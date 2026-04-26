@@ -1,0 +1,604 @@
+import React, { useEffect, useState } from 'react';
+import { Activity, BookOpen, CheckCircle, Dumbbell, Flame } from 'lucide-react';
+import { INITIAL_TEMPLATES } from './data/trainingData';
+import { AssessmentView } from './features/AssessmentView';
+import { PlanView } from './features/PlanView';
+import { ProgressView } from './features/ProgressView';
+import { TodayView } from './features/TodayView';
+import { TrainingView } from './features/TrainingView';
+import {
+  buildWeeklyPrescription,
+  classNames,
+  clone,
+  createRestTimerState,
+  createSession,
+  enrichExercise,
+  extendRestTimer,
+  findTemplate,
+  hydrateTemplates,
+  normalizeTemplateExerciseInput,
+  number,
+  pauseRestTimer,
+  pickSuggestedTemplate,
+  reconcileScreeningProfile,
+  resumeRestTimer,
+  todayKey,
+} from './engines/trainingEngine';
+import type { AppData, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
+import { loadData, saveData } from './storage/persistence';
+import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
+
+const navItems = [
+  { id: 'today', label: '今日', icon: Flame },
+  { id: 'training', label: '训练', icon: Dumbbell },
+  { id: 'assessment', label: '筛查', icon: CheckCircle },
+  { id: 'plan', label: '计划', icon: BookOpen },
+  { id: 'progress', label: '进度', icon: Activity },
+] as const;
+
+type ActiveTab = (typeof navItems)[number]['id'];
+type StatusField = 'sleep' | 'energy' | 'time';
+type SorenessPart = TodayStatus['soreness'][number];
+type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
+
+const getSetList = (session: TrainingSession | null, exerciseIndex: number): TrainingSetLog[] => {
+  if (!session) return [];
+  const exercise = session.exercises?.[exerciseIndex];
+  if (!exercise || !Array.isArray(exercise.sets)) return [];
+  return exercise.sets as TrainingSetLog[];
+};
+
+function App() {
+  const [data, setData] = useState<AppData>(() => loadData() as AppData);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('today');
+  const [expandedExercise, setExpandedExercise] = useState(0);
+  const [, setTimerTick] = useState(0);
+  const [bodyWeightInput, setBodyWeightInput] = useState('');
+
+  useEffect(() => {
+    saveData(data);
+  }, [data]);
+
+  useEffect(() => {
+    if (data.activeSession) setActiveTab('training');
+  }, []);
+
+  useEffect(() => {
+    if (!data.activeSession?.restTimerState?.isRunning) return undefined;
+    const interval = window.setInterval(() => setTimerTick((current) => current + 1), 1000);
+    return () => window.clearInterval(interval);
+  }, [data.activeSession?.restTimerState?.isRunning, data.activeSession?.restTimerState?.startedAt]);
+
+  const selectedTemplate = findTemplate(data.templates, data.selectedTemplateId);
+  const weeklyPrescription = buildWeeklyPrescription(data);
+  const suggestedTemplateId = pickSuggestedTemplate(data);
+  const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
+
+  const startSession = (templateId = data.selectedTemplateId) => {
+    const template = findTemplate(data.templates, templateId);
+    const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
+    const workingData = { ...data, screeningProfile };
+    const session = createSession(
+      template,
+      data.todayStatus,
+      data.history,
+      data.trainingMode,
+      weeklyPrescription,
+      undefined,
+      screeningProfile,
+      data.mesocyclePlan
+    ) as TrainingSession;
+
+    setData((current) => ({
+      ...current,
+      screeningProfile,
+      selectedTemplateId: templateId,
+      activeSession: session,
+    }));
+    setExpandedExercise(0);
+    setActiveTab('training');
+  };
+
+  const finishSession = () => {
+    if (!data.activeSession) return;
+
+    const finishedBase: TrainingSession = {
+      ...data.activeSession,
+      completed: true,
+      finishedAt: new Date().toISOString(),
+      durationMin: Math.max(1, Math.round((Date.now() - new Date(data.activeSession.startedAt || Date.now()).getTime()) / 60000)),
+    };
+
+    setData((current) => {
+      const provisionalHistory = [finishedBase, ...(current.history || [])].slice(0, 500);
+      const nextScreening = reconcileScreeningProfile(current.screeningProfile, provisionalHistory);
+      const finished: TrainingSession = {
+        ...finishedBase,
+        feedbackSummary: {
+          painExercises: Object.entries(nextScreening.adaptiveState?.painByExercise || {})
+            .filter(([, count]) => count >= 2)
+            .map(([exerciseId]) => exerciseId),
+          performanceDrops: nextScreening.adaptiveState?.performanceDrops || [],
+          improvingIssues: (nextScreening.adaptiveState?.improvingIssues || []) as NonNullable<TrainingSession['feedbackSummary']>['improvingIssues'],
+        },
+      };
+
+      return {
+        ...current,
+        activeSession: null,
+        history: [finished, ...(current.history || [])].slice(0, 500),
+        screeningProfile: nextScreening,
+      };
+    });
+
+    setActiveTab('progress');
+  };
+
+  const updateStatus = (field: StatusField, value: string) => {
+    setData((current) => ({
+      ...current,
+      todayStatus: {
+        ...current.todayStatus,
+        [field]: value,
+      },
+    }));
+  };
+
+  const updateTrainingMode = (mode: TrainingMode) => {
+    setData((current) => ({ ...current, trainingMode: mode }));
+  };
+
+  const toggleSoreness = (part: SorenessPart) => {
+    setData((current) => {
+      const currentList = current.todayStatus.soreness || ['无'];
+      let next: TodayStatus['soreness'];
+      if (part === '无') next = ['无'];
+      else if (currentList.includes(part)) next = currentList.filter((item) => item !== part) as TodayStatus['soreness'];
+      else next = [...currentList.filter((item) => item !== '无'), part] as TodayStatus['soreness'];
+      if (!next.length) next = ['无'];
+      return {
+        ...current,
+        todayStatus: {
+          ...current.todayStatus,
+          soreness: next,
+        },
+      };
+    });
+  };
+
+  const updateActiveSet = (exerciseIndex: number, setIndex: number, field: EditableSetField, value: string | boolean) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      const session = clone(current.activeSession) as TrainingSession;
+      const sets = getSetList(session, exerciseIndex);
+      const target = sets[setIndex];
+      if (!target) return current;
+
+      if (field === 'painFlag') target.painFlag = Boolean(value);
+      else if (field === 'note') target.note = String(value);
+      else if (field === 'weight' || field === 'reps') target[field] = Math.max(0, number(value));
+      else if (field === 'techniqueQuality') target.techniqueQuality = String(value) as TrainingSetLog['techniqueQuality'];
+      else target[field] = String(value);
+
+      return { ...current, activeSession: session };
+    });
+  };
+
+  const updateActiveSetFields = (exerciseIndex: number, setIndex: number, values: Partial<TrainingSetLog>) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      const session = clone(current.activeSession) as TrainingSession;
+      const sets = getSetList(session, exerciseIndex);
+      const target = sets[setIndex];
+      if (!target) return current;
+      Object.assign(target, values);
+      return { ...current, activeSession: session };
+    });
+  };
+
+  const completeSet = (exerciseIndex: number, advanceExercise = false) => {
+    const session = data.activeSession;
+    if (!session) return;
+
+    const exercise = session.exercises[exerciseIndex];
+    const sets = getSetList(session, exerciseIndex);
+    const setIndex = sets.findIndex((set) => !set.done);
+    if (setIndex < 0) return;
+
+    const targetSet = sets[setIndex];
+    const nextSession = clone(session) as TrainingSession;
+    const nextExercise = nextSession.exercises[exerciseIndex];
+    const nextSets = Array.isArray(nextExercise.sets) ? (nextExercise.sets as TrainingSetLog[]) : [];
+
+    nextSets[setIndex] = {
+      ...targetSet,
+      weight: number(targetSet.weight),
+      reps: number(targetSet.reps),
+      done: true,
+      completedAt: new Date().toISOString(),
+    };
+    nextSession.restTimerState = createRestTimerState(nextExercise.id, setIndex, exercise.rest, Date.now(), exercise.name);
+
+    const nextSet = nextSets[setIndex + 1];
+    if (nextSet && !nextSet.done) {
+      if (!nextSet.type || nextSet.type === nextSets[setIndex].type || nextSet.type === 'straight') {
+        nextSet.weight = nextSets[setIndex].weight;
+        nextSet.reps = nextSets[setIndex].reps;
+      }
+      nextSet.rpe = '';
+      nextSet.rir = Math.min(2, nextExercise.targetRir?.[1] ?? 2);
+      nextSet.painFlag = false;
+    }
+
+    setData((current) => ({ ...current, activeSession: nextSession }));
+    if (advanceExercise || !nextSet) {
+      const nextExerciseIndex = nextSession.exercises.findIndex((item, index) => index > exerciseIndex && getSetList(nextSession, index).some((set) => !set.done));
+      if (nextExerciseIndex >= 0) setExpandedExercise(nextExerciseIndex);
+    }
+  };
+
+  const copyPreviousSet = (exerciseIndex: number) => {
+    const session = data.activeSession;
+    if (!session) return;
+    const sets = getSetList(session, exerciseIndex);
+    const setIndex = sets.findIndex((set) => !set.done);
+    if (setIndex <= 0) return;
+    const previous = sets[setIndex - 1];
+    updateActiveSetFields(exerciseIndex, setIndex, {
+      weight: previous.weight,
+      reps: previous.reps,
+      rpe: previous.rpe,
+      rir: previous.rir,
+    });
+  };
+
+  const adjustCurrentSet = (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => {
+    const session = data.activeSession;
+    if (!session) return;
+    const sets = getSetList(session, exerciseIndex);
+    const setIndex = sets.findIndex((set) => !set.done);
+    if (setIndex < 0) return;
+    const currentValue = number(sets[setIndex][field]);
+    updateActiveSet(exerciseIndex, setIndex, field, String(Math.max(0, currentValue + delta)));
+  };
+
+  const replaceExercise = (exerciseIndex: number) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      const session = clone(current.activeSession) as TrainingSession;
+      const exercise = session.exercises[exerciseIndex] as TrainingSession['exercises'][number] & {
+        replacedFromId?: string;
+        replacedFromName?: string;
+      };
+      const options = [exercise.originalName || exercise.name, ...(exercise.alternatives || [])].filter(Boolean);
+      if (!options.length) return current;
+      const currentIndex = options.indexOf(exercise.name);
+      const nextIndex = (currentIndex + 1 + options.length) % options.length;
+      const nextName = options[nextIndex];
+      const baseId = exercise.baseId || exercise.id;
+      exercise.name = nextName;
+      exercise.id = nextIndex === 0 ? baseId : `${baseId}__alt_${nextIndex}`;
+      exercise.replacedFromId = nextIndex === 0 ? '' : baseId;
+      exercise.replacedFromName = nextIndex === 0 ? '' : exercise.originalName;
+      exercise.warning =
+        nextIndex === 0
+          ? exercise.warning
+          : [exercise.warning, '已切到替代动作：这次仍属于同一模板位置，但 PR 会独立统计。'].filter(Boolean).join(' / ');
+      return { ...current, activeSession: session };
+    });
+  };
+
+  const deleteActiveSession = () => {
+    if (!window.confirm('确定放弃当前训练吗？未完成的数据不会进入历史记录。')) return;
+    setData((current) => ({ ...current, activeSession: null }));
+    setActiveTab('today');
+  };
+
+  const updateRestTimer = (updater: (timer: RestTimerState | null) => RestTimerState | null) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return {
+        ...current,
+        activeSession: {
+          ...current.activeSession,
+          restTimerState: updater(current.activeSession.restTimerState || null),
+        },
+      };
+    });
+  };
+
+  const extendActiveRestTimer = (seconds: number) => updateRestTimer((timer) => extendRestTimer(timer, seconds));
+  const toggleActiveRestTimer = () =>
+    updateRestTimer((timer) => {
+      if (!timer) return null;
+      return timer.isRunning ? pauseRestTimer(timer) : resumeRestTimer(timer);
+    });
+  const clearActiveRestTimer = () => updateRestTimer(() => null);
+
+  const updateSupportLog = (moduleId: string, exerciseId: string, updates: Partial<NonNullable<TrainingSession['supportExerciseLogs']>[number]>) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      const session = clone(current.activeSession) as TrainingSession;
+      session.supportExerciseLogs = Array.isArray(session.supportExerciseLogs) ? session.supportExerciseLogs : [];
+      const target = session.supportExerciseLogs.find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
+      if (!target) return current;
+      Object.assign(target, updates);
+      target.completedSets = Math.max(0, Math.min(number(target.completedSets), number(target.plannedSets)));
+      return { ...current, activeSession: session };
+    });
+  };
+
+  const completeSupportSet = (moduleId: string, exerciseId: string) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      const session = clone(current.activeSession) as TrainingSession;
+      session.supportExerciseLogs = Array.isArray(session.supportExerciseLogs) ? session.supportExerciseLogs : [];
+      const target = session.supportExerciseLogs.find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
+      if (!target) return current;
+      target.completedSets = Math.max(0, Math.min(number(target.completedSets) + 1, number(target.plannedSets)));
+      if (target.completedSets >= target.plannedSets) target.skippedReason = undefined;
+      return { ...current, activeSession: session };
+    });
+  };
+
+  const skipSupportExercise = (moduleId: string, exerciseId: string, reason: SupportSkipReason) => {
+    updateSupportLog(moduleId, exerciseId, {
+      skippedReason: reason,
+    });
+  };
+
+  const updateTemplateExercise = (templateId: string, exerciseIndex: number, field: string, value: string) => {
+    setData((current) => ({
+      ...current,
+      templates: current.templates.map((template) => {
+        if (template.id !== templateId) return template;
+        const exercises = template.exercises.map((exercise, index) =>
+          index === exerciseIndex ? normalizeTemplateExerciseInput(exercise, field, value) : exercise
+        );
+        return { ...template, exercises: exercises.map((exercise) => enrichExercise(exercise)) };
+      }),
+    }));
+  };
+
+  const saveBodyWeight = () => {
+    const value = number(bodyWeightInput);
+    if (!value) return;
+    const date = todayKey();
+    setData((current) => {
+      const withoutToday = current.bodyWeights.filter((entry) => entry.date !== date);
+      return {
+        ...current,
+        bodyWeights: [{ date, value }, ...withoutToday].sort((a, b) => b.date.localeCompare(a.date)),
+      };
+    });
+    setBodyWeightInput('');
+  };
+
+  const resetTemplates = () => {
+    if (!window.confirm('确定恢复默认模板吗？历史训练记录会保留。')) return;
+    setData((current) => ({
+      ...current,
+      templates: hydrateTemplates(INITIAL_TEMPLATES),
+      selectedTemplateId: 'push-a',
+    }));
+  };
+
+  const updateUserProfile = (field: string, value: string) => {
+    setData((current) => ({
+      ...current,
+      userProfile: {
+        ...current.userProfile,
+        [field]: ['age', 'heightCm', 'weightKg', 'weeklyTrainingDays', 'sessionDurationMin'].includes(field) ? number(value) : value,
+      },
+      trainingMode:
+        field === 'primaryGoal' && value === 'hypertrophy'
+          ? 'hypertrophy'
+          : field === 'primaryGoal' && value === 'strength'
+            ? 'strength'
+            : current.trainingMode,
+      programTemplate:
+        field === 'primaryGoal'
+          ? { ...current.programTemplate, primaryGoal: value as AppData['programTemplate']['primaryGoal'] }
+          : current.programTemplate,
+    }));
+  };
+
+  const updateProgramTemplate = (field: string, value: string) => {
+    setData((current) => ({
+      ...current,
+      programTemplate: {
+        ...current.programTemplate,
+        [field]: field === 'daysPerWeek' ? number(value) : value,
+      },
+    }));
+  };
+
+  const updateScreeningFlag = (group: 'postureFlags' | 'movementFlags', field: string, value: string) => {
+    setData((current) => {
+      const screening = reconcileScreeningProfile(
+        {
+          ...current.screeningProfile,
+          [group]: {
+            ...current.screeningProfile[group],
+            [field]: value,
+          },
+        },
+        current.history
+      );
+      return { ...current, screeningProfile: screening };
+    });
+  };
+
+  const deleteHistorySession = (sessionId: string) => {
+    if (!window.confirm('确定删除这条训练历史吗？')) return;
+    setData((current) => {
+      const nextHistory = (current.history || []).filter((session) => session.id !== sessionId);
+      return {
+        ...current,
+        history: nextHistory,
+        screeningProfile: reconcileScreeningProfile(current.screeningProfile, nextHistory),
+      };
+    });
+  };
+
+  return (
+    <div className="h-screen w-full overflow-hidden bg-stone-100 font-sans text-slate-900">
+      <div className="h-full w-full md:p-3">
+        <div className="h-full w-full overflow-hidden bg-white md:border md:border-slate-200 md:shadow-xl">
+          <div className="flex h-full">
+            <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white md:flex">
+              <div className="border-b border-white/10 px-6 py-6">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-500 text-slate-950">
+                    <Dumbbell className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-black tracking-tight">IronPath</div>
+                    <div className="text-xs text-slate-400">给自己用的训练工作台</div>
+                  </div>
+                </div>
+              </div>
+
+              <nav className="flex-1 space-y-1 px-3 py-4">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const selected = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={classNames(
+                        'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition',
+                        selected ? 'bg-white text-slate-950' : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {item.label}
+                      {item.id === 'training' && data.activeSession && <span className="ml-auto h-2 w-2 rounded-full bg-emerald-400" />}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              <div className="border-t border-white/10 px-6 py-5 text-xs leading-5 text-slate-400">打开就能开练。记录、处方、纠偏和进度都保存在本地。</div>
+            </aside>
+
+            <main className="flex min-w-0 flex-1 flex-col bg-stone-50">
+              <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 md:hidden">
+                <div className="flex items-center gap-2 font-black">
+                  <Dumbbell className="h-5 w-5 text-emerald-600" />
+                  IronPath
+                </div>
+                {data.activeSession && (
+                  <button onClick={() => setActiveTab('training')} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white">
+                    训练中
+                  </button>
+                )}
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto pb-24 md:pb-0">
+                {activeTab === 'today' && (
+                  <TodayView
+                    data={data}
+                    selectedTemplate={selectedTemplate}
+                    suggestedTemplate={suggestedTemplate}
+                    weeklyPrescription={weeklyPrescription}
+                    trainingMode={data.trainingMode}
+                    onModeChange={updateTrainingMode}
+                    onStatusChange={updateStatus}
+                    onSorenessToggle={toggleSoreness}
+                    onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
+                    onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId }))}
+                    onStart={() => startSession()}
+                    onResume={() => setActiveTab('training')}
+                  />
+                )}
+
+                {activeTab === 'training' && (
+                  <TrainingView
+                    session={data.activeSession}
+                    restTimer={data.activeSession?.restTimerState || null}
+                    expandedExercise={expandedExercise}
+                    setExpandedExercise={setExpandedExercise}
+                    onStartFromSelected={() => startSession()}
+                    onSetChange={updateActiveSet}
+                    onCompleteSet={completeSet}
+                    onCopyPrevious={copyPreviousSet}
+                    onAdjustSet={adjustCurrentSet}
+                    onCompleteSupportSet={completeSupportSet}
+                    onSkipSupportExercise={skipSupportExercise}
+                    onUpdateSupportSkipReason={skipSupportExercise}
+                    onReplaceExercise={replaceExercise}
+                    onFinish={finishSession}
+                    onDelete={deleteActiveSession}
+                    onExtendRestTimer={extendActiveRestTimer}
+                    onToggleRestTimer={toggleActiveRestTimer}
+                    onClearRestTimer={clearActiveRestTimer}
+                    onGoToday={() => setActiveTab('today')}
+                  />
+                )}
+
+                {activeTab === 'assessment' && (
+                  <AssessmentView
+                    data={data}
+                    onProfileChange={updateUserProfile}
+                    onProgramChange={updateProgramTemplate}
+                    onScreeningChange={updateScreeningFlag}
+                    onGoProgram={() => setActiveTab('plan')}
+                  />
+                )}
+
+                {activeTab === 'plan' && (
+                  <PlanView
+                    data={data}
+                    weeklyPrescription={weeklyPrescription}
+                    selectedTemplateId={data.selectedTemplateId}
+                    onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
+                    onStartTemplate={(id) => startSession(id)}
+                    onUpdateExercise={updateTemplateExercise}
+                    onResetTemplates={resetTemplates}
+                  />
+                )}
+
+                {activeTab === 'progress' && (
+                  <ProgressView
+                    data={data}
+                    weeklyPrescription={weeklyPrescription}
+                    bodyWeightInput={bodyWeightInput}
+                    setBodyWeightInput={setBodyWeightInput}
+                    onSaveBodyWeight={saveBodyWeight}
+                    onDeleteSession={deleteHistorySession}
+                    onRestoreData={(nextData) => {
+                      setData(nextData);
+                      setActiveTab('today');
+                    }}
+                  />
+                )}
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const selected = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={classNames('flex flex-col items-center justify-center gap-1 text-xs font-semibold', selected ? 'text-emerald-700' : 'text-slate-400')}
+            >
+              <Icon className="h-5 w-5" />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+      <AddToHomeScreenHint />
+    </div>
+  );
+}
+
+export default App;

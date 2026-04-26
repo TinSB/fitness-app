@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ironpath.local/schemas/training-program.schema.json",
+  "title": "ProgramTemplate",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "userId",
+    "primaryGoal",
+    "splitType",
+    "daysPerWeek",
+    "correctionStrategy",
+    "functionalStrategy",
+    "weeklyMuscleTargets",
+    "dayTemplates"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "userId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "primaryGoal": {
+      "type": "string",
+      "enum": ["hypertrophy", "strength", "fat_loss"]
+    },
+    "splitType": {
+      "type": "string",
+      "enum": ["upper_lower", "push_pull_legs", "full_body", "body_part"]
+    },
+    "daysPerWeek": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7
+    },
+    "correctionStrategy": {
+      "type": "string",
+      "enum": ["light", "moderate", "aggressive"]
+    },
+    "functionalStrategy": {
+      "type": "string",
+      "enum": ["minimal", "standard", "enhanced"]
+    },
+    "weeklyMuscleTargets": {
+      "type": "object",
+      "required": ["chest", "back", "quads", "hamstrings", "glutes", "shoulders", "biceps", "triceps", "calves", "abs"],
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 30
+      },
+      "properties": {
+        "chest": { "type": "number", "minimum": 0, "maximum": 30 },
+        "back": { "type": "number", "minimum": 0, "maximum": 30 },
+        "quads": { "type": "number", "minimum": 0, "maximum": 30 },
+        "hamstrings": { "type": "number", "minimum": 0, "maximum": 30 },
+        "glutes": { "type": "number", "minimum": 0, "maximum": 30 },
+        "shoulders": { "type": "number", "minimum": 0, "maximum": 30 },
+        "biceps": { "type": "number", "minimum": 0, "maximum": 30 },
+        "triceps": { "type": "number", "minimum": 0, "maximum": 30 },
+        "calves": { "type": "number", "minimum": 0, "maximum": 30 },
+        "abs": { "type": "number", "minimum": 0, "maximum": 30 }
+      }
+    },
+    "dayTemplates": {
+      "type": "array"
+    }
+  }
+}

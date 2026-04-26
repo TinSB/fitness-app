@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ironpath.local/schemas/training-data.schema.json",
+  "title": "IronPath AppData",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "templates",
+    "history",
+    "activeSession",
+    "todayStatus",
+    "bodyWeights",
+    "userProfile",
+    "screeningProfile",
+    "programTemplate",
+    "mesocyclePlan",
+    "settings"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "templates": { "type": "array", "items": { "$ref": "#/$defs/trainingTemplate" } },
+    "history": { "type": "array", "items": { "$ref": "#/$defs/trainingSession" } },
+    "activeSession": {
+      "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/trainingSession" }]
+    },
+    "selectedTemplateId": { "type": "string" },
+    "trainingMode": { "type": "string", "enum": ["hybrid", "strength", "hypertrophy"] },
+    "todayStatus": { "$ref": "#/$defs/todayStatus" },
+    "bodyWeights": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "value"],
+        "properties": {
+          "date": { "type": "string" },
+          "value": { "type": "number", "minimum": 0 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "userProfile": { "$ref": "#/$defs/userProfile" },
+    "screeningProfile": { "$ref": "#/$defs/screeningProfile" },
+    "programTemplate": { "$ref": "training-program.schema.json" },
+    "mesocyclePlan": { "$ref": "#/$defs/mesocyclePlan" },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "type": "integer", "minimum": 1 },
+        "selectedTemplateId": { "type": "string" },
+        "trainingMode": { "type": "string", "enum": ["hybrid", "strength", "hypertrophy"] }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "todayStatus": {
+      "type": "object",
+      "required": ["sleep", "energy", "soreness", "time"],
+      "properties": {
+        "sleep": { "type": "string", "enum": ["差", "一般", "好"] },
+        "energy": { "type": "string", "enum": ["低", "中", "高"] },
+        "soreness": { "type": "array", "items": { "type": "string" } },
+        "time": { "type": "string", "enum": ["30", "60", "90"] }
+      },
+      "additionalProperties": true
+    },
+    "userProfile": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "sex",
+        "age",
+        "heightCm",
+        "weightKg",
+        "trainingLevel",
+        "primaryGoal",
+        "secondaryPreferences",
+        "weeklyTrainingDays",
+        "sessionDurationMin",
+        "equipmentAccess",
+        "injuryFlags",
+        "painNotes"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "sex": { "type": "string", "enum": ["male", "female", "other"] },
+        "age": { "type": "number", "minimum": 0 },
+        "heightCm": { "type": "number", "minimum": 0 },
+        "weightKg": { "type": "number", "minimum": 0 },
+        "trainingLevel": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+        "primaryGoal": { "type": "string", "enum": ["hypertrophy", "strength", "fat_loss"] },
+        "secondaryPreferences": { "type": "array", "items": { "type": "string" } },
+        "weeklyTrainingDays": { "type": "number", "minimum": 1 },
+        "sessionDurationMin": { "type": "number", "minimum": 1 },
+        "equipmentAccess": { "type": "array", "items": { "type": "string" } },
+        "injuryFlags": { "type": "array", "items": { "type": "string" } },
+        "painNotes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "screeningProfile": {
+      "type": "object",
+      "required": ["userId", "postureFlags", "movementFlags", "painTriggers", "restrictedExercises", "correctionPriority"],
+      "properties": {
+        "userId": { "type": "string" },
+        "postureFlags": { "type": "object", "additionalProperties": { "type": "string" } },
+        "movementFlags": { "type": "object", "additionalProperties": { "type": "string" } },
+        "painTriggers": { "type": "array", "items": { "type": "string" } },
+        "restrictedExercises": { "type": "array", "items": { "type": "string" } },
+        "correctionPriority": { "type": "array", "items": { "type": "string" } },
+        "adaptiveState": {
+          "type": "object",
+          "properties": {
+            "issueScores": { "type": "object", "additionalProperties": { "type": "number" } },
+            "painByExercise": { "type": "object", "additionalProperties": { "type": "number" } },
+            "performanceDrops": { "type": "array", "items": { "type": "string" } },
+            "improvingIssues": { "type": "array", "items": { "type": "string" } },
+            "moduleDose": { "type": "object", "additionalProperties": { "type": "string" } },
+            "lastUpdated": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "trainingSet": {
+      "type": "object",
+      "required": ["id", "weight", "reps"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "weight": { "type": "number", "minimum": 0 },
+        "reps": { "type": "number", "minimum": 0 },
+        "rpe": {},
+        "rir": {},
+        "note": { "type": "string" },
+        "painFlag": { "type": "boolean" },
+        "painArea": { "type": "string" },
+        "painSeverity": { "type": "number", "minimum": 0, "maximum": 5 },
+        "techniqueQuality": { "type": "string", "enum": ["good", "acceptable", "poor"] },
+        "done": { "type": "boolean" },
+        "completedAt": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "exerciseTemplate": {
+      "type": "object",
+      "required": ["id", "name", "muscle", "kind", "sets", "repMin", "repMax", "rest", "startWeight"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "alias": { "type": "string" },
+        "muscle": { "type": "string" },
+        "kind": { "type": "string" },
+        "sets": {
+          "anyOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "array", "items": { "$ref": "#/$defs/trainingSet" } }
+          ]
+        },
+        "repMin": { "type": "number", "minimum": 0 },
+        "repMax": { "type": "number", "minimum": 0 },
+        "rest": { "type": "number", "minimum": 0 },
+        "startWeight": { "type": "number", "minimum": 0 },
+        "alternatives": { "type": "array", "items": { "type": "string" } },
+        "primaryMuscles": { "type": "array", "items": { "type": "string" } },
+        "secondaryMuscles": { "type": "array", "items": { "type": "string" } },
+        "targetRir": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+      },
+      "additionalProperties": true
+    },
+    "trainingTemplate": {
+      "type": "object",
+      "required": ["id", "name", "focus", "duration", "note", "exercises"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "focus": { "type": "string" },
+        "duration": { "type": "number", "minimum": 0 },
+        "note": { "type": "string" },
+        "exercises": { "type": "array", "items": { "$ref": "#/$defs/exerciseTemplate" } }
+      },
+      "additionalProperties": true
+    },
+    "supportExercise": {
+      "type": "object",
+      "required": ["exerciseId", "sets"],
+      "properties": {
+        "exerciseId": { "type": "string" },
+        "name": { "type": "string" },
+        "sets": { "type": "number", "minimum": 0 },
+        "repMin": { "type": "number", "minimum": 0 },
+        "repMax": { "type": "number", "minimum": 0 },
+        "holdSec": { "type": "number", "minimum": 0 },
+        "distanceM": { "type": "number", "minimum": 0 },
+        "timeSec": { "type": "number", "minimum": 0 },
+        "restSec": { "type": "number", "minimum": 0 },
+        "cue": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "supportExerciseLog": {
+      "type": "object",
+      "required": ["moduleId", "exerciseId", "blockType", "plannedSets", "completedSets"],
+      "properties": {
+        "moduleId": { "type": "string" },
+        "exerciseId": { "type": "string" },
+        "exerciseName": { "type": "string" },
+        "blockType": { "type": "string", "enum": ["correction", "functional"] },
+        "plannedSets": { "type": "number", "minimum": 0 },
+        "completedSets": { "type": "number", "minimum": 0 },
+        "skippedReason": { "type": "string", "enum": ["time", "pain", "equipment", "forgot", "too_tired", "not_needed", "other"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "restTimerState": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["exerciseId", "setIndex", "startedAt", "durationSec", "isRunning"],
+          "properties": {
+            "exerciseId": { "type": "string" },
+            "setIndex": { "type": "number", "minimum": 0 },
+            "startedAt": { "type": "string" },
+            "durationSec": { "type": "number", "minimum": 0 },
+            "isRunning": { "type": "boolean" },
+            "pausedRemainingSec": { "type": "number", "minimum": 0 },
+            "label": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "supportModule": {
+      "type": "object",
+      "required": ["id", "name", "durationMin", "exercises"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "durationMin": { "type": "number", "minimum": 0 },
+        "exercises": { "type": "array", "items": { "$ref": "#/$defs/supportExercise" } }
+      },
+      "additionalProperties": true
+    },
+    "mesocycleWeek": {
+      "type": "object",
+      "required": ["weekIndex", "phase", "volumeMultiplier", "intensityBias"],
+      "properties": {
+        "weekIndex": { "type": "integer", "minimum": 0 },
+        "phase": { "type": "string", "enum": ["base", "build", "overload", "deload"] },
+        "volumeMultiplier": { "type": "number", "minimum": 0.4, "maximum": 1.3 },
+        "intensityBias": { "type": "string", "enum": ["conservative", "normal", "aggressive"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "mesocyclePlan": {
+      "type": "object",
+      "required": ["id", "startDate", "lengthWeeks", "currentWeekIndex", "primaryGoal", "weeks"],
+      "properties": {
+        "id": { "type": "string" },
+        "startDate": { "type": "string" },
+        "lengthWeeks": { "type": "integer", "enum": [4, 5, 6] },
+        "currentWeekIndex": { "type": "integer", "minimum": 0 },
+        "primaryGoal": { "type": "string", "enum": ["hypertrophy", "strength", "fat_loss"] },
+        "weeks": { "type": "array", "items": { "$ref": "#/$defs/mesocycleWeek" } }
+      },
+      "additionalProperties": true
+    },
+    "trainingSession": {
+      "type": "object",
+      "required": ["id", "date", "templateId", "templateName", "trainingMode", "exercises"],
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "templateId": { "type": "string" },
+        "templateName": { "type": "string" },
+        "trainingMode": { "type": "string", "enum": ["hybrid", "strength", "hypertrophy"] },
+        "focus": { "type": "string" },
+        "exercises": { "type": "array", "items": { "$ref": "#/$defs/exerciseTemplate" } },
+        "correctionBlock": { "type": "array", "items": { "$ref": "#/$defs/supportModule" } },
+        "functionalBlock": { "type": "array", "items": { "$ref": "#/$defs/supportModule" } },
+        "supportExerciseLogs": { "type": "array", "items": { "$ref": "#/$defs/supportExerciseLog" } },
+        "restTimerState": { "$ref": "#/$defs/restTimerState" },
+        "status": { "$ref": "#/$defs/todayStatus" },
+        "durationMin": { "type": "number", "minimum": 0 },
+        "completed": { "type": "boolean" },
+        "startedAt": { "type": "string" },
+        "finishedAt": { "type": "string" },
+        "explanations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    }
+  }
+}
