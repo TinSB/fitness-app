@@ -18,10 +18,12 @@ import type {
   WeeklyMuscleBudget,
   WeeklyPrescription,
 } from '../models/training-model';
+import { formatCyclePhase } from '../i18n/formatters';
 import { buildAdherenceAdjustment } from './adherenceAdjustmentEngine';
-import { clamp, getPrimaryMuscles, getSecondaryMuscles, number, resolveMode, todayKey } from './engineUtils';
+import { clamp, completedSets, number, resolveMode, todayKey } from './engineUtils';
 import { buildAdaptiveDeloadDecision, getAdaptiveBudgetAdjustment } from './adaptiveFeedbackEngine';
 import { buildAdherenceReport } from './analytics';
+import { evaluateEffectiveSet, getMuscleContribution } from './effectiveSetEngine';
 import { getCurrentMesocycleWeek } from './mesocycleEngine';
 import { inferCorrectionPriority, inferFunctionalPriorities } from './screeningEngine';
 
@@ -70,13 +72,28 @@ const addMuscleCredit = (stats: Record<string, WeeklyStat>, muscle: string, sets
   if (creditedSets > 0 && date) stats[muscle].dates.add(date);
 };
 
+const addWeightedExerciseCredit = (stats: Record<string, WeeklyStat>, exercise: ExercisePrescription, sets: number, date?: string) => {
+  Object.entries(getMuscleContribution(exercise)).forEach(([muscle, contribution]) => addMuscleCredit(stats, muscle, sets, date, contribution));
+};
+
 const addSessionToWeeklyStats = (stats: Record<string, WeeklyStat>, session: PlannedSessionLike | null | undefined, planned = false) => {
   (session?.exercises || []).forEach((exercise) => {
-    const sets = setCountForExercise(exercise, planned);
-    if (!sets) return;
+    if (planned) {
+      const sets = setCountForExercise(exercise, true);
+      if (sets) addWeightedExerciseCredit(stats, exercise, sets, session?.date);
+      return;
+    }
 
-    getPrimaryMuscles(exercise).forEach((muscle: string) => addMuscleCredit(stats, muscle, sets, session?.date, 1));
-    getSecondaryMuscles(exercise).forEach((muscle: string) => addMuscleCredit(stats, muscle, sets, session?.date, 0.5));
+    if (Array.isArray(exercise.sets)) {
+      completedSets(exercise).forEach((set) => {
+        const result = evaluateEffectiveSet(set, exercise);
+        if (result.isEffective) addWeightedExerciseCredit(stats, exercise, result.score, session?.date);
+      });
+      return;
+    }
+
+    const sets = setCountForExercise(exercise, false);
+    if (sets) addWeightedExerciseCredit(stats, exercise, sets, session?.date);
   });
 };
 
@@ -366,7 +383,7 @@ export const buildWeeklyPrescription = (
       targetMultiplier: Math.round(targetMultiplier * phaseMultiplier * adherenceMultiplier * deloadMultiplier * 100) / 100,
       adjustmentReasons: [
         ...reasons,
-        ...(phaseMultiplier !== 1 ? [`当前周期 ${mesocycleWeek.phase} 周，周剂量倍率 ${phaseMultiplier}`] : []),
+        ...(phaseMultiplier !== 1 ? [`当前周期 ${formatCyclePhase(mesocycleWeek.phase)}，周剂量倍率 ${phaseMultiplier}`] : []),
         ...(adherenceMultiplier !== 1 ? adherenceAdjustment.reasons : []),
       ],
       recoveryMultiplier,

@@ -91,8 +91,8 @@ export const DEFAULT_MESOCYCLE_PLAN: MesocyclePlan = {
   primaryGoal: 'hypertrophy',
   weeks: [
     { weekIndex: 0, phase: 'base', volumeMultiplier: 0.9, intensityBias: 'normal', notes: '重新建立节奏和可执行性。' },
-    { weekIndex: 1, phase: 'build', volumeMultiplier: 1, intensityBias: 'normal', notes: '回到标准剂量。' },
-    { weekIndex: 2, phase: 'overload', volumeMultiplier: 1.1, intensityBias: 'aggressive', notes: '在恢复允许时推进。' },
-    { weekIndex: 3, phase: 'deload', volumeMultiplier: 0.6, intensityBias: 'conservative', notes: '主动减量，恢复优先。' },
+    { weekIndex: 1, phase: 'build', volumeMultiplier: 1, intensityBias: 'normal', notes: '回到标准训练剂量。' },
+    { weekIndex: 2, phase: 'overload', volumeMultiplier: 1.1, intensityBias: 'aggressive', notes: '在恢复允许时小幅提高训练压力。' },
+    { weekIndex: 3, phase: 'deload', volumeMultiplier: 0.6, intensityBias: 'conservative', notes: '主动下修训练量，优先恢复和动作质量。' },
   ],
 };

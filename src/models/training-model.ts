@@ -60,7 +60,7 @@ export const TRAINING_SET_TYPES = ['warmup', 'top', 'backoff', 'straight', 'corr
 export const SESSION_STATUSES = ['planned', 'in_progress', 'completed', 'skipped'] as const;
 
 export const PRIMARY_GOAL_LABELS: Record<(typeof PRIMARY_GOALS)[number], string> = {
-  hypertrophy: '增肌',
+  hypertrophy: '肌肥大',
   strength: '力量',
   fat_loss: '减脂',
 };
@@ -77,7 +77,7 @@ export const CORRECTION_STRATEGY_LABELS: Record<(typeof CORRECTION_STRATEGIES)[n
 export const FUNCTIONAL_STRATEGY_LABELS: Record<(typeof FUNCTIONAL_STRATEGIES)[number], string> = {
   minimal: '最小补丁',
   standard: '标准补丁',
-  enhanced: '增强补丁',
+  enhanced: '强化补丁',
 };
 export const POSTURE_FLAG_LABELS: Record<(typeof POSTURE_FLAG_KEYS)[number], string> = {
   forwardHead: '头前引',
@@ -93,7 +93,7 @@ export const MOVEMENT_FLAG_LABELS: Record<(typeof MOVEMENT_FLAG_KEYS)[number], s
   singleLegStability: '单腿稳定',
   scapularControl: '肩胛控制',
   trunkStability: '躯干稳定',
-  ankleMobility: '踝活动度',
+  ankleMobility: '踝关节活动度',
   thoracicRotation: '胸椎旋转',
   hipFlexorLength: '髋屈肌长度',
   lumbarControl: '腰椎控制',
@@ -141,6 +141,11 @@ export type ReadinessAdjustment = 'recovery' | 'conservative' | 'normal' | 'push
 export type AdherenceComplexityLevel = 'normal' | 'reduced' | 'minimal';
 export type PainSuggestedAction = 'watch' | 'substitute' | 'deload' | 'seek_professional';
 export type TechniqueQuality = 'good' | 'acceptable' | 'poor';
+export type EstimateConfidence = 'low' | 'medium' | 'high';
+export type EvidenceConfidence = 'high' | 'moderate' | 'low';
+export type EffectiveSetFlag = 'warmup' | 'poor_technique' | 'pain' | 'too_easy' | 'incomplete' | 'valid_effort' | 'unknown_rir';
+export type PersonalRecordQuality = 'standard' | 'high_quality' | 'low_confidence';
+export type LoadFeedbackValue = 'too_light' | 'good' | 'too_heavy';
 
 export type PostureFlags = Record<PostureFlagKey, PostureSeverity>;
 export type MovementFlags = Record<MovementFlagKey, MovementSeverity>;
@@ -248,8 +253,10 @@ export interface ExerciseMetadata {
   movementPattern?: string;
   primaryMuscles?: string[];
   secondaryMuscles?: string[];
+  muscleContribution?: Record<string, number>;
   goalBias?: string[];
   equivalenceChainId?: string;
+  canonicalExerciseId?: string;
   baseId?: string;
   fatigueCost?: ExerciseFatigueCost | string;
   skillDemand?: ExerciseSkillDemand | string;
@@ -430,6 +437,14 @@ export interface FeedbackSummary {
   improvingIssues: CorrectionIssue[];
 }
 
+export interface LoadFeedback {
+  exerciseId: string;
+  sessionId: string;
+  date: string;
+  feedback: LoadFeedbackValue;
+  note?: string;
+}
+
 export interface SupportPlan {
   primaryGoal: PrimaryGoal;
   mainline: {
@@ -481,6 +496,7 @@ export interface TrainingSession {
   completed?: boolean;
   durationMin?: number;
   feedbackSummary?: FeedbackSummary;
+  loadFeedback?: LoadFeedback[];
   supportExerciseLogs?: SupportExerciseLog[];
   restTimerState?: RestTimerState | null;
   deloadDecision?: DeloadDecision;
@@ -631,6 +647,214 @@ export interface PainPattern {
   suggestedAction: PainSuggestedAction;
 }
 
+export interface EstimatedOneRepMax {
+  exerciseId: string;
+  e1rmKg: number;
+  formula: 'epley' | 'brzycki';
+  confidence: EstimateConfidence;
+  sourceSet: {
+    sessionId: string;
+    date: string;
+    weightKg: number;
+    reps: number;
+    rir?: number;
+    techniqueQuality?: TechniqueQuality;
+    painFlag?: boolean;
+  };
+  notes: string[];
+}
+
+export interface E1RMProfile {
+  exerciseId: string;
+  current?: EstimatedOneRepMax;
+  best?: EstimatedOneRepMax;
+  recentValues?: number[];
+  method?: 'median_recent' | 'weighted_recent_average' | 'single_recent_low_confidence';
+}
+
+export interface MuscleVolumeDashboardRow {
+  muscleId: string;
+  muscleName: string;
+  targetSets: number;
+  completedSets: number;
+  effectiveSets: number;
+  highConfidenceEffectiveSets: number;
+  weightedEffectiveSets: number;
+  remainingSets: number;
+  status: 'low' | 'near_target' | 'on_target' | 'high';
+  notes: string[];
+}
+
+export type WeeklyActionPriority = 'high' | 'medium' | 'low';
+
+export interface WeeklyActionRecommendation {
+  id: string;
+  priority: WeeklyActionPriority;
+  category: 'volume' | 'recovery' | 'exercise_selection' | 'technique' | 'pain' | 'adherence' | 'load_feedback' | 'mesocycle';
+  targetType: 'muscle' | 'exercise' | 'session' | 'program';
+  targetId?: string;
+  targetLabel: string;
+  issue: string;
+  recommendation: string;
+  reason: string;
+  suggestedChange?: {
+    muscleId?: string;
+    setsDelta?: number;
+    exerciseIds?: string[];
+    removeExerciseIds?: string[];
+    volumeMultiplier?: number;
+    supportDoseAdjustment?: 'keep' | 'reduce' | 'minimal';
+  };
+  evidenceRuleIds?: string[];
+  confidence: EstimateConfidence;
+}
+
+export interface ExerciseRecommendation {
+  exerciseId: string;
+  label: string;
+  reason: string;
+  fatigueCost: ExerciseFatigueCost | 'low' | 'medium' | 'high';
+  priority: 'primary' | 'secondary' | 'avoid';
+}
+
+export interface ProgramAdjustmentPreview {
+  id: string;
+  title: string;
+  summary: string;
+  changes: Array<{
+    type: AdjustmentChangeType;
+    dayTemplateId?: string;
+    exerciseId?: string;
+    muscleId?: string;
+    setsDelta?: number;
+    reason: string;
+  }>;
+  confidence: EstimateConfidence;
+}
+
+export type AdjustmentApplicationStatus = 'draft' | 'previewed' | 'applied' | 'rolled_back' | 'dismissed';
+
+export type AdjustmentChangeType = 'add_sets' | 'remove_sets' | 'swap_exercise' | 'reduce_support' | 'increase_support' | 'keep';
+
+export interface AdjustmentChange {
+  id: string;
+  type: AdjustmentChangeType;
+  dayTemplateId?: string;
+  exerciseId?: string;
+  replacementExerciseId?: string;
+  muscleId?: string;
+  setsDelta?: number;
+  reason: string;
+  sourceRecommendationId?: string;
+}
+
+export interface ProgramAdjustmentDraft {
+  id: string;
+  createdAt: string;
+  status: AdjustmentApplicationStatus;
+  sourceProgramTemplateId: string;
+  experimentalProgramTemplateId?: string;
+  title: string;
+  summary: string;
+  selectedRecommendationIds: string[];
+  changes: AdjustmentChange[];
+  confidence: EstimateConfidence;
+  notes: string[];
+}
+
+export interface ProgramAdjustmentHistoryItem {
+  id: string;
+  appliedAt: string;
+  sourceProgramTemplateId: string;
+  experimentalProgramTemplateId: string;
+  selectedRecommendationIds: string[];
+  changes: AdjustmentChange[];
+  rollbackAvailable: boolean;
+  rolledBackAt?: string;
+}
+
+export interface ProgramAdjustmentDiff {
+  title: string;
+  summary: string;
+  changes: Array<{
+    changeId: string;
+    type: AdjustmentChangeType;
+    label: string;
+    before: string;
+    after: string;
+    reason: string;
+    riskLevel: 'low' | 'medium' | 'high';
+  }>;
+}
+
+export interface AdjustmentEffectReview {
+  historyItemId: string;
+  status: 'too_early' | 'improved' | 'neutral' | 'worse' | 'insufficient_data';
+  summary: string;
+  metrics: {
+    targetMuscleChange?: number;
+    adherenceChange?: number;
+    painSignalChange?: number;
+    effectiveVolumeChange?: number;
+  };
+  recommendation: 'keep' | 'rollback' | 'review_manually' | 'collect_more_data';
+}
+
+export interface EffectiveSetResult {
+  isEffective: boolean;
+  score: number;
+  confidence: EstimateConfidence;
+  reasons: string[];
+  flags: EffectiveSetFlag[];
+}
+
+export interface EffectiveVolumeSummary {
+  completedSets: number;
+  effectiveSets: number;
+  highConfidenceEffectiveSets: number;
+  mediumConfidenceEffectiveSets: number;
+  lowConfidenceEffectiveSets: number;
+  effectiveScore: number;
+  byMuscle: Record<
+    string,
+    {
+      completedSets: number;
+      effectiveSets: number;
+      highConfidenceEffectiveSets: number;
+      mediumConfidenceEffectiveSets: number;
+      lowConfidenceEffectiveSets: number;
+      effectiveScore: number;
+      weightedEffectiveSets: number;
+      highConfidenceWeightedSets: number;
+    }
+  >;
+  reasons: string[];
+}
+
+export interface PersonalRecord {
+  key?: string;
+  exerciseId: string;
+  value: number;
+  metric: 'max_weight' | 'estimated_1rm' | 'reps_at_weight' | 'volume';
+  quality: PersonalRecordQuality;
+  reasons: string[];
+  type?: string;
+  exercise?: string;
+  displayValue?: string;
+  raw?: number;
+  date?: string;
+}
+
+export interface ExplanationItem {
+  title: string;
+  conclusion: string;
+  reason: string;
+  action: string;
+  evidenceRuleIds?: string[];
+  confidence?: EvidenceConfidence;
+  caveat?: string;
+}
+
 export interface MesocycleWeek {
   weekIndex: number;
   phase: CyclePhase;
@@ -668,5 +892,8 @@ export interface AppData {
   screeningProfile: ScreeningProfile;
   programTemplate: ProgramTemplate;
   mesocyclePlan: MesocyclePlan;
+  programAdjustmentDrafts?: ProgramAdjustmentDraft[];
+  programAdjustmentHistory?: ProgramAdjustmentHistoryItem[];
+  activeProgramTemplateId?: string;
   settings: AppSettings;
 }

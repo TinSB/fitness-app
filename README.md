@@ -1,28 +1,28 @@
 # IronPath
 
-IronPath is a local-first training system built with React, Vite, and TypeScript. It focuses on hypertrophy training with posture correction, functional add-ons, weekly volume budgeting, readiness, deload signals, support exercise logs, and planned-vs-actual adherence review.
+IronPath 是一个本地优先的私人训练系统，基于 React、Vite 和 TypeScript。当前主线是肌肥大训练，并把体态纠偏、功能补丁、周剂量预算、准备度评分、减量判断、训练完成度和训练后总结接成一个闭环。
 
-## Install
+## 安装
 
 ```bash
 npm install
 ```
 
-## Develop
+## 本地运行
 
 ```bash
 npm run dev
 ```
 
-Default local URL:
+默认地址：
 
 ```text
 http://127.0.0.1:3000/
 ```
 
-If that port is already in use, Vite will show the next available local URL.
+如果端口被占用，Vite 会显示新的可用地址。
 
-## Test And Build
+## 测试与构建
 
 ```bash
 npm run typecheck
@@ -30,52 +30,100 @@ npm test
 npm run build
 ```
 
-## iPhone Safari
+## iPhone Safari 添加到主屏幕
 
-IronPath includes a basic PWA manifest and app-shell service worker. To use it like an app on iPhone:
+IronPath 已包含基础 PWA 配置和应用外壳缓存。iPhone 上使用方式：
 
-1. Open IronPath in Safari.
-2. Tap the Safari share button.
-3. Choose Add to Home Screen.
-4. Launch IronPath from the Home Screen icon.
+1. 用 Safari 打开 IronPath。
+2. 点击 Safari 分享按钮。
+3. 选择“添加到主屏幕”。
+4. 之后从主屏幕图标启动 IronPath。
 
-The app uses a timestamp-based rest timer. If Safari is backgrounded or the phone is locked, the timer calculates the remaining time from `startedAt` and `durationSec` when you return. It does not send native push notifications.
+休息计时器使用时间戳恢复。锁屏或切后台后，再回到页面时会根据开始时间和休息时长重新计算剩余时间，但不会发送原生通知。
 
-## Training On Mobile
+## 手机训练
 
-TrainingView includes a mobile-first Focus Mode. On small screens it opens by default during an active session. It shows the current exercise, current set, target load/reps/RIR, last record, strategy, large one-hand buttons, pain flag, technique quality, replacement, skip controls, and rest countdown.
+训练页包含“极简训练模式”。手机屏幕进入训练时会优先显示当前动作、当前组、目标重量、目标次数、RIR、上次记录、当前策略、大按钮、动作质量、不适标记、替代动作和休息倒计时。
 
-The full desktop TrainingView remains available for detailed editing and review.
+桌面端仍保留完整训练页，适合训练后复盘和细节编辑。
 
-## Data Storage
+## 数据存储
 
-Training data is stored locally in browser `localStorage` using split keys. The data model has `schemaVersion`, migration, sanitization, and AppData schema validation. Active sessions are saved after set completion, support log updates, pain flags, technique quality changes, and timer updates.
+训练数据默认保存在浏览器本地 `localStorage`，并按 key 拆分存储。数据模型包含 `schemaVersion`、迁移、清洗和 AppData schema 校验。
 
-If you refresh Safari during a workout, unfinished `activeSession` is restored and the app offers to continue the session. Completed active sessions are not restored as in-progress workouts.
+训练中完成组、更新辅助动作记录、标记不适、修改动作质量和更新计时器后，都会保存当前训练。刷新页面后，未完成的 `activeSession` 会恢复；已完成训练不会被误认为仍在进行。
 
-## Backup And Restore
+## 备份与恢复
 
-Open Progress, then use Data Backup / Restore:
+打开“进度”页，在“数据备份 / 恢复”区域操作：
 
-- Export full backup downloads `ironpath-backup-YYYY-MM-DD.json`.
-- Import backup reads a JSON file, migrates old schema versions, validates the result, and only replaces current data after confirmation.
-- Invalid JSON or invalid app data will not overwrite current training data.
+- 导出完整备份会下载 `ironpath-backup-YYYY-MM-DD.json`。
+- 导入备份会先迁移旧版本数据，再校验和清洗，确认后才替换当前本地数据。
+- 无效 JSON 或无效训练数据不会覆盖当前数据。
 
-## Delivery Notes
+## 内容与术语规范
 
-Do not package these folders:
+全站默认语言为简体中文。训练术语统一收敛在 `src/i18n/terms.ts`，常用说明统一收敛在 `src/content/definitions.ts`、`src/content/evidenceRules.ts` 和 `src/content/professionalCopy.ts`。
+
+保留的英文缩写只有：
+
+- RIR：剩余可完成次数
+- RPE：主观用力程度
+- 1RM：理论单次最大重量
+- ROM：动作幅度
+
+保留这些缩写是因为它们在训练记录和处方中非常常见，中文全称会让训练中记录变慢。首次出现或说明区域应提供中文解释。
+
+训练建议遵循保守、可执行的循证训练思路：优先看每周有效训练量、动作质量、RIR、恢复状态和不适模式；不因为单次状态好就盲目加重；不把纠偏和功能补丁做成抢主训练容量的独立计划。
+
+IronPath 只提供训练决策支持，不是医疗工具。疼痛或不适相关提示只用于训练层面的保守调整，不提供医疗诊断。
+
+## 训练数据专业度
+
+IronPath 不再把所有完成组都等同为高质量训练数据。系统会区分：
+
+- 完成组数：用户实际完成并记录的组。
+- 有效组数：排除热身组、明显太轻、动作质量较差或出现不适后，仍满足训练刺激要求的工作组。
+- 有效分：介于完成组和有效组之间的加权分数，用于反映“这组有多少训练价值”。
+
+e1RM 是根据最近同动作高质量工作组估算的理论单次最大重量。当前默认使用 Epley 公式，并根据动作质量、不适标记、RIR、重复次数范围和最近记录稳定性给出低 / 中 / 高置信度。历史数据不足时，系统不会输出看似精确的公斤建议，而是提示按目标次数和 RIR 选择可控重量。
+
+系统会区分当前 e1RM 和历史最佳 e1RM：
+
+- 当前 e1RM：优先来自最近 3-5 次同动作高质量记录，用于当天负荷建议。
+- 历史最佳 e1RM：来自历史最高可信记录，只用于进度回看。
+- 同一替代链只作为动作模式参考；不同器械或变式不会直接共享精确 e1RM 或高质量 PR。只有相同动作 ID 或显式 `canonicalExerciseId` 相同，才允许合并记录池。
+
+当前 e1RM 使用近期稳定估算，默认采用最近高质量记录的中位数，避免一次超常表现把训练推荐突然抬高。历史最佳仍会保留在进度页，但不会直接作为当天推荐重量。
+
+训练中可以记录“推荐重量偏轻 / 合适 / 偏重”。这个反馈只作为校准信号：连续偏重会让后续建议更保守，连续偏轻且动作质量良好时可允许小幅积极推进；它不会直接篡改 e1RM 或历史最佳记录。
+
+最佳记录分为普通记录、高质量记录和低置信记录。动作质量较差、出现不适、RIR 明显偏高或数据来源不完整的记录不会被标记为高质量 PR；它们仍会保留在历史中，但不会作为激进加重的主要依据。
+
+周训练量使用“加权有效组”估算。动作如果提供 `muscleContribution`，系统会按贡献权重分配到相关肌群；如果没有，则主要肌群按 1.0、辅助肌群按 0.5 估算。这是训练量估算，不是精确生理刺激测量。
+
+每周教练行动建议会把肌群训练量、完成度、推荐重量反馈、不适模式、当前 e1RM 和周期阶段合并成下周建议。建议会明确写出问题、处理方式、原因和置信度，例如补 2-4 组背部训练量、维持胸部当前训练量、减少腿部辅助动作、或先提高动作质量而不是继续加组。计划调整只生成预览，不会自动修改模板；需要真正应用时，应先复制模板并二次确认。
+
+`src/content/evidenceSources.ts` 保存更具体的证据来源描述，包括用途、来源类型和最后审阅日期；`src/content/evidenceRules.ts` 保存结构化证据规则。每条规则包含实践总结、适用范围、置信度和适用边界，用于解释训练建议，而不是伪造精确医学结论或文献 DOI。
+
+如果持续疼痛、麻木、放射痛或明显功能受限，应停止相关动作并寻求专业人士评估。
+
+## 交付说明
+
+不要打包以下目录或文件：
 
 - `node_modules`
 - `dist`
 - `.vite`
 - `.vitest`
 - `coverage`
-- logs and `*.log`
+- `logs`
+- `*.log`
 
-Keep source files, `package.json`, `package-lock.json`, `index.html`, `vite.config.js`, and `public` PWA assets.
+保留源码、`package.json`、`package-lock.json`、`index.html`、Vite 配置和 `public` 里的 PWA 资源。
 
-## Current PWA Limits
+## 当前 PWA 限制
 
-- iOS Safari requires manual Add to Home Screen.
-- Rest timing is timestamp-recovered, not native notification-based.
-- Data is local by default, so export backups regularly.
+- iOS Safari 需要手动“添加到主屏幕”。
+- 休息计时依赖时间戳恢复，不等同于原生通知。
+- 数据默认只在本地保存，建议定期导出备份。

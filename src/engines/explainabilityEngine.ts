@@ -1,19 +1,29 @@
+import { DEFINITIONS } from '../content/definitions';
+import { formatEvidenceRuleLabel, getEvidenceRule } from '../content/evidenceRules';
+import { buildCoachSentence, professionalFallback, sanitizeCopy } from '../content/professionalCopy';
+import { DELOAD_LEVEL_LABELS, DELOAD_STRATEGY_LABELS, PHASE_LABELS, READINESS_ADJUSTMENT_LABELS, SKIP_REASON_LABELS } from '../i18n/terms';
 import type {
   AdherenceAdjustment,
   AdherenceReport,
+  AdjustmentEffectReview,
   DeloadDecision,
+  EstimatedOneRepMax,
   ExercisePrescription,
+  ExplanationItem,
   PainPattern,
+  ProgramAdjustmentDiff,
   ReadinessResult,
   ScreeningProfile,
   SupportPlan,
   TodayStatus,
   TrainingSession,
   TrainingTemplate,
+  WeeklyActionRecommendation,
   WeeklyMuscleBudget,
   WeeklyPrescription,
 } from '../models/training-model';
 import { completedSets, number } from './engineUtils';
+import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 
 type ReadinessSummary = {
   level: 'green' | 'yellow' | 'red';
@@ -53,6 +63,7 @@ interface WeeklyCoachReviewInput {
   adherenceReport: AdherenceReport;
   adherenceAdjustment: AdherenceAdjustment;
   painPatterns?: PainPattern[];
+  weeklyActions?: WeeklyActionRecommendation[];
   plannedSessionsPerWeek?: number;
 }
 
@@ -63,37 +74,20 @@ const issueLabels: Record<string, string> = {
   hip_stability: '髋稳定',
   anterior_pelvic_tilt: '骨盆前倾',
   core_control: '核心控制',
-  ankle_mobility: '踝活动度',
+  ankle_mobility: '踝关节活动度',
   squat_lean_forward: '深蹲前倾',
   hip_flexor_tightness: '髋屈肌紧张',
   lumbar_compensation: '腰椎代偿',
   thoracic_rotation: '胸椎旋转',
-  overhead_press_restriction: '过顶受限',
+  overhead_press_restriction: '过顶推受限',
   breathing_ribcage: '呼吸与肋骨位置',
 };
 
-const deloadLevelLabels: Record<DeloadDecision['level'], string> = {
-  none: '正常推进',
-  watch: '观察',
-  yellow: '减量观察',
-  red: '恢复优先',
-};
-
-const strategyCopy: Record<DeloadDecision['strategy'], string> = {
-  none: '按原计划推进',
-  reduce_accessories: '先收一部分辅助动作',
-  reduce_volume: '先把总训练量降下来',
-  recovery_template: '直接切到恢复优先模板',
-};
-
-const skipReasonLabels: Record<string, string> = {
-  time: '时间不足',
-  pain: '不适',
-  equipment: '器械问题',
-  forgot: '忘记了',
-  too_tired: '太累',
-  not_needed: '今天没必要',
-  other: '其他原因',
+const painActionLabels: Record<string, string> = {
+  watch: '继续观察',
+  substitute: '优先替代动作',
+  deload: '提高保守等级',
+  seek_professional: '建议咨询专业人士',
 };
 
 const formatMaybeDecimal = (value: number | undefined) => {
@@ -101,6 +95,8 @@ const formatMaybeDecimal = (value: number | undefined) => {
   const safe = number(value);
   return Number.isInteger(safe) ? String(safe) : safe.toFixed(1);
 };
+
+const buildTemplate = (conclusion: string, reason?: string, action?: string) => buildCoachSentence({ conclusion, reason, action });
 
 const pickMostConstrainedBudget = (weeklyPrescription: WeeklyPrescription, exercises: ExercisePrescription[]) => {
   const seen = new Set<string>();
@@ -125,40 +121,51 @@ const pickMostConstrainedBudget = (weeklyPrescription: WeeklyPrescription, exerc
 
 const buildBudgetExplanation = (budget?: WeeklyMuscleBudget) => {
   if (!budget) return '';
-
   if (number(budget.targetMultiplier) < 1 || number(budget.remainingCapacity) < number(budget.remaining)) {
-    return `今天 ${budget.muscle} 的安排更保守，因为本周已完成 ${formatMaybeDecimal(budget.sets)}/${formatMaybeDecimal(
-      budget.target
-    )} 组，恢复额度只剩 ${formatMaybeDecimal(budget.remainingCapacity)} 组。`;
+    return buildTemplate(
+      `今天 ${budget.muscle} 相关训练采用保守安排`,
+      `本周已完成 ${formatMaybeDecimal(budget.sets)}/${formatMaybeDecimal(budget.target)} 组，恢复额度剩余 ${formatMaybeDecimal(budget.remainingCapacity)} 组`,
+      '优先完成高质量主训练，辅助组数不强行补满'
+    );
   }
-
   if (number(budget.remaining) > 0 && number(budget.todayBudget) > 0) {
-    return `今天优先补 ${budget.muscle}，因为这周还差 ${formatMaybeDecimal(budget.remaining)} 组。`;
+    return buildTemplate(
+      `今天优先补足 ${budget.muscle} 的有效训练量`,
+      `本周该肌群还差 ${formatMaybeDecimal(budget.remaining)} 组`,
+      `本次建议补 ${formatMaybeDecimal(budget.todayBudget)} 组左右，并根据动作质量微调`
+    );
   }
-
   return '';
 };
 
 const buildSupportExplanation = (supportPlan: SupportPlan, screening?: ScreeningProfile) => {
   if (supportPlan.adherenceAdjustment?.reasons?.length) {
-    return `本周 support 层做了可执行性调整：${supportPlan.adherenceAdjustment.reasons[0]}。`;
+    return buildTemplate('本次辅助层做了可执行性调整', supportPlan.adherenceAdjustment.reasons[0], '先提高完成度，再逐步恢复完整补丁数量');
   }
 
   const boosted = supportPlan.correctionModules.find((module) => module.dose === 'boost');
   if (boosted) {
     const issueLabel = issueLabels[boosted.targetIssue] || boosted.targetIssue;
     const issueScore = number(screening?.adaptiveState?.issueScores?.[boosted.targetIssue]);
-    return `今天提高了 ${boosted.name} 的剂量，因为 ${issueLabel} 最近的风险信号更高${issueScore ? `（当前分值 ${issueScore}）` : ''}。`;
+    return buildTemplate(
+      `今天提高 ${boosted.name} 的剂量`,
+      `${issueLabel} 的近期信号更高${issueScore ? `，当前评分 ${issueScore}` : ''}`,
+      '先用纠偏模块改善动作准备，再进入主训练'
+    );
   }
 
   const tapered = supportPlan.correctionModules.find((module) => module.dose === 'taper');
   if (tapered) {
-    return `今天把 ${tapered.name} 收回到维持剂量，因为 ${issueLabels[tapered.targetIssue] || tapered.targetIssue} 最近在改善。`;
+    return buildTemplate(
+      `今天将 ${tapered.name} 收回到维持剂量`,
+      `${issueLabels[tapered.targetIssue] || tapered.targetIssue} 最近在改善`,
+      '保留最低有效剂量，不占用过多主训练资源'
+    );
   }
 
   const addon = supportPlan.functionalAddons.find((item) => item.dose === 'boost') || supportPlan.functionalAddons[0];
   if (addon) {
-    return `今天保留了 ${addon.name}，用来补主训练之外的稳定性和能力短板。`;
+    return buildTemplate(`今天保留 ${addon.name}`, '它用于补足主训练之外的稳定性和能力短板', '剂量保持短小，避免影响主训练恢复');
   }
 
   return '';
@@ -166,22 +173,38 @@ const buildSupportExplanation = (supportPlan: SupportPlan, screening?: Screening
 
 const buildExerciseExplanation = (exercise: ExercisePrescription) => {
   const name = exercise.alias || exercise.name;
-  const adaptiveReason = exercise.adaptiveReasons?.slice(0, 2).join('，');
+  const adaptiveReason = exercise.adaptiveReasons?.slice(0, 2).join('；');
 
   if (exercise.suggestion?.includes('动作质量较差')) {
-    return `今天 ${name} 暂时不加重，因为虽然次数达标，但动作质量还不够稳。`;
+    return buildTemplate(`本次 ${name} 不建议加重`, '虽然次数可能达标，但动作质量较差', '下次先维持重量，必要时降低重量或使用回退动作');
   }
 
   if (exercise.replacementSuggested) {
-    return `今天 ${name} 更适合换成 ${exercise.replacementSuggested}，因为${adaptiveReason || '当前状态更适合更稳一点的替代动作'}。`;
+    return buildTemplate(
+      `本次建议将 ${name} 替代为 ${exercise.replacementSuggested}`,
+      adaptiveReason || '当前状态更适合低风险、可控性更高的动作',
+      '替代动作仍计入对应肌群训练量，但不混入原动作最佳记录'
+    );
+  }
+
+  if (exercise.adjustment?.includes('推荐重量偏重')) {
+    return buildTemplate(
+      `本次 ${name} 采用保守重量建议`,
+      '你最近反馈该动作推荐重量偏重，系统不会直接改写 e1RM，而是先降低本次推进幅度',
+      '优先完成动作质量稳定的工作组，再用后续反馈逐步校准推荐重量'
+    );
   }
 
   if (exercise.progressLocked) {
-    return `今天 ${name} 先不加重，因为${adaptiveReason || '最近两次还没有形成稳定达标趋势'}。`;
+    return buildTemplate(`本次 ${name} 先不加重`, adaptiveReason || '最近两次还没有形成稳定达标趋势', '先把目标次数和动作质量做稳，再进入下一次推进');
   }
 
   if (exercise.conservativeTopSet || number(exercise.adaptiveTopSetFactor) < 1 || number(exercise.adaptiveBackoffFactor) < 0.92) {
-    return `今天 ${name} 的顶组和回退组会更保守，因为${adaptiveReason || '当前恢复信号提示先稳住输出更划算'}。`;
+    return buildTemplate(
+      `本次 ${name} 的顶组和回退组会更保守`,
+      adaptiveReason || '当前恢复信号提示不适合强行提高训练压力',
+      '保留动作练习和肌肉刺激，但降低疲劳成本'
+    );
   }
 
   return '';
@@ -189,10 +212,276 @@ const buildExerciseExplanation = (exercise: ExercisePrescription) => {
 
 const buildDeloadExplanation = (decision?: DeloadDecision, readiness?: ReadinessSummary) => {
   if (!decision?.triggered) return '';
-  const levelText = deloadLevelLabels[decision.level];
-  const reasonText = decision.reasons.slice(0, 2).join('，');
-  const readinessText = readiness?.reasons?.length ? `今天状态信号：${readiness.reasons.join('，')}。` : '';
-  return `当前疲劳等级是 ${levelText}，所以今天会${strategyCopy[decision.strategy]}。${reasonText ? `触发原因：${reasonText}。` : ''}${readinessText}`;
+  const levelText = DELOAD_LEVEL_LABELS[decision.level];
+  const strategyText = DELOAD_STRATEGY_LABELS[decision.strategy];
+  const reasonText = decision.reasons.slice(0, 2).join('；');
+  const readinessText = readiness?.reasons?.length ? `准备度信号：${readiness.reasons.join('；')}` : '';
+  return buildTemplate(`当前疲劳等级为${levelText}`, [reasonText, readinessText].filter(Boolean).join('；'), `今天采用${strategyText}，避免把疲劳继续推高`);
+};
+
+const buildReadinessExplanation = (result?: ReadinessResult) => {
+  if (!result) return '';
+  const strategy = READINESS_ADJUSTMENT_LABELS[result.trainingAdjustment];
+  if (result.trainingAdjustment === 'normal' || result.trainingAdjustment === 'push') {
+    return buildTemplate(`准备度评分 ${result.score}，今天可${strategy}`, result.reasons.slice(0, 2).join('；'), '仍以 RIR 和动作质量决定是否真正推进');
+  }
+  return buildTemplate(`准备度评分 ${result.score}，今天采用${strategy}`, result.reasons.slice(0, 2).join('；'), '减少非必要辅助量，优先完成核心动作');
+};
+
+const buildMesocycleExplanation = (week?: AdjustedPlan['mesocycleWeek']) => {
+  if (!week) return '';
+  const phaseLabel = PHASE_LABELS[week.phase as keyof typeof PHASE_LABELS] || week.phase;
+  if (week.phase === 'deload') {
+    return buildTemplate(`当前处于第 ${week.weekIndex + 1} 周：${phaseLabel}`, week.notes || '周期安排进入主动恢复阶段', '训练量下修，动作质量和恢复优先');
+  }
+  return buildTemplate(`当前处于第 ${week.weekIndex + 1} 周：${phaseLabel}`, week.notes || `本周训练量系数为 ${week.volumeMultiplier}`, '按周期节奏推进，但会被准备度和不适信号覆盖');
+};
+
+const makeExplanationItem = (
+  title: string,
+  conclusion: string,
+  reason: string,
+  action: string,
+  evidenceRuleIds: string[] = [],
+  confidence: ExplanationItem['confidence'] = 'moderate'
+): ExplanationItem => {
+  const primaryRule = evidenceRuleIds.map(getEvidenceRule).find(Boolean);
+  return {
+    title,
+    conclusion: sanitizeCopy(conclusion),
+    reason: sanitizeCopy(reason || '当前记录没有明显限制信号。'),
+    action: sanitizeCopy(action || professionalFallback),
+    evidenceRuleIds,
+    confidence,
+    caveat: primaryRule?.caveat,
+  };
+};
+
+export const formatExplanationItem = (item: ExplanationItem) =>
+  buildCoachSentence({
+    conclusion: item.conclusion,
+    reason: item.reason,
+    action: item.action,
+  });
+
+export const formatExplanationEvidence = (item: ExplanationItem) =>
+  (item.evidenceRuleIds || []).map((id) => formatEvidenceRuleLabel(id)).filter(Boolean);
+
+export const buildWeeklyActionExplanation = (recommendation: WeeklyActionRecommendation): ExplanationItem =>
+  makeExplanationItem(
+    '下周行动建议',
+    recommendation.recommendation,
+    recommendation.reason || recommendation.issue,
+    recommendation.suggestedChange
+      ? '这只是计划微调预览，不会自动修改模板；确认后再手动应用。'
+      : '先按当前训练记录继续观察，等数据更稳定后再提高调整置信度。',
+    recommendation.evidenceRuleIds || ['weekly_volume_distribution'],
+    recommendation.confidence === 'high' ? 'high' : recommendation.confidence === 'medium' ? 'moderate' : 'low'
+  );
+
+export const buildE1RMExplanation = (estimate: EstimatedOneRepMax | null, exerciseName = '该动作'): ExplanationItem => {
+  if (!estimate) {
+    return makeExplanationItem(
+      '负荷依据',
+      `${exerciseName} 暂不输出精确公斤建议`,
+      '历史高质量工作组不足，估算 1RM 的置信度不够。',
+      '先按目标次数和 RIR 选择可控重量，积累 2-3 次稳定记录后再估算负荷区间。',
+      ['rir_effort_control', 'technique_quality_gate'],
+      'moderate'
+    );
+  }
+
+  return makeExplanationItem(
+    '负荷依据',
+    `${exerciseName} 当前估算 1RM 为 ${estimate.e1rmKg}kg`,
+    `来源组为 ${estimate.sourceSet.weightKg}kg x ${estimate.sourceSet.reps}，置信度为${estimate.confidence === 'high' ? '高' : estimate.confidence === 'medium' ? '中' : '低'}。${estimate.notes.join('')}`,
+    '训练推荐只使用近期同动作高质量记录；历史最高 e1RM 只用于进度回看，不能直接代表今天的可用负荷。',
+    ['progressive_overload', 'rir_effort_control'],
+    estimate.confidence === 'high' ? 'high' : estimate.confidence === 'medium' ? 'moderate' : 'low'
+  );
+};
+
+export const buildTodayExplanationItems = (input: ExplainabilityInput): ExplanationItem[] => {
+  const { template, adjustedPlan, supportPlan, weeklyPrescription, screening, todayStatus } = input;
+  const items: ExplanationItem[] = [];
+
+  if (adjustedPlan.deloadDecision?.triggered) {
+    items.push(
+      makeExplanationItem(
+        '疲劳管理',
+        `当前建议采用${DELOAD_LEVEL_LABELS[adjustedPlan.deloadDecision.level]}策略`,
+        adjustedPlan.deloadDecision.reasons.slice(0, 2).join('；') || '近期疲劳信号升高。',
+        `${DELOAD_STRATEGY_LABELS[adjustedPlan.deloadDecision.strategy]}，优先让表现和动作质量恢复。`,
+        ['deload_volume_reduction'],
+        'moderate'
+      )
+    );
+  }
+
+  if (adjustedPlan.readinessResult) {
+    const result = adjustedPlan.readinessResult;
+    items.push(
+      makeExplanationItem(
+        '准备度',
+        `准备度评分 ${result.score}，本次采用${READINESS_ADJUSTMENT_LABELS[result.trainingAdjustment]}`,
+        result.reasons.slice(0, 2).join('；') || '准备度信号处于可训练范围。',
+        result.trainingAdjustment === 'recovery' || result.trainingAdjustment === 'conservative' ? '减少非必要辅助量，主训练以高质量完成为先。' : '按当前计划推进，但仍以 RIR 和动作质量控制负荷。',
+        ['weekly_volume_distribution', 'rir_effort_control'],
+        'moderate'
+      )
+    );
+  }
+
+  if (adjustedPlan.mesocycleWeek) {
+    const week = adjustedPlan.mesocycleWeek;
+    const phaseLabel = PHASE_LABELS[week.phase as keyof typeof PHASE_LABELS] || '当前周期';
+    items.push(
+      makeExplanationItem(
+        '周期安排',
+        `当前处于第 ${week.weekIndex + 1} 周：${phaseLabel}`,
+        week.notes || `本周训练量系数为 ${week.volumeMultiplier}。`,
+        week.phase === 'deload' ? '本周主动下修训练量，优先恢复和动作质量。' : '按周期节奏推进，但准备度和不适信号可以覆盖原计划。',
+        week.phase === 'deload' ? ['deload_volume_reduction'] : ['progressive_overload', 'weekly_volume_distribution'],
+        'moderate'
+      )
+    );
+  }
+
+  const constrainedBudget = pickMostConstrainedBudget(weeklyPrescription, adjustedPlan.exercises);
+  if (constrainedBudget && (number(constrainedBudget.targetMultiplier) < 1 || number(constrainedBudget.remainingCapacity) < number(constrainedBudget.remaining))) {
+    items.push(
+      makeExplanationItem(
+        '周剂量预算',
+        `今天 ${constrainedBudget.muscle} 相关训练采用保守补量`,
+        `本周已完成 ${formatMaybeDecimal(constrainedBudget.sets)}/${formatMaybeDecimal(constrainedBudget.target)} 组，恢复额度剩余 ${formatMaybeDecimal(constrainedBudget.remainingCapacity)} 组。`,
+        '先保证主训练有效组，不强行补满所有辅助组。',
+        ['weekly_volume_distribution'],
+        'moderate'
+      )
+    );
+  }
+
+  const boosted = supportPlan.correctionModules.find((module) => module.dose === 'boost');
+  const tapered = supportPlan.correctionModules.find((module) => module.dose === 'taper');
+  if (supportPlan.adherenceAdjustment?.reasons?.length) {
+    items.push(
+      makeExplanationItem(
+        '辅助层调整',
+        '本次辅助层按完成度做了可执行性调整',
+        supportPlan.adherenceAdjustment.reasons[0],
+        '先提高完成度，再逐步恢复完整纠偏和功能补丁剂量。',
+        ['weekly_volume_distribution'],
+        'moderate'
+      )
+    );
+  } else if (boosted || tapered) {
+    const module = boosted || tapered;
+    if (module) {
+      items.push(
+        makeExplanationItem(
+          '纠偏剂量',
+          boosted ? `今天提高 ${module.name} 的剂量` : `今天将 ${module.name} 收回到维持剂量`,
+          boosted
+            ? `${issueLabels[module.targetIssue] || module.targetIssue} 的近期信号仍较明显。`
+            : `${issueLabels[module.targetIssue] || module.targetIssue} 最近在改善。`,
+          boosted ? '先改善动作准备，再进入主训练。' : '保留最低有效剂量，避免占用过多主训练资源。',
+          ['weekly_volume_distribution', 'technique_quality_gate'],
+          'moderate'
+        )
+      );
+    }
+  }
+
+  const flaggedExercise =
+    adjustedPlan.exercises.find((exercise) => exercise.suggestion?.includes('动作质量较差')) ||
+    adjustedPlan.exercises.find((exercise) => exercise.replacementSuggested) ||
+    adjustedPlan.exercises.find((exercise) => exercise.progressLocked || exercise.conservativeTopSet) ||
+    adjustedPlan.exercises.find((exercise) => number(exercise.adaptiveTopSetFactor) < 1 || number(exercise.adaptiveBackoffFactor) < 0.92);
+
+  if (flaggedExercise) {
+    const name = flaggedExercise.alias || flaggedExercise.name;
+    if (flaggedExercise.suggestion?.includes('动作质量较差')) {
+      items.push(
+        makeExplanationItem(
+          '进阶闸门',
+          `${name} 本次不建议加重`,
+          '虽然次数可能达标，但最近记录显示动作质量较差。',
+          '先维持重量并提高控制质量，必要时降低重量或使用回退动作。',
+          ['technique_quality_gate'],
+          'moderate'
+        )
+      );
+    } else if (flaggedExercise.replacementSuggested) {
+      items.push(
+        makeExplanationItem(
+          '替代动作',
+          `本次建议将 ${name} 替代为 ${flaggedExercise.replacementSuggested}`,
+          flaggedExercise.adaptiveReasons?.slice(0, 2).join('；') || '当前状态更适合低风险、可控性更高的动作。',
+          '替代动作仍计入对应肌群训练量，但不混入原动作高质量 PR 池。',
+          ['pain_conservative_rule', 'technique_quality_gate'],
+          'moderate'
+        )
+      );
+    } else {
+      items.push(
+        makeExplanationItem(
+          '负荷策略',
+          `${name} 本次采用保守负荷策略`,
+          flaggedExercise.adaptiveReasons?.slice(0, 2).join('；') || '近期趋势还没有形成稳定达标信号。',
+          '优先把目标次数和动作质量做稳，再进入下一次推进。',
+          ['progressive_overload', 'rir_effort_control'],
+          'moderate'
+        )
+      );
+    }
+  }
+
+  if (!items.length && todayStatus) {
+    items.push(
+      makeExplanationItem(
+        '今日安排',
+        `今天按 ${template.name} 正常推进`,
+        `睡眠 ${todayStatus.sleep}、精力 ${todayStatus.energy}、可训练时间 ${todayStatus.time} 分钟。`,
+        professionalFallback,
+        ['progressive_overload'],
+        'moderate'
+      )
+    );
+  }
+
+  if (!items.length) {
+    items.push(makeExplanationItem('今日安排', '今天按当前计划正常推进', '没有明显疲劳、不适或完成度限制信号。', professionalFallback, ['progressive_overload'], 'moderate'));
+  }
+
+  return items.slice(0, 4);
+};
+
+export const buildTodayExplanations = ({ template, adjustedPlan, supportPlan, weeklyPrescription, screening, todayStatus }: ExplainabilityInput) => {
+  return buildTodayExplanationItems({ template, adjustedPlan, supportPlan, weeklyPrescription, screening, todayStatus }).map(formatExplanationItem);
+};
+
+export const buildSessionExplanations = (session: TrainingSession) => {
+  if (session.explanations?.length) return session.explanations.map(sanitizeCopy);
+
+  const reasons: string[] = [];
+  const deloadText = buildDeloadExplanation(session.deloadDecision);
+  if (deloadText) reasons.push(deloadText);
+
+  const flaggedExercise =
+    session.exercises.find((exercise) => exercise.suggestion?.includes('动作质量较差')) ||
+    session.exercises.find((exercise) => exercise.progressLocked || exercise.replacementSuggested || exercise.conservativeTopSet) ||
+    session.exercises.find((exercise) => number(exercise.adaptiveTopSetFactor) < 1 || number(exercise.adaptiveBackoffFactor) < 0.92);
+  if (flaggedExercise) {
+    const exerciseText = buildExerciseExplanation(flaggedExercise);
+    if (exerciseText) reasons.push(exerciseText);
+  }
+
+  if (!reasons.length && session.supportPlan) {
+    const supportText = buildSupportExplanation(session.supportPlan);
+    if (supportText) reasons.push(supportText);
+  }
+
+  return (reasons.length ? reasons : [professionalFallback]).map(sanitizeCopy).slice(0, 4);
 };
 
 const getSessionCompletionRate = (session: TrainingSession, adherenceReport?: AdherenceReport) => {
@@ -224,12 +513,7 @@ const getSupportSkipSummary = (session: TrainingSession) => {
   }, {});
 
   const topReason = Object.entries(reasonCounts).sort((left, right) => right[1] - left[1])[0]?.[0];
-  return {
-    skippedCount: skipped.length,
-    correctionSkipped: byBlock.correction,
-    functionalSkipped: byBlock.functional,
-    topReason,
-  };
+  return { skippedCount: skipped.length, correctionSkipped: byBlock.correction, functionalSkipped: byBlock.functional, topReason };
 };
 
 const getTechniqueHoldExercise = (session: TrainingSession) =>
@@ -244,82 +528,13 @@ const getSessionPainSummary = (session: TrainingSession, painPatterns?: PainPatt
   const painSets = session.exercises.flatMap((exercise) =>
     completedSets(exercise)
       .filter((set) => set.painFlag || number(set.painSeverity) > 0 || Boolean(set.painArea))
-      .map((set) => ({
-        exerciseName: exercise.alias || exercise.name,
-        area: set.painArea || '',
-      }))
+      .map((set) => ({ exerciseName: exercise.alias || exercise.name, exerciseId: exercise.baseId || exercise.id, area: set.painArea || '' }))
   );
 
   if (!painSets.length) return null;
-
   const first = painSets[0];
-  const matchedPattern = painPatterns?.find(
-    (item) => (item.exerciseId && item.exerciseId === session.exercises.find((exercise) => (exercise.alias || exercise.name) === first.exerciseName)?.baseId) || item.area === first.area
-  );
-
-  return {
-    exerciseName: first.exerciseName,
-    area: first.area,
-    suggestedAction: matchedPattern?.suggestedAction,
-  };
-};
-
-export const buildTodayExplanations = ({ template, adjustedPlan, supportPlan, weeklyPrescription, screening, todayStatus }: ExplainabilityInput) => {
-  const reasons: string[] = [];
-
-  const deloadText = buildDeloadExplanation(adjustedPlan.deloadDecision, adjustedPlan.readiness);
-  if (deloadText) reasons.push(deloadText);
-
-  const budgetText = buildBudgetExplanation(pickMostConstrainedBudget(weeklyPrescription, adjustedPlan.exercises));
-  if (budgetText) reasons.push(budgetText);
-
-  const supportText = buildSupportExplanation(supportPlan, screening);
-  if (supportText) reasons.push(supportText);
-
-  const flaggedExercise =
-    adjustedPlan.exercises.find((exercise) => exercise.suggestion?.includes('动作质量较差')) ||
-    adjustedPlan.exercises.find((exercise) => exercise.progressLocked || exercise.replacementSuggested || exercise.conservativeTopSet) ||
-    adjustedPlan.exercises.find((exercise) => number(exercise.adaptiveTopSetFactor) < 1 || number(exercise.adaptiveBackoffFactor) < 0.92);
-  if (flaggedExercise) {
-    const exerciseText = buildExerciseExplanation(flaggedExercise);
-    if (exerciseText) reasons.push(exerciseText);
-  }
-
-  if (!reasons.length && adjustedPlan.readiness) {
-    reasons.push(
-      `今天按 ${template.name} 正常推进${adjustedPlan.readinessResult ? `，readiness score ${adjustedPlan.readinessResult.score}` : ''}，当前状态是 ${adjustedPlan.readiness.title}。`
-    );
-  }
-
-  if (!reasons.length && todayStatus) {
-    reasons.push(`今天状态是睡眠 ${todayStatus.sleep}、精力 ${todayStatus.energy}、可训练时间 ${todayStatus.time} 分钟，所以先按当前模板正常推进。`);
-  }
-
-  return reasons.slice(0, 4);
-};
-
-export const buildSessionExplanations = (session: TrainingSession) => {
-  if (session.explanations?.length) return session.explanations;
-
-  const reasons: string[] = [];
-  const deloadText = buildDeloadExplanation(session.deloadDecision);
-  if (deloadText) reasons.push(deloadText);
-
-  const flaggedExercise =
-    session.exercises.find((exercise) => exercise.suggestion?.includes('动作质量较差')) ||
-    session.exercises.find((exercise) => exercise.progressLocked || exercise.replacementSuggested || exercise.conservativeTopSet) ||
-    session.exercises.find((exercise) => number(exercise.adaptiveTopSetFactor) < 1 || number(exercise.adaptiveBackoffFactor) < 0.92);
-  if (flaggedExercise) {
-    const exerciseText = buildExerciseExplanation(flaggedExercise);
-    if (exerciseText) reasons.push(exerciseText);
-  }
-
-  if (!reasons.length && session.supportPlan) {
-    const supportText = buildSupportExplanation(session.supportPlan);
-    if (supportText) reasons.push(supportText);
-  }
-
-  return reasons.slice(0, 4);
+  const matchedPattern = painPatterns?.find((item) => (item.exerciseId && item.exerciseId === first.exerciseId) || item.area === first.area);
+  return { ...first, suggestedAction: matchedPattern?.suggestedAction };
 };
 
 export const buildSessionSummaryExplanations = ({ session, adherenceReport, adherenceAdjustment, painPatterns }: SessionSummaryInput) => {
@@ -328,40 +543,66 @@ export const buildSessionSummaryExplanations = ({ session, adherenceReport, adhe
   const mainCompleted = session.exercises.reduce((sum, exercise) => sum + completedSets(exercise).length, 0);
   const mainPlanned = session.exercises.reduce((sum, exercise) => sum + (Array.isArray(exercise.sets) ? exercise.sets.length : number(exercise.sets)), 0);
 
-  lines.push(`今天完成度 ${completionRate}%，主训练完成 ${mainCompleted}/${mainPlanned} 组。`);
+  lines.push(buildTemplate(`本次训练完成度 ${completionRate}%`, `主训练完成 ${mainCompleted}/${mainPlanned} 组`, '用完成度判断下次计划是否需要变得更现实'));
+
+  const loadFeedback = session.loadFeedback || [];
+  if (loadFeedback.length) {
+    const tooHeavy = loadFeedback.filter((item) => item.feedback === 'too_heavy').length;
+    const tooLight = loadFeedback.filter((item) => item.feedback === 'too_light').length;
+    const good = loadFeedback.filter((item) => item.feedback === 'good').length;
+    const dominant =
+      tooHeavy >= tooLight && tooHeavy >= good
+        ? '偏重'
+        : tooLight >= good
+          ? '偏轻'
+          : '合适';
+    lines.push(
+      buildTemplate(
+        `本次记录了 ${loadFeedback.length} 个推荐重量反馈`,
+        `整体感觉以“${dominant}”为主`,
+        dominant === '偏重'
+          ? '下次同动作会先采用更保守建议，但不会直接篡改历史最佳 e1RM'
+          : dominant === '偏轻'
+            ? '如果动作质量继续良好，下次可允许小幅积极推进'
+            : '继续沿用当前推荐规则'
+      )
+    );
+  }
 
   const supportSummary = getSupportSkipSummary(session);
   if (supportSummary) {
-    const reasonText = supportSummary.topReason ? `，主要因为${skipReasonLabels[supportSummary.topReason] || supportSummary.topReason}` : '';
+    const reasonText = supportSummary.topReason ? `主要原因是 ${SKIP_REASON_LABELS[supportSummary.topReason as keyof typeof SKIP_REASON_LABELS] || supportSummary.topReason}` : '原因还没有记录';
     if (supportSummary.functionalSkipped > 0) {
-      lines.push(`功能补丁跳过了 ${supportSummary.functionalSkipped} 项${reasonText}。`);
+      lines.push(buildTemplate(`功能补丁有 ${supportSummary.functionalSkipped} 项未完成`, reasonText, '下次优先保留最关键的功能补丁'));
     }
     if (supportSummary.correctionSkipped > 0) {
-      lines.push(`纠偏动作还有 ${supportSummary.correctionSkipped} 项没做满${reasonText}。`);
+      lines.push(buildTemplate(`纠偏模块有 ${supportSummary.correctionSkipped} 项未做满`, reasonText, '下次可改为最低有效剂量'));
     }
   }
 
   const techniqueHold = getTechniqueHoldExercise(session);
   if (techniqueHold) {
-    lines.push(`${techniqueHold.alias || techniqueHold.name} 虽然次数够了，但动作质量偏差，所以下次先不加重。`);
+    lines.push(buildTemplate(`${techniqueHold.alias || techniqueHold.name} 下次不建议加重`, '本次动作质量记录为较差或不稳定', '先维持重量，必要时使用回退动作'));
   }
 
   const painSummary = getSessionPainSummary(session, painPatterns);
   if (painSummary) {
     lines.push(
-      `${painSummary.exerciseName}${painSummary.area ? ` 的 ${painSummary.area}` : ''} 出现了不适记录，系统会提高替代动作优先级${
-        painSummary.suggestedAction ? `，并偏向 ${painSummary.suggestedAction}` : ''
-      }。`
+      buildTemplate(
+        `${painSummary.exerciseName}${painSummary.area ? ` 的${painSummary.area}` : ''} 出现不适记录`,
+        DEFINITIONS.painPattern.body,
+        painSummary.suggestedAction ? painActionLabels[painSummary.suggestedAction] : '下次提高替代动作优先级'
+      )
     );
   }
 
   if (adherenceAdjustment?.reasons?.length) {
-    lines.push(`下次训练会更现实一些：${adherenceAdjustment.reasons[0]}。`);
+    lines.push(buildTemplate('下次计划会做可执行性调整', adherenceAdjustment.reasons[0], '目标是先把训练完成度拉回稳定区间'));
   } else if (completionRate >= 85) {
-    lines.push('这次主训练执行得比较稳，下一次可以继续按当前主线推进。');
+    lines.push(buildTemplate('本次主训练执行稳定', '完成度较高且没有明显风险信号', '下次可以继续按当前主线推进'));
   }
 
-  return lines.slice(0, 5);
+  return lines.map(sanitizeCopy).slice(0, 5);
 };
 
 export const buildWeeklyCoachReview = ({
@@ -370,16 +611,19 @@ export const buildWeeklyCoachReview = ({
   adherenceReport,
   adherenceAdjustment,
   painPatterns,
+  weeklyActions,
   plannedSessionsPerWeek = 4,
 }: WeeklyCoachReviewInput) => {
   const recentSessions = history.slice(0, 7);
   const lines: string[] = [];
+  const effectiveSummary = buildEffectiveVolumeSummary(recentSessions);
 
   lines.push(`本周完成 ${recentSessions.length} / ${plannedSessionsPerWeek} 次训练，主训练完成率 ${adherenceReport.mainlineRate}%。`);
+  lines.push(`本周主训练完成 ${effectiveSummary.completedSets} 组，其中有效组 ${effectiveSummary.effectiveSets} 组，高置信有效组 ${effectiveSummary.highConfidenceEffectiveSets} 组。`);
 
   if (typeof adherenceReport.correctionRate === 'number' || typeof adherenceReport.functionalRate === 'number') {
     lines.push(
-      `纠偏完成率 ${typeof adherenceReport.correctionRate === 'number' ? `${adherenceReport.correctionRate}%` : '数据不足'}，功能补丁完成率 ${
+      `纠偏模块完成率 ${typeof adherenceReport.correctionRate === 'number' ? `${adherenceReport.correctionRate}%` : '数据不足'}，功能补丁完成率 ${
         typeof adherenceReport.functionalRate === 'number' ? `${adherenceReport.functionalRate}%` : '数据不足'
       }。`
     );
@@ -390,9 +634,9 @@ export const buildWeeklyCoachReview = ({
     .sort((left, right) => number(right.remaining) - number(left.remaining))
     .slice(0, 2);
   if (biggestGap.length) {
-    lines.push(`周剂量还没补齐的重点是 ${biggestGap.map((item) => `${item.muscle} 还差 ${formatMaybeDecimal(item.remaining)} 组`).join('，')}。`);
+    lines.push(`周剂量还需要关注：${biggestGap.map((item) => `${item.muscle} 还差 ${formatMaybeDecimal(item.remaining)} 组`).join('；')}。`);
   } else {
-    lines.push('这周主要肌群剂量基本达标，可以把注意力放回动作质量和恢复。');
+    lines.push('本周主要肌群剂量基本达标，下周重点放在动作质量和恢复稳定性。');
   }
 
   const poorTechniqueExercises = recentSessions
@@ -403,13 +647,13 @@ export const buildWeeklyCoachReview = ({
     )
     .slice(0, 2);
   if (poorTechniqueExercises.length) {
-    lines.push(`${poorTechniqueExercises.join('、')} 最近更像是动作质量问题，不是单纯力量不够。`);
+    lines.push(`${poorTechniqueExercises.join('、')} 最近更像是动作质量问题，不建议只靠加重量解决。`);
   }
 
   const dominantPainPattern = painPatterns?.[0];
   if (dominantPainPattern) {
     lines.push(
-      `${dominantPainPattern.area} 最近出现了重复不适信号，建议下一周优先使用更稳的替代动作，并把保守度再提高一点。`
+      `${dominantPainPattern.area} 最近出现重复不适信号，建议下周优先使用更稳定的替代动作，并提高保守等级。${DEFINITIONS.medicalBoundary.body}`
     );
   }
 
@@ -419,5 +663,54 @@ export const buildWeeklyCoachReview = ({
     lines.push('最近执行度稳定，下周可以继续按当前结构推进，不需要额外收缩内容。');
   }
 
-  return lines.slice(0, 6);
+  const topActions = (weeklyActions || []).filter((item) => item.priority !== 'low').slice(0, 3);
+  if (topActions.length) {
+    lines.push(`下周优先动作：${topActions.map((item) => item.recommendation).join('；')}`);
+  } else if (!recentSessions.length) {
+    lines.push('需要更多训练记录后，系统才能给出高置信的下周行动建议。');
+  }
+
+  return lines.map(sanitizeCopy).slice(0, 6);
 };
+
+export const explainAdjustmentDefaultSelection = (recommendation: WeeklyActionRecommendation) =>
+  buildTemplate(
+    recommendation.priority === 'high' && recommendation.confidence !== 'low'
+      ? '该建议默认选中'
+      : '该建议默认只作为参考',
+    recommendation.priority === 'high' && recommendation.confidence !== 'low'
+      ? '它同时具备较高优先级和可用置信度，适合进入下周实验模板预览。'
+      : '它的优先级或置信度还不够高，适合先人工查看，不自动进入实验调整。',
+    '你仍然可以手动选择或取消选择，系统不会强制修改原模板。'
+  );
+
+export const explainExperimentalTemplatePolicy = () =>
+  buildTemplate(
+    '系统会生成实验模板，而不是覆盖原模板',
+    '周建议来自近期训练数据，仍然属于需要验证的微调。直接覆盖原模板会降低可追踪性。',
+    '应用后会复制出“下周实验版”，保留原模板和回滚入口。'
+  );
+
+export const explainAdjustmentRisk = (change: ProgramAdjustmentDiff['changes'][number]) =>
+  buildTemplate(
+    `${change.label} 的风险等级为${change.riskLevel === 'high' ? '高' : change.riskLevel === 'medium' ? '中' : '低'}`,
+    change.riskLevel === 'high'
+      ? '该调整缺少明确可自动执行的 before / after，或可能改变动作选择，需要人工确认。'
+      : '该调整幅度较小，并且能映射到当前模板中的具体动作。',
+    change.riskLevel === 'high' ? '默认不建议自动应用，高风险调整应先人工复核。' : '可以作为下周实验模板的一部分进行短周期验证。'
+  );
+
+export const explainAdjustmentReview = (review: AdjustmentEffectReview) =>
+  buildTemplate(
+    review.status === 'improved'
+      ? '实验模板初步有效'
+      : review.status === 'worse'
+        ? '实验模板需要复核'
+        : '实验模板仍需观察',
+    review.summary,
+    review.recommendation === 'rollback'
+      ? '建议回滚到原模板。'
+      : review.recommendation === 'keep'
+        ? '可以暂时保留实验模板，并继续记录下周表现。'
+        : '先不要自动定论，继续收集完成度、不适和有效组数据。'
+  );

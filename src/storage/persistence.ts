@@ -28,7 +28,10 @@ import {
   TRAINING_LEVELS,
   TRAINING_MODES,
   type AppData,
+  type LoadFeedback,
   type MesocyclePlan,
+  type ProgramAdjustmentDraft,
+  type ProgramAdjustmentHistoryItem,
   type ProgramTemplate,
   type RestTimerState,
   type ScreeningProfile,
@@ -80,6 +83,22 @@ const pickNumberRecord = (value: unknown) =>
 const pickEnum = <T extends readonly string[]>(value: unknown, allowed: T, fallback: T[number]): T[number] =>
   typeof value === 'string' && allowed.includes(value) ? value : fallback;
 
+const LOAD_FEEDBACK_VALUES = ['too_light', 'good', 'too_heavy'] as const;
+
+const LEGACY_TEXT_MAP: Record<string, string> = {
+  poor: '差',
+  ok: '一般',
+  good: '好',
+  low: '低',
+  medium: '中',
+  high: '高',
+};
+
+const normalizeTextValue = (value: unknown) => {
+  const text = typeof value === 'string' ? value : '';
+  return LEGACY_TEXT_MAP[text] || text;
+};
+
 const coerceSchemaVersion = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
@@ -108,6 +127,7 @@ const migrateLegacyExercise = (exercise: unknown) => {
     ...raw,
     id: rawId,
     baseId: pickString(raw.baseId, rawId),
+    canonicalExerciseId: pickString(raw.canonicalExerciseId, raw.replacedFromId ? rawId : pickString(raw.baseId, rawId)),
     originalName: pickString(raw.originalName, pickString(raw.name)),
     techniqueStandard: {
       ...(isPlainObject(raw.techniqueStandard) ? raw.techniqueStandard : {}),
@@ -217,6 +237,9 @@ const migrateToV6 = (raw: Record<string, unknown>) => ({
       }
     : raw.activeSession,
   mesocyclePlan: raw.mesocyclePlan ?? createMesocyclePlan(),
+  programAdjustmentDrafts: Array.isArray(raw.programAdjustmentDrafts) ? raw.programAdjustmentDrafts : [],
+  programAdjustmentHistory: Array.isArray(raw.programAdjustmentHistory) ? raw.programAdjustmentHistory : [],
+  activeProgramTemplateId: typeof raw.activeProgramTemplateId === 'string' ? raw.activeProgramTemplateId : pickRecord(raw.settings).activeProgramTemplateId,
   schemaVersion: STORAGE_VERSION,
   settings: {
     ...pickRecord(raw.settings),
@@ -413,6 +436,7 @@ const sanitizeExerciseLog = (exercise: unknown) => {
     ...raw,
     id: rawId,
     baseId: pickString(raw.baseId, rawId),
+    canonicalExerciseId: pickString(raw.canonicalExerciseId, raw.replacedFromId ? rawId : pickString(raw.baseId, rawId)),
     name: pickString(raw.name),
     muscle: pickString(raw.muscle),
     kind: pickString(raw.kind, 'compound'),
@@ -420,6 +444,9 @@ const sanitizeExerciseLog = (exercise: unknown) => {
     repMax: Math.max(number(raw.repMin || 6), number(raw.repMax || 8)),
     rest: Math.max(30, number(raw.rest || 90)),
     startWeight: Math.max(0, number(raw.startWeight || 0)),
+    muscleContribution: isPlainObject(raw.muscleContribution)
+      ? Object.fromEntries(Object.entries(raw.muscleContribution).map(([key, value]) => [key, Math.max(0, number(value))]))
+      : undefined,
     sets: Array.isArray(raw.sets)
       ? raw.sets.map((set, index) => sanitizeSet(set, `${rawId}-${index + 1}`))
       : raw.sets,
@@ -441,6 +468,22 @@ const sanitizeDeloadDecision = (decision: unknown) => {
   };
 };
 
+const sanitizeLoadFeedback = (entry: unknown): LoadFeedback | null => {
+  const raw = pickRecord(entry);
+  const exerciseId = pickString(raw.exerciseId);
+  const sessionId = pickString(raw.sessionId);
+  const date = pickString(raw.date);
+  if (!exerciseId || !sessionId || !date) return null;
+
+  return {
+    exerciseId,
+    sessionId,
+    date,
+    feedback: pickEnum(raw.feedback, LOAD_FEEDBACK_VALUES, 'good'),
+    note: pickString(raw.note),
+  };
+};
+
 const sanitizeRestTimerState = (timer: unknown): RestTimerState | null => {
   const raw = pickRecord(timer);
   const exerciseId = pickString(raw.exerciseId);
@@ -457,6 +500,64 @@ const sanitizeRestTimerState = (timer: unknown): RestTimerState | null => {
     label: pickString(raw.label),
   };
 };
+
+const ADJUSTMENT_STATUSES = ['draft', 'previewed', 'applied', 'rolled_back', 'dismissed'] as const;
+const ADJUSTMENT_CHANGE_TYPES = ['add_sets', 'remove_sets', 'swap_exercise', 'reduce_support', 'increase_support', 'keep'] as const;
+
+const sanitizeAdjustmentChange = (entry: unknown, fallbackId: string) => {
+  const raw = pickRecord(entry);
+  return {
+    id: pickString(raw.id, fallbackId),
+    type: pickEnum(raw.type, ADJUSTMENT_CHANGE_TYPES, 'keep'),
+    dayTemplateId: pickString(raw.dayTemplateId) || undefined,
+    exerciseId: pickString(raw.exerciseId) || undefined,
+    replacementExerciseId: pickString(raw.replacementExerciseId) || undefined,
+    muscleId: pickString(raw.muscleId) || undefined,
+    setsDelta: Number.isFinite(number(raw.setsDelta)) ? Math.round(number(raw.setsDelta)) : undefined,
+    reason: pickString(raw.reason),
+    sourceRecommendationId: pickString(raw.sourceRecommendationId) || undefined,
+  };
+};
+
+const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraft[] =>
+  pickArray(drafts).map((draft, draftIndex) => {
+    const raw = pickRecord(draft);
+    const id = pickString(raw.id, `adjustment-draft-${draftIndex + 1}`);
+    return {
+      id,
+      createdAt: pickString(raw.createdAt, new Date().toISOString()),
+      status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'draft'),
+      sourceProgramTemplateId: pickString(raw.sourceProgramTemplateId),
+      experimentalProgramTemplateId: pickString(raw.experimentalProgramTemplateId) || undefined,
+      title: pickString(raw.title, '下周实验调整'),
+      summary: pickString(raw.summary),
+      selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
+      changes: pickArray(raw.changes).map((change, index) => sanitizeAdjustmentChange(change, `${id}-change-${index + 1}`)),
+      confidence: pickEnum(raw.confidence, ['low', 'medium', 'high'] as const, 'low'),
+      notes: pickStringArray(raw.notes),
+    };
+  });
+
+const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHistoryItem[] =>
+  pickArray(history)
+    .map((item, itemIndex) => {
+      const raw = pickRecord(item);
+      const sourceProgramTemplateId = pickString(raw.sourceProgramTemplateId);
+      const experimentalProgramTemplateId = pickString(raw.experimentalProgramTemplateId);
+      if (!sourceProgramTemplateId || !experimentalProgramTemplateId) return null;
+      const id = pickString(raw.id, `adjustment-history-${itemIndex + 1}`);
+      return {
+        id,
+        appliedAt: pickString(raw.appliedAt, new Date().toISOString()),
+        sourceProgramTemplateId,
+        experimentalProgramTemplateId,
+        selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
+        changes: pickArray(raw.changes).map((change, index) => sanitizeAdjustmentChange(change, `${id}-change-${index + 1}`)),
+        rollbackAvailable: Boolean(raw.rollbackAvailable) && !raw.rolledBackAt,
+        rolledBackAt: pickString(raw.rolledBackAt) || undefined,
+      };
+    })
+    .filter(Boolean) as ProgramAdjustmentHistoryItem[];
 
 export const sanitizeSessionLog = (session: unknown): TrainingSession | null => {
   const raw = pickRecord(session);
@@ -475,6 +576,7 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
     correctionBlock: pickArray(raw.correctionBlock),
     functionalBlock: pickArray(raw.functionalBlock),
     supportExerciseLogs: pickArray(raw.supportExerciseLogs).map(sanitizeSupportExerciseLog).filter(Boolean) as SupportExerciseLog[],
+    loadFeedback: pickArray(raw.loadFeedback).map(sanitizeLoadFeedback).filter(Boolean) as LoadFeedback[],
     restTimerState: sanitizeRestTimerState(raw.restTimerState),
     feedbackSummary: isPlainObject(raw.feedbackSummary)
       ? {
@@ -490,7 +592,33 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
 
 const sanitizeTemplates = (templates: unknown) => {
   const source = Array.isArray(templates) && templates.length ? templates : INITIAL_TEMPLATES;
-  return hydrateTemplates(source);
+  const defaultsByTemplate = new Map(INITIAL_TEMPLATES.map((template) => [template.id, template]));
+  const normalized = source.map((template) => {
+    const raw = pickRecord(template);
+    const defaultTemplate = defaultsByTemplate.get(pickString(raw.id));
+    if (!defaultTemplate) return raw;
+    const defaultsByExercise = new Map(defaultTemplate.exercises.map((exercise) => [exercise.id, exercise]));
+    return {
+      ...raw,
+      name: defaultTemplate.name,
+      focus: defaultTemplate.focus,
+      note: defaultTemplate.note,
+      exercises: pickArray(raw.exercises, defaultTemplate.exercises).map((exercise) => {
+        const exerciseRaw = pickRecord(exercise);
+        const clean = defaultsByExercise.get(pickString(exerciseRaw.id));
+        return clean
+          ? {
+              ...exerciseRaw,
+              name: clean.name,
+              alias: clean.alias,
+              muscle: clean.muscle,
+              alternatives: clean.alternatives,
+            }
+          : exerciseRaw;
+      }),
+    };
+  });
+  return hydrateTemplates(normalized as never);
 };
 
 const sanitizeBodyWeights = (entries: unknown) =>
@@ -507,12 +635,15 @@ const sanitizeBodyWeights = (entries: unknown) =>
 
 const sanitizeTodayStatus = (status: unknown): TodayStatus => {
   const raw = pickRecord(status);
+  const soreness = pickArray(raw.soreness, DEFAULT_STATUS.soreness)
+    .map(normalizeTextValue)
+    .filter((item) => item === '无' || item === '胸' || item === '背' || item === '腿' || item === '肩' || item === '手臂') as TodayStatus['soreness'];
   return {
     ...DEFAULT_STATUS,
     ...raw,
-    sleep: pickEnum(raw.sleep, SLEEP_STATES, DEFAULT_STATUS.sleep),
-    energy: pickEnum(raw.energy, ENERGY_STATES, DEFAULT_STATUS.energy),
-    soreness: Array.isArray(raw.soreness) && raw.soreness.length ? raw.soreness : DEFAULT_STATUS.soreness,
+    sleep: pickEnum(normalizeTextValue(raw.sleep), SLEEP_STATES, DEFAULT_STATUS.sleep),
+    energy: pickEnum(normalizeTextValue(raw.energy), ENERGY_STATES, DEFAULT_STATUS.energy),
+    soreness: soreness.length ? soreness : DEFAULT_STATUS.soreness,
     time: pickString(raw.time, DEFAULT_STATUS.time) as TodayStatus['time'],
   };
 };
@@ -521,11 +652,17 @@ export const sanitizeData = (saved: unknown): AppData => {
   const migrated = migrateTrainingData(saved);
   const history = pickArray(migrated.history).map(sanitizeSessionLog).filter(Boolean) as TrainingSession[];
   const activeSession = sanitizeSessionLog(migrated.activeSession);
-  const selectedTemplateId = pickString(migrated.selectedTemplateId, 'push-a');
+  const templates = sanitizeTemplates(migrated.templates);
+  const selectedCandidate = pickString(migrated.selectedTemplateId, 'push-a');
+  const selectedTemplateId = templates.some((template) => template.id === selectedCandidate) ? selectedCandidate : templates[0]?.id || 'push-a';
+  const activeCandidate = pickString(migrated.activeProgramTemplateId, pickString(pickRecord(migrated.settings).activeProgramTemplateId));
+  const activeProgramTemplateId = templates.some((template) => template.id === activeCandidate) ? activeCandidate : selectedTemplateId;
   const trainingMode = pickEnum(migrated.trainingMode, TRAINING_MODES, 'hybrid');
+  const programAdjustmentDrafts = sanitizeProgramAdjustmentDrafts(migrated.programAdjustmentDrafts);
+  const programAdjustmentHistory = sanitizeProgramAdjustmentHistory(migrated.programAdjustmentHistory);
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
-    templates: sanitizeTemplates(migrated.templates),
+    templates,
     history,
     bodyWeights: sanitizeBodyWeights(migrated.bodyWeights),
     activeSession: activeSession?.completed ? null : activeSession,
@@ -536,11 +673,15 @@ export const sanitizeData = (saved: unknown): AppData => {
     screeningProfile: sanitizeScreeningProfile(migrated.screeningProfile, history),
     programTemplate: sanitizeProgramTemplate(migrated.programTemplate),
     mesocyclePlan: sanitizeMesocyclePlan(migrated.mesocyclePlan as MesocyclePlan | undefined),
+    programAdjustmentDrafts,
+    programAdjustmentHistory,
+    activeProgramTemplateId,
     settings: {
       ...pickRecord(migrated.settings),
       schemaVersion: STORAGE_VERSION,
       selectedTemplateId,
       trainingMode,
+      activeProgramTemplateId,
     },
   };
 
@@ -555,11 +696,17 @@ export const sanitizeData = (saved: unknown): AppData => {
     sanitized.screeningProfile = sanitizeScreeningProfile(sanitized.screeningProfile, sanitized.history);
     sanitized.programTemplate = sanitizeProgramTemplate(sanitized.programTemplate);
     sanitized.mesocyclePlan = sanitizeMesocyclePlan(sanitized.mesocyclePlan);
+    sanitized.programAdjustmentDrafts = sanitizeProgramAdjustmentDrafts(sanitized.programAdjustmentDrafts);
+    sanitized.programAdjustmentHistory = sanitizeProgramAdjustmentHistory(sanitized.programAdjustmentHistory);
+    sanitized.activeProgramTemplateId = sanitized.templates.some((template) => template.id === sanitized.activeProgramTemplateId)
+      ? sanitized.activeProgramTemplateId
+      : sanitized.selectedTemplateId;
     sanitized.settings = {
       ...pickRecord(sanitized.settings),
       schemaVersion: STORAGE_VERSION,
       selectedTemplateId: sanitized.selectedTemplateId,
       trainingMode: sanitized.trainingMode,
+      activeProgramTemplateId: sanitized.activeProgramTemplateId,
     };
   }
 
@@ -580,6 +727,9 @@ export const emptyData = (): AppData =>
     screeningProfile: DEFAULT_SCREENING_PROFILE,
     programTemplate: DEFAULT_PROGRAM_TEMPLATE,
     mesocyclePlan: DEFAULT_MESOCYCLE_PLAN,
+    programAdjustmentDrafts: [],
+    programAdjustmentHistory: [],
+    activeProgramTemplateId: undefined,
     settings: {},
   });
 
@@ -606,6 +756,9 @@ export const loadData = (): AppData => {
           screeningProfile: parseJson(localStorage.getItem(STORAGE_KEYS.screeningProfile), null),
           programTemplate: parseJson(localStorage.getItem(STORAGE_KEYS.programTemplate), null),
           mesocyclePlan: parseJson(localStorage.getItem(STORAGE_KEYS.mesocyclePlan), null),
+          programAdjustmentDrafts: pickRecord(settings).programAdjustmentDrafts,
+          programAdjustmentHistory: pickRecord(settings).programAdjustmentHistory,
+          activeProgramTemplateId: pickRecord(settings).activeProgramTemplateId,
           selectedTemplateId: pickRecord(settings).selectedTemplateId,
           trainingMode: pickRecord(settings).trainingMode,
           settings,
@@ -640,6 +793,9 @@ export const saveData = (data: AppData) => {
       schemaVersion: STORAGE_VERSION,
       selectedTemplateId: sanitized.selectedTemplateId,
       trainingMode: sanitized.trainingMode,
+      activeProgramTemplateId: sanitized.activeProgramTemplateId,
+      programAdjustmentDrafts: sanitized.programAdjustmentDrafts || [],
+      programAdjustmentHistory: sanitized.programAdjustmentHistory || [],
     })
   );
 };

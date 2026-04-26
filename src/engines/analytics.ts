@@ -1,5 +1,18 @@
-import type { AdherenceReport, AppData, BodyWeightEntry, DeloadDecision, SupportSkipReason, TrainingSession, TrainingSetLog } from '../models/training-model';
+import type {
+  AdherenceReport,
+  AppData,
+  BodyWeightEntry,
+  DeloadDecision,
+  MuscleVolumeDashboardRow,
+  PersonalRecord,
+  SupportSkipReason,
+  TrainingSession,
+  TrainingSetLog,
+  WeeklyPrescription,
+} from '../models/training-model';
 import { buildAdaptiveDeloadDecision } from './adaptiveFeedbackEngine';
+import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from './effectiveSetEngine';
+import { buildE1RMProfile, getExerciseRecordPoolId } from './e1rmEngine';
 import { completedSets, formatDate, monthKey, number, sessionCompletedSets, sessionVolume, setVolume } from './engineUtils';
 
 type ExerciseTrendPoint = {
@@ -10,11 +23,11 @@ type ExerciseTrendPoint = {
   volume: number;
 };
 
-type PrItem = {
+type PrItem = PersonalRecord & {
   key: string;
   type: string;
   exercise: string;
-  value: string;
+  displayValue: string;
   raw: number;
   date: string;
 };
@@ -45,8 +58,26 @@ const supportPlannedFromBlock = (session: TrainingSession, blockType: 'correctio
   );
 };
 
+const recordQualityForSet = (set: TrainingSetLog): Pick<PersonalRecord, 'quality' | 'reasons'> => {
+  const effective = evaluateEffectiveSet(set);
+  if (set.techniqueQuality === 'poor') return { quality: 'low_confidence', reasons: ['动作质量较差，不能标记为高质量记录。'] };
+  if (set.painFlag) return { quality: 'low_confidence', reasons: ['该组出现不适，不能标记为高质量记录。'] };
+  if (!effective.isEffective) return { quality: 'standard', reasons: effective.reasons };
+  return { quality: 'high_quality', reasons: ['动作质量和努力程度达到高质量记录标准。'] };
+};
+
+const combineRecordQuality = (sets: TrainingSetLog[]): Pick<PersonalRecord, 'quality' | 'reasons'> => {
+  if (!sets.length) return { quality: 'low_confidence', reasons: ['缺少可用工作组。'] };
+  const qualities = sets.map(recordQualityForSet);
+  if (qualities.some((item) => item.quality === 'low_confidence')) {
+    return { quality: 'low_confidence', reasons: [...new Set(qualities.flatMap((item) => item.reasons))] };
+  }
+  if (qualities.every((item) => item.quality === 'high_quality')) return { quality: 'high_quality', reasons: ['本次记录由高质量工作组构成。'] };
+  return { quality: 'standard', reasons: [...new Set(qualities.flatMap((item) => item.reasons))] };
+};
+
 const completedHighQualitySets = (sessionExercise: TrainingSession['exercises'][number]) =>
-  completedSets(sessionExercise).filter((set) => set.techniqueQuality !== 'poor');
+  completedSets(sessionExercise).filter((set) => recordQualityForSet(set).quality !== 'low_confidence');
 
 export const CORE_TREND_EXERCISES = [
   { id: 'bench-press', label: '卧推' },
@@ -54,6 +85,67 @@ export const CORE_TREND_EXERCISES = [
   { id: 'romanian-deadlift', label: 'RDL' },
   { id: 'lat-pulldown', label: '下拉' },
 ] as const;
+
+const roundOne = (value: number) => Math.round(value * 10) / 10;
+
+const getVolumeStatus = (weightedEffectiveSets: number, targetSets: number): MuscleVolumeDashboardRow['status'] => {
+  if (targetSets <= 0) return weightedEffectiveSets > 0 ? 'high' : 'low';
+  const ratioToTarget = weightedEffectiveSets / targetSets;
+  if (ratioToTarget >= 1.15) return 'high';
+  if (ratioToTarget >= 0.95) return 'on_target';
+  if (ratioToTarget >= 0.75) return 'near_target';
+  return 'low';
+};
+
+const buildVolumeNotes = (status: MuscleVolumeDashboardRow['status'], row: Pick<MuscleVolumeDashboardRow, 'effectiveSets' | 'highConfidenceEffectiveSets' | 'remainingSets'>) => {
+  const notes: string[] = ['加权有效组是训练量估算，不是精确生理测量。'];
+  if (status === 'low') notes.push(`本周还差约 ${roundOne(row.remainingSets)} 组加权有效组。`);
+  if (status === 'near_target') notes.push('本周训练量接近目标，后续优先补高质量工作组。');
+  if (status === 'on_target') notes.push('本周训练量已基本达标，继续保持恢复质量。');
+  if (status === 'high') notes.push('本周训练量可能偏高，注意恢复和动作质量。');
+  if (row.effectiveSets > row.highConfidenceEffectiveSets) notes.push('部分有效组置信度不是高，建议结合 RIR 和动作质量复查。');
+  return notes;
+};
+
+export const buildMuscleVolumeDashboard = (
+  history: TrainingSession[],
+  weeklyPrescription: WeeklyPrescription | null | undefined,
+): MuscleVolumeDashboardRow[] => {
+  const weekStart = weeklyPrescription?.weekStart;
+  const weekSessions = weekStart ? history.filter((session) => session.date >= weekStart) : history.slice(0, 7);
+  const effectiveSummary = buildEffectiveVolumeSummary(weekSessions);
+  const targets = new Map((weeklyPrescription?.muscles || []).map((item) => [item.muscle, number(item.target)]));
+  Object.keys(effectiveSummary.byMuscle).forEach((muscle) => {
+    if (!targets.has(muscle)) targets.set(muscle, 0);
+  });
+
+  return [...targets.entries()]
+    .map(([muscleId, targetSets]) => {
+      const muscleSummary = effectiveSummary.byMuscle[muscleId];
+      const completedSets = roundOne(muscleSummary?.completedSets || 0);
+      const effectiveSets = roundOne(muscleSummary?.effectiveSets || 0);
+      const highConfidenceEffectiveSets = roundOne(muscleSummary?.highConfidenceEffectiveSets || 0);
+      const weightedEffectiveSets = roundOne(muscleSummary?.weightedEffectiveSets || 0);
+      const remainingSets = roundOne(Math.max(0, targetSets - weightedEffectiveSets));
+      const status = getVolumeStatus(weightedEffectiveSets, targetSets);
+      return {
+        muscleId,
+        muscleName: muscleId,
+        targetSets: roundOne(targetSets),
+        completedSets,
+        effectiveSets,
+        highConfidenceEffectiveSets,
+        weightedEffectiveSets,
+        remainingSets,
+        status,
+        notes: buildVolumeNotes(status, { effectiveSets, highConfidenceEffectiveSets, remainingSets }),
+      };
+    })
+    .sort((left, right) => {
+      const order = { low: 0, near_target: 1, on_target: 2, high: 3 } satisfies Record<MuscleVolumeDashboardRow['status'], number>;
+      return order[left.status] - order[right.status] || right.remainingSets - left.remainingSets;
+    });
+};
 
 export const buildExerciseTrend = (history: TrainingSession[], exerciseId: string): ExerciseTrendPoint[] =>
   history
@@ -109,39 +201,54 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
   const maxWeight = new Map<string, PrItem>();
   const fixedReps = new Map<string, PrItem>();
   const sessionTotals = new Map<string, PrItem>();
+  const estimatedMaxes = new Map<string, PrItem>();
 
   history.forEach((session) => {
     session.exercises.forEach((exercise) => {
-      const sets = completedHighQualitySets(exercise);
+      const sets = completedSets(exercise).filter((set) => set.type !== 'warmup');
+      const usableSets = completedHighQualitySets(exercise);
       const total = sets.reduce((sum, set) => sum + setVolume(set), 0);
-      const sessionKey = `${exercise.baseId || exercise.id}-volume`;
+      const poolId = getExerciseRecordPoolId(exercise);
+      const sessionKey = `${poolId}-volume`;
       const currentSessionTotal = sessionTotals.get(sessionKey);
+      const totalQuality = combineRecordQuality(sets);
 
       if (total && (!currentSessionTotal || total > currentSessionTotal.raw)) {
         sessionTotals.set(sessionKey, {
           key: sessionKey,
+          exerciseId: poolId,
+          metric: 'volume',
           type: '单次训练总量 PR',
           exercise: exercise.name,
-          value: `${Math.round(total)}kg`,
+          value: total,
+          displayValue: `${Math.round(total)}kg`,
           raw: total,
           date: session.date,
+          quality: totalQuality.quality,
+          reasons: totalQuality.reasons,
         });
       }
 
-      sets.forEach((set) => {
+      usableSets.forEach((set) => {
         const weight = number(set.weight);
         const reps = number(set.reps);
-        const weightKey = `${exercise.baseId || exercise.id}-weight`;
-        const repKey = `${exercise.baseId || exercise.id}-${weight}-reps`;
+        const weightKey = `${poolId}-weight`;
+        const repKey = `${poolId}-${weight}-reps`;
         const currentWeight = maxWeight.get(weightKey);
+        const quality = recordQualityForSet(set);
         if (!currentWeight || weight > currentWeight.raw) {
           maxWeight.set(weightKey, {
             key: weightKey,
+            exerciseId: poolId,
+            metric: 'max_weight',
             type: '最大重量 PR',
             exercise: exercise.name,
-            value: `${weight}kg x ${reps}`,
+            value: weight,
+            displayValue: `${weight}kg x ${reps}`,
             raw: weight,
             date: session.date,
+            quality: quality.quality,
+            reasons: quality.reasons,
           });
         }
 
@@ -149,18 +256,45 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
         if (!currentReps || reps > currentReps.raw) {
           fixedReps.set(repKey, {
             key: repKey,
+            exerciseId: poolId,
+            metric: 'reps_at_weight',
             type: '固定重量次数 PR',
             exercise: exercise.name,
-            value: `${weight}kg x ${reps}`,
+            value: reps,
+            displayValue: `${weight}kg x ${reps}`,
             raw: reps,
             date: session.date,
+            quality: quality.quality,
+            reasons: quality.reasons,
           });
         }
       });
+
+      const estimate = buildE1RMProfile(history, poolId).best;
+      if (estimate) {
+        const key = `${poolId}-e1rm`;
+        const quality: PersonalRecord['quality'] = estimate.confidence === 'high' ? 'high_quality' : estimate.confidence === 'low' ? 'low_confidence' : 'standard';
+        const current = estimatedMaxes.get(key);
+        if (!current || estimate.e1rmKg > current.raw) {
+          estimatedMaxes.set(key, {
+            key,
+            exerciseId: poolId,
+            metric: 'estimated_1rm',
+            type: '估算 1RM PR',
+            exercise: exercise.name,
+            value: estimate.e1rmKg,
+            displayValue: `${estimate.e1rmKg}kg`,
+            raw: estimate.e1rmKg,
+            date: estimate.sourceSet.date,
+            quality,
+            reasons: estimate.notes,
+          });
+        }
+      }
     });
   });
 
-  return [...maxWeight.values(), ...fixedReps.values(), ...sessionTotals.values()]
+  return [...maxWeight.values(), ...fixedReps.values(), ...sessionTotals.values(), ...estimatedMaxes.values()]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 8);
 };
@@ -173,6 +307,7 @@ export const buildWeeklyReport = (history: TrainingSession[], bodyWeights: BodyW
   const sessions = history.filter((session) => new Date(session.date) >= start);
   const volume = sessions.reduce((sum, session) => sum + sessionVolume(session), 0);
   const sets = sessions.reduce((sum, session) => sum + sessionCompletedSets(session), 0);
+  const effectiveSummary = buildEffectiveVolumeSummary(sessions);
   const latestWeight = bodyWeights[0]?.value;
   const focus = sessions.reduce<Record<string, number>>((acc, session) => {
     const key = session.focus || session.templateName;
@@ -186,6 +321,7 @@ export const buildWeeklyReport = (history: TrainingSession[], bodyWeights: BodyW
   return [
     `训练次数：${sessions.length}`,
     `完成组数：${sets}`,
+    `有效组数：${effectiveSummary.effectiveSets}（有效分 ${effectiveSummary.effectiveScore}）`,
     `总训练量：${Math.round(volume)}kg`,
     `训练分布：${focusText}`,
     `当前体重：${latestWeight ? `${latestWeight}kg` : '未记录'}`,
@@ -250,6 +386,8 @@ export const buildMonthStats = (history: TrainingSession[], bodyWeights: BodyWei
   return {
     monthSessions,
     monthVolume: monthSessions.reduce((sum, session) => sum + sessionVolume(session), 0),
+    monthEffectiveSets: buildEffectiveVolumeSummary(monthSessions).effectiveSets,
+    monthEffectiveScore: buildEffectiveVolumeSummary(monthSessions).effectiveScore,
     monthMinutes: monthSessions.reduce((sum, session) => sum + number(session.durationMin), 0),
     sevenDayAverage,
     lastWeights: bodyWeights.slice(0, 5),

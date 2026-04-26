@@ -2,10 +2,12 @@ import React from 'react';
 import { AlertTriangle, CheckCircle, Copy, Timer } from 'lucide-react';
 import { DEFAULT_STATUS } from '../data/trainingData';
 import { buildExerciseLearningPath, buildSessionExplanations, classNames, formatTimer, getRestTimerRemainingSec, number, resolveMode, sessionVolume } from '../engines/trainingEngine';
+import { formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type {
   CorrectionModule,
   ExercisePrescription,
   FunctionalAddon,
+  LoadFeedbackValue,
   RestTimerState,
   SupportSkipReason,
   TrainingSession,
@@ -37,6 +39,7 @@ interface TrainingViewProps {
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onReplaceExercise: (exerciseIndex: number) => void;
+  onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish: () => void;
   onDelete: () => void;
   onExtendRestTimer: (seconds: number) => void;
@@ -59,19 +62,19 @@ const templateNameLabels: Record<string, string> = {
 };
 
 const supportReasonOptions: Array<{ value: SupportSkipReason; label: string }> = [
-  { value: 'time', label: '时间不够' },
-  { value: 'pain', label: '不适' },
-  { value: 'equipment', label: '器械问题' },
-  { value: 'too_tired', label: '太累了' },
-  { value: 'forgot', label: '忘记了' },
-  { value: 'not_needed', label: '今天不需要' },
-  { value: 'other', label: '其他' },
+  { value: 'time', label: formatSkippedReason('time') },
+  { value: 'pain', label: formatSkippedReason('pain') },
+  { value: 'equipment', label: formatSkippedReason('equipment') },
+  { value: 'too_tired', label: formatSkippedReason('too_tired') },
+  { value: 'forgot', label: formatSkippedReason('forgot') },
+  { value: 'not_needed', label: formatSkippedReason('not_needed') },
+  { value: 'other', label: formatSkippedReason('other') },
 ];
 
 const techniqueOptions: Array<{ value: NonNullable<TrainingSetLog['techniqueQuality']>; label: string }> = [
-  { value: 'good', label: '良好' },
-  { value: 'acceptable', label: '可接受' },
-  { value: 'poor', label: '较差' },
+  { value: 'good', label: formatTechniqueQuality('good') },
+  { value: 'acceptable', label: formatTechniqueQuality('acceptable') },
+  { value: 'poor', label: formatTechniqueQuality('poor') },
 ];
 
 const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || fallback;
@@ -125,6 +128,7 @@ export function TrainingView({
   onSkipSupportExercise,
   onUpdateSupportSkipReason,
   onReplaceExercise,
+  onLoadFeedback,
   onFinish,
   onDelete,
   onExtendRestTimer,
@@ -194,7 +198,7 @@ export function TrainingView({
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3">
           <h2 className="font-black text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm text-slate-500">support 动作单独记，不会自动算成全部完成。</p>
+          <p className="mt-1 text-sm text-slate-500">辅助动作需要单独记录，系统不会默认算作全部完成。</p>
         </div>
         <div className="space-y-3">
           {items.map((block) => (
@@ -251,7 +255,7 @@ export function TrainingView({
                       </div>
                       {log?.skippedReason && number(log.completedSets) < number(log.plannedSets) ? (
                         <div className="mt-2 text-xs font-bold text-amber-700">
-                          跳过原因：{supportReasonOptions.find((item) => item.value === log.skippedReason)?.label || log.skippedReason}
+                        跳过原因：{formatSkippedReason(log.skippedReason)}
                         </div>
                       ) : null}
                     </div>
@@ -328,7 +332,7 @@ export function TrainingView({
               <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
                 <div className="text-xs font-black text-slate-500">技术标准</div>
                 <div className="mt-1 font-bold text-slate-800">
-                  {exercise.techniqueStandard?.rom || '标准 ROM'} / Tempo {exercise.techniqueStandard?.tempo || '2-0-1'} / {exercise.techniqueStandard?.stopRule || '动作变形即停'}
+                  {exercise.techniqueStandard?.rom || '标准 ROM'} / 节奏 {exercise.techniqueStandard?.tempo || '2-0-1'} / {exercise.techniqueStandard?.stopRule || '动作变形即停'}
                 </div>
               </div>
             </div>
@@ -535,7 +539,7 @@ export function TrainingView({
         <section className="rounded-lg border border-emerald-200 bg-white p-4 md:p-5">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-black uppercase tracking-widest text-emerald-700">Focus Mode</div>
+              <div className="text-xs font-black uppercase tracking-widest text-emerald-700">极简训练模式</div>
               <h2 className="mt-1 text-3xl font-black text-slate-950">{focusExercise.alias || focusExercise.name}</h2>
               <div className="mt-2 text-sm font-bold text-slate-500">
                 第 {Math.min(focusSetIndex + 1, focusSets.length)} / {focusSets.length} 组
@@ -739,6 +743,7 @@ export function TrainingView({
               onCopyPrevious={onCopyPrevious}
               onAdjustSet={onAdjustSet}
               onReplaceExercise={onReplaceExercise}
+              onLoadFeedback={onLoadFeedback}
               onCompleteSupportSet={onCompleteSupportSet}
               onSkipSupportExercise={onSkipSupportExercise}
               onUpdateSupportSkipReason={onUpdateSupportSkipReason}
@@ -816,7 +821,7 @@ export function TrainingView({
           {focusMode && allMainDone ? (
             <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
               <h2 className="font-black text-emerald-950">主训练已完成</h2>
-              <p className="mt-2 text-sm leading-6 text-emerald-900">现在最适合补 support，或者如果今天时间真的不够，也可以直接收工并让系统在下次自动变得更现实。</p>
+              <p className="mt-2 text-sm leading-6 text-emerald-900">现在最适合补辅助动作；如果今天时间不够，也可以保存结束，让系统下次把计划安排得更现实。</p>
             </section>
           ) : null}
         </aside>

@@ -1,7 +1,7 @@
 {
   "name": "IronPath",
   "short_name": "IronPath",
-  "description": "Local-first training system for hypertrophy, posture correction, and functional add-ons.",
+  "description": "本地优先的私人训练系统，面向肌肥大主线、体态纠偏和功能补丁。",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

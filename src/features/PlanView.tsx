@@ -11,6 +11,7 @@ import {
   getPrimaryMuscles,
   getSecondaryMuscles,
 } from '../engines/trainingEngine';
+import { formatCyclePhase, formatIntensityBias, formatReadinessLevel, formatSplitType } from '../i18n/formatters';
 import type { AppData, ExercisePrescription, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { InfoPill, LabelInput, Page } from '../ui/common';
 
@@ -22,14 +23,8 @@ interface PlanViewProps {
   onStartTemplate: (id: string) => void;
   onUpdateExercise: (templateId: string, exerciseIndex: number, field: string, value: string) => void;
   onResetTemplates: () => void;
+  onRollbackProgramAdjustment?: (historyItemId: string) => void;
 }
-
-const splitTypeLabels: Record<string, string> = {
-  upper_lower: '上下肢',
-  push_pull_legs: '推拉腿',
-  full_body: '全身',
-  body_part: '部位分化',
-};
 
 const movementPatternLabels: Record<string, string> = {
   squat: '深蹲',
@@ -53,12 +48,6 @@ const goalBiasLabels: Record<string, string> = {
   functional: '功能',
 };
 
-const effortLabels: Record<string, string> = {
-  low: '低',
-  medium: '中',
-  high: '高',
-};
-
 const templateNameLabels: Record<string, string> = {
   'push-a': '推 A',
   'pull-a': '拉 A',
@@ -73,13 +62,25 @@ const templateNameLabels: Record<string, string> = {
 const labelJoin = (values: string[] = [], labels: Record<string, string>) => values.map((value) => labels[value] || value).join(' / ');
 const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || fallback;
 
-export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelectTemplate, onStartTemplate, onUpdateExercise, onResetTemplates }: PlanViewProps) {
-  const template = findTemplate(data.templates, selectedTemplateId) as TrainingTemplate;
+export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelectTemplate, onStartTemplate, onUpdateExercise, onResetTemplates, onRollbackProgramAdjustment }: PlanViewProps) {
+  const fallbackTemplate = data.templates.find((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
+  const template = findTemplate(data.templates, fallbackTemplate) as TrainingTemplate;
   const prescribedExercises = applyStatusRules(template, data.todayStatus, data.trainingMode, weeklyPrescription, data.history, data.screeningProfile, data.mesocyclePlan)
     .exercises as ExercisePrescription[];
   const supportPlan = buildSupportPlan(data, template);
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const activeHistoryItem = (data.programAdjustmentHistory || []).find(
+    (item) => item.rollbackAvailable && item.experimentalProgramTemplateId === template.id
+  );
+  const sourceTemplate = activeHistoryItem
+    ? data.templates.find((item) => item.id === activeHistoryItem.sourceProgramTemplateId)
+    : undefined;
+  const currentTemplateStatus = activeHistoryItem
+    ? '实验模板'
+    : (data.programAdjustmentHistory || []).some((item) => item.rolledBackAt && item.sourceProgramTemplateId === template.id)
+      ? '已回滚到原模板'
+      : '原始模板';
 
   return (
     <Page
@@ -136,12 +137,40 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
             </div>
           </div>
 
+          <section className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-widest text-emerald-700">当前模板状态</div>
+                <h3 className="mt-1 font-black text-slate-950">{currentTemplateStatus}</h3>
+                <div className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                  当前使用：{templateLabel(template.id, template.name)}
+                  {sourceTemplate ? `；来源模板：${templateLabel(sourceTemplate.id, sourceTemplate.name)}` : ''}
+                </div>
+                {activeHistoryItem ? (
+                  <div className="mt-2 text-sm leading-6 text-emerald-950">
+                    应用时间：{activeHistoryItem.appliedAt.slice(0, 10)}；主要调整：
+                    {activeHistoryItem.changes.slice(0, 3).map((change) => change.reason).join(' / ') || '保留原计划结构'}
+                  </div>
+                ) : null}
+              </div>
+              {activeHistoryItem && onRollbackProgramAdjustment ? (
+                <button
+                  type="button"
+                  onClick={() => onRollbackProgramAdjustment(activeHistoryItem.id)}
+                  className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-black text-emerald-800"
+                >
+                  回滚到原模板
+                </button>
+              ) : null}
+            </div>
+          </section>
+
           <div className="mb-4 grid gap-3 md:grid-cols-3">
             <section className="rounded-lg border border-slate-200 bg-stone-50 p-4">
               <div className="text-xs font-black uppercase tracking-widest text-slate-500">主线</div>
               <h3 className="mt-1 font-black text-slate-950">主线结构</h3>
               <div className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {(splitTypeLabels[program.splitType] || program.splitType)} / {program.daysPerWeek} 天 / {supportPlan.ratios.mainline}%
+                {formatSplitType(program.splitType)} / {program.daysPerWeek} 天 / {supportPlan.ratios.mainline}%
               </div>
             </section>
             <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -164,8 +193,8 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
             <div className="text-xs font-black uppercase tracking-widest text-slate-500">周期层</div>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
               <InfoPill label="当前周" value={`第 ${mesocycleWeek.weekIndex + 1} 周`} />
-              <InfoPill label="phase" value={mesocycleWeek.phase} />
-              <InfoPill label="容量 / 强度" value={`${Math.round(mesocycleWeek.volumeMultiplier * 100)}% / ${mesocycleWeek.intensityBias}`} />
+              <InfoPill label="周期阶段" value={formatCyclePhase(mesocycleWeek.phase)} />
+              <InfoPill label="容量 / 强度" value={`${Math.round(mesocycleWeek.volumeMultiplier * 100)}% / ${formatIntensityBias(mesocycleWeek.intensityBias)}`} />
             </div>
             {mesocycleWeek.notes ? <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-700">{mesocycleWeek.notes}</div> : null}
           </div>
@@ -210,7 +239,7 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
 
                   <div className="mt-3 grid gap-2 md:grid-cols-3">
                     <LabelInput label="ROM 标准" value={exercise.techniqueStandard?.rom || DEFAULT_TECHNIQUE_STANDARD.rom} onChange={(value) => onUpdateExercise(template.id, index, 'rom', value)} />
-                    <LabelInput label="Tempo" value={exercise.techniqueStandard?.tempo || DEFAULT_TECHNIQUE_STANDARD.tempo} onChange={(value) => onUpdateExercise(template.id, index, 'tempo', value)} />
+                    <LabelInput label="动作节奏" value={exercise.techniqueStandard?.tempo || DEFAULT_TECHNIQUE_STANDARD.tempo} onChange={(value) => onUpdateExercise(template.id, index, 'tempo', value)} />
                     <LabelInput
                       label="停止条件"
                       value={exercise.techniqueStandard?.stopRule || DEFAULT_TECHNIQUE_STANDARD.stopRule}
@@ -221,11 +250,11 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
                   <div className="mt-3 grid gap-2 md:grid-cols-4">
                     <InfoPill label="动作模式" value={movementPatternLabels[prescribed.movementPattern || ''] || prescribed.movementPattern || '未标记'} />
                     <InfoPill label="主要肌群" value={`${getPrimaryMuscles(prescribed).join(' / ')} / 辅助 ${getSecondaryMuscles(prescribed).join(' / ') || '无'}`} />
-                    <InfoPill label="替代链" value={`${prescribed.equivalence?.label || prescribed.movementPattern || '同模式'} / PR 分池`} />
+                    <InfoPill label="替代链" value={`${prescribed.equivalence?.label || prescribed.movementPattern || '同模式'} / 最佳记录分池`} />
                     <InfoPill label="目标偏向" value={labelJoin(prescribed.goalBias, goalBiasLabels) || '增肌'} />
                     <InfoPill label="负荷 / 次数" value={`${prescribed.recommendedLoadRange} / ${prescribed.repMin}-${prescribed.repMax}`} />
                     <InfoPill label="休息 / RIR" value={`${prescribed.rest}s / ${prescribed.targetRirText || '2-3 RIR'}`} />
-                    <InfoPill label="疲劳 / 技术" value={`${effortLabels[prescribed.fatigueCost || ''] || prescribed.fatigueCost} / ${effortLabels[prescribed.skillDemand || ''] || prescribed.skillDemand}`} />
+                    <InfoPill label="疲劳 / 技术" value={`${formatReadinessLevel(prescribed.fatigueCost)} / ${formatReadinessLevel(prescribed.skillDemand)}`} />
                     <InfoPill label="ROM 优先级" value={prescribed.romPriority || '标准'} />
                     <InfoPill label="加重单位" value={prescribed.progressionUnit || '自动'} />
                     <InfoPill label="处方规则" value={prescribed.prescription?.rule || '默认推进'} />

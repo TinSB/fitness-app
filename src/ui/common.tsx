@@ -1,7 +1,9 @@
 import React, { type ReactNode } from 'react';
+import { Info } from 'lucide-react';
 import { TRAINING_MODE_META } from '../data/trainingData';
 import type { CorrectionModule, FunctionalAddon, WeeklyPrescription } from '../models/training-model';
 import { classNames, number } from '../engines/trainingEngine';
+import { formatSupportDoseAdjustment } from '../i18n/formatters';
 
 type Tone = 'slate' | 'emerald' | 'amber' | 'rose';
 
@@ -91,6 +93,7 @@ export const Segment = ({ value, options, labels, onChange }: SegmentProps) => (
       return (
         <button
           key={option}
+          type="button"
           onClick={() => onChange(option)}
           className={classNames(
             'rounded-md px-3 py-2 text-sm font-bold transition',
@@ -111,6 +114,7 @@ export const ModeSwitch = ({ value, onChange }: ModeSwitchProps) => (
       return (
         <button
           key={mode.id}
+          type="button"
           onClick={() => onChange(mode.id)}
           className={classNames(
             'rounded-md px-2 py-2 text-sm font-bold transition',
@@ -139,17 +143,29 @@ export const LabelInput = ({ label, value, onChange, type = 'text', placeholder 
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
-      className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-emerald-500"
+      className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-base font-bold outline-none focus:border-emerald-500 md:text-sm"
     />
   </label>
+);
+
+export const InfoTooltip = ({ title, body }: { title: string; body: string }) => (
+  <details className="group relative inline-block align-middle">
+    <summary className="inline-flex cursor-pointer list-none items-center justify-center rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+      <Info size={16} aria-label={title} />
+    </summary>
+    <div className="absolute right-0 z-20 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 text-left text-xs font-medium leading-5 text-slate-700 shadow-xl">
+      <div className="mb-1 font-black text-slate-950">{title}</div>
+      {body}
+    </div>
+  </details>
 );
 
 export const WeeklyPrescriptionCard = ({ weeklyPrescription, compact = false }: WeeklyPrescriptionCardProps) => (
   <section className="rounded-lg border border-slate-200 bg-white p-4">
     <div className="mb-3 flex items-start justify-between gap-3">
       <div>
-        <div className="text-xs font-black uppercase tracking-widest text-emerald-700">周预算</div>
-        <h2 className="mt-1 font-black text-slate-950">周训练预算</h2>
+        <div className="text-xs font-black uppercase tracking-widest text-emerald-700">周剂量</div>
+        <h2 className="mt-1 font-black text-slate-950">周训练量预算</h2>
       </div>
       <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">
         {weeklyPrescription.mode?.shortLabel || '默认'}
@@ -177,7 +193,7 @@ export const WeeklyPrescriptionCard = ({ weeklyPrescription, compact = false }: 
             </div>
             {!compact && (
               <div className="mt-1 text-xs font-medium text-slate-500">
-                {item.status} / 剩余 {item.remaining} / 恢复额度 {item.remainingCapacity} / 直接 {item.directSets} / 间接 {item.indirectSets} 组
+                {item.status || '进行中'} / 剩余 {item.remaining} / 恢复额度 {item.remainingCapacity} / 直接 {item.directSets} / 间接 {item.indirectSets} 组
               </div>
             )}
           </div>
@@ -208,30 +224,28 @@ export const SupportBlockList = ({ title, subtitle, items, tone = 'emerald' }: S
             <div className="mb-2 flex items-center justify-between gap-2">
               <div>
                 <h3 className="font-black text-slate-950">{block.name}</h3>
-                {'dose' in block && block.dose ? <div className="text-xs font-bold text-slate-500">剂量：{block.dose}</div> : null}
+                {'dose' in block && block.dose ? <div className="text-xs font-bold text-slate-500">剂量：{formatSupportDoseAdjustment(block.dose)}</div> : null}
               </div>
               <span className="rounded-md bg-stone-50 px-2 py-1 text-xs font-bold text-slate-500">{block.durationMin} 分钟</span>
             </div>
             <div className="space-y-2">
-              {block.exercises.map((exercise) => (
-                <div key={`${block.id}-${exercise.exerciseId}`} className="rounded-md bg-stone-50 px-3 py-2 text-sm">
-                  {(() => {
-                    const targetValue =
-                      'distanceM' in exercise && exercise.distanceM
-                        ? `${exercise.sets} x ${exercise.distanceM}m`
-                        : `${exercise.sets} x ${exercise.repMin || exercise.holdSec || ('timeSec' in exercise ? exercise.timeSec : '')}-${exercise.repMax || exercise.holdSec || ('timeSec' in exercise ? exercise.timeSec : '') || ''}`;
-                    return (
-                      <>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-black text-slate-800">{exercise.name || exercise.exerciseId}</span>
-                    <span className="text-xs font-bold text-slate-500">{targetValue}</span>
+              {block.exercises.map((exercise) => {
+                const targetValue =
+                  'distanceM' in exercise && exercise.distanceM
+                    ? `${exercise.sets} 组 x ${exercise.distanceM}m`
+                    : `${exercise.sets} 组 x ${exercise.repMin || exercise.holdSec || ('timeSec' in exercise ? exercise.timeSec : '')}-${
+                        exercise.repMax || exercise.holdSec || ('timeSec' in exercise ? exercise.timeSec : '') || ''
+                      }`;
+                return (
+                  <div key={`${block.id}-${exercise.exerciseId}`} className="rounded-md bg-stone-50 px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-black text-slate-800">{exercise.name || exercise.exerciseId}</span>
+                      <span className="text-xs font-bold text-slate-500">{targetValue}</span>
+                    </div>
+                    {'cue' in exercise && exercise.cue ? <div className="mt-1 text-xs font-bold text-slate-500">{exercise.cue}</div> : null}
                   </div>
-                  {'cue' in exercise && exercise.cue ? <div className="mt-1 text-xs font-bold text-slate-500">{exercise.cue}</div> : null}
-                      </>
-                    );
-                  })()}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}

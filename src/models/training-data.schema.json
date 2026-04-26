@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ironpath.local/schemas/training-data.schema.json",
   "title": "IronPath AppData",
@@ -42,12 +42,30 @@
     "screeningProfile": { "$ref": "#/$defs/screeningProfile" },
     "programTemplate": { "$ref": "training-program.schema.json" },
     "mesocyclePlan": { "$ref": "#/$defs/mesocyclePlan" },
+    "programAdjustmentDrafts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/programAdjustmentDraft" }
+    },
+    "programAdjustmentHistory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/programAdjustmentHistoryItem" }
+    },
+    "activeProgramTemplateId": { "type": "string" },
     "settings": {
       "type": "object",
       "properties": {
         "schemaVersion": { "type": "integer", "minimum": 1 },
         "selectedTemplateId": { "type": "string" },
-        "trainingMode": { "type": "string", "enum": ["hybrid", "strength", "hypertrophy"] }
+        "trainingMode": { "type": "string", "enum": ["hybrid", "strength", "hypertrophy"] },
+        "activeProgramTemplateId": { "type": "string" },
+        "programAdjustmentDrafts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/programAdjustmentDraft" }
+        },
+        "programAdjustmentHistory": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/programAdjustmentHistoryItem" }
+        }
       },
       "additionalProperties": true
     }
@@ -217,6 +235,18 @@
       },
       "additionalProperties": true
     },
+    "loadFeedback": {
+      "type": "object",
+      "required": ["exerciseId", "sessionId", "date", "feedback"],
+      "properties": {
+        "exerciseId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "date": { "type": "string" },
+        "feedback": { "type": "string", "enum": ["too_light", "good", "too_heavy"] },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "restTimerState": {
       "anyOf": [
         { "type": "null" },
@@ -235,6 +265,55 @@
           "additionalProperties": true
         }
       ]
+    },
+    "adjustmentChange": {
+      "type": "object",
+      "required": ["id", "type", "reason"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["add_sets", "remove_sets", "swap_exercise", "reduce_support", "increase_support", "keep"] },
+        "dayTemplateId": { "type": "string" },
+        "exerciseId": { "type": "string" },
+        "replacementExerciseId": { "type": "string" },
+        "muscleId": { "type": "string" },
+        "setsDelta": { "type": "number" },
+        "reason": { "type": "string" },
+        "sourceRecommendationId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "programAdjustmentDraft": {
+      "type": "object",
+      "required": ["id", "createdAt", "status", "sourceProgramTemplateId", "title", "summary", "selectedRecommendationIds", "changes", "confidence", "notes"],
+      "properties": {
+        "id": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "previewed", "applied", "rolled_back", "dismissed"] },
+        "sourceProgramTemplateId": { "type": "string" },
+        "experimentalProgramTemplateId": { "type": "string" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "selectedRecommendationIds": { "type": "array", "items": { "type": "string" } },
+        "changes": { "type": "array", "items": { "$ref": "#/$defs/adjustmentChange" } },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "programAdjustmentHistoryItem": {
+      "type": "object",
+      "required": ["id", "appliedAt", "sourceProgramTemplateId", "experimentalProgramTemplateId", "selectedRecommendationIds", "changes", "rollbackAvailable"],
+      "properties": {
+        "id": { "type": "string" },
+        "appliedAt": { "type": "string" },
+        "sourceProgramTemplateId": { "type": "string" },
+        "experimentalProgramTemplateId": { "type": "string" },
+        "selectedRecommendationIds": { "type": "array", "items": { "type": "string" } },
+        "changes": { "type": "array", "items": { "$ref": "#/$defs/adjustmentChange" } },
+        "rollbackAvailable": { "type": "boolean" },
+        "rolledBackAt": { "type": "string" }
+      },
+      "additionalProperties": true
     },
     "supportModule": {
       "type": "object",
@@ -286,6 +365,7 @@
         "correctionBlock": { "type": "array", "items": { "$ref": "#/$defs/supportModule" } },
         "functionalBlock": { "type": "array", "items": { "$ref": "#/$defs/supportModule" } },
         "supportExerciseLogs": { "type": "array", "items": { "$ref": "#/$defs/supportExerciseLog" } },
+        "loadFeedback": { "type": "array", "items": { "$ref": "#/$defs/loadFeedback" } },
         "restTimerState": { "$ref": "#/$defs/restTimerState" },
         "status": { "$ref": "#/$defs/todayStatus" },
         "durationMin": { "type": "number", "minimum": 0 },

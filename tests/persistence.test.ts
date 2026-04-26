@@ -45,6 +45,7 @@ describe('persistence', () => {
     expect(sanitized.history).toHaveLength(1);
     expect(sanitized.history[0]?.templateId).toBe('push-a');
     expect(sanitized.history[0]?.supportExerciseLogs).toEqual([]);
+    expect(sanitized.history[0]?.loadFeedback).toEqual([]);
     expect(sanitized.todayStatus.time).toBe('60');
     expect(sanitized.mesocyclePlan.weeks.length).toBeGreaterThan(0);
   });
@@ -106,6 +107,14 @@ describe('persistence', () => {
         templateName: 'Push A',
         trainingMode: 'hybrid',
         completed: false,
+        loadFeedback: [
+          {
+            exerciseId: 'bench-press',
+            sessionId: 'active',
+            date: '2026-04-25',
+            feedback: 'too_heavy',
+          },
+        ],
         restTimerState: {
           exerciseId: 'bench-press',
           setIndex: 1,
@@ -131,6 +140,7 @@ describe('persistence', () => {
 
     expect(sanitized.activeSession?.id).toBe('active');
     expect(sanitized.activeSession?.restTimerState?.durationSec).toBe(120);
+    expect(sanitized.activeSession?.loadFeedback?.[0]?.feedback).toBe('too_heavy');
   });
 
   it('drops completed activeSession during recovery', () => {
@@ -159,5 +169,52 @@ describe('persistence', () => {
     });
 
     expect(sanitized.activeSession).toBeNull();
+  });
+
+  it('sanitizes program adjustment workflow fields and validates schema', () => {
+    const sanitized = sanitizeData({
+      selectedTemplateId: 'push-a',
+      activeProgramTemplateId: 'push-a-experiment',
+      templates: [
+        {
+          id: 'push-a-experiment',
+          name: 'Push A 实验版',
+          focus: 'push',
+          duration: 70,
+          note: 'experiment',
+          exercises: [],
+        },
+      ],
+      programAdjustmentDrafts: [
+        {
+          id: 'draft-1',
+          createdAt: '2026-04-26T00:00:00.000Z',
+          status: 'draft',
+          sourceProgramTemplateId: 'push-a',
+          title: '下周实验调整',
+          summary: 'preview',
+          selectedRecommendationIds: ['rec-1'],
+          changes: [{ id: 'change-1', type: 'add_sets', exerciseId: 'bench-press', setsDelta: 2, reason: '补量' }],
+          confidence: 'high',
+          notes: [],
+        },
+      ],
+      programAdjustmentHistory: [
+        {
+          id: 'history-1',
+          appliedAt: '2026-04-26T00:00:00.000Z',
+          sourceProgramTemplateId: 'push-a',
+          experimentalProgramTemplateId: 'push-a-experiment',
+          selectedRecommendationIds: ['rec-1'],
+          changes: [{ id: 'change-1', type: 'add_sets', exerciseId: 'bench-press', setsDelta: 2, reason: '补量' }],
+          rollbackAvailable: true,
+        },
+      ],
+    });
+
+    expect(sanitized.programAdjustmentDrafts).toHaveLength(1);
+    expect(sanitized.programAdjustmentHistory).toHaveLength(1);
+    expect(sanitized.activeProgramTemplateId).toBe('push-a-experiment');
+    expect(validateAppDataSchema(sanitized)).toBe(true);
   });
 });

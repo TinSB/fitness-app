@@ -98,13 +98,14 @@ export function buildExerciseMetadata(exercise: ExerciseLike): ExerciseMetadata 
   const fatigueCost = (override.fatigueCost as ExerciseMetadata['fatigueCost']) || (compound ? 'medium' : 'low');
   const progressionUnitKg = exercise.startWeight >= 40 || bigMuscle ? 2.5 : 1;
   const progressionPercent: [number, number] = bigMuscle ? [5, 10] : [2, 5];
-  const defaultLoadRange = compound ? '65-85% 1RM' : '50-75% 1RM';
+  const defaultLoadRange = compound ? '约 65%-85% 1RM' : '约 50%-75% 1RM';
 
   return {
     movementPattern: (override.movementPattern as string | undefined) || exercise.muscle,
     primaryMuscles: (override.primaryMuscles as string[] | undefined) || [exercise.muscle],
     secondaryMuscles: (override.secondaryMuscles as string[] | undefined) || [],
-    goalBias: (override.goalBias as string[] | undefined) || (compound ? ['力量', '增肌'] : ['增肌']),
+    muscleContribution: (override.muscleContribution as Record<string, number> | undefined) || undefined,
+    goalBias: (override.goalBias as string[] | undefined) || (compound ? ['力量', '肌肥大'] : ['肌肥大']),
     recommendedLoadRange: (override.recommendedLoadRange as string | undefined) || defaultLoadRange,
     recommendedRepRange: (override.recommendedRepRange as [number, number] | undefined) || [exercise.repMin, exercise.repMax],
     recommendedRestSec: (override.recommendedRestSec as [number, number] | undefined) || [Math.max(45, exercise.rest - 30), exercise.rest],
@@ -119,6 +120,7 @@ export function buildExerciseMetadata(exercise: ExerciseLike): ExerciseMetadata 
     targetRir: (override.targetRir as [number, number] | undefined) || (compound ? [1, 3] : [1, 2]),
     evidenceTags: PRESCRIPTION_SOURCES,
     equivalenceChainId: (override.equivalenceChainId as string | undefined) || equivalence?.id || exercise.id,
+    canonicalExerciseId: (override.canonicalExerciseId as string | undefined) || exercise.id,
     equivalence:
       equivalence || {
         label: (override.movementPattern as string | undefined) || exercise.muscle,
@@ -131,8 +133,8 @@ export function buildExerciseMetadata(exercise: ExerciseLike): ExerciseMetadata 
     contraindications: (override.contraindications as string[] | undefined) || [],
     techniqueStandard: {
       ...DEFAULT_TECHNIQUE_STANDARD,
-      rom: compound || (override.romPriority as string | undefined) === 'high' ? '全程' : '受控全程',
-      stopRule: compound ? '动作变形或速度明显下降即停' : '目标肌肉失控即停',
+      rom: compound || (override.romPriority as string | undefined) === 'high' ? '完整可控幅度' : '受控完整幅度',
+      stopRule: compound ? '动作明显变形、速度明显下降或出现不适时停止该组' : '目标肌群失控或出现不适时停止该组',
       ...(exercise.techniqueStandard || {}),
     },
   };

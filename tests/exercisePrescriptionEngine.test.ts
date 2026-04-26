@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SCREENING_PROFILE } from '../src/data/trainingData';
 import { applyStatusRules } from '../src/engines/exercisePrescriptionEngine';
+import { upsertLoadFeedback } from '../src/engines/loadFeedbackEngine';
 import { getTemplate, makeSession, makeStatus } from './fixtures';
 
 describe('exercisePrescriptionEngine', () => {
@@ -50,5 +51,28 @@ describe('exercisePrescriptionEngine', () => {
     expect(adjusted.exercises.length).toBeLessThanOrEqual(4);
     expect(adjusted.duration).toBe(30);
     expect(adjusted.exercises.every((exercise: any) => Number(exercise.sets) <= 2)).toBe(true);
+  });
+
+  it('uses repeated too-heavy load feedback to make the next recommendation conservative', () => {
+    const template = getTemplate('push-a');
+    const history = [0, 1].map((index) =>
+      upsertLoadFeedback(
+        makeSession({
+          id: `load-heavy-${index}`,
+          date: `2026-04-2${index}`,
+          templateId: 'push-a',
+          exerciseId: 'bench-press',
+          setSpecs: [{ weight: 80, reps: 6, rir: 2, techniqueQuality: 'good' }],
+        }),
+        'bench-press',
+        'too_heavy'
+      )
+    );
+
+    const adjusted = applyStatusRules(template, makeStatus({ sleep: '好', energy: '高', time: '60' }), 'hybrid', null, history, DEFAULT_SCREENING_PROFILE);
+    const bench = adjusted.exercises.find((exercise: any) => exercise.id === 'bench-press');
+    expect(bench?.progressLocked).toBe(true);
+    expect(bench?.conservativeTopSet).toBe(true);
+    expect(bench?.adjustment).toContain('推荐重量偏重');
   });
 });

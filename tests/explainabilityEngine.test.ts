@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { CORRECTION_MODULES, FUNCTIONAL_ADDONS } from '../src/data/trainingData';
-import { buildTodayExplanations } from '../src/engines/explainabilityEngine';
+import {
+  buildE1RMExplanation,
+  buildSessionSummaryExplanations,
+  buildTodayExplanationItems,
+  buildTodayExplanations,
+  buildWeeklyActionExplanation,
+  explainAdjustmentDefaultSelection,
+  explainAdjustmentRisk,
+  explainAdjustmentReview,
+  explainExperimentalTemplatePolicy,
+  formatExplanationEvidence,
+  formatExplanationItem,
+} from '../src/engines/explainabilityEngine';
+import { upsertLoadFeedback } from '../src/engines/loadFeedbackEngine';
 import { hydrateTemplates } from '../src/engines/engineUtils';
 import type { ExercisePrescription, SupportPlan, WeeklyPrescription } from '../src/models/training-model';
-import { templates } from './fixtures';
+import { makeSession, templates } from './fixtures';
 
 const template = templates[0];
 
@@ -203,5 +216,116 @@ describe('explainabilityEngine', () => {
     });
 
     expect(explanations.join(' ')).toMatch(/正常推进|按 .* 推进|当前模板/);
+  });
+
+  it('adds evidence, confidence and caveat to low readiness explanations', () => {
+    const items = buildTodayExplanationItems({
+      template,
+      adjustedPlan: {
+        ...template,
+        exercises: [makeExercise()],
+        readinessResult: {
+          score: 42,
+          level: 'low',
+          trainingAdjustment: 'conservative',
+          reasons: ['睡眠差', '精力低'],
+        },
+      },
+      supportPlan: makeSupportPlan(),
+      weeklyPrescription: makeWeeklyPrescription(),
+    });
+
+    const text = items.map(formatExplanationItem).join(' ');
+    expect(text).toContain('准备度评分');
+    expect(text).toContain('保守训练');
+    expect(formatExplanationEvidence(items[0]).length).toBeGreaterThan(0);
+    expect(items[0].caveat).toBeTruthy();
+  });
+
+  it('explains poor technique progression gate without raw enum leakage', () => {
+    const items = buildTodayExplanationItems({
+      template,
+      adjustedPlan: {
+        ...template,
+        exercises: [makeExercise({ suggestion: '动作质量较差，本次不建议加重' })],
+      },
+      supportPlan: makeSupportPlan(),
+      weeklyPrescription: makeWeeklyPrescription(),
+    });
+    const text = items.map(formatExplanationItem).join(' ');
+    expect(text).toContain('动作质量');
+    expect(text).not.toContain('poor');
+    expect(text).not.toContain('undefined');
+  });
+
+  it('explains insufficient e1RM data conservatively', () => {
+    const item = buildE1RMExplanation(null, '卧推');
+    const text = formatExplanationItem(item);
+    expect(text).toContain('历史高质量工作组不足');
+    expect(text).toContain('RIR');
+    expect(formatExplanationEvidence(item)).toContain('RIR 努力程度控制');
+  });
+
+  it('states that load guidance uses recent records instead of historical best', () => {
+    const item = buildE1RMExplanation(
+      {
+        exerciseId: 'bench-press',
+        e1rmKg: 96,
+        formula: 'epley',
+        confidence: 'medium',
+        sourceSet: {
+          sessionId: 's1',
+          date: '2026-04-24',
+          weightKg: 80,
+          reps: 6,
+          rir: 2,
+          techniqueQuality: 'good',
+        },
+        notes: ['基于最近高质量工作组估算，不使用历史最高记录作为训练推荐。'],
+      },
+      '卧推'
+    );
+
+    expect(formatExplanationItem(item)).toContain('近期同动作高质量记录');
+    expect(formatExplanationItem(item)).toContain('历史最高');
+  });
+
+  it('summarizes load feedback after a session', () => {
+    const session = upsertLoadFeedback(
+      makeSession({
+        id: 'summary-feedback',
+        date: '2026-04-24',
+        templateId: 'push-a',
+        exerciseId: 'bench-press',
+        setSpecs: [{ weight: 80, reps: 6, rir: 2, techniqueQuality: 'good' }],
+      }),
+      'bench-press',
+      'too_heavy'
+    );
+
+    const text = buildSessionSummaryExplanations({ session }).join(' ');
+    expect(text).toContain('推荐重量反馈');
+    expect(text).toContain('不会直接篡改历史最佳 e1RM');
+  });
+
+  it('explains weekly action recommendations without raw enum or empty values', () => {
+    const item = buildWeeklyActionExplanation({
+      id: 'volume-back',
+      priority: 'high',
+      category: 'volume',
+      targetType: 'muscle',
+      targetId: '背',
+      targetLabel: '背',
+      issue: '背本周加权有效组明显低于目标。',
+      recommendation: '下周优先补 3 组背部训练量，可放在坐姿划船或高位下拉。',
+      reason: '目标 12 组，目前加权有效组 5 组。',
+      suggestedChange: { muscleId: '背', setsDelta: 3, exerciseIds: ['seated-row', 'lat-pulldown'] },
+      evidenceRuleIds: ['weekly_volume_distribution'],
+      confidence: 'high',
+    });
+    const text = formatExplanationItem(item);
+    expect(text).toContain('下周优先补');
+    expect(text).not.toMatch(/undefined|null|volume|high/);
+    expect(formatExplanationEvidence(item)).toContain('每周训练量分配');
   });
 });

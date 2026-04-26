@@ -8,6 +8,7 @@ import {
   selectCorrectionModules,
   selectFunctionalAddons,
 } from '../engines/trainingEngine';
+import { formatSplitType } from '../i18n/formatters';
 import type { AppData, MovementFlagKey, PostureFlagKey } from '../models/training-model';
 import {
   CORRECTION_STRATEGY_LABELS,
@@ -176,7 +177,7 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
           <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
             <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">筛查输出</div>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              <InfoPill label="主线建议" value={`${program.splitType} / ${program.daysPerWeek} 天`} />
+              <InfoPill label="主线建议" value={`${formatSplitType(program.splitType)} / ${program.daysPerWeek} 天`} />
               <InfoPill label="纠偏优先级" value={summary.correctionPriority.length ? joinLabels(summary.correctionPriority) : joinLabels(inferCorrectionPriority(screening)) || '暂无'} />
               <InfoPill label="功能补丁优先级" value={summary.functionalPriority.length ? joinLabels(summary.functionalPriority) : joinLabels(inferFunctionalPriorities(screening)) || '最低配补丁'} />
               <InfoPill label="预计插入的纠偏模块" value={corrections.map((item) => item.name).join(' / ') || '暂无'} />

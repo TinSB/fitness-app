@@ -22,9 +22,12 @@ import {
   pickSuggestedTemplate,
   reconcileScreeningProfile,
   resumeRestTimer,
+  applyAdjustmentDraft,
+  rollbackAdjustment,
   todayKey,
+  upsertLoadFeedback,
 } from './engines/trainingEngine';
-import type { AppData, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
+import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 
@@ -69,12 +72,13 @@ function App() {
     return () => window.clearInterval(interval);
   }, [data.activeSession?.restTimerState?.isRunning, data.activeSession?.restTimerState?.startedAt]);
 
-  const selectedTemplate = findTemplate(data.templates, data.selectedTemplateId);
+  const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
+  const selectedTemplate = findTemplate(data.templates, activeTemplateId);
   const weeklyPrescription = buildWeeklyPrescription(data);
   const suggestedTemplateId = pickSuggestedTemplate(data);
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
 
-  const startSession = (templateId = data.selectedTemplateId) => {
+  const startSession = (templateId = activeTemplateId) => {
     const template = findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
     const workingData = { ...data, screeningProfile };
@@ -93,6 +97,7 @@ function App() {
       ...current,
       screeningProfile,
       selectedTemplateId: templateId,
+      activeProgramTemplateId: templateId,
       activeSession: session,
     }));
     setExpandedExercise(0);
@@ -278,6 +283,7 @@ function App() {
       const baseId = exercise.baseId || exercise.id;
       exercise.name = nextName;
       exercise.id = nextIndex === 0 ? baseId : `${baseId}__alt_${nextIndex}`;
+      exercise.canonicalExerciseId = nextIndex === 0 ? baseId : exercise.id;
       exercise.replacedFromId = nextIndex === 0 ? '' : baseId;
       exercise.replacedFromName = nextIndex === 0 ? '' : exercise.originalName;
       exercise.warning =
@@ -347,6 +353,16 @@ function App() {
     });
   };
 
+  const recordLoadFeedback = (exerciseId: string, feedback: LoadFeedbackValue) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return {
+        ...current,
+        activeSession: upsertLoadFeedback(current.activeSession, exerciseId, feedback),
+      };
+    });
+  };
+
   const updateTemplateExercise = (templateId: string, exerciseIndex: number, field: string, value: string) => {
     setData((current) => ({
       ...current,
@@ -380,6 +396,55 @@ function App() {
       ...current,
       templates: hydrateTemplates(INITIAL_TEMPLATES),
       selectedTemplateId: 'push-a',
+      activeProgramTemplateId: 'push-a',
+    }));
+  };
+
+  const applyProgramAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
+    const sourceTemplate = data.templates.find((template) => template.id === draft.sourceProgramTemplateId);
+    if (!sourceTemplate) {
+      window.alert('找不到建议来源模板，暂时不能生成实验模板。');
+      return;
+    }
+    const activeExperiment = data.programAdjustmentHistory?.find(
+      (item) => item.rollbackAvailable && item.experimentalProgramTemplateId === data.activeProgramTemplateId
+    );
+    if (activeExperiment && activeExperiment.experimentalProgramTemplateId !== draft.sourceProgramTemplateId) {
+      const replace = window.confirm('当前已经启用了一个实验模板。是否用新的下周实验模板替换当前实验模板？原实验记录会保留，可回滚。');
+      if (!replace) return;
+    }
+
+    const { experimentalTemplate, historyItem } = applyAdjustmentDraft(draft, sourceTemplate);
+    setData((current) => ({
+      ...current,
+      templates: [...current.templates.filter((template) => template.id !== experimentalTemplate.id), experimentalTemplate],
+      selectedTemplateId: experimentalTemplate.id,
+      activeProgramTemplateId: experimentalTemplate.id,
+      programAdjustmentDrafts: [
+        ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
+        {
+          ...draft,
+          status: 'applied',
+          experimentalProgramTemplateId: experimentalTemplate.id,
+        },
+      ],
+      programAdjustmentHistory: [historyItem, ...(current.programAdjustmentHistory || [])],
+    }));
+    window.alert('已生成下周实验模板，并切换为当前计划。');
+  };
+
+  const rollbackProgramAdjustment = (historyItemId: string) => {
+    const historyItem = data.programAdjustmentHistory?.find((item) => item.id === historyItemId);
+    if (!historyItem) return;
+    if (!window.confirm('确定回滚到原模板吗？实验模板不会删除，历史记录会标记为已回滚。')) return;
+    const { restoredTemplateId, updatedHistoryItem } = rollbackAdjustment(historyItem);
+    setData((current) => ({
+      ...current,
+      selectedTemplateId: restoredTemplateId,
+      activeProgramTemplateId: restoredTemplateId,
+      programAdjustmentHistory: (current.programAdjustmentHistory || []).map((item) =>
+        item.id === updatedHistoryItem.id ? updatedHistoryItem : item
+      ),
     }));
   };
 
@@ -507,8 +572,8 @@ function App() {
                     onModeChange={updateTrainingMode}
                     onStatusChange={updateStatus}
                     onSorenessToggle={toggleSoreness}
-                    onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
-                    onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId }))}
+                    onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
+                    onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId, activeProgramTemplateId: suggestedTemplateId }))}
                     onStart={() => startSession()}
                     onResume={() => setActiveTab('training')}
                   />
@@ -529,6 +594,7 @@ function App() {
                     onSkipSupportExercise={skipSupportExercise}
                     onUpdateSupportSkipReason={skipSupportExercise}
                     onReplaceExercise={replaceExercise}
+                    onLoadFeedback={recordLoadFeedback}
                     onFinish={finishSession}
                     onDelete={deleteActiveSession}
                     onExtendRestTimer={extendActiveRestTimer}
@@ -552,11 +618,12 @@ function App() {
                   <PlanView
                     data={data}
                     weeklyPrescription={weeklyPrescription}
-                    selectedTemplateId={data.selectedTemplateId}
-                    onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
+                    selectedTemplateId={activeTemplateId}
+                    onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
                     onStartTemplate={(id) => startSession(id)}
                     onUpdateExercise={updateTemplateExercise}
                     onResetTemplates={resetTemplates}
+                    onRollbackProgramAdjustment={rollbackProgramAdjustment}
                   />
                 )}
 
@@ -572,6 +639,8 @@ function App() {
                       setData(nextData);
                       setActiveTab('today');
                     }}
+                    onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
+                    onRollbackProgramAdjustment={rollbackProgramAdjustment}
                   />
                 )}
               </div>
