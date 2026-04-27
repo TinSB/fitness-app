@@ -40,7 +40,9 @@ import {
   type TrainingSession,
   type UserProfile,
 } from '../models/training-model';
-import { clamp, clone, createMesocyclePlan, hydrateTemplates, number, reconcileScreeningProfile, sanitizeMesocyclePlan } from '../engines/trainingEngine';
+import { clamp, clone, hydrateTemplates, number } from '../engines/engineUtils';
+import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
+import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
 export const validateProgramSchema = ajv.compile(schema);
@@ -501,8 +503,8 @@ const sanitizeRestTimerState = (timer: unknown): RestTimerState | null => {
   };
 };
 
-const ADJUSTMENT_STATUSES = ['draft', 'previewed', 'applied', 'rolled_back', 'dismissed'] as const;
-const ADJUSTMENT_CHANGE_TYPES = ['add_sets', 'remove_sets', 'swap_exercise', 'reduce_support', 'increase_support', 'keep'] as const;
+const ADJUSTMENT_STATUSES = ['draft', 'previewed', 'applied', 'rolled_back', 'dismissed', 'stale'] as const;
+const ADJUSTMENT_CHANGE_TYPES = ['add_sets', 'remove_sets', 'add_new_exercise', 'swap_exercise', 'reduce_support', 'increase_support', 'keep'] as const;
 
 const sanitizeAdjustmentChange = (entry: unknown, fallbackId: string) => {
   const raw = pickRecord(entry);
@@ -510,10 +512,22 @@ const sanitizeAdjustmentChange = (entry: unknown, fallbackId: string) => {
     id: pickString(raw.id, fallbackId),
     type: pickEnum(raw.type, ADJUSTMENT_CHANGE_TYPES, 'keep'),
     dayTemplateId: pickString(raw.dayTemplateId) || undefined,
+    dayTemplateName: pickString(raw.dayTemplateName) || undefined,
     exerciseId: pickString(raw.exerciseId) || undefined,
+    exerciseName: pickString(raw.exerciseName) || undefined,
     replacementExerciseId: pickString(raw.replacementExerciseId) || undefined,
+    replacementExerciseName: pickString(raw.replacementExerciseName) || undefined,
     muscleId: pickString(raw.muscleId) || undefined,
     setsDelta: Number.isFinite(number(raw.setsDelta)) ? Math.round(number(raw.setsDelta)) : undefined,
+    sets: Number.isFinite(number(raw.sets)) ? Math.max(1, Math.round(number(raw.sets))) : undefined,
+    repMin: Number.isFinite(number(raw.repMin)) ? Math.max(1, Math.round(number(raw.repMin))) : undefined,
+    repMax: Number.isFinite(number(raw.repMax)) ? Math.max(1, Math.round(number(raw.repMax))) : undefined,
+    restSec: Number.isFinite(number(raw.restSec)) ? Math.max(30, Math.round(number(raw.restSec))) : undefined,
+    insertAfterExerciseId: pickString(raw.insertAfterExerciseId) || undefined,
+    insertPositionLabel: pickString(raw.insertPositionLabel) || undefined,
+    previewNote: pickString(raw.previewNote) || undefined,
+    skipped: Boolean(raw.skipped),
+    skipReason: pickString(raw.skipReason) || undefined,
     reason: pickString(raw.reason),
     sourceRecommendationId: pickString(raw.sourceRecommendationId) || undefined,
   };
@@ -529,6 +543,8 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
       status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'draft'),
       sourceProgramTemplateId: pickString(raw.sourceProgramTemplateId),
       experimentalProgramTemplateId: pickString(raw.experimentalProgramTemplateId) || undefined,
+      sourceTemplateSnapshotHash: pickString(raw.sourceTemplateSnapshotHash) || undefined,
+      sourceTemplateUpdatedAt: pickString(raw.sourceTemplateUpdatedAt) || undefined,
       title: pickString(raw.title, '下周实验调整'),
       summary: pickString(raw.summary),
       selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
@@ -551,10 +567,35 @@ const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHi
         appliedAt: pickString(raw.appliedAt, new Date().toISOString()),
         sourceProgramTemplateId,
         experimentalProgramTemplateId,
+        sourceProgramTemplateName: pickString(raw.sourceProgramTemplateName) || undefined,
+        experimentalProgramTemplateName: pickString(raw.experimentalProgramTemplateName) || undefined,
+        mainChangeSummary: pickString(raw.mainChangeSummary) || undefined,
         selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
         changes: pickArray(raw.changes).map((change, index) => sanitizeAdjustmentChange(change, `${id}-change-${index + 1}`)),
         rollbackAvailable: Boolean(raw.rollbackAvailable) && !raw.rolledBackAt,
         rolledBackAt: pickString(raw.rolledBackAt) || undefined,
+        sourceProgramSnapshot: isPlainObject(raw.sourceProgramSnapshot) ? sanitizeProgramTemplate(raw.sourceProgramSnapshot) : undefined,
+        effectReview: isPlainObject(raw.effectReview)
+          ? (() => {
+              const effect = pickRecord(raw.effectReview);
+              const metrics = pickRecord(effect.metrics);
+              return {
+                historyItemId: pickString(effect.historyItemId, id),
+                status: pickString(effect.status, 'neutral') as NonNullable<ProgramAdjustmentHistoryItem['effectReview']>['status'],
+                confidence: pickString(effect.confidence, 'low') as NonNullable<ProgramAdjustmentHistoryItem['effectReview']>['confidence'],
+                summary: pickString(effect.summary),
+                metrics: {
+                  targetMuscleChange: Number.isFinite(number(metrics.targetMuscleChange)) ? number(metrics.targetMuscleChange) : undefined,
+                  adherenceChange: Number.isFinite(number(metrics.adherenceChange)) ? number(metrics.adherenceChange) : undefined,
+                  painSignalChange: Number.isFinite(number(metrics.painSignalChange)) ? number(metrics.painSignalChange) : undefined,
+                  effectiveVolumeChange: Number.isFinite(number(metrics.effectiveVolumeChange)) ? number(metrics.effectiveVolumeChange) : undefined,
+                  beforeSessionCount: Number.isFinite(number(metrics.beforeSessionCount)) ? number(metrics.beforeSessionCount) : undefined,
+                  afterSessionCount: Number.isFinite(number(metrics.afterSessionCount)) ? number(metrics.afterSessionCount) : undefined,
+                },
+                recommendation: pickString(effect.recommendation, 'collect_more_data') as NonNullable<ProgramAdjustmentHistoryItem['effectReview']>['recommendation'],
+              };
+            })()
+          : undefined,
       };
     })
     .filter(Boolean) as ProgramAdjustmentHistoryItem[];
@@ -570,6 +611,9 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
     date: pickString(raw.date),
     templateId: pickString(raw.templateId),
     templateName: pickString(raw.templateName),
+    programTemplateId: pickString(raw.programTemplateId) || pickString(raw.templateId) || undefined,
+    programTemplateName: pickString(raw.programTemplateName) || pickString(raw.templateName) || undefined,
+    isExperimentalTemplate: Boolean(raw.isExperimentalTemplate),
     trainingMode: pickEnum(raw.trainingMode, TRAINING_MODES, 'hybrid'),
     status: sanitizeTodayStatus(raw.status),
     exercises: raw.exercises.map(sanitizeExerciseLog),
@@ -603,6 +647,12 @@ const sanitizeTemplates = (templates: unknown) => {
       name: defaultTemplate.name,
       focus: defaultTemplate.focus,
       note: defaultTemplate.note,
+      sourceTemplateId: pickString(raw.sourceTemplateId) || undefined,
+      sourceTemplateName: pickString(raw.sourceTemplateName) || undefined,
+      updatedAt: pickString(raw.updatedAt) || undefined,
+      appliedAt: pickString(raw.appliedAt) || undefined,
+      adjustmentSummary: pickString(raw.adjustmentSummary) || undefined,
+      isExperimentalTemplate: Boolean(raw.isExperimentalTemplate),
       exercises: pickArray(raw.exercises, defaultTemplate.exercises).map((exercise) => {
         const exerciseRaw = pickRecord(exercise);
         const clean = defaultsByExercise.get(pickString(exerciseRaw.id));

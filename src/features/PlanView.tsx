@@ -1,17 +1,17 @@
-import React from 'react';
+﻿import React from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_TECHNIQUE_STANDARD, PRESCRIPTION_SOURCES } from '../data/trainingData';
+import { classNames, enrichExercise, findTemplate, getPrimaryMuscles, getSecondaryMuscles } from '../engines/engineUtils';
+import { applyStatusRules } from '../engines/progressionEngine';
+import { buildSupportPlan } from '../engines/supportPlanEngine';
+import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import {
-  applyStatusRules,
-  buildSupportPlan,
-  classNames,
-  enrichExercise,
-  findTemplate,
-  getCurrentMesocycleWeek,
-  getPrimaryMuscles,
-  getSecondaryMuscles,
-} from '../engines/trainingEngine';
-import { formatCyclePhase, formatIntensityBias, formatReadinessLevel, formatSplitType } from '../i18n/formatters';
+  formatCyclePhase,
+  formatIntensityBias,
+  formatProgramTemplateName,
+  formatReadinessLevel,
+  formatSplitType,
+} from '../i18n/formatters';
 import type { AppData, ExercisePrescription, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { InfoPill, LabelInput, Page } from '../ui/common';
 
@@ -60,7 +60,7 @@ const templateNameLabels: Record<string, string> = {
 };
 
 const labelJoin = (values: string[] = [], labels: Record<string, string>) => values.map((value) => labels[value] || value).join(' / ');
-const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || fallback;
+const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || formatProgramTemplateName(fallback || id);
 
 export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelectTemplate, onStartTemplate, onUpdateExercise, onResetTemplates, onRollbackProgramAdjustment }: PlanViewProps) {
   const fallbackTemplate = data.templates.find((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
@@ -70,17 +70,28 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
   const supportPlan = buildSupportPlan(data, template);
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
+  const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || template;
   const activeHistoryItem = (data.programAdjustmentHistory || []).find(
-    (item) => item.rollbackAvailable && item.experimentalProgramTemplateId === template.id
+    (item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id
   );
   const sourceTemplate = activeHistoryItem
     ? data.templates.find((item) => item.id === activeHistoryItem.sourceProgramTemplateId)
     : undefined;
+  const activeTemplateMissing = Boolean(data.activeProgramTemplateId && !data.templates.some((item) => item.id === data.activeProgramTemplateId));
+  const hasRollbackRecord = (data.programAdjustmentHistory || []).some((item) => item.rolledBackAt && item.sourceProgramTemplateId === currentTemplate.id);
   const currentTemplateStatus = activeHistoryItem
     ? '实验模板'
-    : (data.programAdjustmentHistory || []).some((item) => item.rolledBackAt && item.sourceProgramTemplateId === template.id)
+    : hasRollbackRecord
       ? '已回滚到原模板'
       : '原始模板';
+  const currentTemplateName = formatProgramTemplateName(currentTemplate.name || currentTemplate.id);
+  const sourceTemplateName = formatProgramTemplateName(sourceTemplate?.name || activeHistoryItem?.sourceProgramTemplateName || '');
+  const mainAdjustmentSummary =
+    activeHistoryItem?.mainChangeSummary ||
+    currentTemplate.adjustmentSummary ||
+    activeHistoryItem?.changes.slice(0, 3).map((change) => change.reason).join(' / ') ||
+    '保留原计划结构';
 
   return (
     <Page
@@ -137,26 +148,34 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
             </div>
           </div>
 
+          {activeTemplateMissing ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-900">
+              当前激活模板不存在，系统已回退到可用模板继续展示，不会让页面崩溃。
+            </div>
+          ) : null}
+
           <section className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="text-xs font-black uppercase tracking-widest text-emerald-700">当前模板状态</div>
                 <h3 className="mt-1 font-black text-slate-950">{currentTemplateStatus}</h3>
                 <div className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                  当前使用：{templateLabel(template.id, template.name)}
-                  {sourceTemplate ? `；来源模板：${templateLabel(sourceTemplate.id, sourceTemplate.name)}` : ''}
+                  当前使用：{currentTemplateName}
+                  {sourceTemplate ? `；来源模板：${sourceTemplateName}` : ''}
                 </div>
                 {activeHistoryItem ? (
                   <div className="mt-2 text-sm leading-6 text-emerald-950">
-                    应用时间：{activeHistoryItem.appliedAt.slice(0, 10)}；主要调整：
-                    {activeHistoryItem.changes.slice(0, 3).map((change) => change.reason).join(' / ') || '保留原计划结构'}
+                    应用时间：{activeHistoryItem.appliedAt.slice(0, 10)}；主要调整：{mainAdjustmentSummary}
                   </div>
                 ) : null}
               </div>
               {activeHistoryItem && onRollbackProgramAdjustment ? (
                 <button
                   type="button"
-                  onClick={() => onRollbackProgramAdjustment(activeHistoryItem.id)}
+                  onClick={() => {
+                    if (!window.confirm('确认回滚到原模板吗？实验模板历史会保留。')) return;
+                    onRollbackProgramAdjustment(activeHistoryItem.id);
+                  }}
                   className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-black text-emerald-800"
                 >
                   回滚到原模板

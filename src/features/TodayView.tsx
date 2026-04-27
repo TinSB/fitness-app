@@ -3,24 +3,14 @@ import { AlertTriangle, ChevronDown, ChevronRight, Flame, Play } from 'lucide-re
 import { TRAINING_MODE_META } from '../data/trainingData';
 import { DEFINITIONS } from '../content/definitions';
 import { formatAdherenceConfidence, formatCyclePhase, formatEvidenceConfidence, formatIntensityBias } from '../i18n/formatters';
-import { buildDeloadSignal } from '../engines/analytics';
-import {
-  applyStatusRules,
-  buildPainPatterns,
-  buildSetPrescription,
-  buildSupportPlan,
-  buildTodayExplanationItems,
-  buildWeeklyPrescription,
-  classNames,
-  formatExplanationEvidence,
-  formatExplanationItem,
-  getCurrentMesocycleWeek,
-  makeSuggestion,
-  monthKey,
-  resolveMode,
-  sessionVolume,
-  todayKey,
-} from '../engines/trainingEngine';
+import { buildDeloadSignal } from '../engines/deloadSignalEngine';
+import { classNames, monthKey, resolveMode, sessionVolume, todayKey } from '../engines/engineUtils';
+import { applyStatusRules, buildSetPrescription, makeSuggestion } from '../engines/progressionEngine';
+import { buildPainPatterns } from '../engines/painPatternEngine';
+import { buildSupportPlan, buildWeeklyPrescription } from '../engines/supportPlanEngine';
+import { buildTodayExplanationItems, formatExplanationItem } from '../engines/explainability/trainingExplainability';
+import { formatExplanationEvidence } from '../engines/explainability/evidenceExplainability';
+import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../engines/e1rmEngine';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, WeeklyPrescriptionCard } from '../ui/common';

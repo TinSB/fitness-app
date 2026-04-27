@@ -2,7 +2,6 @@ import type {
   AdherenceReport,
   AppData,
   BodyWeightEntry,
-  DeloadDecision,
   MuscleVolumeDashboardRow,
   PersonalRecord,
   SupportSkipReason,
@@ -10,10 +9,10 @@ import type {
   TrainingSetLog,
   WeeklyPrescription,
 } from '../models/training-model';
-import { buildAdaptiveDeloadDecision } from './adaptiveFeedbackEngine';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from './effectiveSetEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from './e1rmEngine';
 import { completedSets, formatDate, monthKey, number, sessionCompletedSets, sessionVolume, setVolume } from './engineUtils';
+export { buildDeloadSignal } from './deloadSignalEngine';
 
 type ExerciseTrendPoint = {
   date: string;
@@ -31,8 +30,6 @@ type PrItem = PersonalRecord & {
   raw: number;
   date: string;
 };
-
-type DeloadSignal = Pick<DeloadDecision, 'triggered' | 'level' | 'strategy' | 'reasons' | 'title' | 'options' | 'autoSwitchTemplateId' | 'volumeMultiplier'>;
 
 type SkipAggregate = {
   count: number;
@@ -181,20 +178,6 @@ export const trendStatus = (trend: ExerciseTrendPoint[]) => {
   if (recentBest > olderBest) return '推进中';
   if (recentBest < olderBest * 0.95) return '回落';
   return '可能停滞';
-};
-
-export const buildDeloadSignal = (data: Partial<AppData>): DeloadSignal => {
-  const decision = buildAdaptiveDeloadDecision(data);
-  return {
-    triggered: decision.triggered,
-    level: decision.level,
-    strategy: decision.strategy,
-    reasons: decision.reasons,
-    title: decision.title,
-    options: decision.options,
-    autoSwitchTemplateId: decision.autoSwitchTemplateId,
-    volumeMultiplier: decision.volumeMultiplier,
-  };
 };
 
 export const buildPrs = (history: TrainingSession[]): PrItem[] => {

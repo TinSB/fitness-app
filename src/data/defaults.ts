@@ -1,4 +1,24 @@
-import type { MesocyclePlan, ProgramTemplate, ScreeningProfile, TodayStatus, UserProfile } from '../models/training-model';
+import type { MesocyclePlan, MuscleGroup, ProgramTemplate, ScreeningProfile, TodayStatus, UserProfile } from '../models/training-model';
+import { INITIAL_TEMPLATES } from './defaultTemplates';
+
+const unique = <T,>(values: T[]) => [...new Set(values)];
+
+const focusMusclesForTemplate = (template: (typeof INITIAL_TEMPLATES)[number]) =>
+  unique(template.exercises.map((exercise) => exercise.muscle).filter(Boolean)) as MuscleGroup[];
+
+const defaultCorrectionBlocks = (templateId: string) => {
+  if (templateId.includes('push') || templateId.includes('upper')) return ['corr_upper_crossed_01', 'corr_scapular_control_01'];
+  if (templateId.includes('pull')) return ['corr_scapular_control_01', 'corr_thoracic_rotation_01'];
+  if (templateId.includes('leg') || templateId.includes('lower')) return ['corr_ankle_mobility_01', 'corr_core_control_01'];
+  return [];
+};
+
+const defaultFunctionalBlocks = (templateId: string) => {
+  if (templateId.includes('push') || templateId.includes('upper')) return ['func_overhead_stability_01'];
+  if (templateId.includes('pull')) return ['func_core_anti_rotation_01'];
+  if (templateId.includes('leg') || templateId.includes('lower')) return ['func_single_leg_01'];
+  return ['func_carry_capacity_01'];
+};
 
 export const DEFAULT_STATUS: TodayStatus = {
   sleep: '一般',
@@ -80,7 +100,15 @@ export const DEFAULT_PROGRAM_TEMPLATE: ProgramTemplate = {
     calves: 6,
     abs: 6,
   },
-  dayTemplates: [],
+  dayTemplates: INITIAL_TEMPLATES.map((template) => ({
+    id: template.id,
+    name: template.name,
+    focusMuscles: focusMusclesForTemplate(template),
+    correctionBlockIds: defaultCorrectionBlocks(template.id),
+    mainExerciseIds: template.exercises.map((exercise) => exercise.id),
+    functionalBlockIds: defaultFunctionalBlocks(template.id),
+    estimatedDurationMin: template.duration,
+  })),
 };
 
 export const DEFAULT_MESOCYCLE_PLAN: MesocyclePlan = {

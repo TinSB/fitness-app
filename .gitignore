@@ -5,6 +5,11 @@ dist
 coverage
 .env
 .env.*
+!.env.example
+.vercel
+.vercel/
+.DS_Store
+Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

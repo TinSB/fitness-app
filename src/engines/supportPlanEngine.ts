@@ -192,6 +192,14 @@ const isUpperDay = (template: Pick<TrainingTemplate, 'id' | 'name' | 'focus'>) =
   return ['push', 'pull', 'upper', '上肢', '推', '拉'].some((keyword) => haystack.includes(keyword));
 };
 
+const findDayTemplateConfig = (
+  program: AppData['programTemplate'],
+  template: Pick<TrainingTemplate, 'id' | 'name'> & { sourceTemplateId?: string }
+) =>
+  program.dayTemplates.find(
+    (day) => day.id === template.id || (template.sourceTemplateId ? day.id === template.sourceTemplateId : false)
+  );
+
 export const selectCorrectionModules = (
   screening: ScreeningProfile,
   template: Pick<TrainingTemplate, 'id' | 'name' | 'focus'>,
@@ -238,7 +246,7 @@ export const selectFunctionalAddons = (
 
 export const buildSupportPlan = (
   data: Partial<AppData> & { screeningProfile?: ScreeningProfile; programTemplate?: AppData['programTemplate'] },
-  template: Pick<TrainingTemplate, 'id' | 'name' | 'focus' | 'duration'>
+  template: Pick<TrainingTemplate, 'id' | 'name' | 'focus' | 'duration'> & { sourceTemplateId?: string }
 ) => {
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
   const screening = data.screeningProfile || DEFAULT_SCREENING_PROFILE;
@@ -250,6 +258,22 @@ export const buildSupportPlan = (
 
   let correctionModules = selectCorrectionModules(screening, template, program.correctionStrategy);
   let functionalAddons = selectFunctionalAddons(screening, template, program.functionalStrategy);
+  const dayConfig = findDayTemplateConfig(program, template);
+
+  if (dayConfig?.correctionBlockIds?.length) {
+    correctionModules = dayConfig.correctionBlockIds
+      .map((id) => CORRECTION_MODULES.find((module) => module.id === id))
+      .filter((module): module is CorrectionModule => Boolean(module))
+      .map((module) => applyModuleDose(module, screening));
+  }
+
+  if (dayConfig?.functionalBlockIds?.length) {
+    const functionalPriorities = inferFunctionalPriorities(screening);
+    functionalAddons = dayConfig.functionalBlockIds
+      .map((id) => FUNCTIONAL_ADDONS.find((addon) => addon.id === id))
+      .filter((addon): addon is FunctionalAddon => Boolean(addon))
+      .map((addon) => applyAddonDose(addon, screening, functionalPriorities));
+  }
 
   if (adherenceAdjustment.correctionDoseAdjustment === 'reduce') {
     correctionModules = correctionModules.map((module) => ({
@@ -276,12 +300,13 @@ export const buildSupportPlan = (
     functionalAddons = functionalAddons.slice(0, 1).map(toMinimumEffectiveAddon);
   }
 
+  const mainlineDurationMin = number(dayConfig?.estimatedDurationMin) || number(template.duration);
   const correctionMinutes = correctionModules.reduce((sum, module) => sum + number(module.durationMin), 0);
   const functionalMinutes = functionalAddons.reduce((sum, addon) => sum + number(addon.durationMin), 0);
   const durationHint = number(adherenceAdjustment.sessionDurationHint) || 0;
   const totalDurationMin = durationHint
-    ? Math.max(1, Math.min(durationHint, number(template.duration) + correctionMinutes + functionalMinutes))
-    : Math.max(1, number(template.duration) + correctionMinutes + functionalMinutes);
+    ? Math.max(1, Math.min(durationHint, mainlineDurationMin + correctionMinutes + functionalMinutes))
+    : Math.max(1, mainlineDurationMin + correctionMinutes + functionalMinutes);
   const correctionRatio = Math.round((correctionMinutes / totalDurationMin) * 100);
   const functionalRatio = Math.round((functionalMinutes / totalDurationMin) * 100);
 
@@ -290,7 +315,7 @@ export const buildSupportPlan = (
     mainline: {
       name: template.name,
       splitType: program.splitType,
-      durationMin: number(template.duration),
+      durationMin: mainlineDurationMin,
       ratio: Math.max(0, 100 - correctionRatio - functionalRatio),
     },
     correctionModules,

@@ -4,12 +4,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 3000",
-    "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 3000",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "dev": "node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 3000",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "build:stats": "node ./node_modules/vite/bin/vite.js build && node ./scripts/print-dist-assets.mjs",
+    "build:size-check": "node ./node_modules/vite/bin/vite.js build && node ./scripts/check-dist-size.mjs",
+    "predeploy:check": "node ./scripts/predeploy-check.mjs",
+    "preview": "node ./node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 3000",
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "test": "node ./node_modules/vitest/vitest.mjs run",
+    "test:watch": "node ./node_modules/vitest/vitest.mjs"
   },
   "dependencies": {
     "ajv": "^8.17.1",
@@ -23,6 +26,7 @@
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.9.3",
     "vite": "^8.0.9",
     "vitest": "^4.1.5"

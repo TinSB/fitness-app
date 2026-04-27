@@ -2,7 +2,7 @@ import React, { type ReactNode } from 'react';
 import { Info } from 'lucide-react';
 import { TRAINING_MODE_META } from '../data/trainingData';
 import type { CorrectionModule, FunctionalAddon, WeeklyPrescription } from '../models/training-model';
-import { classNames, number } from '../engines/trainingEngine';
+import { classNames, number } from '../engines/engineUtils';
 import { formatSupportDoseAdjustment } from '../i18n/formatters';
 
 type Tone = 'slate' | 'emerald' | 'amber' | 'rose';

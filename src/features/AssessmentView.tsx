@@ -1,13 +1,8 @@
-import React from 'react';
+            import React from 'react';
 import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_SCREENING_PROFILE, DEFAULT_USER_PROFILE } from '../data/trainingData';
-import {
-  findTemplate,
-  inferCorrectionPriority,
-  inferFunctionalPriorities,
-  screeningSummaryCards,
-  selectCorrectionModules,
-  selectFunctionalAddons,
-} from '../engines/trainingEngine';
+import { findTemplate } from '../engines/engineUtils';
+import { inferCorrectionPriority, inferFunctionalPriorities, screeningSummaryCards } from '../engines/screeningEngine';
+import { selectCorrectionModules, selectFunctionalAddons } from '../engines/supportPlanEngine';
 import { formatSplitType } from '../i18n/formatters';
 import type { AppData, MovementFlagKey, PostureFlagKey } from '../models/training-model';
 import {

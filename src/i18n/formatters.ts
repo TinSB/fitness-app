@@ -1,3 +1,4 @@
+import { EXERCISE_DISPLAY_NAMES } from '../data/trainingData';
 import {
   DELOAD_LEVEL_LABELS,
   INTENSITY_BIAS_LABELS,
@@ -12,6 +13,24 @@ const fallback = (value: unknown, empty = '未记录') => {
   if (value === undefined || value === null || value === '') return empty;
   return `未识别：${String(value)}`;
 };
+
+const TEMPLATE_NAME_MAP: Record<string, string> = {
+  'push-a': 'Push A',
+  'pull-a': 'Pull A',
+  'legs-a': 'Legs A',
+  upper: 'Upper',
+  lower: 'Lower',
+  arms: '手臂补量',
+  'quick-30': '30 分钟快练',
+  'crowded-gym': '人多替代',
+};
+
+const humanizeId = (value: string) =>
+  value
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
 export const formatCyclePhase = (value: unknown) => PHASE_LABELS[value as keyof typeof PHASE_LABELS] ?? fallback(value);
 
@@ -149,3 +168,68 @@ export const formatWeeklyActionCategory = (value: unknown) =>
       mesocycle: '周期安排',
     } as const
   )[value as string] ?? fallback(value);
+
+export const formatProgramTemplateName = (value: unknown, fallbackLabel = '未知模板') => {
+  if (typeof value === 'object' && value && 'name' in value && typeof (value as { name?: unknown }).name === 'string') {
+    return (value as { name: string }).name || fallbackLabel;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return TEMPLATE_NAME_MAP[value] || humanizeId(value) || fallbackLabel;
+  }
+  return fallbackLabel;
+};
+
+export const formatDayTemplateName = (value: unknown, fallbackLabel = '未指定训练日') => {
+  if (typeof value === 'object' && value && 'name' in value && typeof (value as { name?: unknown }).name === 'string') {
+    return (value as { name: string }).name || fallbackLabel;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return TEMPLATE_NAME_MAP[value] || humanizeId(value) || fallbackLabel;
+  }
+  return fallbackLabel;
+};
+
+export const formatExerciseName = (value: unknown, fallbackLabel = '未知动作') => {
+  if (typeof value === 'object' && value) {
+    const alias = typeof (value as { alias?: unknown }).alias === 'string' ? (value as { alias: string }).alias : '';
+    const name = typeof (value as { name?: unknown }).name === 'string' ? (value as { name: string }).name : '';
+    return alias || name || fallbackLabel;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return EXERCISE_DISPLAY_NAMES[value] || humanizeId(value) || fallbackLabel;
+  }
+  return fallbackLabel;
+};
+
+export const formatAdjustmentChangeLabel = (value: unknown) =>
+  (
+    {
+      add_sets: '增加组数',
+      remove_sets: '减少组数',
+      add_new_exercise: '新增动作',
+      swap_exercise: '替代动作',
+      reduce_support: '减少 support',
+      increase_support: '增加 support',
+      keep: '保持当前结构',
+    } as const
+  )[value as string] ?? '计划调整';
+
+export const formatAdjustmentRiskLevel = (value: unknown) =>
+  (
+    {
+      low: '低风险',
+      medium: '中风险',
+      high: '高风险',
+    } as const
+  )[value as string] ?? '需人工复核';
+
+export const formatAdjustmentReviewStatus = (value: unknown) =>
+  (
+    {
+      too_early: '数据还太早',
+      improved: '已改善',
+      neutral: '无明显变化',
+      worse: '变差',
+      insufficient_data: '数据不足',
+    } as const
+  )[value as string] ?? '待观察';

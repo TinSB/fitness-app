@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Copy, Replace, SkipForward, Timer } from 'lucide-react';
-import { getRestTimerRemainingSec, classNames, formatTimer, number } from '../engines/trainingEngine';
+import { classNames, formatTimer, number } from '../engines/engineUtils';
+import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { formatBlockType, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { Term } from '../ui/Term';

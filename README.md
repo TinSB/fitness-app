@@ -22,13 +22,107 @@ http://127.0.0.1:3000/
 
 如果端口被占用，Vite 会显示新的可用地址。
 
+## Windows 一键启动
+
+双击 `Start-IronPath.bat` 即可在电脑本地启动 IronPath。脚本会自动进入项目目录，检查 `node` / `npm`，缺少 `node_modules` 时自动执行 `npm install`，然后打开 `http://127.0.0.1:3000/` 并启动 Vite dev server。端口固定为 `3000`，host 固定为 `127.0.0.1`。
+
+如果要用 iPhone Safari 做局域网测试，双击 `Start-IronPath-Mobile.bat`。手机和电脑必须连接同一个 Wi-Fi；脚本会提示运行 `ipconfig` 查看 IPv4 地址。然后在手机 Safari 打开：
+
+```text
+http://你的IPv4地址:3000/
+```
+
+例如：
+
+```text
+http://192.168.1.25:3000/
+```
+
+打开后可以通过 Safari 分享按钮选择“添加到主屏幕”。
+
+如果脚本提示 `node` 或 `npm` 未识别，请安装 Node.js LTS：https://nodejs.org/ 。安装完成后需要关闭并重新打开 PowerShell / 终端，再检查：
+
+```bash
+node -v
+npm -v
+```
+
+也可以运行 `Start-IronPath.ps1` 使用 PowerShell 版本启动器，本地模式使用默认参数，手机测试模式使用 `.\Start-IronPath.ps1 -Mobile`。如果 PowerShell 执行策略阻止 `.ps1` 运行，优先使用 `.bat` 文件即可，不需要强制修改执行策略。
+
 ## 测试与构建
 
 ```bash
 npm run typecheck
 npm test
 npm run build
+npm run build:stats
+npm run build:size-check
+npm run predeploy:check
 ```
+
+`npm run build` 只做普通生产构建，不会因为 chunk 体积门禁失败。`npm run build:stats` 会重新构建并打印 `dist/assets` 文件大小，用于查看体积分布；`npm run build:size-check` 会重新构建并执行严格体积检查，默认单个 JS chunk 超过 500 kB 时失败。`npm run predeploy:check` 会顺序执行 typecheck、test、build 和 size-check，适合上线前最后确认。
+
+## 解释层与计划调整工作流测试
+
+`src/engines/explainabilityEngine.ts` 现在只作为兼容导出层；实际解释逻辑拆到 `src/engines/explainability/`，按训练解释、每周行动解释、计划调整解释、证据解释和 shared helper 分责维护。
+
+计划调整工作流已有 engine 层集成测试保护：从每周行动建议、生成 draft、构建 diff、应用实验模板、记录 session templateId、效果复盘到回滚都走真实函数组合。原模板不会被覆盖，实验模板保留可回滚记录，过期 stale draft 会被阻止应用。
+
+## 性能与代码分割
+
+首屏只保留 App shell、今日页、移动端 Focus Mode 和训练恢复所需核心逻辑。`ProgressView`、`PlanView`、`AssessmentView` 和完整 `TrainingView` 使用 `React.lazy` 延迟加载；计划调整 apply / rollback、调整预览、实验效果复盘和备份恢复在用户触发时动态导入。
+
+项目只保留一个 Vite 配置文件：`vite.config.ts`。React 插件、Tailwind CSS 插件、Vitest 配置、build 配置和 manual chunks 都从这个文件读取，避免 `vite.config.js` / `vite.config.ts` 双配置造成 test 与 build 行为不一致。
+
+`vite.config.ts` 使用 manual chunks 将 React、AJV 校验、分析引擎、计划调整引擎、证据内容、进度页和计划页拆成可读 chunk。Focus Mode 保持轻量，不同步加载 Progress / Plan 等重页面；Progress / Plan 和计划调整相关逻辑按需加载。
+
+## Vercel 上线部署
+
+上线前本地检查：
+
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run build:stats
+npm run build:size-check
+npm run predeploy:check
+```
+
+GitHub 提交前确认不要提交：
+
+- `node_modules`
+- `dist`
+- `.env`
+- `.env.*`
+- `.vercel`
+
+这些路径已经写入 `.gitignore`。如果未来发现它们已经被 Git 跟踪，不要删除本地文件，先用 `git rm --cached` 从 Git 索引移除，再重新提交。
+
+Vercel 从 GitHub 导入项目时使用：
+
+- Framework Preset: `Vite`
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+项目根目录包含 `vercel.json`，会把所有路径 rewrite 到 `/index.html`，用于支持 SPA 刷新和未来子路径访问。当前版本不需要环境变量，`.env.example` 只保留说明；不要提交真实 secret。
+
+Vercel 部署后测试：
+
+1. 电脑端打开 Vercel URL。
+2. iPhone Safari 打开 Vercel URL。
+3. 添加到主屏幕。
+4. 在 Focus Mode 完成一组。
+5. 刷新页面后确认 `activeSession` 可恢复。
+6. 导出 / 导入 JSON 备份。
+7. 打开 ProgressView / PlanView，确认懒加载页面正常。
+
+数据默认存储在当前浏览器本地。更换设备、清理 Safari 数据或删除站点数据可能导致本地数据丢失，建议定期导出 JSON 备份。当前版本不包含登录或云同步，上线前不建议临时加入后端。
+
+main 分支可作为 Production 部署来源；feature 分支或 PR 可用于 Vercel Preview Deployments。测试新功能时先查看 Preview URL，再合并到 main。
+
+如果 PWA 出现旧版本缓存，先刷新页面；iPhone 主屏幕版本仍异常时，移除主屏幕图标后重新添加。
 
 ## iPhone Safari 添加到主屏幕
 

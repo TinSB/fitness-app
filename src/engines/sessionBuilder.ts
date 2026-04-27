@@ -12,7 +12,7 @@ import type {
 } from '../models/training-model';
 import { clone, findTemplate, getPrimaryMuscles, todayKey } from './engineUtils';
 import { buildAdaptiveDeloadDecision, reconcileScreeningProfile } from './adaptiveFeedbackEngine';
-import { buildSessionExplanations, buildTodayExplanations } from './explainabilityEngine';
+import { buildSessionExplanations, buildTodayExplanations } from './explainability/trainingExplainability';
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
 
@@ -144,6 +144,9 @@ export const createSession = (
     date: todayKey(),
     templateId: template.id,
     templateName: adjustedPlan.name,
+    programTemplateId: template.id,
+    programTemplateName: adjustedPlan.name,
+    isExperimentalTemplate: Boolean(template.isExperimentalTemplate),
     focus: adjustedPlan.focus,
     trainingMode,
     status: clone(status),

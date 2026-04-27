@@ -37,6 +37,7 @@ export const FUNCTIONAL_RULES = [
   { ability: 'carry_capacity', always: true },
   { ability: 'gait_bracing', movement: ['ankleMobility', 'singleLegStability'] },
   { ability: 'overhead_stability', movement: ['overheadMobility', 'verticalPressTolerance', 'scapularControl'] },
+  { ability: 'balance', movement: ['singleLegStability', 'ankleMobility'] },
 ];
 
 export const inferCorrectionPriority = (screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE) => {

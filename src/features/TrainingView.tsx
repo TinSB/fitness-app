@@ -1,7 +1,10 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Copy, Timer } from 'lucide-react';
 import { DEFAULT_STATUS } from '../data/trainingData';
-import { buildExerciseLearningPath, buildSessionExplanations, classNames, formatTimer, getRestTimerRemainingSec, number, resolveMode, sessionVolume } from '../engines/trainingEngine';
+import { buildExerciseLearningPath } from '../engines/exercisePathEngine';
+import { buildSessionExplanations } from '../engines/explainability/trainingExplainability';
+import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
+import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type {
   CorrectionModule,

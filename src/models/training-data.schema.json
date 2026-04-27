@@ -199,6 +199,12 @@
         "focus": { "type": "string" },
         "duration": { "type": "number", "minimum": 0 },
         "note": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "sourceTemplateId": { "type": "string" },
+        "sourceTemplateName": { "type": "string" },
+        "isExperimentalTemplate": { "type": "boolean" },
+        "appliedAt": { "type": "string" },
+        "adjustmentSummary": { "type": "string" },
         "exercises": { "type": "array", "items": { "$ref": "#/$defs/exerciseTemplate" } }
       },
       "additionalProperties": true
@@ -271,12 +277,24 @@
       "required": ["id", "type", "reason"],
       "properties": {
         "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["add_sets", "remove_sets", "swap_exercise", "reduce_support", "increase_support", "keep"] },
+        "type": { "type": "string", "enum": ["add_sets", "remove_sets", "add_new_exercise", "swap_exercise", "reduce_support", "increase_support", "keep"] },
         "dayTemplateId": { "type": "string" },
+        "dayTemplateName": { "type": "string" },
         "exerciseId": { "type": "string" },
+        "exerciseName": { "type": "string" },
         "replacementExerciseId": { "type": "string" },
+        "replacementExerciseName": { "type": "string" },
         "muscleId": { "type": "string" },
         "setsDelta": { "type": "number" },
+        "sets": { "type": "number" },
+        "repMin": { "type": "number" },
+        "repMax": { "type": "number" },
+        "restSec": { "type": "number" },
+        "insertAfterExerciseId": { "type": "string" },
+        "insertPositionLabel": { "type": "string" },
+        "previewNote": { "type": "string" },
+        "skipped": { "type": "boolean" },
+        "skipReason": { "type": "string" },
         "reason": { "type": "string" },
         "sourceRecommendationId": { "type": "string" }
       },
@@ -288,9 +306,11 @@
       "properties": {
         "id": { "type": "string" },
         "createdAt": { "type": "string" },
-        "status": { "type": "string", "enum": ["draft", "previewed", "applied", "rolled_back", "dismissed"] },
+        "status": { "type": "string", "enum": ["draft", "previewed", "applied", "rolled_back", "dismissed", "stale"] },
         "sourceProgramTemplateId": { "type": "string" },
         "experimentalProgramTemplateId": { "type": "string" },
+        "sourceTemplateSnapshotHash": { "type": "string" },
+        "sourceTemplateUpdatedAt": { "type": "string" },
         "title": { "type": "string" },
         "summary": { "type": "string" },
         "selectedRecommendationIds": { "type": "array", "items": { "type": "string" } },
@@ -308,10 +328,38 @@
         "appliedAt": { "type": "string" },
         "sourceProgramTemplateId": { "type": "string" },
         "experimentalProgramTemplateId": { "type": "string" },
+        "sourceProgramTemplateName": { "type": "string" },
+        "experimentalProgramTemplateName": { "type": "string" },
+        "mainChangeSummary": { "type": "string" },
         "selectedRecommendationIds": { "type": "array", "items": { "type": "string" } },
         "changes": { "type": "array", "items": { "$ref": "#/$defs/adjustmentChange" } },
         "rollbackAvailable": { "type": "boolean" },
-        "rolledBackAt": { "type": "string" }
+        "rolledBackAt": { "type": "string" },
+        "sourceProgramSnapshot": { "$ref": "training-program.schema.json" },
+        "effectReview": {
+          "type": "object",
+          "required": ["historyItemId", "status", "confidence", "summary", "metrics", "recommendation"],
+          "properties": {
+            "historyItemId": { "type": "string" },
+            "status": { "type": "string", "enum": ["too_early", "improved", "neutral", "worse", "insufficient_data"] },
+            "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+            "summary": { "type": "string" },
+            "metrics": {
+              "type": "object",
+              "properties": {
+                "targetMuscleChange": { "type": "number" },
+                "adherenceChange": { "type": "number" },
+                "painSignalChange": { "type": "number" },
+                "effectiveVolumeChange": { "type": "number" },
+                "beforeSessionCount": { "type": "number" },
+                "afterSessionCount": { "type": "number" }
+              },
+              "additionalProperties": true
+            },
+            "recommendation": { "type": "string", "enum": ["keep", "rollback", "review_manually", "collect_more_data"] }
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },
@@ -359,6 +407,9 @@
         "date": { "type": "string" },
         "templateId": { "type": "string" },
         "templateName": { "type": "string" },
+        "programTemplateId": { "type": "string" },
+        "programTemplateName": { "type": "string" },
+        "isExperimentalTemplate": { "type": "boolean" },
         "trainingMode": { "type": "string", "enum": ["hybrid", "strength", "hypertrophy"] },
         "focus": { "type": "string" },
         "exercises": { "type": "array", "items": { "$ref": "#/$defs/exerciseTemplate" } },

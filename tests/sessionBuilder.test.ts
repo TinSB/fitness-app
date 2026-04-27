@@ -59,5 +59,7 @@ describe('sessionBuilder', () => {
     expect(session.durationMin).toBeLessThanOrEqual(35);
     expect(session.exercises[0]?.progressLocked).toBe(true);
     expect(session.explanations?.length).toBeGreaterThan(0);
+    expect(session.programTemplateId).toBe(template.id);
+    expect(session.programTemplateName).toBeTruthy();
   });
 });

@@ -64,6 +64,9 @@ export const makeSession = ({
   id,
   date,
   templateId,
+  programTemplateId,
+  programTemplateName,
+  isExperimentalTemplate,
   exerciseId,
   setSpecs,
   status,
@@ -71,6 +74,9 @@ export const makeSession = ({
   id: string;
   date: string;
   templateId: string;
+  programTemplateId?: string;
+  programTemplateName?: string;
+  isExperimentalTemplate?: boolean;
   exerciseId: string;
   setSpecs: Array<{
     weight: number;
@@ -90,6 +96,9 @@ export const makeSession = ({
     date,
     templateId,
     templateName: template.name,
+    programTemplateId: programTemplateId || templateId,
+    programTemplateName: programTemplateName || template.name,
+    isExperimentalTemplate: Boolean(isExperimentalTemplate),
     trainingMode: 'hybrid',
     focus: template.focus,
     exercises: [makeExerciseLog(template, exerciseId, setSpecs)],

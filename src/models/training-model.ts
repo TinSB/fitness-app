@@ -423,6 +423,12 @@ export interface TrainingTemplate {
   duration: number;
   note: string;
   exercises: ExerciseTemplate[];
+  updatedAt?: string;
+  sourceTemplateId?: string;
+  sourceTemplateName?: string;
+  isExperimentalTemplate?: boolean;
+  appliedAt?: string;
+  adjustmentSummary?: string;
 }
 
 export interface PerformanceSnapshot {
@@ -484,6 +490,9 @@ export interface TrainingSession {
   date: string;
   templateId: string;
   templateName: string;
+  programTemplateId?: string;
+  programTemplateName?: string;
+  isExperimentalTemplate?: boolean;
   trainingMode: TrainingMode;
   focus?: string;
   exercises: ExercisePrescription[];
@@ -703,7 +712,7 @@ export interface WeeklyActionRecommendation {
     exerciseIds?: string[];
     removeExerciseIds?: string[];
     volumeMultiplier?: number;
-    supportDoseAdjustment?: 'keep' | 'reduce' | 'minimal';
+    supportDoseAdjustment?: 'keep' | 'reduce' | 'minimal' | 'increase' | 'boost';
   };
   evidenceRuleIds?: string[];
   confidence: EstimateConfidence;
@@ -724,26 +733,51 @@ export interface ProgramAdjustmentPreview {
   changes: Array<{
     type: AdjustmentChangeType;
     dayTemplateId?: string;
+    dayTemplateName?: string;
     exerciseId?: string;
+    exerciseName?: string;
     muscleId?: string;
     setsDelta?: number;
+    sets?: number;
+    repMin?: number;
+    repMax?: number;
+    restSec?: number;
     reason: string;
   }>;
   confidence: EstimateConfidence;
 }
 
-export type AdjustmentApplicationStatus = 'draft' | 'previewed' | 'applied' | 'rolled_back' | 'dismissed';
+export type AdjustmentApplicationStatus = 'draft' | 'previewed' | 'applied' | 'rolled_back' | 'dismissed' | 'stale';
 
-export type AdjustmentChangeType = 'add_sets' | 'remove_sets' | 'swap_exercise' | 'reduce_support' | 'increase_support' | 'keep';
+export type AdjustmentChangeType =
+  | 'add_sets'
+  | 'remove_sets'
+  | 'add_new_exercise'
+  | 'swap_exercise'
+  | 'reduce_support'
+  | 'increase_support'
+  | 'keep';
 
 export interface AdjustmentChange {
   id: string;
   type: AdjustmentChangeType;
   dayTemplateId?: string;
+  dayTemplateName?: string;
   exerciseId?: string;
+  exerciseName?: string;
   replacementExerciseId?: string;
+  replacementExerciseName?: string;
   muscleId?: string;
   setsDelta?: number;
+  sets?: number;
+  repMin?: number;
+  repMax?: number;
+  restSec?: number;
+  insertAfterExerciseId?: string;
+  insertPositionLabel?: string;
+  previewNote?: string;
+  skipped?: boolean;
+  skipReason?: string;
   reason: string;
   sourceRecommendationId?: string;
 }
@@ -754,6 +788,8 @@ export interface ProgramAdjustmentDraft {
   status: AdjustmentApplicationStatus;
   sourceProgramTemplateId: string;
   experimentalProgramTemplateId?: string;
+  sourceTemplateSnapshotHash?: string;
+  sourceTemplateUpdatedAt?: string;
   title: string;
   summary: string;
   selectedRecommendationIds: string[];
@@ -767,10 +803,15 @@ export interface ProgramAdjustmentHistoryItem {
   appliedAt: string;
   sourceProgramTemplateId: string;
   experimentalProgramTemplateId: string;
+  sourceProgramTemplateName?: string;
+  experimentalProgramTemplateName?: string;
+  mainChangeSummary?: string;
   selectedRecommendationIds: string[];
   changes: AdjustmentChange[];
   rollbackAvailable: boolean;
   rolledBackAt?: string;
+  sourceProgramSnapshot?: ProgramTemplate;
+  effectReview?: AdjustmentEffectReview;
 }
 
 export interface ProgramAdjustmentDiff {
@@ -790,12 +831,15 @@ export interface ProgramAdjustmentDiff {
 export interface AdjustmentEffectReview {
   historyItemId: string;
   status: 'too_early' | 'improved' | 'neutral' | 'worse' | 'insufficient_data';
+  confidence: 'high' | 'medium' | 'low';
   summary: string;
   metrics: {
     targetMuscleChange?: number;
     adherenceChange?: number;
     painSignalChange?: number;
     effectiveVolumeChange?: number;
+    beforeSessionCount?: number;
+    afterSessionCount?: number;
   };
   recommendation: 'keep' | 'rollback' | 'review_manually' | 'collect_more_data';
 }

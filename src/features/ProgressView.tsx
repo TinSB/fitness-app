@@ -1,10 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { Activity, BarChart3, Copy, Download, Save } from 'lucide-react';
 import { EXERCISE_DISPLAY_NAMES } from '../data/exerciseLibrary';
 import {
   CORE_TREND_EXERCISES,
   buildAdherenceReport,
-  buildDeloadSignal,
   buildExerciseTrend,
   buildMuscleVolumeDashboard,
   buildMonthStats,
@@ -17,38 +16,34 @@ import {
 } from '../engines/analytics';
 import { buildAdherenceAdjustment } from '../engines/adherenceAdjustmentEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
-import {
-  buildE1RMProfile,
-  buildEffectiveVolumeSummary,
-  buildLoadFeedbackSummary,
-  buildAdjustmentDiff,
-  createAdjustmentDraftFromRecommendations,
-  reviewAdjustmentEffect,
-  buildSessionSummaryExplanations,
-  buildWeeklyActionExplanation,
-  buildWeeklyActionRecommendations,
-  buildWeeklyCoachReview,
-  formatExplanationEvidence,
-  formatExplanationItem,
-  formatDate,
-  getCurrentMesocycleWeek,
-  number,
-  sessionCompletedSets,
-  sessionVolume,
-  todayKey,
-} from '../engines/trainingEngine';
+import { buildE1RMProfile } from '../engines/e1rmEngine';
+import { buildEffectiveVolumeSummary } from '../engines/effectiveSetEngine';
+import { buildLoadFeedbackSummary } from '../engines/loadFeedbackEngine';
+import { buildSessionSummaryExplanations } from '../engines/explainability/trainingExplainability';
+import { buildWeeklyActionExplanation, buildWeeklyCoachReview } from '../engines/explainability/weeklyActionExplainability';
+import { formatExplanationEvidence } from '../engines/explainability/evidenceExplainability';
+import { formatExplanationItem } from '../engines/explainability/shared';
+import { buildWeeklyActionRecommendations } from '../engines/weeklyCoachActionEngine';
+import { formatDate, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
+import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
+import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import {
   formatAdherenceConfidence,
+  formatAdjustmentChangeLabel,
+  formatAdjustmentReviewStatus,
+  formatAdjustmentRiskLevel,
   formatComplexityLevel,
+  formatDayTemplateName,
+  formatExerciseName,
   formatPainAction,
   formatPersonalRecordQuality,
+  formatProgramTemplateName,
   formatSkippedReason,
   formatSupportDoseAdjustment,
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
 } from '../i18n/formatters';
-import type { AppData, ProgramAdjustmentDraft, WeeklyPrescription } from '../models/training-model';
-import { exportAppData, getBackupFileName, importAppData } from '../storage/backup';
+import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, WeeklyPrescription } from '../models/training-model';
 import { Page, Stat, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
@@ -90,12 +85,6 @@ const actionPriorityClasses = {
   low: 'bg-slate-100 text-slate-700',
 } as const;
 
-const riskLabels = {
-  low: '低风险',
-  medium: '中风险',
-  high: '高风险',
-} as const;
-
 const riskClasses = {
   low: 'bg-emerald-50 text-emerald-800',
   medium: 'bg-amber-50 text-amber-800',
@@ -105,11 +94,40 @@ const riskClasses = {
 const previewChangeLabels = {
   add_sets: '增加组数',
   remove_sets: '减少组数',
+  add_new_exercise: '新增动作',
   swap_exercise: '替代动作',
   reduce_support: '减少辅助层',
   increase_support: '增加辅助层',
   keep: '维持',
 } as const;
+
+const adjustmentReviewTone = {
+  too_early: 'bg-slate-100 text-slate-700',
+  improved: 'bg-emerald-50 text-emerald-800',
+  neutral: 'bg-sky-50 text-sky-800',
+  worse: 'bg-rose-50 text-rose-800',
+  insufficient_data: 'bg-amber-50 text-amber-800',
+} as const;
+
+const summarizeHistoryChanges = (item: {
+  mainChangeSummary?: string;
+  changes: Array<{ type: string; dayTemplateName?: string; dayTemplateId?: string; exerciseName?: string; exerciseId?: string; reason: string; skipped?: boolean }>;
+}) =>
+  item.mainChangeSummary ||
+  item.changes
+    .filter((change) => !change.skipped)
+    .slice(0, 3)
+    .map((change) => {
+      if (change.type === 'add_new_exercise') {
+        return `${formatDayTemplateName(change.dayTemplateName || change.dayTemplateId)} 新增 ${formatExerciseName(change.exerciseName || change.exerciseId)}`;
+      }
+      if (change.exerciseName || change.exerciseId) {
+        return `${formatExerciseName(change.exerciseName || change.exerciseId)}：${formatAdjustmentChangeLabel(change.type)}`;
+      }
+      return change.reason;
+    })
+    .join(' / ') ||
+  '本次没有自动落地的结构调整';
 
 export function ProgressView({
   data,
@@ -158,14 +176,18 @@ export function ProgressView({
   );
   const [selectedActionIds, setSelectedActionIds] = React.useState<string[]>([]);
   const [previewDraft, setPreviewDraft] = React.useState<ProgramAdjustmentDraft | null>(null);
+  const [adjustmentDiff, setAdjustmentDiff] = React.useState<ProgramAdjustmentDiff | null>(null);
+  const [adjustmentDiffLoading, setAdjustmentDiffLoading] = React.useState(false);
+  const [adjustmentEngineError, setAdjustmentEngineError] = React.useState('');
+  const [adjustmentReviews, setAdjustmentReviews] = React.useState<Record<string, AdjustmentEffectReview>>({});
 
   React.useEffect(() => {
     setSelectedActionIds(defaultSelectedActionIds);
     setPreviewDraft(null);
+    setAdjustmentDiff(null);
   }, [weeklyActionSignature, defaultSelectedActionIds]);
 
   const selectedActions = weeklyActions.filter((item) => selectedActionIds.includes(item.id));
-  const adjustmentDiff = previewDraft && sourceTemplate ? buildAdjustmentDiff(previewDraft, sourceTemplate) : null;
   const adjustmentPreviews = previewDraft
     ? [{
         id: previewDraft.id,
@@ -175,10 +197,55 @@ export function ProgressView({
         confidence: previewDraft.confidence,
       }]
     : [];
-  const latestAdjustment = (data.programAdjustmentHistory || [])[0];
-  const adjustmentReview = latestAdjustment
-    ? reviewAdjustmentEffect(latestAdjustment, history.slice(2, 6), history.slice(0, 2))
-    : null;
+  const adjustmentHistory = data.programAdjustmentHistory || [];
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!previewDraft || !sourceTemplate) {
+      setAdjustmentDiff(null);
+      setAdjustmentDiffLoading(false);
+      return undefined;
+    }
+
+    setAdjustmentDiffLoading(true);
+    setAdjustmentEngineError('');
+    import('../engines/programAdjustmentEngine')
+      .then(({ buildAdjustmentDiff }) => {
+        if (!cancelled) setAdjustmentDiff(buildAdjustmentDiff(previewDraft, sourceTemplate, data.programTemplate, data.templates));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAdjustmentDiff(null);
+          setAdjustmentEngineError('计划调整引擎加载失败，暂时不能生成差异预览。');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAdjustmentDiffLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [previewDraft, sourceTemplate, data.programTemplate, data.templates]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!adjustmentHistory.length) {
+      setAdjustmentReviews({});
+      return undefined;
+    }
+
+    import('../engines/adjustmentReviewEngine')
+      .then(({ reviewAdjustmentEffect }) => {
+        if (!cancelled) {
+          setAdjustmentReviews(Object.fromEntries(adjustmentHistory.map((item) => [item.id, reviewAdjustmentEffect(item, history)])));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAdjustmentEngineError('实验模板效果复盘引擎加载失败，历史仍可查看。');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [adjustmentHistory, history]);
   const volumeActionTargets = weeklyActions
     .filter((item) => item.category === 'volume' && number(item.suggestedChange?.setsDelta) > 0)
     .flatMap((item) => item.suggestedChange?.exerciseIds?.map((exerciseId) => ({ action: item, exerciseId })) || []);
@@ -196,11 +263,15 @@ export function ProgressView({
     plannedSessionsPerWeek: data.programTemplate?.daysPerWeek || data.userProfile?.weeklyTrainingDays || 4,
   });
 
-  const downloadBackup = () => downloadText(getBackupFileName(), exportAppData(data), 'application/json');
+  const downloadBackup = async () => {
+    const { exportAppData, getBackupFileName } = await import('../storage/backup');
+    downloadText(getBackupFileName(), exportAppData(data), 'application/json');
+  };
 
   const handleImportFile = async (file: File | undefined) => {
     if (!file) return;
     const text = await file.text();
+    const { importAppData } = await import('../storage/backup');
     const result = importAppData(text);
     if (!result.ok || !result.data) {
       setRestoreMessage(result.error || '导入失败，当前数据没有被覆盖。');
@@ -210,6 +281,28 @@ export function ProgressView({
     onRestoreData(result.data);
     setRestoreMessage('导入成功，数据已恢复。');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const generateAdjustmentPreview = async () => {
+    if (!sourceTemplate || !selectedActions.length) return;
+    setAdjustmentDiff(null);
+    setAdjustmentDiffLoading(true);
+    setAdjustmentEngineError('');
+    try {
+      const { createAdjustmentDraftFromRecommendations } = await import('../engines/programAdjustmentEngine');
+      setPreviewDraft(
+        createAdjustmentDraftFromRecommendations(selectedActions, sourceTemplate, {
+          programTemplate: data.programTemplate,
+          templates: data.templates,
+          screeningProfile: data.screeningProfile,
+          painPatterns,
+        }),
+      );
+    } catch {
+      setAdjustmentEngineError('计划调整引擎加载失败，暂时不能生成调整预览。');
+    } finally {
+      setAdjustmentDiffLoading(false);
+    }
   };
 
   return (
@@ -279,6 +372,10 @@ export function ProgressView({
               })}
             </div>
           </section>
+
+          {adjustmentEngineError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{adjustmentEngineError}</div>
+          ) : null}
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="mb-3">
@@ -355,11 +452,11 @@ export function ProgressView({
               </div>
               <button
                 type="button"
-                disabled={!sourceTemplate || !selectedActions.length}
-                onClick={() => sourceTemplate && setPreviewDraft(createAdjustmentDraftFromRecommendations(selectedActions, sourceTemplate))}
+                disabled={!sourceTemplate || !selectedActions.length || adjustmentDiffLoading}
+                onClick={() => void generateAdjustmentPreview()}
                 className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                生成调整预览
+                {adjustmentDiffLoading ? '正在生成...' : '生成调整预览'}
               </button>
             </div>
           </section>
@@ -397,13 +494,19 @@ export function ProgressView({
                   </div>
                   <div className="mt-1 text-sm font-bold leading-6 text-slate-600">{preview.summary}</div>
                   <div className="mt-3 space-y-2">
-                    {preview.changes.map((change, index) => (
-                      <div key={`${preview.id}-${index}`} className="rounded-md bg-white px-3 py-2 text-sm text-slate-700">
-                        <span className="font-black text-slate-950">{previewChangeLabels[change.type]}：</span>
-                        {change.muscleId ? `${change.muscleId} ` : ''}
-                        {change.exerciseId ? `${change.exerciseId} ` : ''}
-                        {change.setsDelta ? `${change.setsDelta > 0 ? '+' : ''}${change.setsDelta} 组。` : ''}
-                        {change.reason}
+                    {(adjustmentDiff?.changes || []).map((change) => (
+                      <div key={change.changeId} className="rounded-md bg-white px-3 py-2 text-sm text-slate-700">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-black text-slate-950">{change.label || previewChangeLabels[change.type]}</span>
+                          <span className={`rounded-md px-2 py-1 text-xs font-black ${riskClasses[change.riskLevel]}`}>
+                            {formatAdjustmentRiskLevel(change.riskLevel)}
+                          </span>
+                        </div>
+                        <div className="mt-2 leading-6">
+                          <div><span className="font-black text-slate-950">调整前：</span>{change.before}</div>
+                          <div><span className="font-black text-slate-950">调整后：</span>{change.after}</div>
+                        </div>
+                        <div className="mt-2 text-xs font-bold leading-5 text-slate-500">{change.reason}</div>
                       </div>
                     ))}
                   </div>
@@ -430,8 +533,8 @@ export function ProgressView({
                 {adjustmentDiff.changes.map((change) => (
                   <div key={change.changeId} className="rounded-lg bg-white p-3 text-sm text-slate-700">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-black text-slate-950">{previewChangeLabels[change.type]}</span>
-                      <span className={`rounded-md px-2 py-1 text-xs font-black ${riskClasses[change.riskLevel]}`}>{riskLabels[change.riskLevel]}</span>
+                      <span className="font-black text-slate-950">{change.label || formatAdjustmentChangeLabel(change.type)}</span>
+                      <span className={`rounded-md px-2 py-1 text-xs font-black ${riskClasses[change.riskLevel]}`}>{formatAdjustmentRiskLevel(change.riskLevel)}</span>
                     </div>
                     <div className="mt-2 grid gap-2 md:grid-cols-2">
                       <div className="rounded-md bg-stone-50 px-3 py-2">
@@ -472,38 +575,58 @@ export function ProgressView({
               <div className="text-xs font-black uppercase tracking-widest text-emerald-700">调整历史 / 回滚</div>
               <h2 className="mt-1 font-black text-slate-950">实验模板追踪</h2>
             </div>
-            {(data.programAdjustmentHistory || []).length ? (
+            {adjustmentHistory.length ? (
               <div className="space-y-3">
-                {(data.programAdjustmentHistory || []).slice(0, 4).map((item) => (
-                  <div key={item.id} className="rounded-lg bg-stone-50 p-3 text-sm text-slate-700">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-black text-slate-950">{item.appliedAt.slice(0, 10)} 实验模板</div>
-                      <span className="rounded-md bg-white px-2 py-1 text-xs font-black text-slate-600">
-                        {item.rollbackAvailable ? '可回滚' : '已回滚'}
-                      </span>
-                    </div>
-                    <div className="mt-2 leading-6">
-                      来源模板：{item.sourceProgramTemplateId}；实验模板：{item.experimentalProgramTemplateId}
-                    </div>
-                    <div className="mt-2 text-xs font-bold leading-5 text-slate-500">
-                      {item.changes.slice(0, 3).map((change) => change.reason).join(' / ') || '没有可自动应用的结构调整'}
-                    </div>
-                    {latestAdjustment?.id === item.id && adjustmentReview ? (
-                      <div className="mt-2 rounded-md bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-600">
-                        复盘：{adjustmentReview.summary}
+                {adjustmentHistory.slice(0, 6).map((item) => {
+                  const review = adjustmentReviews[item.id];
+                  const sourceName = formatProgramTemplateName(item.sourceProgramTemplateName || item.sourceProgramTemplateId);
+                  const experimentalName = formatProgramTemplateName(item.experimentalProgramTemplateName || item.experimentalProgramTemplateId);
+                  return (
+                    <div key={item.id} className="rounded-lg bg-stone-50 p-3 text-sm text-slate-700">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-black text-slate-950">{item.appliedAt.slice(0, 10)} 实验模板</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {review ? (
+                            <span className={`rounded-md px-2 py-1 text-xs font-black ${adjustmentReviewTone[review.status]}`}>
+                              {formatAdjustmentReviewStatus(review.status)}
+                            </span>
+                          ) : null}
+                          <span className="rounded-md bg-white px-2 py-1 text-xs font-black text-slate-600">
+                            {item.rollbackAvailable ? '可回滚' : '已回滚'}
+                          </span>
+                        </div>
                       </div>
-                    ) : null}
-                    {item.rollbackAvailable ? (
-                      <button
-                        type="button"
-                        onClick={() => onRollbackProgramAdjustment(item.id)}
-                        className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
-                      >
-                        回滚到原模板
-                      </button>
-                    ) : null}
-                  </div>
-                ))}
+                      <div className="mt-2 leading-6">
+                        来源模板：{sourceName}
+                        <br />
+                        实验模板：{experimentalName}
+                      </div>
+                      <div className="mt-2 rounded-md bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-600">
+                        主要变更：{summarizeHistoryChanges(item)}
+                      </div>
+                      {review ? (
+                        <div className="mt-2 rounded-md bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-600">
+                          复盘：{review.summary}
+                        </div>
+                      ) : null}
+                      {item.rolledBackAt ? (
+                        <div className="mt-2 text-xs font-bold text-slate-500">已于 {item.rolledBackAt.slice(0, 10)} 回滚到原模板。</div>
+                      ) : null}
+                      {item.rollbackAvailable ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!window.confirm('确认回滚到原模板吗？这不会删除实验模板历史。')) return;
+                            onRollbackProgramAdjustment(item.id);
+                          }}
+                          className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
+                        >
+                          回滚到原模板
+                        </button>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-500">

@@ -1,6 +1,6 @@
 import { Info } from 'lucide-react';
 import { getDefinition, type DefinitionKey } from '../content/definitions';
-import { classNames } from '../engines/trainingEngine';
+import { classNames } from '../engines/engineUtils';
 
 interface TermProps {
   id: DefinitionKey;

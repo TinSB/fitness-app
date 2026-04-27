@@ -1,35 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Activity, BookOpen, CheckCircle, Dumbbell, Flame } from 'lucide-react';
 import { INITIAL_TEMPLATES } from './data/trainingData';
-import { AssessmentView } from './features/AssessmentView';
-import { PlanView } from './features/PlanView';
-import { ProgressView } from './features/ProgressView';
 import { TodayView } from './features/TodayView';
-import { TrainingView } from './features/TrainingView';
+import { TrainingFocusView } from './features/TrainingFocusView';
+import { buildWeeklyPrescription } from './engines/supportPlanEngine';
+import { classNames, clone, enrichExercise, findTemplate, hydrateTemplates, number, todayKey } from './engines/engineUtils';
+import { createSession, pickSuggestedTemplate } from './engines/sessionBuilder';
 import {
-  buildWeeklyPrescription,
-  classNames,
-  clone,
   createRestTimerState,
-  createSession,
-  enrichExercise,
   extendRestTimer,
-  findTemplate,
-  hydrateTemplates,
-  normalizeTemplateExerciseInput,
-  number,
   pauseRestTimer,
-  pickSuggestedTemplate,
-  reconcileScreeningProfile,
   resumeRestTimer,
-  applyAdjustmentDraft,
-  rollbackAdjustment,
-  todayKey,
-  upsertLoadFeedback,
-} from './engines/trainingEngine';
+} from './engines/restTimerEngine';
+import { reconcileScreeningProfile } from './engines/adaptiveFeedbackEngine';
+import { normalizeTemplateExerciseInput } from './engines/exercisePrescriptionEngine';
+import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
+import { Page } from './ui/common';
+
+const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
+const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
+const ProgressView = lazy(() => import('./features/ProgressView').then((module) => ({ default: module.ProgressView })));
+const TrainingView = lazy(() => import('./features/TrainingView').then((module) => ({ default: module.TrainingView })));
 
 const navItems = [
   { id: 'today', label: '今日', icon: Flame },
@@ -51,12 +45,22 @@ const getSetList = (session: TrainingSession | null, exerciseIndex: number): Tra
   return exercise.sets as TrainingSetLog[];
 };
 
+const LazyPageFallback = () => (
+  <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
+    <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600">正在加载训练数据...</div>
+  </div>
+);
+
 function App() {
   const [data, setData] = useState<AppData>(() => loadData() as AppData);
   const [activeTab, setActiveTab] = useState<ActiveTab>('today');
   const [expandedExercise, setExpandedExercise] = useState(0);
   const [, setTimerTick] = useState(0);
   const [bodyWeightInput, setBodyWeightInput] = useState('');
+  const [preferFocusShell, setPreferFocusShell] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false
+  );
+  const [forceFullTrainingView, setForceFullTrainingView] = useState(false);
 
   useEffect(() => {
     saveData(data);
@@ -65,6 +69,19 @@ function App() {
   useEffect(() => {
     if (data.activeSession) setActiveTab('training');
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const query = window.matchMedia('(max-width: 767px)');
+    const update = () => setPreferFocusShell(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    setForceFullTrainingView(false);
+  }, [data.activeSession?.id]);
 
   useEffect(() => {
     if (!data.activeSession?.restTimerState?.isRunning) return undefined;
@@ -371,7 +388,7 @@ function App() {
         const exercises = template.exercises.map((exercise, index) =>
           index === exerciseIndex ? normalizeTemplateExerciseInput(exercise, field, value) : exercise
         );
-        return { ...template, exercises: exercises.map((exercise) => enrichExercise(exercise)) };
+        return { ...template, exercises: exercises.map((exercise) => enrichExercise(exercise)), updatedAt: new Date().toISOString() };
       }),
     }));
   };
@@ -400,7 +417,7 @@ function App() {
     }));
   };
 
-  const applyProgramAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
+  const applyProgramAdjustmentDraft = async (draft: ProgramAdjustmentDraft) => {
     const sourceTemplate = data.templates.find((template) => template.id === draft.sourceProgramTemplateId);
     if (!sourceTemplate) {
       window.alert('找不到建议来源模板，暂时不能生成实验模板。');
@@ -414,34 +431,60 @@ function App() {
       if (!replace) return;
     }
 
-    const { experimentalTemplate, historyItem } = applyAdjustmentDraft(draft, sourceTemplate);
+    let result: Awaited<ReturnType<(typeof import('./engines/programAdjustmentEngine'))['applyAdjustmentDraft']>>;
+    try {
+      const { applyAdjustmentDraft } = await import('./engines/programAdjustmentEngine');
+      result = applyAdjustmentDraft(draft, sourceTemplate, data.programTemplate, data.templates);
+    } catch {
+      window.alert('计划调整引擎加载失败，请稍后重试。');
+      return;
+    }
+    if (!result.ok || !result.experimentalTemplate || !result.historyItem || !result.updatedProgramTemplate) {
+      setData((current) => ({
+        ...current,
+        programAdjustmentDrafts: [
+          ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
+          result.draft,
+        ],
+      }));
+      window.alert(result.message || '原模板已变化，请重新生成调整预览。');
+      return;
+    }
+
+    const { experimentalTemplate, historyItem, updatedProgramTemplate } = result;
     setData((current) => ({
       ...current,
       templates: [...current.templates.filter((template) => template.id !== experimentalTemplate.id), experimentalTemplate],
       selectedTemplateId: experimentalTemplate.id,
       activeProgramTemplateId: experimentalTemplate.id,
+      programTemplate: updatedProgramTemplate,
       programAdjustmentDrafts: [
         ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
-        {
-          ...draft,
-          status: 'applied',
-          experimentalProgramTemplateId: experimentalTemplate.id,
-        },
+        result.draft,
       ],
       programAdjustmentHistory: [historyItem, ...(current.programAdjustmentHistory || [])],
     }));
     window.alert('已生成下周实验模板，并切换为当前计划。');
   };
 
-  const rollbackProgramAdjustment = (historyItemId: string) => {
+  const rollbackProgramAdjustment = async (historyItemId: string) => {
     const historyItem = data.programAdjustmentHistory?.find((item) => item.id === historyItemId);
     if (!historyItem) return;
     if (!window.confirm('确定回滚到原模板吗？实验模板不会删除，历史记录会标记为已回滚。')) return;
-    const { restoredTemplateId, updatedHistoryItem } = rollbackAdjustment(historyItem);
+    let rollbackResult: ReturnType<(typeof import('./engines/programAdjustmentEngine'))['rollbackAdjustment']>;
+    try {
+      const { rollbackAdjustment } = await import('./engines/programAdjustmentEngine');
+      rollbackResult = rollbackAdjustment(historyItem);
+    } catch {
+      window.alert('回滚引擎加载失败，请稍后重试。');
+      return;
+    }
+    const { restoredTemplateId, restoredProgramTemplate, updatedHistoryItem } = rollbackResult;
     setData((current) => ({
       ...current,
       selectedTemplateId: restoredTemplateId,
       activeProgramTemplateId: restoredTemplateId,
+      programTemplate: restoredProgramTemplate || current.programTemplate,
       programAdjustmentHistory: (current.programAdjustmentHistory || []).map((item) =>
         item.id === updatedHistoryItem.id ? updatedHistoryItem : item
       ),
@@ -505,6 +548,8 @@ function App() {
       };
     });
   };
+
+  const useFocusTrainingShell = activeTab === 'training' && data.activeSession && preferFocusShell && !forceFullTrainingView;
 
   return (
     <div className="h-screen w-full overflow-hidden bg-stone-100 font-sans text-slate-900">
@@ -579,69 +624,113 @@ function App() {
                   />
                 )}
 
-                {activeTab === 'training' && (
-                  <TrainingView
-                    session={data.activeSession}
-                    restTimer={data.activeSession?.restTimerState || null}
-                    expandedExercise={expandedExercise}
-                    setExpandedExercise={setExpandedExercise}
-                    onStartFromSelected={() => startSession()}
-                    onSetChange={updateActiveSet}
-                    onCompleteSet={completeSet}
-                    onCopyPrevious={copyPreviousSet}
-                    onAdjustSet={adjustCurrentSet}
-                    onCompleteSupportSet={completeSupportSet}
-                    onSkipSupportExercise={skipSupportExercise}
-                    onUpdateSupportSkipReason={skipSupportExercise}
-                    onReplaceExercise={replaceExercise}
-                    onLoadFeedback={recordLoadFeedback}
-                    onFinish={finishSession}
-                    onDelete={deleteActiveSession}
-                    onExtendRestTimer={extendActiveRestTimer}
-                    onToggleRestTimer={toggleActiveRestTimer}
-                    onClearRestTimer={clearActiveRestTimer}
-                    onGoToday={() => setActiveTab('today')}
-                  />
+                {activeTab === 'training' && useFocusTrainingShell && data.activeSession && (
+                  <Page
+                    eyebrow="训练"
+                    title={data.activeSession.templateName}
+                    action={
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => setForceFullTrainingView(true)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
+                          完整训练页
+                        </button>
+                        <button onClick={deleteActiveSession} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
+                          放弃
+                        </button>
+                        <button onClick={finishSession} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-black text-white">
+                          完成训练
+                        </button>
+                      </div>
+                    }
+                  >
+                    <TrainingFocusView
+                      session={data.activeSession}
+                      restTimer={data.activeSession.restTimerState || null}
+                      expandedExercise={expandedExercise}
+                      setExpandedExercise={setExpandedExercise}
+                      onSetChange={updateActiveSet}
+                      onCompleteSet={completeSet}
+                      onCopyPrevious={copyPreviousSet}
+                      onAdjustSet={adjustCurrentSet}
+                      onReplaceExercise={replaceExercise}
+                      onLoadFeedback={recordLoadFeedback}
+                      onCompleteSupportSet={completeSupportSet}
+                      onSkipSupportExercise={skipSupportExercise}
+                      onUpdateSupportSkipReason={skipSupportExercise}
+                    />
+                  </Page>
+                )}
+
+                {activeTab === 'training' && !useFocusTrainingShell && (
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <TrainingView
+                      session={data.activeSession}
+                      restTimer={data.activeSession?.restTimerState || null}
+                      expandedExercise={expandedExercise}
+                      setExpandedExercise={setExpandedExercise}
+                      onStartFromSelected={() => startSession()}
+                      onSetChange={updateActiveSet}
+                      onCompleteSet={completeSet}
+                      onCopyPrevious={copyPreviousSet}
+                      onAdjustSet={adjustCurrentSet}
+                      onCompleteSupportSet={completeSupportSet}
+                      onSkipSupportExercise={skipSupportExercise}
+                      onUpdateSupportSkipReason={skipSupportExercise}
+                      onReplaceExercise={replaceExercise}
+                      onLoadFeedback={recordLoadFeedback}
+                      onFinish={finishSession}
+                      onDelete={deleteActiveSession}
+                      onExtendRestTimer={extendActiveRestTimer}
+                      onToggleRestTimer={toggleActiveRestTimer}
+                      onClearRestTimer={clearActiveRestTimer}
+                      onGoToday={() => setActiveTab('today')}
+                    />
+                  </Suspense>
                 )}
 
                 {activeTab === 'assessment' && (
-                  <AssessmentView
-                    data={data}
-                    onProfileChange={updateUserProfile}
-                    onProgramChange={updateProgramTemplate}
-                    onScreeningChange={updateScreeningFlag}
-                    onGoProgram={() => setActiveTab('plan')}
-                  />
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <AssessmentView
+                      data={data}
+                      onProfileChange={updateUserProfile}
+                      onProgramChange={updateProgramTemplate}
+                      onScreeningChange={updateScreeningFlag}
+                      onGoProgram={() => setActiveTab('plan')}
+                    />
+                  </Suspense>
                 )}
 
                 {activeTab === 'plan' && (
-                  <PlanView
-                    data={data}
-                    weeklyPrescription={weeklyPrescription}
-                    selectedTemplateId={activeTemplateId}
-                    onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
-                    onStartTemplate={(id) => startSession(id)}
-                    onUpdateExercise={updateTemplateExercise}
-                    onResetTemplates={resetTemplates}
-                    onRollbackProgramAdjustment={rollbackProgramAdjustment}
-                  />
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <PlanView
+                      data={data}
+                      weeklyPrescription={weeklyPrescription}
+                      selectedTemplateId={activeTemplateId}
+                      onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
+                      onStartTemplate={(id) => startSession(id)}
+                      onUpdateExercise={updateTemplateExercise}
+                      onResetTemplates={resetTemplates}
+                      onRollbackProgramAdjustment={rollbackProgramAdjustment}
+                    />
+                  </Suspense>
                 )}
 
                 {activeTab === 'progress' && (
-                  <ProgressView
-                    data={data}
-                    weeklyPrescription={weeklyPrescription}
-                    bodyWeightInput={bodyWeightInput}
-                    setBodyWeightInput={setBodyWeightInput}
-                    onSaveBodyWeight={saveBodyWeight}
-                    onDeleteSession={deleteHistorySession}
-                    onRestoreData={(nextData) => {
-                      setData(nextData);
-                      setActiveTab('today');
-                    }}
-                    onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
-                    onRollbackProgramAdjustment={rollbackProgramAdjustment}
-                  />
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <ProgressView
+                      data={data}
+                      weeklyPrescription={weeklyPrescription}
+                      bodyWeightInput={bodyWeightInput}
+                      setBodyWeightInput={setBodyWeightInput}
+                      onSaveBodyWeight={saveBodyWeight}
+                      onDeleteSession={deleteHistorySession}
+                      onRestoreData={(nextData) => {
+                        setData(nextData);
+                        setActiveTab('today');
+                      }}
+                      onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
+                      onRollbackProgramAdjustment={rollbackProgramAdjustment}
+                    />
+                  </Suspense>
                 )}
               </div>
             </main>
