@@ -15,6 +15,7 @@ import { buildAdaptiveDeloadDecision, reconcileScreeningProfile } from './adapti
 import { buildSessionExplanations, buildTodayExplanations } from './explainability/trainingExplainability';
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
+import { buildTrainingLevelAssessment, formatAutoTrainingLevel, type TrainingLevelAssessment } from './trainingLevelEngine';
 
 const TEMPLATE_ROTATION: Record<string, string> = {
   'push-a': 'pull-a',
@@ -34,13 +35,17 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-const buildSessionExerciseSetLogs = (exercise: ExercisePrescription, history: TrainingSession[]): ExercisePrescription => {
+const buildSessionExerciseSetLogs = (
+  exercise: ExercisePrescription,
+  history: TrainingSession[],
+  trainingLevelAssessment?: TrainingLevelAssessment,
+): ExercisePrescription => {
   const suggestion = makeSuggestion(exercise, history);
   const setPrescription = buildSetPrescription(exercise, suggestion);
   const replacementName = exercise.replacementSuggested || '';
   const resolvedName = replacementName || exercise.name;
   const resolvedId = replacementName ? `${exercise.id}__auto_alt_${slugify(replacementName) || 'alt'}` : exercise.id;
-  const useTopBackoff = shouldUseTopBackoff(exercise);
+  const useTopBackoff = shouldUseTopBackoff(exercise) && Boolean(trainingLevelAssessment?.readinessForAdvancedFeatures.topBackoff);
 
   const sets = Array.from({ length: Number(exercise.sets) }, (_, index) => ({
     id: `${resolvedId}-${index + 1}`,
@@ -82,6 +87,7 @@ export const createSession = (
   screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
   mesocyclePlan?: AppData['mesocyclePlan']
 ) => {
+  const trainingLevelAssessment = buildTrainingLevelAssessment({ history });
   const adjustedPlan = applyStatusRules(template, status, trainingMode, weeklyPrescription, history, screening, mesocyclePlan);
   const resolvedWeeklyPrescription =
     weeklyPrescription ||
@@ -94,7 +100,7 @@ export const createSession = (
       programTemplate: DEFAULT_PROGRAM_TEMPLATE,
     });
 
-  const resolvedSupportPlan =
+  const rawSupportPlan =
     supportPlan ||
     buildSupportPlan(
       {
@@ -105,8 +111,22 @@ export const createSession = (
       },
       template
     );
+  const shouldMinimizeSupport =
+    (trainingLevelAssessment.level === 'unknown' || trainingLevelAssessment.level === 'beginner') &&
+    !trainingLevelAssessment.readinessForAdvancedFeatures.advancedExerciseSelection;
+  const resolvedSupportPlan = shouldMinimizeSupport
+    ? {
+        ...rawSupportPlan,
+        correctionModules: rawSupportPlan.correctionModules.slice(0, 1),
+        functionalAddons: rawSupportPlan.functionalAddons.slice(0, 1),
+        totalDurationMin:
+          rawSupportPlan.mainline.durationMin +
+          rawSupportPlan.correctionModules.slice(0, 1).reduce((sum, module) => sum + Number(module.durationMin || 0), 0) +
+          rawSupportPlan.functionalAddons.slice(0, 1).reduce((sum, addon) => sum + Number(addon.durationMin || 0), 0),
+      }
+    : rawSupportPlan;
 
-  const exercises = adjustedPlan.exercises.map((exercise) => buildSessionExerciseSetLogs(exercise, history));
+  const exercises = adjustedPlan.exercises.map((exercise) => buildSessionExerciseSetLogs(exercise, history, trainingLevelAssessment));
   const explanations = buildTodayExplanations({
     template,
     adjustedPlan: { ...adjustedPlan, exercises },
@@ -138,6 +158,13 @@ export const createSession = (
       }))
     ),
   ];
+
+  const baselineExplanation =
+    trainingLevelAssessment.level === 'unknown'
+      ? '系统仍在建立训练基线，因此本次默认关闭激进进阶和复杂顶组/回退组。完成 2–3 次训练后，会开始估算当前力量、有效组和训练等级。'
+      : trainingLevelAssessment.limitations.some((item) => item.includes('不适') || item.includes('poor'))
+        ? `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，但动作质量或不适信号限制了高级推荐。`
+        : `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，系统会按真实记录逐步开放更完整的训练处方。`;
 
   const session: TrainingSession = {
     id: `session-${Date.now()}`,
@@ -176,12 +203,12 @@ export const createSession = (
     focusSkippedStepIds: [],
     focusWarmupSetLogs: [],
     deloadDecision: adjustedPlan.deloadDecision,
-    explanations,
+    explanations: [baselineExplanation, ...explanations],
   };
 
   return {
     ...session,
-    explanations: buildSessionExplanations(session),
+    explanations: [baselineExplanation, ...buildSessionExplanations(session)],
   };
 };
 

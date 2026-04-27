@@ -2,6 +2,7 @@ export {
   buildE1RMExplanation,
   buildSessionExplanations,
   buildSessionSummaryExplanations,
+  buildTrainingLevelExplanation,
   buildTodayExplanationItems,
   buildTodayExplanations,
 } from './trainingExplainability';
@@ -17,7 +18,14 @@ export {
   explainExperimentalTemplatePolicy,
   explainSupportAdjustmentChange,
 } from './adjustmentExplainability';
-export { buildEvidenceRuleExplanation, formatEvidenceSourceBoundary, formatExplanationEvidence } from './evidenceExplainability';
+export {
+  buildEvidenceRuleExplanation,
+  formatAuthorityLevelLabel,
+  formatEvidenceImplementationTypeLabel,
+  formatEvidenceSourceBoundary,
+  formatEvidenceTierLabel,
+  formatExplanationEvidence,
+} from './evidenceExplainability';
 export {
   buildTemplate,
   formatExplainabilityConfidence,

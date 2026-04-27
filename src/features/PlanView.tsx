@@ -5,6 +5,7 @@ import { classNames, enrichExercise, findTemplate, getPrimaryMuscles, getSeconda
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
+import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import {
   formatCyclePhase,
   formatIntensityBias,
@@ -68,6 +69,7 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
   const prescribedExercises = applyStatusRules(template, data.todayStatus, data.trainingMode, weeklyPrescription, data.history, data.screeningProfile, data.mesocyclePlan)
     .exercises as ExercisePrescription[];
   const supportPlan = buildSupportPlan(data, template);
+  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: data.history || [] });
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
@@ -184,6 +186,28 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
                   回滚到原模板
                 </ActionButton>
               ) : null}
+            </div>
+          </section>
+
+          <section className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-widest text-sky-700">训练基线</div>
+                <h3 className="mt-1 font-black text-slate-950">{formatAutoTrainingLevel(trainingLevelAssessment.level)}</h3>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                  {trainingLevelAssessment.level === 'unknown'
+                    ? '当前模板是起始模板，不是基于历史数据生成。系统会在 2–3 次训练后开始校准等级。'
+                    : `当前等级会影响模板建议：顶组/回退组${trainingLevelAssessment.readinessForAdvancedFeatures.topBackoff ? '可用' : '保守关闭'}，高容量${trainingLevelAssessment.readinessForAdvancedFeatures.higherVolume ? '可用' : '未启用'}。`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.advancedExerciseSelection ? 'emerald' : 'slate'}>
+                  复杂动作选择{trainingLevelAssessment.readinessForAdvancedFeatures.advancedExerciseSelection ? '可用' : '保守'}
+                </StatusBadge>
+                <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.aggressiveProgression ? 'emerald' : 'slate'}>
+                  激进进阶{trainingLevelAssessment.readinessForAdvancedFeatures.aggressiveProgression ? '可用' : '关闭'}
+                </StatusBadge>
+              </div>
             </div>
           </section>
 

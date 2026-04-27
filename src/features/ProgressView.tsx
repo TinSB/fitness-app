@@ -29,6 +29,7 @@ import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
+import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import { formatWeight } from '../engines/unitConversionEngine';
 import {
   formatAdherenceConfidence,
@@ -223,6 +224,14 @@ export function ProgressView({
   const effectiveSummary = buildEffectiveVolumeSummary(history);
   const muscleDashboard = buildMuscleVolumeDashboard(history, weeklyPrescription);
   const loadFeedbackSummary = buildLoadFeedbackSummary(history);
+  const trainingLevelAssessment = buildTrainingLevelAssessment({
+    history,
+    e1rmProfiles: coreE1rmProfiles.map((item) => item.profile),
+    effectiveVolumeSummary: effectiveSummary,
+    adherenceReport,
+    painPatterns,
+    calendarData: calendar,
+  });
   const weeklyActions = buildWeeklyActionRecommendations({
     muscleVolumeDashboard: muscleDashboard,
     adherenceReport,
@@ -746,6 +755,43 @@ export function ProgressView({
             </div>
           ) : null}
         </div>
+      </Card>
+
+      <Card className="mb-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">训练基线</div>
+            <h2 className="mt-1 text-lg font-semibold text-slate-950">{formatAutoTrainingLevel(trainingLevelAssessment.level)}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              {trainingLevelAssessment.level === 'unknown'
+                ? '正在建立训练基线。完成 2–3 次训练后，系统会开始估算当前力量、有效组和训练等级。'
+                : `当前判断置信度：${formatAdherenceConfidence(trainingLevelAssessment.confidence)}。`}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.topBackoff ? 'emerald' : 'slate'}>
+              顶组/回退组{trainingLevelAssessment.readinessForAdvancedFeatures.topBackoff ? '已启用' : '保守关闭'}
+            </StatusBadge>
+            <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.higherVolume ? 'emerald' : 'slate'}>
+              高容量{trainingLevelAssessment.readinessForAdvancedFeatures.higherVolume ? '可用' : '未启用'}
+            </StatusBadge>
+            <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.aggressiveProgression ? 'emerald' : 'slate'}>
+              激进进阶{trainingLevelAssessment.readinessForAdvancedFeatures.aggressiveProgression ? '可用' : '关闭'}
+            </StatusBadge>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          {trainingLevelAssessment.signals.slice(0, 3).map((item) => (
+            <div key={item.name} className="rounded-lg bg-stone-50 px-3 py-2">
+              <div className="text-xs font-semibold text-slate-500">{item.name}</div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">{item.score} / 100</div>
+              <div className="mt-1 text-xs leading-5 text-slate-500">{item.reason}</div>
+            </div>
+          ))}
+        </div>
+        {trainingLevelAssessment.nextDataNeeded.length ? (
+          <div className="mt-3 text-xs leading-5 text-slate-500">还需要：{trainingLevelAssessment.nextDataNeeded.slice(0, 2).join(' / ')}</div>
+        ) : null}
       </Card>
 
       <div className="mb-4 space-y-4">

@@ -9,10 +9,11 @@ import { applyStatusRules, buildSetPrescription, makeSuggestion } from '../engin
 import { buildPainPatterns } from '../engines/painPatternEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { buildSupportPlan, buildWeeklyPrescription } from '../engines/supportPlanEngine';
-import { buildTodayExplanationItems, formatExplanationItem } from '../engines/explainability/trainingExplainability';
+import { buildTodayExplanationItems, buildTrainingLevelExplanation, formatExplanationItem } from '../engines/explainability/trainingExplainability';
 import { formatExplanationEvidence } from '../engines/explainability/evidenceExplainability';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../engines/e1rmEngine';
+import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
@@ -53,6 +54,7 @@ export function TodayView({
   const adjustedPlan = applyStatusRules(selectedTemplate, data.todayStatus, trainingMode, weeklyPrescription, data.history, data.screeningProfile, data.mesocyclePlan);
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
+  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: analyticsHistory });
   const supportPlan = buildSupportPlan(data, selectedTemplate);
   const projectedWeekly = buildWeeklyPrescription(data, { date: todayKey(), exercises: adjustedExercises });
   const deloadSignal = buildDeloadSignal(data);
@@ -100,6 +102,9 @@ export function TodayView({
                   准备度 {adjustedPlan.readinessResult?.score ?? '--'} / 100
                 </StatusBadge>
                 <StatusBadge tone={deloadSignal.triggered ? 'rose' : 'slate'}>{deloadSignal.triggered ? '建议减量' : '正常推进'}</StatusBadge>
+                <StatusBadge tone={trainingLevelAssessment.level === 'unknown' ? 'amber' : trainingLevelAssessment.confidence === 'high' ? 'emerald' : 'sky'}>
+                  {formatAutoTrainingLevel(trainingLevelAssessment.level)}
+                </StatusBadge>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-sm md:min-w-80">
@@ -107,6 +112,14 @@ export function TodayView({
               <Stat label="预计时长" value={`${adjustedPlan.duration} 分钟`} tone="emerald" />
               <Stat label="动作数" value={adjustedExercises.length} />
             </div>
+          </div>
+
+          <div className="mb-3">
+            <InlineNotice tone={trainingLevelAssessment.level === 'unknown' ? 'amber' : 'sky'} title={trainingLevelAssessment.level === 'unknown' ? '正在建立训练基线' : '自动等级'}>
+              {trainingLevelAssessment.level === 'unknown'
+                ? '尚未建立训练基线。当前展示的是起始模板，不是基于你的历史数据生成的；完成 2–3 次训练后，系统会开始估算当前力量、有效组和训练等级。'
+                : buildTrainingLevelExplanation(trainingLevelAssessment)}
+            </InlineNotice>
           </div>
 
           <div className="mb-3 grid gap-2 md:grid-cols-[1fr_auto] md:items-center">

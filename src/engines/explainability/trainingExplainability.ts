@@ -20,6 +20,7 @@ import type {
   WeeklyPrescription,
 } from '../../models/training-model';
 import { completedSets, number } from '../engineUtils';
+import { formatAutoTrainingLevel, type TrainingLevelAssessment } from '../trainingLevelEngine';
 
 type ReadinessSummary = {
   level: 'green' | 'yellow' | 'red';
@@ -576,3 +577,35 @@ export const buildSessionSummaryExplanations = ({ session, adherenceReport, adhe
   return lines.map(sanitizeCopy).slice(0, 5);
 };
 
+export const buildTrainingLevelExplanation = (assessment: TrainingLevelAssessment) => {
+  if (assessment.level === 'unknown') {
+    return buildTemplate(
+      '系统正在建立训练基线',
+      '当前真实训练记录不足，不能把新用户直接当作新手，也不能伪造 PR 或 e1RM',
+      '继续完成 2–3 次训练后，系统会开始估算当前力量、有效组和训练等级'
+    );
+  }
+
+  const hasTechniqueOrPainLimit = assessment.limitations.some((item) => item.includes('动作质量') || item.includes('不适') || item.includes('poor'));
+  if (hasTechniqueOrPainLimit) {
+    return buildTemplate(
+      `当前自动等级为${formatAutoTrainingLevel(assessment.level)}`,
+      '虽然部分表现信号较好，但动作质量或不适信号会限制高级推荐',
+      '本次继续采用保守训练决策，不因单次大重量直接升级'
+    );
+  }
+
+  if (assessment.readinessForAdvancedFeatures.topBackoff || assessment.readinessForAdvancedFeatures.higherVolume) {
+    return buildTemplate(
+      `当前自动等级为${formatAutoTrainingLevel(assessment.level)}`,
+      '近期记录较稳定，完成度和有效组质量支持更完整的训练处方',
+      '系统会逐步启用更完整的负荷建议，但仍受动作质量和不适信号约束'
+    );
+  }
+
+  return buildTemplate(
+    `当前自动等级为${formatAutoTrainingLevel(assessment.level)}`,
+    '等级判断仍在积累证据，置信度还不高',
+    '继续记录重量、次数、RIR、动作质量和不适信号'
+  );
+};

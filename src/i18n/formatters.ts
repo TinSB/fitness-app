@@ -144,6 +144,35 @@ export const formatEvidenceConfidence = (value: unknown) =>
     } as const
   )[value as string] ?? fallback(value);
 
+export const formatEvidenceTier = (value: unknown) =>
+  (
+    {
+      A: '直接权威依据',
+      B: '研究支持规则',
+      C: '产品化辅助规则',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatEvidenceImplementationType = (value: unknown) =>
+  (
+    {
+      direct_guideline: '指南直接支持',
+      research_supported: '研究支持',
+      product_heuristic: '产品化估算',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatAuthorityLevel = (value: unknown) =>
+  (
+    {
+      highest: '最高权威',
+      high: '高权威',
+      professional_standard: '专业标准',
+      contextual: '背景参考',
+      market_only: '行业市场参考',
+    } as const
+  )[value as string] ?? fallback(value);
+
 export const formatDeloadLevel = (value: unknown) => DELOAD_LEVEL_LABELS[value as keyof typeof DELOAD_LEVEL_LABELS] ?? fallback(value);
 
 export const formatWeeklyActionPriority = (value: unknown) =>
