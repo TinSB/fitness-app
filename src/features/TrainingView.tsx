@@ -38,6 +38,11 @@ interface TrainingViewProps {
   onCompleteSet: (exerciseIndex: number, advanceExercise?: boolean) => void;
   onCopyPrevious: (exerciseIndex: number) => void;
   onAdjustSet: (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => void;
+  onApplySuggestion: (exerciseIndex: number) => void;
+  onUpdateActualDraft: (
+    exerciseIndex: number,
+    updates: { actualWeightKg?: number; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
+  ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
@@ -129,6 +134,8 @@ export function TrainingView({
   onCompleteSet,
   onCopyPrevious,
   onAdjustSet,
+  onApplySuggestion,
+  onUpdateActualDraft,
   onSwitchExercise,
   onCompleteSupportSet,
   onSkipSupportExercise,
@@ -756,6 +763,8 @@ export function TrainingView({
                       onCompleteSet={onCompleteSet}
                       onCopyPrevious={onCopyPrevious}
                       onAdjustSet={onAdjustSet}
+                      onApplySuggestion={onApplySuggestion}
+                      onUpdateActualDraft={onUpdateActualDraft}
                       onSwitchExercise={onSwitchExercise}
                       onReplaceExercise={onReplaceExercise}
                       onLoadFeedback={onLoadFeedback}

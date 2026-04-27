@@ -14,11 +14,14 @@ import {
 import { reconcileScreeningProfile } from './engines/adaptiveFeedbackEngine';
 import { normalizeTemplateExerciseInput } from './engines/exercisePrescriptionEngine';
 import {
+  applySuggestedFocusStep,
   adjustFocusSetValue,
   completeFocusSet,
+  copyPreviousFocusActualDraft,
   getCurrentSetIndex,
   getNextIncompleteSetInExercise,
   switchFocusExercise,
+  updateFocusActualDraft,
 } from './engines/focusModeStateEngine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
@@ -254,17 +257,9 @@ function App() {
   };
 
   const copyPreviousSet = (exerciseIndex: number) => {
-    const session = data.activeSession;
-    if (!session) return;
-    const sets = getSetList(session, exerciseIndex);
-    const setIndex = getCurrentSetIndex(session, exerciseIndex);
-    if (setIndex <= 0) return;
-    const previous = sets[setIndex - 1];
-    updateActiveSetFields(exerciseIndex, setIndex, {
-      weight: previous.weight,
-      reps: previous.reps,
-      rpe: previous.rpe,
-      rir: previous.rir,
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return { ...current, activeSession: copyPreviousFocusActualDraft(current.activeSession, exerciseIndex) };
     });
   };
 
@@ -272,6 +267,23 @@ function App() {
     setData((current) => {
       if (!current.activeSession) return current;
       return { ...current, activeSession: adjustFocusSetValue(current.activeSession, exerciseIndex, field, delta) };
+    });
+  };
+
+  const applyFocusSuggestion = (exerciseIndex: number) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return { ...current, activeSession: applySuggestedFocusStep(current.activeSession, exerciseIndex) };
+    });
+  };
+
+  const updateFocusDraft = (
+    exerciseIndex: number,
+    updates: Parameters<typeof updateFocusActualDraft>[2]
+  ) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return { ...current, activeSession: updateFocusActualDraft(current.activeSession, exerciseIndex, updates) };
     });
   };
 
@@ -652,6 +664,8 @@ function App() {
                       onCompleteSet={completeSet}
                       onCopyPrevious={copyPreviousSet}
                       onAdjustSet={adjustCurrentSet}
+                      onApplySuggestion={applyFocusSuggestion}
+                      onUpdateActualDraft={updateFocusDraft}
                       onSwitchExercise={switchActiveExercise}
                       onReplaceExercise={replaceExercise}
                       onLoadFeedback={recordLoadFeedback}
@@ -675,6 +689,8 @@ function App() {
                       onCompleteSet={completeSet}
                       onCopyPrevious={copyPreviousSet}
                       onAdjustSet={adjustCurrentSet}
+                      onApplySuggestion={applyFocusSuggestion}
+                      onUpdateActualDraft={updateFocusDraft}
                       onSwitchExercise={switchActiveExercise}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}

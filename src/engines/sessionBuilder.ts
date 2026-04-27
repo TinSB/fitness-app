@@ -160,7 +160,13 @@ export const createSession = (
     exercises,
     currentExerciseId: exercises[0]?.id,
     currentSetIndex: 0,
+    currentFocusStepId: exercises[0]?.warmupSets?.length ? `${exercises[0].id}:warmup:0` : `${exercises[0]?.id}:working:0`,
+    currentFocusStepType: exercises[0]?.warmupSets?.length ? 'warmup' : 'working',
     focusSessionComplete: false,
+    focusActualSetDrafts: [],
+    focusCompletedStepIds: [],
+    focusSkippedStepIds: [],
+    focusWarmupSetLogs: [],
     deloadDecision: adjustedPlan.deloadDecision,
     explanations,
   };

@@ -5,7 +5,6 @@ import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusMod
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { formatBlockType, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog } from '../models/training-model';
-import { Term } from '../ui/Term';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
@@ -19,6 +18,11 @@ interface TrainingFocusViewProps {
   onCompleteSet: (exerciseIndex: number, advanceExercise?: boolean) => void;
   onCopyPrevious: (exerciseIndex: number) => void;
   onAdjustSet: (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => void;
+  onApplySuggestion: (exerciseIndex: number) => void;
+  onUpdateActualDraft: (
+    exerciseIndex: number,
+    updates: { actualWeightKg?: number; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
+  ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
   onReplaceExercise: (exerciseIndex: number) => void;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
@@ -63,6 +67,8 @@ export function TrainingFocusView({
   onCompleteSet,
   onCopyPrevious,
   onAdjustSet,
+  onApplySuggestion,
+  onUpdateActualDraft,
   onSwitchExercise,
   onReplaceExercise,
   onLoadFeedback,
@@ -80,6 +86,8 @@ export function TrainingFocusView({
   const mainSets = mainExercise ? getSets(mainExercise) : [];
   const mainSetIndex = focusState.currentSetIndex;
   const mainSet = focusState.currentSet;
+  const currentStep = focusState.currentStep;
+  const actualDraft = focusState.actualDraft;
   const sessionComplete = focusState.sessionComplete || Boolean(session.focusSessionComplete);
   const remainingSec = getRestTimerRemainingSec(restTimer);
   const mainExercisePoolId = mainExercise?.canonicalExerciseId || mainExercise?.baseId || mainExercise?.id || '';
@@ -101,9 +109,12 @@ export function TrainingFocusView({
     3
   );
 
-  const supportLog = !mainExercise && !sessionComplete
-    ? (session.supportExerciseLogs || []).find((log) => number(log.completedSets) < number(log.plannedSets))
-    : null;
+  const [supportModuleId, supportExerciseId] = currentStep.stepType === 'support' ? currentStep.exerciseId.split('::') : ['', ''];
+  const supportLog = currentStep.stepType === 'support'
+    ? (session.supportExerciseLogs || []).find((log) => log.moduleId === supportModuleId && log.exerciseId === supportExerciseId) || null
+    : !mainExercise && !sessionComplete
+      ? (session.supportExerciseLogs || []).find((log) => number(log.completedSets) < number(log.plannedSets))
+      : null;
   const supportBlock =
     supportLog?.blockType === 'correction'
       ? session.correctionBlock?.find((block) => block.id === supportLog.moduleId)
@@ -111,9 +122,32 @@ export function TrainingFocusView({
         ? session.functionalBlock?.find((block) => block.id === supportLog.moduleId)
         : undefined;
   const supportExercise = supportBlock?.exercises.find((exercise) => exercise.exerciseId === supportLog?.exerciseId);
-  const blockType: FocusBlockType = mainExercise ? 'main' : supportLog?.blockType || 'main';
+  const blockType: FocusBlockType = currentStep.stepType === 'support' ? supportLog?.blockType || 'functional' : mainExercise ? 'main' : supportLog?.blockType || 'main';
+  const stageLabel =
+    currentStep.stepType === 'warmup'
+      ? '热身组'
+      : currentStep.stepType === 'working'
+        ? '正式组'
+        : currentStep.stepType === 'support'
+          ? '支持动作'
+          : '完成';
+  const plannedSummary =
+    currentStep.stepType === 'support'
+      ? supportExercise
+        ? `${supportExercise.name || supportLog?.exerciseName || '支持动作'} / ${supportExercise.sets || supportLog?.plannedSets || currentStep.totalSetsForStepType} 组`
+        : '按支持动作计划完成'
+      : `${number(currentStep.plannedWeight)}kg × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
+  const actualWeight = actualDraft?.actualWeightKg;
+  const actualReps = actualDraft?.actualReps;
+  const actualSummary = `${actualWeight === undefined ? '待输入' : `${number(actualWeight)}kg`} / ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}`;
 
   const notify = (message: string) => setFeedback(message);
+
+  React.useEffect(() => {
+    if (!feedback) return undefined;
+    const timer = window.setTimeout(() => setFeedback(''), 2500);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
 
   const switchExercise = (index: number) => {
     const exercise = session.exercises[index];
@@ -135,7 +169,7 @@ export function TrainingFocusView({
   const togglePainFlag = () => {
     if (mainIndex < 0 || mainSetIndex < 0) return;
     const next = !mainSet?.painFlag;
-    onSetChange(mainIndex, mainSetIndex, 'painFlag', next);
+    onUpdateActualDraft(mainIndex, { painFlag: next });
     notify(next ? '已标记不适' : '已取消不适标记');
   };
 
@@ -154,8 +188,18 @@ export function TrainingFocusView({
       notify('训练已完成');
       return;
     }
+    if (currentStep.stepType === 'support' && supportLog) {
+      onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId);
+      notify('已完成支持动作');
+      return;
+    }
     if (mainIndex < 0 || mainSetIndex < 0) return;
+    if (number(actualDraft?.actualWeightKg) <= 0 && number(actualDraft?.actualReps) <= 0) {
+      notify('请先记录重量/次数，或点套用建议');
+      return;
+    }
     onCompleteSet(mainIndex);
+    notify(currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组');
   };
 
   if (sessionComplete) {
@@ -184,11 +228,30 @@ export function TrainingFocusView({
           <button type="button" onClick={onFinish} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
             查看训练总结
           </button>
-          <button type="button" onClick={() => switchExercise(0)} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
+          <button type="button" onClick={() => setShowExercisePicker((current) => !current)} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
             返回查看动作
           </button>
         </div>
         </section>
+        {showExercisePicker ? (
+          <section className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="mb-2 text-xs font-black text-slate-500">已完成动作</div>
+            <div className="space-y-2">
+              {session.exercises.map((exercise, index) => {
+                const sets = getSets(exercise);
+                const done = sets.filter((set) => set.done).length;
+                return (
+                  <div key={`${exercise.id}-completed-${index}`} className="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-3">
+                    <span className="font-black text-slate-900">{exercise.alias || exercise.name}</span>
+                    <span className="text-sm font-black text-slate-600">
+                      {done}/{sets.length}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
       </div>
     );
   }
@@ -198,12 +261,10 @@ export function TrainingFocusView({
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-black uppercase text-emerald-700">{blockLabel(blockType)}</div>
+            <div className="text-xs font-black uppercase text-emerald-700">{blockLabel(blockType)} / {stageLabel}</div>
             <h2 className="mt-1 text-3xl font-black leading-tight text-slate-950">{mainExercise?.alias || mainExercise?.name || supportLog?.exerciseName || supportExercise?.name}</h2>
             <div className="mt-2 text-sm font-bold text-slate-500">
-              {mainExercise
-                ? `第 ${Math.max(0, mainSetIndex) + 1} / ${mainSets.length} 组`
-                : `第 ${number(supportLog?.completedSets) + 1} / ${number(supportLog?.plannedSets)} 组`}
+              {currentStep.label}
             </div>
           </div>
           <div className={classNames('rounded-lg px-3 py-2 text-right', remainingSec > 0 ? 'bg-slate-950 text-white' : 'bg-stone-100 text-slate-700')}>
@@ -220,30 +281,30 @@ export function TrainingFocusView({
         <>
           <section className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="text-xs font-bold text-slate-500">当前组</div>
-              <div className="mt-2 text-2xl font-black text-slate-950">{number(mainSet?.weight)}kg</div>
-              <div className="mt-1 text-base font-bold text-slate-700">
-                {number(mainSet?.reps)} 次 / {mainExercise.targetRirText || <Term id="rir" label="RIR 1-2" compact />}
-              </div>
+              <div className="text-xs font-bold text-slate-500">建议</div>
+              <div className="mt-2 text-xl font-black text-slate-950">{plannedSummary}</div>
+              <button type="button" onClick={() => { onApplySuggestion(mainIndex); notify('已套用建议重量和次数'); }} className="mt-3 h-9 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-black text-emerald-800">
+                套用建议
+              </button>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="text-xs font-bold text-slate-500">上次记录</div>
-              <div className="mt-2 text-base font-black leading-6 text-slate-950">{mainExercise.lastSummary || '暂无记录'}</div>
-              <div className="mt-1 text-sm font-bold text-emerald-700">{mainExercise.suggestion || '维持推进'}</div>
+              <div className="text-xs font-bold text-slate-500">实际记录</div>
+              <div className="mt-2 text-xl font-black text-slate-950">{actualSummary}</div>
+              <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上次记录'}</div>
             </div>
           </section>
 
           <section className="grid grid-cols-4 gap-2">
-            <button type="button" aria-label="重量减少 2.5kg" onClick={() => onAdjustSet(mainIndex, 'weight', -2.5)} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
+            <button type="button" aria-label="重量减少 2.5kg" onClick={() => { onAdjustSet(mainIndex, 'weight', -2.5); notify('已调整重量'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
               -2.5
             </button>
-            <button type="button" aria-label="重量增加 2.5kg" onClick={() => onAdjustSet(mainIndex, 'weight', 2.5)} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
+            <button type="button" aria-label="重量增加 2.5kg" onClick={() => { onAdjustSet(mainIndex, 'weight', 2.5); notify('已调整重量'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
               +2.5
             </button>
-            <button type="button" aria-label="次数减少 1 次" onClick={() => onAdjustSet(mainIndex, 'reps', -1)} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
+            <button type="button" aria-label="次数减少 1 次" onClick={() => { onAdjustSet(mainIndex, 'reps', -1); notify('已调整次数'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
               -1
             </button>
-            <button type="button" aria-label="次数增加 1 次" onClick={() => onAdjustSet(mainIndex, 'reps', 1)} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
+            <button type="button" aria-label="次数增加 1 次" onClick={() => { onAdjustSet(mainIndex, 'reps', 1); notify('已调整次数'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
               +1
             </button>
           </section>
@@ -290,11 +351,12 @@ export function TrainingFocusView({
             <div className="mb-2 text-xs font-black text-slate-500">动作质量</div>
             <div className="grid grid-cols-3 gap-2">
               {qualityOptions.map((option) => {
-                const selected = (mainSet?.techniqueQuality || 'acceptable') === option.value;
+                const selected = (actualDraft?.techniqueQuality || 'acceptable') === option.value;
                 return (
                   <button
                     key={option.value}
-                    onClick={() => mainSetIndex >= 0 && onSetChange(mainIndex, mainSetIndex, 'techniqueQuality', option.value)}
+                    type="button"
+                    onClick={() => mainSetIndex >= 0 && onUpdateActualDraft(mainIndex, { techniqueQuality: option.value })}
                     className={classNames(
                       'h-12 rounded-lg border text-sm font-black',
                       selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600'
@@ -316,7 +378,7 @@ export function TrainingFocusView({
 
           {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-black text-emerald-900">{feedback}</div> : null}
 
-          {completedMainSets > 0 && mainExercisePoolId ? (
+          {currentStep.stepType === 'working' && completedMainSets > 0 && mainExercisePoolId ? (
             <section className="rounded-lg border border-slate-200 bg-white p-3">
               <div className="mb-2 text-xs font-black text-slate-500">本次推荐重量感觉如何？</div>
               <div className="grid grid-cols-3 gap-2">
@@ -344,7 +406,7 @@ export function TrainingFocusView({
             <button
               type="button"
               onClick={completeCurrentSet}
-              disabled={mainSetIndex < 0 || !number(mainSet?.weight) || !number(mainSet?.reps)}
+              disabled={mainSetIndex < 0}
               className="h-16 rounded-lg bg-emerald-600 text-lg font-black text-white disabled:bg-slate-300"
             >
               完成一组
@@ -354,7 +416,7 @@ export function TrainingFocusView({
                 <Copy className="h-4 w-4" />
                 <span className="text-[11px] font-black">复制上组</span>
               </button>
-              <button type="button" aria-label="标记不适" onClick={togglePainFlag} className={classNames('grid h-16 place-items-center rounded-lg border px-1 text-slate-700', mainSet?.painFlag ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white')} title="标记不适">
+              <button type="button" aria-label="标记不适" onClick={togglePainFlag} className={classNames('grid h-16 place-items-center rounded-lg border px-1 text-slate-700', actualDraft?.painFlag ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white')} title="标记不适">
                 <span className="text-base font-black">!</span>
                 <span className="text-[11px] font-black">标记不适</span>
               </button>

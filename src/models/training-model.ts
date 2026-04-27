@@ -241,6 +241,20 @@ export interface TrainingSetLog {
   targetRir?: [number, number];
 }
 
+export type FocusStepType = 'warmup' | 'working' | 'support' | 'completed';
+
+export interface ActualSetDraft {
+  exerciseId: string;
+  stepId: string;
+  stepType: Exclude<FocusStepType, 'completed'>;
+  setIndex: number;
+  actualWeightKg?: number;
+  actualReps?: number;
+  actualRir?: number;
+  techniqueQuality?: TechniqueQuality;
+  painFlag?: boolean;
+}
+
 export interface ExerciseEquivalenceChain {
   id?: string;
   label: string;
@@ -510,7 +524,13 @@ export interface TrainingSession {
   restTimerState?: RestTimerState | null;
   currentExerciseId?: string;
   currentSetIndex?: number;
+  currentFocusStepId?: string;
+  currentFocusStepType?: FocusStepType;
   focusSessionComplete?: boolean;
+  focusActualSetDrafts?: ActualSetDraft[];
+  focusCompletedStepIds?: string[];
+  focusSkippedStepIds?: string[];
+  focusWarmupSetLogs?: TrainingSetLog[];
   deloadDecision?: DeloadDecision;
   explanations?: string[];
 }
