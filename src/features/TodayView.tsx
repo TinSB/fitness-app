@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, Flame, Play } from 'lucide-react';
 import { TRAINING_MODE_META } from '../data/trainingData';
 import { DEFINITIONS } from '../content/definitions';
-import { formatAdherenceConfidence, formatCyclePhase, formatEvidenceConfidence, formatIntensityBias } from '../i18n/formatters';
+import { formatAdherenceConfidence, formatCyclePhase, formatEvidenceConfidence, formatExerciseName, formatIntensityBias, formatReadinessLevel } from '../i18n/formatters';
 import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import { classNames, monthKey, resolveMode, sessionVolume, todayKey } from '../engines/engineUtils';
 import { applyStatusRules, buildSetPrescription, makeSuggestion } from '../engines/progressionEngine';
@@ -159,8 +159,8 @@ export function TodayView({
                 <div key={`${exercise.id}-${exercise.name}`} className="rounded-lg border border-slate-200 bg-stone-50 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-black text-slate-950">{exercise.alias || exercise.name}</h3>
-                      <div className="mt-1 text-xs font-bold text-slate-500">{exercise.name}</div>
+                      <h3 className="font-black text-slate-950">{formatExerciseName(exercise)}</h3>
+                      <div className="mt-1 text-xs font-bold text-slate-500">{formatExerciseName(exercise.baseId || exercise.id)}</div>
                     </div>
                     <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">
                       {(Array.isArray(exercise.sets) ? exercise.sets.length : exercise.sets) || 0} 组
@@ -198,7 +198,7 @@ export function TodayView({
                     {[
                       exercise.movementPattern || '动作模式',
                       `${Math.round(exercise.rest / 60)} 分钟休息`,
-                      `ROM：${exercise.romPriority || '标准'}`,
+                      `ROM：${formatReadinessLevel(exercise.romPriority || 'standard')}`,
                       `动作质量优先`,
                     ].map((tag) => (
                       <span key={tag} className="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-500">

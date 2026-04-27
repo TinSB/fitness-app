@@ -1,6 +1,5 @@
 ﻿import React from 'react';
 import { Activity, BarChart3, CalendarDays, Copy, Download, Save } from 'lucide-react';
-import { EXERCISE_DISPLAY_NAMES } from '../data/exerciseLibrary';
 import {
   CORE_TREND_EXERCISES,
   buildAdherenceReport,
@@ -454,10 +453,10 @@ export function ProgressView({
 
           {session.exercises.map((exercise) => (
             <div key={`${session.id}-${exercise.id}`} className="rounded-lg bg-stone-50 p-3">
-              <div className="font-black text-slate-950">{exercise.alias || exercise.name}</div>
+              <div className="font-black text-slate-950">{formatExerciseName(exercise)}</div>
               {exercise.replacedFromName ? (
                 <div className="mt-1 rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">
-                  原计划：{exercise.replacedFromName} / 实际执行：{exercise.alias || exercise.name}
+                  原计划：{formatExerciseName(exercise.originalExerciseId || exercise.replacedFromId || exercise.replacedFromName)} / 实际执行：{formatExerciseName(exercise)}
                 </div>
               ) : null}
               <div className="mt-2 space-y-1 text-sm font-bold text-slate-700">
@@ -950,7 +949,7 @@ export function ProgressView({
               <div className="grid gap-2 md:grid-cols-2">
                 {volumeActionTargets.slice(0, 6).map(({ action, exerciseId }) => (
                   <div key={`${action.id}-${exerciseId}`} className="rounded-lg bg-stone-50 p-3">
-                    <div className="font-black text-slate-950">{EXERCISE_DISPLAY_NAMES[exerciseId] || exerciseId}</div>
+                    <div className="font-black text-slate-950">{formatExerciseName(exerciseId)}</div>
                     <div className="mt-1 text-sm font-bold leading-6 text-slate-600">{action.recommendation}</div>
                   </div>
                 ))}
@@ -1537,7 +1536,7 @@ export function ProgressView({
                       <div className="mt-2 space-y-1">
                         {session.exercises.map((exercise) => (
                           <div key={`${session.id}-${exercise.id}`} className="rounded-md bg-white px-3 py-2">
-                            <div className="font-black text-slate-900">{exercise.alias || exercise.name}</div>
+                            <div className="font-black text-slate-900">{formatExerciseName(exercise)}</div>
                             <div className="text-xs font-bold text-slate-500">
                               {Array.isArray(exercise.sets)
                                 ? exercise.sets

@@ -1,5 +1,11 @@
 import type { ExerciseEquivalenceChain, ExerciseTemplate } from '../models/training-model';
 
+export type ExerciseName = {
+  zh: string;
+  en?: string;
+  aliases?: string[];
+};
+
 export const EXERCISE_DISPLAY_NAMES: Record<string, string> = {
   'bench-press': '平板卧推',
   'db-bench-press': '哑铃卧推',
@@ -34,6 +40,113 @@ export const EXERCISE_DISPLAY_NAMES: Record<string, string> = {
   'hip-thrust': '臀推',
   'leg-extension': '腿屈伸',
   'landmine-press': '地雷管推举',
+};
+
+export const EXERCISE_ENGLISH_NAMES: Record<string, string> = {
+  'bench-press': 'Barbell Bench Press',
+  'db-bench-press': 'Dumbbell Bench Press',
+  'incline-db-press': 'Incline Dumbbell Press',
+  'machine-chest-press': 'Machine Chest Press',
+  'cable-fly': 'Cable Fly',
+  'lateral-raise': 'Dumbbell Lateral Raise',
+  'triceps-pushdown': 'Triceps Pushdown',
+  'close-grip-bench': 'Close-Grip Bench Press',
+  'lat-pulldown': 'Lat Pulldown',
+  'seated-row': 'Seated Row',
+  'barbell-row': 'Barbell Row',
+  'one-arm-db-row': 'One-Arm Dumbbell Row',
+  'face-pull': 'Face Pull',
+  'db-curl': 'Dumbbell Curl',
+  'hammer-curl': 'Hammer Curl',
+  'preacher-curl': 'Preacher Curl',
+  squat: 'Back Squat',
+  'hack-squat': 'Hack Squat',
+  'goblet-squat': 'Goblet Squat',
+  'leg-press': 'Leg Press',
+  'romanian-deadlift': 'Romanian Deadlift',
+  'db-rdl': 'Dumbbell Romanian Deadlift',
+  'leg-curl': 'Leg Curl',
+  'calf-raise': 'Calf Raise',
+  'shoulder-press': 'Dumbbell Shoulder Press',
+  'machine-shoulder-press': 'Machine Shoulder Press',
+  'push-up': 'Push-Up',
+  'pull-up': 'Pull-Up',
+  'assisted-pull-up': 'Assisted Pull-Up',
+  deadlift: 'Deadlift',
+  'hip-thrust': 'Hip Thrust',
+  'leg-extension': 'Leg Extension',
+  'landmine-press': 'Landmine Press',
+};
+
+export const EXERCISE_ALIASES: Record<string, string[]> = {
+  'bench-press': ['卧推', '平板杠铃卧推', 'Barbell Bench Press'],
+  'db-bench-press': ['平板哑铃卧推', 'Dumbbell Bench Press'],
+  'machine-chest-press': ['胸推机', '坐姿胸推机', 'Machine Chest Press'],
+  'incline-db-press': ['上斜哑铃推胸', 'Incline Dumbbell Press'],
+};
+
+const hasChineseText = (value: unknown): value is string => typeof value === 'string' && /[\u3400-\u9fff]/.test(value);
+
+const warnMissingChineseName = (id: string) => {
+  if (typeof console !== 'undefined' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    console.warn(`[IronPath] 动作缺少中文名称：${id}`);
+  }
+};
+
+export const getExerciseNameEntry = (id: string): ExerciseName => ({
+  zh: EXERCISE_DISPLAY_NAMES[id] || '',
+  en: EXERCISE_ENGLISH_NAMES[id],
+  aliases: EXERCISE_ALIASES[id],
+});
+
+export const formatExerciseDisplayName = (
+  value: unknown,
+  options: { bilingual?: boolean; fallback?: string } = {}
+): string => {
+  const fallback = options.fallback || '未命名动作';
+  if (typeof value === 'string' && hasChineseText(value)) return value;
+  const id =
+    typeof value === 'string'
+      ? value
+      : value && typeof value === 'object'
+        ? String(
+            (value as { actualExerciseId?: unknown }).actualExerciseId ||
+              (value as { replacementExerciseId?: unknown }).replacementExerciseId ||
+              (value as { canonicalExerciseId?: unknown }).canonicalExerciseId ||
+              (value as { id?: unknown }).id ||
+              ''
+          )
+        : '';
+
+  if (id) {
+    const entry = getExerciseNameEntry(id);
+    if (entry.zh) return options.bilingual && entry.en ? `${entry.zh}（${entry.en}）` : entry.zh;
+  }
+
+  if (value && typeof value === 'object') {
+    const rawNameObject = (value as { name?: unknown }).name;
+    const nameZh =
+      typeof (value as { nameZh?: unknown }).nameZh === 'string'
+        ? (value as { nameZh: string }).nameZh
+        : rawNameObject && typeof rawNameObject === 'object' && typeof (rawNameObject as { zh?: unknown }).zh === 'string'
+          ? (rawNameObject as { zh: string }).zh
+          : '';
+    const alias = (value as { alias?: unknown }).alias;
+    const name = typeof rawNameObject === 'string' ? rawNameObject : '';
+    const zh = nameZh || (hasChineseText(alias) ? alias : '') || (hasChineseText(name) ? name : '');
+    const en =
+      typeof (value as { nameEn?: unknown }).nameEn === 'string'
+        ? (value as { nameEn: string }).nameEn
+        : rawNameObject && typeof rawNameObject === 'object' && typeof (rawNameObject as { en?: unknown }).en === 'string'
+          ? (rawNameObject as { en: string }).en
+          : !hasChineseText(name)
+            ? name
+            : undefined;
+    if (zh) return options.bilingual && en && en !== zh ? `${zh}（${en}）` : zh;
+  }
+
+  if (id) warnMissingChineseName(id);
+  return fallback;
 };
 
 const chain = (id: string, label: string, primaryMuscle: string, pattern: string, members: string[]): ExerciseEquivalenceChain => ({

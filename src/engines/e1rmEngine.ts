@@ -25,8 +25,13 @@ const epley = (weightKg: number, reps: number) => weightKg * (1 + reps / 30);
 
 const isWorkSet = (set: TrainingSetLog) => set.type !== 'warmup' && number(set.weight) > 0 && number(set.reps) > 0 && Boolean(set.done);
 
-export const getExerciseRecordPoolId = (exercise: Pick<TrainingSession['exercises'][number], 'id' | 'baseId' | 'replacedFromId'> & { canonicalExerciseId?: string }) =>
-  exercise.canonicalExerciseId || (exercise.replacedFromId ? exercise.id : exercise.baseId || exercise.id);
+export const getExerciseRecordPoolId = (
+  exercise: Pick<TrainingSession['exercises'][number], 'id' | 'baseId' | 'replacedFromId'> & {
+    actualExerciseId?: string;
+    replacementExerciseId?: string;
+    canonicalExerciseId?: string;
+  }
+) => exercise.actualExerciseId || exercise.replacementExerciseId || exercise.canonicalExerciseId || (exercise.replacedFromId ? exercise.id : exercise.baseId || exercise.id);
 
 const matchesExercise = (exercise: TrainingSession['exercises'][number], exerciseId: string) => getExerciseRecordPoolId(exercise) === exerciseId || exercise.id === exerciseId;
 

@@ -19,5 +19,7 @@ describe('TrainingFocusView replacement UI', () => {
 
   it('shows the PR and e1RM independence note in the picker', () => {
     expect(source).toContain('PR / e1RM 独立统计');
+    expect(source).toContain('fatigueCostLabel');
+    expect(source).toContain('已替换为：');
   });
 });

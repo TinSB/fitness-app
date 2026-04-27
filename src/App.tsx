@@ -308,6 +308,7 @@ function App() {
       exercise.warning = nextIndex === 0 ? warningParts.join(' / ') : [...warningParts, replacementNotice].join(' / ');
       return { ...current, activeSession: switchFocusExercise(session, exerciseIndex) };
     });
+    setExpandedExercise(exerciseIndex);
   };
 
   const switchActiveExercise = (exerciseIndex: number) => {

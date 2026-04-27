@@ -3,15 +3,22 @@ import {
   formatAdherenceConfidence,
   formatBlockType,
   formatComplexityLevel,
+  formatConfidence,
   formatCyclePhase,
+  formatDataFlag,
+  formatExerciseName,
+  formatFatigueCost,
   formatGoal,
   formatIntensityBias,
   formatPainAction,
+  formatReplacementCategory,
+  formatRiskLevel,
   formatSkippedReason,
   formatSplitType,
   formatSupportDoseAdjustment,
   formatTechniqueQuality,
   formatTrainingAdjustment,
+  formatWarmupPolicy,
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
 } from '../src/i18n/formatters';
@@ -46,5 +53,29 @@ describe('i18n formatters', () => {
     expect(formatWeeklyActionPriority('high')).toContain('优先级');
     expect(formatWeeklyActionCategory('load_feedback')).toContain('重量');
     expect(formatWeeklyActionCategory('volume')).not.toBe('volume');
+  });
+
+  it('formats replacement and status labels without exposing raw English enums', () => {
+    const labels = [
+      formatFatigueCost('high'),
+      formatFatigueCost('medium'),
+      formatFatigueCost('low'),
+      formatConfidence('medium'),
+      formatReplacementCategory('optional'),
+      formatWarmupPolicy('skipped_by_policy'),
+      formatDataFlag('test'),
+      formatRiskLevel('high'),
+    ];
+
+    labels.forEach((label) => {
+      expect(label).not.toMatch(/\b(high|medium|low|optional|skipped_by_policy|test)\b/);
+      expect(label).not.toMatch(/undefined|null/);
+    });
+  });
+
+  it('formats exercise names as Chinese by default and never falls back to pure English ids', () => {
+    expect(formatExerciseName('bench-press')).toBe('平板卧推');
+    expect(formatExerciseName({ id: 'db-bench-press', name: 'Dumbbell Bench Press' })).toBe('哑铃卧推');
+    expect(formatExerciseName('Unknown English Exercise')).toBe('未知动作');
   });
 });

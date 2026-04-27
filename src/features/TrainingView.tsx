@@ -6,7 +6,7 @@ import { buildSessionExplanations } from '../engines/explainability/trainingExpl
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { formatWeight } from '../engines/unitConversionEngine';
-import { formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
+import { formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type {
   CorrectionModule,
   ExercisePrescription,
@@ -199,7 +199,7 @@ export function TrainingView({
       .filter((set) => set.note)
       .map((set) => ({
         key: `${exercise.id}-${set.id}-note`,
-        exercise: exercise.alias || exercise.name,
+        exercise: formatExerciseName(exercise),
         note: set.note || '',
       }))
   );
@@ -309,7 +309,7 @@ export function TrainingView({
         <button onClick={() => setExpandedExercise(active ? -1 : exerciseIndex)} className="flex w-full items-center justify-between gap-3 p-4 text-left">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-lg font-black text-slate-950">{exercise.alias || exercise.name}</h2>
+              <h2 className="truncate text-lg font-black text-slate-950">{formatExerciseName(exercise)}</h2>
               {exercise.autoReplaced ? <span className="rounded-md bg-amber-100 px-2 py-1 text-[11px] font-black text-amber-800">自动替代</span> : null}
               {allDone ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : null}
             </div>
@@ -564,7 +564,7 @@ export function TrainingView({
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="text-xs font-black uppercase tracking-widest text-emerald-700">极简训练模式</div>
-              <h2 className="mt-1 text-3xl font-black text-slate-950">{focusExercise.alias || focusExercise.name}</h2>
+              <h2 className="mt-1 text-3xl font-black text-slate-950">{formatExerciseName(focusExercise)}</h2>
               <div className="mt-2 text-sm font-bold text-slate-500">
                 第 {Math.min(focusSetIndex + 1, focusSets.length)} / {focusSets.length} 组
               </div>
@@ -710,7 +710,7 @@ export function TrainingView({
                   )}
                 >
                   <div>
-                    <div className="font-black text-slate-900">{(exercise as LoggedExercise).alias || exercise.name}</div>
+                    <div className="font-black text-slate-900">{formatExerciseName(exercise)}</div>
                     <div className="text-xs font-bold text-slate-500">{(exercise as LoggedExercise).targetSummary || (exercise as LoggedExercise).lastSummary}</div>
                   </div>
                   <div className="text-sm font-black text-slate-700">

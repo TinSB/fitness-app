@@ -1,4 +1,4 @@
-import { EXERCISE_DISPLAY_NAMES } from '../data/trainingData';
+import { formatExerciseDisplayName } from '../data/trainingData';
 import {
   DELOAD_LEVEL_LABELS,
   INTENSITY_BIAS_LABELS,
@@ -74,8 +74,69 @@ export const formatReadinessLevel = (value: unknown) =>
   (
     {
       low: '低',
-      medium: '中',
+      medium: '中等',
       high: '高',
+      standard: '标准',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatConfidence = (value: unknown) =>
+  (
+    {
+      low: '低',
+      medium: '中等',
+      moderate: '中等',
+      high: '高',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatFatigueCost = (value: unknown) =>
+  (
+    {
+      low: '低',
+      medium: '中等',
+      high: '高',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatPriority = (value: unknown) =>
+  (
+    {
+      priority: '优先',
+      primary: '优先',
+      high: '高优先级',
+      medium: '中优先级',
+      low: '低优先级',
+      secondary: '次选',
+      optional: '可选',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatReplacementCategory = (value: unknown) =>
+  (
+    {
+      priority: '优先',
+      optional: '可选',
+      angle: '角度变化',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatWarmupPolicy = (value: unknown) =>
+  (
+    {
+      required: '需要热身',
+      optional: '可选热身',
+      skipped_by_policy: '按策略跳过',
+      none: '无热身',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatDataFlag = (value: unknown) =>
+  (
+    {
+      normal: '正常数据',
+      test: '测试数据',
+      excluded: '排除数据',
     } as const
   )[value as string] ?? fallback(value);
 
@@ -86,9 +147,9 @@ export const formatAdherenceConfidence = (value: unknown) =>
   (
     {
       low: '低',
-      medium: '中',
+      medium: '中等',
       high: '高',
-      moderate: '中',
+      moderate: '中等',
     } as const
   )[value as string] ?? fallback(value);
 
@@ -219,15 +280,7 @@ export const formatDayTemplateName = (value: unknown, fallbackLabel = '未指定
 };
 
 export const formatExerciseName = (value: unknown, fallbackLabel = '未知动作') => {
-  if (typeof value === 'object' && value) {
-    const alias = typeof (value as { alias?: unknown }).alias === 'string' ? (value as { alias: string }).alias : '';
-    const name = typeof (value as { name?: unknown }).name === 'string' ? (value as { name: string }).name : '';
-    return alias || name || fallbackLabel;
-  }
-  if (typeof value === 'string' && value.trim()) {
-    return EXERCISE_DISPLAY_NAMES[value] || humanizeId(value) || fallbackLabel;
-  }
-  return fallbackLabel;
+  return formatExerciseDisplayName(value, { fallback: fallbackLabel });
 };
 
 export const formatAdjustmentChangeLabel = (value: unknown) =>
@@ -251,6 +304,8 @@ export const formatAdjustmentRiskLevel = (value: unknown) =>
       high: '高风险',
     } as const
   )[value as string] ?? '需人工复核';
+
+export const formatRiskLevel = formatAdjustmentRiskLevel;
 
 export const formatAdjustmentReviewStatus = (value: unknown) =>
   (

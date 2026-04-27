@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildPrs } from '../src/engines/analytics';
 import { applyExerciseReplacement, buildReplacementOptions } from '../src/engines/replacementEngine';
 import { getExerciseRecordPoolId } from '../src/engines/e1rmEngine';
 import type { ExercisePrescription, TrainingSession } from '../src/models/training-model';
@@ -42,6 +43,7 @@ describe('replacementEngine', () => {
   it('does not suggest incorrect bench replacements', () => {
     const ids = buildReplacementOptions(benchExercise).map((option) => option.id);
 
+    expect(ids).not.toContain('bench-press');
     expect(ids).not.toContain('triceps-pushdown');
     expect(ids).not.toContain('shoulder-press');
     expect(ids).not.toContain('machine-shoulder-press');
@@ -53,6 +55,10 @@ describe('replacementEngine', () => {
     const exercise = next.exercises[0];
 
     expect(exercise.id).toBe('db-bench-press');
+    expect(exercise.actualExerciseId).toBe('db-bench-press');
+    expect(exercise.replacementExerciseId).toBe('db-bench-press');
+    expect(exercise.originalExerciseId).toBe('bench-press');
+    expect(exercise.sameTemplateSlot).toBe(true);
     expect(exercise.canonicalExerciseId).toBe('db-bench-press');
     expect(exercise.replacedFromId).toBe('bench-press');
     expect(exercise.replacedFromName).toBe('平板卧推');
@@ -63,5 +69,25 @@ describe('replacementEngine', () => {
     const next = applyExerciseReplacement(makeSession(), 0, 'db-bench-press');
 
     expect(getExerciseRecordPoolId(next.exercises[0])).toBe('db-bench-press');
+  });
+
+  it('uses the actual replacement for PR records instead of polluting the planned exercise', () => {
+    const next = applyExerciseReplacement(makeSession(), 0, 'db-bench-press');
+    next.exercises[0].sets = [
+      { id: 's1', type: 'working', weight: 40, reps: 8, rir: 2, techniqueQuality: 'good', done: true },
+    ];
+
+    const prs = buildPrs([next]);
+
+    expect(prs.some((item) => item.exerciseId === 'db-bench-press')).toBe(true);
+    expect(prs.some((item) => item.exerciseId === 'bench-press')).toBe(false);
+  });
+
+  it('filters the current canonical exercise from replacement options', () => {
+    const replaced = applyExerciseReplacement(makeSession(), 0, 'db-bench-press');
+    const ids = buildReplacementOptions(replaced.exercises[0]).map((option) => option.id);
+
+    expect(ids).not.toContain('db-bench-press');
+    expect(ids).not.toContain('bench-press');
   });
 });

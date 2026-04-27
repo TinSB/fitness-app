@@ -332,6 +332,12 @@ export interface ExerciseTemplate extends ExerciseMetadata {
 export interface ExercisePrescription extends Omit<ExerciseTemplate, 'sets'> {
   baseId?: string;
   originalName?: string;
+  originalExerciseId?: string;
+  actualExerciseId?: string;
+  replacementExerciseId?: string;
+  sameTemplateSlot?: boolean;
+  replacementReason?: string;
+  prIndependent?: boolean;
   replacedFromId?: string;
   replacedFromName?: string;
   sets: number | TrainingSetLog[];

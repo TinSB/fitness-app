@@ -8,6 +8,8 @@ import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import {
   formatCyclePhase,
+  formatExerciseName,
+  formatFatigueCost,
   formatIntensityBias,
   formatProgramTemplateName,
   formatReadinessLevel,
@@ -264,7 +266,7 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-black text-slate-500">#{index + 1}</div>
-                      <h3 className="font-black text-slate-950">{exercise.name}</h3>
+                      <h3 className="font-black text-slate-950">{formatExerciseName(exercise)}</h3>
                     </div>
                     <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">{exercise.muscle}</span>
                   </div>
@@ -280,7 +282,7 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
 
                   <div className="mt-3 rounded-md bg-white p-3 text-sm text-slate-600">
                     <span className="font-bold text-slate-950">替代动作：</span>
-                    {exercise.alternatives?.join(' / ') || '暂无'}
+                    {exercise.alternatives?.map((item) => formatExerciseName(item)).join(' / ') || '暂无'}
                   </div>
 
                   <div className="mt-3 grid gap-2 md:grid-cols-3">
@@ -300,8 +302,8 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
                     <InfoPill label="目标偏向" value={labelJoin(prescribed.goalBias, goalBiasLabels) || '增肌'} />
                     <InfoPill label="负荷 / 次数" value={`${prescribed.recommendedLoadRange} / ${prescribed.repMin}-${prescribed.repMax}`} />
                     <InfoPill label="休息 / RIR" value={`${prescribed.rest}s / ${prescribed.targetRirText || '2-3 RIR'}`} />
-                    <InfoPill label="疲劳 / 技术" value={`${formatReadinessLevel(prescribed.fatigueCost)} / ${formatReadinessLevel(prescribed.skillDemand)}`} />
-                    <InfoPill label="ROM 优先级" value={prescribed.romPriority || '标准'} />
+                    <InfoPill label="疲劳 / 技术" value={`${formatFatigueCost(prescribed.fatigueCost)} / ${formatReadinessLevel(prescribed.skillDemand)}`} />
+                    <InfoPill label="ROM 优先级" value={formatReadinessLevel(prescribed.romPriority || 'medium')} />
                     <InfoPill label="加重单位" value={prescribed.progressionUnit || '自动'} />
                     <InfoPill label="处方规则" value={prescribed.prescription?.rule || '默认推进'} />
                     <InfoPill label="热身方案" value={prescribed.warmupSets?.map((set) => `${set.label || `${set.weight}kg`} x ${set.reps}`).join(' / ') || '自动生成'} />

@@ -11,6 +11,7 @@ import type {
 } from '../models/training-model';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from './effectiveSetEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from './e1rmEngine';
+import { formatExerciseName } from '../i18n/formatters';
 import { completedSets, formatDate, monthKey, number, sessionCompletedSets, sessionVolume, setVolume } from './engineUtils';
 export { buildDeloadSignal } from './deloadSignalEngine';
 
@@ -162,7 +163,7 @@ export const buildExerciseTrend = (history: TrainingSession[], exerciseId: strin
 
           return {
             date: session.date,
-            name: exercise.name,
+            name: formatExerciseName(exercise),
             topWeight: topSet ? number(topSet.weight) : 0,
             topReps: topSet ? number(topSet.reps) : 0,
             volume: sets.reduce((sum, set) => sum + setVolume(set), 0),
@@ -205,7 +206,7 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
           exerciseId: poolId,
           metric: 'volume',
           type: '单次训练总量 PR',
-          exercise: exercise.name,
+          exercise: formatExerciseName(exercise),
           value: total,
           displayValue: `${Math.round(total)}kg`,
           raw: total,
@@ -228,7 +229,7 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
             exerciseId: poolId,
             metric: 'max_weight',
             type: '最大重量 PR',
-            exercise: exercise.name,
+            exercise: formatExerciseName(exercise),
             value: weight,
             displayValue: `${weight}kg x ${reps}`,
             raw: weight,
@@ -245,7 +246,7 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
             exerciseId: poolId,
             metric: 'reps_at_weight',
             type: '固定重量次数 PR',
-            exercise: exercise.name,
+            exercise: formatExerciseName(exercise),
             value: reps,
             displayValue: `${weight}kg x ${reps}`,
             raw: reps,
@@ -267,7 +268,7 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
             exerciseId: poolId,
             metric: 'estimated_1rm',
             type: '估算 1RM PR',
-            exercise: exercise.name,
+            exercise: formatExerciseName(exercise),
             value: estimate.e1rmKg,
             displayValue: `${estimate.e1rmKg}kg`,
             raw: estimate.e1rmKg,
@@ -325,7 +326,7 @@ export const makeCsv = (history: TrainingSession[]) => {
         rows.push([
           session.date,
           session.templateName,
-          exercise.name,
+          formatExerciseName(exercise),
           index + 1,
           set.weight,
           set.reps,

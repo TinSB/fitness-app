@@ -306,7 +306,15 @@ export const getNextIncompleteExercise = (session: TrainingSession, fromIndex = 
 
 const findExerciseIndexById = (session: TrainingSession, exerciseId?: string) => {
   if (!exerciseId) return -1;
-  return session.exercises.findIndex((exercise) => exercise.id === exerciseId || exercise.baseId === exerciseId || exercise.canonicalExerciseId === exerciseId);
+  return session.exercises.findIndex(
+    (exercise) =>
+      exercise.id === exerciseId ||
+      exercise.baseId === exerciseId ||
+      exercise.canonicalExerciseId === exerciseId ||
+      exercise.actualExerciseId === exerciseId ||
+      exercise.replacementExerciseId === exerciseId ||
+      exercise.originalExerciseId === exerciseId
+  );
 };
 
 export const getCurrentExercise = (session: TrainingSession, preferredIndex?: number): { exercise: ExercisePrescription; index: number } | null => {

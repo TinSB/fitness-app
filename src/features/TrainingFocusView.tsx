@@ -5,7 +5,7 @@ import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusMod
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
-import { formatBlockType, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
+import { formatBlockType, formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import { MobileActionBar, StatusBadge } from '../ui/common';
 
@@ -183,6 +183,8 @@ export function TrainingFocusView({
   const repAdjustments = [-5, -1, 1, 5];
 
   const notify = (message: string) => setFeedback(message);
+  const displayExerciseName = (exercise: TrainingSession['exercises'][number] | null | undefined) =>
+    exercise ? formatExerciseName(exercise) : '未知动作';
 
   React.useEffect(() => {
     if (!feedback) return undefined;
@@ -195,7 +197,7 @@ export function TrainingFocusView({
     if (!exercise) return;
     onSwitchExercise(index);
     setShowExercisePicker(false);
-    notify(`已切换到 ${exercise.alias || exercise.name}`);
+    notify(`已切换到 ${displayExerciseName(exercise)}`);
   };
 
   const copyPrevious = () => {
@@ -228,7 +230,7 @@ export function TrainingFocusView({
     if (mainIndex < 0) return;
     onReplaceExercise(mainIndex, option.id);
     setShowReplacementPicker(false);
-    notify(`已替换为 ${option.name}`);
+    notify(`已替换为：${option.name}`);
   };
 
   const completeCurrentSet = () => {
@@ -290,7 +292,7 @@ export function TrainingFocusView({
                 const done = sets.filter((set) => set.done).length;
                 return (
                   <div key={`${exercise.id}-completed-${index}`} className="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-3">
-                    <span className="font-black text-slate-900">{exercise.alias || exercise.name}</span>
+                    <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
                     <span className="text-sm font-black text-slate-600">
                       {done}/{sets.length}
                     </span>
@@ -309,7 +311,7 @@ export function TrainingFocusView({
       <div className="mx-auto flex min-h-[72svh] max-w-2xl flex-col gap-3 pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-0">
         <section className="rounded-lg border border-emerald-200 bg-white p-5 text-center">
           <CheckCircle className="mx-auto h-9 w-9 text-emerald-600" />
-          <h2 className="mt-3 text-2xl font-black text-slate-950">{mainExercise.alias || mainExercise.name}</h2>
+          <h2 className="mt-3 text-2xl font-black text-slate-950">{displayExerciseName(mainExercise)}</h2>
           <p className="mt-2 text-sm font-bold text-slate-600">该动作已完成。切换到其他动作时会定位到该动作第一个未完成步骤。</p>
           <div className="mt-5 grid grid-cols-3 gap-2">
             <button type="button" onClick={() => switchExercise(Math.max(0, mainIndex - 1))} disabled={mainIndex <= 0} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
@@ -337,7 +339,7 @@ export function TrainingFocusView({
                     onClick={() => switchExercise(index)}
                     className="flex w-full items-center justify-between rounded-lg bg-stone-50 px-3 py-3 text-left"
                   >
-                    <span className="font-black text-slate-900">{exercise.alias || exercise.name}</span>
+                    <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
                     <span className="text-sm font-black text-slate-600">
                       {done}/{sets.length}
                     </span>
@@ -360,7 +362,7 @@ export function TrainingFocusView({
               <StatusBadge tone={blockType === 'main' ? 'emerald' : blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
               <StatusBadge tone={currentStep.stepType === 'working' ? 'emerald' : 'slate'}>{stageLabel}</StatusBadge>
             </div>
-            <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">{mainExercise?.alias || mainExercise?.name || supportLog?.exerciseName || supportExercise?.name}</h2>
+            <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">{mainExercise ? displayExerciseName(mainExercise) : supportLog?.exerciseName || supportExercise?.name}</h2>
             <div className="mt-2 text-sm font-bold text-slate-500">
               {currentStep.label}
             </div>
@@ -495,7 +497,7 @@ export function TrainingFocusView({
                       onClick={() => switchExercise(index)}
                       className={classNames('flex w-full items-center justify-between rounded-lg px-3 py-3 text-left', selected ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50')}
                     >
-                      <span className="font-black text-slate-900">{exercise.alias || exercise.name}</span>
+                      <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
                       <span className="text-sm font-black text-slate-600">
                         {done}/{sets.length}
                       </span>
@@ -563,7 +565,7 @@ export function TrainingFocusView({
                     </div>
                     <div className="mt-2 text-xs leading-5 text-slate-600">{option.reason}</div>
                     <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                      <span>疲劳成本：{option.fatigueCost}</span>
+                      <span>疲劳成本：{option.fatigueCostLabel}</span>
                       <span>PR / e1RM 独立统计</span>
                     </div>
                   </button>
@@ -635,7 +637,7 @@ export function TrainingFocusView({
                     onClick={() => switchExercise(index)}
                     className={classNames('flex w-full items-center justify-between rounded-lg px-3 py-3 text-left', selected ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50')}
                   >
-                    <span className="font-black text-slate-900">{exercise.alias || exercise.name}</span>
+                    <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
                     <span className="text-sm font-black text-slate-600">
                       {done}/{sets.length}
                     </span>
