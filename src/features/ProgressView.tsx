@@ -446,6 +446,11 @@ export function ProgressView({
           {session.exercises.map((exercise) => (
             <div key={`${session.id}-${exercise.id}`} className="rounded-lg bg-stone-50 p-3">
               <div className="font-black text-slate-950">{exercise.alias || exercise.name}</div>
+              {exercise.replacedFromName ? (
+                <div className="mt-1 rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">
+                  原计划：{exercise.replacedFromName} / 实际执行：{exercise.alias || exercise.name}
+                </div>
+              ) : null}
               <div className="mt-2 space-y-1 text-sm font-bold text-slate-700">
                 {Array.isArray(exercise.sets) && exercise.sets.length ? (
                   exercise.sets.map((set, index) => (

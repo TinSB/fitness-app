@@ -27,6 +27,7 @@ import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
+import { applyExerciseReplacement } from './engines/replacementEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
@@ -277,9 +278,12 @@ function App() {
     });
   };
 
-  const replaceExercise = (exerciseIndex: number) => {
+  const replaceExercise = (exerciseIndex: number, replacementId?: string) => {
     setData((current) => {
       if (!current.activeSession) return current;
+      if (replacementId) {
+        return { ...current, activeSession: switchFocusExercise(applyExerciseReplacement(current.activeSession, exerciseIndex, replacementId), exerciseIndex) };
+      }
       const session = clone(current.activeSession) as TrainingSession;
       const exercise = session.exercises[exerciseIndex] as TrainingSession['exercises'][number] & {
         replacedFromId?: string;

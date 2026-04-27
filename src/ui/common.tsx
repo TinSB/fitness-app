@@ -113,7 +113,7 @@ interface ConfirmDialogProps {
 }
 
 export const Page = ({ eyebrow, title, action, children }: PageProps) => (
-  <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-[calc(1rem+env(safe-area-inset-top))] md:px-8 md:py-8">
+  <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
     <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-end md:justify-between">
       <div>
         <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-emerald-700">{eyebrow}</div>

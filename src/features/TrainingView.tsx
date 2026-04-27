@@ -52,7 +52,7 @@ interface TrainingViewProps {
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
-  onReplaceExercise: (exerciseIndex: number) => void;
+  onReplaceExercise: (exerciseIndex: number, replacementId?: string) => void;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish: () => void;
   onFinishToCalendar?: () => void;

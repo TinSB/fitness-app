@@ -4,6 +4,7 @@ import { classNames, formatTimer, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
+import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
 import { formatBlockType, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import { MobileActionBar, StatusBadge } from '../ui/common';
@@ -27,7 +28,7 @@ interface TrainingFocusViewProps {
     updates: { actualWeightKg?: number; displayWeight?: number; displayUnit?: WeightUnit; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
   ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
-  onReplaceExercise: (exerciseIndex: number) => void;
+  onReplaceExercise: (exerciseIndex: number, replacementId?: string) => void;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish?: () => void;
   onFinishToCalendar?: () => void;
@@ -90,6 +91,7 @@ export function TrainingFocusView({
   const [skipReason, setSkipReason] = React.useState<SupportSkipReason>('time');
   const [feedback, setFeedback] = React.useState('');
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
+  const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
@@ -107,6 +109,7 @@ export function TrainingFocusView({
   const existingLoadFeedback = mainExercisePoolId
     ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId)
     : undefined;
+  const replacementOptions = mainExercise ? buildReplacementOptions(mainExercise) : [];
   const warmupPolicyNotice =
     currentStep.stepType === 'working' && currentStep.warmupPolicy && !currentStep.warmupPolicy.shouldShowWarmupSets && currentStep.warmupPolicy.policy !== 'none'
       ? {
@@ -213,12 +216,19 @@ export function TrainingFocusView({
 
   const replaceExercise = () => {
     if (mainIndex < 0 || !mainExercise) return;
-    if (!mainExercise.alternatives?.length && !mainExercise.originalName) {
-      notify('当前动作暂无替代动作');
+    if (!replacementOptions.length) {
+      notify('当前动作暂无可替代动作');
       return;
     }
-    onReplaceExercise(mainIndex);
-    notify('已切换替代动作');
+    setShowReplacementPicker(true);
+    notify('请选择替代动作');
+  };
+
+  const chooseReplacement = (option: ReplacementOption) => {
+    if (mainIndex < 0) return;
+    onReplaceExercise(mainIndex, option.id);
+    setShowReplacementPicker(false);
+    notify(`已替换为 ${option.name}`);
   };
 
   const completeCurrentSet = () => {
@@ -526,6 +536,41 @@ export function TrainingFocusView({
           ))}
 
           {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-black text-emerald-900">{feedback}</div> : null}
+
+          {showReplacementPicker ? (
+            <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/60">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-emerald-700">替代动作</div>
+                  <h3 className="mt-1 font-semibold text-slate-950">选择本次实际执行动作</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">保留当前模板位置；训练量计入本次，PR / e1RM 按实际动作独立统计。</p>
+                </div>
+                <button type="button" onClick={() => setShowReplacementPicker(false)} className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600">
+                  取消
+                </button>
+              </div>
+              <div className="space-y-2">
+                {replacementOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => chooseReplacement(option)}
+                    className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-950">{option.name}</span>
+                      <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-700">{option.rankLabel}</span>
+                    </div>
+                    <div className="mt-2 text-xs leading-5 text-slate-600">{option.reason}</div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
+                      <span>疲劳成本：{option.fatigueCost}</span>
+                      <span>PR / e1RM 独立统计</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {currentStep.stepType === 'working' && completedMainSets > 0 && mainExercisePoolId ? (
             <section className="rounded-lg border border-slate-200 bg-white p-3">
