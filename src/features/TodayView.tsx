@@ -88,12 +88,12 @@ export function TodayView({
         ) : null
       }
     >
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
-        <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-5">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="grid gap-3 lg:grid-cols-[1.35fr_0.65fr]">
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="text-sm font-bold text-slate-500">{todayKey()}</div>
-              <h2 className="mt-1 text-2xl font-black text-slate-950">{selectedTemplate.name}</h2>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950 md:text-2xl">{selectedTemplate.name}</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">{selectedTemplate.note}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <StatusBadge tone={adjustedPlan.readiness.level === 'green' ? 'emerald' : adjustedPlan.readiness.level === 'yellow' ? 'amber' : 'rose'}>
@@ -109,7 +109,7 @@ export function TodayView({
             </div>
           </div>
 
-          <div className="mb-4 grid gap-2 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="mb-3 grid gap-2 md:grid-cols-[1fr_auto] md:items-center">
             <div className="relative">
               <select
                 value={data.selectedTemplateId}
@@ -131,8 +131,8 @@ export function TodayView({
           </div>
 
           <details className="rounded-lg border border-slate-200 bg-stone-50 p-3">
-            <summary className="cursor-pointer list-none text-sm font-black text-slate-700">
-              查看今日动作细节（训练执行放在训练页）
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700">
+              查看动作安排
             </summary>
             <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {adjustedExercises.map((exercise) => {

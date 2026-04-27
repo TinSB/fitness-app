@@ -80,7 +80,7 @@ interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 interface SegmentedTabsProps<T extends string> {
   value: T;
-  options: Array<{ id: T; label: string; badge?: ReactNode }>;
+  options: Array<{ id: T; label: string; mobileLabel?: string; badge?: ReactNode }>;
   onChange: (value: T) => void;
   ariaLabel?: string;
 }
@@ -113,11 +113,11 @@ interface ConfirmDialogProps {
 }
 
 export const Page = ({ eyebrow, title, action, children }: PageProps) => (
-  <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] md:px-8 md:py-8">
-    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+  <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-[calc(1rem+env(safe-area-inset-top))] md:px-8 md:py-8">
+    <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-end md:justify-between">
       <div>
-        <div className="mb-1 text-xs font-bold uppercase tracking-widest text-emerald-700">{eyebrow}</div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-950 md:text-4xl">{title}</h1>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-emerald-700">{eyebrow}</div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">{title}</h1>
       </div>
       {action}
     </div>
@@ -135,7 +135,7 @@ export const Card = ({ tone = 'slate', padded = true, className, children, ...pr
   };
 
   return (
-    <section className={classNames('rounded-lg border shadow-sm shadow-slate-200/40', padded && 'p-4 md:p-5', tones[tone], className)} {...props}>
+    <section className={classNames('rounded-lg border shadow-[0_1px_2px_rgba(15,23,42,0.04)]', padded && 'p-4 md:p-5', tones[tone], className)} {...props}>
       {children}
     </section>
   );
@@ -144,8 +144,8 @@ export const Card = ({ tone = 'slate', padded = true, className, children, ...pr
 export const SectionHeader = ({ eyebrow, title, description, action }: SectionHeaderProps) => (
   <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
     <div>
-      {eyebrow ? <div className="text-xs font-black uppercase tracking-widest text-emerald-700">{eyebrow}</div> : null}
-      <h2 className="mt-1 font-black text-slate-950">{title}</h2>
+      {eyebrow ? <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">{eyebrow}</div> : null}
+      <h2 className="mt-1 text-lg font-semibold text-slate-950">{title}</h2>
       {description ? <div className="mt-1 text-sm font-medium leading-6 text-slate-500">{description}</div> : null}
     </div>
     {action}
@@ -169,7 +169,7 @@ export const ActionButton = ({ variant = 'secondary', size = 'md', fullWidth = f
     <button
       type={type}
       className={classNames(
-        'inline-flex items-center justify-center gap-2 rounded-lg border font-black transition disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 rounded-lg border font-medium transition disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
         sizes[size],
         fullWidth && 'w-full',
@@ -183,8 +183,8 @@ export const ActionButton = ({ variant = 'secondary', size = 'md', fullWidth = f
 };
 
 export const SegmentedTabs = <T extends string>({ value, options, onChange, ariaLabel = '分区导航' }: SegmentedTabsProps<T>) => (
-  <div className="overflow-x-auto pb-1" aria-label={ariaLabel}>
-    <div className="grid min-w-max grid-flow-col auto-cols-max gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1 md:min-w-0 md:auto-cols-fr">
+  <div className="-mx-1 overflow-x-auto px-1 pb-1" aria-label={ariaLabel}>
+    <div className="grid min-w-max grid-flow-col auto-cols-[minmax(72px,auto)] gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1 md:min-w-0 md:auto-cols-fr">
       {options.map((option) => {
         const selected = value === option.id;
         return (
@@ -193,11 +193,12 @@ export const SegmentedTabs = <T extends string>({ value, options, onChange, aria
             type="button"
             onClick={() => onChange(option.id)}
             className={classNames(
-              'min-h-11 whitespace-nowrap rounded-md px-3 py-2 text-sm font-black transition',
-              selected ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              'min-h-11 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition',
+              selected ? 'bg-white font-semibold text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-900'
             )}
           >
-            {option.label}
+            <span className={option.mobileLabel ? 'md:hidden' : ''}>{option.mobileLabel || option.label}</span>
+            {option.mobileLabel ? <span className="hidden md:inline">{option.label}</span> : null}
             {option.badge ? <span className="ml-2 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">{option.badge}</span> : null}
           </button>
         );
@@ -215,13 +216,13 @@ export const StatusBadge = ({ children, tone = 'slate' }: StatusBadgeProps) => {
     sky: 'bg-sky-50 text-sky-800',
   };
 
-  return <span className={classNames('inline-flex items-center rounded-md px-2 py-1 text-xs font-black', tones[tone])}>{children}</span>;
+  return <span className={classNames('inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold', tones[tone])}>{children}</span>;
 };
 
 export const EmptyState = ({ title, description, action }: EmptyStateProps) => (
-  <div className="rounded-lg border border-dashed border-slate-200 bg-stone-50 p-6 text-center">
-    <div className="font-black text-slate-950">{title}</div>
-    <div className="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-slate-500">{description}</div>
+  <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-4 text-center md:p-5">
+    <div className="text-base font-semibold text-slate-950">{title}</div>
+    <div className="mx-auto mt-1.5 max-w-md text-sm font-normal leading-6 text-slate-500">{description}</div>
     {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
   </div>
 );
@@ -236,8 +237,8 @@ export const InlineNotice = ({ tone = 'slate', title, children }: InlineNoticePr
   };
 
   return (
-    <div className={classNames('rounded-lg border px-3 py-2 text-sm font-bold leading-6', tones[tone])}>
-      {title ? <span className="mr-1 font-black">{title}</span> : null}
+    <div className={classNames('rounded-lg border px-3 py-2 text-sm font-medium leading-6', tones[tone])}>
+      {title ? <span className="mr-1 font-semibold">{title}</span> : null}
       {children}
     </div>
   );
@@ -280,8 +281,8 @@ export const Stat = ({ label, value, tone = 'slate' }: StatProps) => {
 
   return (
     <div className={classNames('rounded-lg border p-4', tones[tone])}>
-      <div className="text-xs font-bold text-slate-500">{label}</div>
-      <div className="mt-1 text-2xl font-black">{value}</div>
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="mt-1 text-2xl font-bold">{value}</div>
     </div>
   );
 };

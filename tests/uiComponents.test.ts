@@ -20,4 +20,11 @@ describe('shared UI components', () => {
     expect(source).toContain('env(safe-area-inset-bottom)');
     expect(source).toContain('min-h-11');
   });
+
+  it('keeps empty states lightweight and actionable', () => {
+    expect(source).toContain('export const EmptyState');
+    expect(source).toContain('action ?');
+    expect(source).toContain('border-dashed');
+    expect(source).toContain('p-4');
+  });
 });

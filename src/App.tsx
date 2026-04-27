@@ -60,7 +60,7 @@ const getSetList = (session: TrainingSession | null, exerciseIndex: number): Tra
 
 const LazyPageFallback = () => (
   <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
-    <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600">正在加载训练数据...</div>
+    <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm font-medium text-slate-600">正在加载训练数据...</div>
   </div>
 );
 
@@ -784,17 +784,21 @@ function App() {
         </div>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
           const selected = activeTab === item.id;
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => setActiveTab(item.id)}
-              className={classNames('flex flex-col items-center justify-center gap-1 text-xs font-semibold', selected ? 'text-emerald-700' : 'text-slate-400')}
+              className={classNames(
+                'mx-0.5 my-1 flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition',
+                selected ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+              )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5 stroke-[2]" />
               {item.label}
             </button>
           );

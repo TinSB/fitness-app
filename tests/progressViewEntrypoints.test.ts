@@ -7,8 +7,11 @@ describe('ProgressView entry points', () => {
 
   it('has visible Chinese section entries for calendar and history', () => {
     expect(source).toContain('训练仪表盘');
+    expect(source).toContain("mobileLabel: '仪表盘'");
     expect(source).toContain('训练日历');
+    expect(source).toContain("mobileLabel: '日历'");
     expect(source).toContain('历史训练');
+    expect(source).toContain("mobileLabel: '历史'");
     expect(source).toContain('个人记录 / PR');
     expect(source).toContain('数据管理');
   });

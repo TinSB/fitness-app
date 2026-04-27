@@ -71,12 +71,12 @@ interface ProgressViewProps {
 
 type ProgressSectionId = 'dashboard' | 'calendar' | 'history' | 'pr' | 'data';
 
-const progressSections: Array<{ id: ProgressSectionId; label: string }> = [
-  { id: 'dashboard', label: '训练仪表盘' },
-  { id: 'calendar', label: '训练日历' },
-  { id: 'history', label: '历史训练' },
-  { id: 'pr', label: '个人记录 / PR' },
-  { id: 'data', label: '数据管理' },
+const progressSections: Array<{ id: ProgressSectionId; label: string; mobileLabel: string }> = [
+  { id: 'dashboard', label: '训练仪表盘', mobileLabel: '仪表盘' },
+  { id: 'calendar', label: '训练日历', mobileLabel: '日历' },
+  { id: 'history', label: '历史训练', mobileLabel: '历史' },
+  { id: 'pr', label: '个人记录 / PR', mobileLabel: 'PR' },
+  { id: 'data', label: '数据管理', mobileLabel: '数据' },
 ];
 
 const historyFilterOptions: Array<{ id: SessionHistoryFilter; label: string }> = [
@@ -732,6 +732,14 @@ export function ProgressView({
       </div>
 
       {activeProgressSection === 'dashboard' ? (
+        !history.length ? (
+          <Card>
+            <EmptyState
+              title="还没有可统计的训练"
+              description="完成一次正式训练后，将自动生成周训练量、PR、e1RM 和趋势图。"
+            />
+          </Card>
+        ) : (
       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <section className="space-y-4">
           <WeeklyPrescriptionCard weeklyPrescription={weeklyPrescription} />
@@ -1494,6 +1502,7 @@ export function ProgressView({
           </section>
         </section>
       </div>
+        )
       ) : null}
     </Page>
   );

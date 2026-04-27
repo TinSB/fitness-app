@@ -350,7 +350,7 @@ export function TrainingFocusView({
               <StatusBadge tone={blockType === 'main' ? 'emerald' : blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
               <StatusBadge tone={currentStep.stepType === 'working' ? 'emerald' : 'slate'}>{stageLabel}</StatusBadge>
             </div>
-            <h2 className="mt-1 text-3xl font-black leading-tight text-slate-950">{mainExercise?.alias || mainExercise?.name || supportLog?.exerciseName || supportExercise?.name}</h2>
+            <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">{mainExercise?.alias || mainExercise?.name || supportLog?.exerciseName || supportExercise?.name}</h2>
             <div className="mt-2 text-sm font-bold text-slate-500">
               {currentStep.label}
             </div>
@@ -360,7 +360,7 @@ export function TrainingFocusView({
               <Timer className="h-3.5 w-3.5" />
               休息
             </div>
-            <div className="mt-1 text-2xl font-black tabular-nums">{formatTimer(remainingSec)}</div>
+            <div className="mt-1 text-2xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
           </div>
         </div>
       </section>
@@ -370,14 +370,14 @@ export function TrainingFocusView({
           <section className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="text-xs font-bold text-slate-500">建议</div>
-              <div className="mt-2 text-xl font-black text-slate-950">{plannedSummary}</div>
+              <div className="mt-2 text-xl font-bold text-slate-950">{plannedSummary}</div>
               <button type="button" onClick={() => { onApplySuggestion(mainIndex); notify('已套用建议重量和次数'); }} className="mt-3 h-9 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-black text-emerald-800">
                 套用建议
               </button>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="text-xs font-bold text-slate-500">实际记录</div>
-              <div className="mt-2 text-xl font-black text-slate-950">{actualSummary}</div>
+              <div className="mt-2 text-xl font-bold text-slate-950">{actualSummary}</div>
               <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上次记录'}</div>
             </div>
           </section>
@@ -556,7 +556,7 @@ export function TrainingFocusView({
               type="button"
               onClick={completeCurrentSet}
               disabled={mainSetIndex < 0}
-              className="h-16 rounded-lg bg-emerald-600 text-lg font-black text-white disabled:bg-slate-300"
+              className="h-16 rounded-lg bg-emerald-600 text-lg font-semibold text-white disabled:bg-slate-300"
             >
               完成一组
             </button>
@@ -606,7 +606,7 @@ export function TrainingFocusView({
       ) : (
         <section className="rounded-lg border border-slate-200 bg-white p-4">
           <div className="text-xs font-black text-emerald-700">{stageLabel}</div>
-          <h2 className="mt-1 text-3xl font-black leading-tight text-slate-950">{supportExercise?.name || supportLog?.exerciseName || currentStep.exerciseName || '支持动作'}</h2>
+          <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">{supportExercise?.name || supportLog?.exerciseName || currentStep.exerciseName || '支持动作'}</h2>
           <div className="mt-1 text-sm font-bold text-slate-500">{supportBlock?.name || currentStep.moduleName || '支持模块'}</div>
           <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm font-bold text-slate-700">{plannedSummary}</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
@@ -615,7 +615,7 @@ export function TrainingFocusView({
           <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
             <button
               onClick={() => supportLog && onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId)}
-              className="h-16 rounded-lg bg-emerald-600 text-lg font-black text-white"
+            className="h-16 rounded-lg bg-emerald-600 text-lg font-semibold text-white"
             >
               完成一组
             </button>
