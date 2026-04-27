@@ -55,6 +55,8 @@ interface TrainingViewProps {
   onReplaceExercise: (exerciseIndex: number) => void;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish: () => void;
+  onFinishToCalendar?: () => void;
+  onFinishToToday?: () => void;
   onDelete: () => void;
   onReturnFocusMode?: () => void;
   onExtendRestTimer: (seconds: number) => void;
@@ -150,6 +152,8 @@ export function TrainingView({
   onReplaceExercise,
   onLoadFeedback,
   onFinish,
+  onFinishToCalendar,
+  onFinishToToday,
   onDelete,
   onReturnFocusMode,
   onExtendRestTimer,
@@ -775,9 +779,11 @@ export function TrainingView({
                       onUpdateActualDraft={onUpdateActualDraft}
                       onSwitchExercise={onSwitchExercise}
                       onReplaceExercise={onReplaceExercise}
-                      onLoadFeedback={onLoadFeedback}
-                      onFinish={onFinish}
-                      onCompleteSupportSet={onCompleteSupportSet}
+              onLoadFeedback={onLoadFeedback}
+              onFinish={onFinish}
+              onFinishToCalendar={onFinishToCalendar}
+              onFinishToToday={onFinishToToday}
+              onCompleteSupportSet={onCompleteSupportSet}
               onSkipSupportExercise={onSkipSupportExercise}
               onSkipSupportBlock={onSkipSupportBlock}
               onUpdateSupportSkipReason={onUpdateSupportSkipReason}

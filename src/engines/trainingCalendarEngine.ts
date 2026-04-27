@@ -1,7 +1,6 @@
-import type { TrainingSession } from '../models/training-model';
+import type { SessionDataFlag, TrainingSession } from '../models/training-model';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 import { monthKey, number, sessionCompletedSets, sessionVolume } from './engineUtils';
-import { filterAnalyticsHistory } from './sessionHistoryEngine';
 
 export type TrainingCalendarDay = {
   date: string;
@@ -15,6 +14,7 @@ export type TrainingCalendarDay = {
     effectiveSets: number;
     totalVolumeKg: number;
     isExperimentalTemplate?: boolean;
+    dataFlag?: SessionDataFlag;
   }>;
   totalSessions: number;
   totalVolumeKg: number;
@@ -30,7 +30,25 @@ export type TrainingCalendarData = {
   }>;
 };
 
-const toDateKey = (value?: string) => String(value || '').slice(0, 10);
+export type TrainingCalendarOptions = {
+  includeDataFlags?: Array<SessionDataFlag | 'unset'> | 'all';
+};
+
+export const toLocalDateKey = (value?: string) => {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return String(value).slice(0, 10);
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+};
+
+const shouldIncludeSession = (session: TrainingSession, includeDataFlags: TrainingCalendarOptions['includeDataFlags']) => {
+  if (includeDataFlags === 'all') return true;
+  const flag = session.dataFlag || 'normal';
+  const allowed = includeDataFlags || ['normal', 'unset'];
+  return allowed.includes(flag as SessionDataFlag) || (!session.dataFlag && allowed.includes('unset'));
+};
 
 const startOfWeekKey = (dateKey: string) => {
   const date = new Date(`${dateKey}T00:00:00`);
@@ -56,12 +74,12 @@ const monthDayKeys = (month: string) => {
 const sessionHasPain = (session: TrainingSession) =>
   (session.exercises || []).some((exercise) => Array.isArray(exercise.sets) && exercise.sets.some((set) => Boolean(set.painFlag)));
 
-export const buildTrainingCalendar = (history: TrainingSession[] = [], month = monthKey()): TrainingCalendarData => {
-  const analyticsHistory = filterAnalyticsHistory(history);
+export const buildTrainingCalendar = (history: TrainingSession[] = [], month = monthKey(), options: TrainingCalendarOptions = {}): TrainingCalendarData => {
+  const calendarHistory = history.filter((session) => shouldIncludeSession(session, options.includeDataFlags));
   const sessionsByDate = new Map<string, TrainingSession[]>();
 
-  analyticsHistory.forEach((session) => {
-    const date = toDateKey(session.date || session.startedAt);
+  calendarHistory.forEach((session) => {
+    const date = toLocalDateKey(session.date || session.startedAt);
     if (!date || !date.startsWith(month)) return;
     const list = sessionsByDate.get(date) || [];
     list.push(session);
@@ -80,6 +98,7 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
       effectiveSets: buildEffectiveVolumeSummary([session]).effectiveSets,
       totalVolumeKg: sessionVolume(session),
       isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
+      dataFlag: session.dataFlag || 'normal',
     }));
 
     return {
@@ -92,8 +111,8 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
   });
 
   const weekCounts = new Map<string, number>();
-  analyticsHistory.forEach((session) => {
-    const date = toDateKey(session.date || session.startedAt);
+  calendarHistory.forEach((session) => {
+    const date = toLocalDateKey(session.date || session.startedAt);
     if (!date) return;
     const weekStart = startOfWeekKey(date);
     weekCounts.set(weekStart, (weekCounts.get(weekStart) || 0) + 1);

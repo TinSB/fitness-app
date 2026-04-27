@@ -25,6 +25,7 @@ import {
 } from './engines/focusModeStateEngine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
@@ -45,6 +46,7 @@ const navItems = [
 ] as const;
 
 type ActiveTab = (typeof navItems)[number]['id'];
+type ProgressSectionTarget = 'dashboard' | 'calendar' | 'history' | 'pr' | 'data';
 type StatusField = 'sleep' | 'energy' | 'time';
 type SorenessPart = TodayStatus['soreness'][number];
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
@@ -72,6 +74,7 @@ function App() {
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false
   );
   const [forceFullTrainingView, setForceFullTrainingView] = useState(false);
+  const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
 
   useEffect(() => {
@@ -133,39 +136,21 @@ function App() {
     setActiveTab('training');
   };
 
-  const finishSession = () => {
+  const finishSession = (target: ProgressSectionTarget | 'today' = 'history') => {
     if (!data.activeSession) return;
-
-    const finishedBase: TrainingSession = {
-      ...data.activeSession,
-      completed: true,
-      finishedAt: new Date().toISOString(),
-      durationMin: Math.max(1, Math.round((Date.now() - new Date(data.activeSession.startedAt || Date.now()).getTime()) / 60000)),
-    };
+    const finishedAt = new Date().toISOString();
+    const completed = completeTrainingSessionIntoHistory(data, finishedAt);
+    const finishedSession = completed.session;
 
     setData((current) => {
-      const provisionalHistory = [finishedBase, ...(current.history || [])].slice(0, 500);
-      const nextScreening = reconcileScreeningProfile(current.screeningProfile, provisionalHistory);
-      const finished: TrainingSession = {
-        ...finishedBase,
-        feedbackSummary: {
-          painExercises: Object.entries(nextScreening.adaptiveState?.painByExercise || {})
-            .filter(([, count]) => count >= 2)
-            .map(([exerciseId]) => exerciseId),
-          performanceDrops: nextScreening.adaptiveState?.performanceDrops || [],
-          improvingIssues: (nextScreening.adaptiveState?.improvingIssues || []) as NonNullable<TrainingSession['feedbackSummary']>['improvingIssues'],
-        },
-      };
-
-      return {
-        ...current,
-        activeSession: null,
-        history: [finished, ...(current.history || [])].slice(0, 500),
-        screeningProfile: nextScreening,
-      };
+      const result = completeTrainingSessionIntoHistory(current, finishedAt);
+      return result.data;
     });
 
-    setActiveTab('progress');
+    if (finishedSession && target !== 'today') {
+      setProgressTarget({ section: target, sessionId: finishedSession.id, date: finishedSession.date });
+    }
+    setActiveTab(target === 'today' ? 'today' : 'progress');
   };
 
   const updateStatus = (field: StatusField, value: string) => {
@@ -675,7 +660,7 @@ function App() {
                         <button onClick={deleteActiveSession} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
                           放弃
                         </button>
-                        <button onClick={finishSession} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-black text-white">
+                        <button onClick={() => finishSession()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-black text-white">
                           完成训练
                         </button>
                       </div>
@@ -697,6 +682,8 @@ function App() {
                       onReplaceExercise={replaceExercise}
                       onLoadFeedback={recordLoadFeedback}
                       onFinish={finishSession}
+                      onFinishToCalendar={() => finishSession('calendar')}
+                      onFinishToToday={() => finishSession('today')}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
                       onSkipSupportBlock={skipSupportBlock}
@@ -728,6 +715,8 @@ function App() {
                       onReplaceExercise={replaceExercise}
                       onLoadFeedback={recordLoadFeedback}
                       onFinish={finishSession}
+                      onFinishToCalendar={() => finishSession('calendar')}
+                      onFinishToToday={() => finishSession('today')}
                       onDelete={deleteActiveSession}
                       onReturnFocusMode={() => setForceFullTrainingView(false)}
                       onExtendRestTimer={extendActiveRestTimer}
@@ -783,6 +772,9 @@ function App() {
                       }}
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
+                      initialSection={progressTarget?.section}
+                      selectedSessionId={progressTarget?.sessionId}
+                      selectedDate={progressTarget?.date}
                     />
                   </Suspense>
                 )}

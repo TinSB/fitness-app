@@ -1,5 +1,6 @@
 import type { AppData, SessionDataFlag, TrainingSession } from '../models/training-model';
 import { reconcileScreeningProfile } from './adaptiveFeedbackEngine';
+import { toLocalDateKey } from './trainingCalendarEngine';
 
 const excludedFlags = new Set<SessionDataFlag>(['test', 'excluded']);
 
@@ -7,6 +8,20 @@ export const isAnalyticsSession = (session: Pick<TrainingSession, 'dataFlag'> | 
   !excludedFlags.has((session?.dataFlag || 'normal') as SessionDataFlag);
 
 export const filterAnalyticsHistory = (history: TrainingSession[] = []) => history.filter(isAnalyticsSession);
+
+export type SessionHistoryFilter = 'all' | 'normal' | 'test' | 'excluded';
+
+const sessionSortKey = (session: TrainingSession) => session.finishedAt || session.startedAt || session.date || '';
+
+export const listSessionHistory = (history: TrainingSession[] = [], filter: SessionHistoryFilter = 'all') =>
+  history
+    .filter((session) => {
+      const flag = session.dataFlag || 'normal';
+      return filter === 'all' ? true : flag === filter;
+    })
+    .sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
+
+export const getSessionLocalDate = (session: TrainingSession) => toLocalDateKey(session.date || session.startedAt || session.finishedAt);
 
 export const deleteTrainingSession = (
   data: AppData,

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { buildPrs } from '../src/engines/analytics';
 import { buildE1RMProfile } from '../src/engines/e1rmEngine';
 import { buildEffectiveVolumeSummary } from '../src/engines/effectiveSetEngine';
-import { deleteTrainingSession, markSessionDataFlag } from '../src/engines/sessionHistoryEngine';
+import { deleteTrainingSession, listSessionHistory, markSessionDataFlag } from '../src/engines/sessionHistoryEngine';
 import { emptyData } from '../src/storage/persistence';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
 
-const completedSession = (id: string, weight = 100, dataFlag: 'normal' | 'test' | 'excluded' = 'normal') => {
+const completedSession = (id: string, weight = 100, dataFlag: 'normal' | 'test' | 'excluded' = 'normal', date = '2026-04-20') => {
   const exercise = {
     ...makeExercise('bench', 1, 1),
     canonicalExerciseId: 'bench',
@@ -15,7 +15,8 @@ const completedSession = (id: string, weight = 100, dataFlag: 'normal' | 'test' 
   return {
     ...makeFocusSession([exercise]),
     id,
-    date: '2026-04-20',
+    date,
+    startedAt: `${date}T10:00:00.000Z`,
     completed: true,
     dataFlag,
   };
@@ -47,5 +48,22 @@ describe('session history cleanup', () => {
     const data = { ...emptyData(), history: [completedSession('s1')] };
     const result = markSessionDataFlag(data, 's1', 'test', true);
     expect(result.data.history[0].dataFlag).toBe('test');
+  });
+
+  it('restores a test session to normal data', () => {
+    const data = { ...emptyData(), history: [completedSession('s1', 100, 'test')] };
+    const result = markSessionDataFlag(data, 's1', 'normal', true);
+    expect(result.data.history[0].dataFlag).toBe('normal');
+    expect(buildEffectiveVolumeSummary(result.data.history).completedSets).toBe(1);
+  });
+
+  it('lists history in reverse chronological order and supports filters', () => {
+    const history = [
+      completedSession('older', 100, 'normal', '2026-04-18'),
+      completedSession('newer', 100, 'normal', '2026-04-20'),
+      completedSession('test', 100, 'test', '2026-04-19'),
+    ];
+    expect(listSessionHistory(history).map((session) => session.id)).toEqual(['newer', 'test', 'older']);
+    expect(listSessionHistory(history, 'test').map((session) => session.id)).toEqual(['test']);
   });
 });

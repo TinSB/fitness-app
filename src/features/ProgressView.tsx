@@ -27,7 +27,7 @@ import { buildWeeklyActionRecommendations } from '../engines/weeklyCoachActionEn
 import { classNames, formatDate, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildDeloadSignal } from '../engines/deloadSignalEngine';
-import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
+import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import { formatWeight } from '../engines/unitConversionEngine';
 import {
@@ -43,10 +43,11 @@ import {
   formatProgramTemplateName,
   formatSkippedReason,
   formatSupportDoseAdjustment,
+  formatTechniqueQuality,
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
 } from '../i18n/formatters';
-import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, UnitSettings, WeeklyPrescription } from '../models/training-model';
+import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, TrainingSession, UnitSettings, WeeklyPrescription } from '../models/training-model';
 import { Page, Stat, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
@@ -63,7 +64,44 @@ interface ProgressViewProps {
   onRestoreData: (data: AppData) => void;
   onApplyProgramAdjustmentDraft: (draft: ProgramAdjustmentDraft) => void;
   onRollbackProgramAdjustment: (historyItemId: string) => void;
+  initialSection?: ProgressSectionId;
+  selectedSessionId?: string;
+  selectedDate?: string;
 }
+
+type ProgressSectionId = 'dashboard' | 'calendar' | 'history' | 'pr' | 'data';
+
+const progressSections: Array<{ id: ProgressSectionId; label: string }> = [
+  { id: 'dashboard', label: '训练仪表盘' },
+  { id: 'calendar', label: '训练日历' },
+  { id: 'history', label: '历史训练' },
+  { id: 'pr', label: '个人记录 / PR' },
+  { id: 'data', label: '数据管理' },
+];
+
+const historyFilterOptions: Array<{ id: SessionHistoryFilter; label: string }> = [
+  { id: 'all', label: '全部' },
+  { id: 'normal', label: '正常数据' },
+  { id: 'test', label: '测试数据' },
+  { id: 'excluded', label: '排除数据' },
+];
+
+const dataFlagLabel = (flag?: SessionDataFlag) => {
+  if (flag === 'test') return '测试';
+  if (flag === 'excluded') return '排除';
+  return '正常';
+};
+
+const formatSessionTime = (session?: Pick<TrainingSession, 'startedAt' | 'finishedAt'> | null) => {
+  if (!session?.startedAt) return '未记录时间';
+  const started = new Date(session.startedAt);
+  if (Number.isNaN(started.getTime())) return '未记录时间';
+  const startText = started.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  if (!session.finishedAt) return startText;
+  const finished = new Date(session.finishedAt);
+  if (Number.isNaN(finished.getTime())) return startText;
+  return `${startText} - ${finished.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+};
 
 const volumeStatusLabels = {
   low: '不足',
@@ -148,15 +186,27 @@ export function ProgressView({
   onRestoreData,
   onApplyProgramAdjustmentDraft,
   onRollbackProgramAdjustment,
+  initialSection,
+  selectedSessionId: requestedSessionId,
+  selectedDate,
 }: ProgressViewProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [restoreMessage, setRestoreMessage] = React.useState('');
   const rawHistory = data.history || [];
+  const [activeProgressSection, setActiveProgressSection] = React.useState<ProgressSectionId>(initialSection || 'dashboard');
+  const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
+  const [showNonNormalCalendarData, setShowNonNormalCalendarData] = React.useState(false);
+  const [selectedSessionId, setSelectedSessionId] = React.useState<string | undefined>(requestedSessionId);
   const history = filterAnalyticsHistory(rawHistory);
-  const calendar = React.useMemo(() => buildTrainingCalendar(rawHistory), [rawHistory]);
-  const [selectedCalendarDate, setSelectedCalendarDate] = React.useState(() => todayKey());
+  const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);
+  const calendar = React.useMemo(
+    () => buildTrainingCalendar(rawHistory, undefined, { includeDataFlags: showNonNormalCalendarData ? 'all' : undefined }),
+    [rawHistory, showNonNormalCalendarData]
+  );
+  const [selectedCalendarDate, setSelectedCalendarDate] = React.useState(() => selectedDate || todayKey());
   const selectedCalendarDay = calendar.days.find((day) => day.date === selectedCalendarDate) || calendar.days.find((day) => day.totalSessions > 0);
   const selectedCalendarSessions = selectedCalendarDay?.sessions || [];
+  const selectedHistorySession = rawHistory.find((session) => session.id === selectedSessionId) || null;
   const monthStats = buildMonthStats(history, data.bodyWeights || []);
   const prs = buildPrs(history);
   const barData = buildRecentSessionBars(history);
@@ -194,6 +244,18 @@ export function ProgressView({
   const [adjustmentDiffLoading, setAdjustmentDiffLoading] = React.useState(false);
   const [adjustmentEngineError, setAdjustmentEngineError] = React.useState('');
   const [adjustmentReviews, setAdjustmentReviews] = React.useState<Record<string, AdjustmentEffectReview>>({});
+
+  React.useEffect(() => {
+    if (initialSection) setActiveProgressSection(initialSection);
+    if (requestedSessionId) {
+      setSelectedSessionId(requestedSessionId);
+      setActiveProgressSection(initialSection || 'history');
+    }
+    if (selectedDate) {
+      setSelectedCalendarDate(selectedDate);
+      if (!requestedSessionId) setActiveProgressSection(initialSection || 'calendar');
+    }
+  }, [initialSection, requestedSessionId, selectedDate]);
 
   React.useEffect(() => {
     setSelectedActionIds(defaultSelectedActionIds);
@@ -319,6 +381,324 @@ export function ProgressView({
     }
   };
 
+  const openSessionDetail = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setActiveProgressSection('history');
+  };
+
+  const renderEmptyHistory = () => (
+    <section className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
+      <h2 className="font-black text-slate-950">暂无训练记录</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-500">完成一次训练后，这里会显示训练日历、历史详情、PR 和趋势。测试数据不会进入统计，但仍可在历史训练里查看。</p>
+    </section>
+  );
+
+  const renderDataFlagBadge = (flag?: SessionDataFlag) => (
+    <span
+      className={classNames(
+        'rounded-md px-2 py-1 text-xs font-black',
+        flag === 'test'
+          ? 'bg-amber-50 text-amber-700'
+          : flag === 'excluded'
+            ? 'bg-slate-200 text-slate-600'
+            : 'bg-emerald-50 text-emerald-700'
+      )}
+    >
+      {dataFlagLabel(flag)}
+    </span>
+  );
+
+  const renderSessionDetail = (session: TrainingSession | null) => {
+    if (!session) return null;
+    const effective = buildEffectiveVolumeSummary([session]);
+    return (
+      <section className="rounded-lg border border-emerald-200 bg-white p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-black text-slate-950">{session.templateName || session.focus || '训练详情'}</h2>
+              {renderDataFlagBadge(session.dataFlag)}
+              {session.isExperimentalTemplate ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-black text-amber-700">实验模板</span> : null}
+            </div>
+            <div className="mt-1 text-sm font-bold text-slate-500">
+              {session.date} / {formatSessionTime(session)} / {session.durationMin || 0} 分钟
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <Stat label="完成组" value={sessionCompletedSets(session)} />
+            <Stat label="有效组" value={effective.effectiveSets} tone="emerald" />
+            <Stat label="总量" value={formatWeight(sessionVolume(session), unitSettings)} tone="amber" />
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {session.focusWarmupSetLogs?.length ? (
+            <div className="rounded-lg bg-stone-50 p-3">
+              <div className="mb-2 text-xs font-black text-slate-500">热身组</div>
+              <div className="space-y-1 text-sm font-bold text-slate-700">
+                {session.focusWarmupSetLogs.map((set, index) => (
+                  <div key={set.id || index}>
+                    热身 {index + 1}：{formatWeight(set.weight, unitSettings)} x {set.reps}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {session.exercises.map((exercise) => (
+            <div key={`${session.id}-${exercise.id}`} className="rounded-lg bg-stone-50 p-3">
+              <div className="font-black text-slate-950">{exercise.alias || exercise.name}</div>
+              <div className="mt-2 space-y-1 text-sm font-bold text-slate-700">
+                {Array.isArray(exercise.sets) && exercise.sets.length ? (
+                  exercise.sets.map((set, index) => (
+                    <div key={set.id || `${exercise.id}-${index}`} className={set.done ? '' : 'text-slate-400'}>
+                      {set.type === 'warmup' ? '热身组' : '正式组'} {index + 1}：{set.done ? `${formatWeight(set.weight, unitSettings)} x ${set.reps}` : '未完成'}
+                      {set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}
+                      {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
+                      {set.painFlag ? ' / 不适' : ''}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-slate-500">没有主训练组记录。</div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {(session.supportExerciseLogs || []).length ? (
+            <div className="rounded-lg bg-stone-50 p-3">
+              <div className="mb-2 text-xs font-black text-slate-500">纠偏 / 功能补丁</div>
+              <div className="space-y-1 text-sm font-bold text-slate-700">
+                {(session.supportExerciseLogs || []).map((log) => (
+                  <div key={`${log.moduleId}-${log.exerciseId}`}>
+                    {log.exerciseName || '辅助动作'}：{log.completedSets}/{log.plannedSets} 组
+                    {log.skippedReason ? ` / 跳过：${formatSkippedReason(log.skippedReason)}` : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button type="button" onClick={() => onDeleteSession(session.id)} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
+            删除本次训练
+          </button>
+          <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-black text-amber-700">
+            {session.dataFlag === 'test' ? '恢复为正常数据' : '标记为测试数据'}
+          </button>
+          {session.dataFlag === 'excluded' ? (
+            <button type="button" onClick={() => onMarkSessionDataFlag(session.id, 'normal')} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
+              恢复为正常数据
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setSelectedSessionId(undefined)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
+            关闭详情
+          </button>
+        </div>
+      </section>
+    );
+  };
+
+  const renderCalendarPanel = () => (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="font-black text-slate-950">训练日历</h2>
+          <p className="mt-1 text-sm text-slate-500">默认只显示正常训练。打开开关后，可查看测试/排除数据，但它们仍不计入统计。</p>
+        </div>
+        <label className="flex items-center gap-2 text-sm font-black text-slate-700">
+          <input type="checkbox" checked={showNonNormalCalendarData} onChange={(event) => setShowNonNormalCalendarData(event.target.checked)} />
+          显示测试 / 排除数据
+        </label>
+      </div>
+      {!rawHistory.length ? renderEmptyHistory() : null}
+      <div className="grid gap-3 md:grid-cols-[1fr_320px]">
+        <div>
+          <div className="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
+            <span>{calendar.month}</span>
+            <span>本月 {calendar.days.reduce((sum, day) => sum + day.totalSessions, 0)} 次</span>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500">
+            {['一', '二', '三', '四', '五', '六', '日'].map((label) => <div key={label}>{label}</div>)}
+            {calendar.days.map((day) => {
+              const selected = selectedCalendarDay?.date === day.date;
+              return (
+                <button
+                  key={day.date}
+                  type="button"
+                  onClick={() => setSelectedCalendarDate(day.date)}
+                  className={classNames(
+                    'min-h-12 rounded-lg border px-1 py-2 text-xs font-black',
+                    selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-stone-50 text-slate-600'
+                  )}
+                >
+                  <div>{Number(day.date.slice(-2))}</div>
+                  {day.totalSessions ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" /> : null}
+                  {day.hasPainFlags ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" /> : null}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-4">
+            {calendar.weeklyFrequency.length ? calendar.weeklyFrequency.map((week) => (
+              <div key={week.weekStart} className="rounded-lg bg-stone-50 p-3">
+                <div className="text-xs font-black text-slate-500">{formatDate(week.weekStart)} 周</div>
+                <div className="mt-1 text-xl font-black text-slate-950">{week.sessionCount} 次</div>
+              </div>
+            )) : <div className="rounded-lg bg-stone-50 p-3 text-sm text-slate-500 sm:col-span-4">最近 4 周暂无训练频率数据。</div>}
+          </div>
+        </div>
+        <div className="rounded-lg bg-stone-50 p-3">
+          <div className="text-sm font-black text-slate-950">{selectedCalendarDay?.date || selectedCalendarDate}</div>
+          <div className="mt-2 space-y-2">
+            {selectedCalendarSessions.length ? selectedCalendarSessions.map((session) => {
+              const rawSession = rawHistory.find((item) => item.id === session.sessionId);
+              return (
+                <div key={session.sessionId} className="rounded-lg bg-white p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-black text-slate-950">{session.title}</div>
+                    {renderDataFlagBadge(session.dataFlag)}
+                  </div>
+                  <div className="mt-1 text-xs font-bold leading-5 text-slate-500">
+                    {session.templateName || '未命名模板'} / {rawSession ? formatSessionTime(rawSession) : '未记录时间'} / {session.completedSets} 组
+                  </div>
+                  <div className="mt-1 text-xs font-bold text-emerald-700">
+                    有效组 {session.effectiveSets} / 总量 {formatWeight(session.totalVolumeKg, unitSettings)}
+                  </div>
+                  <button type="button" onClick={() => openSessionDetail(session.sessionId)} className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-700">
+                    查看详情
+                  </button>
+                </div>
+              );
+            }) : <div className="rounded-lg bg-white p-4 text-sm text-slate-500">当天没有训练记录。</div>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  const renderHistoryPanel = () => (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="font-black text-slate-950">历史训练</h2>
+          <p className="mt-1 text-sm text-slate-500">这里是回顾和清理训练记录的主入口。测试/排除数据可见，但不会进入统计。</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {historyFilterOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setHistoryFilter(option.id)}
+              className={classNames(
+                'h-10 rounded-lg border px-3 text-sm font-black',
+                historyFilter === option.id ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700'
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {!rawHistory.length ? renderEmptyHistory() : null}
+      {selectedHistorySession ? <div className="mb-3">{renderSessionDetail(selectedHistorySession)}</div> : null}
+      <div className="space-y-2">
+        {sortedHistory.map((session) => {
+          const effective = buildEffectiveVolumeSummary([session]);
+          return (
+            <div key={session.id} className="flex flex-col gap-2 rounded-lg bg-stone-50 p-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2 font-black text-slate-950">
+                  {session.templateName || session.focus || '训练'}
+                  {renderDataFlagBadge(session.dataFlag)}
+                  {session.isExperimentalTemplate ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">实验</span> : null}
+                </div>
+                <div className="text-sm text-slate-500">
+                  {session.date} / {formatSessionTime(session)} / {sessionCompletedSets(session)} 组 / 有效 {effective.effectiveSets} 组 / {session.durationMin || 0} 分钟
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-sm font-black text-emerald-700">{formatWeight(sessionVolume(session), unitSettings)}</div>
+                <button type="button" onClick={() => setSelectedSessionId(session.id)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-700">
+                  查看详情
+                </button>
+                <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
+                  {session.dataFlag === 'test' ? '恢复正式' : '标记测试'}
+                </button>
+                <button type="button" onClick={() => onDeleteSession(session.id)} className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-black text-rose-700">
+                  删除
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {rawHistory.length && !sortedHistory.length ? <div className="rounded-lg bg-stone-50 p-6 text-center text-sm text-slate-500">当前筛选下没有训练记录。</div> : null}
+      </div>
+    </section>
+  );
+
+  const renderPrPanel = () => (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <h2 className="mb-3 font-black text-slate-950">个人记录 / PR</h2>
+      {prs.length ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          {prs.map((pr) => (
+            <div key={pr.key} className="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div className="text-xs font-black text-slate-500">{pr.type}</div>
+              <div className="mt-1 font-black text-slate-950">{pr.exercise}</div>
+              <div className="mt-2 text-2xl font-black text-emerald-700">{pr.displayValue}</div>
+              <div className="mt-2 inline-flex rounded-md bg-white px-2 py-1 text-xs font-black text-slate-600">{formatPersonalRecordQuality(pr.quality)}</div>
+              <div className="mt-1 text-xs font-bold text-slate-500">{pr.date}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg bg-stone-50 p-6 text-center text-sm text-slate-500">正常训练数据不足，先完成几次训练后再看 PR。</div>
+      )}
+    </section>
+  );
+
+  const renderDataPanel = () => (
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
+      <h2 className="mb-3 font-black text-slate-950">数据管理</h2>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg bg-stone-50 p-3">
+          <div className="mb-2 text-sm font-black text-slate-950">重量单位</div>
+          <div className="grid grid-cols-2 gap-2">
+            {(['kg', 'lb'] as const).map((unit) => (
+              <button
+                key={unit}
+                type="button"
+                onClick={() => onUpdateUnitSettings({ weightUnit: unit })}
+                className={classNames(
+                  'h-11 rounded-lg border text-sm font-black',
+                  unitSettings.weightUnit === unit ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700'
+                )}
+              >
+                {unit}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-slate-500">切换单位只影响显示和输入，内部历史仍按 kg 保存。</p>
+        </div>
+        <div className="rounded-lg bg-stone-50 p-3">
+          <div className="mb-2 text-sm font-black text-slate-950">备份 / 恢复</div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={downloadBackup} className="flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-black text-white">
+              <Save className="h-4 w-4" /> 下载备份
+            </button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
+              导入备份
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden" onChange={(event) => handleImportFile(event.target.files?.[0])} />
+          {restoreMessage ? <div className="mt-2 text-sm font-bold text-slate-600">{restoreMessage}</div> : null}
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <Page
       eyebrow="进度"
@@ -344,6 +724,37 @@ export function ProgressView({
         </div>
       }
     >
+      <section className="mb-4 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+          {progressSections.map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => setActiveProgressSection(section.id)}
+              className={classNames(
+                'min-h-11 rounded-lg border px-3 py-2 text-sm font-black',
+                activeProgressSection === section.id ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700'
+              )}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+        {!rawHistory.length ? (
+          <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm font-bold text-slate-600">
+            暂无训练记录。完成一次训练后，这里会显示日历和历史详情。
+          </div>
+        ) : null}
+      </section>
+
+      <div className="mb-4 space-y-4">
+        {activeProgressSection === 'calendar' ? renderCalendarPanel() : null}
+        {activeProgressSection === 'history' ? renderHistoryPanel() : null}
+        {activeProgressSection === 'pr' ? renderPrPanel() : null}
+        {activeProgressSection === 'data' ? renderDataPanel() : null}
+      </div>
+
+      {activeProgressSection === 'dashboard' ? (
       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <section className="space-y-4">
           <WeeklyPrescriptionCard weeklyPrescription={weeklyPrescription} />
@@ -1106,6 +1517,7 @@ export function ProgressView({
           </section>
         </section>
       </div>
+      ) : null}
     </Page>
   );
 }

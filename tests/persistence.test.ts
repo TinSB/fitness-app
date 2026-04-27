@@ -130,6 +130,36 @@ describe('persistence', () => {
     expect(sanitized.history[0]?.isExperimentalTemplate).toBe(false);
   });
 
+  it('defaults missing session dataFlag to normal during migration', () => {
+    const sanitized = sanitizeData({
+      history: [
+        {
+          id: 'legacy-session',
+          date: '2026-04-20',
+          templateId: 'push-a',
+          templateName: 'Push A',
+          trainingMode: 'hybrid',
+          completed: true,
+          exercises: [
+            {
+              id: 'bench-press',
+              name: 'Bench Press',
+              muscle: 'chest',
+              kind: 'compound',
+              repMin: 6,
+              repMax: 8,
+              rest: 120,
+              startWeight: 60,
+              sets: [{ id: 'set-1', weight: 60, reps: 8, done: true }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(sanitized.history[0]?.dataFlag).toBe('normal');
+  });
+
   it('migrates draft fields for source template hash and updatedAt', () => {
     const sanitized = sanitizeData({
       templates: [

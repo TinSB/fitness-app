@@ -29,6 +29,8 @@ interface TrainingFocusViewProps {
   onReplaceExercise: (exerciseIndex: number) => void;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish?: () => void;
+  onFinishToCalendar?: () => void;
+  onFinishToToday?: () => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
@@ -77,6 +79,8 @@ export function TrainingFocusView({
   onReplaceExercise,
   onLoadFeedback,
   onFinish,
+  onFinishToCalendar,
+  onFinishToToday,
   onCompleteSupportSet,
   onSkipSupportExercise,
   onSkipSupportBlock,
@@ -241,7 +245,7 @@ export function TrainingFocusView({
         <section className="rounded-lg border border-emerald-200 bg-white p-5 text-center">
         <CheckCircle className="mx-auto h-10 w-10 text-emerald-600" />
         <h2 className="mt-4 text-2xl font-black text-slate-950">本次训练已完成</h2>
-        <p className="mt-2 text-base leading-7 text-slate-600">不会再自动跳回第一个动作。保存后系统会把本次训练写入历史和进度页。</p>
+        <p className="mt-2 text-base leading-7 text-slate-600">不会再自动跳回第一个动作。保存后系统会把本次训练写入历史、日历和进度页。</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-emerald-50 p-4">
             <div className="text-xs font-black text-emerald-700">完成组数</div>
@@ -256,13 +260,13 @@ export function TrainingFocusView({
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-3">
           <button type="button" onClick={onFinish} className="h-12 rounded-lg bg-emerald-600 px-4 text-sm font-black text-white">
-            保存并结束训练
+            查看本次训练
           </button>
-          <button type="button" onClick={onFinish} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
-            查看训练总结
+          <button type="button" onClick={onFinishToCalendar || onFinish} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
+            查看训练日历
           </button>
-          <button type="button" onClick={() => setShowExercisePicker((current) => !current)} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
-            返回查看动作
+          <button type="button" onClick={onFinishToToday || onFinish} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
+            返回首页
           </button>
         </div>
         </section>
