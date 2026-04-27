@@ -46,6 +46,7 @@ interface TrainingViewProps {
   onSwitchExercise: (exerciseIndex: number) => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
+  onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onReplaceExercise: (exerciseIndex: number) => void;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
@@ -139,6 +140,7 @@ export function TrainingView({
   onSwitchExercise,
   onCompleteSupportSet,
   onSkipSupportExercise,
+  onSkipSupportBlock,
   onUpdateSupportSkipReason,
   onReplaceExercise,
   onLoadFeedback,
@@ -239,7 +241,7 @@ export function TrainingView({
                           <button
                             onClick={() => onCompleteSupportSet(block.id, exercise.exerciseId)}
                             disabled={number(log?.completedSets) >= number(log?.plannedSets)}
-                            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:bg-slate-300"
+                            className="min-h-11 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:bg-slate-300"
                           >
                             完成一组
                           </button>
@@ -250,7 +252,7 @@ export function TrainingView({
                               setSupportReasonDrafts((current) => ({ ...current, [draftKey]: nextReason }));
                               onUpdateSupportSkipReason(block.id, exercise.exerciseId, nextReason);
                             }}
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
+                            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 py-2 text-base font-bold text-slate-700 outline-none focus:border-amber-500 md:text-sm"
                           >
                             {supportReasonOptions.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -260,7 +262,7 @@ export function TrainingView({
                           </select>
                           <button
                             onClick={() => onSkipSupportExercise(block.id, exercise.exerciseId, reason)}
-                            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-black text-amber-900"
+                            className="min-h-11 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-black text-amber-900"
                           >
                             跳过
                           </button>
@@ -743,9 +745,9 @@ export function TrainingView({
         </div>
       }
     >
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        <section className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="min-w-0 space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
             <Stat label="完成组数" value={`${doneSets}/${totalSets}`} tone="emerald" />
             <Stat label="当前总量" value={`${Math.round(currentVolume)}kg`} />
             <Stat label="状态" value={`${session.status?.energy || DEFAULT_STATUS.energy} / ${session.status?.time || DEFAULT_STATUS.time} 分`} tone="amber" />
@@ -771,6 +773,7 @@ export function TrainingView({
                       onFinish={onFinish}
                       onCompleteSupportSet={onCompleteSupportSet}
               onSkipSupportExercise={onSkipSupportExercise}
+              onSkipSupportBlock={onSkipSupportBlock}
               onUpdateSupportSkipReason={onUpdateSupportSkipReason}
             />
           ) : (
@@ -786,8 +789,8 @@ export function TrainingView({
           )}
         </section>
 
-        <aside className="space-y-4">
-          <section className="sticky top-4 rounded-lg border border-slate-200 bg-white p-4">
+        <aside className="min-w-0 space-y-4">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 xl:sticky xl:top-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <div className="text-xs font-black uppercase tracking-widest text-emerald-700">计时</div>

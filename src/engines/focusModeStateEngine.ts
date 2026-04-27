@@ -1,10 +1,12 @@
-import type { ActualSetDraft, ExercisePrescription, FocusStepType, TrainingSession, TrainingSetLog } from '../models/training-model';
+import type { ActualSetDraft, ExercisePrescription, FocusStepType, SupportSkipReason, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { clone, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { createRestTimerState } from './restTimerEngine';
+import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupPolicyDecision } from './warmupPolicyEngine';
 
 export type { ActualSetDraft, FocusStepType };
 
 export type FocusNoticeTone = 'warning' | 'success' | 'info';
+export type FocusBlockType = 'correction' | 'main' | 'functional';
 
 export interface FocusNotice {
   id: string;
@@ -17,7 +19,11 @@ export interface FocusTrainingStep {
   id: string;
   exerciseId: string;
   exerciseIndex: number;
+  blockType: FocusBlockType;
   stepType: FocusStepType;
+  moduleId?: string;
+  moduleName?: string;
+  exerciseName?: string;
   setIndex: number;
   totalSetsForStepType: number;
   label: string;
@@ -26,6 +32,7 @@ export interface FocusTrainingStep {
   plannedRir?: number;
   plannedRestSec?: number;
   source: 'warmup' | 'working-set' | 'support-log';
+  warmupPolicy?: WarmupPolicyDecision;
 }
 
 export interface FocusNavigationState {
@@ -45,6 +52,7 @@ const COMPLETED_STEP: FocusTrainingStep = {
   id: 'completed',
   exerciseId: '',
   exerciseIndex: -1,
+  blockType: 'main',
   stepType: 'completed',
   setIndex: -1,
   totalSetsForStepType: 0,
@@ -54,31 +62,85 @@ const COMPLETED_STEP: FocusTrainingStep = {
 
 const getSets = (exercise: ExercisePrescription | undefined): TrainingSetLog[] => (Array.isArray(exercise?.sets) ? exercise.sets : []);
 const getWarmupSets = (exercise: ExercisePrescription | undefined) => (Array.isArray(exercise?.warmupSets) ? exercise.warmupSets : []);
-const stepId = (exerciseId: string, stepType: FocusStepType, setIndex: number, suffix = '') => `${exerciseId}:${stepType}:${setIndex}${suffix}`;
+const stepId = (exerciseId: string, stepType: FocusStepType, setIndex: number, suffix = '') => `main:${exerciseId}:${stepType}:${setIndex}${suffix}`;
+const supportStepId = (blockType: 'correction' | 'functional', moduleId: string, exerciseId: string, setIndex: number) =>
+  `${blockType}:${moduleId}:${exerciseId}:${setIndex}`;
+const exerciseCompletedStepId = (exerciseId: string) => stepId(exerciseId, 'completed', 0);
+const isSupportFocusStep = (step: FocusTrainingStep) => step.stepType === 'correction' || step.stepType === 'functional' || step.stepType === 'support';
+const findSupportLog = (session: TrainingSession, step: FocusTrainingStep) => {
+  const [legacyModuleId, legacyExerciseId] = step.exerciseId.split('::');
+  const moduleId = step.moduleId || legacyModuleId;
+  const exerciseId = step.moduleId ? step.exerciseId : legacyExerciseId;
+  return (session.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
+};
 
 const isStepCompleted = (session: TrainingSession, step: FocusTrainingStep): boolean => {
   if (step.stepType === 'completed') return true;
   if (step.stepType === 'warmup') return Boolean(session.focusCompletedStepIds?.includes(step.id));
   if (step.stepType === 'working') return Boolean(getSets(session.exercises[step.exerciseIndex])?.[step.setIndex]?.done);
-  if (step.stepType === 'support') {
-    const [moduleId, supportExerciseId] = step.exerciseId.split('::');
-    const log = (session.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === supportExerciseId);
-    return number(log?.completedSets) > step.setIndex;
+  if (isSupportFocusStep(step)) {
+    const log = findSupportLog(session, step);
+    return Boolean(log?.skippedReason) || number(log?.completedSets) > step.setIndex;
   }
   return false;
 };
 
+const buildSupportSteps = (session: TrainingSession, blockType: 'correction' | 'functional'): FocusTrainingStep[] => {
+  const blocks = blockType === 'correction' ? session.correctionBlock || [] : session.functionalBlock || [];
+  const steps: FocusTrainingStep[] = [];
+
+  blocks.forEach((block) => {
+    block.exercises.forEach((exercise) => {
+      const log = (session.supportExerciseLogs || []).find((item) => item.moduleId === block.id && item.exerciseId === exercise.exerciseId);
+      const total = Math.max(0, number(log?.plannedSets ?? exercise.sets));
+      const timeSec = 'timeSec' in exercise ? exercise.timeSec : undefined;
+      const distanceM = 'distanceM' in exercise ? exercise.distanceM : undefined;
+      for (let setIndex = 0; setIndex < total; setIndex += 1) {
+        steps.push({
+          id: supportStepId(blockType, block.id, exercise.exerciseId, setIndex),
+          exerciseId: exercise.exerciseId,
+          exerciseIndex: -1,
+          blockType,
+          stepType: blockType,
+          moduleId: block.id,
+          moduleName: block.name,
+          exerciseName: exercise.name || log?.exerciseName || exercise.exerciseId,
+          setIndex,
+          totalSetsForStepType: total,
+          label: `${blockType === 'correction' ? '纠偏模块' : '功能补丁'} ${setIndex + 1} / ${total}`,
+          plannedReps: number(exercise.repMax ?? exercise.repMin ?? exercise.holdSec ?? timeSec ?? distanceM),
+          plannedRestSec: number(exercise.restSec) || 45,
+          source: 'support-log',
+        });
+      }
+    });
+  });
+
+  return steps;
+};
+
 export const buildFocusStepQueue = (session: TrainingSession | null | undefined): FocusTrainingStep[] => {
   if (!session) return [COMPLETED_STEP];
-  const steps: FocusTrainingStep[] = [];
+  const steps: FocusTrainingStep[] = [...buildSupportSteps(session, 'correction')];
+  const previousExercises: ExercisePrescription[] = [];
 
   (session.exercises || []).forEach((exercise, exerciseIndex) => {
     const warmups = getWarmupSets(exercise);
+    const sets = getSets(exercise);
+    const warmupPolicy = decideWarmupPolicy({
+      exercise,
+      exerciseIndex,
+      previousExercises,
+      completedWarmupPatterns: session.focusCompletedWarmupPatterns || [],
+      plannedWeight: number(sets[0]?.weight ?? exercise.startWeight),
+    });
+    if (warmupPolicy.shouldShowWarmupSets) {
     warmups.forEach((warmup, setIndex) => {
       steps.push({
         id: stepId(exercise.id, 'warmup', setIndex),
         exerciseId: exercise.id,
         exerciseIndex,
+        blockType: 'main',
         stepType: 'warmup',
         setIndex,
         totalSetsForStepType: warmups.length,
@@ -87,16 +149,18 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
         plannedReps: number(warmup.reps),
         plannedRestSec: Math.min(60, number(exercise.rest) || 60),
         source: 'warmup',
+        warmupPolicy,
       });
     });
+    }
 
-    const sets = getSets(exercise);
     sets.forEach((set, setIndex) => {
       const isTop = set.type === 'top';
       steps.push({
         id: stepId(exercise.id, 'working', setIndex),
         exerciseId: exercise.id,
         exerciseIndex,
+        blockType: 'main',
         stepType: 'working',
         setIndex,
         totalSetsForStepType: sets.length,
@@ -106,26 +170,13 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
         plannedRir: typeof set.rir === 'number' ? set.rir : number(set.rir || exercise.targetRir?.[1] || 2),
         plannedRestSec: number(exercise.rest) || 90,
         source: isTop ? 'working-set' : 'working-set',
+        warmupPolicy,
       });
     });
+    previousExercises.push(exercise);
   });
 
-  (session.supportExerciseLogs || []).forEach((log) => {
-    const total = number(log.plannedSets);
-    for (let setIndex = 0; setIndex < total; setIndex += 1) {
-      steps.push({
-        id: stepId(`${log.moduleId}::${log.exerciseId}`, 'support', setIndex),
-        exerciseId: `${log.moduleId}::${log.exerciseId}`,
-        exerciseIndex: -1,
-        stepType: 'support',
-        setIndex,
-        totalSetsForStepType: total,
-        label: `支持动作 ${setIndex + 1} / ${total}`,
-        plannedRestSec: 45,
-        source: 'support-log',
-      });
-    }
-  });
+  steps.push(...buildSupportSteps(session, 'functional'));
 
   return steps.length ? steps : [COMPLETED_STEP];
 };
@@ -142,10 +193,34 @@ export const getCurrentFocusStep = (session: TrainingSession | null | undefined)
   const queue = buildFocusStepQueue(session);
   if (isFocusSessionComplete(session)) return COMPLETED_STEP;
 
-  const saved = queue.find((step) => step.id === session.currentFocusStepId);
-  if (saved && !isStepCompleted(session, saved)) return saved;
+  if (session.currentFocusStepId?.endsWith(':completed:0')) {
+    const exerciseIndex = (session.exercises || []).findIndex((exercise) => exerciseCompletedStepId(exercise.id) === session.currentFocusStepId);
+    const exercise = session.exercises[exerciseIndex];
+    if (exercise) {
+      const exerciseSteps = queue.filter((step) => step.exerciseIndex === exerciseIndex && step.stepType !== 'completed');
+      if (exerciseSteps.length && exerciseSteps.every((step) => isStepCompleted(session, step))) {
+        return {
+          id: exerciseCompletedStepId(exercise.id),
+          exerciseId: exercise.id,
+          exerciseIndex,
+          blockType: 'main',
+          stepType: 'completed',
+          setIndex: -1,
+          totalSetsForStepType: 0,
+          label: '该动作已完成',
+          source: 'working-set',
+        };
+      }
+    }
+  }
 
-  return queue.find((step) => step.stepType !== 'completed' && !isStepCompleted(session, step)) || COMPLETED_STEP;
+  const savedIndex = queue.findIndex((step) => step.id === session.currentFocusStepId);
+  const saved = savedIndex >= 0 ? queue[savedIndex] : undefined;
+  const firstIncompleteIndex = queue.findIndex((step) => step.stepType !== 'completed' && !isStepCompleted(session, step));
+  if (session.focusManualStepOverride && saved && !isStepCompleted(session, saved)) return saved;
+  if (saved && !isStepCompleted(session, saved) && (firstIncompleteIndex < 0 || savedIndex <= firstIncompleteIndex)) return saved;
+
+  return firstIncompleteIndex >= 0 ? queue[firstIncompleteIndex] : COMPLETED_STEP;
 };
 
 export const getNextFocusStep = (session: TrainingSession | null | undefined): FocusTrainingStep | null => {
@@ -191,7 +266,19 @@ const setCurrentStep = (session: TrainingSession, step: FocusTrainingStep) => {
   session.currentFocusStepType = step.stepType;
   session.currentExerciseId = step.exerciseId;
   session.currentSetIndex = step.setIndex;
-  session.focusSessionComplete = step.stepType === 'completed';
+  session.focusSessionComplete = step.stepType === 'completed' && step.exerciseIndex < 0;
+  session.focusManualStepOverride = false;
+};
+
+const getNextIncompleteStepAfter = (session: TrainingSession, completedStepId: string): FocusTrainingStep | null => {
+  const queue = buildFocusStepQueue(session);
+  const completedIndex = queue.findIndex((step) => step.id === completedStepId);
+  const startIndex = completedIndex >= 0 ? completedIndex + 1 : 0;
+  for (let index = startIndex; index < queue.length; index += 1) {
+    const step = queue[index];
+    if (step.stepType !== 'completed' && !isStepCompleted(session, step)) return step;
+  }
+  return null;
 };
 
 const findStepForExercise = (session: TrainingSession, exerciseIndex: number): FocusTrainingStep => {
@@ -226,7 +313,11 @@ export const getCurrentExercise = (session: TrainingSession, preferredIndex?: nu
   if (!exercises.length) return null;
 
   const step = getCurrentFocusStep(session);
-  if (step.stepType === 'support' || step.stepType === 'completed') return null;
+  if (isSupportFocusStep(step)) return null;
+  if (step.stepType === 'completed') {
+    if (step.exerciseIndex >= 0 && exercises[step.exerciseIndex]) return { exercise: exercises[step.exerciseIndex], index: step.exerciseIndex };
+    return null;
+  }
   if (step.exerciseIndex >= 0 && exercises[step.exerciseIndex]) return { exercise: exercises[step.exerciseIndex], index: step.exerciseIndex };
 
   const savedIndex = findExerciseIndexById(session, session.currentExerciseId);
@@ -258,7 +349,7 @@ export const getFocusNavigationState = (session: TrainingSession | null | undefi
   }
 
   const step = getCurrentFocusStep(session);
-  const current = step.stepType === 'support' || step.stepType === 'completed' ? null : getCurrentExercise(session, preferredIndex);
+  const current = isSupportFocusStep(step) || (step.stepType === 'completed' && step.exerciseIndex < 0) ? null : getCurrentExercise(session, preferredIndex);
   const sets = current ? getSets(current.exercise) : [];
   const currentSet = step.stepType === 'working' && step.setIndex >= 0 ? sets[step.setIndex] || null : null;
   const totalSets = buildFocusStepQueue(session).filter((item) => item.stepType !== 'completed').length;
@@ -279,13 +370,30 @@ export const getFocusNavigationState = (session: TrainingSession | null | undefi
 
 export const switchFocusExercise = (session: TrainingSession, exerciseIndex: number): TrainingSession => {
   const nextSession = clone(session) as TrainingSession;
-  const step = buildFocusStepQueue(nextSession).find(
+  const queue = buildFocusStepQueue(nextSession);
+  const step = queue.find(
     (item) => item.exerciseIndex === exerciseIndex && item.stepType !== 'completed' && !isStepCompleted(nextSession, item)
   );
-  const fallback = buildFocusStepQueue(nextSession).find((item) => item.exerciseIndex === exerciseIndex && item.stepType !== 'completed');
-  const target = step || fallback;
+  const fallback = queue.find((item) => item.exerciseIndex === exerciseIndex && item.stepType !== 'completed');
+  const exercise = nextSession.exercises[exerciseIndex];
+  const completedTarget: FocusTrainingStep | null =
+    exercise && fallback
+      ? {
+          id: exerciseCompletedStepId(exercise.id),
+          exerciseId: exercise.id,
+          exerciseIndex,
+          blockType: 'main',
+          stepType: 'completed',
+          setIndex: -1,
+          totalSetsForStepType: 0,
+          label: '该动作已完成',
+          source: 'working-set',
+        }
+      : null;
+  const target = step || completedTarget || fallback;
   if (!target) return session;
   setCurrentStep(nextSession, target);
+  nextSession.focusManualStepOverride = true;
   return nextSession;
 };
 
@@ -376,10 +484,12 @@ export const completeFocusSet = (
   session: TrainingSession,
   exerciseIndex: number,
   completedAt = new Date().toISOString(),
-  nowMs = Date.now()
+  nowMs = Date.now(),
+  expectedStepId?: string
 ): CompleteFocusSetResult | null => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
+  if (expectedStepId && step.id !== expectedStepId) return null;
   if (step.stepType === 'completed' || isStepCompleted(nextSession, step)) return null;
 
   const draft = getActualSetDraft(nextSession, step);
@@ -404,6 +514,13 @@ export const completeFocusSet = (
         completedAt,
       },
     ];
+    const exercise = nextSession.exercises[step.exerciseIndex];
+    const warmupSteps = buildFocusStepQueue(nextSession).filter((item) => item.exerciseId === step.exerciseId && item.stepType === 'warmup');
+    if (exercise && warmupSteps.length && warmupSteps.every((item) => isStepCompleted(nextSession, item))) {
+      nextSession.focusCompletedWarmupPatterns = Array.from(
+        new Set([...(nextSession.focusCompletedWarmupPatterns || []), getWarmupMovementPattern(exercise)])
+      );
+    }
   }
 
   if (step.stepType === 'working') {
@@ -423,16 +540,15 @@ export const completeFocusSet = (
     };
   }
 
-  if (step.stepType === 'support') {
-    const [moduleId, supportExerciseId] = step.exerciseId.split('::');
-    const log = (nextSession.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === supportExerciseId);
+  if (isSupportFocusStep(step)) {
+    const log = findSupportLog(nextSession, step);
     if (!log) return null;
     log.completedSets = Math.max(number(log.completedSets), step.setIndex + 1);
     if (log.completedSets >= log.plannedSets) log.skippedReason = undefined;
   }
 
   nextSession.restTimerState = createRestTimerState(step.exerciseId, step.setIndex, step.plannedRestSec || 60, nowMs, step.label);
-  const nextStep = getNextFocusStep(nextSession);
+  const nextStep = getNextIncompleteStepAfter(nextSession, step.id);
   setCurrentStep(nextSession, nextStep || COMPLETED_STEP);
 
   return {
@@ -445,6 +561,73 @@ export const completeFocusSet = (
     nextSetIndex: nextStep?.setIndex ?? -1,
     sessionComplete: !nextStep,
   };
+};
+
+export const completeFocusSupportStep = (
+  session: TrainingSession,
+  completedAt = new Date().toISOString(),
+  nowMs = Date.now(),
+  expectedStepId?: string
+): CompleteFocusSetResult | null => {
+  const nextSession = clone(session) as TrainingSession;
+  const step = getCurrentFocusStep(nextSession);
+  if (!isSupportFocusStep(step)) return null;
+  if (expectedStepId && step.id !== expectedStepId) return null;
+  if (isStepCompleted(nextSession, step)) return null;
+
+  const log = findSupportLog(nextSession, step);
+  if (!log) return null;
+  log.completedSets = Math.max(number(log.completedSets), step.setIndex + 1);
+  if (log.completedSets >= log.plannedSets) log.skippedReason = undefined;
+
+  nextSession.restTimerState = createRestTimerState(step.exerciseId, step.setIndex, step.plannedRestSec || 45, nowMs, step.label);
+  const nextStep = getNextIncompleteStepAfter(nextSession, step.id);
+  setCurrentStep(nextSession, nextStep || COMPLETED_STEP);
+
+  return {
+    session: nextSession,
+    completedExerciseIndex: -1,
+    completedSetIndex: step.setIndex,
+    completedStep: step,
+    nextStep,
+    nextExerciseIndex: nextStep?.exerciseIndex ?? -1,
+    nextSetIndex: nextStep?.setIndex ?? -1,
+    sessionComplete: !nextStep,
+  };
+};
+
+export const skipFocusSupportStep = (
+  session: TrainingSession,
+  reason: SupportSkipReason = 'time',
+  expectedStepId?: string
+): TrainingSession => {
+  const nextSession = clone(session) as TrainingSession;
+  const step = getCurrentFocusStep(nextSession);
+  if (!isSupportFocusStep(step)) return session;
+  if (expectedStepId && step.id !== expectedStepId) return session;
+
+  const log = findSupportLog(nextSession, step);
+  if (!log) return session;
+  log.skippedReason = reason;
+  const nextStep = getNextIncompleteStepAfter(nextSession, step.id);
+  setCurrentStep(nextSession, nextStep || COMPLETED_STEP);
+  return nextSession;
+};
+
+export const skipFocusSupportBlock = (
+  session: TrainingSession,
+  blockType: 'correction' | 'functional',
+  reason: SupportSkipReason = 'time'
+): TrainingSession => {
+  const nextSession = clone(session) as TrainingSession;
+  nextSession.supportExerciseLogs = (nextSession.supportExerciseLogs || []).map((log) =>
+    log.blockType === blockType && number(log.completedSets) < number(log.plannedSets)
+      ? { ...log, skippedReason: reason }
+      : log
+  );
+  const nextStep = buildFocusStepQueue(nextSession).find((step) => step.stepType !== 'completed' && !isStepCompleted(nextSession, step));
+  setCurrentStep(nextSession, nextStep || COMPLETED_STEP);
+  return nextSession;
 };
 
 export const dedupeFocusNotices = (notices: FocusNotice[], maxVisible = 3): FocusNotice[] => {

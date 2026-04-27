@@ -1,33 +1,69 @@
 import { describe, expect, it } from 'vitest';
-import { buildFocusStepQueue, completeFocusSet, getCurrentFocusStep, isFocusSessionComplete } from '../src/engines/focusModeStateEngine';
+import { applySuggestedFocusStep, buildFocusStepQueue, completeFocusSet, getCurrentFocusStep, isFocusSessionComplete } from '../src/engines/focusModeStateEngine';
 import type { TrainingSession } from '../src/models/training-model';
-import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { attachSupportBlocks, makeExercise, makeFocusSession } from './focusModeFixtures';
 
 describe('focus step queue', () => {
-  it('warmup steps 在 working steps 前', () => {
-    const session = makeFocusSession([makeExercise('bench', 2, 0, 2)]);
-    expect(buildFocusStepQueue(session).map((step) => step.stepType)).toEqual(['warmup', 'warmup', 'working', 'working']);
+  it('orders 3 warmup steps before 2 working steps for one exercise', () => {
+    const session = makeFocusSession([makeExercise('bench', 2, 0, 3)]);
+    expect(buildFocusStepQueue(session).map((step) => `${step.stepType}:${step.setIndex}`)).toEqual([
+      'warmup:0',
+      'warmup:1',
+      'warmup:2',
+      'working:0',
+      'working:1',
+    ]);
   });
 
-  it('完成 warmup 后进入 working', () => {
-    let session = makeFocusSession([makeExercise('bench', 1, 0, 1)]);
-    session.focusActualSetDrafts = [{ exerciseId: 'bench', stepId: 'bench:warmup:0', stepType: 'warmup', setIndex: 0, actualWeightKg: 20, actualReps: 8 }];
+  it('places correction before main and functional after main', () => {
+    const session = attachSupportBlocks(makeFocusSession([makeExercise('bench', 1, 0, 1)]));
+    expect(buildFocusStepQueue(session).map((step) => step.blockType)).toEqual([
+      'correction',
+      'correction',
+      'main',
+      'main',
+      'functional',
+      'functional',
+    ]);
+  });
+
+  it('skips empty correction and functional blocks', () => {
+    const session = attachSupportBlocks(makeFocusSession([makeExercise('bench', 1, 0, 1)]), [], []);
+    expect(buildFocusStepQueue(session).map((step) => step.blockType)).toEqual(['main', 'main']);
+  });
+
+  it('advances warmup1 to warmup2, then warmup3, then working1', () => {
+    let session = makeFocusSession([makeExercise('bench', 2, 0, 3)]);
+
+    session = applySuggestedFocusStep(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
-    expect(getCurrentFocusStep(session).stepType).toBe('working');
+    expect(getCurrentFocusStep(session).id).toBe('main:bench:warmup:1');
+
+    session = applySuggestedFocusStep(session, 0);
+    session = completeFocusSet(session, 0)?.session as TrainingSession;
+    expect(getCurrentFocusStep(session).id).toBe('main:bench:warmup:2');
+
+    session = applySuggestedFocusStep(session, 0);
+    session = completeFocusSet(session, 0)?.session as TrainingSession;
+    expect(getCurrentFocusStep(session).id).toBe('main:bench:working:0');
   });
 
-  it('完成 working 后进入 next exercise', () => {
+  it('advances from last working set to next exercise', () => {
     let session = makeFocusSession([makeExercise('bench', 1), makeExercise('row', 1)]);
+    session = applySuggestedFocusStep(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
     expect(getCurrentFocusStep(session).exerciseId).toBe('row');
     expect(getCurrentFocusStep(session).stepType).toBe('working');
+    expect(getCurrentFocusStep(session).setIndex).toBe(0);
   });
 
-  it('所有 step 完成后 session complete 且不会 wrap 到第一个动作', () => {
-    let session = makeFocusSession([makeExercise('bench', 1, 1), makeExercise('row', 1)]);
-    session.currentExerciseId = 'row';
-    session.currentFocusStepId = 'row:working:0';
+  it('marks session complete without wrapping to first exercise', () => {
+    let session = makeFocusSession([makeExercise('bench', 1), makeExercise('row', 1)]);
+    session = applySuggestedFocusStep(session, 0);
+    session = completeFocusSet(session, 0)?.session as TrainingSession;
+    session = applySuggestedFocusStep(session, 1);
     session = completeFocusSet(session, 1)?.session as TrainingSession;
+
     expect(isFocusSessionComplete(session)).toBe(true);
     expect(getCurrentFocusStep(session).stepType).toBe('completed');
     expect(session.currentExerciseId).toBe('');

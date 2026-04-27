@@ -29,6 +29,7 @@ interface TrainingFocusViewProps {
   onFinish?: () => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
+  onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
 }
 
@@ -75,6 +76,7 @@ export function TrainingFocusView({
   onFinish,
   onCompleteSupportSet,
   onSkipSupportExercise,
+  onSkipSupportBlock,
   onUpdateSupportSkipReason,
 }: TrainingFocusViewProps) {
   const [skipReason, setSkipReason] = React.useState<SupportSkipReason>('time');
@@ -88,6 +90,8 @@ export function TrainingFocusView({
   const mainSet = focusState.currentSet;
   const currentStep = focusState.currentStep;
   const actualDraft = focusState.actualDraft;
+  const isSupportStep =
+    currentStep.stepType === 'correction' || currentStep.stepType === 'functional' || currentStep.stepType === 'support';
   const sessionComplete = focusState.sessionComplete || Boolean(session.focusSessionComplete);
   const remainingSec = getRestTimerRemainingSec(restTimer);
   const mainExercisePoolId = mainExercise?.canonicalExerciseId || mainExercise?.baseId || mainExercise?.id || '';
@@ -95,8 +99,18 @@ export function TrainingFocusView({
   const existingLoadFeedback = mainExercisePoolId
     ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId)
     : undefined;
+  const warmupPolicyNotice =
+    currentStep.stepType === 'working' && currentStep.warmupPolicy?.policy === 'skipped_by_policy'
+      ? {
+          id: `warmup-policy-${currentStep.exerciseId}`,
+          type: 'warmup-policy',
+          tone: 'info' as const,
+          message: currentStep.warmupPolicy.reason || '已完成同模式热身，直接进入正式组。',
+        }
+      : null;
   const notices = dedupeFocusNotices(
     [
+      warmupPolicyNotice,
       mainExercise?.warning
         ? {
             id: `warning-${mainExercise.id}`,
@@ -106,11 +120,13 @@ export function TrainingFocusView({
           }
         : null,
     ].filter(Boolean) as Parameters<typeof dedupeFocusNotices>[0],
-    3
+    1
   );
 
-  const [supportModuleId, supportExerciseId] = currentStep.stepType === 'support' ? currentStep.exerciseId.split('::') : ['', ''];
-  const supportLog = currentStep.stepType === 'support'
+  const [legacySupportModuleId, legacySupportExerciseId] = currentStep.stepType === 'support' ? currentStep.exerciseId.split('::') : ['', ''];
+  const supportModuleId = currentStep.moduleId || legacySupportModuleId;
+  const supportExerciseId = currentStep.moduleId ? currentStep.exerciseId : legacySupportExerciseId;
+  const supportLog = isSupportStep
     ? (session.supportExerciseLogs || []).find((log) => log.moduleId === supportModuleId && log.exerciseId === supportExerciseId) || null
     : !mainExercise && !sessionComplete
       ? (session.supportExerciseLogs || []).find((log) => number(log.completedSets) < number(log.plannedSets))
@@ -122,19 +138,29 @@ export function TrainingFocusView({
         ? session.functionalBlock?.find((block) => block.id === supportLog.moduleId)
         : undefined;
   const supportExercise = supportBlock?.exercises.find((exercise) => exercise.exerciseId === supportLog?.exerciseId);
-  const blockType: FocusBlockType = currentStep.stepType === 'support' ? supportLog?.blockType || 'functional' : mainExercise ? 'main' : supportLog?.blockType || 'main';
+  const blockType: FocusBlockType = isSupportStep ? supportLog?.blockType || currentStep.blockType || 'functional' : mainExercise ? 'main' : supportLog?.blockType || 'main';
+  const supportTimeSec = supportExercise && 'timeSec' in supportExercise ? supportExercise.timeSec : undefined;
+  const supportDistanceM = supportExercise && 'distanceM' in supportExercise ? supportExercise.distanceM : undefined;
   const stageLabel =
     currentStep.stepType === 'warmup'
       ? '热身组'
       : currentStep.stepType === 'working'
         ? '正式组'
-        : currentStep.stepType === 'support'
-          ? '支持动作'
+        : currentStep.stepType === 'correction'
+          ? '纠偏模块'
+          : currentStep.stepType === 'functional'
+            ? '功能补丁'
+            : currentStep.stepType === 'support'
+              ? '支持动作'
           : '完成';
   const plannedSummary =
-    currentStep.stepType === 'support'
+    isSupportStep
       ? supportExercise
-        ? `${supportExercise.name || supportLog?.exerciseName || '支持动作'} / ${supportExercise.sets || supportLog?.plannedSets || currentStep.totalSetsForStepType} 组`
+        ? `${supportExercise.name || supportLog?.exerciseName || '支持动作'} / ${supportExercise.sets || supportLog?.plannedSets || currentStep.totalSetsForStepType} 组${
+            supportExercise.repMin || supportExercise.repMax ? ` / ${supportExercise.repMin || supportExercise.repMax}-${supportExercise.repMax || supportExercise.repMin} 次` : ''
+          }${supportExercise.holdSec ? ` / 保持 ${supportExercise.holdSec} 秒` : ''}${supportTimeSec ? ` / ${supportTimeSec} 秒` : ''}${
+            supportDistanceM ? ` / ${supportDistanceM} 米` : ''
+          }`
         : '按支持动作计划完成'
       : `${number(currentStep.plannedWeight)}kg × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
   const actualWeight = actualDraft?.actualWeightKg;
@@ -188,7 +214,7 @@ export function TrainingFocusView({
       notify('训练已完成');
       return;
     }
-    if (currentStep.stepType === 'support' && supportLog) {
+    if (isSupportStep && supportLog) {
       onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId);
       notify('已完成支持动作');
       return;
@@ -247,6 +273,53 @@ export function TrainingFocusView({
                       {done}/{sets.length}
                     </span>
                   </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (currentStep.stepType === 'completed' && mainExercise) {
+    return (
+      <div className="mx-auto flex min-h-[72svh] max-w-2xl flex-col gap-3 pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-0">
+        <section className="rounded-lg border border-emerald-200 bg-white p-5 text-center">
+          <CheckCircle className="mx-auto h-9 w-9 text-emerald-600" />
+          <h2 className="mt-3 text-2xl font-black text-slate-950">{mainExercise.alias || mainExercise.name}</h2>
+          <p className="mt-2 text-sm font-bold text-slate-600">该动作已完成。切换到其他动作时会定位到该动作第一个未完成步骤。</p>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <button type="button" onClick={() => switchExercise(Math.max(0, mainIndex - 1))} disabled={mainIndex <= 0} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
+              上一个
+            </button>
+            <button type="button" onClick={() => setShowExercisePicker((current) => !current)} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700">
+              切换动作
+            </button>
+            <button type="button" onClick={() => switchExercise(Math.min(session.exercises.length - 1, mainIndex + 1))} disabled={mainIndex >= session.exercises.length - 1} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
+              下一个
+            </button>
+          </div>
+        </section>
+        {showExercisePicker ? (
+          <section className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="mb-2 text-xs font-black text-slate-500">选择动作</div>
+            <div className="space-y-2">
+              {session.exercises.map((exercise, index) => {
+                const sets = getSets(exercise);
+                const done = sets.filter((set) => set.done).length;
+                return (
+                  <button
+                    key={`${exercise.id}-completed-picker-${index}`}
+                    type="button"
+                    onClick={() => switchExercise(index)}
+                    className="flex w-full items-center justify-between rounded-lg bg-stone-50 px-3 py-3 text-left"
+                  >
+                    <span className="font-black text-slate-900">{exercise.alias || exercise.name}</span>
+                    <span className="text-sm font-black text-slate-600">
+                      {done}/{sets.length}
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -456,7 +529,10 @@ export function TrainingFocusView({
         </>
       ) : (
         <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="text-xs font-black text-slate-500">辅助动作完成记录</div>
+          <div className="text-xs font-black text-emerald-700">{stageLabel}</div>
+          <h2 className="mt-1 text-3xl font-black leading-tight text-slate-950">{supportExercise?.name || supportLog?.exerciseName || currentStep.exerciseName || '支持动作'}</h2>
+          <div className="mt-1 text-sm font-bold text-slate-500">{supportBlock?.name || currentStep.moduleName || '支持模块'}</div>
+          <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm font-bold text-slate-700">{plannedSummary}</div>
           <div className="mt-2 text-2xl font-black text-slate-950">
             {supportLog?.completedSets || 0}/{supportLog?.plannedSets || 0} 组
           </div>
@@ -475,6 +551,21 @@ export function TrainingFocusView({
               <SkipForward className="h-5 w-5" />
             </button>
           </div>
+          {supportLog?.blockType === 'correction' || supportLog?.blockType === 'functional' ? (
+            <button
+              type="button"
+              onClick={() => {
+                const label = supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁';
+                const confirmed = typeof window === 'undefined' ? true : window.confirm(`跳过整个${label}？未完成的支持动作会记录为跳过。`);
+                if (!confirmed) return;
+                onSkipSupportBlock(supportLog.blockType, skipReason);
+                notify(`已跳过${label}`);
+              }}
+              className="mt-2 h-12 w-full rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-black text-amber-900"
+            >
+              跳过整个{supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁'}
+            </button>
+          ) : null}
           <select
             value={skipReason}
             onChange={(event) => {

@@ -160,8 +160,16 @@ export const createSession = (
     exercises,
     currentExerciseId: exercises[0]?.id,
     currentSetIndex: 0,
-    currentFocusStepId: exercises[0]?.warmupSets?.length ? `${exercises[0].id}:warmup:0` : `${exercises[0]?.id}:working:0`,
-    currentFocusStepType: exercises[0]?.warmupSets?.length ? 'warmup' : 'working',
+    currentFocusStepId: supportExerciseLogs.find((log) => log.blockType === 'correction' && log.plannedSets > 0)
+      ? `correction:${supportExerciseLogs.find((log) => log.blockType === 'correction' && log.plannedSets > 0)?.moduleId}:${supportExerciseLogs.find((log) => log.blockType === 'correction' && log.plannedSets > 0)?.exerciseId}:0`
+      : exercises[0]?.warmupSets?.length
+        ? `main:${exercises[0].id}:warmup:0`
+        : `main:${exercises[0]?.id}:working:0`,
+    currentFocusStepType: supportExerciseLogs.some((log) => log.blockType === 'correction' && log.plannedSets > 0)
+      ? 'correction'
+      : exercises[0]?.warmupSets?.length
+        ? 'warmup'
+        : 'working',
     focusSessionComplete: false,
     focusActualSetDrafts: [],
     focusCompletedStepIds: [],

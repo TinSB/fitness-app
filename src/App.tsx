@@ -18,8 +18,8 @@ import {
   adjustFocusSetValue,
   completeFocusSet,
   copyPreviousFocusActualDraft,
-  getCurrentSetIndex,
-  getNextIncompleteSetInExercise,
+  getCurrentFocusStep,
+  skipFocusSupportBlock,
   switchFocusExercise,
   updateFocusActualDraft,
 } from './engines/focusModeStateEngine';
@@ -231,12 +231,12 @@ function App() {
   const completeSet = (exerciseIndex: number, advanceExercise = false) => {
     const session = data.activeSession;
     if (!session) return;
-    const setIndex = getCurrentSetIndex(session, exerciseIndex);
-    if (setIndex < 0) return;
+    const step = getCurrentFocusStep(session);
+    if (step.stepType === 'completed' || step.exerciseIndex !== exerciseIndex) return;
 
     const completedAt = new Date().toISOString();
     const now = Date.now();
-    const guardKey = `${session.id}:${exerciseIndex}:${setIndex}`;
+    const guardKey = `${session.id}:${step.id}`;
     const lastGuard = completeSetGuardRef.current;
     if (lastGuard?.key === guardKey && now - lastGuard.at < 500) return;
     completeSetGuardRef.current = { key: guardKey, at: now };
@@ -245,7 +245,7 @@ function App() {
 
     setData((current) => {
       if (!current.activeSession) return current;
-      const result = completeFocusSet(current.activeSession, exerciseIndex, completedAt, now);
+      const result = completeFocusSet(current.activeSession, exerciseIndex, completedAt, now, step.id);
       if (!result) return current;
       nextExpandedExercise = result.sessionComplete ? exerciseIndex : result.nextExerciseIndex;
       return { ...current, activeSession: result.session };
@@ -380,6 +380,13 @@ function App() {
   const skipSupportExercise = (moduleId: string, exerciseId: string, reason: SupportSkipReason) => {
     updateSupportLog(moduleId, exerciseId, {
       skippedReason: reason,
+    });
+  };
+
+  const skipSupportBlock = (blockType: 'correction' | 'functional', reason: SupportSkipReason) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return { ...current, activeSession: skipFocusSupportBlock(current.activeSession, blockType, reason) };
     });
   };
 
@@ -672,6 +679,7 @@ function App() {
                       onFinish={finishSession}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
+                      onSkipSupportBlock={skipSupportBlock}
                       onUpdateSupportSkipReason={skipSupportExercise}
                     />
                   </Page>
@@ -694,6 +702,7 @@ function App() {
                       onSwitchExercise={switchActiveExercise}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
+                      onSkipSupportBlock={skipSupportBlock}
                       onUpdateSupportSkipReason={skipSupportExercise}
                       onReplaceExercise={replaceExercise}
                       onLoadFeedback={recordLoadFeedback}

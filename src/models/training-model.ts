@@ -241,7 +241,7 @@ export interface TrainingSetLog {
   targetRir?: [number, number];
 }
 
-export type FocusStepType = 'warmup' | 'working' | 'support' | 'completed';
+export type FocusStepType = 'correction' | 'warmup' | 'working' | 'functional' | 'support' | 'completed';
 
 export interface ActualSetDraft {
   exerciseId: string;
@@ -526,9 +526,11 @@ export interface TrainingSession {
   currentSetIndex?: number;
   currentFocusStepId?: string;
   currentFocusStepType?: FocusStepType;
+  focusManualStepOverride?: boolean;
   focusSessionComplete?: boolean;
   focusActualSetDrafts?: ActualSetDraft[];
   focusCompletedStepIds?: string[];
+  focusCompletedWarmupPatterns?: string[];
   focusSkippedStepIds?: string[];
   focusWarmupSetLogs?: TrainingSetLog[];
   deloadDecision?: DeloadDecision;
