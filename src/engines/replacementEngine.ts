@@ -150,6 +150,23 @@ export const applyExerciseReplacement = (session: TrainingSession, exerciseIndex
   exercise.replacementReason = `用户在训练中手动选择替代动作；原实际动作为 ${displayName(previousActualId)}。`;
   exercise.warning = [...warningParts, replacementNotice].join(' / ');
 
+  const oldStepPrefix = `main:${previousActualId}:`;
+  const newStepPrefix = `main:${replacementId}:`;
+  const migrateStepId = (id?: string) => (id && id.startsWith(oldStepPrefix) ? id.replace(oldStepPrefix, newStepPrefix) : id);
+
+  next.currentFocusStepId = migrateStepId(next.currentFocusStepId);
+  next.focusCompletedStepIds = (next.focusCompletedStepIds || []).map((id) => migrateStepId(id) || id);
+  next.focusSkippedStepIds = (next.focusSkippedStepIds || []).map((id) => migrateStepId(id) || id);
+  next.focusWarmupSetLogs = (next.focusWarmupSetLogs || []).map((set) => ({ ...set, id: migrateStepId(set.id) || set.id }));
+  next.focusActualSetDrafts = (next.focusActualSetDrafts || []).map((draft) =>
+    draft.exerciseId === previousActualId || draft.stepId.startsWith(oldStepPrefix)
+      ? { ...draft, exerciseId: replacementId, stepId: migrateStepId(draft.stepId) || draft.stepId }
+      : draft
+  );
+  if (next.restTimerState?.exerciseId === previousActualId) {
+    next.restTimerState = { ...next.restTimerState, exerciseId: replacementId };
+  }
+
   next.currentExerciseId = replacementId;
   return next;
 };
