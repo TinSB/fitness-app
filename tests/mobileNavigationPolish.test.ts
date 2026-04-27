@@ -6,7 +6,7 @@ describe('mobile navigation polish', () => {
   const source = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
 
   it('keeps the primary mobile navigation labels visible', () => {
-    for (const label of ['今日', '训练', '筛查', '计划', '进度']) {
+    for (const label of ['今日', '训练', '记录', '计划', '我的']) {
       expect(source).toContain(`label: '${label}'`);
     }
   });

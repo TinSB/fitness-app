@@ -51,7 +51,7 @@ import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdj
 import { ActionButton, Card, EmptyState, Page, SegmentedTabs, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
-interface ProgressViewProps {
+export interface ProgressViewProps {
   data: AppData;
   unitSettings: UnitSettings;
   weeklyPrescription: WeeklyPrescription;
@@ -64,6 +64,7 @@ interface ProgressViewProps {
   onRestoreData: (data: AppData) => void;
   onApplyProgramAdjustmentDraft: (draft: ProgramAdjustmentDraft) => void;
   onRollbackProgramAdjustment: (historyItemId: string) => void;
+  onStartTraining?: () => void;
   initialSection?: ProgressSectionId;
   selectedSessionId?: string;
   selectedDate?: string;
@@ -72,9 +73,9 @@ interface ProgressViewProps {
 type ProgressSectionId = 'dashboard' | 'calendar' | 'history' | 'pr' | 'data';
 
 const progressSections: Array<{ id: ProgressSectionId; label: string; mobileLabel: string }> = [
-  { id: 'dashboard', label: '训练仪表盘', mobileLabel: '仪表盘' },
   { id: 'calendar', label: '训练日历', mobileLabel: '日历' },
   { id: 'history', label: '历史训练', mobileLabel: '历史' },
+  { id: 'dashboard', label: '统计', mobileLabel: '统计' },
   { id: 'pr', label: '个人记录 / PR', mobileLabel: 'PR' },
   { id: 'data', label: '数据管理', mobileLabel: '数据' },
 ];
@@ -186,6 +187,7 @@ export function ProgressView({
   onRestoreData,
   onApplyProgramAdjustmentDraft,
   onRollbackProgramAdjustment,
+  onStartTraining,
   initialSection,
   selectedSessionId: requestedSessionId,
   selectedDate,
@@ -193,7 +195,7 @@ export function ProgressView({
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [restoreMessage, setRestoreMessage] = React.useState('');
   const rawHistory = data.history || [];
-  const [activeProgressSection, setActiveProgressSection] = React.useState<ProgressSectionId>(initialSection || 'dashboard');
+  const [activeProgressSection, setActiveProgressSection] = React.useState<ProgressSectionId>(initialSection || 'calendar');
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
   const [showNonNormalCalendarData, setShowNonNormalCalendarData] = React.useState(false);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | undefined>(requestedSessionId);
@@ -389,7 +391,14 @@ export function ProgressView({
   const renderEmptyHistory = () => (
     <EmptyState
       title="暂无训练记录"
-      description="完成一次训练后，这里会显示训练日历、历史详情、PR 和趋势。测试数据不会进入统计，但仍可在历史训练里查看。"
+      description="完成一次训练后，这里会自动显示训练日历和历史详情。"
+      action={
+        onStartTraining ? (
+          <ActionButton variant="primary" onClick={onStartTraining}>
+            开始训练
+          </ActionButton>
+        ) : undefined
+      }
     />
   );
 
@@ -690,8 +699,8 @@ export function ProgressView({
 
   return (
     <Page
-      eyebrow="进度"
-      title="长期训练回看"
+      eyebrow="记录"
+      title="训练记录"
       action={
         <div className="flex flex-wrap gap-2">
           <ActionButton
@@ -718,7 +727,17 @@ export function ProgressView({
           <SegmentedTabs value={activeProgressSection} options={progressSections} onChange={setActiveProgressSection} ariaLabel="进度中心分区" />
           {!rawHistory.length ? (
             <div className="mt-3">
-              <EmptyState title="暂无训练记录" description="完成一次训练后，这里会显示日历和历史详情。" />
+              <EmptyState
+                title="暂无训练记录"
+                description="完成一次训练后，这里会自动显示训练日历。"
+                action={
+                  onStartTraining ? (
+                    <ActionButton variant="primary" onClick={onStartTraining}>
+                      开始训练
+                    </ActionButton>
+                  ) : undefined
+                }
+              />
             </div>
           ) : null}
         </div>

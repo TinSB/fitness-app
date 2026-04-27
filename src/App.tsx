@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Activity, BookOpen, CheckCircle, Dumbbell, Flame } from 'lucide-react';
+import { BookOpen, CalendarDays, Dumbbell, Flame, UserCircle } from 'lucide-react';
 import { INITIAL_TEMPLATES } from './data/trainingData';
 import { TodayView } from './features/TodayView';
 import { TrainingFocusView } from './features/TrainingFocusView';
@@ -34,19 +34,21 @@ import { Page } from './ui/common';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
 const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
-const ProgressView = lazy(() => import('./features/ProgressView').then((module) => ({ default: module.ProgressView })));
+const ProfileView = lazy(() => import('./features/ProfileView').then((module) => ({ default: module.ProfileView })));
+const RecordView = lazy(() => import('./features/RecordView').then((module) => ({ default: module.RecordView })));
 const TrainingView = lazy(() => import('./features/TrainingView').then((module) => ({ default: module.TrainingView })));
 
 const navItems = [
   { id: 'today', label: '今日', icon: Flame },
   { id: 'training', label: '训练', icon: Dumbbell },
-  { id: 'assessment', label: '筛查', icon: CheckCircle },
+  { id: 'record', label: '记录', icon: CalendarDays },
   { id: 'plan', label: '计划', icon: BookOpen },
-  { id: 'progress', label: '进度', icon: Activity },
+  { id: 'profile', label: '我的', icon: UserCircle },
 ] as const;
 
 type ActiveTab = (typeof navItems)[number]['id'];
 type ProgressSectionTarget = 'dashboard' | 'calendar' | 'history' | 'pr' | 'data';
+type ProfileSection = 'home' | 'assessment';
 type StatusField = 'sleep' | 'energy' | 'time';
 type SorenessPart = TodayStatus['soreness'][number];
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
@@ -75,6 +77,7 @@ function App() {
   );
   const [forceFullTrainingView, setForceFullTrainingView] = useState(false);
   const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
+  const [profileSection, setProfileSection] = useState<ProfileSection>('home');
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
 
   useEffect(() => {
@@ -150,7 +153,7 @@ function App() {
     if (finishedSession && target !== 'today') {
       setProgressTarget({ section: target, sessionId: finishedSession.id, date: finishedSession.date });
     }
-    setActiveTab(target === 'today' ? 'today' : 'progress');
+    setActiveTab(target === 'today' ? 'today' : 'record');
   };
 
   const updateStatus = (field: StatusField, value: string) => {
@@ -600,7 +603,10 @@ function App() {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        if (item.id === 'profile') setProfileSection('home');
+                      }}
                       className={classNames(
                         'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition',
                         selected ? 'bg-white text-slate-950' : 'text-slate-400 hover:bg-white/10 hover:text-white'
@@ -614,7 +620,7 @@ function App() {
                 })}
               </nav>
 
-              <div className="border-t border-white/10 px-6 py-5 text-xs leading-5 text-slate-400">打开就能开练。记录、处方、纠偏和进度都保存在本地。</div>
+              <div className="border-t border-white/10 px-6 py-5 text-xs leading-5 text-slate-400">打开就能开练。记录、处方、纠偏和趋势都保存在本地。</div>
             </aside>
 
             <main className="flex min-w-0 flex-1 flex-col bg-stone-50">
@@ -727,18 +733,6 @@ function App() {
                   </Suspense>
                 )}
 
-                {activeTab === 'assessment' && (
-                  <Suspense fallback={<LazyPageFallback />}>
-                    <AssessmentView
-                      data={data}
-                      onProfileChange={updateUserProfile}
-                      onProgramChange={updateProgramTemplate}
-                      onScreeningChange={updateScreeningFlag}
-                      onGoProgram={() => setActiveTab('plan')}
-                    />
-                  </Suspense>
-                )}
-
                 {activeTab === 'plan' && (
                   <Suspense fallback={<LazyPageFallback />}>
                     <PlanView
@@ -754,9 +748,9 @@ function App() {
                   </Suspense>
                 )}
 
-                {activeTab === 'progress' && (
+                {activeTab === 'record' && (
                   <Suspense fallback={<LazyPageFallback />}>
-                    <ProgressView
+                    <RecordView
                       data={data}
                       unitSettings={data.unitSettings}
                       weeklyPrescription={weeklyPrescription}
@@ -772,9 +766,44 @@ function App() {
                       }}
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
+                      onStartTraining={() => startSession()}
                       initialSection={progressTarget?.section}
                       selectedSessionId={progressTarget?.sessionId}
                       selectedDate={progressTarget?.date}
+                    />
+                  </Suspense>
+                )}
+
+                {activeTab === 'profile' && profileSection === 'home' && (
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <ProfileView
+                      data={data}
+                      unitSettings={data.unitSettings}
+                      onUpdateUnitSettings={updateUnitSettings}
+                      onRestoreData={(nextData) => {
+                        setData(nextData);
+                        setActiveTab('today');
+                      }}
+                      onOpenAssessment={() => setProfileSection('assessment')}
+                      onOpenRecordData={() => {
+                        setProgressTarget({ section: 'data' });
+                        setActiveTab('record');
+                      }}
+                    />
+                  </Suspense>
+                )}
+
+                {activeTab === 'profile' && profileSection === 'assessment' && (
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <AssessmentView
+                      data={data}
+                      onProfileChange={updateUserProfile}
+                      onProgramChange={updateProgramTemplate}
+                      onScreeningChange={updateScreeningFlag}
+                      onGoProgram={() => {
+                        setProfileSection('home');
+                        setActiveTab('plan');
+                      }}
                     />
                   </Suspense>
                 )}
@@ -792,7 +821,10 @@ function App() {
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (item.id === 'profile') setProfileSection('home');
+              }}
               className={classNames(
                 'mx-0.5 my-1 flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition',
                 selected ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
