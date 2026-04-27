@@ -1,7 +1,7 @@
 import type { MuscleGroup, TechniqueStandard, TrainingMode } from '../models/training-model';
 
 export const STORAGE_KEY = 'ironpath_personal_strength_os_v3';
-export const STORAGE_VERSION = 7;
+export const STORAGE_VERSION = 8;
 export const STORAGE_KEYS = {
   version: 'ironpath_version',
   templates: 'ironpath_templates',

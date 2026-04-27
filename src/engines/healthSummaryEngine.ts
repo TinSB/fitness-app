@@ -1,6 +1,17 @@
 import type { HealthMetricSample, ImportedWorkoutSample } from '../models/training-model';
 import { convertLbToKg } from './unitConversionEngine';
 
+export type HealthActivityLoadSummary = {
+  previous24hWorkoutMinutes: number;
+  previous48hWorkoutMinutes: number;
+  recent7dWorkoutMinutes: number;
+  previous24hActiveEnergyKcal?: number;
+  previous48hActiveEnergyKcal?: number;
+  recent7dActiveEnergyKcal?: number;
+  previous24hHighActivity: boolean;
+  previous48hHighActivity: boolean;
+};
+
 export type HealthSummary = {
   latestSleepHours?: number;
   latestRestingHeartRate?: number;
@@ -11,6 +22,7 @@ export type HealthSummary = {
   recentWorkoutCount: number;
   recentWorkoutMinutes: number;
   recentHighActivityDays: number;
+  activityLoad?: HealthActivityLoadSummary;
   notes: string[];
   confidence: 'low' | 'medium' | 'high';
 };
@@ -62,16 +74,68 @@ const normalizeBodyWeightKg = (sample?: HealthMetricSample) => {
   return sample.unit.toLowerCase().includes('lb') ? convertLbToKg(sample.value) : sample.value;
 };
 
+const minutesInWindow = (workouts: ImportedWorkoutSample[], samples: HealthMetricSample[], endDate: Date, hours: number) => {
+  const start = new Date(endDate.getTime() - hours * 3600000);
+  const workoutMinutes = workouts
+    .filter((workout) => inRange(workout.startDate, start, endDate))
+    .reduce((sum, workout) => sum + workout.durationMin, 0);
+  const exerciseMinutes = samples
+    .filter((sample) => sample.metricType === 'exercise_minutes' && inRange(sample.startDate, start, endDate))
+    .reduce((sum, sample) => sum + sample.value, 0);
+  return workoutMinutes + exerciseMinutes;
+};
+
+const activeEnergyInWindow = (workouts: ImportedWorkoutSample[], samples: HealthMetricSample[], endDate: Date, hours: number) => {
+  const start = new Date(endDate.getTime() - hours * 3600000);
+  const workoutKcal = workouts
+    .filter((workout) => inRange(workout.startDate, start, endDate))
+    .reduce((sum, workout) => sum + (workout.activeEnergyKcal || 0), 0);
+  const sampleKcal = samples
+    .filter((sample) => sample.metricType === 'active_energy' && inRange(sample.startDate, start, endDate))
+    .reduce((sum, sample) => sum + sample.value, 0);
+  const total = workoutKcal + sampleKcal;
+  return total > 0 ? total : undefined;
+};
+
+const buildActivityLoad = (
+  samples: HealthMetricSample[],
+  workouts: ImportedWorkoutSample[],
+  endDate: Date
+): HealthActivityLoadSummary => {
+  const previous24hWorkoutMinutes = Math.round(minutesInWindow(workouts, samples, endDate, 24));
+  const previous48hWorkoutMinutes = Math.round(minutesInWindow(workouts, samples, endDate, 48));
+  const recent7dWorkoutMinutes = Math.round(minutesInWindow(workouts, samples, endDate, 24 * 7));
+  const previous24hActiveEnergyKcal = activeEnergyInWindow(workouts, samples, endDate, 24);
+  const previous48hActiveEnergyKcal = activeEnergyInWindow(workouts, samples, endDate, 48);
+  const recent7dActiveEnergyKcal = activeEnergyInWindow(workouts, samples, endDate, 24 * 7);
+
+  return {
+    previous24hWorkoutMinutes,
+    previous48hWorkoutMinutes,
+    recent7dWorkoutMinutes,
+    previous24hActiveEnergyKcal: previous24hActiveEnergyKcal === undefined ? undefined : Math.round(previous24hActiveEnergyKcal),
+    previous48hActiveEnergyKcal: previous48hActiveEnergyKcal === undefined ? undefined : Math.round(previous48hActiveEnergyKcal),
+    recent7dActiveEnergyKcal: recent7dActiveEnergyKcal === undefined ? undefined : Math.round(recent7dActiveEnergyKcal),
+    previous24hHighActivity: previous24hWorkoutMinutes >= 60 || Number(previous24hActiveEnergyKcal || 0) >= 500,
+    previous48hHighActivity: previous48hWorkoutMinutes >= 90 || Number(previous48hActiveEnergyKcal || 0) >= 700,
+  };
+};
+
 export const buildHealthSummary = (
   samples: HealthMetricSample[] = [],
   workouts: ImportedWorkoutSample[] = [],
   dateRange: HealthSummaryDateRange = {}
 ): HealthSummary => {
   const endDate = toDate(dateRange.endDate);
-  endDate.setHours(23, 59, 59, 999);
+  if (!dateRange.endDate) endDate.setHours(23, 59, 59, 999);
   const startDate = dateRange.startDate ? toDate(dateRange.startDate) : startOfRange(endDate, dateRange.days || 7);
   const activeSamples = samples.filter((sample) => sample.dataFlag !== 'excluded' && inRange(sample.startDate, startDate, endDate));
   const activeWorkouts = workouts.filter((workout) => workout.dataFlag !== 'excluded' && inRange(workout.startDate, startDate, endDate));
+  const activityLoad = buildActivityLoad(
+    samples.filter((sample) => sample.dataFlag !== 'excluded'),
+    workouts.filter((workout) => workout.dataFlag !== 'excluded'),
+    endDate
+  );
 
   const sleep = latestSample(activeSamples, 'sleep_duration');
   const restingHeartRate = latestSample(activeSamples, 'resting_heart_rate');
@@ -125,6 +189,13 @@ export const buildHealthSummary = (
   if (hrv && hrvBaseline !== undefined && hrv.value <= hrvBaseline * 0.85) {
     notes.push('HRV 低于近期导入基线，恢复可能偏低。');
   }
+  if (activityLoad.previous24hHighActivity) {
+    notes.push('过去 24 小时外部活动量较高，今天训练建议略保守。');
+  } else if (activityLoad.previous48hHighActivity) {
+    notes.push('过去 48 小时外部活动量偏高，今天注意恢复反馈。');
+  } else if (activityLoad.recent7dWorkoutMinutes >= 240) {
+    notes.push('最近 7 天外部活动时间较多，仅作为活动趋势参考。');
+  }
 
   return {
     latestSleepHours: sleep?.value,
@@ -136,6 +207,7 @@ export const buildHealthSummary = (
     recentWorkoutCount: activeWorkouts.length,
     recentWorkoutMinutes: Math.round(activeWorkouts.reduce((sum, workout) => sum + workout.durationMin, 0)),
     recentHighActivityDays: highActivityDays.size,
+    activityLoad,
     notes,
     confidence,
   };

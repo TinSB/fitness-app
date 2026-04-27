@@ -535,12 +535,15 @@ export type HealthMetricType =
 export type HealthMetricSample = {
   id: string;
   source: HealthDataSource;
+  sourceName?: string;
+  deviceSourceName?: string;
   metricType: HealthMetricType;
   startDate: string;
   endDate?: string;
   value: number;
   unit: string;
   importedAt: string;
+  batchId?: string;
   dataFlag?: SessionDataFlag;
   raw?: unknown;
 };
@@ -548,6 +551,8 @@ export type HealthMetricSample = {
 export type ImportedWorkoutSample = {
   id: string;
   source: HealthDataSource;
+  sourceName?: string;
+  deviceSourceName?: string;
   workoutType: string;
   startDate: string;
   endDate: string;
@@ -557,6 +562,7 @@ export type ImportedWorkoutSample = {
   maxHeartRate?: number;
   distanceMeters?: number;
   importedAt: string;
+  batchId?: string;
   dataFlag?: SessionDataFlag;
   raw?: unknown;
 };
@@ -568,8 +574,19 @@ export type HealthImportBatch = {
   fileName?: string;
   sampleCount: number;
   workoutCount: number;
+  newSampleCount?: number;
+  duplicateSampleCount?: number;
+  skippedSampleCount?: number;
+  newWorkoutCount?: number;
+  duplicateWorkoutCount?: number;
+  skippedWorkoutCount?: number;
   notes: string[];
   dataFlag?: SessionDataFlag;
+};
+
+export type HealthIntegrationSettings = {
+  useHealthDataForReadiness: boolean;
+  showExternalWorkoutsInCalendar: boolean;
 };
 
 export interface RestTimerState {
@@ -1030,6 +1047,7 @@ export interface AppSettings {
   selectedTemplateId?: string;
   trainingMode?: TrainingMode;
   unitSettings?: UnitSettings;
+  healthIntegrationSettings?: HealthIntegrationSettings;
   [key: string]: unknown;
 }
 

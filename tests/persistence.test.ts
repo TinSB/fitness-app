@@ -171,6 +171,9 @@ describe('persistence', () => {
           value: 7,
           unit: 'h',
           importedAt: '2026-04-22T00:00:00.000Z',
+          batchId: 'batch-1',
+          sourceName: 'Apple Watch',
+          deviceSourceName: 'Apple Watch',
         },
       ],
       importedWorkoutSamples: [
@@ -182,6 +185,9 @@ describe('persistence', () => {
           endDate: '2026-04-21T18:35:00.000Z',
           durationMin: 35,
           importedAt: '2026-04-22T00:00:00.000Z',
+          batchId: 'batch-1',
+          sourceName: 'Apple Watch',
+          deviceSourceName: 'Apple Watch',
         },
       ],
       healthImportBatches: [
@@ -191,15 +197,32 @@ describe('persistence', () => {
           importedAt: '2026-04-22T00:00:00.000Z',
           sampleCount: 1,
           workoutCount: 1,
+          newSampleCount: 1,
+          duplicateSampleCount: 0,
+          skippedSampleCount: 0,
+          newWorkoutCount: 1,
+          duplicateWorkoutCount: 0,
+          skippedWorkoutCount: 0,
           notes: [],
         },
       ],
+      settings: {
+        healthIntegrationSettings: {
+          useHealthDataForReadiness: false,
+          showExternalWorkoutsInCalendar: false,
+        },
+      },
     });
 
     expect(sanitized.healthMetricSamples).toHaveLength(1);
     expect(sanitized.importedWorkoutSamples).toHaveLength(1);
     expect(sanitized.healthImportBatches).toHaveLength(1);
     expect(sanitized.healthMetricSamples?.[0]?.dataFlag).toBe('normal');
+    expect(sanitized.healthMetricSamples?.[0]?.batchId).toBe('batch-1');
+    expect(sanitized.healthMetricSamples?.[0]?.deviceSourceName).toBe('Apple Watch');
+    expect(sanitized.healthImportBatches?.[0]?.duplicateSampleCount).toBe(0);
+    expect(sanitized.settings.healthIntegrationSettings?.useHealthDataForReadiness).toBe(false);
+    expect(sanitized.settings.healthIntegrationSettings?.showExternalWorkoutsInCalendar).toBe(false);
     expect(validateAppDataSchema(sanitized)).toBe(true);
   });
 

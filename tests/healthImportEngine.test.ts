@@ -20,6 +20,8 @@ describe('healthImportEngine', () => {
     expect(result.workouts).toHaveLength(1);
     expect(result.batch.sampleCount).toBe(2);
     expect(result.batch.workoutCount).toBe(1);
+    expect(result.samples.every((sample) => sample.batchId === result.batch.id)).toBe(true);
+    expect(result.workouts.every((workout) => workout.batchId === result.batch.id)).toBe(true);
   });
 
   it('parses CSV samples and keeps warnings for unknown columns', () => {
@@ -44,6 +46,8 @@ describe('healthImportEngine', () => {
 
     expect(result.samples).toHaveLength(1);
     expect(result.samples[0]?.metricType).toBe('resting_heart_rate');
+    expect(result.samples[0]?.source).toBe('apple_health_export');
+    expect(result.samples[0]?.deviceSourceName).toBe('Apple Watch');
     expect(result.workouts).toEqual([]);
     expect(result.summary?.detectedRecordCount).toBe(1);
   });
@@ -65,5 +69,13 @@ describe('healthImportEngine', () => {
     expect(result.samples).toEqual([]);
     expect(result.workouts).toEqual([]);
     expect(result.warnings.some((warning) => warning.includes('解析失败'))).toBe(true);
+  });
+
+  it('returns a clear warning for non-Apple XML', () => {
+    const result = parseHealthImportFile('<root></root>', 'export.xml');
+
+    expect(result.samples).toEqual([]);
+    expect(result.workouts).toEqual([]);
+    expect(result.warnings.join(' ')).toContain('不是有效的 Apple Health');
   });
 });

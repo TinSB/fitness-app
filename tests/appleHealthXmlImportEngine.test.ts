@@ -24,6 +24,8 @@ describe('appleHealthXmlImportEngine', () => {
 
     expect(result.samples.find((sample) => sample.metricType === 'resting_heart_rate')?.value).toBe(58);
     expect(result.samples.find((sample) => sample.metricType === 'resting_heart_rate')?.unit).toBe('bpm');
+    expect(result.samples.find((sample) => sample.metricType === 'resting_heart_rate')?.source).toBe('apple_health_export');
+    expect(result.samples.find((sample) => sample.metricType === 'resting_heart_rate')?.deviceSourceName).toBe('Apple Watch');
     expect(result.samples.find((sample) => sample.metricType === 'hrv')?.value).toBe(51);
     expect(result.samples.find((sample) => sample.metricType === 'steps')?.value).toBe(3200);
     expect(result.samples.find((sample) => sample.metricType === 'body_weight')?.value).toBeGreaterThan(81);
@@ -36,6 +38,24 @@ describe('appleHealthXmlImportEngine', () => {
 
     expect(sleep?.unit).toBe('h');
     expect(sleep?.value).toBe(4.5);
+    expect((sleep?.raw as { day?: string } | undefined)?.day).toBe('2026-04-20');
+    expect(sleep?.batchId).toBe(result.batch.id);
+  });
+
+  it('assigns cross-midnight sleep to wake date and avoids overlapping duplicate duration', () => {
+    const result = parseAppleHealthXml(
+      `<?xml version="1.0"?><HealthData>
+        <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" startDate="2026-04-27 23:30:00 +0000" endDate="2026-04-28 02:00:00 +0000" value="HKCategoryValueSleepAnalysisAsleepCore"/>
+        <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" startDate="2026-04-28 01:30:00 +0000" endDate="2026-04-28 03:00:00 +0000" value="HKCategoryValueSleepAnalysisAsleepDeep"/>
+        <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" startDate="2026-04-28 03:00:00 +0000" endDate="2026-04-28 07:00:00 +0000" value="HKCategoryValueSleepAnalysisAsleepREM"/>
+        <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Apple Watch" startDate="2026-04-28 07:00:00 +0000" endDate="2026-04-28 07:15:00 +0000" value="HKCategoryValueSleepAnalysisAwake"/>
+      </HealthData>`,
+      'export.xml'
+    );
+    const sleep = result.samples.find((sample) => sample.metricType === 'sleep_duration');
+
+    expect((sleep?.raw as { day?: string } | undefined)?.day).toBe('2026-04-28');
+    expect(sleep?.value).toBe(7.5);
   });
 
   it('parses workouts as imported external activity', () => {

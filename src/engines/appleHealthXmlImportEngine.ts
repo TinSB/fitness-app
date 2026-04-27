@@ -69,12 +69,20 @@ const localDateKey = (value: string) => {
   return local.toISOString().slice(0, 10);
 };
 
-const startOfLocalDateIso = (dateKey: string) => new Date(`${dateKey}T00:00:00`).toISOString();
+const appleHealthDateKey = (value?: string) => {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : undefined;
+};
 
-const detectSource = (sourceName?: string): HealthDataSource => {
+const detectWorkoutSource = (sourceName?: string): HealthDataSource => {
   const source = String(sourceName || '').toLowerCase();
   if (source.includes('watch')) return 'apple_watch_workout';
   return 'apple_health_export';
+};
+
+const normalizeSourceName = (sourceName?: string) => {
+  const value = String(sourceName || '').trim();
+  return value || undefined;
 };
 
 const isWithinRange = (startDate: string, options: AppleHealthXmlImportOptions) => {
@@ -82,6 +90,15 @@ const isWithinRange = (startDate: string, options: AppleHealthXmlImportOptions) 
   if (Number.isNaN(time)) return false;
   if (options.fromDate && time < new Date(options.fromDate).getTime()) return false;
   if (options.toDate && time > new Date(options.toDate).getTime()) return false;
+  return true;
+};
+
+const isIntervalWithinRange = (startDate: string, endDate: string, options: AppleHealthXmlImportOptions) => {
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate || startDate).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return false;
+  if (options.fromDate && end < new Date(options.fromDate).getTime()) return false;
+  if (options.toDate && start > new Date(options.toDate).getTime()) return false;
   return true;
 };
 
@@ -157,21 +174,100 @@ const readWorkoutStatistics = (body: string) => {
 };
 
 const buildBatch = (
+  batchId: string,
   fileName: string,
   importedAt: string,
   samples: HealthMetricSample[],
   workouts: ImportedWorkoutSample[],
   warnings: string[]
 ): HealthImportBatch => ({
-  id: `batch-${hashText(`${fileName}:${importedAt}:${samples.length}:${workouts.length}:xml`)}`,
+  id: batchId,
   importedAt,
   source: workouts.length && !samples.length ? 'apple_watch_workout' : 'apple_health_export',
   fileName,
   sampleCount: samples.length,
   workoutCount: workouts.length,
+  newSampleCount: samples.length,
+  duplicateSampleCount: 0,
+  skippedSampleCount: 0,
+  newWorkoutCount: workouts.length,
+  duplicateWorkoutCount: 0,
+  skippedWorkoutCount: 0,
   notes: warnings,
   dataFlag: 'normal',
 });
+
+type SleepSegment = {
+  startDate: string;
+  endDate: string;
+  wakeDateKey?: string;
+  key: string;
+  raw: XmlAttrs;
+};
+
+export const aggregateSleepSamplesByWakeDate = (
+  segments: SleepSegment[],
+  importedAt: string,
+  batchId?: string
+): HealthMetricSample[] => {
+  const sorted = [...segments].sort((left, right) => left.startDate.localeCompare(right.startDate));
+  const sessions: SleepSegment[][] = [];
+  let current: SleepSegment[] = [];
+  let currentEnd = 0;
+  const maxGapMs = 3 * 3600000;
+
+  sorted.forEach((segment) => {
+    const start = new Date(segment.startDate).getTime();
+    const end = new Date(segment.endDate).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return;
+    if (!current.length || start <= currentEnd + maxGapMs) {
+      current.push(segment);
+      currentEnd = Math.max(currentEnd, end);
+    } else {
+      sessions.push(current);
+      current = [segment];
+      currentEnd = end;
+    }
+  });
+  if (current.length) sessions.push(current);
+
+  return sessions
+    .map((session) => {
+      const ordered = [...session].sort((left, right) => left.startDate.localeCompare(right.startDate));
+      let totalMs = 0;
+      let cursorEnd = 0;
+      ordered.forEach((segment) => {
+        const start = new Date(segment.startDate).getTime();
+        const end = new Date(segment.endDate).getTime();
+        if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return;
+        const adjustedStart = Math.max(start, cursorEnd);
+        if (end > adjustedStart) totalMs += end - adjustedStart;
+        cursorEnd = Math.max(cursorEnd, end);
+      });
+      if (!totalMs) return null;
+      const startDate = ordered[0]?.startDate || '';
+      const endDate = ordered[ordered.length - 1]?.endDate || startDate;
+      const wakeDate = ordered[ordered.length - 1]?.wakeDateKey || localDateKey(endDate);
+      const value = Math.round((totalMs / 3600000) * 10) / 10;
+      const key = `sleep_duration:${wakeDate}:${startDate}:${endDate}:${value}:h`;
+      return {
+        id: `health-${hashText(key)}`,
+        source: 'apple_health_export' as const,
+        sourceName: normalizeSourceName(ordered[0]?.raw.sourceName),
+        deviceSourceName: normalizeSourceName(ordered[0]?.raw.sourceName),
+        metricType: 'sleep_duration' as const,
+        startDate,
+        endDate,
+        value,
+        unit: 'h',
+        importedAt,
+        batchId,
+        dataFlag: 'normal' as const,
+        raw: { day: wakeDate, segments: ordered.map((item) => item.raw) },
+      };
+    })
+    .filter(Boolean) as HealthMetricSample[];
+};
 
 export const parseAppleHealthXml = (
   xmlText: string,
@@ -179,11 +275,12 @@ export const parseAppleHealthXml = (
   options: AppleHealthXmlImportOptions = {}
 ): AppleHealthXmlImportResult => {
   const importedAt = new Date().toISOString();
+  const batchId = `batch-${hashText(`${fileName}:${importedAt}:xml`)}`;
   const warnings: string[] = [];
   const trimmed = String(xmlText || '').trim();
   if (!trimmed || !trimmed.includes('<HealthData')) {
     warnings.push('文件不是有效的 Apple Health export.xml，未导入任何数据。');
-    const batch = buildBatch(fileName, importedAt, [], [], warnings);
+    const batch = buildBatch(batchId, fileName, importedAt, [], [], warnings);
     return {
       samples: [],
       workouts: [],
@@ -195,7 +292,7 @@ export const parseAppleHealthXml = (
 
   const records = parseRecordTags(trimmed);
   const unsupportedTypes = new Set<string>();
-  const sleepSegmentsByDay = new Map<string, Array<{ startDate: string; endDate: string; key: string }>>();
+  const sleepSegments: SleepSegment[] = [];
   const samples: HealthMetricSample[] = [];
   const seenSamples = new Set<string>();
   let minDate = '';
@@ -218,7 +315,7 @@ export const parseAppleHealthXml = (
 
     const startDate = toIso(attrs.startDate);
     const endDate = toIso(attrs.endDate) || startDate;
-    if (!startDate || !isWithinRange(startDate, options)) return;
+    if (!startDate || !isIntervalWithinRange(startDate, endDate, options)) return;
     trackDate(startDate, endDate);
 
     if (attrs.type === 'HKCategoryTypeIdentifierSleepAnalysis') {
@@ -226,11 +323,10 @@ export const parseAppleHealthXml = (
         if (String(attrs.value || '').includes('Asleep') === false) warnings.push('发现非睡眠 asleep 片段，已跳过 InBed/Awake。');
         return;
       }
-      const day = localDateKey(startDate);
       const key = `${startDate}:${endDate}:${attrs.value}`;
-      const list = sleepSegmentsByDay.get(day) || [];
-      if (!list.some((item) => item.key === key)) list.push({ startDate, endDate, key });
-      sleepSegmentsByDay.set(day, list);
+      if (!sleepSegments.some((item) => item.key === key)) {
+        sleepSegments.push({ startDate, endDate, wakeDateKey: appleHealthDateKey(attrs.endDate), key, raw: attrs });
+      }
       return;
     }
 
@@ -246,49 +342,26 @@ export const parseAppleHealthXml = (
     seenSamples.add(key);
     samples.push({
       id: `health-${hashText(key)}`,
-      source: detectSource(attrs.sourceName),
+      source: 'apple_health_export',
+      sourceName: normalizeSourceName(attrs.sourceName),
+      deviceSourceName: normalizeSourceName(attrs.sourceName),
       metricType: mapping.metricType,
       startDate,
       endDate,
       value: Math.max(0, converted.value),
       unit: converted.unit,
       importedAt,
+      batchId,
       dataFlag: 'normal',
       raw: attrs,
     });
   });
 
-  sleepSegmentsByDay.forEach((segments, day) => {
-    const sorted = segments.sort((left, right) => left.startDate.localeCompare(right.startDate));
-    let totalMs = 0;
-    let cursorEnd = 0;
-    sorted.forEach((segment) => {
-      const start = new Date(segment.startDate).getTime();
-      const end = new Date(segment.endDate).getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return;
-      const adjustedStart = Math.max(start, cursorEnd);
-      if (end > adjustedStart) totalMs += end - adjustedStart;
-      cursorEnd = Math.max(cursorEnd, end);
-    });
-    if (!totalMs) return;
-    const startDate = sorted[0]?.startDate || startOfLocalDateIso(day);
-    const endDate = sorted[sorted.length - 1]?.endDate || startDate;
-    const value = Math.round((totalMs / 3600000) * 10) / 10;
-    const key = `sleep_duration:${day}:${value}:h`;
+  aggregateSleepSamplesByWakeDate(sleepSegments, importedAt, batchId).forEach((sample) => {
+    const key = sample.id;
     if (seenSamples.has(key)) return;
     seenSamples.add(key);
-    samples.push({
-      id: `health-${hashText(key)}`,
-      source: 'apple_health_export',
-      metricType: 'sleep_duration',
-      startDate,
-      endDate,
-      value,
-      unit: 'h',
-      importedAt,
-      dataFlag: 'normal',
-      raw: { day, segments: sorted },
-    });
+    samples.push(sample);
   });
 
   const workouts: ImportedWorkoutSample[] = [];
@@ -311,7 +384,9 @@ export const parseAppleHealthXml = (
       seenWorkouts.add(key);
       workouts.push({
         id: `workout-${hashText(key)}`,
-        source: detectSource(attrs.sourceName),
+        source: detectWorkoutSource(attrs.sourceName),
+        sourceName: normalizeSourceName(attrs.sourceName),
+        deviceSourceName: normalizeSourceName(attrs.sourceName),
         workoutType,
         startDate,
         endDate,
@@ -319,6 +394,7 @@ export const parseAppleHealthXml = (
         activeEnergyKcal: stats.activeEnergyKcal === undefined ? undefined : Math.round(stats.activeEnergyKcal * 10) / 10,
         distanceMeters: stats.distanceMeters === undefined ? undefined : Math.round(stats.distanceMeters),
         importedAt,
+        batchId,
         dataFlag: 'normal',
         raw: { ...attrs, statistics: stats },
       });
@@ -330,7 +406,7 @@ export const parseAppleHealthXml = (
   }
 
   const metricTypes = [...new Set([...samples.map((sample) => sample.metricType), ...(workouts.length ? ['workout'] : [])])].sort();
-  const batch = buildBatch(fileName, importedAt, samples, workouts, warnings);
+  const batch = buildBatch(batchId, fileName, importedAt, samples, workouts, warnings);
 
   return {
     samples,

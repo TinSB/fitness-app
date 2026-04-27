@@ -77,6 +77,14 @@
         "programAdjustmentHistory": {
           "type": "array",
           "items": { "$ref": "#/$defs/programAdjustmentHistoryItem" }
+        },
+        "healthIntegrationSettings": {
+          "type": "object",
+          "properties": {
+            "useHealthDataForReadiness": { "type": "boolean" },
+            "showExternalWorkoutsInCalendar": { "type": "boolean" }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true
@@ -111,12 +119,15 @@
       "properties": {
         "id": { "type": "string" },
         "source": { "$ref": "#/$defs/healthDataSource" },
+        "sourceName": { "type": "string" },
+        "deviceSourceName": { "type": "string" },
         "metricType": { "$ref": "#/$defs/healthMetricType" },
         "startDate": { "type": "string" },
         "endDate": { "type": "string" },
         "value": { "type": "number", "minimum": 0 },
         "unit": { "type": "string" },
         "importedAt": { "type": "string" },
+        "batchId": { "type": "string" },
         "dataFlag": { "$ref": "#/$defs/dataFlag" }
       },
       "additionalProperties": true
@@ -127,6 +138,8 @@
       "properties": {
         "id": { "type": "string" },
         "source": { "$ref": "#/$defs/healthDataSource" },
+        "sourceName": { "type": "string" },
+        "deviceSourceName": { "type": "string" },
         "workoutType": { "type": "string" },
         "startDate": { "type": "string" },
         "endDate": { "type": "string" },
@@ -136,6 +149,7 @@
         "maxHeartRate": { "type": "number", "minimum": 0 },
         "distanceMeters": { "type": "number", "minimum": 0 },
         "importedAt": { "type": "string" },
+        "batchId": { "type": "string" },
         "dataFlag": { "$ref": "#/$defs/dataFlag" }
       },
       "additionalProperties": true
@@ -150,6 +164,12 @@
         "fileName": { "type": "string" },
         "sampleCount": { "type": "number", "minimum": 0 },
         "workoutCount": { "type": "number", "minimum": 0 },
+        "newSampleCount": { "type": "number", "minimum": 0 },
+        "duplicateSampleCount": { "type": "number", "minimum": 0 },
+        "skippedSampleCount": { "type": "number", "minimum": 0 },
+        "newWorkoutCount": { "type": "number", "minimum": 0 },
+        "duplicateWorkoutCount": { "type": "number", "minimum": 0 },
+        "skippedWorkoutCount": { "type": "number", "minimum": 0 },
         "notes": { "type": "array", "items": { "type": "string" } },
         "dataFlag": { "$ref": "#/$defs/dataFlag" }
       },

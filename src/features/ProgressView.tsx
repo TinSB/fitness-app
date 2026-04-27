@@ -198,7 +198,12 @@ export function ProgressView({
   const [activeProgressSection, setActiveProgressSection] = React.useState<ProgressSectionId>(initialSection || 'calendar');
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
   const [showNonNormalCalendarData, setShowNonNormalCalendarData] = React.useState(false);
-  const [showExternalCalendarActivity, setShowExternalCalendarActivity] = React.useState(false);
+  const [showExternalCalendarActivity, setShowExternalCalendarActivity] = React.useState(
+    data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false
+  );
+  React.useEffect(() => {
+    setShowExternalCalendarActivity(data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false);
+  }, [data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar]);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | undefined>(requestedSessionId);
   const history = filterAnalyticsHistory(rawHistory);
   const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);

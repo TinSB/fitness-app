@@ -14,6 +14,7 @@ import { formatExplanationEvidence } from '../engines/explainability/evidenceExp
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../engines/e1rmEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
+import { buildHealthSummary } from '../engines/healthSummaryEngine';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
@@ -51,7 +52,25 @@ export function TodayView({
   onStart,
   onResume,
 }: TodayViewProps) {
-  const adjustedPlan = applyStatusRules(selectedTemplate, data.todayStatus, trainingMode, weeklyPrescription, data.history, data.screeningProfile, data.mesocyclePlan);
+  const useHealthDataForReadiness = data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false;
+  const hasImportedHealthData = Boolean((data.healthMetricSamples || []).length || (data.importedWorkoutSamples || []).length);
+  const healthSummary = React.useMemo(
+    () =>
+      useHealthDataForReadiness && hasImportedHealthData
+        ? buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || [], { endDate: new Date().toISOString() })
+        : undefined,
+    [data.healthMetricSamples, data.importedWorkoutSamples, useHealthDataForReadiness, hasImportedHealthData]
+  );
+  const adjustedPlan = applyStatusRules(
+    selectedTemplate,
+    data.todayStatus,
+    trainingMode,
+    weeklyPrescription,
+    data.history,
+    data.screeningProfile,
+    data.mesocyclePlan,
+    { healthSummary, useHealthDataForReadiness }
+  );
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const trainingLevelAssessment = buildTrainingLevelAssessment({ history: analyticsHistory });
@@ -286,6 +305,13 @@ export function TodayView({
               {adjustedPlan.readinessResult?.score ?? '--'} / 100 · {adjustedPlan.readiness.title}
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-700">{adjustedPlan.readiness.advice}</p>
+            {adjustedPlan.readiness.reasons?.length ? (
+              <div className="mt-2 space-y-1 text-xs font-semibold leading-5 text-slate-600">
+                {adjustedPlan.readiness.reasons.slice(0, 3).map((reason) => (
+                  <div key={reason}>{reason}</div>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">

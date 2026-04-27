@@ -21,6 +21,7 @@ import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
 import { getCurrentMesocycleWeek } from './mesocycleEngine';
 import { buildPainPatterns, getExercisePainPattern } from './painPatternEngine';
 import { buildTodayReadiness } from './readinessEngine';
+import type { HealthSummary } from './healthSummaryEngine';
 import { getMuscleBudget, getMuscleRemaining } from './supportPlanEngine';
 
 const NONE_SORENESS: TodayStatus['soreness'][number] = '无';
@@ -298,11 +299,14 @@ export const applyStatusRules = (
   weeklyPrescription: WeeklyPrescription | null = null,
   history: TrainingSession[] = [],
   screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
-  mesocyclePlan?: MesocyclePlan | null
+  mesocyclePlan?: MesocyclePlan | null,
+  context: { healthSummary?: HealthSummary; useHealthDataForReadiness?: boolean } = {}
 ) => {
   const adherenceReport = buildAdherenceReport(history);
   const readinessResult = buildTodayReadiness({ todayStatus: status, history }, template, {
     adherenceHigh: adherenceReport.overallRate >= 85,
+    healthSummary: context.healthSummary,
+    useHealthDataForReadiness: context.useHealthDataForReadiness,
   });
   const readiness = mapReadinessToSignal(readinessResult, recentPoorSleepDays(status, history));
   const deloadDecision = buildAdaptiveDeloadDecision({

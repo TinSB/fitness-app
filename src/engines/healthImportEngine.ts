@@ -154,6 +154,9 @@ const knownCsvHeaders = new Set([
   'value',
   'unit',
   'source',
+  'sourcename',
+  'devicesourcename',
+  'device',
   'workouttype',
   'durationmin',
   'activeenergykcal',
@@ -180,6 +183,8 @@ const buildSample = (record: Record<string, unknown>, importedAt: string, fallba
   return {
     id: `health-${hashText(key)}`,
     source,
+    sourceName: String(getField(record, ['sourceName']) || '') || undefined,
+    deviceSourceName: String(getField(record, ['deviceSourceName', 'device']) || getField(record, ['sourceName']) || '') || undefined,
     metricType,
     startDate,
     endDate: normalizeDateToIso(getField(record, ['endDate', 'end'])) || undefined,
@@ -205,6 +210,8 @@ const buildWorkout = (record: Record<string, unknown>, importedAt: string, fallb
   return {
     id: `workout-${hashText(key)}`,
     source,
+    sourceName: String(getField(record, ['sourceName']) || '') || undefined,
+    deviceSourceName: String(getField(record, ['deviceSourceName', 'device']) || getField(record, ['sourceName']) || '') || undefined,
     workoutType,
     startDate,
     endDate,
@@ -247,6 +254,7 @@ const parseRecords = (records: Record<string, unknown>[], importedAt: string, fa
 export const parseHealthImportFile = (fileText: string, fileName = 'health-import', options?: AppleHealthXmlImportOptions): HealthImportResult => {
   const warnings: string[] = [];
   const importedAt = new Date().toISOString();
+  const batchId = `batch-${hashText(`${fileName}:${importedAt}`)}`;
   const trimmed = String(fileText || '').trim();
   const fallbackSource: HealthDataSource = fileName.toLowerCase().endsWith('.csv') ? 'third_party_csv' : 'unknown';
 
@@ -257,7 +265,7 @@ export const parseHealthImportFile = (fileText: string, fileName = 'health-impor
   if (!trimmed) {
     warnings.push('文件为空，未导入任何健康数据。');
   } else if (trimmed.startsWith('<')) {
-    warnings.push('当前版本不直接解析 Apple Health XML。请先使用第三方导出工具或快捷指令导出 CSV/JSON。');
+    warnings.push('XML 文件不是有效的 Apple Health export.xml，未导入任何数据。');
   }
 
   let samples: HealthMetricSample[] = [];
@@ -293,13 +301,21 @@ export const parseHealthImportFile = (fileText: string, fileName = 'health-impor
   }
 
   const source = samples[0]?.source || workouts[0]?.source || (workouts.length && !samples.length ? 'apple_watch_workout' : fallbackSource);
+  samples = samples.map((sample) => ({ ...sample, batchId }));
+  workouts = workouts.map((workout) => ({ ...workout, batchId }));
   const batch: HealthImportBatch = {
-    id: `batch-${hashText(`${fileName}:${importedAt}:${samples.length}:${workouts.length}`)}`,
+    id: batchId,
     importedAt,
     source,
     fileName,
     sampleCount: samples.length,
     workoutCount: workouts.length,
+    newSampleCount: samples.length,
+    duplicateSampleCount: 0,
+    skippedSampleCount: 0,
+    newWorkoutCount: workouts.length,
+    duplicateWorkoutCount: 0,
+    skippedWorkoutCount: 0,
     notes: warnings,
     dataFlag: 'normal',
   };

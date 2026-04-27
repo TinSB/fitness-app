@@ -16,6 +16,7 @@ import { buildSessionExplanations, buildTodayExplanations } from './explainabili
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel, type TrainingLevelAssessment } from './trainingLevelEngine';
+import type { HealthSummary } from './healthSummaryEngine';
 
 const TEMPLATE_ROTATION: Record<string, string> = {
   'push-a': 'pull-a',
@@ -85,10 +86,11 @@ export const createSession = (
   weeklyPrescription: WeeklyPrescription | null = null,
   supportPlan: ReturnType<typeof buildSupportPlan> | null = null,
   screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
-  mesocyclePlan?: AppData['mesocyclePlan']
+  mesocyclePlan?: AppData['mesocyclePlan'],
+  decisionContext: { healthSummary?: HealthSummary; useHealthDataForReadiness?: boolean } = {}
 ) => {
   const trainingLevelAssessment = buildTrainingLevelAssessment({ history });
-  const adjustedPlan = applyStatusRules(template, status, trainingMode, weeklyPrescription, history, screening, mesocyclePlan);
+  const adjustedPlan = applyStatusRules(template, status, trainingMode, weeklyPrescription, history, screening, mesocyclePlan, decisionContext);
   const resolvedWeeklyPrescription =
     weeklyPrescription ||
     buildWeeklyPrescription({

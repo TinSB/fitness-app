@@ -47,6 +47,7 @@ describe('healthSummaryEngine', () => {
     expect(summary.latestBodyWeightKg).toBeGreaterThan(80);
     expect(summary.recentWorkoutCount).toBe(1);
     expect(summary.recentWorkoutMinutes).toBe(45);
+    expect(summary.activityLoad?.recent7dWorkoutMinutes).toBe(45);
   });
 
   it('ignores excluded data', () => {
@@ -85,6 +86,23 @@ describe('healthSummaryEngine', () => {
 
     expect(summary.notes.join(' ')).toContain('静息心率高于');
     expect(summary.notes.join(' ')).toContain('HRV 低于');
+  });
+
+  it('separates external activity load into 24h, 48h and 7d windows', () => {
+    const summary = buildHealthSummary(
+      [],
+      [
+        workout({ id: 'w-24', startDate: '2026-04-21T20:00:00.000Z', endDate: '2026-04-21T21:20:00.000Z', durationMin: 80, activeEnergyKcal: 520 }),
+        workout({ id: 'w-48', startDate: '2026-04-20T18:00:00.000Z', endDate: '2026-04-20T18:40:00.000Z', durationMin: 40 }),
+        workout({ id: 'w-7d', startDate: '2026-04-16T18:00:00.000Z', endDate: '2026-04-16T19:00:00.000Z', durationMin: 60 }),
+      ],
+      { endDate: '2026-04-22T08:00:00.000Z' }
+    );
+
+    expect(summary.activityLoad?.previous24hWorkoutMinutes).toBe(80);
+    expect(summary.activityLoad?.previous48hWorkoutMinutes).toBe(120);
+    expect(summary.activityLoad?.recent7dWorkoutMinutes).toBe(180);
+    expect(summary.activityLoad?.previous24hHighActivity).toBe(true);
   });
 
   it('summarizes XML-imported samples', () => {

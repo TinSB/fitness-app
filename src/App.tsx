@@ -28,6 +28,7 @@ import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHis
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { applyExerciseReplacement } from './engines/replacementEngine';
+import { buildHealthSummary } from './engines/healthSummaryEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
@@ -118,6 +119,11 @@ function App() {
     const template = findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
     const workingData = { ...data, screeningProfile };
+    const useHealthDataForReadiness = data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false;
+    const hasImportedHealthData = Boolean((data.healthMetricSamples || []).length || (data.importedWorkoutSamples || []).length);
+    const healthSummary = useHealthDataForReadiness && hasImportedHealthData
+      ? buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || [], { endDate: new Date().toISOString() })
+      : undefined;
     const session = createSession(
       template,
       data.todayStatus,
@@ -126,7 +132,8 @@ function App() {
       weeklyPrescription,
       undefined,
       screeningProfile,
-      data.mesocyclePlan
+      data.mesocyclePlan,
+      { healthSummary, useHealthDataForReadiness }
     ) as TrainingSession;
 
     setData((current) => ({

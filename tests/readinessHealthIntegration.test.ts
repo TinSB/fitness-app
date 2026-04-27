@@ -36,11 +36,20 @@ describe('readiness health integration', () => {
 
   it('high previous activity adds a conservative note without forcing deload', () => {
     const result = buildReadinessResult(baseInput, {
-      healthSummary: { ...baseHealthSummary, recentWorkoutMinutes: 130, recentHighActivityDays: 1 },
+      healthSummary: {
+        ...baseHealthSummary,
+        activityLoad: {
+          previous24hWorkoutMinutes: 90,
+          previous48hWorkoutMinutes: 90,
+          recent7dWorkoutMinutes: 90,
+          previous24hHighActivity: true,
+          previous48hHighActivity: true,
+        },
+      },
     });
 
     expect(result.trainingAdjustment).not.toBe('recovery');
-    expect(result.reasons.join(' ')).toContain('活动负荷偏高');
+    expect(result.reasons.join(' ')).toContain('过去 24 小时外部活动量较高');
   });
 
   it('insufficient imported health data does not strongly affect readiness', () => {
@@ -49,7 +58,19 @@ describe('readiness health integration', () => {
       healthSummary: { ...baseHealthSummary, latestSleepHours: 4, recentWorkoutMinutes: 180, confidence: 'low' },
     });
 
+    expect(baseline.score - result.score).toBeLessThanOrEqual(2);
+    expect(result.reasons.join(' ')).toContain('健康数据不足');
+  });
+
+  it('can disable imported health data for readiness', () => {
+    const baseline = buildReadinessResult(baseInput);
+    const result = buildReadinessResult(baseInput, {
+      useHealthDataForReadiness: false,
+      healthSummary: { ...baseHealthSummary, latestSleepHours: 4, recentWorkoutMinutes: 180 },
+    });
+
     expect(result.score).toBe(baseline.score);
+    expect(result.reasons.join(' ')).not.toContain('健康数据');
   });
 
   it('uses XML imported sleep, HRV and RHR as auxiliary readiness signals', () => {

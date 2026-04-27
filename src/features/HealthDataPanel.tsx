@@ -12,6 +12,14 @@ interface HealthDataPanelProps {
 }
 
 type HealthImportPreview = ReturnType<typeof parseHealthImportFile>;
+type HealthImportPreviewStats = {
+  newSamples: HealthMetricSample[];
+  duplicateSampleCount: number;
+  skippedSampleCount: number;
+  newWorkouts: ImportedWorkoutSample[];
+  duplicateWorkoutCount: number;
+  skippedWorkoutCount: number;
+};
 
 type XmlDateRangeOption = '7' | '30' | '90' | 'all';
 
@@ -44,6 +52,28 @@ const mergeById = <T extends { id: string }>(current: T[] = [], next: T[] = []) 
   return [...map.values()];
 };
 
+const computePreviewStats = (
+  currentSamples: HealthMetricSample[] = [],
+  currentWorkouts: ImportedWorkoutSample[] = [],
+  preview: HealthImportPreview | null
+): HealthImportPreviewStats => {
+  if (!preview) {
+    return { newSamples: [], duplicateSampleCount: 0, skippedSampleCount: 0, newWorkouts: [], duplicateWorkoutCount: 0, skippedWorkoutCount: 0 };
+  }
+  const sampleIds = new Set(currentSamples.map((item) => item.id));
+  const workoutIds = new Set(currentWorkouts.map((item) => item.id));
+  const newSamples = preview.samples.filter((item) => !sampleIds.has(item.id));
+  const newWorkouts = preview.workouts.filter((item) => !workoutIds.has(item.id));
+  return {
+    newSamples,
+    duplicateSampleCount: preview.samples.length - newSamples.length,
+    skippedSampleCount: Math.max(0, Number(preview.batch.skippedSampleCount || 0)),
+    newWorkouts,
+    duplicateWorkoutCount: preview.workouts.length - newWorkouts.length,
+    skippedWorkoutCount: Math.max(0, Number(preview.batch.skippedWorkoutCount || 0)),
+  };
+};
+
 const formatDateTime = (value?: string) => {
   if (!value) return '未记录';
   const parsed = new Date(value);
@@ -52,7 +82,7 @@ const formatDateTime = (value?: string) => {
 };
 
 const batchItems = <T extends HealthMetricSample | ImportedWorkoutSample>(items: T[] = [], batch: HealthImportBatch) =>
-  items.filter((item) => item.importedAt === batch.importedAt);
+  items.filter((item) => (batch.id && item.batchId === batch.id) || (!item.batchId && item.importedAt === batch.importedAt));
 
 const batchIsExcluded = (data: AppData, batch: HealthImportBatch) => {
   if (batch.dataFlag === 'excluded') return true;
@@ -68,9 +98,29 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
   const [message, setMessage] = React.useState('');
   const [xmlDateRange, setXmlDateRange] = React.useState<XmlDateRangeOption>('30');
   const [xmlMetricTypes, setXmlMetricTypes] = React.useState<HealthMetricType[]>(defaultXmlMetricTypes);
+  const healthIntegrationSettings = {
+    useHealthDataForReadiness: data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false,
+    showExternalWorkoutsInCalendar: data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false,
+  };
+  const updateHealthIntegrationSettings = (updates: Partial<typeof healthIntegrationSettings>) => {
+    onUpdateData({
+      ...data,
+      settings: {
+        ...data.settings,
+        healthIntegrationSettings: {
+          ...healthIntegrationSettings,
+          ...updates,
+        },
+      },
+    });
+  };
   const summary = React.useMemo(
     () => buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || []),
     [data.healthMetricSamples, data.importedWorkoutSamples]
+  );
+  const previewStats = React.useMemo(
+    () => computePreviewStats(data.healthMetricSamples || [], data.importedWorkoutSamples || [], preview),
+    [data.healthMetricSamples, data.importedWorkoutSamples, preview]
   );
   const batches = [...(data.healthImportBatches || [])].sort((left, right) => right.importedAt.localeCompare(left.importedAt));
 
@@ -98,13 +148,24 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
 
   const confirmImport = () => {
     if (!preview || (!preview.samples.length && !preview.workouts.length)) return;
+    const batch: HealthImportBatch = {
+      ...preview.batch,
+      sampleCount: previewStats.newSamples.length,
+      workoutCount: previewStats.newWorkouts.length,
+      newSampleCount: previewStats.newSamples.length,
+      duplicateSampleCount: previewStats.duplicateSampleCount,
+      skippedSampleCount: previewStats.skippedSampleCount,
+      newWorkoutCount: previewStats.newWorkouts.length,
+      duplicateWorkoutCount: previewStats.duplicateWorkoutCount,
+      skippedWorkoutCount: previewStats.skippedWorkoutCount,
+    };
     onUpdateData({
       ...data,
-      healthMetricSamples: mergeById(data.healthMetricSamples, preview.samples),
-      importedWorkoutSamples: mergeById(data.importedWorkoutSamples, preview.workouts),
-      healthImportBatches: mergeById(data.healthImportBatches, [preview.batch]).sort((left, right) => right.importedAt.localeCompare(left.importedAt)),
+      healthMetricSamples: mergeById(data.healthMetricSamples, previewStats.newSamples.map((item) => ({ ...item, batchId: batch.id }))),
+      importedWorkoutSamples: mergeById(data.importedWorkoutSamples, previewStats.newWorkouts.map((item) => ({ ...item, batchId: batch.id }))),
+      healthImportBatches: mergeById(data.healthImportBatches, [batch]).sort((left, right) => right.importedAt.localeCompare(left.importedAt)),
     });
-    setMessage('健康数据已导入。');
+    setMessage(`健康数据已导入：新增样本 ${previewStats.newSamples.length}，重复样本 ${previewStats.duplicateSampleCount}，新增外部活动 ${previewStats.newWorkouts.length}。`);
     setPreview(null);
   };
 
@@ -112,8 +173,8 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
     if (dataFlag === 'excluded' && !window.confirm('排除后，该批健康数据不会参与准备度和恢复分析，但仍可查看。确定继续吗？')) return;
     onUpdateData({
       ...data,
-      healthMetricSamples: (data.healthMetricSamples || []).map((item) => (item.importedAt === batch.importedAt ? { ...item, dataFlag } : item)),
-      importedWorkoutSamples: (data.importedWorkoutSamples || []).map((item) => (item.importedAt === batch.importedAt ? { ...item, dataFlag } : item)),
+      healthMetricSamples: (data.healthMetricSamples || []).map((item) => ((item.batchId === batch.id || (!item.batchId && item.importedAt === batch.importedAt)) ? { ...item, dataFlag } : item)),
+      importedWorkoutSamples: (data.importedWorkoutSamples || []).map((item) => ((item.batchId === batch.id || (!item.batchId && item.importedAt === batch.importedAt)) ? { ...item, dataFlag } : item)),
       healthImportBatches: (data.healthImportBatches || []).map((item) => (item.id === batch.id ? { ...item, dataFlag } : item)),
     });
     setMessage(dataFlag === 'excluded' ? '已排除该批健康数据。' : '该批健康数据已恢复参与分析。');
@@ -123,8 +184,8 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
     if (!window.confirm('确定删除这一批健康数据吗？删除后不能恢复，但不会影响 IronPath 训练历史。')) return;
     onUpdateData({
       ...data,
-      healthMetricSamples: (data.healthMetricSamples || []).filter((item) => item.importedAt !== batch.importedAt),
-      importedWorkoutSamples: (data.importedWorkoutSamples || []).filter((item) => item.importedAt !== batch.importedAt),
+      healthMetricSamples: (data.healthMetricSamples || []).filter((item) => item.batchId !== batch.id && (item.batchId || item.importedAt !== batch.importedAt)),
+      importedWorkoutSamples: (data.importedWorkoutSamples || []).filter((item) => item.batchId !== batch.id && (item.batchId || item.importedAt !== batch.importedAt)),
       healthImportBatches: (data.healthImportBatches || []).filter((item) => item.id !== batch.id),
     });
     setMessage('已删除该批健康数据。');
@@ -135,7 +196,7 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
       <SectionHeader
         eyebrow="健康数据"
         title="健康数据导入"
-        description="当前 Web 版不能直接读取 Apple Health。你可以导入 CSV/JSON，让 IronPath 辅助判断准备度和恢复。"
+        description="当前 Web 版不能直接读取 Apple Health。你可以导入 CSV / JSON / Apple Health export.xml，让 IronPath 辅助判断准备度和恢复。"
         action={<StatusBadge tone="slate">手动导入</StatusBadge>}
       />
 
@@ -144,6 +205,24 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
           <InlineNotice tone="slate" title="边界">
             Safari PWA 不能直接读取 HealthKit；导入数据仅作恢复和活动负荷参考，不作医疗诊断。
           </InlineNotice>
+          <div className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+            <label className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-slate-700">用健康数据辅助准备度</span>
+              <input
+                type="checkbox"
+                checked={healthIntegrationSettings.useHealthDataForReadiness}
+                onChange={(event) => updateHealthIntegrationSettings({ useHealthDataForReadiness: event.target.checked })}
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-slate-700">日历显示外部活动</span>
+              <input
+                type="checkbox"
+                checked={healthIntegrationSettings.showExternalWorkoutsInCalendar}
+                onChange={(event) => updateHealthIntegrationSettings({ showExternalWorkoutsInCalendar: event.target.checked })}
+              />
+            </label>
+          </div>
           <div className="flex flex-wrap gap-2">
             <ActionButton variant="secondary" onClick={() => inputRef.current?.click()}>
               <Upload className="h-4 w-4" />
@@ -210,12 +289,20 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
               <div className="font-semibold text-slate-950">导入预览</div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="rounded-md bg-white p-2">
-                  <div className="text-xs text-slate-500">健康样本</div>
-                  <div className="text-lg font-semibold text-slate-950">{preview.samples.length}</div>
+                  <div className="text-xs text-slate-500">新增样本</div>
+                  <div className="text-lg font-semibold text-slate-950">{previewStats.newSamples.length}</div>
                 </div>
                 <div className="rounded-md bg-white p-2">
-                  <div className="text-xs text-slate-500">外部活动</div>
-                  <div className="text-lg font-semibold text-slate-950">{preview.workouts.length}</div>
+                  <div className="text-xs text-slate-500">新增外部活动</div>
+                  <div className="text-lg font-semibold text-slate-950">{previewStats.newWorkouts.length}</div>
+                </div>
+                <div className="rounded-md bg-white p-2">
+                  <div className="text-xs text-slate-500">重复样本</div>
+                  <div className="text-lg font-semibold text-slate-950">{previewStats.duplicateSampleCount}</div>
+                </div>
+                <div className="rounded-md bg-white p-2">
+                  <div className="text-xs text-slate-500">重复活动</div>
+                  <div className="text-lg font-semibold text-slate-950">{previewStats.duplicateWorkoutCount}</div>
                 </div>
               </div>
               {preview.summary ? (
@@ -230,7 +317,7 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
                 </div>
               ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
-                <ActionButton variant="primary" onClick={confirmImport} disabled={!preview.samples.length && !preview.workouts.length}>
+                <ActionButton variant="primary" onClick={confirmImport} disabled={!previewStats.newSamples.length && !previewStats.newWorkouts.length}>
                   确认导入
                 </ActionButton>
                 <ActionButton variant="ghost" onClick={() => setPreview(null)}>
@@ -287,7 +374,7 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
                         <StatusBadge tone={excluded ? 'slate' : 'emerald'}>{excluded ? '已排除' : '参与分析'}</StatusBadge>
                       </div>
                       <div className="mt-1 text-xs leading-5 text-slate-500">
-                        {formatDateTime(batch.importedAt)} / 样本 {batch.sampleCount} / 外部活动 {batch.workoutCount}
+                        {formatDateTime(batch.importedAt)} / 新增样本 {batch.newSampleCount ?? batch.sampleCount} / 重复样本 {batch.duplicateSampleCount ?? 0} / 新增外部活动 {batch.newWorkoutCount ?? batch.workoutCount}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button

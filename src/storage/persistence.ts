@@ -28,6 +28,7 @@ import {
   TRAINING_LEVELS,
   TRAINING_MODES,
   type AppData,
+  type HealthIntegrationSettings,
   type HealthImportBatch,
   type HealthMetricSample,
   type ImportedWorkoutSample,
@@ -93,6 +94,20 @@ const finiteNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+export const sanitizeHealthIntegrationSettings = (settings: unknown): HealthIntegrationSettings => {
+  const raw = pickRecord(settings);
+  return {
+    useHealthDataForReadiness:
+      typeof raw.useHealthDataForReadiness === 'boolean'
+        ? raw.useHealthDataForReadiness
+        : DEFAULT_HEALTH_INTEGRATION_SETTINGS.useHealthDataForReadiness,
+    showExternalWorkoutsInCalendar:
+      typeof raw.showExternalWorkoutsInCalendar === 'boolean'
+        ? raw.showExternalWorkoutsInCalendar
+        : DEFAULT_HEALTH_INTEGRATION_SETTINGS.showExternalWorkoutsInCalendar,
+  };
+};
+
 const LOAD_FEEDBACK_VALUES = ['too_light', 'good', 'too_heavy'] as const;
 const SESSION_DATA_FLAGS = ['normal', 'test', 'excluded'] as const;
 const WEIGHT_UNITS = ['kg', 'lb'] as const;
@@ -110,6 +125,11 @@ const HEALTH_METRIC_TYPES = [
   'vo2max',
   'workout',
 ] as const;
+
+export const DEFAULT_HEALTH_INTEGRATION_SETTINGS: HealthIntegrationSettings = {
+  useHealthDataForReadiness: true,
+  showExternalWorkoutsInCalendar: true,
+};
 
 const LEGACY_TEXT_MAP: Record<string, string> = {
   poor: '差',
@@ -738,12 +758,15 @@ const sanitizeHealthMetricSamples = (entries: unknown): HealthMetricSample[] =>
       return {
         id: pickString(raw.id, `health-sample-${index}`),
         source: pickEnum(raw.source, HEALTH_DATA_SOURCES, 'unknown'),
+        sourceName: pickString(raw.sourceName) || undefined,
+        deviceSourceName: pickString(raw.deviceSourceName) || undefined,
         metricType: metricType as HealthMetricSample['metricType'],
         startDate,
         endDate: pickString(raw.endDate) || undefined,
         value: Math.max(0, value),
         unit: pickString(raw.unit, ''),
         importedAt: pickString(raw.importedAt, startDate),
+        batchId: pickString(raw.batchId) || undefined,
         dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
         raw: raw.raw,
       };
@@ -761,6 +784,8 @@ const sanitizeImportedWorkoutSamples = (entries: unknown): ImportedWorkoutSample
       return {
         id: pickString(raw.id, `health-workout-${index}`),
         source: pickEnum(raw.source, HEALTH_DATA_SOURCES, 'unknown'),
+        sourceName: pickString(raw.sourceName) || undefined,
+        deviceSourceName: pickString(raw.deviceSourceName) || undefined,
         workoutType: pickString(raw.workoutType, '外部活动'),
         startDate,
         endDate,
@@ -770,6 +795,7 @@ const sanitizeImportedWorkoutSamples = (entries: unknown): ImportedWorkoutSample
         maxHeartRate: finiteNumber(raw.maxHeartRate),
         distanceMeters: finiteNumber(raw.distanceMeters),
         importedAt: pickString(raw.importedAt, startDate),
+        batchId: pickString(raw.batchId) || undefined,
         dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
         raw: raw.raw,
       };
@@ -789,6 +815,12 @@ const sanitizeHealthImportBatches = (entries: unknown): HealthImportBatch[] =>
         fileName: pickString(raw.fileName) || undefined,
         sampleCount: Math.max(0, number(raw.sampleCount)),
         workoutCount: Math.max(0, number(raw.workoutCount)),
+        newSampleCount: Math.max(0, number(raw.newSampleCount)),
+        duplicateSampleCount: Math.max(0, number(raw.duplicateSampleCount)),
+        skippedSampleCount: Math.max(0, number(raw.skippedSampleCount)),
+        newWorkoutCount: Math.max(0, number(raw.newWorkoutCount)),
+        duplicateWorkoutCount: Math.max(0, number(raw.duplicateWorkoutCount)),
+        skippedWorkoutCount: Math.max(0, number(raw.skippedWorkoutCount)),
         notes: pickArray(raw.notes).map(String),
         dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
       };
@@ -826,6 +858,7 @@ export const sanitizeData = (saved: unknown): AppData => {
   const healthMetricSamples = sanitizeHealthMetricSamples(migrated.healthMetricSamples ?? pickRecord(migrated.settings).healthMetricSamples);
   const importedWorkoutSamples = sanitizeImportedWorkoutSamples(migrated.importedWorkoutSamples ?? pickRecord(migrated.settings).importedWorkoutSamples);
   const healthImportBatches = sanitizeHealthImportBatches(migrated.healthImportBatches ?? pickRecord(migrated.settings).healthImportBatches);
+  const healthIntegrationSettings = sanitizeHealthIntegrationSettings(pickRecord(migrated.settings).healthIntegrationSettings);
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
     templates,
@@ -852,6 +885,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       selectedTemplateId,
       trainingMode,
       unitSettings,
+      healthIntegrationSettings,
       activeProgramTemplateId,
     },
   };
@@ -872,6 +906,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     sanitized.healthMetricSamples = sanitizeHealthMetricSamples(sanitized.healthMetricSamples);
     sanitized.importedWorkoutSamples = sanitizeImportedWorkoutSamples(sanitized.importedWorkoutSamples);
     sanitized.healthImportBatches = sanitizeHealthImportBatches(sanitized.healthImportBatches);
+    sanitized.settings.healthIntegrationSettings = sanitizeHealthIntegrationSettings(sanitized.settings.healthIntegrationSettings);
     sanitized.activeProgramTemplateId = sanitized.templates.some((template) => template.id === sanitized.activeProgramTemplateId)
       ? sanitized.activeProgramTemplateId
       : sanitized.selectedTemplateId;
@@ -881,6 +916,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       selectedTemplateId: sanitized.selectedTemplateId,
       trainingMode: sanitized.trainingMode,
       unitSettings: sanitized.unitSettings,
+      healthIntegrationSettings: sanitized.settings.healthIntegrationSettings,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
     };
   }
@@ -909,7 +945,7 @@ export const emptyData = (): AppData =>
     healthMetricSamples: [],
     importedWorkoutSamples: [],
     healthImportBatches: [],
-    settings: {},
+    settings: { healthIntegrationSettings: DEFAULT_HEALTH_INTEGRATION_SETTINGS },
   });
 
 export const loadData = (): AppData => {
@@ -980,6 +1016,7 @@ export const saveData = (data: AppData) => {
       selectedTemplateId: sanitized.selectedTemplateId,
       trainingMode: sanitized.trainingMode,
       unitSettings: sanitized.unitSettings,
+      healthIntegrationSettings: sanitized.settings.healthIntegrationSettings || DEFAULT_HEALTH_INTEGRATION_SETTINGS,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
       programAdjustmentDrafts: sanitized.programAdjustmentDrafts || [],
       programAdjustmentHistory: sanitized.programAdjustmentHistory || [],
