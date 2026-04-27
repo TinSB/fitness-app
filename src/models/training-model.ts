@@ -508,6 +508,9 @@ export interface TrainingSession {
   loadFeedback?: LoadFeedback[];
   supportExerciseLogs?: SupportExerciseLog[];
   restTimerState?: RestTimerState | null;
+  currentExerciseId?: string;
+  currentSetIndex?: number;
+  focusSessionComplete?: boolean;
   deloadDecision?: DeloadDecision;
   explanations?: string[];
 }

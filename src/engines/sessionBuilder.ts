@@ -158,6 +158,9 @@ export const createSession = (
     functionalBlock: clone(resolvedSupportPlan.functionalAddons || []),
     supportExerciseLogs,
     exercises,
+    currentExerciseId: exercises[0]?.id,
+    currentSetIndex: 0,
+    focusSessionComplete: false,
     deloadDecision: adjustedPlan.deloadDecision,
     explanations,
   };

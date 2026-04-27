@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Activity, BookOpen, CheckCircle, Dumbbell, Flame } from 'lucide-react';
 import { INITIAL_TEMPLATES } from './data/trainingData';
 import { TodayView } from './features/TodayView';
@@ -7,13 +7,19 @@ import { buildWeeklyPrescription } from './engines/supportPlanEngine';
 import { classNames, clone, enrichExercise, findTemplate, hydrateTemplates, number, todayKey } from './engines/engineUtils';
 import { createSession, pickSuggestedTemplate } from './engines/sessionBuilder';
 import {
-  createRestTimerState,
   extendRestTimer,
   pauseRestTimer,
   resumeRestTimer,
 } from './engines/restTimerEngine';
 import { reconcileScreeningProfile } from './engines/adaptiveFeedbackEngine';
 import { normalizeTemplateExerciseInput } from './engines/exercisePrescriptionEngine';
+import {
+  adjustFocusSetValue,
+  completeFocusSet,
+  getCurrentSetIndex,
+  getNextIncompleteSetInExercise,
+  switchFocusExercise,
+} from './engines/focusModeStateEngine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
@@ -61,6 +67,7 @@ function App() {
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false
   );
   const [forceFullTrainingView, setForceFullTrainingView] = useState(false);
+  const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
 
   useEffect(() => {
     saveData(data);
@@ -221,41 +228,28 @@ function App() {
   const completeSet = (exerciseIndex: number, advanceExercise = false) => {
     const session = data.activeSession;
     if (!session) return;
-
-    const exercise = session.exercises[exerciseIndex];
-    const sets = getSetList(session, exerciseIndex);
-    const setIndex = sets.findIndex((set) => !set.done);
+    const setIndex = getCurrentSetIndex(session, exerciseIndex);
     if (setIndex < 0) return;
 
-    const targetSet = sets[setIndex];
-    const nextSession = clone(session) as TrainingSession;
-    const nextExercise = nextSession.exercises[exerciseIndex];
-    const nextSets = Array.isArray(nextExercise.sets) ? (nextExercise.sets as TrainingSetLog[]) : [];
+    const completedAt = new Date().toISOString();
+    const now = Date.now();
+    const guardKey = `${session.id}:${exerciseIndex}:${setIndex}`;
+    const lastGuard = completeSetGuardRef.current;
+    if (lastGuard?.key === guardKey && now - lastGuard.at < 500) return;
+    completeSetGuardRef.current = { key: guardKey, at: now };
 
-    nextSets[setIndex] = {
-      ...targetSet,
-      weight: number(targetSet.weight),
-      reps: number(targetSet.reps),
-      done: true,
-      completedAt: new Date().toISOString(),
-    };
-    nextSession.restTimerState = createRestTimerState(nextExercise.id, setIndex, exercise.rest, Date.now(), exercise.name);
+    let nextExpandedExercise: number | null = null;
 
-    const nextSet = nextSets[setIndex + 1];
-    if (nextSet && !nextSet.done) {
-      if (!nextSet.type || nextSet.type === nextSets[setIndex].type || nextSet.type === 'straight') {
-        nextSet.weight = nextSets[setIndex].weight;
-        nextSet.reps = nextSets[setIndex].reps;
-      }
-      nextSet.rpe = '';
-      nextSet.rir = Math.min(2, nextExercise.targetRir?.[1] ?? 2);
-      nextSet.painFlag = false;
-    }
+    setData((current) => {
+      if (!current.activeSession) return current;
+      const result = completeFocusSet(current.activeSession, exerciseIndex, completedAt, now);
+      if (!result) return current;
+      nextExpandedExercise = result.sessionComplete ? exerciseIndex : result.nextExerciseIndex;
+      return { ...current, activeSession: result.session };
+    });
 
-    setData((current) => ({ ...current, activeSession: nextSession }));
-    if (advanceExercise || !nextSet) {
-      const nextExerciseIndex = nextSession.exercises.findIndex((item, index) => index > exerciseIndex && getSetList(nextSession, index).some((set) => !set.done));
-      if (nextExerciseIndex >= 0) setExpandedExercise(nextExerciseIndex);
+    if (nextExpandedExercise !== null && nextExpandedExercise >= 0) {
+      setExpandedExercise(nextExpandedExercise);
     }
   };
 
@@ -263,7 +257,7 @@ function App() {
     const session = data.activeSession;
     if (!session) return;
     const sets = getSetList(session, exerciseIndex);
-    const setIndex = sets.findIndex((set) => !set.done);
+    const setIndex = getCurrentSetIndex(session, exerciseIndex);
     if (setIndex <= 0) return;
     const previous = sets[setIndex - 1];
     updateActiveSetFields(exerciseIndex, setIndex, {
@@ -275,13 +269,10 @@ function App() {
   };
 
   const adjustCurrentSet = (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => {
-    const session = data.activeSession;
-    if (!session) return;
-    const sets = getSetList(session, exerciseIndex);
-    const setIndex = sets.findIndex((set) => !set.done);
-    if (setIndex < 0) return;
-    const currentValue = number(sets[setIndex][field]);
-    updateActiveSet(exerciseIndex, setIndex, field, String(Math.max(0, currentValue + delta)));
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return { ...current, activeSession: adjustFocusSetValue(current.activeSession, exerciseIndex, field, delta) };
+    });
   };
 
   const replaceExercise = (exerciseIndex: number) => {
@@ -303,12 +294,22 @@ function App() {
       exercise.canonicalExerciseId = nextIndex === 0 ? baseId : exercise.id;
       exercise.replacedFromId = nextIndex === 0 ? '' : baseId;
       exercise.replacedFromName = nextIndex === 0 ? '' : exercise.originalName;
-      exercise.warning =
-        nextIndex === 0
-          ? exercise.warning
-          : [exercise.warning, '已切到替代动作：这次仍属于同一模板位置，但 PR 会独立统计。'].filter(Boolean).join(' / ');
-      return { ...current, activeSession: session };
+      const replacementNotice = '已切到替代动作：这次仍属于同一模板位置，但 PR 会独立统计。';
+      const warningParts = String(exercise.warning || '')
+        .split(' / ')
+        .map((item) => item.trim())
+        .filter((item) => item && item !== replacementNotice);
+      exercise.warning = nextIndex === 0 ? warningParts.join(' / ') : [...warningParts, replacementNotice].join(' / ');
+      return { ...current, activeSession: switchFocusExercise(session, exerciseIndex) };
     });
+  };
+
+  const switchActiveExercise = (exerciseIndex: number) => {
+    setData((current) => {
+      if (!current.activeSession) return current;
+      return { ...current, activeSession: switchFocusExercise(current.activeSession, exerciseIndex) };
+    });
+    setExpandedExercise(exerciseIndex);
   };
 
   const deleteActiveSession = () => {
@@ -594,7 +595,7 @@ function App() {
             </aside>
 
             <main className="flex min-w-0 flex-1 flex-col bg-stone-50">
-              <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 md:hidden">
+              <div className="flex min-h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] md:hidden">
                 <div className="flex items-center gap-2 font-black">
                   <Dumbbell className="h-5 w-5 text-emerald-600" />
                   IronPath
@@ -651,8 +652,10 @@ function App() {
                       onCompleteSet={completeSet}
                       onCopyPrevious={copyPreviousSet}
                       onAdjustSet={adjustCurrentSet}
+                      onSwitchExercise={switchActiveExercise}
                       onReplaceExercise={replaceExercise}
                       onLoadFeedback={recordLoadFeedback}
+                      onFinish={finishSession}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
                       onUpdateSupportSkipReason={skipSupportExercise}
@@ -672,6 +675,7 @@ function App() {
                       onCompleteSet={completeSet}
                       onCopyPrevious={copyPreviousSet}
                       onAdjustSet={adjustCurrentSet}
+                      onSwitchExercise={switchActiveExercise}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
                       onUpdateSupportSkipReason={skipSupportExercise}
@@ -679,6 +683,7 @@ function App() {
                       onLoadFeedback={recordLoadFeedback}
                       onFinish={finishSession}
                       onDelete={deleteActiveSession}
+                      onReturnFocusMode={() => setForceFullTrainingView(false)}
                       onExtendRestTimer={extendActiveRestTimer}
                       onToggleRestTimer={toggleActiveRestTimer}
                       onClearRestTimer={clearActiveRestTimer}

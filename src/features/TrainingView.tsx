@@ -38,6 +38,7 @@ interface TrainingViewProps {
   onCompleteSet: (exerciseIndex: number, advanceExercise?: boolean) => void;
   onCopyPrevious: (exerciseIndex: number) => void;
   onAdjustSet: (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => void;
+  onSwitchExercise: (exerciseIndex: number) => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
@@ -45,6 +46,7 @@ interface TrainingViewProps {
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish: () => void;
   onDelete: () => void;
+  onReturnFocusMode?: () => void;
   onExtendRestTimer: (seconds: number) => void;
   onToggleRestTimer: () => void;
   onClearRestTimer: () => void;
@@ -127,6 +129,7 @@ export function TrainingView({
   onCompleteSet,
   onCopyPrevious,
   onAdjustSet,
+  onSwitchExercise,
   onCompleteSupportSet,
   onSkipSupportExercise,
   onUpdateSupportSkipReason,
@@ -134,6 +137,7 @@ export function TrainingView({
   onLoadFeedback,
   onFinish,
   onDelete,
+  onReturnFocusMode,
   onExtendRestTimer,
   onToggleRestTimer,
   onClearRestTimer,
@@ -144,8 +148,7 @@ export function TrainingView({
 
   React.useEffect(() => {
     setSupportReasonDrafts({});
-    const prefersFocus = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-    setFocusMode(prefersFocus);
+    setFocusMode(false);
   }, [session?.id]);
 
   if (!session) {
@@ -713,8 +716,16 @@ export function TrainingView({
       title={templateLabel(session.templateId, session.templateName)}
       action={
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setFocusMode((current) => !current)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
-            {focusMode ? '退出极简模式' : '训练中极简模式'}
+          <button
+            type="button"
+            onClick={() => {
+              if (focusMode) setFocusMode(false);
+              else if (onReturnFocusMode) onReturnFocusMode();
+              else setFocusMode(true);
+            }}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700"
+          >
+            {focusMode ? '完整训练页' : '返回极简模式'}
           </button>
           <button onClick={onDelete} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
             放弃
@@ -740,14 +751,16 @@ export function TrainingView({
               session={session}
               restTimer={restTimer}
               expandedExercise={expandedExercise}
-              setExpandedExercise={setExpandedExercise}
-              onSetChange={onSetChange}
-              onCompleteSet={onCompleteSet}
-              onCopyPrevious={onCopyPrevious}
-              onAdjustSet={onAdjustSet}
-              onReplaceExercise={onReplaceExercise}
-              onLoadFeedback={onLoadFeedback}
-              onCompleteSupportSet={onCompleteSupportSet}
+                      setExpandedExercise={setExpandedExercise}
+                      onSetChange={onSetChange}
+                      onCompleteSet={onCompleteSet}
+                      onCopyPrevious={onCopyPrevious}
+                      onAdjustSet={onAdjustSet}
+                      onSwitchExercise={onSwitchExercise}
+                      onReplaceExercise={onReplaceExercise}
+                      onLoadFeedback={onLoadFeedback}
+                      onFinish={onFinish}
+                      onCompleteSupportSet={onCompleteSupportSet}
               onSkipSupportExercise={onSkipSupportExercise}
               onUpdateSupportSkipReason={onUpdateSupportSkipReason}
             />
