@@ -512,6 +512,66 @@ export interface BodyWeightEntry {
   value: number;
 }
 
+export type HealthDataSource =
+  | 'apple_health_export'
+  | 'apple_watch_workout'
+  | 'third_party_csv'
+  | 'manual_import'
+  | 'unknown';
+
+export type HealthMetricType =
+  | 'sleep_duration'
+  | 'resting_heart_rate'
+  | 'hrv'
+  | 'heart_rate'
+  | 'steps'
+  | 'active_energy'
+  | 'exercise_minutes'
+  | 'body_weight'
+  | 'body_fat'
+  | 'vo2max'
+  | 'workout';
+
+export type HealthMetricSample = {
+  id: string;
+  source: HealthDataSource;
+  metricType: HealthMetricType;
+  startDate: string;
+  endDate?: string;
+  value: number;
+  unit: string;
+  importedAt: string;
+  dataFlag?: SessionDataFlag;
+  raw?: unknown;
+};
+
+export type ImportedWorkoutSample = {
+  id: string;
+  source: HealthDataSource;
+  workoutType: string;
+  startDate: string;
+  endDate: string;
+  durationMin: number;
+  activeEnergyKcal?: number;
+  avgHeartRate?: number;
+  maxHeartRate?: number;
+  distanceMeters?: number;
+  importedAt: string;
+  dataFlag?: SessionDataFlag;
+  raw?: unknown;
+};
+
+export type HealthImportBatch = {
+  id: string;
+  importedAt: string;
+  source: HealthDataSource;
+  fileName?: string;
+  sampleCount: number;
+  workoutCount: number;
+  notes: string[];
+  dataFlag?: SessionDataFlag;
+};
+
 export interface RestTimerState {
   exerciseId: string;
   setIndex: number;
@@ -990,5 +1050,8 @@ export interface AppData {
   programAdjustmentDrafts?: ProgramAdjustmentDraft[];
   programAdjustmentHistory?: ProgramAdjustmentHistoryItem[];
   activeProgramTemplateId?: string;
+  healthMetricSamples?: HealthMetricSample[];
+  importedWorkoutSamples?: ImportedWorkoutSample[];
+  healthImportBatches?: HealthImportBatch[];
   settings: AppSettings;
 }

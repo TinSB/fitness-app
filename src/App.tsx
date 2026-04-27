@@ -789,6 +789,7 @@ function App() {
                         setData(nextData);
                         setActiveTab('today');
                       }}
+                      onUpdateHealthData={(nextData) => setData(nextData)}
                       onOpenAssessment={() => setProfileSection('assessment')}
                       onOpenRecordData={() => {
                         setProgressTarget({ section: 'data' });

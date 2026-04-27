@@ -1,7 +1,7 @@
 import type { MuscleGroup, TechniqueStandard, TrainingMode } from '../models/training-model';
 
 export const STORAGE_KEY = 'ironpath_personal_strength_os_v3';
-export const STORAGE_VERSION = 6;
+export const STORAGE_VERSION = 7;
 export const STORAGE_KEYS = {
   version: 'ironpath_version',
   templates: 'ironpath_templates',
@@ -13,6 +13,9 @@ export const STORAGE_KEYS = {
   screeningProfile: 'ironpath_screening_profile',
   programTemplate: 'ironpath_program_template',
   mesocyclePlan: 'ironpath_mesocycle_plan',
+  healthMetricSamples: 'ironpath_health_metric_samples',
+  importedWorkoutSamples: 'ironpath_imported_workout_samples',
+  healthImportBatches: 'ironpath_health_import_batches',
   settings: 'ironpath_settings',
 } as const;
 

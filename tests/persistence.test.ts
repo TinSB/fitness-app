@@ -160,6 +160,49 @@ describe('persistence', () => {
     expect(sanitized.history[0]?.dataFlag).toBe('normal');
   });
 
+  it('migrates health import arrays and validates schema', () => {
+    const sanitized = sanitizeData({
+      healthMetricSamples: [
+        {
+          id: 'sleep-1',
+          source: 'apple_health_export',
+          metricType: 'sleep_duration',
+          startDate: '2026-04-21T00:00:00.000Z',
+          value: 7,
+          unit: 'h',
+          importedAt: '2026-04-22T00:00:00.000Z',
+        },
+      ],
+      importedWorkoutSamples: [
+        {
+          id: 'watch-1',
+          source: 'apple_watch_workout',
+          workoutType: '户外跑步',
+          startDate: '2026-04-21T18:00:00.000Z',
+          endDate: '2026-04-21T18:35:00.000Z',
+          durationMin: 35,
+          importedAt: '2026-04-22T00:00:00.000Z',
+        },
+      ],
+      healthImportBatches: [
+        {
+          id: 'batch-1',
+          source: 'apple_health_export',
+          importedAt: '2026-04-22T00:00:00.000Z',
+          sampleCount: 1,
+          workoutCount: 1,
+          notes: [],
+        },
+      ],
+    });
+
+    expect(sanitized.healthMetricSamples).toHaveLength(1);
+    expect(sanitized.importedWorkoutSamples).toHaveLength(1);
+    expect(sanitized.healthImportBatches).toHaveLength(1);
+    expect(sanitized.healthMetricSamples?.[0]?.dataFlag).toBe('normal');
+    expect(validateAppDataSchema(sanitized)).toBe(true);
+  });
+
   it('migrates draft fields for source template hash and updatedAt', () => {
     const sanitized = sanitizeData({
       templates: [

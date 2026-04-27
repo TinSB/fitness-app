@@ -1,4 +1,5 @@
 import type { AppData, ReadinessInput, ReadinessResult, TodayStatus, TrainingSession, TrainingTemplate } from '../models/training-model';
+import { buildHealthSummary, type HealthSummary } from './healthSummaryEngine';
 
 const sleepMap: Record<TodayStatus['sleep'], ReadinessInput['sleep']> = {
   差: 'poor',
@@ -27,7 +28,7 @@ export const mapTodayStatusToReadinessInput = (
 
 export const buildReadinessResult = (
   input: ReadinessInput,
-  context: { adherenceHigh?: boolean } = {}
+  context: { adherenceHigh?: boolean; healthSummary?: HealthSummary } = {}
 ): ReadinessResult => {
   let score = 82;
   const reasons: string[] = [];
@@ -69,6 +70,22 @@ export const buildReadinessResult = (
     reasons.push('可用时间低于计划时长');
   }
 
+  if (context.healthSummary && context.healthSummary.confidence !== 'low') {
+    const healthNotes = context.healthSummary.notes.join(' ');
+    if (context.healthSummary.latestSleepHours !== undefined && context.healthSummary.latestSleepHours < 6) {
+      score -= 4;
+      reasons.push('导入健康数据提示睡眠偏少，建议略保守');
+    }
+    if (healthNotes.includes('静息心率高于') || healthNotes.includes('HRV 低于')) {
+      score -= 3;
+      reasons.push('导入健康数据提示恢复可能偏低');
+    }
+    if (context.healthSummary.recentHighActivityDays > 0 || context.healthSummary.recentWorkoutMinutes >= 120) {
+      score -= 3;
+      reasons.push('导入健康数据提示近期活动负荷偏高');
+    }
+  }
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   let level: ReadinessResult['level'] = 'medium';
   let trainingAdjustment: ReadinessResult['trainingAdjustment'] = 'normal';
@@ -90,12 +107,15 @@ export const buildReadinessResult = (
 };
 
 export const buildTodayReadiness = (
-  data: Pick<Partial<AppData>, 'todayStatus' | 'activeSession' | 'history'>,
+  data: Pick<Partial<AppData>, 'todayStatus' | 'activeSession' | 'history' | 'healthMetricSamples' | 'importedWorkoutSamples'>,
   template?: Pick<TrainingTemplate, 'duration'>,
-  context: { adherenceHigh?: boolean; painAreas?: string[] } = {}
+  context: { adherenceHigh?: boolean; painAreas?: string[]; healthSummary?: HealthSummary } = {}
 ) =>
   buildReadinessResult(mapTodayStatusToReadinessInput((data.todayStatus || ({} as TodayStatus)) as TodayStatus, template, context.painAreas), {
     adherenceHigh: context.adherenceHigh,
+    healthSummary:
+      context.healthSummary ||
+      buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || []),
   });
 
 export const collectPainAreasFromHistory = (history: TrainingSession[] = []) =>

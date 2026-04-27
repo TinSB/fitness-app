@@ -1,0 +1,325 @@
+import React from 'react';
+import { Database, Trash2, Upload } from 'lucide-react';
+import { parseHealthImportFile } from '../engines/healthImportEngine';
+import { buildHealthSummary } from '../engines/healthSummaryEngine';
+import { formatWeight } from '../engines/unitConversionEngine';
+import type { AppData, HealthImportBatch, HealthMetricSample, HealthMetricType, ImportedWorkoutSample } from '../models/training-model';
+import { ActionButton, Card, InlineNotice, SectionHeader, StatusBadge } from '../ui/common';
+
+interface HealthDataPanelProps {
+  data: AppData;
+  onUpdateData: (data: AppData) => void;
+}
+
+type HealthImportPreview = ReturnType<typeof parseHealthImportFile>;
+
+type XmlDateRangeOption = '7' | '30' | '90' | 'all';
+
+const xmlMetricOptions: Array<{ id: HealthMetricType; label: string }> = [
+  { id: 'sleep_duration', label: '睡眠' },
+  { id: 'resting_heart_rate', label: '静息心率' },
+  { id: 'hrv', label: 'HRV' },
+  { id: 'steps', label: '步数' },
+  { id: 'active_energy', label: '活动能量' },
+  { id: 'body_weight', label: '体重' },
+  { id: 'workout', label: 'workout' },
+];
+
+const defaultXmlMetricTypes: HealthMetricType[] = ['sleep_duration', 'resting_heart_rate', 'hrv', 'steps', 'workout'];
+
+const buildXmlDateOptions = (range: XmlDateRangeOption) => {
+  if (range === 'all') return {};
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(start.getDate() - Number(range) + 1);
+  start.setHours(0, 0, 0, 0);
+  return { fromDate: start.toISOString(), toDate: end.toISOString() };
+};
+
+const mergeById = <T extends { id: string }>(current: T[] = [], next: T[] = []) => {
+  const map = new Map<string, T>();
+  current.forEach((item) => map.set(item.id, item));
+  next.forEach((item) => map.set(item.id, item));
+  return [...map.values()];
+};
+
+const formatDateTime = (value?: string) => {
+  if (!value) return '未记录';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+};
+
+const batchItems = <T extends HealthMetricSample | ImportedWorkoutSample>(items: T[] = [], batch: HealthImportBatch) =>
+  items.filter((item) => item.importedAt === batch.importedAt);
+
+const batchIsExcluded = (data: AppData, batch: HealthImportBatch) => {
+  if (batch.dataFlag === 'excluded') return true;
+  const samples = batchItems(data.healthMetricSamples, batch);
+  const workouts = batchItems(data.importedWorkoutSamples, batch);
+  const combined = [...samples, ...workouts];
+  return combined.length > 0 && combined.every((item) => item.dataFlag === 'excluded');
+};
+
+export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const [preview, setPreview] = React.useState<HealthImportPreview | null>(null);
+  const [message, setMessage] = React.useState('');
+  const [xmlDateRange, setXmlDateRange] = React.useState<XmlDateRangeOption>('30');
+  const [xmlMetricTypes, setXmlMetricTypes] = React.useState<HealthMetricType[]>(defaultXmlMetricTypes);
+  const summary = React.useMemo(
+    () => buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || []),
+    [data.healthMetricSamples, data.importedWorkoutSamples]
+  );
+  const batches = [...(data.healthImportBatches || [])].sort((left, right) => right.importedAt.localeCompare(left.importedAt));
+
+  const handleFile = async (file?: File) => {
+    if (!file) return;
+    const isXml = file.name.toLowerCase().endsWith('.xml');
+    if (isXml && file.size > 8 * 1024 * 1024) {
+      setMessage('大型 XML 可能需要较长时间。建议优先导入最近 30–90 天数据。');
+    }
+    const result = parseHealthImportFile(await file.text(), file.name, isXml ? {
+      ...buildXmlDateOptions(xmlDateRange),
+      metricTypes: xmlMetricTypes,
+      includeWorkouts: xmlMetricTypes.includes('workout'),
+    } : undefined);
+    setPreview(result);
+    setMessage(
+      result.samples.length || result.workouts.length
+        ? isXml
+          ? '已识别 Apple Health XML。当前只导入对训练恢复有用的关键指标。'
+          : '文件已解析，请确认后导入。'
+        : '没有找到可导入的健康数据。'
+    );
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const confirmImport = () => {
+    if (!preview || (!preview.samples.length && !preview.workouts.length)) return;
+    onUpdateData({
+      ...data,
+      healthMetricSamples: mergeById(data.healthMetricSamples, preview.samples),
+      importedWorkoutSamples: mergeById(data.importedWorkoutSamples, preview.workouts),
+      healthImportBatches: mergeById(data.healthImportBatches, [preview.batch]).sort((left, right) => right.importedAt.localeCompare(left.importedAt)),
+    });
+    setMessage('健康数据已导入。');
+    setPreview(null);
+  };
+
+  const updateBatchFlag = (batch: HealthImportBatch, dataFlag: 'normal' | 'excluded') => {
+    if (dataFlag === 'excluded' && !window.confirm('排除后，该批健康数据不会参与准备度和恢复分析，但仍可查看。确定继续吗？')) return;
+    onUpdateData({
+      ...data,
+      healthMetricSamples: (data.healthMetricSamples || []).map((item) => (item.importedAt === batch.importedAt ? { ...item, dataFlag } : item)),
+      importedWorkoutSamples: (data.importedWorkoutSamples || []).map((item) => (item.importedAt === batch.importedAt ? { ...item, dataFlag } : item)),
+      healthImportBatches: (data.healthImportBatches || []).map((item) => (item.id === batch.id ? { ...item, dataFlag } : item)),
+    });
+    setMessage(dataFlag === 'excluded' ? '已排除该批健康数据。' : '该批健康数据已恢复参与分析。');
+  };
+
+  const deleteBatch = (batch: HealthImportBatch) => {
+    if (!window.confirm('确定删除这一批健康数据吗？删除后不能恢复，但不会影响 IronPath 训练历史。')) return;
+    onUpdateData({
+      ...data,
+      healthMetricSamples: (data.healthMetricSamples || []).filter((item) => item.importedAt !== batch.importedAt),
+      importedWorkoutSamples: (data.importedWorkoutSamples || []).filter((item) => item.importedAt !== batch.importedAt),
+      healthImportBatches: (data.healthImportBatches || []).filter((item) => item.id !== batch.id),
+    });
+    setMessage('已删除该批健康数据。');
+  };
+
+  return (
+    <Card>
+      <SectionHeader
+        eyebrow="健康数据"
+        title="健康数据导入"
+        description="当前 Web 版不能直接读取 Apple Health。你可以导入 CSV/JSON，让 IronPath 辅助判断准备度和恢复。"
+        action={<StatusBadge tone="slate">手动导入</StatusBadge>}
+      />
+
+      <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="space-y-3">
+          <InlineNotice tone="slate" title="边界">
+            Safari PWA 不能直接读取 HealthKit；导入数据仅作恢复和活动负荷参考，不作医疗诊断。
+          </InlineNotice>
+          <div className="flex flex-wrap gap-2">
+            <ActionButton variant="secondary" onClick={() => inputRef.current?.click()}>
+              <Upload className="h-4 w-4" />
+              选择 CSV / JSON / XML
+            </ActionButton>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".json,.csv,.xml,application/json,text/csv,text/xml,application/xml"
+              className="hidden"
+              onChange={(event) => void handleFile(event.target.files?.[0])}
+            />
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="text-sm font-semibold text-slate-950">Apple Health XML 导入选项</div>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {([
+                ['7', '最近 7 天'],
+                ['30', '最近 30 天'],
+                ['90', '最近 90 天'],
+                ['all', '全部'],
+              ] as Array<[XmlDateRangeOption, string]>).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setXmlDateRange(id)}
+                  className={[
+                    'min-h-10 rounded-lg border px-2 text-sm font-semibold',
+                    xmlDateRange === id ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {xmlMetricOptions.map((option) => {
+                const selected = xmlMetricTypes.includes(option.id);
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() =>
+                      setXmlMetricTypes((current) =>
+                        selected ? current.filter((item) => item !== option.id) : [...current, option.id]
+                      )
+                    }
+                    className={[
+                      'rounded-md border px-2 py-1 text-xs font-semibold',
+                      selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
+                    ].join(' ')}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs leading-5 text-slate-500">默认导入最近 30 天的睡眠、静息心率、HRV、步数和 workout。</div>
+          </div>
+
+          {preview ? (
+            <div className="rounded-lg border border-slate-200 bg-stone-50 p-3 text-sm">
+              <div className="font-semibold text-slate-950">导入预览</div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="rounded-md bg-white p-2">
+                  <div className="text-xs text-slate-500">健康样本</div>
+                  <div className="text-lg font-semibold text-slate-950">{preview.samples.length}</div>
+                </div>
+                <div className="rounded-md bg-white p-2">
+                  <div className="text-xs text-slate-500">外部活动</div>
+                  <div className="text-lg font-semibold text-slate-950">{preview.workouts.length}</div>
+                </div>
+              </div>
+              {preview.summary ? (
+                <div className="mt-2 rounded-md bg-white p-2 text-xs leading-5 text-slate-600">
+                  识别 Record {preview.summary.detectedRecordCount} 条 / 导入指标 {preview.summary.metricTypes.join('、') || '无'}
+                  {preview.summary.dateRange ? ` / ${preview.summary.dateRange.startDate.slice(0, 10)} 至 ${preview.summary.dateRange.endDate.slice(0, 10)}` : ''}
+                </div>
+              ) : null}
+              {preview.warnings.length ? (
+                <div className="mt-2 space-y-1 text-xs leading-5 text-amber-700">
+                  {preview.warnings.slice(0, 4).map((warning) => <div key={warning}>{warning}</div>)}
+                </div>
+              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <ActionButton variant="primary" onClick={confirmImport} disabled={!preview.samples.length && !preview.workouts.length}>
+                  确认导入
+                </ActionButton>
+                <ActionButton variant="ghost" onClick={() => setPreview(null)}>
+                  取消
+                </ActionButton>
+              </div>
+            </div>
+          ) : null}
+
+          {message ? <InlineNotice tone={message.includes('没有') ? 'amber' : 'emerald'}>{message}</InlineNotice> : null}
+        </div>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+            <div className="rounded-lg bg-stone-50 p-3 text-sm">
+              <div className="text-xs text-slate-500">最近睡眠</div>
+              <div className="mt-1 font-semibold text-slate-950">{summary.latestSleepHours ? `${summary.latestSleepHours} 小时` : '暂无'}</div>
+            </div>
+            <div className="rounded-lg bg-stone-50 p-3 text-sm">
+              <div className="text-xs text-slate-500">静息心率</div>
+              <div className="mt-1 font-semibold text-slate-950">{summary.latestRestingHeartRate ? `${summary.latestRestingHeartRate} bpm` : '暂无'}</div>
+            </div>
+            <div className="rounded-lg bg-stone-50 p-3 text-sm">
+              <div className="text-xs text-slate-500">HRV</div>
+              <div className="mt-1 font-semibold text-slate-950">{summary.latestHrv ? `${summary.latestHrv} ms` : '暂无'}</div>
+            </div>
+            <div className="rounded-lg bg-stone-50 p-3 text-sm">
+              <div className="text-xs text-slate-500">步数</div>
+              <div className="mt-1 font-semibold text-slate-950">{summary.latestSteps ? Math.round(summary.latestSteps) : '暂无'}</div>
+            </div>
+            <div className="rounded-lg bg-stone-50 p-3 text-sm">
+              <div className="text-xs text-slate-500">体重</div>
+              <div className="mt-1 font-semibold text-slate-950">{summary.latestBodyWeightKg ? formatWeight(summary.latestBodyWeightKg, data.unitSettings) : '暂无'}</div>
+            </div>
+            <div className="rounded-lg bg-stone-50 p-3 text-sm">
+              <div className="text-xs text-slate-500">外部活动</div>
+              <div className="mt-1 font-semibold text-slate-950">{summary.recentWorkoutCount} 次 / {summary.recentWorkoutMinutes} 分钟</div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <Database className="h-4 w-4 text-emerald-600" />
+              导入历史
+            </div>
+            {batches.length ? (
+              <div className="space-y-2">
+                {batches.slice(0, 6).map((batch) => {
+                  const excluded = batchIsExcluded(data, batch);
+                  return (
+                    <div key={batch.id} className="rounded-lg bg-stone-50 p-3 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-semibold text-slate-950">{batch.fileName || '健康数据导入'}</div>
+                        <StatusBadge tone={excluded ? 'slate' : 'emerald'}>{excluded ? '已排除' : '参与分析'}</StatusBadge>
+                      </div>
+                      <div className="mt-1 text-xs leading-5 text-slate-500">
+                        {formatDateTime(batch.importedAt)} / 样本 {batch.sampleCount} / 外部活动 {batch.workoutCount}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateBatchFlag(batch, excluded ? 'normal' : 'excluded')}
+                          className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700"
+                        >
+                          {excluded ? '恢复参与' : '排除统计'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteBatch(batch)}
+                          className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-lg bg-stone-50 p-4 text-sm text-slate-500">暂无健康数据导入记录。</div>
+            )}
+          </div>
+
+          <InlineNotice tone="slate" title="日历显示">
+            Apple Watch workout 会作为外部活动背景显示，不会自动变成 IronPath 力量训练，也不会参与 PR / e1RM。
+          </InlineNotice>
+        </div>
+      </div>
+    </Card>
+  );
+}

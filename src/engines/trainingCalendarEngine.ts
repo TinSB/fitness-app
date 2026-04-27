@@ -1,4 +1,4 @@
-import type { SessionDataFlag, TrainingSession } from '../models/training-model';
+import type { ImportedWorkoutSample, SessionDataFlag, TrainingSession } from '../models/training-model';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 import { monthKey, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 
@@ -16,7 +16,19 @@ export type TrainingCalendarDay = {
     isExperimentalTemplate?: boolean;
     dataFlag?: SessionDataFlag;
   }>;
+  externalWorkouts: Array<{
+    workoutId: string;
+    title: string;
+    workoutType: string;
+    startTime?: string;
+    durationMin: number;
+    activeEnergyKcal?: number;
+    avgHeartRate?: number;
+    dataFlag?: SessionDataFlag;
+    source: string;
+  }>;
   totalSessions: number;
+  totalExternalWorkouts: number;
   totalVolumeKg: number;
   hasPainFlags: boolean;
 };
@@ -32,6 +44,9 @@ export type TrainingCalendarData = {
 
 export type TrainingCalendarOptions = {
   includeDataFlags?: Array<SessionDataFlag | 'unset'> | 'all';
+  importedWorkouts?: ImportedWorkoutSample[];
+  includeExternalWorkouts?: boolean;
+  includeExternalDataFlags?: Array<SessionDataFlag | 'unset'> | 'all';
 };
 
 export const toLocalDateKey = (value?: string) => {
@@ -48,6 +63,16 @@ const shouldIncludeSession = (session: TrainingSession, includeDataFlags: Traini
   const flag = session.dataFlag || 'normal';
   const allowed = includeDataFlags || ['normal', 'unset'];
   return allowed.includes(flag as SessionDataFlag) || (!session.dataFlag && allowed.includes('unset'));
+};
+
+const shouldIncludeExternalWorkout = (
+  workout: ImportedWorkoutSample,
+  includeDataFlags: TrainingCalendarOptions['includeExternalDataFlags']
+) => {
+  if (includeDataFlags === 'all') return true;
+  const flag = workout.dataFlag || 'normal';
+  const allowed = includeDataFlags || ['normal', 'unset'];
+  return allowed.includes(flag as SessionDataFlag) || (!workout.dataFlag && allowed.includes('unset'));
 };
 
 const startOfWeekKey = (dateKey: string) => {
@@ -76,7 +101,11 @@ const sessionHasPain = (session: TrainingSession) =>
 
 export const buildTrainingCalendar = (history: TrainingSession[] = [], month = monthKey(), options: TrainingCalendarOptions = {}): TrainingCalendarData => {
   const calendarHistory = history.filter((session) => shouldIncludeSession(session, options.includeDataFlags));
+  const calendarExternalWorkouts = options.includeExternalWorkouts
+    ? (options.importedWorkouts || []).filter((workout) => shouldIncludeExternalWorkout(workout, options.includeExternalDataFlags))
+    : [];
   const sessionsByDate = new Map<string, TrainingSession[]>();
+  const externalWorkoutsByDate = new Map<string, ImportedWorkoutSample[]>();
 
   calendarHistory.forEach((session) => {
     const date = toLocalDateKey(session.date || session.startedAt);
@@ -84,6 +113,14 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
     const list = sessionsByDate.get(date) || [];
     list.push(session);
     sessionsByDate.set(date, list);
+  });
+
+  calendarExternalWorkouts.forEach((workout) => {
+    const date = toLocalDateKey(workout.startDate);
+    if (!date || !date.startsWith(month)) return;
+    const list = externalWorkoutsByDate.get(date) || [];
+    list.push(workout);
+    externalWorkoutsByDate.set(date, list);
   });
 
   const days = monthDayKeys(month).map<TrainingCalendarDay>((date) => {
@@ -100,11 +137,26 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
       isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
       dataFlag: session.dataFlag || 'normal',
     }));
+    const externalWorkoutRows = (externalWorkoutsByDate.get(date) || [])
+      .sort((left, right) => String(left.startDate || '').localeCompare(String(right.startDate || '')))
+      .map((workout) => ({
+        workoutId: workout.id,
+        title: `外部活动：${workout.workoutType || '活动'}`,
+        workoutType: workout.workoutType || '活动',
+        startTime: workout.startDate,
+        durationMin: number(workout.durationMin),
+        activeEnergyKcal: workout.activeEnergyKcal,
+        avgHeartRate: workout.avgHeartRate,
+        dataFlag: workout.dataFlag || 'normal',
+        source: workout.source,
+      }));
 
     return {
       date,
       sessions: sessionRows,
+      externalWorkouts: externalWorkoutRows,
       totalSessions: sessionRows.length,
+      totalExternalWorkouts: externalWorkoutRows.length,
       totalVolumeKg: sessionRows.reduce((sum, item) => sum + item.totalVolumeKg, 0),
       hasPainFlags: sessions.some(sessionHasPain),
     };

@@ -149,6 +149,40 @@ main 分支可作为 Production 部署来源；feature 分支或 PR 可用于 Ve
 
 如果 PWA 出现旧版本缓存，先刷新页面；iPhone 主屏幕版本仍异常时，移除主屏幕图标后重新添加。
 
+## Health Data Import V1
+
+IronPath 当前是 Web/PWA，不是 iOS 原生 App。Safari PWA 不能直接读取 Apple Health / Apple Watch / HealthKit 数据，也不能写入 Apple Health。HealthKit 需要原生 iOS/watchOS App、HealthKit capability、Info.plist 权限说明和用户授权；WorkoutKit 也属于原生 iOS/watchOS 能力，不在当前版本内。
+
+当前版本支持手动导入健康数据文件：
+
+- 支持 `.csv` / `.json`。
+- 支持 Apple Health 官方导出的 `export.xml`，但只解析训练恢复相关的关键指标。
+- 支持睡眠、静息心率、HRV、心率、步数、活动能量、运动分钟、体重、体脂、VO2max 和外部 workout。
+- 导入数据只用于准备度、恢复参考、活动负荷解释和记录页日历背景。
+- Apple Watch workout 会显示为外部活动，例如跑步、羽毛球或骑行；它不会自动变成 IronPath 力量训练 session，也不会参与 PR / e1RM / 有效组。
+- 健康数据可在“我的 → 健康数据导入”查看、删除或排除统计。
+
+边界说明：
+
+- 健康数据不会覆盖用户主观输入。
+- 单次异常指标不会强制 deload。
+- 睡眠、HRV、静息心率和活动量只作为训练层面的保守提示，不作医疗诊断。
+- 未来如果要做 HealthKit / WorkoutKit 深度同步，需要单独开发 iOS Companion App。
+
+### Apple Health XML 导入
+
+iPhone 健康 App 可以导出 Apple Health 数据，官方导出格式是 XML。IronPath Web/PWA 仍然不能直接读取 HealthKit，本功能只是让用户手动选择 `export.xml` 文件导入。
+
+当前 XML 导入只支持关键恢复数据：
+
+- 静息心率、HRV、心率、步数、活动能量、运动分钟、体重、体脂、VO2max。
+- 睡眠片段会按 asleep Core / Deep / REM / Asleep 汇总为每日睡眠时长；InBed 和 Awake 不计入睡眠。
+- Apple Watch Workout 会作为记录日历里的外部活动显示，不会写入 IronPath strength session history。
+
+导入前可以选择最近 7 / 30 / 90 天或全部，也可以选择导入哪些数据类型。大型 XML 建议优先导入最近 30–90 天，避免浏览器处理时间过长。
+
+不支持的 Apple Health 类型会被跳过并显示 warning。导入数据只用于 readiness 和恢复辅助，不会污染 PR、e1RM、有效组或力量训练历史。本系统不是医疗诊断工具。
+
 ## iPhone Safari 添加到主屏幕
 
 IronPath 已包含基础 PWA 配置和应用外壳缓存。iPhone 上使用方式：
@@ -246,3 +280,4 @@ e1RM 是根据最近同动作高质量工作组估算的理论单次最大重量
 - iOS Safari 需要手动“添加到主屏幕”。
 - 休息计时依赖时间戳恢复，不等同于原生通知。
 - 数据默认只在本地保存，建议定期导出备份。
+- Web/PWA 不能直接读取 HealthKit；健康数据仅支持 CSV/JSON 手动导入。

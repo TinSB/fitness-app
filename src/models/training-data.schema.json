@@ -38,6 +38,18 @@
         "additionalProperties": true
       }
     },
+    "healthMetricSamples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/healthMetricSample" }
+    },
+    "importedWorkoutSamples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/importedWorkoutSample" }
+    },
+    "healthImportBatches": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/healthImportBatch" }
+    },
     "userProfile": { "$ref": "#/$defs/userProfile" },
     "screeningProfile": { "$ref": "#/$defs/screeningProfile" },
     "programTemplate": { "$ref": "training-program.schema.json" },
@@ -72,6 +84,77 @@
   },
   "additionalProperties": true,
   "$defs": {
+    "dataFlag": { "type": "string", "enum": ["normal", "test", "excluded"] },
+    "healthDataSource": {
+      "type": "string",
+      "enum": ["apple_health_export", "apple_watch_workout", "third_party_csv", "manual_import", "unknown"]
+    },
+    "healthMetricType": {
+      "type": "string",
+      "enum": [
+        "sleep_duration",
+        "resting_heart_rate",
+        "hrv",
+        "heart_rate",
+        "steps",
+        "active_energy",
+        "exercise_minutes",
+        "body_weight",
+        "body_fat",
+        "vo2max",
+        "workout"
+      ]
+    },
+    "healthMetricSample": {
+      "type": "object",
+      "required": ["id", "source", "metricType", "startDate", "value", "unit", "importedAt"],
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "$ref": "#/$defs/healthDataSource" },
+        "metricType": { "$ref": "#/$defs/healthMetricType" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "value": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string" },
+        "importedAt": { "type": "string" },
+        "dataFlag": { "$ref": "#/$defs/dataFlag" }
+      },
+      "additionalProperties": true
+    },
+    "importedWorkoutSample": {
+      "type": "object",
+      "required": ["id", "source", "workoutType", "startDate", "endDate", "durationMin", "importedAt"],
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "$ref": "#/$defs/healthDataSource" },
+        "workoutType": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "durationMin": { "type": "number", "minimum": 0 },
+        "activeEnergyKcal": { "type": "number", "minimum": 0 },
+        "avgHeartRate": { "type": "number", "minimum": 0 },
+        "maxHeartRate": { "type": "number", "minimum": 0 },
+        "distanceMeters": { "type": "number", "minimum": 0 },
+        "importedAt": { "type": "string" },
+        "dataFlag": { "$ref": "#/$defs/dataFlag" }
+      },
+      "additionalProperties": true
+    },
+    "healthImportBatch": {
+      "type": "object",
+      "required": ["id", "importedAt", "source", "sampleCount", "workoutCount", "notes"],
+      "properties": {
+        "id": { "type": "string" },
+        "importedAt": { "type": "string" },
+        "source": { "$ref": "#/$defs/healthDataSource" },
+        "fileName": { "type": "string" },
+        "sampleCount": { "type": "number", "minimum": 0 },
+        "workoutCount": { "type": "number", "minimum": 0 },
+        "notes": { "type": "array", "items": { "type": "string" } },
+        "dataFlag": { "$ref": "#/$defs/dataFlag" }
+      },
+      "additionalProperties": true
+    },
     "todayStatus": {
       "type": "object",
       "required": ["sleep", "energy", "soreness", "time"],

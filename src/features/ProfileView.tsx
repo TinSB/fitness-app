@@ -5,17 +5,19 @@ import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import type { AppData, UnitSettings } from '../models/training-model';
 import { ActionButton, Card, InlineNotice, Page, SectionHeader, StatusBadge } from '../ui/common';
+import { HealthDataPanel } from './HealthDataPanel';
 
 interface ProfileViewProps {
   data: AppData;
   unitSettings: UnitSettings;
   onUpdateUnitSettings: (updates: Partial<UnitSettings>) => void;
   onRestoreData: (data: AppData) => void;
+  onUpdateHealthData: (data: AppData) => void;
   onOpenAssessment: () => void;
   onOpenRecordData: () => void;
 }
 
-export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestoreData, onOpenAssessment, onOpenRecordData }: ProfileViewProps) {
+export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestoreData, onUpdateHealthData, onOpenAssessment, onOpenRecordData }: ProfileViewProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = React.useState('');
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
@@ -111,6 +113,8 @@ export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestor
               </div>
             ) : null}
           </Card>
+
+          <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
 
           <Card>
             <SectionHeader eyebrow="PWA" title="手机使用" description="iPhone Safari 打开线上地址后，可以添加到主屏幕作为本地训练工具使用。" />

@@ -28,6 +28,9 @@ import {
   TRAINING_LEVELS,
   TRAINING_MODES,
   type AppData,
+  type HealthImportBatch,
+  type HealthMetricSample,
+  type ImportedWorkoutSample,
   type LoadFeedback,
   type MesocyclePlan,
   type ProgramAdjustmentDraft,
@@ -85,10 +88,28 @@ const pickNumberRecord = (value: unknown) =>
   ) as Record<string, number>;
 const pickEnum = <T extends readonly string[]>(value: unknown, allowed: T, fallback: T[number]): T[number] =>
   typeof value === 'string' && allowed.includes(value) ? value : fallback;
+const finiteNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
 
 const LOAD_FEEDBACK_VALUES = ['too_light', 'good', 'too_heavy'] as const;
 const SESSION_DATA_FLAGS = ['normal', 'test', 'excluded'] as const;
 const WEIGHT_UNITS = ['kg', 'lb'] as const;
+const HEALTH_DATA_SOURCES = ['apple_health_export', 'apple_watch_workout', 'third_party_csv', 'manual_import', 'unknown'] as const;
+const HEALTH_METRIC_TYPES = [
+  'sleep_duration',
+  'resting_heart_rate',
+  'hrv',
+  'heart_rate',
+  'steps',
+  'active_energy',
+  'exercise_minutes',
+  'body_weight',
+  'body_fat',
+  'vo2max',
+  'workout',
+] as const;
 
 const LEGACY_TEXT_MAP: Record<string, string> = {
   poor: '差',
@@ -705,6 +726,75 @@ const sanitizeBodyWeights = (entries: unknown) =>
     .filter((entry) => entry.date && entry.value)
     .sort((a, b) => b.date.localeCompare(a.date));
 
+const sanitizeHealthMetricSamples = (entries: unknown): HealthMetricSample[] =>
+  pickArray(entries)
+    .map((entry, index) => {
+      const raw = pickRecord(entry);
+      const metricType = pickString(raw.metricType);
+      const value = finiteNumber(raw.value);
+      if (!HEALTH_METRIC_TYPES.includes(metricType as (typeof HEALTH_METRIC_TYPES)[number]) || value === undefined) return null;
+      const startDate = pickString(raw.startDate);
+      if (!startDate) return null;
+      return {
+        id: pickString(raw.id, `health-sample-${index}`),
+        source: pickEnum(raw.source, HEALTH_DATA_SOURCES, 'unknown'),
+        metricType: metricType as HealthMetricSample['metricType'],
+        startDate,
+        endDate: pickString(raw.endDate) || undefined,
+        value: Math.max(0, value),
+        unit: pickString(raw.unit, ''),
+        importedAt: pickString(raw.importedAt, startDate),
+        dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
+        raw: raw.raw,
+      };
+    })
+    .filter(Boolean) as HealthMetricSample[];
+
+const sanitizeImportedWorkoutSamples = (entries: unknown): ImportedWorkoutSample[] =>
+  pickArray(entries)
+    .map((entry, index) => {
+      const raw = pickRecord(entry);
+      const startDate = pickString(raw.startDate);
+      const endDate = pickString(raw.endDate, startDate);
+      const durationMin = finiteNumber(raw.durationMin);
+      if (!startDate || !endDate || durationMin === undefined) return null;
+      return {
+        id: pickString(raw.id, `health-workout-${index}`),
+        source: pickEnum(raw.source, HEALTH_DATA_SOURCES, 'unknown'),
+        workoutType: pickString(raw.workoutType, '外部活动'),
+        startDate,
+        endDate,
+        durationMin: Math.max(0, durationMin),
+        activeEnergyKcal: finiteNumber(raw.activeEnergyKcal),
+        avgHeartRate: finiteNumber(raw.avgHeartRate),
+        maxHeartRate: finiteNumber(raw.maxHeartRate),
+        distanceMeters: finiteNumber(raw.distanceMeters),
+        importedAt: pickString(raw.importedAt, startDate),
+        dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
+        raw: raw.raw,
+      };
+    })
+    .filter(Boolean) as ImportedWorkoutSample[];
+
+const sanitizeHealthImportBatches = (entries: unknown): HealthImportBatch[] =>
+  pickArray(entries)
+    .map((entry, index) => {
+      const raw = pickRecord(entry);
+      const importedAt = pickString(raw.importedAt);
+      if (!importedAt) return null;
+      return {
+        id: pickString(raw.id, `health-batch-${index}`),
+        importedAt,
+        source: pickEnum(raw.source, HEALTH_DATA_SOURCES, 'unknown'),
+        fileName: pickString(raw.fileName) || undefined,
+        sampleCount: Math.max(0, number(raw.sampleCount)),
+        workoutCount: Math.max(0, number(raw.workoutCount)),
+        notes: pickArray(raw.notes).map(String),
+        dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
+      };
+    })
+    .filter(Boolean) as HealthImportBatch[];
+
 const sanitizeTodayStatus = (status: unknown): TodayStatus => {
   const raw = pickRecord(status);
   const soreness = pickArray(raw.soreness, DEFAULT_STATUS.soreness)
@@ -733,6 +823,9 @@ export const sanitizeData = (saved: unknown): AppData => {
   const unitSettings = sanitizeUnitSettings(migrated.unitSettings ?? pickRecord(migrated.settings).unitSettings ?? DEFAULT_UNIT_SETTINGS);
   const programAdjustmentDrafts = sanitizeProgramAdjustmentDrafts(migrated.programAdjustmentDrafts);
   const programAdjustmentHistory = sanitizeProgramAdjustmentHistory(migrated.programAdjustmentHistory);
+  const healthMetricSamples = sanitizeHealthMetricSamples(migrated.healthMetricSamples ?? pickRecord(migrated.settings).healthMetricSamples);
+  const importedWorkoutSamples = sanitizeImportedWorkoutSamples(migrated.importedWorkoutSamples ?? pickRecord(migrated.settings).importedWorkoutSamples);
+  const healthImportBatches = sanitizeHealthImportBatches(migrated.healthImportBatches ?? pickRecord(migrated.settings).healthImportBatches);
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
     templates,
@@ -750,6 +843,9 @@ export const sanitizeData = (saved: unknown): AppData => {
     programAdjustmentDrafts,
     programAdjustmentHistory,
     activeProgramTemplateId,
+    healthMetricSamples,
+    importedWorkoutSamples,
+    healthImportBatches,
     settings: {
       ...pickRecord(migrated.settings),
       schemaVersion: STORAGE_VERSION,
@@ -773,6 +869,9 @@ export const sanitizeData = (saved: unknown): AppData => {
     sanitized.mesocyclePlan = sanitizeMesocyclePlan(sanitized.mesocyclePlan);
     sanitized.programAdjustmentDrafts = sanitizeProgramAdjustmentDrafts(sanitized.programAdjustmentDrafts);
     sanitized.programAdjustmentHistory = sanitizeProgramAdjustmentHistory(sanitized.programAdjustmentHistory);
+    sanitized.healthMetricSamples = sanitizeHealthMetricSamples(sanitized.healthMetricSamples);
+    sanitized.importedWorkoutSamples = sanitizeImportedWorkoutSamples(sanitized.importedWorkoutSamples);
+    sanitized.healthImportBatches = sanitizeHealthImportBatches(sanitized.healthImportBatches);
     sanitized.activeProgramTemplateId = sanitized.templates.some((template) => template.id === sanitized.activeProgramTemplateId)
       ? sanitized.activeProgramTemplateId
       : sanitized.selectedTemplateId;
@@ -807,6 +906,9 @@ export const emptyData = (): AppData =>
     programAdjustmentDrafts: [],
     programAdjustmentHistory: [],
     activeProgramTemplateId: undefined,
+    healthMetricSamples: [],
+    importedWorkoutSamples: [],
+    healthImportBatches: [],
     settings: {},
   });
 
@@ -833,6 +935,9 @@ export const loadData = (): AppData => {
           screeningProfile: parseJson(localStorage.getItem(STORAGE_KEYS.screeningProfile), null),
           programTemplate: parseJson(localStorage.getItem(STORAGE_KEYS.programTemplate), null),
           mesocyclePlan: parseJson(localStorage.getItem(STORAGE_KEYS.mesocyclePlan), null),
+          healthMetricSamples: parseJson(localStorage.getItem(STORAGE_KEYS.healthMetricSamples), pickRecord(settings).healthMetricSamples || []),
+          importedWorkoutSamples: parseJson(localStorage.getItem(STORAGE_KEYS.importedWorkoutSamples), pickRecord(settings).importedWorkoutSamples || []),
+          healthImportBatches: parseJson(localStorage.getItem(STORAGE_KEYS.healthImportBatches), pickRecord(settings).healthImportBatches || []),
           programAdjustmentDrafts: pickRecord(settings).programAdjustmentDrafts,
           programAdjustmentHistory: pickRecord(settings).programAdjustmentHistory,
           activeProgramTemplateId: pickRecord(settings).activeProgramTemplateId,
@@ -864,6 +969,9 @@ export const saveData = (data: AppData) => {
   localStorage.setItem(STORAGE_KEYS.screeningProfile, JSON.stringify(sanitized.screeningProfile || DEFAULT_SCREENING_PROFILE));
   localStorage.setItem(STORAGE_KEYS.programTemplate, JSON.stringify(sanitized.programTemplate || DEFAULT_PROGRAM_TEMPLATE));
   localStorage.setItem(STORAGE_KEYS.mesocyclePlan, JSON.stringify(sanitized.mesocyclePlan || DEFAULT_MESOCYCLE_PLAN));
+  localStorage.setItem(STORAGE_KEYS.healthMetricSamples, JSON.stringify(sanitized.healthMetricSamples || []));
+  localStorage.setItem(STORAGE_KEYS.importedWorkoutSamples, JSON.stringify(sanitized.importedWorkoutSamples || []));
+  localStorage.setItem(STORAGE_KEYS.healthImportBatches, JSON.stringify(sanitized.healthImportBatches || []));
   localStorage.setItem(
     STORAGE_KEYS.settings,
     JSON.stringify({

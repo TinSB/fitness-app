@@ -198,16 +198,24 @@ export function ProgressView({
   const [activeProgressSection, setActiveProgressSection] = React.useState<ProgressSectionId>(initialSection || 'calendar');
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
   const [showNonNormalCalendarData, setShowNonNormalCalendarData] = React.useState(false);
+  const [showExternalCalendarActivity, setShowExternalCalendarActivity] = React.useState(false);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | undefined>(requestedSessionId);
   const history = filterAnalyticsHistory(rawHistory);
   const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);
   const calendar = React.useMemo(
-    () => buildTrainingCalendar(rawHistory, undefined, { includeDataFlags: showNonNormalCalendarData ? 'all' : undefined }),
-    [rawHistory, showNonNormalCalendarData]
+    () =>
+      buildTrainingCalendar(rawHistory, undefined, {
+        includeDataFlags: showNonNormalCalendarData ? 'all' : undefined,
+        importedWorkouts: data.importedWorkoutSamples || [],
+        includeExternalWorkouts: showExternalCalendarActivity,
+        includeExternalDataFlags: showNonNormalCalendarData ? 'all' : undefined,
+      }),
+    [rawHistory, showNonNormalCalendarData, showExternalCalendarActivity, data.importedWorkoutSamples]
   );
   const [selectedCalendarDate, setSelectedCalendarDate] = React.useState(() => selectedDate || todayKey());
-  const selectedCalendarDay = calendar.days.find((day) => day.date === selectedCalendarDate) || calendar.days.find((day) => day.totalSessions > 0);
+  const selectedCalendarDay = calendar.days.find((day) => day.date === selectedCalendarDate) || calendar.days.find((day) => day.totalSessions > 0 || day.totalExternalWorkouts > 0);
   const selectedCalendarSessions = selectedCalendarDay?.sessions || [];
+  const selectedExternalWorkouts = selectedCalendarDay?.externalWorkouts || [];
   const selectedHistorySession = rawHistory.find((session) => session.id === selectedSessionId) || null;
   const monthStats = buildMonthStats(history, data.bodyWeights || []);
   const prs = buildPrs(history);
@@ -518,10 +526,16 @@ export function ProgressView({
           <h2 className="font-black text-slate-950">训练日历</h2>
           <p className="mt-1 text-sm text-slate-500">默认只显示正常训练。打开开关后，可查看测试/排除数据，但它们仍不计入统计。</p>
         </div>
-        <label className="flex items-center gap-2 text-sm font-black text-slate-700">
-          <input type="checkbox" checked={showNonNormalCalendarData} onChange={(event) => setShowNonNormalCalendarData(event.target.checked)} />
-          显示测试 / 排除数据
-        </label>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <label className="flex items-center gap-2 text-sm font-black text-slate-700">
+            <input type="checkbox" checked={showExternalCalendarActivity} onChange={(event) => setShowExternalCalendarActivity(event.target.checked)} />
+            显示外部活动
+          </label>
+          <label className="flex items-center gap-2 text-sm font-black text-slate-700">
+            <input type="checkbox" checked={showNonNormalCalendarData} onChange={(event) => setShowNonNormalCalendarData(event.target.checked)} />
+            显示测试 / 排除数据
+          </label>
+        </div>
       </div>
       {!rawHistory.length ? renderEmptyHistory() : null}
       <div className="grid gap-3 md:grid-cols-[1fr_320px]">
@@ -546,6 +560,7 @@ export function ProgressView({
                 >
                   <div>{Number(day.date.slice(-2))}</div>
                   {day.totalSessions ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" /> : null}
+                  {day.totalExternalWorkouts ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-sky-500" /> : null}
                   {day.hasPainFlags ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" /> : null}
                 </button>
               );
@@ -563,7 +578,7 @@ export function ProgressView({
         <div className="rounded-lg bg-stone-50 p-3">
           <div className="text-sm font-black text-slate-950">{selectedCalendarDay?.date || selectedCalendarDate}</div>
           <div className="mt-2 space-y-2">
-            {selectedCalendarSessions.length ? selectedCalendarSessions.map((session) => {
+            {selectedCalendarSessions.map((session) => {
               const rawSession = rawHistory.find((item) => item.id === session.sessionId);
               return (
                 <div key={session.sessionId} className="rounded-lg bg-white p-3">
@@ -582,7 +597,24 @@ export function ProgressView({
                   </button>
                 </div>
               );
-            }) : <div className="rounded-lg bg-white p-4 text-sm text-slate-500">当天没有训练记录。</div>}
+            })}
+            {selectedExternalWorkouts.map((workout) => (
+              <div key={workout.workoutId} className="rounded-lg border border-sky-100 bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-black text-slate-950">Apple Watch：{workout.workoutType}</div>
+                  <StatusBadge tone={workout.dataFlag === 'excluded' ? 'slate' : 'sky'}>外部活动</StatusBadge>
+                </div>
+                <div className="mt-1 text-xs font-bold leading-5 text-slate-500">
+                  {workout.startTime ? new Date(workout.startTime).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '未记录时间'} / {workout.durationMin} 分钟
+                </div>
+                <div className="mt-1 text-xs font-bold text-sky-700">
+                  {workout.activeEnergyKcal ? `活动能量 ${Math.round(workout.activeEnergyKcal)} kcal` : '仅作为活动背景'}{workout.avgHeartRate ? ` / 平均心率 ${Math.round(workout.avgHeartRate)} bpm` : ''}
+                </div>
+              </div>
+            ))}
+            {!selectedCalendarSessions.length && !selectedExternalWorkouts.length ? (
+              <div className="rounded-lg bg-white p-4 text-sm text-slate-500">当天没有训练记录。</div>
+            ) : null}
           </div>
         </div>
       </div>
