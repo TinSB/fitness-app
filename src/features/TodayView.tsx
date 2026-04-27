@@ -14,7 +14,7 @@ import { formatExplanationEvidence } from '../engines/explainability/evidenceExp
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../engines/e1rmEngine';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
-import { InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, WeeklyPrescriptionCard } from '../ui/common';
+import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
 interface TodayViewProps {
@@ -81,10 +81,10 @@ export function TodayView({
       title="今天该怎么练"
       action={
         data.activeSession ? (
-          <button type="button" onClick={onResume} className="flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">
+          <ActionButton type="button" onClick={onResume} variant="primary">
             继续上次训练
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </ActionButton>
         ) : null
       }
     >
@@ -95,6 +95,12 @@ export function TodayView({
               <div className="text-sm font-bold text-slate-500">{todayKey()}</div>
               <h2 className="mt-1 text-2xl font-black text-slate-950">{selectedTemplate.name}</h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">{selectedTemplate.note}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <StatusBadge tone={adjustedPlan.readiness.level === 'green' ? 'emerald' : adjustedPlan.readiness.level === 'yellow' ? 'amber' : 'rose'}>
+                  准备度 {adjustedPlan.readinessResult?.score ?? '--'} / 100
+                </StatusBadge>
+                <StatusBadge tone={deloadSignal.triggered ? 'rose' : 'slate'}>{deloadSignal.triggered ? '建议减量' : '正常推进'}</StatusBadge>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-sm md:min-w-80">
               <Stat label="模式" value={resolveMode(trainingMode).shortLabel} tone="amber" />
@@ -118,10 +124,10 @@ export function TodayView({
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
             </div>
-            <button type="button" onClick={onStart} className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-black text-white hover:bg-emerald-700">
+            <ActionButton type="button" onClick={onStart} variant="primary" size="lg">
               <Play className="h-4 w-4" />
               开始训练
-            </button>
+            </ActionButton>
           </div>
 
           <details className="rounded-lg border border-slate-200 bg-stone-50 p-3">
@@ -297,9 +303,9 @@ export function TodayView({
               <div className="mb-2 text-xs font-black uppercase tracking-widest text-amber-700">保守提醒</div>
               <div className="space-y-2">
                 {activePainWarnings.map((item) => (
-                  <div key={`${item?.area}-${item?.exerciseId}`} className="rounded-md bg-white/70 px-3 py-2 text-sm font-medium text-amber-950">
+                  <InlineNotice key={`${item?.area}-${item?.exerciseId}`} tone="amber">
                     {item?.exerciseId || item?.area} 最近反复出现不适，今天优先保守推进或替代动作。
-                  </div>
+                  </InlineNotice>
                 ))}
               </div>
             </section>
@@ -309,54 +315,59 @@ export function TodayView({
             <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">今日建议</div>
             <h2 className="text-xl font-black text-emerald-950">{suggestedTemplate.name}</h2>
             <p className="mt-1 text-sm leading-6 text-emerald-900">{suggestedTemplate.note}</p>
-            <button type="button" onClick={onUseSuggestion} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-sm font-black text-white">
+            <ActionButton type="button" onClick={onUseSuggestion} variant="primary" fullWidth className="mt-4">
               采用这套安排
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </ActionButton>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="mb-2 text-xs font-black uppercase tracking-widest text-slate-500">为什么这样排</div>
-            <h2 className="font-black text-slate-950">今日安排解释</h2>
-            <div className="mt-3 space-y-2">
-              {explanationItems.map((item) => (
-                <details key={`${item.title}-${item.conclusion}`} className="rounded-md bg-stone-50 px-3 py-2 text-sm font-medium leading-6 text-slate-700">
-                  <summary className="cursor-pointer list-none">
-                    <span className="font-black text-slate-950">{item.title}：</span>
-                    {formatExplanationItem(item)}
-                  </summary>
-                  <div className="mt-2 space-y-1 border-t border-slate-200 pt-2 text-xs font-bold text-slate-500">
-                    {formatExplanationEvidence(item).length ? <div>依据：{formatExplanationEvidence(item).join(' / ')}</div> : null}
-                    {item.confidence ? <div>{formatEvidenceConfidence(item.confidence)}</div> : null}
-                    {item.caveat ? <div>边界：{item.caveat}</div> : null}
-                  </div>
-                </details>
-              ))}
-            </div>
-          </section>
-
-          <WeeklyPrescriptionCard weeklyPrescription={weeklyPrescription} />
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 font-black text-slate-950">练完后的周预算预览</h2>
-            <div className="space-y-2">
-              {projectedWeekly.muscles.map((item) => (
-                <div key={item.muscle} className="rounded-md bg-stone-50 px-3 py-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-600">{item.muscle}</span>
-                    <span className="font-black text-slate-950">
-                      {item.sets}/{item.target} 组
-                    </span>
-                  </div>
-                  <div className="mt-1 grid grid-cols-3 gap-2 text-xs font-bold text-slate-500">
-                    <span>剩余 {item.remaining}</span>
-                    <span>额度 {item.remainingCapacity}</span>
-                    <span>今日 {item.todayBudget}</span>
-                  </div>
+          <details className="rounded-lg border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer list-none font-black text-slate-950">更多计划信息</summary>
+            <div className="mt-4 space-y-4">
+              <section className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="mb-2 text-xs font-black uppercase tracking-widest text-slate-500">为什么这样排</div>
+                <h2 className="font-black text-slate-950">今日安排解释</h2>
+                <div className="mt-3 space-y-2">
+                  {explanationItems.map((item) => (
+                    <details key={`${item.title}-${item.conclusion}`} className="rounded-md bg-stone-50 px-3 py-2 text-sm font-medium leading-6 text-slate-700">
+                      <summary className="cursor-pointer list-none">
+                        <span className="font-black text-slate-950">{item.title}：</span>
+                        {formatExplanationItem(item)}
+                      </summary>
+                      <div className="mt-2 space-y-1 border-t border-slate-200 pt-2 text-xs font-bold text-slate-500">
+                        {formatExplanationEvidence(item).length ? <div>依据：{formatExplanationEvidence(item).join(' / ')}</div> : null}
+                        {item.confidence ? <div>{formatEvidenceConfidence(item.confidence)}</div> : null}
+                        {item.caveat ? <div>边界：{item.caveat}</div> : null}
+                      </div>
+                    </details>
+                  ))}
                 </div>
-              ))}
+              </section>
+
+              <WeeklyPrescriptionCard weeklyPrescription={weeklyPrescription} />
+
+              <section className="rounded-lg border border-slate-200 bg-white p-4">
+                <h2 className="mb-3 font-black text-slate-950">练完后的周预算预览</h2>
+                <div className="space-y-2">
+                  {projectedWeekly.muscles.map((item) => (
+                    <div key={item.muscle} className="rounded-md bg-stone-50 px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-600">{item.muscle}</span>
+                        <span className="font-black text-slate-950">
+                          {item.sets}/{item.target} 组
+                        </span>
+                      </div>
+                      <div className="mt-1 grid grid-cols-3 gap-2 text-xs font-bold text-slate-500">
+                        <span>剩余 {item.remaining}</span>
+                        <span>额度 {item.remainingCapacity}</span>
+                        <span>今日 {item.todayBudget}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
-          </section>
+          </details>
 
           <section className={classNames('rounded-lg border p-4', deloadSignal.triggered ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-white')}>
             <div className="mb-2 flex items-center gap-1 text-xs font-black uppercase tracking-widest text-slate-500">

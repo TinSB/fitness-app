@@ -6,6 +6,7 @@ import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { formatBlockType, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
+import { MobileActionBar, StatusBadge } from '../ui/common';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
@@ -345,7 +346,10 @@ export function TrainingFocusView({
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-black uppercase text-emerald-700">{blockLabel(blockType)} / {stageLabel}</div>
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge tone={blockType === 'main' ? 'emerald' : blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
+              <StatusBadge tone={currentStep.stepType === 'working' ? 'emerald' : 'slate'}>{stageLabel}</StatusBadge>
+            </div>
             <h2 className="mt-1 text-3xl font-black leading-tight text-slate-950">{mainExercise?.alias || mainExercise?.name || supportLog?.exerciseName || supportExercise?.name}</h2>
             <div className="mt-2 text-sm font-bold text-slate-500">
               {currentStep.label}
@@ -547,7 +551,7 @@ export function TrainingFocusView({
             </section>
           ) : null}
 
-          <section className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white/95 p-3 pb-[calc(12px+env(safe-area-inset-bottom))] backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+          <MobileActionBar className="!bottom-[calc(64px+env(safe-area-inset-bottom))] grid grid-cols-2 gap-2 md:!bottom-auto">
             <button
               type="button"
               onClick={completeCurrentSet}
@@ -570,7 +574,7 @@ export function TrainingFocusView({
                 <span className="text-[11px] font-black">替代动作</span>
               </button>
             </div>
-          </section>
+          </MobileActionBar>
 
           <details className="rounded-lg border border-slate-200 bg-white p-3">
             <summary className="cursor-pointer list-none text-xs font-black text-slate-500">查看训练顺序与依据</summary>

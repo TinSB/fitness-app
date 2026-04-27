@@ -48,7 +48,7 @@ import {
   formatWeeklyActionPriority,
 } from '../i18n/formatters';
 import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, TrainingSession, UnitSettings, WeeklyPrescription } from '../models/training-model';
-import { Page, Stat, WeeklyPrescriptionCard } from '../ui/common';
+import { ActionButton, Card, EmptyState, Page, SegmentedTabs, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
 interface ProgressViewProps {
@@ -387,25 +387,14 @@ export function ProgressView({
   };
 
   const renderEmptyHistory = () => (
-    <section className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-      <h2 className="font-black text-slate-950">暂无训练记录</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-500">完成一次训练后，这里会显示训练日历、历史详情、PR 和趋势。测试数据不会进入统计，但仍可在历史训练里查看。</p>
-    </section>
+    <EmptyState
+      title="暂无训练记录"
+      description="完成一次训练后，这里会显示训练日历、历史详情、PR 和趋势。测试数据不会进入统计，但仍可在历史训练里查看。"
+    />
   );
 
   const renderDataFlagBadge = (flag?: SessionDataFlag) => (
-    <span
-      className={classNames(
-        'rounded-md px-2 py-1 text-xs font-black',
-        flag === 'test'
-          ? 'bg-amber-50 text-amber-700'
-          : flag === 'excluded'
-            ? 'bg-slate-200 text-slate-600'
-            : 'bg-emerald-50 text-emerald-700'
-      )}
-    >
-      {dataFlagLabel(flag)}
-    </span>
+    <StatusBadge tone={flag === 'test' ? 'amber' : flag === 'excluded' ? 'slate' : 'emerald'}>{dataFlagLabel(flag)}</StatusBadge>
   );
 
   const renderSessionDetail = (session: TrainingSession | null) => {
@@ -705,47 +694,35 @@ export function ProgressView({
       title="长期训练回看"
       action={
         <div className="flex flex-wrap gap-2">
-          <button
+          <ActionButton
             type="button"
             onClick={() => downloadText(`ironpath-${todayKey()}.json`, JSON.stringify(data, null, 2), 'application/json')}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700"
+            variant="secondary"
           >
             <Download className="h-4 w-4" />
             导出 JSON
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             type="button"
             onClick={() => downloadText(`ironpath-${todayKey()}.csv`, makeCsv(history), 'text/csv;charset=utf-8')}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700"
+            variant="secondary"
           >
             <Download className="h-4 w-4" />
             导出 CSV
-          </button>
+          </ActionButton>
         </div>
       }
     >
-      <section className="mb-4 rounded-lg border border-slate-200 bg-white p-3">
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-          {progressSections.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => setActiveProgressSection(section.id)}
-              className={classNames(
-                'min-h-11 rounded-lg border px-3 py-2 text-sm font-black',
-                activeProgressSection === section.id ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700'
-              )}
-            >
-              {section.label}
-            </button>
-          ))}
+      <Card className="mb-4" padded={false}>
+        <div className="p-3">
+          <SegmentedTabs value={activeProgressSection} options={progressSections} onChange={setActiveProgressSection} ariaLabel="进度中心分区" />
+          {!rawHistory.length ? (
+            <div className="mt-3">
+              <EmptyState title="暂无训练记录" description="完成一次训练后，这里会显示日历和历史详情。" />
+            </div>
+          ) : null}
         </div>
-        {!rawHistory.length ? (
-          <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm font-bold text-slate-600">
-            暂无训练记录。完成一次训练后，这里会显示日历和历史详情。
-          </div>
-        ) : null}
-      </section>
+      </Card>
 
       <div className="mb-4 space-y-4">
         {activeProgressSection === 'calendar' ? renderCalendarPanel() : null}

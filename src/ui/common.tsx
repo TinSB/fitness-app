@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React, { type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from 'react';
 import { Info } from 'lucide-react';
 import { TRAINING_MODE_META } from '../data/trainingData';
 import type { CorrectionModule, FunctionalAddon, WeeklyPrescription } from '../models/training-model';
@@ -6,6 +6,9 @@ import { classNames, number } from '../engines/engineUtils';
 import { formatSupportDoseAdjustment } from '../i18n/formatters';
 
 type Tone = 'slate' | 'emerald' | 'amber' | 'rose';
+type UiTone = Tone | 'sky';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface PageProps {
   eyebrow: string;
@@ -57,6 +60,58 @@ interface SupportBlockListProps {
   tone?: 'emerald' | 'amber';
 }
 
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  tone?: UiTone;
+  padded?: boolean;
+}
+
+interface SectionHeaderProps {
+  eyebrow?: string;
+  title: string;
+  description?: ReactNode;
+  action?: ReactNode;
+}
+
+interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  fullWidth?: boolean;
+}
+
+interface SegmentedTabsProps<T extends string> {
+  value: T;
+  options: Array<{ id: T; label: string; badge?: ReactNode }>;
+  onChange: (value: T) => void;
+  ariaLabel?: string;
+}
+
+interface StatusBadgeProps {
+  children: ReactNode;
+  tone?: UiTone;
+}
+
+interface EmptyStateProps {
+  title: string;
+  description: ReactNode;
+  action?: ReactNode;
+}
+
+interface InlineNoticeProps {
+  tone?: UiTone;
+  title?: string;
+  children: ReactNode;
+}
+
+interface ConfirmDialogProps {
+  title: string;
+  description: ReactNode;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
 export const Page = ({ eyebrow, title, action, children }: PageProps) => (
   <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] md:px-8 md:py-8">
     <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -67,6 +122,151 @@ export const Page = ({ eyebrow, title, action, children }: PageProps) => (
       {action}
     </div>
     {children}
+  </div>
+);
+
+export const Card = ({ tone = 'slate', padded = true, className, children, ...props }: CardProps) => {
+  const tones: Record<UiTone, string> = {
+    slate: 'border-slate-200 bg-white text-slate-950',
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+    amber: 'border-amber-200 bg-amber-50 text-amber-950',
+    rose: 'border-rose-200 bg-rose-50 text-rose-950',
+    sky: 'border-sky-200 bg-sky-50 text-sky-950',
+  };
+
+  return (
+    <section className={classNames('rounded-lg border shadow-sm shadow-slate-200/40', padded && 'p-4 md:p-5', tones[tone], className)} {...props}>
+      {children}
+    </section>
+  );
+};
+
+export const SectionHeader = ({ eyebrow, title, description, action }: SectionHeaderProps) => (
+  <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div>
+      {eyebrow ? <div className="text-xs font-black uppercase tracking-widest text-emerald-700">{eyebrow}</div> : null}
+      <h2 className="mt-1 font-black text-slate-950">{title}</h2>
+      {description ? <div className="mt-1 text-sm font-medium leading-6 text-slate-500">{description}</div> : null}
+    </div>
+    {action}
+  </div>
+);
+
+export const ActionButton = ({ variant = 'secondary', size = 'md', fullWidth = false, className, children, type = 'button', ...props }: ActionButtonProps) => {
+  const variants: Record<ButtonVariant, string> = {
+    primary: 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700',
+    secondary: 'border-slate-200 bg-white text-slate-700 hover:bg-stone-50',
+    ghost: 'border-transparent bg-transparent text-slate-600 hover:bg-slate-100',
+    danger: 'border-rose-200 bg-white text-rose-700 hover:bg-rose-50',
+  };
+  const sizes: Record<ButtonSize, string> = {
+    sm: 'min-h-9 px-3 py-2 text-xs',
+    md: 'min-h-11 px-4 py-2.5 text-sm',
+    lg: 'min-h-14 px-5 py-3 text-base',
+  };
+
+  return (
+    <button
+      type={type}
+      className={classNames(
+        'inline-flex items-center justify-center gap-2 rounded-lg border font-black transition disabled:cursor-not-allowed disabled:opacity-50',
+        variants[variant],
+        sizes[size],
+        fullWidth && 'w-full',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+export const SegmentedTabs = <T extends string>({ value, options, onChange, ariaLabel = '分区导航' }: SegmentedTabsProps<T>) => (
+  <div className="overflow-x-auto pb-1" aria-label={ariaLabel}>
+    <div className="grid min-w-max grid-flow-col auto-cols-max gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1 md:min-w-0 md:auto-cols-fr">
+      {options.map((option) => {
+        const selected = value === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onChange(option.id)}
+            className={classNames(
+              'min-h-11 whitespace-nowrap rounded-md px-3 py-2 text-sm font-black transition',
+              selected ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+            )}
+          >
+            {option.label}
+            {option.badge ? <span className="ml-2 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">{option.badge}</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
+export const StatusBadge = ({ children, tone = 'slate' }: StatusBadgeProps) => {
+  const tones: Record<UiTone, string> = {
+    slate: 'bg-slate-100 text-slate-700',
+    emerald: 'bg-emerald-50 text-emerald-800',
+    amber: 'bg-amber-50 text-amber-800',
+    rose: 'bg-rose-50 text-rose-800',
+    sky: 'bg-sky-50 text-sky-800',
+  };
+
+  return <span className={classNames('inline-flex items-center rounded-md px-2 py-1 text-xs font-black', tones[tone])}>{children}</span>;
+};
+
+export const EmptyState = ({ title, description, action }: EmptyStateProps) => (
+  <div className="rounded-lg border border-dashed border-slate-200 bg-stone-50 p-6 text-center">
+    <div className="font-black text-slate-950">{title}</div>
+    <div className="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-slate-500">{description}</div>
+    {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+  </div>
+);
+
+export const InlineNotice = ({ tone = 'slate', title, children }: InlineNoticeProps) => {
+  const tones: Record<UiTone, string> = {
+    slate: 'border-slate-200 bg-stone-50 text-slate-700',
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    rose: 'border-rose-200 bg-rose-50 text-rose-900',
+    sky: 'border-sky-200 bg-sky-50 text-sky-900',
+  };
+
+  return (
+    <div className={classNames('rounded-lg border px-3 py-2 text-sm font-bold leading-6', tones[tone])}>
+      {title ? <span className="mr-1 font-black">{title}</span> : null}
+      {children}
+    </div>
+  );
+};
+
+export const MobileActionBar = ({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={classNames(
+      'fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:static md:border-0 md:bg-transparent md:p-0',
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+export const ConfirmDialog = ({ title, description, confirmLabel = '确认', cancelLabel = '取消', danger, onConfirm, onCancel }: ConfirmDialogProps) => (
+  <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+    <div className="font-black text-slate-950">{title}</div>
+    <div className="mt-2 text-sm font-medium leading-6 text-slate-600">{description}</div>
+    <div className="mt-4 flex justify-end gap-2">
+      <ActionButton variant="secondary" size="sm" onClick={onCancel}>
+        {cancelLabel}
+      </ActionButton>
+      <ActionButton variant={danger ? 'danger' : 'primary'} size="sm" onClick={onConfirm}>
+        {confirmLabel}
+      </ActionButton>
+    </div>
   </div>
 );
 

@@ -13,7 +13,7 @@ import {
   formatSplitType,
 } from '../i18n/formatters';
 import type { AppData, ExercisePrescription, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
-import { InfoPill, LabelInput, Page } from '../ui/common';
+import { ActionButton, InfoPill, LabelInput, Page, StatusBadge } from '../ui/common';
 
 interface PlanViewProps {
   data: AppData;
@@ -99,14 +99,14 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
       title="计划与模板"
       action={
         <div className="flex gap-2">
-          <button onClick={onResetTemplates} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
+          <ActionButton onClick={onResetTemplates} variant="secondary">
             <RotateCcw className="h-4 w-4" />
             恢复默认
-          </button>
-          <button onClick={() => onStartTemplate(template.id)} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white">
+          </ActionButton>
+          <ActionButton onClick={() => onStartTemplate(template.id)} variant="primary">
             <Play className="h-4 w-4" />
             以此开练
-          </button>
+          </ActionButton>
         </div>
       }
     >
@@ -158,7 +158,10 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="text-xs font-black uppercase tracking-widest text-emerald-700">当前模板状态</div>
-                <h3 className="mt-1 font-black text-slate-950">{currentTemplateStatus}</h3>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <h3 className="font-black text-slate-950">{currentTemplateStatus}</h3>
+                  <StatusBadge tone={activeHistoryItem ? 'amber' : hasRollbackRecord ? 'sky' : 'emerald'}>{currentTemplateStatus}</StatusBadge>
+                </div>
                 <div className="mt-2 text-sm font-bold leading-6 text-slate-700">
                   当前使用：{currentTemplateName}
                   {sourceTemplate ? `；来源模板：${sourceTemplateName}` : ''}
@@ -170,16 +173,16 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
                 ) : null}
               </div>
               {activeHistoryItem && onRollbackProgramAdjustment ? (
-                <button
+                <ActionButton
                   type="button"
                   onClick={() => {
                     if (!window.confirm('确认回滚到原模板吗？实验模板历史会保留。')) return;
                     onRollbackProgramAdjustment(activeHistoryItem.id);
                   }}
-                  className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-black text-emerald-800"
+                  variant="danger"
                 >
                   回滚到原模板
-                </button>
+                </ActionButton>
               ) : null}
             </div>
           </section>
