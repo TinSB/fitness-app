@@ -1,5 +1,6 @@
 import type { E1RMProfile, EstimatedOneRepMax, EstimateConfidence, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { completedSets, number } from './engineUtils';
+import { filterAnalyticsHistory } from './sessionHistoryEngine';
 
 type SourceCandidate = {
   sessionId: string;
@@ -94,7 +95,7 @@ const buildEstimate = (
 };
 
 const collectCandidates = (history: TrainingSession[], exerciseId: string): SourceCandidate[] =>
-  history
+  filterAnalyticsHistory(history)
     .flatMap((session) =>
       (session.exercises || [])
         .filter((exercise) => matchesExercise(exercise, exerciseId))

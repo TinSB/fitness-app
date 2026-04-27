@@ -48,6 +48,43 @@ describe('warmup policy engine', () => {
     expect(decision.shouldShowWarmupSets).toBe(false);
   });
 
+  it('does not require warmup for small isolation exercises by default', () => {
+    const triceps = exercise('triceps_pushdown', 2, {
+      name: '三头下压',
+      kind: 'isolation',
+      orderPriority: 6,
+      startWeight: 25,
+    });
+    const decision = decideWarmupPolicy({ exercise: triceps, exerciseIndex: 4, previousExercises: [exercise('bench')] });
+    expect(decision.policy).not.toBe('required');
+    expect(decision.shouldShowWarmupSets).toBe(false);
+    expect(decision.reason).toContain('孤立动作');
+  });
+
+  it('does not require warmup for lateral raises by default', () => {
+    const lateralRaise = exercise('lateral_raise', 2, {
+      name: '侧平举',
+      kind: 'isolation',
+      orderPriority: 6,
+      startWeight: 8,
+    });
+    const decision = decideWarmupPolicy({ exercise: lateralRaise, exerciseIndex: 5 });
+    expect(decision.policy).not.toBe('required');
+    expect(decision.shouldShowWarmupSets).toBe(false);
+  });
+
+  it('requires warmup only when isolation exercise is manually set to always', () => {
+    const triceps = exercise('triceps_pushdown', 2, {
+      name: '三头下压',
+      kind: 'isolation',
+      orderPriority: 6,
+      warmupPreference: 'always',
+    });
+    const decision = decideWarmupPolicy({ exercise: triceps, exerciseIndex: 4 });
+    expect(decision.policy).toBe('required');
+    expect(decision.shouldShowWarmupSets).toBe(true);
+  });
+
   it('keeps the same horizontal push pattern for bench, incline press, and chest press', () => {
     const decisions = ['bench_press', 'incline_db_press', 'machine_chest_press'].map((id, index) =>
       decideWarmupPolicy({ exercise: makeExercise(id, 2, 0, 2), exerciseIndex: index })

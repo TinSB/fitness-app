@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Activity, BarChart3, Copy, Download, Save } from 'lucide-react';
+import { Activity, BarChart3, CalendarDays, Copy, Download, Save } from 'lucide-react';
 import { EXERCISE_DISPLAY_NAMES } from '../data/exerciseLibrary';
 import {
   CORE_TREND_EXERCISES,
@@ -24,9 +24,12 @@ import { buildWeeklyActionExplanation, buildWeeklyCoachReview } from '../engines
 import { formatExplanationEvidence } from '../engines/explainability/evidenceExplainability';
 import { formatExplanationItem } from '../engines/explainability/shared';
 import { buildWeeklyActionRecommendations } from '../engines/weeklyCoachActionEngine';
-import { formatDate, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
+import { classNames, formatDate, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildDeloadSignal } from '../engines/deloadSignalEngine';
+import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
+import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
+import { formatWeight } from '../engines/unitConversionEngine';
 import {
   formatAdherenceConfidence,
   formatAdjustmentChangeLabel,
@@ -43,17 +46,20 @@ import {
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
 } from '../i18n/formatters';
-import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, WeeklyPrescription } from '../models/training-model';
+import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, UnitSettings, WeeklyPrescription } from '../models/training-model';
 import { Page, Stat, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
 interface ProgressViewProps {
   data: AppData;
+  unitSettings: UnitSettings;
   weeklyPrescription: WeeklyPrescription;
   bodyWeightInput: string;
   setBodyWeightInput: React.Dispatch<React.SetStateAction<string>>;
   onSaveBodyWeight: () => void;
   onDeleteSession: (sessionId: string) => void;
+  onMarkSessionDataFlag: (sessionId: string, dataFlag: SessionDataFlag) => void;
+  onUpdateUnitSettings: (updates: Partial<UnitSettings>) => void;
   onRestoreData: (data: AppData) => void;
   onApplyProgramAdjustmentDraft: (draft: ProgramAdjustmentDraft) => void;
   onRollbackProgramAdjustment: (historyItemId: string) => void;
@@ -131,18 +137,26 @@ const summarizeHistoryChanges = (item: {
 
 export function ProgressView({
   data,
+  unitSettings,
   weeklyPrescription,
   bodyWeightInput,
   setBodyWeightInput,
   onSaveBodyWeight,
   onDeleteSession,
+  onMarkSessionDataFlag,
+  onUpdateUnitSettings,
   onRestoreData,
   onApplyProgramAdjustmentDraft,
   onRollbackProgramAdjustment,
 }: ProgressViewProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [restoreMessage, setRestoreMessage] = React.useState('');
-  const history = data.history || [];
+  const rawHistory = data.history || [];
+  const history = filterAnalyticsHistory(rawHistory);
+  const calendar = React.useMemo(() => buildTrainingCalendar(rawHistory), [rawHistory]);
+  const [selectedCalendarDate, setSelectedCalendarDate] = React.useState(() => todayKey());
+  const selectedCalendarDay = calendar.days.find((day) => day.date === selectedCalendarDate) || calendar.days.find((day) => day.totalSessions > 0);
+  const selectedCalendarSessions = selectedCalendarDay?.sessions || [];
   const monthStats = buildMonthStats(history, data.bodyWeights || []);
   const prs = buildPrs(history);
   const barData = buildRecentSessionBars(history);
@@ -953,25 +967,141 @@ export function ProgressView({
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-black text-slate-950">训练日历</h2>
+                <p className="mt-1 text-sm text-slate-500">按日期回看训练频率、训练时间和当天详情。测试/排除数据不会进入统计。</p>
+              </div>
+              <CalendarDays className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div className="grid gap-3 md:grid-cols-[1fr_280px]">
+              <div>
+                <div className="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
+                  <span>{calendar.month}</span>
+                  <span>本月 {calendar.days.reduce((sum, day) => sum + day.totalSessions, 0)} 次</span>
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500">
+                  {['一', '二', '三', '四', '五', '六', '日'].map((label) => <div key={label}>{label}</div>)}
+                  {calendar.days.map((day) => {
+                    const selected = selectedCalendarDay?.date === day.date;
+                    return (
+                      <button
+                        key={day.date}
+                        type="button"
+                        onClick={() => setSelectedCalendarDate(day.date)}
+                        className={classNames(
+                          'min-h-12 rounded-lg border px-1 py-2 text-xs font-black',
+                          selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-stone-50 text-slate-600'
+                        )}
+                      >
+                        <div>{Number(day.date.slice(-2))}</div>
+                        {day.totalSessions ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" /> : null}
+                        {day.hasPainFlags ? <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                  {calendar.weeklyFrequency.map((week) => (
+                    <div key={week.weekStart} className="rounded-lg bg-stone-50 p-3">
+                      <div className="text-xs font-black text-slate-500">{formatDate(week.weekStart)} 周</div>
+                      <div className="mt-1 text-xl font-black text-slate-950">{week.sessionCount} 次</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-3">
+                <div className="text-sm font-black text-slate-950">{selectedCalendarDay?.date || '选择日期'}</div>
+                <div className="mt-2 space-y-2">
+                  {selectedCalendarSessions.length ? selectedCalendarSessions.map((session) => (
+                    <div key={session.sessionId} className="rounded-lg bg-white p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-black text-slate-950">{session.title}</div>
+                        {session.isExperimentalTemplate ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-black text-amber-700">实验</span> : null}
+                      </div>
+                      <div className="mt-1 text-xs font-bold leading-5 text-slate-500">
+                        {session.templateName || '未命名模板'} / {session.durationMin || 0} 分钟 / {session.completedSets} 组
+                      </div>
+                      <div className="mt-1 text-xs font-bold text-emerald-700">
+                        有效组 {session.effectiveSets} / 总量 {formatWeight(session.totalVolumeKg, unitSettings)}
+                      </div>
+                    </div>
+                  )) : <div className="rounded-lg bg-white p-4 text-sm text-slate-500">当天没有训练记录。</div>}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
+            <h2 className="mb-3 font-black text-slate-950">重量单位</h2>
+            <div className="grid grid-cols-2 gap-2 md:max-w-xs">
+              {(['kg', 'lb'] as const).map((unit) => (
+                <button
+                  key={unit}
+                  type="button"
+                  onClick={() => onUpdateUnitSettings({ weightUnit: unit })}
+                  className={classNames(
+                    'h-11 rounded-lg border text-sm font-black',
+                    unitSettings.weightUnit === unit ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700'
+                  )}
+                >
+                  {unit}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-sm text-slate-500">历史数据内部仍按 kg 保存，切换单位只改变显示和输入方式。</p>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4">
             <h2 className="mb-3 font-black text-slate-950">历史记录</h2>
             <div className="space-y-2">
-              {history.slice(0, 10).map((session) => (
+              {rawHistory.slice(0, 10).map((session) => (
                 <div key={session.id} className="flex flex-col gap-2 rounded-lg bg-stone-50 p-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <div className="font-black text-slate-950">{session.templateName}</div>
+                    <div className="flex flex-wrap items-center gap-2 font-black text-slate-950">
+                      {session.templateName}
+                      {session.dataFlag === 'test' ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">测试</span> : null}
+                      {session.dataFlag === 'excluded' ? <span className="rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600">排除</span> : null}
+                    </div>
                     <div className="text-sm text-slate-500">
                       {session.date} / {sessionCompletedSets(session)} 组 / {session.durationMin || 0} 分钟
                     </div>
+                    <details className="mt-2 text-sm text-slate-600">
+                      <summary className="cursor-pointer font-black text-slate-700">查看训练详情</summary>
+                      <div className="mt-2 space-y-1">
+                        {session.exercises.map((exercise) => (
+                          <div key={`${session.id}-${exercise.id}`} className="rounded-md bg-white px-3 py-2">
+                            <div className="font-black text-slate-900">{exercise.alias || exercise.name}</div>
+                            <div className="text-xs font-bold text-slate-500">
+                              {Array.isArray(exercise.sets)
+                                ? exercise.sets
+                                    .filter((set) => set.done)
+                                    .map((set) => `${formatWeight(set.weight, unitSettings)} x ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}${set.painFlag ? ' / 不适' : ''}`)
+                                    .join('；') || '未完成'
+                                : '未记录'}
+                            </div>
+                          </div>
+                        ))}
+                        {(session.supportExerciseLogs || []).length ? (
+                          <div className="rounded-md bg-white px-3 py-2 text-xs font-bold text-slate-500">
+                            辅助动作：{(session.supportExerciseLogs || []).map((log) => `${log.exerciseName || log.exerciseId} ${log.completedSets}/${log.plannedSets}${log.skippedReason ? ` / 已跳过` : ''}`).join('；')}
+                          </div>
+                        ) : null}
+                      </div>
+                    </details>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm font-black text-emerald-700">{Math.round(sessionVolume(session))}kg</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-black text-emerald-700">{formatWeight(sessionVolume(session), unitSettings)}</div>
+                    <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
+                      {session.dataFlag === 'test' ? '恢复正式' : '标记测试'}
+                    </button>
                     <button type="button" onClick={() => onDeleteSession(session.id)} className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-black text-rose-700">
                       删除
                     </button>
                   </div>
                 </div>
               ))}
-              {!history.length ? <div className="rounded-lg bg-stone-50 p-6 text-center text-sm text-slate-500">还没有历史训练。</div> : null}
+              {!rawHistory.length ? <div className="rounded-lg bg-stone-50 p-6 text-center text-sm text-slate-500">还没有历史训练。</div> : null}
             </div>
           </section>
         </section>

@@ -68,4 +68,20 @@ describe('focus step queue', () => {
     expect(getCurrentFocusStep(session).stepType).toBe('completed');
     expect(session.currentExerciseId).toBe('');
   });
+
+  it('does not force warmup steps for small isolation exercises', () => {
+    const session = makeFocusSession([
+      makeExercise('bench', 2, 0, 2),
+      {
+        ...makeExercise('triceps_pushdown', 2, 0, 2),
+        name: '三头下压',
+        kind: 'isolation',
+        orderPriority: 6,
+        startWeight: 25,
+      },
+    ]);
+    const tricepsSteps = buildFocusStepQueue(session).filter((step) => step.exerciseId === 'triceps_pushdown');
+    expect(tricepsSteps.map((step) => step.stepType)).toEqual(['working', 'working']);
+    expect(tricepsSteps[0].warmupPolicy?.reason).toContain('孤立动作');
+  });
 });

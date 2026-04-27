@@ -43,6 +43,7 @@ import {
 import { clamp, clone, hydrateTemplates, number } from '../engines/engineUtils';
 import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
 import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
+import { DEFAULT_UNIT_SETTINGS, sanitizeUnitSettings } from '../engines/unitConversionEngine';
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
 export const validateProgramSchema = ajv.compile(schema);
@@ -86,6 +87,8 @@ const pickEnum = <T extends readonly string[]>(value: unknown, allowed: T, fallb
   typeof value === 'string' && allowed.includes(value) ? value : fallback;
 
 const LOAD_FEEDBACK_VALUES = ['too_light', 'good', 'too_heavy'] as const;
+const SESSION_DATA_FLAGS = ['normal', 'test', 'excluded'] as const;
+const WEIGHT_UNITS = ['kg', 'lb'] as const;
 
 const LEGACY_TEXT_MAP: Record<string, string> = {
   poor: '差',
@@ -112,6 +115,9 @@ const migrateLegacySet = (set: unknown, fallbackId: string) => {
     id: pickString(raw.id, fallbackId),
     type: pickString(raw.type, 'straight'),
     weight: Math.max(0, number(raw.weight)),
+    actualWeightKg: Number.isFinite(number(raw.actualWeightKg)) ? Math.max(0, number(raw.actualWeightKg)) : undefined,
+    displayWeight: Number.isFinite(number(raw.displayWeight)) ? Math.max(0, number(raw.displayWeight)) : undefined,
+    displayUnit: pickEnum(raw.displayUnit, WEIGHT_UNITS, 'kg'),
     reps: Math.max(0, number(raw.reps)),
     rpe: raw.rpe ?? '',
     rir: raw.rir ?? '',
@@ -400,6 +406,9 @@ const sanitizeSet = (set: unknown, fallbackId: string) => {
     id: pickString(raw.id, fallbackId),
     type: pickString(raw.type, 'straight'),
     weight: Math.max(0, number(raw.weight)),
+    actualWeightKg: Number.isFinite(number(raw.actualWeightKg)) ? Math.max(0, number(raw.actualWeightKg)) : undefined,
+    displayWeight: Number.isFinite(number(raw.displayWeight)) ? Math.max(0, number(raw.displayWeight)) : undefined,
+    displayUnit: pickEnum(raw.displayUnit, WEIGHT_UNITS, 'kg'),
     reps: Math.max(0, number(raw.reps)),
     rpe: raw.rpe ?? '',
     rir: raw.rir ?? '',
@@ -614,6 +623,7 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
     programTemplateId: pickString(raw.programTemplateId) || pickString(raw.templateId) || undefined,
     programTemplateName: pickString(raw.programTemplateName) || pickString(raw.templateName) || undefined,
     isExperimentalTemplate: Boolean(raw.isExperimentalTemplate),
+    dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
     trainingMode: pickEnum(raw.trainingMode, TRAINING_MODES, 'hybrid'),
     status: sanitizeTodayStatus(raw.status),
     exercises: raw.exercises.map(sanitizeExerciseLog),
@@ -708,6 +718,7 @@ export const sanitizeData = (saved: unknown): AppData => {
   const activeCandidate = pickString(migrated.activeProgramTemplateId, pickString(pickRecord(migrated.settings).activeProgramTemplateId));
   const activeProgramTemplateId = templates.some((template) => template.id === activeCandidate) ? activeCandidate : selectedTemplateId;
   const trainingMode = pickEnum(migrated.trainingMode, TRAINING_MODES, 'hybrid');
+  const unitSettings = sanitizeUnitSettings(migrated.unitSettings ?? pickRecord(migrated.settings).unitSettings ?? DEFAULT_UNIT_SETTINGS);
   const programAdjustmentDrafts = sanitizeProgramAdjustmentDrafts(migrated.programAdjustmentDrafts);
   const programAdjustmentHistory = sanitizeProgramAdjustmentHistory(migrated.programAdjustmentHistory);
   const sanitized: AppData = {
@@ -718,6 +729,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     activeSession: activeSession?.completed ? null : activeSession,
     selectedTemplateId,
     trainingMode,
+    unitSettings,
     todayStatus: sanitizeTodayStatus(migrated.todayStatus),
     userProfile: sanitizeUserProfile(migrated.userProfile),
     screeningProfile: sanitizeScreeningProfile(migrated.screeningProfile, history),
@@ -731,6 +743,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       schemaVersion: STORAGE_VERSION,
       selectedTemplateId,
       trainingMode,
+      unitSettings,
       activeProgramTemplateId,
     },
   };
@@ -756,6 +769,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       schemaVersion: STORAGE_VERSION,
       selectedTemplateId: sanitized.selectedTemplateId,
       trainingMode: sanitized.trainingMode,
+      unitSettings: sanitized.unitSettings,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
     };
   }
@@ -772,6 +786,7 @@ export const emptyData = (): AppData =>
     activeSession: null,
     selectedTemplateId: 'push-a',
     trainingMode: 'hybrid',
+    unitSettings: DEFAULT_UNIT_SETTINGS,
     todayStatus: DEFAULT_STATUS,
     userProfile: DEFAULT_USER_PROFILE,
     screeningProfile: DEFAULT_SCREENING_PROFILE,
@@ -811,6 +826,7 @@ export const loadData = (): AppData => {
           activeProgramTemplateId: pickRecord(settings).activeProgramTemplateId,
           selectedTemplateId: pickRecord(settings).selectedTemplateId,
           trainingMode: pickRecord(settings).trainingMode,
+          unitSettings: pickRecord(settings).unitSettings,
           settings,
         }
       : parseJson(rawMonolith, {});
@@ -843,6 +859,7 @@ export const saveData = (data: AppData) => {
       schemaVersion: STORAGE_VERSION,
       selectedTemplateId: sanitized.selectedTemplateId,
       trainingMode: sanitized.trainingMode,
+      unitSettings: sanitized.unitSettings,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
       programAdjustmentDrafts: sanitized.programAdjustmentDrafts || [],
       programAdjustmentHistory: sanitized.programAdjustmentHistory || [],

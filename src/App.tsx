@@ -24,7 +24,9 @@ import {
   updateFocusActualDraft,
 } from './engines/focusModeStateEngine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
-import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus } from './models/training-model';
+import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { sanitizeUnitSettings } from './engines/unitConversionEngine';
+import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 import { Page } from './ui/common';
@@ -245,7 +247,7 @@ function App() {
 
     setData((current) => {
       if (!current.activeSession) return current;
-      const result = completeFocusSet(current.activeSession, exerciseIndex, completedAt, now, step.id);
+      const result = completeFocusSet(current.activeSession, exerciseIndex, completedAt, now, step.id, current.unitSettings.weightUnit);
       if (!result) return current;
       nextExpandedExercise = result.sessionComplete ? exerciseIndex : result.nextExerciseIndex;
       return { ...current, activeSession: result.session };
@@ -558,15 +560,32 @@ function App() {
   };
 
   const deleteHistorySession = (sessionId: string) => {
-    if (!window.confirm('确定删除这条训练历史吗？')) return;
+    const confirmed = window.confirm('删除后该训练不会计入进度、e1RM、PR、完成度和日历。此操作不可恢复，建议先导出备份。确定删除吗？');
     setData((current) => {
-      const nextHistory = (current.history || []).filter((session) => session.id !== sessionId);
+      const result = deleteTrainingSession(current, sessionId, confirmed);
+      return result.data;
+    });
+  };
+
+  const updateUnitSettings = (updates: Partial<UnitSettings>) => {
+    setData((current) => {
+      const unitSettings = sanitizeUnitSettings({ ...current.unitSettings, ...updates });
       return {
         ...current,
-        history: nextHistory,
-        screeningProfile: reconcileScreeningProfile(current.screeningProfile, nextHistory),
+        unitSettings,
+        settings: {
+          ...current.settings,
+          unitSettings,
+        },
       };
     });
+  };
+
+  const updateHistorySessionFlag = (sessionId: string, dataFlag: SessionDataFlag) => {
+    const confirmed =
+      dataFlag === 'normal' ||
+      window.confirm('标记为测试/排除后，该训练不会计入进度、e1RM、PR、完成度和日历。确定继续吗？');
+    setData((current) => markSessionDataFlag(current, sessionId, dataFlag, confirmed).data);
   };
 
   const useFocusTrainingShell = activeTab === 'training' && data.activeSession && preferFocusShell && !forceFullTrainingView;
@@ -664,6 +683,7 @@ function App() {
                   >
                     <TrainingFocusView
                       session={data.activeSession}
+                      unitSettings={data.unitSettings}
                       restTimer={data.activeSession.restTimerState || null}
                       expandedExercise={expandedExercise}
                       setExpandedExercise={setExpandedExercise}
@@ -689,6 +709,7 @@ function App() {
                   <Suspense fallback={<LazyPageFallback />}>
                     <TrainingView
                       session={data.activeSession}
+                      unitSettings={data.unitSettings}
                       restTimer={data.activeSession?.restTimerState || null}
                       expandedExercise={expandedExercise}
                       setExpandedExercise={setExpandedExercise}
@@ -748,11 +769,14 @@ function App() {
                   <Suspense fallback={<LazyPageFallback />}>
                     <ProgressView
                       data={data}
+                      unitSettings={data.unitSettings}
                       weeklyPrescription={weeklyPrescription}
                       bodyWeightInput={bodyWeightInput}
                       setBodyWeightInput={setBodyWeightInput}
                       onSaveBodyWeight={saveBodyWeight}
                       onDeleteSession={deleteHistorySession}
+                      onMarkSessionDataFlag={updateHistorySessionFlag}
+                      onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
                         setData(nextData);
                         setActiveTab('today');

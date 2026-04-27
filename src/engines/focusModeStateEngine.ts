@@ -1,6 +1,7 @@
-import type { ActualSetDraft, ExercisePrescription, FocusStepType, SupportSkipReason, TrainingSession, TrainingSetLog } from '../models/training-model';
+import type { ActualSetDraft, ExercisePrescription, FocusStepType, SupportSkipReason, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
 import { clone, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { createRestTimerState } from './restTimerEngine';
+import { convertKgToDisplayWeight } from './unitConversionEngine';
 import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupPolicyDecision } from './warmupPolicyEngine';
 
 export type { ActualSetDraft, FocusStepType };
@@ -400,7 +401,7 @@ export const switchFocusExercise = (session: TrainingSession, exerciseIndex: num
 export const updateFocusActualDraft = (
   session: TrainingSession,
   exerciseIndex: number,
-  updates: Partial<Pick<ActualSetDraft, 'actualWeightKg' | 'actualReps' | 'actualRir' | 'techniqueQuality' | 'painFlag'>>
+  updates: Partial<Pick<ActualSetDraft, 'actualWeightKg' | 'displayWeight' | 'displayUnit' | 'actualReps' | 'actualRir' | 'techniqueQuality' | 'painFlag'>>
 ): TrainingSession => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
@@ -485,7 +486,8 @@ export const completeFocusSet = (
   exerciseIndex: number,
   completedAt = new Date().toISOString(),
   nowMs = Date.now(),
-  expectedStepId?: string
+  expectedStepId?: string,
+  displayUnit: WeightUnit = 'kg'
 ): CompleteFocusSetResult | null => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
@@ -493,8 +495,8 @@ export const completeFocusSet = (
   if (step.stepType === 'completed' || isStepCompleted(nextSession, step)) return null;
 
   const draft = getActualSetDraft(nextSession, step);
-  const actualWeight = number(draft?.actualWeightKg ?? (step.stepType === 'working' ? getSets(nextSession.exercises[step.exerciseIndex])[step.setIndex]?.weight : 0));
-  const actualReps = number(draft?.actualReps ?? (step.stepType === 'working' ? getSets(nextSession.exercises[step.exerciseIndex])[step.setIndex]?.reps : 0));
+  const actualWeight = number(draft?.actualWeightKg);
+  const actualReps = number(draft?.actualReps);
 
   if (step.stepType === 'warmup') {
     nextSession.focusCompletedStepIds = Array.from(new Set([...(nextSession.focusCompletedStepIds || []), step.id]));
@@ -505,6 +507,9 @@ export const completeFocusSet = (
         id: step.id,
         type: 'warmup',
         weight: actualWeight,
+        actualWeightKg: actualWeight,
+        displayWeight: draft?.displayWeight ?? convertKgToDisplayWeight(actualWeight, draft?.displayUnit || displayUnit),
+        displayUnit: draft?.displayUnit || displayUnit,
         reps: actualReps,
         rir: draft?.actualRir ?? '',
         rpe: '',
@@ -531,6 +536,9 @@ export const completeFocusSet = (
     sets[step.setIndex] = {
       ...targetSet,
       weight: actualWeight,
+      actualWeightKg: actualWeight,
+      displayWeight: draft?.displayWeight ?? convertKgToDisplayWeight(actualWeight, draft?.displayUnit || displayUnit),
+      displayUnit: draft?.displayUnit || displayUnit,
       reps: actualReps,
       rir: draft?.actualRir ?? targetSet.rir,
       techniqueQuality: draft?.techniqueQuality || targetSet.techniqueQuality || 'acceptable',

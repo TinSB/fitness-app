@@ -17,8 +17,8 @@ describe('complete focus set', () => {
     const session = makeFocusSession([makeExercise('bench', 1)]);
     const result = completeFocusSet(session, 0);
     const set = result?.session.exercises[0].sets[0];
-    expect(set.weight).toBe(50);
-    expect(set.reps).toBe(8);
+    expect(set.weight).toBe(0);
+    expect(set.reps).toBe(0);
   });
 
   it('double submit 不重复写入同一 step', () => {

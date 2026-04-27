@@ -7,6 +7,7 @@ import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import { classNames, monthKey, resolveMode, sessionVolume, todayKey } from '../engines/engineUtils';
 import { applyStatusRules, buildSetPrescription, makeSuggestion } from '../engines/progressionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
+import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { buildSupportPlan, buildWeeklyPrescription } from '../engines/supportPlanEngine';
 import { buildTodayExplanationItems, formatExplanationItem } from '../engines/explainability/trainingExplainability';
 import { formatExplanationEvidence } from '../engines/explainability/evidenceExplainability';
@@ -51,17 +52,18 @@ export function TodayView({
 }: TodayViewProps) {
   const adjustedPlan = applyStatusRules(selectedTemplate, data.todayStatus, trainingMode, weeklyPrescription, data.history, data.screeningProfile, data.mesocyclePlan);
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
+  const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const supportPlan = buildSupportPlan(data, selectedTemplate);
   const projectedWeekly = buildWeeklyPrescription(data, { date: todayKey(), exercises: adjustedExercises });
   const deloadSignal = buildDeloadSignal(data);
-  const lastSession = data.history?.[0];
+  const lastSession = analyticsHistory[0];
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
-  const painPatterns = buildPainPatterns(data.history || []);
+  const painPatterns = buildPainPatterns(analyticsHistory);
   const activePainWarnings = adjustedExercises
     .map((exercise) => painPatterns.find((item) => item.exerciseId && (item.exerciseId === exercise.baseId || item.exerciseId === exercise.id)))
     .filter(Boolean)
     .slice(0, 2);
-  const monthVolume = (data.history || [])
+  const monthVolume = analyticsHistory
     .filter((session) => session.date?.startsWith(monthKey()))
     .reduce((sum, session) => sum + sessionVolume(session), 0);
   const explanationItems = buildTodayExplanationItems({
@@ -122,11 +124,15 @@ export function TodayView({
             </button>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {adjustedExercises.map((exercise) => {
-              const suggestion = makeSuggestion(exercise, data.history);
+          <details className="rounded-lg border border-slate-200 bg-stone-50 p-3">
+            <summary className="cursor-pointer list-none text-sm font-black text-slate-700">
+              查看今日动作细节（训练执行放在训练页）
+            </summary>
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {adjustedExercises.map((exercise) => {
+              const suggestion = makeSuggestion(exercise, analyticsHistory);
               const setPrescription = buildSetPrescription(exercise, suggestion);
-              const e1rmProfile = buildE1RMProfile(data.history || [], exercise.canonicalExerciseId || exercise.baseId || exercise.id);
+              const e1rmProfile = buildE1RMProfile(analyticsHistory, exercise.canonicalExerciseId || exercise.baseId || exercise.id);
               const e1rm = e1rmProfile.current?.confidence === 'low' ? null : e1rmProfile.current;
               const percentRange = parsePercentRange(exercise.recommendedLoadRange);
               const loadRange = e1rm && percentRange ? estimateLoadFromE1RM(e1rm.e1rmKg, percentRange) : null;
@@ -189,8 +195,9 @@ export function TodayView({
                   )}
                 </div>
               );
-            })}
-          </div>
+              })}
+            </div>
+          </details>
         </section>
 
         <aside className="space-y-4">

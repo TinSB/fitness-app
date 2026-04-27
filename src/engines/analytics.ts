@@ -37,6 +37,8 @@ type SkipAggregate = {
 };
 
 const ratio = (actual: number, planned: number) => (planned > 0 ? Math.round((actual / planned) * 100) : 0);
+const analyticsHistory = (history: TrainingSession[] = []) =>
+  history.filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded');
 const incrementReason = (aggregate: SkipAggregate, reason?: SupportSkipReason) => {
   if (!reason) return;
   aggregate.reasons[reason] = (aggregate.reasons[reason] || 0) + 1;
@@ -145,7 +147,7 @@ export const buildMuscleVolumeDashboard = (
 };
 
 export const buildExerciseTrend = (history: TrainingSession[], exerciseId: string): ExerciseTrendPoint[] =>
-  history
+  analyticsHistory(history)
     .flatMap((session) =>
       (session.exercises || [])
         .filter((exercise) => exercise.baseId === exerciseId || exercise.id === exerciseId)
@@ -181,6 +183,7 @@ export const trendStatus = (trend: ExerciseTrendPoint[]) => {
 };
 
 export const buildPrs = (history: TrainingSession[]): PrItem[] => {
+  history = analyticsHistory(history);
   const maxWeight = new Map<string, PrItem>();
   const fixedReps = new Map<string, PrItem>();
   const sessionTotals = new Map<string, PrItem>();
@@ -283,6 +286,7 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
 };
 
 export const buildWeeklyReport = (history: TrainingSession[], bodyWeights: BodyWeightEntry[]) => {
+  history = analyticsHistory(history);
   const now = new Date();
   const start = new Date(now);
   start.setDate(start.getDate() - 7);
@@ -312,6 +316,7 @@ export const buildWeeklyReport = (history: TrainingSession[], bodyWeights: BodyW
 };
 
 export const makeCsv = (history: TrainingSession[]) => {
+  history = analyticsHistory(history);
   const rows: Array<Array<string | number>> = [['date', 'template', 'exercise', 'set', 'weight', 'reps', 'rpe', 'rir', 'pain_flag', 'technique_quality', 'note']];
 
   history.forEach((session) => {
@@ -357,6 +362,7 @@ export const downloadText = (filename: string, text: string, type: string) => {
 };
 
 export const buildMonthStats = (history: TrainingSession[], bodyWeights: BodyWeightEntry[]) => {
+  history = analyticsHistory(history);
   const currentMonth = monthKey();
   const monthSessions = history.filter((session) => session.date?.startsWith(currentMonth));
   const last7Date = new Date();
@@ -378,6 +384,7 @@ export const buildMonthStats = (history: TrainingSession[], bodyWeights: BodyWei
 };
 
 export const buildRecentSessionBars = (history: TrainingSession[]) => {
+  history = analyticsHistory(history);
   const lastEightSessions = history.slice(0, 8).reverse();
   const maxBar = Math.max(1, ...lastEightSessions.map((session) => sessionVolume(session)));
 
@@ -392,6 +399,7 @@ export const buildRecentSessionBars = (history: TrainingSession[]) => {
 };
 
 export const buildAdherenceReport = (history: TrainingSession[]): AdherenceReport => {
+  history = analyticsHistory(history);
   const recentSessions = history.slice(0, 7);
   const skippedExercises = new Map<string, SkipAggregate>();
   const skippedSupportExercises = new Map<string, SkipAggregate>();

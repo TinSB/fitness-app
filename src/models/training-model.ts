@@ -146,6 +146,17 @@ export type EvidenceConfidence = 'high' | 'moderate' | 'low';
 export type EffectiveSetFlag = 'warmup' | 'poor_technique' | 'pain' | 'too_easy' | 'incomplete' | 'valid_effort' | 'unknown_rir';
 export type PersonalRecordQuality = 'standard' | 'high_quality' | 'low_confidence';
 export type LoadFeedbackValue = 'too_light' | 'good' | 'too_heavy';
+export type WeightUnit = 'kg' | 'lb';
+export type SessionDataFlag = 'normal' | 'test' | 'excluded';
+export type ExerciseWarmupPreference = 'auto' | 'always' | 'optional' | 'never';
+
+export interface UnitSettings {
+  weightUnit: WeightUnit;
+  defaultIncrementKg: number;
+  defaultIncrementLb: number;
+  customIncrementsKg: number[];
+  customIncrementsLb: number[];
+}
 
 export type PostureFlags = Record<PostureFlagKey, PostureSeverity>;
 export type MovementFlags = Record<MovementFlagKey, MovementSeverity>;
@@ -229,6 +240,9 @@ export interface TrainingSetLog {
   type?: TrainingSetType | string;
   weight: number;
   reps: number;
+  actualWeightKg?: number;
+  displayWeight?: number;
+  displayUnit?: WeightUnit;
   rpe?: number | string;
   rir?: number | string;
   note?: string;
@@ -249,6 +263,8 @@ export interface ActualSetDraft {
   stepType: Exclude<FocusStepType, 'completed'>;
   setIndex: number;
   actualWeightKg?: number;
+  displayWeight?: number;
+  displayUnit?: WeightUnit;
   actualReps?: number;
   actualRir?: number;
   techniqueQuality?: TechniqueQuality;
@@ -290,6 +306,7 @@ export interface ExerciseMetadata {
   regressionIds?: string[];
   progressionIds?: string[];
   contraindications?: string[];
+  warmupPreference?: ExerciseWarmupPreference;
 }
 
 export interface ExerciseTemplate extends ExerciseMetadata {
@@ -517,6 +534,7 @@ export interface TrainingSession {
   startedAt?: string;
   finishedAt?: string;
   completed?: boolean;
+  dataFlag?: SessionDataFlag;
   durationMin?: number;
   feedbackSummary?: FeedbackSummary;
   loadFeedback?: LoadFeedback[];
@@ -945,6 +963,7 @@ export interface AppSettings {
   schemaVersion?: number;
   selectedTemplateId?: string;
   trainingMode?: TrainingMode;
+  unitSettings?: UnitSettings;
   [key: string]: unknown;
 }
 
@@ -956,6 +975,7 @@ export interface AppData {
   activeSession: TrainingSession | null;
   selectedTemplateId: string;
   trainingMode: TrainingMode;
+  unitSettings: UnitSettings;
   todayStatus: TodayStatus;
   userProfile: UserProfile;
   screeningProfile: ScreeningProfile;

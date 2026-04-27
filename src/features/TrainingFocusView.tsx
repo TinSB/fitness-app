@@ -3,14 +3,16 @@ import { AlertTriangle, CheckCircle, Copy, Replace, SkipForward, Timer } from 'l
 import { classNames, formatTimer, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
+import { convertKgToDisplayWeight, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { formatBlockType, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
-import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog } from '../models/training-model';
+import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
 
 interface TrainingFocusViewProps {
   session: TrainingSession;
+  unitSettings: UnitSettings;
   restTimer: RestTimerState | null;
   expandedExercise: number;
   setExpandedExercise: React.Dispatch<React.SetStateAction<number>>;
@@ -21,7 +23,7 @@ interface TrainingFocusViewProps {
   onApplySuggestion: (exerciseIndex: number) => void;
   onUpdateActualDraft: (
     exerciseIndex: number,
-    updates: { actualWeightKg?: number; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
+    updates: { actualWeightKg?: number; displayWeight?: number; displayUnit?: WeightUnit; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
   ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
   onReplaceExercise: (exerciseIndex: number) => void;
@@ -61,6 +63,7 @@ const blockLabel = (blockType: FocusBlockType) => formatBlockType(blockType);
 
 export function TrainingFocusView({
   session,
+  unitSettings,
   restTimer,
   expandedExercise,
   setExpandedExercise,
@@ -100,12 +103,12 @@ export function TrainingFocusView({
     ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId)
     : undefined;
   const warmupPolicyNotice =
-    currentStep.stepType === 'working' && currentStep.warmupPolicy?.policy === 'skipped_by_policy'
+    currentStep.stepType === 'working' && currentStep.warmupPolicy && !currentStep.warmupPolicy.shouldShowWarmupSets && currentStep.warmupPolicy.policy !== 'none'
       ? {
           id: `warmup-policy-${currentStep.exerciseId}`,
           type: 'warmup-policy',
           tone: 'info' as const,
-          message: currentStep.warmupPolicy.reason || '已完成同模式热身，直接进入正式组。',
+          message: currentStep.warmupPolicy.reason || '已按热身策略直接进入正式组。',
         }
       : null;
   const notices = dedupeFocusNotices(
@@ -141,6 +144,7 @@ export function TrainingFocusView({
   const blockType: FocusBlockType = isSupportStep ? supportLog?.blockType || currentStep.blockType || 'functional' : mainExercise ? 'main' : supportLog?.blockType || 'main';
   const supportTimeSec = supportExercise && 'timeSec' in supportExercise ? supportExercise.timeSec : undefined;
   const supportDistanceM = supportExercise && 'distanceM' in supportExercise ? supportExercise.distanceM : undefined;
+  const weightUnit = unitSettings.weightUnit;
   const stageLabel =
     currentStep.stepType === 'warmup'
       ? '热身组'
@@ -162,10 +166,13 @@ export function TrainingFocusView({
             supportDistanceM ? ` / ${supportDistanceM} 米` : ''
           }`
         : '按支持动作计划完成'
-      : `${number(currentStep.plannedWeight)}kg × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
+      : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
-  const actualSummary = `${actualWeight === undefined ? '待输入' : `${number(actualWeight)}kg`} / ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}`;
+  const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
+  const actualSummary = `${actualDisplayWeight === undefined ? '待输入' : `${actualDisplayWeight}${weightUnit}`} / ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}`;
+  const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
+  const repAdjustments = [-5, -1, 1, 5];
 
   const notify = (message: string) => setFeedback(message);
 
@@ -367,19 +374,80 @@ export function TrainingFocusView({
             </div>
           </section>
 
-          <section className="grid grid-cols-4 gap-2">
-            <button type="button" aria-label="重量减少 2.5kg" onClick={() => { onAdjustSet(mainIndex, 'weight', -2.5); notify('已调整重量'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
-              -2.5
-            </button>
-            <button type="button" aria-label="重量增加 2.5kg" onClick={() => { onAdjustSet(mainIndex, 'weight', 2.5); notify('已调整重量'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
-              +2.5
-            </button>
-            <button type="button" aria-label="次数减少 1 次" onClick={() => { onAdjustSet(mainIndex, 'reps', -1); notify('已调整次数'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
-              -1
-            </button>
-            <button type="button" aria-label="次数增加 1 次" onClick={() => { onAdjustSet(mainIndex, 'reps', 1); notify('已调整次数'); }} className="h-14 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700">
-              +1
-            </button>
+          <section className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="mb-2 text-xs font-black text-slate-500">快速调整重量（{weightUnit}）</div>
+            <div className="grid grid-cols-3 gap-2">
+              {weightAdjustments.map((delta) => (
+                <button
+                  key={`weight-${delta}`}
+                  type="button"
+                  aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
+                  onClick={() => {
+                    const nextDisplayWeight = Math.max(0, number(actualDisplayWeight) + delta);
+                    onUpdateActualDraft(mainIndex, {
+                      actualWeightKg: parseDisplayWeightToKg(nextDisplayWeight, weightUnit),
+                      displayWeight: nextDisplayWeight,
+                      displayUnit: weightUnit,
+                    });
+                    notify('已调整重量');
+                  }}
+                  className="h-12 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700"
+                >
+                  {delta > 0 ? `+${delta}` : delta}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="text-xs font-black text-slate-500">
+                自定义重量
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step={weightUnit === 'lb' ? '1' : '0.5'}
+                  value={actualDisplayWeight ?? ''}
+                  onChange={(event) =>
+                    onUpdateActualDraft(mainIndex, {
+                      actualWeightKg: parseDisplayWeightToKg(event.target.value, weightUnit),
+                      displayWeight: Math.max(0, number(event.target.value)),
+                      displayUnit: weightUnit,
+                    })
+                  }
+                  className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-black text-slate-900"
+                  placeholder={`0${weightUnit}`}
+                />
+              </label>
+              <label className="text-xs font-black text-slate-500">
+                自定义次数
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  value={actualReps ?? ''}
+                  onChange={(event) => onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(number(event.target.value))) })}
+                  className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-black text-slate-900"
+                  placeholder="0 次"
+                />
+              </label>
+            </div>
+            <div className="mt-3 text-xs font-black text-slate-500">快速调整次数</div>
+            <div className="mt-2 grid grid-cols-4 gap-2">
+              {repAdjustments.map((delta) => (
+                <button
+                  key={`rep-${delta}`}
+                  type="button"
+                  aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
+                  onClick={() => {
+                    onAdjustSet(mainIndex, 'reps', delta);
+                    notify('已调整次数');
+                  }}
+                  className="h-12 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700"
+                >
+                  {delta > 0 ? `+${delta}` : delta}
+                </button>
+              ))}
+            </div>
           </section>
 
           <section className="grid grid-cols-3 gap-2">

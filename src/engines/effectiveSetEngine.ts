@@ -138,6 +138,7 @@ export const buildEffectiveVolumeSummary = (history: TrainingSession[], dateRang
   };
 
   const sessions = history.filter((session) => {
+    if (session.dataFlag === 'test' || session.dataFlag === 'excluded') return false;
     if (dateRange?.from && session.date < dateRange.from) return false;
     if (dateRange?.to && session.date > dateRange.to) return false;
     return true;

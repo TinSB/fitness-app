@@ -5,6 +5,7 @@ import { buildExerciseLearningPath } from '../engines/exercisePathEngine';
 import { buildSessionExplanations } from '../engines/explainability/trainingExplainability';
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
+import { formatWeight } from '../engines/unitConversionEngine';
 import { formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type {
   CorrectionModule,
@@ -15,6 +16,8 @@ import type {
   SupportSkipReason,
   TrainingSession,
   TrainingSetLog,
+  UnitSettings,
+  WeightUnit,
 } from '../models/training-model';
 import { TrainingFocusView } from './TrainingFocusView';
 import { Page, Stat, SupportBlockList } from '../ui/common';
@@ -25,6 +28,7 @@ type LoggedExercise = ExercisePrescription & {
 
 interface TrainingViewProps {
   session: TrainingSession | null;
+  unitSettings: UnitSettings;
   restTimer: RestTimerState | null;
   expandedExercise: number;
   setExpandedExercise: React.Dispatch<React.SetStateAction<number>>;
@@ -41,7 +45,7 @@ interface TrainingViewProps {
   onApplySuggestion: (exerciseIndex: number) => void;
   onUpdateActualDraft: (
     exerciseIndex: number,
-    updates: { actualWeightKg?: number; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
+    updates: { actualWeightKg?: number; displayWeight?: number; displayUnit?: WeightUnit; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
   ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
@@ -127,6 +131,7 @@ const renderTechniqueButtons = (
 
 export function TrainingView({
   session,
+  unitSettings,
   restTimer,
   expandedExercise,
   setExpandedExercise,
@@ -749,7 +754,7 @@ export function TrainingView({
         <section className="min-w-0 space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
             <Stat label="完成组数" value={`${doneSets}/${totalSets}`} tone="emerald" />
-            <Stat label="当前总量" value={`${Math.round(currentVolume)}kg`} />
+            <Stat label="当前总量" value={formatWeight(currentVolume, unitSettings)} />
             <Stat label="状态" value={`${session.status?.energy || DEFAULT_STATUS.energy} / ${session.status?.time || DEFAULT_STATUS.time} 分`} tone="amber" />
             <Stat label="模式" value={resolveMode(session.trainingMode || 'hybrid').shortLabel} />
             <Stat label="视图" value={focusMode ? '极简' : '完整'} />
@@ -758,6 +763,7 @@ export function TrainingView({
           {focusMode ? (
             <TrainingFocusView
               session={session}
+              unitSettings={unitSettings}
               restTimer={restTimer}
               expandedExercise={expandedExercise}
                       setExpandedExercise={setExpandedExercise}
