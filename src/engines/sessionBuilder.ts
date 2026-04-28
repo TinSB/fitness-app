@@ -16,7 +16,7 @@ import { buildSessionExplanations, buildTodayExplanations } from './explainabili
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel, type TrainingLevelAssessment } from './trainingLevelEngine';
-import type { HealthSummary } from './healthSummaryEngine';
+import { buildTrainingDecisionContext, toStatusRulesDecisionContext, type TrainingDecisionContext } from './trainingDecisionContext';
 
 const TEMPLATE_ROTATION: Record<string, string> = {
   'push-a': 'pull-a',
@@ -80,29 +80,56 @@ export const createSession = (
   supportPlan: ReturnType<typeof buildSupportPlan> | null = null,
   screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
   mesocyclePlan?: AppData['mesocyclePlan'],
-  decisionContext: { healthSummary?: HealthSummary; useHealthDataForReadiness?: boolean } = {}
+  decisionContext: Partial<TrainingDecisionContext> = {}
 ) => {
-  const trainingLevelAssessment = buildTrainingLevelAssessment({ history });
-  const adjustedPlan = applyStatusRules(template, status, trainingMode, weeklyPrescription, history, screening, mesocyclePlan, decisionContext);
+  const context = buildTrainingDecisionContext(
+    {
+      history,
+      todayStatus: status,
+      trainingMode,
+      screeningProfile: screening,
+      mesocyclePlan,
+      programTemplate: DEFAULT_PROGRAM_TEMPLATE,
+    },
+    decisionContext
+  );
+  const resolvedStatus = context.todayStatus;
+  const resolvedHistory = context.history;
+  const resolvedTrainingMode = context.trainingMode;
+  const resolvedScreening = context.screeningProfile || screening;
+  const resolvedMesocyclePlan = context.mesocyclePlan || mesocyclePlan;
+  const resolvedProgramTemplate = context.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
+  const statusRulesContext = toStatusRulesDecisionContext(context);
+  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: resolvedHistory });
+  const adjustedPlan = applyStatusRules(
+    template,
+    resolvedStatus,
+    resolvedTrainingMode,
+    weeklyPrescription,
+    resolvedHistory,
+    resolvedScreening,
+    resolvedMesocyclePlan,
+    statusRulesContext
+  );
   const resolvedWeeklyPrescription =
     weeklyPrescription ||
     buildWeeklyPrescription({
-      history,
+      history: resolvedHistory,
       activeSession: null,
-      trainingMode,
-      todayStatus: status,
-      screeningProfile: screening,
-      programTemplate: DEFAULT_PROGRAM_TEMPLATE,
+      trainingMode: resolvedTrainingMode,
+      todayStatus: resolvedStatus,
+      screeningProfile: resolvedScreening,
+      programTemplate: resolvedProgramTemplate,
     });
 
   const rawSupportPlan =
     supportPlan ||
     buildSupportPlan(
       {
-        history,
-        todayStatus: status,
-        screeningProfile: screening,
-        programTemplate: DEFAULT_PROGRAM_TEMPLATE,
+        history: resolvedHistory,
+        todayStatus: resolvedStatus,
+        screeningProfile: resolvedScreening,
+        programTemplate: resolvedProgramTemplate,
       },
       template
     );
@@ -121,14 +148,14 @@ export const createSession = (
       }
     : rawSupportPlan;
 
-  const exercises = adjustedPlan.exercises.map((exercise) => buildSessionExerciseSetLogs(exercise, history, trainingLevelAssessment));
+  const exercises = adjustedPlan.exercises.map((exercise) => buildSessionExerciseSetLogs(exercise, resolvedHistory, trainingLevelAssessment));
   const explanations = buildTodayExplanations({
     template,
     adjustedPlan: { ...adjustedPlan, exercises },
     supportPlan: resolvedSupportPlan,
     weeklyPrescription: resolvedWeeklyPrescription,
-    screening,
-    todayStatus: status,
+    screening: resolvedScreening,
+    todayStatus: resolvedStatus,
   });
 
   const supportExerciseLogs: SupportExerciseLog[] = [
@@ -170,8 +197,8 @@ export const createSession = (
     programTemplateName: adjustedPlan.name,
     isExperimentalTemplate: Boolean(template.isExperimentalTemplate),
     focus: adjustedPlan.focus,
-    trainingMode,
-    status: clone(status),
+    trainingMode: resolvedTrainingMode,
+    status: clone(resolvedStatus),
     startedAt: new Date().toISOString(),
     completed: false,
     durationMin: adjustedPlan.duration,
@@ -207,20 +234,24 @@ export const createSession = (
   };
 };
 
-export const pickSuggestedTemplate = (data: Partial<AppData>) => {
-  const status = data.todayStatus || DEFAULT_STATUS;
-  if (Number(status.time) <= 30) return 'quick-30';
-
-  const screening = reconcileScreeningProfile(data.screeningProfile, data.history || []);
-  const deloadDecision = buildAdaptiveDeloadDecision({ ...data, screeningProfile: screening });
-  if (deloadDecision.autoSwitchTemplateId) return deloadDecision.autoSwitchTemplateId;
-
-  const weekly = buildWeeklyPrescription({ ...data, screeningProfile: screening });
+export const scoreSuggestedTemplates = (data: Partial<AppData>, decisionContext: Partial<TrainingDecisionContext> = {}) => {
+  const context = buildTrainingDecisionContext(data, decisionContext);
+  const status = context.todayStatus || DEFAULT_STATUS;
+  const screening = reconcileScreeningProfile(context.screeningProfile, context.history || []);
+  const weekly = buildWeeklyPrescription({
+    ...data,
+    history: context.history,
+    todayStatus: status,
+    trainingMode: context.trainingMode,
+    screeningProfile: screening,
+    programTemplate: context.programTemplate || data.programTemplate,
+  });
   const soreness = status.soreness || [];
   const templates = data.templates || [];
+  const statusRulesContext = toStatusRulesDecisionContext(context);
 
-  const scores = templates.map((template) => {
-    const prescribed = applyStatusRules(template, status, data.trainingMode || 'hybrid', weekly, data.history || [], screening);
+  return templates.map((template) => {
+    const prescribed = applyStatusRules(template, status, context.trainingMode, weekly, context.history || [], screening, context.mesocyclePlan, statusRulesContext);
     const score = prescribed.exercises.reduce((sum, exercise) => {
       const primary = getPrimaryMuscles(exercise)[0];
       const remaining = getMuscleRemaining(weekly, primary);
@@ -228,18 +259,40 @@ export const pickSuggestedTemplate = (data: Partial<AppData>) => {
       const fatiguePenalty = exercise.fatigueCost === 'high' && status.energy === '低' ? 3 : 0;
       const replacementPenalty = exercise.replacementSuggested ? 1.5 : 0;
       const conservativePenalty = exercise.conservativeTopSet ? 1 : 0;
-      return sum + Math.max(0, remaining) - sorenessPenalty - fatiguePenalty - replacementPenalty - conservativePenalty;
+      const healthRecoveryPenalty =
+        prescribed.readinessResult?.trainingAdjustment === 'recovery'
+          ? exercise.fatigueCost === 'high'
+            ? 4
+            : exercise.kind === 'compound'
+              ? 2
+              : 0
+          : prescribed.readinessResult?.trainingAdjustment === 'conservative' && exercise.fatigueCost === 'high'
+            ? 2
+            : 0;
+      return sum + Math.max(0, remaining) - sorenessPenalty - fatiguePenalty - replacementPenalty - conservativePenalty - healthRecoveryPenalty;
     }, 0);
 
     return { id: template.id, score };
   });
+};
+
+export const pickSuggestedTemplate = (data: Partial<AppData>, decisionContext: Partial<TrainingDecisionContext> = {}) => {
+  const context = buildTrainingDecisionContext(data, decisionContext);
+  const status = context.todayStatus || DEFAULT_STATUS;
+  if (Number(status.time) <= 30) return 'quick-30';
+
+  const screening = reconcileScreeningProfile(context.screeningProfile, context.history || []);
+  const deloadDecision = buildAdaptiveDeloadDecision({ ...data, history: context.history, todayStatus: status, trainingMode: context.trainingMode, screeningProfile: screening });
+  if (deloadDecision.autoSwitchTemplateId) return deloadDecision.autoSwitchTemplateId;
+
+  const scores = scoreSuggestedTemplates(data, context);
 
   const best = [...scores].sort((left, right) => right.score - left.score)[0];
   if (best?.score > 0) return best.id;
 
-  const lastTemplateId = data.history?.[0]?.templateId;
+  const lastTemplateId = context.history?.[0]?.templateId;
   if (lastTemplateId && TEMPLATE_ROTATION[lastTemplateId]) return TEMPLATE_ROTATION[lastTemplateId];
 
   const selected = typeof data.selectedTemplateId === 'string' ? data.selectedTemplateId : 'push-a';
-  return findTemplate(templates, selected)?.id || 'push-a';
+  return findTemplate(data.templates || [], selected)?.id || 'push-a';
 };

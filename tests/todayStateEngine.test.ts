@@ -63,6 +63,15 @@ describe('todayStateEngine', () => {
     expect(state.status).toBe('not_started');
   });
 
+  it('does not count an excluded session as completed today', () => {
+    const state = buildTodayTrainingState({
+      history: [session({ id: 'excluded-session', dataFlag: 'excluded' })],
+      currentLocalDate: '2026-04-27',
+    });
+
+    expect(state.status).toBe('not_started');
+  });
+
   it('uses local date keys for timestamp comparisons', () => {
     const state = buildTodayTrainingState({
       history: [

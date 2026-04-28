@@ -14,9 +14,9 @@ import { formatExplanationEvidence } from '../engines/explainability/evidenceExp
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../engines/e1rmEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
-import { buildHealthSummary } from '../engines/healthSummaryEngine';
 import { formatTrainingVolume, formatWeight } from '../engines/unitConversionEngine';
 import { buildTodayTrainingState } from '../engines/todayStateEngine';
+import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
@@ -58,24 +58,30 @@ export function TodayView({
   onViewSession,
   onViewCalendar,
 }: TodayViewProps) {
-  const useHealthDataForReadiness = data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false;
-  const hasImportedHealthData = Boolean((data.healthMetricSamples || []).length || (data.importedWorkoutSamples || []).length);
-  const healthSummary = React.useMemo(
-    () =>
-      useHealthDataForReadiness && hasImportedHealthData
-        ? buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || [], { endDate: new Date().toISOString() })
-        : undefined,
-    [data.healthMetricSamples, data.importedWorkoutSamples, useHealthDataForReadiness, hasImportedHealthData]
+  const decisionContext = React.useMemo(
+    () => buildTrainingDecisionContext(data, { trainingMode }),
+    [
+      data.todayStatus,
+      data.history,
+      data.activeSession,
+      data.healthMetricSamples,
+      data.importedWorkoutSamples,
+      data.settings?.healthIntegrationSettings?.useHealthDataForReadiness,
+      data.screeningProfile,
+      data.mesocyclePlan,
+      data.programTemplate,
+      trainingMode,
+    ]
   );
   const adjustedPlan = applyStatusRules(
     selectedTemplate,
-    data.todayStatus,
-    trainingMode,
+    decisionContext.todayStatus,
+    decisionContext.trainingMode,
     weeklyPrescription,
-    data.history,
-    data.screeningProfile,
-    data.mesocyclePlan,
-    { healthSummary, useHealthDataForReadiness }
+    decisionContext.history,
+    decisionContext.screeningProfile,
+    decisionContext.mesocyclePlan,
+    toStatusRulesDecisionContext(decisionContext)
   );
   const todayTrainingState = buildTodayTrainingState({
     activeSession: data.activeSession,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SCREENING_PROFILE } from '../src/data/trainingData';
+import type { HealthSummary } from '../src/engines/healthSummaryEngine';
 import { createSession } from '../src/engines/sessionBuilder';
 import { getTemplate, makeSession, makeStatus } from './fixtures';
 
@@ -61,5 +62,32 @@ describe('sessionBuilder', () => {
     expect(session.explanations?.length).toBeGreaterThan(0);
     expect(session.programTemplateId).toBe(template.id);
     expect(session.programTemplateName).toBeTruthy();
+  });
+
+  it('uses imported health summary consistently when creating a session', () => {
+    const template = getTemplate('push-a');
+    const healthSummary: HealthSummary = {
+      latestSleepHours: 5.5,
+      recentWorkoutCount: 0,
+      recentWorkoutMinutes: 0,
+      recentHighActivityDays: 0,
+      notes: ['导入健康数据仅作训练准备度辅助。'],
+      confidence: 'medium',
+    };
+    const baseline = createSession(template, makeStatus(), [], 'hybrid', null, null, DEFAULT_SCREENING_PROFILE, undefined, {
+      healthSummary,
+      useHealthDataForReadiness: false,
+    });
+    const withHealth = createSession(template, makeStatus(), [], 'hybrid', null, null, DEFAULT_SCREENING_PROFILE, undefined, {
+      healthSummary,
+      useHealthDataForReadiness: true,
+    });
+    const countSets = (sets: unknown) => (Array.isArray(sets) ? sets.length : Number(sets));
+    const baselineIsolationSets = baseline.exercises.find((exercise) => exercise.id === 'triceps-pushdown')?.sets;
+    const healthIsolationSets = withHealth.exercises.find((exercise) => exercise.id === 'triceps-pushdown')?.sets;
+
+    expect(countSets(healthIsolationSets)).toBeLessThanOrEqual(countSets(baselineIsolationSets));
+    expect(withHealth.explanations?.join(' ')).not.toContain('undefined');
+    expect(withHealth.explanations?.join(' ')).not.toContain('null');
   });
 });

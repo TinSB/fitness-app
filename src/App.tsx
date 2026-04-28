@@ -28,7 +28,7 @@ import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHis
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { applyExerciseReplacement, buildReplacementOptions } from './engines/replacementEngine';
-import { buildHealthSummary } from './engines/healthSummaryEngine';
+import { buildTrainingDecisionContext } from './engines/trainingDecisionContext';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
@@ -112,18 +112,15 @@ function App() {
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
   const selectedTemplate = findTemplate(data.templates, activeTemplateId);
   const weeklyPrescription = buildWeeklyPrescription(data);
-  const suggestedTemplateId = pickSuggestedTemplate(data);
+  const decisionContext = buildTrainingDecisionContext(data);
+  const suggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
 
   const startSession = (templateId = activeTemplateId) => {
     const template = findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
     const workingData = { ...data, screeningProfile };
-    const useHealthDataForReadiness = data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false;
-    const hasImportedHealthData = Boolean((data.healthMetricSamples || []).length || (data.importedWorkoutSamples || []).length);
-    const healthSummary = useHealthDataForReadiness && hasImportedHealthData
-      ? buildHealthSummary(data.healthMetricSamples || [], data.importedWorkoutSamples || [], { endDate: new Date().toISOString() })
-      : undefined;
+    const sessionDecisionContext = buildTrainingDecisionContext(workingData, { screeningProfile });
     const session = createSession(
       template,
       data.todayStatus,
@@ -133,7 +130,7 @@ function App() {
       undefined,
       screeningProfile,
       data.mesocyclePlan,
-      { healthSummary, useHealthDataForReadiness }
+      sessionDecisionContext
     ) as TrainingSession;
 
     setData((current) => ({
