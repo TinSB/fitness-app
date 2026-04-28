@@ -730,6 +730,19 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
       : { painExercises: [], performanceDrops: [], improvingIssues: [] },
     deloadDecision: sanitizeDeloadDecision(raw.deloadDecision),
     explanations: pickArray(raw.explanations).map(String),
+    editedAt: pickString(raw.editedAt) || undefined,
+    editHistory: pickArray(raw.editHistory)
+      .map((item) => {
+        const entry = pickRecord(item);
+        const editedAt = pickString(entry.editedAt);
+        if (!editedAt) return null;
+        return {
+          editedAt,
+          fields: pickArray(entry.fields).map(String).filter(Boolean),
+          note: pickString(entry.note) || undefined,
+        };
+      })
+      .filter(Boolean) as TrainingSession['editHistory'],
   } as TrainingSession;
 };
 
@@ -762,6 +775,8 @@ const sanitizeTemplates = (templates: unknown) => {
               alias: clean.alias,
               muscle: clean.muscle,
               alternatives: clean.alternatives,
+              alternativeIds: clean.alternativeIds,
+              alternativePriorities: clean.alternativePriorities,
             }
           : exerciseRaw;
       }),

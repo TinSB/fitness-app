@@ -14,7 +14,7 @@ interface AppShellProps<T extends string> {
 }
 
 export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, activeSession, auxiliary, immersive = false, children }: AppShellProps<T>) => (
-  <div className="h-screen w-full overflow-hidden bg-stone-100 font-sans text-slate-900">
+  <div className="h-dvh min-h-dvh w-full overflow-hidden bg-stone-100 font-sans text-slate-900">
     <div className="flex h-full w-full">
       <aside className={classNames('hidden w-[244px] shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white lg:flex', immersive && 'lg:hidden')}>
         <div className="border-b border-white/10 px-5 py-5">
@@ -61,7 +61,7 @@ export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, ac
       <main className="flex min-w-0 flex-1 flex-col bg-stone-50">
         <div
           className={classNames(
-            'flex min-h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] lg:hidden',
+            'flex h-[calc(48px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] lg:hidden',
             immersive && 'hidden',
           )}
         >

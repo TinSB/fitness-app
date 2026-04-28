@@ -11,8 +11,12 @@ import {
   formatConfidence,
   formatCyclePhase,
   formatExerciseName,
+  formatFatigueCost,
   formatGoal,
   formatIntensityBias,
+  formatReplacementCategory,
+  formatRomPriority,
+  formatSkillDemand,
   formatProgramTemplateName,
   formatSplitType,
 } from '../i18n/formatters';
@@ -34,6 +38,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { formatWeight } from '../engines/unitConversionEngine';
 
 interface PlanViewProps {
   data: AppData;
@@ -335,6 +340,24 @@ export function PlanView({
                   <PlanInput label="次数下限" type="number" value={exercise.repMin} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'repMin', value)} />
                   <PlanInput label="次数上限" type="number" value={exercise.repMax} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'repMax', value)} />
                   <PlanInput label="休息秒数" type="number" value={exercise.rest} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'rest', value)} />
+                </div>
+                <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600">
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <div>递增单位：{formatWeight(prescription.progressionUnitKg || enriched.progressionUnitKg || 1, data.unitSettings)}</div>
+                    <div>疲劳成本：{formatFatigueCost(prescription.fatigueCost)}</div>
+                    <div>技术需求：{formatSkillDemand(prescription.skillDemand)}</div>
+                    <div>幅度优先：{formatRomPriority(prescription.romPriority)}</div>
+                    <div>
+                      替代层级：
+                      {Object.values(prescription.alternativePriorities || {}).slice(0, 3).map(formatReplacementCategory).join(' / ') || '按动作链推断'}
+                    </div>
+                    <div>动作链：{prescription.equivalence?.label || '默认动作链'}</div>
+                  </div>
+                  {prescription.techniqueStandard ? (
+                    <div className="mt-2 rounded-md bg-stone-50 p-2">
+                      技术标准：{prescription.techniqueStandard.rom}；节奏 {prescription.techniqueStandard.tempo}；{prescription.techniqueStandard.stopRule}
+                    </div>
+                  ) : null}
                 </div>
               </details>
             );

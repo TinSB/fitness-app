@@ -13,6 +13,7 @@ import {
   todayKey,
 } from '../engines/engineUtils';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
+import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../engines/sessionEditEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import {
   formatDataFlag,
@@ -21,11 +22,12 @@ import {
   formatSkippedReason,
   formatTechniqueQuality,
 } from '../i18n/formatters';
-import { formatTrainingVolume, formatWeight } from '../engines/unitConversionEngine';
+import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import type {
   AppData,
   PersonalRecord,
   SessionDataFlag,
+  TechniqueQuality,
   TrainingSession,
   TrainingSetLog,
   UnitSettings,
@@ -53,6 +55,7 @@ export interface RecordViewProps {
   onSaveBodyWeight: () => void;
   onDeleteSession: (sessionId: string) => void;
   onMarkSessionDataFlag: (sessionId: string, dataFlag: SessionDataFlag) => void;
+  onEditSession?: (session: TrainingSession) => void;
   onUpdateUnitSettings: (updates: Partial<UnitSettings>) => void;
   onRestoreData: (data: AppData) => void;
   onApplyProgramAdjustmentDraft?: unknown;
@@ -68,7 +71,8 @@ type RecordSectionTarget = RecordSectionId | 'history' | 'dashboard';
 type PrSetFilter = 'all' | 'no_pain' | 'work_sets';
 type PendingRecordAction =
   | { type: 'delete'; sessionId: string }
-  | { type: 'flag'; sessionId: string; dataFlag: SessionDataFlag };
+  | { type: 'flag'; sessionId: string; dataFlag: SessionDataFlag }
+  | { type: 'edit'; session: TrainingSession };
 
 const recordSections: Array<{ id: RecordSectionId; label: string; mobileLabel: string }> = [
   { id: 'calendar', label: '日历', mobileLabel: '日历' },
@@ -175,6 +179,7 @@ export function RecordView({
   unitSettings,
   onDeleteSession,
   onMarkSessionDataFlag,
+  onEditSession,
   onStartTraining,
   initialSection,
   selectedSessionId,
@@ -184,6 +189,8 @@ export function RecordView({
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
   const [selectedDateKey, setSelectedDateKey] = React.useState(selectedDate || todayKey());
   const [selectedSession, setSelectedSession] = React.useState<TrainingSession | null>(null);
+  const [editDraft, setEditDraft] = React.useState<TrainingSession | null>(null);
+  const [editError, setEditError] = React.useState('');
   const [pendingAction, setPendingAction] = React.useState<PendingRecordAction | null>(null);
   const [selectedPrExerciseId, setSelectedPrExerciseId] = React.useState('');
   const [prSetFilter, setPrSetFilter] = React.useState<PrSetFilter>('all');
@@ -253,14 +260,45 @@ export function RecordView({
     setPendingAction({ type: 'flag', sessionId, dataFlag });
   };
 
+  const startEditingSession = (session: TrainingSession) => {
+    setEditDraft(JSON.parse(JSON.stringify(session)) as TrainingSession);
+    setEditError('');
+  };
+
+  const cancelEditingSession = () => {
+    setEditDraft(null);
+    setEditError('');
+  };
+
+  const updateDraftSet = (exerciseId: string, setId: string, patch: Parameters<typeof updateSessionSet>[3]) => {
+    setEditDraft((current) => (current ? updateSessionSet(current, exerciseId, setId, patch) : current));
+  };
+
+  const requestSaveEdit = () => {
+    if (!editDraft) return;
+    const validation = validateSessionEdit(editDraft);
+    if (!validation.valid) {
+      setEditError('修正内容包含无效数值，请检查重量、次数和 RIR。');
+      return;
+    }
+    setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, ['sets'], '历史训练详情修正') });
+  };
+
   const confirmPendingAction = () => {
     if (!pendingAction) return;
     if (pendingAction.type === 'delete') {
       onDeleteSession(pendingAction.sessionId);
       setSelectedSession(null);
-    } else {
+      setEditDraft(null);
+    } else if (pendingAction.type === 'flag') {
       onMarkSessionDataFlag(pendingAction.sessionId, pendingAction.dataFlag);
       setSelectedSession((current) => (current?.id === pendingAction.sessionId ? { ...current, dataFlag: pendingAction.dataFlag } : current));
+      setEditDraft((current) => (current?.id === pendingAction.sessionId ? { ...current, dataFlag: pendingAction.dataFlag } : current));
+    } else {
+      onEditSession?.(pendingAction.session);
+      setSelectedSession(pendingAction.session);
+      setEditDraft(null);
+      setEditError('');
     }
     setPendingAction(null);
   };
@@ -667,14 +705,93 @@ export function RecordView({
     );
   };
 
+  const renderSetEditor = (exerciseId: string, set: TrainingSetLog, index: number) => {
+    const setId = set.id || String(index);
+    const displayWeight = convertKgToDisplayWeight(set.actualWeightKg ?? set.weight, unitSettings.weightUnit);
+    return (
+      <div key={set.id || `${exerciseId}-${index}`} className="grid gap-2 rounded-lg bg-stone-50 p-3 text-sm md:grid-cols-[1fr_1fr_1fr_1fr]">
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold text-slate-500">重量（{unitSettings.weightUnit}）</span>
+          <input
+            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
+            inputMode="decimal"
+            value={displayWeight}
+            onChange={(event) =>
+              updateDraftSet(exerciseId, setId, {
+                weightKg: parseDisplayWeightToKg(event.target.value, unitSettings.weightUnit),
+                displayWeight: Math.max(0, number(event.target.value)),
+                displayUnit: unitSettings.weightUnit,
+              })
+            }
+          />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold text-slate-500">次数</span>
+          <input
+            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
+            inputMode="numeric"
+            value={set.reps}
+            onChange={(event) => updateDraftSet(exerciseId, setId, { reps: number(event.target.value) })}
+          />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold text-slate-500">RIR</span>
+          <input
+            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
+            inputMode="numeric"
+            value={set.rir ?? ''}
+            onChange={(event) => updateDraftSet(exerciseId, setId, { rir: event.target.value })}
+          />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold text-slate-500">动作质量</span>
+          <select
+            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
+            value={set.techniqueQuality || 'acceptable'}
+            onChange={(event) => updateDraftSet(exerciseId, setId, { techniqueQuality: event.target.value as TechniqueQuality })}
+          >
+            <option value="good">良好</option>
+            <option value="acceptable">可接受</option>
+            <option value="poor">较差</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 md:col-span-2">
+          <input
+            type="checkbox"
+            checked={Boolean(set.painFlag)}
+            onChange={(event) => updateDraftSet(exerciseId, setId, { painFlag: event.target.checked })}
+          />
+          <span className="text-sm font-semibold text-slate-700">本组有不适</span>
+        </label>
+        <label className="grid gap-1 md:col-span-2">
+          <span className="text-xs font-semibold text-slate-500">备注</span>
+          <input
+            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
+            value={set.note || ''}
+            onChange={(event) => updateDraftSet(exerciseId, setId, { note: event.target.value })}
+          />
+        </label>
+      </div>
+    );
+  };
+
   const renderSessionDrawer = () => {
-    const session = selectedSession;
+    const session = editDraft && selectedSession && editDraft.id === selectedSession.id ? editDraft : selectedSession;
     if (!session) return null;
+    const isEditing = Boolean(editDraft && selectedSession && editDraft.id === selectedSession.id);
     const notes = sessionNotes(session);
     const effective = buildEffectiveVolumeSummary([session]);
 
     return (
-      <Drawer open={Boolean(selectedSession)} title="训练详情" onClose={() => setSelectedSession(null)}>
+      <Drawer
+        open={Boolean(selectedSession)}
+        title={isEditing ? '修正记录' : '训练详情'}
+        onClose={() => {
+          setSelectedSession(null);
+          setEditDraft(null);
+          setEditError('');
+        }}
+      >
         <div className="space-y-4">
           <Card>
             <div className="flex flex-wrap items-center gap-2">
@@ -722,17 +839,21 @@ export function RecordView({
                       原计划：{formatExerciseName(exercise.originalExerciseId)} / 实际执行：{formatExerciseName(exercise.actualExerciseId)}
                     </div>
                   ) : null}
-                  <div className="space-y-1 text-xs font-semibold text-slate-600">
+                  <div className="space-y-2 text-xs font-semibold text-slate-600">
                     {sets.length ? (
-                      sets.map((set: TrainingSetLog, index: number) => (
-                        <div key={set.id || `${exercise.id}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
-                          {formatSetType(set.type)} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
-                          {set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}
-                          {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
-                          {set.painFlag ? ' / 有不适' : ''}
-                          {set.note ? ` / ${set.note}` : ''}
-                        </div>
-                      ))
+                      sets.map((set: TrainingSetLog, index: number) =>
+                        isEditing ? (
+                          renderSetEditor(exercise.actualExerciseId || exercise.replacementExerciseId || exercise.id, set, index)
+                        ) : (
+                          <div key={set.id || `${exercise.id}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
+                            {formatSetType(set.type)} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
+                            {set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}
+                            {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
+                            {set.painFlag ? ' / 有不适' : ''}
+                            {set.note ? ` / ${set.note}` : ''}
+                          </div>
+                        ),
+                      )
                     ) : (
                       <div className="rounded-md bg-stone-50 px-3 py-2 text-slate-500">没有组记录。</div>
                     )}
@@ -771,7 +892,22 @@ export function RecordView({
           </PageSection>
 
           <PageSection title="操作">
+            {editError ? <div className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{editError}</div> : null}
             <div className="grid gap-2 sm:grid-cols-4">
+              {isEditing ? (
+                <>
+                  <ActionButton variant="primary" onClick={requestSaveEdit}>
+                    保存修正
+                  </ActionButton>
+                  <ActionButton variant="secondary" onClick={cancelEditingSession}>
+                    取消编辑
+                  </ActionButton>
+                </>
+              ) : (
+                <ActionButton variant="secondary" onClick={() => startEditingSession(session)}>
+                  修正记录
+                </ActionButton>
+              )}
               <ActionButton variant="danger" onClick={() => setPendingAction({ type: 'delete', sessionId: session.id })}>
                 <Trash2 className="h-4 w-4" />
                 删除记录
@@ -799,7 +935,13 @@ export function RecordView({
           description: '删除后该训练不会计入记录、PR、e1RM、有效组、完成度和日历。此操作不可恢复，建议先导出全局备份。',
           confirmLabel: '删除',
         }
-      : pendingAction?.dataFlag === 'normal'
+      : pendingAction?.type === 'edit'
+        ? {
+            title: '保存历史修正？',
+            description: '修改历史记录后，PR、e1RM、有效组和统计会重新计算。',
+            confirmLabel: '保存修正',
+          }
+        : pendingAction?.dataFlag === 'normal'
         ? {
             title: '恢复为正常训练？',
             description: '恢复后该训练会重新参与统计、PR、e1RM、有效组和日历。',
@@ -839,7 +981,7 @@ export function RecordView({
             title={pendingActionCopy.title}
             description={pendingActionCopy.description}
             confirmLabel={pendingActionCopy.confirmLabel}
-            danger={pendingAction.type === 'delete' || pendingAction.dataFlag === 'excluded'}
+            danger={pendingAction.type === 'delete' || (pendingAction.type === 'flag' && pendingAction.dataFlag === 'excluded')}
             onCancel={() => setPendingAction(null)}
             onConfirm={confirmPendingAction}
           />

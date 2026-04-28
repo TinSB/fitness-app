@@ -13,6 +13,7 @@ describe('TrainingFocusView replacement UI', () => {
 
   it('keeps the replacement button touch-safe and accessible', () => {
     expect(source).toContain('type="button"');
+    expect(source).toContain('替代动作');
     expect(source).toContain('onClick={openReplacementPicker}');
     expect(source).toContain('onClose={() => setShowReplacementPicker(false)}');
   });

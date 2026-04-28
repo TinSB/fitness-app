@@ -11,6 +11,7 @@ import { clone } from './engineUtils';
 import type { ExercisePrescription, TrainingSession } from '../models/training-model';
 
 export type ReplacementRank = 'priority' | 'optional' | 'angle';
+type ReplacementPriorityValue = ReplacementRank | 'not_recommended' | 'avoid' | string;
 
 export interface ReplacementOption {
   id: string;
@@ -82,29 +83,41 @@ const optionFromId = (id: string, rank: ReplacementRank, reason: string): Replac
   };
 };
 
+const rankFromPriority = (value: ReplacementPriorityValue | undefined, fallback: ReplacementRank): ReplacementRank | null => {
+  if (value === 'not_recommended' || value === 'avoid') return null;
+  if (value === 'priority' || value === 'optional' || value === 'angle') return value;
+  return fallback;
+};
+
+const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRank) => {
+  if (sourceId === 'bench-press') {
+    if (id === 'db-bench-press') return '同为水平推，胸部刺激接近，器械占用时适合直接替代卧推。';
+    if (id === 'machine-chest-press') return '同为水平推，轨迹更稳定，适合在卧推架不可用或需要降低技术压力时替代。';
+    if (id === 'push-up') return '同为水平推，适合器械受限或短时训练，但负荷精度低于卧推。';
+    if (id === 'incline-db-press') return '同属胸部推举，但角度偏上胸，适合作为较低优先级替代。';
+  }
+  if (rank === 'angle') return '同属相近动作链，但角度或刺激重点不同，适合作为较低优先级替代。';
+  return '同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。';
+};
+
 export const buildReplacementOptions = (exercise: ExercisePrescription): ReplacementOption[] => {
   const sourceId = baseExerciseId(exercise);
   const identity = buildCurrentIdentitySet(exercise);
-
-  if (sourceId === 'bench-press') {
-    return [
-      optionFromId('db-bench-press', 'priority', '同为水平推，胸部刺激接近，器械占用时适合直接替代卧推。'),
-      optionFromId('machine-chest-press', 'priority', '同为水平推，轨迹更稳定，适合在卧推架不可用或需要降低技术压力时替代。'),
-      optionFromId('push-up', 'optional', '同为水平推，适合器械受限或短时训练，但负荷精度低于卧推。'),
-      optionFromId('incline-db-press', 'angle', '同属胸部推举，但角度偏上胸，适合作为较低优先级替代。'),
-    ].filter((option): option is ReplacementOption => option !== null && !isSelfOrAlias(option.id, identity));
-  }
-
   const metadata = EXERCISE_KNOWLEDGE_OVERRIDES[sourceId] || {};
   const chain = Object.values(EXERCISE_EQUIVALENCE_CHAINS).find((item) => item.id === metadata.equivalenceChainId || item.members.includes(sourceId));
-  const candidateIds = [
-    ...((metadata.regressionIds as string[] | undefined) || []),
-    ...((chain?.members || []).filter((id) => id !== sourceId)),
-    ...((metadata.progressionIds as string[] | undefined) || []),
-  ];
+  const explicitAlternativeIds = ((metadata.alternativeIds as string[] | undefined) || exercise.alternativeIds || []).filter(Boolean);
+  const priorityMap = ((metadata.alternativePriorities as Record<string, ReplacementPriorityValue> | undefined) || exercise.alternativePriorities || {}) as Record<string, ReplacementPriorityValue>;
+  const candidateIds = explicitAlternativeIds.length
+    ? explicitAlternativeIds
+    : [
+        ...((metadata.regressionIds as string[] | undefined) || []),
+        ...((chain?.members || []).filter((id) => id !== sourceId)),
+        ...((metadata.progressionIds as string[] | undefined) || []),
+      ];
   const seenNames = new Set<string>();
   const uniqueIds = Array.from(new Set(candidateIds)).filter((id) => {
     if (id === sourceId || forbiddenBenchReplacementIds.has(id) || isSelfOrAlias(id, identity)) return false;
+    if (priorityMap[id] === 'not_recommended' || priorityMap[id] === 'avoid') return false;
     const nameKey = normalizeName(canonicalIdForAliasFilter(id));
     if (seenNames.has(nameKey)) return false;
     seenNames.add(nameKey);
@@ -112,13 +125,10 @@ export const buildReplacementOptions = (exercise: ExercisePrescription): Replace
   });
 
   return uniqueIds
-    .map((id, index) =>
-      optionFromId(
-        id,
-        index <= 1 ? 'priority' : 'optional',
-        '同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。'
-      )
-    )
+    .map((id, index) => {
+      const rank = rankFromPriority(priorityMap[id], index <= 1 ? 'priority' : 'optional');
+      return rank ? optionFromId(id, rank, reasonForReplacement(sourceId, id, rank)) : null;
+    })
     .filter(Boolean) as ReplacementOption[];
 };
 

@@ -675,6 +675,13 @@ function App() {
     setData((current) => markSessionDataFlag(current, sessionId, dataFlag, confirmed).data);
   };
 
+  const editHistorySession = (session: TrainingSession) => {
+    setData((current) => ({
+      ...current,
+      history: (current.history || []).map((item) => (item.id === session.id ? session : item)),
+    }));
+  };
+
   const navigate = (tab: ActiveTab) => {
     setActiveTab(tab);
     if (tab === 'profile') setProfileSection('home');
@@ -836,6 +843,7 @@ function App() {
                       onSaveBodyWeight={saveBodyWeight}
                       onDeleteSession={deleteHistorySession}
                       onMarkSessionDataFlag={updateHistorySessionFlag}
+                      onEditSession={editHistorySession}
                       onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
                         setData(nextData);

@@ -132,6 +132,7 @@ export type SupportExerciseCategory = 'corrective' | 'functional' | 'mobility' |
 export type ExerciseKind = 'compound' | 'machine' | 'isolation';
 export type ExerciseFatigueCost = 'low' | 'medium' | 'high';
 export type ExerciseSkillDemand = 'low' | 'medium' | 'high';
+export type ExerciseReplacementPriority = 'priority' | 'optional' | 'angle' | 'not_recommended';
 export type SupportBlockType = 'correction' | 'functional';
 export type SupportSkipReason = 'time' | 'pain' | 'equipment' | 'forgot' | 'too_tired' | 'not_needed' | 'other';
 export type CyclePhase = 'base' | 'build' | 'overload' | 'deload';
@@ -303,6 +304,8 @@ export interface ExerciseMetadata {
   evidenceTags?: readonly string[];
   techniqueStandard?: TechniqueStandard;
   equivalence?: ExerciseEquivalenceChain;
+  alternativeIds?: string[];
+  alternativePriorities?: Record<string, ExerciseReplacementPriority | string>;
   regressionIds?: string[];
   progressionIds?: string[];
   contraindications?: string[];
@@ -599,6 +602,12 @@ export interface RestTimerState {
   label?: string;
 }
 
+export type SessionEditHistoryItem = {
+  editedAt: string;
+  fields: string[];
+  note?: string;
+};
+
 export interface TrainingSession {
   id: string;
   date: string;
@@ -636,6 +645,8 @@ export interface TrainingSession {
   focusWarmupSetLogs?: TrainingSetLog[];
   deloadDecision?: DeloadDecision;
   explanations?: string[];
+  editedAt?: string;
+  editHistory?: SessionEditHistoryItem[];
 }
 
 export interface WeeklyMuscleBudget {

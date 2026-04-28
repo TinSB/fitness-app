@@ -1,5 +1,10 @@
 import type { TrainingTemplate } from '../models/training-model';
+import { STORAGE_VERSION } from './appConfig';
 import { makeExercise } from './exerciseLibrary';
+
+// 默认模板与 AppData schema 使用同一个 active storage version。旧版本模板只通过 persistence migration 读取，
+// UI 和 sessionBuilder 运行时只消费这里导出的 INITIAL_TEMPLATES。
+export const ACTIVE_DEFAULT_TEMPLATE_SCHEMA_VERSION = STORAGE_VERSION;
 
 export const INITIAL_TEMPLATES: TrainingTemplate[] = [
   {

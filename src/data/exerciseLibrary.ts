@@ -1,4 +1,4 @@
-import type { ExerciseEquivalenceChain, ExerciseTemplate } from '../models/training-model';
+import type { ExerciseEquivalenceChain, ExerciseReplacementPriority, ExerciseTemplate } from '../models/training-model';
 
 export type ExerciseName = {
   zh: string;
@@ -83,6 +83,31 @@ export const EXERCISE_ALIASES: Record<string, string[]> = {
   'db-bench-press': ['平板哑铃卧推', 'Dumbbell Bench Press'],
   'machine-chest-press': ['胸推机', '坐姿胸推机', 'Machine Chest Press'],
   'incline-db-press': ['上斜哑铃推胸', 'Incline Dumbbell Press'],
+  'cable-fly': ['夹胸', '蝴蝶机夹胸', 'Cable Fly'],
+  'lateral-raise': ['侧平举', '绳索侧平举', 'Dumbbell Lateral Raise'],
+  'triceps-pushdown': ['三头下压', '下压', '绳索过顶臂屈伸', 'Triceps Pushdown'],
+  'close-grip-bench': ['窄握卧推', 'Close-Grip Bench Press'],
+  'lat-pulldown': ['下拉', '高位下拉', 'Lat Pulldown'],
+  'pull-up': ['引体向上', 'Pull-Up'],
+  'assisted-pull-up': ['辅助引体向上', 'Assisted Pull-Up'],
+  'seated-row': ['划船机', '坐姿划船', 'Seated Row'],
+  'barbell-row': ['杠铃划船', 'Barbell Row'],
+  'one-arm-db-row': ['单臂哑铃划船', '单臂划船', 'One-Arm Dumbbell Row'],
+  'face-pull': ['面拉', '反向飞鸟', 'Face Pull'],
+  'db-curl': ['二头弯举', '弯举', '哑铃弯举', 'Dumbbell Curl'],
+  'hammer-curl': ['锤式弯举', '绳索锤式弯举', 'Hammer Curl'],
+  'preacher-curl': ['牧师凳弯举', 'Preacher Curl'],
+  squat: ['深蹲', 'Back Squat'],
+  'hack-squat': ['哈克深蹲', 'Hack Squat'],
+  'goblet-squat': ['杯式深蹲', 'Goblet Squat'],
+  'leg-press': ['腿举', '高脚位腿举', 'Leg Press'],
+  'romanian-deadlift': ['RDL', '罗马尼亚硬拉', 'Romanian Deadlift'],
+  'db-rdl': ['哑铃 RDL', '哑铃罗马尼亚硬拉', 'Dumbbell Romanian Deadlift'],
+  'leg-curl': ['腿弯举', '北欧腿弯举', 'Leg Curl'],
+  'calf-raise': ['提踵', '坐姿提踵', 'Calf Raise'],
+  'shoulder-press': ['肩推', '哑铃肩推', 'Dumbbell Shoulder Press'],
+  'machine-shoulder-press': ['器械肩推', 'Machine Shoulder Press'],
+  'landmine-press': ['地雷管推举', 'Landmine Press'],
 };
 
 const hasChineseText = (value: unknown): value is string => typeof value === 'string' && /[\u3400-\u9fff]/.test(value);
@@ -149,6 +174,44 @@ export const formatExerciseDisplayName = (
   return fallback;
 };
 
+const normalizeExerciseReference = (value: unknown) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[（(].*?[)）]/g, '')
+    .replace(/[\s_\-·,，。:：;；/\\|]+/g, '');
+
+export const resolveExerciseReferenceToId = (value: unknown): string | undefined => {
+  const raw = String(value || '').trim();
+  if (!raw) return undefined;
+  if (EXERCISE_DISPLAY_NAMES[raw] || EXERCISE_ENGLISH_NAMES[raw] || EXERCISE_KNOWLEDGE_OVERRIDES[raw]) return raw;
+  const normalized = normalizeExerciseReference(raw);
+  for (const [id, label] of Object.entries(EXERCISE_DISPLAY_NAMES)) {
+    if (normalizeExerciseReference(id) === normalized || normalizeExerciseReference(label) === normalized) return id;
+  }
+  for (const [id, label] of Object.entries(EXERCISE_ENGLISH_NAMES)) {
+    if (normalizeExerciseReference(label) === normalized) return id;
+  }
+  for (const [id, aliases] of Object.entries(EXERCISE_ALIASES)) {
+    if (aliases.some((alias) => normalizeExerciseReference(alias) === normalized)) return id;
+  }
+  return undefined;
+};
+
+export const mapLegacyAlternativeLabelsToIds = (alternatives: string[] = []) => {
+  const warnings: string[] = [];
+  const ids: string[] = [];
+  alternatives.forEach((label) => {
+    const id = resolveExerciseReferenceToId(label);
+    if (id) {
+      if (!ids.includes(id)) ids.push(id);
+      return;
+    }
+    warnings.push(`替代动作「${label}」无法映射到动作库 ID，已从可选替代列表跳过。`);
+  });
+  return { ids, warnings };
+};
+
 const chain = (id: string, label: string, primaryMuscle: string, pattern: string, members: string[]): ExerciseEquivalenceChain => ({
   id,
   label,
@@ -195,6 +258,17 @@ export const EXERCISE_KNOWLEDGE_OVERRIDES: Record<string, Record<string, unknown
     goalBias: ['力量', '肌肥大'],
     romPriority: 'high',
     equivalenceChainId: 'horizontal-press',
+    alternativeIds: ['db-bench-press', 'machine-chest-press', 'push-up', 'incline-db-press'],
+    alternativePriorities: {
+      'db-bench-press': 'priority',
+      'machine-chest-press': 'priority',
+      'push-up': 'optional',
+      'incline-db-press': 'angle',
+      'cable-fly': 'not_recommended',
+      'triceps-pushdown': 'not_recommended',
+      'shoulder-press': 'not_recommended',
+      'machine-shoulder-press': 'not_recommended',
+    },
     regressionIds: ['machine-chest-press', 'db-bench-press'],
     progressionIds: ['close-grip-bench'],
     contraindications: ['upper_crossed', 'scapular_control', 'breathing_ribcage'],
@@ -207,6 +281,11 @@ export const EXERCISE_KNOWLEDGE_OVERRIDES: Record<string, Record<string, unknown
     fatigueCost: 'medium',
     skillDemand: 'medium',
     orderPriority: 2,
+    alternativeIds: ['machine-chest-press', 'db-bench-press'],
+    alternativePriorities: {
+      'machine-chest-press': 'priority',
+      'db-bench-press': 'angle',
+    },
     progressionIds: ['bench-press'],
     contraindications: ['upper_crossed', 'scapular_control'],
   },
@@ -219,6 +298,12 @@ export const EXERCISE_KNOWLEDGE_OVERRIDES: Record<string, Record<string, unknown
     skillDemand: 'low',
     orderPriority: 3,
     equivalenceChainId: 'horizontal-press',
+    alternativeIds: ['db-bench-press', 'bench-press', 'push-up'],
+    alternativePriorities: {
+      'db-bench-press': 'priority',
+      'bench-press': 'optional',
+      'push-up': 'optional',
+    },
     progressionIds: ['db-bench-press', 'bench-press'],
     contraindications: ['upper_crossed', 'scapular_control'],
   },
@@ -443,6 +528,7 @@ export const EXERCISE_KNOWLEDGE_OVERRIDES: Record<string, Record<string, unknown
     movementPattern: '肘屈',
     primaryMuscles: ['手臂'],
     secondaryMuscles: [],
+    muscleContribution: { 手臂: 1 },
     fatigueCost: 'low',
     skillDemand: 'low',
     orderPriority: 7,
@@ -457,6 +543,13 @@ export const EXERCISE_KNOWLEDGE_OVERRIDES: Record<string, Record<string, unknown
     skillDemand: 'medium',
     orderPriority: 2,
     equivalenceChainId: 'horizontal-press',
+    alternativeIds: ['machine-chest-press', 'bench-press', 'push-up', 'incline-db-press'],
+    alternativePriorities: {
+      'machine-chest-press': 'priority',
+      'bench-press': 'optional',
+      'push-up': 'optional',
+      'incline-db-press': 'angle',
+    },
     regressionIds: ['machine-chest-press'],
     progressionIds: ['bench-press'],
     contraindications: ['upper_crossed', 'scapular_control'],
@@ -580,6 +673,11 @@ export function makeExercise(
   startWeight: number,
   alternatives: string[] = []
 ): ExerciseTemplate {
+  const override = EXERCISE_KNOWLEDGE_OVERRIDES[id] || {};
+  const legacyAlternativeIds = mapLegacyAlternativeLabelsToIds(alternatives).ids;
+  const overrideAlternativeIds = Array.isArray(override.alternativeIds) ? (override.alternativeIds as string[]) : [];
+  const alternativeIds = Array.from(new Set([...overrideAlternativeIds, ...legacyAlternativeIds])).filter((candidateId) => candidateId !== id);
+  const alternativePriorities = override.alternativePriorities as Record<string, ExerciseReplacementPriority | string> | undefined;
   return {
     id,
     name,
@@ -592,5 +690,7 @@ export function makeExercise(
     rest,
     startWeight,
     alternatives,
+    alternativeIds,
+    alternativePriorities,
   };
 }

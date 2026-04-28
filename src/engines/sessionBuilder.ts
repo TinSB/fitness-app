@@ -30,6 +30,30 @@ const TEMPLATE_ROTATION: Record<string, string> = {
   'lower-b': 'upper-a',
 };
 
+const isAnalyticsSession = (session: TrainingSession) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded';
+
+const sessionSortKey = (session: TrainingSession) => session.finishedAt || session.startedAt || session.date || '';
+
+export const getLatestCompletedSession = (history: TrainingSession[] = []) =>
+  [...history]
+    .filter((session) => isAnalyticsSession(session) && session.completed !== false)
+    .sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)))[0];
+
+export const getNextTemplateAfterLastCompletedSession = (
+  history: TrainingSession[] = [],
+  templates: TrainingTemplate[] = [],
+): string | null => {
+  const latest = getLatestCompletedSession(history);
+  const latestTemplateId = latest?.templateId;
+  if (!latestTemplateId) return null;
+  const rotatedId = TEMPLATE_ROTATION[latestTemplateId];
+  if (rotatedId && findTemplate(templates, rotatedId)) return rotatedId;
+  const templateIds = templates.map((template) => template.id);
+  const latestIndex = templateIds.indexOf(latestTemplateId);
+  if (latestIndex >= 0 && templateIds.length > 1) return templateIds[(latestIndex + 1) % templateIds.length];
+  return null;
+};
+
 const buildSessionExerciseSetLogs = (
   exercise: ExercisePrescription,
   history: TrainingSession[],
@@ -286,13 +310,18 @@ export const pickSuggestedTemplate = (data: Partial<AppData>, decisionContext: P
   if (deloadDecision.autoSwitchTemplateId) return deloadDecision.autoSwitchTemplateId;
 
   const scores = scoreSuggestedTemplates(data, context);
+  const templates = data.templates || [];
+  const latestCompleted = getLatestCompletedSession(context.history || []);
+  const nextAfterCompleted = getNextTemplateAfterLastCompletedSession(context.history || [], templates);
 
   const best = [...scores].sort((left, right) => right.score - left.score)[0];
-  if (best?.score > 0) return best.id;
+  if (best?.score > 0) {
+    if (latestCompleted?.templateId && best.id === latestCompleted.templateId && nextAfterCompleted) return nextAfterCompleted;
+    return best.id;
+  }
 
-  const lastTemplateId = context.history?.[0]?.templateId;
-  if (lastTemplateId && TEMPLATE_ROTATION[lastTemplateId]) return TEMPLATE_ROTATION[lastTemplateId];
+  if (nextAfterCompleted) return nextAfterCompleted;
 
   const selected = typeof data.selectedTemplateId === 'string' ? data.selectedTemplateId : 'push-a';
-  return findTemplate(data.templates || [], selected)?.id || 'push-a';
+  return findTemplate(templates, selected)?.id || 'push-a';
 };

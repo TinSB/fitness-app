@@ -99,6 +99,27 @@ export const formatFatigueCost = (value: unknown) =>
     } as const
   )[value as string] ?? fallback(value);
 
+export const formatSkillDemand = (value: unknown) =>
+  (
+    {
+      low: '低',
+      medium: '中等',
+      high: '高',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatRomPriority = (value: unknown) =>
+  (
+    {
+      low: '幅度优先级低',
+      medium: '幅度优先级中等',
+      high: '幅度优先级高',
+    } as const
+  )[value as string] ?? fallback(value);
+
+export const formatBooleanStatus = (value: unknown, labels: { yes: string; no: string } = { yes: '是', no: '否' }) =>
+  value === true ? labels.yes : value === false ? labels.no : fallback(value);
+
 export const formatPriority = (value: unknown) =>
   (
     {
@@ -118,6 +139,8 @@ export const formatReplacementCategory = (value: unknown) =>
       priority: '优先',
       optional: '可选',
       angle: '角度变化',
+      not_recommended: '不推荐',
+      avoid: '不推荐',
     } as const
   )[value as string] ?? fallback(value);
 

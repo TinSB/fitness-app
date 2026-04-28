@@ -65,14 +65,21 @@ export const formatTimer = (seconds: number) => {
 export const classNames = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
 
 const isTrainingSetLog = (value: unknown): value is TrainingSetLog =>
-  typeof value === 'object' && value !== null && 'weight' in value && 'reps' in value;
+  typeof value === 'object' && value !== null && ('weight' in value || 'actualWeightKg' in value) && 'reps' in value;
+
+export const setWeightKg = (set: Pick<TrainingSetLog, 'weight'> & Partial<Pick<TrainingSetLog, 'actualWeightKg'>>) =>
+  number(set.actualWeightKg ?? set.weight);
 
 export const completedSets = (exercise: Pick<ExercisePrescription, 'sets'> | { sets?: TrainingSetLog[] | number }): TrainingSetLog[] => {
   if (!Array.isArray(exercise?.sets)) return [];
-  return exercise.sets.filter((set): set is TrainingSetLog => isTrainingSetLog(set) && Boolean(set.done) && number(set.weight) > 0 && number(set.reps) > 0);
+  return exercise.sets.filter(
+    (set): set is TrainingSetLog =>
+      isTrainingSetLog(set) && set.done !== false && setWeightKg(set) > 0 && number(set.reps) > 0,
+  );
 };
 
-export const setVolume = (set: Pick<TrainingSetLog, 'weight' | 'reps'>) => number(set.weight) * number(set.reps);
+export const setVolume = (set: Pick<TrainingSetLog, 'weight' | 'reps'> & Partial<Pick<TrainingSetLog, 'actualWeightKg'>>) =>
+  setWeightKg(set) * number(set.reps);
 
 export const exerciseVolume = (exercise: Pick<ExercisePrescription, 'sets'> | { sets?: TrainingSetLog[] | number }) =>
   completedSets(exercise).reduce((sum, set) => sum + setVolume(set), 0);
@@ -105,7 +112,12 @@ export function buildExerciseMetadata(exercise: ExerciseLike): ExerciseMetadata 
   const bigMuscle = ['胸', '背', '腿'].includes(exercise.muscle);
   const compound = exercise.kind === 'compound' || exercise.kind === 'machine';
   const fatigueCost = (override.fatigueCost as ExerciseMetadata['fatigueCost']) || (compound ? 'medium' : 'low');
-  const progressionUnitKg = exercise.startWeight >= 40 || bigMuscle ? 2.5 : 1;
+  const parsedProgressionUnit = Number(String((override.progressionUnit || exercise.progressionUnit || '') as string).replace(/[^0-9.]/g, ''));
+  const progressionUnitKg =
+    number(override.progressionUnitKg) ||
+    number(exercise.progressionUnitKg) ||
+    (Number.isFinite(parsedProgressionUnit) && parsedProgressionUnit > 0 ? parsedProgressionUnit : 0) ||
+    (exercise.startWeight >= 40 || bigMuscle ? 2.5 : 1);
   const progressionPercent: [number, number] = bigMuscle ? [5, 10] : [2, 5];
   const defaultLoadRange = compound ? '约 65%-85% 1RM' : '约 50%-75% 1RM';
 
@@ -136,7 +148,12 @@ export function buildExerciseMetadata(exercise: ExerciseLike): ExerciseMetadata 
         primaryMuscle: exercise.muscle,
         pattern: (override.movementPattern as string | undefined) || exercise.muscle,
         members: [exercise.id],
-      },
+    },
+    alternativeIds: (override.alternativeIds as string[] | undefined) || exercise.alternativeIds || [],
+    alternativePriorities:
+      (override.alternativePriorities as Record<string, string> | undefined) ||
+      exercise.alternativePriorities ||
+      {},
     regressionIds: (override.regressionIds as string[] | undefined) || [],
     progressionIds: (override.progressionIds as string[] | undefined) || [],
     contraindications: (override.contraindications as string[] | undefined) || [],

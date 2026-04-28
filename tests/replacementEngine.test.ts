@@ -38,6 +38,9 @@ describe('replacementEngine', () => {
     expect(ids).toContain('machine-chest-press');
     expect(ids).toContain('push-up');
     expect(ids).toContain('incline-db-press');
+    expect(options.filter((option) => option.rank === 'priority').map((option) => option.id)).toEqual(
+      expect.arrayContaining(['db-bench-press', 'machine-chest-press'])
+    );
   });
 
   it('does not suggest incorrect bench replacements', () => {
@@ -48,6 +51,18 @@ describe('replacementEngine', () => {
     expect(ids).not.toContain('shoulder-press');
     expect(ids).not.toContain('machine-shoulder-press');
     expect(ids).not.toContain('cable-fly');
+  });
+
+  it('uses alternativeIds instead of legacy display names when present', () => {
+    const options = buildReplacementOptions({
+      ...benchExercise,
+      alternatives: ['绳索下压', '器械推胸'],
+      alternativeIds: ['db-bench-press', 'machine-chest-press'],
+    });
+    const ids = options.map((option) => option.id);
+
+    expect(ids).toEqual(expect.arrayContaining(['db-bench-press', 'machine-chest-press']));
+    expect(ids).not.toContain('triceps-pushdown');
   });
 
   it('records original and actual exercise separately after replacement', () => {
