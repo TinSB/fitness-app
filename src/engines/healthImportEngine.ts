@@ -15,6 +15,22 @@ type HealthImportResult = {
   summary?: ReturnType<typeof parseAppleHealthXml>['summary'];
 };
 
+export type HealthImportFileKind = 'xml' | 'json' | 'csv' | 'unknown';
+
+export type HealthImportFileValidation = {
+  allowed: boolean;
+  kind: HealthImportFileKind;
+  severity: 'ok' | 'warning' | 'blocked';
+  message?: string;
+  requiresConfirmation?: boolean;
+  limitBytes?: number;
+  mobile: boolean;
+};
+
+const MB = 1024 * 1024;
+export const XML_IMPORT_MOBILE_HARD_LIMIT_BYTES = 20 * MB;
+export const XML_IMPORT_DESKTOP_WARNING_BYTES = 50 * MB;
+
 const HEALTH_METRIC_TYPES: HealthMetricType[] = [
   'sleep_duration',
   'resting_heart_rate',
@@ -30,6 +46,61 @@ const HEALTH_METRIC_TYPES: HealthMetricType[] = [
 ];
 
 const SOURCE_VALUES: HealthDataSource[] = ['apple_health_export', 'apple_watch_workout', 'third_party_csv', 'manual_import', 'unknown'];
+
+export const isLikelyMobileDevice = (
+  userAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent,
+  maxTouchPoints = typeof navigator === 'undefined' ? 0 : navigator.maxTouchPoints
+) => {
+  const agent = String(userAgent || '').toLowerCase();
+  return /iphone|ipad|ipod|android|mobile/.test(agent) || (maxTouchPoints > 1 && /macintosh/.test(agent));
+};
+
+export const getXmlImportSizeLimit = (mobile = isLikelyMobileDevice()) =>
+  mobile ? XML_IMPORT_MOBILE_HARD_LIMIT_BYTES : XML_IMPORT_DESKTOP_WARNING_BYTES;
+
+const getHealthImportFileKind = (file: Pick<File, 'name' | 'type'>): HealthImportFileKind => {
+  const name = String(file.name || '').toLowerCase();
+  const type = String(file.type || '').toLowerCase();
+  if (name.endsWith('.xml') || type.includes('xml')) return 'xml';
+  if (name.endsWith('.json') || type.includes('json')) return 'json';
+  if (name.endsWith('.csv') || type.includes('csv')) return 'csv';
+  return 'unknown';
+};
+
+export const validateHealthImportFileBeforeParse = (
+  file: Pick<File, 'name' | 'size' | 'type'>,
+  options: { isMobile?: boolean; force?: boolean } = {}
+): HealthImportFileValidation => {
+  const mobile = options.isMobile ?? isLikelyMobileDevice();
+  const kind = getHealthImportFileKind(file);
+  if (kind !== 'xml') return { allowed: true, kind, severity: 'ok', mobile };
+
+  const limitBytes = getXmlImportSizeLimit(mobile);
+  if (mobile && file.size > limitBytes) {
+    return {
+      allowed: false,
+      kind,
+      severity: 'blocked',
+      limitBytes,
+      mobile,
+      message: '文件过大，手机端可能白屏或卡死。请选择较小的 XML、CSV/JSON，或在电脑端导入。',
+    };
+  }
+
+  if (!mobile && file.size > limitBytes && !options.force) {
+    return {
+      allowed: true,
+      kind,
+      severity: 'warning',
+      requiresConfirmation: true,
+      limitBytes,
+      mobile,
+      message: '这个 Apple Health XML 文件较大，解析可能耗时较长。建议先导入最近 30–90 天数据，或确认后继续。',
+    };
+  }
+
+  return { allowed: true, kind, severity: 'ok', limitBytes, mobile };
+};
 
 const normalizeKey = (value: string) => value.trim().toLowerCase().replace(/[\s_-]+/g, '');
 
@@ -259,7 +330,29 @@ export const parseHealthImportFile = (fileText: string, fileName = 'health-impor
   const fallbackSource: HealthDataSource = fileName.toLowerCase().endsWith('.csv') ? 'third_party_csv' : 'unknown';
 
   if (trimmed && (fileName.toLowerCase().endsWith('.xml') || trimmed.includes('<HealthData'))) {
-    return parseAppleHealthXml(fileText, fileName, options);
+    try {
+      return parseAppleHealthXml(fileText, fileName, options);
+    } catch (error) {
+      console.error('Apple Health XML parse failed.', error);
+      warnings.push('Apple Health XML 解析失败，当前数据没有被导入或覆盖。');
+      const batch: HealthImportBatch = {
+        id: batchId,
+        importedAt,
+        source: 'apple_health_export',
+        fileName,
+        sampleCount: 0,
+        workoutCount: 0,
+        newSampleCount: 0,
+        duplicateSampleCount: 0,
+        skippedSampleCount: 0,
+        newWorkoutCount: 0,
+        duplicateWorkoutCount: 0,
+        skippedWorkoutCount: 0,
+        notes: warnings,
+        dataFlag: 'normal',
+      };
+      return { samples: [], workouts: [], batch, warnings };
+    }
   }
 
   if (!trimmed) {

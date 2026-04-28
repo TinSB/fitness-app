@@ -50,6 +50,23 @@ const parseAttrs = (text: string): XmlAttrs => {
   return attrs;
 };
 
+const XML_RAW_ATTR_ALLOW_LIST = new Set([
+  'type',
+  'sourceName',
+  'unit',
+  'startDate',
+  'endDate',
+  'value',
+  'workoutActivityType',
+  'duration',
+  'durationUnit',
+]);
+
+const sanitizeXmlRawAttrs = (attrs: XmlAttrs) =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key, value]) => XML_RAW_ATTR_ALLOW_LIST.has(key) && value.length < 500)
+  );
+
 const toNumber = (value?: string) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -263,7 +280,11 @@ export const aggregateSleepSamplesByWakeDate = (
         importedAt,
         batchId,
         dataFlag: 'normal' as const,
-        raw: { day: wakeDate, segments: ordered.map((item) => item.raw) },
+        raw: {
+          day: wakeDate,
+          segmentCount: ordered.length,
+          segments: ordered.slice(0, 24).map((item) => item.raw),
+        },
       };
     })
     .filter(Boolean) as HealthMetricSample[];
@@ -278,8 +299,19 @@ export const parseAppleHealthXml = (
   const batchId = `batch-${hashText(`${fileName}:${importedAt}:xml`)}`;
   const warnings: string[] = [];
   const trimmed = String(xmlText || '').trim();
-  if (!trimmed || !trimmed.includes('<HealthData')) {
+  if (!trimmed || !/<HealthData\b/.test(trimmed)) {
     warnings.push('文件不是有效的 Apple Health export.xml，未导入任何数据。');
+    const batch = buildBatch(batchId, fileName, importedAt, [], [], warnings);
+    return {
+      samples: [],
+      workouts: [],
+      batch,
+      warnings,
+      summary: { detectedRecordCount: 0, importedSampleCount: 0, importedWorkoutCount: 0, metricTypes: [] },
+    };
+  }
+  if (/<parsererror\b/i.test(trimmed) || (!/<\/HealthData\s*>/.test(trimmed) && !/<HealthData\b[^>]*\/>/.test(trimmed))) {
+    warnings.push('Apple Health XML 结构不完整或无法解析，未导入任何数据。');
     const batch = buildBatch(batchId, fileName, importedAt, [], [], warnings);
     return {
       samples: [],
@@ -325,7 +357,7 @@ export const parseAppleHealthXml = (
       }
       const key = `${startDate}:${endDate}:${attrs.value}`;
       if (!sleepSegments.some((item) => item.key === key)) {
-        sleepSegments.push({ startDate, endDate, wakeDateKey: appleHealthDateKey(attrs.endDate), key, raw: attrs });
+        sleepSegments.push({ startDate, endDate, wakeDateKey: appleHealthDateKey(attrs.endDate), key, raw: sanitizeXmlRawAttrs(attrs) });
       }
       return;
     }
@@ -353,7 +385,7 @@ export const parseAppleHealthXml = (
       importedAt,
       batchId,
       dataFlag: 'normal',
-      raw: attrs,
+      raw: sanitizeXmlRawAttrs(attrs),
     });
   });
 
@@ -396,13 +428,16 @@ export const parseAppleHealthXml = (
         importedAt,
         batchId,
         dataFlag: 'normal',
-        raw: { ...attrs, statistics: stats },
+        raw: { ...sanitizeXmlRawAttrs(attrs), statistics: stats },
       });
     });
   }
 
   if (unsupportedTypes.size) {
     warnings.push(`已跳过未支持的 Apple Health 类型：${[...unsupportedTypes].slice(0, 8).join(', ')}。`);
+  }
+  if (!samples.length && !workouts.length && !warnings.length) {
+    warnings.push('没有找到当前支持的 Apple Health 指标，未导入任何数据。');
   }
 
   const metricTypes = [...new Set([...samples.map((sample) => sample.metricType), ...(workouts.length ? ['workout'] : [])])].sort();

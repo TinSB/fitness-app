@@ -104,4 +104,46 @@ describe('appleHealthXmlImportEngine', () => {
     expect(result.workouts).toEqual([]);
     expect(result.warnings[0]).toContain('不是有效的 Apple Health');
   });
+
+  it('handles malformed Apple Health XML without continuing into partial data', () => {
+    const result = parseAppleHealthXml(
+      '<?xml version="1.0"?><HealthData><Record type="HKQuantityTypeIdentifierStepCount" startDate="2026-04-20 10:00:00 +0000" value="1000"/>',
+      'export.xml',
+    );
+
+    expect(result.samples).toEqual([]);
+    expect(result.workouts).toEqual([]);
+    expect(result.warnings.join(' ')).toContain('结构不完整');
+  });
+
+  it('handles parsererror XML as a warning instead of throwing', () => {
+    const result = parseAppleHealthXml('<?xml version="1.0"?><HealthData><parsererror>bad xml</parsererror></HealthData>', 'export.xml');
+
+    expect(result.samples).toEqual([]);
+    expect(result.workouts).toEqual([]);
+    expect(result.warnings.join(' ')).toContain('无法解析');
+  });
+
+  it('handles supported root with no supported data', () => {
+    const result = parseAppleHealthXml('<?xml version="1.0"?><HealthData><Record type="HKQuantityTypeIdentifierUnknown" value="1"/></HealthData>', 'export.xml');
+
+    expect(result.samples).toEqual([]);
+    expect(result.workouts).toEqual([]);
+    expect(result.warnings.join(' ')).toContain('未支持');
+  });
+
+  it('does not store full XML text or oversized attributes in raw data', () => {
+    const result = parseAppleHealthXml(
+      `<?xml version="1.0"?><HealthData>
+        <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" startDate="2026-04-20 10:00:00 +0000" endDate="2026-04-20 10:30:00 +0000" value="3200" xmlText="${'x'.repeat(2000)}" metadata="${'y'.repeat(2000)}"/>
+      </HealthData>`,
+      'export.xml',
+    );
+    const rawText = JSON.stringify(result.samples[0]?.raw || {});
+
+    expect(rawText).not.toContain('xmlText');
+    expect(rawText).not.toContain('metadata');
+    expect(rawText.length).toBeLessThan(1000);
+    expect(JSON.stringify(result.batch)).not.toContain('<HealthData');
+  });
 });

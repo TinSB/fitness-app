@@ -211,6 +211,12 @@ describe('persistence', () => {
           batchId: 'batch-1',
           sourceName: 'Apple Watch',
           deviceSourceName: 'Apple Watch',
+          raw: {
+            sourceName: 'Apple Watch',
+            xmlText: '<HealthData>large raw xml</HealthData>',
+            nested: { fileText: '<HealthData>nested raw xml</HealthData>', value: 'kept' },
+            longText: 'x'.repeat(800),
+          },
         },
       ],
       importedWorkoutSamples: [
@@ -225,6 +231,10 @@ describe('persistence', () => {
           batchId: 'batch-1',
           sourceName: 'Apple Watch',
           deviceSourceName: 'Apple Watch',
+          raw: {
+            workoutActivityType: 'HKWorkoutActivityTypeRunning',
+            rawXml: '<Workout />',
+          },
         },
       ],
       healthImportBatches: [
@@ -258,6 +268,16 @@ describe('persistence', () => {
     expect(sanitized.healthMetricSamples?.[0]?.batchId).toBe('batch-1');
     expect(sanitized.healthMetricSamples?.[0]?.deviceSourceName).toBe('Apple Watch');
     expect(sanitized.healthImportBatches?.[0]?.duplicateSampleCount).toBe(0);
+    const persistedHealthText = JSON.stringify({
+      samples: sanitized.healthMetricSamples,
+      workouts: sanitized.importedWorkoutSamples,
+      batches: sanitized.healthImportBatches,
+    });
+    expect(persistedHealthText).not.toContain('xmlText');
+    expect(persistedHealthText).not.toContain('fileText');
+    expect(persistedHealthText).not.toContain('rawXml');
+    expect(persistedHealthText).not.toContain('<HealthData>');
+    expect(persistedHealthText).toContain('kept');
     expect(sanitized.settings.healthIntegrationSettings?.useHealthDataForReadiness).toBe(false);
     expect(sanitized.settings.healthIntegrationSettings?.showExternalWorkoutsInCalendar).toBe(false);
     expect(validateAppDataSchema(sanitized)).toBe(true);

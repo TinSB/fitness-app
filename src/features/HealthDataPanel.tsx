@@ -1,10 +1,11 @@
 import React from 'react';
 import { Database, Trash2, Upload } from 'lucide-react';
-import { parseHealthImportFile } from '../engines/healthImportEngine';
+import { parseHealthImportFile, validateHealthImportFileBeforeParse } from '../engines/healthImportEngine';
 import { buildHealthSummary } from '../engines/healthSummaryEngine';
 import { formatWeight } from '../engines/unitConversionEngine';
 import type { AppData, HealthImportBatch, HealthMetricSample, HealthMetricType, ImportedWorkoutSample } from '../models/training-model';
 import { ActionButton, Card, InlineNotice, SectionHeader, StatusBadge } from '../ui/common';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 
 interface HealthDataPanelProps {
   data: AppData;
@@ -22,6 +23,11 @@ type HealthImportPreviewStats = {
 };
 
 type XmlDateRangeOption = '7' | '30' | '90' | 'all';
+type HealthImportStatus = 'idle' | 'reading' | 'parsing' | 'preview_ready' | 'error' | 'cancelled';
+
+const HEALTH_IMPORT_WARNING_DISPLAY_LIMIT = 20;
+const HEALTH_IMPORT_ERROR_TITLE = '健康数据导入失败';
+const HEALTH_IMPORT_ERROR_DESCRIPTION = '文件可能过大或格式不受支持。请尝试导入最近 30 天数据，或使用 CSV/JSON。';
 
 const xmlMetricOptions: Array<{ id: HealthMetricType; label: string }> = [
   { id: 'sleep_duration', label: '睡眠' },
@@ -92,10 +98,56 @@ const batchIsExcluded = (data: AppData, batch: HealthImportBatch) => {
   return combined.length > 0 && combined.every((item) => item.dataFlag === 'excluded');
 };
 
-export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
+export const getVisibleHealthImportWarnings = (warnings: string[], limit = HEALTH_IMPORT_WARNING_DISPLAY_LIMIT) => ({
+  visibleWarnings: warnings.slice(0, limit),
+  hiddenWarningCount: Math.max(0, warnings.length - limit),
+});
+
+export const HealthDataImportErrorState = ({
+  detail,
+  onRetry,
+  onClear,
+}: {
+  detail?: string;
+  onRetry: () => void;
+  onClear: () => void;
+}) => (
+  <Card tone="rose" className="space-y-3">
+    <div>
+      <div className="text-base font-semibold text-rose-950">{HEALTH_IMPORT_ERROR_TITLE}</div>
+      <div className="mt-1 text-sm leading-6 text-rose-900">{detail || HEALTH_IMPORT_ERROR_DESCRIPTION}</div>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      <ActionButton variant="secondary" onClick={onRetry}>
+        重新选择文件
+      </ActionButton>
+      <ActionButton variant="ghost" onClick={onClear}>
+        清除导入状态
+      </ActionButton>
+    </div>
+  </Card>
+);
+
+const readFileAsText = (file: File, setReader: (reader: FileReader | null) => void) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    setReader(reader);
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('文件读取失败'));
+    reader.onabort = () => reject(new DOMException('导入已取消', 'AbortError'));
+    reader.readAsText(file);
+  });
+
+function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const readerRef = React.useRef<FileReader | null>(null);
+  const importJobRef = React.useRef<{ id: number; cancelled: boolean } | null>(null);
+  const importJobSeqRef = React.useRef(0);
   const [preview, setPreview] = React.useState<HealthImportPreview | null>(null);
   const [message, setMessage] = React.useState('');
+  const [importStatus, setImportStatus] = React.useState<HealthImportStatus>('idle');
+  const [importError, setImportError] = React.useState('');
+  const [pendingFileWarning, setPendingFileWarning] = React.useState<{ file: File; message: string } | null>(null);
   const [xmlDateRange, setXmlDateRange] = React.useState<XmlDateRangeOption>('30');
   const [xmlMetricTypes, setXmlMetricTypes] = React.useState<HealthMetricType[]>(defaultXmlMetricTypes);
   const healthIntegrationSettings = {
@@ -123,31 +175,125 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
     [data.healthMetricSamples, data.importedWorkoutSamples, preview]
   );
   const batches = [...(data.healthImportBatches || [])].sort((left, right) => right.importedAt.localeCompare(left.importedAt));
+  const importBusy = importStatus === 'reading' || importStatus === 'parsing';
 
-  const handleFile = async (file?: File) => {
-    if (!file) return;
-    const isXml = file.name.toLowerCase().endsWith('.xml');
-    if (isXml && file.size > 8 * 1024 * 1024) {
-      setMessage('大型 XML 可能需要较长时间。建议优先导入最近 30–90 天数据。');
-    }
-    const result = parseHealthImportFile(await file.text(), file.name, isXml ? {
-      ...buildXmlDateOptions(xmlDateRange),
-      metricTypes: xmlMetricTypes,
-      includeWorkouts: xmlMetricTypes.includes('workout'),
-    } : undefined);
-    setPreview(result);
-    setMessage(
-      result.samples.length || result.workouts.length
-        ? isXml
-          ? '已识别 Apple Health XML。当前只导入对训练恢复有用的关键指标。'
-          : '文件已解析，请确认后导入。'
-        : '没有找到可导入的健康数据。'
-    );
+  React.useEffect(
+    () => () => {
+      if (importJobRef.current) importJobRef.current.cancelled = true;
+      if (readerRef.current && readerRef.current.readyState === 1) readerRef.current.abort();
+    },
+    []
+  );
+
+  const clearImportState = () => {
+    if (importJobRef.current) importJobRef.current.cancelled = true;
+    if (readerRef.current && readerRef.current.readyState === 1) readerRef.current.abort();
+    importJobRef.current = null;
+    readerRef.current = null;
+    setPreview(null);
+    setPendingFileWarning(null);
+    setImportError('');
+    setImportStatus('idle');
+    setMessage('');
     if (inputRef.current) inputRef.current.value = '';
   };
 
+  const retryImport = () => {
+    clearImportState();
+    window.setTimeout(() => inputRef.current?.click(), 0);
+  };
+
+  const cancelImport = () => {
+    if (importJobRef.current) importJobRef.current.cancelled = true;
+    if (readerRef.current && readerRef.current.readyState === 1) readerRef.current.abort();
+    importJobRef.current = null;
+    readerRef.current = null;
+    setPreview(null);
+    setPendingFileWarning(null);
+    setImportError('');
+    setImportStatus('cancelled');
+    setMessage('已取消导入，现有数据未改变。');
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const handleFile = async (file?: File, options: { force?: boolean } = {}) => {
+    if (!file) return;
+    const validation = validateHealthImportFileBeforeParse(file, { force: options.force });
+    setPreview(null);
+    setImportError('');
+    setPendingFileWarning(null);
+
+    if (!validation.allowed) {
+      setImportStatus('error');
+      setImportError(validation.message || HEALTH_IMPORT_ERROR_DESCRIPTION);
+      setMessage(validation.message || HEALTH_IMPORT_ERROR_DESCRIPTION);
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
+    if (validation.requiresConfirmation && validation.message && !options.force) {
+      setImportStatus('idle');
+      setPendingFileWarning({ file, message: validation.message });
+      setMessage(validation.message);
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
+    const job = { id: importJobSeqRef.current + 1, cancelled: false };
+    importJobSeqRef.current = job.id;
+    importJobRef.current = job;
+    let fileText = '';
+    try {
+      const isXml = validation.kind === 'xml' || file.name.toLowerCase().endsWith('.xml');
+      setImportStatus('reading');
+      setMessage(isXml ? '正在读取 Apple Health XML…' : '正在读取文件…');
+      fileText = await readFileAsText(file, (reader) => {
+        readerRef.current = reader;
+      });
+      if (job.cancelled || importJobRef.current?.id !== job.id) return;
+
+      setImportStatus('parsing');
+      setMessage(isXml ? '正在解析 Apple Health XML…' : '正在解析健康数据…');
+      await new Promise<void>((resolve) => (typeof window === 'undefined' ? resolve() : window.setTimeout(resolve, 0)));
+      if (job.cancelled || importJobRef.current?.id !== job.id) return;
+
+      const result = parseHealthImportFile(fileText, file.name, isXml ? {
+        ...buildXmlDateOptions(xmlDateRange),
+        metricTypes: xmlMetricTypes,
+        includeWorkouts: xmlMetricTypes.includes('workout'),
+      } : undefined);
+      fileText = '';
+      if (job.cancelled || importJobRef.current?.id !== job.id) return;
+      setPreview(result);
+      setImportStatus('preview_ready');
+      setMessage(
+        result.samples.length || result.workouts.length
+          ? isXml
+            ? '已识别 Apple Health XML。当前只导入对训练恢复有用的关键指标。'
+            : '文件已解析，请确认后导入。'
+          : '没有找到可导入的健康数据。'
+      );
+    } catch (error) {
+      fileText = '';
+      if ((error as Error)?.name === 'AbortError' || job.cancelled) {
+        setImportStatus('cancelled');
+        setMessage('已取消导入，现有数据未改变。');
+        return;
+      }
+      console.error('Health data import failed.', error);
+      setPreview(null);
+      setImportStatus('error');
+      setImportError(HEALTH_IMPORT_ERROR_DESCRIPTION);
+      setMessage(HEALTH_IMPORT_ERROR_DESCRIPTION);
+    } finally {
+      if (importJobRef.current?.id === job.id) importJobRef.current = null;
+      readerRef.current = null;
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
   const confirmImport = () => {
-    if (!preview || (!preview.samples.length && !preview.workouts.length)) return;
+    if (importStatus !== 'preview_ready' || !preview || (!preview.samples.length && !preview.workouts.length)) return;
     const batch: HealthImportBatch = {
       ...preview.batch,
       sampleCount: previewStats.newSamples.length,
@@ -159,14 +305,23 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
       duplicateWorkoutCount: previewStats.duplicateWorkoutCount,
       skippedWorkoutCount: previewStats.skippedWorkoutCount,
     };
-    onUpdateData({
-      ...data,
-      healthMetricSamples: mergeById(data.healthMetricSamples, previewStats.newSamples.map((item) => ({ ...item, batchId: batch.id }))),
-      importedWorkoutSamples: mergeById(data.importedWorkoutSamples, previewStats.newWorkouts.map((item) => ({ ...item, batchId: batch.id }))),
-      healthImportBatches: mergeById(data.healthImportBatches, [batch]).sort((left, right) => right.importedAt.localeCompare(left.importedAt)),
-    });
+    try {
+      const nextData = {
+        ...data,
+        healthMetricSamples: mergeById(data.healthMetricSamples, previewStats.newSamples.map((item) => ({ ...item, batchId: batch.id }))),
+        importedWorkoutSamples: mergeById(data.importedWorkoutSamples, previewStats.newWorkouts.map((item) => ({ ...item, batchId: batch.id }))),
+        healthImportBatches: mergeById(data.healthImportBatches, [batch]).sort((left, right) => right.importedAt.localeCompare(left.importedAt)),
+      };
+      onUpdateData(nextData);
+    } catch (error) {
+      console.error('Health data merge failed.', error);
+      setImportStatus('error');
+      setImportError('导入合并失败，现有数据没有被覆盖。请重新选择文件再试。');
+      return;
+    }
     setMessage(`健康数据已导入：新增样本 ${previewStats.newSamples.length}，重复样本 ${previewStats.duplicateSampleCount}，新增外部活动 ${previewStats.newWorkouts.length}。`);
     setPreview(null);
+    setImportStatus('idle');
   };
 
   const updateBatchFlag = (batch: HealthImportBatch, dataFlag: 'normal' | 'excluded') => {
@@ -205,6 +360,9 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
           <InlineNotice tone="slate" title="边界">
             Safari PWA 不能直接读取 HealthKit；导入数据仅作恢复和活动负荷参考，不作医疗诊断。
           </InlineNotice>
+          <InlineNotice tone="amber" title="Apple Health XML">
+            Apple Health 官方导出的 export.xml 可能很大。手机端建议只导入最近 30 天或 90 天数据；完整多年数据建议在电脑端导入。
+          </InlineNotice>
           <div className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
             <label className="flex items-center justify-between gap-3">
               <span className="font-semibold text-slate-700">用健康数据辅助准备度</span>
@@ -224,10 +382,15 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
             </label>
           </div>
           <div className="flex flex-wrap gap-2">
-            <ActionButton variant="secondary" onClick={() => inputRef.current?.click()}>
+            <ActionButton variant="secondary" onClick={() => inputRef.current?.click()} disabled={importBusy}>
               <Upload className="h-4 w-4" />
               选择 CSV / JSON / XML
             </ActionButton>
+            {importBusy ? (
+              <ActionButton variant="ghost" onClick={cancelImport}>
+                取消导入
+              </ActionButton>
+            ) : null}
             <input
               ref={inputRef}
               type="file"
@@ -284,6 +447,38 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
             <div className="mt-2 text-xs leading-5 text-slate-500">默认导入最近 30 天的睡眠、静息心率、HRV、步数和 workout。</div>
           </div>
 
+          {importBusy ? (
+            <InlineNotice tone="amber" title={importStatus === 'reading' ? '正在读取文件' : '正在解析 Apple Health XML'}>
+              <div className="space-y-2">
+                <div>{importStatus === 'reading' ? '正在读取文件…' : '正在解析 Apple Health XML…'} 解析完成前不能确认导入。</div>
+                <ActionButton variant="secondary" onClick={cancelImport}>
+                  取消导入
+                </ActionButton>
+              </div>
+            </InlineNotice>
+          ) : null}
+
+          {pendingFileWarning ? (
+            <InlineNotice tone="amber" title="文件较大">
+              <div className="space-y-2">
+                <div>{pendingFileWarning.message}</div>
+                <div className="flex flex-wrap gap-2">
+                  <ActionButton variant="primary" onClick={() => void handleFile(pendingFileWarning.file, { force: true })}>
+                    继续解析
+                  </ActionButton>
+                  <ActionButton variant="ghost" onClick={retryImport}>
+                    重新选择文件
+                  </ActionButton>
+                </div>
+                <div className="text-xs text-amber-800">继续后可能耗时较长。</div>
+              </div>
+            </InlineNotice>
+          ) : null}
+
+          {importStatus === 'error' ? (
+            <HealthDataImportErrorState detail={importError || undefined} onRetry={retryImport} onClear={clearImportState} />
+          ) : null}
+
           {preview ? (
             <div className="rounded-lg border border-slate-200 bg-stone-50 p-3 text-sm">
               <div className="font-semibold text-slate-950">导入预览</div>
@@ -313,14 +508,17 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
               ) : null}
               {preview.warnings.length ? (
                 <div className="mt-2 space-y-1 text-xs leading-5 text-amber-700">
-                  {preview.warnings.slice(0, 4).map((warning) => <div key={warning}>{warning}</div>)}
+                  {getVisibleHealthImportWarnings(preview.warnings).visibleWarnings.map((warning) => <div key={warning}>{warning}</div>)}
+                  {getVisibleHealthImportWarnings(preview.warnings).hiddenWarningCount ? (
+                    <div>还有 {getVisibleHealthImportWarnings(preview.warnings).hiddenWarningCount} 条警告。</div>
+                  ) : null}
                 </div>
               ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
-                <ActionButton variant="primary" onClick={confirmImport} disabled={!previewStats.newSamples.length && !previewStats.newWorkouts.length}>
+                <ActionButton variant="primary" onClick={confirmImport} disabled={importStatus !== 'preview_ready' || (!previewStats.newSamples.length && !previewStats.newWorkouts.length)}>
                   确认导入
                 </ActionButton>
-                <ActionButton variant="ghost" onClick={() => setPreview(null)}>
+                <ActionButton variant="ghost" onClick={cancelImport}>
                   取消
                 </ActionButton>
               </div>
@@ -408,5 +606,23 @@ export function HealthDataPanel({ data, onUpdateData }: HealthDataPanelProps) {
         </div>
       </div>
     </Card>
+  );
+}
+
+export function HealthDataPanel(props: HealthDataPanelProps) {
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('HealthDataPanel crashed.', error, errorInfo);
+      }}
+      fallback={({ resetError }) => (
+        <HealthDataImportErrorState
+          onRetry={resetError}
+          onClear={resetError}
+        />
+      )}
+    >
+      <HealthDataPanelContent {...props} />
+    </ErrorBoundary>
   );
 }

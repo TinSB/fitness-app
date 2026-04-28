@@ -804,6 +804,22 @@ const sanitizeBodyWeights = (entries: unknown) =>
     .filter((entry) => entry.date && entry.value)
     .sort((a, b) => b.date.localeCompare(a.date));
 
+const HEALTH_RAW_BLOCKED_KEYS = new Set(['xmlText', 'fileText', 'rawXml', 'xml', 'document', 'content']);
+
+const sanitizeHealthRaw = (value: unknown, depth = 0): unknown => {
+  if (value === undefined || value === null || depth > 2) return undefined;
+  if (typeof value === 'string') return value.length > 500 ? `${value.slice(0, 500)}…` : value;
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) return value.slice(0, 24).map((item) => sanitizeHealthRaw(item, depth + 1)).filter((item) => item !== undefined);
+  if (!isPlainObject(value)) return undefined;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !HEALTH_RAW_BLOCKED_KEYS.has(key))
+      .map(([key, entry]) => [key, sanitizeHealthRaw(entry, depth + 1)])
+      .filter(([, entry]) => entry !== undefined)
+  );
+};
+
 const sanitizeHealthMetricSamples = (entries: unknown): HealthMetricSample[] =>
   pickArray(entries)
     .map((entry, index) => {
@@ -826,7 +842,7 @@ const sanitizeHealthMetricSamples = (entries: unknown): HealthMetricSample[] =>
         importedAt: pickString(raw.importedAt, startDate),
         batchId: pickString(raw.batchId) || undefined,
         dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
-        raw: raw.raw,
+        raw: sanitizeHealthRaw(raw.raw),
       };
     })
     .filter(Boolean) as HealthMetricSample[];
@@ -855,7 +871,7 @@ const sanitizeImportedWorkoutSamples = (entries: unknown): ImportedWorkoutSample
         importedAt: pickString(raw.importedAt, startDate),
         batchId: pickString(raw.batchId) || undefined,
         dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
-        raw: raw.raw,
+        raw: sanitizeHealthRaw(raw.raw),
       };
     })
     .filter(Boolean) as ImportedWorkoutSample[];
