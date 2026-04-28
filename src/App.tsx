@@ -644,6 +644,14 @@ function App() {
                     onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId, activeProgramTemplateId: suggestedTemplateId }))}
                     onStart={() => startSession()}
                     onResume={() => setActiveTab('training')}
+                    onViewSession={(sessionId, date) => {
+                      setProgressTarget({ section: 'history', sessionId, date });
+                      setActiveTab('record');
+                    }}
+                    onViewCalendar={(date) => {
+                      setProgressTarget({ section: 'calendar', date });
+                      setActiveTab('record');
+                    }}
                   />
                 )}
 

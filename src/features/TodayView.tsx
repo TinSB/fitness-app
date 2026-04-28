@@ -16,6 +16,7 @@ import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../en
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import { buildHealthSummary } from '../engines/healthSummaryEngine';
 import { formatTrainingVolume, formatWeight } from '../engines/unitConversionEngine';
+import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
@@ -33,6 +34,8 @@ interface TodayViewProps {
   onUseSuggestion: () => void;
   onStart: () => void;
   onResume: () => void;
+  onViewSession?: (sessionId: string, date?: string) => void;
+  onViewCalendar?: (date?: string) => void;
 }
 
 const sorenessOptions = ['无', '胸', '背', '腿', '肩', '手臂'] as const;
@@ -52,6 +55,8 @@ export function TodayView({
   onUseSuggestion,
   onStart,
   onResume,
+  onViewSession,
+  onViewCalendar,
 }: TodayViewProps) {
   const useHealthDataForReadiness = data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false;
   const hasImportedHealthData = Boolean((data.healthMetricSamples || []).length || (data.importedWorkoutSamples || []).length);
@@ -72,6 +77,27 @@ export function TodayView({
     data.mesocyclePlan,
     { healthSummary, useHealthDataForReadiness }
   );
+  const todayTrainingState = buildTodayTrainingState({
+    activeSession: data.activeSession,
+    history: data.history,
+    currentLocalDate: todayKey(),
+    templates: data.templates,
+    programTemplate: data.programTemplate,
+    plannedTemplateId: data.selectedTemplateId,
+  });
+  const completedSession =
+    todayTrainingState.status === 'completed'
+      ? data.history.find((session) => session.id === todayTrainingState.lastCompletedSessionId)
+      : undefined;
+  const recommendationLabel =
+    todayTrainingState.status === 'completed' ? '下次建议' : todayTrainingState.status === 'in_progress' ? '当前训练' : '今日建议';
+  const pageTitle =
+    todayTrainingState.status === 'completed' ? '今日训练已完成' : todayTrainingState.status === 'in_progress' ? '训练进行中' : '今天该怎么练';
+  const handleExtraTraining = () => {
+    if (typeof window === 'undefined' || window.confirm('你今天已经完成训练，确定要再开始一场吗？')) {
+      onStart();
+    }
+  };
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const trainingLevelAssessment = buildTrainingLevelAssessment({ history: analyticsHistory });
@@ -100,11 +126,16 @@ export function TodayView({
   return (
     <Page
       eyebrow="今日"
-      title="今天该怎么练"
+      title={pageTitle}
       action={
-        data.activeSession ? (
+        todayTrainingState.status === 'in_progress' ? (
           <ActionButton type="button" onClick={onResume} variant="primary">
             继续上次训练
+            <ChevronRight className="h-4 w-4" />
+          </ActionButton>
+        ) : todayTrainingState.status === 'completed' && completedSession ? (
+          <ActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary">
+            查看本次训练
             <ChevronRight className="h-4 w-4" />
           </ActionButton>
         ) : null
@@ -115,8 +146,20 @@ export function TodayView({
           <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="text-sm font-bold text-slate-500">{todayKey()}</div>
-              <h2 className="mt-1 text-xl font-semibold text-slate-950 md:text-2xl">{selectedTemplate.name}</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-500">{selectedTemplate.note}</p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950 md:text-2xl">
+                {todayTrainingState.status === 'completed'
+                  ? `已完成 ${completedSession?.templateName || completedSession?.focus || '本次训练'}`
+                  : todayTrainingState.status === 'in_progress'
+                    ? data.activeSession?.templateName || selectedTemplate.name
+                    : selectedTemplate.name}
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                {todayTrainingState.status === 'completed'
+                  ? '今天已经有一场正式训练记录。下面的安排会作为下次建议展示，不代表今天必须继续训练。'
+                  : todayTrainingState.status === 'in_progress'
+                    ? '当前有未完成训练，继续记录即可；不要重新开始覆盖 activeSession。'
+                    : selectedTemplate.note}
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <StatusBadge tone={adjustedPlan.readiness.level === 'green' ? 'emerald' : adjustedPlan.readiness.level === 'yellow' ? 'amber' : 'rose'}>
                   准备度 {adjustedPlan.readinessResult?.score ?? '--'} / 100
@@ -157,10 +200,29 @@ export function TodayView({
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
             </div>
-            <ActionButton type="button" onClick={onStart} variant="primary" size="lg">
-              <Play className="h-4 w-4" />
-              开始训练
-            </ActionButton>
+            {todayTrainingState.status === 'not_started' ? (
+              <ActionButton type="button" onClick={onStart} variant="primary" size="lg">
+                <Play className="h-4 w-4" />
+                开始训练
+              </ActionButton>
+            ) : todayTrainingState.status === 'in_progress' ? (
+              <ActionButton type="button" onClick={onResume} variant="primary" size="lg">
+                继续训练
+                <ChevronRight className="h-4 w-4" />
+              </ActionButton>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-3 md:flex">
+                <ActionButton type="button" onClick={() => completedSession && onViewSession?.(completedSession.id, completedSession.date)} variant="primary">
+                  查看本次训练
+                </ActionButton>
+                <ActionButton type="button" onClick={() => onViewCalendar?.(todayTrainingState.date)} variant="secondary">
+                  查看训练日历
+                </ActionButton>
+                <ActionButton type="button" onClick={handleExtraTraining} variant="ghost">
+                  再练一场
+                </ActionButton>
+              </div>
+            )}
           </div>
 
           <details className="rounded-lg border border-slate-200 bg-stone-50 p-3">
@@ -328,7 +390,9 @@ export function TodayView({
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">今日计划</div>
+            <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">
+              {todayTrainingState.status === 'completed' ? '下次计划参考' : todayTrainingState.status === 'in_progress' ? '当前计划' : '今日计划'}
+            </div>
             <h2 className="font-black text-slate-950">主训练 + 纠偏模块 + 功能补丁</h2>
             <div className="mt-3 grid gap-2">
               <InfoPill label="主训练" value={`${supportPlan.mainline.name || selectedTemplate.name} / ${supportPlan.ratios.mainline}%`} />
@@ -352,13 +416,26 @@ export function TodayView({
           )}
 
           <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">今日建议</div>
+            <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">{recommendationLabel}</div>
             <h2 className="text-xl font-black text-emerald-950">{suggestedTemplate.name}</h2>
-            <p className="mt-1 text-sm leading-6 text-emerald-900">{suggestedTemplate.note}</p>
-            <ActionButton type="button" onClick={onUseSuggestion} variant="primary" fullWidth className="mt-4">
-              采用这套安排
-              <ChevronRight className="h-4 w-4" />
-            </ActionButton>
+            <p className="mt-1 text-sm leading-6 text-emerald-900">
+              {todayTrainingState.status === 'completed'
+                ? `今日已完成 ${completedSession?.templateName || '训练'}。${suggestedTemplate.note} 这是下次建议，不是今天必须继续训练。`
+                : suggestedTemplate.note}
+            </p>
+            {todayTrainingState.status === 'not_started' ? (
+              <ActionButton type="button" onClick={onUseSuggestion} variant="primary" fullWidth className="mt-4">
+                采用这套安排
+                <ChevronRight className="h-4 w-4" />
+              </ActionButton>
+            ) : todayTrainingState.status === 'completed' ? (
+              <ActionButton type="button" onClick={handleExtraTraining} variant="secondary" fullWidth className="mt-4">
+                安排加练
+                <ChevronRight className="h-4 w-4" />
+              </ActionButton>
+            ) : (
+              <div className="mt-4 rounded-md bg-white px-3 py-2 text-sm font-bold text-emerald-900">先完成当前训练，再查看下次建议。</div>
+            )}
           </section>
 
           <details className="rounded-lg border border-slate-200 bg-white p-4">
@@ -366,7 +443,7 @@ export function TodayView({
             <div className="mt-4 space-y-4">
               <section className="rounded-lg border border-slate-200 bg-white p-4">
                 <div className="mb-2 text-xs font-black uppercase tracking-widest text-slate-500">为什么这样排</div>
-                <h2 className="font-black text-slate-950">今日安排解释</h2>
+                <h2 className="font-black text-slate-950">{todayTrainingState.status === 'completed' ? '下次安排说明' : '今日安排解释'}</h2>
                 <div className="mt-3 space-y-2">
                   {explanationItems.map((item) => (
                     <details key={`${item.title}-${item.conclusion}`} className="rounded-md bg-stone-50 px-3 py-2 text-sm font-medium leading-6 text-slate-700">
