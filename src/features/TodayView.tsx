@@ -15,6 +15,7 @@ import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildE1RMProfile, estimateLoadFromE1RM, parsePercentRange } from '../engines/e1rmEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import { buildHealthSummary } from '../engines/healthSummaryEngine';
+import { formatTrainingVolume, formatWeight } from '../engines/unitConversionEngine';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
@@ -198,15 +199,15 @@ export function TodayView({
                       <span className="text-slate-500">负荷建议</span>
                       <span className="text-right font-bold text-slate-900">
                         {loadRange
-                          ? `${loadRange.minKg}-${loadRange.maxKg}kg / ${exercise.targetRirText}`
+                          ? `${formatWeight(loadRange.minKg, data.unitSettings)}-${formatWeight(loadRange.maxKg, data.unitSettings)} / ${exercise.targetRirText}`
                           : `按目标次数和 ${exercise.targetRirText || 'RIR'} 选择可控重量`}
                       </span>
                     </div>
                     <div className="rounded-md bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-600">
                       {e1rm ? (
                         <>
-                          估算 <Term id="oneRm" label="1RM" compact />：{e1rm.e1rmKg}kg，置信度 {formatAdherenceConfidence(e1rm.confidence)}；依据最近工作组{' '}
-                          {e1rm.sourceSet.weightKg}kg x {e1rm.sourceSet.reps}。本次负荷建议基于近期高质量记录，不使用历史最高记录。
+                          估算 <Term id="oneRm" label="1RM" compact />：{formatWeight(e1rm.e1rmKg, data.unitSettings)}，置信度 {formatAdherenceConfidence(e1rm.confidence)}；依据最近工作组{' '}
+                          {formatWeight(e1rm.sourceSet.weightKg, data.unitSettings)} x {e1rm.sourceSet.reps}。本次负荷建议基于近期高质量记录，不使用历史最高记录。
                         </>
                       ) : (
                         <>历史高质量记录不足，暂不输出精确公斤数；先按目标次数和 <Term id="rir" label="RIR" compact /> 控制重量。</>
@@ -421,7 +422,7 @@ export function TodayView({
 
           <section className="grid grid-cols-2 gap-3">
             <Stat label="上次训练" value={lastSession ? lastSession.templateName : '暂无'} />
-            <Stat label="本月总量" value={`${Math.round(monthVolume)}kg`} tone="amber" />
+            <Stat label="本月总量" value={formatTrainingVolume(monthVolume, data.unitSettings)} tone="amber" />
           </section>
         </aside>
       </div>

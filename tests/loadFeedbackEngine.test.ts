@@ -66,4 +66,70 @@ describe('loadFeedbackEngine', () => {
 
     expect(getLoadFeedbackAdjustment([session], 'bench-press').direction).toBe('normal');
   });
+
+  it('only applies too-heavy feedback to the same exercise', () => {
+    const benchSessions = [0, 1].map((index) =>
+      upsertLoadFeedback(
+        makeSession({
+          id: `bench-heavy-${index}`,
+          date: `2026-04-2${index}`,
+          templateId: 'push-a',
+          exerciseId: 'bench-press',
+          setSpecs: [{ weight: 80, reps: 6, rir: 2, techniqueQuality: 'good' }],
+        }),
+        'bench-press',
+        'too_heavy'
+      )
+    );
+
+    expect(getLoadFeedbackAdjustment(benchSessions, 'bench-press').direction).toBe('conservative');
+    expect(getLoadFeedbackAdjustment(benchSessions, 'triceps-pushdown').direction).toBe('normal');
+  });
+
+  it('ignores test and excluded sessions for load feedback', () => {
+    const normal = upsertLoadFeedback(
+      makeSession({
+        id: 'normal-feedback',
+        date: '2026-04-20',
+        templateId: 'push-a',
+        exerciseId: 'bench-press',
+        setSpecs: [{ weight: 80, reps: 6, rir: 2, techniqueQuality: 'good' }],
+      }),
+      'bench-press',
+      'good'
+    );
+    const test = {
+      ...upsertLoadFeedback({ ...normal, id: 'test-feedback', date: '2026-04-21' }, 'bench-press', 'too_heavy'),
+      dataFlag: 'test' as const,
+    };
+    const excluded = {
+      ...upsertLoadFeedback({ ...normal, id: 'excluded-feedback', date: '2026-04-22' }, 'bench-press', 'too_heavy'),
+      dataFlag: 'excluded' as const,
+    };
+
+    const summary = buildLoadFeedbackSummary([normal, test, excluded], 'bench-press');
+
+    expect(summary.counts.good).toBe(1);
+    expect(summary.counts.too_heavy).toBe(0);
+    expect(summary.adjustment.direction).toBe('normal');
+  });
+
+  it('keeps replacement feedback under the actual exercise id', () => {
+    const sessions = [0, 1].map((index) =>
+      upsertLoadFeedback(
+        makeSession({
+          id: `db-heavy-${index}`,
+          date: `2026-04-2${index}`,
+          templateId: 'push-a',
+          exerciseId: 'bench-press',
+          setSpecs: [{ weight: 40, reps: 8, rir: 2, techniqueQuality: 'good' }],
+        }),
+        'db-bench-press',
+        'too_heavy'
+      )
+    );
+
+    expect(getLoadFeedbackAdjustment(sessions, 'db-bench-press').direction).toBe('conservative');
+    expect(getLoadFeedbackAdjustment(sessions, 'bench-press').direction).toBe('normal');
+  });
 });

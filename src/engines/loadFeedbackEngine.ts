@@ -49,6 +49,7 @@ export const upsertLoadFeedback = (
 export const collectLoadFeedback = (history: TrainingSession[], exerciseId?: string): LoadFeedback[] =>
   sortRecent(
     history
+      .filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded')
       .flatMap((session) => session.loadFeedback || [])
       .filter((item) => !exerciseId || item.exerciseId === exerciseId)
   );

@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 8,
+  "exportedAt": "2026-04-27T12:00:00.000Z",
+  "userProfile": {
+    "id": "anonymous",
+    "name": "anonymous",
+    "primaryGoal": "fat_loss",
+    "weeklyTrainingDays": 4
+  },
+  "trainingMode": "hybrid",
+  "unitSettings": {
+    "weightUnit": "lb",
+    "defaultIncrementKg": 2.5,
+    "defaultIncrementLb": 5,
+    "customIncrementsKg": [2.5, 5, 10],
+    "customIncrementsLb": [5, 10, 20]
+  },
+  "programTemplate": {
+    "id": "program-fat-loss-hybrid",
+    "primaryGoal": "hypertrophy",
+    "splitType": "upper_lower",
+    "daysPerWeek": 4,
+    "weeklyMuscleTargets": {
+      "chest": 10,
+      "back": 12,
+      "quads": 10,
+      "triceps": 6
+    },
+    "dayTemplates": [
+      {
+        "id": "push-a",
+        "name": "Push A",
+        "mainExerciseIds": ["bench-press", "triceps-pushdown"]
+      }
+    ]
+  },
+  "mesocyclePlan": {
+    "id": "meso-fat-loss",
+    "startDate": "2026-04-01",
+    "lengthWeeks": 4,
+    "currentWeekIndex": 1,
+    "primaryGoal": "hypertrophy",
+    "weeks": []
+  },
+  "history": [
+    {
+      "id": "session-fat-1",
+      "date": "2026-04-25",
+      "templateId": "push-a",
+      "templateName": "Push A",
+      "programTemplateId": "program-fat-loss-hybrid",
+      "programTemplateName": "Fat Loss Hybrid",
+      "trainingMode": "hybrid",
+      "completed": true,
+      "dataFlag": "normal",
+      "exercises": [
+        {
+          "id": "bench-press__auto_alt_alt",
+          "baseId": "bench-press",
+          "originalExerciseId": "bench-press",
+          "actualExerciseId": "bench-press__auto_alt_alt",
+          "replacementExerciseId": "bench-press__auto_alt_alt",
+          "sameTemplateSlot": true,
+          "prIndependent": true,
+          "name": "卧推",
+          "muscle": "胸",
+          "kind": "compound",
+          "repMin": 6,
+          "repMax": 8,
+          "rest": 180,
+          "startWeight": 61.234,
+          "sets": [
+            {
+              "id": "set-1",
+              "type": "working",
+              "weight": 61.234,
+              "actualWeightKg": 61.234,
+              "displayWeight": 135,
+              "displayUnit": "lb",
+              "reps": 6,
+              "rir": 2,
+              "techniqueQuality": "acceptable",
+              "done": true
+            }
+          ]
+        }
+      ],
+      "loadFeedback": [
+        {
+          "exerciseId": "bench-press",
+          "sessionId": "session-fat-1",
+          "date": "2026-04-25",
+          "feedback": "too_heavy"
+        }
+      ]
+    }
+  ]
+}

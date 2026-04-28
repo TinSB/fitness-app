@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 8,
+  "exportedAt": "2026-04-27T12:00:00.000Z",
+  "userProfile": {
+    "id": "anonymous",
+    "name": "anonymous",
+    "primaryGoal": "肌肥大",
+    "weeklyTrainingDays": 5
+  },
+  "trainingMode": "hypertrophy",
+  "unitSettings": {
+    "weightUnit": "lb",
+    "defaultIncrementKg": 2.5,
+    "defaultIncrementLb": 5,
+    "customIncrementsKg": [2.5, 5, 10],
+    "customIncrementsLb": [5, 10, 20]
+  },
+  "programTemplate": {
+    "id": "program-hypertrophy-support",
+    "primaryGoal": "增肌",
+    "splitType": "push_pull_legs",
+    "daysPerWeek": 5,
+    "weeklyMuscleTargets": {
+      "chest": 12,
+      "back": 14,
+      "quads": 12,
+      "triceps": 8
+    },
+    "dayTemplates": [
+      {
+        "id": "push-a",
+        "name": "Push A",
+        "mainExerciseIds": ["bench-press", "triceps-pushdown"]
+      }
+    ]
+  },
+  "mesocyclePlan": {
+    "id": "meso-hypertrophy",
+    "startDate": "2026-04-01",
+    "lengthWeeks": 4,
+    "currentWeekIndex": 1,
+    "primaryGoal": "muscle_gain",
+    "weeks": []
+  },
+  "history": [
+    {
+      "id": "session-hyp-1",
+      "date": "2026-04-24",
+      "templateId": "push-a",
+      "templateName": "Push A",
+      "programTemplateId": "program-hypertrophy-support",
+      "programTemplateName": "Hypertrophy Support",
+      "trainingMode": "hypertrophy",
+      "completed": true,
+      "dataFlag": "normal",
+      "exercises": [
+        {
+          "id": "db-bench-press",
+          "baseId": "bench-press",
+          "originalExerciseId": "bench-press",
+          "actualExerciseId": "db-bench-press",
+          "replacementExerciseId": "db-bench-press",
+          "sameTemplateSlot": true,
+          "prIndependent": true,
+          "name": "哑铃卧推",
+          "muscle": "胸",
+          "kind": "compound",
+          "repMin": 6,
+          "repMax": 10,
+          "rest": 150,
+          "startWeight": 20.4117,
+          "sets": [
+            {
+              "id": "set-1",
+              "type": "working",
+              "weight": 20.4117,
+              "actualWeightKg": 20.4117,
+              "displayWeight": 45,
+              "displayUnit": "lb",
+              "reps": 8,
+              "rir": 2,
+              "techniqueQuality": "good",
+              "done": true
+            }
+          ]
+        }
+      ],
+      "loadFeedback": [
+        {
+          "exerciseId": "db-bench-press",
+          "sessionId": "session-hyp-1",
+          "date": "2026-04-24",
+          "feedback": "too_heavy"
+        }
+      ]
+    }
+  ]
+}

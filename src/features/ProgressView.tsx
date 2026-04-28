@@ -47,7 +47,7 @@ import {
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
 } from '../i18n/formatters';
-import type { AdjustmentEffectReview, AppData, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, TrainingSession, UnitSettings, WeeklyPrescription } from '../models/training-model';
+import type { AdjustmentEffectReview, AppData, PersonalRecord, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, TrainingSession, UnitSettings, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, Card, EmptyState, Page, SegmentedTabs, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
 
@@ -123,6 +123,16 @@ const e1rmMethodLabels = {
   weighted_recent_average: '近期加权平均',
   single_recent_low_confidence: '单次低置信参考',
 } as const;
+
+const formatPrDisplayValue = (pr: PersonalRecord, unitSettings: UnitSettings) => {
+  const raw = number(pr.raw ?? pr.value);
+  if (pr.metric === 'volume') return formatTrainingVolume(raw, unitSettings);
+  if (pr.metric === 'max_weight' || pr.metric === 'estimated_1rm') return formatWeight(raw, unitSettings);
+  if (pr.metric === 'reps_at_weight' && pr.displayValue) {
+    return pr.displayValue.replace(/(\d+(?:\.\d+)?)kg/g, (_, weightKg) => formatWeight(Number(weightKg), unitSettings));
+  }
+  return pr.displayValue || String(pr.value);
+};
 
 const actionPriorityClasses = {
   high: 'bg-rose-50 text-rose-800',
@@ -695,7 +705,7 @@ export function ProgressView({
             <div key={pr.key} className="rounded-lg border border-slate-200 bg-stone-50 p-4">
               <div className="text-xs font-black text-slate-500">{pr.type}</div>
               <div className="mt-1 font-black text-slate-950">{pr.exercise}</div>
-              <div className="mt-2 text-2xl font-black text-emerald-700">{pr.displayValue}</div>
+              <div className="mt-2 text-2xl font-black text-emerald-700">{formatPrDisplayValue(pr, unitSettings)}</div>
               <div className="mt-2 inline-flex rounded-md bg-white px-2 py-1 text-xs font-black text-slate-600">{formatPersonalRecordQuality(pr.quality)}</div>
               <div className="mt-1 text-xs font-bold text-slate-500">{pr.date}</div>
             </div>
@@ -1456,7 +1466,7 @@ export function ProgressView({
                   <div key={pr.key} className="rounded-lg border border-slate-200 bg-stone-50 p-4">
                     <div className="text-xs font-black text-slate-500">{pr.type}</div>
                     <div className="mt-1 font-black text-slate-950">{pr.exercise}</div>
-                    <div className="mt-2 text-2xl font-black text-emerald-700">{pr.displayValue}</div>
+                    <div className="mt-2 text-2xl font-black text-emerald-700">{formatPrDisplayValue(pr, unitSettings)}</div>
                     <div className="mt-2 inline-flex rounded-md bg-white px-2 py-1 text-xs font-black text-slate-600">{formatPersonalRecordQuality(pr.quality)}</div>
                     {pr.reasons?.length ? <div className="mt-2 text-xs font-bold leading-5 text-slate-500">{pr.reasons[0]}</div> : null}
                     <div className="mt-1 text-xs font-bold text-slate-500">{pr.date}</div>

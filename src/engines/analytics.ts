@@ -151,7 +151,7 @@ export const buildExerciseTrend = (history: TrainingSession[], exerciseId: strin
   analyticsHistory(history)
     .flatMap((session) =>
       (session.exercises || [])
-        .filter((exercise) => exercise.baseId === exerciseId || exercise.id === exerciseId)
+        .filter((exercise) => getExerciseRecordPoolId(exercise) === exerciseId)
         .map((exercise) => {
           const sets = completedHighQualitySets(exercise);
           const topSet = sets.reduce<TrainingSetLog | null>((best, set) => {
