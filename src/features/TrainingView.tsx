@@ -23,6 +23,7 @@ import { TrainingFocusView } from './TrainingFocusView';
 import { SupportBlockList } from '../ui/common';
 import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
+import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
 type LoggedExercise = ExercisePrescription & {
   increment?: number;
@@ -173,7 +174,7 @@ export function TrainingView({
 
   if (!session) {
     return (
-      <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+      <ResponsivePageLayout>
         <PageHeader eyebrow="训练" title="训练工作台" description="开始或继续一场训练；手机端建议进入极简模式。" />
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
           <div className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-stone-100 text-slate-400">
@@ -190,7 +191,7 @@ export function TrainingView({
             </button>
           </div>
         </div>
-      </div>
+      </ResponsivePageLayout>
     );
   }
 
@@ -736,7 +737,7 @@ export function TrainingView({
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+    <ResponsivePageLayout>
       <PageHeader
         eyebrow="训练"
         title={templateLabel(session.templateId, session.templateName)}
@@ -875,6 +876,6 @@ export function TrainingView({
           ) : null}
         </aside>
       </div>
-    </div>
+    </ResponsivePageLayout>
   );
 }

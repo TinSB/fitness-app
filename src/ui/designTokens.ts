@@ -2,8 +2,8 @@ export const uiTokens = {
   page: {
     background: 'bg-stone-100',
     surface: 'bg-white',
-    contentPadding: 'px-4 pb-5 pt-4 md:px-8 md:py-8',
-    maxWidth: 'max-w-7xl',
+    contentPadding: 'px-4 pb-5 pt-4 md:px-6 md:py-6 xl:px-8',
+    maxWidth: 'max-w-[1280px]',
   },
   radius: {
     sm: 'rounded-md',

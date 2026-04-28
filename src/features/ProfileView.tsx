@@ -9,6 +9,7 @@ import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
 import { PageHeader } from '../ui/PageHeader';
 import { StatusBadge } from '../ui/StatusBadge';
+import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { HealthDataPanel } from './HealthDataPanel';
 
 interface ProfileViewProps {
@@ -48,9 +49,9 @@ export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestor
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+    <ResponsivePageLayout>
       <PageHeader eyebrow="我的" title="设置与资料" description="筛查、单位、健康数据导入和备份恢复都放在这里。" />
-      <div className="grid gap-3 lg:grid-cols-[0.85fr_1.15fr]">
+      <div className="grid gap-4 xl:grid-cols-[0.82fr_1.18fr]">
         <section className="space-y-3">
           <Card>
             <SectionHeader
@@ -155,6 +156,6 @@ export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestor
           </Card>
         </section>
       </div>
-    </div>
+    </ResponsivePageLayout>
   );
 }

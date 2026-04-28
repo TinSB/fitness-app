@@ -19,6 +19,7 @@ import { InfoPill, LabelInput, Segment } from '../ui/common';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
 import { PageHeader } from '../ui/PageHeader';
+import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
 interface AssessmentViewProps {
   data: AppData;
@@ -77,14 +78,14 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
   const summary = screeningSummaryCards(screening);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+    <ResponsivePageLayout>
       <PageHeader
         eyebrow="筛查"
         title="身体 / 动作筛查"
         description="作为“我的”页下的低频设置，用于调整纠偏模块、功能补丁和计划建议。"
         action={<ActionButton onClick={onGoProgram}>查看计划组成</ActionButton>}
       />
-      <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <section className="space-y-4">
           <Card>
             <h2 className="mb-3 font-black text-slate-950">基础档案</h2>
@@ -183,6 +184,6 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
           </Card>
         </section>
       </div>
-    </div>
+    </ResponsivePageLayout>
   );
 }

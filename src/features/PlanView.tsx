@@ -21,6 +21,7 @@ import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
 import { PageHeader } from '../ui/PageHeader';
 import { StatusBadge } from '../ui/StatusBadge';
+import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
 interface PlanViewProps {
   data: AppData;
@@ -102,7 +103,7 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
     '保留原计划结构';
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+    <ResponsivePageLayout>
       <PageHeader
         eyebrow="计划"
         title="计划与模板"
@@ -119,7 +120,7 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
         </div>
         }
       />
-      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
         <Card className="p-3">
           <div className="space-y-2">
             {data.templates.map((item) => {
@@ -318,8 +319,34 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
               );
             })}
           </div>
+
+          <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-widest text-slate-500">调整历史</div>
+                <h3 className="mt-1 font-black text-slate-950">实验模板与回滚记录</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">这里仅显示计划调整记录，不混入历史训练、日历或 PR。</p>
+              </div>
+              <StatusBadge tone={(data.programAdjustmentHistory || []).length ? 'emerald' : 'slate'}>
+                {(data.programAdjustmentHistory || []).length ? `${data.programAdjustmentHistory?.length || 0} 条` : '暂无历史调整'}
+              </StatusBadge>
+            </div>
+            <div className="mt-3 space-y-2">
+              {(data.programAdjustmentHistory || []).slice(0, 3).map((item) => (
+                <div key={item.id} className="rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-700">
+                  <span className="font-bold text-slate-950">{item.appliedAt?.slice(0, 10) || '未记录日期'}</span>
+                  {' / '}
+                  {item.mainChangeSummary || item.changes?.[0]?.reason || '计划调整'}
+                  {item.rolledBackAt ? ' / 已回滚' : ''}
+                </div>
+              ))}
+              {!(data.programAdjustmentHistory || []).length ? (
+                <div className="rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-500">暂无历史调整。生成并应用调整草稿后会显示在这里。</div>
+              ) : null}
+            </div>
+          </section>
         </Card>
       </div>
-    </div>
+    </ResponsivePageLayout>
   );
 }

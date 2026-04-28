@@ -19,6 +19,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { StatusBadge } from '../ui/StatusBadge';
+import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
 export interface RecordViewProps {
   data: AppData;
@@ -112,6 +113,12 @@ export function RecordView({
   const prs = buildPrs(analyticsHistory);
   const monthStats = buildMonthStats(analyticsHistory, data.bodyWeights || []);
   const effectiveSummary = buildEffectiveVolumeSummary(analyticsHistory);
+  const monthSessionCount = calendar.days.reduce((sum, day) => sum + day.totalSessions, 0);
+  const recentWeeks = calendar.weeklyFrequency.slice(-4);
+  const currentWeekCount = recentWeeks[recentWeeks.length - 1]?.sessionCount || 0;
+  const recentWeekAverage = recentWeeks.length
+    ? recentWeeks.reduce((sum, week) => sum + week.sessionCount, 0) / recentWeeks.length
+    : 0;
 
   React.useEffect(() => {
     if (initialSection) setActiveSection(initialSection);
@@ -166,11 +173,17 @@ export function RecordView({
           action={onStartTraining ? <ActionButton onClick={onStartTraining}>开始训练</ActionButton> : undefined}
         />
       ) : (
-        <div className="grid gap-3 xl:grid-cols-[1fr_320px]">
+        <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-3">
+            <MetricCard label="本周训练" value={`${currentWeekCount} 次`} tone="emerald" />
+            <MetricCard label="本月训练" value={`${monthSessionCount} 次`} />
+            <MetricCard label="近 4 周频率" value={`${recentWeekAverage.toFixed(1)} 次/周`} />
+          </div>
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_360px]">
           <Card>
             <div className="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
               <span>{calendar.month}</span>
-              <span>本月 {calendar.days.reduce((sum, day) => sum + day.totalSessions, 0)} 次</span>
+              <span>本月 {monthSessionCount} 次</span>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500">
               {['一', '二', '三', '四', '五', '六', '日'].map((label) => (
@@ -228,6 +241,7 @@ export function RecordView({
               ) : null}
             </div>
           </Card>
+        </div>
         </div>
       )}
     </PageSection>
@@ -430,7 +444,7 @@ export function RecordView({
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+    <ResponsivePageLayout>
       <PageHeader eyebrow="记录" title="训练记录中心" description="先看日历，再回看历史、统计和 PR。测试数据可查看，但不会进入分析。" />
       <div className="space-y-4">
         <SegmentedControl value={activeSection} options={recordSections} onChange={setActiveSection} ariaLabel="记录中心分区" />
@@ -457,6 +471,6 @@ export function RecordView({
           />
         </div>
       ) : null}
-    </div>
+    </ResponsivePageLayout>
   );
 }

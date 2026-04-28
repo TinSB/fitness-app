@@ -15,7 +15,7 @@ interface BottomNavProps<T extends string> {
 }
 
 export const BottomNav = <T extends string>({ items, activeId, onNavigate, activeSession }: BottomNavProps<T>) => (
-  <nav className="fixed inset-x-0 bottom-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+  <nav className="fixed inset-x-0 bottom-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
     {items.map((item) => {
       const Icon = item.icon;
       const selected = activeId === item.id;
