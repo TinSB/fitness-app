@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('mobile safe-area layout', () => {
   const appSource = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
   const commonSource = readFileSync(resolve(process.cwd(), 'src/ui/common.tsx'), 'utf8');
+  const bottomNavSource = readFileSync(resolve(process.cwd(), 'src/ui/BottomNav.tsx'), 'utf8');
 
   it('keeps top safe-area handling in the app header, not repeated in Page content', () => {
     expect(appSource).toContain('pt-[env(safe-area-inset-top)]');
@@ -15,6 +16,6 @@ describe('mobile safe-area layout', () => {
 
   it('keeps bottom safe-area for mobile action areas', () => {
     expect(commonSource).toContain('env(safe-area-inset-bottom)');
-    expect(appSource).toContain('pb-[env(safe-area-inset-bottom)]');
+    expect(bottomNavSource).toContain('pb-[env(safe-area-inset-bottom)]');
   });
 });

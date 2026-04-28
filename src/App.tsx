@@ -14,25 +14,23 @@ import {
 import { reconcileScreeningProfile } from './engines/adaptiveFeedbackEngine';
 import { normalizeTemplateExerciseInput } from './engines/exercisePrescriptionEngine';
 import {
-  applySuggestedFocusStep,
-  adjustFocusSetValue,
-  completeFocusSet,
-  copyPreviousFocusActualDraft,
   getCurrentFocusStep,
-  skipFocusSupportBlock,
   switchFocusExercise,
   updateFocusActualDraft,
 } from './engines/focusModeStateEngine';
+import { dispatchWorkoutExecutionEvent } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
-import { applyExerciseReplacement, buildReplacementOptions } from './engines/replacementEngine';
+import { buildReplacementOptions } from './engines/replacementEngine';
 import { buildTrainingDecisionContext } from './engines/trainingDecisionContext';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 import { Page } from './ui/common';
+import { AppShell } from './ui/AppShell';
+import { BottomNav } from './ui/BottomNav';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
 const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
@@ -240,10 +238,18 @@ function App() {
 
     setData((current) => {
       if (!current.activeSession) return current;
-      const result = completeFocusSet(current.activeSession, exerciseIndex, completedAt, now, step.id, current.unitSettings.weightUnit);
-      if (!result) return current;
-      nextExpandedExercise = result.sessionComplete ? exerciseIndex : result.nextExerciseIndex;
-      return { ...current, activeSession: result.session };
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, {
+        type: 'COMPLETE_STEP',
+        exerciseIndex,
+        completedAt,
+        nowMs: now,
+        expectedStepId: step.id,
+        displayUnit: current.unitSettings.weightUnit,
+      });
+      if (result.updatedSession === current.activeSession && result.warnings.length) return current;
+      const nextStep = getCurrentFocusStep(result.updatedSession);
+      nextExpandedExercise = result.nextState === 'completed' ? exerciseIndex : nextStep.exerciseIndex;
+      return { ...current, activeSession: result.updatedSession };
     });
 
     if (nextExpandedExercise !== null && nextExpandedExercise >= 0) {
@@ -254,21 +260,28 @@ function App() {
   const copyPreviousSet = (exerciseIndex: number) => {
     setData((current) => {
       if (!current.activeSession) return current;
-      return { ...current, activeSession: copyPreviousFocusActualDraft(current.activeSession, exerciseIndex) };
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'COPY_PREVIOUS_SET', exerciseIndex });
+      return { ...current, activeSession: result.updatedSession };
     });
   };
 
   const adjustCurrentSet = (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => {
     setData((current) => {
       if (!current.activeSession) return current;
-      return { ...current, activeSession: adjustFocusSetValue(current.activeSession, exerciseIndex, field, delta) };
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, {
+        type: field === 'weight' ? 'ADJUST_WEIGHT' : 'ADJUST_REPS',
+        exerciseIndex,
+        delta,
+      });
+      return { ...current, activeSession: result.updatedSession };
     });
   };
 
   const applyFocusSuggestion = (exerciseIndex: number) => {
     setData((current) => {
       if (!current.activeSession) return current;
-      return { ...current, activeSession: applySuggestedFocusStep(current.activeSession, exerciseIndex) };
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'APPLY_PRESCRIPTION', exerciseIndex });
+      return { ...current, activeSession: result.updatedSession };
     });
   };
 
@@ -286,12 +299,14 @@ function App() {
     setData((current) => {
       if (!current.activeSession) return current;
       if (replacementId) {
-        return { ...current, activeSession: switchFocusExercise(applyExerciseReplacement(current.activeSession, exerciseIndex, replacementId), exerciseIndex) };
+        const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'APPLY_REPLACEMENT', exerciseIndex, replacementId });
+        return { ...current, activeSession: result.updatedSession };
       }
       const exercise = current.activeSession.exercises[exerciseIndex];
       const nextOption = exercise ? buildReplacementOptions(exercise)[0] : undefined;
       if (!nextOption) return current;
-      return { ...current, activeSession: switchFocusExercise(applyExerciseReplacement(current.activeSession, exerciseIndex, nextOption.id), exerciseIndex) };
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'APPLY_REPLACEMENT', exerciseIndex, replacementId: nextOption.id });
+      return { ...current, activeSession: result.updatedSession };
     });
     setExpandedExercise(exerciseIndex);
   };
@@ -347,13 +362,17 @@ function App() {
   const completeSupportSet = (moduleId: string, exerciseId: string) => {
     setData((current) => {
       if (!current.activeSession) return current;
-      const session = clone(current.activeSession) as TrainingSession;
-      session.supportExerciseLogs = Array.isArray(session.supportExerciseLogs) ? session.supportExerciseLogs : [];
-      const target = session.supportExerciseLogs.find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
-      if (!target) return current;
-      target.completedSets = Math.max(0, Math.min(number(target.completedSets) + 1, number(target.plannedSets)));
-      if (target.completedSets >= target.plannedSets) target.skippedReason = undefined;
-      return { ...current, activeSession: session };
+      const step = getCurrentFocusStep(current.activeSession);
+      if (step.moduleId !== moduleId || step.exerciseId !== exerciseId) return current;
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, {
+        type: 'COMPLETE_STEP',
+        exerciseIndex: step.exerciseIndex,
+        completedAt: new Date().toISOString(),
+        nowMs: Date.now(),
+        expectedStepId: step.id,
+        displayUnit: current.unitSettings.weightUnit,
+      });
+      return { ...current, activeSession: result.updatedSession };
     });
   };
 
@@ -366,7 +385,8 @@ function App() {
   const skipSupportBlock = (blockType: 'correction' | 'functional', reason: SupportSkipReason) => {
     setData((current) => {
       if (!current.activeSession) return current;
-      return { ...current, activeSession: skipFocusSupportBlock(current.activeSession, blockType, reason) };
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'SKIP_BLOCK', blockType, reason });
+      return { ...current, activeSession: result.updatedSession };
     });
   };
 
@@ -564,6 +584,11 @@ function App() {
       dataFlag === 'normal' ||
       window.confirm('标记为测试/排除后，该训练不会计入进度、e1RM、PR、完成度和日历。确定继续吗？');
     setData((current) => markSessionDataFlag(current, sessionId, dataFlag, confirmed).data);
+  };
+
+  const navigate = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    if (tab === 'profile') setProfileSection('home');
   };
 
   const useFocusTrainingShell = activeTab === 'training' && data.activeSession && preferFocusShell && !forceFullTrainingView;
@@ -812,29 +837,7 @@ function App() {
         </div>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 grid h-[calc(64px+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const selected = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setActiveTab(item.id);
-                if (item.id === 'profile') setProfileSection('home');
-              }}
-              className={classNames(
-                'mx-0.5 my-1 flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition',
-                selected ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-              )}
-            >
-              <Icon className="h-5 w-5 stroke-[2]" />
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
+      <BottomNav items={navItems} activeId={activeTab} onNavigate={navigate} activeSession={Boolean(data.activeSession)} />
       <AddToHomeScreenHint />
     </div>
   );

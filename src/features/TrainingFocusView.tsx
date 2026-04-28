@@ -6,6 +6,7 @@ import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
 import { formatBlockType, formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
+import { buildTrainingFocusViewModel } from '../presenters/trainingPresenter';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import { MobileActionBar, StatusBadge } from '../ui/common';
 
@@ -92,6 +93,7 @@ export function TrainingFocusView({
   const [feedback, setFeedback] = React.useState('');
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
+  const focusViewModel = buildTrainingFocusViewModel(session, unitSettings);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
@@ -605,6 +607,7 @@ export function TrainingFocusView({
           <MobileActionBar className="!bottom-[calc(64px+env(safe-area-inset-bottom))] grid grid-cols-2 gap-2 md:!bottom-auto">
             <button
               type="button"
+              aria-label={focusViewModel.primaryActionLabel}
               onClick={completeCurrentSet}
               disabled={mainSetIndex < 0}
               className="h-16 rounded-lg bg-emerald-600 text-lg font-semibold text-white disabled:bg-slate-300"

@@ -17,6 +17,7 @@ import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engine
 import { formatTrainingVolume, formatWeight } from '../engines/unitConversionEngine';
 import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
+import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { Term } from '../ui/Term';
@@ -95,6 +96,11 @@ export function TodayView({
     todayTrainingState.status === 'completed'
       ? data.history.find((session) => session.id === todayTrainingState.lastCompletedSessionId)
       : undefined;
+  const todayViewModel = buildTodayViewModel({
+    todayState: todayTrainingState,
+    selectedTemplate,
+    completedTemplateName: completedSession?.templateName,
+  });
   const recommendationLabel =
     todayTrainingState.status === 'completed' ? '下次建议' : todayTrainingState.status === 'in_progress' ? '当前训练' : '今日建议';
   const pageTitle =
@@ -132,7 +138,7 @@ export function TodayView({
   return (
     <Page
       eyebrow="今日"
-      title={pageTitle}
+      title={todayViewModel.pageTitle || pageTitle}
       action={
         todayTrainingState.status === 'in_progress' ? (
           <ActionButton type="button" onClick={onResume} variant="primary">
