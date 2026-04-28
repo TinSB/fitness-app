@@ -60,7 +60,7 @@ export const TRAINING_SET_TYPES = ['warmup', 'top', 'backoff', 'straight', 'corr
 export const SESSION_STATUSES = ['planned', 'in_progress', 'completed', 'skipped'] as const;
 
 export const PRIMARY_GOAL_LABELS: Record<(typeof PRIMARY_GOALS)[number], string> = {
-  hypertrophy: '肌肥大',
+  hypertrophy: '肌肥大（增肌）',
   strength: '力量',
   fat_loss: '减脂',
 };

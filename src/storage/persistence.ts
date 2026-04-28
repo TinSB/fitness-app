@@ -47,6 +47,7 @@ import {
 import { clamp, clone, hydrateTemplates, number } from '../engines/engineUtils';
 import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
 import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
+import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from '../engines/replacementEngine';
 import { DEFAULT_UNIT_SETTINGS, sanitizeUnitSettings } from '../engines/unitConversionEngine';
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
@@ -92,6 +93,49 @@ const pickEnum = <T extends readonly string[]>(value: unknown, allowed: T, fallb
 const finiteNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizePrimaryGoal = (value: unknown, fallback: AppData['programTemplate']['primaryGoal'] = 'hypertrophy'): AppData['programTemplate']['primaryGoal'] => {
+  const text = String(value || '').trim();
+  const normalized = text.toLowerCase().replace(/[\s-]+/g, '_');
+  if (text === '增肌' || text === '肌肥大' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
+  if (text === '力量' || normalized === 'strength') return 'strength';
+  if (text === '减脂' || normalized === 'fat_loss' || normalized === 'fatloss') return 'fat_loss';
+  return pickEnum(value, PRIMARY_GOALS, fallback);
+};
+
+const normalizeTrainingMode = (value: unknown, fallback: AppData['trainingMode'] = 'hybrid'): AppData['trainingMode'] => {
+  const text = String(value || '').trim();
+  const normalized = text.toLowerCase().replace(/[\s-]+/g, '_');
+  if (text === '增肌' || text === '肌肥大' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
+  if (text === '力量' || normalized === 'strength') return 'strength';
+  if (text === '综合' || normalized === 'hybrid') return 'hybrid';
+  return pickEnum(value, TRAINING_MODES, fallback);
+};
+
+const normalizeExerciseIdentity = (raw: Record<string, unknown>, rawId: string) => {
+  const baseId = pickString(raw.baseId, rawId.split('__auto_alt')[0] || rawId);
+  const originalExerciseId = pickString(raw.originalExerciseId, pickString(raw.replacedFromId, baseId));
+  const rawReplacementId = pickString(raw.replacementExerciseId);
+  const rawActualId = pickString(raw.actualExerciseId, rawReplacementId || rawId);
+  const validReplacementId = validateReplacementExerciseId(rawReplacementId) ? rawReplacementId : '';
+  const validActualId = validateReplacementExerciseId(rawActualId) ? rawActualId : '';
+  const hasSyntheticId = [rawId, rawActualId, rawReplacementId].some(isSyntheticReplacementExerciseId);
+  const fallbackActualId = originalExerciseId || baseId || rawId;
+  const actualExerciseId = validActualId || validReplacementId || (hasSyntheticId ? fallbackActualId : rawActualId || fallbackActualId);
+  const replacementExerciseId = validReplacementId || (validActualId && validActualId !== originalExerciseId ? validActualId : '');
+  const id = hasSyntheticId ? actualExerciseId : rawId;
+  const warning = hasSyntheticId ? [pickString(raw.warning), '已修复无效替代动作 ID，避免继续使用合成动作 ID。'].filter(Boolean).join(' / ') : pickString(raw.warning);
+
+  return {
+    id,
+    baseId,
+    canonicalExerciseId: pickString(raw.canonicalExerciseId, actualExerciseId || id),
+    originalExerciseId,
+    actualExerciseId,
+    replacementExerciseId,
+    warning,
+  };
 };
 
 export const sanitizeHealthIntegrationSettings = (settings: unknown): HealthIntegrationSettings => {
@@ -172,17 +216,13 @@ const migrateLegacySet = (set: unknown, fallbackId: string) => {
 const migrateLegacyExercise = (exercise: unknown) => {
   const raw = pickRecord(exercise);
   const rawId = pickString(raw.id) || pickString(raw.baseId) || `exercise-${Date.now()}`;
+  const identity = normalizeExerciseIdentity(raw, rawId);
   return {
     ...raw,
-    id: rawId,
-    baseId: pickString(raw.baseId, rawId),
-    canonicalExerciseId: pickString(raw.canonicalExerciseId, raw.actualExerciseId ? pickString(raw.actualExerciseId, rawId) : raw.replacedFromId ? rawId : pickString(raw.baseId, rawId)),
-    originalExerciseId: pickString(raw.originalExerciseId, pickString(raw.replacedFromId, pickString(raw.baseId, rawId))),
-    actualExerciseId: pickString(raw.actualExerciseId, pickString(raw.replacementExerciseId, rawId)),
-    replacementExerciseId: pickString(raw.replacementExerciseId),
-    sameTemplateSlot: Boolean(raw.sameTemplateSlot),
+    ...identity,
+    sameTemplateSlot: Boolean(raw.sameTemplateSlot) || Boolean(identity.replacementExerciseId),
     replacementReason: pickString(raw.replacementReason),
-    prIndependent: Boolean(raw.prIndependent),
+    prIndependent: Boolean(raw.prIndependent) || Boolean(identity.replacementExerciseId),
     originalName: pickString(raw.originalName, pickString(raw.name)),
     techniqueStandard: {
       ...(isPlainObject(raw.techniqueStandard) ? raw.techniqueStandard : {}),
@@ -191,7 +231,7 @@ const migrateLegacyExercise = (exercise: unknown) => {
       ...(typeof raw.stopRule === 'string' ? { stopRule: raw.stopRule } : {}),
     },
     sets: Array.isArray(raw.sets)
-      ? raw.sets.map((set, index) => migrateLegacySet(set, `${rawId}-${index + 1}`))
+      ? raw.sets.map((set, index) => migrateLegacySet(set, `${identity.id}-${index + 1}`))
       : raw.sets,
   };
 };
@@ -371,7 +411,7 @@ export const sanitizeUserProfile = (profile: unknown): UserProfile => {
     heightCm: clamp(number(raw.heightCm) || DEFAULT_USER_PROFILE.heightCm, 100, 240),
     weightKg: clamp(number(raw.weightKg) || DEFAULT_USER_PROFILE.weightKg, 30, 250),
     trainingLevel: pickEnum(raw.trainingLevel, TRAINING_LEVELS, DEFAULT_USER_PROFILE.trainingLevel),
-    primaryGoal: pickEnum(raw.primaryGoal, PRIMARY_GOALS, DEFAULT_USER_PROFILE.primaryGoal),
+    primaryGoal: normalizePrimaryGoal(raw.primaryGoal, DEFAULT_USER_PROFILE.primaryGoal),
     weeklyTrainingDays: clamp(number(raw.weeklyTrainingDays) || DEFAULT_USER_PROFILE.weeklyTrainingDays, 1, 7),
     sessionDurationMin: clamp(number(raw.sessionDurationMin) || DEFAULT_USER_PROFILE.sessionDurationMin, 20, 180),
     secondaryPreferences: pickStringArray(raw.secondaryPreferences, DEFAULT_USER_PROFILE.secondaryPreferences) as UserProfile['secondaryPreferences'],
@@ -386,7 +426,7 @@ const repairProgramTemplateCandidate = (programTemplate: unknown): ProgramTempla
   return {
     ...DEFAULT_PROGRAM_TEMPLATE,
     ...raw,
-    primaryGoal: pickEnum(raw.primaryGoal, PRIMARY_GOALS, DEFAULT_PROGRAM_TEMPLATE.primaryGoal),
+    primaryGoal: normalizePrimaryGoal(raw.primaryGoal, DEFAULT_PROGRAM_TEMPLATE.primaryGoal),
     splitType: pickEnum(raw.splitType, SPLIT_TYPES, DEFAULT_PROGRAM_TEMPLATE.splitType),
     daysPerWeek: clamp(number(raw.daysPerWeek) || DEFAULT_PROGRAM_TEMPLATE.daysPerWeek, 1, 7),
     correctionStrategy: pickEnum(raw.correctionStrategy, CORRECTION_STRATEGIES, DEFAULT_PROGRAM_TEMPLATE.correctionStrategy),
@@ -490,17 +530,13 @@ const sanitizeSupportExerciseLog = (entry: unknown): SupportExerciseLog | null =
 const sanitizeExerciseLog = (exercise: unknown) => {
   const raw = pickRecord(exercise);
   const rawId = pickString(raw.id) || pickString(raw.baseId) || 'exercise';
+  const identity = normalizeExerciseIdentity(raw, rawId);
   return {
     ...raw,
-    id: rawId,
-    baseId: pickString(raw.baseId, rawId),
-    canonicalExerciseId: pickString(raw.canonicalExerciseId, raw.actualExerciseId ? pickString(raw.actualExerciseId, rawId) : raw.replacedFromId ? rawId : pickString(raw.baseId, rawId)),
-    originalExerciseId: pickString(raw.originalExerciseId, pickString(raw.replacedFromId, pickString(raw.baseId, rawId))),
-    actualExerciseId: pickString(raw.actualExerciseId, pickString(raw.replacementExerciseId, rawId)),
-    replacementExerciseId: pickString(raw.replacementExerciseId),
-    sameTemplateSlot: Boolean(raw.sameTemplateSlot),
+    ...identity,
+    sameTemplateSlot: Boolean(raw.sameTemplateSlot) || Boolean(identity.replacementExerciseId),
     replacementReason: pickString(raw.replacementReason),
-    prIndependent: Boolean(raw.prIndependent),
+    prIndependent: Boolean(raw.prIndependent) || Boolean(identity.replacementExerciseId),
     name: pickString(raw.name),
     muscle: pickString(raw.muscle),
     kind: pickString(raw.kind, 'compound'),
@@ -512,7 +548,7 @@ const sanitizeExerciseLog = (exercise: unknown) => {
       ? Object.fromEntries(Object.entries(raw.muscleContribution).map(([key, value]) => [key, Math.max(0, number(value))]))
       : undefined,
     sets: Array.isArray(raw.sets)
-      ? raw.sets.map((set, index) => sanitizeSet(set, `${rawId}-${index + 1}`))
+      ? raw.sets.map((set, index) => sanitizeSet(set, `${identity.id}-${index + 1}`))
       : raw.sets,
   };
 };
@@ -677,7 +713,7 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
     programTemplateName: pickString(raw.programTemplateName) || pickString(raw.templateName) || undefined,
     isExperimentalTemplate: Boolean(raw.isExperimentalTemplate),
     dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
-    trainingMode: pickEnum(raw.trainingMode, TRAINING_MODES, 'hybrid'),
+    trainingMode: normalizeTrainingMode(raw.trainingMode, 'hybrid'),
     status: sanitizeTodayStatus(raw.status),
     exercises: raw.exercises.map(sanitizeExerciseLog),
     correctionBlock: pickArray(raw.correctionBlock),
@@ -851,7 +887,7 @@ export const sanitizeData = (saved: unknown): AppData => {
   const selectedTemplateId = templates.some((template) => template.id === selectedCandidate) ? selectedCandidate : templates[0]?.id || 'push-a';
   const activeCandidate = pickString(migrated.activeProgramTemplateId, pickString(pickRecord(migrated.settings).activeProgramTemplateId));
   const activeProgramTemplateId = templates.some((template) => template.id === activeCandidate) ? activeCandidate : selectedTemplateId;
-  const trainingMode = pickEnum(migrated.trainingMode, TRAINING_MODES, 'hybrid');
+  const trainingMode = normalizeTrainingMode(migrated.trainingMode, 'hybrid');
   const unitSettings = sanitizeUnitSettings(migrated.unitSettings ?? pickRecord(migrated.settings).unitSettings ?? DEFAULT_UNIT_SETTINGS);
   const programAdjustmentDrafts = sanitizeProgramAdjustmentDrafts(migrated.programAdjustmentDrafts);
   const programAdjustmentHistory = sanitizeProgramAdjustmentHistory(migrated.programAdjustmentHistory);

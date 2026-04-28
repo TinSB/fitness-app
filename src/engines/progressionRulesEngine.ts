@@ -29,6 +29,9 @@ type Suggestion = {
   note: string;
 };
 
+export const buildRecommendationDifferenceExplanation = () =>
+  '同一模板下，推荐会因历史记录、训练等级、准备度、动作质量和单位设置不同而变化；“增肌”和“肌肥大”会归一为同一个肌肥大目标。';
+
 const averageRir = (sets: TrainingSetLog[]) => {
   const values = sets.map((set) => Number(set.rir)).filter((value) => Number.isFinite(value));
   if (!values.length) return null;
@@ -96,14 +99,18 @@ export const makeSuggestion = (templateExercise: ExerciseForProgression, history
   const conservativeBias = Boolean(templateExercise.conservativeTopSet || templateExercise.progressLocked);
 
   if (!last) {
+    const rangeNote =
+      templateExercise.kind === 'isolation' && number(templateExercise.repMax) >= 20
+        ? ` ${templateExercise.repMin}-${templateExercise.repMax} 次是目标范围，不代表每组必须做到 ${templateExercise.repMax} 次；数据不足时先从 ${templateExercise.repMin}-${Math.min(number(templateExercise.repMin) + 2, number(templateExercise.repMax))} 次建立基线。`
+        : '';
     return {
       weight: templateExercise.startWeight,
       reps: templateExercise.repMin,
       lastSummary: '暂无历史',
       targetSummary: `${weightText(templateExercise.startWeight)} x ${templateExercise.repMin}-${templateExercise.repMax} x ${templateExercise.sets} / ${templateExercise.targetRirText}`,
       note: conservativeBias
-        ? `先建立基线，今天把第一组做保守一点，停在 ${templateExercise.targetRirText}。`
-        : `先建立基线，默认停在 ${templateExercise.targetRirText}。`,
+        ? `先建立基线，今天把第一组做保守一点，停在 ${templateExercise.targetRirText}。${rangeNote}`
+        : `先建立基线，默认停在 ${templateExercise.targetRirText}。${rangeNote}`,
     };
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convertKgToDisplayWeight, convertLbToKg, formatWeight, parseDisplayWeightToKg } from '../src/engines/unitConversionEngine';
+import { convertKgToDisplayWeight, convertLbToKg, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../src/engines/unitConversionEngine';
 
 describe('unit conversion', () => {
   it('converts 100 lb to kg', () => {
@@ -8,7 +8,7 @@ describe('unit conversion', () => {
 
   it('does not change internal kg when formatting as lb', () => {
     const weightKg = 100;
-    expect(convertKgToDisplayWeight(weightKg, 'lb')).toBeCloseTo(220.5, 1);
+    expect(convertKgToDisplayWeight(weightKg, 'lb')).toBe(220);
     expect(weightKg).toBe(100);
   });
 
@@ -17,7 +17,17 @@ describe('unit conversion', () => {
   });
 
   it('formats display unit from settings', () => {
-    expect(formatWeight(100, { weightUnit: 'lb' })).toBe('220.5lb');
+    expect(formatWeight(100, { weightUnit: 'lb' })).toBe('220lb');
     expect(formatWeight(100, { weightUnit: 'kg' })).toBe('100kg');
+  });
+
+  it('does not show unnecessary lb decimals', () => {
+    expect(formatWeight(20.4117, { weightUnit: 'lb' })).toBe('45lb');
+    expect(formatWeight(16, { weightUnit: 'lb' })).toBe('35lb');
+  });
+
+  it('formats training volume in selected unit', () => {
+    expect(formatTrainingVolume(100, { weightUnit: 'lb' })).toBe('220lb');
+    expect(formatTrainingVolume(100, { weightUnit: 'kg' })).toBe('100kg');
   });
 });

@@ -29,7 +29,7 @@ import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
-import { formatWeight } from '../engines/unitConversionEngine';
+import { formatTrainingVolume, formatWeight } from '../engines/unitConversionEngine';
 import {
   formatAdherenceConfidence,
   formatAdjustmentChangeLabel,
@@ -446,7 +446,7 @@ export function ProgressView({
           <div className="grid grid-cols-3 gap-2 text-center">
             <Stat label="完成组" value={sessionCompletedSets(session)} />
             <Stat label="有效组" value={effective.effectiveSets} tone="emerald" />
-            <Stat label="总量" value={formatWeight(sessionVolume(session), unitSettings)} tone="amber" />
+            <Stat label="总量" value={formatTrainingVolume(sessionVolume(session), unitSettings)} tone="amber" />
           </div>
         </div>
 
@@ -595,7 +595,7 @@ export function ProgressView({
                     {session.templateName || '未命名模板'} / {rawSession ? formatSessionTime(rawSession) : '未记录时间'} / {session.completedSets} 组
                   </div>
                   <div className="mt-1 text-xs font-bold text-emerald-700">
-                    有效组 {session.effectiveSets} / 总量 {formatWeight(session.totalVolumeKg, unitSettings)}
+                    有效组 {session.effectiveSets} / 总量 {formatTrainingVolume(session.totalVolumeKg, unitSettings)}
                   </div>
                   <button type="button" onClick={() => openSessionDetail(session.sessionId)} className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-700">
                     查看详情
@@ -667,7 +667,7 @@ export function ProgressView({
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="text-sm font-black text-emerald-700">{formatWeight(sessionVolume(session), unitSettings)}</div>
+                <div className="text-sm font-black text-emerald-700">{formatTrainingVolume(sessionVolume(session), unitSettings)}</div>
                 <button type="button" onClick={() => setSelectedSessionId(session.id)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-700">
                   查看详情
                 </button>
@@ -1211,8 +1211,8 @@ export function ProgressView({
           </section>
 
           <div className="grid grid-cols-2 gap-3">
-            <Stat label="当前体重" value={data.bodyWeights[0] ? `${data.bodyWeights[0].value}kg` : '未记录'} tone="emerald" />
-            <Stat label="7 天均重" value={monthStats.sevenDayAverage ? `${monthStats.sevenDayAverage.toFixed(1)}kg` : '未记录'} />
+            <Stat label="当前体重" value={data.bodyWeights[0] ? formatWeight(data.bodyWeights[0].value, unitSettings) : '未记录'} tone="emerald" />
+            <Stat label="7 天均重" value={monthStats.sevenDayAverage ? formatWeight(monthStats.sevenDayAverage, unitSettings) : '未记录'} />
             <Stat label="本月训练" value={`${monthStats.monthSessions.length} 次`} tone="amber" />
             <Stat label="本月时长" value={`${monthStats.monthMinutes} 分钟`} />
           </div>
@@ -1236,7 +1236,7 @@ export function ProgressView({
               {monthStats.lastWeights.map((entry) => (
                 <div key={entry.date} className="flex justify-between rounded-md bg-stone-50 px-3 py-2 text-sm">
                   <span className="font-bold text-slate-500">{entry.date}</span>
-                  <span className="font-black text-slate-950">{entry.value}kg</span>
+                  <span className="font-black text-slate-950">{formatWeight(entry.value, unitSettings)}</span>
                 </div>
               ))}
             </div>
@@ -1275,7 +1275,7 @@ export function ProgressView({
 
         <section className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
-            <Stat label="本月总训练量" value={`${Math.round(monthStats.monthVolume)}kg`} tone="emerald" />
+            <Stat label="本月总训练量" value={formatTrainingVolume(monthStats.monthVolume, unitSettings)} tone="emerald" />
             <Stat label="历史训练" value={`${history.length} 次`} />
             <Stat label="历史完成组数" value={history.reduce((sum, session) => sum + sessionCompletedSets(session), 0)} tone="amber" />
             <Stat label="有效组 / 高置信" value={`${effectiveSummary.effectiveSets} / ${effectiveSummary.highConfidenceEffectiveSets}`} tone="emerald" />
@@ -1292,7 +1292,7 @@ export function ProgressView({
                   <div key={session.id}>
                     <div className="mb-1 flex justify-between text-xs font-bold text-slate-500">
                       <span>{session.label}</span>
-                      <span>{Math.round(session.volume)}kg</span>
+                      <span>{formatTrainingVolume(session.volume, unitSettings)}</span>
                     </div>
                     <div className="h-3 rounded-md bg-stone-100">
                       <div className="h-3 rounded-md bg-emerald-600" style={{ width: `${Math.max(5, (session.volume / barData.maxBar) * 100)}%` }} />
@@ -1323,9 +1323,9 @@ export function ProgressView({
                         <div key={`${item.id}-${entry.date}`} className="grid grid-cols-[54px_1fr_auto] gap-2 text-xs font-bold text-slate-600">
                           <span>{formatDate(entry.date)}</span>
                           <span>
-                            {entry.topWeight}kg x {entry.topReps}
+                            {formatWeight(entry.topWeight, unitSettings)} x {entry.topReps}
                           </span>
-                          <span>{Math.round(entry.volume)}kg</span>
+                          <span>{formatTrainingVolume(entry.volume, unitSettings)}</span>
                         </div>
                       ))}
                     </div>
@@ -1352,10 +1352,10 @@ export function ProgressView({
                     <summary className="cursor-pointer list-none font-black text-slate-950">{item.label}</summary>
                     {current ? (
                       <div className="mt-2 space-y-1 text-sm font-bold text-slate-700">
-                        <div>当前 e1RM：{current.e1rmKg}kg / 置信度 {formatAdherenceConfidence(current.confidence)}</div>
+                        <div>当前 e1RM：{formatWeight(current.e1rmKg, unitSettings)} / 置信度 {formatAdherenceConfidence(current.confidence)}</div>
                         <div>估算方法：{e1rmMethodLabels[item.profile.method || 'median_recent']}</div>
                         <div>
-                          来源：{current.sourceSet.weightKg}kg x {current.sourceSet.reps}，{current.sourceSet.date}
+                          来源：{formatWeight(current.sourceSet.weightKg, unitSettings)} x {current.sourceSet.reps}，{current.sourceSet.date}
                         </div>
                       </div>
                     ) : (
@@ -1363,7 +1363,7 @@ export function ProgressView({
                     )}
                     {best ? (
                       <div className="mt-2 text-sm font-bold text-slate-600">
-                        历史最佳 e1RM：{best.e1rmKg}kg / {formatAdherenceConfidence(best.confidence)}
+                        历史最佳 e1RM：{formatWeight(best.e1rmKg, unitSettings)} / {formatAdherenceConfidence(best.confidence)}
                       </div>
                     ) : null}
                     {currentLowerThanBest ? (
@@ -1525,7 +1525,7 @@ export function ProgressView({
                         {session.templateName || '未命名模板'} / {session.durationMin || 0} 分钟 / {session.completedSets} 组
                       </div>
                       <div className="mt-1 text-xs font-bold text-emerald-700">
-                        有效组 {session.effectiveSets} / 总量 {formatWeight(session.totalVolumeKg, unitSettings)}
+                        有效组 {session.effectiveSets} / 总量 {formatTrainingVolume(session.totalVolumeKg, unitSettings)}
                       </div>
                     </div>
                   )) : <div className="rounded-lg bg-white p-4 text-sm text-slate-500">当天没有训练记录。</div>}
@@ -1593,7 +1593,7 @@ export function ProgressView({
                     </details>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-black text-emerald-700">{formatWeight(sessionVolume(session), unitSettings)}</div>
+                    <div className="text-sm font-black text-emerald-700">{formatTrainingVolume(sessionVolume(session), unitSettings)}</div>
                     <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
                       {session.dataFlag === 'test' ? '恢复正式' : '标记测试'}
                     </button>

@@ -5,7 +5,7 @@ import { buildExerciseLearningPath } from '../engines/exercisePathEngine';
 import { buildSessionExplanations } from '../engines/explainability/trainingExplainability';
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
-import { formatWeight } from '../engines/unitConversionEngine';
+import { formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type {
   CorrectionModule,
@@ -302,6 +302,8 @@ export function TrainingView({
     const allDone = nextSetIndex === -1;
     const rowSet = sets[nextSetIndex] || sets[sets.length - 1];
     const increment = typeof exercise.increment === 'number' ? exercise.increment : 2.5;
+    const displayIncrement = unitSettings.weightUnit === 'lb' ? unitSettings.defaultIncrementLb : increment;
+    const incrementDeltaKg = unitSettings.weightUnit === 'lb' ? parseDisplayWeightToKg(displayIncrement, 'lb') : increment;
     const learningPath = buildExerciseLearningPath(exercise);
 
     return (
@@ -350,7 +352,7 @@ export function TrainingView({
               <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
                 <div className="text-xs font-black text-slate-500">热身 / 爬坡组</div>
                 <div className="mt-1 font-bold text-slate-800">
-                  {exercise.warmupSets?.length ? exercise.warmupSets.map((set) => `${set.label || `${set.weight}kg`} x ${set.reps}`).join(' / ') : '轻重量 1-2 组后进入正式组'}
+                  {exercise.warmupSets?.length ? exercise.warmupSets.map((set) => `${set.label || formatWeight(set.weight, unitSettings)} x ${set.reps}`).join(' / ') : '轻重量 1-2 组后进入正式组'}
                 </div>
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
@@ -488,18 +490,18 @@ export function TrainingView({
 
             <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_1fr_1.5fr_1.5fr]">
               <button
-                onClick={() => onAdjustSet(exerciseIndex, 'weight', -increment)}
+                onClick={() => onAdjustSet(exerciseIndex, 'weight', -incrementDeltaKg)}
                 disabled={allDone}
                 className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
               >
-                -{increment}kg
+                -{displayIncrement}{unitSettings.weightUnit}
               </button>
               <button
-                onClick={() => onAdjustSet(exerciseIndex, 'weight', increment)}
+                onClick={() => onAdjustSet(exerciseIndex, 'weight', incrementDeltaKg)}
                 disabled={allDone}
                 className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
               >
-                +{increment}kg
+                +{displayIncrement}{unitSettings.weightUnit}
               </button>
               <button
                 onClick={() => onAdjustSet(exerciseIndex, 'reps', -1)}
@@ -556,6 +558,8 @@ export function TrainingView({
 
     const learningPath = buildExerciseLearningPath(focusExercise);
     const increment = typeof focusExercise.increment === 'number' ? focusExercise.increment : 2.5;
+    const displayIncrement = unitSettings.weightUnit === 'lb' ? unitSettings.defaultIncrementLb : increment;
+    const incrementDeltaKg = unitSettings.weightUnit === 'lb' ? parseDisplayWeightToKg(displayIncrement, 'lb') : increment;
     const completedCount = focusSets.filter((set) => set.done).length;
 
     return (
@@ -580,13 +584,13 @@ export function TrainingView({
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-lg bg-stone-50 p-4">
               <div className="text-xs font-bold text-slate-500">目标重量</div>
-              <div className="mt-1 text-3xl font-black text-slate-950">{number(currentSet?.weight)}kg</div>
+              <div className="mt-1 text-3xl font-black text-slate-950">{formatWeight(currentSet?.weight, unitSettings)}</div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <button onClick={() => onAdjustSet(focusExerciseIndex, 'weight', -increment)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                  -{increment}
+                <button onClick={() => onAdjustSet(focusExerciseIndex, 'weight', -incrementDeltaKg)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
+                  -{displayIncrement}{unitSettings.weightUnit}
                 </button>
-                <button onClick={() => onAdjustSet(focusExerciseIndex, 'weight', increment)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                  +{increment}
+                <button onClick={() => onAdjustSet(focusExerciseIndex, 'weight', incrementDeltaKg)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
+                  +{displayIncrement}{unitSettings.weightUnit}
                 </button>
               </div>
             </div>
@@ -758,7 +762,7 @@ export function TrainingView({
         <section className="min-w-0 space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
             <Stat label="完成组数" value={`${doneSets}/${totalSets}`} tone="emerald" />
-            <Stat label="当前总量" value={formatWeight(currentVolume, unitSettings)} />
+            <Stat label="当前总量" value={formatTrainingVolume(currentVolume, unitSettings)} />
             <Stat label="状态" value={`${session.status?.energy || DEFAULT_STATUS.energy} / ${session.status?.time || DEFAULT_STATUS.time} 分`} tone="amber" />
             <Stat label="模式" value={resolveMode(session.trainingMode || 'hybrid').shortLabel} />
             <Stat label="视图" value={focusMode ? '极简' : '完整'} />

@@ -160,6 +160,43 @@ describe('persistence', () => {
     expect(sanitized.history[0]?.dataFlag).toBe('normal');
   });
 
+  it('repairs synthetic replacement ids during sanitize', () => {
+    const sanitized = sanitizeData({
+      history: [
+        {
+          id: 'synthetic-session',
+          date: '2026-04-20',
+          templateId: 'push-a',
+          templateName: 'Push A',
+          trainingMode: 'hybrid',
+          exercises: [
+            {
+              id: 'bench-press__auto_alt_alt',
+              baseId: 'bench-press',
+              originalExerciseId: 'bench-press',
+              actualExerciseId: 'bench-press__auto_alt_alt',
+              replacementExerciseId: 'bench-press__auto_alt_alt',
+              name: 'Bench synthetic',
+              muscle: 'chest',
+              kind: 'compound',
+              repMin: 6,
+              repMax: 8,
+              rest: 120,
+              startWeight: 60,
+              sets: [{ id: 'set-1', weight: 60, reps: 8, done: true }],
+            },
+          ],
+        },
+      ],
+    });
+    const exercise = sanitized.history[0]?.exercises[0];
+
+    expect(exercise?.id).toBe('bench-press');
+    expect(exercise?.actualExerciseId).toBe('bench-press');
+    expect(exercise?.replacementExerciseId).toBe('');
+    expect(exercise?.warning).toContain('合成动作 ID');
+  });
+
   it('migrates health import arrays and validates schema', () => {
     const sanitized = sanitizeData({
       healthMetricSamples: [

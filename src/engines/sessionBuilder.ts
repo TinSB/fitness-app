@@ -30,12 +30,6 @@ const TEMPLATE_ROTATION: Record<string, string> = {
   'lower-b': 'upper-a',
 };
 
-const slugify = (value: string) =>
-  String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
 const buildSessionExerciseSetLogs = (
   exercise: ExercisePrescription,
   history: TrainingSession[],
@@ -43,9 +37,8 @@ const buildSessionExerciseSetLogs = (
 ): ExercisePrescription => {
   const suggestion = makeSuggestion(exercise, history);
   const setPrescription = buildSetPrescription(exercise, suggestion);
-  const replacementName = exercise.replacementSuggested || '';
-  const resolvedName = replacementName || exercise.name;
-  const resolvedId = replacementName ? `${exercise.id}__auto_alt_${slugify(replacementName) || 'alt'}` : exercise.id;
+  const resolvedName = exercise.name;
+  const resolvedId = exercise.id;
   const useTopBackoff = shouldUseTopBackoff(exercise) && Boolean(trainingLevelAssessment?.readinessForAdvancedFeatures.topBackoff);
 
   const sets = Array.from({ length: Number(exercise.sets) }, (_, index) => ({
@@ -64,16 +57,16 @@ const buildSessionExerciseSetLogs = (
   return {
     ...exercise,
     id: resolvedId,
-    baseId: exercise.id,
+    baseId: exercise.baseId || exercise.id,
     originalName: exercise.name,
     name: resolvedName,
-    autoReplaced: Boolean(replacementName),
+    autoReplaced: false,
     targetSummary: suggestion.targetSummary,
     lastSummary: suggestion.lastSummary,
     suggestion: `${suggestion.note} ${setPrescription.summary}`.trim(),
     setPrescription,
     warmupSets: buildWarmupSets(setPrescription.topWeight, exercise),
-    alternatives: (exercise.alternatives || []).filter((item) => item !== resolvedName),
+    alternatives: exercise.alternatives || [],
     sets,
   };
 };

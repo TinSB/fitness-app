@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildPrs } from '../src/engines/analytics';
-import { applyExerciseReplacement, buildReplacementOptions } from '../src/engines/replacementEngine';
+import { applyExerciseReplacement, buildReplacementOptions, restoreOriginalExercise, validateReplacementExerciseId } from '../src/engines/replacementEngine';
 import { getExerciseRecordPoolId } from '../src/engines/e1rmEngine';
 import type { ExercisePrescription, TrainingSession } from '../src/models/training-model';
 
@@ -63,6 +63,7 @@ describe('replacementEngine', () => {
     expect(exercise.replacedFromId).toBe('bench-press');
     expect(exercise.replacedFromName).toBe('平板卧推');
     expect(exercise.baseId).toBe('bench-press');
+    expect(exercise.prIndependent).toBe(true);
   });
 
   it('keeps PR and e1RM record pool independent for the actual replacement', () => {
@@ -89,5 +90,24 @@ describe('replacementEngine', () => {
 
     expect(ids).not.toContain('db-bench-press');
     expect(ids).not.toContain('bench-press');
+  });
+
+  it('rejects synthetic replacement ids', () => {
+    const session = makeSession();
+    const next = applyExerciseReplacement(session, 0, 'bench-press__auto_alt_alt');
+
+    expect(validateReplacementExerciseId('bench-press__auto_alt_alt')).toBe(false);
+    expect(validateReplacementExerciseId('bench-press__alt_1')).toBe(false);
+    expect(next.exercises[0].id).toBe('bench-press');
+  });
+
+  it('can restore the original planned exercise explicitly', () => {
+    const replaced = applyExerciseReplacement(makeSession(), 0, 'machine-chest-press');
+    const restored = restoreOriginalExercise(replaced, 0);
+
+    expect(restored.exercises[0].id).toBe('bench-press');
+    expect(restored.exercises[0].actualExerciseId).toBe('bench-press');
+    expect(restored.exercises[0].replacementExerciseId).toBeUndefined();
+    expect(restored.exercises[0].sameTemplateSlot).toBe(false);
   });
 });

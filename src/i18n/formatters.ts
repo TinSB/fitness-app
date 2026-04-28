@@ -51,7 +51,7 @@ export const formatSplitType = (value: unknown) =>
 export const formatGoal = (value: unknown) =>
   (
     {
-      hypertrophy: '肌肥大',
+      hypertrophy: '肌肥大（增肌）',
       strength: '力量',
       fat_loss: '减脂',
     } as const

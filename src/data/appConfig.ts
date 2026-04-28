@@ -45,8 +45,8 @@ export const TRAINING_MODE_META: Record<
   },
   hypertrophy: {
     id: 'hypertrophy',
-    label: '肌肥大优先',
-    shortLabel: '肌肥大',
+    label: '肌肥大（增肌）优先',
+    shortLabel: '肌肥大（增肌）',
     description: '优先保证每周有效训练组数，复合动作稳步推进，孤立动作通过次数和总量积累刺激。',
     weeklyTargets: { 胸: 12, 背: 14, 腿: 14, 肩: 10, 手臂: 10 },
   },

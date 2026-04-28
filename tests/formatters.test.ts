@@ -28,7 +28,7 @@ describe('i18n formatters', () => {
     expect(formatCyclePhase('deload')).toBe('减量周');
     expect(formatIntensityBias('aggressive')).toBe('积极');
     expect(formatSplitType('upper_lower')).toBe('上下肢分化');
-    expect(formatGoal('hypertrophy')).toBe('肌肥大');
+    expect(formatGoal('hypertrophy')).toBe('肌肥大（增肌）');
     expect(formatBlockType('functional')).toBe('功能补丁');
     expect(formatTechniqueQuality('poor')).toBe('较差');
     expect(formatTrainingAdjustment('conservative')).toBe('保守训练');

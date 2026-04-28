@@ -33,6 +33,14 @@ const forbiddenBenchReplacementIds = new Set(['triceps-pushdown', 'shoulder-pres
 
 const displayName = (id: string, bilingual = false) => formatExerciseDisplayName(id, { bilingual, fallback: '未命名动作' });
 
+export const isSyntheticReplacementExerciseId = (id: unknown) => /__(?:auto_)?alt(?:_|$)/.test(String(id || ''));
+
+export const validateReplacementExerciseId = (id: unknown) => {
+  const value = String(id || '').trim();
+  if (!value || isSyntheticReplacementExerciseId(value)) return false;
+  return Boolean(EXERCISE_DISPLAY_NAMES[value] || EXERCISE_KNOWLEDGE_OVERRIDES[value]);
+};
+
 const baseExerciseId = (
   exercise: Pick<ExercisePrescription, 'baseId' | 'replacedFromId' | 'canonicalExerciseId' | 'id' | 'originalExerciseId' | 'actualExerciseId' | 'replacementExerciseId'>
 ) => exercise.originalExerciseId || exercise.replacedFromId || exercise.baseId || String(exercise.canonicalExerciseId || exercise.id).split('__alt_')[0];
@@ -60,7 +68,7 @@ const isSelfOrAlias = (id: string, identity: ReturnType<typeof buildCurrentIdent
 
 const optionFromId = (id: string, rank: ReplacementRank, reason: string): ReplacementOption | null => {
   const metadata = EXERCISE_KNOWLEDGE_OVERRIDES[id];
-  if (!metadata && !EXERCISE_DISPLAY_NAMES[id]) return null;
+  if (!validateReplacementExerciseId(id)) return null;
   const fatigueCost = String(metadata?.fatigueCost || 'medium');
   return {
     id,
@@ -115,6 +123,7 @@ export const buildReplacementOptions = (exercise: ExercisePrescription): Replace
 };
 
 export const applyExerciseReplacement = (session: TrainingSession, exerciseIndex: number, replacementId: string): TrainingSession => {
+  if (!validateReplacementExerciseId(replacementId)) return session;
   const next = clone(session) as TrainingSession;
   const exercise = next.exercises[exerciseIndex] as ExercisePrescription & {
     replacementReason?: string;
@@ -168,5 +177,58 @@ export const applyExerciseReplacement = (session: TrainingSession, exerciseIndex
   }
 
   next.currentExerciseId = replacementId;
+  return next;
+};
+
+export const restoreOriginalExercise = (session: TrainingSession, exerciseIndex: number): TrainingSession => {
+  const next = clone(session) as TrainingSession;
+  const exercise = next.exercises[exerciseIndex] as ExercisePrescription & {
+    replacementReason?: string;
+    sameTemplateSlot?: boolean;
+    prIndependent?: boolean;
+  };
+  if (!exercise) return session;
+  const originalId = baseExerciseId(exercise);
+  const previousActualId = actualExerciseId(exercise);
+  if (!originalId || previousActualId === originalId) return session;
+  const originalName = exercise.replacedFromName || exercise.originalName || displayName(originalId);
+  const originalMetadata = EXERCISE_KNOWLEDGE_OVERRIDES[originalId] || {};
+
+  exercise.id = originalId;
+  exercise.name = originalName;
+  exercise.alias = originalName;
+  Object.assign(exercise, originalMetadata);
+  exercise.canonicalExerciseId = originalId;
+  exercise.originalExerciseId = originalId;
+  exercise.actualExerciseId = originalId;
+  exercise.replacementExerciseId = undefined;
+  exercise.replacedFromId = undefined;
+  exercise.replacedFromName = undefined;
+  exercise.sameTemplateSlot = false;
+  exercise.prIndependent = false;
+  exercise.autoReplaced = false;
+  exercise.replacementReason = '用户手动恢复原计划动作。';
+  exercise.warning = String(exercise.warning || '')
+    .split(' / ')
+    .map((item) => item.trim())
+    .filter((item) => item && !item.startsWith('已替换为 '))
+    .join(' / ');
+
+  const oldStepPrefix = `main:${previousActualId}:`;
+  const newStepPrefix = `main:${originalId}:`;
+  const migrateStepId = (id?: string) => (id && id.startsWith(oldStepPrefix) ? id.replace(oldStepPrefix, newStepPrefix) : id);
+  next.currentFocusStepId = migrateStepId(next.currentFocusStepId);
+  next.focusCompletedStepIds = (next.focusCompletedStepIds || []).map((id) => migrateStepId(id) || id);
+  next.focusSkippedStepIds = (next.focusSkippedStepIds || []).map((id) => migrateStepId(id) || id);
+  next.focusWarmupSetLogs = (next.focusWarmupSetLogs || []).map((set) => ({ ...set, id: migrateStepId(set.id) || set.id }));
+  next.focusActualSetDrafts = (next.focusActualSetDrafts || []).map((draft) =>
+    draft.exerciseId === previousActualId || draft.stepId.startsWith(oldStepPrefix)
+      ? { ...draft, exerciseId: originalId, stepId: migrateStepId(draft.stepId) || draft.stepId }
+      : draft
+  );
+  if (next.restTimerState?.exerciseId === previousActualId) {
+    next.restTimerState = { ...next.restTimerState, exerciseId: originalId };
+  }
+  next.currentExerciseId = originalId;
   return next;
 };

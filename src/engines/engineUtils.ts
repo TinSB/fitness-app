@@ -85,8 +85,17 @@ export const sessionCompletedSets = (session: SessionLike) =>
 export const repsText = (sets: Pick<TrainingSetLog, 'reps'>[]) => sets.map((set) => number(set.reps)).join('/');
 export const weightText = (weight: unknown) => `${number(weight)}kg`;
 
+export const canonicalTrainingMode = (mode: TrainingMode | string | unknown): TrainingMode => {
+  const text = String(mode || '').trim();
+  const normalized = text.toLowerCase().replace(/[\s-]+/g, '_');
+  if (text === '增肌' || text === '肌肥大' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
+  if (text === '力量' || normalized === 'strength') return 'strength';
+  if (text === '综合' || normalized === 'hybrid') return 'hybrid';
+  return 'hybrid';
+};
+
 export const resolveMode = (mode: TrainingMode | string) =>
-  TRAINING_MODE_META[mode as TrainingMode] || TRAINING_MODE_META.hybrid;
+  TRAINING_MODE_META[canonicalTrainingMode(mode)] || TRAINING_MODE_META.hybrid;
 
 export const findTemplate = (templates: TrainingTemplate[] = [], id: string) => templates.find((template) => template.id === id) || templates[0];
 

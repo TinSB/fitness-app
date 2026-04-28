@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle, Copy, Replace, SkipForward, Timer } from 'l
 import { classNames, formatTimer, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
-import { convertKgToDisplayWeight, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
+import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
 import { formatBlockType, formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
@@ -174,7 +174,11 @@ export function TrainingFocusView({
             supportDistanceM ? ` / ${supportDistanceM} 米` : ''
           }`
         : '按支持动作计划完成'
-      : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
+      : currentStep.stepType === 'working' && mainExercise
+        ? `${formatWeight(currentStep.plannedWeight, unitSettings)} × 目标范围 ${mainExercise.repMin}-${mainExercise.repMax} 次，本组建议 ${number(currentStep.plannedReps)} 次${
+            currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''
+          }`
+        : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
   const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
@@ -268,7 +272,7 @@ export function TrainingFocusView({
           </div>
           <div className="rounded-lg bg-stone-50 p-4">
             <div className="text-xs font-black text-slate-500">当前总量</div>
-            <div className="mt-1 text-2xl font-black text-slate-950">{Math.round(focusState.totalVolume)}kg</div>
+            <div className="mt-1 text-2xl font-black text-slate-950">{formatTrainingVolume(focusState.totalVolume, unitSettings)}</div>
           </div>
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-3">

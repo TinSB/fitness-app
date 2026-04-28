@@ -45,7 +45,7 @@ const movementPatternLabels: Record<string, string> = {
 };
 
 const goalBiasLabels: Record<string, string> = {
-  hypertrophy: '增肌',
+  hypertrophy: '肌肥大（增肌）',
   strength: '力量',
   posture: '纠偏',
   functional: '功能',

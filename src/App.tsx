@@ -27,7 +27,7 @@ import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
-import { applyExerciseReplacement } from './engines/replacementEngine';
+import { applyExerciseReplacement, buildReplacementOptions } from './engines/replacementEngine';
 import { buildHealthSummary } from './engines/healthSummaryEngine';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
@@ -291,29 +291,10 @@ function App() {
       if (replacementId) {
         return { ...current, activeSession: switchFocusExercise(applyExerciseReplacement(current.activeSession, exerciseIndex, replacementId), exerciseIndex) };
       }
-      const session = clone(current.activeSession) as TrainingSession;
-      const exercise = session.exercises[exerciseIndex] as TrainingSession['exercises'][number] & {
-        replacedFromId?: string;
-        replacedFromName?: string;
-      };
-      const options = [exercise.originalName || exercise.name, ...(exercise.alternatives || [])].filter(Boolean);
-      if (!options.length) return current;
-      const currentIndex = options.indexOf(exercise.name);
-      const nextIndex = (currentIndex + 1 + options.length) % options.length;
-      const nextName = options[nextIndex];
-      const baseId = exercise.baseId || exercise.id;
-      exercise.name = nextName;
-      exercise.id = nextIndex === 0 ? baseId : `${baseId}__alt_${nextIndex}`;
-      exercise.canonicalExerciseId = nextIndex === 0 ? baseId : exercise.id;
-      exercise.replacedFromId = nextIndex === 0 ? '' : baseId;
-      exercise.replacedFromName = nextIndex === 0 ? '' : exercise.originalName;
-      const replacementNotice = '已切到替代动作：这次仍属于同一模板位置，但 PR 会独立统计。';
-      const warningParts = String(exercise.warning || '')
-        .split(' / ')
-        .map((item) => item.trim())
-        .filter((item) => item && item !== replacementNotice);
-      exercise.warning = nextIndex === 0 ? warningParts.join(' / ') : [...warningParts, replacementNotice].join(' / ');
-      return { ...current, activeSession: switchFocusExercise(session, exerciseIndex) };
+      const exercise = current.activeSession.exercises[exerciseIndex];
+      const nextOption = exercise ? buildReplacementOptions(exercise)[0] : undefined;
+      if (!nextOption) return current;
+      return { ...current, activeSession: switchFocusExercise(applyExerciseReplacement(current.activeSession, exerciseIndex, nextOption.id), exerciseIndex) };
     });
     setExpandedExercise(exerciseIndex);
   };

@@ -24,7 +24,12 @@ export const parseDisplayWeightToKg = (value: unknown, weightUnit: WeightUnit): 
 
 export const convertKgToDisplayWeight = (weightKg: unknown, weightUnit: WeightUnit): number => {
   const kg = Math.max(0, number(weightKg));
-  return weightUnit === 'lb' ? convertKgToLb(kg) : roundOne(kg);
+  return weightUnit === 'lb' ? Math.round(number(kg) / KG_PER_LB) : roundOne(kg);
+};
+
+export const convertKgToDisplayVolume = (volumeKg: unknown, weightUnit: WeightUnit): number => {
+  const kg = Math.max(0, number(volumeKg));
+  return weightUnit === 'lb' ? Math.round(number(kg) / KG_PER_LB) : Math.round(kg);
 };
 
 export const roundToIncrement = (value: number, increment: number): number => {
@@ -36,6 +41,11 @@ export const roundToIncrement = (value: number, increment: number): number => {
 export const formatWeight = (weightKg: unknown, unitSettings?: Partial<UnitSettings>): string => {
   const weightUnit = unitSettings?.weightUnit === 'lb' ? 'lb' : 'kg';
   return `${convertKgToDisplayWeight(weightKg, weightUnit)}${weightUnit}`;
+};
+
+export const formatTrainingVolume = (volumeKg: unknown, unitSettings?: Partial<UnitSettings>): string => {
+  const weightUnit = unitSettings?.weightUnit === 'lb' ? 'lb' : 'kg';
+  return `${convertKgToDisplayVolume(volumeKg, weightUnit)}${weightUnit}`;
 };
 
 export const sanitizeUnitSettings = (value: unknown): UnitSettings => {
