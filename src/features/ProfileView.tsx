@@ -4,7 +4,11 @@ import { downloadText, makeCsv } from '../engines/analytics';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import type { AppData, UnitSettings } from '../models/training-model';
-import { ActionButton, Card, InlineNotice, Page, SectionHeader, StatusBadge } from '../ui/common';
+import { InlineNotice, SectionHeader } from '../ui/common';
+import { ActionButton } from '../ui/ActionButton';
+import { Card } from '../ui/Card';
+import { PageHeader } from '../ui/PageHeader';
+import { StatusBadge } from '../ui/StatusBadge';
 import { HealthDataPanel } from './HealthDataPanel';
 
 interface ProfileViewProps {
@@ -44,7 +48,8 @@ export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestor
   };
 
   return (
-    <Page eyebrow="我的" title="设置与资料">
+    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+      <PageHeader eyebrow="我的" title="设置与资料" description="筛查、单位、健康数据导入和备份恢复都放在这里。" />
       <div className="grid gap-3 lg:grid-cols-[0.85fr_1.15fr]">
         <section className="space-y-3">
           <Card>
@@ -150,6 +155,6 @@ export function ProfileView({ data, unitSettings, onUpdateUnitSettings, onRestor
           </Card>
         </section>
       </div>
-    </Page>
+    </div>
   );
 }

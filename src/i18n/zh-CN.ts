@@ -6,9 +6,9 @@ export const zhCN = {
   nav: {
     today: '今日',
     training: '训练',
-    assessment: '筛查',
+    record: '记录',
     plan: '计划',
-    progress: '进度',
+    profile: '我的',
   },
   actions: {
     startTraining: '开始训练',

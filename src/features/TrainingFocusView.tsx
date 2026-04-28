@@ -8,7 +8,7 @@ import { buildReplacementOptions, type ReplacementOption } from '../engines/repl
 import { formatBlockType, formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import { buildTrainingFocusViewModel } from '../presenters/trainingPresenter';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
-import { StatusBadge } from '../ui/common';
+import { StatusBadge } from '../ui/StatusBadge';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Toast } from '../ui/Toast';
 import { WorkoutActionBar } from '../ui/WorkoutActionBar';

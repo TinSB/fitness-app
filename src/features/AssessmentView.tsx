@@ -15,7 +15,10 @@ import {
   PRIMARY_GOAL_LABELS,
   TRAINING_LEVEL_LABELS,
 } from '../models/training-model';
-import { InfoPill, LabelInput, Page, Segment } from '../ui/common';
+import { InfoPill, LabelInput, Segment } from '../ui/common';
+import { ActionButton } from '../ui/ActionButton';
+import { Card } from '../ui/Card';
+import { PageHeader } from '../ui/PageHeader';
 
 interface AssessmentViewProps {
   data: AppData;
@@ -74,18 +77,16 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
   const summary = screeningSummaryCards(screening);
 
   return (
-    <Page
-      eyebrow="筛查"
-      title="初始筛查与计划建档"
-      action={
-        <button onClick={onGoProgram} className="rounded-lg bg-slate-950 px-4 py-3 text-sm font-black text-white">
-          查看计划组成
-        </button>
-      }
-    >
+    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+      <PageHeader
+        eyebrow="筛查"
+        title="身体 / 动作筛查"
+        description="作为“我的”页下的低频设置，用于调整纠偏模块、功能补丁和计划建议。"
+        action={<ActionButton onClick={onGoProgram}>查看计划组成</ActionButton>}
+      />
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <section className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
+          <Card>
             <h2 className="mb-3 font-black text-slate-950">基础档案</h2>
             <div className="grid gap-3 md:grid-cols-2">
               <LabelInput label="名字" value={profile.name} onChange={(value) => onProfileChange('name', value)} />
@@ -103,9 +104,9 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
                 <Segment value={profile.trainingLevel} options={Object.keys(TRAINING_LEVEL_LABELS)} labels={TRAINING_LEVEL_LABELS} onChange={(value) => onProfileChange('trainingLevel', value)} />
               </div>
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
+          <Card>
             <h2 className="mb-3 font-black text-slate-950">计划策略</h2>
             <div className="grid gap-3 md:grid-cols-2">
               <LabelInput label="每周训练天数" type="number" value={program.daysPerWeek} onChange={(value) => onProgramChange('daysPerWeek', value)} />
@@ -131,11 +132,11 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
                 />
               </div>
             </div>
-          </section>
+          </Card>
         </section>
 
         <section className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
+          <Card>
             <h2 className="mb-3 font-black text-slate-950">体态筛查</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {POSTURE_FLAG_KEYS.map((key) => (
@@ -150,9 +151,9 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
                 </div>
               ))}
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
+          <Card>
             <h2 className="mb-3 font-black text-slate-950">动作与功能筛查</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {MOVEMENT_FLAG_KEYS.map((key) => (
@@ -167,9 +168,9 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
                 </div>
               ))}
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <Card tone="emerald">
             <div className="mb-2 text-xs font-black uppercase tracking-widest text-emerald-700">筛查输出</div>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               <InfoPill label="主线建议" value={`${formatSplitType(program.splitType)} / ${program.daysPerWeek} 天`} />
@@ -179,9 +180,9 @@ export function AssessmentView({ data, onProfileChange, onProgramChange, onScree
               <InfoPill label="预计插入的功能补丁" value={addons.map((item) => item.name).join(' / ') || '暂无'} />
               <InfoPill label="动态反馈信号" value={summary.adaptiveSignals.length ? joinLabels(summary.adaptiveSignals) : '当前还没有闭环反馈'} />
             </div>
-          </section>
+          </Card>
         </section>
       </div>
-    </Page>
+    </div>
   );
 }

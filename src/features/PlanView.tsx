@@ -16,7 +16,11 @@ import {
   formatSplitType,
 } from '../i18n/formatters';
 import type { AppData, ExercisePrescription, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
-import { ActionButton, InfoPill, LabelInput, Page, StatusBadge } from '../ui/common';
+import { InfoPill, LabelInput } from '../ui/common';
+import { ActionButton } from '../ui/ActionButton';
+import { Card } from '../ui/Card';
+import { PageHeader } from '../ui/PageHeader';
+import { StatusBadge } from '../ui/StatusBadge';
 
 interface PlanViewProps {
   data: AppData;
@@ -98,10 +102,11 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
     '保留原计划结构';
 
   return (
-    <Page
-      eyebrow="计划"
-      title="计划与模板"
-      action={
+    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+      <PageHeader
+        eyebrow="计划"
+        title="计划与模板"
+        action={
         <div className="flex gap-2">
           <ActionButton onClick={onResetTemplates} variant="secondary">
             <RotateCcw className="h-4 w-4" />
@@ -112,10 +117,10 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
             以此开练
           </ActionButton>
         </div>
-      }
-    >
+        }
+      />
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <section className="rounded-lg border border-slate-200 bg-white p-3">
+        <Card className="p-3">
           <div className="space-y-2">
             {data.templates.map((item) => {
               const selected = item.id === selectedTemplateId;
@@ -139,9 +144,9 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
               );
             })}
           </div>
-        </section>
+        </Card>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
+        <Card>
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <h2 className="text-2xl font-black text-slate-950">{templateLabel(template.id, template.name)}</h2>
@@ -313,8 +318,8 @@ export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelec
               );
             })}
           </div>
-        </section>
+        </Card>
       </div>
-    </Page>
+    </div>
   );
 }

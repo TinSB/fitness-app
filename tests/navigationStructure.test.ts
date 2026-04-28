@@ -7,16 +7,14 @@ describe('main navigation structure', () => {
   const navBlock = appSource.slice(appSource.indexOf('const navItems'), appSource.indexOf('] as const;', appSource.indexOf('const navItems')));
 
   it('uses the real training workflow navigation', () => {
-    for (const label of ['今日', '训练', '记录', '计划', '我的']) {
-      expect(navBlock).toContain(`label: '${label}'`);
+    for (const id of ['today', 'training', 'record', 'plan', 'profile']) {
+      expect(navBlock).toContain(`id: '${id}'`);
     }
   });
 
-  it('does not keep screening or progress as primary tabs', () => {
+  it('does not keep assessment or progress as primary tabs', () => {
     expect(navBlock).not.toContain("id: 'assessment'");
-    expect(navBlock).not.toContain("label: '筛查'");
     expect(navBlock).not.toContain("id: 'progress'");
-    expect(navBlock).not.toContain("label: '进度'");
   });
 
   it('routes record and profile to their page components', () => {

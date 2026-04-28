@@ -19,9 +19,12 @@ import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
-import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
+import { InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Segment, WeeklyPrescriptionCard } from '../ui/common';
+import { ActionButton } from '../ui/ActionButton';
 import { Card as ProductCard } from '../ui/Card';
 import { MetricCard } from '../ui/MetricCard';
+import { PageHeader } from '../ui/PageHeader';
+import { StatusBadge } from '../ui/StatusBadge';
 import { Term } from '../ui/Term';
 
 interface TodayViewProps {
@@ -138,10 +141,12 @@ export function TodayView({
   });
 
   return (
-    <Page
-      eyebrow="今日"
-      title={todayViewModel.pageTitle || pageTitle}
-      action={
+    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+      <PageHeader
+        eyebrow="今日"
+        title={todayViewModel.pageTitle || pageTitle}
+        description="今天是否训练、练什么、从哪里开始。"
+        action={
         todayTrainingState.status === 'in_progress' ? (
           <ActionButton type="button" onClick={onResume} variant="primary">
             继续上次训练
@@ -153,8 +158,8 @@ export function TodayView({
             <ChevronRight className="h-4 w-4" />
           </ActionButton>
         ) : null
-      }
-    >
+        }
+      />
       <ProductCard className="mb-3 border-emerald-100 bg-white">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
           <div>
@@ -236,9 +241,9 @@ export function TodayView({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-sm md:min-w-80">
-              <Stat label="模式" value={resolveMode(trainingMode).shortLabel} tone="amber" />
-              <Stat label="预计时长" value={`${adjustedPlan.duration} 分钟`} tone="emerald" />
-              <Stat label="动作数" value={adjustedExercises.length} />
+              <MetricCard label="模式" value={resolveMode(trainingMode).shortLabel} tone="amber" />
+              <MetricCard label="预计时长" value={`${adjustedPlan.duration} 分钟`} tone="emerald" />
+              <MetricCard label="动作数" value={adjustedExercises.length} />
             </div>
           </div>
 
@@ -563,11 +568,11 @@ export function TodayView({
           </section>
 
           <section className="grid grid-cols-2 gap-3">
-            <Stat label="上次训练" value={lastSession ? lastSession.templateName : '暂无'} />
-            <Stat label="本月总量" value={formatTrainingVolume(monthVolume, data.unitSettings)} tone="amber" />
+            <MetricCard label="上次训练" value={lastSession ? lastSession.templateName : '暂无'} />
+            <MetricCard label="本月总量" value={formatTrainingVolume(monthVolume, data.unitSettings)} tone="amber" />
           </section>
         </aside>
       </div>
-    </Page>
+    </div>
   );
 }

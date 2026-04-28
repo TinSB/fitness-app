@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 describe('AppShell migration', () => {
   const appSource = readFileSync('src/App.tsx', 'utf8');
   const appShellSource = readFileSync('src/ui/AppShell.tsx', 'utf8');
+  const navBlock = appSource.slice(appSource.indexOf('const navItems'), appSource.indexOf('] as const;', appSource.indexOf('const navItems')));
 
   it('renders product pages through the shared AppShell', () => {
     expect(appSource).toContain('<AppShell');
@@ -11,13 +12,11 @@ describe('AppShell migration', () => {
     expect(appShellSource).toContain('<BottomNav');
   });
 
-  it('keeps only the product-level main navigation entries', () => {
-    expect(appSource).toContain("label: '今日'");
-    expect(appSource).toContain("label: '训练'");
-    expect(appSource).toContain("label: '记录'");
-    expect(appSource).toContain("label: '计划'");
-    expect(appSource).toContain("label: '我的'");
-    expect(appSource).not.toContain("label: '筛查'");
-    expect(appSource).not.toContain("label: '进度'");
+  it('keeps only the five product-level main navigation entries', () => {
+    for (const id of ['today', 'training', 'record', 'plan', 'profile']) {
+      expect(navBlock).toContain(`id: '${id}'`);
+    }
+    expect(navBlock).not.toContain("id: 'assessment'");
+    expect(navBlock).not.toContain("id: 'progress'");
   });
 });

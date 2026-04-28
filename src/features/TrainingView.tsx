@@ -20,7 +20,9 @@ import type {
   WeightUnit,
 } from '../models/training-model';
 import { TrainingFocusView } from './TrainingFocusView';
-import { Page, Stat, SupportBlockList } from '../ui/common';
+import { SupportBlockList } from '../ui/common';
+import { MetricCard } from '../ui/MetricCard';
+import { PageHeader } from '../ui/PageHeader';
 
 type LoggedExercise = ExercisePrescription & {
   increment?: number;
@@ -171,7 +173,8 @@ export function TrainingView({
 
   if (!session) {
     return (
-      <Page eyebrow="训练" title="训练工作台">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+        <PageHeader eyebrow="训练" title="训练工作台" description="开始或继续一场训练；手机端建议进入极简模式。" />
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
           <div className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-stone-100 text-slate-400">
             <Timer className="h-5 w-5" />
@@ -187,7 +190,7 @@ export function TrainingView({
             </button>
           </div>
         </div>
-      </Page>
+      </div>
     );
   }
 
@@ -733,10 +736,12 @@ export function TrainingView({
   };
 
   return (
-    <Page
-      eyebrow="训练"
-      title={templateLabel(session.templateId, session.templateName)}
-      action={
+    <div className="mx-auto w-full max-w-7xl px-4 pb-5 pt-4 md:px-8 md:py-8">
+      <PageHeader
+        eyebrow="训练"
+        title={templateLabel(session.templateId, session.templateName)}
+        description="完整训练页用于查看所有区块和编辑细节；训练中快速记录优先使用极简模式。"
+        action={
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -756,16 +761,16 @@ export function TrainingView({
             完成训练
           </button>
         </div>
-      }
-    >
+        }
+      />
       <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
-            <Stat label="完成组数" value={`${doneSets}/${totalSets}`} tone="emerald" />
-            <Stat label="当前总量" value={formatTrainingVolume(currentVolume, unitSettings)} />
-            <Stat label="状态" value={`${session.status?.energy || DEFAULT_STATUS.energy} / ${session.status?.time || DEFAULT_STATUS.time} 分`} tone="amber" />
-            <Stat label="模式" value={resolveMode(session.trainingMode || 'hybrid').shortLabel} />
-            <Stat label="视图" value={focusMode ? '极简' : '完整'} />
+            <MetricCard label="完成组数" value={`${doneSets}/${totalSets}`} tone="emerald" />
+            <MetricCard label="当前总量" value={formatTrainingVolume(currentVolume, unitSettings)} />
+            <MetricCard label="状态" value={`${session.status?.energy || DEFAULT_STATUS.energy} / ${session.status?.time || DEFAULT_STATUS.time} 分`} tone="amber" />
+            <MetricCard label="模式" value={resolveMode(session.trainingMode || 'hybrid').shortLabel} />
+            <MetricCard label="视图" value={focusMode ? '极简' : '完整'} />
           </div>
 
           {focusMode ? (
@@ -870,6 +875,6 @@ export function TrainingView({
           ) : null}
         </aside>
       </div>
-    </Page>
+    </div>
   );
 }
