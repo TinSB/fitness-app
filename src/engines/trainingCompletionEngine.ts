@@ -1,9 +1,19 @@
 import type { AppData, TrainingSession } from '../models/training-model';
+import { number } from './engineUtils';
 import { reconcileScreeningProfile } from './adaptiveFeedbackEngine';
 import { toLocalDateKey } from './trainingCalendarEngine';
 
 export const finalizeTrainingSession = (session: TrainingSession, finishedAt = new Date().toISOString()): TrainingSession => {
   const startedAt = session.startedAt || finishedAt;
+  const focusWarmupSetLogs = (Array.isArray(session.focusWarmupSetLogs) ? session.focusWarmupSetLogs : []).map((set) => ({
+    ...set,
+    type: 'warmup',
+    weight: Math.max(0, number(set.actualWeightKg ?? set.weight)),
+    actualWeightKg: Math.max(0, number(set.actualWeightKg ?? set.weight)),
+    reps: Math.max(0, number(set.reps)),
+    done: set.done !== false,
+  }));
+
   return {
     ...session,
     date: toLocalDateKey(session.date || startedAt || finishedAt),
@@ -16,6 +26,7 @@ export const finalizeTrainingSession = (session: TrainingSession, finishedAt = n
     programTemplateName: session.programTemplateName || session.templateName,
     isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
     supportExerciseLogs: Array.isArray(session.supportExerciseLogs) ? session.supportExerciseLogs : [],
+    focusWarmupSetLogs,
   };
 };
 

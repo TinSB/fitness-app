@@ -7,13 +7,12 @@ import {
   classNames,
   completedSets,
   number,
-  sessionCompletedSets,
-  sessionVolume,
   setVolume,
   todayKey,
 } from '../engines/engineUtils';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../engines/sessionEditEngine';
+import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import {
   formatDataFlag,
@@ -21,6 +20,7 @@ import {
   formatMuscleName,
   formatPersonalRecordQuality,
   formatRirLabel,
+  formatSessionVolumeLabel,
   formatSetType,
   formatSkippedReason,
   formatTemplateName,
@@ -93,6 +93,12 @@ const historyFilterOptions: Array<{ id: SessionHistoryFilter; label: string }> =
   { id: 'excluded', label: '排除' },
 ];
 
+const dataFlagOptions: Array<{ id: SessionDataFlag; label: string }> = [
+  { id: 'normal', label: formatDataFlag('normal') },
+  { id: 'test', label: formatDataFlag('test') },
+  { id: 'excluded', label: formatDataFlag('excluded') },
+];
+
 const prFilterOptions: Array<{ id: PrSetFilter; label: string }> = [
   { id: 'all', label: '全部记录' },
   { id: 'no_pain', label: '排除不适' },
@@ -146,18 +152,16 @@ const sessionHasPain = (session: TrainingSession) =>
   (session.exercises || []).some((exercise) => Array.isArray(exercise.sets) && exercise.sets.some((set) => Boolean(set.painFlag)));
 
 const sessionNotes = (session: TrainingSession) =>
-  (session.exercises || []).flatMap((exercise) =>
-    (Array.isArray(exercise.sets) ? exercise.sets : [])
-      .filter((set) => set.note)
-      .map((set, index) => ({
-        key: `${session.id}-${exercise.id}-${set.id || index}`,
-        exerciseName: formatExerciseName(exercise),
-        setIndex: index + 1,
-        note: set.note || '',
+  groupSessionSetsByType(session).exerciseGroups.flatMap((group) =>
+    [...group.warmupSets, ...group.workingSets, ...group.uncategorizedSets]
+      .filter((entry) => entry.set.note)
+      .map((entry, index) => ({
+        key: `${session.id}-${group.exerciseId}-${entry.set.id || index}`,
+        exerciseName: formatExerciseName(group.exercise),
+        setLabel: `${entry.category === 'warmup' ? '热身组' : entry.category === 'working' ? '正式组' : '未分类组'} ${index + 1}`,
+        note: entry.set.note || '',
       })),
   );
-
-const effectiveSetsForSession = (session: TrainingSession) => buildEffectiveVolumeSummary([session]).effectiveSets;
 
 const formatPrValue = (record: PersonalRecord, unitSettings: UnitSettings) => {
   if (record.metric === 'volume') return formatTrainingVolume(record.raw ?? record.value, unitSettings);
@@ -187,7 +191,9 @@ export function RecordView({
   const [activeSection, setActiveSection] = React.useState<RecordSectionId>(() => normalizeSection(initialSection));
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
   const [selectedDateKey, setSelectedDateKey] = React.useState(selectedDate || todayKey());
-  const [selectedSession, setSelectedSession] = React.useState<TrainingSession | null>(null);
+  const [selectedSession, setSelectedSession] = React.useState<TrainingSession | null>(() =>
+    selectedSessionId ? (data.history || []).find((session) => session.id === selectedSessionId) || null : null,
+  );
   const [editDraft, setEditDraft] = React.useState<TrainingSession | null>(null);
   const [editError, setEditError] = React.useState('');
   const [pendingAction, setPendingAction] = React.useState<PendingRecordAction | null>(null);
@@ -273,6 +279,10 @@ export function RecordView({
     setEditDraft((current) => (current ? updateSessionSet(current, exerciseId, setId, patch) : current));
   };
 
+  const updateDraftDataFlag = (dataFlag: SessionDataFlag) => {
+    setEditDraft((current) => (current ? { ...current, dataFlag } : current));
+  };
+
   const requestSaveEdit = () => {
     if (!editDraft) return;
     const validation = validateSessionEdit(editDraft);
@@ -280,7 +290,14 @@ export function RecordView({
       setEditError('修正内容包含无效数值，请检查重量、次数和 RIR。');
       return;
     }
-    setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, ['sets'], '历史训练详情修正') });
+    const editedFields: string[] = [];
+    if (JSON.stringify(selectedSession?.focusWarmupSetLogs || []) !== JSON.stringify(editDraft.focusWarmupSetLogs || [])) editedFields.push('warmupSets');
+    if (JSON.stringify((selectedSession?.exercises || []).map((exercise) => exercise.sets)) !== JSON.stringify((editDraft.exercises || []).map((exercise) => exercise.sets))) {
+      editedFields.push('sets');
+    }
+    if ((selectedSession?.dataFlag || 'normal') !== (editDraft.dataFlag || 'normal')) editedFields.push('dataFlag');
+    if (!editedFields.length) editedFields.push('sets');
+    setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, editedFields, '历史训练详情修正') });
   };
 
   const confirmPendingAction = () => {
@@ -330,6 +347,10 @@ export function RecordView({
   const selectedE1rmProfile = selectedPrExerciseId ? buildE1RMProfile(analyticsHistory, selectedPrExerciseId) : null;
   const selectedExercisePrs = selectedPrExerciseId ? prs.filter((item) => item.exerciseId === selectedPrExerciseId) : [];
   const topSet = selectedExerciseSets[0];
+  const formatSessionSummaryDescription = (session: TrainingSession) => {
+    const summary = buildSessionDetailSummary(session, unitSettings);
+    return `${session.date} · ${formatSessionDuration(session)} · ${summary.workingSetCount} 正式组 · ${summary.effectiveSetCount} 有效组 · ${summary.totalDisplayVolume}`;
+  };
 
   const renderCalendarMarker = (day: (typeof calendar.days)[number]) => {
     const hasTraining = day.totalSessions > 0;
@@ -478,7 +499,7 @@ export function RecordView({
                   {sessionHasPain(session) ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
                 </span>
               }
-              description={`${session.date} · ${formatSessionDuration(session)} · ${sessionCompletedSets(session)} 组 · ${effectiveSetsForSession(session)} 有效组 · ${formatTrainingVolume(sessionVolume(session), unitSettings)}`}
+              description={formatSessionSummaryDescription(session)}
               meta={formatSessionTime(session)}
               action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>查看详情</ActionButton>}
             />
@@ -678,35 +699,40 @@ export function RecordView({
           <EmptyState title="暂无训练记录" description="完成一次训练后，可以在这里管理该训练是否参与统计。" />
         ) : (
           <div className="mt-3 space-y-2">
-            {dataRows.map((session) => (
-              <ListItem
-                key={session.id}
-                title={
-                  <span className="flex flex-wrap items-center gap-2">
-                    {getSessionTitle(session)}
-                    {renderFlagBadge(session.dataFlag)}
-                  </span>
-                }
-                description={`${session.date} · ${sessionCompletedSets(session)} 组 · ${formatTrainingVolume(sessionVolume(session), unitSettings)}`}
-                action={
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>详情</ActionButton>
-                    <ActionButton size="sm" variant="secondary" onClick={() => requestFlagChange(session.id, 'test')}>标记测试</ActionButton>
-                    <ActionButton size="sm" variant="ghost" onClick={() => requestFlagChange(session.id, 'normal')}>恢复正常</ActionButton>
-                    <ActionButton size="sm" variant="danger" onClick={() => setPendingAction({ type: 'delete', sessionId: session.id })}>删除</ActionButton>
-                  </div>
-                }
-              />
-            ))}
+            {dataRows.map((session) => {
+              const summary = buildSessionDetailSummary(session, unitSettings);
+              return (
+                <ListItem
+                  key={session.id}
+                  title={
+                    <span className="flex flex-wrap items-center gap-2">
+                      {getSessionTitle(session)}
+                      {renderFlagBadge(session.dataFlag)}
+                    </span>
+                  }
+                  description={`${session.date} · ${summary.workingSetCount} 正式组 · ${summary.totalDisplayVolume}`}
+                  action={
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>详情</ActionButton>
+                      <ActionButton size="sm" variant="secondary" onClick={() => requestFlagChange(session.id, 'test')}>标记测试</ActionButton>
+                      <ActionButton size="sm" variant="ghost" onClick={() => requestFlagChange(session.id, 'normal')}>恢复正常</ActionButton>
+                      <ActionButton size="sm" variant="danger" onClick={() => setPendingAction({ type: 'delete', sessionId: session.id })}>删除</ActionButton>
+                    </div>
+                  }
+                />
+              );
+            })}
           </div>
         )}
       </PageSection>
     );
   };
 
-  const renderSetEditor = (exerciseId: string, set: TrainingSetLog, index: number) => {
+  const renderSetEditor = (entry: SessionSetEntry, index: number) => {
+    const { exerciseId, set, category } = entry;
     const setId = set.id || String(index);
     const displayWeight = convertKgToDisplayWeight(set.actualWeightKg ?? set.weight, unitSettings.weightUnit);
+    const isWarmup = category === 'warmup';
     return (
       <div key={set.id || `${exerciseId}-${index}`} className="grid gap-2 rounded-lg bg-stone-50 p-3 text-sm md:grid-cols-[1fr_1fr_1fr_1fr]">
         <label className="grid gap-1">
@@ -742,26 +768,30 @@ export function RecordView({
             onChange={(event) => updateDraftSet(exerciseId, setId, { rir: event.target.value })}
           />
         </label>
-        <label className="grid gap-1">
-          <span className="text-xs font-semibold text-slate-500">动作质量</span>
-          <select
-            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
-            value={set.techniqueQuality || 'acceptable'}
-            onChange={(event) => updateDraftSet(exerciseId, setId, { techniqueQuality: event.target.value as TechniqueQuality })}
-          >
-            <option value="good">良好</option>
-            <option value="acceptable">可接受</option>
-            <option value="poor">较差</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2 md:col-span-2">
-          <input
-            type="checkbox"
-            checked={Boolean(set.painFlag)}
-            onChange={(event) => updateDraftSet(exerciseId, setId, { painFlag: event.target.checked })}
-          />
-          <span className="text-sm font-semibold text-slate-700">本组有不适</span>
-        </label>
+        {!isWarmup ? (
+          <>
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold text-slate-500">动作质量</span>
+              <select
+                className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
+                value={set.techniqueQuality || 'acceptable'}
+                onChange={(event) => updateDraftSet(exerciseId, setId, { techniqueQuality: event.target.value as TechniqueQuality })}
+              >
+                <option value="good">良好</option>
+                <option value="acceptable">可接受</option>
+                <option value="poor">较差</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(set.painFlag)}
+                onChange={(event) => updateDraftSet(exerciseId, setId, { painFlag: event.target.checked })}
+              />
+              <span className="text-sm font-semibold text-slate-700">本组有不适</span>
+            </label>
+          </>
+        ) : null}
         <label className="grid gap-1 md:col-span-2">
           <span className="text-xs font-semibold text-slate-500">备注</span>
           <input
@@ -779,7 +809,31 @@ export function RecordView({
     if (!session) return null;
     const isEditing = Boolean(editDraft && selectedSession && editDraft.id === selectedSession.id);
     const notes = sessionNotes(session);
-    const effective = buildEffectiveVolumeSummary([session]);
+    const summary = buildSessionDetailSummary(session, unitSettings);
+    const effective = summary.effectiveSummary;
+
+    const renderSetLine = (entry: SessionSetEntry, index: number) => {
+      const set = entry.set;
+      const label = entry.category === 'warmup' ? formatSetType('warmup') : entry.category === 'working' ? formatSetType('working') : '未分类组';
+      return (
+        <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
+          {label} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
+          {' / '}
+          {formatRirLabel(set.rir)}
+          {entry.category !== 'warmup' && set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
+          {entry.category !== 'warmup' && set.painFlag ? ' / 有不适' : ''}
+          {set.note ? ` / ${set.note}` : ''}
+        </div>
+      );
+    };
+
+    const renderSetSection = (title: string, entries: SessionSetEntry[]) =>
+      entries.length ? (
+        <div className="space-y-2">
+          <div className="text-xs font-semibold text-slate-500">{title}</div>
+          {entries.map((entry, index) => (isEditing ? renderSetEditor(entry, index) : renderSetLine(entry, index)))}
+        </div>
+      ) : null;
 
     return (
       <Drawer
@@ -798,19 +852,41 @@ export function RecordView({
               {renderFlagBadge(session.dataFlag)}
               {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
               {sessionHasPain(session) ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
+              {session.editedAt ? <StatusBadge tone="amber">已修正</StatusBadge> : null}
             </div>
             <div className="mt-1 text-sm text-slate-500">{session.date} · {formatSessionTime(session)} · {formatSessionDuration(session)}</div>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <MetricCard label="完成组数" value={`${sessionCompletedSets(session)}`} />
-              <MetricCard label="有效组" value={`${effective.effectiveSets}`} tone="emerald" />
-              <MetricCard label="总量" value={formatTrainingVolume(sessionVolume(session), unitSettings)} />
-              <MetricCard label="训练状态" value={formatDataFlag(session.dataFlag || 'normal')} />
+              <MetricCard label="完成组数" value={`${summary.workingSetCount}`} helper="正式组" />
+              <MetricCard label="有效组" value={`${summary.effectiveSetCount}`} helper="正式有效组" tone="emerald" />
+              <MetricCard label={formatSessionVolumeLabel()} value={summary.totalDisplayVolume} helper="正式组训练量" />
+              <MetricCard label="热身组" value={`${summary.warmupSetCount}`} helper={`热身量 ${formatTrainingVolume(summary.warmupVolumeKg, unitSettings)}`} />
             </div>
+            {session.dataFlag === 'test' || session.dataFlag === 'excluded' ? (
+              <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                这次训练仍可查看和修正，但当前标记为{formatDataFlag(session.dataFlag)}，不会参与 PR、e1RM、有效组和统计。
+              </div>
+            ) : null}
+            {isEditing ? (
+              <label className="mt-3 grid gap-1">
+                <span className="text-xs font-semibold text-slate-500">数据标记</span>
+                <select
+                  className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950"
+                  value={session.dataFlag || 'normal'}
+                  onChange={(event) => updateDraftDataFlag(event.target.value as SessionDataFlag)}
+                >
+                  {dataFlagOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </Card>
 
           <PageSection title="表现概览">
             <Card>
-              <div className="grid gap-2 md:grid-cols-3">
+              <div className="grid gap-2 md:grid-cols-4">
                 <div className="rounded-lg bg-stone-50 p-3">
                   <div className="text-xs font-semibold text-slate-500">高置信有效组</div>
                   <div className="mt-1 text-xl font-bold text-slate-950">{effective.highConfidenceEffectiveSets}</div>
@@ -823,13 +899,17 @@ export function RecordView({
                   <div className="text-xs font-semibold text-slate-500">不适标记</div>
                   <div className="mt-1 text-xl font-bold text-slate-950">{sessionHasPain(session) ? '有' : '无'}</div>
                 </div>
+                <div className="rounded-lg bg-stone-50 p-3">
+                  <div className="text-xs font-semibold text-slate-500">辅助完成组</div>
+                  <div className="mt-1 text-xl font-bold text-slate-950">{summary.supportSetCount}</div>
+                </div>
               </div>
             </Card>
           </PageSection>
 
           <PageSection title="动作记录">
-            {(session.exercises || []).map((exercise) => {
-              const sets = Array.isArray(exercise.sets) ? exercise.sets : [];
+            {summary.groupedSets.exerciseGroups.map((group) => {
+              const exercise = group.exercise;
               return (
                 <Card key={`${session.id}-${exercise.id}`} className="space-y-2">
                   <div className="font-semibold text-slate-950">{formatExerciseName(exercise)}</div>
@@ -839,20 +919,12 @@ export function RecordView({
                     </div>
                   ) : null}
                   <div className="space-y-2 text-xs font-semibold text-slate-600">
-                    {sets.length ? (
-                      sets.map((set: TrainingSetLog, index: number) =>
-                        isEditing ? (
-                          renderSetEditor(exercise.actualExerciseId || exercise.replacementExerciseId || exercise.id, set, index)
-                        ) : (
-                          <div key={set.id || `${exercise.id}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
-                            {formatSetType(set.type)} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
-                    {set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}
-                            {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
-                            {set.painFlag ? ' / 有不适' : ''}
-                            {set.note ? ` / ${set.note}` : ''}
-                          </div>
-                        ),
-                      )
+                    {group.warmupSets.length || group.workingSets.length || group.uncategorizedSets.length ? (
+                      <>
+                        {renderSetSection('热身组', group.warmupSets)}
+                        {renderSetSection('正式组', group.workingSets)}
+                        {renderSetSection('未分类组', group.uncategorizedSets)}
+                      </>
                     ) : (
                       <div className="rounded-md bg-stone-50 px-3 py-2 text-slate-500">没有组记录。</div>
                     )}
@@ -880,7 +952,7 @@ export function RecordView({
               <div className="space-y-2">
                 {notes.map((item) => (
                   <div key={item.key} className="rounded-lg bg-stone-50 p-3 text-sm leading-6 text-slate-600">
-                    <span className="font-semibold text-slate-950">{item.exerciseName} 第 {item.setIndex} 组：</span>
+                    <span className="font-semibold text-slate-950">{item.exerciseName} {item.setLabel}：</span>
                     {item.note}
                   </div>
                 ))}

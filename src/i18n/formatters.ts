@@ -224,6 +224,9 @@ export const formatMovementPattern = (value: unknown) =>
 export const formatSetType = (value: unknown) =>
   lookupLabel('formatSetType', value, SET_TYPE_LABELS);
 
+export const formatSessionVolumeLabel = (scope: 'working' | 'including_warmup' = 'working') =>
+  scope === 'including_warmup' ? '总量（含热身）' : '总量';
+
 export const formatRirLabel = (value: unknown) => {
   if (value === undefined || value === null || value === '') return '余力（RIR）未记录';
   const text = String(value).trim();

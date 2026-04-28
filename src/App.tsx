@@ -679,10 +679,14 @@ function App() {
   };
 
   const editHistorySession = (session: TrainingSession) => {
-    setData((current) => ({
-      ...current,
-      history: (current.history || []).map((item) => (item.id === session.id ? session : item)),
-    }));
+    setData((current) => {
+      const history = (current.history || []).map((item) => (item.id === session.id ? session : item));
+      return {
+        ...current,
+        history,
+        screeningProfile: reconcileScreeningProfile(current.screeningProfile, history),
+      };
+    });
   };
 
   const navigate = (tab: ActiveTab) => {

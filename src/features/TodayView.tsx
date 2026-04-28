@@ -166,12 +166,16 @@ export function TodayView({
       : undefined;
 
   const selectedTemplateName = templateLabel(selectedTemplate);
-  const suggestedTemplateName = templateLabel(suggestedTemplate);
   const completedTrainingName = sessionTemplateLabel(completedSession);
+  const activeTrainingName = data.activeSession?.templateId
+    ? formatTemplateName(data.activeSession.templateId, '当前训练')
+    : formatTemplateName(data.activeSession?.templateName, selectedTemplateName);
   const todayViewModel = buildTodayViewModel({
     todayState: todayTrainingState,
     selectedTemplate: { ...selectedTemplate, name: selectedTemplateName },
     completedTemplateName: completedTrainingName,
+    activeTemplateName: activeTrainingName,
+    nextSuggestion: suggestedTemplate,
   });
 
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
@@ -184,20 +188,10 @@ export function TodayView({
   const readinessScore = adjustedPlan.readinessResult?.score;
   const readinessReasons = adjustedPlan.readinessResult?.reasons || adjustedPlan.readiness.reasons || [];
   const recommendationLabel = todayViewModel.recommendationLabel;
-  const currentTrainingName =
-    todayTrainingState.status === 'completed'
-      ? completedTrainingName
-      : todayTrainingState.status === 'in_progress'
-        ? data.activeSession?.templateId
-          ? formatTemplateName(data.activeSession.templateId, '当前训练')
-          : formatTemplateName(data.activeSession?.templateName, selectedTemplateName)
-        : selectedTemplateName;
-  const decisionText =
-    todayTrainingState.status === 'completed'
-      ? `${completedTrainingName} 已完成。下次建议只作为参考，不是今天必须继续训练。`
-      : todayTrainingState.status === 'in_progress'
-        ? '当前训练还没有结束，继续记录当前组即可。'
-        : `建议今天执行 ${selectedTemplateName}。如果你要采用系统推荐的其他安排，请先切换安排再开始。`;
+  const currentTrainingName = todayViewModel.currentTrainingName;
+  const decisionText = todayViewModel.decisionText;
+  const nextSuggestion = todayViewModel.nextSuggestion;
+  const hasAlternativeSuggestion = Boolean(nextSuggestion.templateId && nextSuggestion.templateId !== selectedTemplate.id);
   const todayNote =
     readinessReasons[0] ||
     (trainingLevelAssessment.level === 'unknown'
@@ -248,12 +242,15 @@ export function TodayView({
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">{currentTrainingName}</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{decisionText}</p>
                   {todayTrainingState.status === 'completed' ? (
-                    <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900">
-                      下次建议：{suggestedTemplateName}。这是下一次训练参考，不会覆盖今日已完成状态。
+                    <div
+                      className="mt-4 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900"
+                      aria-label={`下次建议：${nextSuggestion.templateName}，不是今天必须继续训练`}
+                    >
+                      {nextSuggestion.description}
                     </div>
-                  ) : suggestedTemplate.id !== selectedTemplate.id ? (
+                  ) : hasAlternativeSuggestion ? (
                     <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
-                      系统建议可切换到 {suggestedTemplateName}。采用后再开始训练。
+                      系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
                     </div>
                   ) : null}
                 </div>
@@ -270,7 +267,7 @@ export function TodayView({
                         再练一场
                       </ActionButton>
                     </>
-                  ) : suggestedTemplate.id !== selectedTemplate.id ? (
+                  ) : hasAlternativeSuggestion ? (
                     <ActionButton type="button" onClick={onUseSuggestion} variant="secondary" fullWidth>
                       采用推荐安排
                     </ActionButton>

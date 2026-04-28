@@ -1,6 +1,6 @@
 import type { ImportedWorkoutSample, SessionDataFlag, TrainingSession } from '../models/training-model';
-import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
-import { monthKey, number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { monthKey, number } from './engineUtils';
+import { buildSessionDetailSummary } from './sessionDetailSummaryEngine';
 
 export type TrainingCalendarDay = {
   date: string;
@@ -125,18 +125,21 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
 
   const days = monthDayKeys(month).map<TrainingCalendarDay>((date) => {
     const sessions = (sessionsByDate.get(date) || []).sort((left, right) => String(left.startedAt || '').localeCompare(String(right.startedAt || '')));
-    const sessionRows = sessions.map((session) => ({
-      sessionId: session.id,
-      title: session.focus || session.templateName || '训练',
-      templateName: session.templateName,
-      startTime: session.startedAt,
-      durationMin: number(session.durationMin),
-      completedSets: sessionCompletedSets(session),
-      effectiveSets: buildEffectiveVolumeSummary([session]).effectiveSets,
-      totalVolumeKg: sessionVolume(session),
-      isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
-      dataFlag: session.dataFlag || 'normal',
-    }));
+    const sessionRows = sessions.map((session) => {
+      const summary = buildSessionDetailSummary(session);
+      return {
+        sessionId: session.id,
+        title: session.focus || session.templateName || '训练',
+        templateName: session.templateName,
+        startTime: session.startedAt,
+        durationMin: number(session.durationMin),
+        completedSets: summary.workingSetCount,
+        effectiveSets: summary.effectiveSetCount,
+        totalVolumeKg: summary.workingVolumeKg,
+        isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
+        dataFlag: session.dataFlag || 'normal',
+      };
+    });
     const externalWorkoutRows = (externalWorkoutsByDate.get(date) || [])
       .sort((left, right) => String(left.startDate || '').localeCompare(String(right.startDate || '')))
       .map((workout) => ({

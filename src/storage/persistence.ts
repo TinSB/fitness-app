@@ -487,16 +487,19 @@ export const sanitizeScreeningProfile = (screening: unknown, history: TrainingSe
   return reconcileScreeningProfile(merged, history);
 };
 
-const sanitizeSet = (set: unknown, fallbackId: string) => {
+const sanitizeSet = (set: unknown, fallbackId: string, fallbackType = 'straight') => {
   const raw = pickRecord(set);
+  const weight = Math.max(0, number(raw.actualWeightKg ?? raw.weight));
+  const reps = Math.max(0, number(raw.reps));
+  const done = typeof raw.done === 'boolean' ? raw.done : weight > 0 && reps > 0;
   return {
     id: pickString(raw.id, fallbackId),
-    type: pickString(raw.type, 'straight'),
-    weight: Math.max(0, number(raw.weight)),
-    actualWeightKg: Number.isFinite(number(raw.actualWeightKg)) ? Math.max(0, number(raw.actualWeightKg)) : undefined,
+    type: pickString(raw.type || raw.setType || raw.stepType, fallbackType),
+    weight,
+    actualWeightKg: Number.isFinite(number(raw.actualWeightKg ?? raw.weight)) ? weight : undefined,
     displayWeight: Number.isFinite(number(raw.displayWeight)) ? Math.max(0, number(raw.displayWeight)) : undefined,
     displayUnit: pickEnum(raw.displayUnit, WEIGHT_UNITS, 'kg'),
-    reps: Math.max(0, number(raw.reps)),
+    reps,
     rpe: raw.rpe ?? '',
     rir: raw.rir ?? '',
     note: pickString(raw.note),
@@ -504,7 +507,7 @@ const sanitizeSet = (set: unknown, fallbackId: string) => {
     painArea: pickString(raw.painArea),
     painSeverity: Math.max(0, Math.min(5, number(raw.painSeverity) || 0)),
     techniqueQuality: pickString(raw.techniqueQuality, 'acceptable'),
-    done: Boolean(raw.done),
+    done,
     completedAt: pickString(raw.completedAt),
   };
 };
@@ -719,6 +722,10 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
     correctionBlock: pickArray(raw.correctionBlock),
     functionalBlock: pickArray(raw.functionalBlock),
     supportExerciseLogs: pickArray(raw.supportExerciseLogs).map(sanitizeSupportExerciseLog).filter(Boolean) as SupportExerciseLog[],
+    focusWarmupSetLogs: pickArray(raw.focusWarmupSetLogs).map((set, index) => sanitizeSet(set, `warmup-${index + 1}`, 'warmup')),
+    focusCompletedWarmupPatterns: pickStringArray(raw.focusCompletedWarmupPatterns),
+    focusCompletedStepIds: pickStringArray(raw.focusCompletedStepIds),
+    focusSkippedStepIds: pickStringArray(raw.focusSkippedStepIds),
     loadFeedback: pickArray(raw.loadFeedback).map(sanitizeLoadFeedback).filter(Boolean) as LoadFeedback[],
     restTimerState: sanitizeRestTimerState(raw.restTimerState),
     feedbackSummary: isPlainObject(raw.feedbackSummary)

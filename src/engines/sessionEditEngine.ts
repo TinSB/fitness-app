@@ -27,6 +27,31 @@ const matchesExercise = (exercise: TrainingSession['exercises'][number], exercis
 const matchesSet = (set: TrainingSetLog, setId: string, index: number) =>
   set.id === setId || String(index) === setId || String(index + 1) === setId;
 
+const focusWarmupExerciseId = (set: TrainingSetLog) => {
+  const explicit = String((set as TrainingSetLog & { exerciseId?: unknown }).exerciseId || '').trim();
+  if (explicit) return explicit;
+  const match = String(set.id || '').match(/^main:([^:]+):warmup:/);
+  return match?.[1] || '';
+};
+
+const applySetPatch = (set: TrainingSetLog, patch: SessionSetEditPatch): TrainingSetLog => {
+  const nextSet: TrainingSetLog = { ...set };
+  if (patch.weightKg !== undefined) {
+    const safeWeightKg = Math.max(0, number(patch.weightKg));
+    nextSet.weight = safeWeightKg;
+    nextSet.actualWeightKg = safeWeightKg;
+  }
+  if (patch.displayWeight !== undefined) nextSet.displayWeight = Math.max(0, number(patch.displayWeight));
+  if (patch.displayUnit) nextSet.displayUnit = patch.displayUnit;
+  if (patch.reps !== undefined) nextSet.reps = Math.max(0, Math.round(number(patch.reps)));
+  if (patch.rir !== undefined) nextSet.rir = patch.rir;
+  if (patch.techniqueQuality) nextSet.techniqueQuality = patch.techniqueQuality;
+  if (patch.painFlag !== undefined) nextSet.painFlag = patch.painFlag;
+  if (patch.note !== undefined) nextSet.note = patch.note;
+  nextSet.done = true;
+  return nextSet;
+};
+
 export const updateSessionSet = (
   session: TrainingSession,
   exerciseId: string,
@@ -40,23 +65,14 @@ export const updateSessionSet = (
       ...exercise,
       sets: exercise.sets.map((set, index) => {
         if (!matchesSet(set, setId, index)) return set;
-        const nextSet: TrainingSetLog = { ...set };
-        if (patch.weightKg !== undefined) {
-          const safeWeightKg = Math.max(0, number(patch.weightKg));
-          nextSet.weight = safeWeightKg;
-          nextSet.actualWeightKg = safeWeightKg;
-        }
-        if (patch.displayWeight !== undefined) nextSet.displayWeight = Math.max(0, number(patch.displayWeight));
-        if (patch.displayUnit) nextSet.displayUnit = patch.displayUnit;
-        if (patch.reps !== undefined) nextSet.reps = Math.max(0, Math.round(number(patch.reps)));
-        if (patch.rir !== undefined) nextSet.rir = patch.rir;
-        if (patch.techniqueQuality) nextSet.techniqueQuality = patch.techniqueQuality;
-        if (patch.painFlag !== undefined) nextSet.painFlag = patch.painFlag;
-        if (patch.note !== undefined) nextSet.note = patch.note;
-        nextSet.done = true;
-        return nextSet;
+        return applySetPatch(set, patch);
       }),
     };
+  });
+  next.focusWarmupSetLogs = (next.focusWarmupSetLogs || []).map((set, index) => {
+    const warmupExerciseId = focusWarmupExerciseId(set);
+    if (warmupExerciseId !== exerciseId || !matchesSet(set, setId, index)) return set;
+    return { ...applySetPatch(set, patch), type: 'warmup' };
   });
   return next;
 };
