@@ -20,7 +20,7 @@ describe('Record entry points', () => {
 
   it('keeps calendar and history visible in the record center', () => {
     expect(recordSource).toContain('renderCalendar');
-    expect(recordSource).toContain('renderHistory');
+    expect(recordSource).toContain('renderHistoryList');
     expect(recordSource).toContain('selectedSession');
   });
 });

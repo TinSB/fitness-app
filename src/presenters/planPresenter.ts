@@ -13,7 +13,7 @@ export const buildPlanViewModel = (data: AppData): PlanViewModel => {
   return {
     currentTemplateName: current?.name || '当前模板',
     templateStateLabel: hasExperimentalTemplate ? '实验模板' : '原始模板',
-    sections: ['当前模板', '周期信息', '训练日模板', '计划调整', '调整历史'],
+    sections: ['当前模板', '周期时间线', '本周训练日', '训练日模板', '实验模板', '计划调整', '调整历史'],
     hasExperimentalTemplate,
   };
 };

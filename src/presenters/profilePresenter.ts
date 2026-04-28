@@ -8,7 +8,7 @@ export type ProfileViewModel = {
 };
 
 export const buildProfileViewModel = (data: AppData): ProfileViewModel => ({
-  sections: ['个人资料', '身体/动作筛查', '单位设置', '健康数据导入', '数据管理', 'PWA / 本地数据说明', '关于 IronPath'],
+  sections: ['个人数据状态', '身体/动作筛查', '单位设置', '健康数据导入', '备份与恢复', 'PWA / 本地数据说明', '关于 IronPath'],
   unitLabel: data.unitSettings?.weightUnit === 'lb' ? 'lb' : 'kg',
   healthImportEnabled: true,
   backupAvailable: true,

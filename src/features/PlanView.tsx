@@ -1,25 +1,37 @@
-﻿import React from 'react';
+import React from 'react';
 import { Play, RotateCcw } from 'lucide-react';
-import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_TECHNIQUE_STANDARD, PRESCRIPTION_SOURCES } from '../data/trainingData';
-import { classNames, enrichExercise, findTemplate, getPrimaryMuscles, getSecondaryMuscles } from '../engines/engineUtils';
+import { DEFAULT_PROGRAM_TEMPLATE } from '../data/trainingData';
+import { classNames, enrichExercise, findTemplate, getPrimaryMuscles } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import {
+  formatAdjustmentChangeLabel,
+  formatConfidence,
   formatCyclePhase,
   formatExerciseName,
-  formatFatigueCost,
+  formatGoal,
   formatIntensityBias,
   formatProgramTemplateName,
-  formatReadinessLevel,
   formatSplitType,
 } from '../i18n/formatters';
-import type { AppData, ExercisePrescription, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
-import { InfoPill, LabelInput } from '../ui/common';
+import type {
+  AdjustmentChange,
+  AppData,
+  ProgramAdjustmentDraft,
+  ProgramAdjustmentHistoryItem,
+  TrainingTemplate,
+  WeeklyPrescription,
+} from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { EmptyState } from '../ui/EmptyState';
+import { ListItem } from '../ui/ListItem';
+import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
+import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
@@ -34,319 +46,449 @@ interface PlanViewProps {
   onRollbackProgramAdjustment?: (historyItemId: string) => void;
 }
 
-const movementPatternLabels: Record<string, string> = {
-  squat: '深蹲',
-  hinge: '髋铰链',
-  horizontal_push: '水平推',
-  horizontal_pull: '水平拉',
-  vertical_push: '垂直推',
-  vertical_pull: '垂直拉',
-  single_leg: '单腿',
-  carry: '搬运',
-  anti_rotation: '抗旋转',
-  anti_extension: '抗伸展',
-  scapular_control: '肩胛控制',
-  mobility: '活动度',
-};
-
-const goalBiasLabels: Record<string, string> = {
-  hypertrophy: '肌肥大（增肌）',
-  strength: '力量',
-  posture: '纠偏',
-  functional: '功能',
-};
-
 const templateNameLabels: Record<string, string> = {
   'push-a': '推 A',
   'pull-a': '拉 A',
   'legs-a': '腿 A',
   upper: '上肢',
   lower: '下肢',
-  arms: '手臂 + 三角',
-  'quick-30': '快练 30',
+  arms: '手臂补量',
+  'quick-30': '30 分钟快练',
   'crowded-gym': '人多替代',
 };
 
-const labelJoin = (values: string[] = [], labels: Record<string, string>) => values.map((value) => labels[value] || value).join(' / ');
-const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || formatProgramTemplateName(fallback || id);
+const templateLabel = (template: Pick<TrainingTemplate, 'id' | 'name'> | string, fallback = '') => {
+  if (typeof template === 'string') return templateNameLabels[template] || formatProgramTemplateName(fallback || template);
+  return templateNameLabels[template.id] || formatProgramTemplateName(template.name || template.id);
+};
 
-export function PlanView({ data, weeklyPrescription, selectedTemplateId, onSelectTemplate, onStartTemplate, onUpdateExercise, onResetTemplates, onRollbackProgramAdjustment }: PlanViewProps) {
-  const fallbackTemplate = data.templates.find((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
-  const template = findTemplate(data.templates, fallbackTemplate) as TrainingTemplate;
-  const prescribedExercises = applyStatusRules(template, data.todayStatus, data.trainingMode, weeklyPrescription, data.history, data.screeningProfile, data.mesocyclePlan)
-    .exercises as ExercisePrescription[];
-  const supportPlan = buildSupportPlan(data, template);
-  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: data.history || [] });
+const formatDateLabel = (value?: string) => {
+  if (!value) return '未记录日期';
+  return value.slice(0, 10);
+};
+
+const formatChangeImpact = (change: AdjustmentChange) => {
+  if (change.skipped) return change.skipReason || '该项已跳过，不会修改模板。';
+  if (change.type === 'add_sets') return `给已有动作增加 ${change.setsDelta || change.sets || 1} 组。`;
+  if (change.type === 'remove_sets') return `减少 ${Math.abs(change.setsDelta || change.sets || 1)} 组训练量。`;
+  if (change.type === 'add_new_exercise') {
+    return `新增 ${change.exerciseName || formatExerciseName(change.exerciseId)}，${change.sets || 1} 组${change.repMin && change.repMax ? `，${change.repMin}-${change.repMax} 次` : ''}。`;
+  }
+  if (change.type === 'swap_exercise') return `替换为 ${change.replacementExerciseName || formatExerciseName(change.replacementExerciseId)}。`;
+  if (change.type === 'reduce_support') return '降低纠偏或功能补丁剂量，缩短训练负担。';
+  if (change.type === 'increase_support') return '增加关键纠偏或功能补丁，优先处理短板。';
+  return '保留当前计划结构。';
+};
+
+const formatChangeReason = (change: AdjustmentChange) => change.reason || change.previewNote || '根据近期训练记录生成。';
+
+const adjustmentStatusTone = (item: ProgramAdjustmentHistoryItem): 'emerald' | 'amber' | 'slate' => {
+  if (item.rolledBackAt) return 'slate';
+  if (item.rollbackAvailable) return 'amber';
+  return 'emerald';
+};
+
+const TemplateStatusBadge = ({
+  template,
+  activeTemplateId,
+}: {
+  template: TrainingTemplate;
+  activeTemplateId?: string;
+}) => {
+  if (template.id === activeTemplateId && template.isExperimentalTemplate) return <StatusBadge tone="amber">当前实验模板</StatusBadge>;
+  if (template.id === activeTemplateId) return <StatusBadge tone="emerald">当前使用</StatusBadge>;
+  if (template.isExperimentalTemplate) return <StatusBadge tone="amber">实验模板</StatusBadge>;
+  return <StatusBadge tone="slate">可选模板</StatusBadge>;
+};
+
+const PlanInput = ({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  type?: string;
+}) => (
+  <label className="block">
+    <span className="mb-1 block text-xs font-semibold text-slate-500">{label}</span>
+    <input
+      type={type}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-900 outline-none transition focus:border-emerald-500 md:text-sm"
+    />
+  </label>
+);
+
+export function PlanView({
+  data,
+  weeklyPrescription,
+  selectedTemplateId,
+  onSelectTemplate,
+  onStartTemplate,
+  onUpdateExercise,
+  onResetTemplates,
+  onRollbackProgramAdjustment,
+}: PlanViewProps) {
+  const [rollbackTarget, setRollbackTarget] = React.useState<ProgramAdjustmentHistoryItem | null>(null);
+  const fallbackTemplateId = data.templates.some((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
+  const selectedTemplate = findTemplate(data.templates, fallbackTemplateId) as TrainingTemplate;
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
-  const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const mesocycle = data.mesocyclePlan;
+  const mesocycleWeek = getCurrentMesocycleWeek(mesocycle);
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
-  const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || template;
-  const activeHistoryItem = (data.programAdjustmentHistory || []).find(
-    (item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id
-  );
-  const sourceTemplate = activeHistoryItem
-    ? data.templates.find((item) => item.id === activeHistoryItem.sourceProgramTemplateId)
-    : undefined;
+  const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || selectedTemplate;
+  const prescribed = applyStatusRules(selectedTemplate, data.todayStatus, data.trainingMode, weeklyPrescription, data.history, data.screeningProfile, mesocycle);
+  const supportPlan = buildSupportPlan(data, selectedTemplate);
+  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: data.history || [] });
+  const adjustmentDrafts = (data.programAdjustmentDrafts || []).slice(0, 3);
+  const adjustmentHistory = data.programAdjustmentHistory || [];
+  const activeHistoryItem = adjustmentHistory.find((item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id);
+  const experimentalTemplates = data.templates.filter((template) => template.isExperimentalTemplate || template.sourceTemplateId);
   const activeTemplateMissing = Boolean(data.activeProgramTemplateId && !data.templates.some((item) => item.id === data.activeProgramTemplateId));
-  const hasRollbackRecord = (data.programAdjustmentHistory || []).some((item) => item.rolledBackAt && item.sourceProgramTemplateId === currentTemplate.id);
+
   const currentTemplateStatus = activeHistoryItem
     ? '实验模板'
-    : hasRollbackRecord
-      ? '已回滚到原模板'
+    : adjustmentHistory.some((item) => item.rolledBackAt && item.sourceProgramTemplateId === currentTemplate.id)
+      ? '已回滚模板'
       : '原始模板';
-  const currentTemplateName = formatProgramTemplateName(currentTemplate.name || currentTemplate.id);
-  const sourceTemplateName = formatProgramTemplateName(sourceTemplate?.name || activeHistoryItem?.sourceProgramTemplateName || '');
-  const mainAdjustmentSummary =
-    activeHistoryItem?.mainChangeSummary ||
-    currentTemplate.adjustmentSummary ||
-    activeHistoryItem?.changes.slice(0, 3).map((change) => change.reason).join(' / ') ||
-    '保留原计划结构';
+
+  const confirmRollback = () => {
+    if (!rollbackTarget || !onRollbackProgramAdjustment) return;
+    onRollbackProgramAdjustment(rollbackTarget.id);
+    setRollbackTarget(null);
+  };
+
+  const renderCurrentTemplate = () => (
+    <PageSection title="当前模板" description="这里显示现在计划正在使用的模板，不混入历史训练详情。">
+      <Card className={classNames('space-y-4', activeHistoryItem ? 'border-amber-200 bg-amber-50' : '')}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <StatusBadge tone={activeHistoryItem ? 'amber' : currentTemplateStatus === '已回滚模板' ? 'sky' : 'emerald'}>{currentTemplateStatus}</StatusBadge>
+              {activeTemplateMissing ? <StatusBadge tone="amber">已回退到可用模板</StatusBadge> : null}
+            </div>
+            <h2 className="text-xl font-bold text-slate-950">{templateLabel(currentTemplate)}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              {currentTemplate.focus || '计划训练'} · {currentTemplate.duration || program.dayTemplates?.[0]?.estimatedDurationMin || 60} 分钟 · {currentTemplate.exercises?.length || 0} 个动作
+            </p>
+            {activeHistoryItem ? (
+              <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-sm leading-6 text-amber-950">
+                来源模板：{formatProgramTemplateName(activeHistoryItem.sourceProgramTemplateName || activeHistoryItem.sourceProgramTemplateId)}
+                <br />
+                主要调整：{activeHistoryItem.mainChangeSummary || activeHistoryItem.changes?.[0]?.reason || '实验模板调整'}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ActionButton variant="secondary" onClick={onResetTemplates}>
+              <RotateCcw className="h-4 w-4" />
+              恢复默认
+            </ActionButton>
+            <ActionButton variant="secondary" onClick={() => onStartTemplate(currentTemplate.id)}>
+              <Play className="h-4 w-4" />
+              以此开练
+            </ActionButton>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <MetricCard label="计划目标" value={formatGoal(program.primaryGoal)} tone="emerald" />
+          <MetricCard label="分化方式" value={formatSplitType(program.splitType)} />
+          <MetricCard label="每周频率" value={`${program.daysPerWeek} 天`} />
+        </div>
+      </Card>
+    </PageSection>
+  );
+
+  const renderCycleTimeline = () => (
+    <PageSection title="周期时间线" description="当前周期只说明未来几周怎么推进，不展示训练历史。">
+      <Card>
+        <div className="mb-3 grid gap-3 md:grid-cols-3">
+          <MetricCard label="当前周" value={`第 ${mesocycleWeek.weekIndex + 1} 周`} tone="sky" />
+          <MetricCard label="阶段" value={formatCyclePhase(mesocycleWeek.phase)} />
+          <MetricCard label="容量 / 强度" value={`${Math.round(mesocycleWeek.volumeMultiplier * 100)}% / ${formatIntensityBias(mesocycleWeek.intensityBias)}`} />
+        </div>
+        <div className="grid gap-2 md:grid-cols-4">
+          {(mesocycle.weeks || []).map((week) => {
+            const isCurrent = week.weekIndex === mesocycleWeek.weekIndex;
+            return (
+              <div
+                key={week.weekIndex}
+                className={classNames(
+                  'rounded-lg border p-3',
+                  isCurrent ? 'border-emerald-300 bg-emerald-50 text-emerald-950' : 'border-slate-200 bg-stone-50 text-slate-700',
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold">第 {week.weekIndex + 1} 周</span>
+                  {isCurrent ? <StatusBadge tone="emerald">当前</StatusBadge> : null}
+                </div>
+                <div className="mt-2 text-xs leading-5 text-slate-600">
+                  {formatCyclePhase(week.phase)} · 容量 {Math.round(week.volumeMultiplier * 100)}% · {formatIntensityBias(week.intensityBias)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </PageSection>
+  );
+
+  const renderThisWeekDays = () => (
+    <PageSection title="本周训练日" description="这些是本周计划结构，用来回答接下来每次大致练什么。">
+      <div className="grid gap-3 md:grid-cols-2">
+        {(program.dayTemplates || []).map((day, index) => (
+          <Card key={day.id} className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-emerald-700">训练日 {index + 1}</div>
+                <h3 className="mt-1 text-base font-semibold text-slate-950">{day.name}</h3>
+                <p className="mt-1 text-sm text-slate-500">{day.focusMuscles.join(' / ') || '综合训练'} · 预计 {day.estimatedDurationMin} 分钟</p>
+              </div>
+              <StatusBadge tone="sky">{day.mainExerciseIds.length} 个主动作</StatusBadge>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+              {day.mainExerciseIds.slice(0, 5).map((exerciseId) => (
+                <span key={exerciseId} className="rounded-md bg-stone-50 px-2 py-1">
+                  {formatExerciseName(exerciseId)}
+                </span>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </PageSection>
+  );
+
+  const renderTrainingTemplates = () => (
+    <PageSection title="训练日模板" description="选择一个模板查看结构。实验模板会用独立标记区分。">
+      <div className="grid gap-3">
+        {data.templates.map((template) => {
+          const selected = template.id === selectedTemplate.id;
+          return (
+            <Card
+              key={template.id}
+              className={classNames(
+                'transition',
+                selected ? 'border-emerald-300 bg-emerald-50' : '',
+                template.isExperimentalTemplate && !selected ? 'border-amber-200 bg-amber-50' : '',
+              )}
+            >
+              <button type="button" className="w-full text-left" onClick={() => onSelectTemplate(template.id)}>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-semibold text-slate-950">{templateLabel(template)}</h3>
+                      <TemplateStatusBadge template={template} activeTemplateId={activeTemplateId} />
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{template.focus} · {template.duration} 分钟 · {template.exercises.length} 个动作</p>
+                  </div>
+                  <StatusBadge tone={selected ? 'emerald' : 'slate'}>{selected ? '正在查看' : '点击查看'}</StatusBadge>
+                </div>
+              </button>
+            </Card>
+          );
+        })}
+      </div>
+    </PageSection>
+  );
+
+  const renderSelectedTemplateDetail = () => (
+    <PageSection title="当前查看的训练日" description="只展示训练执行所需的处方摘要；细节可展开调整。">
+      <Card className="space-y-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-950">{templateLabel(selectedTemplate)}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{selectedTemplate.note || selectedTemplate.focus}</p>
+          </div>
+          <ActionButton variant="secondary" onClick={() => onStartTemplate(selectedTemplate.id)}>
+            以此模板训练
+          </ActionButton>
+        </div>
+        <div className="space-y-2">
+          {selectedTemplate.exercises.map((exercise, index) => {
+            const enriched = enrichExercise(exercise);
+            const prescription = prescribed.exercises[index] || enriched;
+            const muscles = getPrimaryMuscles(prescription).join(' / ') || exercise.muscle;
+            return (
+              <details key={`${exercise.id}-${index}`} className="rounded-lg border border-slate-200 bg-stone-50 p-3">
+                <summary className="cursor-pointer list-none">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-500">#{index + 1}</div>
+                      <h3 className="font-semibold text-slate-950">{formatExerciseName(exercise)}</h3>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {muscles} · {exercise.sets} 组 · {exercise.repMin}-{exercise.repMax} 次 · 休息 {exercise.rest} 秒
+                      </p>
+                    </div>
+                    <StatusBadge tone={exercise.kind === 'compound' ? 'emerald' : exercise.kind === 'machine' ? 'sky' : 'slate'}>
+                      {exercise.kind === 'compound' ? '复合动作' : exercise.kind === 'machine' ? '器械动作' : '孤立动作'}
+                    </StatusBadge>
+                  </div>
+                </summary>
+                <div className="mt-3 grid gap-3 md:grid-cols-5">
+                  <PlanInput label="别名" value={exercise.alias || ''} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'alias', value)} />
+                  <PlanInput label="组数" type="number" value={exercise.sets} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'sets', value)} />
+                  <PlanInput label="次数下限" type="number" value={exercise.repMin} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'repMin', value)} />
+                  <PlanInput label="次数上限" type="number" value={exercise.repMax} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'repMax', value)} />
+                  <PlanInput label="休息秒数" type="number" value={exercise.rest} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'rest', value)} />
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      </Card>
+    </PageSection>
+  );
+
+  const renderAdjustmentSuggestion = (draft: ProgramAdjustmentDraft) => (
+    <Card key={draft.id} className="space-y-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-base font-semibold text-slate-950">{draft.title}</h3>
+            <StatusBadge tone={draft.status === 'stale' ? 'amber' : 'sky'}>{draft.status === 'stale' ? '已过期' : '草稿'}</StatusBadge>
+            <StatusBadge tone="slate">置信度：{formatConfidence(draft.confidence)}</StatusBadge>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{draft.summary}</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {draft.changes.slice(0, 4).map((change) => (
+          <div key={change.id} className="rounded-lg bg-stone-50 p-3">
+            <div className="text-sm font-semibold text-slate-950">{formatAdjustmentChangeLabel(change.type)}</div>
+            <div className="mt-1 text-xs leading-5 text-slate-600">原因：{formatChangeReason(change)}</div>
+            <div className="mt-1 text-xs leading-5 text-slate-600">影响：{formatChangeImpact(change)}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const renderExperimentalTemplates = () => (
+    <PageSection title="实验模板" description="实验模板不会覆盖原模板，完成过的训练记录也会保留。">
+      {experimentalTemplates.length ? (
+        <div className="space-y-2">
+          {experimentalTemplates.map((template) => (
+            <ListItem
+              key={template.id}
+              title={
+                <span className="flex flex-wrap items-center gap-2">
+                  {templateLabel(template)}
+                  <TemplateStatusBadge template={template} activeTemplateId={activeTemplateId} />
+                </span>
+              }
+              description={`来源：${formatProgramTemplateName(template.sourceTemplateName || template.sourceTemplateId || '原模板')} · ${template.adjustmentSummary || '计划调整实验'}`}
+              meta={template.appliedAt ? `应用时间：${formatDateLabel(template.appliedAt)}` : undefined}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState title="暂无实验模板" description="应用计划调整后，会生成独立实验模板；原模板和历史训练记录不会被删除。" />
+      )}
+    </PageSection>
+  );
+
+  const renderVersionHistory = () => (
+    <PageSection title="版本历史与回滚" description="回滚只恢复当前使用的计划模板，不会删除已经完成的训练记录。">
+      {adjustmentHistory.length ? (
+        <div className="space-y-2">
+          {adjustmentHistory.map((item) => (
+            <Card key={item.id} className={classNames('space-y-3', item.rollbackAvailable && !item.rolledBackAt ? 'border-amber-200 bg-amber-50' : '')}>
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-semibold text-slate-950">{item.mainChangeSummary || '计划版本调整'}</h3>
+                    <StatusBadge tone={adjustmentStatusTone(item)}>{item.rolledBackAt ? '已回滚' : item.rollbackAvailable ? '可回滚' : '已应用'}</StatusBadge>
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {formatDateLabel(item.appliedAt)} · 来源：{formatProgramTemplateName(item.sourceProgramTemplateName || item.sourceProgramTemplateId)}
+                    {' → '}
+                    实验：{formatProgramTemplateName(item.experimentalProgramTemplateName || item.experimentalProgramTemplateId)}
+                  </p>
+                  <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-xs leading-5 text-slate-600">
+                    回滚说明：只切回原计划模板；已经完成的训练记录、历史详情、PR/e1RM 记录不会被删除。
+                  </p>
+                </div>
+                {item.rollbackAvailable && !item.rolledBackAt && onRollbackProgramAdjustment ? (
+                  <ActionButton variant="danger" onClick={() => setRollbackTarget(item)}>
+                    回滚到原模板
+                  </ActionButton>
+                ) : null}
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <EmptyState title="暂无版本历史" description="应用实验模板后，这里会保留版本记录和回滚入口。" />
+      )}
+    </PageSection>
+  );
 
   return (
     <ResponsivePageLayout>
-      <PageHeader
-        eyebrow="计划"
-        title="计划与模板"
-        action={
-        <div className="flex gap-2">
-          <ActionButton onClick={onResetTemplates} variant="secondary">
-            <RotateCcw className="h-4 w-4" />
-            恢复默认
-          </ActionButton>
-          <ActionButton onClick={() => onStartTemplate(template.id)} variant="primary">
-            <Play className="h-4 w-4" />
-            以此开练
-          </ActionButton>
+      <PageHeader eyebrow="计划" title="计划管理中心" description="回答“我以后怎么练”：当前计划、周期推进、训练日模板和实验版本。" />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_420px]">
+        <div className="space-y-4">
+          {renderCurrentTemplate()}
+          {renderCycleTimeline()}
+          {renderThisWeekDays()}
+          {renderTrainingTemplates()}
+          {renderSelectedTemplateDetail()}
         </div>
-        }
-      />
-      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <Card className="p-3">
-          <div className="space-y-2">
-            {data.templates.map((item) => {
-              const selected = item.id === selectedTemplateId;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectTemplate(item.id)}
-                  className={classNames(
-                    'w-full rounded-lg border p-4 text-left transition',
-                    selected ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:bg-stone-50'
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-black text-slate-950">{templateLabel(item.id, item.name)}</h2>
-                    <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">{item.duration} 分钟</span>
-                  </div>
-                  <div className="mt-1 text-sm text-slate-500">
-                    {item.focus} / {item.exercises.length} 个动作
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-
-        <Card>
-          <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-2xl font-black text-slate-950">{templateLabel(template.id, template.name)}</h2>
-              <p className="mt-1 text-sm text-slate-500">{template.note}</p>
-            </div>
-            <div className="rounded-lg bg-stone-50 px-4 py-3 text-sm font-bold text-slate-700">
-              {template.focus} / {template.duration} 分钟
-            </div>
-          </div>
-
-          {activeTemplateMissing ? (
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-900">
-              当前激活模板不存在，系统已回退到可用模板继续展示，不会让页面崩溃。
-            </div>
-          ) : null}
-
-          <section className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <div className="text-xs font-black uppercase tracking-widest text-emerald-700">当前模板状态</div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <h3 className="font-black text-slate-950">{currentTemplateStatus}</h3>
-                  <StatusBadge tone={activeHistoryItem ? 'amber' : hasRollbackRecord ? 'sky' : 'emerald'}>{currentTemplateStatus}</StatusBadge>
-                </div>
-                <div className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                  当前使用：{currentTemplateName}
-                  {sourceTemplate ? `；来源模板：${sourceTemplateName}` : ''}
-                </div>
-                {activeHistoryItem ? (
-                  <div className="mt-2 text-sm leading-6 text-emerald-950">
-                    应用时间：{activeHistoryItem.appliedAt.slice(0, 10)}；主要调整：{mainAdjustmentSummary}
-                  </div>
-                ) : null}
-              </div>
-              {activeHistoryItem && onRollbackProgramAdjustment ? (
-                <ActionButton
-                  type="button"
-                  onClick={() => {
-                    if (!window.confirm('确认回滚到原模板吗？实验模板历史会保留。')) return;
-                    onRollbackProgramAdjustment(activeHistoryItem.id);
-                  }}
-                  variant="danger"
-                >
-                  回滚到原模板
-                </ActionButton>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <div className="text-xs font-black uppercase tracking-widest text-sky-700">训练基线</div>
-                <h3 className="mt-1 font-black text-slate-950">{formatAutoTrainingLevel(trainingLevelAssessment.level)}</h3>
-                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                  {trainingLevelAssessment.level === 'unknown'
-                    ? '当前模板是起始模板，不是基于历史数据生成。系统会在 2–3 次训练后开始校准等级。'
-                    : `当前等级会影响模板建议：顶组/回退组${trainingLevelAssessment.readinessForAdvancedFeatures.topBackoff ? '可用' : '保守关闭'}，高容量${trainingLevelAssessment.readinessForAdvancedFeatures.higherVolume ? '可用' : '未启用'}。`}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.advancedExerciseSelection ? 'emerald' : 'slate'}>
-                  复杂动作选择{trainingLevelAssessment.readinessForAdvancedFeatures.advancedExerciseSelection ? '可用' : '保守'}
+        <aside className="space-y-4">
+          <PageSection title="训练基线" description="等级只影响计划建议的保守程度，不会强制改模板。">
+            <Card className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge tone={trainingLevelAssessment.level === 'unknown' ? 'slate' : 'emerald'}>
+                  {formatAutoTrainingLevel(trainingLevelAssessment.level)}
                 </StatusBadge>
-                <StatusBadge tone={trainingLevelAssessment.readinessForAdvancedFeatures.aggressiveProgression ? 'emerald' : 'slate'}>
-                  激进进阶{trainingLevelAssessment.readinessForAdvancedFeatures.aggressiveProgression ? '可用' : '关闭'}
-                </StatusBadge>
+                <StatusBadge tone="slate">置信度：{formatConfidence(trainingLevelAssessment.confidence)}</StatusBadge>
               </div>
+              <p className="text-sm leading-6 text-slate-600">
+                {trainingLevelAssessment.level === 'unknown'
+                  ? '当前模板是起始模板，不是基于历史数据生成。完成 2–3 次训练后，系统会开始校准。'
+                  : '近期记录会影响高级功能启用、训练量上限和动作复杂度建议。'}
+              </p>
+            </Card>
+          </PageSection>
+
+          <PageSection title="计划构成" description="主训练、纠偏和功能补丁的未来安排。">
+            <div className="grid gap-3">
+              <MetricCard label="主训练占比" value={`${supportPlan.ratios.mainline}%`} tone="emerald" helper={`${formatSplitType(program.splitType)} · ${program.daysPerWeek} 天`} />
+              <MetricCard label="纠偏模块" value={`${supportPlan.correctionModules.length} 项`} helper={supportPlan.correctionModules.map((item) => item.name).join(' / ') || '暂无'} />
+              <MetricCard label="功能补丁" value={`${supportPlan.functionalAddons.length} 项`} helper={supportPlan.functionalAddons.map((item) => item.name).join(' / ') || '最低配补丁'} />
             </div>
-          </section>
+          </PageSection>
 
-          <div className="mb-4 grid gap-3 md:grid-cols-3">
-            <section className="rounded-lg border border-slate-200 bg-stone-50 p-4">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-500">主线</div>
-              <h3 className="mt-1 font-black text-slate-950">主线结构</h3>
-              <div className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {formatSplitType(program.splitType)} / {program.daysPerWeek} 天 / {supportPlan.ratios.mainline}%
-              </div>
-            </section>
-            <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <div className="text-xs font-black uppercase tracking-widest text-emerald-700">纠偏</div>
-              <h3 className="mt-1 font-black text-slate-950">纠偏层</h3>
-              <div className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {supportPlan.correctionModules.map((module) => module.name).join(' / ') || '暂无'} / {supportPlan.ratios.correction}%
-              </div>
-            </section>
-            <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="text-xs font-black uppercase tracking-widest text-amber-700">补丁</div>
-              <h3 className="mt-1 font-black text-slate-950">功能补丁层</h3>
-              <div className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {supportPlan.functionalAddons.map((addon) => addon.name).join(' / ') || '最低配补丁'} / {supportPlan.ratios.functional}%
-              </div>
-            </section>
-          </div>
+          <PageSection title="调整建议" description="每条建议都显示原因和对模板的影响。">
+            {adjustmentDrafts.length ? (
+              <div className="space-y-3">{adjustmentDrafts.map(renderAdjustmentSuggestion)}</div>
+            ) : (
+              <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成计划调整草稿。" />
+            )}
+          </PageSection>
 
-          <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-xs font-black uppercase tracking-widest text-slate-500">周期层</div>
-            <div className="mt-2 grid gap-2 md:grid-cols-3">
-              <InfoPill label="当前周" value={`第 ${mesocycleWeek.weekIndex + 1} 周`} />
-              <InfoPill label="周期阶段" value={formatCyclePhase(mesocycleWeek.phase)} />
-              <InfoPill label="容量 / 强度" value={`${Math.round(mesocycleWeek.volumeMultiplier * 100)}% / ${formatIntensityBias(mesocycleWeek.intensityBias)}`} />
-            </div>
-            {mesocycleWeek.notes ? <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-700">{mesocycleWeek.notes}</div> : null}
-          </div>
-
-          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <div className="text-xs font-black uppercase tracking-widest text-emerald-700">处方依据</div>
-            <div className="mt-2 grid gap-2 md:grid-cols-3">
-              {PRESCRIPTION_SOURCES.map((source) => (
-                <div key={source} className="rounded-md bg-white/70 p-3 text-xs font-bold leading-5 text-emerald-950">
-                  {source}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {template.exercises.map((exercise: TrainingTemplate['exercises'][number], index: number) => {
-              const prescribed = prescribedExercises[index] || (enrichExercise(exercise) as ExercisePrescription);
-              return (
-                <div key={`${exercise.id}-${index}`} className="rounded-lg border border-slate-200 bg-stone-50 p-3">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-black text-slate-500">#{index + 1}</div>
-                      <h3 className="font-black text-slate-950">{formatExerciseName(exercise)}</h3>
-                    </div>
-                    <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">{exercise.muscle}</span>
-                  </div>
-
-                  <div className="grid gap-2 md:grid-cols-6">
-                    <LabelInput label="别名" value={exercise.alias || ''} onChange={(value) => onUpdateExercise(template.id, index, 'alias', value)} />
-                    <LabelInput label="组数" type="number" value={exercise.sets} onChange={(value) => onUpdateExercise(template.id, index, 'sets', value)} />
-                    <LabelInput label="次数下限" type="number" value={exercise.repMin} onChange={(value) => onUpdateExercise(template.id, index, 'repMin', value)} />
-                    <LabelInput label="次数上限" type="number" value={exercise.repMax} onChange={(value) => onUpdateExercise(template.id, index, 'repMax', value)} />
-                    <LabelInput label="休息秒数" type="number" value={exercise.rest} onChange={(value) => onUpdateExercise(template.id, index, 'rest', value)} />
-                    <LabelInput label="默认重量 kg" type="number" value={exercise.startWeight} onChange={(value) => onUpdateExercise(template.id, index, 'startWeight', value)} />
-                  </div>
-
-                  <div className="mt-3 rounded-md bg-white p-3 text-sm text-slate-600">
-                    <span className="font-bold text-slate-950">替代动作：</span>
-                    {exercise.alternatives?.map((item) => formatExerciseName(item)).join(' / ') || '暂无'}
-                  </div>
-
-                  <div className="mt-3 grid gap-2 md:grid-cols-3">
-                    <LabelInput label="ROM 标准" value={exercise.techniqueStandard?.rom || DEFAULT_TECHNIQUE_STANDARD.rom} onChange={(value) => onUpdateExercise(template.id, index, 'rom', value)} />
-                    <LabelInput label="动作节奏" value={exercise.techniqueStandard?.tempo || DEFAULT_TECHNIQUE_STANDARD.tempo} onChange={(value) => onUpdateExercise(template.id, index, 'tempo', value)} />
-                    <LabelInput
-                      label="停止条件"
-                      value={exercise.techniqueStandard?.stopRule || DEFAULT_TECHNIQUE_STANDARD.stopRule}
-                      onChange={(value) => onUpdateExercise(template.id, index, 'stopRule', value)}
-                    />
-                  </div>
-
-                  <div className="mt-3 grid gap-2 md:grid-cols-4">
-                    <InfoPill label="动作模式" value={movementPatternLabels[prescribed.movementPattern || ''] || prescribed.movementPattern || '未标记'} />
-                    <InfoPill label="主要肌群" value={`${getPrimaryMuscles(prescribed).join(' / ')} / 辅助 ${getSecondaryMuscles(prescribed).join(' / ') || '无'}`} />
-                    <InfoPill label="替代链" value={`${prescribed.equivalence?.label || prescribed.movementPattern || '同模式'} / 最佳记录分池`} />
-                    <InfoPill label="目标偏向" value={labelJoin(prescribed.goalBias, goalBiasLabels) || '增肌'} />
-                    <InfoPill label="负荷 / 次数" value={`${prescribed.recommendedLoadRange} / ${prescribed.repMin}-${prescribed.repMax}`} />
-                    <InfoPill label="休息 / RIR" value={`${prescribed.rest}s / ${prescribed.targetRirText || '2-3 RIR'}`} />
-                    <InfoPill label="疲劳 / 技术" value={`${formatFatigueCost(prescribed.fatigueCost)} / ${formatReadinessLevel(prescribed.skillDemand)}`} />
-                    <InfoPill label="ROM 优先级" value={formatReadinessLevel(prescribed.romPriority || 'medium')} />
-                    <InfoPill label="加重单位" value={prescribed.progressionUnit || '自动'} />
-                    <InfoPill label="处方规则" value={prescribed.prescription?.rule || '默认推进'} />
-                    <InfoPill label="热身方案" value={prescribed.warmupSets?.map((set) => `${set.label || `${set.weight}kg`} x ${set.reps}`).join(' / ') || '自动生成'} />
-                    <InfoPill label="顶组 / 回退" value={prescribed.setPrescription?.summary || '直线组'} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div>
-                <div className="text-xs font-black uppercase tracking-widest text-slate-500">调整历史</div>
-                <h3 className="mt-1 font-black text-slate-950">实验模板与回滚记录</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-500">这里仅显示计划调整记录，不混入历史训练、日历或 PR。</p>
-              </div>
-              <StatusBadge tone={(data.programAdjustmentHistory || []).length ? 'emerald' : 'slate'}>
-                {(data.programAdjustmentHistory || []).length ? `${data.programAdjustmentHistory?.length || 0} 条` : '暂无历史调整'}
-              </StatusBadge>
-            </div>
-            <div className="mt-3 space-y-2">
-              {(data.programAdjustmentHistory || []).slice(0, 3).map((item) => (
-                <div key={item.id} className="rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-700">
-                  <span className="font-bold text-slate-950">{item.appliedAt?.slice(0, 10) || '未记录日期'}</span>
-                  {' / '}
-                  {item.mainChangeSummary || item.changes?.[0]?.reason || '计划调整'}
-                  {item.rolledBackAt ? ' / 已回滚' : ''}
-                </div>
-              ))}
-              {!(data.programAdjustmentHistory || []).length ? (
-                <div className="rounded-md bg-stone-50 px-3 py-2 text-sm text-slate-500">暂无历史调整。生成并应用调整草稿后会显示在这里。</div>
-              ) : null}
-            </div>
-          </section>
-        </Card>
+          {renderExperimentalTemplates()}
+          {renderVersionHistory()}
+        </aside>
       </div>
+
+      {rollbackTarget ? (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/30 p-4">
+          <ConfirmDialog
+            title="回滚到原模板？"
+            description="回滚只会把当前计划切回原模板。已经完成的训练记录、历史详情、PR/e1RM 和日历不会被删除。"
+            confirmLabel="确认回滚"
+            danger
+            onCancel={() => setRollbackTarget(null)}
+            onConfirm={confirmRollback}
+          />
+        </div>
+      ) : null}
     </ResponsivePageLayout>
   );
 }

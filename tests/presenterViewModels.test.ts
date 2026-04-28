@@ -33,7 +33,7 @@ describe('page presenters', () => {
   it('keeps Record default tab on calendar and exposes secondary sections', () => {
     const vm = buildRecordViewModel(makeAppData());
     expect(vm.defaultTab).toBe('calendar');
-    expect(vm.tabs).toEqual(['calendar', 'history', 'dashboard', 'pr', 'data']);
+    expect(vm.tabs).toEqual(['calendar', 'list', 'pr', 'stats', 'data']);
     expect(vm.emptyTitle).toBe('暂无训练记录');
   });
 

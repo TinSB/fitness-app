@@ -23,6 +23,14 @@ describe('AppShell responsive layout', () => {
 
   it('keeps mobile safe-area handling centralized in the shell', () => {
     expect(appShellSource).toContain('env(safe-area-inset-top)');
-    expect(appShellSource).toContain('pb-24 lg:pb-0');
+    expect(appShellSource).toContain("immersive ? 'pb-0' : 'pb-24'");
+    expect(appShellSource).toContain('{!immersive ? <BottomNav');
+  });
+
+  it('supports desktop auxiliary panels without replacing page content', () => {
+    expect(appShellSource).toContain('auxiliary?: ReactNode');
+    expect(appShellSource).toContain('lg:grid-cols-[minmax(0,1fr)_300px]');
+    expect(appShellSource).toContain('<aside');
+    expect(appShellSource).toContain('<section className="min-w-0">{children}</section>');
   });
 });

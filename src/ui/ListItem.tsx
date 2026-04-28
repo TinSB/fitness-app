@@ -9,12 +9,12 @@ interface ListItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
 }
 
 export const ListItem = ({ title, description, meta, action, className, ...props }: ListItemProps) => (
-  <div className={classNames('flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3', className)} {...props}>
+  <div className={classNames('flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]', className)} {...props}>
     <div className="min-w-0">
       <div className="truncate text-sm font-semibold text-slate-950">{title}</div>
       {description ? <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{description}</div> : null}
       {meta ? <div className="mt-1 text-xs text-slate-400">{meta}</div> : null}
     </div>
-    {action}
+    {action ? <div className="shrink-0">{action}</div> : null}
   </div>
 );

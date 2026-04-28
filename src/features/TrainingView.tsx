@@ -1,11 +1,8 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle, Copy, Timer } from 'lucide-react';
-import { DEFAULT_STATUS } from '../data/trainingData';
-import { buildExerciseLearningPath } from '../engines/exercisePathEngine';
-import { buildSessionExplanations } from '../engines/explainability/trainingExplainability';
+import { AlertTriangle, CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle } from 'lucide-react';
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
-import { formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
+import { convertKgToDisplayWeight, formatTrainingVolume, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import type {
   CorrectionModule,
@@ -13,21 +10,30 @@ import type {
   FunctionalAddon,
   LoadFeedbackValue,
   RestTimerState,
+  SupportBlockType,
   SupportSkipReason,
   TrainingSession,
   TrainingSetLog,
   UnitSettings,
   WeightUnit,
 } from '../models/training-model';
-import { TrainingFocusView } from './TrainingFocusView';
-import { SupportBlockList } from '../ui/common';
+import { ActionButton } from '../ui/ActionButton';
+import { Card } from '../ui/Card';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { EmptyState } from '../ui/EmptyState';
+import { ListItem } from '../ui/ListItem';
 import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
+import { PageSection } from '../ui/PageSection';
+import { StatusBadge } from '../ui/StatusBadge';
+import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
 type LoggedExercise = ExercisePrescription & {
   increment?: number;
 };
+
+type ExerciseStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
 
 interface TrainingViewProps {
   session: TrainingSession | null;
@@ -48,7 +54,15 @@ interface TrainingViewProps {
   onApplySuggestion: (exerciseIndex: number) => void;
   onUpdateActualDraft: (
     exerciseIndex: number,
-    updates: { actualWeightKg?: number; displayWeight?: number; displayUnit?: WeightUnit; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
+    updates: {
+      actualWeightKg?: number;
+      displayWeight?: number;
+      displayUnit?: WeightUnit;
+      actualReps?: number;
+      actualRir?: number;
+      techniqueQuality?: TrainingSetLog['techniqueQuality'];
+      painFlag?: boolean;
+    }
   ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
@@ -68,19 +82,6 @@ interface TrainingViewProps {
   onGoToday: () => void;
 }
 
-const getSets = (exercise: LoggedExercise): TrainingSetLog[] => (Array.isArray(exercise.sets) ? exercise.sets : []);
-
-const templateNameLabels: Record<string, string> = {
-  'push-a': '推 A',
-  'pull-a': '拉 A',
-  'legs-a': '腿 A',
-  upper: '上肢',
-  lower: '下肢',
-  arms: '手臂 + 三角',
-  'quick-30': '快练 30',
-  'crowded-gym': '人多替代',
-};
-
 const supportReasonOptions: Array<{ value: SupportSkipReason; label: string }> = [
   { value: 'time', label: formatSkippedReason('time') },
   { value: 'pain', label: formatSkippedReason('pain') },
@@ -97,42 +98,90 @@ const techniqueOptions: Array<{ value: NonNullable<TrainingSetLog['techniqueQual
   { value: 'poor', label: formatTechniqueQuality('poor') },
 ];
 
-const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || fallback;
+const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = [
+  { value: 'too_light', label: '偏轻' },
+  { value: 'good', label: '合适' },
+  { value: 'too_heavy', label: '偏重' },
+];
+
+const templateNameLabels: Record<string, string> = {
+  'push-a': 'Push A',
+  'pull-a': 'Pull A',
+  'legs-a': 'Legs A',
+  upper: 'Upper',
+  lower: 'Lower',
+  arms: '手臂补量',
+  'quick-30': '30 分钟快练',
+  'crowded-gym': '人多替代',
+};
+
+const getSets = (exercise: LoggedExercise | undefined): TrainingSetLog[] =>
+  Array.isArray(exercise?.sets) ? (exercise.sets as TrainingSetLog[]) : [];
+
+const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || fallback || '当前训练';
+
+const setTypeLabel = (type: unknown) => {
+  if (type === 'warmup') return '热身';
+  if (type === 'top') return '主力组';
+  if (type === 'backoff') return '回退组';
+  if (type === 'straight') return '正式组';
+  if (type === 'corrective') return '纠偏';
+  if (type === 'functional') return '功能';
+  return '正式组';
+};
+
+const exerciseStatusLabel: Record<ExerciseStatus, string> = {
+  not_started: '未开始',
+  in_progress: '进行中',
+  completed: '已完成',
+  skipped: '已跳过',
+};
+
+const exerciseStatusTone: Record<ExerciseStatus, 'slate' | 'emerald' | 'amber' | 'rose' | 'sky'> = {
+  not_started: 'slate',
+  in_progress: 'amber',
+  completed: 'emerald',
+  skipped: 'rose',
+};
 
 const findNextUnfinishedSetIndex = (exercise: LoggedExercise) => getSets(exercise).findIndex((set) => !set.done);
 
-const findFocusExerciseIndex = (session: TrainingSession, expandedExercise: number) => {
-  const expanded = session.exercises[expandedExercise] as LoggedExercise | undefined;
-  if (expanded && findNextUnfinishedSetIndex(expanded) >= 0) return expandedExercise;
-  const nextUnfinished = session.exercises.findIndex((exercise) => findNextUnfinishedSetIndex(exercise as LoggedExercise) >= 0);
-  return nextUnfinished >= 0 ? nextUnfinished : 0;
+const getExerciseStatus = (exercise: LoggedExercise, isCurrent: boolean): ExerciseStatus => {
+  const sets = getSets(exercise);
+  if (!sets.length) return 'skipped';
+  const done = sets.filter((set) => set.done).length;
+  if (done >= sets.length) return 'completed';
+  if (done > 0 || isCurrent) return 'in_progress';
+  return 'not_started';
+};
+
+const statusIcon = (status: ExerciseStatus) => {
+  if (status === 'completed') return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+  if (status === 'skipped') return <XCircle className="h-4 w-4 text-rose-600" />;
+  if (status === 'in_progress') return <Timer className="h-4 w-4 text-amber-600" />;
+  return <Circle className="h-4 w-4 text-slate-300" />;
 };
 
 const supportLogKey = (moduleId: string, exerciseId: string) => `${moduleId}:${exerciseId}`;
 
-const renderTechniqueButtons = (
-  value: NonNullable<TrainingSetLog['techniqueQuality']>,
-  onChange: (next: NonNullable<TrainingSetLog['techniqueQuality']>) => void
-) => (
-  <div className="grid grid-cols-3 gap-2">
-    {techniqueOptions.map((option) => {
-      const selected = value === option.value;
-      return (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          className={classNames(
-            'rounded-lg border px-3 py-2 text-sm font-black transition',
-            selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600'
-          )}
-        >
-          {option.label}
-        </button>
-      );
-    })}
-  </div>
-);
+const getSupportExerciseName = (exercise: { exerciseId: string; name?: string }) =>
+  exercise.name || formatExerciseName(exercise.exerciseId);
+
+const plannedSupportSets = (exercise: { sets: number }) => Math.max(0, number(exercise.sets));
+
+const supportBlockLabel = (blockType: SupportBlockType) => (blockType === 'correction' ? '纠偏模块' : '功能补丁');
+
+const formatRest = (seconds?: number) => {
+  const safe = Math.max(0, number(seconds));
+  if (!safe) return '按需';
+  const minutes = Math.floor(safe / 60);
+  const remain = safe % 60;
+  if (!minutes) return `${remain} 秒`;
+  return remain ? `${minutes} 分 ${remain} 秒` : `${minutes} 分`;
+};
+
+const formatDisplayWeightValue = (weightKg: unknown, unitSettings: UnitSettings) =>
+  String(convertKgToDisplayWeight(weightKg, unitSettings.weightUnit));
 
 export function TrainingView({
   session,
@@ -165,99 +214,409 @@ export function TrainingView({
   onGoToday,
 }: TrainingViewProps) {
   const [supportReasonDrafts, setSupportReasonDrafts] = React.useState<Record<string, SupportSkipReason>>({});
-  const [focusMode, setFocusMode] = React.useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = React.useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = React.useState(false);
 
   React.useEffect(() => {
     setSupportReasonDrafts({});
-    setFocusMode(false);
+    setShowFinishConfirm(false);
+    setShowAbandonConfirm(false);
   }, [session?.id]);
 
   if (!session) {
     return (
       <ResponsivePageLayout>
-        <PageHeader eyebrow="训练" title="训练工作台" description="开始或继续一场训练；手机端建议进入极简模式。" />
-        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-          <div className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-stone-100 text-slate-400">
-            <Timer className="h-5 w-5" />
-          </div>
-          <h2 className="mt-4 text-xl font-black text-slate-950">当前没有进行中的训练</h2>
-          <p className="mt-2 text-sm text-slate-500">从今日页开始一场训练，记录会进入历史，周预算也会一起更新。</p>
-          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button onClick={onStartFromSelected} className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-black text-white">
-              用当前模板开练
-            </button>
-            <button onClick={onGoToday} className="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700">
-              回到今日
-            </button>
-          </div>
-        </div>
+        <PageHeader
+          eyebrow="训练"
+          title="训练工作台"
+          description="用于查看、补记和结束当前训练；手机端快速记录优先使用极简模式。"
+        />
+        <EmptyState
+          title="当前没有进行中的训练"
+          description="从今日页开始一场训练，或者直接用当前模板开始。"
+          action={
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <ActionButton variant="primary" onClick={onStartFromSelected}>
+                用当前模板开始
+              </ActionButton>
+              <ActionButton variant="secondary" onClick={onGoToday}>
+                回到今日
+              </ActionButton>
+            </div>
+          }
+        />
       </ResponsivePageLayout>
     );
   }
 
-  const totalSets = session.exercises.reduce((sum, exercise) => sum + getSets(exercise as LoggedExercise).length, 0);
-  const doneSets = session.exercises.reduce((sum, exercise) => sum + getSets(exercise as LoggedExercise).filter((set) => set.done).length, 0);
+  const mainExercises = session.exercises as LoggedExercise[];
+  const totalSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).length, 0);
+  const doneSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).filter((set) => set.done).length, 0);
   const currentVolume = sessionVolume(session);
-  const notes = session.exercises.flatMap((exercise) =>
-    getSets(exercise as LoggedExercise)
-      .filter((set) => set.note)
-      .map((set) => ({
-        key: `${exercise.id}-${set.id}-note`,
-        exercise: formatExerciseName(exercise),
-        note: set.note || '',
-      }))
-  );
-  const explanations = buildSessionExplanations(session);
+  const nextExerciseIndex = mainExercises.findIndex((exercise) => findNextUnfinishedSetIndex(exercise) >= 0);
+  const activeExerciseIndex = nextExerciseIndex >= 0 ? nextExerciseIndex : Math.max(0, Math.min(expandedExercise, mainExercises.length - 1));
+  const activeExercise = mainExercises[activeExerciseIndex];
+  const activeSetIndex = activeExercise ? findNextUnfinishedSetIndex(activeExercise) : -1;
   const remainingSec = getRestTimerRemainingSec(restTimer);
-  const focusExerciseIndex = findFocusExerciseIndex(session, expandedExercise);
-  const focusExercise = session.exercises[focusExerciseIndex] as LoggedExercise;
-  const focusSets = focusExercise ? getSets(focusExercise) : [];
-  const focusSetIndex = focusExercise ? findNextUnfinishedSetIndex(focusExercise) : -1;
-  const currentSet = focusSetIndex >= 0 ? focusSets[focusSetIndex] : focusSets[focusSets.length - 1];
-  const allMainDone = session.exercises.every((exercise) => findNextUnfinishedSetIndex(exercise as LoggedExercise) === -1);
+  const mode = resolveMode(session.trainingMode || 'hybrid');
 
   const getSupportLog = (moduleId: string, exerciseId: string) =>
     (session.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
 
-  const renderSupportTracker = (title: string, items: Array<CorrectionModule | FunctionalAddon>, compact = false) => {
-    if (!items.length) return null;
+  const supportSummary = [...(session.correctionBlock || []), ...(session.functionalBlock || [])].reduce(
+    (summary, block) => {
+      block.exercises.forEach((exercise) => {
+        const log = getSupportLog(block.id, exercise.exerciseId);
+        const planned = log?.plannedSets || plannedSupportSets(exercise);
+        const completed = Math.min(number(log?.completedSets), planned);
+        const resolved = log?.skippedReason ? planned : completed;
+        summary.planned += planned;
+        summary.completed += completed;
+        summary.resolved += resolved;
+        if (log?.skippedReason) summary.skipped += 1;
+      });
+      return summary;
+    },
+    { planned: 0, completed: 0, resolved: 0, skipped: 0 }
+  );
+
+  const overallPlanned = totalSets + supportSummary.planned;
+  const overallResolved = doneSets + supportSummary.resolved;
+  const overallPercent = overallPlanned ? Math.round((overallResolved / overallPlanned) * 100) : 0;
+  const allMainDone = totalSets > 0 && doneSets >= totalSets;
+  const supportResolved = supportSummary.resolved >= supportSummary.planned;
+  const workoutFinished = allMainDone && supportResolved;
+  const notes = mainExercises.flatMap((exercise) =>
+    getSets(exercise)
+      .filter((set) => set.note)
+      .map((set, setIndex) => ({
+        key: `${exercise.id}-${set.id}-note`,
+        exercise: formatExerciseName(exercise),
+        setIndex,
+        note: set.note || '',
+      }))
+  );
+
+  const requestFinish = (target?: 'calendar' | 'today') => {
+    const finish = target === 'calendar' ? onFinishToCalendar || onFinish : target === 'today' ? onFinishToToday || onFinish : onFinish;
+    if (workoutFinished) {
+      finish();
+      return;
+    }
+    setShowFinishConfirm(true);
+  };
+
+  const renderSetSummary = (set: TrainingSetLog, setIndex: number) => {
+    const weightKg = set.actualWeightKg ?? set.weight;
+    const reps = set.reps;
+    return (
+      <div key={set.id} className="flex flex-wrap items-center gap-2 rounded-md bg-stone-50 px-3 py-2 text-xs text-slate-600">
+        <StatusBadge tone="emerald">{setTypeLabel(set.type)} {setIndex + 1}</StatusBadge>
+        <span className="font-semibold text-slate-900">
+          {formatDisplayWeightValue(weightKg, unitSettings)}{unitSettings.weightUnit} × {number(reps)}
+        </span>
+        {set.rir !== undefined && set.rir !== '' ? <span>RIR {String(set.rir)}</span> : null}
+        {set.techniqueQuality ? <span>{formatTechniqueQuality(set.techniqueQuality)}</span> : null}
+        {set.painFlag ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
+      </div>
+    );
+  };
+
+  const renderExerciseDetail = (exercise: LoggedExercise, exerciseIndex: number) => {
+    const sets = getSets(exercise);
+    const nextSetIndex = findNextUnfinishedSetIndex(exercise);
+    const allDone = nextSetIndex === -1;
+    const increment = typeof exercise.increment === 'number' ? exercise.increment : unitSettings.defaultIncrementKg;
+    const displayIncrement = unitSettings.weightUnit === 'lb' ? unitSettings.defaultIncrementLb : increment;
+    const incrementDeltaKg = unitSettings.weightUnit === 'lb' ? parseDisplayWeightToKg(displayIncrement, 'lb') : increment;
 
     return (
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="mb-3">
-          <h2 className="font-black text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm text-slate-500">辅助动作需要单独记录，系统不会默认算作全部完成。</p>
+      <div className="border-t border-slate-100 p-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <Card className="bg-stone-50" padded>
+            <div className="text-xs font-semibold text-slate-500">本次建议</div>
+            <div className="mt-1 text-sm font-semibold text-slate-950">{exercise.suggestion || exercise.targetSummary || '按计划完成本动作'}</div>
+          </Card>
+          <Card className="bg-stone-50" padded>
+            <div className="text-xs font-semibold text-slate-500">目标范围</div>
+            <div className="mt-1 text-sm font-semibold text-slate-950">
+              {exercise.repMin}-{exercise.repMax} 次 · {exercise.targetRirText || 'RIR 1-2'}
+            </div>
+          </Card>
+          <Card className="bg-stone-50" padded>
+            <div className="text-xs font-semibold text-slate-500">休息</div>
+            <div className="mt-1 text-sm font-semibold text-slate-950">{formatRest(exercise.rest)}</div>
+          </Card>
         </div>
+
+        <div className="mt-4 space-y-3">
+          {sets.map((set, setIndex) => {
+            const isNext = setIndex === nextSetIndex;
+            const weightKg = set.actualWeightKg ?? set.weight;
+            const displayWeight = convertKgToDisplayWeight(weightKg, unitSettings.weightUnit);
+            return (
+              <Card
+                key={set.id}
+                className={classNames(
+                  'border-slate-200',
+                  set.done && 'bg-emerald-50/50',
+                  isNext && 'border-emerald-300 ring-1 ring-emerald-100'
+                )}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge tone={set.done ? 'emerald' : isNext ? 'amber' : 'slate'}>
+                        {set.done ? '已完成' : isNext ? '当前组' : '待完成'}
+                      </StatusBadge>
+                      <h3 className="text-sm font-semibold text-slate-950">
+                        {setTypeLabel(set.type)} {setIndex + 1}
+                      </h3>
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      推荐处方与实际记录分开；这里用于补记或修正本组数据。
+                    </div>
+                  </div>
+                  {!set.done && isNext ? (
+                    <ActionButton
+                      size="sm"
+                      variant="primary"
+                      onClick={() => onCompleteSet(exerciseIndex)}
+                      disabled={!number(set.weight) || !number(set.reps)}
+                    >
+                      完成这组
+                    </ActionButton>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-500">重量（{unitSettings.weightUnit}）</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={String(displayWeight)}
+                      onChange={(event) =>
+                        onSetChange(exerciseIndex, setIndex, 'weight', String(parseDisplayWeightToKg(event.target.value, unitSettings.weightUnit)))
+                      }
+                      className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950 outline-none focus:border-emerald-500"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-500">次数</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={String(set.reps ?? '')}
+                      onChange={(event) => onSetChange(exerciseIndex, setIndex, 'reps', event.target.value)}
+                      className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950 outline-none focus:border-emerald-500"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-500">RIR</span>
+                    <input
+                      value={String(set.rir ?? '')}
+                      onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rir', event.target.value)}
+                      className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950 outline-none focus:border-emerald-500"
+                      placeholder={exercise.targetRirText || '1-2'}
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-500">RPE</span>
+                    <input
+                      value={String(set.rpe ?? '')}
+                      onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rpe', event.target.value)}
+                      className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950 outline-none focus:border-emerald-500"
+                      placeholder="8"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <div>
+                    <div className="mb-2 text-xs font-semibold text-slate-500">动作质量</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {techniqueOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => onSetChange(exerciseIndex, setIndex, 'techniqueQuality', option.value)}
+                          className={classNames(
+                            'min-h-10 rounded-lg border px-2 text-sm font-medium transition',
+                            (set.techniqueQuality || 'acceptable') === option.value
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+                              : 'border-slate-200 bg-white text-slate-600'
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(set.painFlag)}
+                      onChange={(event) => onSetChange(exerciseIndex, setIndex, 'painFlag', event.target.checked)}
+                    />
+                    这组有不适
+                  </label>
+                </div>
+
+                <label className="mt-3 block space-y-1">
+                  <span className="text-xs font-semibold text-slate-500">本组备注</span>
+                  <input
+                    value={set.note || ''}
+                    onChange={(event) => onSetChange(exerciseIndex, setIndex, 'note', event.target.value)}
+                    className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950 outline-none focus:border-emerald-500"
+                    placeholder="例如：肩不舒服、节奏乱了、器械被占"
+                  />
+                </label>
+              </Card>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 grid gap-2 md:grid-cols-4">
+          <ActionButton variant="secondary" onClick={() => onAdjustSet(exerciseIndex, 'weight', -incrementDeltaKg)} disabled={allDone}>
+            -{displayIncrement}{unitSettings.weightUnit}
+          </ActionButton>
+          <ActionButton variant="secondary" onClick={() => onAdjustSet(exerciseIndex, 'weight', incrementDeltaKg)} disabled={allDone}>
+            +{displayIncrement}{unitSettings.weightUnit}
+          </ActionButton>
+          <ActionButton variant="secondary" onClick={() => onCopyPrevious(exerciseIndex)} disabled={allDone || nextSetIndex <= 0}>
+            复制上组
+          </ActionButton>
+          <ActionButton variant="secondary" onClick={() => onApplySuggestion(exerciseIndex)} disabled={allDone}>
+            套用建议
+          </ActionButton>
+        </div>
+
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          <ActionButton variant="ghost" onClick={() => onSwitchExercise(exerciseIndex)}>
+            设为当前动作
+          </ActionButton>
+          <ActionButton variant="ghost" onClick={() => onReplaceExercise(exerciseIndex)}>
+            选择替代动作
+          </ActionButton>
+          <div className="grid grid-cols-3 gap-2">
+            {loadFeedbackOptions.map((option) => (
+              <ActionButton key={option.value} size="sm" variant="ghost" onClick={() => onLoadFeedback(exercise.actualExerciseId || exercise.id, option.value)}>
+                {option.label}
+              </ActionButton>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderExerciseCard = (exercise: LoggedExercise, exerciseIndex: number) => {
+    const sets = getSets(exercise);
+    const done = sets.filter((set) => set.done).length;
+    const active = expandedExercise === exerciseIndex;
+    const status = getExerciseStatus(exercise, exerciseIndex === activeExerciseIndex);
+    const completedSets = sets.filter((set) => set.done);
+
+    return (
+      <Card key={`${exercise.id}-${exerciseIndex}`} padded={false} className={classNames(active && 'border-emerald-300 ring-1 ring-emerald-100')}>
+        <button
+          type="button"
+          onClick={() => setExpandedExercise(active ? -1 : exerciseIndex)}
+          className="flex w-full items-start justify-between gap-3 p-4 text-left"
+        >
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {statusIcon(status)}
+              <h2 className="truncate text-base font-semibold text-slate-950">{formatExerciseName(exercise)}</h2>
+              <StatusBadge tone={exerciseStatusTone[status]}>{exerciseStatusLabel[status]}</StatusBadge>
+              {exercise.actualExerciseId && exercise.originalExerciseId && exercise.actualExerciseId !== exercise.originalExerciseId ? (
+                <StatusBadge tone="amber">已替代</StatusBadge>
+              ) : null}
+            </div>
+            <div className="mt-1 line-clamp-2 text-sm text-slate-500">
+              {exercise.targetSummary || exercise.suggestion || `${exercise.repMin}-${exercise.repMax} 次 · ${formatRest(exercise.rest)}`}
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="text-sm font-semibold text-slate-950">
+              {done}/{sets.length}
+            </div>
+            <div className="text-xs text-slate-400">组数</div>
+          </div>
+        </button>
+
+        {completedSets.length ? (
+          <div className="border-t border-slate-100 px-4 py-3">
+            <div className="mb-2 text-xs font-semibold text-slate-500">已完成组</div>
+            <div className="flex flex-col gap-2">{completedSets.map(renderSetSummary)}</div>
+          </div>
+        ) : null}
+
+        {active ? renderExerciseDetail(exercise, exerciseIndex) : null}
+      </Card>
+    );
+  };
+
+  const renderSupportBlock = (title: string, blockType: SupportBlockType, items: Array<CorrectionModule | FunctionalAddon>) => {
+    if (!items.length) return null;
+    const reasonForBlock = supportReasonDrafts[`${blockType}:block`] || 'time';
+
+    return (
+      <PageSection
+        title={title}
+        description="纠偏和功能补丁会单独记录；跳过时会保留原因，便于训练后复盘。"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={reasonForBlock}
+              onChange={(event) => setSupportReasonDrafts((current) => ({ ...current, [`${blockType}:block`]: event.target.value as SupportSkipReason }))}
+              className="min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
+            >
+              {supportReasonOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ActionButton size="sm" variant="danger" onClick={() => onSkipSupportBlock(blockType, reasonForBlock)}>
+              跳过整个{supportBlockLabel(blockType)}
+            </ActionButton>
+          </div>
+        }
+      >
         <div className="space-y-3">
           {items.map((block) => (
-            <div key={block.id} className="rounded-lg border border-slate-200 bg-stone-50 p-3">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="font-black text-slate-950">{block.name}</div>
-                <div className="text-xs font-bold text-slate-500">{block.durationMin} 分钟</div>
+            <Card key={block.id} className="bg-white">
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-950">{block.name}</h3>
+                  <div className="mt-1 text-xs text-slate-500">预计 {block.durationMin} 分钟</div>
+                </div>
+                <StatusBadge tone={blockType === 'correction' ? 'emerald' : 'amber'}>{supportBlockLabel(blockType)}</StatusBadge>
               </div>
               <div className="space-y-2">
                 {block.exercises.map((exercise) => {
                   const log = getSupportLog(block.id, exercise.exerciseId);
+                  const planned = log?.plannedSets || plannedSupportSets(exercise);
+                  const completed = number(log?.completedSets);
+                  const skipped = Boolean(log?.skippedReason);
+                  const status: ExerciseStatus = skipped ? 'skipped' : completed >= planned ? 'completed' : completed > 0 ? 'in_progress' : 'not_started';
                   const draftKey = supportLogKey(block.id, exercise.exerciseId);
-                  const reason = supportReasonDrafts[draftKey] || log?.skippedReason || 'too_tired';
+                  const reason = supportReasonDrafts[draftKey] || log?.skippedReason || 'time';
 
                   return (
-                    <div key={`${block.id}-${exercise.exerciseId}`} className="rounded-md bg-white p-3">
-                      <div className={classNames('gap-2', compact ? 'grid grid-cols-1' : 'flex flex-col md:flex-row md:items-center md:justify-between')}>
-                        <div>
-                          <div className="font-black text-slate-900">{exercise.name || exercise.exerciseId}</div>
-                          <div className="text-xs font-bold text-slate-500">
-                            计划 {log?.plannedSets || exercise.sets} 组 / 已做 {log?.completedSets || 0} 组
-                          </div>
-                        </div>
-                        <div className={classNames('gap-2', compact ? 'grid grid-cols-1 sm:grid-cols-[auto_1fr_auto]' : 'grid md:grid-cols-[auto_160px_auto]')}>
-                          <button
-                            onClick={() => onCompleteSupportSet(block.id, exercise.exerciseId)}
-                            disabled={number(log?.completedSets) >= number(log?.plannedSets)}
-                            className="min-h-11 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:bg-slate-300"
-                          >
-                            完成一组
-                          </button>
+                    <ListItem
+                      key={`${block.id}-${exercise.exerciseId}`}
+                      title={
+                        <span className="flex flex-wrap items-center gap-2">
+                          {getSupportExerciseName(exercise)}
+                          <StatusBadge tone={exerciseStatusTone[status]}>{exerciseStatusLabel[status]}</StatusBadge>
+                        </span>
+                      }
+                      description={`计划 ${planned} 组，已完成 ${completed} 组${log?.skippedReason ? `，跳过原因：${formatSkippedReason(log.skippedReason)}` : ''}`}
+                      action={
+                        <div className="grid min-w-[210px] grid-cols-[1fr_auto] gap-2">
                           <select
                             value={reason}
                             onChange={(event) => {
@@ -265,7 +624,7 @@ export function TrainingView({
                               setSupportReasonDrafts((current) => ({ ...current, [draftKey]: nextReason }));
                               onUpdateSupportSkipReason(block.id, exercise.exerciseId, nextReason);
                             }}
-                            className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 py-2 text-base font-bold text-slate-700 outline-none focus:border-amber-500 md:text-sm"
+                            className="min-h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700"
                           >
                             {supportReasonOptions.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -273,609 +632,219 @@ export function TrainingView({
                               </option>
                             ))}
                           </select>
-                          <button
-                            onClick={() => onSkipSupportExercise(block.id, exercise.exerciseId, reason)}
-                            className="min-h-11 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-black text-amber-900"
-                          >
-                            跳过
-                          </button>
+                          <div className="flex gap-2">
+                            <ActionButton size="sm" variant="primary" onClick={() => onCompleteSupportSet(block.id, exercise.exerciseId)} disabled={completed >= planned}>
+                              完成
+                            </ActionButton>
+                            <ActionButton size="sm" variant="danger" onClick={() => onSkipSupportExercise(block.id, exercise.exerciseId, reason)}>
+                              跳过
+                            </ActionButton>
+                          </div>
                         </div>
-                      </div>
-                      {log?.skippedReason && number(log.completedSets) < number(log.plannedSets) ? (
-                        <div className="mt-2 text-xs font-bold text-amber-700">
-                        跳过原因：{formatSkippedReason(log.skippedReason)}
-                        </div>
-                      ) : null}
-                    </div>
+                      }
+                    />
                   );
                 })}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
-      </section>
-    );
-  };
-
-  const renderExerciseFullCard = (rawExercise: TrainingSession['exercises'][number], exerciseIndex: number) => {
-    const exercise = rawExercise as LoggedExercise;
-    const sets = getSets(exercise);
-    const done = sets.filter((set) => set.done).length;
-    const nextSetIndex = findNextUnfinishedSetIndex(exercise);
-    const active = expandedExercise === exerciseIndex;
-    const allDone = nextSetIndex === -1;
-    const rowSet = sets[nextSetIndex] || sets[sets.length - 1];
-    const increment = typeof exercise.increment === 'number' ? exercise.increment : 2.5;
-    const displayIncrement = unitSettings.weightUnit === 'lb' ? unitSettings.defaultIncrementLb : increment;
-    const incrementDeltaKg = unitSettings.weightUnit === 'lb' ? parseDisplayWeightToKg(displayIncrement, 'lb') : increment;
-    const learningPath = buildExerciseLearningPath(exercise);
-
-    return (
-      <div key={`${exercise.id}-${exerciseIndex}`} className="rounded-lg border border-slate-200 bg-white">
-        <button onClick={() => setExpandedExercise(active ? -1 : exerciseIndex)} className="flex w-full items-center justify-between gap-3 p-4 text-left">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-lg font-black text-slate-950">{formatExerciseName(exercise)}</h2>
-              {exercise.autoReplaced ? <span className="rounded-md bg-amber-100 px-2 py-1 text-[11px] font-black text-amber-800">自动替代</span> : null}
-              {allDone ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : null}
-            </div>
-            <div className="mt-1 text-sm text-slate-500">
-              上次 {exercise.lastSummary || '暂无'} / 今天 {exercise.targetSummary || exercise.suggestion || '按处方完成'}
-            </div>
-          </div>
-          <div className="shrink-0 text-right">
-            <div className="text-sm font-black text-slate-950">
-              {done}/{sets.length}
-            </div>
-            <div className="text-xs text-slate-500">已完成</div>
-          </div>
-        </button>
-
-        {active ? (
-          <div className="border-t border-slate-100 p-4">
-            <div className="mb-4 grid gap-2 md:grid-cols-3">
-              <div className="rounded-lg bg-stone-50 p-3">
-                <div className="text-xs font-bold text-slate-500">本次建议</div>
-                <div className="mt-1 text-sm font-bold text-slate-950">{exercise.suggestion || '按计划完成本动作'}</div>
-              </div>
-              <div className="rounded-lg bg-stone-50 p-3">
-                <div className="text-xs font-bold text-slate-500">休息</div>
-                <div className="mt-1 text-sm font-bold text-slate-950">
-                  {Math.round(exercise.rest / 60)} 分{exercise.rest % 60 ? ` ${exercise.rest % 60} 秒` : ''}
-                </div>
-              </div>
-              <div className="rounded-lg bg-stone-50 p-3">
-                <div className="text-xs font-bold text-slate-500">目标强度</div>
-                <div className="mt-1 text-sm font-bold text-slate-950">
-                  {exercise.targetRirText || 'RIR 1-2'} / {exercise.recommendedLoadRange || '按建议负荷'}
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4 grid gap-2 md:grid-cols-2">
-              <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                <div className="text-xs font-black text-slate-500">热身 / 爬坡组</div>
-                <div className="mt-1 font-bold text-slate-800">
-                  {exercise.warmupSets?.length ? exercise.warmupSets.map((set) => `${set.label || formatWeight(set.weight, unitSettings)} x ${set.reps}`).join(' / ') : '轻重量 1-2 组后进入正式组'}
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                <div className="text-xs font-black text-slate-500">技术标准</div>
-                <div className="mt-1 font-bold text-slate-800">
-                  {exercise.techniqueStandard?.rom || '标准 ROM'} / 节奏 {exercise.techniqueStandard?.tempo || '2-0-1'} / {exercise.techniqueStandard?.stopRule || '动作变形即停'}
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4 grid gap-2 md:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                <div className="text-xs font-black text-slate-500">处方规则</div>
-                <div className="mt-1 font-bold text-slate-800">{exercise.prescription?.rule || '按当前模式推进'}</div>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                <div className="text-xs font-black text-slate-500">推进条件</div>
-                <div className="mt-1 font-bold text-slate-800">连续两次打满上限，且 RIR 不低于 {exercise.targetRir?.[0] ?? 1}</div>
-              </div>
-              <button onClick={() => onReplaceExercise(exerciseIndex)} className="rounded-lg border border-slate-200 bg-white p-3 text-left text-sm font-black text-slate-700">
-                替代动作
-                <div className="mt-1 text-xs font-medium text-slate-500">{exercise.equivalence?.label || '当前模式链'} / {exercise.alternatives?.join(' / ') || '暂无'}</div>
-              </button>
-            </div>
-
-            {learningPath ? (
-              <div className="mb-4 rounded-lg border border-slate-200 bg-stone-50 p-3">
-                <div className="text-xs font-black text-slate-500">动作学习路径</div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-800">
-                  {learningPath.steps.map((step, index) => (
-                    <React.Fragment key={`${learningPath.currentId}-${step.id}-${index}`}>
-                      <span
-                        className={classNames(
-                          'rounded-md px-2 py-1',
-                          step.stage === 'current' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'
-                        )}
-                      >
-                        {step.name}
-                      </span>
-                      {index < learningPath.steps.length - 1 ? <span className="text-slate-400">→</span> : null}
-                    </React.Fragment>
-                  ))}
-                </div>
-                {learningPath.nextStepName ? <div className="mt-2 text-xs font-bold text-slate-500">下一步可尝试：{learningPath.nextStepName}</div> : null}
-              </div>
-            ) : null}
-
-            {exercise.warning ? (
-              <div className="mb-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-sm font-bold text-amber-800">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                {exercise.warning}
-              </div>
-            ) : null}
-
-            <div className="mb-4 overflow-x-auto">
-              <div className="min-w-[900px]">
-                <div className="grid grid-cols-[56px_1fr_1fr_1fr_1fr_120px_150px_1.2fr] gap-2 text-xs font-black text-slate-500">
-                  <div>组</div>
-                  <div>重量</div>
-                  <div>次数</div>
-                  <div>RPE</div>
-                  <div>RIR</div>
-                  <div>疼痛标记</div>
-                  <div>动作质量</div>
-                  <div>备注</div>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {sets.map((set, setIndex) => (
-                    <div
-                      key={set.id}
-                      className={classNames(
-                        'grid grid-cols-[56px_1fr_1fr_1fr_1fr_120px_150px_1.2fr] gap-2 rounded-md',
-                        set.done && 'opacity-70',
-                        setIndex === nextSetIndex && 'bg-emerald-50 p-1 ring-2 ring-emerald-200'
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => !set.done && setIndex === nextSetIndex && onCompleteSet(exerciseIndex)}
-                        disabled={set.done || setIndex !== nextSetIndex || !number(set.weight) || !number(set.reps)}
-                        className="flex h-10 items-center gap-2 rounded-md bg-slate-100 px-2 text-sm font-black disabled:cursor-default"
-                      >
-                        {set.done ? <CheckCircle className="h-4 w-4 text-emerald-600" /> : setIndex + 1}
-                      </button>
-                      <input
-                        type="number"
-                        value={set.weight}
-                        onChange={(event) => onSetChange(exerciseIndex, setIndex, 'weight', event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm font-bold outline-none focus:border-emerald-500"
-                      />
-                      <input
-                        type="number"
-                        value={set.reps}
-                        onChange={(event) => onSetChange(exerciseIndex, setIndex, 'reps', event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm font-bold outline-none focus:border-emerald-500"
-                      />
-                      <input
-                        value={String(set.rpe ?? '')}
-                        onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rpe', event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
-                        placeholder="8"
-                      />
-                      <input
-                        value={String(set.rir ?? '')}
-                        onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rir', event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
-                        placeholder={exercise.targetRirText || '1-2'}
-                      />
-                      <label className="flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-2 text-xs font-black text-slate-700">
-                        <input type="checkbox" checked={Boolean(set.painFlag)} onChange={(event) => onSetChange(exerciseIndex, setIndex, 'painFlag', event.target.checked)} />
-                        疼痛
-                      </label>
-                      <select
-                        value={set.techniqueQuality || 'acceptable'}
-                        onChange={(event) => onSetChange(exerciseIndex, setIndex, 'techniqueQuality', event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-emerald-500"
-                      >
-                        {techniqueOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        value={set.note || ''}
-                        onChange={(event) => onSetChange(exerciseIndex, setIndex, 'note', event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
-                        placeholder="肩不舒服 / 节奏乱了 / 器械被占"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_1fr_1.5fr_1.5fr]">
-              <button
-                onClick={() => onAdjustSet(exerciseIndex, 'weight', -incrementDeltaKg)}
-                disabled={allDone}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-              >
-                -{displayIncrement}{unitSettings.weightUnit}
-              </button>
-              <button
-                onClick={() => onAdjustSet(exerciseIndex, 'weight', incrementDeltaKg)}
-                disabled={allDone}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-              >
-                +{displayIncrement}{unitSettings.weightUnit}
-              </button>
-              <button
-                onClick={() => onAdjustSet(exerciseIndex, 'reps', -1)}
-                disabled={allDone}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-              >
-                -1 次
-              </button>
-              <button
-                onClick={() => onAdjustSet(exerciseIndex, 'reps', 1)}
-                disabled={allDone}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-              >
-                +1 次
-              </button>
-              <button
-                onClick={() => onCopyPrevious(exerciseIndex)}
-                disabled={allDone || nextSetIndex <= 0}
-                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-              >
-                <Copy className="h-4 w-4" />
-                复制上一组
-              </button>
-              <button
-                onClick={() => onCompleteSet(exerciseIndex)}
-                disabled={allDone || !number(rowSet?.weight) || !number(rowSet?.reps)}
-                className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:bg-slate-300"
-              >
-                {allDone ? '动作已完成' : `完成第 ${nextSetIndex + 1} 组`}
-              </button>
-              <button
-                onClick={() => onCompleteSet(exerciseIndex, true)}
-                disabled={allDone || !number(rowSet?.weight) || !number(rowSet?.reps)}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-              >
-                完成并切下一动作
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
-    );
-  };
-
-  const renderFocusMode = () => {
-    if (!focusExercise) {
-      return (
-        <section className="rounded-lg border border-slate-200 bg-white p-6 text-center">
-          <h2 className="text-xl font-black text-slate-950">主训练已经完成</h2>
-          <p className="mt-2 text-sm text-slate-500">现在可以补纠偏、功能补丁，或者直接结束训练。</p>
-        </section>
-      );
-    }
-
-    const learningPath = buildExerciseLearningPath(focusExercise);
-    const increment = typeof focusExercise.increment === 'number' ? focusExercise.increment : 2.5;
-    const displayIncrement = unitSettings.weightUnit === 'lb' ? unitSettings.defaultIncrementLb : increment;
-    const incrementDeltaKg = unitSettings.weightUnit === 'lb' ? parseDisplayWeightToKg(displayIncrement, 'lb') : increment;
-    const completedCount = focusSets.filter((set) => set.done).length;
-
-    return (
-      <div className="space-y-4">
-        <section className="rounded-lg border border-emerald-200 bg-white p-4 md:p-5">
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="text-xs font-black uppercase tracking-widest text-emerald-700">极简训练模式</div>
-              <h2 className="mt-1 text-3xl font-black text-slate-950">{formatExerciseName(focusExercise)}</h2>
-              <div className="mt-2 text-sm font-bold text-slate-500">
-                第 {Math.min(focusSetIndex + 1, focusSets.length)} / {focusSets.length} 组
-              </div>
-            </div>
-            <div className="rounded-lg bg-stone-50 px-4 py-3 text-right">
-              <div className="text-xs font-bold text-slate-500">上次</div>
-              <div className="text-sm font-black text-slate-900">{focusExercise.lastSummary || '暂无记录'}</div>
-              <div className="mt-2 text-xs font-bold text-slate-500">今日策略</div>
-              <div className="text-sm font-black text-emerald-700">{focusExercise.suggestion || '维持推进'}</div>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg bg-stone-50 p-4">
-              <div className="text-xs font-bold text-slate-500">目标重量</div>
-              <div className="mt-1 text-3xl font-black text-slate-950">{formatWeight(currentSet?.weight, unitSettings)}</div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button onClick={() => onAdjustSet(focusExerciseIndex, 'weight', -incrementDeltaKg)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                  -{displayIncrement}{unitSettings.weightUnit}
-                </button>
-                <button onClick={() => onAdjustSet(focusExerciseIndex, 'weight', incrementDeltaKg)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                  +{displayIncrement}{unitSettings.weightUnit}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-stone-50 p-4">
-              <div className="text-xs font-bold text-slate-500">目标次数</div>
-              <div className="mt-1 text-3xl font-black text-slate-950">
-                {focusExercise.repMin}-{focusExercise.repMax}
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button onClick={() => onAdjustSet(focusExerciseIndex, 'reps', -1)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                  -1
-                </button>
-                <button onClick={() => onAdjustSet(focusExerciseIndex, 'reps', 1)} disabled={focusSetIndex < 0} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                  +1
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-stone-50 p-4">
-              <div className="text-xs font-bold text-slate-500">当前状态</div>
-              <div className="mt-1 text-3xl font-black text-slate-950">
-                {completedCount}/{focusSets.length}
-              </div>
-              <div className="mt-2 text-sm font-bold text-slate-600">{focusExercise.targetRirText || 'RIR 1-2'} / {focusExercise.recommendedLoadRange || '按建议负荷'}</div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <label className="rounded-lg border border-slate-200 bg-white p-3">
-              <div className="mb-2 text-xs font-black text-slate-500">疼痛标记</div>
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={Boolean(currentSet?.painFlag)}
-                  onChange={(event) => focusSetIndex >= 0 && onSetChange(focusExerciseIndex, focusSetIndex, 'painFlag', event.target.checked)}
-                />
-                这组有不适
-              </div>
-            </label>
-            <div className="rounded-lg border border-slate-200 bg-white p-3">
-              <div className="mb-2 text-xs font-black text-slate-500">动作质量</div>
-              {renderTechniqueButtons((currentSet?.techniqueQuality || 'acceptable') as NonNullable<TrainingSetLog['techniqueQuality']>, (next) => {
-                if (focusSetIndex >= 0) onSetChange(focusExerciseIndex, focusSetIndex, 'techniqueQuality', next);
-              })}
-            </div>
-          </div>
-
-          {learningPath ? (
-            <div className="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-3">
-              <div className="text-xs font-black text-slate-500">动作学习路径</div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-800">
-                {learningPath.steps.map((step, index) => (
-                  <React.Fragment key={`${learningPath.currentId}-focus-${step.id}-${index}`}>
-                    <span className={classNames('rounded-md px-2 py-1', step.stage === 'current' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700')}>
-                      {step.name}
-                    </span>
-                    {index < learningPath.steps.length - 1 ? <span className="text-slate-400">→</span> : null}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {focusExercise.warning ? (
-            <div className="mt-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-sm font-bold text-amber-800">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              {focusExercise.warning}
-            </div>
-          ) : null}
-
-          <div className="mt-4 grid gap-2 md:grid-cols-4">
-            <button
-              onClick={() => onCompleteSet(focusExerciseIndex)}
-              disabled={focusSetIndex < 0 || !number(currentSet?.weight) || !number(currentSet?.reps)}
-              className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:bg-slate-300"
-            >
-              完成一组
-            </button>
-            <button
-              onClick={() => onCopyPrevious(focusExerciseIndex)}
-              disabled={focusSetIndex <= 0}
-              className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-            >
-              <Copy className="h-4 w-4" />
-              复制上一组
-            </button>
-            <button
-              onClick={() => onReplaceExercise(focusExerciseIndex)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700"
-            >
-              替代动作
-            </button>
-            <button
-              onClick={() => onCompleteSet(focusExerciseIndex, true)}
-              disabled={focusSetIndex < 0 || !number(currentSet?.weight) || !number(currentSet?.reps)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 disabled:opacity-40"
-            >
-              完成并切下一动作
-            </button>
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-black text-slate-950">训练顺序</h2>
-            <div className="text-xs font-bold text-slate-500">只高亮当前动作</div>
-          </div>
-          <div className="space-y-2">
-            {session.exercises.map((exercise, index) => {
-              const setCount = getSets(exercise as LoggedExercise);
-              const doneCount = setCount.filter((set) => set.done).length;
-              const isCurrent = index === focusExerciseIndex;
-              return (
-                <button
-                  key={`${exercise.id}-focus-list-${index}`}
-                  onClick={() => setExpandedExercise(index)}
-                  className={classNames(
-                    'flex w-full items-center justify-between rounded-lg px-3 py-3 text-left',
-                    isCurrent ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50'
-                  )}
-                >
-                  <div>
-                    <div className="font-black text-slate-900">{formatExerciseName(exercise)}</div>
-                    <div className="text-xs font-bold text-slate-500">{(exercise as LoggedExercise).targetSummary || (exercise as LoggedExercise).lastSummary}</div>
-                  </div>
-                  <div className="text-sm font-black text-slate-700">
-                    {doneCount}/{setCount.length}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {renderSupportTracker('纠偏完成记录', session.correctionBlock || [], true)}
-        {renderSupportTracker('功能补丁完成记录', session.functionalBlock || [], true)}
-      </div>
+      </PageSection>
     );
   };
 
   return (
-    <ResponsivePageLayout>
+    <ResponsivePageLayout className="pb-36 md:pb-6">
       <PageHeader
         eyebrow="训练"
         title={templateLabel(session.templateId, session.templateName)}
-        description="完整训练页用于查看所有区块和编辑细节；训练中快速记录优先使用极简模式。"
+        description="完整训练页用于查看整体流程、补记每组数据、处理纠偏/功能补丁，并在训练结束时保存。"
         action={
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (focusMode) setFocusMode(false);
-              else if (onReturnFocusMode) onReturnFocusMode();
-              else setFocusMode(true);
-            }}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700"
-          >
-            {focusMode ? '完整训练页' : '返回极简模式'}
-          </button>
-          <button onClick={onDelete} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
-            放弃
-          </button>
-          <button onClick={onFinish} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-black text-white">
-            完成训练
-          </button>
-        </div>
+          <div className="hidden flex-wrap gap-2 md:flex">
+            <ActionButton type="button" variant="secondary" onClick={onReturnFocusMode}>
+              返回极简模式
+            </ActionButton>
+            <ActionButton type="button" variant="danger" onClick={() => setShowAbandonConfirm(true)}>
+              放弃训练
+            </ActionButton>
+            <ActionButton type="button" variant="primary" onClick={() => requestFinish()}>
+              结束训练
+            </ActionButton>
+          </div>
         }
       />
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="min-w-0 space-y-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
-            <MetricCard label="完成组数" value={`${doneSets}/${totalSets}`} tone="emerald" />
+
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <main className="min-w-0 space-y-4">
+          <Card>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">本次训练进度</div>
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                  {overallResolved}/{overallPlanned || 1} 项已处理
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  这里用于查看全流程、展开动作补记、修正记录，快速记录仍建议回到极简模式。
+                </p>
+              </div>
+              <div className="min-w-[160px]">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>完成度</span>
+                  <span>{overallPercent}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${Math.min(100, overallPercent)}%` }} />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <MetricCard label="主训练组" value={`${doneSets}/${totalSets}`} tone="emerald" />
             <MetricCard label="当前总量" value={formatTrainingVolume(currentVolume, unitSettings)} />
-            <MetricCard label="状态" value={`${session.status?.energy || DEFAULT_STATUS.energy} / ${session.status?.time || DEFAULT_STATUS.time} 分`} tone="amber" />
-            <MetricCard label="模式" value={resolveMode(session.trainingMode || 'hybrid').shortLabel} />
-            <MetricCard label="视图" value={focusMode ? '极简' : '完整'} />
+            <MetricCard label="辅助处理" value={`${supportSummary.resolved}/${supportSummary.planned}`} helper={supportSummary.skipped ? `${supportSummary.skipped} 项已跳过` : undefined} />
+            <MetricCard label="训练模式" value={mode.shortLabel} tone="sky" />
           </div>
 
-          {focusMode ? (
-            <TrainingFocusView
-              session={session}
-              unitSettings={unitSettings}
-              restTimer={restTimer}
-              expandedExercise={expandedExercise}
-                      setExpandedExercise={setExpandedExercise}
-                      onSetChange={onSetChange}
-                      onCompleteSet={onCompleteSet}
-                      onCopyPrevious={onCopyPrevious}
-                      onAdjustSet={onAdjustSet}
-                      onApplySuggestion={onApplySuggestion}
-                      onUpdateActualDraft={onUpdateActualDraft}
-                      onSwitchExercise={onSwitchExercise}
-                      onReplaceExercise={onReplaceExercise}
-              onLoadFeedback={onLoadFeedback}
-              onFinish={onFinish}
-              onFinishToCalendar={onFinishToCalendar}
-              onFinishToToday={onFinishToToday}
-              onCompleteSupportSet={onCompleteSupportSet}
-              onSkipSupportExercise={onSkipSupportExercise}
-              onSkipSupportBlock={onSkipSupportBlock}
-              onUpdateSupportSkipReason={onUpdateSupportSkipReason}
-            />
-          ) : (
-            <>
-              <SupportBlockList title="B. 纠偏块" subtitle="先把该补的补上，再进入主训练。" items={session.correctionBlock || []} tone="emerald" />
-              {renderSupportTracker('纠偏完成记录', session.correctionBlock || [])}
+          <PageSection title="完整动作列表" description="展开动作可补记重量、次数、RIR、动作质量、不适和备注。">
+            <div className="space-y-3">{mainExercises.map((exercise, index) => renderExerciseCard(exercise, index))}</div>
+          </PageSection>
 
-              {session.exercises.map((exercise, exerciseIndex) => renderExerciseFullCard(exercise, exerciseIndex))}
-
-              <SupportBlockList title="D. 功能补丁" subtitle="补单腿、抗旋转、搬运和稳定性短板。" items={session.functionalBlock || []} tone="amber" />
-              {renderSupportTracker('功能补丁完成记录', session.functionalBlock || [])}
-            </>
-          )}
-        </section>
+          {renderSupportBlock('纠偏模块', 'correction', session.correctionBlock || [])}
+          {renderSupportBlock('功能补丁', 'functional', session.functionalBlock || [])}
+        </main>
 
         <aside className="min-w-0 space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 xl:sticky xl:top-4">
-            <div className="mb-3 flex items-center justify-between">
+          <Card className="xl:sticky xl:top-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <div className="text-xs font-black uppercase tracking-widest text-emerald-700">计时</div>
-                <h2 className="text-xl font-black text-slate-950">休息计时器</h2>
+                <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">下一步</div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  {workoutFinished ? '可以结束训练' : activeExercise ? formatExerciseName(activeExercise) : '处理剩余项目'}
+                </h2>
               </div>
-              <Timer className="h-6 w-6 text-emerald-600" />
+              <Dumbbell className="h-5 w-5 text-emerald-600" />
             </div>
-            <div className={classNames('rounded-lg p-5 text-center', restTimer?.isRunning ? 'bg-slate-950 text-white' : 'bg-stone-100 text-slate-950')}>
-              <div className="text-sm font-bold text-inherit opacity-70">{restTimer?.label || '完成一组后自动开始'}</div>
-              <div className="mt-2 text-5xl font-black tabular-nums">{formatTimer(remainingSec)}</div>
-              <div className="mt-2 text-xs font-bold opacity-70">{restTimer && remainingSec <= 0 ? '休息结束' : restTimer?.isRunning ? '计时中' : '暂停'}</div>
+            <div className="rounded-lg bg-stone-50 p-3 text-sm leading-6 text-slate-600">
+              {workoutFinished
+                ? '主训练和辅助项目都已处理，可以保存并结束。'
+                : activeExercise && activeSetIndex >= 0
+                  ? `继续完成第 ${activeSetIndex + 1} 组，或展开动作补记细节。`
+                  : '主训练已完成，请检查纠偏模块和功能补丁是否需要补记或跳过。'}
+            </div>
+            <div className="mt-3 grid gap-2">
+              <ActionButton variant="primary" onClick={() => requestFinish()}>
+                结束训练
+              </ActionButton>
+              <ActionButton variant="secondary" onClick={onReturnFocusMode}>
+                返回极简模式
+              </ActionButton>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">休息计时</div>
+                <h2 className="text-lg font-semibold text-slate-950">休息计时器</h2>
+              </div>
+              <Timer className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div className={classNames('rounded-lg p-4 text-center', restTimer?.isRunning ? 'bg-slate-950 text-white' : 'bg-stone-100 text-slate-950')}>
+              <div className="text-xs font-medium opacity-70">{restTimer?.label || '完成一组后自动开始'}</div>
+              <div className="mt-2 text-4xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
+              <div className="mt-1 text-xs opacity-70">{restTimer && remainingSec <= 0 ? '休息结束' : restTimer?.isRunning ? '计时中' : '未运行'}</div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
-              <button onClick={() => onExtendRestTimer(30)} disabled={!restTimer} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
-                +30 秒
-              </button>
-              <button onClick={onToggleRestTimer} disabled={!restTimer} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
+              <ActionButton size="sm" variant="secondary" onClick={() => onExtendRestTimer(30)} disabled={!restTimer}>
+                +30秒
+              </ActionButton>
+              <ActionButton size="sm" variant="secondary" onClick={onToggleRestTimer} disabled={!restTimer}>
                 {restTimer?.isRunning ? '暂停' : '继续'}
-              </button>
-              <button onClick={onClearRestTimer} disabled={!restTimer} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:opacity-40">
+              </ActionButton>
+              <ActionButton size="sm" variant="secondary" onClick={onClearRestTimer} disabled={!restTimer}>
                 清零
-              </button>
+              </ActionButton>
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 font-black text-slate-950">为什么这样练</h2>
-            <div className="space-y-2 text-sm text-slate-600">
-              {explanations.length ? (
-                explanations.map((item) => (
-                  <div key={item} className="rounded-md bg-stone-50 p-3 leading-6 text-slate-700">
-                    {item}
+          <Card>
+            <div className="mb-3 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-slate-500" />
+              <h2 className="text-lg font-semibold text-slate-950">训练备注</h2>
+            </div>
+            {notes.length ? (
+              <div className="space-y-2">
+                {notes.map((item) => (
+                  <div key={item.key} className="rounded-lg bg-stone-50 p-3 text-sm leading-6 text-slate-600">
+                    <span className="font-semibold text-slate-950">{item.exercise} 第 {item.setIndex + 1} 组：</span>
+                    {item.note}
                   </div>
-                ))
-              ) : (
-                <div className="rounded-md bg-stone-50 p-3 text-slate-500">这里会解释今天为什么这样安排主训练、纠偏和补丁。</div>
-              )}
-            </div>
-          </section>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg bg-stone-50 p-3 text-sm leading-6 text-slate-500">
+                暂无备注。展开动作后可在每组下方补记情况。
+              </div>
+            )}
+          </Card>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 font-black text-slate-950">训练备注</h2>
-            <div className="space-y-2 text-sm text-slate-600">
-              {notes.length ? (
-                notes.map((item) => (
-                  <div key={item.key} className="rounded-md bg-stone-50 p-3">
-                    <span className="font-bold text-slate-950">{item.exercise}</span>：{item.note}
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-md bg-stone-50 p-3 text-slate-500">这里会自动收集每组备注，方便训练后回看。</div>
-              )}
+          <Card tone="amber">
+            <div className="flex gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="text-sm leading-6">
+                <div className="font-semibold">完整页用于复盘和补记</div>
+                <div className="mt-1 opacity-80">训练中快速完成一组、替代动作或标记不适，优先回到极简模式。</div>
+              </div>
             </div>
-          </section>
-
-          {focusMode && allMainDone ? (
-            <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <h2 className="font-black text-emerald-950">主训练已完成</h2>
-              <p className="mt-2 text-sm leading-6 text-emerald-900">现在最适合补辅助动作；如果今天时间不够，也可以保存结束，让系统下次把计划安排得更现实。</p>
-            </section>
-          ) : null}
+          </Card>
         </aside>
       </div>
+
+      <WorkoutActionBar className="bottom-[calc(4.25rem+env(safe-area-inset-bottom))] md:bottom-auto">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_1fr] gap-2 md:flex md:justify-end">
+          <ActionButton variant="secondary" onClick={onReturnFocusMode} fullWidth>
+            返回极简
+          </ActionButton>
+          <ActionButton variant="primary" onClick={() => requestFinish()} fullWidth>
+            结束训练
+          </ActionButton>
+        </div>
+      </WorkoutActionBar>
+
+      {showFinishConfirm ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-[1px]">
+          <ConfirmDialog
+            title="确认结束未完成训练？"
+            description="当前还有动作或辅助项目没有处理。确认后会按现有记录保存本次训练，未完成内容不会自动补齐。"
+            confirmLabel="保存并结束"
+            cancelLabel="继续训练"
+            danger
+            onCancel={() => setShowFinishConfirm(false)}
+            onConfirm={() => {
+              setShowFinishConfirm(false);
+              onFinish();
+            }}
+          />
+        </div>
+      ) : null}
+
+      {showAbandonConfirm ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-[1px]">
+          <ConfirmDialog
+            title="放弃当前训练？"
+            description="放弃后当前 activeSession 会被清除，本次未保存的训练不会进入历史记录。"
+            confirmLabel="放弃训练"
+            cancelLabel="继续训练"
+            danger
+            onCancel={() => setShowAbandonConfirm(false)}
+            onConfirm={() => {
+              setShowAbandonConfirm(false);
+              onDelete();
+            }}
+          />
+        </div>
+      ) : null}
     </ResponsivePageLayout>
   );
 }

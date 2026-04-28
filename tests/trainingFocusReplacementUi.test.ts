@@ -13,13 +13,13 @@ describe('TrainingFocusView replacement UI', () => {
 
   it('keeps the replacement button touch-safe and accessible', () => {
     expect(source).toContain('type="button"');
-    expect(source).toContain('onClick={replaceExercise}');
+    expect(source).toContain('onClick={openReplacementPicker}');
     expect(source).toContain('onClose={() => setShowReplacementPicker(false)}');
   });
 
   it('shows the PR and e1RM independence note in the picker', () => {
     expect(source).toContain('PR / e1RM');
-    expect(source).toContain('fatigueCostLabel');
+    expect(source).toContain('fatigueCostLabel(option.fatigueCost)');
     expect(source).toContain('chooseReplacement');
   });
 });

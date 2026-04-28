@@ -2,9 +2,11 @@ import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import { listSessionHistory } from '../engines/sessionHistoryEngine';
 import type { AppData } from '../models/training-model';
 
+export type RecordTabId = 'calendar' | 'list' | 'pr' | 'stats' | 'data';
+
 export type RecordViewModel = {
   defaultTab: 'calendar';
-  tabs: Array<'calendar' | 'history' | 'dashboard' | 'pr' | 'data'>;
+  tabs: RecordTabId[];
   monthSessionCount: number;
   historyCount: number;
   emptyTitle?: string;
@@ -17,7 +19,7 @@ export const buildRecordViewModel = (data: AppData): RecordViewModel => {
   const hasHistory = history.length > 0;
   return {
     defaultTab: 'calendar',
-    tabs: ['calendar', 'history', 'dashboard', 'pr', 'data'],
+    tabs: ['calendar', 'list', 'pr', 'stats', 'data'],
     monthSessionCount: calendar.days.reduce((sum, day) => sum + day.totalSessions, 0),
     historyCount: history.length,
     emptyTitle: hasHistory ? undefined : '暂无训练记录',

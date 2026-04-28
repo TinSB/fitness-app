@@ -15,9 +15,9 @@ describe('RecordView information architecture', () => {
   it('defaults to the calendar-first record workflow', () => {
     expect(recordSource).toContain("initialSection || 'calendar'");
     expect(recordSource).toContain("id: 'calendar'");
-    expect(recordSource).toContain("id: 'history'");
-    expect(recordSource).toContain("id: 'dashboard'");
+    expect(recordSource).toContain("id: 'list'");
     expect(recordSource).toContain("id: 'pr'");
+    expect(recordSource).toContain("id: 'stats'");
     expect(recordSource).toContain("id: 'data'");
   });
 
@@ -26,5 +26,17 @@ describe('RecordView information architecture', () => {
     expect(recordSource).toContain("from '../ui/Drawer'");
     expect(recordSource).toContain("from '../ui/ConfirmDialog'");
     expect(recordSource).toContain("from '../ui/EmptyState'");
+  });
+
+  it('keeps record management scoped to training records', () => {
+    expect(recordSource).toContain('删除记录');
+    expect(recordSource).toContain('标记测试');
+    expect(recordSource).toContain('恢复正常');
+    expect(recordSource).toContain('排除统计');
+    expect(recordSource).toContain('<ConfirmDialog');
+    expect(recordSource).not.toContain('健康数据导入');
+    expect(recordSource).not.toContain('单位设置');
+    expect(recordSource).not.toContain('导入备份');
+    expect(recordSource).not.toContain('当前模板编辑');
   });
 });

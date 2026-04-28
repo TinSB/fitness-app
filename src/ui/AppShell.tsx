@@ -8,13 +8,15 @@ interface AppShellProps<T extends string> {
   activeTab: T;
   onNavigate: (id: T) => void;
   activeSession?: boolean;
+  auxiliary?: ReactNode;
+  immersive?: boolean;
   children: ReactNode;
 }
 
-export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, activeSession, children }: AppShellProps<T>) => (
+export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, activeSession, auxiliary, immersive = false, children }: AppShellProps<T>) => (
   <div className="h-screen w-full overflow-hidden bg-stone-100 font-sans text-slate-900">
     <div className="flex h-full w-full">
-      <aside className="hidden w-[244px] shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white lg:flex">
+      <aside className={classNames('hidden w-[244px] shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white lg:flex', immersive && 'lg:hidden')}>
         <div className="border-b border-white/10 px-5 py-5">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500 text-slate-950">
@@ -57,7 +59,12 @@ export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, ac
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col bg-stone-50">
-        <div className="flex min-h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] lg:hidden">
+        <div
+          className={classNames(
+            'flex min-h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] lg:hidden',
+            immersive && 'hidden',
+          )}
+        >
           <div className="flex items-center gap-2 font-semibold text-slate-950">
             <Dumbbell className="h-5 w-5 text-emerald-600" />
             IronPath
@@ -68,10 +75,24 @@ export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, ac
             </button>
           ) : null}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto pb-24 lg:pb-0">{children}</div>
+        <div className={classNames('min-h-0 flex-1 overflow-y-auto lg:pb-0', immersive ? 'pb-0' : 'pb-24')}>
+          <div
+            className={classNames(
+              'mx-auto w-full max-w-[1600px]',
+              auxiliary && !immersive ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-6' : '',
+            )}
+          >
+            <section className="min-w-0">{children}</section>
+            {auxiliary && !immersive ? (
+              <aside className="hidden min-w-0 px-4 py-6 lg:block xl:px-6">
+                <div className="sticky top-6 space-y-3">{auxiliary}</div>
+              </aside>
+            ) : null}
+          </div>
+        </div>
       </main>
     </div>
 
-    <BottomNav items={navItems} activeId={activeTab} onNavigate={onNavigate} activeSession={activeSession} />
+    {!immersive ? <BottomNav items={navItems} activeId={activeTab} onNavigate={onNavigate} activeSession={activeSession} /> : null}
   </div>
 );

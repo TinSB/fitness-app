@@ -28,8 +28,12 @@ import { buildTrainingDecisionContext } from './engines/trainingDecisionContext'
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
-import { Page } from './ui/common';
 import { AppShell } from './ui/AppShell';
+import { ActionButton } from './ui/ActionButton';
+import { Card } from './ui/Card';
+import { PageHeader } from './ui/PageHeader';
+import { StatusBadge } from './ui/StatusBadge';
+import { ResponsivePageLayout } from './ui/layouts/ResponsivePageLayout';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
 const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
@@ -46,7 +50,7 @@ const navItems = [
 ] as const;
 
 type ActiveTab = (typeof navItems)[number]['id'];
-type ProgressSectionTarget = 'dashboard' | 'calendar' | 'history' | 'pr' | 'data';
+type ProgressSectionTarget = 'calendar' | 'list' | 'pr' | 'stats' | 'data';
 type ProfileSection = 'home' | 'assessment';
 type StatusField = 'sleep' | 'energy' | 'time';
 type SorenessPart = TodayStatus['soreness'][number];
@@ -64,6 +68,93 @@ const LazyPageFallback = () => (
     <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm font-medium text-slate-600">正在加载训练数据...</div>
   </div>
 );
+
+const AppAuxiliaryPanel = ({
+  activeTab,
+  activeSession,
+  selectedTemplateName,
+  suggestedTemplateName,
+  profileSection,
+  todayStatus,
+}: {
+  activeTab: ActiveTab;
+  activeSession: TrainingSession | null | undefined;
+  selectedTemplateName: string;
+  suggestedTemplateName: string;
+  profileSection: ProfileSection;
+  todayStatus: TodayStatus;
+}) => {
+  const title =
+    activeTab === 'today'
+      ? '今日辅助'
+      : activeTab === 'training'
+        ? '训练辅助'
+        : activeTab === 'record'
+          ? '记录辅助'
+          : activeTab === 'plan'
+            ? '计划辅助'
+            : '我的辅助';
+
+  return (
+    <Card className="space-y-3">
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">{title}</div>
+        <div className="mt-1 text-sm leading-6 text-slate-500">
+          {activeTab === 'today'
+            ? '用于放置低优先级状态，不挤占主决策区。'
+            : activeTab === 'training'
+              ? '训练页优先保留记录操作，辅助信息保持轻量。'
+              : activeTab === 'record'
+                ? '记录页默认日历，统计和 PR 留在二级分区。'
+                : activeTab === 'plan'
+                  ? '计划页只处理未来安排和模板状态。'
+                  : '设置、筛查、单位和数据入口集中在这里。'}
+        </div>
+      </div>
+
+      {activeTab === 'today' ? (
+        <div className="space-y-2 text-sm">
+          <StatusBadge tone="emerald">当前安排</StatusBadge>
+          <div className="font-semibold text-slate-950">{selectedTemplateName}</div>
+          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">下次建议：{suggestedTemplateName}</div>
+          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">
+            今日状态：睡眠 {todayStatus.sleep} / 精力 {todayStatus.energy} / {todayStatus.time} 分钟
+          </div>
+        </div>
+      ) : null}
+
+      {activeTab === 'training' ? (
+        <div className="space-y-2 text-sm">
+          <StatusBadge tone={activeSession ? 'emerald' : 'slate'}>{activeSession ? '训练中' : '未开始'}</StatusBadge>
+          <div className="font-semibold text-slate-950">{activeSession?.templateName || '暂无进行中的训练'}</div>
+          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">训练业务状态仍由 activeSession 和 workout state machine 管理。</div>
+        </div>
+      ) : null}
+
+      {activeTab === 'record' ? (
+        <div className="space-y-2 text-sm text-slate-600">
+          <div className="rounded-lg bg-stone-50 p-3">默认入口：训练日历。</div>
+          <div className="rounded-lg bg-stone-50 p-3">历史详情、统计、PR、数据管理在记录页内切换。</div>
+        </div>
+      ) : null}
+
+      {activeTab === 'plan' ? (
+        <div className="space-y-2 text-sm">
+          <StatusBadge tone="sky">当前模板</StatusBadge>
+          <div className="font-semibold text-slate-950">{selectedTemplateName}</div>
+          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">实验模板、调整建议和回滚保留在计划页主内容。</div>
+        </div>
+      ) : null}
+
+      {activeTab === 'profile' ? (
+        <div className="space-y-2 text-sm text-slate-600">
+          <div className="rounded-lg bg-stone-50 p-3">当前位置：{profileSection === 'assessment' ? '身体 / 动作筛查' : '设置中心'}</div>
+          <div className="rounded-lg bg-stone-50 p-3">健康数据、单位、备份和筛查集中在“我的”。</div>
+        </div>
+      ) : null}
+    </Card>
+  );
+};
 
 function App() {
   const [data, setData] = useState<AppData>(() => loadData() as AppData);
@@ -141,7 +232,7 @@ function App() {
     setActiveTab('training');
   };
 
-  const finishSession = (target: ProgressSectionTarget | 'today' = 'history') => {
+  const finishSession = (target: ProgressSectionTarget | 'today' = 'list') => {
     if (!data.activeSession) return;
     const finishedAt = new Date().toISOString();
     const completed = completeTrainingSessionIntoHistory(data, finishedAt);
@@ -489,7 +580,6 @@ function App() {
   const rollbackProgramAdjustment = async (historyItemId: string) => {
     const historyItem = data.programAdjustmentHistory?.find((item) => item.id === historyItemId);
     if (!historyItem) return;
-    if (!window.confirm('确定回滚到原模板吗？实验模板不会删除，历史记录会标记为已回滚。')) return;
     let rollbackResult: ReturnType<(typeof import('./engines/programAdjustmentEngine'))['rollbackAdjustment']>;
     try {
       const { rollbackAdjustment } = await import('./engines/programAdjustmentEngine');
@@ -594,7 +684,23 @@ function App() {
 
   return (
     <>
-      <AppShell navItems={navItems} activeTab={activeTab} onNavigate={navigate} activeSession={Boolean(data.activeSession)}>
+      <AppShell
+        navItems={navItems}
+        activeTab={activeTab}
+        onNavigate={navigate}
+        activeSession={Boolean(data.activeSession)}
+        immersive={Boolean(useFocusTrainingShell)}
+        auxiliary={
+          <AppAuxiliaryPanel
+            activeTab={activeTab}
+            activeSession={data.activeSession}
+            selectedTemplateName={selectedTemplate.name}
+            suggestedTemplateName={suggestedTemplate.name}
+            profileSection={profileSection}
+            todayStatus={data.todayStatus}
+          />
+        }
+      >
                 {activeTab === 'today' && (
                   <TodayView
                     data={data}
@@ -610,7 +716,7 @@ function App() {
                     onStart={() => startSession()}
                     onResume={() => setActiveTab('training')}
                     onViewSession={(sessionId, date) => {
-                      setProgressTarget({ section: 'history', sessionId, date });
+                      setProgressTarget({ section: 'list', sessionId, date });
                       setActiveTab('record');
                     }}
                     onViewCalendar={(date) => {
@@ -621,23 +727,27 @@ function App() {
                 )}
 
                 {activeTab === 'training' && useFocusTrainingShell && data.activeSession && (
-                  <Page
-                    eyebrow="训练"
-                    title={data.activeSession.templateName}
-                    action={
+                  <>
+                    {false && (
+                    <PageHeader
+                      eyebrow="训练"
+                      title={data.activeSession?.templateName || '训练'}
+                      description="手机端优先使用极简模式记录训练。"
+                      action={
                       <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setForceFullTrainingView(true)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
+                        <ActionButton type="button" onClick={() => setForceFullTrainingView(true)} variant="secondary">
                           完整训练页
-                        </button>
-                        <button onClick={deleteActiveSession} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
+                        </ActionButton>
+                        <ActionButton type="button" onClick={deleteActiveSession} variant="danger">
                           放弃
-                        </button>
-                        <button onClick={() => finishSession()} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-black text-white">
+                        </ActionButton>
+                        <ActionButton type="button" onClick={() => finishSession()} variant="primary">
                           完成训练
-                        </button>
+                        </ActionButton>
                       </div>
-                    }
-                  >
+                      }
+                    />
+                    )}
                     <TrainingFocusView
                       session={data.activeSession}
                       unitSettings={data.unitSettings}
@@ -656,12 +766,13 @@ function App() {
                       onFinish={finishSession}
                       onFinishToCalendar={() => finishSession('calendar')}
                       onFinishToToday={() => finishSession('today')}
+                      onShowFullTraining={() => setForceFullTrainingView(true)}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
                       onSkipSupportBlock={skipSupportBlock}
                       onUpdateSupportSkipReason={skipSupportExercise}
                     />
-                  </Page>
+                  </>
                 )}
 
                 {activeTab === 'training' && !useFocusTrainingShell && (

@@ -8,5 +8,9 @@ export const Toast = ({ children, tone = 'success' }: { children: ReactNode; ton
     danger: 'border-rose-200 bg-rose-50 text-rose-900',
     info: 'border-sky-200 bg-sky-50 text-sky-900',
   };
-  return <div className={classNames('rounded-lg border px-3 py-2 text-sm font-medium', classes[tone])}>{children}</div>;
+  return (
+    <div role="status" className={classNames('rounded-lg border px-3 py-2 text-sm font-medium leading-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]', classes[tone])}>
+      {children}
+    </div>
+  );
 };

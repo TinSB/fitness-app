@@ -1,15 +1,15 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle, Copy, Replace, SkipForward, Timer } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Copy, Dumbbell, ListChecks, Replace, SkipForward, Timer, XCircle } from 'lucide-react';
 import { classNames, formatTimer, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
-import { formatBlockType, formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
-import { buildTrainingFocusViewModel } from '../presenters/trainingPresenter';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
-import { StatusBadge } from '../ui/StatusBadge';
+import { ActionButton } from '../ui/ActionButton';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Card } from '../ui/Card';
+import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
 import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 
@@ -29,7 +29,15 @@ interface TrainingFocusViewProps {
   onApplySuggestion: (exerciseIndex: number) => void;
   onUpdateActualDraft: (
     exerciseIndex: number,
-    updates: { actualWeightKg?: number; displayWeight?: number; displayUnit?: WeightUnit; actualReps?: number; actualRir?: number; techniqueQuality?: TrainingSetLog['techniqueQuality']; painFlag?: boolean }
+    updates: {
+      actualWeightKg?: number;
+      displayWeight?: number;
+      displayUnit?: WeightUnit;
+      actualReps?: number;
+      actualRir?: number;
+      techniqueQuality?: TrainingSetLog['techniqueQuality'];
+      painFlag?: boolean;
+    },
   ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
   onReplaceExercise: (exerciseIndex: number, replacementId?: string) => void;
@@ -37,6 +45,7 @@ interface TrainingFocusViewProps {
   onFinish?: () => void;
   onFinishToCalendar?: () => void;
   onFinishToToday?: () => void;
+  onShowFullTraining?: () => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
@@ -44,19 +53,19 @@ interface TrainingFocusViewProps {
 }
 
 const supportReasonOptions: Array<{ value: SupportSkipReason; label: string }> = [
-  { value: 'time', label: formatSkippedReason('time') },
-  { value: 'pain', label: formatSkippedReason('pain') },
-  { value: 'equipment', label: formatSkippedReason('equipment') },
-  { value: 'too_tired', label: formatSkippedReason('too_tired') },
-  { value: 'forgot', label: formatSkippedReason('forgot') },
-  { value: 'not_needed', label: formatSkippedReason('not_needed') },
-  { value: 'other', label: formatSkippedReason('other') },
+  { value: 'time', label: '时间不足' },
+  { value: 'pain', label: '不舒服' },
+  { value: 'equipment', label: '器械不可用' },
+  { value: 'too_tired', label: '今天太累' },
+  { value: 'forgot', label: '暂时跳过' },
+  { value: 'not_needed', label: '今天不需要' },
+  { value: 'other', label: '其他原因' },
 ];
 
 const qualityOptions: Array<{ value: NonNullable<TrainingSetLog['techniqueQuality']>; label: string }> = [
-  { value: 'good', label: formatTechniqueQuality('good') },
-  { value: 'acceptable', label: formatTechniqueQuality('acceptable') },
-  { value: 'poor', label: formatTechniqueQuality('poor') },
+  { value: 'good', label: '良好' },
+  { value: 'acceptable', label: '可接受' },
+  { value: 'poor', label: '较差' },
 ];
 
 const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = [
@@ -65,20 +74,113 @@ const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = 
   { value: 'too_heavy', label: '偏重' },
 ];
 
-const getSets = (exercise: TrainingSession['exercises'][number]): TrainingSetLog[] => (Array.isArray(exercise.sets) ? exercise.sets : []);
+const exerciseNameLabels: Record<string, string> = {
+  'bench-press': '平板卧推',
+  'db-bench-press': '哑铃卧推',
+  'incline-db-press': '上斜哑铃卧推',
+  'machine-chest-press': '器械胸推',
+  'cable-fly': '绳索夹胸',
+  'lateral-raise': '哑铃侧平举',
+  'triceps-pushdown': '绳索下压',
+  'close-grip-bench': '窄握卧推',
+  'lat-pulldown': '高位下拉',
+  'seated-row': '坐姿划船',
+  'barbell-row': '杠铃划船',
+  'one-arm-db-row': '单臂哑铃划船',
+  'face-pull': '面拉',
+  'db-curl': '哑铃弯举',
+  'hammer-curl': '锤式弯举',
+  'preacher-curl': '牧师凳弯举',
+  squat: '深蹲',
+  'hack-squat': '哈克深蹲',
+  'leg-press': '腿举',
+  'romanian-deadlift': '罗马尼亚硬拉',
+  'db-rdl': '哑铃罗马尼亚硬拉',
+  'leg-curl': '腿弯举',
+  'calf-raise': '提踵',
+  'shoulder-press': '哑铃肩推',
+  'push-up': '俯卧撑',
+  'pull-up': '引体向上',
+};
 
-const blockLabel = (blockType: FocusBlockType) => formatBlockType(blockType);
+const movementPatternLabels: Record<string, string> = {
+  horizontal_push: '水平推',
+  vertical_push: '垂直推',
+  horizontal_pull: '水平拉',
+  vertical_pull: '垂直拉',
+  squat: '蹲',
+  hinge: '髋铰链',
+  lunge: '单腿',
+  carry: '搬运',
+  isolation_push: '孤立推',
+  isolation_pull: '孤立拉',
+};
+
+const muscleLabels: Record<string, string> = {
+  chest: '胸',
+  back: '背',
+  lats: '背阔肌',
+  quads: '股四头肌',
+  hamstrings: '腘绳肌',
+  glutes: '臀',
+  shoulders: '肩',
+  delts: '三角肌',
+  triceps: '肱三头肌',
+  biceps: '肱二头肌',
+  calves: '小腿',
+  core: '核心',
+};
+
+const getSets = (exercise: TrainingSession['exercises'][number] | undefined): TrainingSetLog[] => (Array.isArray(exercise?.sets) ? exercise.sets : []);
+
+const displayExerciseName = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
+  if (!exercise) return '未知动作';
+  return exerciseNameLabels[exercise.actualExerciseId || exercise.replacementExerciseId || exercise.id] || exerciseNameLabels[exercise.id] || exercise.name || '未知动作';
+};
+
+const displayReplacementName = (option: ReplacementOption) => exerciseNameLabels[option.id] || option.name || '未知动作';
+
+const displayMovementPattern = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
+  const pattern = String(exercise?.movementPattern || '').trim();
+  return movementPatternLabels[pattern] || (pattern ? '动作模式' : '未标注模式');
+};
+
+const displayPrimaryMuscles = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
+  const muscles = exercise?.primaryMuscles?.length ? exercise.primaryMuscles : exercise?.muscle ? [exercise.muscle] : [];
+  const labels = muscles.map((item) => muscleLabels[String(item)] || String(item)).filter(Boolean);
+  return labels.length ? labels.join(' / ') : '未标注主肌群';
+};
+
+const blockLabel = (blockType: FocusBlockType) => (blockType === 'main' ? '主训练' : blockType === 'correction' ? '纠偏' : '功能补丁');
+
+const stageLabel = (stepType: string) => {
+  if (stepType === 'warmup') return '热身组';
+  if (stepType === 'working') return '正式组';
+  if (stepType === 'correction') return '纠偏模块';
+  if (stepType === 'functional') return '功能补丁';
+  if (stepType === 'support') return '支持动作';
+  return '完成';
+};
+
+const replacementRankLabel = (rank: ReplacementOption['rank']) => {
+  if (rank === 'priority') return '优先';
+  if (rank === 'angle') return '角度变化';
+  return '可选';
+};
+
+const fatigueCostLabel = (value: string) => {
+  if (value === 'high') return '高';
+  if (value === 'low') return '低';
+  return '中等';
+};
 
 export function TrainingFocusView({
   session,
   unitSettings,
   restTimer,
   expandedExercise,
-  setExpandedExercise,
-  onSetChange,
   onCompleteSet,
   onCopyPrevious,
-  onAdjustSet,
   onApplySuggestion,
   onUpdateActualDraft,
   onSwitchExercise,
@@ -87,6 +189,7 @@ export function TrainingFocusView({
   onFinish,
   onFinishToCalendar,
   onFinishToToday,
+  onShowFullTraining,
   onCompleteSupportSet,
   onSkipSupportExercise,
   onSkipSupportBlock,
@@ -96,25 +199,24 @@ export function TrainingFocusView({
   const [feedback, setFeedback] = React.useState('');
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
-  const focusViewModel = buildTrainingFocusViewModel(session, unitSettings);
+  const [showDiscomfortSheet, setShowDiscomfortSheet] = React.useState(false);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
-  const mainSets = mainExercise ? getSets(mainExercise) : [];
+  const mainSets = getSets(mainExercise || undefined);
   const mainSetIndex = focusState.currentSetIndex;
   const mainSet = focusState.currentSet;
   const currentStep = focusState.currentStep;
   const actualDraft = focusState.actualDraft;
-  const isSupportStep =
-    currentStep.stepType === 'correction' || currentStep.stepType === 'functional' || currentStep.stepType === 'support';
+  const isSupportStep = currentStep.stepType === 'correction' || currentStep.stepType === 'functional' || currentStep.stepType === 'support';
   const sessionComplete = focusState.sessionComplete || Boolean(session.focusSessionComplete);
   const remainingSec = getRestTimerRemainingSec(restTimer);
+  const weightUnit = unitSettings.weightUnit;
   const mainExercisePoolId = mainExercise?.canonicalExerciseId || mainExercise?.baseId || mainExercise?.id || '';
-  const completedMainSets = mainSets.filter((set) => set.done).length;
-  const existingLoadFeedback = mainExercisePoolId
-    ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId)
-    : undefined;
+  const completedMainSets = mainSets.filter((set) => set.done);
+  const existingLoadFeedback = mainExercisePoolId ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId) : undefined;
   const replacementOptions = mainExercise ? buildReplacementOptions(mainExercise) : [];
+
   const warmupPolicyNotice =
     currentStep.stepType === 'working' && currentStep.warmupPolicy && !currentStep.warmupPolicy.shouldShowWarmupSets && currentStep.warmupPolicy.policy !== 'none'
       ? {
@@ -136,7 +238,7 @@ export function TrainingFocusView({
           }
         : null,
     ].filter(Boolean) as Parameters<typeof dedupeFocusNotices>[0],
-    1
+    1,
   );
 
   const [legacySupportModuleId, legacySupportExerciseId] = currentStep.stepType === 'support' ? currentStep.exerciseId.split('::') : ['', ''];
@@ -144,9 +246,7 @@ export function TrainingFocusView({
   const supportExerciseId = currentStep.moduleId ? currentStep.exerciseId : legacySupportExerciseId;
   const supportLog = isSupportStep
     ? (session.supportExerciseLogs || []).find((log) => log.moduleId === supportModuleId && log.exerciseId === supportExerciseId) || null
-    : !mainExercise && !sessionComplete
-      ? (session.supportExerciseLogs || []).find((log) => number(log.completedSets) < number(log.plannedSets))
-      : null;
+    : null;
   const supportBlock =
     supportLog?.blockType === 'correction'
       ? session.correctionBlock?.find((block) => block.id === supportLog.moduleId)
@@ -154,46 +254,34 @@ export function TrainingFocusView({
         ? session.functionalBlock?.find((block) => block.id === supportLog.moduleId)
         : undefined;
   const supportExercise = supportBlock?.exercises.find((exercise) => exercise.exerciseId === supportLog?.exerciseId);
-  const blockType: FocusBlockType = isSupportStep ? supportLog?.blockType || currentStep.blockType || 'functional' : mainExercise ? 'main' : supportLog?.blockType || 'main';
+  const blockType: FocusBlockType = isSupportStep ? supportLog?.blockType || currentStep.blockType || 'functional' : 'main';
   const supportTimeSec = supportExercise && 'timeSec' in supportExercise ? supportExercise.timeSec : undefined;
   const supportDistanceM = supportExercise && 'distanceM' in supportExercise ? supportExercise.distanceM : undefined;
-  const weightUnit = unitSettings.weightUnit;
-  const stageLabel =
-    currentStep.stepType === 'warmup'
-      ? '热身组'
-      : currentStep.stepType === 'working'
-        ? '正式组'
-        : currentStep.stepType === 'correction'
-          ? '纠偏模块'
-          : currentStep.stepType === 'functional'
-            ? '功能补丁'
-            : currentStep.stepType === 'support'
-              ? '支持动作'
-          : '完成';
+
   const plannedSummary =
-    isSupportStep
-      ? supportExercise
-        ? `${supportExercise.name || supportLog?.exerciseName || '支持动作'} / ${supportExercise.sets || supportLog?.plannedSets || currentStep.totalSetsForStepType} 组${
-            supportExercise.repMin || supportExercise.repMax ? ` / ${supportExercise.repMin || supportExercise.repMax}-${supportExercise.repMax || supportExercise.repMin} 次` : ''
-          }${supportExercise.holdSec ? ` / 保持 ${supportExercise.holdSec} 秒` : ''}${supportTimeSec ? ` / ${supportTimeSec} 秒` : ''}${
-            supportDistanceM ? ` / ${supportDistanceM} 米` : ''
-          }`
-        : '按支持动作计划完成'
-      : currentStep.stepType === 'working' && mainExercise
-        ? `${formatWeight(currentStep.plannedWeight, unitSettings)} × 目标范围 ${mainExercise.repMin}-${mainExercise.repMax} 次，本组建议 ${number(currentStep.plannedReps)} 次${
-            currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''
-          }`
-        : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)}${currentStep.plannedRir ? ` / RIR ${currentStep.plannedRir}` : ''}`;
+    isSupportStep && supportExercise
+      ? `${supportExercise.sets || supportLog?.plannedSets || currentStep.totalSetsForStepType} 组${
+          supportExercise.repMin || supportExercise.repMax ? ` · ${supportExercise.repMin || supportExercise.repMax}-${supportExercise.repMax || supportExercise.repMin} 次` : ''
+        }${supportExercise.holdSec ? ` · 保持 ${supportExercise.holdSec} 秒` : ''}${supportTimeSec ? ` · ${supportTimeSec} 秒` : ''}${supportDistanceM ? ` · ${supportDistanceM} 米` : ''}`
+      : isSupportStep
+        ? '按支持动作计划完成'
+        : currentStep.stepType === 'working' && mainExercise
+          ? `${formatWeight(currentStep.plannedWeight, unitSettings)} × 建议 ${number(currentStep.plannedReps)} 次 · 目标范围 ${mainExercise.repMin}-${mainExercise.repMax} 次${
+              currentStep.plannedRir ? ` · RIR ${currentStep.plannedRir}` : ''
+            }`
+          : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · RIR ${currentStep.plannedRir}` : ''}`;
+
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
+  const actualRir = actualDraft?.actualRir;
   const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
-  const actualSummary = `${actualDisplayWeight === undefined ? '待输入' : `${actualDisplayWeight}${weightUnit}`} / ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}`;
+  const actualSummary = `${actualDisplayWeight === undefined ? '待输入' : `${actualDisplayWeight}${weightUnit}`} · ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}${
+    actualRir === undefined ? '' : ` · RIR ${actualRir}`
+  }`;
   const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
   const repAdjustments = [-5, -1, 1, 5];
 
   const notify = (message: string) => setFeedback(message);
-  const displayExerciseName = (exercise: TrainingSession['exercises'][number] | null | undefined) =>
-    exercise ? formatExerciseName(exercise) : '未知动作';
 
   React.useEffect(() => {
     if (!feedback) return undefined;
@@ -218,28 +306,27 @@ export function TrainingFocusView({
     notify('已复制上一组');
   };
 
-  const togglePainFlag = () => {
+  const markPain = (painFlag: boolean) => {
     if (mainIndex < 0 || mainSetIndex < 0) return;
-    const next = !mainSet?.painFlag;
-    onUpdateActualDraft(mainIndex, { painFlag: next });
-    notify(next ? '已标记不适' : '已取消不适标记');
+    onUpdateActualDraft(mainIndex, { painFlag });
+    setShowDiscomfortSheet(false);
+    notify(painFlag ? '已标记本组不适' : '已取消不适标记');
   };
 
-  const replaceExercise = () => {
+  const openReplacementPicker = () => {
     if (mainIndex < 0 || !mainExercise) return;
     if (!replacementOptions.length) {
       notify('当前动作暂无可替代动作');
       return;
     }
     setShowReplacementPicker(true);
-    notify('请选择替代动作');
   };
 
   const chooseReplacement = (option: ReplacementOption) => {
     if (mainIndex < 0) return;
     onReplaceExercise(mainIndex, option.id);
     setShowReplacementPicker(false);
-    notify(`已替换为：${option.name}`);
+    notify(`已替换为：${displayReplacementName(option)}`);
   };
 
   const completeCurrentSet = () => {
@@ -249,7 +336,7 @@ export function TrainingFocusView({
     }
     if (isSupportStep && supportLog) {
       onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId);
-      notify('已完成支持动作');
+      notify(currentStep.stepType === 'correction' ? '已完成纠偏组' : '已完成功能补丁');
       return;
     }
     if (mainIndex < 0 || mainSetIndex < 0) return;
@@ -261,447 +348,190 @@ export function TrainingFocusView({
     notify(currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组');
   };
 
-  if (sessionComplete) {
-    return (
-      <div className="mx-auto flex min-h-[70svh] max-w-2xl flex-col gap-3 pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
-        <section className="rounded-lg border border-emerald-200 bg-white p-5 text-center">
-        <CheckCircle className="mx-auto h-10 w-10 text-emerald-600" />
-        <h2 className="mt-4 text-2xl font-black text-slate-950">本次训练已完成</h2>
-        <p className="mt-2 text-base leading-7 text-slate-600">不会再自动跳回第一个动作。保存后系统会把本次训练写入历史、日历和进度页。</p>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-emerald-50 p-4">
-            <div className="text-xs font-black text-emerald-700">完成组数</div>
-            <div className="mt-1 text-2xl font-black text-emerald-950">
-              {focusState.completedSets}/{focusState.totalSets}
-            </div>
-          </div>
-          <div className="rounded-lg bg-stone-50 p-4">
-            <div className="text-xs font-black text-slate-500">当前总量</div>
-            <div className="mt-1 text-2xl font-black text-slate-950">{formatTrainingVolume(focusState.totalVolume, unitSettings)}</div>
-          </div>
-        </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-3">
-          <button type="button" onClick={onFinish} className="h-12 rounded-lg bg-emerald-600 px-4 text-sm font-black text-white">
-            查看本次训练
-          </button>
-          <button type="button" onClick={onFinishToCalendar || onFinish} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
-            查看训练日历
-          </button>
-          <button type="button" onClick={onFinishToToday || onFinish} className="h-12 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
-            返回首页
-          </button>
-        </div>
-        </section>
-        {showExercisePicker ? (
-          <section className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="mb-2 text-xs font-black text-slate-500">已完成动作</div>
-            <div className="space-y-2">
-              {session.exercises.map((exercise, index) => {
-                const sets = getSets(exercise);
-                const done = sets.filter((set) => set.done).length;
-                return (
-                  <div key={`${exercise.id}-completed-${index}`} className="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-3">
-                    <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
-                    <span className="text-sm font-black text-slate-600">
-                      {done}/{sets.length}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-      </div>
-    );
-  }
+  const updateDisplayWeight = (nextDisplayWeight: number) => {
+    if (mainIndex < 0) return;
+    const safeDisplayWeight = Math.max(0, nextDisplayWeight);
+    onUpdateActualDraft(mainIndex, {
+      actualWeightKg: parseDisplayWeightToKg(safeDisplayWeight, weightUnit),
+      displayWeight: safeDisplayWeight,
+      displayUnit: weightUnit,
+    });
+  };
 
-  if (currentStep.stepType === 'completed' && mainExercise) {
-    return (
-      <div className="mx-auto flex min-h-[72svh] max-w-2xl flex-col gap-3 pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-0">
-        <section className="rounded-lg border border-emerald-200 bg-white p-5 text-center">
-          <CheckCircle className="mx-auto h-9 w-9 text-emerald-600" />
-          <h2 className="mt-3 text-2xl font-black text-slate-950">{displayExerciseName(mainExercise)}</h2>
-          <p className="mt-2 text-sm font-bold text-slate-600">该动作已完成。切换到其他动作时会定位到该动作第一个未完成步骤。</p>
-          <div className="mt-5 grid grid-cols-3 gap-2">
-            <button type="button" onClick={() => switchExercise(Math.max(0, mainIndex - 1))} disabled={mainIndex <= 0} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
-              上一个
-            </button>
-            <button type="button" onClick={() => setShowExercisePicker((current) => !current)} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700">
-              切换动作
-            </button>
-            <button type="button" onClick={() => switchExercise(Math.min(session.exercises.length - 1, mainIndex + 1))} disabled={mainIndex >= session.exercises.length - 1} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
-              下一个
-            </button>
-          </div>
-        </section>
-        {showExercisePicker ? (
-          <section className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="mb-2 text-xs font-black text-slate-500">选择动作</div>
-            <div className="space-y-2">
-              {session.exercises.map((exercise, index) => {
-                const sets = getSets(exercise);
-                const done = sets.filter((set) => set.done).length;
-                return (
-                  <button
-                    key={`${exercise.id}-completed-picker-${index}`}
-                    type="button"
-                    onClick={() => switchExercise(index)}
-                    className="flex w-full items-center justify-between rounded-lg bg-stone-50 px-3 py-3 text-left"
-                  >
-                    <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
-                    <span className="text-sm font-black text-slate-600">
-                      {done}/{sets.length}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-      </div>
-    );
-  }
+  const updateActualReps = (nextReps: number) => {
+    if (mainIndex < 0) return;
+    onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(nextReps)) });
+  };
 
-  return (
-    <div className="mx-auto flex min-h-[72svh] max-w-2xl flex-col gap-3 pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-0">
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap gap-2">
-              <StatusBadge tone={blockType === 'main' ? 'emerald' : blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
-              <StatusBadge tone={currentStep.stepType === 'working' ? 'emerald' : 'slate'}>{stageLabel}</StatusBadge>
-            </div>
-            <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">{mainExercise ? displayExerciseName(mainExercise) : supportLog?.exerciseName || supportExercise?.name}</h2>
-            <div className="mt-2 text-sm font-bold text-slate-500">
-              {currentStep.label}
-            </div>
-          </div>
-          <div className={classNames('rounded-lg px-3 py-2 text-right', remainingSec > 0 ? 'bg-slate-950 text-white' : 'bg-stone-100 text-slate-700')}>
-            <div className="flex items-center justify-end gap-1 text-xs font-bold opacity-75">
-              <Timer className="h-3.5 w-3.5" />
-              休息
-            </div>
-            <div className="mt-1 text-2xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
-          </div>
-        </div>
-      </section>
+  const updateActualRir = (nextRir: number) => {
+    if (mainIndex < 0) return;
+    onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))) });
+  };
 
-      {mainExercise ? (
-        <>
-          <section className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="text-xs font-bold text-slate-500">建议</div>
-              <div className="mt-2 text-xl font-bold text-slate-950">{plannedSummary}</div>
-              <button type="button" onClick={() => { onApplySuggestion(mainIndex); notify('已套用建议重量和次数'); }} className="mt-3 h-9 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-black text-emerald-800">
-                套用建议
-              </button>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="text-xs font-bold text-slate-500">实际记录</div>
-              <div className="mt-2 text-xl font-bold text-slate-950">{actualSummary}</div>
-              <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上次记录'}</div>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="mb-2 text-xs font-black text-slate-500">快速调整重量（{weightUnit}）</div>
-            <div className="grid grid-cols-3 gap-2">
-              {weightAdjustments.map((delta) => (
-                <button
-                  key={`weight-${delta}`}
-                  type="button"
-                  aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
-                  onClick={() => {
-                    const nextDisplayWeight = Math.max(0, number(actualDisplayWeight) + delta);
-                    onUpdateActualDraft(mainIndex, {
-                      actualWeightKg: parseDisplayWeightToKg(nextDisplayWeight, weightUnit),
-                      displayWeight: nextDisplayWeight,
-                      displayUnit: weightUnit,
-                    });
-                    notify('已调整重量');
-                  }}
-                  className="h-12 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700"
-                >
-                  {delta > 0 ? `+${delta}` : delta}
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="text-xs font-black text-slate-500">
-                自定义重量
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step={weightUnit === 'lb' ? '1' : '0.5'}
-                  value={actualDisplayWeight ?? ''}
-                  onChange={(event) =>
-                    onUpdateActualDraft(mainIndex, {
-                      actualWeightKg: parseDisplayWeightToKg(event.target.value, weightUnit),
-                      displayWeight: Math.max(0, number(event.target.value)),
-                      displayUnit: weightUnit,
-                    })
-                  }
-                  className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-black text-slate-900"
-                  placeholder={`0${weightUnit}`}
-                />
-              </label>
-              <label className="text-xs font-black text-slate-500">
-                自定义次数
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="1"
-                  value={actualReps ?? ''}
-                  onChange={(event) => onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(number(event.target.value))) })}
-                  className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-black text-slate-900"
-                  placeholder="0 次"
-                />
-              </label>
-            </div>
-            <div className="mt-3 text-xs font-black text-slate-500">快速调整次数</div>
-            <div className="mt-2 grid grid-cols-4 gap-2">
-              {repAdjustments.map((delta) => (
-                <button
-                  key={`rep-${delta}`}
-                  type="button"
-                  aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
-                  onClick={() => {
-                    onAdjustSet(mainIndex, 'reps', delta);
-                    notify('已调整次数');
-                  }}
-                  className="h-12 rounded-lg border border-slate-200 bg-white text-base font-black text-slate-700"
-                >
-                  {delta > 0 ? `+${delta}` : delta}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="grid grid-cols-3 gap-2">
-            <button type="button" onClick={() => switchExercise(Math.max(0, mainIndex - 1))} disabled={mainIndex <= 0} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
-              上一个
-            </button>
-            <button type="button" onClick={() => setShowExercisePicker((current) => !current)} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700">
-              切换动作
-            </button>
-            <button type="button" onClick={() => switchExercise(Math.min(session.exercises.length - 1, mainIndex + 1))} disabled={mainIndex >= session.exercises.length - 1} className="h-11 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40">
-              下一个
-            </button>
-          </section>
-
-          {showExercisePicker ? (
-            <section className="rounded-lg border border-slate-200 bg-white p-3">
-              <div className="mb-2 text-xs font-black text-slate-500">选择动作</div>
-              <div className="space-y-2">
-                {session.exercises.map((exercise, index) => {
-                  const sets = getSets(exercise);
-                  const done = sets.filter((set) => set.done).length;
-                  const selected = index === mainIndex;
-                  return (
-                    <button
-                      key={`${exercise.id}-picker-${index}`}
-                      type="button"
-                      onClick={() => switchExercise(index)}
-                      className={classNames('flex w-full items-center justify-between rounded-lg px-3 py-3 text-left', selected ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50')}
-                    >
-                      <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
-                      <span className="text-sm font-black text-slate-600">
-                        {done}/{sets.length}
-                      </span>
-                    </button>
-                  );
-                })}
+  const renderCompletedState = () => (
+    <div className="min-h-svh bg-slate-950 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-white">
+      <div className="mx-auto flex min-h-[80svh] max-w-2xl flex-col justify-center">
+        <Card className="border-emerald-400/20 bg-white p-5 text-center text-slate-950">
+          <CheckCircle className="mx-auto h-10 w-10 text-emerald-600" />
+          <h2 className="mt-4 text-2xl font-bold">本次训练已完成</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">保存后会进入训练历史、日历和记录详情。</p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-emerald-50 p-4">
+              <div className="text-xs font-semibold text-emerald-700">完成组数</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-950">
+                {focusState.completedSets}/{focusState.totalSets}
               </div>
-            </section>
-          ) : null}
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="mb-2 text-xs font-black text-slate-500">动作质量</div>
-            <div className="grid grid-cols-3 gap-2">
-              {qualityOptions.map((option) => {
-                const selected = (actualDraft?.techniqueQuality || 'acceptable') === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => mainSetIndex >= 0 && onUpdateActualDraft(mainIndex, { techniqueQuality: option.value })}
-                    className={classNames(
-                      'h-12 rounded-lg border text-sm font-black',
-                      selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600'
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
             </div>
-          </section>
-
-          {notices.map((notice) => (
-            <div key={notice.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              {notice.message}
+            <div className="rounded-lg bg-stone-50 p-4">
+              <div className="text-xs font-semibold text-slate-500">当前总量</div>
+              <div className="mt-1 text-2xl font-bold text-slate-950">{formatTrainingVolume(focusState.totalVolume, unitSettings)}</div>
             </div>
-          ))}
+          </div>
+          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+            <ActionButton type="button" onClick={onFinish} variant="primary" size="lg">
+              查看本次训练
+            </ActionButton>
+            <ActionButton type="button" onClick={onFinishToCalendar || onFinish} variant="secondary" size="lg">
+              查看日历
+            </ActionButton>
+            <ActionButton type="button" onClick={onFinishToToday || onFinish} variant="ghost" size="lg">
+              返回今日
+            </ActionButton>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 
-          {feedback ? <Toast>{feedback}</Toast> : null}
+  if (sessionComplete || currentStep.stepType === 'completed') {
+    return renderCompletedState();
+  }
 
-          <BottomSheet open={showReplacementPicker} title="??????????" onClose={() => setShowReplacementPicker(false)}>
-            <p className="mb-3 text-xs leading-5 text-slate-500">
-              ???????????????????PR / e1RM ??????????
-            </p>
-            <div className="space-y-2">
-              {replacementOptions.length ? (
-                replacementOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => chooseReplacement(option)}
-                    className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-semibold text-slate-950">{option.name}</span>
-                      <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-700">{option.rankLabel}</span>
-                    </div>
-                    <div className="mt-2 text-xs leading-5 text-slate-600">{option.reason}</div>
-                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                      <span>?????{option.fatigueCostLabel}</span>
-                      <span>PR / e1RM ????</span>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="rounded-lg border border-slate-200 bg-stone-50 p-4 text-sm font-semibold text-slate-600">???????????</div>
+  const renderExercisePicker = () => (
+    <BottomSheet open={showExercisePicker} title="切换动作" onClose={() => setShowExercisePicker(false)}>
+      <div className="space-y-2">
+        {session.exercises.map((exercise, index) => {
+          const sets = getSets(exercise);
+          const done = sets.filter((set) => set.done).length;
+          const selected = index === mainIndex;
+          return (
+            <button
+              key={`${exercise.id}-picker-${index}`}
+              type="button"
+              onClick={() => switchExercise(index)}
+              className={classNames(
+                'flex w-full items-center justify-between rounded-lg px-3 py-3 text-left',
+                selected ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50',
               )}
-            </div>
-          </BottomSheet>
+            >
+              <span className="font-semibold text-slate-900">{displayExerciseName(exercise)}</span>
+              <span className="text-sm font-semibold text-slate-600">
+                {done}/{sets.length}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </BottomSheet>
+  );
 
-          {currentStep.stepType === 'working' && completedMainSets > 0 && mainExercisePoolId ? (
-            <section className="rounded-lg border border-slate-200 bg-white p-3">
-              <div className="mb-2 text-xs font-black text-slate-500">本次推荐重量感觉如何？</div>
-              <div className="grid grid-cols-3 gap-2">
-                {loadFeedbackOptions.map((option) => {
-                  const selected = existingLoadFeedback?.feedback === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => onLoadFeedback(mainExercisePoolId, option.value)}
-                      className={classNames(
-                        'h-11 rounded-lg border text-sm font-black',
-                        selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600'
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
+  const renderReplacementPicker = () => (
+    <BottomSheet open={showReplacementPicker} title="选择本次实际执行动作" onClose={() => setShowReplacementPicker(false)}>
+      <p className="mb-3 text-xs leading-5 text-slate-500">保留当前模板位置；训练量计入本次训练，PR / e1RM 按实际动作独立统计。</p>
+      <div className="space-y-2">
+        {replacementOptions.length ? (
+          replacementOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => chooseReplacement(option)}
+              className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-slate-950">{displayReplacementName(option)}</span>
+                <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-700">{replacementRankLabel(option.rank)}</span>
               </div>
-            </section>
-          ) : null}
+              <div className="mt-2 text-xs leading-5 text-slate-600">同类动作替代，适合本次训练临时调整。</div>
+              <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
+                <span>疲劳成本：{fatigueCostLabel(option.fatigueCost)}</span>
+                <span>PR / e1RM 独立统计</span>
+              </div>
+            </button>
+          ))
+        ) : (
+          <div className="rounded-lg border border-slate-200 bg-stone-50 p-4 text-sm font-semibold text-slate-600">当前动作暂无可替代动作</div>
+        )}
+      </div>
+    </BottomSheet>
+  );
 
-          <WorkoutActionBar className="!bottom-[calc(64px+env(safe-area-inset-bottom))] grid grid-cols-2 gap-2 md:!bottom-auto">
-            <button
-              type="button"
-              aria-label={focusViewModel.primaryActionLabel}
-              onClick={completeCurrentSet}
-              disabled={mainSetIndex < 0}
-              className="h-16 rounded-lg bg-emerald-600 text-lg font-semibold text-white disabled:bg-slate-300"
-            >
-              完成一组
-            </button>
-            <div className="grid grid-cols-3 gap-2">
-              <button type="button" aria-label="复制上一组" onClick={copyPrevious} disabled={mainSetIndex <= 0} className="grid h-16 place-items-center rounded-lg border border-slate-200 bg-white px-1 text-slate-700 disabled:opacity-40" title="复制上一组">
-                <Copy className="h-4 w-4" />
-                <span className="text-[11px] font-black">复制上组</span>
-              </button>
-              <button type="button" aria-label="标记不适" onClick={togglePainFlag} className={classNames('grid h-16 place-items-center rounded-lg border px-1 text-slate-700', actualDraft?.painFlag ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white')} title="标记不适">
-                <span className="text-base font-black">!</span>
-                <span className="text-[11px] font-black">标记不适</span>
-              </button>
-              <button type="button" aria-label="替代动作" onClick={replaceExercise} className="grid h-16 place-items-center rounded-lg border border-slate-200 bg-white px-1 text-slate-700" title="替代动作">
-                <Replace className="h-4 w-4" />
-                <span className="text-[11px] font-black">替代动作</span>
-              </button>
-            </div>
-          </WorkoutActionBar>
+  const renderDiscomfortSheet = () => (
+    <BottomSheet open={showDiscomfortSheet} title="标记不适" onClose={() => setShowDiscomfortSheet(false)}>
+      <p className="text-sm leading-6 text-slate-600">仅记录本组训练不适，用于后续训练建议更保守；这不是医疗诊断。</p>
+      <div className="mt-4 grid gap-2">
+        <ActionButton type="button" variant="danger" size="lg" fullWidth onClick={() => markPain(true)}>
+          标记本组不适
+        </ActionButton>
+        <ActionButton type="button" variant="secondary" size="lg" fullWidth onClick={() => markPain(false)}>
+          取消不适标记
+        </ActionButton>
+      </div>
+    </BottomSheet>
+  );
 
-          <details className="rounded-lg border border-slate-200 bg-white p-3">
-            <summary className="cursor-pointer list-none text-xs font-black text-slate-500">查看训练顺序与依据</summary>
-            <div className="mt-3 space-y-2">
-              {session.exercises.map((exercise, index) => {
-                const sets = getSets(exercise);
-                const done = sets.filter((set) => set.done).length;
-                const selected = index === mainIndex;
-                return (
-                  <button
-                    key={`${exercise.id}-${index}`}
-                    type="button"
-                    onClick={() => switchExercise(index)}
-                    className={classNames('flex w-full items-center justify-between rounded-lg px-3 py-3 text-left', selected ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50')}
-                  >
-                    <span className="font-black text-slate-900">{displayExerciseName(exercise)}</span>
-                    <span className="text-sm font-black text-slate-600">
-                      {done}/{sets.length}
-                    </span>
-                  </button>
-                );
-              })}
+  const renderRestTimer = () =>
+    remainingSec > 0 ? (
+      <Card className="border-white/10 bg-white/10 text-white">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-200">
+              <Timer className="h-4 w-4" />
+              休息中
             </div>
-            <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-xs font-bold leading-5 text-slate-500">
-              这里仅作训练中定位；e1RM 来源、证据规则和有效组细节留在完整训练页与进度页查看，避免训练时信息过载。
+            <div className="mt-1 text-sm text-slate-300">下一步：{currentStep.label}</div>
+          </div>
+          <div className="text-3xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
+        </div>
+      </Card>
+    ) : null;
+
+  const renderSupportStep = () => {
+    if (!supportLog) return null;
+    const supportTitle = supportExercise?.name || supportLog.exerciseName || currentStep.exerciseName || '支持动作';
+    const supportModuleName = supportBlock?.name || currentStep.moduleName || blockLabel(blockType);
+    return (
+      <>
+        <Card className="border-white/10 bg-white text-slate-950">
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge tone={blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
+            <StatusBadge tone="slate">{stageLabel(currentStep.stepType)}</StatusBadge>
+          </div>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight">{supportTitle}</h1>
+          <p className="mt-1 text-sm font-medium text-slate-500">{supportModuleName}</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-stone-50 p-3">
+              <div className="text-xs font-semibold text-slate-500">当前组</div>
+              <div className="mt-1 text-2xl font-bold">
+                {supportLog.completedSets || 0}/{supportLog.plannedSets || currentStep.totalSetsForStepType}
+              </div>
             </div>
-          </details>
-        </>
-      ) : (
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="text-xs font-black text-emerald-700">{stageLabel}</div>
-          <h2 className="mt-2 text-2xl font-bold leading-tight text-slate-950">{supportExercise?.name || supportLog?.exerciseName || currentStep.exerciseName || '支持动作'}</h2>
-          <div className="mt-1 text-sm font-bold text-slate-500">{supportBlock?.name || currentStep.moduleName || '支持模块'}</div>
-          <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm font-bold text-slate-700">{plannedSummary}</div>
-          <div className="mt-2 text-2xl font-black text-slate-950">
-            {supportLog?.completedSets || 0}/{supportLog?.plannedSets || 0} 组
+            <div className="rounded-lg bg-stone-50 p-3">
+              <div className="text-xs font-semibold text-slate-500">建议</div>
+              <div className="mt-1 text-sm font-semibold leading-6">{plannedSummary}</div>
+            </div>
           </div>
-          <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-            <button
-              onClick={() => supportLog && onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId)}
-            className="h-16 rounded-lg bg-emerald-600 text-lg font-semibold text-white"
-            >
-              完成一组
-            </button>
-            <button
-              onClick={() => supportLog && onSkipSupportExercise(supportLog.moduleId, supportLog.exerciseId, skipReason)}
-              className="h-16 rounded-lg border border-amber-200 bg-amber-50 px-4 font-black text-amber-900"
-              title="跳过"
-            >
-              <SkipForward className="h-5 w-5" />
-            </button>
-          </div>
-          {supportLog?.blockType === 'correction' || supportLog?.blockType === 'functional' ? (
-            <button
-              type="button"
-              onClick={() => {
-                const label = supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁';
-                const confirmed = typeof window === 'undefined' ? true : window.confirm(`跳过整个${label}？未完成的支持动作会记录为跳过。`);
-                if (!confirmed) return;
-                onSkipSupportBlock(supportLog.blockType, skipReason);
-                notify(`已跳过${label}`);
-              }}
-              className="mt-2 h-12 w-full rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-black text-amber-900"
-            >
-              跳过整个{supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁'}
-            </button>
-          ) : null}
+        </Card>
+
+        <Card className="border-white/10 bg-white text-slate-950">
+          <div className="text-sm font-semibold">跳过原因</div>
           <select
             value={skipReason}
             onChange={(event) => {
               const next = event.target.value as SupportSkipReason;
               setSkipReason(next);
-              if (supportLog) onUpdateSupportSkipReason(supportLog.moduleId, supportLog.exerciseId, next);
+              onUpdateSupportSkipReason(supportLog.moduleId, supportLog.exerciseId, next);
             }}
-            className="mt-3 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-bold text-slate-700"
+            className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-700"
           >
             {supportReasonOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -709,8 +539,347 @@ export function TrainingFocusView({
               </option>
             ))}
           </select>
-        </section>
-      )}
+          <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+            <ActionButton type="button" variant="primary" size="lg" onClick={() => onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId)} fullWidth>
+              完成一组
+            </ActionButton>
+            <button
+              type="button"
+              aria-label="跳过当前支持动作"
+              onClick={() => onSkipSupportExercise(supportLog.moduleId, supportLog.exerciseId, skipReason)}
+              className="grid h-14 w-14 place-items-center rounded-lg border border-amber-200 bg-amber-50 text-amber-900"
+            >
+              <SkipForward className="h-5 w-5" />
+            </button>
+          </div>
+          <ActionButton
+            type="button"
+            variant="ghost"
+            size="md"
+            fullWidth
+            className="mt-2"
+            onClick={() => {
+              const label = supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁';
+              const confirmed = typeof window === 'undefined' ? true : window.confirm(`跳过整个${label}？未完成的支持动作会记录为跳过。`);
+              if (!confirmed) return;
+              onSkipSupportBlock(supportLog.blockType, skipReason);
+              notify(`已跳过${label}`);
+            }}
+          >
+            跳过整个{supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁'}
+          </ActionButton>
+        </Card>
+      </>
+    );
+  };
+
+  const renderMainStep = () => {
+    if (!mainExercise) return null;
+    return (
+      <>
+        <Card className="border-white/10 bg-white text-slate-950">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge tone="emerald">{blockLabel('main')}</StatusBadge>
+                <StatusBadge tone={currentStep.stepType === 'warmup' ? 'amber' : 'emerald'}>{stageLabel(currentStep.stepType)}</StatusBadge>
+              </div>
+              <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight">{displayExerciseName(mainExercise)}</h1>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+                <span>{displayMovementPattern(mainExercise)}</span>
+                <span>·</span>
+                <span>{displayPrimaryMuscles(mainExercise)}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowExercisePicker(true)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+            >
+              切换
+            </button>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-stone-50 p-3">
+              <div className="text-xs font-semibold text-slate-500">当前组</div>
+              <div className="mt-1 text-2xl font-bold">
+                {currentStep.setIndex + 1}/{currentStep.totalSetsForStepType}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">{currentStep.label}</div>
+            </div>
+            <div className="rounded-lg bg-stone-50 p-3">
+              <div className="text-xs font-semibold text-slate-500">动作进度</div>
+              <div className="mt-1 text-2xl font-bold">
+                {completedMainSets.length}/{mainSets.length}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">已完成正式组</div>
+            </div>
+          </div>
+        </Card>
+
+        {renderRestTimer()}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Card className="border-white/10 bg-white text-slate-950">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-slate-500">推荐处方</div>
+                <div className="mt-2 text-lg font-bold leading-7">{plannedSummary}</div>
+              </div>
+              <ActionButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  onApplySuggestion(mainIndex);
+                  notify('已套用建议重量和次数');
+                }}
+              >
+                套用建议
+              </ActionButton>
+            </div>
+          </Card>
+          <Card className="border-white/10 bg-white text-slate-950">
+            <div className="text-xs font-semibold text-slate-500">实际记录</div>
+            <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
+            <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
+          </Card>
+        </div>
+
+        <Card className="border-white/10 bg-white text-slate-950">
+          <div className="text-sm font-semibold">重量（{weightUnit}）</div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {weightAdjustments.map((delta) => (
+              <button
+                key={`weight-${delta}`}
+                type="button"
+                aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
+                onClick={() => {
+                  updateDisplayWeight(number(actualDisplayWeight) + delta);
+                  notify('已调整重量');
+                }}
+                className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
+              >
+                {delta > 0 ? `+${delta}` : delta}
+              </button>
+            ))}
+          </div>
+          <label className="mt-3 block text-xs font-semibold text-slate-500">
+            自定义重量
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step={weightUnit === 'lb' ? '1' : '0.5'}
+              value={actualDisplayWeight ?? ''}
+              onChange={(event) => updateDisplayWeight(number(event.target.value))}
+              className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
+              placeholder={`0${weightUnit}`}
+            />
+          </label>
+        </Card>
+
+        <Card className="border-white/10 bg-white text-slate-950">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-sm font-semibold">次数</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {repAdjustments.map((delta) => (
+                  <button
+                    key={`rep-${delta}`}
+                    type="button"
+                    aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
+                    onClick={() => {
+                      updateActualReps(number(actualReps) + delta);
+                      notify('已调整次数');
+                    }}
+                    className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
+                  >
+                    {delta > 0 ? `+${delta}` : delta}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                step="1"
+                value={actualReps ?? ''}
+                onChange={(event) => updateActualReps(number(event.target.value))}
+                className="mt-2 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
+                placeholder="0 次"
+              />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">RIR</div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[0, 1, 2, 3, 4, 5].map((rir) => (
+                  <button
+                    key={rir}
+                    type="button"
+                    onClick={() => updateActualRir(rir)}
+                    className={classNames(
+                      'h-12 rounded-lg border text-sm font-semibold',
+                      actualRir === rir ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700',
+                    )}
+                  >
+                    {rir}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {completedMainSets.length ? (
+          <Card className="border-white/10 bg-white text-slate-950">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <ListChecks className="h-4 w-4 text-emerald-600" />
+              已完成组
+            </div>
+            <div className="space-y-2">
+              {completedMainSets.map((set, index) => (
+                <div key={set.id || `${mainExercise.id}-${index}`} className="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2 text-sm">
+                  <span>第 {index + 1} 组</span>
+                  <span className="font-semibold">
+                    {formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps} 次{set.rir !== undefined && set.rir !== '' ? ` · RIR ${set.rir}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : null}
+
+        {notices.map((notice) => (
+          <div key={notice.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            {notice.message}
+          </div>
+        ))}
+
+        <details className="rounded-lg border border-white/10 bg-white/10 p-3 text-white">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">查看动作顺序</summary>
+          <div className="mt-3 space-y-2">
+            {session.exercises.map((exercise, index) => {
+              const sets = getSets(exercise);
+              const done = sets.filter((set) => set.done).length;
+              const selected = index === mainIndex;
+              return (
+                <button
+                  key={`${exercise.id}-${index}`}
+                  type="button"
+                  onClick={() => switchExercise(index)}
+                  className={classNames('flex w-full items-center justify-between rounded-lg px-3 py-3 text-left', selected ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-white')}
+                >
+                  <span className="font-semibold">{displayExerciseName(exercise)}</span>
+                  <span className="text-sm font-semibold">
+                    {done}/{sets.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </details>
+
+        {currentStep.stepType === 'working' && completedMainSets.length > 0 && mainExercisePoolId ? (
+          <Card className="border-white/10 bg-white text-slate-950">
+            <div className="mb-2 text-sm font-semibold">本次重量感觉</div>
+            <div className="grid grid-cols-3 gap-2">
+              {loadFeedbackOptions.map((option) => {
+                const selected = existingLoadFeedback?.feedback === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onLoadFeedback(mainExercisePoolId, option.value)}
+                    className={classNames(
+                      'h-11 rounded-lg border text-sm font-semibold',
+                      selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        ) : null}
+      </>
+    );
+  };
+
+  return (
+    <div className="min-h-svh bg-slate-950 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-white">
+      <div className="mx-auto max-w-2xl space-y-3">
+        <header className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
+              <Dumbbell className="h-4 w-4" />
+              Focus Mode
+            </div>
+            <div className="mt-1 truncate text-lg font-bold">{session.templateName}</div>
+          </div>
+          <div className="flex gap-2">
+            {onShowFullTraining ? (
+              <button type="button" onClick={onShowFullTraining} className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100">
+                完整页
+              </button>
+            ) : null}
+            <button type="button" onClick={onFinish} className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100">
+              结束
+            </button>
+          </div>
+        </header>
+
+        {isSupportStep ? renderSupportStep() : renderMainStep()}
+      </div>
+
+      {feedback ? <Toast>{feedback}</Toast> : null}
+      {renderExercisePicker()}
+      {renderReplacementPicker()}
+      {renderDiscomfortSheet()}
+
+      {!isSupportStep && mainExercise ? (
+        <WorkoutActionBar className="grid grid-cols-[minmax(0,1fr)_168px] gap-2 border-white/10 bg-slate-950/95 text-white md:static">
+          <ActionButton type="button" aria-label="完成一组" onClick={completeCurrentSet} disabled={mainSetIndex < 0} variant="primary" size="lg" fullWidth>
+            完成一组
+          </ActionButton>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              aria-label="复制上组"
+              onClick={copyPrevious}
+              disabled={mainSetIndex <= 0}
+              className="grid h-14 place-items-center rounded-lg border border-white/10 bg-white/10 px-1 text-slate-100 disabled:opacity-40"
+            >
+              <Copy className="h-4 w-4" />
+              <span className="text-[10px] font-semibold">上组</span>
+            </button>
+            <button
+              type="button"
+              aria-label="标记不适"
+              onClick={() => setShowDiscomfortSheet(true)}
+              className={classNames(
+                'grid h-14 place-items-center rounded-lg border px-1',
+                actualDraft?.painFlag ? 'border-rose-300 bg-rose-500/20 text-rose-100' : 'border-white/10 bg-white/10 text-slate-100',
+              )}
+            >
+              <XCircle className="h-4 w-4" />
+              <span className="text-[10px] font-semibold">不适</span>
+            </button>
+            <button
+              type="button"
+              aria-label="替代动作"
+              onClick={openReplacementPicker}
+              className="grid h-14 place-items-center rounded-lg border border-white/10 bg-white/10 px-1 text-slate-100"
+            >
+              <Replace className="h-4 w-4" />
+              <span className="text-[10px] font-semibold">替代</span>
+            </button>
+          </div>
+        </WorkoutActionBar>
+      ) : null}
     </div>
   );
 }
