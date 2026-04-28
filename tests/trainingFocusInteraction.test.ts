@@ -19,8 +19,10 @@ describe('TrainingFocusView interaction surface', () => {
     expect(source).toContain('actualReps');
   });
 
-  it('does not expose long evidence panels in the default action bar', () => {
-    expect(source).toContain('查看训练顺序与依据');
-    expect(source).toContain('MobileActionBar');
+  it('uses the product workout action bar and collapses long details', () => {
+    expect(source).toContain('WorkoutActionBar');
+    expect(source).toContain('BottomSheet');
+    expect(source).toContain('Toast');
+    expect(source).toContain('<details');
   });
 });

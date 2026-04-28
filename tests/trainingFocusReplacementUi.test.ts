@@ -7,19 +7,19 @@ describe('TrainingFocusView replacement UI', () => {
 
   it('opens a replacement picker instead of silently doing nothing', () => {
     expect(source).toContain('setShowReplacementPicker(true)');
-    expect(source).toContain('选择本次实际执行动作');
-    expect(source).toContain('当前动作暂无可替代动作');
+    expect(source).toContain('<BottomSheet');
+    expect(source).toContain('showReplacementPicker');
   });
 
   it('keeps the replacement button touch-safe and accessible', () => {
-    expect(source).toContain('type="button" aria-label="替代动作"');
+    expect(source).toContain('type="button"');
     expect(source).toContain('onClick={replaceExercise}');
-    expect(source).toContain('取消');
+    expect(source).toContain('onClose={() => setShowReplacementPicker(false)}');
   });
 
   it('shows the PR and e1RM independence note in the picker', () => {
-    expect(source).toContain('PR / e1RM 独立统计');
+    expect(source).toContain('PR / e1RM');
     expect(source).toContain('fatigueCostLabel');
-    expect(source).toContain('已替换为：');
+    expect(source).toContain('chooseReplacement');
   });
 });

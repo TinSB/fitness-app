@@ -20,6 +20,8 @@ import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../e
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton, InlineNotice, InfoPill, InfoTooltip, ModeSwitch, Page, Segment, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
+import { Card as ProductCard } from '../ui/Card';
+import { MetricCard } from '../ui/MetricCard';
 import { Term } from '../ui/Term';
 
 interface TodayViewProps {
@@ -153,6 +155,57 @@ export function TodayView({
         ) : null
       }
     >
+      <ProductCard className="mb-3 border-emerald-100 bg-white">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge tone={todayViewModel.state === 'completed' ? 'emerald' : todayViewModel.state === 'in_progress' ? 'amber' : 'sky'}>
+                {todayViewModel.pageTitle}
+              </StatusBadge>
+              <span className="text-xs font-semibold text-slate-400">{todayKey()}</span>
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold text-slate-950">
+              {todayViewModel.state === 'completed'
+                ? completedSession?.templateName || '本次训练'
+                : todayViewModel.state === 'in_progress'
+                  ? data.activeSession?.templateName || selectedTemplate.name
+                  : selectedTemplate.name}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{todayViewModel.statusText}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {todayTrainingState.status === 'completed' && completedSession ? (
+                <>
+                  <ActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary">
+                    查看本次训练
+                  </ActionButton>
+                  <ActionButton type="button" onClick={() => onViewCalendar?.(todayTrainingState.date)} variant="secondary">
+                    查看日历
+                  </ActionButton>
+                  <ActionButton type="button" onClick={handleExtraTraining} variant="ghost">
+                    再练一场
+                  </ActionButton>
+                </>
+              ) : todayTrainingState.status === 'in_progress' ? (
+                <ActionButton type="button" onClick={onResume} variant="primary">
+                  继续训练
+                  <ChevronRight className="h-4 w-4" />
+                </ActionButton>
+              ) : (
+                <ActionButton type="button" onClick={onStart} variant="primary" size="lg">
+                  <Play className="h-4 w-4" />
+                  开始训练
+                </ActionButton>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
+            <MetricCard label="准备度" value={`${adjustedPlan.readinessResult?.score ?? '--'} / 100`} />
+            <MetricCard label="预计时长" value={`${adjustedPlan.duration} 分钟`} />
+            <MetricCard label={todayTrainingState.status === 'completed' ? '下次建议' : '今日建议'} value={suggestedTemplate.name} />
+          </div>
+        </div>
+      </ProductCard>
+
       <div className="grid gap-3 lg:grid-cols-[1.35fr_0.65fr]">
         <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">

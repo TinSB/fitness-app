@@ -26,7 +26,7 @@ export const buildTodayViewModel = ({
       recommendationLabel: '下次建议',
       primaryActionLabel: '查看本次训练',
       secondaryActionLabels: ['查看训练日历', '再练一场'],
-      statusText: `已完成 ${completedTemplateName || '本次训练'}。下一次建议只作为参考，不代表今天必须继续训练。`,
+      statusText: `已完成 ${completedTemplateName || '本次训练'}。下次建议只作为参考，不代表今天必须继续训练。`,
     };
   }
 

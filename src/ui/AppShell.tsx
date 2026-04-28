@@ -45,14 +45,16 @@ export const AppShell = <T extends string>({ navItems, activeTab, onNavigate, ac
                   >
                     <Icon className="h-5 w-5" />
                     <span>{item.label}</span>
-                    {item.id === 'training' && activeSession ? <span className="ml-auto rounded-md bg-emerald-400/20 px-2 py-0.5 text-[11px] text-emerald-200">训练中</span> : null}
+                    {item.id === 'training' && activeSession ? (
+                      <span className="ml-auto rounded-md bg-emerald-400/20 px-2 py-0.5 text-[11px] text-emerald-200">训练中</span>
+                    ) : null}
                   </button>
                 );
               })}
             </nav>
 
             <div className="border-t border-white/10 px-6 py-5 text-xs leading-5 text-slate-400">
-              打开即可开始训练。记录、处方、纠偏和趋势保存在本地。
+              打开即可开始训练。记录、处方、纠偏和趋势都保存在本地。
             </div>
           </aside>
 

@@ -48,7 +48,8 @@ import {
   formatWeeklyActionPriority,
 } from '../i18n/formatters';
 import type { AdjustmentEffectReview, AppData, PersonalRecord, ProgramAdjustmentDiff, ProgramAdjustmentDraft, SessionDataFlag, TrainingSession, UnitSettings, WeeklyPrescription } from '../models/training-model';
-import { ActionButton, Card, EmptyState, Page, SegmentedTabs, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
+import { ActionButton, Card, EmptyState, Page, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { Term } from '../ui/Term';
 
 export interface ProgressViewProps {
@@ -784,7 +785,7 @@ export function ProgressView({
     >
       <Card className="mb-4" padded={false}>
         <div className="p-3">
-          <SegmentedTabs value={activeProgressSection} options={progressSections} onChange={setActiveProgressSection} ariaLabel="进度中心分区" />
+          <SegmentedControl value={activeProgressSection} options={progressSections} onChange={setActiveProgressSection} ariaLabel="记录中心分区" />
           {!rawHistory.length ? (
             <div className="mt-3">
               <EmptyState

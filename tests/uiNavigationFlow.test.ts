@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('UI navigation structure', () => {
   const appSource = readFileSync('src/App.tsx', 'utf8');
+  const appShellSource = readFileSync('src/ui/AppShell.tsx', 'utf8');
   const bottomNavSource = readFileSync('src/ui/BottomNav.tsx', 'utf8');
 
   it('keeps the five product-level navigation entries', () => {
@@ -14,7 +15,8 @@ describe('UI navigation structure', () => {
   });
 
   it('uses a shared BottomNav with safe-area handling', () => {
-    expect(appSource).toContain('<BottomNav');
+    expect(appSource).toContain('<AppShell');
+    expect(appShellSource).toContain('<BottomNav');
     expect(bottomNavSource).toContain('env(safe-area-inset-bottom)');
     expect(bottomNavSource).toContain('activeSession');
   });

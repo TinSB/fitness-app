@@ -8,7 +8,10 @@ import { buildReplacementOptions, type ReplacementOption } from '../engines/repl
 import { formatBlockType, formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
 import { buildTrainingFocusViewModel } from '../presenters/trainingPresenter';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
-import { MobileActionBar, StatusBadge } from '../ui/common';
+import { StatusBadge } from '../ui/common';
+import { BottomSheet } from '../ui/BottomSheet';
+import { Toast } from '../ui/Toast';
+import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
@@ -543,27 +546,20 @@ export function TrainingFocusView({
             </div>
           ))}
 
-          {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-black text-emerald-900">{feedback}</div> : null}
+          {feedback ? <Toast>{feedback}</Toast> : null}
 
-          {showReplacementPicker ? (
-            <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-lg shadow-slate-200/60">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold text-emerald-700">替代动作</div>
-                  <h3 className="mt-1 font-semibold text-slate-950">选择本次实际执行动作</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">保留当前模板位置；训练量计入本次，PR / e1RM 按实际动作独立统计。</p>
-                </div>
-                <button type="button" onClick={() => setShowReplacementPicker(false)} className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600">
-                  取消
-                </button>
-              </div>
-              <div className="space-y-2">
-                {replacementOptions.map((option) => (
+          <BottomSheet open={showReplacementPicker} title="??????????" onClose={() => setShowReplacementPicker(false)}>
+            <p className="mb-3 text-xs leading-5 text-slate-500">
+              ???????????????????PR / e1RM ??????????
+            </p>
+            <div className="space-y-2">
+              {replacementOptions.length ? (
+                replacementOptions.map((option) => (
                   <button
                     key={option.id}
                     type="button"
                     onClick={() => chooseReplacement(option)}
-                    className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left"
+                    className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-semibold text-slate-950">{option.name}</span>
@@ -571,14 +567,16 @@ export function TrainingFocusView({
                     </div>
                     <div className="mt-2 text-xs leading-5 text-slate-600">{option.reason}</div>
                     <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                      <span>疲劳成本：{option.fatigueCostLabel}</span>
-                      <span>PR / e1RM 独立统计</span>
+                      <span>?????{option.fatigueCostLabel}</span>
+                      <span>PR / e1RM ????</span>
                     </div>
                   </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
+                ))
+              ) : (
+                <div className="rounded-lg border border-slate-200 bg-stone-50 p-4 text-sm font-semibold text-slate-600">???????????</div>
+              )}
+            </div>
+          </BottomSheet>
 
           {currentStep.stepType === 'working' && completedMainSets > 0 && mainExercisePoolId ? (
             <section className="rounded-lg border border-slate-200 bg-white p-3">
@@ -604,7 +602,7 @@ export function TrainingFocusView({
             </section>
           ) : null}
 
-          <MobileActionBar className="!bottom-[calc(64px+env(safe-area-inset-bottom))] grid grid-cols-2 gap-2 md:!bottom-auto">
+          <WorkoutActionBar className="!bottom-[calc(64px+env(safe-area-inset-bottom))] grid grid-cols-2 gap-2 md:!bottom-auto">
             <button
               type="button"
               aria-label={focusViewModel.primaryActionLabel}
@@ -628,7 +626,7 @@ export function TrainingFocusView({
                 <span className="text-[11px] font-black">替代动作</span>
               </button>
             </div>
-          </MobileActionBar>
+          </WorkoutActionBar>
 
           <details className="rounded-lg border border-slate-200 bg-white p-3">
             <summary className="cursor-pointer list-none text-xs font-black text-slate-500">查看训练顺序与依据</summary>
