@@ -47,4 +47,39 @@ describe('goalConsistencyEngine', () => {
       byHypertrophy.exercises.map((exercise) => [exercise.id, exercise.repMin, exercise.repMax])
     );
   });
+
+  it('does not normalize fat loss plus hybrid into hypertrophy', () => {
+    const base = makeAppData();
+    const result = auditGoalModeConsistency({
+      ...base,
+      trainingMode: 'hybrid',
+      userProfile: { ...base.userProfile, primaryGoal: 'fat_loss' },
+      programTemplate: { ...base.programTemplate, primaryGoal: 'fat_loss' },
+    });
+
+    expect(result.primaryGoal).toBe('fat_loss');
+    expect(result.trainingMode).toBe('hybrid');
+    expect(result.primaryGoal).not.toBe('hypertrophy');
+  });
+
+  it('allows hypertrophy and hybrid prescriptions to differ for explainable mode reasons', () => {
+    const template = getTemplate('push-a');
+    const status = makeStatus();
+    const hypertrophy = applyStatusRules(template, status, 'hypertrophy', null, [], DEFAULT_SCREENING_PROFILE);
+    const hybrid = applyStatusRules(template, status, 'hybrid', null, [], DEFAULT_SCREENING_PROFILE);
+
+    expect(hypertrophy.exercises.map((exercise) => [exercise.id, exercise.repMin, exercise.repMax])).not.toEqual(
+      hybrid.exercises.map((exercise) => [exercise.id, exercise.repMin, exercise.repMax])
+    );
+  });
+
+  it('keeps hybrid mode out of the strength branch', () => {
+    const template = getTemplate('push-a');
+    const status = makeStatus();
+    const hybrid = applyStatusRules(template, status, 'hybrid', null, [], DEFAULT_SCREENING_PROFILE).exercises.find((exercise) => exercise.id === 'lateral-raise');
+    const strength = applyStatusRules(template, status, 'strength', null, [], DEFAULT_SCREENING_PROFILE).exercises.find((exercise) => exercise.id === 'lateral-raise');
+
+    expect(hybrid?.prescription?.mode).toBe('hybrid');
+    expect([hybrid?.repMin, hybrid?.repMax]).not.toEqual([strength?.repMin, strength?.repMax]);
+  });
 });

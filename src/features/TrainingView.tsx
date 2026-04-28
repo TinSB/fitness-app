@@ -238,6 +238,10 @@ export function TrainingView({
   const activeSetIndex = activeExercise ? findNextUnfinishedSetIndex(activeExercise) : -1;
   const remainingSec = getRestTimerRemainingSec(restTimer);
   const mode = resolveMode(session.trainingMode || 'hybrid');
+  const recommendationReasons = (session.explanations || []).filter(Boolean).slice(0, 6);
+  const visibleRecommendationReasons = recommendationReasons.length
+    ? recommendationReasons
+    : ['当前主要使用起始模板和默认处方，历史数据仍在积累中。'];
 
   const getSupportLog = (moduleId: string, exerciseId: string) =>
     (session.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
@@ -684,6 +688,15 @@ export function TrainingView({
             <MetricCard label="辅助处理" value={`${supportSummary.resolved}/${supportSummary.planned}`} helper={supportSummary.skipped ? `${supportSummary.skipped} 项已跳过` : undefined} />
             <MetricCard label="训练模式" value={formatTrainingMode(mode.id)} tone="sky" />
           </div>
+
+          <details className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+            <summary className="cursor-pointer list-none font-semibold text-slate-900">为什么这样推荐？</summary>
+            <div className="mt-2 space-y-2">
+              {visibleRecommendationReasons.map((reason) => (
+                <p key={reason}>{reason}</p>
+              ))}
+            </div>
+          </details>
 
           <PageSection title="完整动作列表" description="展开动作可补记重量、次数、RIR、动作质量、不适和备注。">
             <div className="space-y-3">{mainExercises.map((exercise, index) => renderExerciseCard(exercise, index))}</div>

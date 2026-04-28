@@ -1,0 +1,31 @@
+{
+  "selectedTemplateId": "legs-a",
+  "trainingMode": "hybrid",
+  "userProfile": {
+    "primaryGoal": "fat_loss",
+    "trainingLevel": "intermediate"
+  },
+  "todayStatus": {
+    "sleep": "一般",
+    "energy": "中",
+    "soreness": [],
+    "time": "60"
+  },
+  "history": [
+    {
+      "id": "fat-loss-push-history",
+      "date": "2026-04-27",
+      "templateId": "push-a",
+      "exerciseId": "bench-press",
+      "sets": [
+        { "weight": 80, "reps": 6, "rir": 2, "techniqueQuality": "acceptable" },
+        { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "acceptable" }
+      ],
+      "loadFeedback": "too_heavy"
+    }
+  ],
+  "loadFeedback": [
+    { "exerciseId": "bench-press", "feedback": "too_heavy" }
+  ],
+  "readinessScore": 68
+}

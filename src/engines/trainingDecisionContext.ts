@@ -11,6 +11,7 @@ import type {
   TrainingSession,
 } from '../models/training-model';
 import { buildHealthSummary, type HealthSummary } from './healthSummaryEngine';
+import { filterAnalyticsHistory } from './sessionHistoryEngine';
 
 export type TrainingDecisionContext = {
   todayStatus: TodayStatus;
@@ -43,9 +44,11 @@ export const buildTrainingDecisionContext = (
           ? buildHealthSummary(healthMetricSamples, importedWorkoutSamples, { endDate: new Date().toISOString() })
           : undefined);
 
+  const history = filterAnalyticsHistory(overrides.history ?? data.history ?? []);
+
   return {
     todayStatus: overrides.todayStatus ?? data.todayStatus ?? DEFAULT_STATUS,
-    history: overrides.history ?? data.history ?? [],
+    history,
     activeSession: overrides.activeSession ?? data.activeSession ?? null,
     healthMetricSamples,
     importedWorkoutSamples,

@@ -21,6 +21,7 @@ import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
 import { getCurrentMesocycleWeek } from './mesocycleEngine';
 import { buildPainPatterns, getExercisePainPattern } from './painPatternEngine';
 import { buildTodayReadiness } from './readinessEngine';
+import { filterAnalyticsHistory } from './sessionHistoryEngine';
 import type { HealthSummary } from './healthSummaryEngine';
 import { getMuscleBudget, getMuscleRemaining } from './supportPlanEngine';
 
@@ -255,9 +256,10 @@ const prescribeExercise = (
 };
 
 export const buildReadinessSignal = (status: TodayStatus, history: TrainingSession[] = []): ReadinessSignal => {
-  const poorSleepDays = recentPoorSleepDays(status, history);
-  const readiness = buildTodayReadiness({ todayStatus: status, history }, undefined, {
-    adherenceHigh: buildAdherenceReport(history).overallRate >= 85,
+  const recommendationHistory = filterAnalyticsHistory(history);
+  const poorSleepDays = recentPoorSleepDays(status, recommendationHistory);
+  const readiness = buildTodayReadiness({ todayStatus: status, history: recommendationHistory }, undefined, {
+    adherenceHigh: buildAdherenceReport(recommendationHistory).overallRate >= 85,
   });
 
   return mapReadinessToSignal(readiness, poorSleepDays);
@@ -302,15 +304,16 @@ export const applyStatusRules = (
   mesocyclePlan?: MesocyclePlan | null,
   context: { healthSummary?: HealthSummary; useHealthDataForReadiness?: boolean } = {}
 ) => {
-  const adherenceReport = buildAdherenceReport(history);
-  const readinessResult = buildTodayReadiness({ todayStatus: status, history }, template, {
+  const recommendationHistory = filterAnalyticsHistory(history);
+  const adherenceReport = buildAdherenceReport(recommendationHistory);
+  const readinessResult = buildTodayReadiness({ todayStatus: status, history: recommendationHistory }, template, {
     adherenceHigh: adherenceReport.overallRate >= 85,
     healthSummary: context.healthSummary,
     useHealthDataForReadiness: context.useHealthDataForReadiness,
   });
-  const readiness = mapReadinessToSignal(readinessResult, recentPoorSleepDays(status, history));
+  const readiness = mapReadinessToSignal(readinessResult, recentPoorSleepDays(status, recommendationHistory));
   const deloadDecision = buildAdaptiveDeloadDecision({
-    history,
+    history: recommendationHistory,
     todayStatus: status,
     screeningProfile: screening,
     templates: [template],
@@ -318,7 +321,7 @@ export const applyStatusRules = (
     trainingMode: trainingMode as TrainingMode,
   });
   const mesocycleWeek = getCurrentMesocycleWeek(mesocyclePlan);
-  const painPatterns = buildPainPatterns(history);
+  const painPatterns = buildPainPatterns(recommendationHistory);
 
   let exercises: ExercisePrescription[] = clone(template.exercises || []).map((exercise: ExerciseTemplate) =>
     prescribeExercise(enrichExercise(exercise), trainingMode, weeklyPrescription)
@@ -442,7 +445,7 @@ export const applyStatusRules = (
       };
     }
 
-    const feedbackAdjustment = getLoadFeedbackAdjustment(history, next.canonicalExerciseId || next.baseId || next.id);
+    const feedbackAdjustment = getLoadFeedbackAdjustment(recommendationHistory, next.canonicalExerciseId || next.baseId || next.id);
     if (feedbackAdjustment.direction === 'conservative') {
       next = {
         ...next,

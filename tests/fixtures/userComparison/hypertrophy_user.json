@@ -1,0 +1,28 @@
+{
+  "selectedTemplateId": "legs-a",
+  "trainingMode": "hypertrophy",
+  "userProfile": {
+    "primaryGoal": "hypertrophy",
+    "trainingLevel": "intermediate"
+  },
+  "todayStatus": {
+    "sleep": "一般",
+    "energy": "中",
+    "soreness": [],
+    "time": "60"
+  },
+  "history": [
+    {
+      "id": "hypertrophy-leg-history",
+      "date": "2026-04-27",
+      "templateId": "legs-a",
+      "exerciseId": "squat",
+      "sets": [
+        { "weight": 90, "reps": 6, "rir": 2, "techniqueQuality": "good" },
+        { "weight": 90, "reps": 6, "rir": 2, "techniqueQuality": "acceptable" }
+      ]
+    }
+  ],
+  "loadFeedback": [],
+  "readinessScore": 72
+}

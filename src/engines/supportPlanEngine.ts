@@ -39,6 +39,9 @@ type PlannedSessionLike = Pick<TrainingSession, 'date'> & {
   exercises?: ExercisePrescription[];
 };
 
+const filterRecommendationHistory = (history: TrainingSession[] | undefined): TrainingSession[] =>
+  (history || []).filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded');
+
 const EMPTY_WEEKLY_STAT = (muscle: string): WeeklyStat => ({
   muscle,
   sets: 0,
@@ -250,11 +253,12 @@ export const buildSupportPlan = (
 ) => {
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
   const screening = data.screeningProfile || DEFAULT_SCREENING_PROFILE;
-  const history = data.history || [];
+  const history = filterRecommendationHistory(data.history);
+  const recommendationData = { ...data, history };
   const adherenceReport = buildAdherenceReport(history);
   const adherenceAdjustment = buildAdherenceAdjustment(adherenceReport, program, screening.adaptiveState);
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
-  const deloadDecision = buildAdaptiveDeloadDecision(data);
+  const deloadDecision = buildAdaptiveDeloadDecision(recommendationData);
 
   let correctionModules = selectCorrectionModules(screening, template, program.correctionStrategy);
   let functionalAddons = selectFunctionalAddons(screening, template, program.functionalStrategy);
@@ -338,7 +342,7 @@ const recoveryMultiplierForMuscle = (data: Partial<AppData>, muscle: string) => 
   if (status?.energy === '低') multiplier -= 0.15;
   if ((status?.soreness || []).includes(muscle as never)) multiplier -= 0.25;
 
-  const recentSessions = (data.history || []).slice(0, 6);
+  const recentSessions = filterRecommendationHistory(data.history).slice(0, 6);
   const sorenessHits = recentSessions.filter((session) => (session.status?.soreness || []).includes(muscle as never)).length;
   if (sorenessHits >= 2) multiplier -= 0.15;
 
@@ -361,10 +365,12 @@ export const buildWeeklyPrescription = (
 ): WeeklyPrescription => {
   const mode = resolveMode(data.trainingMode || 'hybrid');
   const start = weekStartKey();
-  const deloadDecision = buildAdaptiveDeloadDecision(data);
+  const history = filterRecommendationHistory(data.history);
+  const recommendationData = { ...data, history };
+  const deloadDecision = buildAdaptiveDeloadDecision(recommendationData);
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
   const adherenceAdjustment = buildAdherenceAdjustment(
-    buildAdherenceReport(data.history || []),
+    buildAdherenceReport(history),
     data.programTemplate || DEFAULT_PROGRAM_TEMPLATE,
     data.screeningProfile?.adaptiveState
   );
@@ -373,7 +379,7 @@ export const buildWeeklyPrescription = (
     return acc;
   }, {});
 
-  (data.history || [])
+  history
     .filter((session) => session.date >= start)
     .forEach((session) => addSessionToWeeklyStats(stats, session));
 
@@ -383,14 +389,14 @@ export const buildWeeklyPrescription = (
   const muscles: WeeklyMuscleBudget[] = MUSCLE_ORDER.map((muscle) => {
     const item = stats[muscle];
     const baseTarget = number(mode.weeklyTargets[muscle]) || 8;
-    const { targetMultiplier, reasons } = getAdaptiveBudgetAdjustment(data, muscle, deloadDecision);
+    const { targetMultiplier, reasons } = getAdaptiveBudgetAdjustment(recommendationData, muscle, deloadDecision);
     const phaseMultiplier = mesocycleWeek.volumeMultiplier || 1;
     const adherenceMultiplier = adherenceAdjustment.weeklyVolumeMultiplier || 1;
     const deloadMultiplier = deloadDecision.level === 'red' ? 0.85 : 1;
     const target = Math.max(1, Math.round(baseTarget * targetMultiplier * phaseMultiplier * adherenceMultiplier * deloadMultiplier * 10) / 10);
     const sets = Math.round(item.sets * 10) / 10;
     const frequency = item.dates.size;
-    const recoveryMultiplier = recoveryMultiplierForMuscle(data, muscle);
+    const recoveryMultiplier = recoveryMultiplierForMuscle(recommendationData, muscle);
     const capacity = Math.round((number(MUSCLE_RECOVERY_CAPACITY[muscle]) || target + 4) * recoveryMultiplier * 10) / 10;
     const remaining = Math.max(0, Math.round((target - sets) * 10) / 10);
     const remainingCapacity = Math.max(0, Math.round((capacity - sets) * 10) / 10);

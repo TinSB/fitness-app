@@ -10,6 +10,7 @@ import { buildTrainingLevelAssessment, type AutoTrainingLevel } from '../engines
 import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
+import { buildRecommendationTrace, getRecommendationTraceReasons } from '../engines/recommendationTraceEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
@@ -187,6 +188,24 @@ export function TodayView({
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
   const readinessScore = adjustedPlan.readinessResult?.score;
   const readinessReasons = adjustedPlan.readinessResult?.reasons || adjustedPlan.readiness.reasons || [];
+  const recommendationTrace = React.useMemo(
+    () =>
+      buildRecommendationTrace({
+        ...data,
+        template: selectedTemplate,
+        sessionTemplateId: selectedTemplate.id,
+        trainingMode,
+        weeklyPrescription,
+        history: decisionContext.history,
+        todayStatus: decisionContext.todayStatus,
+        screeningProfile: decisionContext.screeningProfile,
+        mesocyclePlan: decisionContext.mesocyclePlan,
+        healthMetricSamples: decisionContext.healthMetricSamples,
+        importedWorkoutSamples: decisionContext.importedWorkoutSamples,
+      }),
+    [data, selectedTemplate, trainingMode, weeklyPrescription, decisionContext]
+  );
+  const recommendationReasons = React.useMemo(() => getRecommendationTraceReasons(recommendationTrace, 6), [recommendationTrace]);
   const recommendationLabel = todayViewModel.recommendationLabel;
   const currentTrainingName = todayViewModel.currentTrainingName;
   const decisionText = todayViewModel.decisionText;
@@ -275,6 +294,15 @@ export function TodayView({
                 </div>
               </div>
             </Card>
+
+            <details className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+              <summary className="cursor-pointer list-none font-semibold text-slate-900">为什么这样推荐？</summary>
+              <div className="mt-2 space-y-2">
+                {recommendationReasons.map((reason) => (
+                  <p key={reason}>{reason}</p>
+                ))}
+              </div>
+            </details>
 
             <Card className="space-y-3">
               <div className="flex items-start justify-between gap-3">
