@@ -10,7 +10,7 @@ import { buildTrainingLevelAssessment, type AutoTrainingLevel } from '../engines
 import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
-import { buildRecommendationTrace, getRecommendationTraceReasons } from '../engines/recommendationTraceEngine';
+import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
@@ -20,6 +20,7 @@ import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
+import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
@@ -188,12 +189,18 @@ export function TodayView({
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
   const readinessScore = adjustedPlan.readinessResult?.score;
   const readinessReasons = adjustedPlan.readinessResult?.reasons || adjustedPlan.readiness.reasons || [];
+  const explanationTemplate =
+    todayTrainingState.status === 'completed'
+      ? suggestedTemplate
+      : todayTrainingState.status === 'in_progress' && data.activeSession?.templateId
+        ? data.templates.find((template) => template.id === data.activeSession?.templateId) || selectedTemplate
+        : selectedTemplate;
   const recommendationTrace = React.useMemo(
     () =>
       buildRecommendationTrace({
         ...data,
-        template: selectedTemplate,
-        sessionTemplateId: selectedTemplate.id,
+        template: explanationTemplate,
+        sessionTemplateId: explanationTemplate.id,
         trainingMode,
         weeklyPrescription,
         history: decisionContext.history,
@@ -203,9 +210,9 @@ export function TodayView({
         healthMetricSamples: decisionContext.healthMetricSamples,
         importedWorkoutSamples: decisionContext.importedWorkoutSamples,
       }),
-    [data, selectedTemplate, trainingMode, weeklyPrescription, decisionContext]
+    [data, explanationTemplate, trainingMode, weeklyPrescription, decisionContext]
   );
-  const recommendationReasons = React.useMemo(() => getRecommendationTraceReasons(recommendationTrace, 6), [recommendationTrace]);
+  const recommendationExplanationTitle = todayTrainingState.status === 'completed' ? '为什么这样建议下次训练？' : '为什么这样推荐？';
   const recommendationLabel = todayViewModel.recommendationLabel;
   const currentTrainingName = todayViewModel.currentTrainingName;
   const decisionText = todayViewModel.decisionText;
@@ -295,14 +302,12 @@ export function TodayView({
               </div>
             </Card>
 
-            <details className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
-              <summary className="cursor-pointer list-none font-semibold text-slate-900">为什么这样推荐？</summary>
-              <div className="mt-2 space-y-2">
-                {recommendationReasons.map((reason) => (
-                  <p key={reason}>{reason}</p>
-                ))}
-              </div>
-            </details>
+            <RecommendationExplanationPanel
+              trace={recommendationTrace}
+              title={recommendationExplanationTitle}
+              compact
+              maxVisibleFactors={3}
+            />
 
             <Card className="space-y-3">
               <div className="flex items-start justify-between gap-3">

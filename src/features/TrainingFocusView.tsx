@@ -24,6 +24,8 @@ import { Card } from '../ui/Card';
 import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
 import { WorkoutActionBar } from '../ui/WorkoutActionBar';
+import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
+import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
@@ -144,6 +146,7 @@ export function TrainingFocusView({
   const [feedback, setFeedback] = React.useState('');
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
+  const [showExplanationSheet, setShowExplanationSheet] = React.useState(false);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
@@ -160,6 +163,7 @@ export function TrainingFocusView({
   const completedMainSets = mainSets.filter((set) => set.done);
   const existingLoadFeedback = mainExercisePoolId ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId) : undefined;
   const replacementOptions = mainExercise ? buildReplacementOptions(mainExercise) : [];
+  const recommendationTrace = React.useMemo(() => buildSessionRecommendationTrace(session), [session]);
 
   const warmupPolicyNotice =
     currentStep.stepType === 'working' && currentStep.warmupPolicy && !currentStep.warmupPolicy.shouldShowWarmupSets && currentStep.warmupPolicy.policy !== 'none'
@@ -435,6 +439,12 @@ export function TrainingFocusView({
     </BottomSheet>
   );
 
+  const renderExplanationSheet = () => (
+    <BottomSheet open={showExplanationSheet} title="推荐依据" onClose={() => setShowExplanationSheet(false)}>
+      <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} defaultOpen />
+    </BottomSheet>
+  );
+
   const renderRestTimer = () =>
     remainingSec > 0 ? (
       <Card className="border-white/10 bg-white/10 text-white">
@@ -458,9 +468,18 @@ export function TrainingFocusView({
     return (
       <>
         <Card className="border-white/10 bg-white text-slate-950">
-          <div className="flex flex-wrap gap-2">
-            <StatusBadge tone={blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
-            <StatusBadge tone="slate">{stageLabel(currentStep.stepType)}</StatusBadge>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge tone={blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
+              <StatusBadge tone="slate">{stageLabel(currentStep.stepType)}</StatusBadge>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowExplanationSheet(true)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              依据
+            </button>
           </div>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">{supportTitle}</h1>
           <p className="mt-1 text-sm font-medium text-slate-500">{supportModuleName}</p>
@@ -547,13 +566,22 @@ export function TrainingFocusView({
                 <span>{displayPrimaryMuscles(mainExercise)}</span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowExercisePicker(true)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
-            >
-              切换
-            </button>
+            <div className="flex shrink-0 flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setShowExplanationSheet(true)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                依据
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowExercisePicker(true)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+              >
+                切换
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -794,6 +822,7 @@ export function TrainingFocusView({
       {feedback ? <Toast>{feedback}</Toast> : null}
       {renderExercisePicker()}
       {renderReplacementPicker()}
+      {renderExplanationSheet()}
 
       <WorkoutActionBar className="border-slate-200 bg-white text-slate-950 md:static md:bg-transparent">
         <div className="mx-auto grid w-full max-w-2xl gap-2">

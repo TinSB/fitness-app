@@ -3,7 +3,7 @@ import { Play, RotateCcw } from 'lucide-react';
 import { DEFAULT_PROGRAM_TEMPLATE } from '../data/trainingData';
 import { classNames, enrichExercise, findTemplate, getPrimaryMuscles } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
-import { buildRecommendationTrace, getRecommendationTraceReasons } from '../engines/recommendationTraceEngine';
+import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
@@ -40,6 +40,7 @@ import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
+import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { formatWeight } from '../engines/unitConversionEngine';
 
@@ -151,7 +152,6 @@ export function PlanView({
       }),
     [data, selectedTemplate, weeklyPrescription]
   );
-  const recommendationReasons = React.useMemo(() => getRecommendationTraceReasons(recommendationTrace, 6), [recommendationTrace]);
   const trainingLevelAssessment = buildTrainingLevelAssessment({ history: data.history || [] });
   const adjustmentDrafts = (data.programAdjustmentDrafts || []).slice(0, 3);
   const adjustmentHistory = data.programAdjustmentHistory || [];
@@ -317,14 +317,11 @@ export function PlanView({
             以此模板训练
           </ActionButton>
         </div>
-        <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-600">
-          <summary className="cursor-pointer list-none font-semibold text-slate-900">为什么这样推荐？</summary>
-          <div className="mt-2 space-y-2">
-            {recommendationReasons.map((reason) => (
-              <p key={reason}>{reason}</p>
-            ))}
-          </div>
-        </details>
+        <RecommendationExplanationPanel
+          trace={recommendationTrace}
+          title="为什么这样建议？"
+          maxVisibleFactors={4}
+        />
         <div className="space-y-2">
           {selectedTemplate.exercises.map((exercise, index) => {
             const enriched = enrichExercise(exercise);

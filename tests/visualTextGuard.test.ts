@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTodayViewModel } from '../src/presenters/todayPresenter';
+import { buildRecommendationExplanationViewModel } from '../src/presenters/recommendationExplanationPresenter';
+import type { RecommendationTrace } from '../src/engines/recommendationTraceEngine';
 import { getTemplate } from './fixtures';
 
 describe('visual text guard', () => {
@@ -18,5 +20,34 @@ describe('visual text guard', () => {
     expect(text).not.toContain('undefined');
     expect(text).not.toContain('null');
     expect(text).not.toContain('not_started');
+  });
+
+  it('recommendation explanation text does not emit raw technical labels', () => {
+    const trace: RecommendationTrace = {
+      sessionTemplateId: 'push-a',
+      primaryGoal: 'hypertrophy',
+      trainingMode: 'hybrid',
+      trainingLevel: 'medium',
+      globalFactors: [
+        {
+          id: 'raw-factor',
+          label: 'primaryGoal',
+          effect: 'decrease',
+          magnitude: 'large',
+          source: 'primaryGoal',
+          reason: 'primaryGoal decrease high，因为目标不同，建议保守。 medium low undefined null',
+        },
+      ],
+      exerciseFactors: {},
+      volumeFactors: [],
+      loadFeedbackFactors: [],
+      finalSummary: 'trainingMode maintain 当前建议保持克制。',
+    };
+    const vm = buildRecommendationExplanationViewModel(trace);
+    const text = [vm.summary, ...vm.primaryFactors.flatMap((item) => [item.label, item.effectLabel, item.reason])].join(' ');
+
+    expect(text).not.toMatch(/\b(increase|decrease|primaryGoal|trainingMode|high|medium|low|undefined|null)\b/);
+    expect(text).toContain('主目标');
+    expect(text).toContain('保守建议');
   });
 });
