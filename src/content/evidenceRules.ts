@@ -208,7 +208,7 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
     title: '热身策略',
     label: '热身策略',
     practicalSummary: '热身优先安排在第一个主复合动作或高技术/高负荷动作前，孤立动作默认不强制热身。',
-    appliesTo: ['Focus Mode', '热身组', '动作顺序'],
+    appliesTo: ['专注训练', '热身组', '动作顺序'],
     sourceIds: ['acsm_resistance_training_guidance', 'nsca_strength_conditioning_reference'],
     authorityIds: ['acsm', 'nsca'],
     implementationType: 'product_heuristic',

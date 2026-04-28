@@ -46,7 +46,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'chin_tuck',
-    name: 'Chin tuck',
+    name: '收下巴',
     category: 'activation',
     targetIssue: 'upper_crossed',
     cues: ['轻收下巴', '颈部向后拉长'],
@@ -77,7 +77,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'dead_bug',
-    name: 'Dead bug',
+    name: '死虫',
     category: 'activation',
     targetIssue: 'core_control',
     cues: ['呼气时锁住肋骨', '腰背贴地'],
@@ -87,7 +87,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'dead_bug_exhale',
-    name: 'Dead bug with exhale',
+    name: '呼气死虫',
     category: 'activation',
     targetIssue: 'breathing_ribcage',
     cues: ['每次伸腿时完整呼气', '肋骨回收后再换边'],
@@ -98,7 +98,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'breathing_90_90',
-    name: '90/90 breathing',
+    name: '90/90 呼吸',
     category: 'mobility',
     targetIssue: 'breathing_ribcage',
     cues: ['后侧肋骨吸满', '呼气时骨盆轻轻后倾'],
@@ -128,7 +128,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'monster_walk',
-    name: 'Monster walk',
+    name: '怪兽走',
     category: 'activation',
     targetIssue: 'hip_stability',
     cues: ['保持张力，步幅小而稳', '脚尖和膝盖同向'],
@@ -149,7 +149,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'hip_90_90_switch',
-    name: '90/90 hip switch',
+    name: '90/90 髋转换',
     category: 'mobility',
     targetIssue: 'hip_stability',
     cues: ['骨盆跟着转，不要只扭膝盖', '保持躯干直立'],
@@ -159,7 +159,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'couch_stretch',
-    name: 'Couch stretch',
+    name: '沙发拉伸',
     category: 'mobility',
     targetIssue: 'hip_flexor_tightness',
     cues: ['骨盆轻后倾', '臀部收紧再直立'],
@@ -222,7 +222,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'open_book',
-    name: 'Open book',
+    name: '开书式',
     category: 'mobility',
     targetIssue: 'thoracic_rotation',
     cues: ['骨盆固定，旋转来自胸椎', '呼气时把手打开'],
@@ -244,7 +244,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'pallof_press',
-    name: 'Pallof press',
+    name: '帕洛夫抗旋推',
     category: 'functional',
     targetAbility: 'anti_rotation',
     cues: ['肋骨和骨盆对齐', '推出时不要被拉偏'],
@@ -296,7 +296,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'bottom_up_press',
-    name: 'Bottom-up press',
+    name: '倒置壶铃推举',
     category: 'functional',
     targetAbility: 'overhead_stability',
     cues: ['前臂竖直', '慢慢推过头顶'],
@@ -308,7 +308,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'landmine_press',
-    name: 'Landmine press',
+    name: '地雷管推举',
     category: 'functional',
     targetAbility: 'overhead_stability',
     cues: ['先把肋骨收住，再把重量推远', '肩胛自然上旋'],
@@ -320,7 +320,7 @@ export const SUPPORT_EXERCISE_LIBRARY: SupportExerciseDefinition[] = [
   },
   {
     id: 'waiter_carry',
-    name: 'Waiter carry',
+    name: '服务员行走',
     category: 'functional',
     targetAbility: 'overhead_stability',
     cues: ['手臂叠在肩上方', '肋骨别外翻'],

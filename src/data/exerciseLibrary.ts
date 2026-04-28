@@ -40,6 +40,37 @@ export const EXERCISE_DISPLAY_NAMES: Record<string, string> = {
   'hip-thrust': '臀推',
   'leg-extension': '腿屈伸',
   'landmine-press': '地雷管推举',
+  thoracic_extension_foam: '泡沫轴胸椎伸展',
+  wall_slide: '墙滑',
+  serratus_wall_slide: '前锯肌墙滑',
+  face_pull: '面拉',
+  chin_tuck: '收下巴',
+  band_pull_apart: '弹力带拉开',
+  scap_pushup: '肩胛俯卧撑',
+  dead_bug: '死虫',
+  dead_bug_exhale: '呼气死虫',
+  breathing_90_90: '90/90 呼吸',
+  side_plank: '侧桥',
+  mini_band_walk: '弹力带侧走',
+  monster_walk: '怪兽走',
+  single_leg_glute_bridge: '单腿臀桥',
+  hip_90_90_switch: '90/90 髋转换',
+  couch_stretch: '沙发拉伸',
+  side_lying_hip_abduction: '侧卧髋外展',
+  knee_to_wall: '膝触墙',
+  soleus_raise: '屈膝提踵',
+  deep_squat_hold: '深蹲底部停留',
+  goblet_squat_pattern: '杯式深蹲模式重建',
+  open_book: '开书式',
+  quadruped_thoracic_rotation: '四点跪胸椎旋转',
+  pallof_press: '帕洛夫抗旋推',
+  single_arm_carry: '单臂农夫走',
+  single_leg_rdl: '单腿 RDL',
+  split_squat_iso: '分腿蹲等长停留',
+  farmer_carry: '农夫走',
+  bottom_up_press: '倒置壶铃推举',
+  landmine_press: '地雷管推举',
+  waiter_carry: '服务员行走',
 };
 
 export const EXERCISE_ENGLISH_NAMES: Record<string, string> = {
@@ -168,6 +199,7 @@ export const formatExerciseDisplayName = (
             ? name
             : undefined;
     if (zh) return options.bilingual && en && en !== zh ? `${zh}（${en}）` : zh;
+    if (en) warnMissingChineseName(id || en);
   }
 
   if (id) warnMissingChineseName(id);

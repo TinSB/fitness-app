@@ -10,7 +10,7 @@ import { buildTrainingLevelAssessment, type AutoTrainingLevel } from '../engines
 import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
-import { formatCyclePhase, formatExerciseName, formatIntensityBias } from '../i18n/formatters';
+import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
@@ -41,45 +41,6 @@ interface TodayViewProps {
 
 const sorenessOptions: AppData['todayStatus']['soreness'] = ['无', '胸', '背', '腿', '肩', '手臂'];
 
-const templateNameLabels: Record<string, string> = {
-  'push-a': 'Push A',
-  'pull-a': 'Pull A',
-  'legs-a': 'Legs A',
-  upper: '上肢',
-  lower: '下肢',
-  arms: '手臂 + 三角肌',
-  'quick-30': '快练 30',
-  'crowded-gym': '人多替代',
-};
-
-const exerciseNameLabels: Record<string, string> = {
-  'bench-press': '平板卧推',
-  'db-bench-press': '哑铃卧推',
-  'incline-db-press': '上斜哑铃卧推',
-  'machine-chest-press': '器械胸推',
-  'cable-fly': '绳索夹胸',
-  'lateral-raise': '哑铃侧平举',
-  'triceps-pushdown': '绳索下压',
-  'lat-pulldown': '高位下拉',
-  'seated-row': '坐姿划船',
-  'barbell-row': '杠铃划船',
-  'face-pull': '面拉',
-  'db-curl': '哑铃弯举',
-  'hammer-curl': '锤式弯举',
-  squat: '深蹲',
-  'hack-squat': '哈克深蹲',
-  'leg-press': '腿举',
-  'romanian-deadlift': '罗马尼亚硬拉',
-  'leg-curl': '腿弯举',
-  'calf-raise': '提踵',
-};
-
-const trainingModeLabels: Partial<Record<TrainingMode, string>> = {
-  hypertrophy: '肌肥大（增肌）',
-  strength: '力量',
-  hybrid: '综合',
-};
-
 const trainingLevelLabels: Record<AutoTrainingLevel, string> = {
   unknown: '正在建立基线',
   beginner: '新手阶段',
@@ -101,12 +62,16 @@ const statusTone = (status: 'not_started' | 'in_progress' | 'completed') => {
   return 'sky' as const;
 };
 
-const templateLabel = (template: Pick<TrainingTemplate, 'id' | 'name'>) => templateNameLabels[template.id] || template.name || '未命名训练';
+const templateLabel = (template: Pick<TrainingTemplate, 'id' | 'name'>) => formatTemplateName(template, '未命名训练');
 
 const sessionTemplateLabel = (session?: { templateId?: string; templateName?: string; focus?: string }) =>
-  (session?.templateId && templateNameLabels[session.templateId]) || session?.templateName || session?.focus || '本次训练';
+  session?.templateId
+    ? formatTemplateName(session.templateId, '本次训练')
+    : session?.templateName
+      ? formatTemplateName(session.templateName, '本次训练')
+      : session?.focus || '本次训练';
 
-const exerciseLabel = (exercise: ExercisePrescription) => exerciseNameLabels[exercise.actualExerciseId || exercise.replacementExerciseId || exercise.id] || formatExerciseName(exercise);
+const exerciseLabel = (exercise: ExercisePrescription) => formatExerciseName(exercise);
 
 const formatExercisePrescription = (exercise: ExercisePrescription) => {
   const sets = Array.isArray(exercise.sets) ? exercise.sets.length : number(exercise.sets);
@@ -223,7 +188,9 @@ export function TodayView({
     todayTrainingState.status === 'completed'
       ? completedTrainingName
       : todayTrainingState.status === 'in_progress'
-        ? data.activeSession?.templateName || selectedTemplateName
+        ? data.activeSession?.templateId
+          ? formatTemplateName(data.activeSession.templateId, '当前训练')
+          : formatTemplateName(data.activeSession?.templateName, selectedTemplateName)
         : selectedTemplateName;
   const decisionText =
     todayTrainingState.status === 'completed'
@@ -327,7 +294,7 @@ export function TodayView({
                       <div className="truncate text-sm font-semibold text-slate-950">{exerciseLabel(exercise)}</div>
                       <div className="mt-1 text-xs text-slate-500">{formatExercisePrescription(exercise)}</div>
                     </div>
-                    <StatusBadge tone={exercise.warning ? 'amber' : 'slate'}>{exercise.targetRirText || 'RIR 1-3'}</StatusBadge>
+                    <StatusBadge tone={exercise.warning ? 'amber' : 'slate'}>{formatRirLabel(exercise.targetRirText || '1–3')}</StatusBadge>
                   </div>
                 ))}
               </div>
@@ -421,7 +388,7 @@ export function TodayView({
                   </div>
                   <div className="flex items-center justify-between gap-3 rounded-lg bg-stone-50 px-3 py-2">
                     <span className="text-slate-500">训练模式</span>
-                    <span className="font-semibold text-slate-950">{trainingModeLabels[trainingMode] || trainingMode}</span>
+                    <span className="font-semibold text-slate-950">{formatTrainingMode(trainingMode)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 rounded-lg bg-stone-50 px-3 py-2">
                     <span className="text-slate-500">周期阶段</span>
@@ -455,9 +422,9 @@ export function TodayView({
                   value={trainingMode}
                   options={['hypertrophy', 'strength', 'hybrid'] as const}
                   labels={{
-                    hypertrophy: '肌肥大',
-                    strength: '力量',
-                    hybrid: '综合',
+                    hypertrophy: formatTrainingMode('hypertrophy'),
+                    strength: formatTrainingMode('strength'),
+                    hybrid: formatTrainingMode('hybrid'),
                   }}
                   onChange={(value) => onModeChange(value as TrainingMode)}
                 />

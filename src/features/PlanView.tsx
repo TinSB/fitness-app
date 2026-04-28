@@ -12,13 +12,15 @@ import {
   formatCyclePhase,
   formatExerciseName,
   formatFatigueCost,
-  formatGoal,
   formatIntensityBias,
+  formatMuscleName,
+  formatPrimaryGoal,
   formatReplacementCategory,
   formatRomPriority,
   formatSkillDemand,
-  formatProgramTemplateName,
   formatSplitType,
+  formatTemplateName,
+  formatTrainingDayName,
 } from '../i18n/formatters';
 import type {
   AdjustmentChange,
@@ -51,20 +53,9 @@ interface PlanViewProps {
   onRollbackProgramAdjustment?: (historyItemId: string) => void;
 }
 
-const templateNameLabels: Record<string, string> = {
-  'push-a': '推 A',
-  'pull-a': '拉 A',
-  'legs-a': '腿 A',
-  upper: '上肢',
-  lower: '下肢',
-  arms: '手臂补量',
-  'quick-30': '30 分钟快练',
-  'crowded-gym': '人多替代',
-};
-
 const templateLabel = (template: Pick<TrainingTemplate, 'id' | 'name'> | string, fallback = '') => {
-  if (typeof template === 'string') return templateNameLabels[template] || formatProgramTemplateName(fallback || template);
-  return templateNameLabels[template.id] || formatProgramTemplateName(template.name || template.id);
+  if (typeof template === 'string') return formatTemplateName(template, fallback || '未命名');
+  return formatTemplateName(template, fallback || '未命名');
 };
 
 const formatDateLabel = (value?: string) => {
@@ -77,9 +68,9 @@ const formatChangeImpact = (change: AdjustmentChange) => {
   if (change.type === 'add_sets') return `给已有动作增加 ${change.setsDelta || change.sets || 1} 组。`;
   if (change.type === 'remove_sets') return `减少 ${Math.abs(change.setsDelta || change.sets || 1)} 组训练量。`;
   if (change.type === 'add_new_exercise') {
-    return `新增 ${change.exerciseName || formatExerciseName(change.exerciseId)}，${change.sets || 1} 组${change.repMin && change.repMax ? `，${change.repMin}-${change.repMax} 次` : ''}。`;
+    return `新增 ${formatExerciseName(change.exerciseName || change.exerciseId)}，${change.sets || 1} 组${change.repMin && change.repMax ? `，${change.repMin}-${change.repMax} 次` : ''}。`;
   }
-  if (change.type === 'swap_exercise') return `替换为 ${change.replacementExerciseName || formatExerciseName(change.replacementExerciseId)}。`;
+  if (change.type === 'swap_exercise') return `替换为 ${formatExerciseName(change.replacementExerciseName || change.replacementExerciseId)}。`;
   if (change.type === 'reduce_support') return '降低纠偏或功能补丁剂量，缩短训练负担。';
   if (change.type === 'increase_support') return '增加关键纠偏或功能补丁，优先处理短板。';
   return '保留当前计划结构。';
@@ -182,7 +173,7 @@ export function PlanView({
             </p>
             {activeHistoryItem ? (
               <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-sm leading-6 text-amber-950">
-                来源模板：{formatProgramTemplateName(activeHistoryItem.sourceProgramTemplateName || activeHistoryItem.sourceProgramTemplateId)}
+                来源模板：{formatTemplateName(activeHistoryItem.sourceProgramTemplateName || activeHistoryItem.sourceProgramTemplateId)}
                 <br />
                 主要调整：{activeHistoryItem.mainChangeSummary || activeHistoryItem.changes?.[0]?.reason || '实验模板调整'}
               </p>
@@ -200,7 +191,7 @@ export function PlanView({
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
-          <MetricCard label="计划目标" value={formatGoal(program.primaryGoal)} tone="emerald" />
+          <MetricCard label="计划目标" value={formatPrimaryGoal(program.primaryGoal)} tone="emerald" />
           <MetricCard label="分化方式" value={formatSplitType(program.splitType)} />
           <MetricCard label="每周频率" value={`${program.daysPerWeek} 天`} />
         </div>
@@ -250,8 +241,8 @@ export function PlanView({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs font-semibold text-emerald-700">训练日 {index + 1}</div>
-                <h3 className="mt-1 text-base font-semibold text-slate-950">{day.name}</h3>
-                <p className="mt-1 text-sm text-slate-500">{day.focusMuscles.join(' / ') || '综合训练'} · 预计 {day.estimatedDurationMin} 分钟</p>
+                <h3 className="mt-1 text-base font-semibold text-slate-950">{formatTrainingDayName(day.name || day.id)}</h3>
+                <p className="mt-1 text-sm text-slate-500">{day.focusMuscles.map(formatMuscleName).join(' / ') || '综合训练'} · 预计 {day.estimatedDurationMin} 分钟</p>
               </div>
               <StatusBadge tone="sky">{day.mainExerciseIds.length} 个主动作</StatusBadge>
             </div>
@@ -317,7 +308,7 @@ export function PlanView({
           {selectedTemplate.exercises.map((exercise, index) => {
             const enriched = enrichExercise(exercise);
             const prescription = prescribed.exercises[index] || enriched;
-            const muscles = getPrimaryMuscles(prescription).join(' / ') || exercise.muscle;
+            const muscles = (getPrimaryMuscles(prescription).length ? getPrimaryMuscles(prescription) : [exercise.muscle]).map(formatMuscleName).join(' / ');
             return (
               <details key={`${exercise.id}-${index}`} className="rounded-lg border border-slate-200 bg-stone-50 p-3">
                 <summary className="cursor-pointer list-none">
@@ -404,7 +395,7 @@ export function PlanView({
                   <TemplateStatusBadge template={template} activeTemplateId={activeTemplateId} />
                 </span>
               }
-              description={`来源：${formatProgramTemplateName(template.sourceTemplateName || template.sourceTemplateId || '原模板')} · ${template.adjustmentSummary || '计划调整实验'}`}
+              description={`来源：${formatTemplateName(template.sourceTemplateName || template.sourceTemplateId || '原模板')} · ${template.adjustmentSummary || '计划调整实验'}`}
               meta={template.appliedAt ? `应用时间：${formatDateLabel(template.appliedAt)}` : undefined}
             />
           ))}
@@ -428,9 +419,9 @@ export function PlanView({
                     <StatusBadge tone={adjustmentStatusTone(item)}>{item.rolledBackAt ? '已回滚' : item.rollbackAvailable ? '可回滚' : '已应用'}</StatusBadge>
                   </div>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    {formatDateLabel(item.appliedAt)} · 来源：{formatProgramTemplateName(item.sourceProgramTemplateName || item.sourceProgramTemplateId)}
+                    {formatDateLabel(item.appliedAt)} · 来源：{formatTemplateName(item.sourceProgramTemplateName || item.sourceProgramTemplateId)}
                     {' → '}
-                    实验：{formatProgramTemplateName(item.experimentalProgramTemplateName || item.experimentalProgramTemplateId)}
+                    实验：{formatTemplateName(item.experimentalProgramTemplateName || item.experimentalProgramTemplateId)}
                   </p>
                   <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-xs leading-5 text-slate-600">
                     回滚说明：只切回原计划模板；已经完成的训练记录、历史详情、PR/e1RM 记录不会被删除。

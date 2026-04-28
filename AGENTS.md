@@ -31,7 +31,7 @@ Each page has a strict responsibility:
 - Do not stack many cards.
 - Do not repeat the same information across pages.
 - Do not expose raw exercise metadata unless the user opens details.
-- Focus Mode must hide unrelated navigation and long-term statistics.
+- User UI must label Focus Mode as “专注训练”; technical docs may still mention Focus Mode when referring to the implementation shell.
 - Desktop layouts must use the full workspace with main content and auxiliary panels.
 
 ## UI Rules

@@ -10,16 +10,24 @@ import {
   formatFatigueCost,
   formatGoal,
   formatIntensityBias,
+  formatMovementPattern,
+  formatMuscleName,
   formatPainAction,
+  formatPrimaryGoal,
   formatReplacementCategory,
+  formatRirLabel,
   formatRiskLevel,
   formatRomPriority,
+  formatSetType,
   formatSkippedReason,
   formatSkillDemand,
   formatSplitType,
   formatSupportDoseAdjustment,
+  formatTemplateName,
   formatTechniqueQuality,
   formatTrainingAdjustment,
+  formatTrainingDayName,
+  formatTrainingMode,
   formatWarmupPolicy,
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
@@ -31,6 +39,9 @@ describe('i18n formatters', () => {
     expect(formatIntensityBias('aggressive')).toBe('积极');
     expect(formatSplitType('upper_lower')).toBe('上下肢分化');
     expect(formatGoal('hypertrophy')).toBe('肌肥大（增肌）');
+    expect(formatPrimaryGoal('fat_loss')).toBe('减脂');
+    expect(formatPrimaryGoal('health_maintenance')).toBe('健康维持');
+    expect(formatTrainingMode('hybrid')).toBe('综合');
     expect(formatBlockType('functional')).toBe('功能补丁');
     expect(formatTechniqueQuality('poor')).toBe('较差');
     expect(formatTrainingAdjustment('conservative')).toBe('保守训练');
@@ -48,7 +59,16 @@ describe('i18n formatters', () => {
   });
 
   it('uses a safe fallback for unknown values', () => {
-    expect(formatCyclePhase('unknown')).toContain('未识别');
+    expect(formatCyclePhase('unknown')).toBe('未知状态');
+  });
+
+  it('formats template and training day names consistently in Chinese', () => {
+    expect(formatTemplateName('legs-a')).toBe('腿 A');
+    expect(formatTemplateName('Legs A')).toBe('腿 A');
+    expect(formatTemplateName('pushA')).toBe('推 A');
+    expect(formatTemplateName('Pull A')).toBe('拉 A');
+    expect(formatTrainingDayName('Upper A')).toBe('上肢 A');
+    expect(formatTrainingDayName('Full Body')).toBe('全身训练');
   });
 
   it('formats weekly coach action enums as Chinese labels', () => {
@@ -70,6 +90,10 @@ describe('i18n formatters', () => {
       formatWarmupPolicy('skipped_by_policy'),
       formatDataFlag('test'),
       formatRiskLevel('high'),
+      formatMuscleName('chest'),
+      formatMovementPattern('horizontal_push'),
+      formatSetType('warmup'),
+      formatRirLabel('1-3 RIR'),
     ];
 
     labels.forEach((label) => {
@@ -81,6 +105,6 @@ describe('i18n formatters', () => {
   it('formats exercise names as Chinese by default and never falls back to pure English ids', () => {
     expect(formatExerciseName('bench-press')).toBe('平板卧推');
     expect(formatExerciseName({ id: 'db-bench-press', name: 'Dumbbell Bench Press' })).toBe('哑铃卧推');
-    expect(formatExerciseName('Unknown English Exercise')).toBe('未知动作');
+    expect(formatExerciseName('Unknown English Exercise')).toBe('未命名动作');
   });
 });

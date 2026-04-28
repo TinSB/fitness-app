@@ -18,8 +18,12 @@ import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import {
   formatDataFlag,
   formatExerciseName,
+  formatMuscleName,
   formatPersonalRecordQuality,
+  formatRirLabel,
+  formatSetType,
   formatSkippedReason,
+  formatTemplateName,
   formatTechniqueQuality,
 } from '../i18n/formatters';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
@@ -102,7 +106,11 @@ const normalizeSection = (section?: RecordSectionTarget): RecordSectionId => {
   return 'calendar';
 };
 
-const getSessionTitle = (session: TrainingSession) => session.templateName || session.focus || '未命名训练';
+const getSessionTitle = (session: TrainingSession) =>
+  session.templateId ? formatTemplateName(session.templateId, '未命名训练') : formatTemplateName(session.templateName || session.focus, '未命名训练');
+
+const formatCalendarSessionTitle = (session: { title?: string; templateName?: string }) =>
+  formatTemplateName(session.templateName || session.title, '未命名训练');
 
 const sessionSortKey = (session: TrainingSession) => session.finishedAt || session.startedAt || session.date || '';
 
@@ -150,15 +158,6 @@ const sessionNotes = (session: TrainingSession) =>
   );
 
 const effectiveSetsForSession = (session: TrainingSession) => buildEffectiveVolumeSummary([session]).effectiveSets;
-
-const formatSetType = (value?: string) => {
-  if (value === 'warmup') return '热身组';
-  if (value === 'corrective') return '纠偏';
-  if (value === 'functional') return '功能补丁';
-  if (value === 'top') return '顶组';
-  if (value === 'backoff') return '回退组';
-  return '正式组';
-};
 
 const formatPrValue = (record: PersonalRecord, unitSettings: UnitSettings) => {
   if (record.metric === 'volume') return formatTrainingVolume(record.raw ?? record.value, unitSettings);
@@ -418,12 +417,12 @@ export function RecordView({
                     key={session.sessionId}
                     title={
                       <span className="flex flex-wrap items-center gap-2">
-                        {session.title}
+                        {formatCalendarSessionTitle(session)}
                         {renderFlagBadge(session.dataFlag)}
                         {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
                       </span>
                     }
-                    description={`${session.templateName || '未命名模板'} · ${session.completedSets} 组 · ${session.effectiveSets} 有效组 · ${formatTrainingVolume(session.totalVolumeKg, unitSettings)}`}
+                    description={`${formatCalendarSessionTitle(session)} · ${session.completedSets} 组 · ${session.effectiveSets} 有效组 · ${formatTrainingVolume(session.totalVolumeKg, unitSettings)}`}
                     meta={session.startTime ? formatSessionTime(rawHistory.find((item) => item.id === session.sessionId) || ({ startedAt: session.startTime } as TrainingSession)) : undefined}
                     action={<ActionButton size="sm" variant="secondary" onClick={() => openSession(session.sessionId)}>详情</ActionButton>}
                   />
@@ -561,7 +560,7 @@ export function RecordView({
                     key={`${item.session.id}-${item.exercise.id}-${item.set.id || item.setIndex}`}
                     title={`${formatWeight(item.set.weight, unitSettings)} × ${item.set.reps}`}
                     description={`${item.session.date} · ${getSessionTitle(item.session)} · ${item.effective.confidence === 'high' ? '高置信' : '可参考'}`}
-                    meta={`RIR ${item.set.rir ?? '未记'} · ${formatTechniqueQuality(item.set.techniqueQuality || 'acceptable')}${item.set.painFlag ? ' · 有不适' : ''}`}
+                    meta={`${item.set.rir === undefined || item.set.rir === '' ? '余力（RIR）未记录' : formatRirLabel(item.set.rir)} · ${formatTechniqueQuality(item.set.techniqueQuality || 'acceptable')}${item.set.painFlag ? ' · 有不适' : ''}`}
                     action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(item.session)}>详情</ActionButton>}
                   />
                 ))}
@@ -624,7 +623,7 @@ export function RecordView({
                     {muscleRows.map((row) => (
                       <div key={row.muscle}>
                         <div className="mb-1 flex justify-between text-sm text-slate-600">
-                          <span>{row.muscle}</span>
+                          <span>{formatMuscleName(row.muscle)}</span>
                           <span>{Math.round(row.weightedEffectiveSets * 10) / 10} 加权有效组</span>
                         </div>
                         <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -735,7 +734,7 @@ export function RecordView({
           />
         </label>
         <label className="grid gap-1">
-          <span className="text-xs font-semibold text-slate-500">RIR</span>
+          <span className="text-xs font-semibold text-slate-500">余力（RIR）</span>
           <input
             className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-950"
             inputMode="numeric"
@@ -847,7 +846,7 @@ export function RecordView({
                         ) : (
                           <div key={set.id || `${exercise.id}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
                             {formatSetType(set.type)} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
-                            {set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}
+                    {set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}
                             {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
                             {set.painFlag ? ' / 有不适' : ''}
                             {set.note ? ` / ${set.note}` : ''}
@@ -868,7 +867,7 @@ export function RecordView({
               {(session.supportExerciseLogs || []).map((log) => (
                 <ListItem
                   key={`${log.moduleId}-${log.exerciseId}`}
-                  title={log.exerciseName || formatExerciseName(log.exerciseId)}
+                  title={formatExerciseName({ id: log.exerciseId, name: log.exerciseName })}
                   description={`${log.completedSets}/${log.plannedSets} 组${log.skippedReason ? ` · 跳过原因：${formatSkippedReason(log.skippedReason)}` : ''}`}
                   meta={log.blockType === 'correction' ? '纠偏模块' : '功能补丁'}
                 />

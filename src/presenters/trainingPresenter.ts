@@ -1,6 +1,6 @@
 import { getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { formatWeight } from '../engines/unitConversionEngine';
-import { formatBlockType, formatExerciseName } from '../i18n/formatters';
+import { formatBlockType, formatExerciseName, formatSetType, formatTemplateName } from '../i18n/formatters';
 import type { TrainingSession, UnitSettings } from '../models/training-model';
 
 export type TrainingFocusViewModel = {
@@ -20,7 +20,7 @@ export const buildTrainingFocusViewModel = (session: TrainingSession, unitSettin
     return {
       state: 'completed',
       phaseLabel: '训练完成',
-      exerciseName: session.templateName,
+      exerciseName: formatTemplateName(session.templateId || session.templateName, '本次训练'),
       stepLabel: '全部步骤已完成',
       prescriptionSummary: '保存后会进入训练历史和日历。',
       actualDraftSummary: '',
@@ -30,7 +30,7 @@ export const buildTrainingFocusViewModel = (session: TrainingSession, unitSettin
   }
 
   const supportStep = state.currentStep.blockType === 'correction' || state.currentStep.blockType === 'functional';
-  const exerciseName = state.currentExercise ? formatExerciseName(state.currentExercise) : state.currentStep.exerciseName || '支持动作';
+  const exerciseName = state.currentExercise ? formatExerciseName(state.currentExercise) : formatExerciseName({ id: state.currentStep.exerciseId, name: state.currentStep.exerciseName });
   const actual = state.actualDraft;
   const planned =
     typeof state.currentStep.plannedWeight === 'number'
@@ -39,7 +39,7 @@ export const buildTrainingFocusViewModel = (session: TrainingSession, unitSettin
 
   return {
     state: supportStep ? 'support_step' : 'active_step',
-    phaseLabel: supportStep ? formatBlockType(state.currentStep.blockType) : state.currentStep.stepType === 'warmup' ? '热身组' : '正式组',
+    phaseLabel: supportStep ? formatBlockType(state.currentStep.blockType) : formatSetType(state.currentStep.stepType),
     exerciseName,
     stepLabel: state.currentStep.label,
     prescriptionSummary: `建议：${planned}`,

@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
-import { formatExerciseName, formatSkippedReason, formatTechniqueQuality } from '../i18n/formatters';
+import { formatExerciseName, formatRirLabel, formatSetType, formatSkippedReason, formatTechniqueQuality, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import type {
   CorrectionModule,
   ExercisePrescription,
@@ -104,31 +104,10 @@ const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = 
   { value: 'too_heavy', label: '偏重' },
 ];
 
-const templateNameLabels: Record<string, string> = {
-  'push-a': 'Push A',
-  'pull-a': 'Pull A',
-  'legs-a': 'Legs A',
-  upper: 'Upper',
-  lower: 'Lower',
-  arms: '手臂补量',
-  'quick-30': '30 分钟快练',
-  'crowded-gym': '人多替代',
-};
-
 const getSets = (exercise: LoggedExercise | undefined): TrainingSetLog[] =>
   Array.isArray(exercise?.sets) ? (exercise.sets as TrainingSetLog[]) : [];
 
-const templateLabel = (id: string, fallback: string) => templateNameLabels[id] || fallback || '当前训练';
-
-const setTypeLabel = (type: unknown) => {
-  if (type === 'warmup') return '热身';
-  if (type === 'top') return '主力组';
-  if (type === 'backoff') return '回退组';
-  if (type === 'straight') return '正式组';
-  if (type === 'corrective') return '纠偏';
-  if (type === 'functional') return '功能';
-  return '正式组';
-};
+const templateLabel = (id: string, fallback: string) => formatTemplateName(id || fallback, '当前训练');
 
 const exerciseStatusLabel: Record<ExerciseStatus, string> = {
   not_started: '未开始',
@@ -165,7 +144,7 @@ const statusIcon = (status: ExerciseStatus) => {
 const supportLogKey = (moduleId: string, exerciseId: string) => `${moduleId}:${exerciseId}`;
 
 const getSupportExerciseName = (exercise: { exerciseId: string; name?: string }) =>
-  exercise.name || formatExerciseName(exercise.exerciseId);
+  formatExerciseName({ id: exercise.exerciseId, name: exercise.name });
 
 const plannedSupportSets = (exercise: { sets: number }) => Math.max(0, number(exercise.sets));
 
@@ -311,11 +290,11 @@ export function TrainingView({
     const reps = set.reps;
     return (
       <div key={set.id} className="flex flex-wrap items-center gap-2 rounded-md bg-stone-50 px-3 py-2 text-xs text-slate-600">
-        <StatusBadge tone="emerald">{setTypeLabel(set.type)} {setIndex + 1}</StatusBadge>
+        <StatusBadge tone="emerald">{formatSetType(set.type)} {setIndex + 1}</StatusBadge>
         <span className="font-semibold text-slate-900">
           {formatDisplayWeightValue(weightKg, unitSettings)}{unitSettings.weightUnit} × {number(reps)}
         </span>
-        {set.rir !== undefined && set.rir !== '' ? <span>RIR {String(set.rir)}</span> : null}
+        {set.rir !== undefined && set.rir !== '' ? <span>{formatRirLabel(set.rir)}</span> : null}
         {set.techniqueQuality ? <span>{formatTechniqueQuality(set.techniqueQuality)}</span> : null}
         {set.painFlag ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
       </div>
@@ -340,7 +319,7 @@ export function TrainingView({
           <Card className="bg-stone-50" padded>
             <div className="text-xs font-semibold text-slate-500">目标范围</div>
             <div className="mt-1 text-sm font-semibold text-slate-950">
-              {exercise.repMin}-{exercise.repMax} 次 · {exercise.targetRirText || 'RIR 1-2'}
+              {exercise.repMin}-{exercise.repMax} 次 · {formatRirLabel(exercise.targetRirText || '1–2')}
             </div>
           </Card>
           <Card className="bg-stone-50" padded>
@@ -370,7 +349,7 @@ export function TrainingView({
                         {set.done ? '已完成' : isNext ? '当前组' : '待完成'}
                       </StatusBadge>
                       <h3 className="text-sm font-semibold text-slate-950">
-                        {setTypeLabel(set.type)} {setIndex + 1}
+                        {formatSetType(set.type)} {setIndex + 1}
                       </h3>
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
@@ -413,7 +392,7 @@ export function TrainingView({
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="text-xs font-semibold text-slate-500">RIR</span>
+                    <span className="text-xs font-semibold text-slate-500">余力（RIR）</span>
                     <input
                       value={String(set.rir ?? '')}
                       onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rir', event.target.value)}
@@ -703,7 +682,7 @@ export function TrainingView({
             <MetricCard label="主训练组" value={`${doneSets}/${totalSets}`} tone="emerald" />
             <MetricCard label="当前总量" value={formatTrainingVolume(currentVolume, unitSettings)} />
             <MetricCard label="辅助处理" value={`${supportSummary.resolved}/${supportSummary.planned}`} helper={supportSummary.skipped ? `${supportSummary.skipped} 项已跳过` : undefined} />
-            <MetricCard label="训练模式" value={mode.shortLabel} tone="sky" />
+            <MetricCard label="训练模式" value={formatTrainingMode(mode.id)} tone="sky" />
           </div>
 
           <PageSection title="完整动作列表" description="展开动作可补记重量、次数、RIR、动作质量、不适和备注。">

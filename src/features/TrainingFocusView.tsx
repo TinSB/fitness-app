@@ -5,6 +5,18 @@ import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusMod
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
+import {
+  formatExerciseName,
+  formatFatigueCost,
+  formatMovementPattern,
+  formatMuscleName,
+  formatReplacementCategory,
+  formatRirLabel,
+  formatSetType,
+  formatSkippedReason,
+  formatTechniqueQuality,
+  formatTemplateName,
+} from '../i18n/formatters';
 import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
 import { BottomSheet } from '../ui/BottomSheet';
@@ -53,19 +65,19 @@ interface TrainingFocusViewProps {
 }
 
 const supportReasonOptions: Array<{ value: SupportSkipReason; label: string }> = [
-  { value: 'time', label: '时间不足' },
-  { value: 'pain', label: '不舒服' },
-  { value: 'equipment', label: '器械不可用' },
-  { value: 'too_tired', label: '今天太累' },
-  { value: 'forgot', label: '暂时跳过' },
-  { value: 'not_needed', label: '今天不需要' },
-  { value: 'other', label: '其他原因' },
+  { value: 'time', label: formatSkippedReason('time') },
+  { value: 'pain', label: formatSkippedReason('pain') },
+  { value: 'equipment', label: formatSkippedReason('equipment') },
+  { value: 'too_tired', label: formatSkippedReason('too_tired') },
+  { value: 'forgot', label: formatSkippedReason('forgot') },
+  { value: 'not_needed', label: formatSkippedReason('not_needed') },
+  { value: 'other', label: formatSkippedReason('other') },
 ];
 
 const qualityOptions: Array<{ value: NonNullable<TrainingSetLog['techniqueQuality']>; label: string }> = [
-  { value: 'good', label: '良好' },
-  { value: 'acceptable', label: '可接受' },
-  { value: 'poor', label: '较差' },
+  { value: 'good', label: formatTechniqueQuality('good') },
+  { value: 'acceptable', label: formatTechniqueQuality('acceptable') },
+  { value: 'poor', label: formatTechniqueQuality('poor') },
 ];
 
 const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = [
@@ -74,104 +86,37 @@ const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = 
   { value: 'too_heavy', label: '偏重' },
 ];
 
-const exerciseNameLabels: Record<string, string> = {
-  'bench-press': '平板卧推',
-  'db-bench-press': '哑铃卧推',
-  'incline-db-press': '上斜哑铃卧推',
-  'machine-chest-press': '器械胸推',
-  'cable-fly': '绳索夹胸',
-  'lateral-raise': '哑铃侧平举',
-  'triceps-pushdown': '绳索下压',
-  'close-grip-bench': '窄握卧推',
-  'lat-pulldown': '高位下拉',
-  'seated-row': '坐姿划船',
-  'barbell-row': '杠铃划船',
-  'one-arm-db-row': '单臂哑铃划船',
-  'face-pull': '面拉',
-  'db-curl': '哑铃弯举',
-  'hammer-curl': '锤式弯举',
-  'preacher-curl': '牧师凳弯举',
-  squat: '深蹲',
-  'hack-squat': '哈克深蹲',
-  'leg-press': '腿举',
-  'romanian-deadlift': '罗马尼亚硬拉',
-  'db-rdl': '哑铃罗马尼亚硬拉',
-  'leg-curl': '腿弯举',
-  'calf-raise': '提踵',
-  'shoulder-press': '哑铃肩推',
-  'push-up': '俯卧撑',
-  'pull-up': '引体向上',
-};
-
-const movementPatternLabels: Record<string, string> = {
-  horizontal_push: '水平推',
-  vertical_push: '垂直推',
-  horizontal_pull: '水平拉',
-  vertical_pull: '垂直拉',
-  squat: '蹲',
-  hinge: '髋铰链',
-  lunge: '单腿',
-  carry: '搬运',
-  isolation_push: '孤立推',
-  isolation_pull: '孤立拉',
-};
-
-const muscleLabels: Record<string, string> = {
-  chest: '胸',
-  back: '背',
-  lats: '背阔肌',
-  quads: '股四头肌',
-  hamstrings: '腘绳肌',
-  glutes: '臀',
-  shoulders: '肩',
-  delts: '三角肌',
-  triceps: '肱三头肌',
-  biceps: '肱二头肌',
-  calves: '小腿',
-  core: '核心',
-};
-
 const getSets = (exercise: TrainingSession['exercises'][number] | undefined): TrainingSetLog[] => (Array.isArray(exercise?.sets) ? exercise.sets : []);
 
 const displayExerciseName = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
-  if (!exercise) return '未知动作';
-  return exerciseNameLabels[exercise.actualExerciseId || exercise.replacementExerciseId || exercise.id] || exerciseNameLabels[exercise.id] || exercise.name || '未知动作';
+  if (!exercise) return '未命名动作';
+  return formatExerciseName(exercise);
 };
 
-const displayReplacementName = (option: ReplacementOption) => exerciseNameLabels[option.id] || option.name || '未知动作';
+const displayReplacementName = (option: ReplacementOption) => formatExerciseName({ id: option.id, name: option.name });
 
 const displayMovementPattern = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
-  const pattern = String(exercise?.movementPattern || '').trim();
-  return movementPatternLabels[pattern] || (pattern ? '动作模式' : '未标注模式');
+  return formatMovementPattern(exercise?.movementPattern);
 };
 
 const displayPrimaryMuscles = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
   const muscles = exercise?.primaryMuscles?.length ? exercise.primaryMuscles : exercise?.muscle ? [exercise.muscle] : [];
-  const labels = muscles.map((item) => muscleLabels[String(item)] || String(item)).filter(Boolean);
+  const labels = muscles.map(formatMuscleName).filter(Boolean);
   return labels.length ? labels.join(' / ') : '未标注主肌群';
 };
 
 const blockLabel = (blockType: FocusBlockType) => (blockType === 'main' ? '主训练' : blockType === 'correction' ? '纠偏' : '功能补丁');
 
 const stageLabel = (stepType: string) => {
-  if (stepType === 'warmup') return '热身组';
-  if (stepType === 'working') return '正式组';
-  if (stepType === 'correction') return '纠偏模块';
+  if (stepType === 'correction') return '纠偏组';
   if (stepType === 'functional') return '功能补丁';
-  if (stepType === 'support') return '支持动作';
+  if (stepType === 'support') return '辅助动作';
+  if (stepType === 'warmup' || stepType === 'working') return formatSetType(stepType);
   return '完成';
 };
 
 const replacementRankLabel = (rank: ReplacementOption['rank']) => {
-  if (rank === 'priority') return '优先';
-  if (rank === 'angle') return '角度变化';
-  return '可选';
-};
-
-const fatigueCostLabel = (value: string) => {
-  if (value === 'high') return '高';
-  if (value === 'low') return '低';
-  return '中等';
+  return formatReplacementCategory(rank);
 };
 
 export function TrainingFocusView({
@@ -267,16 +212,16 @@ export function TrainingFocusView({
         ? '按支持动作计划完成'
         : currentStep.stepType === 'working' && mainExercise
           ? `${formatWeight(currentStep.plannedWeight, unitSettings)} × 建议 ${number(currentStep.plannedReps)} 次 · 目标范围 ${mainExercise.repMin}-${mainExercise.repMax} 次${
-              currentStep.plannedRir ? ` · RIR ${currentStep.plannedRir}` : ''
+              currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''
             }`
-          : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · RIR ${currentStep.plannedRir}` : ''}`;
+          : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''}`;
 
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
   const actualRir = actualDraft?.actualRir;
   const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
   const actualSummary = `${actualDisplayWeight === undefined ? '待输入' : `${actualDisplayWeight}${weightUnit}`} · ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}${
-    actualRir === undefined ? '' : ` · RIR ${actualRir}`
+    actualRir === undefined ? '' : ` · ${formatRirLabel(actualRir)}`
   }`;
   const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
   const repAdjustments = [-5, -1, 1, 5];
@@ -456,7 +401,7 @@ export function TrainingFocusView({
               </div>
               <div className="mt-2 text-xs leading-5 text-slate-600">同类动作替代，适合本次训练临时调整。</div>
               <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                <span>疲劳成本：{fatigueCostLabel(option.fatigueCost)}</span>
+                <span>疲劳成本：{formatFatigueCost(option.fatigueCost)}</span>
                 <span>PR / e1RM 独立统计</span>
               </div>
             </button>
@@ -500,7 +445,7 @@ export function TrainingFocusView({
 
   const renderSupportStep = () => {
     if (!supportLog) return null;
-    const supportTitle = supportExercise?.name || supportLog.exerciseName || currentStep.exerciseName || '支持动作';
+    const supportTitle = formatExerciseName({ id: supportLog.exerciseId, name: supportExercise?.name || supportLog.exerciseName || currentStep.exerciseName });
     const supportModuleName = supportBlock?.name || currentStep.moduleName || blockLabel(blockType);
     return (
       <>
@@ -715,7 +660,7 @@ export function TrainingFocusView({
               />
             </div>
             <div>
-              <div className="text-sm font-semibold">RIR</div>
+              <div className="text-sm font-semibold">余力（RIR）</div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {[0, 1, 2, 3, 4, 5].map((rir) => (
                   <button
@@ -746,7 +691,7 @@ export function TrainingFocusView({
                 <div key={set.id || `${mainExercise.id}-${index}`} className="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2 text-sm">
                   <span>第 {index + 1} 组</span>
                   <span className="font-semibold">
-                    {formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps} 次{set.rir !== undefined && set.rir !== '' ? ` · RIR ${set.rir}` : ''}
+                    {formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps} 次{set.rir !== undefined && set.rir !== '' ? ` · ${formatRirLabel(set.rir)}` : ''}
                   </span>
                 </div>
               ))}
@@ -819,9 +764,9 @@ export function TrainingFocusView({
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
               <Dumbbell className="h-4 w-4" />
-              Focus Mode
+              专注训练
             </div>
-            <div className="mt-1 truncate text-lg font-bold">{session.templateName}</div>
+            <div className="mt-1 truncate text-lg font-bold">{formatTemplateName(session.templateId || session.templateName, '当前训练')}</div>
           </div>
           <div className="flex gap-2">
             {onShowFullTraining ? (

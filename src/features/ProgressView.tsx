@@ -36,12 +36,17 @@ import {
   formatAdjustmentReviewStatus,
   formatAdjustmentRiskLevel,
   formatComplexityLevel,
+  formatDataFlag,
   formatDayTemplateName,
   formatExerciseName,
+  formatMuscleName,
   formatPainAction,
   formatPersonalRecordQuality,
   formatProgramTemplateName,
+  formatRirLabel,
+  formatSetType,
   formatSkippedReason,
+  formatTemplateName,
   formatSupportDoseAdjustment,
   formatTechniqueQuality,
   formatWeeklyActionCategory,
@@ -88,11 +93,7 @@ const historyFilterOptions: Array<{ id: SessionHistoryFilter; label: string }> =
   { id: 'excluded', label: '排除数据' },
 ];
 
-const dataFlagLabel = (flag?: SessionDataFlag) => {
-  if (flag === 'test') return '测试';
-  if (flag === 'excluded') return '排除';
-  return '正常';
-};
+const dataFlagLabel = (flag?: SessionDataFlag) => formatDataFlag(flag || 'normal');
 
 const formatSessionTime = (session?: Pick<TrainingSession, 'startedAt' | 'finishedAt'> | null) => {
   if (!session?.startedAt) return '未记录时间';
@@ -446,7 +447,7 @@ export function ProgressView({
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-black text-slate-950">{session.templateName || session.focus || '训练详情'}</h2>
+              <h2 className="text-xl font-black text-slate-950">{formatTemplateName(session.templateId || session.templateName || session.focus, '训练详情')}</h2>
               {renderDataFlagBadge(session.dataFlag)}
               {session.isExperimentalTemplate ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-black text-amber-700">实验模板</span> : null}
             </div>
@@ -487,8 +488,8 @@ export function ProgressView({
                 {Array.isArray(exercise.sets) && exercise.sets.length ? (
                   exercise.sets.map((set, index) => (
                     <div key={set.id || `${exercise.id}-${index}`} className={set.done ? '' : 'text-slate-400'}>
-                      {set.type === 'warmup' ? '热身组' : '正式组'} {index + 1}：{set.done ? `${formatWeight(set.weight, unitSettings)} x ${set.reps}` : '未完成'}
-                      {set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}
+                      {formatSetType(set.type)} {index + 1}：{set.done ? `${formatWeight(set.weight, unitSettings)} x ${set.reps}` : '未完成'}
+                      {set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}
                       {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
                       {set.painFlag ? ' / 不适' : ''}
                     </div>
@@ -506,7 +507,7 @@ export function ProgressView({
               <div className="space-y-1 text-sm font-bold text-slate-700">
                 {(session.supportExerciseLogs || []).map((log) => (
                   <div key={`${log.moduleId}-${log.exerciseId}`}>
-                    {log.exerciseName || '辅助动作'}：{log.completedSets}/{log.plannedSets} 组
+                    {formatExerciseName({ id: log.exerciseId, name: log.exerciseName })}：{log.completedSets}/{log.plannedSets} 组
                     {log.skippedReason ? ` / 跳过：${formatSkippedReason(log.skippedReason)}` : ''}
                   </div>
                 ))}
@@ -603,7 +604,7 @@ export function ProgressView({
                     {renderDataFlagBadge(session.dataFlag)}
                   </div>
                   <div className="mt-1 text-xs font-bold leading-5 text-slate-500">
-                    {session.templateName || '未命名模板'} / {rawSession ? formatSessionTime(rawSession) : '未记录时间'} / {session.completedSets} 组
+                    {formatTemplateName(session.templateName, '未命名模板')} / {rawSession ? formatSessionTime(rawSession) : '未记录时间'} / {session.completedSets} 组
                   </div>
                   <div className="mt-1 text-xs font-bold text-emerald-700">
                     有效组 {session.effectiveSets} / 总量 {formatTrainingVolume(session.totalVolumeKg, unitSettings)}
@@ -669,7 +670,7 @@ export function ProgressView({
             <div key={session.id} className="flex flex-col gap-2 rounded-lg bg-stone-50 p-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2 font-black text-slate-950">
-                  {session.templateName || session.focus || '训练'}
+                  {formatTemplateName(session.templateId || session.templateName || session.focus, '训练')}
                   {renderDataFlagBadge(session.dataFlag)}
                   {session.isExperimentalTemplate ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">实验</span> : null}
                 </div>
@@ -1168,7 +1169,7 @@ export function ProgressView({
                 <div className="text-xs font-black uppercase tracking-widest text-emerald-700">训练后总结</div>
                 <h2 className="mt-1 font-black text-slate-950">最近一次训练解释</h2>
               </div>
-              {latestSession ? <span className="rounded-md bg-stone-100 px-2 py-1 text-xs font-black text-slate-600">{latestSession.templateName}</span> : null}
+              {latestSession ? <span className="rounded-md bg-stone-100 px-2 py-1 text-xs font-black text-slate-600">{formatTemplateName(latestSession.templateId || latestSession.templateName, '未命名训练')}</span> : null}
             </div>
             {latestSessionSummary.length ? (
               <div className="space-y-2">
@@ -1419,12 +1420,12 @@ export function ProgressView({
             <div className="mt-3 space-y-2 text-sm text-slate-700">
               <div>
                 <span className="font-black text-slate-950">经常跳过的主训练动作：</span>
-                {adherenceReport.skippedExercises.length ? adherenceReport.skippedExercises.map((item) => `${item.exerciseId} (${item.count})`).join(' / ') : '暂无明显跳过动作'}
+                {adherenceReport.skippedExercises.length ? adherenceReport.skippedExercises.map((item) => `${formatExerciseName(item.exerciseId)} (${item.count})`).join(' / ') : '暂无明显跳过动作'}
               </div>
               <div>
                 <span className="font-black text-slate-950">经常未完成的辅助动作：</span>
                 {adherenceReport.skippedSupportExercises.length
-                  ? adherenceReport.skippedSupportExercises.map((item) => `${item.exerciseId} (${item.count}${item.mostCommonReason ? ` / ${formatSkippedReason(item.mostCommonReason)}` : ''})`).join(' / ')
+                  ? adherenceReport.skippedSupportExercises.map((item) => `${formatExerciseName(item.exerciseId)} (${item.count}${item.mostCommonReason ? ` / ${formatSkippedReason(item.mostCommonReason)}` : ''})`).join(' / ')
                   : '暂无明显未完成的辅助动作'}
               </div>
               {adherenceReport.suggestions.map((item) => (
@@ -1442,7 +1443,7 @@ export function ProgressView({
                 {painPatterns.map((pattern) => (
                   <div key={`${pattern.area}-${pattern.exerciseId || 'area'}`} className="rounded-md bg-stone-50 p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="font-black text-slate-950">{pattern.exerciseId || pattern.area}</div>
+                      <div className="font-black text-slate-950">{pattern.exerciseId ? formatExerciseName(pattern.exerciseId) : formatMuscleName(pattern.area)}</div>
                       <span className="rounded-md bg-white px-2 py-1 text-xs font-black text-slate-600">{formatPainAction(pattern.suggestedAction)}</span>
                     </div>
                     <div className="mt-1 text-sm text-slate-600">
@@ -1533,7 +1534,7 @@ export function ProgressView({
                         {session.isExperimentalTemplate ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-black text-amber-700">实验</span> : null}
                       </div>
                       <div className="mt-1 text-xs font-bold leading-5 text-slate-500">
-                        {session.templateName || '未命名模板'} / {session.durationMin || 0} 分钟 / {session.completedSets} 组
+                        {formatTemplateName(session.templateName, '未命名模板')} / {session.durationMin || 0} 分钟 / {session.completedSets} 组
                       </div>
                       <div className="mt-1 text-xs font-bold text-emerald-700">
                         有效组 {session.effectiveSets} / 总量 {formatTrainingVolume(session.totalVolumeKg, unitSettings)}
@@ -1572,9 +1573,9 @@ export function ProgressView({
                 <div key={session.id} className="flex flex-col gap-2 rounded-lg bg-stone-50 p-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 font-black text-slate-950">
-                      {session.templateName}
-                      {session.dataFlag === 'test' ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">测试</span> : null}
-                      {session.dataFlag === 'excluded' ? <span className="rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600">排除</span> : null}
+                      {formatTemplateName(session.templateId || session.templateName, '未命名训练')}
+                      {session.dataFlag === 'test' ? <span className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-700">测试数据</span> : null}
+                      {session.dataFlag === 'excluded' ? <span className="rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600">排除数据</span> : null}
                     </div>
                     <div className="text-sm text-slate-500">
                       {session.date} / {sessionCompletedSets(session)} 组 / {session.durationMin || 0} 分钟
@@ -1589,7 +1590,7 @@ export function ProgressView({
                               {Array.isArray(exercise.sets)
                                 ? exercise.sets
                                     .filter((set) => set.done)
-                                    .map((set) => `${formatWeight(set.weight, unitSettings)} x ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / RIR ${set.rir}` : ''}${set.painFlag ? ' / 不适' : ''}`)
+                                    .map((set) => `${formatWeight(set.weight, unitSettings)} x ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}${set.painFlag ? ' / 不适' : ''}`)
                                     .join('；') || '未完成'
                                 : '未记录'}
                             </div>
@@ -1597,7 +1598,7 @@ export function ProgressView({
                         ))}
                         {(session.supportExerciseLogs || []).length ? (
                           <div className="rounded-md bg-white px-3 py-2 text-xs font-bold text-slate-500">
-                            辅助动作：{(session.supportExerciseLogs || []).map((log) => `${log.exerciseName || log.exerciseId} ${log.completedSets}/${log.plannedSets}${log.skippedReason ? ` / 已跳过` : ''}`).join('；')}
+                            辅助动作：{(session.supportExerciseLogs || []).map((log) => `${formatExerciseName({ id: log.exerciseId, name: log.exerciseName })} ${log.completedSets}/${log.plannedSets}${log.skippedReason ? ` / 已跳过` : ''}`).join('；')}
                           </div>
                         ) : null}
                       </div>

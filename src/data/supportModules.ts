@@ -16,7 +16,7 @@ export const CORRECTION_MODULES: CorrectionModule[] = [
       { exerciseId: 'thoracic_extension_foam', name: '泡沫轴胸椎伸展', sets: 2, repMin: 8, repMax: 10, cue: '先打开胸椎，不要用腰椎代偿' },
       { exerciseId: 'wall_slide', name: '墙滑', sets: 2, repMin: 10, repMax: 12, cue: '肋骨下沉，前锯肌带动上举' },
       { exerciseId: 'face_pull', name: '面拉', sets: 2, repMin: 12, repMax: 15, cue: '后拉时别耸肩' },
-      { exerciseId: 'chin_tuck', name: 'Chin tuck', sets: 2, repMin: 8, repMax: 10, holdSec: 3, cue: '轻收下巴，激活深颈屈肌' },
+      { exerciseId: 'chin_tuck', name: '收下巴', sets: 2, repMin: 8, repMax: 10, holdSec: 3, cue: '轻收下巴，激活深颈屈肌' },
     ],
   },
   {
@@ -48,7 +48,7 @@ export const CORRECTION_MODULES: CorrectionModule[] = [
     minimumEffectiveDose: 6,
     maxRecommendedDose: 10,
     exercises: [
-      { exerciseId: 'dead_bug', name: 'Dead bug', sets: 2, repMin: 8, repMax: 10, cue: '腰背贴地，呼气锁住肋骨' },
+      { exerciseId: 'dead_bug', name: '死虫', sets: 2, repMin: 8, repMax: 10, cue: '腰背贴地，呼气锁住肋骨' },
       { exerciseId: 'side_plank', name: '侧桥', sets: 2, repMin: 20, repMax: 30, holdSec: 20, cue: '骨盆不要旋转' },
     ],
   },
@@ -129,7 +129,7 @@ export const CORRECTION_MODULES: CorrectionModule[] = [
     maxRecommendedDose: 10,
     exercises: [
       { exerciseId: 'hip_hinge_dowel', name: '棍棒髋铰链', sets: 2, repMin: 8, repMax: 10, cue: '保持三点贴杆，用髋部后移发力' },
-      { exerciseId: 'bird_dog', name: 'Bird dog', sets: 2, repMin: 8, repMax: 10, cue: '不要扭腰，保持肋骨和骨盆堆叠' },
+      { exerciseId: 'bird_dog', name: '鸟狗式', sets: 2, repMin: 8, repMax: 10, cue: '不要扭腰，保持肋骨和骨盆堆叠' },
     ],
   },
   {
@@ -144,7 +144,7 @@ export const CORRECTION_MODULES: CorrectionModule[] = [
     minimumEffectiveDose: 5,
     maxRecommendedDose: 9,
     exercises: [
-      { exerciseId: 'open_book', name: 'Open book', sets: 2, repMin: 8, repMax: 10, cue: '旋转来自胸椎，不要借腰发力' },
+      { exerciseId: 'open_book', name: '开书式', sets: 2, repMin: 8, repMax: 10, cue: '旋转来自胸椎，不要借腰发力' },
       { exerciseId: 'thread_the_needle', name: '穿针引线', sets: 2, repMin: 8, repMax: 10, cue: '配合呼气打开上背' },
     ],
   },
@@ -161,7 +161,7 @@ export const CORRECTION_MODULES: CorrectionModule[] = [
     maxRecommendedDose: 9,
     exercises: [
       { exerciseId: 'half_kneeling_landmine_press', name: '半跪地雷管推', sets: 2, repMin: 8, repMax: 10, cue: '先找肩胛上旋，再推进' },
-      { exerciseId: 'wall_slide_lift_off', name: '墙滑 lift-off', sets: 2, repMin: 8, repMax: 10, cue: '避免耸肩和腰椎代偿' },
+      { exerciseId: 'wall_slide_lift_off', name: '墙滑离墙', sets: 2, repMin: 8, repMax: 10, cue: '避免耸肩和腰椎代偿' },
     ],
   },
   {
@@ -177,7 +177,7 @@ export const CORRECTION_MODULES: CorrectionModule[] = [
     maxRecommendedDose: 8,
     exercises: [
       { exerciseId: '90_90_breathing', name: '90/90 呼吸', sets: 2, repMin: 5, repMax: 6, cue: '长呼气，把肋骨带回中立位' },
-      { exerciseId: 'bear_exhale', name: 'Bear exhale', sets: 2, repMin: 5, repMax: 6, cue: '保持腹压，不让腰椎塌陷' },
+      { exerciseId: 'bear_exhale', name: '熊式呼气', sets: 2, repMin: 5, repMax: 6, cue: '保持腹压，不让腰椎塌陷' },
     ],
   },
 ];
@@ -195,7 +195,7 @@ export const FUNCTIONAL_ADDONS: FunctionalAddon[] = [
     minimumEffectiveDose: 6,
     maxRecommendedDose: 10,
     exercises: [
-      { exerciseId: 'pallof_press', name: 'Pallof press', sets: 3, repMin: 10, repMax: 12, restSec: 45 },
+      { exerciseId: 'pallof_press', name: '帕洛夫抗旋推', sets: 3, repMin: 10, repMax: 12, restSec: 45 },
       { exerciseId: 'single_arm_carry', name: '单臂农夫走', sets: 3, distanceM: 20, restSec: 45 },
     ],
   },
@@ -240,8 +240,8 @@ export const FUNCTIONAL_ADDONS: FunctionalAddon[] = [
     minimumEffectiveDose: 4,
     maxRecommendedDose: 8,
     exercises: [
-      { exerciseId: 'bottom_up_press', name: 'Bottom-up press', sets: 2, repMin: 6, repMax: 8, restSec: 45 },
-      { exerciseId: 'waiter_carry', name: 'Waiter carry', sets: 2, distanceM: 15, restSec: 45 },
+      { exerciseId: 'bottom_up_press', name: '倒置壶铃推举', sets: 2, repMin: 6, repMax: 8, restSec: 45 },
+      { exerciseId: 'waiter_carry', name: '服务员行走', sets: 2, distanceM: 15, restSec: 45 },
     ],
   },
   {

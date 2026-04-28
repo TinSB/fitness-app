@@ -1,5 +1,6 @@
 import type { TrainingTemplate } from '../models/training-model';
 import type { TodayTrainingState } from '../engines/todayStateEngine';
+import { formatTemplateName } from '../i18n/formatters';
 
 export type TodayViewModel = {
   state: TodayTrainingState['status'];
@@ -20,13 +21,14 @@ export const buildTodayViewModel = ({
   completedTemplateName?: string;
 }): TodayViewModel => {
   if (todayState.status === 'completed') {
+    const completedName = completedTemplateName ? formatTemplateName(completedTemplateName, '本次训练') : '本次训练';
     return {
       state: 'completed',
       pageTitle: '今日训练已完成',
       recommendationLabel: '下次建议',
       primaryActionLabel: '查看本次训练',
       secondaryActionLabels: ['查看训练日历', '再练一场'],
-      statusText: `已完成 ${completedTemplateName || '本次训练'}。下次建议只作为参考，不代表今天必须继续训练。`,
+      statusText: `已完成 ${completedName}。下次建议只作为参考，不代表今天必须继续训练。`,
     };
   }
 
@@ -47,6 +49,6 @@ export const buildTodayViewModel = ({
     recommendationLabel: '今日建议',
     primaryActionLabel: '开始训练',
     secondaryActionLabels: ['查看动作安排'],
-    statusText: `建议执行 ${selectedTemplate.name}。`,
+    statusText: `建议执行 ${formatTemplateName(selectedTemplate)}。`,
   };
 };

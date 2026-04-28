@@ -27,6 +27,8 @@ IronPath 的训练建议分为三层证据等级：
 
 IronPath 是一个本地优先的私人训练系统，基于 React、Vite 和 TypeScript。当前主线是肌肥大训练，并把体态纠偏、功能补丁、周剂量预算、准备度评分、减量判断、训练完成度和训练后总结接成一个闭环。
 
+主导航固定为：今日 / 训练 / 记录 / 计划 / 我的。用户界面中的训练模板统一显示为中文，例如推 A、拉 A、腿 A；底层模板 id 仍保持 `push-a`、`pull-a`、`legs-a`。
+
 ## 安装
 
 ```bash
@@ -95,11 +97,11 @@ npm run predeploy:check
 
 ## 性能与代码分割
 
-首屏只保留 App shell、今日页、移动端 Focus Mode 和训练恢复所需核心逻辑。`ProgressView`、`PlanView`、`AssessmentView` 和完整 `TrainingView` 使用 `React.lazy` 延迟加载；计划调整 apply / rollback、调整预览、实验效果复盘和备份恢复在用户触发时动态导入。
+首屏只保留 App shell、今日页、移动端专注训练界面和训练恢复所需核心逻辑。`ProgressView`、`PlanView`、`AssessmentView` 和完整 `TrainingView` 使用 `React.lazy` 延迟加载；计划调整 apply / rollback、调整预览、实验效果复盘和备份恢复在用户触发时动态导入。
 
 项目只保留一个 Vite 配置文件：`vite.config.ts`。React 插件、Tailwind CSS 插件、Vitest 配置、build 配置和 manual chunks 都从这个文件读取，避免 `vite.config.js` / `vite.config.ts` 双配置造成 test 与 build 行为不一致。
 
-`vite.config.ts` 使用 manual chunks 将 React、AJV 校验、分析引擎、计划调整引擎、证据内容、进度页和计划页拆成可读 chunk。Focus Mode 保持轻量，不同步加载 Progress / Plan 等重页面；Progress / Plan 和计划调整相关逻辑按需加载。
+`vite.config.ts` 使用 manual chunks 将 React、AJV 校验、分析引擎、计划调整引擎、证据内容、记录/统计相关页面和计划页拆成可读 chunk。专注训练保持轻量，不同步加载 Progress / Plan 等重页面；Progress / Plan 和计划调整相关逻辑按需加载。
 
 ## Vercel 上线部署
 
@@ -138,7 +140,7 @@ Vercel 部署后测试：
 1. 电脑端打开 Vercel URL。
 2. iPhone Safari 打开 Vercel URL。
 3. 添加到主屏幕。
-4. 在 Focus Mode 完成一组。
+4. 在专注训练中完成一组。
 5. 刷新页面后确认 `activeSession` 可恢复。
 6. 导出 / 导入 JSON 备份。
 7. 打开记录页 / 计划页，确认懒加载页面正常。

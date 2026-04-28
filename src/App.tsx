@@ -25,6 +25,7 @@ import { completeTrainingSessionIntoHistory } from './engines/trainingCompletion
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
 import { buildTrainingDecisionContext } from './engines/trainingDecisionContext';
+import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
@@ -126,7 +127,9 @@ const AppAuxiliaryPanel = ({
       {activeTab === 'training' ? (
         <div className="space-y-2 text-sm">
           <StatusBadge tone={activeSession ? 'emerald' : 'slate'}>{activeSession ? '训练中' : '未开始'}</StatusBadge>
-          <div className="font-semibold text-slate-950">{activeSession?.templateName || '暂无进行中的训练'}</div>
+          <div className="font-semibold text-slate-950">
+            {activeSession ? formatTemplateName(activeSession.templateId || activeSession.templateName, '当前训练') : '暂无进行中的训练'}
+          </div>
           <div className="rounded-lg bg-stone-50 p-3 text-slate-600">训练业务状态仍由 activeSession 和 workout state machine 管理。</div>
         </div>
       ) : null}
@@ -647,7 +650,7 @@ function App() {
   };
 
   const deleteHistorySession = (sessionId: string) => {
-    const confirmed = window.confirm('删除后该训练不会计入进度、e1RM、PR、完成度和日历。此操作不可恢复，建议先导出备份。确定删除吗？');
+    const confirmed = window.confirm('删除后该训练不会计入记录、e1RM、PR、完成度和日历。此操作不可恢复，建议先导出备份。确定删除吗？');
     setData((current) => {
       const result = deleteTrainingSession(current, sessionId, confirmed);
       return result.data;
@@ -671,7 +674,7 @@ function App() {
   const updateHistorySessionFlag = (sessionId: string, dataFlag: SessionDataFlag) => {
     const confirmed =
       dataFlag === 'normal' ||
-      window.confirm('标记为测试/排除后，该训练不会计入进度、e1RM、PR、完成度和日历。确定继续吗？');
+      window.confirm('标记为测试/排除后，该训练不会计入记录、e1RM、PR、完成度和日历。确定继续吗？');
     setData((current) => markSessionDataFlag(current, sessionId, dataFlag, confirmed).data);
   };
 
@@ -701,8 +704,8 @@ function App() {
           <AppAuxiliaryPanel
             activeTab={activeTab}
             activeSession={data.activeSession}
-            selectedTemplateName={selectedTemplate.name}
-            suggestedTemplateName={suggestedTemplate.name}
+            selectedTemplateName={formatTemplateName(selectedTemplate)}
+            suggestedTemplateName={formatTemplateName(suggestedTemplate)}
             profileSection={profileSection}
             todayStatus={data.todayStatus}
           />
@@ -738,7 +741,7 @@ function App() {
                     {false && (
                     <PageHeader
                       eyebrow="训练"
-                      title={data.activeSession?.templateName || '训练'}
+                      title={formatTemplateName(data.activeSession?.templateId || data.activeSession?.templateName, '训练')}
                       description="手机端优先使用极简模式记录训练。"
                       action={
                       <div className="flex flex-wrap gap-2">

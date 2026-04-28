@@ -40,10 +40,11 @@ describe('real world regressions from 2026-04-28', () => {
     expect(getNextTemplateAfterLastCompletedSession([testLegs, excludedLegs, normalPush], templates)).toBe('pull-a');
   });
 
-  it('keeps Focus Mode replacement action visible and bottom-sheet backed', () => {
+  it('keeps 专注训练 replacement action visible and bottom-sheet backed', () => {
     const focusSource = readFileSync(resolve(process.cwd(), 'src/features/TrainingFocusView.tsx'), 'utf8');
 
     expect(focusSource).toContain('替代动作');
+    expect(focusSource).toContain('专注训练');
     expect(focusSource).toContain('onClick={openReplacementPicker}');
     expect(focusSource).toContain('setShowReplacementPicker(true)');
     expect(focusSource).toContain('<BottomSheet open={showReplacementPicker}');
