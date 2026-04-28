@@ -144,7 +144,6 @@ export function TrainingFocusView({
   const [feedback, setFeedback] = React.useState('');
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
-  const [showDiscomfortSheet, setShowDiscomfortSheet] = React.useState(false);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
@@ -225,6 +224,19 @@ export function TrainingFocusView({
   }`;
   const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
   const repAdjustments = [-5, -1, 1, 5];
+  const canCompleteCurrentStep = isSupportStep || mainSetIndex >= 0;
+  const painMarked = Boolean(actualDraft?.painFlag || (isSupportStep && skipReason === 'pain'));
+  const auxiliaryActionClass = (tone: 'default' | 'pain' | 'replacement' = 'default', active = false) =>
+    classNames(
+      'grid min-h-14 place-items-center rounded-lg border px-2 py-2 text-center shadow-sm transition active:scale-[0.99]',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+      'disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none',
+      active
+        ? 'border-rose-300 bg-rose-50 text-rose-800'
+        : tone === 'replacement'
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100'
+          : 'border-slate-200 bg-white text-slate-800 hover:border-emerald-200 hover:bg-emerald-50',
+    );
 
   const notify = (message: string) => setFeedback(message);
 
@@ -260,13 +272,11 @@ export function TrainingFocusView({
       const nextReason = painFlag ? 'pain' : 'time';
       setSkipReason(nextReason);
       onUpdateSupportSkipReason(supportLog.moduleId, supportLog.exerciseId, nextReason);
-      setShowDiscomfortSheet(false);
       notify(painFlag ? '已记录当前辅助动作不适' : '已取消当前辅助动作不适标记');
       return;
     }
     if (mainIndex < 0 || mainSetIndex < 0) return;
     onUpdateActualDraft(mainIndex, { painFlag });
-    setShowDiscomfortSheet(false);
     notify(painFlag ? '已标记本组不适' : '已取消不适标记');
   };
 
@@ -421,20 +431,6 @@ export function TrainingFocusView({
         ) : (
           <div className="rounded-lg border border-slate-200 bg-stone-50 p-4 text-sm font-semibold text-slate-600">当前动作暂无可替代动作</div>
         )}
-      </div>
-    </BottomSheet>
-  );
-
-  const renderDiscomfortSheet = () => (
-    <BottomSheet open={showDiscomfortSheet} title="标记不适" onClose={() => setShowDiscomfortSheet(false)}>
-      <p className="text-sm leading-6 text-slate-600">仅记录本组训练不适，用于后续训练建议更保守；这不是医疗诊断。</p>
-      <div className="mt-4 grid gap-2">
-        <ActionButton type="button" variant="danger" size="lg" fullWidth onClick={() => markPain(true)}>
-          标记本组不适
-        </ActionButton>
-        <ActionButton type="button" variant="secondary" size="lg" fullWidth onClick={() => markPain(false)}>
-          取消不适标记
-        </ActionButton>
       </div>
     </BottomSheet>
   );
@@ -770,7 +766,7 @@ export function TrainingFocusView({
   };
 
   return (
-    <div className="min-h-svh bg-slate-950 px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-white">
+    <div className="min-h-svh bg-slate-950 px-4 pb-[calc(10.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-white md:pb-6">
       <div className="mx-auto max-w-2xl space-y-3">
         <header className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -798,43 +794,50 @@ export function TrainingFocusView({
       {feedback ? <Toast>{feedback}</Toast> : null}
       {renderExercisePicker()}
       {renderReplacementPicker()}
-      {renderDiscomfortSheet()}
 
-      <WorkoutActionBar className="grid grid-cols-1 gap-2 border-white/10 bg-slate-950/95 text-white sm:grid-cols-[minmax(0,1fr)_260px] md:static">
-        <ActionButton type="button" aria-label="完成一组" onClick={completeCurrentSet} disabled={!isSupportStep && mainSetIndex < 0} variant="primary" size="lg" fullWidth>
-          完成一组
-        </ActionButton>
-        <div className="grid grid-cols-3 gap-2">
-          <button
+      <WorkoutActionBar className="border-slate-200 bg-white text-slate-950 md:static md:bg-transparent">
+        <div className="mx-auto grid w-full max-w-2xl gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              aria-label="复制上组"
+              onClick={copyPrevious}
+              className={auxiliaryActionClass()}
+            >
+              <Copy className="h-4 w-4" />
+              <span className="text-xs font-semibold leading-tight">复制上组</span>
+            </button>
+            <button
+              type="button"
+              aria-label="标记不适"
+              onClick={() => markPain(!painMarked)}
+              className={auxiliaryActionClass('pain', painMarked)}
+            >
+              <XCircle className="h-4 w-4" />
+              <span className="text-xs font-semibold leading-tight">标记不适</span>
+            </button>
+            <button
+              type="button"
+              aria-label="替代动作"
+              onClick={openReplacementPicker}
+              className={auxiliaryActionClass('replacement')}
+            >
+              <Replace className="h-4 w-4" />
+              <span className="text-xs font-bold leading-tight">替代动作</span>
+            </button>
+          </div>
+          <ActionButton
             type="button"
-            aria-label="复制上组"
-            onClick={copyPrevious}
-            className="grid min-h-14 place-items-center rounded-lg border border-white/10 bg-white/10 px-2 py-2 text-slate-100"
+            aria-label="完成一组"
+            onClick={completeCurrentSet}
+            disabled={!canCompleteCurrentStep}
+            variant="primary"
+            size="lg"
+            fullWidth
+            className="shadow-lg shadow-emerald-900/20"
           >
-            <Copy className="h-4 w-4" />
-            <span className="text-[11px] font-semibold">复制上组</span>
-          </button>
-          <button
-            type="button"
-            aria-label="标记不适"
-            onClick={() => setShowDiscomfortSheet(true)}
-            className={classNames(
-              'grid min-h-14 place-items-center rounded-lg border px-2 py-2',
-              actualDraft?.painFlag || (isSupportStep && skipReason === 'pain') ? 'border-rose-300 bg-rose-500/20 text-rose-100' : 'border-white/10 bg-white/10 text-slate-100',
-            )}
-          >
-            <XCircle className="h-4 w-4" />
-            <span className="text-[11px] font-semibold">标记不适</span>
-          </button>
-          <button
-            type="button"
-            aria-label="替代动作"
-            onClick={openReplacementPicker}
-            className="grid min-h-14 place-items-center rounded-lg border border-white/10 bg-white/10 px-2 py-2 text-slate-100"
-          >
-            <Replace className="h-4 w-4" />
-            <span className="text-[11px] font-semibold">替代动作</span>
-          </button>
+            完成一组
+          </ActionButton>
         </div>
       </WorkoutActionBar>
     </div>

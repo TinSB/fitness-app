@@ -27,7 +27,7 @@ export const ActionButton = ({ variant = 'secondary', size = 'md', fullWidth = f
   <button
     type={type}
     className={classNames(
-      'inline-flex items-center justify-center gap-2 rounded-lg border font-medium transition disabled:cursor-not-allowed disabled:opacity-50',
+      'inline-flex items-center justify-center gap-2 rounded-lg border font-medium transition disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none disabled:hover:bg-slate-100 disabled:active:bg-slate-100',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
       variants[variant],
       sizes[size],
