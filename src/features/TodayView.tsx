@@ -15,6 +15,7 @@ import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
+import type { SessionPatch } from '../engines/sessionPatchEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { splitCoachReminders, type CoachReminderView } from '../presenters/coachReminderPresenter';
@@ -57,6 +58,7 @@ interface TodayViewProps {
   onCoachAction?: (action: CoachAction) => void;
   onDismissCoachAction?: (action: CoachAction) => void;
   temporarySessionAdjustmentActive?: boolean;
+  pendingSessionPatches?: SessionPatch[];
   onRevertTemporarySessionPatches?: () => void;
 }
 
@@ -113,6 +115,63 @@ const recoveryExerciseTone = (label: string) => {
   return 'emerald' as const;
 };
 
+type PreviewBadge = { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' | 'sky' };
+
+type SupportPreviewItem = {
+  id: string;
+  name: string;
+  label: string;
+};
+
+const supportPreviewItems = (supportPlan: ReturnType<typeof buildSupportPlan>): SupportPreviewItem[] => [
+  ...(supportPlan.correctionModules || []).flatMap((module) =>
+    module.exercises.map((exercise) => ({
+      id: `${module.id}:${exercise.exerciseId}`,
+      name: formatExerciseName({ id: exercise.exerciseId, name: exercise.name }),
+      label: '本次跳过',
+    })),
+  ),
+  ...(supportPlan.functionalAddons || []).flatMap((addon) =>
+    addon.exercises.map((exercise) => ({
+      id: `${addon.id}:${exercise.exerciseId}`,
+      name: formatExerciseName({ id: exercise.exerciseId, name: exercise.name }),
+      label: '本次跳过',
+    })),
+  ),
+];
+
+const patchTargetsExercise = (patch: SessionPatch, exercise: ExercisePrescription) =>
+  Boolean(
+    patch.targetId &&
+      [exercise.id, exercise.baseId, exercise.canonicalExerciseId, exercise.originalExerciseId, exercise.actualExerciseId].filter(Boolean).includes(patch.targetId),
+  );
+
+const patchBadgeForExercise = (exercise: ExercisePrescription, patches: SessionPatch[]): PreviewBadge | null => {
+  if (!patches.length) return null;
+  if (patches.some((patch) => patch.type === 'substitute_exercise' && patchTargetsExercise(patch, exercise))) return { label: '建议替代', tone: 'amber' };
+  if (patches.some((patch) => patch.type === 'skip_optional' && patchTargetsExercise(patch, exercise))) return { label: '本次跳过', tone: 'amber' };
+  if (patches.some((patch) => patch.type === 'reduce_intensity' && (!patch.targetId || patchTargetsExercise(patch, exercise)))) return { label: '降低强度', tone: 'sky' };
+  if (patches.some((patch) => patch.type === 'reduce_volume' && (!patch.targetId || patchTargetsExercise(patch, exercise)))) return { label: '控制总量', tone: 'sky' };
+  if (patches.some((patch) => patch.type === 'main_only' || patch.type === 'reduce_support')) return { label: '保留', tone: 'emerald' };
+  return null;
+};
+
+const temporaryPatchSummary = (patches: SessionPatch[], supportPlan: ReturnType<typeof buildSupportPlan>) => {
+  const supportCount = supportPreviewItems(supportPlan).length;
+  const summaries = new Set<string>();
+  patches.forEach((patch) => {
+    if (patch.type === 'reduce_support') summaries.add(supportCount ? `减少/跳过 ${supportCount} 个辅助内容` : '减少辅助内容');
+    else if (patch.type === 'main_only') summaries.add('主训练保留，纠偏和功能补丁本次跳过');
+    else if (patch.type === 'reduce_intensity') summaries.add('不主动加重，降低本次强度');
+    else if (patch.type === 'reduce_volume') summaries.add('不额外加组，控制本次总量');
+    else if (patch.type === 'substitute_exercise') summaries.add('高冲突动作会在训练中提示替代');
+    else if (patch.type === 'extend_rest') summaries.add('组间休息略延长');
+    else if (patch.type === 'skip_optional') summaries.add('跳过本次可选内容');
+  });
+  if (patches.length) summaries.add('只影响本次训练，不修改原模板');
+  return [...summaries];
+};
+
 const ChoiceRow = ({
   value,
   options,
@@ -167,6 +226,7 @@ export function TodayView({
   onCoachAction,
   onDismissCoachAction,
   temporarySessionAdjustmentActive,
+  pendingSessionPatches = [],
   onRevertTemporarySessionPatches,
 }: TodayViewProps) {
   const [coachActionFeedback, setCoachActionFeedback] = React.useState('');
@@ -231,6 +291,14 @@ export function TodayView({
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const trainingLevelAssessment = buildTrainingLevelAssessment({ history: analyticsHistory });
   const supportPlan = buildSupportPlan(data, selectedTemplate);
+  const temporaryAdjustmentSummaries = React.useMemo(
+    () => temporaryPatchSummary(pendingSessionPatches, supportPlan),
+    [pendingSessionPatches, supportPlan],
+  );
+  const temporarySkippedSupportItems = React.useMemo(() => {
+    if (!pendingSessionPatches.some((patch) => patch.type === 'reduce_support' || patch.type === 'main_only' || patch.type === 'skip_optional')) return [];
+    return supportPreviewItems(supportPlan);
+  }, [pendingSessionPatches, supportPlan]);
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
   const readinessScore = adjustedPlan.readinessResult?.score;
   const readinessReasons = adjustedPlan.readinessResult?.reasons || adjustedPlan.readiness.reasons || [];
@@ -653,25 +721,54 @@ export function TodayView({
             <Card className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-base font-semibold text-slate-950">训练预览</div>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">只展示今天开始训练前需要知道的核心安排。</p>
+                  <div className="text-base font-semibold text-slate-950">
+                    {pendingSessionPatches.length ? '训练预览 · 已应用本次调整' : '训练预览'}
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    {pendingSessionPatches.length ? '下方是开始训练时会使用的本次安排；只影响这次训练。' : '只展示今天开始训练前需要知道的核心安排。'}
+                  </p>
                 </div>
                 <StatusBadge tone="slate">{adjustedExercises.length} 个动作</StatusBadge>
               </div>
-              <div className="divide-y divide-slate-100">
-                {previewExercises.map((exercise, index) => (
-                  <div key={`${exercise.id}-${index}`} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-slate-950">{exerciseLabel(exercise)}</div>
-                      <div className="mt-1 text-xs text-slate-500">{formatExercisePrescription(exercise)}</div>
+              {pendingSessionPatches.length ? (
+                <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2">
+                  <div className="text-sm font-semibold text-sky-950">本次调整</div>
+                  <ul className="mt-1 space-y-1 text-xs leading-5 text-sky-900">
+                    {temporaryAdjustmentSummaries.map((summary) => (
+                      <li key={summary}>- {summary}</li>
+                    ))}
+                  </ul>
+                  {temporarySkippedSupportItems.length ? (
+                    <div className="mt-2 space-y-1 border-t border-sky-100 pt-2 text-xs leading-5 text-sky-900">
+                      {temporarySkippedSupportItems.slice(0, 3).map((item) => (
+                        <div key={item.id}>
+                          {item.name} · {item.label}
+                        </div>
+                      ))}
+                      {temporarySkippedSupportItems.length > 3 ? <div>还有 {temporarySkippedSupportItems.length - 3} 个辅助内容本次减少。</div> : null}
                     </div>
-                    {recoveryPreviewGuidance.get(exercise.id) ? (
-                      <StatusBadge tone={recoveryPreviewGuidance.get(exercise.id)?.tone}>{recoveryPreviewGuidance.get(exercise.id)?.label}</StatusBadge>
-                    ) : (
-                      <StatusBadge tone={exercise.warning ? 'amber' : 'slate'}>{formatRirLabel(exercise.targetRirText || '1–3')}</StatusBadge>
-                    )}
-                  </div>
-                ))}
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="divide-y divide-slate-100">
+                {previewExercises.map((exercise, index) => {
+                  const patchBadge = patchBadgeForExercise(exercise, pendingSessionPatches);
+                  return (
+                    <div key={`${exercise.id}-${index}`} className="flex items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-slate-950">{exerciseLabel(exercise)}</div>
+                        <div className="mt-1 text-xs text-slate-500">{formatExercisePrescription(exercise)}</div>
+                      </div>
+                      {patchBadge ? (
+                        <StatusBadge tone={patchBadge.tone}>{patchBadge.label}</StatusBadge>
+                      ) : recoveryPreviewGuidance.get(exercise.id) ? (
+                        <StatusBadge tone={recoveryPreviewGuidance.get(exercise.id)?.tone}>{recoveryPreviewGuidance.get(exercise.id)?.label}</StatusBadge>
+                      ) : (
+                        <StatusBadge tone={exercise.warning ? 'amber' : 'slate'}>{formatRirLabel(exercise.targetRirText || '1–3')}</StatusBadge>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               {hiddenExerciseCount > 0 ? (
                 <div className="rounded-lg bg-stone-50 px-3 py-2 text-sm text-slate-500">

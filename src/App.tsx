@@ -1045,6 +1045,7 @@ function App() {
                     onCoachAction={handleCoachAction}
                     onDismissCoachAction={dismissCoachAction}
                     temporarySessionAdjustmentActive={Boolean(pendingSessionPatches.length || data.activeSession?.appliedCoachActions?.length)}
+                    pendingSessionPatches={pendingSessionPatches}
                     onRevertTemporarySessionPatches={revertTemporarySessionPatches}
                     trainingIntelligenceSummary={trainingIntelligenceSummary}
                     trainingMode={data.trainingMode}
