@@ -1,6 +1,16 @@
 import React from 'react';
 import { Database, Trash2, Upload } from 'lucide-react';
-import { parseHealthImportFile, validateHealthImportFileBeforeParse } from '../engines/healthImportEngine';
+import {
+  getXmlImportSizeLimit,
+  parseHealthImportFile,
+  validateHealthImportFileBeforeParse,
+} from '../engines/healthImportEngine';
+import {
+  createAppleHealthStreamingImportJob,
+  isAppleHealthStreamingWorkerSupported,
+  type AppleHealthStreamingImportJob,
+  type AppleHealthStreamingImportProgress,
+} from '../engines/appleHealthStreamingImportEngine';
 import { buildHealthSummary } from '../engines/healthSummaryEngine';
 import { formatWeight } from '../engines/unitConversionEngine';
 import type { AppData, HealthImportBatch, HealthMetricSample, HealthMetricType, ImportedWorkoutSample } from '../models/training-model';
@@ -37,7 +47,7 @@ const xmlMetricOptions: Array<{ id: HealthMetricType; label: string }> = [
   { id: 'steps', label: '步数' },
   { id: 'active_energy', label: '活动能量' },
   { id: 'body_weight', label: '体重' },
-  { id: 'workout', label: 'workout' },
+  { id: 'workout', label: '外部活动' },
 ];
 
 const defaultXmlMetricTypes: HealthMetricType[] = ['sleep_duration', 'resting_heart_rate', 'hrv', 'steps', 'workout'];
@@ -104,6 +114,8 @@ export const getVisibleHealthImportWarnings = (warnings: string[], limit = HEALT
   hiddenWarningCount: Math.max(0, warnings.length - limit),
 });
 
+const formatImportBytes = (bytes = 0) => `${Math.round((bytes / (1024 * 1024)) * 10) / 10} MB`;
+
 export const HealthDataImportErrorState = ({
   detail,
   onRetry,
@@ -142,12 +154,14 @@ const readFileAsText = (file: File, setReader: (reader: FileReader | null) => vo
 function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const readerRef = React.useRef<FileReader | null>(null);
+  const streamingImportJobRef = React.useRef<AppleHealthStreamingImportJob | null>(null);
   const importJobRef = React.useRef<{ id: number; cancelled: boolean } | null>(null);
   const importJobSeqRef = React.useRef(0);
   const [preview, setPreview] = React.useState<HealthImportPreview | null>(null);
   const [message, setMessage] = React.useState('');
   const [importStatus, setImportStatus] = React.useState<HealthImportStatus>('idle');
   const [importError, setImportError] = React.useState('');
+  const [streamProgress, setStreamProgress] = React.useState<AppleHealthStreamingImportProgress | null>(null);
   const [pendingFileWarning, setPendingFileWarning] = React.useState<{ file: File; message: string } | null>(null);
   const [xmlDateRange, setXmlDateRange] = React.useState<XmlDateRangeOption>('30');
   const [xmlMetricTypes, setXmlMetricTypes] = React.useState<HealthMetricType[]>(defaultXmlMetricTypes);
@@ -183,6 +197,7 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
     () => () => {
       if (importJobRef.current) importJobRef.current.cancelled = true;
       if (readerRef.current && readerRef.current.readyState === 1) readerRef.current.abort();
+      streamingImportJobRef.current?.cancel();
     },
     []
   );
@@ -190,11 +205,14 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
   const clearImportState = () => {
     if (importJobRef.current) importJobRef.current.cancelled = true;
     if (readerRef.current && readerRef.current.readyState === 1) readerRef.current.abort();
+    streamingImportJobRef.current?.cancel();
     importJobRef.current = null;
     readerRef.current = null;
+    streamingImportJobRef.current = null;
     setPreview(null);
     setPendingFileWarning(null);
     setImportError('');
+    setStreamProgress(null);
     setImportStatus('idle');
     setMessage('');
     if (inputRef.current) inputRef.current.value = '';
@@ -208,11 +226,14 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
   const cancelImport = () => {
     if (importJobRef.current) importJobRef.current.cancelled = true;
     if (readerRef.current && readerRef.current.readyState === 1) readerRef.current.abort();
+    streamingImportJobRef.current?.cancel();
     importJobRef.current = null;
     readerRef.current = null;
+    streamingImportJobRef.current = null;
     setPreview(null);
     setPendingFileWarning(null);
     setImportError('');
+    setStreamProgress(null);
     setImportStatus('cancelled');
     setMessage('已取消导入，现有数据未改变。');
     if (inputRef.current) inputRef.current.value = '';
@@ -224,6 +245,7 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
     setPreview(null);
     setImportError('');
     setPendingFileWarning(null);
+    setStreamProgress(null);
 
     if (!validation.allowed) {
       setImportStatus('error');
@@ -247,36 +269,78 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
     let fileText = '';
     try {
       const isXml = validation.kind === 'xml' || file.name.toLowerCase().endsWith('.xml');
+      if (isXml) {
+        const xmlOptions = {
+          ...buildXmlDateOptions(xmlDateRange),
+          metricTypes: xmlMetricTypes,
+          includeWorkouts: xmlMetricTypes.includes('workout'),
+        };
+
+        if (!isAppleHealthStreamingWorkerSupported()) {
+          const limitBytes = validation.limitBytes || getXmlImportSizeLimit(validation.mobile);
+          if (file.size > limitBytes) {
+            setImportStatus('error');
+            setImportError('当前浏览器不支持后台解析大型 XML，请使用电脑端或 CSV/JSON 导入。');
+            setMessage('当前浏览器不支持后台解析大型 XML，请使用电脑端或 CSV/JSON 导入。');
+            return;
+          }
+
+          setImportStatus('reading');
+          setMessage('正在读取小型 Apple Health XML…');
+          fileText = await readFileAsText(file, (reader) => {
+            readerRef.current = reader;
+          });
+          if (job.cancelled || importJobRef.current?.id !== job.id) return;
+          setImportStatus('parsing');
+          setMessage('正在解析 Apple Health XML…');
+          const result = parseHealthImportFile(fileText, file.name, xmlOptions);
+          fileText = '';
+          if (job.cancelled || importJobRef.current?.id !== job.id) return;
+          setPreview(result);
+          setImportStatus('preview_ready');
+          setMessage(result.samples.length || result.workouts.length ? '已生成 Apple Health XML 导入预览。' : '没有找到可导入的健康数据。');
+          return;
+        }
+
+        setImportStatus('parsing');
+        setMessage(validation.message || '正在解析 Apple Health XML…大型 XML 会在后台分块解析，可能需要几分钟。');
+        const streamingJob = createAppleHealthStreamingImportJob(file, xmlOptions, {
+          onProgress: (progress) => {
+            if (importJobRef.current?.id !== job.id || job.cancelled) return;
+            setStreamProgress(progress);
+          },
+        });
+        streamingImportJobRef.current = streamingJob;
+        const result = await streamingJob.promise;
+        streamingImportJobRef.current = null;
+        if (job.cancelled || importJobRef.current?.id !== job.id) return;
+        setPreview(result);
+        setImportStatus('preview_ready');
+        setMessage(result.samples.length || result.workouts.length ? '已生成 Apple Health XML 导入预览。' : '没有找到可导入的健康数据。');
+        return;
+      }
+
       setImportStatus('reading');
-      setMessage(isXml ? '正在读取 Apple Health XML…' : '正在读取文件…');
+      setMessage('正在读取文件…');
       fileText = await readFileAsText(file, (reader) => {
         readerRef.current = reader;
       });
       if (job.cancelled || importJobRef.current?.id !== job.id) return;
 
       setImportStatus('parsing');
-      setMessage(isXml ? '正在解析 Apple Health XML…' : '正在解析健康数据…');
+      setMessage('正在解析健康数据…');
       await new Promise<void>((resolve) => (typeof window === 'undefined' ? resolve() : window.setTimeout(resolve, 0)));
       if (job.cancelled || importJobRef.current?.id !== job.id) return;
 
-      const result = parseHealthImportFile(fileText, file.name, isXml ? {
-        ...buildXmlDateOptions(xmlDateRange),
-        metricTypes: xmlMetricTypes,
-        includeWorkouts: xmlMetricTypes.includes('workout'),
-      } : undefined);
+      const result = parseHealthImportFile(fileText, file.name);
       fileText = '';
       if (job.cancelled || importJobRef.current?.id !== job.id) return;
       setPreview(result);
       setImportStatus('preview_ready');
-      setMessage(
-        result.samples.length || result.workouts.length
-          ? isXml
-            ? '已识别 Apple Health XML。当前只导入对训练恢复有用的关键指标。'
-            : '文件已解析，请确认后导入。'
-          : '没有找到可导入的健康数据。'
-      );
+      setMessage(result.samples.length || result.workouts.length ? '文件已解析，请确认后导入。' : '没有找到可导入的健康数据。');
     } catch (error) {
       fileText = '';
+      streamingImportJobRef.current = null;
       if ((error as Error)?.name === 'AbortError' || job.cancelled) {
         setImportStatus('cancelled');
         setMessage('已取消导入，现有数据未改变。');
@@ -395,7 +459,7 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
             Safari PWA 不能直接读取 HealthKit；导入数据仅作恢复和活动负荷参考，不作医疗诊断。
           </InlineNotice>
           <InlineNotice tone="amber" title="Apple Health XML">
-            Apple Health 官方导出的 export.xml 可能很大。手机端建议只导入最近 30 天或 90 天数据；完整多年数据建议在电脑端导入。
+            Apple Health 官方导出的 export.xml 可能很大。现在会在后台分块解析；手机端仍建议只导入最近 30 天或 90 天数据，CSV/JSON 仍然最快。
           </InlineNotice>
           <div className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
             <label className="flex items-center justify-between gap-3">
@@ -478,13 +542,26 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
                 );
               })}
             </div>
-            <div className="mt-2 text-xs leading-5 text-slate-500">默认导入最近 30 天的睡眠、静息心率、HRV、步数和 workout。</div>
+            <div className="mt-2 text-xs leading-5 text-slate-500">默认导入最近 30 天的睡眠、静息心率、HRV、步数和外部活动。</div>
           </div>
 
           {importBusy ? (
             <InlineNotice tone="amber" title={importStatus === 'reading' ? '正在读取文件' : '正在解析 Apple Health XML'}>
               <div className="space-y-2">
                 <div>{importStatus === 'reading' ? '正在读取文件…' : '正在解析 Apple Health XML…'} 解析完成前不能确认导入。</div>
+                {streamProgress ? (
+                  <div className="rounded-md bg-white p-2 text-xs leading-5 text-slate-700">
+                    <div className="font-semibold text-slate-950">
+                      进度 {streamProgress.totalBytes ? Math.min(100, Math.round((streamProgress.processedBytes / streamProgress.totalBytes) * 100)) : 0}%
+                    </div>
+                    <div>
+                      已扫描 {formatImportBytes(streamProgress.processedBytes)} / {formatImportBytes(streamProgress.totalBytes)}
+                    </div>
+                    <div>
+                      已识别记录 {streamProgress.detectedRecordCount} 条 / 已导入样本 {streamProgress.importedSampleCount} 条 / 外部活动 {streamProgress.importedWorkoutCount} 条
+                    </div>
+                  </div>
+                ) : null}
                 <ActionButton variant="secondary" onClick={cancelImport}>
                   取消导入
                 </ActionButton>

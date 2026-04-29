@@ -11,21 +11,21 @@ import {
 const fileLike = (name: string, size: number, type = '') => ({ name, size, type }) as File;
 
 describe('health import mobile stability', () => {
-  it('blocks large Apple Health XML on mobile before parsing', () => {
+  it('warns large Apple Health XML on mobile so streaming import can run', () => {
     const validation = validateHealthImportFileBeforeParse(fileLike('export.xml', XML_IMPORT_MOBILE_HARD_LIMIT_BYTES + 1, 'text/xml'), { isMobile: true });
 
-    expect(validation.allowed).toBe(false);
-    expect(validation.severity).toBe('blocked');
-    expect(validation.message).toContain('文件过大');
+    expect(validation.allowed).toBe(true);
+    expect(validation.severity).toBe('warning');
+    expect(validation.message).toContain('后台分块解析');
   });
 
-  it('warns but allows large Apple Health XML on desktop after confirmation', () => {
+  it('warns but allows large Apple Health XML on desktop for streaming import', () => {
     const warning = validateHealthImportFileBeforeParse(fileLike('export.xml', XML_IMPORT_DESKTOP_WARNING_BYTES + 1, 'text/xml'), { isMobile: false });
     const forced = validateHealthImportFileBeforeParse(fileLike('export.xml', XML_IMPORT_DESKTOP_WARNING_BYTES + 1, 'text/xml'), { isMobile: false, force: true });
 
     expect(warning.allowed).toBe(true);
     expect(warning.severity).toBe('warning');
-    expect(warning.requiresConfirmation).toBe(true);
+    expect(warning.requiresConfirmation).toBeFalsy();
     expect(forced.allowed).toBe(true);
     expect(forced.requiresConfirmation).toBeFalsy();
   });

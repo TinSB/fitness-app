@@ -78,12 +78,12 @@ export const validateHealthImportFileBeforeParse = (
   const limitBytes = getXmlImportSizeLimit(mobile);
   if (mobile && file.size > limitBytes) {
     return {
-      allowed: false,
+      allowed: true,
       kind,
-      severity: 'blocked',
+      severity: 'warning',
       limitBytes,
       mobile,
-      message: '文件过大，手机端可能白屏或卡死。请选择较小的 XML、CSV/JSON，或在电脑端导入。',
+      message: '大型 XML 会在后台分块解析，可能需要几分钟。手机端建议优先导入最近 30–90 天数据。',
     };
   }
 
@@ -92,10 +92,10 @@ export const validateHealthImportFileBeforeParse = (
       allowed: true,
       kind,
       severity: 'warning',
-      requiresConfirmation: true,
+      requiresConfirmation: false,
       limitBytes,
       mobile,
-      message: '这个 Apple Health XML 文件较大，解析可能耗时较长。建议先导入最近 30–90 天数据，或确认后继续。',
+      message: '大型 XML 会在后台分块解析，可能需要几分钟。CSV/JSON 仍然是最快的导入方式。',
     };
   }
 
