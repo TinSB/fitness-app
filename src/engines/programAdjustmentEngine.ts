@@ -420,6 +420,20 @@ const resolvePrimarySourceTemplateId = (changes: AdjustmentChange[], fallbackId:
   return ranked[0]?.[0] || fallbackId;
 };
 
+const riskLevelForDraftChange = (change: AdjustmentChange): 'low' | 'medium' | 'high' => {
+  if (change.type === 'swap_exercise' || change.type === 'add_new_exercise') return change.dayTemplateId ? 'medium' : 'high';
+  if (change.type === 'add_sets' || change.type === 'remove_sets') return Math.abs(number(change.setsDelta || change.sets)) >= 3 ? 'medium' : 'low';
+  if (change.type === 'reduce_support' || change.type === 'increase_support') return 'low';
+  return 'low';
+};
+
+const riskLevelForDraft = (changes: AdjustmentChange[]): 'low' | 'medium' | 'high' => {
+  if (!changes.length) return 'high';
+  if (changes.some((change) => riskLevelForDraftChange(change) === 'high')) return 'high';
+  if (changes.some((change) => riskLevelForDraftChange(change) === 'medium')) return 'medium';
+  return 'low';
+};
+
 export const createAdjustmentDraftFromRecommendations = (
   recommendations: WeeklyActionRecommendation[],
   sourceProgramTemplate: TrainingTemplate,
@@ -435,11 +449,14 @@ export const createAdjustmentDraftFromRecommendations = (
   const resolvedSourceTemplate = findTemplateById(availableTemplates, sourceProgramTemplateId) || sourceProgramTemplate;
   const notes = changes.flatMap((change) => (change.previewNote ? [change.previewNote] : []));
 
-  return {
+  const draft: ProgramAdjustmentDraft = {
     id: makeId('adjustment-draft'),
     createdAt: new Date().toISOString(),
-    status: 'previewed',
+    status: 'ready_to_apply',
     sourceProgramTemplateId: resolvedSourceTemplate.id,
+    sourceTemplateId: resolvedSourceTemplate.id,
+    sourceRecommendationId: recommendations[0]?.id,
+    experimentalTemplateName: `${formatProgramTemplateName(resolvedSourceTemplate)} 实验版`,
     sourceTemplateSnapshotHash: hashProgramTemplate(resolvedSourceTemplate),
     sourceTemplateUpdatedAt: resolvedSourceTemplate.updatedAt || new Date().toISOString(),
     title: `${formatProgramTemplateName(resolvedSourceTemplate)} 下周实验调整`,
@@ -453,7 +470,13 @@ export const createAdjustmentDraftFromRecommendations = (
       : notes.length
         ? 'medium'
         : highestConfidence(recommendations),
+    riskLevel: riskLevelForDraft(changes),
+    explanation: actionable.map((item) => item.reason || item.recommendation).filter(Boolean).join('；') || '根据近期训练记录生成，应用前需要用户确认。',
     notes: notes.length ? notes : actionable.length ? [] : ['当前建议更适合作为人工参考，暂不生成自动调整。'],
+  };
+  return {
+    ...draft,
+    diffPreview: buildAdjustmentDiff(draft, resolvedSourceTemplate, context.programTemplate || DEFAULT_PROGRAM_TEMPLATE, availableTemplates),
   };
 };
 
@@ -755,7 +778,7 @@ export const applyAdjustmentDraft = (
       message: '原模板已变化，请重新生成调整预览。',
       draft: {
         ...draft,
-        status: 'stale',
+        status: 'expired',
       },
     };
   }
@@ -831,6 +854,8 @@ export const applyAdjustmentDraft = (
     mainChangeSummary: experimentalTemplate.adjustmentSummary,
     selectedRecommendationIds: draft.selectedRecommendationIds,
     changes: appliedChanges,
+    status: 'applied',
+    explanation: draft.explanation,
     rollbackAvailable: true,
     sourceProgramSnapshot: cloneProgram(currentProgramTemplate),
   };
@@ -859,6 +884,7 @@ export const rollbackAdjustment = (
   restoredProgramTemplate: historyItem.sourceProgramSnapshot ? cloneProgram(historyItem.sourceProgramSnapshot) : undefined,
   updatedHistoryItem: {
     ...historyItem,
+    status: 'rolled_back',
     rollbackAvailable: false,
     rolledBackAt: new Date().toISOString(),
   },

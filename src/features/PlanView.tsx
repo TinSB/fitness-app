@@ -3,6 +3,7 @@ import { Play, RotateCcw } from 'lucide-react';
 import { DEFAULT_PROGRAM_TEMPLATE } from '../data/trainingData';
 import { classNames, enrichExercise, findTemplate, getPrimaryMuscles } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
+import { buildAdjustmentDiff } from '../engines/programAdjustmentEngine';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
@@ -37,6 +38,7 @@ import type {
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { Drawer } from '../ui/Drawer';
 import { EmptyState } from '../ui/EmptyState';
 import { ListItem } from '../ui/ListItem';
 import { MetricCard } from '../ui/MetricCard';
@@ -68,6 +70,9 @@ interface PlanViewProps {
   onStartTemplate: (id: string) => void;
   onUpdateExercise: (templateId: string, exerciseIndex: number, field: string, value: string) => void;
   onResetTemplates: () => void;
+  onApplyProgramAdjustmentDraft?: (draft: ProgramAdjustmentDraft) => void;
+  onDismissProgramAdjustmentDraft?: (draftId: string) => void;
+  onDeleteProgramAdjustmentDraft?: (draftId: string) => void;
   onCoachAction?: (action: CoachAction) => void;
   onDismissCoachAction?: (action: CoachAction) => void;
   onRollbackProgramAdjustment?: (historyItemId: string) => void;
@@ -97,6 +102,29 @@ const formatChangeImpact = (change: AdjustmentChange) => {
 };
 
 const formatChangeReason = (change: AdjustmentChange) => change.reason || change.previewNote || '根据近期训练记录生成。';
+
+const statusView = (status?: ProgramAdjustmentDraft['status']) => {
+  if (status === 'recommendation') return { label: '建议', tone: 'sky' as const };
+  if (status === 'draft_created') return { label: '草案已生成', tone: 'sky' as const };
+  if (status === 'ready_to_apply' || status === 'previewed' || status === 'draft') return { label: '待确认应用', tone: 'amber' as const };
+  if (status === 'applied') return { label: '已应用实验模板', tone: 'emerald' as const };
+  if (status === 'dismissed') return { label: '已暂不采用', tone: 'slate' as const };
+  if (status === 'rolled_back') return { label: '已回滚', tone: 'slate' as const };
+  if (status === 'expired' || status === 'stale') return { label: '已过期', tone: 'amber' as const };
+  return { label: '待确认应用', tone: 'amber' as const };
+};
+
+const riskView = (risk?: 'low' | 'medium' | 'high') => {
+  if (risk === 'high') return { label: '风险：高', tone: 'rose' as const, explanation: '变化较大或需要人工确认，建议先查看差异。' };
+  if (risk === 'medium') return { label: '风险：中等', tone: 'amber' as const, explanation: '变化不大，但建议观察一周反馈。' };
+  return { label: '风险：低', tone: 'emerald' as const, explanation: '调整幅度较小，应用后仍建议观察一周。' };
+};
+
+const strongestRisk = (levels: Array<'low' | 'medium' | 'high'>): 'low' | 'medium' | 'high' => {
+  if (levels.includes('high')) return 'high';
+  if (levels.includes('medium')) return 'medium';
+  return 'low';
+};
 
 const adjustmentStatusTone = (item: ProgramAdjustmentHistoryItem): 'emerald' | 'amber' | 'slate' => {
   if (item.rolledBackAt) return 'slate';
@@ -150,12 +178,19 @@ export function PlanView({
   onStartTemplate,
   onUpdateExercise,
   onResetTemplates,
+  onApplyProgramAdjustmentDraft,
+  onDismissProgramAdjustmentDraft,
+  onDeleteProgramAdjustmentDraft,
   onCoachAction,
   onDismissCoachAction,
   onRollbackProgramAdjustment,
 }: PlanViewProps) {
   const [rollbackTarget, setRollbackTarget] = React.useState<ProgramAdjustmentHistoryItem | null>(null);
+  const [applyTarget, setApplyTarget] = React.useState<ProgramAdjustmentDraft | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<ProgramAdjustmentDraft | null>(null);
+  const [diffTarget, setDiffTarget] = React.useState<ProgramAdjustmentDraft | null>(null);
   const adjustmentSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const draftSectionRef = React.useRef<HTMLDivElement | null>(null);
   const coachActionsSectionRef = React.useRef<HTMLDivElement | null>(null);
   const volumeSectionRef = React.useRef<HTMLDivElement | null>(null);
   const [highlightTarget, setHighlightTarget] = React.useState<PlanTarget | null>(() => (target?.highlight === false ? null : target || null));
@@ -212,7 +247,7 @@ export function PlanView({
         ? volumeSectionRef.current || adjustmentSectionRef.current
         : nextTarget.section === 'coach_actions'
           ? coachActionsSectionRef.current || adjustmentSectionRef.current
-          : adjustmentSectionRef.current;
+          : draftSectionRef.current || adjustmentSectionRef.current;
     if (typeof window !== 'undefined') {
       window.setTimeout(() => node?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
     }
@@ -226,6 +261,26 @@ export function PlanView({
     if (!rollbackTarget || !onRollbackProgramAdjustment) return;
     onRollbackProgramAdjustment(rollbackTarget.id);
     setRollbackTarget(null);
+  };
+
+  const confirmApplyDraft = () => {
+    if (!applyTarget || !onApplyProgramAdjustmentDraft) return;
+    onApplyProgramAdjustmentDraft(applyTarget);
+    setApplyTarget(null);
+  };
+
+  const confirmDeleteDraft = () => {
+    if (!deleteTarget || !onDeleteProgramAdjustmentDraft) return;
+    onDeleteProgramAdjustmentDraft(deleteTarget.id);
+    setDeleteTarget(null);
+  };
+
+  const sourceTemplateForDraft = (draft: ProgramAdjustmentDraft) =>
+    data.templates.find((template) => template.id === draft.sourceProgramTemplateId) || selectedTemplate;
+
+  const diffForDraft = (draft: ProgramAdjustmentDraft) => {
+    const sourceTemplate = sourceTemplateForDraft(draft);
+    return draft.diffPreview || buildAdjustmentDiff(draft, sourceTemplate, data.programTemplate || DEFAULT_PROGRAM_TEMPLATE, data.templates);
   };
 
   const renderCurrentTemplate = () => (
@@ -243,13 +298,22 @@ export function PlanView({
             </p>
             {activeHistoryItem ? (
               <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-sm leading-6 text-amber-950">
+                当前计划：实验模板
+                <br />
                 来源模板：{formatTemplateName(activeHistoryItem.sourceProgramTemplateName || activeHistoryItem.sourceProgramTemplateId)}
+                <br />
+                应用时间：{formatDateLabel(activeHistoryItem.appliedAt)}
                 <br />
                 主要调整：{activeHistoryItem.mainChangeSummary || activeHistoryItem.changes?.[0]?.reason || '实验模板调整'}
               </p>
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
+            {activeHistoryItem?.rollbackAvailable && onRollbackProgramAdjustment ? (
+              <ActionButton variant="danger" onClick={() => setRollbackTarget(activeHistoryItem)}>
+                回滚到原模板
+              </ActionButton>
+            ) : null}
             <ActionButton variant="secondary" onClick={onResetTemplates}>
               <RotateCcw className="h-4 w-4" />
               恢复默认
@@ -433,32 +497,72 @@ export function PlanView({
     </PageSection>
   );
 
-  const renderAdjustmentSuggestion = (draft: ProgramAdjustmentDraft) => {
+  const renderAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
     const highlighted = highlightTarget?.section === 'adjustment_drafts' && highlightTarget.draftId === draft.id;
+    const diff = diffForDraft(draft);
+    const risk = riskView(draft.riskLevel || strongestRisk(diff.changes.map((change) => change.riskLevel)));
+    const appliedHistory = adjustmentHistory.find((item) => item.experimentalProgramTemplateId === draft.experimentalProgramTemplateId);
+    const canApply = Boolean(onApplyProgramAdjustmentDraft && (draft.status === 'ready_to_apply' || draft.status === 'previewed' || draft.status === 'draft_created' || draft.status === 'draft'));
+    const isApplied = draft.status === 'applied';
+    const isRolledBack = draft.status === 'rolled_back' || Boolean(appliedHistory?.rolledBackAt);
+    const status = statusView(isRolledBack ? 'rolled_back' : draft.status);
     return (
-    <Card key={draft.id} className={classNames('space-y-3 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
-      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-slate-950">{draft.title}</h3>
-            <StatusBadge tone={draft.status === 'stale' ? 'amber' : 'sky'}>{draft.status === 'stale' ? '已过期' : '草稿'}</StatusBadge>
-            <StatusBadge tone="amber">需确认</StatusBadge>
-            <StatusBadge tone="slate">置信度：{formatConfidence(draft.confidence)}</StatusBadge>
+      <Card key={draft.id} className={classNames('space-y-3 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold text-slate-950">{draft.title}</h3>
+              <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+              <StatusBadge tone={risk.tone}>{risk.label}</StatusBadge>
+              <StatusBadge tone="slate">置信度：{formatConfidence(draft.confidence)}</StatusBadge>
+            </div>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{draft.explanation || draft.summary}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              来源建议：{draft.sourceRecommendationId || draft.selectedRecommendationIds[0] ? '教练自动调整建议' : '手动调整草案'} · 创建时间：{formatDateLabel(draft.createdAt)}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{risk.explanation}</p>
           </div>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{draft.summary}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">自动调整草案不会自动覆盖当前计划；采用后会生成实验模板并保留回滚。</p>
+          <div className="flex flex-wrap gap-2">
+            <ActionButton size="sm" variant="secondary" onClick={() => setDiffTarget(draft)}>
+              查看差异
+            </ActionButton>
+            {canApply ? (
+              <ActionButton size="sm" variant="primary" onClick={() => setApplyTarget(draft)}>
+                应用为实验模板
+              </ActionButton>
+            ) : null}
+            {isApplied && draft.experimentalProgramTemplateId ? (
+              <ActionButton size="sm" variant="secondary" onClick={() => onSelectTemplate(draft.experimentalProgramTemplateId!)}>
+                查看实验模板
+              </ActionButton>
+            ) : null}
+            {isApplied && appliedHistory?.rollbackAvailable && !appliedHistory.rolledBackAt && onRollbackProgramAdjustment ? (
+              <ActionButton size="sm" variant="danger" onClick={() => setRollbackTarget(appliedHistory)}>
+                回滚到原模板
+              </ActionButton>
+            ) : null}
+            {!isApplied && !isRolledBack && draft.status !== 'dismissed' && onDismissProgramAdjustmentDraft ? (
+              <ActionButton size="sm" variant="secondary" onClick={() => onDismissProgramAdjustmentDraft(draft.id)}>
+                暂不采用
+              </ActionButton>
+            ) : null}
+            {!isApplied && !isRolledBack && onDeleteProgramAdjustmentDraft ? (
+              <ActionButton size="sm" variant="ghost" onClick={() => setDeleteTarget(draft)}>
+                删除草案
+              </ActionButton>
+            ) : null}
+          </div>
         </div>
-      </div>
-      <div className="space-y-2">
-        {draft.changes.slice(0, 4).map((change) => (
-          <div key={change.id} className="rounded-lg bg-stone-50 p-3">
-            <div className="text-sm font-semibold text-slate-950">{formatAdjustmentChangeLabel(change.type)}</div>
-            <div className="mt-1 text-xs leading-5 text-slate-600">原因：{formatChangeReason(change)}</div>
-            <div className="mt-1 text-xs leading-5 text-slate-600">影响：{formatChangeImpact(change)}</div>
-          </div>
-        ))}
-      </div>
-    </Card>
+        <div className="space-y-2">
+          {draft.changes.slice(0, 4).map((change) => (
+            <div key={change.id} className="rounded-lg bg-stone-50 p-3">
+              <div className="text-sm font-semibold text-slate-950">{formatAdjustmentChangeLabel(change.type)}</div>
+              <div className="mt-1 text-xs leading-5 text-slate-600">原因：{formatChangeReason(change)}</div>
+              <div className="mt-1 text-xs leading-5 text-slate-600">影响：{formatChangeImpact(change)}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
     );
   };
 
@@ -566,6 +670,8 @@ export function PlanView({
     </PageSection>
   );
 
+  const activeDiff = diffTarget ? diffForDraft(diffTarget) : null;
+
   return (
     <ResponsivePageLayout>
       <PageHeader eyebrow="计划" title="计划管理中心" description="回答“我以后怎么练”：当前计划、周期推进、训练日模板和实验版本。" />
@@ -603,8 +709,8 @@ export function PlanView({
           </PageSection>
 
           <div ref={adjustmentSectionRef} className="scroll-mt-24">
-            <PageSection title="调整建议" description="自动调整草案入口。每条建议都显示原因和影响，采用前需要确认，不会自动覆盖计划。">
-              {planCoachActionViewModel.pending.length || volumeAdaptationItems.length || adjustmentDrafts.length ? (
+            <PageSection title="调整建议" description="这里是还没有生成草案的建议；只有点击生成后，才会进入下方调整草案区。">
+              {planCoachActionViewModel.pending.length || volumeAdaptationItems.length ? (
                 <div className="space-y-3">
                   {planCoachActionViewModel.pending.length ? (
                     <div
@@ -626,10 +732,19 @@ export function PlanView({
                     </div>
                   ) : null}
                   {renderTrainingIntelligenceVolume()}
-                  {adjustmentDrafts.map(renderAdjustmentSuggestion)}
                 </div>
               ) : (
-                <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成自动调整草案；你确认后才会应用。" />
+                <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里提示可生成草案的建议。" />
+              )}
+            </PageSection>
+          </div>
+
+          <div ref={draftSectionRef} className="scroll-mt-24">
+            <PageSection title="调整草案" description="草案是可应用前的预览。应用后会生成实验模板，原模板保留，可回滚。">
+              {adjustmentDrafts.length ? (
+                <div className="space-y-3">{adjustmentDrafts.map(renderAdjustmentDraft)}</div>
+              ) : (
+                <EmptyState title="暂无调整草案" description="点击“生成调整草案”后，新草案会出现在这里；应用前仍需要确认。" />
               )}
             </PageSection>
           </div>
@@ -638,6 +753,68 @@ export function PlanView({
           {renderVersionHistory()}
         </aside>
       </div>
+
+      <Drawer open={Boolean(diffTarget && activeDiff)} title="查看调整差异" onClose={() => setDiffTarget(null)}>
+        {diffTarget && activeDiff ? (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-950">{activeDiff.title}</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{activeDiff.summary}</p>
+            </div>
+            {activeDiff.changes.map((change) => {
+              const risk = riskView(change.riskLevel);
+              return (
+                <Card key={change.changeId} className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge tone="sky">{change.label}</StatusBadge>
+                    <StatusBadge tone={risk.tone}>{risk.label}</StatusBadge>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg bg-stone-50 p-3">
+                      <div className="text-xs font-semibold text-slate-500">原计划</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-950">{change.before}</div>
+                    </div>
+                    <div className="rounded-lg bg-emerald-50 p-3">
+                      <div className="text-xs font-semibold text-emerald-700">调整后</div>
+                      <div className="mt-1 text-sm font-semibold text-emerald-950">{change.after}</div>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-6 text-slate-600">原因：{change.reason || diffTarget.explanation || '根据近期训练记录生成。'}</p>
+                  <p className="text-xs leading-5 text-slate-500">{risk.explanation}</p>
+                </Card>
+              );
+            })}
+          </div>
+        ) : null}
+      </Drawer>
+
+      {applyTarget ? (
+        <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
+          <ConfirmDialog
+            title="应用实验模板？"
+            description="这会基于当前计划生成实验模板，不会删除原计划。之后可回滚。"
+            confirmText="应用实验模板"
+            cancelText="取消"
+            variant="default"
+            onCancel={() => setApplyTarget(null)}
+            onConfirm={confirmApplyDraft}
+          />
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
+          <ConfirmDialog
+            title="删除这份调整草案？"
+            description="删除后这份草案不会再显示；不会影响原计划、实验模板或历史训练。"
+            confirmText="删除草案"
+            cancelText="取消"
+            variant="danger"
+            onCancel={() => setDeleteTarget(null)}
+            onConfirm={confirmDeleteDraft}
+          />
+        </div>
+      ) : null}
 
       {rollbackTarget ? (
         <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">

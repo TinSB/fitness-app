@@ -183,7 +183,7 @@ describe('programAdjustmentEngine', () => {
 
     const result = applyAdjustmentDraft(draft, changedTemplate, clone(DEFAULT_PROGRAM_TEMPLATE), [changedTemplate]);
     expect(result.ok).toBe(false);
-    expect(result.draft.status).toBe('stale');
+    expect(result.draft.status).toBe('expired');
     expect(result.message).toContain('重新生成');
   });
 

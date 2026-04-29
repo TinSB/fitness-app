@@ -692,8 +692,8 @@ function App() {
       setData((current) => ({
         ...current,
         programAdjustmentDrafts: [
-          ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
           result.draft,
+          ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
         ],
       }));
       showAppToast(result.message || '计划调整失败，请重新生成预览。', 'danger');
@@ -708,12 +708,19 @@ function App() {
       activeProgramTemplateId: experimentalTemplate.id,
       programTemplate: updatedProgramTemplate,
       programAdjustmentDrafts: [
-        ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
         result.draft,
+        ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
       ],
       programAdjustmentHistory: [historyItem, ...(current.programAdjustmentHistory || [])],
     }));
-    showAppToast('已生成下周实验模板。', 'success');
+    setPlanTarget({
+      section: 'adjustment_drafts',
+      draftId: result.draft.id,
+      highlight: true,
+      version: Date.now(),
+    });
+    setActiveTab('plan');
+    showAppToast('已应用实验模板，可随时回滚。', 'success');
   };
 
   const rollbackProgramAdjustment = async (historyItemId: string) => {
@@ -736,8 +743,31 @@ function App() {
       programAdjustmentHistory: (current.programAdjustmentHistory || []).map((item) =>
         item.id === updatedHistoryItem.id ? updatedHistoryItem : item
       ),
+      programAdjustmentDrafts: (current.programAdjustmentDrafts || []).map((draft) =>
+        draft.experimentalProgramTemplateId === updatedHistoryItem.experimentalProgramTemplateId
+          ? { ...draft, status: 'rolled_back' }
+          : draft
+      ),
     }));
     showAppToast('已回滚到原模板。', 'success');
+  };
+
+  const dismissProgramAdjustmentDraft = (draftId: string) => {
+    setData((current) => ({
+      ...current,
+      programAdjustmentDrafts: (current.programAdjustmentDrafts || []).map((draft) =>
+        draft.id === draftId ? { ...draft, status: 'dismissed' } : draft
+      ),
+    }));
+    showAppToast('已暂不采用这份调整草案。', 'info');
+  };
+
+  const deleteProgramAdjustmentDraft = (draftId: string) => {
+    setData((current) => ({
+      ...current,
+      programAdjustmentDrafts: (current.programAdjustmentDrafts || []).filter((draft) => draft.id !== draftId),
+    }));
+    showAppToast('已删除调整草案。', 'success');
   };
 
   const updateUserProfile = (field: string, value: string) => {
@@ -919,12 +949,17 @@ function App() {
 
     try {
       const { createAdjustmentDraftFromRecommendations } = await import('./engines/programAdjustmentEngine');
-      const draft = createAdjustmentDraftFromRecommendations([draftInput.recommendation], draftInput.sourceTemplate, {
+      const { buildAdjustmentDiff } = await import('./engines/programAdjustmentEngine');
+      const baseDraft = createAdjustmentDraftFromRecommendations([draftInput.recommendation], draftInput.sourceTemplate, {
         programTemplate: data.programTemplate,
         templates: data.templates,
         screeningProfile: data.screeningProfile,
         painPatterns: recoveryPainPatterns,
       });
+      const draft = {
+        ...baseDraft,
+        diffPreview: buildAdjustmentDiff(baseDraft, draftInput.sourceTemplate, data.programTemplate, data.templates),
+      };
       if (!draft.changes.length) {
         setPlanTarget({
           section: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
@@ -1274,6 +1309,9 @@ function App() {
                       onStartTemplate={(id) => startSession(id)}
                       onUpdateExercise={updateTemplateExercise}
                       onResetTemplates={resetTemplates}
+                      onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
+                      onDismissProgramAdjustmentDraft={dismissProgramAdjustmentDraft}
+                      onDeleteProgramAdjustmentDraft={deleteProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
                     />
                   </Suspense>

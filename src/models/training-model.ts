@@ -912,7 +912,16 @@ export interface ProgramAdjustmentPreview {
   confidence: EstimateConfidence;
 }
 
-export type AdjustmentApplicationStatus = 'draft' | 'previewed' | 'applied' | 'rolled_back' | 'dismissed' | 'stale';
+export type PlanAdjustmentDraftStatus =
+  | 'recommendation'
+  | 'draft_created'
+  | 'ready_to_apply'
+  | 'applied'
+  | 'dismissed'
+  | 'expired'
+  | 'rolled_back';
+
+export type AdjustmentApplicationStatus = PlanAdjustmentDraftStatus | 'draft' | 'previewed' | 'stale';
 
 export type AdjustmentChangeType =
   | 'add_sets'
@@ -952,7 +961,10 @@ export interface ProgramAdjustmentDraft {
   createdAt: string;
   status: AdjustmentApplicationStatus;
   sourceProgramTemplateId: string;
+  sourceTemplateId?: string;
+  sourceRecommendationId?: string;
   experimentalProgramTemplateId?: string;
+  experimentalTemplateName?: string;
   sourceTemplateSnapshotHash?: string;
   sourceTemplateUpdatedAt?: string;
   title: string;
@@ -960,6 +972,9 @@ export interface ProgramAdjustmentDraft {
   selectedRecommendationIds: string[];
   changes: AdjustmentChange[];
   confidence: EstimateConfidence;
+  riskLevel?: 'low' | 'medium' | 'high';
+  explanation?: string;
+  diffPreview?: ProgramAdjustmentDiff;
   notes: string[];
 }
 
@@ -973,6 +988,8 @@ export interface ProgramAdjustmentHistoryItem {
   mainChangeSummary?: string;
   selectedRecommendationIds: string[];
   changes: AdjustmentChange[];
+  status?: PlanAdjustmentDraftStatus;
+  explanation?: string;
   rollbackAvailable: boolean;
   rolledBackAt?: string;
   sourceProgramSnapshot?: ProgramTemplate;

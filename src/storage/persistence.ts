@@ -604,7 +604,18 @@ const sanitizeRestTimerState = (timer: unknown): RestTimerState | null => {
   };
 };
 
-const ADJUSTMENT_STATUSES = ['draft', 'previewed', 'applied', 'rolled_back', 'dismissed', 'stale'] as const;
+const ADJUSTMENT_STATUSES = [
+  'recommendation',
+  'draft_created',
+  'ready_to_apply',
+  'applied',
+  'dismissed',
+  'expired',
+  'rolled_back',
+  'draft',
+  'previewed',
+  'stale',
+] as const;
 const ADJUSTMENT_CHANGE_TYPES = ['add_sets', 'remove_sets', 'add_new_exercise', 'swap_exercise', 'reduce_support', 'increase_support', 'keep'] as const;
 
 const sanitizeAdjustmentChange = (entry: unknown, fallbackId: string) => {
@@ -643,7 +654,10 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
       createdAt: pickString(raw.createdAt, new Date().toISOString()),
       status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'draft'),
       sourceProgramTemplateId: pickString(raw.sourceProgramTemplateId),
+      sourceTemplateId: pickString(raw.sourceTemplateId) || undefined,
+      sourceRecommendationId: pickString(raw.sourceRecommendationId) || undefined,
       experimentalProgramTemplateId: pickString(raw.experimentalProgramTemplateId) || undefined,
+      experimentalTemplateName: pickString(raw.experimentalTemplateName) || undefined,
       sourceTemplateSnapshotHash: pickString(raw.sourceTemplateSnapshotHash) || undefined,
       sourceTemplateUpdatedAt: pickString(raw.sourceTemplateUpdatedAt) || undefined,
       title: pickString(raw.title, '下周实验调整'),
@@ -651,6 +665,8 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
       selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
       changes: pickArray(raw.changes).map((change, index) => sanitizeAdjustmentChange(change, `${id}-change-${index + 1}`)),
       confidence: pickEnum(raw.confidence, ['low', 'medium', 'high'] as const, 'low'),
+      riskLevel: pickEnum(raw.riskLevel, ['low', 'medium', 'high'] as const, 'low'),
+      explanation: pickString(raw.explanation) || undefined,
       notes: pickStringArray(raw.notes),
     };
   });
@@ -673,6 +689,8 @@ const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHi
         mainChangeSummary: pickString(raw.mainChangeSummary) || undefined,
         selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
         changes: pickArray(raw.changes).map((change, index) => sanitizeAdjustmentChange(change, `${id}-change-${index + 1}`)),
+        status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'applied'),
+        explanation: pickString(raw.explanation) || undefined,
         rollbackAvailable: Boolean(raw.rollbackAvailable) && !raw.rolledBackAt,
         rolledBackAt: pickString(raw.rolledBackAt) || undefined,
         sourceProgramSnapshot: isPlainObject(raw.sourceProgramSnapshot) ? sanitizeProgramTemplate(raw.sourceProgramSnapshot) : undefined,

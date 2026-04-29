@@ -210,7 +210,7 @@ describe('program adjustment workflow integration', () => {
 
     const result = applyAdjustmentDraft(draft, changedSource, clone(DEFAULT_PROGRAM_TEMPLATE), templates);
     expect(result.ok).toBe(false);
-    expect(result.draft.status).toBe('stale');
+    expect(result.draft.status).toBe('expired');
     expect(result.message).toBeTruthy();
     expect(result.experimentalTemplate).toBeUndefined();
     expect(result.historyItem).toBeUndefined();

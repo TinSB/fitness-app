@@ -26,7 +26,7 @@ describe('native alert guard', () => {
 
     expect(source).toContain('showAppToast');
     expect(source).toContain('<Toast');
-    expect(source).toContain('已生成下周实验模板。');
+    expect(source).toContain('已应用实验模板，可随时回滚。');
     expect(source).toContain('计划调整功能暂时无法加载，请稍后再试。');
     expect(source).not.toContain('window.alert');
   });

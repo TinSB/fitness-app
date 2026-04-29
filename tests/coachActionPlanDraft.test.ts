@@ -62,7 +62,10 @@ describe('coach action plan draft creation', () => {
       painPatterns: [],
     });
 
-    expect(draft.status).toBe('previewed');
+    expect(draft.status).toBe('ready_to_apply');
+    expect(draft.riskLevel).toBeTruthy();
+    expect(draft.explanation).toContain('背部');
+    expect(draft.diffPreview?.changes.length).toBeGreaterThan(0);
     expect(draft.changes.length).toBeGreaterThan(0);
     expect(draft.selectedRecommendationIds).toContain('coach-action-volume-preview-back-increase');
     expect(JSON.stringify(data.programTemplate)).toBe(originalProgram);
