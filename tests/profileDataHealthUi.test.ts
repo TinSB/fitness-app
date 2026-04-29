@@ -14,6 +14,9 @@ describe('profile data health UI', () => {
     expect(source).toContain('查看全部问题');
     expect(source).toContain('查看详情');
     expect(source).toContain('technicalDetails');
+    expect(source).toContain('onDataHealthAction');
+    expect(source).toContain('issue.action.label');
+    expect(source).not.toContain('issue.actionLabel');
   });
 
   it('keeps Record data health entry aligned with the same presenter', () => {
@@ -23,6 +26,7 @@ describe('profile data health UI', () => {
     expect(source).toContain('primaryIssues');
     expect(source).toContain('secondaryIssues');
     expect(source).toContain('查看全部问题');
+    expect(source).toContain('onDataHealthAction');
   });
 
   it('keeps engineering terms out of default Profile copy', () => {
@@ -31,6 +35,6 @@ describe('profile data health UI', () => {
       .replace(/<pre[\s\S]*?<\/pre>/g, '')
       .replace(/technicalDetails/g, '');
 
-    expect(defaultCopySource).not.toMatch(/synthetic replacement id|summary cache mismatch|actualExerciseId missing/);
+    expect(defaultCopySource).not.toMatch(/synthetic replacement id|summary cache mismatch|actualExerciseId missing|actionLabel/);
   });
 });

@@ -1,5 +1,25 @@
 import { sortDataHealthIssues, type DataHealthIssue, type DataHealthReport } from '../engines/dataHealthEngine';
 
+export type DataHealthActionType =
+  | 'open_session_detail'
+  | 'open_record_history'
+  | 'open_record_data'
+  | 'open_health_data'
+  | 'open_unit_settings'
+  | 'open_plan'
+  | 'open_backup'
+  | 'dismiss'
+  | 'none';
+
+export type DataHealthActionView = {
+  id: string;
+  label: string;
+  type: DataHealthActionType;
+  targetId?: string;
+  targetDate?: string;
+  requiresConfirmation?: boolean;
+};
+
 export type DataHealthViewModel = {
   statusLabel: string;
   statusTone: 'healthy' | 'warning' | 'error';
@@ -13,7 +33,7 @@ export type DataHealthIssueView = {
   title: string;
   userMessage: string;
   severityLabel: string;
-  actionLabel?: string;
+  action?: DataHealthActionView;
   technicalDetails?: string;
 };
 
@@ -37,84 +57,108 @@ const statusLabel = (status: DataHealthReport['status']) => {
 
 const normalizeText = (value?: string) => String(value || '').replace(/\b(undefined|null)\b/g, '').trim();
 
-const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'title' | 'userMessage' | 'actionLabel'> => {
+const firstAffectedId = (issue: DataHealthIssue) => issue.affectedIds?.find(Boolean);
+
+const action = (
+  issue: DataHealthIssue,
+  type: DataHealthActionType,
+  label: string,
+  targetId = firstAffectedId(issue),
+): DataHealthActionView | undefined => {
+  if (type === 'none') return undefined;
+  return {
+    id: `${issue.id}-${type}`,
+    label,
+    type,
+    ...(targetId ? { targetId } : {}),
+  };
+};
+
+const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'title' | 'userMessage' | 'action'> => {
   const id = issue.id.toLowerCase();
 
   if (id.startsWith('synthetic-replacement')) {
     return {
       title: '替代动作记录异常',
       userMessage: '有训练记录使用了旧版替代动作标记，可能影响该动作的历史显示。',
-      actionLabel: '打开历史详情确认替代动作',
+      action: action(issue, 'open_record_history', '查看相关训练'),
     };
   }
   if (id.startsWith('lb-display-decimal')) {
     return {
       title: '重量显示需要整理',
       userMessage: '部分历史记录的磅数显示存在小数，系统会按当前单位设置格式化显示。',
-      actionLabel: '检查单位显示',
+      action: action(issue, 'open_unit_settings', '打开单位设置'),
     };
   }
   if (id.startsWith('summary-completed-zero') || id.startsWith('summary-volume-zero') || issue.category === 'summary') {
     return {
       title: '训练汇总可能过期',
       userMessage: '某次训练的顶部汇总和组记录不一致，建议打开该记录确认。',
-      actionLabel: '查看训练详情',
+      action: action(issue, 'open_session_detail', '查看训练详情'),
     };
   }
   if (id.startsWith('warmup-missing-type')) {
     return {
       title: '热身组分类不完整',
       userMessage: '部分历史组缺少热身/正式组标记，可能影响历史详情展示。',
-      actionLabel: '修正历史记录',
+      action: action(issue, 'open_session_detail', '查看训练详情'),
     };
   }
   if (id.startsWith('warmup-analytics-marker')) {
     return {
       title: '热身组统计标记异常',
       userMessage: '部分热身组可能被计入强度统计，建议检查该记录的组类型。',
-      actionLabel: '检查组类型',
+      action: action(issue, 'open_session_detail', '查看训练详情'),
     };
   }
   if (id.startsWith('excluded-session-in-analytics') || id.startsWith('non-normal-session-present')) {
     return {
       title: '测试数据可能参与统计',
       userMessage: '有测试或排除数据可能被计入训练分析，请检查数据状态。',
-      actionLabel: '检查数据状态',
+      action: action(issue, 'open_record_history', '查看历史训练'),
     };
   }
   if (id.startsWith('external-workout-in-history')) {
     return {
       title: '外部活动记录分类异常',
       userMessage: '有 Apple Watch 或外部运动记录可能被误归入力量训练历史。',
-      actionLabel: '检查外部活动',
+      action: action(issue, 'open_health_data', '查看健康数据'),
     };
   }
   if (id.startsWith('missing-actual-exercise') || id.startsWith('replacement-missing-original') || id.startsWith('replacement-actual-mismatch')) {
     return {
       title: '替代动作信息不完整',
       userMessage: '有训练记录的实际执行动作无法在动作库中找到。',
-      actionLabel: '确认实际执行动作',
+      action: action(issue, 'open_record_history', '查看相关训练'),
     };
   }
   if (id.startsWith('mixed-display-unit')) {
     return {
       title: '单位显示不一致',
       userMessage: '同一次训练中存在不同显示单位，请确认是否为真实记录。',
-      actionLabel: '检查重量单位',
+      action: action(issue, 'open_unit_settings', '打开单位设置'),
     };
   }
   if (id.startsWith('template-missing') || id.startsWith('program-template-missing')) {
     return {
       title: '计划动作缺失',
       userMessage: '某个计划模板引用了动作库中不存在的动作。',
-      actionLabel: '检查计划模板',
+      action: action(issue, 'open_plan', '打开计划页'),
     };
   }
   if (id.startsWith('excluded-health-readiness') || id.startsWith('excluded-workout-readiness')) {
     return {
       title: '健康数据排除状态异常',
       userMessage: '被排除的健康数据不应影响准备度评分。',
-      actionLabel: '检查健康数据',
+      action: action(issue, 'open_health_data', '查看健康数据'),
+    };
+  }
+  if (id.startsWith('backup')) {
+    return {
+      title: '建议导出备份',
+      userMessage: '当前数据建议先导出备份，再进行修正或整理。',
+      action: action(issue, 'open_backup', '导出备份'),
     };
   }
 
@@ -122,35 +166,34 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '替代动作记录需要检查',
       userMessage: '有替代动作记录信息不完整，可能影响历史回看。',
-      actionLabel: '查看详情',
+      action: action(issue, 'open_record_history', '查看相关训练'),
     };
   }
   if (issue.category === 'unit') {
     return {
       title: '单位记录需要检查',
       userMessage: '部分重量单位显示可能不一致，请确认是否符合你的记录习惯。',
-      actionLabel: '查看详情',
+      action: action(issue, 'open_unit_settings', '打开单位设置'),
     };
   }
   if (issue.category === 'healthData') {
     return {
       title: '健康数据需要检查',
       userMessage: '部分健康数据状态可能影响准备度或日历展示。',
-      actionLabel: '查看详情',
+      action: action(issue, 'open_health_data', '查看健康数据'),
     };
   }
   if (issue.category === 'template') {
     return {
       title: '计划模板需要检查',
       userMessage: '计划模板中有动作引用需要确认。',
-      actionLabel: '查看详情',
+      action: action(issue, 'open_plan', '打开计划页'),
     };
   }
 
   return {
     title: '数据记录需要检查',
     userMessage: '发现一条可能影响训练回看的数据问题。',
-    actionLabel: '查看详情',
   };
 };
 
@@ -172,7 +215,7 @@ const toIssueView = (issue: DataHealthIssue): DataHealthIssueView => {
     title: copy.title,
     userMessage: copy.userMessage,
     severityLabel: severityLabel(issue.severity),
-    actionLabel: copy.actionLabel,
+    action: copy.action,
     technicalDetails: technicalDetails(issue),
   };
 };

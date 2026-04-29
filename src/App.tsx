@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, Dumbbell, Flame, UserCircle } from 'lucide-reac
 import { INITIAL_TEMPLATES } from './data/trainingData';
 import { TodayView } from './features/TodayView';
 import { TrainingFocusView } from './features/TrainingFocusView';
+import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
 import { clone, enrichExercise, findTemplate, hydrateTemplates, number, todayKey } from './engines/engineUtils';
 import { createSession, pickSuggestedTemplate } from './engines/sessionBuilder';
@@ -28,6 +29,7 @@ import { buildTrainingDecisionContext } from './engines/trainingDecisionContext'
 import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
+import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 import { AppShell } from './ui/AppShell';
@@ -35,6 +37,7 @@ import { ActionButton } from './ui/ActionButton';
 import { Card } from './ui/Card';
 import { PageHeader } from './ui/PageHeader';
 import { StatusBadge } from './ui/StatusBadge';
+import { Toast } from './ui/Toast';
 import { useConfirmDialog } from './ui/useConfirmDialog';
 import { ResponsivePageLayout } from './ui/layouts/ResponsivePageLayout';
 
@@ -55,6 +58,7 @@ const navItems = [
 type ActiveTab = (typeof navItems)[number]['id'];
 type ProgressSectionTarget = 'calendar' | 'list' | 'pr' | 'stats' | 'data';
 type ProfileSection = 'home' | 'assessment';
+type AppToast = { message: string; tone: 'success' | 'warning' | 'danger' | 'info' };
 type StatusField = 'sleep' | 'energy' | 'time';
 type SorenessPart = TodayStatus['soreness'][number];
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
@@ -173,12 +177,24 @@ function App() {
   const [forceFullTrainingView, setForceFullTrainingView] = useState(false);
   const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
   const [profileSection, setProfileSection] = useState<ProfileSection>('home');
+  const [profileTargetSection, setProfileTargetSection] = useState<ProfileTargetSection | null>(null);
+  const [appToast, setAppToast] = useState<AppToast | null>(null);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
+
+  const showAppToast = (message: string, tone: AppToast['tone'] = 'info') => {
+    setAppToast({ message, tone });
+  };
 
   useEffect(() => {
     saveData(data);
   }, [data]);
+
+  useEffect(() => {
+    if (!appToast || typeof window === 'undefined') return undefined;
+    const timer = window.setTimeout(() => setAppToast(null), 3200);
+    return () => window.clearTimeout(timer);
+  }, [appToast]);
 
   useEffect(() => {
     if (data.activeSession) setActiveTab('training');
@@ -551,7 +567,7 @@ function App() {
   const applyProgramAdjustmentDraft = async (draft: ProgramAdjustmentDraft) => {
     const sourceTemplate = data.templates.find((template) => template.id === draft.sourceProgramTemplateId);
     if (!sourceTemplate) {
-      window.alert('找不到建议来源模板，暂时不能生成实验模板。');
+      showAppToast('找不到建议来源模板，暂时不能生成实验模板。', 'warning');
       return;
     }
     const activeExperiment = data.programAdjustmentHistory?.find(
@@ -573,7 +589,7 @@ function App() {
       const { applyAdjustmentDraft } = await import('./engines/programAdjustmentEngine');
       result = applyAdjustmentDraft(draft, sourceTemplate, data.programTemplate, data.templates);
     } catch {
-      window.alert('计划调整引擎加载失败，请稍后重试。');
+      showAppToast('计划调整功能暂时无法加载，请稍后再试。', 'danger');
       return;
     }
     if (!result.ok || !result.experimentalTemplate || !result.historyItem || !result.updatedProgramTemplate) {
@@ -584,7 +600,7 @@ function App() {
           result.draft,
         ],
       }));
-      window.alert(result.message || '原模板已变化，请重新生成调整预览。');
+      showAppToast(result.message || '计划调整失败，请重新生成预览。', 'danger');
       return;
     }
 
@@ -601,7 +617,7 @@ function App() {
       ],
       programAdjustmentHistory: [historyItem, ...(current.programAdjustmentHistory || [])],
     }));
-    window.alert('已生成下周实验模板，并切换为当前计划。');
+    showAppToast('已生成下周实验模板。', 'success');
   };
 
   const rollbackProgramAdjustment = async (historyItemId: string) => {
@@ -612,7 +628,7 @@ function App() {
       const { rollbackAdjustment } = await import('./engines/programAdjustmentEngine');
       rollbackResult = rollbackAdjustment(historyItem);
     } catch {
-      window.alert('回滚引擎加载失败，请稍后重试。');
+      showAppToast('计划调整功能暂时无法加载，请稍后再试。', 'danger');
       return;
     }
     const { restoredTemplateId, restoredProgramTemplate, updatedHistoryItem } = rollbackResult;
@@ -625,6 +641,7 @@ function App() {
         item.id === updatedHistoryItem.id ? updatedHistoryItem : item
       ),
     }));
+    showAppToast('已回滚到原模板。', 'success');
   };
 
   const updateUserProfile = (field: string, value: string) => {
@@ -709,9 +726,72 @@ function App() {
     });
   };
 
+  const openProfileTarget = (target: ProfileTargetSection) => {
+    setProfileSection('home');
+    setProfileTargetSection(target);
+    setActiveTab('profile');
+  };
+
+  const handleDataHealthAction = (action: DataHealthActionView) => {
+    if (!action || action.type === 'none') return;
+    if (action.type === 'dismiss') {
+      showAppToast('已忽略此提醒。', 'info');
+      return;
+    }
+    if (action.type === 'open_session_detail') {
+      if (action.targetId) {
+        const session = (data.history || []).find((item) => item.id === action.targetId);
+        if (session) {
+          setProgressTarget({ section: 'list', sessionId: session.id, date: session.date || action.targetDate });
+          setActiveTab('record');
+          showAppToast('已打开相关训练。', 'info');
+          return;
+        }
+        showAppToast('暂时无法定位到对应记录。', 'warning');
+      }
+      setProgressTarget({ section: 'list', date: action.targetDate });
+      setActiveTab('record');
+      return;
+    }
+    if (action.type === 'open_record_history') {
+      setProgressTarget({ section: 'list', ...(action.targetDate ? { date: action.targetDate } : {}) });
+      setActiveTab('record');
+      showAppToast('已打开历史训练。', 'info');
+      return;
+    }
+    if (action.type === 'open_record_data') {
+      setProgressTarget({ section: 'data' });
+      setActiveTab('record');
+      showAppToast('已打开数据分区。', 'info');
+      return;
+    }
+    if (action.type === 'open_health_data') {
+      openProfileTarget('health_data');
+      showAppToast('已定位到健康数据导入。', 'info');
+      return;
+    }
+    if (action.type === 'open_unit_settings') {
+      openProfileTarget('unit_settings');
+      showAppToast('已定位到单位设置。', 'info');
+      return;
+    }
+    if (action.type === 'open_plan') {
+      setActiveTab('plan');
+      showAppToast('已打开计划页。', 'info');
+      return;
+    }
+    if (action.type === 'open_backup') {
+      openProfileTarget('data_management');
+      showAppToast('已定位到备份与恢复。', 'info');
+    }
+  };
+
   const navigate = (tab: ActiveTab) => {
     setActiveTab(tab);
-    if (tab === 'profile') setProfileSection('home');
+    if (tab === 'profile') {
+      setProfileSection('home');
+      setProfileTargetSection(null);
+    }
   };
 
   const useFocusTrainingShell = activeTab === 'training' && data.activeSession && preferFocusShell && !forceFullTrainingView;
@@ -886,6 +966,7 @@ function App() {
                       }}
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
+                      onDataHealthAction={handleDataHealthAction}
                       onStartTraining={() => startSession()}
                       initialSection={progressTarget?.section}
                       selectedSessionId={progressTarget?.sessionId}
@@ -907,6 +988,8 @@ function App() {
                       }}
                       onUpdateHealthData={(nextData) => setData(nextData)}
                       onOpenAssessment={() => setProfileSection('assessment')}
+                      onDataHealthAction={handleDataHealthAction}
+                      targetSection={profileTargetSection}
                       onOpenRecordData={() => {
                         setProgressTarget({ section: 'data' });
                         setActiveTab('record');
@@ -931,6 +1014,11 @@ function App() {
                 )}
       </AppShell>
       <ConfirmDialogHost />
+      {appToast ? (
+        <div className="fixed left-1/2 top-[calc(1rem+env(safe-area-inset-top))] z-[100] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2">
+          <Toast tone={appToast.tone}>{appToast.message}</Toast>
+        </div>
+      ) : null}
       <AddToHomeScreenHint />
     </>
   );

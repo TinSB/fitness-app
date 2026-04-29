@@ -70,10 +70,10 @@ describe('visual text guard', () => {
     const text = [
       vm.statusLabel,
       vm.summary,
-      ...vm.primaryIssues.flatMap((issue) => [issue.title, issue.userMessage, issue.severityLabel, issue.actionLabel || '']),
+      ...vm.primaryIssues.flatMap((issue) => [issue.title, issue.userMessage, issue.severityLabel, issue.action?.label || '']),
     ].join(' ');
 
     expect(text).toContain('替代动作记录异常');
-    expect(text).not.toMatch(/synthetic replacement id|actualExerciseId|undefined|null|has_errors|replacement/);
+    expect(text).not.toMatch(/synthetic replacement id|actualExerciseId|undefined|null|has_errors|replacement|actionLabel/);
   });
 });

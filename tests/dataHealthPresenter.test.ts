@@ -26,6 +26,8 @@ describe('dataHealthPresenter', () => {
     expect(vm.statusLabel).toBe('需要处理');
     expect(vm.primaryIssues[0].title).toBe('替代动作记录异常');
     expect(vm.primaryIssues[0].userMessage).toBe('有训练记录使用了旧版替代动作标记，可能影响该动作的历史显示。');
+    expect(vm.primaryIssues[0].action?.label).toBe('查看相关训练');
+    expect(vm.primaryIssues[0].action?.type).toBe('open_record_history');
     expect(vm.primaryIssues[0].technicalDetails).toContain('synthetic replacement id detected');
   });
 
@@ -36,6 +38,8 @@ describe('dataHealthPresenter', () => {
 
     expect(vm.primaryIssues[0].title).toBe('训练汇总可能过期');
     expect(vm.primaryIssues[0].userMessage).toBe('某次训练的顶部汇总和组记录不一致，建议打开该记录确认。');
+    expect(vm.primaryIssues[0].action?.label).toBe('查看训练详情');
+    expect(vm.primaryIssues[0].action?.type).toBe('open_session_detail');
   });
 
   it('sorts by severity and shows only three primary issues', () => {
@@ -59,7 +63,7 @@ describe('dataHealthPresenter', () => {
     const defaultText = [
       vm.statusLabel,
       vm.summary,
-      ...vm.primaryIssues.flatMap((item) => [item.title, item.userMessage, item.severityLabel, item.actionLabel || '']),
+      ...vm.primaryIssues.flatMap((item) => [item.title, item.userMessage, item.severityLabel, item.action?.label || '']),
     ].join('\n');
 
     expect(defaultText).not.toMatch(/synthetic replacement id|summary cache mismatch|actualExerciseId|undefined|null/);

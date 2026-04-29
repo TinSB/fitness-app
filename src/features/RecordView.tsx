@@ -15,7 +15,7 @@ import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../eng
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
-import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
+import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
 import {
   formatDataFlag,
   formatExerciseName,
@@ -67,6 +67,7 @@ export interface RecordViewProps {
   onRestoreData: (data: AppData) => void;
   onApplyProgramAdjustmentDraft?: unknown;
   onRollbackProgramAdjustment?: unknown;
+  onDataHealthAction?: (action: DataHealthActionView) => void;
   onStartTraining?: () => void;
   initialSection?: RecordSectionTarget;
   selectedSessionId?: string;
@@ -187,6 +188,7 @@ export function RecordView({
   onDeleteSession,
   onMarkSessionDataFlag,
   onEditSession,
+  onDataHealthAction,
   onStartTraining,
   initialSection,
   selectedSessionId,
@@ -717,6 +719,11 @@ export function RecordView({
                   <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
                     <div className="font-semibold text-slate-950">{issue.title}</div>
                     <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                    {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                      <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction(issue.action!)}>
+                        {issue.action.label}
+                      </ActionButton>
+                    ) : null}
                     {issue.technicalDetails ? (
                       <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                         <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -737,6 +744,11 @@ export function RecordView({
                     <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
                       <div className="font-semibold text-slate-950">{issue.title}</div>
                       <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                      {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                        <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction(issue.action!)}>
+                          {issue.action.label}
+                        </ActionButton>
+                      ) : null}
                       {issue.technicalDetails ? (
                         <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                           <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>

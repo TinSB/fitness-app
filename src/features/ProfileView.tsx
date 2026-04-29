@@ -5,7 +5,7 @@ import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import { formatGoal } from '../i18n/formatters';
-import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
+import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
 import type { AppData, UnitSettings } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
@@ -27,7 +27,11 @@ interface ProfileViewProps {
   onUpdateHealthData: (data: AppData) => void;
   onOpenAssessment: () => void;
   onOpenRecordData: () => void;
+  onDataHealthAction?: (action: DataHealthActionView) => void;
+  targetSection?: ProfileTargetSection | null;
 }
+
+export type ProfileTargetSection = 'unit_settings' | 'health_data' | 'data_management' | 'screening';
 
 type PendingRestore = {
   fileName: string;
@@ -69,8 +73,14 @@ export function ProfileView({
   onUpdateHealthData,
   onOpenAssessment,
   onOpenRecordData,
+  onDataHealthAction,
+  targetSection,
 }: ProfileViewProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const screeningRef = React.useRef<HTMLDivElement | null>(null);
+  const unitSettingsRef = React.useRef<HTMLDivElement | null>(null);
+  const healthDataRef = React.useRef<HTMLDivElement | null>(null);
+  const dataManagementRef = React.useRef<HTMLDivElement | null>(null);
   const [message, setMessage] = React.useState('');
   const [pendingRestore, setPendingRestore] = React.useState<PendingRestore | null>(null);
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
@@ -82,6 +92,17 @@ export function ProfileView({
   const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
   const visibleDataHealthIssues = dataHealthViewModel?.primaryIssues || [];
   const hiddenDataHealthIssues = dataHealthViewModel?.secondaryIssues || [];
+
+  React.useEffect(() => {
+    const targets: Record<ProfileTargetSection, React.RefObject<HTMLDivElement | null>> = {
+      screening: screeningRef,
+      unit_settings: unitSettingsRef,
+      health_data: healthDataRef,
+      data_management: dataManagementRef,
+    };
+    if (!targetSection) return;
+    targets[targetSection]?.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [targetSection]);
 
   const downloadBackup = () => {
     downloadText(`ironpath-${todayKey()}.json`, JSON.stringify(data, null, 2), 'application/json');
@@ -140,50 +161,56 @@ export function ProfileView({
             </Card>
           </PageSection>
 
-          <PageSection title="筛查" description="身体资料、体态筛查和动作受限入口。">
-            <Card>
-              <ListItem
-                title="身体 / 动作筛查"
-                description="管理训练目标、体态问题、动作限制和疼痛触发。"
-                meta="低频设置，不放在训练页。"
-                action={
-                  <ActionButton variant="primary" onClick={onOpenAssessment}>
-                    <ShieldCheck className="h-4 w-4" />
-                    打开筛查
-                  </ActionButton>
-                }
-              />
-            </Card>
-          </PageSection>
+          <div ref={screeningRef}>
+            <PageSection title="筛查" description="身体资料、体态筛查和动作受限入口。">
+              <Card>
+                <ListItem
+                  title="身体 / 动作筛查"
+                  description="管理训练目标、体态问题、动作限制和疼痛触发。"
+                  meta="低频设置，不放在训练页。"
+                  action={
+                    <ActionButton variant="primary" onClick={onOpenAssessment}>
+                      <ShieldCheck className="h-4 w-4" />
+                      打开筛查
+                    </ActionButton>
+                  }
+                />
+              </Card>
+            </PageSection>
+          </div>
 
-          <PageSection title="单位设置" description="切换只影响界面显示和输入，历史训练内部仍按 kg 标准化保存。">
-            <Card className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                {(['kg', 'lb'] as const).map((unit) => (
-                  <button
-                    key={unit}
-                    type="button"
-                    onClick={() => onUpdateUnitSettings({ weightUnit: unit })}
-                    className={[
-                      'min-h-12 rounded-lg border text-base font-semibold transition',
-                      unitSettings.weightUnit === unit ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
-                    ].join(' ')}
-                  >
-                    {unit === 'kg' ? 'kg 公斤' : 'lb 磅'}
-                  </button>
-                ))}
-              </div>
-              <Notice title="说明">
-                e1RM、PR 和训练量内部仍统一计算，界面会按你选择的单位显示。
-              </Notice>
-            </Card>
-          </PageSection>
+          <div ref={unitSettingsRef}>
+            <PageSection title="单位设置" description="切换只影响界面显示和输入，历史训练内部仍按 kg 标准化保存。">
+              <Card className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {(['kg', 'lb'] as const).map((unit) => (
+                    <button
+                      key={unit}
+                      type="button"
+                      onClick={() => onUpdateUnitSettings({ weightUnit: unit })}
+                      className={[
+                        'min-h-12 rounded-lg border text-base font-semibold transition',
+                        unitSettings.weightUnit === unit ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
+                      ].join(' ')}
+                    >
+                      {unit === 'kg' ? 'kg 公斤' : 'lb 磅'}
+                    </button>
+                  ))}
+                </div>
+                <Notice title="说明">
+                  e1RM、PR 和训练量内部仍统一计算，界面会按你选择的单位显示。
+                </Notice>
+              </Card>
+            </PageSection>
+          </div>
         </section>
 
         <section className="space-y-4">
-          <PageSection title="健康数据导入" description="手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。">
-            <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
-          </PageSection>
+          <div ref={healthDataRef}>
+            <PageSection title="健康数据导入" description="手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。">
+              <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
+            </PageSection>
+          </div>
 
           {dataHealthViewModel ? (
             <PageSection title="数据健康检查" description="自动发现历史记录、替代动作、单位和健康导入中的潜在异常。">
@@ -210,7 +237,11 @@ export function ProfileView({
                           </StatusBadge>
                         </div>
                         <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                        {issue.actionLabel ? <div className="mt-1 text-xs font-semibold leading-5 text-slate-700">{issue.actionLabel}</div> : null}
+                        {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                          <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction?.(issue.action!)}>
+                            {issue.action.label}
+                          </ActionButton>
+                        ) : null}
                         {issue.technicalDetails ? (
                           <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                             <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -231,6 +262,11 @@ export function ProfileView({
                         <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
                           <div className="font-semibold text-slate-950">{issue.title}</div>
                           <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                          {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                            <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction?.(issue.action!)}>
+                              {issue.action.label}
+                            </ActionButton>
+                          ) : null}
                           {issue.technicalDetails ? (
                             <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                               <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -258,39 +294,41 @@ export function ProfileView({
             </Card>
           </PageSection>
 
-          <PageSection title="备份与恢复" description="这是全局应用数据备份，和记录页的单次训练数据管理分开。">
-            <Card className="space-y-3">
-              <div className="grid gap-2 sm:grid-cols-3">
-                <ActionButton variant="secondary" onClick={downloadBackup}>
-                  <Download className="h-4 w-4" />
-                  导出 JSON
+          <div ref={dataManagementRef}>
+            <PageSection title="备份与恢复" description="这是全局应用数据备份，和记录页的单次训练数据管理分开。">
+              <Card className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <ActionButton variant="secondary" onClick={downloadBackup}>
+                    <Download className="h-4 w-4" />
+                    导出 JSON
+                  </ActionButton>
+                  <ActionButton variant="secondary" onClick={downloadCsv}>
+                    <Activity className="h-4 w-4" />
+                    导出 CSV
+                  </ActionButton>
+                  <ActionButton variant="danger" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-4 w-4" />
+                    导入恢复
+                  </ActionButton>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(event) => void handleImportFile(event.target.files?.[0])}
+                />
+                <Notice tone="amber" title="恢复会覆盖当前本地数据。">
+                  导入 JSON 备份前建议先导出现有备份。确认后会替换当前浏览器里的 IronPath 数据。
+                </Notice>
+                {message ? <Notice tone={message.includes('失败') ? 'rose' : 'emerald'}>{message}</Notice> : null}
+                <ActionButton variant="ghost" size="sm" onClick={onOpenRecordData}>
+                  <Database className="h-4 w-4" />
+                  管理单次训练记录
                 </ActionButton>
-                <ActionButton variant="secondary" onClick={downloadCsv}>
-                  <Activity className="h-4 w-4" />
-                  导出 CSV
-                </ActionButton>
-                <ActionButton variant="danger" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="h-4 w-4" />
-                  导入恢复
-                </ActionButton>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(event) => void handleImportFile(event.target.files?.[0])}
-              />
-              <Notice tone="amber" title="恢复会覆盖当前本地数据。">
-                导入 JSON 备份前建议先导出现有备份。确认后会替换当前浏览器里的 IronPath 数据。
-              </Notice>
-              {message ? <Notice tone={message.includes('失败') ? 'rose' : 'emerald'}>{message}</Notice> : null}
-              <ActionButton variant="ghost" size="sm" onClick={onOpenRecordData}>
-                <Database className="h-4 w-4" />
-                管理单次训练记录
-              </ActionButton>
-            </Card>
-          </PageSection>
+              </Card>
+            </PageSection>
+          </div>
 
           <PageSection title="PWA / 本地数据说明" description="IronPath Web/PWA 默认使用当前浏览器本地存储。">
             <div className="grid gap-3 md:grid-cols-2">
