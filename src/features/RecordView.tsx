@@ -20,6 +20,8 @@ import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../eng
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import type { CoachAction } from '../engines/coachActionEngine';
+import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
 import {
   formatDataFlag,
@@ -56,6 +58,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { StatusBadge } from '../ui/StatusBadge';
+import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
 export interface RecordViewProps {
@@ -63,6 +66,7 @@ export interface RecordViewProps {
   unitSettings: UnitSettings;
   coachAutomationSummary?: CoachAutomationSummary;
   trainingIntelligenceSummary?: TrainingIntelligenceSummary;
+  coachActions?: CoachAction[];
   weeklyPrescription: WeeklyPrescription;
   bodyWeightInput: string;
   setBodyWeightInput: React.Dispatch<React.SetStateAction<string>>;
@@ -75,6 +79,8 @@ export interface RecordViewProps {
   onApplyProgramAdjustmentDraft?: unknown;
   onRollbackProgramAdjustment?: unknown;
   onDataHealthAction?: (action: DataHealthActionView) => void;
+  onCoachAction?: (action: CoachAction) => void;
+  onDismissCoachAction?: (action: CoachAction) => void;
   onStartTraining?: () => void;
   initialSection?: RecordSectionTarget;
   selectedSessionId?: string;
@@ -203,10 +209,13 @@ export function RecordView({
   unitSettings,
   coachAutomationSummary,
   trainingIntelligenceSummary: _trainingIntelligenceSummary,
+  coachActions,
   onDeleteSession,
   onMarkSessionDataFlag,
   onEditSession,
   onDataHealthAction,
+  onCoachAction,
+  onDismissCoachAction,
   onStartTraining,
   initialSection,
   selectedSessionId,
@@ -228,6 +237,10 @@ export function RecordView({
   const analyticsHistory = React.useMemo(() => filterAnalyticsHistory(rawHistory), [rawHistory]);
   const dataHealth = coachAutomationSummary?.dataHealth;
   const dataHealthViewModel = React.useMemo(() => (dataHealth ? buildDataHealthViewModel(dataHealth) : null), [dataHealth]);
+  const recordCoachActionViewModel = React.useMemo(
+    () => buildCoachActionListViewModel(coachActions || [], { surface: 'record' }),
+    [coachActions],
+  );
   const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);
   const calendar = React.useMemo(
     () =>
@@ -780,6 +793,19 @@ export function RecordView({
               </details>
             ) : null}
           </Card>
+        ) : null}
+        {recordCoachActionViewModel.pending.length ? (
+          <div className="mb-3">
+            <CoachActionList
+              title="记录相关教练建议"
+              description="只显示和训练记录、数据健康相关的建议；点击后会打开对应记录或数据分区。"
+              viewModel={recordCoachActionViewModel}
+              compact
+              onAction={onCoachAction}
+              onDismiss={onDismissCoachAction}
+              onDetail={onCoachAction}
+            />
+          </div>
         ) : null}
         <div className="grid gap-3 md:grid-cols-3">
           <MetricCard label="正常记录" value={`${normalCount}`} tone="emerald" />

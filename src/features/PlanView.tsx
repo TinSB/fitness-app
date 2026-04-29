@@ -5,9 +5,11 @@ import { classNames, enrichExercise, findTemplate, getPrimaryMuscles } from '../
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
+import type { CoachAction } from '../engines/coachActionEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
+import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import {
   formatAdjustmentChangeLabel,
   formatConfidence,
@@ -42,6 +44,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
+import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { formatWeight } from '../engines/unitConversionEngine';
 
@@ -49,11 +52,14 @@ interface PlanViewProps {
   data: AppData;
   weeklyPrescription: WeeklyPrescription;
   trainingIntelligenceSummary?: TrainingIntelligenceSummary;
+  coachActions?: CoachAction[];
   selectedTemplateId: string;
   onSelectTemplate: (id: string) => void;
   onStartTemplate: (id: string) => void;
   onUpdateExercise: (templateId: string, exerciseIndex: number, field: string, value: string) => void;
   onResetTemplates: () => void;
+  onCoachAction?: (action: CoachAction) => void;
+  onDismissCoachAction?: (action: CoachAction) => void;
   onRollbackProgramAdjustment?: (historyItemId: string) => void;
 }
 
@@ -127,11 +133,14 @@ export function PlanView({
   data,
   weeklyPrescription,
   trainingIntelligenceSummary,
+  coachActions,
   selectedTemplateId,
   onSelectTemplate,
   onStartTemplate,
   onUpdateExercise,
   onResetTemplates,
+  onCoachAction,
+  onDismissCoachAction,
   onRollbackProgramAdjustment,
 }: PlanViewProps) {
   const [rollbackTarget, setRollbackTarget] = React.useState<ProgramAdjustmentHistoryItem | null>(null);
@@ -165,6 +174,10 @@ export function PlanView({
     trainingIntelligenceSummary?.volumeAdaptation?.muscles
       ?.filter((item) => item.decision === 'increase' || item.decision === 'decrease' || item.decision === 'hold')
       .slice(0, 3) || [];
+  const planCoachActionViewModel = React.useMemo(
+    () => buildCoachActionListViewModel(coachActions || [], { surface: 'plan' }),
+    [coachActions],
+  );
 
   const currentTemplateStatus = activeHistoryItem
     ? '实验模板'
@@ -542,8 +555,21 @@ export function PlanView({
           </PageSection>
 
           <PageSection title="调整建议" description="自动调整草案入口。每条建议都显示原因和影响，采用前需要确认，不会自动覆盖计划。">
-            {volumeAdaptationItems.length || adjustmentDrafts.length ? (
+            {planCoachActionViewModel.pending.length || volumeAdaptationItems.length || adjustmentDrafts.length ? (
               <div className="space-y-3">
+                {planCoachActionViewModel.pending.length ? (
+                  <div>
+                    <CoachActionList
+                      title="计划相关教练建议"
+                      description="这些建议只引导查看或生成调整草案，不会直接应用到正式计划。"
+                      viewModel={planCoachActionViewModel}
+                      compact
+                      onAction={onCoachAction}
+                      onDismiss={onDismissCoachAction}
+                      onDetail={onCoachAction}
+                    />
+                  </div>
+                ) : null}
                 {renderTrainingIntelligenceVolume()}
                 {adjustmentDrafts.map(renderAdjustmentSuggestion)}
               </div>

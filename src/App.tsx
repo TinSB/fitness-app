@@ -31,8 +31,15 @@ import { buildReplacementOptions } from './engines/replacementEngine';
 import { applyStatusRules } from './engines/progressionEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './engines/trainingDecisionContext';
 import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
+import { buildCoachActions, type CoachAction } from './engines/coachActionEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
+import {
+  applySessionPatches,
+  buildSessionPatchesFromDailyAdjustment,
+  revertSessionPatches,
+  type SessionPatch,
+} from './engines/sessionPatchEngine';
 import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
@@ -184,6 +191,7 @@ function App() {
   const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
   const [profileSection, setProfileSection] = useState<ProfileSection>('home');
   const [profileTargetSection, setProfileTargetSection] = useState<ProfileTargetSection | null>(null);
+  const [pendingSessionPatches, setPendingSessionPatches] = useState<SessionPatch[]>([]);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
@@ -287,13 +295,28 @@ function App() {
   );
   const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
+  const coachActions = React.useMemo(
+    () =>
+      buildCoachActions({
+        appData: data,
+        dailyAdjustment: coachAutomationSummary.todayAdjustment,
+        nextWorkout: coachAutomationSummary.nextWorkout,
+        dataHealthReport: coachAutomationSummary.dataHealth,
+        sessionQuality: trainingIntelligenceSummary.sessionQuality,
+        plateauResults: trainingIntelligenceSummary.plateauResults,
+        volumeAdaptation: trainingIntelligenceSummary.volumeAdaptation,
+        recommendationConfidence: trainingIntelligenceSummary.recommendationConfidence,
+        recoveryRecommendation,
+      }),
+    [data, coachAutomationSummary, trainingIntelligenceSummary, recoveryRecommendation],
+  );
 
-  const startSession = (templateId = activeTemplateId) => {
+  const startSession = (templateId = activeTemplateId, explicitPatches?: SessionPatch[]) => {
     const template = findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
     const workingData = { ...data, screeningProfile };
     const sessionDecisionContext = buildTrainingDecisionContext(workingData, { screeningProfile });
-    const session = createSession(
+    const baseSession = createSession(
       template,
       data.todayStatus,
       data.history,
@@ -304,6 +327,9 @@ function App() {
       data.mesocyclePlan,
       sessionDecisionContext
     ) as TrainingSession;
+    const patches = explicitPatches ?? pendingSessionPatches;
+    const patchResult = patches.length ? applySessionPatches(baseSession, patches) : null;
+    const session = patchResult?.session || baseSession;
 
     setData((current) => ({
       ...current,
@@ -312,6 +338,10 @@ function App() {
       activeProgramTemplateId: templateId,
       activeSession: session,
     }));
+    if (patches.length) {
+      setPendingSessionPatches([]);
+      if (patchResult?.warnings.length) showAppToast(patchResult.warnings[0], 'warning');
+    }
     setExpandedExercise(0);
     setActiveTab('training');
   };
@@ -847,6 +877,135 @@ function App() {
     }
   };
 
+  const handleCoachAction = (action: CoachAction) => {
+    if (!action) return;
+    if (action.actionType === 'open_data_health') {
+      if (action.targetType === 'plan') {
+        setActiveTab('plan');
+        showAppToast('已打开计划页查看相关问题。', 'info');
+        return;
+      }
+      if (action.targetType === 'session' && action.targetId) {
+        const session = (data.history || []).find((item) => item.id === action.targetId);
+        if (session) {
+          setProgressTarget({ section: 'list', sessionId: session.id, date: session.date });
+          setActiveTab('record');
+          showAppToast('已打开相关训练详情。', 'info');
+          return;
+        }
+      }
+      openProfileTarget('health_data');
+      showAppToast('已打开数据健康检查。', 'info');
+      return;
+    }
+    if (action.actionType === 'open_record_detail' || action.actionType === 'review_session') {
+      if (action.targetId) {
+        const session = (data.history || []).find((item) => item.id === action.targetId);
+        if (session) {
+          setProgressTarget({ section: 'list', sessionId: session.id, date: session.date });
+          setActiveTab('record');
+          showAppToast('已打开训练详情。', 'info');
+          return;
+        }
+        showAppToast('暂时无法定位到对应记录。', 'warning');
+      }
+      setProgressTarget({ section: 'list' });
+      setActiveTab('record');
+      return;
+    }
+    if (
+      action.actionType === 'create_plan_adjustment_preview' ||
+      action.actionType === 'review_volume' ||
+      action.actionType === 'review_exercise'
+    ) {
+      setActiveTab('plan');
+      showAppToast(
+        action.actionType === 'create_plan_adjustment_preview'
+          ? '已打开计划页；这里只引导生成草案，不会自动应用。'
+          : '已打开计划页查看相关建议。',
+        'info',
+      );
+      return;
+    }
+    if (action.actionType === 'open_next_workout') {
+      setActiveTab('today');
+      showAppToast('已打开今日页查看下次训练建议。', 'info');
+      return;
+    }
+    if (action.actionType === 'apply_temporary_session_adjustment') {
+      if (action.source !== 'dailyAdjustment') {
+        setActiveTab('today');
+        showAppToast('已打开今日页查看恢复建议。', 'info');
+        return;
+      }
+      const patches = buildSessionPatchesFromDailyAdjustment(coachAutomationSummary.todayAdjustment);
+      if (!patches.length) {
+        showAppToast('当前没有可应用的本次临时调整。', 'info');
+        return;
+      }
+      void (async () => {
+        const confirmed = await confirm({
+          title: '采用本次临时调整？',
+          description: '只影响本次训练，不会修改原计划。',
+          confirmText: '采用',
+          cancelText: '取消',
+          variant: 'warning',
+        });
+        if (!confirmed) return;
+        if (data.activeSession) {
+          setData((current) => {
+            if (!current.activeSession) return current;
+            const result = applySessionPatches(current.activeSession, patches);
+            return { ...current, activeSession: result.session };
+          });
+        } else {
+          setPendingSessionPatches(patches);
+        }
+        setActiveTab(data.activeSession ? 'training' : 'today');
+        showAppToast(data.activeSession ? '已应用本次临时调整。' : '已应用本次临时调整。开始训练时生效。', 'success');
+      })();
+      return;
+    }
+    if (action.actionType === 'keep_observing') {
+      setActiveTab('today');
+      showAppToast('已打开今日页查看建议；不会自动修改训练。', 'info');
+      return;
+    }
+    if (action.actionType === 'open_replacement_sheet') {
+      setActiveTab(data.activeSession ? 'training' : 'today');
+      showAppToast('请在训练页打开替代动作列表。', 'info');
+      return;
+    }
+    if (action.actionType === 'dismiss') {
+      showAppToast('已暂不处理。', 'info');
+      return;
+    }
+    showAppToast('已记录为继续观察。', 'info');
+  };
+
+  const dismissCoachAction = (_action: CoachAction) => {
+    showAppToast('已暂不处理。', 'info');
+  };
+
+  const revertTemporarySessionPatches = () => {
+    if (data.activeSession?.appliedCoachActions?.length) {
+      const patchIds = data.activeSession.appliedCoachActions.map((patch) => patch.id);
+      setData((current) => {
+        if (!current.activeSession) return current;
+        const result = revertSessionPatches(current.activeSession, patchIds);
+        return { ...current, activeSession: result.session };
+      });
+      showAppToast('已撤销本次临时调整。', 'success');
+      return;
+    }
+    if (pendingSessionPatches.length) {
+      setPendingSessionPatches([]);
+      showAppToast('已撤销本次临时调整。', 'success');
+      return;
+    }
+    showAppToast('当前没有可撤销的本次调整。', 'info');
+  };
+
   const navigate = (tab: ActiveTab) => {
     setActiveTab(tab);
     if (tab === 'profile') {
@@ -884,6 +1043,11 @@ function App() {
                     recoveryRecommendation={recoveryRecommendation}
                     weeklyPrescription={weeklyPrescription}
                     coachAutomationSummary={coachAutomationSummary}
+                    coachActions={coachActions}
+                    onCoachAction={handleCoachAction}
+                    onDismissCoachAction={dismissCoachAction}
+                    temporarySessionAdjustmentActive={Boolean(pendingSessionPatches.length || data.activeSession?.appliedCoachActions?.length)}
+                    onRevertTemporarySessionPatches={revertTemporarySessionPatches}
                     trainingIntelligenceSummary={trainingIntelligenceSummary}
                     trainingMode={data.trainingMode}
                     onModeChange={updateTrainingMode}
@@ -1001,6 +1165,9 @@ function App() {
                       data={data}
                       weeklyPrescription={weeklyPrescription}
                       trainingIntelligenceSummary={trainingIntelligenceSummary}
+                      coachActions={coachActions}
+                      onCoachAction={handleCoachAction}
+                      onDismissCoachAction={dismissCoachAction}
                       selectedTemplateId={activeTemplateId}
                       onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
                       onStartTemplate={(id) => startSession(id)}
@@ -1018,6 +1185,9 @@ function App() {
                       unitSettings={data.unitSettings}
                       coachAutomationSummary={coachAutomationSummary}
                       trainingIntelligenceSummary={trainingIntelligenceSummary}
+                      coachActions={coachActions}
+                      onCoachAction={handleCoachAction}
+                      onDismissCoachAction={dismissCoachAction}
                       weeklyPrescription={weeklyPrescription}
                       bodyWeightInput={bodyWeightInput}
                       setBodyWeightInput={setBodyWeightInput}
@@ -1047,6 +1217,9 @@ function App() {
                       data={data}
                       unitSettings={data.unitSettings}
                       coachAutomationSummary={coachAutomationSummary}
+                      coachActions={coachActions}
+                      onCoachAction={handleCoachAction}
+                      onDismissCoachAction={dismissCoachAction}
                       onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
                         setData(nextData);

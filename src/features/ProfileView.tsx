@@ -2,9 +2,11 @@ import React from 'react';
 import { Activity, Database, Download, HardDrive, Ruler, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { downloadText, makeCsv } from '../engines/analytics';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import type { CoachAction } from '../engines/coachActionEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import { formatGoal } from '../i18n/formatters';
+import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
 import type { AppData, UnitSettings } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
@@ -15,6 +17,7 @@ import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
+import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { HealthDataPanel } from './HealthDataPanel';
 
@@ -22,12 +25,15 @@ interface ProfileViewProps {
   data: AppData;
   unitSettings: UnitSettings;
   coachAutomationSummary?: CoachAutomationSummary;
+  coachActions?: CoachAction[];
   onUpdateUnitSettings: (updates: Partial<UnitSettings>) => void;
   onRestoreData: (data: AppData) => void;
   onUpdateHealthData: (data: AppData) => void;
   onOpenAssessment: () => void;
   onOpenRecordData: () => void;
   onDataHealthAction?: (action: DataHealthActionView) => void;
+  onCoachAction?: (action: CoachAction) => void;
+  onDismissCoachAction?: (action: CoachAction) => void;
   targetSection?: ProfileTargetSection | null;
 }
 
@@ -68,12 +74,15 @@ export function ProfileView({
   data,
   unitSettings,
   coachAutomationSummary,
+  coachActions,
   onUpdateUnitSettings,
   onRestoreData,
   onUpdateHealthData,
   onOpenAssessment,
   onOpenRecordData,
   onDataHealthAction,
+  onCoachAction,
+  onDismissCoachAction,
   targetSection,
 }: ProfileViewProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -92,6 +101,10 @@ export function ProfileView({
   const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
   const visibleDataHealthIssues = dataHealthViewModel?.primaryIssues || [];
   const hiddenDataHealthIssues = dataHealthViewModel?.secondaryIssues || [];
+  const coachActionListViewModel = React.useMemo(
+    () => buildCoachActionListViewModel(coachActions || [], { surface: 'profile' }),
+    [coachActions],
+  );
 
   React.useEffect(() => {
     const targets: Record<ProfileTargetSection, React.RefObject<HTMLDivElement | null>> = {
@@ -292,6 +305,18 @@ export function ProfileView({
                 今日调整、下次训练和数据健康提醒会优先显示最重要内容。采用建议、修正记录或调整计划仍由你手动确认。
               </p>
             </Card>
+            <div className="mt-3">
+              <CoachActionList
+                title="教练动作收件箱"
+                description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会自动修改数据。"
+                viewModel={coachActionListViewModel}
+                showStatusFilters
+                onAction={onCoachAction}
+                onDismiss={onDismissCoachAction}
+                onDetail={onCoachAction}
+                emptyText="暂无需要处理的教练建议。"
+              />
+            </div>
           </PageSection>
 
           <div ref={dataManagementRef}>

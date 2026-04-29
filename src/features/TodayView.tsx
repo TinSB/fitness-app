@@ -12,9 +12,11 @@ import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../e
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
+import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { splitCoachReminders, type CoachReminderView } from '../presenters/coachReminderPresenter';
 import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
@@ -26,6 +28,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
+import { CoachActionList } from '../ui/CoachActionList';
 import { useConfirmDialog } from '../ui/useConfirmDialog';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
@@ -37,6 +40,7 @@ interface TodayViewProps {
   recoveryRecommendation?: RecoveryAwareRecommendation;
   weeklyPrescription: WeeklyPrescription;
   coachAutomationSummary?: CoachAutomationSummary;
+  coachActions?: CoachAction[];
   trainingIntelligenceSummary?: TrainingIntelligenceSummary;
   trainingMode: TrainingMode;
   onModeChange: (mode: TrainingMode) => void;
@@ -50,6 +54,10 @@ interface TodayViewProps {
   onViewSession?: (sessionId: string, date?: string) => void;
   onViewCalendar?: (date?: string) => void;
   onReviewDataHealth?: () => void;
+  onCoachAction?: (action: CoachAction) => void;
+  onDismissCoachAction?: (action: CoachAction) => void;
+  temporarySessionAdjustmentActive?: boolean;
+  onRevertTemporarySessionPatches?: () => void;
 }
 
 const sorenessOptions: AppData['todayStatus']['soreness'] = ['无', '胸', '背', '腿', '肩', '手臂'];
@@ -143,6 +151,7 @@ export function TodayView({
   recoveryRecommendation,
   weeklyPrescription,
   coachAutomationSummary,
+  coachActions,
   trainingIntelligenceSummary,
   trainingMode,
   onModeChange,
@@ -155,6 +164,10 @@ export function TodayView({
   onViewSession,
   onViewCalendar,
   onReviewDataHealth,
+  onCoachAction,
+  onDismissCoachAction,
+  temporarySessionAdjustmentActive,
+  onRevertTemporarySessionPatches,
 }: TodayViewProps) {
   const [coachActionFeedback, setCoachActionFeedback] = React.useState('');
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
@@ -258,6 +271,10 @@ export function TodayView({
       ? '系统还在建立训练基线，今天的建议会保持保守。'
       : '今天优先完成主训练，细节记录放到训练页处理。');
   const rawCoachActions = coachAutomationSummary?.recommendedActions || [];
+  const coachActionListViewModel = React.useMemo(
+    () => buildCoachActionListViewModel(coachActions || [], { surface: 'today', maxVisible: 2 }),
+    [coachActions],
+  );
   const dataHealthViewModel = React.useMemo(
     () => (coachAutomationSummary?.dataHealth ? buildDataHealthViewModel(coachAutomationSummary.dataHealth) : null),
     [coachAutomationSummary?.dataHealth],
@@ -388,7 +405,8 @@ export function TodayView({
     () => splitCoachReminders(rawCoachReminders, 2),
     [rawCoachReminders],
   );
-  const shouldShowCoachAdvice = coachReminders.length > 0;
+  const shouldShowCoachActionList = coachActionListViewModel.pending.length > 0;
+  const shouldShowCoachAdvice = !shouldShowCoachActionList && coachReminders.length > 0;
   const coachActionForReminder = (reminder: CoachReminderView) =>
     rawCoachActions.find((action) => reminder.source === `action:${action.id}` || reminder.id === action.id);
   const reminderToneBadge = (tone: CoachReminderView['tone']) =>
@@ -537,6 +555,32 @@ export function TodayView({
                   <StatusBadge tone={confidenceCopy.tone}>{confidenceCopy.label}</StatusBadge>
                 </div>
                 <p className="text-sm leading-6 text-slate-600">{confidenceCopy.text}</p>
+              </Card>
+            ) : null}
+
+            {shouldShowCoachActionList ? (
+              <CoachActionList
+                title="教练建议"
+                description="只显示当前最重要的 1–2 条；采用临时调整前会再次确认。"
+                viewModel={coachActionListViewModel}
+                compact
+                onAction={onCoachAction}
+                onDismiss={onDismissCoachAction}
+                onDetail={onCoachAction}
+              />
+            ) : null}
+
+            {temporarySessionAdjustmentActive ? (
+              <Card className="space-y-3 border-sky-100 bg-sky-50">
+                <div>
+                  <div className="text-sm font-semibold text-slate-950">本次临时调整已生效</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">只影响当前这次训练，不会修改原模板或长期计划。</p>
+                </div>
+                {onRevertTemporarySessionPatches ? (
+                  <ActionButton type="button" variant="secondary" size="sm" onClick={onRevertTemporarySessionPatches}>
+                    撤销调整
+                  </ActionButton>
+                ) : null}
               </Card>
             ) : null}
 

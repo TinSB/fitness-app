@@ -1,8 +1,165 @@
 # IronPath Frontend Tasks
 
-Last updated: 2026-04-28
+Last updated: 2026-04-29
 
 This backlog is ordered for multiple Codex conversations. Each task is scoped to minimize collisions and preserve current architecture.
+
+## Coach Action Workflow V1 Backlog
+
+Planning source: `COACH_ACTION_WORKFLOW.md`
+
+### P0-024: Define CoachAction contract and status flow
+
+Priority: P0
+
+Goal:
+Create the shared action contract that turns existing coach analysis into reviewable, confirmable user actions.
+
+Files likely involved:
+- `src/engines/coachActionWorkflowEngine.ts`
+- `src/presenters/coachActionPresenter.ts`
+- `src/models/training-model.ts` only if a shared exported type is needed
+- `tests/coachActionWorkflowEngine.test.ts`
+
+Acceptance criteria:
+- Defines `CoachAction`, `CoachActionStatus`, `CoachActionType`, source, target, risk, confirmation, undo, and tracking metadata.
+- Action generation is pure and does not mutate `AppData`.
+- High-risk actions are marked `requiresConfirmation`.
+- Visible presenter text is Chinese and contains no raw enum, internal id, `undefined`, or `null`.
+- Status transitions cover `pending`, `applied`, `dismissed`, `expired`, and `failed`.
+
+Out of scope:
+- Applying actions.
+- Persistent dismissal.
+- New backend or cloud sync.
+- Changing training algorithms.
+
+### P0-025: Implement navigation-only Coach Actions
+
+Priority: P0
+
+Goal:
+Make low-risk actions open the right existing surface instead of appearing as inert advice.
+
+Files likely involved:
+- `src/App.tsx`
+- `src/presenters/coachActionPresenter.ts`
+- `src/features/TodayView.tsx`
+- `src/features/RecordView.tsx`
+- `src/features/ProfileView.tsx`
+- `tests/coachActionRouting.test.ts`
+
+Acceptance criteria:
+- `review_data_health`, `review_session`, `review_exercise`, `review_plan_adjustment_preview`, and `navigate` actions route to existing pages/sections.
+- Missing targets show a toast or inline message, not a silent no-op.
+- Navigation actions do not require confirmation unless they lead into a separate destructive flow.
+- No training data, history, or templates are changed.
+
+Out of scope:
+- Active session mutation.
+- History edits.
+- Plan preview generation.
+
+### P0-026: Implement confirmation-gated active-session Coach Actions
+
+Priority: P0
+
+Goal:
+Allow confirmed coach actions to affect only the current active session, never the original template.
+
+Files likely involved:
+- `src/engines/coachActionWorkflowEngine.ts`
+- `src/engines/sessionBuilder.ts`
+- `src/features/TrainingFocusView.tsx`
+- `src/features/TodayView.tsx`
+- `src/ui/ConfirmDialog.tsx`
+- `tests/coachActionActiveSession.test.ts`
+
+Acceptance criteria:
+- Recovery override, temporary session adjustment, set anomaly confirmation, and replacement handoff all use ConfirmDialog where required.
+- Temporary adjustments are recorded as session-only context.
+- Original templates, programTemplate, mesocycle, and activeProgramTemplateId are not changed.
+- Cancelled actions leave activeSession unchanged.
+- Replacement uses existing originalExerciseId / actualExerciseId semantics.
+
+Out of scope:
+- Automatic plan changes.
+- Automatically adding main sets.
+- Rewriting replacementEngine.
+
+### P0-027: Connect Coach Actions to Program Adjustment Preview
+
+Priority: P0
+
+Goal:
+Convert high-confidence plan-level action candidates into existing Program Adjustment Preview drafts without applying them.
+
+Files likely involved:
+- `src/engines/coachActionWorkflowEngine.ts`
+- `src/engines/programAdjustmentEngine.ts`
+- `src/features/PlanView.tsx`
+- `tests/coachActionPlanPreview.test.ts`
+
+Acceptance criteria:
+- `create_plan_adjustment_preview` creates or opens a preview/draft only.
+- Preview shows reason, impact, confidence, before/after, and affected templates.
+- Applying still uses existing confirm/apply-by-copy/rollback workflow.
+- Original templates are preserved.
+- Rollback copy still states completed history is preserved.
+
+Out of scope:
+- Direct plan overwrite.
+- Automatic rollback.
+- New program generation algorithm.
+
+### P1-028: Add undo and local dismissal for Coach Actions
+
+Priority: P1
+
+Goal:
+Reduce noise and make reversible temporary actions easier to control locally.
+
+Files likely involved:
+- `src/engines/coachActionWorkflowEngine.ts`
+- `src/storage/persistence.ts`
+- `src/features/TrainingFocusView.tsx`
+- `src/features/TodayView.tsx`
+- `tests/coachActionDismissUndo.test.ts`
+
+Acceptance criteria:
+- Dismissed local actions do not reappear for the same stable id.
+- Temporary active-session actions can be undone before session completion where supported.
+- Undo never deletes completed history.
+- Dismissal and undo are local-only.
+
+Out of scope:
+- Cloud sync.
+- Account-level preferences.
+- Undoing historical edits directly.
+
+### P1-029: Track Coach Action outcomes
+
+Priority: P1
+
+Goal:
+Review whether applied coach actions helped, without auto-rollback or silent plan changes.
+
+Files likely involved:
+- `src/engines/coachActionWorkflowEngine.ts`
+- `src/engines/trainingIntelligenceSummaryEngine.ts`
+- `src/engines/adjustmentReviewEngine.ts`
+- `tests/coachActionOutcomeTracking.test.ts`
+
+Acceptance criteria:
+- Applied temporary session actions can be reviewed through completion, pain, load feedback, and session quality.
+- Applied plan previews can be reviewed through existing adjustment review metrics.
+- Follow-up output is informational and can suggest review or rollback.
+- No follow-up action auto-edits data or auto-rolls back plans.
+
+Out of scope:
+- New analytics algorithms.
+- Automatic plan mutation.
+- Medical diagnosis.
 
 ## Training Intelligence V1 Backlog
 

@@ -645,6 +645,10 @@ export interface TrainingSession {
   focusWarmupSetLogs?: TrainingSetLog[];
   deloadDecision?: DeloadDecision;
   explanations?: string[];
+  appliedCoachActions?: AppliedCoachActionPatch[];
+  adjustmentNotes?: string[];
+  adjustmentType?: string;
+  adjustmentReasons?: string[];
   editedAt?: string;
   editHistory?: SessionEditHistoryItem[];
 }
@@ -718,6 +722,30 @@ export interface SupportExerciseLog {
   completedSets: number;
   skippedReason?: SupportSkipReason;
   notes?: string;
+}
+
+export interface AppliedCoachActionPatch {
+  id: string;
+  type: string;
+  targetId?: string;
+  title: string;
+  description: string;
+  reason: string;
+  reversible: boolean;
+  appliedAt: string;
+  snapshot?: {
+    exercises?: ExercisePrescription[];
+    supportExerciseLogs?: SupportExerciseLog[];
+    currentExerciseId?: string;
+    currentSetIndex?: number;
+    currentFocusStepId?: string;
+    currentFocusStepType?: FocusStepType;
+    focusManualStepOverride?: boolean;
+    adjustmentNotes?: string[];
+    adjustmentType?: string;
+    adjustmentReasons?: string[];
+    appliedCoachActions?: AppliedCoachActionPatch[];
+  };
 }
 
 export interface AdherenceReport {

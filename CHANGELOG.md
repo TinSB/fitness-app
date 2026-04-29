@@ -2,6 +2,12 @@
 
 All notable frontend governance and product-structure changes should be recorded here.
 
+## 2026-04-29
+
+- Added `COACH_ACTION_WORKFLOW.md` for Coach Action Workflow V1 planning, including the CoachAction contract, action types, status flow, confirmation/undo rules, active-session-only boundaries, Program Adjustment Preview handoff, follow-up tracking, implementation order, and testing strategy.
+- Added Coach Action Workflow V1 backlog tasks for action contract/status flow, navigation-only actions, confirmation-gated active-session actions, Program Adjustment Preview handoff, local dismissal/undo, and outcome tracking.
+- Confirmed this planning pass does not modify business logic, training algorithms, data models, or runtime UI.
+
 ## 2026-04-28
 
 - Added `TRAINING_INTELLIGENCE_PLAN.md` for Training Intelligence V1 planning, including engine boundaries, display-only analysis, Program Adjustment Preview handoff rules, confirmation rules, protected core algorithms, implementation order, and testing strategy.
