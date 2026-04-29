@@ -30,6 +30,8 @@ import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
 import { buildTrainingDecisionContext } from './engines/trainingDecisionContext';
 import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
+import { buildPainPatterns } from './engines/painPatternEngine';
+import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
@@ -243,7 +245,21 @@ function App() {
       trainingLevel: data.userProfile.trainingLevel,
     });
   }, [data.history, data.userProfile.trainingLevel, weeklyPrescription]);
-  const suggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
+  const baseSuggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
+  const baseSuggestedTemplate = findTemplate(data.templates, baseSuggestedTemplateId);
+  const recoveryPainPatterns = React.useMemo(() => buildPainPatterns(filterAnalyticsHistory(data.history || [])), [data.history]);
+  const recoveryRecommendation = React.useMemo(
+    () =>
+      buildRecoveryAwareRecommendation({
+        preferredTemplate: baseSuggestedTemplate,
+        templates: data.templates || [],
+        sorenessAreas: (data.todayStatus?.soreness || []).filter((area) => area !== '无'),
+        painAreas: recoveryPainPatterns.map((pattern) => pattern.area),
+        availableTimeMin: number(data.todayStatus?.time),
+      }),
+    [baseSuggestedTemplate, data.templates, data.todayStatus?.soreness, data.todayStatus?.time, recoveryPainPatterns],
+  );
+  const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
 
   const startSession = (templateId = activeTemplateId) => {
@@ -839,6 +855,7 @@ function App() {
                     data={data}
                     selectedTemplate={selectedTemplate}
                     suggestedTemplate={suggestedTemplate}
+                    recoveryRecommendation={recoveryRecommendation}
                     weeklyPrescription={weeklyPrescription}
                     coachAutomationSummary={coachAutomationSummary}
                     trainingIntelligenceSummary={trainingIntelligenceSummary}
@@ -849,6 +866,7 @@ function App() {
                     onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
                     onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId, activeProgramTemplateId: suggestedTemplateId }))}
                     onStart={() => startSession()}
+                    onStartRecommended={(templateId) => startSession(templateId)}
                     onResume={() => setActiveTab('training')}
                     onViewSession={(sessionId, date) => {
                       setProgressTarget({ section: 'list', sessionId, date });

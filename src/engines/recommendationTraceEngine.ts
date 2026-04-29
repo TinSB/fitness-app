@@ -20,6 +20,7 @@ import { auditGoalModeConsistency, normalizePrimaryGoal, normalizeTrainingMode }
 import { buildLoadFeedbackSummary } from './loadFeedbackEngine';
 import { buildPainPatterns, getExercisePainPattern } from './painPatternEngine';
 import { applyStatusRules } from './progressionEngine';
+import { buildTemplateBodyPartConflictScore } from './recoveryAwareScheduler';
 import { buildWeeklyPrescription, getMuscleBudget } from './supportPlanEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './trainingDecisionContext';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel, type AutoTrainingLevel } from './trainingLevelEngine';
@@ -279,6 +280,23 @@ export const buildRecommendationTrace = (context: RecommendationTraceContext): R
     trainingLevelFactor(trainingLevel, decisionContext.history.length),
     recentHistoryFactor(decisionContext.history),
   ];
+  const recoveryConflict = buildTemplateBodyPartConflictScore({
+    template,
+    sorenessAreas: (decisionContext.todayStatus?.soreness || []).filter((area) => area !== '无'),
+    painAreas: painPatterns.map((pattern) => pattern.area),
+  });
+  if (recoveryConflict.level === 'moderate' || recoveryConflict.level === 'high') {
+    globalFactors.push(
+      factor({
+        id: 'recovery-template-conflict',
+        label: '恢复冲突',
+        effect: 'decrease',
+        magnitude: recoveryConflict.level === 'high' ? 'large' : 'moderate',
+        source: 'painPattern',
+        reason: `你标记了${recoveryConflict.affectedAreas.join('、')}，而 ${formatTemplateName(template)} 包含相关参与动作，因此系统建议今天选择低冲突安排或保守执行。`,
+      }),
+    );
+  }
   if (decisionContext.healthSummary) {
     globalFactors.push(
       factor({

@@ -4,6 +4,7 @@ import type { HealthSummary } from './healthSummaryEngine';
 import type { LoadFeedbackSummary } from './loadFeedbackEngine';
 import type { AutoTrainingLevel } from './trainingLevelEngine';
 import { number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { buildTemplateBodyPartConflictScore } from './recoveryAwareScheduler';
 
 export type DailyTrainingAdjustmentType =
   | 'normal'
@@ -48,6 +49,8 @@ export type BuildDailyTrainingAdjustmentInput = {
   previous24hActivity?: Previous24hActivityInput | null;
   recentHistory?: TrainingSession[];
   painPatterns?: PainPattern[];
+  sorenessAreas?: string[];
+  painAreas?: string[];
   loadFeedbackSummary?: LoadFeedbackSummary | LoadFeedbackSummary[] | Record<string, LoadFeedbackSummary> | null;
   trainingLevel?: AutoTrainingLevel | string;
   activeTemplate?: TrainingTemplate | null;
@@ -177,6 +180,36 @@ const painSignals = (painPatterns: PainPattern[] = [], activeTemplate?: Training
     }));
 };
 
+const recoveryConflictSignals = (
+  activeTemplate?: TrainingTemplate | null,
+  sorenessAreas: string[] = [],
+  painAreas: string[] = [],
+): Signal[] => {
+  if (!activeTemplate || (!sorenessAreas.length && !painAreas.length)) return [];
+  const conflict = buildTemplateBodyPartConflictScore({ template: activeTemplate, sorenessAreas, painAreas });
+  if (conflict.level === 'none' || conflict.level === 'low') return [];
+  const templateName = formatTemplateName(activeTemplate.id || activeTemplate.name, '当前训练');
+  const affected = conflict.affectedAreas.join('、');
+  if (conflict.level === 'high') {
+    return [
+      {
+        id: 'recovery-template-high-conflict',
+        priority: 98,
+        reason: `今天标记的${affected}与 ${templateName} 重叠较高，建议改练低冲突模板或安排恢复。`,
+        change: { type: 'reduce_volume', reason: '不自动修改计划；如仍训练，应明显降低相关部位压力。' },
+      },
+    ];
+  }
+  return [
+    {
+      id: 'recovery-template-moderate-conflict',
+      priority: 82,
+      reason: `今天标记的${affected}与 ${templateName} 有中等重叠，建议按保守版执行。`,
+      change: { type: 'reduce_support', reason: '减少相关辅助动作，主训练保持可控，不主动加量。' },
+    },
+  ];
+};
+
 const normalizeLoadFeedbackSummaries = (
   value?: LoadFeedbackSummary | LoadFeedbackSummary[] | Record<string, LoadFeedbackSummary> | null,
 ) => {
@@ -260,6 +293,8 @@ const confidenceFor = (signals: Signal[], healthSummary?: HealthSummary | null):
 const typeForSignals = (signals: Signal[]): DailyTrainingAdjustmentType => {
   if (!signals.length) return 'normal';
   if (signals.some((signal) => signal.id === 'readiness-recovery')) return 'rest_or_recovery';
+  if (signals.some((signal) => signal.id === 'recovery-template-high-conflict')) return 'rest_or_recovery';
+  if (signals.some((signal) => signal.id === 'recovery-template-moderate-conflict')) return 'conservative';
   if (signals.some((signal) => signal.id.startsWith('pain-'))) return 'substitute_risky_exercises';
   if (signals.some((signal) => signal.id === 'previous-24h-high-activity')) return 'reduce_support';
   if (signals.some((signal) => signal.id === 'recent-high-volume')) return 'main_only';
@@ -310,6 +345,8 @@ export const buildDailyTrainingAdjustment = ({
   previous24hActivity,
   recentHistory = [],
   painPatterns = [],
+  sorenessAreas = [],
+  painAreas = [],
   loadFeedbackSummary,
   trainingLevel,
   activeTemplate,
@@ -318,6 +355,7 @@ export const buildDailyTrainingAdjustment = ({
     ...readinessSignals(readinessResult),
     ...healthSignals(healthSummary),
     ...activitySignals(previous24hActivity, healthSummary),
+    ...recoveryConflictSignals(activeTemplate, sorenessAreas, painAreas),
     ...painSignals(painPatterns, activeTemplate),
     ...loadFeedbackSignals(loadFeedbackSummary, activeTemplate),
     ...trainingLevelSignals(trainingLevel),

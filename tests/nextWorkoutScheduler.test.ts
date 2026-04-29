@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildNextWorkoutRecommendation } from '../src/engines/nextWorkoutScheduler';
 import { buildTodayTrainingState } from '../src/engines/todayStateEngine';
 import type { PainPattern, ReadinessResult, TrainingSession } from '../src/models/training-model';
-import { makeAppData, makeSession } from './fixtures';
+import { getTemplate, makeAppData, makeSession } from './fixtures';
 
 const completedSession = (id: string, date: string, templateId: string, exerciseId: string, dataFlag?: TrainingSession['dataFlag']) => ({
   ...makeSession({
@@ -168,6 +168,18 @@ describe('nextWorkoutScheduler', () => {
     expect(recommendation.templateId).toBeTruthy();
     expect(recommendation.warnings.join('\n')).toContain('准备度较低');
     expect(recommendation.reason).toContain('低负荷');
+  });
+
+  it('uses today soreness to avoid high-conflict templates', () => {
+    const recommendation = buildNextWorkoutRecommendation({
+      templates: [getTemplate('upper'), getTemplate('legs-a')],
+      sorenessAreas: ['肩部'],
+    });
+
+    expect(recommendation.kind).toBe('train');
+    expect(recommendation.templateId).toBe('legs-a');
+    expect(recommendation.conflictLevel).toBe('high');
+    expect(recommendation.warnings.join('\n')).toContain('肩部');
   });
 
   it('returns Chinese explanation text without raw enum leakage', () => {

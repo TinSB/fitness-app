@@ -13,6 +13,7 @@ import { buildTrainingLevelExplanation } from '../engines/explainability/trainin
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
+import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
@@ -32,6 +33,7 @@ interface TodayViewProps {
   data: AppData;
   selectedTemplate: TrainingTemplate;
   suggestedTemplate: TrainingTemplate;
+  recoveryRecommendation?: RecoveryAwareRecommendation;
   weeklyPrescription: WeeklyPrescription;
   coachAutomationSummary?: CoachAutomationSummary;
   trainingIntelligenceSummary?: TrainingIntelligenceSummary;
@@ -42,6 +44,7 @@ interface TodayViewProps {
   onTemplateSelect: (id: string) => void;
   onUseSuggestion: () => void;
   onStart: () => void;
+  onStartRecommended?: (templateId: string) => void;
   onResume: () => void;
   onViewSession?: (sessionId: string, date?: string) => void;
   onViewCalendar?: (date?: string) => void;
@@ -123,6 +126,7 @@ export function TodayView({
   data,
   selectedTemplate,
   suggestedTemplate,
+  recoveryRecommendation,
   weeklyPrescription,
   coachAutomationSummary,
   trainingIntelligenceSummary,
@@ -132,6 +136,7 @@ export function TodayView({
   onSorenessToggle,
   onUseSuggestion,
   onStart,
+  onStartRecommended,
   onResume,
   onViewSession,
   onViewCalendar,
@@ -190,6 +195,7 @@ export function TodayView({
     completedTemplateName: completedTrainingName,
     activeTemplateName: activeTrainingName,
     nextSuggestion: suggestedTemplate,
+    recoveryRecommendation,
   });
 
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
@@ -206,7 +212,9 @@ export function TodayView({
       ? suggestedTemplate
       : todayTrainingState.status === 'in_progress' && data.activeSession?.templateId
         ? data.templates.find((template) => template.id === data.activeSession?.templateId) || selectedTemplate
-        : selectedTemplate;
+        : recoveryRecommendation?.templateId
+          ? data.templates.find((template) => template.id === recoveryRecommendation.templateId) || selectedTemplate
+          : selectedTemplate;
   const recommendationTrace = React.useMemo(
     () =>
       buildRecommendationTrace({
@@ -273,6 +281,32 @@ export function TodayView({
     if (confirmed) onStart();
   };
 
+  const handleRecoveryOverride = async () => {
+    const confirmed = await confirm({
+      title: '今天存在恢复冲突，确定继续训练吗？',
+      description: '你仍然可以训练。建议降低相关部位压力，并在不适加重时停止当前动作。',
+      confirmText: '仍要训练',
+      cancelText: '返回建议',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
+    const templateId =
+      todayViewModel.recommendationKind === 'train' && todayViewModel.recommendedTemplateId && todayViewModel.recommendedTemplateId !== selectedTemplate.id
+        ? selectedTemplate.id
+        : todayViewModel.recommendedTemplateId || selectedTemplate.id;
+    if (onStartRecommended) {
+      onStartRecommended(templateId);
+      return;
+    }
+    onStart();
+  };
+
+  const handleRecoveryPrimaryAction = () => {
+    const summary = todayViewModel.recoverySummary || '今天建议保守处理恢复信号。';
+    const reasons = (todayViewModel.recoveryReasons || []).slice(0, 2).join(' ');
+    setCoachActionFeedback([summary, reasons].filter(Boolean).join(' '));
+  };
+
   const coachActionTitle = (action: CoachAutomationSummary['recommendedActions'][number]) =>
     action.actionType === 'review_data'
       ? dataHealthViewModel?.primaryIssues[0]?.title || action.label
@@ -312,6 +346,12 @@ export function TodayView({
     setCoachActionFeedback(action.reason || '这条建议只是提示，可忽略。');
   };
 
+  const recoveryNeedsNonTrainingPrimary =
+    todayTrainingState.status === 'not_started' &&
+    todayViewModel.recommendationKind &&
+    todayViewModel.recommendationKind !== 'train';
+  const recommendedTemplateId = todayTrainingState.status === 'not_started' ? todayViewModel.recommendedTemplateId : undefined;
+
   const primaryAction =
     todayTrainingState.status === 'completed' && completedSession ? (
       <ActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary" size="lg" fullWidth>
@@ -323,10 +363,19 @@ export function TodayView({
         继续训练
         <ChevronRight className="h-4 w-4" />
       </ActionButton>
+    ) : recoveryNeedsNonTrainingPrimary ? (
+      <ActionButton type="button" onClick={handleRecoveryPrimaryAction} variant="primary" size="lg" fullWidth>
+        {todayViewModel.primaryActionLabel}
+      </ActionButton>
+    ) : recommendedTemplateId && recommendedTemplateId !== selectedTemplate.id ? (
+      <ActionButton type="button" onClick={() => (onStartRecommended ? onStartRecommended(recommendedTemplateId) : onStart())} variant="primary" size="lg" fullWidth>
+        <Play className="h-4 w-4" />
+        {todayViewModel.primaryActionLabel}
+      </ActionButton>
     ) : (
       <ActionButton type="button" onClick={onStart} variant="primary" size="lg" fullWidth>
         <Play className="h-4 w-4" />
-        开始训练
+        {todayViewModel.primaryActionLabel}
       </ActionButton>
     );
 
@@ -349,6 +398,11 @@ export function TodayView({
                   <div className="text-sm font-semibold text-emerald-700">{recommendationLabel}</div>
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">{currentTrainingName}</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{decisionText}</p>
+                  {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
+                    <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                      {todayViewModel.recoverySummary}
+                    </div>
+                  ) : null}
                   {todayTrainingState.status === 'completed' ? (
                     <div
                       className="mt-4 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900"
@@ -356,7 +410,7 @@ export function TodayView({
                     >
                       {nextSuggestion.description}
                     </div>
-                  ) : hasAlternativeSuggestion ? (
+                  ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
                     <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
                       系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
                     </div>
@@ -375,6 +429,10 @@ export function TodayView({
                         再练一场
                       </ActionButton>
                     </>
+                  ) : recoveryNeedsNonTrainingPrimary || todayViewModel.requiresRecoveryOverride ? (
+                    <ActionButton type="button" onClick={handleRecoveryOverride} variant="secondary" fullWidth>
+                      仍要训练
+                    </ActionButton>
                   ) : hasAlternativeSuggestion ? (
                     <ActionButton type="button" onClick={onUseSuggestion} variant="secondary" fullWidth>
                       采用推荐安排

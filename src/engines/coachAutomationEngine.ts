@@ -147,6 +147,8 @@ export const buildCoachAutomationSummary = (appData: AppData): CoachAutomationSu
           : undefined,
         recentHistory: analyticsHistory,
         painPatterns,
+        sorenessAreas: appData.todayStatus?.soreness?.filter((area) => area !== '无') || [],
+        painAreas: painPatterns.map((pattern) => pattern.area),
         loadFeedbackSummary,
         trainingLevel,
         activeTemplate,
@@ -158,6 +160,8 @@ export const buildCoachAutomationSummary = (appData: AppData): CoachAutomationSu
     templates: appData.templates || [],
     todayState,
     painPatterns,
+    sorenessAreas: appData.todayStatus?.soreness?.filter((area) => area !== '无') || [],
+    painAreas: painPatterns.map((pattern) => pattern.area),
     readinessResult,
     trainingMode: appData.trainingMode,
   });

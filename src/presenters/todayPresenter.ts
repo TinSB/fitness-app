@@ -1,5 +1,6 @@
 import type { TrainingTemplate } from '../models/training-model';
 import type { TodayTrainingState } from '../engines/todayStateEngine';
+import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
 import { formatTemplateName } from '../i18n/formatters';
 
 export type TodayViewModel = {
@@ -16,6 +17,11 @@ export type TodayViewModel = {
     templateName: string;
     description: string;
   };
+  recommendationKind?: RecoveryAwareRecommendation['kind'];
+  recoverySummary?: string;
+  recoveryReasons?: string[];
+  requiresRecoveryOverride?: boolean;
+  recommendedTemplateId?: string;
 };
 
 const buildNextSuggestion = (template?: Pick<TrainingTemplate, 'id' | 'name'> | null): TodayViewModel['nextSuggestion'] => {
@@ -39,12 +45,14 @@ export const buildTodayViewModel = ({
   completedTemplateName,
   activeTemplateName,
   nextSuggestion,
+  recoveryRecommendation,
 }: {
   todayState: TodayTrainingState;
   selectedTemplate: TrainingTemplate;
   completedTemplateName?: string;
   activeTemplateName?: string;
   nextSuggestion?: Pick<TrainingTemplate, 'id' | 'name'> | null;
+  recoveryRecommendation?: RecoveryAwareRecommendation;
 }): TodayViewModel => {
   const selectedTemplateName = formatTemplateName(selectedTemplate);
   const resolvedNextSuggestion = buildNextSuggestion(nextSuggestion);
@@ -76,6 +84,56 @@ export const buildTodayViewModel = ({
       currentTrainingName,
       decisionText: '当前训练还没有结束，继续记录当前组即可。',
       nextSuggestion: resolvedNextSuggestion,
+    };
+  }
+
+  if (recoveryRecommendation && recoveryRecommendation.kind !== 'train') {
+    const currentTrainingName =
+      recoveryRecommendation.kind === 'modified_train' && recoveryRecommendation.templateName
+        ? `${recoveryRecommendation.templateName}（保守建议）`
+        : recoveryRecommendation.title.replace('今日建议：', '');
+    const primaryActionLabel =
+      recoveryRecommendation.kind === 'rest'
+        ? '查看恢复建议'
+        : recoveryRecommendation.kind === 'active_recovery'
+          ? '查看恢复安排'
+          : recoveryRecommendation.kind === 'mobility_only'
+            ? '开始轻量恢复'
+            : '查看保守建议';
+    return {
+      state: 'not_started',
+      pageTitle: recoveryRecommendation.kind === 'rest' || recoveryRecommendation.kind === 'active_recovery' ? '今日恢复优先' : '今日建议已调整',
+      recommendationLabel: '今日建议',
+      primaryActionLabel,
+      secondaryActionLabels: ['仍要训练'],
+      statusText: recoveryRecommendation.summary,
+      currentTrainingName,
+      decisionText: recoveryRecommendation.summary,
+      nextSuggestion: resolvedNextSuggestion,
+      recommendationKind: recoveryRecommendation.kind,
+      recoverySummary: recoveryRecommendation.summary,
+      recoveryReasons: recoveryRecommendation.reasons,
+      requiresRecoveryOverride: recoveryRecommendation.requiresConfirmationToOverride,
+      recommendedTemplateId: recoveryRecommendation.templateId,
+    };
+  }
+
+  if (recoveryRecommendation?.templateId && recoveryRecommendation.templateId !== selectedTemplate.id) {
+    return {
+      state: 'not_started',
+      pageTitle: '今天该怎么练',
+      recommendationLabel: '今日建议',
+      primaryActionLabel: '开始推荐训练',
+      secondaryActionLabels: ['查看动作安排'],
+      statusText: recoveryRecommendation.summary,
+      currentTrainingName: recoveryRecommendation.templateName || formatTemplateName(recoveryRecommendation.templateId),
+      decisionText: recoveryRecommendation.summary,
+      nextSuggestion: resolvedNextSuggestion,
+      recommendationKind: recoveryRecommendation.kind,
+      recoverySummary: recoveryRecommendation.summary,
+      recoveryReasons: recoveryRecommendation.reasons,
+      requiresRecoveryOverride: recoveryRecommendation.requiresConfirmationToOverride,
+      recommendedTemplateId: recoveryRecommendation.templateId,
     };
   }
 

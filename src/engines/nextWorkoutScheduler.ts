@@ -9,13 +9,22 @@ import type {
 } from '../models/training-model';
 import type { TodayTrainingState } from './todayStateEngine';
 import { number } from './engineUtils';
+import {
+  buildRecoveryAwareRecommendation,
+  type DailyRecommendationKind,
+  type RecoveryAwareRecommendation,
+  type RecoveryConflictLevel,
+} from './recoveryAwareScheduler';
 
 export type NextWorkoutRecommendation = {
+  kind?: DailyRecommendationKind;
   templateId?: string;
   templateName: string;
   confidence: 'low' | 'medium' | 'high';
   reason: string;
   warnings: string[];
+  conflictLevel?: RecoveryConflictLevel;
+  recovery?: RecoveryAwareRecommendation;
   alternatives: Array<{
     templateId: string;
     templateName: string;
@@ -61,6 +70,8 @@ export type BuildNextWorkoutRecommendationInput = {
   todayState?: TodayTrainingState;
   weeklyVolumeSummary?: WeeklyVolumeSummaryInput | null;
   painPatterns?: PainPattern[];
+  sorenessAreas?: string[];
+  painAreas?: string[];
   readinessResult?: ReadinessResult | null;
   trainingMode?: TrainingMode | string;
 };
@@ -330,11 +341,14 @@ export const buildNextWorkoutRecommendation = ({
   todayState,
   weeklyVolumeSummary,
   painPatterns = [],
+  sorenessAreas = [],
+  painAreas = [],
   readinessResult,
   trainingMode,
 }: BuildNextWorkoutRecommendationInput): NextWorkoutRecommendation => {
   if (activeSession && activeSession.completed !== true) {
     return {
+      kind: 'train',
       templateId: activeSession.templateId,
       templateName: localizedTemplateName(activeSession),
       confidence: 'high',
@@ -348,6 +362,7 @@ export const buildNextWorkoutRecommendation = ({
   const ordered = orderedResult.templates;
   if (!ordered.length) {
     return {
+      kind: 'active_recovery',
       templateName: '暂无下次建议',
       confidence: 'low',
       reason: '当前没有可用训练模板，因此暂时无法判断下次练什么。',
@@ -429,15 +444,52 @@ export const buildNextWorkoutRecommendation = ({
   const selectedCandidate = candidates.find((candidate) => candidate.template.id === selected.id);
   selectedCandidate?.warnings.forEach((warning) => appendWarning(warnings, warning));
 
+  const recovery = buildRecoveryAwareRecommendation({
+    preferredTemplate: selected,
+    templates: ordered,
+    sorenessAreas,
+    painAreas,
+    readinessResult,
+    availableTimeMin: number(todayState && 'availableTimeMin' in todayState ? todayState.availableTimeMin : undefined),
+  });
+  if (recovery.kind !== 'train' || recovery.templateId !== selected.id || recovery.conflictLevel !== 'none') {
+    reasonParts.push(recovery.summary);
+    recovery.reasons.slice(0, 2).forEach((reason) => appendWarning(warnings, reason));
+  }
+  if (recovery.kind === 'train' && recovery.templateId && recovery.templateId !== selected.id) {
+    const recoveryTemplate = ordered.find((template) => template.id === recovery.templateId);
+    if (recoveryTemplate) selected = recoveryTemplate;
+  }
+
   const confidence: NextWorkoutRecommendation['confidence'] =
-    !anchorSession || readinessLow || warnings.length >= 2 ? 'low' : selected.id !== baseTemplate.id || warnings.length ? 'medium' : 'high';
+    !anchorSession || readinessLow || warnings.length >= 2 || recovery.kind !== 'train'
+      ? 'low'
+      : selected.id !== baseTemplate.id || warnings.length || recovery.conflictLevel !== 'none'
+        ? 'medium'
+        : 'high';
+
+  if (recovery.kind === 'rest' || recovery.kind === 'active_recovery' || recovery.kind === 'mobility_only') {
+    return {
+      kind: recovery.kind,
+      templateName: recovery.templateName || recovery.title.replace('今日建议：', ''),
+      confidence,
+      reason: reasonParts.join(' '),
+      warnings,
+      conflictLevel: recovery.conflictLevel,
+      recovery,
+      alternatives: alternativesFor(ordered, selected, candidates),
+    };
+  }
 
   return {
+    kind: recovery.kind,
     templateId: selected.id,
     templateName: localizedTemplateName(selected),
     confidence,
     reason: reasonParts.join(' '),
     warnings,
+    conflictLevel: recovery.conflictLevel,
+    recovery,
     alternatives: alternativesFor(ordered, selected, candidates),
   };
 };
