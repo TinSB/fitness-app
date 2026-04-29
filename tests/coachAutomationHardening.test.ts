@@ -160,6 +160,7 @@ describe('coach automation hardening', () => {
 
     expect(source).toContain('detectSetAnomalies');
     expect(source).toContain('<ConfirmDialog');
+    expect(source).toContain('确认保存这组？');
     expect(source).toContain('返回修改');
     expect(source).toContain('仍然保存');
     expect(source).toContain('confirmPendingAction');
@@ -178,9 +179,11 @@ describe('coach automation hardening', () => {
     const recordSource = sourceOf('src/features/RecordView.tsx');
 
     expect(sorted.map((issue) => issue.severity)).toEqual(['error', 'warning', 'warning', 'info']);
-    expect(profileSource).toContain('visibleDataHealthIssues = sortedDataHealthIssues.slice(0, 3)');
+    expect(profileSource).toContain('buildDataHealthViewModel');
+    expect(profileSource).toContain('primaryIssues');
     expect(profileSource).toContain('查看全部问题');
-    expect(recordSource).toContain('visibleIssues = sortedIssues.slice(0, 3)');
+    expect(recordSource).toContain('buildDataHealthViewModel');
+    expect(recordSource).toContain('primaryIssues');
     expect(recordSource).toContain('查看全部问题');
   });
 

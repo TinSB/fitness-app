@@ -2,10 +2,10 @@ import React from 'react';
 import { Activity, Database, Download, HardDrive, Ruler, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { downloadText, makeCsv } from '../engines/analytics';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
-import { sortDataHealthIssues } from '../engines/dataHealthEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import { formatGoal } from '../i18n/formatters';
+import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import type { AppData, UnitSettings } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
@@ -78,11 +78,10 @@ export function ProfileView({
   const testSessionCount = (data.history || []).filter((session) => session.dataFlag === 'test').length;
   const healthBatchCount = data.healthImportBatches?.length || 0;
   const dataHealth = coachAutomationSummary?.dataHealth;
-  const dataHealthTone = dataHealth?.status === 'has_errors' ? 'rose' : dataHealth?.status === 'has_warnings' ? 'amber' : 'emerald';
-  const dataHealthLabel = dataHealth?.status === 'has_errors' ? '需要处理' : dataHealth?.status === 'has_warnings' ? '建议复查' : '健康';
-  const sortedDataHealthIssues = sortDataHealthIssues(dataHealth?.issues || []);
-  const visibleDataHealthIssues = sortedDataHealthIssues.slice(0, 3);
-  const hiddenDataHealthIssues = sortedDataHealthIssues.slice(3);
+  const dataHealthViewModel = React.useMemo(() => (dataHealth ? buildDataHealthViewModel(dataHealth) : null), [dataHealth]);
+  const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
+  const visibleDataHealthIssues = dataHealthViewModel?.primaryIssues || [];
+  const hiddenDataHealthIssues = dataHealthViewModel?.secondaryIssues || [];
 
   const downloadBackup = () => {
     downloadText(`ironpath-${todayKey()}.json`, JSON.stringify(data, null, 2), 'application/json');
@@ -186,15 +185,19 @@ export function ProfileView({
             <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
           </PageSection>
 
-          {dataHealth ? (
+          {dataHealthViewModel ? (
             <PageSection title="数据健康检查" description="自动发现历史记录、替代动作、单位和健康导入中的潜在异常。">
               <Card className="space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-slate-950">{dataHealth.summary}</div>
-                    <div className="mt-1 text-xs leading-5 text-slate-500">这里只报告问题，不会自动删除、修正或覆盖任何数据。</div>
+                    <div className="text-sm font-semibold text-slate-950">
+                      {dataHealthViewModel.statusTone === 'healthy' ? '数据健康良好' : dataHealthViewModel.summary}
+                    </div>
+                    <div className="mt-1 text-xs leading-5 text-slate-500">
+                      {dataHealthViewModel.statusTone === 'healthy' ? '未发现会影响训练统计的问题。' : '这里只报告问题，不会自动删除、修正或覆盖任何数据。'}
+                    </div>
                   </div>
-                  <StatusBadge tone={dataHealthTone}>{dataHealthLabel}</StatusBadge>
+                  <StatusBadge tone={dataHealthTone}>{dataHealthViewModel.statusLabel}</StatusBadge>
                 </div>
                 {visibleDataHealthIssues.length ? (
                   <div className="space-y-2">
@@ -202,17 +205,23 @@ export function ProfileView({
                       <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-slate-950">{issue.title}</span>
-                          <StatusBadge tone={issue.severity === 'error' ? 'rose' : issue.severity === 'warning' ? 'amber' : 'slate'}>
-                            {issue.severity === 'error' ? '需要处理' : issue.severity === 'warning' ? '建议复查' : '提示'}
+                          <StatusBadge tone={issue.severityLabel === '需要处理' ? 'rose' : issue.severityLabel === '建议复查' ? 'amber' : 'slate'}>
+                            {issue.severityLabel}
                           </StatusBadge>
                         </div>
-                        <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
-                        {issue.suggestedAction ? <div className="mt-1 text-xs font-semibold leading-5 text-slate-700">{issue.suggestedAction}</div> : null}
+                        <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                        {issue.actionLabel ? <div className="mt-1 text-xs font-semibold leading-5 text-slate-700">{issue.actionLabel}</div> : null}
+                        {issue.technicalDetails ? (
+                          <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
+                            <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
+                            <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
+                          </details>
+                        ) : null}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <Notice tone="emerald">未发现明显数据异常。</Notice>
+                  <Notice tone="emerald">数据健康良好。未发现会影响训练统计的问题。</Notice>
                 )}
                 {hiddenDataHealthIssues.length ? (
                   <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
@@ -221,7 +230,13 @@ export function ProfileView({
                       {hiddenDataHealthIssues.map((issue) => (
                         <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
                           <div className="font-semibold text-slate-950">{issue.title}</div>
-                          <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                          <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                          {issue.technicalDetails ? (
+                            <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
+                              <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
+                              <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
+                            </details>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -324,12 +339,13 @@ export function ProfileView({
       </div>
 
       {pendingRestore ? (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/30 p-4">
+        <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
           <ConfirmDialog
-            title="导入并恢复备份？"
-            description={`将使用 ${pendingRestore.fileName} 覆盖当前浏览器里的 IronPath 数据。此操作会替换当前本地数据，建议确认已导出现有备份。`}
-            confirmLabel="确认恢复"
-            danger
+            title="导入备份？"
+            description={`导入会替换或合并当前数据，请确认备份来源可靠。文件：${pendingRestore.fileName}`}
+            confirmText="导入"
+            cancelText="取消"
+            variant="warning"
             onCancel={() => setPendingRestore(null)}
             onConfirm={confirmRestore}
           />

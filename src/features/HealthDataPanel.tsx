@@ -6,6 +6,7 @@ import { formatWeight } from '../engines/unitConversionEngine';
 import type { AppData, HealthImportBatch, HealthMetricSample, HealthMetricType, ImportedWorkoutSample } from '../models/training-model';
 import { ActionButton, Card, InlineNotice, SectionHeader, StatusBadge } from '../ui/common';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
+import { useConfirmDialog } from '../ui/useConfirmDialog';
 
 interface HealthDataPanelProps {
   data: AppData;
@@ -150,6 +151,7 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
   const [pendingFileWarning, setPendingFileWarning] = React.useState<{ file: File; message: string } | null>(null);
   const [xmlDateRange, setXmlDateRange] = React.useState<XmlDateRangeOption>('30');
   const [xmlMetricTypes, setXmlMetricTypes] = React.useState<HealthMetricType[]>(defaultXmlMetricTypes);
+  const { confirm, ConfirmDialogHost } = useConfirmDialog();
   const healthIntegrationSettings = {
     useHealthDataForReadiness: data.settings?.healthIntegrationSettings?.useHealthDataForReadiness !== false,
     showExternalWorkoutsInCalendar: data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false,
@@ -324,8 +326,17 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
     setImportStatus('idle');
   };
 
-  const updateBatchFlag = (batch: HealthImportBatch, dataFlag: 'normal' | 'excluded') => {
-    if (dataFlag === 'excluded' && !window.confirm('排除后，该批健康数据不会参与准备度和恢复分析，但仍可查看。确定继续吗？')) return;
+  const updateBatchFlag = async (batch: HealthImportBatch, dataFlag: 'normal' | 'excluded') => {
+    if (dataFlag === 'excluded') {
+      const confirmed = await confirm({
+        title: '更改数据状态？',
+        description: '测试或排除数据仍可查看，但不会参与训练统计。',
+        confirmText: '确认更改',
+        cancelText: '取消',
+        variant: 'warning',
+      });
+      if (!confirmed) return;
+    }
     onUpdateData({
       ...data,
       healthMetricSamples: (data.healthMetricSamples || []).map((item) => ((item.batchId === batch.id || (!item.batchId && item.importedAt === batch.importedAt)) ? { ...item, dataFlag } : item)),
@@ -335,8 +346,15 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
     setMessage(dataFlag === 'excluded' ? '已排除该批健康数据。' : '该批健康数据已恢复参与分析。');
   };
 
-  const deleteBatch = (batch: HealthImportBatch) => {
-    if (!window.confirm('确定删除这一批健康数据吗？删除后不能恢复，但不会影响 IronPath 训练历史。')) return;
+  const deleteBatch = async (batch: HealthImportBatch) => {
+    const confirmed = await confirm({
+      title: '删除这批健康数据？',
+      description: '删除后，这批导入的睡眠、心率、HRV、运动记录将不再用于准备度和日历。',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     onUpdateData({
       ...data,
       healthMetricSamples: (data.healthMetricSamples || []).filter((item) => item.batchId !== batch.id && (item.batchId || item.importedAt !== batch.importedAt)),
@@ -344,6 +362,22 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
       healthImportBatches: (data.healthImportBatches || []).filter((item) => item.id !== batch.id),
     });
     setMessage('已删除该批健康数据。');
+  };
+
+  const confirmLargeXmlImport = async () => {
+    if (!pendingFileWarning) return;
+    const confirmed = await confirm({
+      title: '继续解析大型 XML？',
+      description: '手机端解析大型文件可能较慢或失败。建议优先导入最近 30–90 天数据。',
+      confirmText: '继续解析',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (confirmed) {
+      void handleFile(pendingFileWarning.file, { force: true });
+    } else {
+      setPendingFileWarning(null);
+    }
   };
 
   return (
@@ -463,7 +497,7 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
               <div className="space-y-2">
                 <div>{pendingFileWarning.message}</div>
                 <div className="flex flex-wrap gap-2">
-                  <ActionButton variant="primary" onClick={() => void handleFile(pendingFileWarning.file, { force: true })}>
+                  <ActionButton variant="primary" onClick={() => void confirmLargeXmlImport()}>
                     继续解析
                   </ActionButton>
                   <ActionButton variant="ghost" onClick={retryImport}>
@@ -605,6 +639,7 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
           </InlineNotice>
         </div>
       </div>
+      <ConfirmDialogHost />
     </Card>
   );
 }

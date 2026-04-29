@@ -31,6 +31,8 @@ describe('shared UI component implementations', () => {
     expect(read('src/ui/Card.tsx')).toContain('uiTokens.shadow.card');
     expect(read('src/ui/StatusBadge.tsx')).toContain('emerald');
     expect(read('src/ui/StatusBadge.tsx')).toContain('rose');
-    expect(read('src/ui/ConfirmDialog.tsx')).toContain("variant={danger ? 'danger' : 'primary'}");
+    expect(read('src/ui/ConfirmDialog.tsx')).toContain('ConfirmDialogVariant');
+    expect(read('src/ui/ConfirmDialog.tsx')).toContain('aria-modal');
+    expect(read('src/ui/ConfirmDialog.tsx')).toContain("tone === 'warning'");
   });
 });

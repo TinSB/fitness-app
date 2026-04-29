@@ -512,12 +512,13 @@ export function PlanView({
       </div>
 
       {rollbackTarget ? (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/30 p-4">
+        <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
           <ConfirmDialog
             title="回滚到原模板？"
-            description="回滚只会把当前计划切回原模板。已经完成的训练记录、历史详情、PR/e1RM 和日历不会被删除。"
-            confirmLabel="确认回滚"
-            danger
+            description="当前实验模板不会删除，但之后训练会切回原模板。"
+            confirmText="回滚"
+            cancelText="取消"
+            variant="warning"
             onCancel={() => setRollbackTarget(null)}
             onConfirm={confirmRollback}
           />

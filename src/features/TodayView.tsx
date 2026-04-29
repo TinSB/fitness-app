@@ -13,6 +13,7 @@ import { buildTrainingLevelExplanation } from '../engines/explainability/trainin
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
+import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
@@ -22,6 +23,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
+import { useConfirmDialog } from '../ui/useConfirmDialog';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 
@@ -133,6 +135,7 @@ export function TodayView({
   onReviewDataHealth,
 }: TodayViewProps) {
   const [coachActionFeedback, setCoachActionFeedback] = React.useState('');
+  const { confirm, ConfirmDialogHost } = useConfirmDialog();
   const decisionContext = React.useMemo(
     () => buildTrainingDecisionContext(data, { trainingMode }),
     [
@@ -231,15 +234,36 @@ export function TodayView({
       : '今天优先完成主训练，细节记录放到训练页处理。');
   const coachActions = (coachAutomationSummary?.recommendedActions || []).slice(0, 2);
   const hiddenCoachActions = (coachAutomationSummary?.recommendedActions || []).slice(2);
-  const coachWarnings = (coachAutomationSummary?.keyWarnings || []).slice(0, Math.max(0, 2 - coachActions.length));
-  const hiddenCoachWarnings = (coachAutomationSummary?.keyWarnings || []).slice(coachWarnings.length);
+  const dataHealthViewModel = React.useMemo(
+    () => (coachAutomationSummary?.dataHealth ? buildDataHealthViewModel(coachAutomationSummary.dataHealth) : null),
+    [coachAutomationSummary?.dataHealth],
+  );
+  const rawCoachWarnings = coachAutomationSummary?.keyWarnings || [];
+  const shouldUseDataHealthActionCopy = dataHealthViewModel && dataHealthViewModel.statusTone !== 'healthy';
+  const coachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings.slice(0, Math.max(0, 2 - coachActions.length));
+  const hiddenCoachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings.slice(coachWarnings.length);
   const shouldShowCoachAdvice = coachActions.length > 0 || coachWarnings.length > 0;
 
-  const handleExtraTraining = () => {
-    if (typeof window === 'undefined' || window.confirm('你今天已经完成训练，确定要再开始一场吗？')) {
-      onStart();
-    }
+  const handleExtraTraining = async () => {
+    const confirmed = await confirm({
+      title: '今天已经完成训练，仍要再练一场？',
+      description: '系统会把这次训练作为额外训练记录保存。',
+      confirmText: '再练一场',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (confirmed) onStart();
   };
+
+  const coachActionTitle = (action: CoachAutomationSummary['recommendedActions'][number]) =>
+    action.actionType === 'review_data'
+      ? dataHealthViewModel?.primaryIssues[0]?.title || action.label
+      : action.label;
+
+  const coachActionReason = (action: CoachAutomationSummary['recommendedActions'][number]) =>
+    action.actionType === 'review_data'
+      ? dataHealthViewModel?.primaryIssues[0]?.userMessage || dataHealthViewModel?.summary || action.reason
+      : action.reason;
 
   const coachActionButtonLabel = (action: CoachAutomationSummary['recommendedActions'][number]) => {
     if (action.actionType === 'review_data') return '去检查数据';
@@ -363,14 +387,14 @@ export function TodayView({
                     <div key={action.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-slate-950">{action.label}</span>
+                          <span className="text-sm font-semibold text-slate-950">{coachActionTitle(action)}</span>
                           {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
                         </div>
                         <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
                           {coachActionButtonLabel(action)}
                         </ActionButton>
                       </div>
-                      <div className="mt-1 text-xs leading-5 text-slate-600">{action.reason}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-600">{coachActionReason(action)}</div>
                     </div>
                   ))}
                   {coachWarnings.map((warning) => (
@@ -392,14 +416,14 @@ export function TodayView({
                         <div key={action.id} className="rounded-lg bg-stone-50 px-3 py-2">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-slate-950">{action.label}</span>
+                              <span className="font-semibold text-slate-950">{coachActionTitle(action)}</span>
                               {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
                             </div>
                             <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
                               {coachActionButtonLabel(action)}
                             </ActionButton>
                           </div>
-                          <div className="mt-1 text-xs leading-5 text-slate-600">{action.reason}</div>
+                          <div className="mt-1 text-xs leading-5 text-slate-600">{coachActionReason(action)}</div>
                         </div>
                       ))}
                       {hiddenCoachWarnings.map((warning) => (
@@ -570,6 +594,7 @@ export function TodayView({
           </div>
         }
       />
+      <ConfirmDialogHost />
     </ResponsivePageLayout>
   );
 }

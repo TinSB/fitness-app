@@ -35,6 +35,7 @@ import { ActionButton } from './ui/ActionButton';
 import { Card } from './ui/Card';
 import { PageHeader } from './ui/PageHeader';
 import { StatusBadge } from './ui/StatusBadge';
+import { useConfirmDialog } from './ui/useConfirmDialog';
 import { ResponsivePageLayout } from './ui/layouts/ResponsivePageLayout';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
@@ -173,6 +174,7 @@ function App() {
   const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
   const [profileSection, setProfileSection] = useState<ProfileSection>('home');
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
+  const { confirm, ConfirmDialogHost } = useConfirmDialog();
 
   useEffect(() => {
     saveData(data);
@@ -414,8 +416,15 @@ function App() {
     setExpandedExercise(exerciseIndex);
   };
 
-  const deleteActiveSession = () => {
-    if (!window.confirm('确定放弃当前训练吗？未完成的数据不会进入历史记录。')) return;
+  const deleteActiveSession = async (skipConfirm = false) => {
+    const confirmed = skipConfirm ? true : await confirm({
+        title: '放弃当前训练？',
+        description: '当前未保存的训练记录将不会进入历史。',
+        confirmText: '放弃训练',
+        cancelText: '继续训练',
+        variant: 'danger',
+      });
+    if (!confirmed) return;
     setData((current) => ({ ...current, activeSession: null }));
     setActiveTab('today');
   };
@@ -522,8 +531,15 @@ function App() {
     setBodyWeightInput('');
   };
 
-  const resetTemplates = () => {
-    if (!window.confirm('确定恢复默认模板吗？历史训练记录会保留。')) return;
+  const resetTemplates = async () => {
+    const confirmed = await confirm({
+      title: '恢复默认模板？',
+      description: '会重置当前模板配置，历史训练记录会保留。',
+      confirmText: '恢复默认',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     setData((current) => ({
       ...current,
       templates: hydrateTemplates(INITIAL_TEMPLATES),
@@ -542,7 +558,13 @@ function App() {
       (item) => item.rollbackAvailable && item.experimentalProgramTemplateId === data.activeProgramTemplateId
     );
     if (activeExperiment && activeExperiment.experimentalProgramTemplateId !== draft.sourceProgramTemplateId) {
-      const replace = window.confirm('当前已经启用了一个实验模板。是否用新的下周实验模板替换当前实验模板？原实验记录会保留，可回滚。');
+      const replace = await confirm({
+        title: '应用实验模板？',
+        description: '不会覆盖原模板，会生成或切换到实验模板，可回滚。',
+        confirmText: '应用',
+        cancelText: '取消',
+        variant: 'default',
+      });
       if (!replace) return;
     }
 
@@ -652,9 +674,8 @@ function App() {
   };
 
   const deleteHistorySession = (sessionId: string) => {
-    const confirmed = window.confirm('删除后该训练不会计入记录、e1RM、PR、完成度和日历。此操作不可恢复，建议先导出备份。确定删除吗？');
     setData((current) => {
-      const result = deleteTrainingSession(current, sessionId, confirmed);
+      const result = deleteTrainingSession(current, sessionId, true);
       return result.data;
     });
   };
@@ -674,10 +695,7 @@ function App() {
   };
 
   const updateHistorySessionFlag = (sessionId: string, dataFlag: SessionDataFlag) => {
-    const confirmed =
-      dataFlag === 'normal' ||
-      window.confirm('标记为测试/排除后，该训练不会计入记录、e1RM、PR、完成度和日历。确定继续吗？');
-    setData((current) => markSessionDataFlag(current, sessionId, dataFlag, confirmed).data);
+    setData((current) => markSessionDataFlag(current, sessionId, dataFlag, true).data);
   };
 
   const editHistorySession = (session: TrainingSession) => {
@@ -759,7 +777,7 @@ function App() {
                         <ActionButton type="button" onClick={() => setForceFullTrainingView(true)} variant="secondary">
                           完整训练页
                         </ActionButton>
-                        <ActionButton type="button" onClick={deleteActiveSession} variant="danger">
+                        <ActionButton type="button" onClick={() => void deleteActiveSession()} variant="danger">
                           放弃
                         </ActionButton>
                         <ActionButton type="button" onClick={() => finishSession()} variant="primary">
@@ -823,7 +841,7 @@ function App() {
                       onFinish={finishSession}
                       onFinishToCalendar={() => finishSession('calendar')}
                       onFinishToToday={() => finishSession('today')}
-                      onDelete={deleteActiveSession}
+                      onDelete={() => void deleteActiveSession(true)}
                       onReturnFocusMode={() => setForceFullTrainingView(false)}
                       onExtendRestTimer={extendActiveRestTimer}
                       onToggleRestTimer={toggleActiveRestTimer}
@@ -912,6 +930,7 @@ function App() {
                   </Suspense>
                 )}
       </AppShell>
+      <ConfirmDialogHost />
       <AddToHomeScreenHint />
     </>
   );

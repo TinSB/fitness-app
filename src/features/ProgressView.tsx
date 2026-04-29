@@ -56,6 +56,7 @@ import type { AdjustmentEffectReview, AppData, PersonalRecord, ProgramAdjustment
 import { ActionButton, Card, EmptyState, Page, Stat, StatusBadge, WeeklyPrescriptionCard } from '../ui/common';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Term } from '../ui/Term';
+import { useConfirmDialog } from '../ui/useConfirmDialog';
 
 export interface ProgressViewProps {
   data: AppData;
@@ -206,6 +207,7 @@ export function ProgressView({
 }: ProgressViewProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [restoreMessage, setRestoreMessage] = React.useState('');
+  const { confirm, ConfirmDialogHost } = useConfirmDialog();
   const rawHistory = data.history || [];
   const [activeProgressSection, setActiveProgressSection] = React.useState<ProgressSectionId>(initialSection || 'calendar');
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
@@ -388,7 +390,14 @@ export function ProgressView({
       setRestoreMessage(result.error || '导入失败，当前数据没有被覆盖。');
       return;
     }
-    if (!window.confirm('确定导入这个备份吗？当前本地数据会被替换。')) return;
+    const confirmed = await confirm({
+      title: '导入备份？',
+      description: '导入会替换或合并当前数据，请确认备份来源可靠。',
+      confirmText: '导入',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     onRestoreData(result.data);
     setRestoreMessage('导入成功，数据已恢复。');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -419,6 +428,57 @@ export function ProgressView({
   const openSessionDetail = (sessionId: string) => {
     setSelectedSessionId(sessionId);
     setActiveProgressSection('history');
+  };
+
+  const requestApplyProgramAdjustmentDraft = async () => {
+    if (!previewDraft || !adjustmentDiff) return;
+    const hasHighRisk = adjustmentDiff.changes.some((change) => change.riskLevel === 'high');
+    const confirmed = await confirm({
+      title: '应用实验模板？',
+      description: hasHighRisk
+        ? '这次预览包含风险较高的调整。不会覆盖原模板，会生成或切换到实验模板，可回滚。'
+        : '不会覆盖原模板，会生成或切换到实验模板，可回滚。',
+      confirmText: '应用',
+      cancelText: '取消',
+      variant: 'default',
+    });
+    if (confirmed) onApplyProgramAdjustmentDraft(previewDraft);
+  };
+
+  const requestRollbackProgramAdjustment = async (historyItemId: string) => {
+    const confirmed = await confirm({
+      title: '回滚到原模板？',
+      description: '当前实验模板不会删除，但之后训练会切回原模板。',
+      confirmText: '回滚',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (confirmed) onRollbackProgramAdjustment(historyItemId);
+  };
+
+  const requestDeleteHistorySession = async (sessionId: string) => {
+    const confirmed = await confirm({
+      title: '删除这次训练？',
+      description: '删除后该训练不会参与日历、PR、e1RM、有效组和统计。建议先导出备份。',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (confirmed) onDeleteSession(sessionId);
+  };
+
+  const requestMarkSessionDataFlag = async (sessionId: string, dataFlag: SessionDataFlag) => {
+    const confirmed = await confirm({
+      title: dataFlag === 'normal' ? '恢复为正常数据？' : '更改数据状态？',
+      description:
+        dataFlag === 'normal'
+          ? '恢复后这次训练会重新参与 PR、e1RM、有效组和统计。'
+          : '测试或排除数据仍可查看，但不会参与训练统计。',
+      confirmText: dataFlag === 'normal' ? '恢复' : '确认更改',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (confirmed) onMarkSessionDataFlag(sessionId, dataFlag);
   };
 
   const renderEmptyHistory = () => (
@@ -517,14 +577,14 @@ export function ProgressView({
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" onClick={() => onDeleteSession(session.id)} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
+          <button type="button" onClick={() => void requestDeleteHistorySession(session.id)} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-700">
             删除本次训练
           </button>
-          <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-black text-amber-700">
+          <button type="button" onClick={() => void requestMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-black text-amber-700">
             {session.dataFlag === 'test' ? '恢复为正常数据' : '标记为测试数据'}
           </button>
           {session.dataFlag === 'excluded' ? (
-            <button type="button" onClick={() => onMarkSessionDataFlag(session.id, 'normal')} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
+            <button type="button" onClick={() => void requestMarkSessionDataFlag(session.id, 'normal')} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700">
               恢复为正常数据
             </button>
           ) : null}
@@ -683,10 +743,10 @@ export function ProgressView({
                 <button type="button" onClick={() => setSelectedSessionId(session.id)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-700">
                   查看详情
                 </button>
-                <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
+                <button type="button" onClick={() => void requestMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
                   {session.dataFlag === 'test' ? '恢复正式' : '标记测试'}
                 </button>
-                <button type="button" onClick={() => onDeleteSession(session.id)} className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-black text-rose-700">
+                <button type="button" onClick={() => void requestDeleteHistorySession(session.id)} className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-black text-rose-700">
                   删除
                 </button>
               </div>
@@ -1084,13 +1144,7 @@ export function ProgressView({
               <button
                 type="button"
                 disabled={!previewDraft || !adjustmentDiff.changes.length || adjustmentDiff.changes.every((change) => change.riskLevel === 'high')}
-                onClick={() => {
-                  if (!previewDraft) return;
-                  const hasHighRisk = adjustmentDiff.changes.some((change) => change.riskLevel === 'high');
-                  if (hasHighRisk && !window.confirm('预览里包含高风险调整，确定仍要作为实验模板应用吗？')) return;
-                  if (!window.confirm('确认应用为下周实验模板吗？这不会覆盖原模板，并且可以回滚。')) return;
-                  onApplyProgramAdjustmentDraft(previewDraft);
-                }}
+                onClick={() => void requestApplyProgramAdjustmentDraft()}
                 className="mt-3 w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 应用为下周实验模板
@@ -1143,10 +1197,7 @@ export function ProgressView({
                       {item.rollbackAvailable ? (
                         <button
                           type="button"
-                          onClick={() => {
-                            if (!window.confirm('确认回滚到原模板吗？这不会删除实验模板历史。')) return;
-                            onRollbackProgramAdjustment(item.id);
-                          }}
+                          onClick={() => void requestRollbackProgramAdjustment(item.id)}
                           className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
                         >
                           回滚到原模板
@@ -1606,10 +1657,10 @@ export function ProgressView({
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="text-sm font-black text-emerald-700">{formatTrainingVolume(sessionVolume(session), unitSettings)}</div>
-                    <button type="button" onClick={() => onMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
+                    <button type="button" onClick={() => void requestMarkSessionDataFlag(session.id, session.dataFlag === 'test' ? 'normal' : 'test')} className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-black text-amber-700">
                       {session.dataFlag === 'test' ? '恢复正式' : '标记测试'}
                     </button>
-                    <button type="button" onClick={() => onDeleteSession(session.id)} className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-black text-rose-700">
+                    <button type="button" onClick={() => void requestDeleteHistorySession(session.id)} className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-black text-rose-700">
                       删除
                     </button>
                   </div>
@@ -1622,6 +1673,7 @@ export function ProgressView({
       </div>
         )
       ) : null}
+      <ConfirmDialogHost />
     </Page>
   );
 }

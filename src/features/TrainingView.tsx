@@ -797,13 +797,13 @@ export function TrainingView({
       </WorkoutActionBar>
 
       {showFinishConfirm ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-[1px]">
           <ConfirmDialog
             title="确认结束未完成训练？"
             description="当前还有动作或辅助项目没有处理。确认后会按现有记录保存本次训练，未完成内容不会自动补齐。"
-            confirmLabel="保存并结束"
-            cancelLabel="继续训练"
-            danger
+            confirmText="保存并结束"
+            cancelText="继续训练"
+            variant="warning"
             onCancel={() => setShowFinishConfirm(false)}
             onConfirm={() => {
               setShowFinishConfirm(false);
@@ -814,13 +814,13 @@ export function TrainingView({
       ) : null}
 
       {showAbandonConfirm ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-[1px]">
           <ConfirmDialog
             title="放弃当前训练？"
-            description="放弃后当前 activeSession 会被清除，本次未保存的训练不会进入历史记录。"
-            confirmLabel="放弃训练"
-            cancelLabel="继续训练"
-            danger
+            description="当前未保存的训练记录将不会进入历史。"
+            confirmText="放弃训练"
+            cancelText="继续训练"
+            variant="danger"
             onCancel={() => setShowAbandonConfirm(false)}
             onConfirm={() => {
               setShowAbandonConfirm(false);

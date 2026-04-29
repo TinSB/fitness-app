@@ -105,8 +105,11 @@ interface InlineNoticeProps {
 interface ConfirmDialogProps {
   title: string;
   description: ReactNode;
+  confirmText?: string;
+  cancelText?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  variant?: 'default' | 'danger' | 'warning';
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -256,20 +259,31 @@ export const MobileActionBar = ({ className, children, ...props }: HTMLAttribute
   </div>
 );
 
-export const ConfirmDialog = ({ title, description, confirmLabel = '确认', cancelLabel = '取消', danger, onConfirm, onCancel }: ConfirmDialogProps) => (
-  <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+export const ConfirmDialog = ({ title, description, confirmText, cancelText, confirmLabel, cancelLabel, variant = 'default', danger, onConfirm, onCancel }: ConfirmDialogProps) => {
+  const tone = danger ? 'danger' : variant;
+  const resolvedConfirmText = confirmText || confirmLabel || '确认';
+  const resolvedCancelText = cancelText || cancelLabel || '取消';
+
+  return (
+  <div role="dialog" aria-modal="true" aria-label={title} className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
     <div className="font-black text-slate-950">{title}</div>
-    <div className="mt-2 text-sm font-medium leading-6 text-slate-600">{description}</div>
+    <div className="mt-2 max-h-[55svh] overflow-y-auto text-sm font-medium leading-6 text-slate-600">{description}</div>
     <div className="mt-4 flex justify-end gap-2">
       <ActionButton variant="secondary" size="sm" onClick={onCancel}>
-        {cancelLabel}
+        {resolvedCancelText}
       </ActionButton>
-      <ActionButton variant={danger ? 'danger' : 'primary'} size="sm" onClick={onConfirm}>
-        {confirmLabel}
+      <ActionButton
+        variant={tone === 'danger' ? 'danger' : tone === 'warning' ? 'secondary' : 'primary'}
+        size="sm"
+        className={tone === 'warning' ? 'border-amber-500 bg-amber-500 text-white hover:bg-amber-600' : undefined}
+        onClick={onConfirm}
+      >
+        {resolvedConfirmText}
       </ActionButton>
     </div>
   </div>
-);
+  );
+};
 
 export const Stat = ({ label, value, tone = 'slate' }: StatProps) => {
   const tones: Record<Tone, string> = {

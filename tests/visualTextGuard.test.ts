@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTodayViewModel } from '../src/presenters/todayPresenter';
 import { buildRecommendationExplanationViewModel } from '../src/presenters/recommendationExplanationPresenter';
+import { buildDataHealthViewModel } from '../src/presenters/dataHealthPresenter';
 import type { RecommendationTrace } from '../src/engines/recommendationTraceEngine';
 import { getTemplate } from './fixtures';
 
@@ -49,5 +50,30 @@ describe('visual text guard', () => {
     expect(text).not.toMatch(/\b(increase|decrease|primaryGoal|trainingMode|high|medium|low|undefined|null)\b/);
     expect(text).toContain('主目标');
     expect(text).toContain('保守建议');
+  });
+
+  it('data health default UI copy does not emit engineering terms', () => {
+    const vm = buildDataHealthViewModel({
+      status: 'has_errors',
+      summary: 'synthetic replacement id detected',
+      issues: [
+        {
+          id: 'synthetic-replacement-session-1-0-actualExerciseId',
+          severity: 'error',
+          category: 'replacement',
+          title: 'synthetic replacement id detected',
+          message: 'actualExerciseId missing undefined null',
+          canAutoFix: false,
+        },
+      ],
+    });
+    const text = [
+      vm.statusLabel,
+      vm.summary,
+      ...vm.primaryIssues.flatMap((issue) => [issue.title, issue.userMessage, issue.severityLabel, issue.actionLabel || '']),
+    ].join(' ');
+
+    expect(text).toContain('替代动作记录异常');
+    expect(text).not.toMatch(/synthetic replacement id|actualExerciseId|undefined|null|has_errors|replacement/);
   });
 });

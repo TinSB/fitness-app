@@ -15,7 +15,7 @@ import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../eng
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
-import { sortDataHealthIssues } from '../engines/dataHealthEngine';
+import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import {
   formatDataFlag,
   formatExerciseName,
@@ -207,6 +207,7 @@ export function RecordView({
   const rawHistory = data.history || [];
   const analyticsHistory = React.useMemo(() => filterAnalyticsHistory(rawHistory), [rawHistory]);
   const dataHealth = coachAutomationSummary?.dataHealth;
+  const dataHealthViewModel = React.useMemo(() => (dataHealth ? buildDataHealthViewModel(dataHealth) : null), [dataHealth]);
   const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);
   const calendar = React.useMemo(
     () =>
@@ -692,35 +693,41 @@ export function RecordView({
     const testCount = rawHistory.filter((session) => session.dataFlag === 'test').length;
     const excludedCount = rawHistory.filter((session) => session.dataFlag === 'excluded').length;
     const dataRows = [...rawHistory].sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
-    const dataHealthTone = dataHealth?.status === 'has_errors' ? 'rose' : dataHealth?.status === 'has_warnings' ? 'amber' : 'emerald';
-    const dataHealthLabel = dataHealth?.status === 'has_errors' ? '需要处理' : dataHealth?.status === 'has_warnings' ? '建议复查' : '健康';
-    const sortedIssues = sortDataHealthIssues(dataHealth?.issues || []);
-    const visibleIssues = sortedIssues.slice(0, 3);
-    const hiddenIssues = sortedIssues.slice(3);
+    const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
+    const visibleIssues = dataHealthViewModel?.primaryIssues || [];
+    const hiddenIssues = dataHealthViewModel?.secondaryIssues || [];
 
     return (
       <PageSection title="训练记录数据" description="这里只管理训练记录本身：删除、标记测试、恢复正常、排除统计。单位、健康数据和全局备份在“我的”页。">
-        {dataHealth ? (
+        {dataHealthViewModel ? (
           <Card className="mb-3 space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-slate-950">数据健康检查</div>
-                <div className="mt-1 text-xs leading-5 text-slate-600">{dataHealth.summary}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-600">
+                  {dataHealthViewModel.statusTone === 'healthy' ? '未发现会影响训练统计的问题。' : dataHealthViewModel.summary}
+                </div>
                 <div className="mt-1 text-xs leading-5 text-slate-500">这里只报告问题；修正记录、删除或排除统计仍由你确认。</div>
               </div>
-              <StatusBadge tone={dataHealthTone}>{dataHealthLabel}</StatusBadge>
+              <StatusBadge tone={dataHealthTone}>{dataHealthViewModel.statusLabel}</StatusBadge>
             </div>
             {visibleIssues.length ? (
               <div className="space-y-2">
                 {visibleIssues.map((issue) => (
                   <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
                     <div className="font-semibold text-slate-950">{issue.title}</div>
-                    <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                    {issue.technicalDetails ? (
+                      <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
+                        <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
+                        <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
+                      </details>
+                    ) : null}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">未发现明显数据异常。</div>
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">数据健康良好。未发现会影响训练统计的问题。</div>
             )}
             {hiddenIssues.length ? (
               <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
@@ -729,7 +736,13 @@ export function RecordView({
                   {hiddenIssues.map((issue) => (
                     <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
                       <div className="font-semibold text-slate-950">{issue.title}</div>
-                      <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
+                      {issue.technicalDetails ? (
+                        <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
+                          <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
+                          <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
+                        </details>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -1054,32 +1067,42 @@ export function RecordView({
   const pendingActionCopy =
     pendingAction?.type === 'delete'
       ? {
-          title: '删除训练记录？',
-          description: '删除后该训练不会计入记录、PR、e1RM、有效组、完成度和日历。此操作不可恢复，建议先导出全局备份。',
-          confirmLabel: '删除',
+          title: '删除这次训练？',
+          description: '删除后该训练不会参与日历、PR、e1RM、有效组和统计。建议先导出备份。',
+          confirmText: '删除',
+          cancelText: '取消',
+          variant: 'danger' as const,
         }
       : pendingAction?.type === 'edit'
         ? {
-            title: '保存历史修正？',
-            description: '修改历史记录后，PR、e1RM、有效组和统计会重新计算。',
-            confirmLabel: '保存修正',
+            title: '保存修正？',
+            description: '修改后，PR、e1RM、有效组和总量会根据新数据重新计算。',
+            confirmText: '保存修正',
+            cancelText: '继续编辑',
+            variant: 'warning' as const,
           }
         : pendingAction?.dataFlag === 'normal'
         ? {
-            title: '恢复为正常训练？',
-            description: '恢复后该训练会重新参与统计、PR、e1RM、有效组和日历。',
-            confirmLabel: '恢复正常',
+            title: '恢复为正常数据？',
+            description: '恢复后这次训练会重新参与 PR、e1RM、有效组和统计。',
+            confirmText: '恢复',
+            cancelText: '取消',
+            variant: 'warning' as const,
           }
         : pendingAction?.dataFlag === 'test'
           ? {
-              title: '标记为测试数据？',
-              description: '测试数据仍可查看，但默认不会参与统计、PR、e1RM 和有效组。',
-              confirmLabel: '标记测试',
+              title: '更改数据状态？',
+              description: '测试或排除数据仍可查看，但不会参与训练统计。',
+              confirmText: '确认更改',
+              cancelText: '取消',
+              variant: 'warning' as const,
             }
           : {
-              title: '排除这次训练？',
-              description: '排除数据仍可查看，但不会参与统计、PR、e1RM、有效组和日历。',
-              confirmLabel: '排除统计',
+              title: '更改数据状态？',
+              description: '测试或排除数据仍可查看，但不会参与训练统计。',
+              confirmText: '确认更改',
+              cancelText: '取消',
+              variant: 'warning' as const,
             };
 
   return (
@@ -1099,12 +1122,13 @@ export function RecordView({
       </div>
       {renderSessionDrawer()}
       {pendingAction ? (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/30 p-4">
+        <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
           <ConfirmDialog
             title={pendingActionCopy.title}
             description={pendingActionCopy.description}
-            confirmLabel={pendingActionCopy.confirmLabel}
-            danger={pendingAction.type === 'delete' || (pendingAction.type === 'flag' && pendingAction.dataFlag === 'excluded')}
+            confirmText={pendingActionCopy.confirmText}
+            cancelText={pendingActionCopy.cancelText}
+            variant={pendingActionCopy.variant}
             onCancel={() => setPendingAction(null)}
             onConfirm={confirmPendingAction}
           />

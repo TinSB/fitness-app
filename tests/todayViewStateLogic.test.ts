@@ -17,6 +17,7 @@ describe('TodayView state copy', () => {
     expect(presenterSource).toContain('下次建议');
     expect(source).toContain('下次建议');
     expect(source).toContain('不是今天必须继续训练');
-    expect(source).toContain('你今天已经完成训练，确定要再开始一场吗？');
+    expect(source).toContain('今天已经完成训练，仍要再练一场？');
+    expect(source).toContain('系统会把这次训练作为额外训练记录保存。');
   });
 });

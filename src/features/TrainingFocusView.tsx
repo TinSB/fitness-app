@@ -558,14 +558,18 @@ export function TrainingFocusView({
     if (!pendingConfirmation) return null;
     const isSetAnomaly = pendingConfirmation.type === 'set-anomaly';
     return (
-      <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/40 p-4">
+      <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-slate-950/40 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
         <ConfirmDialog
-          title={isSetAnomaly ? '输入异常提示' : `跳过整个${pendingConfirmation.label}？`}
+          title={isSetAnomaly ? '确认保存这组？' : `跳过整个${pendingConfirmation.label}？`}
           description={
             isSetAnomaly ? (
               <div className="space-y-2">
-                <div className="font-semibold text-slate-800">{pendingConfirmation.anomaly.title}</div>
-                <div>{pendingConfirmation.anomaly.message}</div>
+                <div>系统检测到重量、次数或 RIR 可能异常，请确认不是输入错误。</div>
+                <details className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+                  <summary className="cursor-pointer font-semibold">查看详情</summary>
+                  <div className="mt-1 font-semibold">{pendingConfirmation.anomaly.title}</div>
+                  <div>{pendingConfirmation.anomaly.message}</div>
+                </details>
                 {pendingConfirmation.anomaly.suggestedAction ? (
                   <div className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900">建议：{pendingConfirmation.anomaly.suggestedAction}</div>
                 ) : null}
@@ -574,9 +578,9 @@ export function TrainingFocusView({
               <div>未完成的支持动作会记录为跳过，你可以返回继续完成。</div>
             )
           }
-          cancelLabel={isSetAnomaly ? '返回修改' : '返回'}
-          confirmLabel={isSetAnomaly ? '仍然保存' : '确认跳过'}
-          danger={!isSetAnomaly}
+          cancelText={isSetAnomaly ? '返回修改' : '返回'}
+          confirmText={isSetAnomaly ? '仍然保存' : '确认跳过'}
+          variant={isSetAnomaly ? 'warning' : 'danger'}
           onCancel={cancelPendingAction}
           onConfirm={confirmPendingAction}
         />

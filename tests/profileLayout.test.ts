@@ -24,7 +24,8 @@ describe('Profile layout', () => {
     expect(source).toContain('这是全局应用数据备份');
     expect(source).toContain('导入恢复');
     expect(source).toContain('<ConfirmDialog');
-    expect(source).toContain('确认恢复');
+    expect(source).toContain('导入备份？');
+    expect(source).toContain('confirmText="导入"');
   });
 
   it('does not become another training or record page', () => {
