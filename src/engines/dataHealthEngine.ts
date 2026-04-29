@@ -30,6 +30,19 @@ export type DataHealthReport = {
   summary: string;
 };
 
+const dataHealthSeverityRank: Record<DataHealthSeverity, number> = {
+  error: 3,
+  warning: 2,
+  info: 1,
+};
+
+export const sortDataHealthIssues = (issues: DataHealthIssue[] = []) =>
+  [...issues].sort((left, right) => {
+    const severityDiff = dataHealthSeverityRank[right.severity] - dataHealthSeverityRank[left.severity];
+    if (severityDiff !== 0) return severityDiff;
+    return left.title.localeCompare(right.title, 'zh-CN');
+  });
+
 type SessionSource = 'active' | 'history';
 type IssueInput = Omit<DataHealthIssue, 'affectedIds' | 'suggestedAction'> & {
   affectedIds?: string[];

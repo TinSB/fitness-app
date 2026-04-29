@@ -740,6 +740,10 @@ function App() {
                       setProgressTarget({ section: 'calendar', date });
                       setActiveTab('record');
                     }}
+                    onReviewDataHealth={() => {
+                      setProgressTarget({ section: 'data' });
+                      setActiveTab('record');
+                    }}
                   />
                 )}
 

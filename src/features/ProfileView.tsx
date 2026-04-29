@@ -2,6 +2,7 @@ import React from 'react';
 import { Activity, Database, Download, HardDrive, Ruler, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { downloadText, makeCsv } from '../engines/analytics';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import { sortDataHealthIssues } from '../engines/dataHealthEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import { formatGoal } from '../i18n/formatters';
@@ -79,6 +80,9 @@ export function ProfileView({
   const dataHealth = coachAutomationSummary?.dataHealth;
   const dataHealthTone = dataHealth?.status === 'has_errors' ? 'rose' : dataHealth?.status === 'has_warnings' ? 'amber' : 'emerald';
   const dataHealthLabel = dataHealth?.status === 'has_errors' ? '需要处理' : dataHealth?.status === 'has_warnings' ? '建议复查' : '健康';
+  const sortedDataHealthIssues = sortDataHealthIssues(dataHealth?.issues || []);
+  const visibleDataHealthIssues = sortedDataHealthIssues.slice(0, 3);
+  const hiddenDataHealthIssues = sortedDataHealthIssues.slice(3);
 
   const downloadBackup = () => {
     downloadText(`ironpath-${todayKey()}.json`, JSON.stringify(data, null, 2), 'application/json');
@@ -192,9 +196,9 @@ export function ProfileView({
                   </div>
                   <StatusBadge tone={dataHealthTone}>{dataHealthLabel}</StatusBadge>
                 </div>
-                {dataHealth.issues.length ? (
+                {visibleDataHealthIssues.length ? (
                   <div className="space-y-2">
-                    {dataHealth.issues.map((issue) => (
+                    {visibleDataHealthIssues.map((issue) => (
                       <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-slate-950">{issue.title}</span>
@@ -210,6 +214,19 @@ export function ProfileView({
                 ) : (
                   <Notice tone="emerald">未发现明显数据异常。</Notice>
                 )}
+                {hiddenDataHealthIssues.length ? (
+                  <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                    <summary className="cursor-pointer font-semibold text-slate-700">查看全部问题</summary>
+                    <div className="mt-2 space-y-2">
+                      {hiddenDataHealthIssues.map((issue) => (
+                        <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
+                          <div className="font-semibold text-slate-950">{issue.title}</div>
+                          <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                ) : null}
               </Card>
             </PageSection>
           ) : null}

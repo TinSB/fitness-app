@@ -99,26 +99,77 @@ const localizedTemplateName = (template?: Pick<TrainingTemplate, 'id' | 'name'> 
   return formatTemplateName(template.id || template.name, '未命名模板');
 };
 
-const orderedTemplates = (templates: TrainingTemplate[] = [], programTemplate?: ProgramTemplate) => {
+const templateAliases = (template: TrainingTemplate | undefined | null) =>
+  new Set([template?.id, template?.sourceTemplateId, template?.name].filter(Boolean).map(normalizeKey));
+
+const resolveProgramDayTemplate = (day: ProgramTemplate['dayTemplates'][number], templates: TrainingTemplate[]) => {
   const byId = new Map(templates.map((template) => [template.id, template]));
-  const orderedIds = [
-    ...(programTemplate?.dayTemplates || []).map((day) => day.id),
-    ...(programTemplate?.dayTemplates || []).flatMap((day) => day.mainExerciseIds.length ? [] : [day.name]),
-  ].filter(Boolean);
-  const ordered = orderedIds.map((id) => byId.get(id)).filter(Boolean) as TrainingTemplate[];
-  const remaining = templates.filter((template) => !ordered.some((item) => item.id === template.id));
-  return [...ordered, ...remaining];
+  const exact = byId.get(day.id);
+  if (exact) return exact;
+  const dayKey = normalizeKey(day.id || day.name);
+  const dayNameKey = normalizeKey(day.name);
+  return templates.find((template) => template.sourceTemplateId === day.id) ||
+    templates.find((template) => templateAliases(template).has(dayKey) || templateAliases(template).has(dayNameKey));
 };
 
-const nextByDefaultRotation = (lastTemplateId: string | undefined, templates: TrainingTemplate[]) => {
+const orderedTemplates = (templates: TrainingTemplate[] = [], programTemplate?: ProgramTemplate) => {
+  const dayTemplates = programTemplate?.dayTemplates || [];
+  const ordered = dayTemplates.map((day) => resolveProgramDayTemplate(day, templates)).filter(Boolean) as TrainingTemplate[];
+  const remaining = templates.filter((template) => !ordered.some((item) => item.id === template.id));
+  return {
+    templates: [...ordered, ...remaining],
+    usedProgramOrder: dayTemplates.length > 0 && ordered.length > 0,
+  };
+};
+
+const resolveSessionTemplateKey = (session: TrainingSession | undefined, templates: TrainingTemplate[], programTemplate?: ProgramTemplate) => {
+  if (!session) return undefined;
+  const programIds = new Set((programTemplate?.dayTemplates || []).map((day) => day.id));
+  const candidates = [session.programTemplateId, session.templateId].filter(Boolean).map(String);
+  const matchedTemplate = templates.find((template) => candidates.includes(template.id));
+  if (matchedTemplate?.sourceTemplateId) return matchedTemplate.sourceTemplateId;
+  const programMatch = candidates.find((id) => programIds.has(id));
+  if (programMatch) return programMatch;
+  return matchedTemplate?.id || session.templateId;
+};
+
+const templateMatchesKey = (template: TrainingTemplate, key: string | undefined) => {
+  if (!key) return false;
+  const normalizedKey = normalizeKey(key);
+  return templateAliases(template).has(normalizedKey);
+};
+
+const rotationFamilyKey = (template: TrainingTemplate | undefined) => {
+  const text = [...templateAliases(template)].join(' ');
+  if (/\b(push|pull|legs?|leg)\b/.test(text)) return 'push-pull-legs';
+  if (/\b(upper|lower)\b/.test(text)) return 'upper-lower';
+  return '';
+};
+
+const contiguousFamilyGroup = (templates: TrainingTemplate[], index: number) => {
+  const family = rotationFamilyKey(templates[index]);
+  if (!family) return [];
+  let start = index;
+  let end = index;
+  while (start > 0 && rotationFamilyKey(templates[start - 1]) === family) start -= 1;
+  while (end < templates.length - 1 && rotationFamilyKey(templates[end + 1]) === family) end += 1;
+  return templates.slice(start, end + 1);
+};
+
+const nextByDefaultRotation = (lastTemplateKey: string | undefined, templates: TrainingTemplate[], usePplFallback: boolean) => {
   if (!templates.length) return undefined;
   const ids = new Set(templates.map((template) => template.id));
-  if (lastTemplateId && PPL_ORDER.every((id) => ids.has(id)) && PPL_ORDER.includes(lastTemplateId)) {
-    const nextId = PPL_ORDER[(PPL_ORDER.indexOf(lastTemplateId) + 1) % PPL_ORDER.length];
+  if (usePplFallback && lastTemplateKey && PPL_ORDER.every((id) => ids.has(id)) && PPL_ORDER.includes(lastTemplateKey)) {
+    const nextId = PPL_ORDER[(PPL_ORDER.indexOf(lastTemplateKey) + 1) % PPL_ORDER.length];
     return templates.find((template) => template.id === nextId);
   }
-  const index = templates.findIndex((template) => template.id === lastTemplateId);
+  const index = templates.findIndex((template) => templateMatchesKey(template, lastTemplateKey));
   if (index < 0) return templates[0];
+  const familyGroup = contiguousFamilyGroup(templates, index);
+  if (familyGroup.length > 1) {
+    const groupIndex = familyGroup.findIndex((template) => template.id === templates[index].id);
+    return familyGroup[(groupIndex + 1) % familyGroup.length];
+  }
   return templates[(index + 1) % templates.length];
 };
 
@@ -293,7 +344,8 @@ export const buildNextWorkoutRecommendation = ({
     };
   }
 
-  const ordered = orderedTemplates(templates, programTemplate);
+  const orderedResult = orderedTemplates(templates, programTemplate);
+  const ordered = orderedResult.templates;
   if (!ordered.length) {
     return {
       templateName: '暂无下次建议',
@@ -307,7 +359,8 @@ export const buildNextWorkoutRecommendation = ({
   const normalCompleted = completedHistory(history);
   const todayCompletedId = todayState?.status === 'completed' ? todayState.lastCompletedSessionId : undefined;
   const anchorSession = (todayCompletedId ? normalCompleted.find((session) => session.id === todayCompletedId) : undefined) || normalCompleted[0];
-  const baseTemplate = nextByDefaultRotation(anchorSession?.templateId, ordered) || ordered[0];
+  const anchorTemplateKey = resolveSessionTemplateKey(anchorSession, ordered, programTemplate);
+  const baseTemplate = nextByDefaultRotation(anchorTemplateKey, ordered, !orderedResult.usedProgramOrder) || ordered[0];
   const deficits = weeklyDeficitEntries(weeklyVolumeSummary);
   const candidates = ordered.map((template) => candidateFor(template, painPatterns, deficits));
   const readinessScore = readinessResult?.score;

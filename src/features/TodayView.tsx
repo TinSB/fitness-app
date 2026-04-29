@@ -41,6 +41,7 @@ interface TodayViewProps {
   onResume: () => void;
   onViewSession?: (sessionId: string, date?: string) => void;
   onViewCalendar?: (date?: string) => void;
+  onReviewDataHealth?: () => void;
 }
 
 const sorenessOptions: AppData['todayStatus']['soreness'] = ['无', '胸', '背', '腿', '肩', '手臂'];
@@ -129,7 +130,9 @@ export function TodayView({
   onResume,
   onViewSession,
   onViewCalendar,
+  onReviewDataHealth,
 }: TodayViewProps) {
+  const [coachActionFeedback, setCoachActionFeedback] = React.useState('');
   const decisionContext = React.useMemo(
     () => buildTrainingDecisionContext(data, { trainingMode }),
     [
@@ -238,6 +241,35 @@ export function TodayView({
     }
   };
 
+  const coachActionButtonLabel = (action: CoachAutomationSummary['recommendedActions'][number]) => {
+    if (action.actionType === 'review_data') return '去检查数据';
+    if (action.actionType === 'open_next_workout') return '查看下次建议';
+    if (action.actionType === 'apply_daily_adjustment') return '查看建议';
+    return '查看说明';
+  };
+
+  const handleCoachAction = (action: CoachAutomationSummary['recommendedActions'][number]) => {
+    if (action.actionType === 'review_data') {
+      if (onReviewDataHealth) {
+        onReviewDataHealth();
+        return;
+      }
+      setCoachActionFeedback('请到记录页的数据区或我的页查看数据健康检查。');
+      return;
+    }
+    if (action.actionType === 'open_next_workout') {
+      const nextWorkout = coachAutomationSummary?.nextWorkout;
+      setCoachActionFeedback(nextWorkout ? `下次建议详情：${nextWorkout.templateName}。${nextWorkout.reason}` : action.reason);
+      return;
+    }
+    if (action.actionType === 'apply_daily_adjustment') {
+      const adjustment = coachAutomationSummary?.todayAdjustment;
+      setCoachActionFeedback(adjustment ? `今日自动调整：${adjustment.summary} 本轮只提供查看，不会自动覆盖计划。` : '本轮只提供查看，不会自动覆盖计划。');
+      return;
+    }
+    setCoachActionFeedback(action.reason || '这条建议只是提示，可忽略。');
+  };
+
   const primaryAction =
     todayTrainingState.status === 'completed' && completedSession ? (
       <ActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary" size="lg" fullWidth>
@@ -329,9 +361,14 @@ export function TodayView({
                 <div className="space-y-2">
                   {coachActions.map((action) => (
                     <div key={action.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-950">{action.label}</span>
-                        {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-950">{action.label}</span>
+                          {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                        </div>
+                        <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
+                          {coachActionButtonLabel(action)}
+                        </ActionButton>
                       </div>
                       <div className="mt-1 text-xs leading-5 text-slate-600">{action.reason}</div>
                     </div>
@@ -342,15 +379,25 @@ export function TodayView({
                     </div>
                   ))}
                 </div>
+                {coachActionFeedback ? (
+                  <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-semibold leading-5 text-sky-900">
+                    {coachActionFeedback}
+                  </div>
+                ) : null}
                 {hiddenCoachActions.length || hiddenCoachWarnings.length ? (
                   <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                     <summary className="cursor-pointer font-semibold text-slate-700">查看更多提醒</summary>
                     <div className="mt-2 space-y-2">
                       {hiddenCoachActions.map((action) => (
                         <div key={action.id} className="rounded-lg bg-stone-50 px-3 py-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-slate-950">{action.label}</span>
-                            {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-slate-950">{action.label}</span>
+                              {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                            </div>
+                            <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
+                              {coachActionButtonLabel(action)}
+                            </ActionButton>
                           </div>
                           <div className="mt-1 text-xs leading-5 text-slate-600">{action.reason}</div>
                         </div>

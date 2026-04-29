@@ -5,7 +5,7 @@ import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusMod
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildSmartReplacementRecommendations, type SmartReplacementRecommendation } from '../engines/smartReplacementEngine';
-import { detectSetAnomalies } from '../engines/setAnomalyEngine';
+import { detectSetAnomalies, type SetAnomaly } from '../engines/setAnomalyEngine';
 import {
   formatExerciseName,
   formatFatigueCost,
@@ -22,6 +22,7 @@ import type { LoadFeedbackValue, PainPattern, ReadinessResult, RestTimerState, S
 import { ActionButton } from '../ui/ActionButton';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Card } from '../ui/Card';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
 import { WorkoutActionBar } from '../ui/WorkoutActionBar';
@@ -30,6 +31,9 @@ import { buildSessionRecommendationTrace } from '../presenters/recommendationExp
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
+type PendingFocusConfirmation =
+  | { type: 'set-anomaly'; anomaly: SetAnomaly; exerciseIndex: number; completionNotice: string }
+  | { type: 'skip-support-block'; blockType: 'correction' | 'functional'; reason: SupportSkipReason; label: string };
 
 interface TrainingFocusViewProps {
   session: TrainingSession;
@@ -168,6 +172,7 @@ export function TrainingFocusView({
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
   const [showExplanationSheet, setShowExplanationSheet] = React.useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = React.useState<PendingFocusConfirmation | null>(null);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
@@ -377,27 +382,36 @@ export function TrainingFocusView({
     });
     const blockingAnomaly = anomalies.find((item) => item.requiresConfirmation || item.severity === 'critical');
     if (blockingAnomaly) {
-      const confirmed =
-        typeof window === 'undefined'
-          ? true
-          : window.confirm(
-              [
-                `输入异常提示：${blockingAnomaly.title}`,
-                blockingAnomaly.message,
-                blockingAnomaly.suggestedAction,
-                '仍要保存这一组吗？',
-              ]
-                .filter(Boolean)
-                .join('\n'),
-            );
-      if (!confirmed) {
-        notify('已取消保存，请先检查本组记录');
-        return;
-      }
+      setPendingConfirmation({
+        type: 'set-anomaly',
+        anomaly: blockingAnomaly,
+        exerciseIndex: mainIndex,
+        completionNotice: currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组',
+      });
+      return;
     }
     const warningAnomaly = anomalies.find((item) => item.severity !== 'critical' && !item.requiresConfirmation);
     onCompleteSet(mainIndex);
     notify(warningAnomaly ? `输入异常提示：${warningAnomaly.title}` : currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组');
+  };
+
+  const confirmPendingAction = () => {
+    if (!pendingConfirmation) return;
+    if (pendingConfirmation.type === 'set-anomaly') {
+      onCompleteSet(pendingConfirmation.exerciseIndex);
+      notify(`已确认输入异常并保存：${pendingConfirmation.completionNotice}`);
+    } else {
+      onSkipSupportBlock(pendingConfirmation.blockType, pendingConfirmation.reason);
+      notify(`已跳过${pendingConfirmation.label}`);
+    }
+    setPendingConfirmation(null);
+  };
+
+  const cancelPendingAction = () => {
+    if (pendingConfirmation?.type === 'set-anomaly') {
+      notify('已返回修改，请先检查本组记录');
+    }
+    setPendingConfirmation(null);
   };
 
   const updateDisplayWeight = (nextDisplayWeight: number) => {
@@ -540,6 +554,36 @@ export function TrainingFocusView({
     </BottomSheet>
   );
 
+  const renderPendingConfirmation = () => {
+    if (!pendingConfirmation) return null;
+    const isSetAnomaly = pendingConfirmation.type === 'set-anomaly';
+    return (
+      <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/40 p-4">
+        <ConfirmDialog
+          title={isSetAnomaly ? '输入异常提示' : `跳过整个${pendingConfirmation.label}？`}
+          description={
+            isSetAnomaly ? (
+              <div className="space-y-2">
+                <div className="font-semibold text-slate-800">{pendingConfirmation.anomaly.title}</div>
+                <div>{pendingConfirmation.anomaly.message}</div>
+                {pendingConfirmation.anomaly.suggestedAction ? (
+                  <div className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900">建议：{pendingConfirmation.anomaly.suggestedAction}</div>
+                ) : null}
+              </div>
+            ) : (
+              <div>未完成的支持动作会记录为跳过，你可以返回继续完成。</div>
+            )
+          }
+          cancelLabel={isSetAnomaly ? '返回修改' : '返回'}
+          confirmLabel={isSetAnomaly ? '仍然保存' : '确认跳过'}
+          danger={!isSetAnomaly}
+          onCancel={cancelPendingAction}
+          onConfirm={confirmPendingAction}
+        />
+      </div>
+    );
+  };
+
   const renderRestTimer = () =>
     remainingSec > 0 ? (
       <Card className="border-white/10 bg-white/10 text-white">
@@ -630,10 +674,7 @@ export function TrainingFocusView({
             className="mt-2"
             onClick={() => {
               const label = supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁';
-              const confirmed = typeof window === 'undefined' ? true : window.confirm(`跳过整个${label}？未完成的支持动作会记录为跳过。`);
-              if (!confirmed) return;
-              onSkipSupportBlock(supportLog.blockType, skipReason);
-              notify(`已跳过${label}`);
+              setPendingConfirmation({ type: 'skip-support-block', blockType: supportLog.blockType, reason: skipReason, label });
             }}
           >
             跳过整个{supportLog.blockType === 'correction' ? '纠偏模块' : '功能补丁'}
@@ -918,6 +959,7 @@ export function TrainingFocusView({
       {renderExercisePicker()}
       {renderReplacementPicker()}
       {renderExplanationSheet()}
+      {renderPendingConfirmation()}
 
       <WorkoutActionBar className="border-slate-200 bg-white text-slate-950 md:static md:bg-transparent">
         <div className="mx-auto grid w-full max-w-2xl gap-2">

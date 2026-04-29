@@ -15,6 +15,7 @@ import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../eng
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import { sortDataHealthIssues } from '../engines/dataHealthEngine';
 import {
   formatDataFlag,
   formatExerciseName,
@@ -693,8 +694,9 @@ export function RecordView({
     const dataRows = [...rawHistory].sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
     const dataHealthTone = dataHealth?.status === 'has_errors' ? 'rose' : dataHealth?.status === 'has_warnings' ? 'amber' : 'emerald';
     const dataHealthLabel = dataHealth?.status === 'has_errors' ? '需要处理' : dataHealth?.status === 'has_warnings' ? '建议复查' : '健康';
-    const visibleIssues = (dataHealth?.issues || []).slice(0, 2);
-    const hiddenIssues = (dataHealth?.issues || []).slice(2);
+    const sortedIssues = sortDataHealthIssues(dataHealth?.issues || []);
+    const visibleIssues = sortedIssues.slice(0, 3);
+    const hiddenIssues = sortedIssues.slice(3);
 
     return (
       <PageSection title="训练记录数据" description="这里只管理训练记录本身：删除、标记测试、恢复正常、排除统计。单位、健康数据和全局备份在“我的”页。">
@@ -722,7 +724,7 @@ export function RecordView({
             )}
             {hiddenIssues.length ? (
               <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                <summary className="cursor-pointer font-semibold text-slate-700">查看其余 {hiddenIssues.length} 条</summary>
+                <summary className="cursor-pointer font-semibold text-slate-700">查看全部问题</summary>
                 <div className="mt-2 space-y-2">
                   {hiddenIssues.map((issue) => (
                     <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">

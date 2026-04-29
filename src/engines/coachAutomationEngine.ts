@@ -1,5 +1,5 @@
 import type { AppData } from '../models/training-model';
-import { buildDataHealthReport, type DataHealthReport } from './dataHealthEngine';
+import { buildDataHealthReport, sortDataHealthIssues, type DataHealthReport } from './dataHealthEngine';
 import { buildDailyTrainingAdjustment, type DailyTrainingAdjustment } from './dailyTrainingAdjustmentEngine';
 import { buildHealthSummary } from './healthSummaryEngine';
 import { buildLoadFeedbackSummary } from './loadFeedbackEngine';
@@ -45,14 +45,7 @@ const selectedTemplateFor = (data: Partial<AppData>) => {
   return (data.templates || []).find((template) => template.id === templateId) || (data.templates || [])[0] || null;
 };
 
-const issuePriority = (severity: string) => {
-  if (severity === 'error') return 100;
-  if (severity === 'warning') return 70;
-  return 30;
-};
-
-const topDataHealthIssues = (report?: DataHealthReport) =>
-  [...(report?.issues || [])].sort((left, right) => issuePriority(right.severity) - issuePriority(left.severity));
+const topDataHealthIssues = (report?: DataHealthReport) => sortDataHealthIssues(report?.issues || []);
 
 const dataHealthWarnings = (report?: DataHealthReport) =>
   topDataHealthIssues(report)

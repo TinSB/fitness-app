@@ -227,9 +227,14 @@ const trainingLevelSignals = (trainingLevel?: AutoTrainingLevel | string): Signa
   ];
 };
 
+const historySortKey = (session: TrainingSession) => session.finishedAt || session.startedAt || session.date || '';
+
 const historySignals = (recentHistory: TrainingSession[] = []): Signal[] => {
-  const normal = recentHistory.filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded').slice(0, 1);
-  const latest = normal[0];
+  const normal = [...recentHistory]
+    .filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded')
+    .filter((session) => session.completed !== false)
+    .sort((left, right) => String(historySortKey(right)).localeCompare(String(historySortKey(left))));
+  const latest = normal.find((session) => sessionCompletedSets(session) > 0 || sessionVolume(session) > 0);
   if (!latest) return [];
   const sets = sessionCompletedSets(latest);
   const volume = sessionVolume(latest);
@@ -238,7 +243,7 @@ const historySignals = (recentHistory: TrainingSession[] = []): Signal[] => {
       {
         id: 'recent-high-volume',
         priority: 58,
-        reason: '最近一次训练量较高，今天建议保留主训练质量，避免堆叠额外疲劳。',
+        reason: '最新一场正式训练量较高，今天建议保留主训练质量，避免堆叠额外疲劳。',
         change: { type: 'skip_optional', reason: '可跳过非必要辅助动作，把恢复留给后续训练。' },
       },
     ];
