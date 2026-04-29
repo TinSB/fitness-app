@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, ChevronDown } from 'lucide-react';
 import type { RecommendationTrace } from '../engines/recommendationTraceEngine';
+import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
 import {
   buildRecommendationExplanationViewModel,
   type RecommendationFactorView,
@@ -16,6 +17,7 @@ type RecommendationExplanationPanelProps = {
   showDebugDetails?: boolean;
   warnings?: string[];
   defaultOpen?: boolean;
+  recoveryRecommendation?: RecoveryAwareRecommendation | null;
 };
 
 const toneClass: Record<RecommendationFactorView['effectTone'], string> = {
@@ -67,10 +69,11 @@ export const RecommendationExplanationPanel = ({
   showDebugDetails = false,
   warnings = [],
   defaultOpen = false,
+  recoveryRecommendation,
 }: RecommendationExplanationPanelProps) => {
   const viewModel = React.useMemo(
-    () => buildRecommendationExplanationViewModel(trace, { title, warnings }),
-    [trace, title, warnings],
+    () => buildRecommendationExplanationViewModel(trace, { title, warnings, recoveryRecommendation }),
+    [trace, title, warnings, recoveryRecommendation],
   );
   const visibleLimit = maxVisibleFactors ?? (compact ? 2 : 3);
   const primary = viewModel.primaryFactors.length ? viewModel.primaryFactors : viewModel.secondaryFactors.slice(0, 1);

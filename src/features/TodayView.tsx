@@ -15,6 +15,7 @@ import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
+import { splitCoachReminders, type CoachReminderView } from '../presenters/coachReminderPresenter';
 import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
@@ -89,6 +90,19 @@ const formatExercisePrescription = (exercise: ExercisePrescription) => {
   const sets = Array.isArray(exercise.sets) ? exercise.sets.length : number(exercise.sets);
   const restSec = number(exercise.prescription?.restSec || exercise.rest || 90);
   return `${sets} 组 · ${exercise.repMin}-${exercise.repMax} 次 · 休息 ${Math.round(restSec / 60)} 分钟`;
+};
+
+const recoveryExerciseLabel = (action: string) => {
+  if (action === 'substitute') return '建议替代';
+  if (action === 'skip') return '建议跳过';
+  if (action === 'reduce_intensity' || action === 'reduce_volume') return '降低强度';
+  return '可保留';
+};
+
+const recoveryExerciseTone = (label: string) => {
+  if (label === '建议替代' || label === '建议跳过') return 'amber' as const;
+  if (label === '降低强度') return 'sky' as const;
+  return 'emerald' as const;
 };
 
 const ChoiceRow = ({
@@ -243,17 +257,14 @@ export function TodayView({
     (trainingLevelAssessment.level === 'unknown'
       ? '系统还在建立训练基线，今天的建议会保持保守。'
       : '今天优先完成主训练，细节记录放到训练页处理。');
-  const coachActions = (coachAutomationSummary?.recommendedActions || []).slice(0, 2);
-  const hiddenCoachActions = (coachAutomationSummary?.recommendedActions || []).slice(2);
+  const rawCoachActions = coachAutomationSummary?.recommendedActions || [];
   const dataHealthViewModel = React.useMemo(
     () => (coachAutomationSummary?.dataHealth ? buildDataHealthViewModel(coachAutomationSummary.dataHealth) : null),
     [coachAutomationSummary?.dataHealth],
   );
   const rawCoachWarnings = coachAutomationSummary?.keyWarnings || [];
   const shouldUseDataHealthActionCopy = dataHealthViewModel && dataHealthViewModel.statusTone !== 'healthy';
-  const coachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings.slice(0, Math.max(0, 2 - coachActions.length));
-  const hiddenCoachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings.slice(coachWarnings.length);
-  const shouldShowCoachAdvice = coachActions.length > 0 || coachWarnings.length > 0;
+  const displayCoachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings;
   const recommendationConfidence = trainingIntelligenceSummary?.recommendationConfidence?.find((item) => item.level !== 'high');
   const confidenceCopy =
     recommendationConfidence?.level === 'low'
@@ -269,6 +280,20 @@ export function TodayView({
             text: `${recommendationConfidence.summary} 可以执行，但请继续记录余力（RIR）和动作质量。`,
           }
         : null;
+  const recoveryOverrideLabel = todayViewModel.recommendationKind === 'modified_train' ? '仍按原计划训练' : '仍要训练';
+  const recoveryPreviewGuidance = React.useMemo(() => {
+    const guidance = new Map<string, { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' | 'sky' }>();
+    const conflict = todayViewModel.recoveryTemplateConflict;
+    if (todayViewModel.recommendationKind !== 'modified_train' || !conflict) return guidance;
+    conflict.safeExercises.forEach((exercise) => {
+      guidance.set(exercise.exerciseId, { label: '可保留', tone: 'emerald' });
+    });
+    conflict.conflictingExercises.forEach((exercise) => {
+      const label = recoveryExerciseLabel(exercise.recommendedAction);
+      guidance.set(exercise.exerciseId, { label, tone: recoveryExerciseTone(label) });
+    });
+    return guidance;
+  }, [todayViewModel.recommendationKind, todayViewModel.recoveryTemplateConflict]);
 
   const handleExtraTraining = async () => {
     const confirmed = await confirm({
@@ -285,7 +310,7 @@ export function TodayView({
     const confirmed = await confirm({
       title: '今天存在恢复冲突，确定继续训练吗？',
       description: '你仍然可以训练。建议降低相关部位压力，并在不适加重时停止当前动作。',
-      confirmText: '仍要训练',
+      confirmText: recoveryOverrideLabel,
       cancelText: '返回建议',
       variant: 'warning',
     });
@@ -324,6 +349,51 @@ export function TodayView({
     return '查看说明';
   };
 
+  const coachReminderTone = (action: CoachAutomationSummary['recommendedActions'][number]): CoachReminderView['tone'] => {
+    if (action.actionType === 'review_data') return 'danger';
+    if (action.requiresConfirmation || action.actionType === 'apply_daily_adjustment') return 'warning';
+    return 'info';
+  };
+
+  const rawCoachReminders = React.useMemo<CoachReminderView[]>(() => {
+    const actionReminders = rawCoachActions.map((action, index) => ({
+      id: action.id || `coach-action-${index}`,
+      title: coachActionTitle(action),
+      message: coachActionReason(action),
+      tone: coachReminderTone(action),
+      source: `action:${action.id}`,
+      priority:
+        action.actionType === 'review_data'
+          ? 100
+          : action.requiresConfirmation
+            ? 85
+            : action.actionType === 'apply_daily_adjustment'
+              ? 75
+              : 60,
+    }));
+
+    const warningReminders = displayCoachWarnings.map((warning, index) => ({
+      id: `coach-warning-${index}`,
+      title: /酸痛|不适|恢复|冲突|保守/.test(warning) ? '恢复提醒' : '教练提醒',
+      message: warning,
+      tone: 'warning' as const,
+      source: 'warning',
+      priority: 70 - index,
+    }));
+
+    return [...actionReminders, ...warningReminders];
+  }, [rawCoachActions, displayCoachWarnings, dataHealthViewModel]);
+
+  const { visible: coachReminders, hidden: hiddenCoachReminders } = React.useMemo(
+    () => splitCoachReminders(rawCoachReminders, 2),
+    [rawCoachReminders],
+  );
+  const shouldShowCoachAdvice = coachReminders.length > 0;
+  const coachActionForReminder = (reminder: CoachReminderView) =>
+    rawCoachActions.find((action) => reminder.source === `action:${action.id}` || reminder.id === action.id);
+  const reminderToneBadge = (tone: CoachReminderView['tone']) =>
+    tone === 'danger' ? ('rose' as const) : tone === 'warning' ? ('amber' as const) : tone === 'success' ? ('emerald' as const) : ('sky' as const);
+
   const handleCoachAction = (action: CoachAutomationSummary['recommendedActions'][number]) => {
     if (action.actionType === 'review_data') {
       if (onReviewDataHealth) {
@@ -348,8 +418,11 @@ export function TodayView({
 
   const recoveryNeedsNonTrainingPrimary =
     todayTrainingState.status === 'not_started' &&
-    todayViewModel.recommendationKind &&
-    todayViewModel.recommendationKind !== 'train';
+    Boolean(
+      todayViewModel.recommendationKind === 'rest' ||
+        todayViewModel.recommendationKind === 'active_recovery' ||
+        todayViewModel.recommendationKind === 'mobility_only',
+    );
   const recommendedTemplateId = todayTrainingState.status === 'not_started' ? todayViewModel.recommendedTemplateId : undefined;
 
   const primaryAction =
@@ -401,6 +474,13 @@ export function TodayView({
                   {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
                     <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
                       {todayViewModel.recoverySummary}
+                      {todayViewModel.recoveryReasons?.length ? (
+                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5">
+                          {todayViewModel.recoveryReasons.slice(0, 2).map((reason) => (
+                            <li key={reason}>{reason}</li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </div>
                   ) : null}
                   {todayTrainingState.status === 'completed' ? (
@@ -431,7 +511,7 @@ export function TodayView({
                     </>
                   ) : recoveryNeedsNonTrainingPrimary || todayViewModel.requiresRecoveryOverride ? (
                     <ActionButton type="button" onClick={handleRecoveryOverride} variant="secondary" fullWidth>
-                      仍要训练
+                      {recoveryOverrideLabel}
                     </ActionButton>
                   ) : hasAlternativeSuggestion ? (
                     <ActionButton type="button" onClick={onUseSuggestion} variant="secondary" fullWidth>
@@ -447,6 +527,7 @@ export function TodayView({
               title={recommendationExplanationTitle}
               compact
               maxVisibleFactors={3}
+              recoveryRecommendation={recoveryRecommendation}
             />
 
             {confidenceCopy ? (
@@ -469,54 +550,56 @@ export function TodayView({
                   <StatusBadge tone={coachAutomationSummary?.dataHealth?.status === 'has_errors' ? 'rose' : 'emerald'}>可忽略</StatusBadge>
                 </div>
                 <div className="space-y-2">
-                  {coachActions.map((action) => (
-                    <div key={action.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-slate-950">{coachActionTitle(action)}</span>
-                          {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                  {coachReminders.map((reminder) => {
+                    const action = coachActionForReminder(reminder);
+                    return (
+                      <div key={reminder.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-slate-950">{reminder.title}</span>
+                            {action?.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                            {!action ? <StatusBadge tone={reminderToneBadge(reminder.tone)}>{reminder.tone === 'warning' ? '提醒' : '提示'}</StatusBadge> : null}
+                          </div>
+                          {action ? (
+                            <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
+                              {coachActionButtonLabel(action)}
+                            </ActionButton>
+                          ) : null}
                         </div>
-                        <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
-                          {coachActionButtonLabel(action)}
-                        </ActionButton>
+                        <div className="mt-1 text-xs leading-5 text-slate-600">{reminder.message}</div>
                       </div>
-                      <div className="mt-1 text-xs leading-5 text-slate-600">{coachActionReason(action)}</div>
-                    </div>
-                  ))}
-                  {coachWarnings.map((warning) => (
-                    <div key={warning} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-900">
-                      {warning}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {coachActionFeedback ? (
                   <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-semibold leading-5 text-sky-900">
                     {coachActionFeedback}
                   </div>
                 ) : null}
-                {hiddenCoachActions.length || hiddenCoachWarnings.length ? (
+                {hiddenCoachReminders.length ? (
                   <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                     <summary className="cursor-pointer font-semibold text-slate-700">查看更多提醒</summary>
                     <div className="mt-2 space-y-2">
-                      {hiddenCoachActions.map((action) => (
-                        <div key={action.id} className="rounded-lg bg-stone-50 px-3 py-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-slate-950">{coachActionTitle(action)}</span>
-                              {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                      {hiddenCoachReminders.map((reminder) => {
+                        const action = coachActionForReminder(reminder);
+                        return (
+                          <div key={reminder.id} className="rounded-lg bg-stone-50 px-3 py-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-semibold text-slate-950">{reminder.title}</span>
+                                {action?.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                                {!action ? <StatusBadge tone={reminderToneBadge(reminder.tone)}>{reminder.tone === 'warning' ? '提醒' : '提示'}</StatusBadge> : null}
+                              </div>
+                              {action ? (
+                                <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
+                                  {coachActionButtonLabel(action)}
+                                </ActionButton>
+                              ) : null}
                             </div>
-                            <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
-                              {coachActionButtonLabel(action)}
-                            </ActionButton>
+                            <div className="mt-1 text-xs leading-5 text-slate-600">{reminder.message}</div>
                           </div>
-                          <div className="mt-1 text-xs leading-5 text-slate-600">{coachActionReason(action)}</div>
-                        </div>
-                      ))}
-                      {hiddenCoachWarnings.map((warning) => (
-                        <div key={warning} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-900">
-                          {warning}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </details>
                 ) : null}
@@ -538,7 +621,11 @@ export function TodayView({
                       <div className="truncate text-sm font-semibold text-slate-950">{exerciseLabel(exercise)}</div>
                       <div className="mt-1 text-xs text-slate-500">{formatExercisePrescription(exercise)}</div>
                     </div>
-                    <StatusBadge tone={exercise.warning ? 'amber' : 'slate'}>{formatRirLabel(exercise.targetRirText || '1–3')}</StatusBadge>
+                    {recoveryPreviewGuidance.get(exercise.id) ? (
+                      <StatusBadge tone={recoveryPreviewGuidance.get(exercise.id)?.tone}>{recoveryPreviewGuidance.get(exercise.id)?.label}</StatusBadge>
+                    ) : (
+                      <StatusBadge tone={exercise.warning ? 'amber' : 'slate'}>{formatRirLabel(exercise.targetRirText || '1–3')}</StatusBadge>
+                    )}
                   </div>
                 ))}
               </div>

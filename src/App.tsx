@@ -28,7 +28,8 @@ import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligence
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
-import { buildTrainingDecisionContext } from './engines/trainingDecisionContext';
+import { applyStatusRules } from './engines/progressionEngine';
+import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './engines/trainingDecisionContext';
 import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
@@ -247,6 +248,30 @@ function App() {
   }, [data.history, data.userProfile.trainingLevel, weeklyPrescription]);
   const baseSuggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
   const baseSuggestedTemplate = findTemplate(data.templates, baseSuggestedTemplateId);
+  const recoveryReadinessResult = React.useMemo(
+    () =>
+      applyStatusRules(
+        baseSuggestedTemplate,
+        decisionContext.todayStatus,
+        decisionContext.trainingMode,
+        weeklyPrescription,
+        decisionContext.history,
+        decisionContext.screeningProfile,
+        decisionContext.mesocyclePlan,
+        toStatusRulesDecisionContext(decisionContext),
+      ).readinessResult,
+    [
+      baseSuggestedTemplate,
+      decisionContext.todayStatus,
+      decisionContext.trainingMode,
+      weeklyPrescription,
+      decisionContext.history,
+      decisionContext.screeningProfile,
+      decisionContext.mesocyclePlan,
+      decisionContext.healthSummary,
+      decisionContext.useHealthDataForReadiness,
+    ],
+  );
   const recoveryPainPatterns = React.useMemo(() => buildPainPatterns(filterAnalyticsHistory(data.history || [])), [data.history]);
   const recoveryRecommendation = React.useMemo(
     () =>
@@ -255,9 +280,10 @@ function App() {
         templates: data.templates || [],
         sorenessAreas: (data.todayStatus?.soreness || []).filter((area) => area !== '无'),
         painAreas: recoveryPainPatterns.map((pattern) => pattern.area),
+        readinessResult: recoveryReadinessResult,
         availableTimeMin: number(data.todayStatus?.time),
       }),
-    [baseSuggestedTemplate, data.templates, data.todayStatus?.soreness, data.todayStatus?.time, recoveryPainPatterns],
+    [baseSuggestedTemplate, data.templates, data.todayStatus?.soreness, data.todayStatus?.time, recoveryPainPatterns, recoveryReadinessResult],
   );
   const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);

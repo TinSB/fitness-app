@@ -2,6 +2,11 @@ import { EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/exerciseLibrary';
 import { formatExerciseName, formatMuscleName, formatTemplateName } from '../i18n/formatters';
 import type { ExerciseTemplate, ReadinessResult, TrainingTemplate } from '../models/training-model';
 import { number } from './engineUtils';
+import {
+  buildExerciseRecoveryConflict,
+  type ExerciseRecoveryConflict,
+  type ExerciseRecoveryConflictLevel,
+} from './exerciseRecoveryConflictEngine';
 
 export type DailyRecommendationKind = 'train' | 'modified_train' | 'rest' | 'active_recovery' | 'mobility_only';
 
@@ -20,6 +25,7 @@ export type RecoveryAwareRecommendation = {
     type:
       | 'reduce_volume'
       | 'reduce_intensity'
+      | 'substitute'
       | 'skip_accessory'
       | 'avoid_movement_pattern'
       | 'choose_alternative_template'
@@ -27,6 +33,7 @@ export type RecoveryAwareRecommendation = {
     target?: string;
     reason: string;
   }>;
+  templateRecoveryConflict?: TemplateRecoveryConflict;
   requiresConfirmationToOverride: boolean;
 };
 
@@ -39,6 +46,21 @@ export type TemplateBodyPartConflict = {
     exerciseName: string;
     reason: string;
   }>;
+};
+
+export type TemplateRecoveryConflict = {
+  templateId: string;
+  templateName: string;
+  conflictLevel: RecoveryConflictLevel;
+  kind: DailyRecommendationKind;
+  conflictingExercises: ExerciseRecoveryConflict[];
+  safeExercises: ExerciseRecoveryConflict[];
+  suggestedChanges: Array<{
+    type: 'reduce_volume' | 'reduce_intensity' | 'substitute' | 'skip_accessory' | 'rest';
+    exerciseId?: string;
+    reason: string;
+  }>;
+  summary: string;
 };
 
 type BodyAreaKey = 'shoulder' | 'chest' | 'back' | 'leg' | 'arm';
@@ -66,6 +88,13 @@ export type BuildRecoveryAwareRecommendationInput = BuildTemplateBodyPartConflic
   templates?: TrainingTemplate[];
   readinessResult?: ReadinessResult | null;
   availableTimeMin?: number;
+};
+
+export type BuildTemplateRecoveryConflictInput = {
+  template: TrainingTemplate;
+  sorenessAreas?: string[];
+  painAreas?: string[];
+  readinessResult?: ReadinessResult | null;
 };
 
 const areaLabels: Record<BodyAreaKey, string> = {
@@ -219,6 +248,139 @@ export const buildTemplateBodyPartConflictScore = ({
 const lowReadiness = (readinessResult?: ReadinessResult | null) =>
   Boolean(readinessResult && (readinessResult.score < 50 || readinessResult.trainingAdjustment === 'recovery'));
 
+const conflictRank: Record<ExerciseRecoveryConflictLevel, number> = {
+  none: 0,
+  low: 1,
+  moderate: 2,
+  high: 3,
+};
+
+const isMainExercise = (exercise?: ExerciseTemplate) => {
+  if (!exercise) return false;
+  if (exercise.kind === 'isolation') return false;
+  if (exercise.fatigueCost === 'low') return false;
+  return exercise.kind === 'compound' || exercise.kind === 'machine' || exercise.fatigueCost === 'high' || exercise.fatigueCost === 'medium';
+};
+
+const isAccessoryExercise = (exercise?: ExerciseTemplate) => !isMainExercise(exercise);
+
+const templateLevelFromExerciseConflicts = (conflicts: Array<{ conflict: ExerciseRecoveryConflict; exercise: ExerciseTemplate }>): RecoveryConflictLevel => {
+  const total = Math.max(1, conflicts.length);
+  const high = conflicts.filter((item) => item.conflict.conflictLevel === 'high');
+  const moderate = conflicts.filter((item) => item.conflict.conflictLevel === 'moderate');
+  const low = conflicts.filter((item) => item.conflict.conflictLevel === 'low');
+  const highMainCount = high.filter((item) => isMainExercise(item.exercise)).length;
+  const conflictRatio = (high.length * 2 + moderate.length) / total;
+
+  if (high.length >= 3 || highMainCount >= 2 || conflictRatio >= 1.2) return 'high';
+  if (high.length >= 1 || moderate.length >= 2 || conflictRatio >= 0.55) return 'moderate';
+  if (moderate.length >= 1 || low.length >= 1) return 'low';
+  return 'none';
+};
+
+const templateKindFromConflict = ({
+  level,
+  conflicts,
+  readinessResult,
+  painAreas,
+}: {
+  level: RecoveryConflictLevel;
+  conflicts: Array<{ conflict: ExerciseRecoveryConflict; exercise: ExerciseTemplate }>;
+  readinessResult?: ReadinessResult | null;
+  painAreas: string[];
+}): DailyRecommendationKind => {
+  if (level === 'none' || level === 'low') return 'train';
+  const highMainCount = conflicts.filter((item) => item.conflict.conflictLevel === 'high' && isMainExercise(item.exercise)).length;
+  const hasPain = painAreas.length > 0;
+  const readinessIsLow = lowReadiness(readinessResult);
+  if (level === 'high' && readinessIsLow) return hasPain ? 'rest' : 'active_recovery';
+  if (level === 'high' && hasPain && highMainCount >= 2) return 'active_recovery';
+  return 'modified_train';
+};
+
+const changeForConflict = ({ conflict, exercise }: { conflict: ExerciseRecoveryConflict; exercise: ExerciseTemplate }): TemplateRecoveryConflict['suggestedChanges'][number] | null => {
+  if (conflict.conflictLevel === 'none' || conflict.conflictLevel === 'low') return null;
+  if (isAccessoryExercise(exercise)) {
+    return {
+      type: conflict.conflictLevel === 'high' ? 'skip_accessory' : 'reduce_volume',
+      exerciseId: exercise.id,
+      reason: `${conflict.exerciseName} 与恢复信号重叠，作为辅助动作可先减少或跳过。`,
+    };
+  }
+  if (exercise.alternatives?.length || exercise.regressionIds?.length || exercise.alternativeIds?.length) {
+    return {
+      type: 'substitute',
+      exerciseId: exercise.id,
+      reason: `${conflict.exerciseName} 冲突较高，优先考虑低冲突替代动作。`,
+    };
+  }
+  return {
+    type: conflict.conflictLevel === 'high' ? 'reduce_intensity' : 'reduce_volume',
+    exerciseId: exercise.id,
+    reason: `${conflict.exerciseName} 与恢复信号重叠，本次保持保守。`,
+  };
+};
+
+const uniqueChanges = (changes: TemplateRecoveryConflict['suggestedChanges']) => {
+  const seen = new Set<string>();
+  return changes.filter((change) => {
+    const key = `${change.type}:${change.exerciseId || ''}:${change.reason}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+export const buildTemplateRecoveryConflict = ({
+  template,
+  sorenessAreas = [],
+  painAreas = [],
+  readinessResult,
+}: BuildTemplateRecoveryConflictInput): TemplateRecoveryConflict => {
+  const templateName = formatTemplateName(template);
+  const exerciseConflicts = (template.exercises || []).map((exercise) => ({
+    exercise,
+    conflict: buildExerciseRecoveryConflict({ exercise, sorenessAreas, painAreas }),
+  }));
+  const sortedConflicts = [...exerciseConflicts].sort((left, right) => conflictRank[right.conflict.conflictLevel] - conflictRank[left.conflict.conflictLevel]);
+  const conflictLevel = templateLevelFromExerciseConflicts(exerciseConflicts);
+  const kind = templateKindFromConflict({ level: conflictLevel, conflicts: exerciseConflicts, readinessResult, painAreas });
+  const conflictingExercises = sortedConflicts
+    .filter((item) => item.conflict.conflictLevel === 'moderate' || item.conflict.conflictLevel === 'high')
+    .map((item) => item.conflict);
+  const safeExercises = exerciseConflicts
+    .filter((item) => item.conflict.conflictLevel === 'none' || item.conflict.conflictLevel === 'low')
+    .map((item) => item.conflict);
+  const suggestedChanges = uniqueChanges(
+    sortedConflicts
+      .map(changeForConflict)
+      .filter((change): change is TemplateRecoveryConflict['suggestedChanges'][number] => Boolean(change)),
+  );
+  const topConflict = conflictingExercises[0];
+  const safeCount = safeExercises.length;
+  const summary =
+    kind === 'train'
+      ? conflictLevel === 'none'
+        ? `${templateName} 与今天标记的恢复部位没有明显冲突，可以按计划训练。`
+        : `${templateName} 只有轻度恢复冲突，可以训练，注意相关动作的反馈。`
+      : kind === 'modified_train'
+        ? `${templateName} 建议按保守版执行：重点调整${topConflict?.exerciseName || '高冲突动作'}，其余 ${safeCount} 个低冲突动作可以保留。`
+        : kind === 'rest'
+          ? `${templateName} 与今天恢复状态冲突较高，且准备度偏低，建议休息。`
+          : `${templateName} 与今天恢复状态冲突较高，建议主动恢复。`;
+
+  return {
+    templateId: template.id,
+    templateName,
+    conflictLevel,
+    kind,
+    conflictingExercises,
+    safeExercises,
+    suggestedChanges,
+    summary,
+  };
+};
+
 const conflictLabel = (level: RecoveryConflictLevel) =>
   ({
     none: '无明显冲突',
@@ -240,16 +402,39 @@ const findLowerConflictTemplate = (
   templates: TrainingTemplate[],
   sorenessAreas: string[],
   painAreas: string[],
-  exerciseLibrary?: Record<string, ExerciseMetaInput>,
 ) =>
   templates
     .filter((template) => template.id !== preferredTemplate.id)
     .map((template) => ({
       template,
-      conflict: buildTemplateBodyPartConflictScore({ template, sorenessAreas, painAreas, exerciseLibrary }),
+      conflict: buildTemplateRecoveryConflict({ template, sorenessAreas, painAreas }),
     }))
-    .filter((item) => item.conflict.level === 'none' || item.conflict.level === 'low')
-    .sort((left, right) => left.conflict.score - right.conflict.score || left.template.duration - right.template.duration)[0];
+    .filter((item) => item.conflict.conflictLevel === 'none' || item.conflict.conflictLevel === 'low')
+    .sort((left, right) => conflictRank[left.conflict.conflictLevel] - conflictRank[right.conflict.conflictLevel] || left.template.duration - right.template.duration)[0];
+
+const recoveryReasonsFromTemplateConflict = (conflict: TemplateRecoveryConflict) => {
+  if (conflict.conflictLevel === 'none') return [`${conflict.templateName} 与今天标记的恢复部位没有明显重叠。`];
+  return [
+    conflict.summary,
+    ...conflict.conflictingExercises.slice(0, 2).map((exercise) => exercise.reason),
+  ].filter(Boolean);
+};
+
+const mapTemplateSuggestedChanges = (conflict: TemplateRecoveryConflict): RecoveryAwareRecommendation['suggestedChanges'] => {
+  const mapped = conflict.suggestedChanges.map((change) => ({
+    type: change.type,
+    target: change.exerciseId,
+    reason: change.reason,
+  }));
+  if (conflict.kind === 'modified_train') {
+    return [
+      { type: 'reduce_volume' as const, target: conflict.templateId, reason: '本次只做保守调整，不改变原训练模板。' },
+      { type: 'reduce_intensity' as const, target: conflict.templateId, reason: '高冲突动作降低强度，保留更多余力（RIR）。' },
+      ...mapped,
+    ];
+  }
+  return mapped;
+};
 
 export const buildRecoveryAwareRecommendation = ({
   preferredTemplate,
@@ -276,31 +461,33 @@ export const buildRecoveryAwareRecommendation = ({
   }
 
   const templateName = formatTemplateName(targetTemplate);
-  const conflict = buildTemplateBodyPartConflictScore({
+  const templateConflict = buildTemplateRecoveryConflict({
     template: targetTemplate,
     sorenessAreas,
     painAreas,
-    exerciseLibrary,
+    readinessResult,
   });
   const readinessIsLow = lowReadiness(readinessResult);
   const availableTime = number(availableTimeMin);
-  const reasons = baseReasons(templateName, conflict);
+  const reasons = recoveryReasonsFromTemplateConflict(templateConflict);
+  const shouldPreferAlternative = templateConflict.conflictLevel === 'high' && templateConflict.conflictingExercises.length > 1;
 
-  if (conflict.level === 'high' && readinessIsLow) {
+  if (templateConflict.conflictLevel === 'high' && readinessIsLow) {
     return {
       kind: 'rest',
       title: '今日建议：休息',
       summary: `${templateName} 与今天的恢复信号冲突较高，且准备度偏低。建议今天休息或做很轻量的恢复活动。`,
-      conflictLevel: conflict.level,
-      affectedAreas: conflict.affectedAreas,
+      conflictLevel: templateConflict.conflictLevel,
+      affectedAreas: [...new Set(templateConflict.conflictingExercises.flatMap((exercise) => exercise.affectedAreas))],
       reasons: [...reasons, '准备度偏低时，高冲突模板不适合作为正常训练推荐。'],
       suggestedChanges: [{ type: 'rest', reason: '今天保留恢复空间，不强行安排正式训练。' }],
+      templateRecoveryConflict: templateConflict,
       requiresConfirmationToOverride: true,
     };
   }
 
-  if (conflict.level === 'high') {
-    const alternative = findLowerConflictTemplate(targetTemplate, templates, sorenessAreas, painAreas, exerciseLibrary);
+  if (shouldPreferAlternative) {
+    const alternative = findLowerConflictTemplate(targetTemplate, templates, sorenessAreas, painAreas);
     if (alternative) {
       const alternativeName = formatTemplateName(alternative.template);
       return {
@@ -309,16 +496,17 @@ export const buildRecoveryAwareRecommendation = ({
         templateName: alternativeName,
         title: `今日建议：${alternativeName}`,
         summary: `${templateName} 与今天的酸痛部位冲突较高，建议改为低冲突的 ${alternativeName}。`,
-        conflictLevel: conflict.level,
-        affectedAreas: conflict.affectedAreas,
+        conflictLevel: templateConflict.conflictLevel,
+        affectedAreas: [...new Set(templateConflict.conflictingExercises.flatMap((exercise) => exercise.affectedAreas))],
         reasons: [...reasons, `${alternativeName} 与当前酸痛部位重叠更少。`],
         suggestedChanges: [
           {
             type: 'choose_alternative_template',
             target: alternative.template.id,
-            reason: `改为 ${alternativeName}，避免把主要压力继续放在${conflict.affectedAreas.join('、')}。`,
+            reason: `改为 ${alternativeName}，避免把主要压力继续放在恢复冲突部位。`,
           },
         ],
+        templateRecoveryConflict: templateConflict,
         requiresConfirmationToOverride: true,
       };
     }
@@ -327,15 +515,16 @@ export const buildRecoveryAwareRecommendation = ({
       kind: 'active_recovery',
       title: '今日建议：主动恢复',
       summary: `${templateName} 与今天的酸痛部位冲突较高，当前没有更低冲突的训练模板。建议安排主动恢复。`,
-      conflictLevel: conflict.level,
-      affectedAreas: conflict.affectedAreas,
+      conflictLevel: templateConflict.conflictLevel,
+      affectedAreas: [...new Set(templateConflict.conflictingExercises.flatMap((exercise) => exercise.affectedAreas))],
       reasons,
       suggestedChanges: [{ type: 'rest', reason: '用主动恢复替代正式训练，避免继续刺激高冲突部位。' }],
+      templateRecoveryConflict: templateConflict,
       requiresConfirmationToOverride: true,
     };
   }
 
-  if (conflict.level === 'moderate') {
+  if (templateConflict.kind === 'modified_train' || templateConflict.conflictLevel === 'moderate') {
     if (availableTime > 0 && availableTime <= 30) {
       return {
         kind: 'mobility_only',
@@ -343,13 +532,14 @@ export const buildRecoveryAwareRecommendation = ({
         templateName,
         title: '今日建议：只做活动度 / 纠偏',
         summary: `${templateName} 与今天的酸痛部位有中等重叠，且可用时间较少。建议只做轻量活动度或纠偏。`,
-        conflictLevel: conflict.level,
-        affectedAreas: conflict.affectedAreas,
+        conflictLevel: templateConflict.conflictLevel,
+        affectedAreas: [...new Set(templateConflict.conflictingExercises.flatMap((exercise) => exercise.affectedAreas))],
         reasons,
         suggestedChanges: [
           { type: 'avoid_movement_pattern', reason: '跳过高冲突动作模式，只保留轻量活动度。' },
           { type: 'skip_accessory', reason: '今天不额外堆叠辅助动作。' },
         ],
+        templateRecoveryConflict: templateConflict,
         requiresConfirmationToOverride: true,
       };
     }
@@ -358,16 +548,13 @@ export const buildRecoveryAwareRecommendation = ({
       kind: 'modified_train',
       templateId: targetTemplate.id,
       templateName,
-      title: `今日建议：${templateName}（保守建议）`,
-      summary: `${templateName} 可以训练，但建议降低相关部位训练压力，不按正常强度推进。`,
-      conflictLevel: conflict.level,
-      affectedAreas: conflict.affectedAreas,
+      title: `今日建议：${templateName}（保守版）`,
+      summary: templateConflict.summary,
+      conflictLevel: templateConflict.conflictLevel,
+      affectedAreas: [...new Set(templateConflict.conflictingExercises.flatMap((exercise) => exercise.affectedAreas))],
       reasons,
-      suggestedChanges: [
-        { type: 'reduce_volume', target: targetTemplate.id, reason: '减少与酸痛部位相关的额外组数。' },
-        { type: 'reduce_intensity', target: targetTemplate.id, reason: '相关动作采用更保守的重量和余力（RIR）。' },
-        { type: 'skip_accessory', target: targetTemplate.id, reason: '优先跳过高冲突辅助动作。' },
-      ],
+      suggestedChanges: mapTemplateSuggestedChanges(templateConflict),
+      templateRecoveryConflict: templateConflict,
       requiresConfirmationToOverride: true,
     };
   }
@@ -378,16 +565,17 @@ export const buildRecoveryAwareRecommendation = ({
     templateName,
     title: `今日建议：${templateName}`,
     summary:
-      conflict.level === 'low'
+      templateConflict.conflictLevel === 'low'
         ? `${templateName} 与今天的酸痛部位只有轻度重叠，可以训练，但注意动作质量。`
         : `${templateName} 可以按计划训练。`,
-    conflictLevel: conflict.level,
-    affectedAreas: conflict.affectedAreas,
+    conflictLevel: templateConflict.conflictLevel,
+    affectedAreas: [...new Set(templateConflict.safeExercises.flatMap((exercise) => exercise.affectedAreas))],
     reasons,
     suggestedChanges:
-      conflict.level === 'low'
+      templateConflict.conflictLevel === 'low'
         ? [{ type: 'reduce_intensity', target: targetTemplate.id, reason: '如酸痛加重，相关动作保持保守。' }]
         : [],
+    templateRecoveryConflict: templateConflict,
     requiresConfirmationToOverride: false,
   };
 };

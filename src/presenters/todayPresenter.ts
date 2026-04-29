@@ -20,6 +20,8 @@ export type TodayViewModel = {
   recommendationKind?: RecoveryAwareRecommendation['kind'];
   recoverySummary?: string;
   recoveryReasons?: string[];
+  recoverySuggestedChanges?: RecoveryAwareRecommendation['suggestedChanges'];
+  recoveryTemplateConflict?: RecoveryAwareRecommendation['templateRecoveryConflict'];
   requiresRecoveryOverride?: boolean;
   recommendedTemplateId?: string;
 };
@@ -90,7 +92,7 @@ export const buildTodayViewModel = ({
   if (recoveryRecommendation && recoveryRecommendation.kind !== 'train') {
     const currentTrainingName =
       recoveryRecommendation.kind === 'modified_train' && recoveryRecommendation.templateName
-        ? `${recoveryRecommendation.templateName}（保守建议）`
+        ? `${recoveryRecommendation.templateName}（保守版）`
         : recoveryRecommendation.title.replace('今日建议：', '');
     const primaryActionLabel =
       recoveryRecommendation.kind === 'rest'
@@ -99,13 +101,13 @@ export const buildTodayViewModel = ({
           ? '查看恢复安排'
           : recoveryRecommendation.kind === 'mobility_only'
             ? '开始轻量恢复'
-            : '查看保守建议';
+            : '开始保守训练';
     return {
       state: 'not_started',
       pageTitle: recoveryRecommendation.kind === 'rest' || recoveryRecommendation.kind === 'active_recovery' ? '今日恢复优先' : '今日建议已调整',
       recommendationLabel: '今日建议',
       primaryActionLabel,
-      secondaryActionLabels: ['仍要训练'],
+      secondaryActionLabels: [recoveryRecommendation.kind === 'modified_train' ? '仍按原计划训练' : '仍要训练'],
       statusText: recoveryRecommendation.summary,
       currentTrainingName,
       decisionText: recoveryRecommendation.summary,
@@ -113,6 +115,8 @@ export const buildTodayViewModel = ({
       recommendationKind: recoveryRecommendation.kind,
       recoverySummary: recoveryRecommendation.summary,
       recoveryReasons: recoveryRecommendation.reasons,
+      recoverySuggestedChanges: recoveryRecommendation.suggestedChanges,
+      recoveryTemplateConflict: recoveryRecommendation.templateRecoveryConflict,
       requiresRecoveryOverride: recoveryRecommendation.requiresConfirmationToOverride,
       recommendedTemplateId: recoveryRecommendation.templateId,
     };
@@ -123,7 +127,7 @@ export const buildTodayViewModel = ({
       state: 'not_started',
       pageTitle: '今天该怎么练',
       recommendationLabel: '今日建议',
-      primaryActionLabel: '开始推荐训练',
+      primaryActionLabel: '开始训练',
       secondaryActionLabels: ['查看动作安排'],
       statusText: recoveryRecommendation.summary,
       currentTrainingName: recoveryRecommendation.templateName || formatTemplateName(recoveryRecommendation.templateId),
@@ -132,6 +136,8 @@ export const buildTodayViewModel = ({
       recommendationKind: recoveryRecommendation.kind,
       recoverySummary: recoveryRecommendation.summary,
       recoveryReasons: recoveryRecommendation.reasons,
+      recoverySuggestedChanges: recoveryRecommendation.suggestedChanges,
+      recoveryTemplateConflict: recoveryRecommendation.templateRecoveryConflict,
       requiresRecoveryOverride: recoveryRecommendation.requiresConfirmationToOverride,
       recommendedTemplateId: recoveryRecommendation.templateId,
     };
