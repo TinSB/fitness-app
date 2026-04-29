@@ -383,9 +383,11 @@ export function PlanView({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-semibold text-slate-950">{draft.title}</h3>
             <StatusBadge tone={draft.status === 'stale' ? 'amber' : 'sky'}>{draft.status === 'stale' ? '已过期' : '草稿'}</StatusBadge>
+            <StatusBadge tone="amber">需确认</StatusBadge>
             <StatusBadge tone="slate">置信度：{formatConfidence(draft.confidence)}</StatusBadge>
           </div>
           <p className="mt-1 text-sm leading-6 text-slate-600">{draft.summary}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">自动调整草案不会自动覆盖当前计划；采用后会生成实验模板并保留回滚。</p>
         </div>
       </div>
       <div className="space-y-2">
@@ -496,11 +498,11 @@ export function PlanView({
             </div>
           </PageSection>
 
-          <PageSection title="调整建议" description="每条建议都显示原因和对模板的影响。">
+          <PageSection title="调整建议" description="自动调整草案入口。每条建议都显示原因和影响，采用前需要确认，不会自动覆盖计划。">
             {adjustmentDrafts.length ? (
               <div className="space-y-3">{adjustmentDrafts.map(renderAdjustmentSuggestion)}</div>
             ) : (
-              <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成计划调整草稿。" />
+              <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成自动调整草案；你确认后才会应用。" />
             )}
           </PageSection>
 

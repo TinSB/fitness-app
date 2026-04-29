@@ -4,6 +4,189 @@ Last updated: 2026-04-28
 
 This backlog is ordered for multiple Codex conversations. Each task is scoped to minimize collisions and preserve current architecture.
 
+## Coach Automation V1 Backlog
+
+Planning source: `COACH_AUTOMATION_PLAN.md`
+
+### P0-009: Define CoachSuggestion contract and read-only automation boundaries
+
+Priority: P0
+
+Goal:
+Create shared types and tests for explainable, dismissible coach suggestions before implementing UI write flows.
+
+Files likely involved:
+- `src/engines/coachAutomationEngine.ts`
+- `src/engines/dataHealthEngine.ts`
+- `src/engines/setAnomalyEngine.ts`
+- `tests/coachAutomationEngine.test.ts`
+
+Acceptance criteria:
+- Every suggestion has Chinese title, reason, impact, source engine, and confirmation requirement.
+- No suggestion mutates AppData directly.
+- Tests prove inputs are not mutated.
+- Raw enum/internal ids are not shown in visible suggestion text.
+
+Out of scope:
+- Backend jobs.
+- Cloud sync.
+- Automatic plan overwrite.
+
+### P0-010: Implement dataHealthEngine
+
+Priority: P0
+
+Goal:
+Detect data quality issues that could affect recommendations or statistics, while keeping all fixes user-confirmed.
+
+Files likely involved:
+- `src/engines/dataHealthEngine.ts`
+- `src/engines/sessionHistoryEngine.ts`
+- `src/presenters/recordPresenter.ts`
+- `tests/dataHealthEngine.test.ts`
+
+Acceptance criteria:
+- Detect empty completed sessions, test/excluded data, missing set type, suspicious health imports, duplicate-looking imports, and impossible dates.
+- Output suggestions only; no delete, exclude, restore, or edit happens automatically.
+- Record can later surface these suggestions without becoming a settings/backup page.
+
+Out of scope:
+- Changing history editing behavior.
+- Changing PR/e1RM/effectiveSet calculations.
+
+### P0-011: Implement setAnomalyEngine
+
+Priority: P0
+
+Goal:
+Detect likely set-entry mistakes in active and historical sessions.
+
+Files likely involved:
+- `src/engines/setAnomalyEngine.ts`
+- `src/features/TrainingFocusView.tsx` if surfacing a compact warning later
+- `src/features/RecordView.tsx` if surfacing historical edit suggestions later
+- `tests/setAnomalyEngine.test.ts`
+
+Acceptance criteria:
+- Detect likely kg/lb mismatch, missing reps/weight, extreme jumps, duplicated sets, and warmup/working classification risk.
+- Suggestions open existing edit/review flows but do not apply corrections automatically.
+- Warmup groups are not treated as PR/e1RM/effectiveSet contributors by this engine.
+
+Out of scope:
+- New training algorithms.
+- Automatic correction.
+
+### P0-012: Implement dailyTrainingAdjustmentEngine
+
+Priority: P0
+
+Goal:
+Convert existing readiness, health, pain, technique, load feedback, and training level signals into short daily coaching guidance.
+
+Files likely involved:
+- `src/engines/dailyTrainingAdjustmentEngine.ts`
+- `src/engines/recommendationTraceEngine.ts`
+- `src/presenters/recommendationExplanationPresenter.ts`
+- `tests/dailyTrainingAdjustmentEngine.test.ts`
+
+Acceptance criteria:
+- Explain normal/conservative/recovery-focused daily stance in 1-2 short Chinese reasons.
+- Do not recalculate readiness or change progression rules.
+- Do not automatically skip or reduce a workout.
+
+Out of scope:
+- Changing readinessEngine.
+- Changing progressionRulesEngine.
+
+### P0-013: Implement nextWorkoutScheduler
+
+Priority: P0
+
+Goal:
+Recommend the next workout from existing plan order, recent normal history, readiness, and weekly prescription.
+
+Files likely involved:
+- `src/engines/nextWorkoutScheduler.ts`
+- `src/engines/sessionBuilder.ts`
+- `src/presenters/todayPresenter.ts`
+- `tests/nextWorkoutScheduler.test.ts`
+
+Acceptance criteria:
+- Same input returns the same next workout.
+- Completed state uses one next workout source.
+- Does not switch selectedTemplateId or start sessions automatically.
+- Reasons use Chinese template names via formatter.
+
+Out of scope:
+- Rewriting the plan system.
+- Auto-applying program adjustments.
+
+### P0-014: Implement coachAutomationEngine aggregator
+
+Priority: P0
+
+Goal:
+Combine P0 suggestions into a deduplicated, surface-aware report.
+
+Files likely involved:
+- `src/engines/coachAutomationEngine.ts`
+- `src/presenters/coachAutomationPresenter.ts`
+- `tests/coachAutomationEngine.test.ts`
+
+Acceptance criteria:
+- Today receives daily and next-workout suggestions.
+- Focus receives only current training/action suggestions.
+- Record receives data health and edit-review suggestions.
+- Plan receives program-review suggestions without bypassing preview/confirm/rollback.
+- No automatic writes to protected AppData fields.
+
+Out of scope:
+- Persistent dismissal state unless explicitly added later.
+
+### P1-015: Implement smartReplacementEngine
+
+Priority: P1
+
+Goal:
+Rank replacement options with coach-style reasons while reusing existing replacementEngine IDs and boundaries.
+
+Files likely involved:
+- `src/engines/smartReplacementEngine.ts`
+- `src/engines/replacementEngine.ts`
+- `src/features/TrainingFocusView.tsx`
+- `tests/smartReplacementEngine.test.ts`
+
+Acceptance criteria:
+- Uses real exercise IDs only.
+- Explains why an option is better for pain, equipment, fatigue cost, or movement pattern.
+- Does not apply replacement until the user confirms.
+- Does not merge original and actual exercise PR/e1RM.
+
+Out of scope:
+- Synthetic exercise creation.
+- New replacement data model.
+
+### P1-016: Suggestion dismissal and review history
+
+Priority: P1
+
+Goal:
+Allow users to dismiss suggestions locally without adding backend or cloud sync.
+
+Files likely involved:
+- `src/storage/persistence.ts`
+- `src/models/training-model.ts`
+- `src/engines/coachAutomationEngine.ts`
+- `tests/persistence.test.ts`
+
+Acceptance criteria:
+- Dismissed suggestions do not reappear for the same stable suggestion id.
+- Dismissal is local-only.
+- No suggestion dismissal deletes or edits training data.
+
+Out of scope:
+- Accounts or sync.
+
 ## P0-001: 建立前端治理文档基线
 
 任务编号: P0-001

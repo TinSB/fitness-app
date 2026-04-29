@@ -11,6 +11,7 @@ import { buildTodayTrainingState } from '../engines/todayStateEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
+import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
@@ -29,6 +30,7 @@ interface TodayViewProps {
   selectedTemplate: TrainingTemplate;
   suggestedTemplate: TrainingTemplate;
   weeklyPrescription: WeeklyPrescription;
+  coachAutomationSummary?: CoachAutomationSummary;
   trainingMode: TrainingMode;
   onModeChange: (mode: TrainingMode) => void;
   onStatusChange: (field: 'sleep' | 'energy' | 'time', value: string) => void;
@@ -117,6 +119,7 @@ export function TodayView({
   selectedTemplate,
   suggestedTemplate,
   weeklyPrescription,
+  coachAutomationSummary,
   trainingMode,
   onModeChange,
   onStatusChange,
@@ -223,6 +226,11 @@ export function TodayView({
     (trainingLevelAssessment.level === 'unknown'
       ? '系统还在建立训练基线，今天的建议会保持保守。'
       : '今天优先完成主训练，细节记录放到训练页处理。');
+  const coachActions = (coachAutomationSummary?.recommendedActions || []).slice(0, 2);
+  const hiddenCoachActions = (coachAutomationSummary?.recommendedActions || []).slice(2);
+  const coachWarnings = (coachAutomationSummary?.keyWarnings || []).slice(0, Math.max(0, 2 - coachActions.length));
+  const hiddenCoachWarnings = (coachAutomationSummary?.keyWarnings || []).slice(coachWarnings.length);
+  const shouldShowCoachAdvice = coachActions.length > 0 || coachWarnings.length > 0;
 
   const handleExtraTraining = () => {
     if (typeof window === 'undefined' || window.confirm('你今天已经完成训练，确定要再开始一场吗？')) {
@@ -308,6 +316,55 @@ export function TodayView({
               compact
               maxVisibleFactors={3}
             />
+
+            {shouldShowCoachAdvice ? (
+              <Card className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-base font-semibold text-slate-950">教练提醒</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">默认只显示当前最重要的 1–2 条；所有建议都可忽略，采用前仍需你确认。</p>
+                  </div>
+                  <StatusBadge tone={coachAutomationSummary?.dataHealth?.status === 'has_errors' ? 'rose' : 'emerald'}>可忽略</StatusBadge>
+                </div>
+                <div className="space-y-2">
+                  {coachActions.map((action) => (
+                    <div key={action.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-950">{action.label}</span>
+                        {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                      </div>
+                      <div className="mt-1 text-xs leading-5 text-slate-600">{action.reason}</div>
+                    </div>
+                  ))}
+                  {coachWarnings.map((warning) => (
+                    <div key={warning} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-900">
+                      {warning}
+                    </div>
+                  ))}
+                </div>
+                {hiddenCoachActions.length || hiddenCoachWarnings.length ? (
+                  <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                    <summary className="cursor-pointer font-semibold text-slate-700">查看更多提醒</summary>
+                    <div className="mt-2 space-y-2">
+                      {hiddenCoachActions.map((action) => (
+                        <div key={action.id} className="rounded-lg bg-stone-50 px-3 py-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-slate-950">{action.label}</span>
+                            {action.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
+                          </div>
+                          <div className="mt-1 text-xs leading-5 text-slate-600">{action.reason}</div>
+                        </div>
+                      ))}
+                      {hiddenCoachWarnings.map((warning) => (
+                        <div key={warning} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-900">
+                          {warning}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                ) : null}
+              </Card>
+            ) : null}
 
             <Card className="space-y-3">
               <div className="flex items-start justify-between gap-3">

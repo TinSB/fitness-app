@@ -23,4 +23,13 @@ describe('TrainingFocusView replacement UI', () => {
     expect(source).toContain('formatFatigueCost(option.fatigueCost)');
     expect(source).toContain('chooseReplacement');
   });
+
+  it('groups smart replacements by recommendation level', () => {
+    expect(source).toContain('buildSmartReplacementRecommendations');
+    expect(source).toContain("title: '推荐'");
+    expect(source).toContain("title: '可选'");
+    expect(source).toContain("title: '角度变化'");
+    expect(source).toContain("title: '不建议'");
+    expect(source).toContain('{option.reason}');
+  });
 });

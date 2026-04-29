@@ -4,7 +4,8 @@ import { classNames, formatTimer, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
-import { buildReplacementOptions, type ReplacementOption } from '../engines/replacementEngine';
+import { buildSmartReplacementRecommendations, type SmartReplacementRecommendation } from '../engines/smartReplacementEngine';
+import { detectSetAnomalies } from '../engines/setAnomalyEngine';
 import {
   formatExerciseName,
   formatFatigueCost,
@@ -17,7 +18,7 @@ import {
   formatTechniqueQuality,
   formatTemplateName,
 } from '../i18n/formatters';
-import type { LoadFeedbackValue, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
+import type { LoadFeedbackValue, PainPattern, ReadinessResult, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Card } from '../ui/Card';
@@ -64,6 +65,10 @@ interface TrainingFocusViewProps {
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
+  painPatterns?: PainPattern[];
+  readinessResult?: ReadinessResult | null;
+  trainingHistory?: TrainingSession[];
+  equipmentPreferences?: string[];
 }
 
 const supportReasonOptions: Array<{ value: SupportSkipReason; label: string }> = [
@@ -95,7 +100,7 @@ const displayExerciseName = (exercise: TrainingSession['exercises'][number] | nu
   return formatExerciseName(exercise);
 };
 
-const displayReplacementName = (option: ReplacementOption) => formatExerciseName({ id: option.id, name: option.name });
+const displayReplacementName = (option: SmartReplacementRecommendation) => formatExerciseName({ id: option.exerciseId, name: option.exerciseName });
 
 const displayMovementPattern = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
   return formatMovementPattern(exercise?.movementPattern);
@@ -117,9 +122,21 @@ const stageLabel = (stepType: string) => {
   return '完成';
 };
 
-const replacementRankLabel = (rank: ReplacementOption['rank']) => {
-  return formatReplacementCategory(rank);
+const replacementRankLabels: Record<SmartReplacementRecommendation['priority'], string> = {
+  primary: '推荐',
+  secondary: '可选',
+  angle_variation: '角度变化',
+  avoid: '不建议',
 };
+
+const replacementGroups: Array<{ priority: SmartReplacementRecommendation['priority']; title: string; tone: string }> = [
+  { priority: 'primary', title: '推荐', tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
+  { priority: 'secondary', title: '可选', tone: 'border-sky-200 bg-sky-50 text-sky-800' },
+  { priority: 'angle_variation', title: '角度变化', tone: 'border-amber-200 bg-amber-50 text-amber-800' },
+  { priority: 'avoid', title: '不建议', tone: 'border-slate-200 bg-slate-100 text-slate-600' },
+];
+
+const replacementRankLabel = (rank: SmartReplacementRecommendation['priority']) => replacementRankLabels[rank] || formatReplacementCategory(rank);
 
 export function TrainingFocusView({
   session,
@@ -141,6 +158,10 @@ export function TrainingFocusView({
   onSkipSupportExercise,
   onSkipSupportBlock,
   onUpdateSupportSkipReason,
+  painPatterns,
+  readinessResult,
+  trainingHistory,
+  equipmentPreferences,
 }: TrainingFocusViewProps) {
   const [skipReason, setSkipReason] = React.useState<SupportSkipReason>('time');
   const [feedback, setFeedback] = React.useState('');
@@ -162,7 +183,21 @@ export function TrainingFocusView({
   const mainExercisePoolId = mainExercise?.canonicalExerciseId || mainExercise?.baseId || mainExercise?.id || '';
   const completedMainSets = mainSets.filter((set) => set.done);
   const existingLoadFeedback = mainExercisePoolId ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId) : undefined;
-  const replacementOptions = mainExercise ? buildReplacementOptions(mainExercise) : [];
+  const replacementOptions = React.useMemo(
+    () =>
+      mainExercise
+        ? buildSmartReplacementRecommendations({
+            currentExercise: mainExercise,
+            exerciseLibrary: session.exercises,
+            painPatterns,
+            readinessResult,
+            loadFeedback: session.loadFeedback,
+            trainingHistory,
+            equipmentPreferences,
+          })
+        : [],
+    [equipmentPreferences, mainExercise, painPatterns, readinessResult, session.exercises, session.loadFeedback, trainingHistory],
+  );
   const recommendationTrace = React.useMemo(() => buildSessionRecommendationTrace(session), [session]);
 
   const warmupPolicyNotice =
@@ -296,9 +331,9 @@ export function TrainingFocusView({
     setShowReplacementPicker(true);
   };
 
-  const chooseReplacement = (option: ReplacementOption) => {
+  const chooseReplacement = (option: SmartReplacementRecommendation) => {
     if (mainIndex < 0) return;
-    onReplaceExercise(mainIndex, option.id);
+    onReplaceExercise(mainIndex, option.exerciseId);
     setShowReplacementPicker(false);
     notify(`已替换为：${displayReplacementName(option)}`);
   };
@@ -318,8 +353,51 @@ export function TrainingFocusView({
       notify('请先记录重量/次数，或点套用建议');
       return;
     }
+    const anomalyStepType = currentStep.stepType === 'completed' ? 'working' : currentStep.stepType;
+    const anomalies = detectSetAnomalies({
+      currentDraft: {
+        ...actualDraft,
+        stepType: anomalyStepType,
+        setType: anomalyStepType,
+        isWarmup: anomalyStepType === 'warmup',
+      },
+      exerciseId: mainExercisePoolId || mainExercise?.id,
+      previousSets: mainSets,
+      recentHistory: trainingHistory || [],
+      unitSettings,
+      plannedPrescription: {
+        plannedWeight: currentStep.plannedWeight,
+        plannedReps: currentStep.plannedReps,
+        repMin: mainExercise?.repMin,
+        repMax: mainExercise?.repMax,
+        stepType: anomalyStepType,
+        setType: anomalyStepType,
+        isWarmup: anomalyStepType === 'warmup',
+      },
+    });
+    const blockingAnomaly = anomalies.find((item) => item.requiresConfirmation || item.severity === 'critical');
+    if (blockingAnomaly) {
+      const confirmed =
+        typeof window === 'undefined'
+          ? true
+          : window.confirm(
+              [
+                `输入异常提示：${blockingAnomaly.title}`,
+                blockingAnomaly.message,
+                blockingAnomaly.suggestedAction,
+                '仍要保存这一组吗？',
+              ]
+                .filter(Boolean)
+                .join('\n'),
+            );
+      if (!confirmed) {
+        notify('已取消保存，请先检查本组记录');
+        return;
+      }
+    }
+    const warningAnomaly = anomalies.find((item) => item.severity !== 'critical' && !item.requiresConfirmation);
     onCompleteSet(mainIndex);
-    notify(currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组');
+    notify(warningAnomaly ? `输入异常提示：${warningAnomaly.title}` : currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组');
   };
 
   const updateDisplayWeight = (nextDisplayWeight: number) => {
@@ -412,26 +490,43 @@ export function TrainingFocusView({
   const renderReplacementPicker = () => (
     <BottomSheet open={showReplacementPicker} title="选择本次实际执行动作" onClose={() => setShowReplacementPicker(false)}>
       <p className="mb-3 text-xs leading-5 text-slate-500">保留当前模板位置；训练量计入本次训练，PR / e1RM 按实际动作独立统计。</p>
-      <div className="space-y-2">
+      <div className="space-y-4">
         {replacementOptions.length ? (
-          replacementOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => chooseReplacement(option)}
-              className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-semibold text-slate-950">{displayReplacementName(option)}</span>
-                <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-700">{replacementRankLabel(option.rank)}</span>
-              </div>
-              <div className="mt-2 text-xs leading-5 text-slate-600">同类动作替代，适合本次训练临时调整。</div>
-              <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                <span>疲劳成本：{formatFatigueCost(option.fatigueCost)}</span>
-                <span>PR / e1RM 独立统计</span>
-              </div>
-            </button>
-          ))
+          replacementGroups.map((group) => {
+            const groupOptions = replacementOptions.filter((option) => option.priority === group.priority);
+            if (!groupOptions.length) return null;
+            return (
+              <section key={group.priority} className="space-y-2">
+                <div className="text-xs font-bold text-slate-500">{group.title}</div>
+                {groupOptions.map((option) => (
+                  <button
+                    key={option.exerciseId}
+                    type="button"
+                    onClick={() => chooseReplacement(option)}
+                    className={classNames(
+                      'w-full rounded-lg border p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50',
+                      option.priority === 'avoid' ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-stone-50',
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-950">{displayReplacementName(option)}</span>
+                      <span className={classNames('rounded-md border px-2 py-1 text-xs font-semibold', group.tone)}>{replacementRankLabel(option.priority)}</span>
+                    </div>
+                    <div className="mt-2 text-xs leading-5 text-slate-600">{option.reason}</div>
+                    {option.warnings.length ? (
+                      <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold leading-5 text-amber-900">
+                        {option.warnings[0]}
+                      </div>
+                    ) : null}
+                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
+                      <span>疲劳成本：{formatFatigueCost(option.fatigueCost)}</span>
+                      <span>PR / e1RM 独立统计</span>
+                    </div>
+                  </button>
+                ))}
+              </section>
+            );
+          })
         ) : (
           <div className="rounded-lg border border-slate-200 bg-stone-50 p-4 text-sm font-semibold text-slate-600">当前动作暂无可替代动作</div>
         )}

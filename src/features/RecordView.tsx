@@ -14,6 +14,7 @@ import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter }
 import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../engines/sessionEditEngine';
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
+import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import {
   formatDataFlag,
   formatExerciseName,
@@ -53,6 +54,7 @@ import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 export interface RecordViewProps {
   data: AppData;
   unitSettings: UnitSettings;
+  coachAutomationSummary?: CoachAutomationSummary;
   weeklyPrescription: WeeklyPrescription;
   bodyWeightInput: string;
   setBodyWeightInput: React.Dispatch<React.SetStateAction<string>>;
@@ -180,6 +182,7 @@ const getMonthLeadingBlankCount = (firstDate?: string) => {
 export function RecordView({
   data,
   unitSettings,
+  coachAutomationSummary,
   onDeleteSession,
   onMarkSessionDataFlag,
   onEditSession,
@@ -202,6 +205,7 @@ export function RecordView({
 
   const rawHistory = data.history || [];
   const analyticsHistory = React.useMemo(() => filterAnalyticsHistory(rawHistory), [rawHistory]);
+  const dataHealth = coachAutomationSummary?.dataHealth;
   const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);
   const calendar = React.useMemo(
     () =>
@@ -687,9 +691,50 @@ export function RecordView({
     const testCount = rawHistory.filter((session) => session.dataFlag === 'test').length;
     const excludedCount = rawHistory.filter((session) => session.dataFlag === 'excluded').length;
     const dataRows = [...rawHistory].sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
+    const dataHealthTone = dataHealth?.status === 'has_errors' ? 'rose' : dataHealth?.status === 'has_warnings' ? 'amber' : 'emerald';
+    const dataHealthLabel = dataHealth?.status === 'has_errors' ? '需要处理' : dataHealth?.status === 'has_warnings' ? '建议复查' : '健康';
+    const visibleIssues = (dataHealth?.issues || []).slice(0, 2);
+    const hiddenIssues = (dataHealth?.issues || []).slice(2);
 
     return (
       <PageSection title="训练记录数据" description="这里只管理训练记录本身：删除、标记测试、恢复正常、排除统计。单位、健康数据和全局备份在“我的”页。">
+        {dataHealth ? (
+          <Card className="mb-3 space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-950">数据健康检查</div>
+                <div className="mt-1 text-xs leading-5 text-slate-600">{dataHealth.summary}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-500">这里只报告问题；修正记录、删除或排除统计仍由你确认。</div>
+              </div>
+              <StatusBadge tone={dataHealthTone}>{dataHealthLabel}</StatusBadge>
+            </div>
+            {visibleIssues.length ? (
+              <div className="space-y-2">
+                {visibleIssues.map((issue) => (
+                  <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
+                    <div className="font-semibold text-slate-950">{issue.title}</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">未发现明显数据异常。</div>
+            )}
+            {hiddenIssues.length ? (
+              <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                <summary className="cursor-pointer font-semibold text-slate-700">查看其余 {hiddenIssues.length} 条</summary>
+                <div className="mt-2 space-y-2">
+                  {hiddenIssues.map((issue) => (
+                    <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
+                      <div className="font-semibold text-slate-950">{issue.title}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
+          </Card>
+        ) : null}
         <div className="grid gap-3 md:grid-cols-3">
           <MetricCard label="正常记录" value={`${normalCount}`} tone="emerald" />
           <MetricCard label="测试记录" value={`${testCount}`} tone="amber" />
@@ -867,20 +912,25 @@ export function RecordView({
               </div>
             ) : null}
             {isEditing ? (
-              <label className="mt-3 grid gap-1">
-                <span className="text-xs font-semibold text-slate-500">数据标记</span>
-                <select
-                  className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950"
-                  value={session.dataFlag || 'normal'}
-                  onChange={(event) => updateDraftDataFlag(event.target.value as SessionDataFlag)}
-                >
-                  {dataFlagOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <>
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                  保存后会重新计算 PR、e1RM、有效组和统计；取消编辑不会保存。
+                </div>
+                <label className="mt-3 grid gap-1">
+                  <span className="text-xs font-semibold text-slate-500">数据标记</span>
+                  <select
+                    className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950"
+                    value={session.dataFlag || 'normal'}
+                    onChange={(event) => updateDraftDataFlag(event.target.value as SessionDataFlag)}
+                  >
+                    {dataFlagOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
             ) : null}
           </Card>
 

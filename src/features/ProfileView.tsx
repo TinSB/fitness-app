@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity, Database, Download, HardDrive, Ruler, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { downloadText, makeCsv } from '../engines/analytics';
+import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import { formatGoal } from '../i18n/formatters';
@@ -19,6 +20,7 @@ import { HealthDataPanel } from './HealthDataPanel';
 interface ProfileViewProps {
   data: AppData;
   unitSettings: UnitSettings;
+  coachAutomationSummary?: CoachAutomationSummary;
   onUpdateUnitSettings: (updates: Partial<UnitSettings>) => void;
   onRestoreData: (data: AppData) => void;
   onUpdateHealthData: (data: AppData) => void;
@@ -60,6 +62,7 @@ const Notice = ({
 export function ProfileView({
   data,
   unitSettings,
+  coachAutomationSummary,
   onUpdateUnitSettings,
   onRestoreData,
   onUpdateHealthData,
@@ -73,6 +76,9 @@ export function ProfileView({
   const normalSessionCount = analyticsHistory.length;
   const testSessionCount = (data.history || []).filter((session) => session.dataFlag === 'test').length;
   const healthBatchCount = data.healthImportBatches?.length || 0;
+  const dataHealth = coachAutomationSummary?.dataHealth;
+  const dataHealthTone = dataHealth?.status === 'has_errors' ? 'rose' : dataHealth?.status === 'has_warnings' ? 'amber' : 'emerald';
+  const dataHealthLabel = dataHealth?.status === 'has_errors' ? '需要处理' : dataHealth?.status === 'has_warnings' ? '建议复查' : '健康';
 
   const downloadBackup = () => {
     downloadText(`ironpath-${todayKey()}.json`, JSON.stringify(data, null, 2), 'application/json');
@@ -174,6 +180,50 @@ export function ProfileView({
         <section className="space-y-4">
           <PageSection title="健康数据导入" description="手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。">
             <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
+          </PageSection>
+
+          {dataHealth ? (
+            <PageSection title="数据健康检查" description="自动发现历史记录、替代动作、单位和健康导入中的潜在异常。">
+              <Card className="space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-950">{dataHealth.summary}</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-500">这里只报告问题，不会自动删除、修正或覆盖任何数据。</div>
+                  </div>
+                  <StatusBadge tone={dataHealthTone}>{dataHealthLabel}</StatusBadge>
+                </div>
+                {dataHealth.issues.length ? (
+                  <div className="space-y-2">
+                    {dataHealth.issues.map((issue) => (
+                      <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-950">{issue.title}</span>
+                          <StatusBadge tone={issue.severity === 'error' ? 'rose' : issue.severity === 'warning' ? 'amber' : 'slate'}>
+                            {issue.severity === 'error' ? '需要处理' : issue.severity === 'warning' ? '建议复查' : '提示'}
+                          </StatusBadge>
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-slate-600">{issue.message}</div>
+                        {issue.suggestedAction ? <div className="mt-1 text-xs font-semibold leading-5 text-slate-700">{issue.suggestedAction}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Notice tone="emerald">未发现明显数据异常。</Notice>
+                )}
+              </Card>
+            </PageSection>
+          ) : null}
+
+          <PageSection title="自动化设置" description="教练自动化只生成建议，不会自动覆盖计划或修改历史。">
+            <Card className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge tone="emerald">可忽略</StatusBadge>
+                <StatusBadge tone="slate">需用户确认</StatusBadge>
+              </div>
+              <p className="text-sm leading-6 text-slate-600">
+                今日调整、下次训练和数据健康提醒会优先显示最重要内容。采用建议、修正记录或调整计划仍由你手动确认。
+              </p>
+            </Card>
           </PageSection>
 
           <PageSection title="备份与恢复" description="这是全局应用数据备份，和记录页的单次训练数据管理分开。">

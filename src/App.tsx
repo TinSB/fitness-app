@@ -25,6 +25,7 @@ import { completeTrainingSessionIntoHistory } from './engines/trainingCompletion
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
 import { buildTrainingDecisionContext } from './engines/trainingDecisionContext';
+import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import { loadData, saveData } from './storage/persistence';
@@ -204,6 +205,7 @@ function App() {
   const selectedTemplate = findTemplate(data.templates, activeTemplateId);
   const weeklyPrescription = buildWeeklyPrescription(data);
   const decisionContext = buildTrainingDecisionContext(data);
+  const coachAutomationSummary = React.useMemo(() => buildCoachAutomationSummary(data), [data]);
   const suggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
 
@@ -721,6 +723,7 @@ function App() {
                     selectedTemplate={selectedTemplate}
                     suggestedTemplate={suggestedTemplate}
                     weeklyPrescription={weeklyPrescription}
+                    coachAutomationSummary={coachAutomationSummary}
                     trainingMode={data.trainingMode}
                     onModeChange={updateTrainingMode}
                     onStatusChange={updateStatus}
@@ -785,6 +788,8 @@ function App() {
                       onSkipSupportExercise={skipSupportExercise}
                       onSkipSupportBlock={skipSupportBlock}
                       onUpdateSupportSkipReason={skipSupportExercise}
+                      trainingHistory={decisionContext.history}
+                      equipmentPreferences={data.userProfile.equipmentAccess}
                     />
                   </>
                 )}
@@ -844,6 +849,7 @@ function App() {
                     <RecordView
                       data={data}
                       unitSettings={data.unitSettings}
+                      coachAutomationSummary={coachAutomationSummary}
                       weeklyPrescription={weeklyPrescription}
                       bodyWeightInput={bodyWeightInput}
                       setBodyWeightInput={setBodyWeightInput}
@@ -871,6 +877,7 @@ function App() {
                     <ProfileView
                       data={data}
                       unitSettings={data.unitSettings}
+                      coachAutomationSummary={coachAutomationSummary}
                       onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
                         setData(nextData);
