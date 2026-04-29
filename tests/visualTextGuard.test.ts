@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildTodayViewModel } from '../src/presenters/todayPresenter';
 import { buildRecommendationExplanationViewModel } from '../src/presenters/recommendationExplanationPresenter';
 import { buildDataHealthViewModel } from '../src/presenters/dataHealthPresenter';
+import { dedupeCoachReminders } from '../src/presenters/coachReminderPresenter';
 import type { RecommendationTrace } from '../src/engines/recommendationTraceEngine';
 import { getTemplate } from './fixtures';
 
@@ -75,5 +76,31 @@ describe('visual text guard', () => {
 
     expect(text).toContain('替代动作记录异常');
     expect(text).not.toMatch(/synthetic replacement id|actualExerciseId|undefined|null|has_errors|replacement|actionLabel/);
+  });
+
+  it('coach reminders remove duplicate recovery noise and raw labels', () => {
+    const reminders = dedupeCoachReminders([
+      {
+        id: 'recovery',
+        title: '恢复提醒',
+        message: '今天标记胸/背酸痛，建议保持保守。',
+        tone: 'warning',
+        source: 'dailyAdjustment',
+        priority: 60,
+      },
+      {
+        id: 'another-recovery',
+        title: '恢复冲突',
+        message: '今天标记胸/背酸痛，recovery modified_train high medium low undefined null',
+        tone: 'warning',
+        source: 'recovery',
+        priority: 80,
+      },
+    ]);
+    const text = reminders.flatMap((item) => [item.title, item.message]).join(' ');
+
+    expect(reminders).toHaveLength(1);
+    expect(text).toContain('胸/背酸痛');
+    expect(text).not.toMatch(/\b(modified_train|active_recovery|high|medium|low|undefined|null)\b/);
   });
 });

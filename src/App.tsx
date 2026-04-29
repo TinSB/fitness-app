@@ -46,9 +46,7 @@ import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 import { AppShell } from './ui/AppShell';
-import { ActionButton } from './ui/ActionButton';
 import { Card } from './ui/Card';
-import { PageHeader } from './ui/PageHeader';
 import { StatusBadge } from './ui/StatusBadge';
 import { Toast } from './ui/Toast';
 import { useConfirmDialog } from './ui/useConfirmDialog';
@@ -1075,26 +1073,6 @@ function App() {
 
                 {activeTab === 'training' && useFocusTrainingShell && data.activeSession && (
                   <>
-                    {false && (
-                    <PageHeader
-                      eyebrow="训练"
-                      title={formatTemplateName(data.activeSession?.templateId || data.activeSession?.templateName, '训练')}
-                      description="手机端优先使用极简模式记录训练。"
-                      action={
-                      <div className="flex flex-wrap gap-2">
-                        <ActionButton type="button" onClick={() => setForceFullTrainingView(true)} variant="secondary">
-                          完整训练页
-                        </ActionButton>
-                        <ActionButton type="button" onClick={() => void deleteActiveSession()} variant="danger">
-                          放弃
-                        </ActionButton>
-                        <ActionButton type="button" onClick={() => finishSession()} variant="primary">
-                          完成训练
-                        </ActionButton>
-                      </div>
-                      }
-                    />
-                    )}
                     <TrainingFocusView
                       session={data.activeSession}
                       unitSettings={data.unitSettings}
