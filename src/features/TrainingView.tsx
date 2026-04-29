@@ -3,6 +3,8 @@ import { AlertTriangle, CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
+import { buildSessionComposition } from '../engines/sessionCompositionEngine';
+import { getExerciseIdentityFromExercise } from '../engines/currentExerciseSelector';
 import { convertKgToDisplayWeight, formatTrainingVolume, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { formatExerciseName, formatRirLabel, formatSetType, formatSkippedReason, formatTechniqueQuality, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import type {
@@ -246,22 +248,17 @@ export function TrainingView({
   const getSupportLog = (moduleId: string, exerciseId: string) =>
     (session.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
 
-  const supportSummary = [...(session.correctionBlock || []), ...(session.functionalBlock || [])].reduce(
-    (summary, block) => {
-      block.exercises.forEach((exercise) => {
-        const log = getSupportLog(block.id, exercise.exerciseId);
-        const planned = log?.plannedSets || plannedSupportSets(exercise);
-        const completed = Math.min(number(log?.completedSets), planned);
-        const resolved = log?.skippedReason ? planned : completed;
-        summary.planned += planned;
-        summary.completed += completed;
-        summary.resolved += resolved;
-        if (log?.skippedReason) summary.skipped += 1;
-      });
-      return summary;
-    },
-    { planned: 0, completed: 0, resolved: 0, skipped: 0 }
-  );
+  const composition = buildSessionComposition(session);
+  const supportSummary = {
+    planned: composition.correctionPlannedSteps + composition.functionalPlannedSteps,
+    completed: composition.correctionCompletedSteps + composition.functionalCompletedSteps,
+    resolved:
+      composition.correctionCompletedSteps +
+      composition.functionalCompletedSteps +
+      composition.correctionSkippedSteps +
+      composition.functionalSkippedSteps,
+    skipped: composition.correctionSkippedSteps + composition.functionalSkippedSteps,
+  };
 
   const overallPlanned = totalSets + supportSummary.planned;
   const overallResolved = doneSets + supportSummary.resolved;
@@ -276,7 +273,7 @@ export function TrainingView({
       .filter((set) => set.note)
       .map((set, setIndex) => ({
         key: `${exercise.id}-${set.id}-note`,
-        exercise: formatExerciseName(exercise),
+        exercise: formatExerciseName({ id: getExerciseIdentityFromExercise(exercise, exercise.id).displayExerciseId, name: exercise.name }),
         setIndex,
         note: set.note || '',
       }))
@@ -486,7 +483,7 @@ export function TrainingView({
           </ActionButton>
           <div className="grid grid-cols-3 gap-2">
             {loadFeedbackOptions.map((option) => (
-              <ActionButton key={option.value} size="sm" variant="ghost" onClick={() => onLoadFeedback(exercise.actualExerciseId || exercise.id, option.value)}>
+              <ActionButton key={option.value} size="sm" variant="ghost" onClick={() => onLoadFeedback(getExerciseIdentityFromExercise(exercise, exercise.id).recordExerciseId, option.value)}>
                 {option.label}
               </ActionButton>
             ))}
@@ -513,7 +510,7 @@ export function TrainingView({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               {statusIcon(status)}
-              <h2 className="truncate text-base font-semibold text-slate-950">{formatExerciseName(exercise)}</h2>
+              <h2 className="truncate text-base font-semibold text-slate-950">{formatExerciseName({ id: getExerciseIdentityFromExercise(exercise, exercise.id).displayExerciseId, name: exercise.name })}</h2>
               <StatusBadge tone={exerciseStatusTone[status]}>{exerciseStatusLabel[status]}</StatusBadge>
               {exercise.actualExerciseId && exercise.originalExerciseId && exercise.actualExerciseId !== exercise.originalExerciseId ? (
                 <StatusBadge tone="amber">已替代</StatusBadge>
@@ -690,6 +687,14 @@ export function TrainingView({
             <MetricCard label="辅助处理" value={`${supportSummary.resolved}/${supportSummary.planned}`} helper={supportSummary.skipped ? `${supportSummary.skipped} 项已跳过` : undefined} />
             <MetricCard label="训练模式" value={formatTrainingMode(mode.id)} tone="sky" />
           </div>
+
+          <Card className="bg-stone-50">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="font-semibold text-slate-950">训练构成</span>
+              <span className="text-slate-600">主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%</span>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{composition.summary}</p>
+          </Card>
 
           <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} />
 

@@ -1,5 +1,6 @@
 import type { ActualSetDraft, ExercisePrescription, FocusStepType, SupportSkipReason, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
 import { clone, number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from './currentExerciseSelector';
 import { createRestTimerState } from './restTimerEngine';
 import { convertKgToDisplayWeight } from './unitConversionEngine';
 import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupPolicyDecision } from './warmupPolicyEngine';
@@ -126,6 +127,8 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
   const previousExercises: ExercisePrescription[] = [];
 
   (session.exercises || []).forEach((exercise, exerciseIndex) => {
+    const identity = getExerciseIdentityFromExercise(exercise, exercise.id);
+    const stepExerciseId = identity.recordExerciseId;
     const warmups = getWarmupSets(exercise);
     const sets = getSets(exercise);
     const warmupPolicy = decideWarmupPolicy({
@@ -138,8 +141,8 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
     if (warmupPolicy.shouldShowWarmupSets) {
     warmups.forEach((warmup, setIndex) => {
       steps.push({
-        id: stepId(exercise.id, 'warmup', setIndex),
-        exerciseId: exercise.id,
+        id: stepId(stepExerciseId, 'warmup', setIndex),
+        exerciseId: stepExerciseId,
         exerciseIndex,
         blockType: 'main',
         stepType: 'warmup',
@@ -158,8 +161,8 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
     sets.forEach((set, setIndex) => {
       const isTop = set.type === 'top';
       steps.push({
-        id: stepId(exercise.id, 'working', setIndex),
-        exerciseId: exercise.id,
+        id: stepId(stepExerciseId, 'working', setIndex),
+        exerciseId: stepExerciseId,
         exerciseIndex,
         blockType: 'main',
         stepType: 'working',
@@ -195,14 +198,17 @@ export const getCurrentFocusStep = (session: TrainingSession | null | undefined)
   if (isFocusSessionComplete(session)) return COMPLETED_STEP;
 
   if (session.currentFocusStepId?.endsWith(':completed:0')) {
-    const exerciseIndex = (session.exercises || []).findIndex((exercise) => exerciseCompletedStepId(exercise.id) === session.currentFocusStepId);
+    const exerciseIndex = (session.exercises || []).findIndex(
+      (exercise) => exerciseCompletedStepId(getExerciseIdentityFromExercise(exercise, exercise.id).recordExerciseId) === session.currentFocusStepId
+    );
     const exercise = session.exercises[exerciseIndex];
     if (exercise) {
+      const identity = getExerciseIdentityFromExercise(exercise, exercise.id);
       const exerciseSteps = queue.filter((step) => step.exerciseIndex === exerciseIndex && step.stepType !== 'completed');
       if (exerciseSteps.length && exerciseSteps.every((step) => isStepCompleted(session, step))) {
         return {
-          id: exerciseCompletedStepId(exercise.id),
-          exerciseId: exercise.id,
+          id: exerciseCompletedStepId(identity.recordExerciseId),
+          exerciseId: identity.recordExerciseId,
           exerciseIndex,
           blockType: 'main',
           stepType: 'completed',
@@ -385,11 +391,12 @@ export const switchFocusExercise = (session: TrainingSession, exerciseIndex: num
   );
   const fallback = queue.find((item) => item.exerciseIndex === exerciseIndex && item.stepType !== 'completed');
   const exercise = nextSession.exercises[exerciseIndex];
+  const identity = getExerciseIdentityFromExercise(exercise, exercise?.id);
   const completedTarget: FocusTrainingStep | null =
     exercise && fallback
       ? {
-          id: exerciseCompletedStepId(exercise.id),
-          exerciseId: exercise.id,
+          id: exerciseCompletedStepId(identity.recordExerciseId),
+          exerciseId: identity.recordExerciseId,
           exerciseIndex,
           blockType: 'main',
           stepType: 'completed',
@@ -414,7 +421,8 @@ export const updateFocusActualDraft = (
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
   if (step.stepType === 'completed') return session;
-  upsertDraft(nextSession, step, updates);
+  const identity = getCurrentExerciseIdentity(step, nextSession);
+  upsertDraft(nextSession, { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) }, updates);
   setCurrentStep(nextSession, step);
   return nextSession;
 };
@@ -428,11 +436,13 @@ export const adjustFocusSetValue = (
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
   if (step.stepType === 'completed') return session;
+  const identity = getCurrentExerciseIdentity(step, nextSession);
+  const draftStep = { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
   const draft = getActualSetDraft(nextSession, step);
   if (field === 'weight') {
-    upsertDraft(nextSession, step, { actualWeightKg: Math.max(0, number(draft?.actualWeightKg) + delta) });
+    upsertDraft(nextSession, draftStep, { actualWeightKg: Math.max(0, number(draft?.actualWeightKg) + delta) });
   } else {
-    upsertDraft(nextSession, step, { actualReps: Math.max(0, number(draft?.actualReps) + delta) });
+    upsertDraft(nextSession, draftStep, { actualReps: Math.max(0, number(draft?.actualReps) + delta) });
   }
   setCurrentStep(nextSession, step);
   return nextSession;
@@ -442,7 +452,9 @@ export const applySuggestedFocusStep = (session: TrainingSession, exerciseIndex:
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
   if (step.stepType === 'completed') return session;
-  upsertDraft(nextSession, step, {
+  const identity = getCurrentExerciseIdentity(step, nextSession);
+  const draftStep = { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
+  upsertDraft(nextSession, draftStep, {
     ...(typeof step.plannedWeight === 'number' ? { actualWeightKg: step.plannedWeight } : {}),
     ...(typeof step.plannedReps === 'number' ? { actualReps: step.plannedReps } : {}),
     ...(typeof step.plannedRir === 'number' ? { actualRir: step.plannedRir } : {}),
@@ -467,7 +479,9 @@ export const copyPreviousFocusActualDraft = (session: TrainingSession, exerciseI
   if (!source) return session;
   const isDraft = 'actualWeightKg' in source || 'actualReps' in source || 'actualRir' in source;
 
-  upsertDraft(nextSession, step, {
+  const identity = getCurrentExerciseIdentity(step, nextSession);
+  const draftStep = { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
+  upsertDraft(nextSession, draftStep, {
     actualWeightKg: isDraft ? (source as ActualSetDraft).actualWeightKg : (source as TrainingSetLog).weight,
     actualReps: isDraft ? (source as ActualSetDraft).actualReps : (source as TrainingSetLog).reps,
     actualRir: isDraft ? (source as ActualSetDraft).actualRir : number((source as TrainingSetLog).rir),

@@ -6,6 +6,7 @@ import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildSmartReplacementRecommendations, type SmartReplacementRecommendation } from '../engines/smartReplacementEngine';
 import { detectSetAnomalies, type SetAnomaly } from '../engines/setAnomalyEngine';
+import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from '../engines/currentExerciseSelector';
 import {
   formatExerciseName,
   formatFatigueCost,
@@ -101,7 +102,8 @@ const getSets = (exercise: TrainingSession['exercises'][number] | undefined): Tr
 
 const displayExerciseName = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
   if (!exercise) return '未命名动作';
-  return formatExerciseName(exercise);
+  const identity = getExerciseIdentityFromExercise(exercise, exercise.id);
+  return formatExerciseName({ id: identity.displayExerciseId, name: exercise.name });
 };
 
 const displayReplacementName = (option: SmartReplacementRecommendation) => formatExerciseName({ id: option.exerciseId, name: option.exerciseName });
@@ -180,12 +182,13 @@ export function TrainingFocusView({
   const mainSetIndex = focusState.currentSetIndex;
   const mainSet = focusState.currentSet;
   const currentStep = focusState.currentStep;
+  const currentExerciseIdentity = React.useMemo(() => getCurrentExerciseIdentity(currentStep, session), [currentStep, session]);
   const actualDraft = focusState.actualDraft;
   const isSupportStep = currentStep.stepType === 'correction' || currentStep.stepType === 'functional' || currentStep.stepType === 'support';
   const sessionComplete = focusState.sessionComplete || Boolean(session.focusSessionComplete);
   const remainingSec = getRestTimerRemainingSec(restTimer);
   const weightUnit = unitSettings.weightUnit;
-  const mainExercisePoolId = mainExercise?.canonicalExerciseId || mainExercise?.baseId || mainExercise?.id || '';
+  const mainExercisePoolId = currentExerciseIdentity.recordExerciseId || mainExercise?.actualExerciseId || mainExercise?.replacementExerciseId || mainExercise?.id || '';
   const completedMainSets = mainSets.filter((set) => set.done);
   const existingLoadFeedback = mainExercisePoolId ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId) : undefined;
   const replacementOptions = React.useMemo(

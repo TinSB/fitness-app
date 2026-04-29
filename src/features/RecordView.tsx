@@ -6,6 +6,7 @@ import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
+import { buildSessionComposition } from '../engines/sessionCompositionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import {
   classNames,
@@ -37,6 +38,7 @@ import type {
   AppData,
   PersonalRecord,
   SessionDataFlag,
+  SupportExerciseLog,
   TechniqueQuality,
   TrainingSession,
   TrainingSetLog,
@@ -156,6 +158,16 @@ const dataFlagTone = (flag?: SessionDataFlag): 'slate' | 'emerald' | 'amber' | '
 const renderFlagBadge = (flag?: SessionDataFlag) => (
   <StatusBadge tone={dataFlagTone(flag)}>{formatDataFlag(flag || 'normal')}</StatusBadge>
 );
+
+const supportLogStatusLabel = (log: SupportExerciseLog) => {
+  const planned = Math.max(0, number(log.plannedSets));
+  const completed = Math.min(Math.max(0, number(log.completedSets)), planned);
+  if (log.skippedReason && completed <= 0) return '\u5df2\u8df3\u8fc7';
+  if (log.skippedReason) return '\u90e8\u5206\u5b8c\u6210';
+  if (planned > 0 && completed >= planned) return '\u5df2\u5b8c\u6210';
+  if (completed > 0) return '\u90e8\u5206\u5b8c\u6210';
+  return '\u672a\u5f00\u59cb';
+};
 
 const sessionHasPain = (session: TrainingSession) =>
   (session.exercises || []).some((exercise) => Array.isArray(exercise.sets) && exercise.sets.some((set) => Boolean(set.painFlag)));
@@ -889,6 +901,7 @@ export function RecordView({
     const isEditing = Boolean(editDraft && selectedSession && editDraft.id === selectedSession.id);
     const notes = sessionNotes(session);
     const summary = buildSessionDetailSummary(session, unitSettings);
+    const composition = buildSessionComposition(session);
     const effective = summary.effectiveSummary;
     const sessionQuality = buildSessionQualityResult({
       session,
@@ -961,6 +974,11 @@ export function RecordView({
               <MetricCard label="有效组" value={`${summary.effectiveSetCount}`} helper="正式有效组" tone="emerald" />
               <MetricCard label={formatSessionVolumeLabel()} value={summary.totalDisplayVolume} helper="正式组训练量" />
               <MetricCard label="热身组" value={`${summary.warmupSetCount}`} helper={`热身量 ${formatTrainingVolume(summary.warmupVolumeKg, unitSettings)}`} />
+            </div>
+            <div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
+              <span className="font-semibold text-slate-950">训练构成：</span>
+              主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%。
+              {composition.summary}
             </div>
             {session.dataFlag === 'test' || session.dataFlag === 'excluded' ? (
               <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
@@ -1086,8 +1104,8 @@ export function RecordView({
                 <ListItem
                   key={`${log.moduleId}-${log.exerciseId}`}
                   title={formatExerciseName({ id: log.exerciseId, name: log.exerciseName })}
-                  description={`${log.completedSets}/${log.plannedSets} 组${log.skippedReason ? ` · 跳过原因：${formatSkippedReason(log.skippedReason)}` : ''}`}
-                  meta={log.blockType === 'correction' ? '纠偏模块' : '功能补丁'}
+                  description={`${supportLogStatusLabel(log)} · ${log.completedSets}/${log.plannedSets} 组${log.skippedReason ? ` · 跳过原因：${formatSkippedReason(log.skippedReason)}` : ''}`}
+                  meta={`${log.blockType === 'correction' ? '纠偏' : '功能补丁'}：${supportLogStatusLabel(log)}`}
                 />
               ))}
             </PageSection>

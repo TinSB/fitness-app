@@ -1,10 +1,25 @@
 import type { AppData, TrainingSession } from '../models/training-model';
 import { number } from './engineUtils';
 import { reconcileScreeningProfile } from './adaptiveFeedbackEngine';
+import { getExerciseIdentityFromExercise } from './currentExerciseSelector';
 import { toLocalDateKey } from './trainingCalendarEngine';
 
 export const finalizeTrainingSession = (session: TrainingSession, finishedAt = new Date().toISOString()): TrainingSession => {
   const startedAt = session.startedAt || finishedAt;
+  const exercises = (session.exercises || []).map((exercise) => {
+    const identity = getExerciseIdentityFromExercise(exercise, exercise.id);
+    if (!identity.isReplacement) return exercise;
+    return {
+      ...exercise,
+      id: identity.recordExerciseId,
+      canonicalExerciseId: identity.recordExerciseId,
+      originalExerciseId: identity.originalExerciseId,
+      actualExerciseId: identity.recordExerciseId,
+      replacementExerciseId: identity.recordExerciseId,
+      sameTemplateSlot: true,
+      prIndependent: true,
+    };
+  });
   const focusWarmupSetLogs = (Array.isArray(session.focusWarmupSetLogs) ? session.focusWarmupSetLogs : []).map((set) => ({
     ...set,
     type: 'warmup',
@@ -21,6 +36,7 @@ export const finalizeTrainingSession = (session: TrainingSession, finishedAt = n
     finishedAt,
     completed: true,
     dataFlag: session.dataFlag || 'normal',
+    exercises,
     durationMin: Math.max(1, Math.round((new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 60000)),
     programTemplateId: session.programTemplateId || session.templateId,
     programTemplateName: session.programTemplateName || session.templateName,
