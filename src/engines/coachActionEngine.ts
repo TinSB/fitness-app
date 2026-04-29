@@ -1,4 +1,6 @@
-import type { AppData } from '../models/training-model';
+import type { AppData, TrainingTemplate, WeeklyActionRecommendation } from '../models/training-model';
+import { formatExerciseName, formatMuscleName } from '../i18n/formatters';
+import { enrichExercise, getPrimaryMuscles } from './engineUtils';
 import { sortDataHealthIssues, type DataHealthIssue, type DataHealthReport } from './dataHealthEngine';
 import type { DailyTrainingAdjustment } from './dailyTrainingAdjustmentEngine';
 import type { NextWorkoutRecommendation } from './nextWorkoutScheduler';
@@ -37,6 +39,17 @@ export type CoachActionPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export type CoachActionStatus = 'pending' | 'applied' | 'dismissed' | 'expired' | 'failed';
 
+export type CoachActionExecutionStatus = 'success' | 'no_op' | 'needs_more_data' | 'unsupported' | 'failed';
+
+export type CoachActionExecutionResult = {
+  status: CoachActionExecutionStatus;
+  message: string;
+  openedTab?: 'today' | 'training' | 'record' | 'plan' | 'profile';
+  openedSection?: string;
+  createdDraftId?: string;
+  highlightedTargetId?: string;
+};
+
 export type CoachAction = {
   id: string;
   title: string;
@@ -70,6 +83,11 @@ export type BuildCoachActionsInput = {
   now?: string;
 };
 
+export type CoachActionAdjustmentDraftInput = {
+  recommendation: WeeklyActionRecommendation;
+  sourceTemplate: TrainingTemplate;
+};
+
 const priorityRank: Record<CoachActionPriority, number> = {
   urgent: 4,
   high: 3,
@@ -98,6 +116,135 @@ const tomorrowIso = (createdAt: string) => {
 };
 
 const activeSessionInProgress = (appData: AppData) => Boolean(appData.activeSession && appData.activeSession.completed !== true);
+
+const priorityToWeeklyPriority = (priority: CoachActionPriority): WeeklyActionRecommendation['priority'] => {
+  if (priority === 'urgent' || priority === 'high') return 'high';
+  if (priority === 'medium') return 'medium';
+  return 'low';
+};
+
+const confidenceFromActionPriority = (priority: CoachActionPriority): WeeklyActionRecommendation['confidence'] => {
+  if (priority === 'urgent' || priority === 'high') return 'high';
+  if (priority === 'medium') return 'medium';
+  return 'low';
+};
+
+const normalizeText = (value: unknown) => String(value || '').trim().toLowerCase();
+
+const muscleAliases = (muscleId?: string) => {
+  const id = normalizeText(muscleId);
+  const label = formatMuscleName(muscleId || '');
+  const aliases: Record<string, string[]> = {
+    back: ['背', '背部'],
+    chest: ['胸', '胸部'],
+    shoulders: ['肩', '肩部'],
+    biceps: ['手臂', '肱二头'],
+    triceps: ['手臂', '肱三头'],
+    arms: ['手臂', '肱二头', '肱三头'],
+    quads: ['腿', '股四头'],
+    hamstrings: ['腿', '腿后侧'],
+    glutes: ['腿', '臀'],
+    calves: ['腿', '小腿'],
+    legs: ['腿', '股四头', '腿后侧', '小腿', '臀'],
+  };
+  return [...new Set([id, label, ...(aliases[id] || [])].filter(Boolean).map(normalizeText))];
+};
+
+const exerciseMatchesMuscle = (exercise: TrainingTemplate['exercises'][number], muscleId?: string) => {
+  const aliases = muscleAliases(muscleId);
+  if (!aliases.length) return false;
+  const enriched = enrichExercise(exercise);
+  const muscles = [
+    exercise.muscle,
+    ...getPrimaryMuscles(enriched),
+    ...((enriched.secondaryMuscles || []) as string[]),
+  ].map(normalizeText);
+  return muscles.some((muscle) => aliases.some((alias) => muscle === alias || muscle.includes(alias) || alias.includes(muscle)));
+};
+
+const findTemplateByExercise = (templates: TrainingTemplate[], exerciseId?: string) => {
+  if (!exerciseId) return undefined;
+  return templates.find((template) => template.exercises.some((exercise) => exercise.id === exerciseId || exercise.baseId === exerciseId));
+};
+
+const findTemplateByMuscle = (templates: TrainingTemplate[], muscleId?: string) => {
+  if (!muscleId) return undefined;
+  return templates.find((template) => template.exercises.some((exercise) => exerciseMatchesMuscle(exercise, muscleId)));
+};
+
+const firstExerciseForMuscle = (template: TrainingTemplate, muscleId?: string) =>
+  template.exercises.find((exercise) => exerciseMatchesMuscle(exercise, muscleId)) || template.exercises[0];
+
+export function buildCoachActionAdjustmentDraftInput(
+  action: CoachAction,
+  context: {
+    templates?: TrainingTemplate[] | null;
+    volumeAdaptation?: VolumeAdaptationReport | null;
+    plateauResults?: PlateauDetectionResult[] | null;
+  } = {},
+): CoachActionAdjustmentDraftInput | null {
+  if (!action || action.actionType !== 'create_plan_adjustment_preview') return null;
+  const templates = context.templates || [];
+  if (!templates.length || !action.targetId) return null;
+
+  if (action.targetType === 'muscle') {
+    const volumeItem = context.volumeAdaptation?.muscles?.find((item) => item.muscleId === action.targetId);
+    const setsDelta = volumeItem?.setsDelta;
+    if (!setsDelta) return null;
+    const sourceTemplate = findTemplateByMuscle(templates, action.targetId);
+    if (!sourceTemplate) return null;
+    const exercise = firstExerciseForMuscle(sourceTemplate, action.targetId);
+    if (!exercise) return null;
+    const targetLabel = formatMuscleName(action.targetId);
+    return {
+      sourceTemplate,
+      recommendation: {
+        id: `coach-action-${action.id}`,
+        priority: priorityToWeeklyPriority(action.priority),
+        category: 'volume',
+        targetType: 'muscle',
+        targetId: action.targetId,
+        targetLabel,
+        issue: action.description || `${targetLabel}训练量需要复查`,
+        recommendation: action.reason || action.description || `${targetLabel}训练量建议进入计划调整草案。`,
+        reason: action.reason || volumeItem.reason || action.description,
+        suggestedChange: {
+          muscleId: action.targetId,
+          setsDelta,
+          exerciseIds: [exercise.id],
+        },
+        confidence: volumeItem?.confidence || confidenceFromActionPriority(action.priority),
+      },
+    };
+  }
+
+  if (action.targetType === 'exercise') {
+    const sourceTemplate = findTemplateByExercise(templates, action.targetId);
+    if (!sourceTemplate) return null;
+    const plateau = context.plateauResults?.find((item) => item.exerciseId === action.targetId);
+    return {
+      sourceTemplate,
+      recommendation: {
+        id: `coach-action-${action.id}`,
+        priority: priorityToWeeklyPriority(action.priority),
+        category: 'exercise_selection',
+        targetType: 'exercise',
+        targetId: action.targetId,
+        targetLabel: formatExerciseName(action.targetId),
+        issue: action.description || '动作进展需要复查',
+        recommendation: action.reason || plateau?.suggestedActions?.[0] || '生成动作调整草案，应用前由用户确认。',
+        reason: action.reason || plateau?.summary || action.description,
+        suggestedChange: {
+          exerciseIds: [action.targetId],
+          setsDelta: -1,
+        },
+        confidence: plateau?.confidence || confidenceFromActionPriority(action.priority),
+      },
+    };
+  }
+
+  return null;
+}
 
 const makeAction = (
   input: Omit<CoachAction, 'status' | 'createdAt' | 'title' | 'description' | 'reason'> & {

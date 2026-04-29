@@ -31,9 +31,12 @@ export function CoachActionCard({ action, compact = false, onPrimary, onSecondar
         {action.requiresConfirmation ? <StatusBadge tone="amber">需要确认</StatusBadge> : <StatusBadge tone="emerald">只查看</StatusBadge>}
         {action.reversible ? <StatusBadge tone="sky">可撤销</StatusBadge> : null}
       </div>
+      {action.disabledReason ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{action.disabledReason}</div>
+      ) : null}
 
       <div className={compact ? 'grid gap-2 sm:grid-cols-[1fr_auto_auto]' : 'grid gap-2 sm:grid-cols-[1fr_auto_auto]'}>
-        <ActionButton type="button" size={compact ? 'sm' : 'md'} variant="primary" fullWidth disabled={!onPrimary} onClick={() => onPrimary?.(action.action)}>
+        <ActionButton type="button" size={compact ? 'sm' : 'md'} variant={action.primaryVariant} fullWidth disabled={!onPrimary} onClick={() => onPrimary?.(action.action)}>
           {action.primaryLabel}
         </ActionButton>
         <ActionButton type="button" size={compact ? 'sm' : 'md'} variant="secondary" disabled={!onSecondary} onClick={() => onSecondary?.(action.action)}>

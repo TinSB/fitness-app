@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, Dumbbell, Flame, UserCircle } from 'lucide-reac
 import { INITIAL_TEMPLATES } from './data/trainingData';
 import { TodayView } from './features/TodayView';
 import { TrainingFocusView } from './features/TrainingFocusView';
+import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
 import { clone, enrichExercise, findTemplate, hydrateTemplates, number, todayKey } from './engines/engineUtils';
@@ -31,7 +32,12 @@ import { buildReplacementOptions } from './engines/replacementEngine';
 import { applyStatusRules } from './engines/progressionEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './engines/trainingDecisionContext';
 import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
-import { buildCoachActions, type CoachAction } from './engines/coachActionEngine';
+import {
+  buildCoachActionAdjustmentDraftInput,
+  buildCoachActions,
+  type CoachAction,
+  type CoachActionExecutionResult,
+} from './engines/coachActionEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -189,6 +195,7 @@ function App() {
   const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
   const [profileSection, setProfileSection] = useState<ProfileSection>('home');
   const [profileTargetSection, setProfileTargetSection] = useState<ProfileTargetSection | null>(null);
+  const [planTarget, setPlanTarget] = useState<PlanTarget | null>(null);
   const [pendingSessionPatches, setPendingSessionPatches] = useState<SessionPatch[]>([]);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
@@ -875,6 +882,95 @@ function App() {
     }
   };
 
+  const toastToneForCoachActionResult = (status: CoachActionExecutionResult['status']): AppToast['tone'] => {
+    if (status === 'success') return 'success';
+    if (status === 'failed') return 'danger';
+    if (status === 'needs_more_data' || status === 'unsupported') return 'warning';
+    return 'info';
+  };
+
+  const showCoachActionResult = (result: CoachActionExecutionResult) => {
+    showAppToast(result.message, toastToneForCoachActionResult(result.status));
+  };
+
+  const createPlanAdjustmentDraftFromCoachAction = async (action: CoachAction): Promise<CoachActionExecutionResult> => {
+    const draftInput = buildCoachActionAdjustmentDraftInput(action, {
+      templates: data.templates,
+      volumeAdaptation: trainingIntelligenceSummary.volumeAdaptation,
+      plateauResults: trainingIntelligenceSummary.plateauResults,
+    });
+    if (!draftInput) {
+      setPlanTarget({
+        section: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
+        muscleId: action.targetType === 'muscle' ? action.targetId : undefined,
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      return {
+        status: 'needs_more_data',
+        message: '当前数据不足，暂时无法生成调整草案。已打开相关建议。',
+        openedTab: 'plan',
+        openedSection: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
+        highlightedTargetId: action.targetId,
+      };
+    }
+
+    try {
+      const { createAdjustmentDraftFromRecommendations } = await import('./engines/programAdjustmentEngine');
+      const draft = createAdjustmentDraftFromRecommendations([draftInput.recommendation], draftInput.sourceTemplate, {
+        programTemplate: data.programTemplate,
+        templates: data.templates,
+        screeningProfile: data.screeningProfile,
+        painPatterns: recoveryPainPatterns,
+      });
+      if (!draft.changes.length) {
+        setPlanTarget({
+          section: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
+          muscleId: action.targetType === 'muscle' ? action.targetId : undefined,
+          actionId: action.id,
+          highlight: true,
+          version: Date.now(),
+        });
+        setActiveTab('plan');
+        return {
+          status: 'needs_more_data',
+          message: '当前建议更适合先查看原因，暂时没有可安全生成的调整草案。',
+          openedTab: 'plan',
+          openedSection: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
+          highlightedTargetId: action.targetId,
+        };
+      }
+
+      setData((current) => ({
+        ...current,
+        programAdjustmentDrafts: [draft, ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id)],
+      }));
+      setPlanTarget({
+        section: 'adjustment_drafts',
+        draftId: draft.id,
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      return {
+        status: 'success',
+        message: '已生成调整草案，应用前请确认。',
+        openedTab: 'plan',
+        openedSection: 'adjustment_drafts',
+        createdDraftId: draft.id,
+        highlightedTargetId: draft.id,
+      };
+    } catch {
+      return {
+        status: 'failed',
+        message: '计划调整功能暂时无法加载，请稍后再试。',
+      };
+    }
+  };
+
   const handleCoachAction = (action: CoachAction) => {
     if (!action) return;
     if (action.actionType === 'open_data_health') {
@@ -911,18 +1007,43 @@ function App() {
       setActiveTab('record');
       return;
     }
-    if (
-      action.actionType === 'create_plan_adjustment_preview' ||
-      action.actionType === 'review_volume' ||
-      action.actionType === 'review_exercise'
-    ) {
+    if (action.actionType === 'create_plan_adjustment_preview') {
+      void createPlanAdjustmentDraftFromCoachAction(action).then(showCoachActionResult);
+      return;
+    }
+    if (action.actionType === 'review_volume') {
+      setPlanTarget({
+        section: 'volume_adaptation',
+        muscleId: action.targetType === 'muscle' ? action.targetId : undefined,
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
       setActiveTab('plan');
-      showAppToast(
-        action.actionType === 'create_plan_adjustment_preview'
-          ? '已打开计划页；这里只引导生成草案，不会自动应用。'
-          : '已打开计划页查看相关建议。',
-        'info',
-      );
+      showCoachActionResult({
+        status: 'success',
+        message: action.targetId ? '已打开训练量建议。' : '已打开训练量建议，暂无具体肌群可定位。',
+        openedTab: 'plan',
+        openedSection: 'volume_adaptation',
+        highlightedTargetId: action.targetId,
+      });
+      return;
+    }
+    if (action.actionType === 'review_exercise') {
+      setPlanTarget({
+        section: 'coach_actions',
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      showCoachActionResult({
+        status: 'success',
+        message: '已打开动作进展建议。',
+        openedTab: 'plan',
+        openedSection: 'coach_actions',
+        highlightedTargetId: action.targetId,
+      });
       return;
     }
     if (action.actionType === 'open_next_workout') {
@@ -1145,6 +1266,7 @@ function App() {
                       weeklyPrescription={weeklyPrescription}
                       trainingIntelligenceSummary={trainingIntelligenceSummary}
                       coachActions={coachActions}
+                      target={planTarget}
                       onCoachAction={handleCoachAction}
                       onDismissCoachAction={dismissCoachAction}
                       selectedTemplateId={activeTemplateId}

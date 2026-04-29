@@ -48,11 +48,21 @@ import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { formatWeight } from '../engines/unitConversionEngine';
 
+export type PlanTarget = {
+  section: 'volume_adaptation' | 'adjustment_drafts' | 'coach_actions';
+  muscleId?: string;
+  actionId?: string;
+  draftId?: string;
+  highlight?: boolean;
+  version?: number;
+};
+
 interface PlanViewProps {
   data: AppData;
   weeklyPrescription: WeeklyPrescription;
   trainingIntelligenceSummary?: TrainingIntelligenceSummary;
   coachActions?: CoachAction[];
+  target?: PlanTarget | null;
   selectedTemplateId: string;
   onSelectTemplate: (id: string) => void;
   onStartTemplate: (id: string) => void;
@@ -134,6 +144,7 @@ export function PlanView({
   weeklyPrescription,
   trainingIntelligenceSummary,
   coachActions,
+  target,
   selectedTemplateId,
   onSelectTemplate,
   onStartTemplate,
@@ -144,6 +155,11 @@ export function PlanView({
   onRollbackProgramAdjustment,
 }: PlanViewProps) {
   const [rollbackTarget, setRollbackTarget] = React.useState<ProgramAdjustmentHistoryItem | null>(null);
+  const adjustmentSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const coachActionsSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const volumeSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const [highlightTarget, setHighlightTarget] = React.useState<PlanTarget | null>(() => (target?.highlight === false ? null : target || null));
+  const [expandedVolumeMuscleId, setExpandedVolumeMuscleId] = React.useState<string | null>(() => target?.muscleId || null);
   const fallbackTemplateId = data.templates.some((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
   const selectedTemplate = findTemplate(data.templates, fallbackTemplateId) as TrainingTemplate;
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
@@ -184,6 +200,27 @@ export function PlanView({
     : adjustmentHistory.some((item) => item.rolledBackAt && item.sourceProgramTemplateId === currentTemplate.id)
       ? '已回滚模板'
       : '原始模板';
+
+  React.useEffect(() => {
+    if (!target) return undefined;
+    const nextTarget = { ...target };
+    setHighlightTarget(nextTarget.highlight === false ? null : nextTarget);
+    if (nextTarget.muscleId) setExpandedVolumeMuscleId(nextTarget.muscleId);
+
+    const node =
+      nextTarget.section === 'volume_adaptation'
+        ? volumeSectionRef.current || adjustmentSectionRef.current
+        : nextTarget.section === 'coach_actions'
+          ? coachActionsSectionRef.current || adjustmentSectionRef.current
+          : adjustmentSectionRef.current;
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => node?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+    }
+    const timer = typeof window !== 'undefined' ? window.setTimeout(() => setHighlightTarget(null), 3000) : undefined;
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [target?.section, target?.muscleId, target?.draftId, target?.actionId, target?.version, target?.highlight]);
 
   const confirmRollback = () => {
     if (!rollbackTarget || !onRollbackProgramAdjustment) return;
@@ -396,8 +433,10 @@ export function PlanView({
     </PageSection>
   );
 
-  const renderAdjustmentSuggestion = (draft: ProgramAdjustmentDraft) => (
-    <Card key={draft.id} className="space-y-3">
+  const renderAdjustmentSuggestion = (draft: ProgramAdjustmentDraft) => {
+    const highlighted = highlightTarget?.section === 'adjustment_drafts' && highlightTarget.draftId === draft.id;
+    return (
+    <Card key={draft.id} className={classNames('space-y-3 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -420,11 +459,12 @@ export function PlanView({
         ))}
       </div>
     </Card>
-  );
+    );
+  };
 
   const renderTrainingIntelligenceVolume = () =>
     volumeAdaptationItems.length ? (
-      <div className="space-y-3">
+      <div ref={volumeSectionRef} className="space-y-3 scroll-mt-24">
         {volumeAdaptationItems.map((item) => {
           const tone = item.decision === 'increase' ? 'emerald' : item.decision === 'decrease' ? 'amber' : 'slate';
           const decisionText =
@@ -433,8 +473,9 @@ export function PlanView({
               : item.decision === 'decrease'
                 ? `建议减少 ${Math.abs(item.setsDelta || 1)} 组`
                 : '暂缓调整';
+          const highlighted = highlightTarget?.section === 'volume_adaptation' && highlightTarget.muscleId === item.muscleId;
           return (
-            <Card key={item.muscleId} className="space-y-2">
+            <Card key={item.muscleId} className={classNames('space-y-2 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="font-semibold text-slate-950">{item.title}</div>
                 <div className="flex flex-wrap gap-2">
@@ -443,7 +484,14 @@ export function PlanView({
                 </div>
               </div>
               <p className="text-sm leading-6 text-slate-600">{item.reason}</p>
-              <details className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
+              <details
+                className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm"
+                open={expandedVolumeMuscleId === item.muscleId}
+                onToggle={(event) => {
+                  const isOpen = event.currentTarget.open;
+                  setExpandedVolumeMuscleId((current) => (isOpen ? item.muscleId : current === item.muscleId ? null : current));
+                }}
+              >
                 <summary className="cursor-pointer font-semibold text-slate-700">查看下周建议</summary>
                 <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
                   {item.suggestedActions.slice(0, 3).map((action) => (
@@ -554,29 +602,37 @@ export function PlanView({
             </div>
           </PageSection>
 
-          <PageSection title="调整建议" description="自动调整草案入口。每条建议都显示原因和影响，采用前需要确认，不会自动覆盖计划。">
-            {planCoachActionViewModel.pending.length || volumeAdaptationItems.length || adjustmentDrafts.length ? (
-              <div className="space-y-3">
-                {planCoachActionViewModel.pending.length ? (
-                  <div>
-                    <CoachActionList
-                      title="计划相关教练建议"
-                      description="这些建议只引导查看或生成调整草案，不会直接应用到正式计划。"
-                      viewModel={planCoachActionViewModel}
-                      compact
-                      onAction={onCoachAction}
-                      onDismiss={onDismissCoachAction}
-                      onDetail={onCoachAction}
-                    />
-                  </div>
-                ) : null}
-                {renderTrainingIntelligenceVolume()}
-                {adjustmentDrafts.map(renderAdjustmentSuggestion)}
-              </div>
-            ) : (
-              <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成自动调整草案；你确认后才会应用。" />
-            )}
-          </PageSection>
+          <div ref={adjustmentSectionRef} className="scroll-mt-24">
+            <PageSection title="调整建议" description="自动调整草案入口。每条建议都显示原因和影响，采用前需要确认，不会自动覆盖计划。">
+              {planCoachActionViewModel.pending.length || volumeAdaptationItems.length || adjustmentDrafts.length ? (
+                <div className="space-y-3">
+                  {planCoachActionViewModel.pending.length ? (
+                    <div
+                      ref={coachActionsSectionRef}
+                      className={classNames(
+                        'scroll-mt-24 rounded-lg transition',
+                        highlightTarget?.section === 'coach_actions' ? 'ring-2 ring-emerald-200' : '',
+                      )}
+                    >
+                      <CoachActionList
+                        title="计划相关教练建议"
+                        description="这些建议只引导查看或生成调整草案，不会直接应用到正式计划。"
+                        viewModel={planCoachActionViewModel}
+                        compact
+                        onAction={onCoachAction}
+                        onDismiss={onDismissCoachAction}
+                        onDetail={onCoachAction}
+                      />
+                    </div>
+                  ) : null}
+                  {renderTrainingIntelligenceVolume()}
+                  {adjustmentDrafts.map(renderAdjustmentSuggestion)}
+                </div>
+              ) : (
+                <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成自动调整草案；你确认后才会应用。" />
+              )}
+            </PageSection>
+          </div>
 
           {renderExperimentalTemplates()}
           {renderVersionHistory()}

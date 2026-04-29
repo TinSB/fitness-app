@@ -1,4 +1,5 @@
 import type { CoachAction, CoachActionPriority, CoachActionSource, CoachActionStatus, CoachActionType } from '../engines/coachActionEngine';
+import type { ActionButtonVariant } from '../ui/ActionButton';
 import type { UiTone } from '../ui/Card';
 
 export type CoachActionView = {
@@ -11,6 +12,9 @@ export type CoachActionView = {
   statusLabel: string;
   statusTone: UiTone;
   primaryLabel: string;
+  primaryVariant: ActionButtonVariant;
+  isExecutable: boolean;
+  disabledReason?: string;
   secondaryLabel: string;
   detailLabel: string;
   requiresConfirmation: boolean;
@@ -119,16 +123,36 @@ const fallbackDescription = (action: CoachAction) => {
   return '查看建议详情；你可以暂不处理。';
 };
 
-export const getCoachActionPrimaryLabel = (actionType: CoachActionType, source?: CoachActionSource) => {
+const canCreateAdjustmentDraft = (action: CoachAction) =>
+  action.actionType === 'create_plan_adjustment_preview' &&
+  Boolean(action.targetId && (action.targetType === 'muscle' || action.targetType === 'exercise'));
+
+export const getCoachActionPrimaryLabel = (actionType: CoachActionType, source?: CoachActionSource, action?: CoachAction) => {
   if (actionType === 'open_data_health') return '查看数据';
   if (actionType === 'open_record_detail' || actionType === 'review_session') return '查看训练详情';
-  if (actionType === 'create_plan_adjustment_preview') return '生成调整草案';
-  if (actionType === 'review_volume') return '查看训练量';
+  if (actionType === 'create_plan_adjustment_preview') return action && !canCreateAdjustmentDraft(action) ? '查看建议' : '生成调整草案';
+  if (actionType === 'review_volume') return '查看训练量建议';
   if (actionType === 'review_exercise') return '查看动作';
   if (actionType === 'open_next_workout') return '查看建议';
   if (actionType === 'open_replacement_sheet') return '查看替代动作';
   if (actionType === 'apply_temporary_session_adjustment') return source === 'dailyAdjustment' ? '采用本次调整' : '查看建议';
   return '查看建议';
+};
+
+const isExecutionAction = (action: CoachAction) =>
+  action.actionType === 'apply_temporary_session_adjustment' ||
+  (action.actionType === 'create_plan_adjustment_preview' && canCreateAdjustmentDraft(action));
+
+const primaryVariantForAction = (action: CoachAction): ActionButtonVariant => {
+  if (isExecutionAction(action)) return 'primary';
+  return 'secondary';
+};
+
+const disabledReasonForAction = (action: CoachAction) => {
+  if (action.actionType === 'create_plan_adjustment_preview' && !canCreateAdjustmentDraft(action)) {
+    return '当前建议缺少可生成草案的目标信息，只能先查看原因。';
+  }
+  return undefined;
 };
 
 export function buildCoachActionView(action: CoachAction): CoachActionView {
@@ -141,7 +165,10 @@ export function buildCoachActionView(action: CoachAction): CoachActionView {
     priorityTone: priorityTone[action.priority] || 'slate',
     statusLabel: statusLabels[action.status] || '待处理',
     statusTone: statusTone[action.status] || 'slate',
-    primaryLabel: getCoachActionPrimaryLabel(action.actionType, action.source),
+    primaryLabel: getCoachActionPrimaryLabel(action.actionType, action.source, action),
+    primaryVariant: primaryVariantForAction(action),
+    isExecutable: isExecutionAction(action),
+    disabledReason: disabledReasonForAction(action),
     secondaryLabel: '暂不处理',
     detailLabel: '查看详情',
     requiresConfirmation: Boolean(action.requiresConfirmation),
