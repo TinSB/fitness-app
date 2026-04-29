@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle } from 'lucide-react';
 import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
+import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { formatExerciseName, formatRirLabel, formatSetType, formatSkippedReason, formatTechniqueQuality, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import type {
@@ -268,6 +269,8 @@ export function TrainingView({
   const allMainDone = totalSets > 0 && doneSets >= totalSets;
   const supportResolved = supportSummary.resolved >= supportSummary.planned;
   const workoutFinished = allMainDone && supportResolved;
+  const sessionQuality = React.useMemo(() => buildSessionQualityResult({ session }), [session]);
+  const sessionQualityItems = [...sessionQuality.positives, ...sessionQuality.issues].slice(0, 3);
   const notes = mainExercises.flatMap((exercise) =>
     getSets(exercise)
       .filter((set) => set.note)
@@ -689,6 +692,42 @@ export function TrainingView({
           </div>
 
           <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} />
+
+          {workoutFinished ? (
+            <PageSection title="完成总结" description="保存前先看本次训练质量；这里不会自动改计划。">
+              <Card className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-base font-semibold text-slate-950">{sessionQuality.title}</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{sessionQuality.summary}</p>
+                  </div>
+                  <StatusBadge tone={sessionQuality.level === 'high' ? 'emerald' : sessionQuality.level === 'low' ? 'amber' : 'sky'}>
+                    {sessionQuality.confidence === 'high' ? '高置信' : sessionQuality.confidence === 'medium' ? '中等置信' : '低置信'}
+                  </StatusBadge>
+                </div>
+                {sessionQualityItems.length ? (
+                  <div className="space-y-2">
+                    {sessionQualityItems.map((item) => (
+                      <div key={item.id} className="rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
+                        <span className="font-semibold text-slate-950">{item.label}：</span>
+                        {item.reason}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {sessionQuality.nextSuggestions.length ? (
+                  <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                    <summary className="cursor-pointer font-semibold text-slate-700">下次建议</summary>
+                    <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                      {sessionQuality.nextSuggestions.slice(0, 3).map((item) => (
+                        <div key={item}>- {item}</div>
+                      ))}
+                    </div>
+                  </details>
+                ) : null}
+              </Card>
+            </PageSection>
+          ) : null}
 
           <PageSection title="完整动作列表" description="展开动作可补记重量、次数、RIR、动作质量、不适和备注。">
             <div className="space-y-3">{mainExercises.map((exercise, index) => renderExerciseCard(exercise, index))}</div>

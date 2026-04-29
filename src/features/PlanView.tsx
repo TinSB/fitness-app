@@ -7,6 +7,7 @@ import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
+import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import {
   formatAdjustmentChangeLabel,
   formatConfidence,
@@ -47,6 +48,7 @@ import { formatWeight } from '../engines/unitConversionEngine';
 interface PlanViewProps {
   data: AppData;
   weeklyPrescription: WeeklyPrescription;
+  trainingIntelligenceSummary?: TrainingIntelligenceSummary;
   selectedTemplateId: string;
   onSelectTemplate: (id: string) => void;
   onStartTemplate: (id: string) => void;
@@ -124,6 +126,7 @@ const PlanInput = ({
 export function PlanView({
   data,
   weeklyPrescription,
+  trainingIntelligenceSummary,
   selectedTemplateId,
   onSelectTemplate,
   onStartTemplate,
@@ -158,6 +161,10 @@ export function PlanView({
   const activeHistoryItem = adjustmentHistory.find((item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id);
   const experimentalTemplates = data.templates.filter((template) => template.isExperimentalTemplate || template.sourceTemplateId);
   const activeTemplateMissing = Boolean(data.activeProgramTemplateId && !data.templates.some((item) => item.id === data.activeProgramTemplateId));
+  const volumeAdaptationItems =
+    trainingIntelligenceSummary?.volumeAdaptation?.muscles
+      ?.filter((item) => item.decision === 'increase' || item.decision === 'decrease' || item.decision === 'hold')
+      .slice(0, 3) || [];
 
   const currentTemplateStatus = activeHistoryItem
     ? '实验模板'
@@ -402,6 +409,42 @@ export function PlanView({
     </Card>
   );
 
+  const renderTrainingIntelligenceVolume = () =>
+    volumeAdaptationItems.length ? (
+      <div className="space-y-3">
+        {volumeAdaptationItems.map((item) => {
+          const tone = item.decision === 'increase' ? 'emerald' : item.decision === 'decrease' ? 'amber' : 'slate';
+          const decisionText =
+            item.decision === 'increase'
+              ? `建议小幅增加 ${item.setsDelta || 1} 组`
+              : item.decision === 'decrease'
+                ? `建议减少 ${Math.abs(item.setsDelta || 1)} 组`
+                : '暂缓调整';
+          return (
+            <Card key={item.muscleId} className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-semibold text-slate-950">{item.title}</div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusBadge tone={tone}>{decisionText}</StatusBadge>
+                  <StatusBadge tone="amber">采用前需确认</StatusBadge>
+                </div>
+              </div>
+              <p className="text-sm leading-6 text-slate-600">{item.reason}</p>
+              <details className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
+                <summary className="cursor-pointer font-semibold text-slate-700">查看下周建议</summary>
+                <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                  {item.suggestedActions.slice(0, 3).map((action) => (
+                    <div key={action}>- {action}</div>
+                  ))}
+                  <div className="font-semibold text-amber-800">这里只生成计划调整草案入口，不会自动应用到当前计划。</div>
+                </div>
+              </details>
+            </Card>
+          );
+        })}
+      </div>
+    ) : null;
+
   const renderExperimentalTemplates = () => (
     <PageSection title="实验模板" description="实验模板不会覆盖原模板，完成过的训练记录也会保留。">
       {experimentalTemplates.length ? (
@@ -499,8 +542,11 @@ export function PlanView({
           </PageSection>
 
           <PageSection title="调整建议" description="自动调整草案入口。每条建议都显示原因和影响，采用前需要确认，不会自动覆盖计划。">
-            {adjustmentDrafts.length ? (
-              <div className="space-y-3">{adjustmentDrafts.map(renderAdjustmentSuggestion)}</div>
+            {volumeAdaptationItems.length || adjustmentDrafts.length ? (
+              <div className="space-y-3">
+                {renderTrainingIntelligenceVolume()}
+                {adjustmentDrafts.map(renderAdjustmentSuggestion)}
+              </div>
             ) : (
               <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里生成自动调整草案；你确认后才会应用。" />
             )}

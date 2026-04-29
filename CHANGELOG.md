@@ -4,6 +4,8 @@ All notable frontend governance and product-structure changes should be recorded
 
 ## 2026-04-28
 
+- Added `TRAINING_INTELLIGENCE_PLAN.md` for Training Intelligence V1 planning, including engine boundaries, display-only analysis, Program Adjustment Preview handoff rules, confirmation rules, protected core algorithms, implementation order, and testing strategy.
+- Added Training Intelligence V1 backlog tasks for `sessionQualityEngine`, `recommendationConfidenceEngine`, `plateauDetectionEngine`, `volumeAdaptationEngine`, and `trainingIntelligenceSummaryEngine`.
 - Added `COACH_AUTOMATION_PLAN.md` for Coach Automation V1 planning, including engine boundaries, confirmation rules, protected data, implementation order, and testing strategy.
 - Added Coach Automation V1 backlog tasks for `dataHealthEngine`, `nextWorkoutScheduler`, `setAnomalyEngine`, `dailyTrainingAdjustmentEngine`, `smartReplacementEngine`, and `coachAutomationEngine`.
 

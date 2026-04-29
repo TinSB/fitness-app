@@ -12,6 +12,7 @@ import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../e
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
@@ -33,6 +34,7 @@ interface TodayViewProps {
   suggestedTemplate: TrainingTemplate;
   weeklyPrescription: WeeklyPrescription;
   coachAutomationSummary?: CoachAutomationSummary;
+  trainingIntelligenceSummary?: TrainingIntelligenceSummary;
   trainingMode: TrainingMode;
   onModeChange: (mode: TrainingMode) => void;
   onStatusChange: (field: 'sleep' | 'energy' | 'time', value: string) => void;
@@ -123,6 +125,7 @@ export function TodayView({
   suggestedTemplate,
   weeklyPrescription,
   coachAutomationSummary,
+  trainingIntelligenceSummary,
   trainingMode,
   onModeChange,
   onStatusChange,
@@ -243,6 +246,21 @@ export function TodayView({
   const coachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings.slice(0, Math.max(0, 2 - coachActions.length));
   const hiddenCoachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings.slice(coachWarnings.length);
   const shouldShowCoachAdvice = coachActions.length > 0 || coachWarnings.length > 0;
+  const recommendationConfidence = trainingIntelligenceSummary?.recommendationConfidence?.find((item) => item.level !== 'high');
+  const confidenceCopy =
+    recommendationConfidence?.level === 'low'
+      ? {
+          label: '推荐可信度偏低',
+          tone: 'amber' as const,
+          text: `${recommendationConfidence.summary} 建议保守参考，继续记录后会更稳定。`,
+        }
+      : recommendationConfidence?.level === 'medium'
+        ? {
+            label: '推荐可信度中等',
+            tone: 'sky' as const,
+            text: `${recommendationConfidence.summary} 可以执行，但请继续记录余力（RIR）和动作质量。`,
+          }
+        : null;
 
   const handleExtraTraining = async () => {
     const confirmed = await confirm({
@@ -372,6 +390,16 @@ export function TodayView({
               compact
               maxVisibleFactors={3}
             />
+
+            {confidenceCopy ? (
+              <Card className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm font-semibold text-slate-950">推荐置信度</div>
+                  <StatusBadge tone={confidenceCopy.tone}>{confidenceCopy.label}</StatusBadge>
+                </div>
+                <p className="text-sm leading-6 text-slate-600">{confidenceCopy.text}</p>
+              </Card>
+            ) : null}
 
             {shouldShowCoachAdvice ? (
               <Card className="space-y-3">

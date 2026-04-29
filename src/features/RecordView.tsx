@@ -3,6 +3,10 @@ import { CalendarDays, Medal, Trash2 } from 'lucide-react';
 import { buildMonthStats, buildPrs } from '../engines/analytics';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/effectiveSetEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
+import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
+import { buildPainPatterns } from '../engines/painPatternEngine';
+import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
+import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import {
   classNames,
   completedSets,
@@ -56,6 +60,7 @@ export interface RecordViewProps {
   data: AppData;
   unitSettings: UnitSettings;
   coachAutomationSummary?: CoachAutomationSummary;
+  trainingIntelligenceSummary?: TrainingIntelligenceSummary;
   weeklyPrescription: WeeklyPrescription;
   bodyWeightInput: string;
   setBodyWeightInput: React.Dispatch<React.SetStateAction<string>>;
@@ -185,6 +190,7 @@ export function RecordView({
   data,
   unitSettings,
   coachAutomationSummary,
+  trainingIntelligenceSummary: _trainingIntelligenceSummary,
   onDeleteSession,
   onMarkSessionDataFlag,
   onEditSession,
@@ -224,6 +230,7 @@ export function RecordView({
   const prDates = React.useMemo(() => new Set(prs.map((item) => item.date).filter(Boolean)), [prs]);
   const monthStats = React.useMemo(() => buildMonthStats(analyticsHistory, data.bodyWeights || []), [analyticsHistory, data.bodyWeights]);
   const effectiveSummary = React.useMemo(() => buildEffectiveVolumeSummary(analyticsHistory), [analyticsHistory]);
+  const painPatterns = React.useMemo(() => buildPainPatterns(analyticsHistory), [analyticsHistory]);
   const monthSessionCount = calendar.days.reduce(
     (sum, day) => sum + day.sessions.filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded').length,
     0,
@@ -883,6 +890,28 @@ export function RecordView({
     const notes = sessionNotes(session);
     const summary = buildSessionDetailSummary(session, unitSettings);
     const effective = summary.effectiveSummary;
+    const sessionQuality = buildSessionQualityResult({
+      session,
+      painPatterns,
+      loadFeedback: session.loadFeedback || [],
+    });
+    const qualityItems = [...sessionQuality.positives, ...sessionQuality.issues].slice(0, 3);
+    const plateauResults = summary.groupedSets.exerciseGroups
+      .map((group) => getExerciseRecordPoolId(group.exercise))
+      .filter((exerciseId, index, items) => exerciseId && items.indexOf(exerciseId) === index)
+      .slice(0, 3)
+      .map((exerciseId) =>
+        detectExercisePlateau({
+          exerciseId,
+          history: analyticsHistory,
+          e1rmProfile: buildE1RMProfile(analyticsHistory, exerciseId),
+          effectiveSetSummary: effectiveSummary,
+          loadFeedback: analyticsHistory.flatMap((item) => item.loadFeedback || []),
+          painPatterns,
+        }),
+      )
+      .filter((item) => item.status !== 'none' && item.status !== 'insufficient_data');
+    const primaryPlateau = plateauResults[0];
 
     const renderSetLine = (entry: SessionSetEntry, index: number) => {
       const set = entry.set;
@@ -960,6 +989,46 @@ export function RecordView({
               </>
             ) : null}
           </Card>
+
+          <PageSection title="训练质量">
+            <Card className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-base font-semibold text-slate-950">{sessionQuality.title}</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{sessionQuality.summary}</p>
+                </div>
+                <StatusBadge tone={sessionQuality.level === 'high' ? 'emerald' : sessionQuality.level === 'low' ? 'amber' : 'sky'}>
+                  {sessionQuality.confidence === 'high' ? '高置信' : sessionQuality.confidence === 'medium' ? '中等置信' : '低置信'}
+                </StatusBadge>
+              </div>
+              {qualityItems.length ? (
+                <div className="space-y-2">
+                  {qualityItems.map((item) => (
+                    <div key={item.id} className="rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
+                      <span className="font-semibold text-slate-950">{item.label}：</span>
+                      {item.reason}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {sessionQuality.nextSuggestions.length ? (
+                <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                  <summary className="cursor-pointer font-semibold text-slate-700">下次建议</summary>
+                  <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                    {sessionQuality.nextSuggestions.slice(0, 3).map((item) => (
+                      <div key={item}>- {item}</div>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
+              {primaryPlateau ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                  <span className="font-semibold">平台期提示：</span>
+                  {primaryPlateau.summary}
+                </div>
+              ) : null}
+            </Card>
+          </PageSection>
 
           <PageSection title="表现概览">
             <Card>

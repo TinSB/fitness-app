@@ -21,7 +21,10 @@ import {
 } from './engines/focusModeStateEngine';
 import { dispatchWorkoutExecutionEvent } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
-import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { deleteTrainingSession, filterAnalyticsHistory, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { buildMuscleVolumeDashboard } from './engines/analytics';
+import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
+import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligenceSummaryEngine';
 import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
@@ -224,6 +227,22 @@ function App() {
   const weeklyPrescription = buildWeeklyPrescription(data);
   const decisionContext = buildTrainingDecisionContext(data);
   const coachAutomationSummary = React.useMemo(() => buildCoachAutomationSummary(data), [data]);
+  const trainingIntelligenceSummary = React.useMemo(() => {
+    const analyticsHistory = filterAnalyticsHistory(data.history || []);
+    const latestSession = [...analyticsHistory].sort((left, right) =>
+      (right.finishedAt || right.startedAt || right.date || '').localeCompare(left.finishedAt || left.startedAt || left.date || ''),
+    )[0];
+    const effectiveSetSummary = buildEffectiveVolumeSummary(analyticsHistory);
+    const weeklyVolumeSummary = buildMuscleVolumeDashboard(analyticsHistory, weeklyPrescription);
+    return buildTrainingIntelligenceSummary({
+      latestSession,
+      history: analyticsHistory,
+      weeklyVolumeSummary,
+      effectiveSetSummary,
+      loadFeedback: analyticsHistory.flatMap((session) => session.loadFeedback || []),
+      trainingLevel: data.userProfile.trainingLevel,
+    });
+  }, [data.history, data.userProfile.trainingLevel, weeklyPrescription]);
   const suggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
 
@@ -822,6 +841,7 @@ function App() {
                     suggestedTemplate={suggestedTemplate}
                     weeklyPrescription={weeklyPrescription}
                     coachAutomationSummary={coachAutomationSummary}
+                    trainingIntelligenceSummary={trainingIntelligenceSummary}
                     trainingMode={data.trainingMode}
                     onModeChange={updateTrainingMode}
                     onStatusChange={updateStatus}
@@ -936,6 +956,7 @@ function App() {
                     <PlanView
                       data={data}
                       weeklyPrescription={weeklyPrescription}
+                      trainingIntelligenceSummary={trainingIntelligenceSummary}
                       selectedTemplateId={activeTemplateId}
                       onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
                       onStartTemplate={(id) => startSession(id)}
@@ -952,6 +973,7 @@ function App() {
                       data={data}
                       unitSettings={data.unitSettings}
                       coachAutomationSummary={coachAutomationSummary}
+                      trainingIntelligenceSummary={trainingIntelligenceSummary}
                       weeklyPrescription={weeklyPrescription}
                       bodyWeightInput={bodyWeightInput}
                       setBodyWeightInput={setBodyWeightInput}

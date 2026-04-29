@@ -4,6 +4,186 @@ Last updated: 2026-04-28
 
 This backlog is ordered for multiple Codex conversations. Each task is scoped to minimize collisions and preserve current architecture.
 
+## Training Intelligence V1 Backlog
+
+Planning source: `TRAINING_INTELLIGENCE_PLAN.md`
+
+### P0-017: Implement sessionQualityEngine
+
+Priority: P0
+
+Goal:
+Evaluate completed workout quality from saved session logs without changing PR, e1RM, effectiveSet, or history data.
+
+Files likely involved:
+- `src/engines/sessionQualityEngine.ts`
+- `src/engines/sessionSummaryEngine.ts`
+- `src/presenters/recordPresenter.ts`
+- `tests/sessionQualityEngine.test.ts`
+
+Acceptance criteria:
+- Produces a session quality label and Chinese explanation.
+- Uses existing effectiveSet results instead of redefining effective set logic.
+- Separates warmup/support/working evidence correctly.
+- Flags poor data confidence without editing or excluding records.
+- Ignores test/excluded sessions for analytics-style quality conclusions.
+
+Out of scope:
+- Editing history.
+- Changing e1RM/effectiveSet/readiness/progression/warmupPolicy.
+- Applying plan changes.
+
+### P0-018: Implement recommendationConfidenceEngine
+
+Priority: P0
+
+Goal:
+Explain whether a recommendation is high, medium, or low confidence based on existing trace, data quality, history depth, readiness freshness, load feedback coverage, and training level confidence.
+
+Files likely involved:
+- `src/engines/recommendationConfidenceEngine.ts`
+- `src/engines/recommendationTraceEngine.ts`
+- `src/engines/dataHealthEngine.ts`
+- `tests/recommendationConfidenceEngine.test.ts`
+
+Acceptance criteria:
+- Does not change the recommendation result.
+- Outputs short Chinese confidence reasons.
+- Low history depth and data health warnings reduce confidence conservatively.
+- Same input produces the same confidence report.
+- No visible raw enum, internal id, `undefined`, or `null`.
+
+Out of scope:
+- Rewriting recommendation logic.
+- Changing readiness or training level calculation.
+- Auto-fixing data health issues.
+
+### P0-019: Implement trainingIntelligenceSummaryEngine read-only aggregation
+
+Priority: P0
+
+Goal:
+Aggregate Training Intelligence findings into a surface-aware summary for Today, Training, Record, and Plan.
+
+Files likely involved:
+- `src/engines/trainingIntelligenceSummaryEngine.ts`
+- `src/presenters/trainingIntelligencePresenter.ts`
+- `tests/trainingIntelligenceSummaryEngine.test.ts`
+
+Acceptance criteria:
+- Aggregates session quality and recommendation confidence without adding new algorithms.
+- Produces top 1-3 findings per surface.
+- Clearly marks display-only findings vs Program Adjustment Preview candidates.
+- Does not mutate AppData.
+- Does not bypass existing Coach Automation or Program Adjustment confirmation flows.
+
+Out of scope:
+- Persistent dismissal state.
+- Applying program adjustments.
+- Large UI redesign.
+
+### P0-020: Surface Training Intelligence display-only findings
+
+Priority: P0
+
+Goal:
+Add minimal, non-dashboard UI surfacing for session quality and recommendation confidence.
+
+Files likely involved:
+- `src/features/TodayView.tsx`
+- `src/features/RecordView.tsx`
+- `src/features/PlanView.tsx`
+- `src/presenters/trainingIntelligencePresenter.ts`
+- `tests/trainingIntelligenceUi.test.ts`
+
+Acceptance criteria:
+- Today shows at most one recommendation confidence insight.
+- Record session detail can show session quality.
+- Plan can show preview candidate entry text without applying changes.
+- All findings are dismissible or ignorable.
+- No raw enum or technical log text appears in UI.
+
+Out of scope:
+- Focus Mode interruption.
+- Applying or editing data.
+- New dashboard page.
+
+### P1-021: Implement plateauDetectionEngine
+
+Priority: P1
+
+Goal:
+Detect possible or likely exercise plateaus conservatively from normal history and existing e1RM/performance signals.
+
+Files likely involved:
+- `src/engines/plateauDetectionEngine.ts`
+- `src/engines/e1rmEngine.ts`
+- `src/engines/loadFeedbackEngine.ts`
+- `tests/plateauDetectionEngine.test.ts`
+
+Acceptance criteria:
+- Requires enough normal history before reporting a likely plateau.
+- Does not use warmup, test, or excluded sets as performance evidence.
+- Distinguishes plateau from pain/technique masking.
+- Outputs Chinese evidence and confidence.
+- Does not trigger deload or exercise replacement automatically.
+
+Out of scope:
+- Changing e1RM calculation.
+- Automatic deload.
+- Automatic template changes.
+
+### P1-022: Implement volumeAdaptationEngine
+
+Priority: P1
+
+Goal:
+Recommend muscle-level increase, maintain, decrease, or review directions using existing weekly volume, effective sets, session quality, recovery, adherence, pain, and load feedback.
+
+Files likely involved:
+- `src/engines/volumeAdaptationEngine.ts`
+- `src/engines/weeklyVolumeEngine.ts`
+- `src/engines/muscleContributionEngine.ts`
+- `src/engines/programAdjustmentEngine.ts`
+- `tests/volumeAdaptationEngine.test.ts`
+
+Acceptance criteria:
+- Produces Chinese muscle-level reasons and impacts.
+- Uses existing effectiveSet and muscle contribution outputs.
+- Does not use test/excluded history.
+- Candidates can enter Program Adjustment Preview but are not applied.
+- Conservative when data is sparse or confidence is low.
+
+Out of scope:
+- Rewriting the plan system.
+- Changing progression or warmupPolicy.
+- Auto-overwriting templates.
+
+### P1-023: Connect Training Intelligence to Program Adjustment Preview
+
+Priority: P1
+
+Goal:
+Allow high-confidence plateau and volume adaptation findings to become reviewable Program Adjustment Preview candidates.
+
+Files likely involved:
+- `src/engines/trainingIntelligenceSummaryEngine.ts`
+- `src/engines/programAdjustmentEngine.ts`
+- `src/features/PlanView.tsx`
+- `tests/trainingIntelligenceProgramPreview.test.ts`
+
+Acceptance criteria:
+- Candidates include reason, evidence, expected impact, and confidence.
+- Existing preview / confirm / apply-by-copy / rollback workflow remains intact.
+- No candidate is applied automatically.
+- One-off low-confidence findings remain display-only.
+- Rollback copy still states history and completed records are preserved.
+
+Out of scope:
+- New mutation flow.
+- Backend review jobs.
+- Automatic deletion or history edits.
+
 ## Coach Automation V1 Backlog
 
 Planning source: `COACH_AUTOMATION_PLAN.md`
