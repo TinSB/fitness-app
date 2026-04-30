@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +11,7 @@ import { makeAppData } from './fixtures';
 
 const noop = (..._args: unknown[]) => undefined;
 const now = '2026-04-29T12:00:00.000Z';
+const planViewSource = readFileSync('src/features/PlanView.tsx', 'utf8');
 
 const makeAction = (overrides: Partial<CoachAction> = {}): CoachAction => ({
   id: overrides.id || 'action',
@@ -85,7 +87,8 @@ describe('Plan coach inbox dedupe', () => {
       ],
     });
 
-    expect(vm.coachInbox.visibleActions[0].title).toBe('训练量建议：背、腿、胸低于目标');
+    expect(vm.coachInbox.visibleActions[0].title).toBe('训练量建议');
+    expect(vm.coachInbox.visibleActions[0].description).toContain('背、腿、胸低于目标');
     expect(vm.coachInbox.visibleActions[0].detailItems).toHaveLength(3);
     expect(vm.coachInbox.summary).toBe('系统发现 3 条计划相关建议，其中 1 条需要确认。');
   });
@@ -104,6 +107,7 @@ describe('Plan coach inbox dedupe', () => {
         }),
         makeAction({ id: 'plateau-bench', source: 'plateau', actionType: 'review_exercise', title: '查看卧推进展', targetId: 'bench-press', targetType: 'exercise' }),
         makeAction({ id: 'plateau-row', source: 'plateau', actionType: 'review_exercise', title: '查看划船进展', targetId: 'barbell-row', targetType: 'exercise' }),
+        makeAction({ id: 'recovery-shoulder', source: 'recovery', actionType: 'keep_observing', title: '查看恢复建议', targetId: 'upper-a', targetType: 'template' }),
       ],
     });
 
@@ -144,6 +148,7 @@ describe('Plan coach inbox dedupe', () => {
         coachActions: [
           makeAction({ id: 'plateau-bench', source: 'plateau', actionType: 'review_exercise', title: '查看卧推进展', targetId: 'bench-press', targetType: 'exercise' }),
           makeAction({ id: 'plateau-row', source: 'plateau', actionType: 'review_exercise', title: '查看划船进展', targetId: 'barbell-row', targetType: 'exercise' }),
+          makeAction({ id: 'recovery-shoulder', source: 'recovery', actionType: 'keep_observing', title: '查看恢复建议', targetId: 'upper-a', targetType: 'template' }),
         ],
         selectedTemplateId: data.selectedTemplateId,
         onSelectTemplate: noop,
@@ -154,12 +159,19 @@ describe('Plan coach inbox dedupe', () => {
     );
 
     expect(text).toContain('待处理建议');
-    expect(text).toContain('训练量建议：背、腿、胸低于目标');
+    expect(text).toContain('训练量建议');
+    expect(text).toContain('背、腿、胸低于目标');
     expect(text).toContain('查看全部建议');
     expect(text).not.toContain('计划相关教练建议');
     expect(text).not.toContain('背：增加训练量');
     expect(text).not.toContain('腿：增加训练量');
     expect(text).not.toContain('胸：增加训练量');
     expect(text).not.toMatch(/\b(undefined|null|review_volume|create_plan_adjustment_preview|increase|medium|low|high)\b/);
+  });
+
+  it('keeps PlanView on aggregated advice instead of raw coach action mapping', () => {
+    expect(planViewSource).toContain('inbox.visibleAdvice.map');
+    expect(planViewSource).toContain('inbox.hiddenAdvice.map');
+    expect(planViewSource).not.toContain('coachActions.map');
   });
 });

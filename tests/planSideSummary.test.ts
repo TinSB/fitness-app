@@ -136,8 +136,8 @@ describe('Plan side summary', () => {
       ],
     });
 
-    expect(vm.sideSummary.pendingActionCount).toBe(3);
-    expect(vm.sideSummary.latestReminder).toBe('训练量建议：背、腿、胸低于目标');
+    expect(vm.sideSummary.pendingActionCount).toBe(2);
+    expect(vm.sideSummary.latestReminder).toBe('训练量建议');
   });
 
   it('shows the current experimental template status when one is active', () => {

@@ -583,7 +583,7 @@ export function PlanView({
             </div>
           </details>
         ) : null}
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <ActionButton
             type="button"
             size="sm"
@@ -603,15 +603,6 @@ export function PlanView({
           >
             暂不处理
           </ActionButton>
-          <ActionButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            disabled={!onCoachAction}
-            onClick={() => onCoachAction?.(action.action)}
-          >
-            查看详情
-          </ActionButton>
         </div>
       </Card>
     );
@@ -624,11 +615,11 @@ export function PlanView({
         {inbox.visibleActions.length ? (
           <div className="space-y-3">
             <p className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">{inbox.summary}</p>
-            <div className="space-y-2">{inbox.visibleActions.map(renderCoachInboxAction)}</div>
-            {inbox.hiddenActions.length ? (
+            <div className="space-y-2">{inbox.visibleAdvice.map(renderCoachInboxAction)}</div>
+            {inbox.hiddenAdvice.length ? (
               <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                 <summary className="cursor-pointer font-semibold text-slate-700">查看全部建议（还有 {inbox.hiddenCount} 条）</summary>
-                <div className="mt-3 space-y-2">{inbox.hiddenActions.map(renderCoachInboxAction)}</div>
+                <div className="mt-3 space-y-2">{inbox.hiddenAdvice.map(renderCoachInboxAction)}</div>
               </details>
             ) : null}
           </div>

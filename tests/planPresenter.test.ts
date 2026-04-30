@@ -157,13 +157,12 @@ describe('planPresenter', () => {
 
     const volumeItems = vm.coachInbox.visibleActions.filter((action) => action.sourceLabel === '训练量');
     expect(volumeItems).toHaveLength(1);
-    expect(volumeItems[0].title).toContain('训练量建议');
-    expect(volumeItems[0].title).toContain('背');
-    expect(volumeItems[0].title).toContain('胸');
+    expect(volumeItems[0].title).toBe('训练量建议');
+    expect(volumeItems[0].description).toContain('背、胸');
     expect(volumeItems[0].primaryLabel).toBe('生成调整草案');
     expect(volumeItems[0].primaryVariant).toBe('primary');
     expect(volumeItems[0].detailItems?.map((item) => item.label)).toEqual(['背', '胸']);
-    expect(vm.coachInbox.summary).toBe('系统发现 2 条计划相关建议，其中 1 条需要确认。');
+    expect(vm.coachInbox.summary).toBe('系统发现 3 条计划相关建议，其中 1 条需要确认。');
   });
 
   it('returns an empty state when there is no real adjustment draft', () => {

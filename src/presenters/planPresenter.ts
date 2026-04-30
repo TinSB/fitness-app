@@ -1,6 +1,6 @@
-import type { CoachAction, CoachActionPriority } from '../engines/coachActionEngine';
+import type { CoachAction } from '../engines/coachActionEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
-import type { MuscleVolumeAdaptation, VolumeAdaptationReport } from '../engines/volumeAdaptationEngine';
+import type { VolumeAdaptationReport } from '../engines/volumeAdaptationEngine';
 import {
   formatAdjustmentChangeLabel,
   formatCyclePhase,
@@ -18,6 +18,7 @@ import type {
   TrainingTemplate,
 } from '../models/training-model';
 import { buildCoachActionView, type CoachActionView } from './coachActionPresenter';
+import { aggregatePlanAdvice, type AggregatedPlanAdvice } from './planAdviceAggregator';
 
 export type WeeklyScheduleDayView = {
   id: string;
@@ -50,6 +51,7 @@ export type PlanCoachInboxDetailView = {
 export type PlanCoachInboxActionView = CoachActionView & {
   detailItems?: PlanCoachInboxDetailView[];
   mergedCount?: number;
+  advice?: AggregatedPlanAdvice;
 };
 
 export type PlanViewModel = {
@@ -65,6 +67,8 @@ export type PlanViewModel = {
   };
   coachInbox: {
     summary: string;
+    visibleAdvice: PlanCoachInboxActionView[];
+    hiddenAdvice: PlanCoachInboxActionView[];
     visibleActions: PlanCoachInboxActionView[];
     hiddenActions: PlanCoachInboxActionView[];
     hiddenCount: number;
@@ -92,13 +96,6 @@ export type BuildPlanViewModelOptions = {
   coachActions?: CoachAction[];
   volumeAdaptation?: VolumeAdaptationReport | null;
   maxVisibleCoachActions?: number;
-};
-
-const priorityRank: Record<CoachActionPriority, number> = {
-  urgent: 4,
-  high: 3,
-  medium: 2,
-  low: 1,
 };
 
 const visibleFallback = (value: unknown, fallback: string) => {
@@ -166,110 +163,74 @@ const buildWeeklySchedule = (data: AppData): PlanViewModel['weeklySchedule'] => 
   };
 };
 
-const isPlanCoachAction = (action: CoachAction) =>
-  action.status === 'pending' &&
-  (action.source === 'plateau' || action.source === 'volumeAdaptation' || action.actionType === 'create_plan_adjustment_preview');
-
-const strongestPriority = (actions: CoachAction[]): CoachActionPriority =>
-  actions.reduce<CoachActionPriority>((current, action) => (priorityRank[action.priority] > priorityRank[current] ? action.priority : current), 'low');
-
-const isDraftCreationAction = (action: CoachAction) =>
-  action.actionType === 'create_plan_adjustment_preview' && Boolean(action.targetId);
-
-const volumeDecisionText = (item: MuscleVolumeAdaptation) => {
-  if (item.decision === 'increase') return `建议增加 ${item.setsDelta || 1} 组`;
-  if (item.decision === 'decrease') return `建议减少 ${Math.abs(item.setsDelta || 1)} 组`;
-  if (item.decision === 'hold') return '建议暂缓调整';
-  return '建议维持观察';
-};
-
-const volumeDetailView = (item: MuscleVolumeAdaptation): PlanCoachInboxDetailView => ({
-  id: item.muscleId,
-  label: formatMuscleName(item.muscleId),
-  reason: visibleFallback(item.reason, '根据近期训练记录生成。'),
-  suggestedActions: (item.suggestedActions || []).slice(0, 2),
+const fallbackCoachActionFromAdvice = (advice: AggregatedPlanAdvice): CoachAction => ({
+  id: advice.id,
+  title: advice.title,
+  description: advice.summary,
+  source:
+    advice.category === 'volume'
+      ? 'volumeAdaptation'
+      : advice.category === 'plateau'
+        ? 'plateau'
+        : advice.category === 'data_health'
+          ? 'dataHealth'
+          : advice.category === 'recovery'
+            ? 'recovery'
+            : 'volumeAdaptation',
+  actionType: advice.primaryAction?.actionType === 'create_plan_adjustment_preview' ? 'create_plan_adjustment_preview' : advice.primaryAction?.actionType === 'review_exercise' ? 'review_exercise' : 'review_volume',
+  priority: advice.priority,
+  status: 'pending',
+  requiresConfirmation: advice.status === 'needs_confirmation',
+  reversible: advice.status === 'needs_confirmation',
+  createdAt: new Date(0).toISOString(),
+  targetId: advice.affectedItems[0]?.id,
+  targetType: advice.affectedItems[0]?.type === 'muscle' || advice.affectedItems[0]?.type === 'exercise' || advice.affectedItems[0]?.type === 'template' || advice.affectedItems[0]?.type === 'session'
+    ? advice.affectedItems[0].type
+    : 'plan',
+  reason: advice.summary,
 });
 
-const buildVolumeTitle = (items: MuscleVolumeAdaptation[], actions: CoachAction[]) => {
-  const labels = items.length
-    ? items.map((item) => formatMuscleName(item.muscleId))
-    : actions.map((action) => formatMuscleName(action.targetId || action.targetType || '')).filter((label) => label !== '未标注肌群');
-  const uniqueLabels = [...new Set(labels)].filter(Boolean);
-  const allIncrease = items.length > 0 && items.every((item) => item.decision === 'increase');
-  if (uniqueLabels.length) return `训练量建议：${uniqueLabels.slice(0, 4).join('、')}${allIncrease ? '低于目标' : '需要复查'}`;
-  return '训练量建议';
-};
-
-const mergeVolumeActions = (actions: CoachAction[], volumeItems: MuscleVolumeAdaptation[]): PlanCoachInboxActionView | null => {
-  if (!actions.length && !volumeItems.length) return null;
-  const primaryAction =
-    actions.find(isDraftCreationAction) ||
-    actions.find((action) => action.actionType === 'review_volume') ||
-    actions[0];
-  const createdAt = primaryAction?.createdAt || new Date(0).toISOString();
-  const requiresConfirmation = Boolean(primaryAction?.requiresConfirmation && isDraftCreationAction(primaryAction));
-  const mergedAction: CoachAction = {
-    ...(primaryAction || {
-      id: 'plan-volume-adaptation-group',
-      source: 'volumeAdaptation',
-      actionType: 'review_volume',
-      priority: 'medium',
-      status: 'pending',
-      requiresConfirmation: false,
-      reversible: false,
-      createdAt,
-      reason: '查看训练量建议，不会自动修改计划。',
-    }),
-    id: 'plan-volume-adaptation-group',
-    title: buildVolumeTitle(volumeItems, actions),
-    description: volumeItems.length
-      ? `已合并 ${volumeItems.length} 条肌群训练量建议，展开后查看每个肌群。`
-      : `已合并 ${actions.length} 条训练量相关建议，展开后查看详情。`,
-    priority: strongestPriority(actions.length ? actions : [{ priority: 'medium' } as CoachAction]),
-    requiresConfirmation,
-    reversible: requiresConfirmation,
-    targetId: primaryAction?.targetId,
-    targetType: primaryAction?.targetType || 'plan',
-    reason: '同类训练量建议已合并，避免在计划页重复显示相似卡片。',
-  };
-  const view = buildCoachActionView(mergedAction) as PlanCoachInboxActionView;
-  const fallbackDetails = actions
-    .filter((action) => action.targetId)
-    .map<PlanCoachInboxDetailView>((action) => ({
-      id: action.targetId || action.id,
-      label: formatMuscleName(action.targetId),
-      reason: visibleFallback(action.reason || action.description, '根据近期训练记录生成。'),
-      suggestedActions: [],
-    }));
+const adviceToCoachInboxView = (advice: AggregatedPlanAdvice): PlanCoachInboxActionView => {
+  const action = advice.primaryAction?.coachAction || fallbackCoachActionFromAdvice(advice);
+  const view = buildCoachActionView({
+    ...action,
+    id: advice.id,
+    title: advice.title,
+    description: advice.summary,
+    priority: advice.priority,
+    requiresConfirmation: advice.status === 'needs_confirmation',
+    reversible: advice.status === 'needs_confirmation',
+  }) as PlanCoachInboxActionView;
 
   return {
     ...view,
-    detailItems: volumeItems.length ? volumeItems.map(volumeDetailView) : fallbackDetails,
-    mergedCount: Math.max(volumeItems.length, actions.length),
+    primaryLabel: advice.primaryAction?.label || view.primaryLabel,
+    primaryVariant: advice.primaryAction?.variant || view.primaryVariant,
+    detailItems: advice.affectedItems.map((item) => ({
+      id: item.id,
+      label: item.label,
+      reason: item.summary,
+      suggestedActions: [],
+    })),
+    mergedCount: advice.affectedItems.length || advice.sourceActionIds.length || 1,
+    advice,
   };
 };
 
 const buildCoachInbox = (
   actions: CoachAction[] = [],
   volumeAdaptation?: VolumeAdaptationReport | null,
+  drafts: ProgramAdjustmentDraft[] = [],
   maxVisible = 3,
 ): PlanViewModel['coachInbox'] => {
-  const planActions = actions.filter(isPlanCoachAction);
-  const volumeActions = planActions.filter((action) => action.source === 'volumeAdaptation');
-  const volumeItems =
-    volumeAdaptation?.muscles?.filter((item) => item.decision === 'increase' || item.decision === 'decrease' || item.decision === 'hold') || [];
-  const otherActions = planActions.filter((action) => action.source !== 'volumeAdaptation');
-  const mergedVolumeAction = mergeVolumeActions(volumeActions, volumeItems);
-  const normalizedViews = [
-    ...(mergedVolumeAction ? [mergedVolumeAction] : []),
-    ...otherActions.map((action) => buildCoachActionView(action) as PlanCoachInboxActionView),
-  ];
-  const views = normalizedViews
-    .sort((left, right) => priorityRank[right.action.priority] - priorityRank[left.action.priority] || left.title.localeCompare(right.title, 'zh-Hans-CN'));
+  const advice = aggregatePlanAdvice(actions, volumeAdaptation, drafts).filter(
+    (item) => item.category !== 'draft' && (item.status === 'suggestion' || item.status === 'needs_confirmation'),
+  );
+  const views = advice.map(adviceToCoachInboxView);
   const visibleActions = views.slice(0, maxVisible);
   const hiddenActions = views.slice(maxVisible);
   const hiddenCount = hiddenActions.length;
-  const totalCount = Math.max(volumeItems.length, volumeActions.length ? 1 : 0) + otherActions.length;
+  const totalCount = advice.reduce((sum, item) => sum + Math.max(item.affectedItems.length, item.sourceActionIds.length, 1), 0);
   const confirmationCount = views.filter((view) => view.requiresConfirmation).length;
   const summary = views.length
     ? `系统发现 ${totalCount} 条计划相关建议，其中 ${confirmationCount} 条需要确认。`
@@ -277,6 +238,8 @@ const buildCoachInbox = (
 
   return {
     summary,
+    visibleAdvice: visibleActions,
+    hiddenAdvice: hiddenActions,
     visibleActions,
     hiddenActions,
     hiddenCount,
@@ -356,7 +319,7 @@ export const buildPlanViewModel = (data: AppData, options: BuildPlanViewModelOpt
   const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
   const phaseLabel = `第 ${mesocycleWeek.weekIndex + 1} 周 · ${formatCyclePhase(mesocycleWeek.phase)}`;
   const experimentStatus = buildExperimentStatus(data, current);
-  const coachInbox = buildCoachInbox(options.coachActions, options.volumeAdaptation, options.maxVisibleCoachActions ?? 2);
+  const coachInbox = buildCoachInbox(options.coachActions, options.volumeAdaptation, data.programAdjustmentDrafts || [], options.maxVisibleCoachActions ?? 2);
   const adjustmentDrafts = buildAdjustmentDrafts(data);
 
   return {
