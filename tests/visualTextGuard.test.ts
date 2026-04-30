@@ -1,10 +1,24 @@
 import { describe, expect, it } from 'vitest';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { buildTodayViewModel } from '../src/presenters/todayPresenter';
 import { buildRecommendationExplanationViewModel } from '../src/presenters/recommendationExplanationPresenter';
 import { buildDataHealthViewModel } from '../src/presenters/dataHealthPresenter';
 import { dedupeCoachReminders } from '../src/presenters/coachReminderPresenter';
+import { buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
+import { PlanView } from '../src/features/PlanView';
 import type { RecommendationTrace } from '../src/engines/recommendationTraceEngine';
-import { getTemplate } from './fixtures';
+import { getTemplate, makeAppData } from './fixtures';
+
+const noop = (..._args: unknown[]) => undefined;
+
+const visibleText = (html: string) =>
+  html
+    .replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 describe('visual text guard', () => {
   it('presenter text does not emit undefined, null, or raw state labels', () => {
@@ -102,5 +116,35 @@ describe('visual text guard', () => {
     expect(reminders).toHaveLength(1);
     expect(text).toContain('胸/背酸痛');
     expect(text).not.toMatch(/\b(modified_train|active_recovery|high|medium|low|undefined|null)\b/);
+  });
+
+  it('Plan page text uses the final section names without old entry copy', () => {
+    const data = makeAppData();
+    const text = visibleText(
+      renderToStaticMarkup(
+        React.createElement(PlanView, {
+          data,
+          weeklyPrescription: buildWeeklyPrescription(data),
+          coachActions: [],
+          selectedTemplateId: data.selectedTemplateId,
+          onSelectTemplate: noop,
+          onStartTemplate: noop,
+          onUpdateExercise: noop,
+          onResetTemplates: noop,
+          onCoachAction: noop,
+          onDismissCoachAction: noop,
+        }),
+      ),
+    );
+
+    expect(text).toContain('当前计划');
+    expect(text).toContain('本周安排');
+    expect(text).toContain('待处理建议');
+    expect(text).toContain('调整草案');
+    expect(text).not.toContain('本周训练日');
+    expect(text).not.toContain('训练日模板');
+    expect(text).not.toContain('Progress');
+    expect(text).not.toContain('进度页');
+    expect(text).not.toMatch(/\b(undefined|null|hybrid|hypertrophy|strength|fat_loss|warmup|working|support|compound|isolation|machine|review_volume|create_plan_adjustment_preview|push-a|pull-a|legs-a)\b/);
   });
 });

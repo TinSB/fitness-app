@@ -4,6 +4,105 @@ Last updated: 2026-04-29
 
 This backlog is ordered for multiple Codex conversations. Each task is scoped to minimize collisions and preserve current architecture.
 
+## Plan Page Cleanup Backlog
+
+Planning source: `PLAN_PAGE_CLEANUP.md`
+
+### P0-030: Reframe Plan page view model into four IA groups
+
+Priority: P0
+
+Goal:
+Prepare the Plan page cleanup by grouping existing data into `currentPlan`, `weeklySchedule`, `pendingRecommendations`, and `adjustmentDrafts` without changing algorithms or adding new features.
+
+Files likely involved:
+- `src/features/PlanView.tsx`
+- `src/presenters/planPresenter.ts`
+- `tests/planPageCleanup.test.ts`
+
+Acceptance criteria:
+- Current plan, weekly schedule, pending recommendations, and adjustment drafts are separable in presenter/view-model naming.
+- No training algorithm, template generation, or persistence behavior changes.
+- Existing experiment-template apply and rollback flows remain intact.
+- User-visible copy stays Chinese and avoids raw enum, internal id, `undefined`, or `null`.
+
+Out of scope:
+- New engines.
+- New pages.
+- Automatic plan changes.
+- Data model changes.
+
+### P0-031: Merge duplicate Plan schedule sections
+
+Priority: P0
+
+Goal:
+Combine `本周训练日`, `训练日模板`, and `当前查看的训练日` into one future-facing `本周安排` flow.
+
+Files likely involved:
+- `src/features/PlanView.tsx`
+- `src/presenters/planPresenter.ts`
+- `tests/planPageCleanup.test.ts`
+
+Acceptance criteria:
+- Training-day names, template selection, and selected-day details appear as one coherent schedule area.
+- The selected-day detail remains available without creating a separate competing section.
+- No Focus Mode controls, history details, health import, or backup/restore content moves into Plan.
+
+Out of scope:
+- Changing template contents.
+- Changing the next-workout scheduler.
+- Adding new plan views.
+
+### P0-032: De-duplicate Plan recommendations and drafts
+
+Priority: P0
+
+Goal:
+Ensure the same plan-level issue does not appear simultaneously as a CoachAction, a training-volume suggestion, and a draft card.
+
+Files likely involved:
+- `src/features/PlanView.tsx`
+- `src/presenters/coachActionPresenter.ts`
+- `src/presenters/planPresenter.ts`
+- `tests/coachActionPlanDraft.test.ts`
+- `tests/planPageCleanup.test.ts`
+
+Acceptance criteria:
+- `待处理建议` contains only recommendations that have not become drafts.
+- Generated drafts appear only under `调整草案`.
+- Generated-draft actions change to `查看草案` or disappear from pending suggestions.
+- View-only actions use secondary button semantics.
+- Applying a draft still requires confirmation and creates an experimental template by copy.
+
+Out of scope:
+- New recommendation logic.
+- Auto-applying drafts.
+- Overwriting original templates.
+
+### P1-033: Consolidate experimental template and rollback presentation
+
+Priority: P1
+
+Goal:
+Make active experimental-template state visible in `当前计划`, while moving template history into a compact support role.
+
+Files likely involved:
+- `src/features/PlanView.tsx`
+- `src/presenters/planPresenter.ts`
+- `tests/experimentalTemplateApplyRollback.test.ts`
+
+Acceptance criteria:
+- `当前计划` clearly shows whether the active plan is original or experimental.
+- Rollback remains visible when an experimental template is active.
+- Version history remains available but does not duplicate the current-plan state.
+- Rollback copy continues to state that completed training history is preserved.
+
+Out of scope:
+- Deleting experimental templates.
+- Changing adjustment review algorithms.
+- Changing completed history.
+
 ## Coach Action Workflow V1 Backlog
 
 Planning source: `COACH_ACTION_WORKFLOW.md`

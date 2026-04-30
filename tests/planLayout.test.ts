@@ -6,16 +6,17 @@ describe('Plan layout', () => {
 
   it('uses the responsive product page layout', () => {
     expect(source).toContain("from '../ui/layouts/ResponsivePageLayout'");
-    expect(source).toContain('xl:grid-cols-[minmax(0,1.55fr)_420px]');
+    expect(source).toContain('xl:grid-cols-[minmax(0,1.55fr)_380px]');
   });
 
   it('keeps plan management content visible', () => {
-    expect(source).toContain('当前模板');
+    expect(source).toContain('当前计划');
     expect(source).toContain('周期时间线');
-    expect(source).toContain('本周训练日');
-    expect(source).toContain('训练日模板');
+    expect(source).toContain('本周安排');
+    expect(source).not.toContain('title="本周训练日"');
+    expect(source).not.toContain('title="训练日模板"');
     expect(source).toContain('实验模板');
-    expect(source).toContain('调整建议');
+    expect(source).toContain('待处理建议');
     expect(source).toContain('版本历史与回滚');
   });
 

@@ -43,9 +43,11 @@ describe('Training Intelligence UI wiring', () => {
   });
 
   it('shows volume adaptation as a plan suggestion instead of automatic plan mutation', () => {
-    expect(planSource).toContain('volumeAdaptationItems');
-    expect(planSource).toContain('采用前需确认');
-    expect(planSource).toContain('不会自动应用到当前计划');
+    expect(planSource).toContain('volumeAdaptation: trainingIntelligenceSummary?.volumeAdaptation');
+    expect(planSource).toContain('待处理建议');
+    expect(planSource).toContain('同类建议已合并显示');
+    expect(planSource).toContain('生成草案前不会修改当前计划');
+    expect(planSource).not.toContain('volumeAdaptationItems');
     expect(planSource).not.toContain('applyAdjustmentDraft(');
   });
 
@@ -58,9 +60,10 @@ describe('Training Intelligence UI wiring', () => {
       '保存前先看本次训练质量；这里不会自动改计划。',
       '训练质量',
       '平台期提示',
-      '查看下周建议',
-      '这里只生成计划调整草案入口，不会自动应用到当前计划。',
-      '采用前需确认',
+      '待处理建议',
+      '同类建议已合并显示，生成草案前不会修改当前计划。',
+      '查看肌群详情',
+      '查看全部建议',
     ].join('\n');
 
     expect(visibleCopy).not.toMatch(/\b(undefined|null|low|medium|high|increase|maintain|decrease|hold|plateau|raw enum)\b/i);

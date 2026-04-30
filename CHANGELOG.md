@@ -4,6 +4,9 @@ All notable frontend governance and product-structure changes should be recorded
 
 ## 2026-04-29
 
+- Added `PLAN_PAGE_CLEANUP.md` to audit current Plan page sections, identify duplicate schedule/recommendation/draft/rollback surfaces, and define the target structure: current plan, weekly schedule, pending recommendations, and adjustment drafts.
+- Added Plan Page Cleanup backlog tasks for view-model grouping, schedule-section consolidation, recommendation/draft de-duplication, and experimental-template rollback presentation.
+- Confirmed this Plan audit pass is documentation-only and does not modify UI, training algorithms, engines, or data models.
 - Added `COACH_ACTION_WORKFLOW.md` for Coach Action Workflow V1 planning, including the CoachAction contract, action types, status flow, confirmation/undo rules, active-session-only boundaries, Program Adjustment Preview handoff, follow-up tracking, implementation order, and testing strategy.
 - Added Coach Action Workflow V1 backlog tasks for action contract/status flow, navigation-only actions, confirmation-gated active-session actions, Program Adjustment Preview handoff, local dismissal/undo, and outcome tracking.
 - Confirmed this planning pass does not modify business logic, training algorithms, data models, or runtime UI.

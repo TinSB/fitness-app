@@ -67,7 +67,7 @@ describe('PlanView adjustment draft UI', () => {
     );
 
     expect(text).toContain('调整草案');
-    expect(text).toContain('待确认应用');
+    expect(text).toContain('状态：待确认');
     expect(text).toContain('查看差异');
     expect(text).toContain('应用为实验模板');
     expect(text).toContain('暂不采用');

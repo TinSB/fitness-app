@@ -13,13 +13,16 @@ describe('exercise metadata display boundary', () => {
     expect(source).not.toContain('progressionIds');
   });
 
-  it('keeps action-facing metadata formatted in plan details', () => {
+  it('keeps plan schedule details focused on user-facing prescription fields', () => {
     const source = read('src/features/PlanView.tsx');
 
-    expect(source).toContain('formatFatigueCost');
-    expect(source).toContain('formatSkillDemand');
-    expect(source).toContain('formatWeight');
-    expect(source).toContain('技术标准');
+    expect(source).toContain('title="训练日详情"');
+    expect(source).toContain('组数');
+    expect(source).toContain('次数下限');
+    expect(source).toContain('休息秒数');
+    expect(source).not.toContain('formatFatigueCost');
+    expect(source).not.toContain('formatSkillDemand');
+    expect(source).not.toContain('技术标准');
     expect(source).not.toContain('progressionUnit}');
   });
 });

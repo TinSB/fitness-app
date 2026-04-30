@@ -20,5 +20,7 @@ describe('navigation naming', () => {
   it('does not keep old README primary-entry wording', () => {
     expect(readme).not.toContain('打开“进度”页');
     expect(readme).not.toContain('ProgressView / PlanView');
+    expect(readme).not.toContain('Progress / Plan');
+    expect(readme).not.toContain('进度页');
   });
 });

@@ -97,11 +97,11 @@ npm run predeploy:check
 
 ## 性能与代码分割
 
-首屏只保留 App shell、今日页、移动端专注训练界面和训练恢复所需核心逻辑。`ProgressView`、`PlanView`、`AssessmentView` 和完整 `TrainingView` 使用 `React.lazy` 延迟加载；计划调整 apply / rollback、调整预览、实验效果复盘和备份恢复在用户触发时动态导入。
+首屏只保留 App shell、今日页、移动端专注训练界面和训练恢复所需核心逻辑。记录页、计划页、筛查页和完整训练页使用 `React.lazy` 延迟加载；计划调整 apply / rollback、调整预览、实验效果复盘和备份恢复在用户触发时动态导入。
 
 项目只保留一个 Vite 配置文件：`vite.config.ts`。React 插件、Tailwind CSS 插件、Vitest 配置、build 配置和 manual chunks 都从这个文件读取，避免 `vite.config.js` / `vite.config.ts` 双配置造成 test 与 build 行为不一致。
 
-`vite.config.ts` 使用 manual chunks 将 React、AJV 校验、分析引擎、计划调整引擎、证据内容、记录/统计相关页面和计划页拆成可读 chunk。专注训练保持轻量，不同步加载 Progress / Plan 等重页面；Progress / Plan 和计划调整相关逻辑按需加载。
+`vite.config.ts` 使用 manual chunks 将 React、AJV 校验、分析引擎、计划调整引擎、证据内容、记录/统计相关页面和计划页拆成可读 chunk。专注训练保持轻量，不同步加载记录 / 计划等重页面；记录 / 计划和计划调整相关逻辑按需加载。
 
 ## Vercel 上线部署
 
@@ -263,7 +263,7 @@ e1RM 是根据最近同动作高质量工作组估算的理论单次最大重量
 - 历史最佳 e1RM：来自历史最高可信记录，只用于进度回看。
 - 同一替代链只作为动作模式参考；不同器械或变式不会直接共享精确 e1RM 或高质量 PR。只有相同动作 ID 或显式 `canonicalExerciseId` 相同，才允许合并记录池。
 
-当前 e1RM 使用近期稳定估算，默认采用最近高质量记录的中位数，避免一次超常表现把训练推荐突然抬高。历史最佳仍会保留在进度页，但不会直接作为当天推荐重量。
+当前 e1RM 使用近期稳定估算，默认采用最近高质量记录的中位数，避免一次超常表现把训练推荐突然抬高。历史最佳仍会保留在记录页，但不会直接作为当天推荐重量。
 
 训练中可以记录“推荐重量偏轻 / 合适 / 偏重”。这个反馈只作为校准信号：连续偏重会让后续建议更保守，连续偏轻且动作质量良好时可允许小幅积极推进；它不会直接篡改 e1RM 或历史最佳记录。
 

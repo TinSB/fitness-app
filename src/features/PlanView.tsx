@@ -10,22 +10,17 @@ import type { CoachAction } from '../engines/coachActionEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
-import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
+import { buildPlanViewModel, type AdjustmentDraftView, type PlanCoachInboxActionView } from '../presenters/planPresenter';
 import {
   formatAdjustmentChangeLabel,
   formatConfidence,
   formatCyclePhase,
   formatExerciseName,
-  formatFatigueCost,
   formatIntensityBias,
   formatMuscleName,
   formatPrimaryGoal,
-  formatReplacementCategory,
-  formatRomPriority,
-  formatSkillDemand,
   formatSplitType,
   formatTemplateName,
-  formatTrainingDayName,
 } from '../i18n/formatters';
 import type {
   AdjustmentChange,
@@ -46,9 +41,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
-import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
-import { formatWeight } from '../engines/unitConversionEngine';
 
 export type PlanTarget = {
   section: 'volume_adaptation' | 'adjustment_drafts' | 'coach_actions';
@@ -106,12 +99,12 @@ const formatChangeReason = (change: AdjustmentChange) => change.reason || change
 const statusView = (status?: ProgramAdjustmentDraft['status']) => {
   if (status === 'recommendation') return { label: '建议', tone: 'sky' as const };
   if (status === 'draft_created') return { label: '草案已生成', tone: 'sky' as const };
-  if (status === 'ready_to_apply' || status === 'previewed' || status === 'draft') return { label: '待确认应用', tone: 'amber' as const };
-  if (status === 'applied') return { label: '已应用实验模板', tone: 'emerald' as const };
+  if (status === 'ready_to_apply' || status === 'previewed' || status === 'draft') return { label: '待确认', tone: 'amber' as const };
+  if (status === 'applied') return { label: '已应用', tone: 'emerald' as const };
   if (status === 'dismissed') return { label: '已暂不采用', tone: 'slate' as const };
   if (status === 'rolled_back') return { label: '已回滚', tone: 'slate' as const };
   if (status === 'expired' || status === 'stale') return { label: '已过期', tone: 'amber' as const };
-  return { label: '待确认应用', tone: 'amber' as const };
+  return { label: '待确认', tone: 'amber' as const };
 };
 
 const riskView = (risk?: 'low' | 'medium' | 'high') => {
@@ -189,12 +182,10 @@ export function PlanView({
   const [applyTarget, setApplyTarget] = React.useState<ProgramAdjustmentDraft | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<ProgramAdjustmentDraft | null>(null);
   const [diffTarget, setDiffTarget] = React.useState<ProgramAdjustmentDraft | null>(null);
+  const [scheduleDetailTemplate, setScheduleDetailTemplate] = React.useState<TrainingTemplate | null>(null);
   const adjustmentSectionRef = React.useRef<HTMLDivElement | null>(null);
   const draftSectionRef = React.useRef<HTMLDivElement | null>(null);
-  const coachActionsSectionRef = React.useRef<HTMLDivElement | null>(null);
-  const volumeSectionRef = React.useRef<HTMLDivElement | null>(null);
   const [highlightTarget, setHighlightTarget] = React.useState<PlanTarget | null>(() => (target?.highlight === false ? null : target || null));
-  const [expandedVolumeMuscleId, setExpandedVolumeMuscleId] = React.useState<string | null>(() => target?.muscleId || null);
   const fallbackTemplateId = data.templates.some((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
   const selectedTemplate = findTemplate(data.templates, fallbackTemplateId) as TrainingTemplate;
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
@@ -202,7 +193,6 @@ export function PlanView({
   const mesocycleWeek = getCurrentMesocycleWeek(mesocycle);
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
   const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || selectedTemplate;
-  const prescribed = applyStatusRules(selectedTemplate, data.todayStatus, data.trainingMode, weeklyPrescription, data.history, data.screeningProfile, mesocycle);
   const supportPlan = buildSupportPlan(data, selectedTemplate);
   const recommendationTrace = React.useMemo(
     () =>
@@ -216,19 +206,18 @@ export function PlanView({
     [data, selectedTemplate, weeklyPrescription]
   );
   const trainingLevelAssessment = buildTrainingLevelAssessment({ history: data.history || [] });
-  const adjustmentDrafts = (data.programAdjustmentDrafts || []).slice(0, 3);
   const adjustmentHistory = data.programAdjustmentHistory || [];
   const activeHistoryItem = adjustmentHistory.find((item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id);
   const experimentalTemplates = data.templates.filter((template) => template.isExperimentalTemplate || template.sourceTemplateId);
   const activeTemplateMissing = Boolean(data.activeProgramTemplateId && !data.templates.some((item) => item.id === data.activeProgramTemplateId));
-  const volumeAdaptationItems =
-    trainingIntelligenceSummary?.volumeAdaptation?.muscles
-      ?.filter((item) => item.decision === 'increase' || item.decision === 'decrease' || item.decision === 'hold')
-      .slice(0, 3) || [];
-  const planCoachActionViewModel = React.useMemo(
-    () => buildCoachActionListViewModel(coachActions || [], { surface: 'plan' }),
-    [coachActions],
+  const planViewModel = React.useMemo(
+    () => buildPlanViewModel(data, { coachActions, volumeAdaptation: trainingIntelligenceSummary?.volumeAdaptation }),
+    [data, coachActions, trainingIntelligenceSummary?.volumeAdaptation],
   );
+  const adjustmentDraftViews = planViewModel.adjustmentDrafts.drafts;
+  const adjustmentDrafts = adjustmentDraftViews
+    .map((view) => (data.programAdjustmentDrafts || []).find((draft) => draft.id === view.id))
+    .filter((draft): draft is ProgramAdjustmentDraft => Boolean(draft));
 
   const currentTemplateStatus = activeHistoryItem
     ? '实验模板'
@@ -240,14 +229,11 @@ export function PlanView({
     if (!target) return undefined;
     const nextTarget = { ...target };
     setHighlightTarget(nextTarget.highlight === false ? null : nextTarget);
-    if (nextTarget.muscleId) setExpandedVolumeMuscleId(nextTarget.muscleId);
 
     const node =
-      nextTarget.section === 'volume_adaptation'
-        ? volumeSectionRef.current || adjustmentSectionRef.current
-        : nextTarget.section === 'coach_actions'
-          ? coachActionsSectionRef.current || adjustmentSectionRef.current
-          : draftSectionRef.current || adjustmentSectionRef.current;
+      nextTarget.section === 'volume_adaptation' || nextTarget.section === 'coach_actions'
+        ? adjustmentSectionRef.current
+        : draftSectionRef.current || adjustmentSectionRef.current;
     if (typeof window !== 'undefined') {
       window.setTimeout(() => node?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
     }
@@ -275,6 +261,11 @@ export function PlanView({
     setDeleteTarget(null);
   };
 
+  const scrollToPlanSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (typeof window === 'undefined') return;
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const sourceTemplateForDraft = (draft: ProgramAdjustmentDraft) =>
     data.templates.find((template) => template.id === draft.sourceProgramTemplateId) || selectedTemplate;
 
@@ -284,15 +275,15 @@ export function PlanView({
   };
 
   const renderCurrentTemplate = () => (
-    <PageSection title="当前模板" description="这里显示现在计划正在使用的模板，不混入历史训练详情。">
-      <Card className={classNames('space-y-4', activeHistoryItem ? 'border-amber-200 bg-amber-50' : '')}>
+    <PageSection data-plan-primary-section="current-plan" title="当前计划" description="这里显示现在计划正在使用的模板，不混入历史训练详情。">
+      <Card className={classNames('space-y-3', activeHistoryItem ? 'border-amber-200 bg-amber-50' : '')}>
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
               <StatusBadge tone={activeHistoryItem ? 'amber' : currentTemplateStatus === '已回滚模板' ? 'sky' : 'emerald'}>{currentTemplateStatus}</StatusBadge>
               {activeTemplateMissing ? <StatusBadge tone="amber">已回退到可用模板</StatusBadge> : null}
             </div>
-            <h2 className="text-xl font-bold text-slate-950">{templateLabel(currentTemplate)}</h2>
+            <h2 className="text-lg font-bold text-slate-950 md:text-xl">{templateLabel(currentTemplate)}</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
               {currentTemplate.focus || '计划训练'} · {currentTemplate.duration || program.dayTemplates?.[0]?.estimatedDurationMin || 60} 分钟 · {currentTemplate.exercises?.length || 0} 个动作
             </p>
@@ -308,23 +299,23 @@ export function PlanView({
               </p>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 md:justify-end">
             {activeHistoryItem?.rollbackAvailable && onRollbackProgramAdjustment ? (
-              <ActionButton variant="danger" onClick={() => setRollbackTarget(activeHistoryItem)}>
+              <ActionButton size="sm" variant="danger" onClick={() => setRollbackTarget(activeHistoryItem)}>
                 回滚到原模板
               </ActionButton>
             ) : null}
-            <ActionButton variant="secondary" onClick={onResetTemplates}>
+            <ActionButton size="sm" variant="secondary" onClick={onResetTemplates}>
               <RotateCcw className="h-4 w-4" />
               恢复默认
             </ActionButton>
-            <ActionButton variant="secondary" onClick={() => onStartTemplate(currentTemplate.id)}>
+            <ActionButton size="sm" variant="secondary" onClick={() => onStartTemplate(currentTemplate.id)}>
               <Play className="h-4 w-4" />
               以此开练
             </ActionButton>
           </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-2 md:grid-cols-3">
           <MetricCard label="计划目标" value={formatPrimaryGoal(program.primaryGoal)} tone="emerald" />
           <MetricCard label="分化方式" value={formatSplitType(program.splitType)} />
           <MetricCard label="每周频率" value={`${program.daysPerWeek} 天`} />
@@ -335,8 +326,8 @@ export function PlanView({
 
   const renderCycleTimeline = () => (
     <PageSection title="周期时间线" description="当前周期只说明未来几周怎么推进，不展示训练历史。">
-      <Card>
-        <div className="mb-3 grid gap-3 md:grid-cols-3">
+      <Card className="space-y-3">
+        <div className="grid gap-2 md:grid-cols-3">
           <MetricCard label="当前周" value={`第 ${mesocycleWeek.weekIndex + 1} 周`} tone="sky" />
           <MetricCard label="阶段" value={formatCyclePhase(mesocycleWeek.phase)} />
           <MetricCard label="容量 / 强度" value={`${Math.round(mesocycleWeek.volumeMultiplier * 100)}% / ${formatIntensityBias(mesocycleWeek.intensityBias)}`} />
@@ -367,58 +358,52 @@ export function PlanView({
     </PageSection>
   );
 
-  const renderThisWeekDays = () => (
-    <PageSection title="本周训练日" description="这些是本周计划结构，用来回答接下来每次大致练什么。">
-      <div className="grid gap-3 md:grid-cols-2">
-        {(program.dayTemplates || []).map((day, index) => (
-          <Card key={day.id} className="space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs font-semibold text-emerald-700">训练日 {index + 1}</div>
-                <h3 className="mt-1 text-base font-semibold text-slate-950">{formatTrainingDayName(day.name || day.id)}</h3>
-                <p className="mt-1 text-sm text-slate-500">{day.focusMuscles.map(formatMuscleName).join(' / ') || '综合训练'} · 预计 {day.estimatedDurationMin} 分钟</p>
-              </div>
-              <StatusBadge tone="sky">{day.mainExerciseIds.length} 个主动作</StatusBadge>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              {day.mainExerciseIds.slice(0, 5).map((exerciseId) => (
-                <span key={exerciseId} className="rounded-md bg-stone-50 px-2 py-1">
-                  {formatExerciseName(exerciseId)}
-                </span>
-              ))}
-            </div>
-          </Card>
-        ))}
-      </div>
-    </PageSection>
-  );
+  const openScheduleDetail = (template?: TrainingTemplate) => {
+    if (!template) return;
+    onSelectTemplate(template.id);
+    setScheduleDetailTemplate(template);
+  };
 
-  const renderTrainingTemplates = () => (
-    <PageSection title="训练日模板" description="选择一个模板查看结构。实验模板会用独立标记区分。">
-      <div className="grid gap-3">
-        {data.templates.map((template) => {
-          const selected = template.id === selectedTemplate.id;
+  const renderWeeklySchedule = () => (
+    <PageSection data-plan-primary-section="weekly-schedule" title="本周安排" description="把本周安排和模板摘要合并在这里；先看摘要，需要时再打开详情。">
+      <div className="grid gap-2 md:grid-cols-2 md:gap-3">
+        {planViewModel.weeklySchedule.days.map((day, index) => {
+          const template = data.templates.find((item) => item.id === day.id);
+          const selected = template?.id === selectedTemplate.id;
           return (
             <Card
-              key={template.id}
+              key={day.id}
               className={classNames(
-                'transition',
+                'space-y-3 transition',
                 selected ? 'border-emerald-300 bg-emerald-50' : '',
-                template.isExperimentalTemplate && !selected ? 'border-amber-200 bg-amber-50' : '',
+                template?.isExperimentalTemplate && !selected ? 'border-amber-200 bg-amber-50' : '',
               )}
             >
-              <button type="button" className="w-full text-left" onClick={() => onSelectTemplate(template.id)}>
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-slate-950">{templateLabel(template)}</h3>
-                      <TemplateStatusBadge template={template} activeTemplateId={activeTemplateId} />
-                    </div>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{template.focus} · {template.duration} 分钟 · {template.exercises.length} 个动作</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-emerald-700">训练日 {index + 1}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-semibold text-slate-950">{day.name}</h3>
+                    {template ? <TemplateStatusBadge template={template} activeTemplateId={activeTemplateId} /> : null}
                   </div>
-                  <StatusBadge tone={selected ? 'emerald' : 'slate'}>{selected ? '正在查看' : '点击查看'}</StatusBadge>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {day.focus} · 预计 {day.durationMin} 分钟 · {day.exerciseCount} 个动作
+                  </p>
                 </div>
-              </button>
+                <StatusBadge tone={selected ? 'emerald' : 'sky'}>{selected ? '正在查看' : '本周安排'}</StatusBadge>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                {day.primaryExercises.slice(0, 4).map((exerciseName) => (
+                  <span key={`${day.id}-${exerciseName}`} className="rounded-md bg-white px-2 py-1">
+                    {exerciseName}
+                  </span>
+                ))}
+              </div>
+              <div className="flex justify-end">
+                <ActionButton size="sm" variant="secondary" onClick={() => openScheduleDetail(template)}>
+                  查看详情
+                </ActionButton>
+              </div>
             </Card>
           );
         })}
@@ -426,15 +411,19 @@ export function PlanView({
     </PageSection>
   );
 
-  const renderSelectedTemplateDetail = () => (
-    <PageSection title="当前查看的训练日" description="只展示训练执行所需的处方摘要；细节可展开调整。">
-      <Card className="space-y-3">
+  const renderScheduleDetailDrawer = () => {
+    const detailTemplate = scheduleDetailTemplate;
+    if (!detailTemplate) return null;
+    const detailPrescribed = applyStatusRules(detailTemplate, data.todayStatus, data.trainingMode, weeklyPrescription, data.history, data.screeningProfile, mesocycle);
+    return (
+      <Drawer open={Boolean(detailTemplate)} title="训练日详情" onClose={() => setScheduleDetailTemplate(null)}>
+        <Card className="space-y-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-slate-950">{templateLabel(selectedTemplate)}</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{selectedTemplate.note || selectedTemplate.focus}</p>
+            <h2 className="text-xl font-bold text-slate-950">{templateLabel(detailTemplate)}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{detailTemplate.note || detailTemplate.focus}</p>
           </div>
-          <ActionButton variant="secondary" onClick={() => onStartTemplate(selectedTemplate.id)}>
+          <ActionButton variant="secondary" onClick={() => onStartTemplate(detailTemplate.id)}>
             以此模板训练
           </ActionButton>
         </div>
@@ -444,9 +433,9 @@ export function PlanView({
           maxVisibleFactors={4}
         />
         <div className="space-y-2">
-          {selectedTemplate.exercises.map((exercise, index) => {
+          {detailTemplate.exercises.map((exercise, index) => {
             const enriched = enrichExercise(exercise);
-            const prescription = prescribed.exercises[index] || enriched;
+            const prescription = detailPrescribed.exercises[index] || enriched;
             const muscles = (getPrimaryMuscles(prescription).length ? getPrimaryMuscles(prescription) : [exercise.muscle]).map(formatMuscleName).join(' / ');
             return (
               <details key={`${exercise.id}-${index}`} className="rounded-lg border border-slate-200 bg-stone-50 p-3">
@@ -459,45 +448,26 @@ export function PlanView({
                         {muscles} · {exercise.sets} 组 · {exercise.repMin}-{exercise.repMax} 次 · 休息 {exercise.rest} 秒
                       </p>
                     </div>
-                    <StatusBadge tone={exercise.kind === 'compound' ? 'emerald' : exercise.kind === 'machine' ? 'sky' : 'slate'}>
-                      {exercise.kind === 'compound' ? '复合动作' : exercise.kind === 'machine' ? '器械动作' : '孤立动作'}
-                    </StatusBadge>
                   </div>
                 </summary>
                 <div className="mt-3 grid gap-3 md:grid-cols-5">
-                  <PlanInput label="别名" value={exercise.alias || ''} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'alias', value)} />
-                  <PlanInput label="组数" type="number" value={exercise.sets} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'sets', value)} />
-                  <PlanInput label="次数下限" type="number" value={exercise.repMin} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'repMin', value)} />
-                  <PlanInput label="次数上限" type="number" value={exercise.repMax} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'repMax', value)} />
-                  <PlanInput label="休息秒数" type="number" value={exercise.rest} onChange={(value) => onUpdateExercise(selectedTemplate.id, index, 'rest', value)} />
-                </div>
-                <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600">
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <div>递增单位：{formatWeight(prescription.progressionUnitKg || enriched.progressionUnitKg || 1, data.unitSettings)}</div>
-                    <div>疲劳成本：{formatFatigueCost(prescription.fatigueCost)}</div>
-                    <div>技术需求：{formatSkillDemand(prescription.skillDemand)}</div>
-                    <div>幅度优先：{formatRomPriority(prescription.romPriority)}</div>
-                    <div>
-                      替代层级：
-                      {Object.values(prescription.alternativePriorities || {}).slice(0, 3).map(formatReplacementCategory).join(' / ') || '按动作链推断'}
-                    </div>
-                    <div>动作链：{prescription.equivalence?.label || '默认动作链'}</div>
-                  </div>
-                  {prescription.techniqueStandard ? (
-                    <div className="mt-2 rounded-md bg-stone-50 p-2">
-                      技术标准：{prescription.techniqueStandard.rom}；节奏 {prescription.techniqueStandard.tempo}；{prescription.techniqueStandard.stopRule}
-                    </div>
-                  ) : null}
+                  <PlanInput label="别名" value={exercise.alias || ''} onChange={(value) => onUpdateExercise(detailTemplate.id, index, 'alias', value)} />
+                  <PlanInput label="组数" type="number" value={exercise.sets} onChange={(value) => onUpdateExercise(detailTemplate.id, index, 'sets', value)} />
+                  <PlanInput label="次数下限" type="number" value={exercise.repMin} onChange={(value) => onUpdateExercise(detailTemplate.id, index, 'repMin', value)} />
+                  <PlanInput label="次数上限" type="number" value={exercise.repMax} onChange={(value) => onUpdateExercise(detailTemplate.id, index, 'repMax', value)} />
+                  <PlanInput label="休息秒数" type="number" value={exercise.rest} onChange={(value) => onUpdateExercise(detailTemplate.id, index, 'rest', value)} />
                 </div>
               </details>
             );
           })}
         </div>
       </Card>
-    </PageSection>
-  );
+      </Drawer>
+    );
+  };
 
   const renderAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
+    const draftView: AdjustmentDraftView | undefined = adjustmentDraftViews.find((view) => view.id === draft.id);
     const highlighted = highlightTarget?.section === 'adjustment_drafts' && highlightTarget.draftId === draft.id;
     const diff = diffForDraft(draft);
     const risk = riskView(draft.riskLevel || strongestRisk(diff.changes.map((change) => change.riskLevel)));
@@ -506,19 +476,24 @@ export function PlanView({
     const isApplied = draft.status === 'applied';
     const isRolledBack = draft.status === 'rolled_back' || Boolean(appliedHistory?.rolledBackAt);
     const status = statusView(isRolledBack ? 'rolled_back' : draft.status);
+    const statusLabel = isRolledBack ? '已回滚' : draftView?.statusLabel || status.label;
+    const title = draftView?.title || draft.title || draft.experimentalTemplateName || '调整草案';
+    const summary = draftView?.summary || draft.explanation || draft.summary || '应用前需要确认，不会自动覆盖原计划。';
+    const sourceLabel = draftView?.sourceLabel || (draft.sourceRecommendationId || draft.selectedRecommendationIds?.length ? '教练自动调整建议' : '手动调整草案');
+    const primaryChangeSummary = draftView?.primaryChangeSummary || '查看差异后再决定是否应用。';
     return (
       <Card key={draft.id} className={classNames('space-y-3 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-slate-950">{draft.title}</h3>
-              <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+              <h3 className="text-base font-semibold text-slate-950">{title}</h3>
+              <StatusBadge tone={status.tone}>状态：{statusLabel}</StatusBadge>
               <StatusBadge tone={risk.tone}>{risk.label}</StatusBadge>
               <StatusBadge tone="slate">置信度：{formatConfidence(draft.confidence)}</StatusBadge>
             </div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{draft.explanation || draft.summary}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{summary}</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              来源建议：{draft.sourceRecommendationId || draft.selectedRecommendationIds[0] ? '教练自动调整建议' : '手动调整草案'} · 创建时间：{formatDateLabel(draft.createdAt)}
+              来源建议：{sourceLabel} · 创建时间：{formatDateLabel(draft.createdAt)}
             </p>
             <p className="mt-1 text-xs leading-5 text-slate-500">{risk.explanation}</p>
           </div>
@@ -553,62 +528,116 @@ export function PlanView({
             ) : null}
           </div>
         </div>
+        <div className="rounded-lg border border-slate-200 bg-stone-50 p-3">
+          <div className="text-xs font-semibold text-slate-500">主要变化</div>
+          <div className="mt-1 text-sm font-semibold text-slate-950">{primaryChangeSummary}</div>
+        </div>
         <div className="space-y-2">
-          {draft.changes.slice(0, 4).map((change) => (
-            <div key={change.id} className="rounded-lg bg-stone-50 p-3">
-              <div className="text-sm font-semibold text-slate-950">{formatAdjustmentChangeLabel(change.type)}</div>
-              <div className="mt-1 text-xs leading-5 text-slate-600">原因：{formatChangeReason(change)}</div>
-              <div className="mt-1 text-xs leading-5 text-slate-600">影响：{formatChangeImpact(change)}</div>
-            </div>
-          ))}
+          <div className="text-xs font-semibold text-slate-500">变化明细</div>
+          {draft.changes.length ? (
+            draft.changes.slice(0, 4).map((change) => (
+              <div key={change.id} className="rounded-lg bg-stone-50 p-3">
+                <div className="text-sm font-semibold text-slate-950">{formatAdjustmentChangeLabel(change.type)}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-600">原因：{formatChangeReason(change)}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-600">影响：{formatChangeImpact(change)}</div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg bg-stone-50 p-3 text-sm text-slate-600">查看差异后再决定是否应用。</div>
+          )}
         </div>
       </Card>
     );
   };
 
-  const renderTrainingIntelligenceVolume = () =>
-    volumeAdaptationItems.length ? (
-      <div ref={volumeSectionRef} className="space-y-3 scroll-mt-24">
-        {volumeAdaptationItems.map((item) => {
-          const tone = item.decision === 'increase' ? 'emerald' : item.decision === 'decrease' ? 'amber' : 'slate';
-          const decisionText =
-            item.decision === 'increase'
-              ? `建议小幅增加 ${item.setsDelta || 1} 组`
-              : item.decision === 'decrease'
-                ? `建议减少 ${Math.abs(item.setsDelta || 1)} 组`
-                : '暂缓调整';
-          const highlighted = highlightTarget?.section === 'volume_adaptation' && highlightTarget.muscleId === item.muscleId;
-          return (
-            <Card key={item.muscleId} className={classNames('space-y-2 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="font-semibold text-slate-950">{item.title}</div>
-                <div className="flex flex-wrap gap-2">
-                  <StatusBadge tone={tone}>{decisionText}</StatusBadge>
-                  <StatusBadge tone="amber">采用前需确认</StatusBadge>
+  const renderCoachInboxAction = (action: PlanCoachInboxActionView) => {
+    const highlighted =
+      highlightTarget?.actionId === action.action.id ||
+      (highlightTarget?.section === 'volume_adaptation' && Boolean(action.detailItems?.some((item) => item.id === highlightTarget.muscleId)));
+    return (
+      <Card key={action.id} className={classNames('space-y-3 transition', highlighted ? 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200' : '')}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold text-slate-950">{action.title}</h3>
+              <StatusBadge tone={action.priorityTone}>{action.priorityLabel}</StatusBadge>
+              {action.requiresConfirmation ? <StatusBadge tone="amber">需要确认</StatusBadge> : <StatusBadge tone="emerald">只查看</StatusBadge>}
+            </div>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{action.description}</p>
+          </div>
+          <StatusBadge tone="slate">{action.sourceLabel}</StatusBadge>
+        </div>
+        {action.detailItems?.length ? (
+          <details className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm" open={highlighted}>
+            <summary className="cursor-pointer font-semibold text-slate-700">查看肌群详情</summary>
+            <div className="mt-2 space-y-2 text-xs leading-5 text-slate-600">
+              {action.detailItems.map((item) => (
+                <div key={item.id} className="rounded-md bg-white px-3 py-2">
+                  <div className="font-semibold text-slate-800">{item.label}</div>
+                  <div className="mt-1">{item.reason}</div>
+                  {item.suggestedActions.length ? (
+                    <div className="mt-1 text-slate-500">{item.suggestedActions.join(' / ')}</div>
+                  ) : null}
                 </div>
-              </div>
-              <p className="text-sm leading-6 text-slate-600">{item.reason}</p>
-              <details
-                className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm"
-                open={expandedVolumeMuscleId === item.muscleId}
-                onToggle={(event) => {
-                  const isOpen = event.currentTarget.open;
-                  setExpandedVolumeMuscleId((current) => (isOpen ? item.muscleId : current === item.muscleId ? null : current));
-                }}
-              >
-                <summary className="cursor-pointer font-semibold text-slate-700">查看下周建议</summary>
-                <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
-                  {item.suggestedActions.slice(0, 3).map((action) => (
-                    <div key={action}>- {action}</div>
-                  ))}
-                  <div className="font-semibold text-amber-800">这里只生成计划调整草案入口，不会自动应用到当前计划。</div>
-                </div>
+              ))}
+            </div>
+          </details>
+        ) : null}
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+          <ActionButton
+            type="button"
+            size="sm"
+            variant={action.primaryVariant}
+            fullWidth
+            disabled={!onCoachAction}
+            onClick={() => onCoachAction?.(action.action)}
+          >
+            {action.primaryLabel}
+          </ActionButton>
+          <ActionButton
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={!onDismissCoachAction}
+            onClick={() => onDismissCoachAction?.(action.action)}
+          >
+            暂不处理
+          </ActionButton>
+          <ActionButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={!onCoachAction}
+            onClick={() => onCoachAction?.(action.action)}
+          >
+            查看详情
+          </ActionButton>
+        </div>
+      </Card>
+    );
+  };
+
+  const renderCoachInbox = () => {
+    const inbox = planViewModel.coachInbox;
+    return (
+      <PageSection data-plan-primary-section="coach-inbox" title="待处理建议" description="同类建议已合并显示，生成草案前不会修改当前计划。">
+        {inbox.visibleActions.length ? (
+          <div className="space-y-3">
+            <p className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">{inbox.summary}</p>
+            <div className="space-y-2">{inbox.visibleActions.map(renderCoachInboxAction)}</div>
+            {inbox.hiddenActions.length ? (
+              <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                <summary className="cursor-pointer font-semibold text-slate-700">查看全部建议（还有 {inbox.hiddenCount} 条）</summary>
+                <div className="mt-3 space-y-2">{inbox.hiddenActions.map(renderCoachInboxAction)}</div>
               </details>
-            </Card>
-          );
-        })}
-      </div>
-    ) : null;
+            ) : null}
+          </div>
+        ) : (
+          <EmptyState title="暂无待处理建议" description="积累更多训练记录后，系统会在这里提示可生成草案的建议。" />
+        )}
+      </PageSection>
+    );
+  };
 
   const renderExperimentalTemplates = () => (
     <PageSection title="实验模板" description="实验模板不会覆盖原模板，完成过的训练记录也会保留。">
@@ -670,20 +699,67 @@ export function PlanView({
     </PageSection>
   );
 
+  const renderPlanSideSummary = () => {
+    const sideSummary = planViewModel.sideSummary;
+    const planStatusTone = currentTemplateStatus === '实验模板' ? 'amber' : currentTemplateStatus === '已回滚模板' ? 'slate' : 'emerald';
+    return (
+      <PageSection title="计划摘要" description="桌面侧栏只保留状态和跳转入口，完整建议在主内容区查看。">
+        <Card className="space-y-3">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-slate-500">当前计划状态</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-base font-semibold text-slate-950">{sideSummary.currentTemplate}</span>
+              <StatusBadge tone={planStatusTone}>{currentTemplateStatus}</StatusBadge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-slate-200 bg-stone-50 p-3">
+              <div className="text-xs font-semibold text-slate-500">待处理建议</div>
+              <div className="mt-1 text-xl font-bold text-slate-950">{sideSummary.pendingActionCount} 条</div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-stone-50 p-3">
+              <div className="text-xs font-semibold text-slate-500">调整草案</div>
+              <div className="mt-1 text-xl font-bold text-slate-950">{sideSummary.draftCount} 份</div>
+            </div>
+          </div>
+
+          {sideSummary.experimentStatus ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              <div className="font-semibold">当前实验模板状态</div>
+              <div className="mt-1">{sideSummary.experimentStatus}</div>
+            </div>
+          ) : null}
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="text-xs font-semibold text-slate-500">最近计划提醒</div>
+            <p className="mt-1 text-sm leading-6 text-slate-700">{sideSummary.latestReminder}</p>
+          </div>
+
+          <div className="grid gap-2">
+            <ActionButton size="sm" variant="secondary" onClick={() => scrollToPlanSection(adjustmentSectionRef)}>
+              查看建议
+            </ActionButton>
+            <ActionButton size="sm" variant="secondary" onClick={() => scrollToPlanSection(draftSectionRef)}>
+              查看草案
+            </ActionButton>
+          </div>
+        </Card>
+      </PageSection>
+    );
+  };
+
   const activeDiff = diffTarget ? diffForDraft(diffTarget) : null;
 
   return (
     <ResponsivePageLayout>
-      <PageHeader eyebrow="计划" title="计划管理中心" description="回答“我以后怎么练”：当前计划、周期推进、训练日模板和实验版本。" />
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_420px]">
-        <div className="space-y-4">
+      <PageHeader eyebrow="计划" title="计划管理中心" description="回答“我以后怎么练”：当前计划、周期推进、本周安排和实验版本。" />
+      <div className="grid gap-3 md:gap-4 xl:grid-cols-[minmax(0,1.55fr)_380px]">
+        <div className="space-y-3 md:space-y-4">
           {renderCurrentTemplate()}
           {renderCycleTimeline()}
-          {renderThisWeekDays()}
-          {renderTrainingTemplates()}
-          {renderSelectedTemplateDetail()}
-        </div>
-        <aside className="space-y-4">
+          {renderWeeklySchedule()}
+
           <PageSection title="训练基线" description="等级只影响计划建议的保守程度，不会强制改模板。">
             <Card className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -693,8 +769,8 @@ export function PlanView({
                 <StatusBadge tone="slate">置信度：{formatConfidence(trainingLevelAssessment.confidence)}</StatusBadge>
               </div>
               <p className="text-sm leading-6 text-slate-600">
-                {trainingLevelAssessment.level === 'unknown'
-                  ? '当前模板是起始模板，不是基于历史数据生成。完成 2–3 次训练后，系统会开始校准。'
+                  {trainingLevelAssessment.level === 'unknown'
+                    ? '当前计划使用起始模板，不是基于历史数据生成。完成 2–3 次训练后，系统会开始校准。'
                   : '近期记录会影响高级功能启用、训练量上限和动作复杂度建议。'}
               </p>
             </Card>
@@ -709,50 +785,28 @@ export function PlanView({
           </PageSection>
 
           <div ref={adjustmentSectionRef} className="scroll-mt-24">
-            <PageSection title="调整建议" description="这里是还没有生成草案的建议；只有点击生成后，才会进入下方调整草案区。">
-              {planCoachActionViewModel.pending.length || volumeAdaptationItems.length ? (
-                <div className="space-y-3">
-                  {planCoachActionViewModel.pending.length ? (
-                    <div
-                      ref={coachActionsSectionRef}
-                      className={classNames(
-                        'scroll-mt-24 rounded-lg transition',
-                        highlightTarget?.section === 'coach_actions' ? 'ring-2 ring-emerald-200' : '',
-                      )}
-                    >
-                      <CoachActionList
-                        title="计划相关教练建议"
-                        description="这些建议只引导查看或生成调整草案，不会直接应用到正式计划。"
-                        viewModel={planCoachActionViewModel}
-                        compact
-                        onAction={onCoachAction}
-                        onDismiss={onDismissCoachAction}
-                        onDetail={onCoachAction}
-                      />
-                    </div>
-                  ) : null}
-                  {renderTrainingIntelligenceVolume()}
-                </div>
-              ) : (
-                <EmptyState title="暂无调整建议" description="积累更多训练记录后，系统会在这里提示可生成草案的建议。" />
-              )}
-            </PageSection>
+            {renderCoachInbox()}
           </div>
 
           <div ref={draftSectionRef} className="scroll-mt-24">
-            <PageSection title="调整草案" description="草案是可应用前的预览。应用后会生成实验模板，原模板保留，可回滚。">
+            <PageSection data-plan-primary-section="adjustment-drafts" title="调整草案" description="草案是可应用前的预览。应用后会生成实验模板，原模板保留，可回滚。">
               {adjustmentDrafts.length ? (
                 <div className="space-y-3">{adjustmentDrafts.map(renderAdjustmentDraft)}</div>
               ) : (
-                <EmptyState title="暂无调整草案" description="点击“生成调整草案”后，新草案会出现在这里；应用前仍需要确认。" />
+                <EmptyState title="暂无调整草案" description={planViewModel.adjustmentDrafts.emptyState || '生成草案后，你可以在这里查看差异、应用实验模板或暂不采用。'} />
               )}
             </PageSection>
           </div>
 
           {renderExperimentalTemplates()}
           {renderVersionHistory()}
+        </div>
+        <aside className="hidden space-y-3 xl:block xl:sticky xl:top-4 xl:self-start" aria-label="计划侧栏摘要">
+          {renderPlanSideSummary()}
         </aside>
       </div>
+
+      {renderScheduleDetailDrawer()}
 
       <Drawer open={Boolean(diffTarget && activeDiff)} title="查看调整差异" onClose={() => setDiffTarget(null)}>
         {diffTarget && activeDiff ? (
