@@ -39,7 +39,7 @@ import {
   type CoachActionExecutionResult,
 } from './engines/coachActionEngine';
 import { dismissCoachActionToday, filterVisibleCoachActions, findExistingAdjustmentForCoachAction } from './engines/coachActionDismissEngine';
-import { buildCoachActionFingerprint } from './engines/coachActionIdentityEngine';
+import { buildPlanAdjustmentFingerprintFromCoachAction } from './engines/planAdjustmentIdentityEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -755,7 +755,7 @@ function App() {
       ),
       programAdjustmentDrafts: (current.programAdjustmentDrafts || []).map((draft) =>
         draft.experimentalProgramTemplateId === updatedHistoryItem.experimentalProgramTemplateId
-          ? { ...draft, status: 'rolled_back' }
+          ? { ...draft, status: 'rolled_back', rolledBackAt: updatedHistoryItem.rolledBackAt }
           : draft
       ),
     }));
@@ -957,7 +957,7 @@ function App() {
       };
     }
 
-    const sourceFingerprint = action.sourceFingerprint || buildCoachActionFingerprint(action, {
+    const sourceFingerprint = buildPlanAdjustmentFingerprintFromCoachAction(action, {
       sourceTemplateId: draftInput.sourceTemplate.id,
       suggestedChange: draftInput.recommendation.suggestedChange,
     });

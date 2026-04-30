@@ -616,6 +616,8 @@ export interface TrainingSession {
   programTemplateId?: string;
   programTemplateName?: string;
   isExperimentalTemplate?: boolean;
+  sourceProgramTemplateId?: string;
+  sourceProgramTemplateName?: string;
   trainingMode: TrainingMode;
   focus?: string;
   exercises: ExercisePrescription[];
@@ -968,6 +970,7 @@ export interface ProgramAdjustmentDraft {
   experimentalProgramTemplateId?: string;
   experimentalTemplateName?: string;
   appliedAt?: string;
+  rolledBackAt?: string;
   sourceTemplateSnapshotHash?: string;
   sourceTemplateUpdatedAt?: string;
   title: string;

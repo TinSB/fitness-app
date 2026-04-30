@@ -19,7 +19,7 @@ import type {
 } from '../models/training-model';
 import { buildCoachActionView, type CoachActionView } from './coachActionPresenter';
 import { aggregatePlanAdvice, type AggregatedPlanAdvice } from './planAdviceAggregator';
-import { dedupeProgramAdjustmentDraftsByFingerprint } from '../engines/coachActionIdentityEngine';
+import { dedupePlanAdjustmentDraftsByFingerprint } from '../engines/planAdjustmentIdentityEngine';
 
 export type WeeklyScheduleDayView = {
   id: string;
@@ -271,7 +271,7 @@ const buildDraftView = (draft: ProgramAdjustmentDraft): AdjustmentDraftView => {
 };
 
 const buildAdjustmentDrafts = (data: AppData): PlanViewModel['adjustmentDrafts'] => {
-  const drafts = dedupeProgramAdjustmentDraftsByFingerprint((data.programAdjustmentDrafts || []).filter(isRealDraft)).map(buildDraftView);
+  const drafts = dedupePlanAdjustmentDraftsByFingerprint((data.programAdjustmentDrafts || []).filter(isRealDraft)).map(buildDraftView);
   return {
     drafts,
     emptyState: drafts.length ? undefined : '生成草案后，你可以在这里查看差异、应用实验模板或暂不采用。',

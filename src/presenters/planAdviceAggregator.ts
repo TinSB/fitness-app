@@ -1,6 +1,9 @@
 import type { CoachAction, CoachActionPriority, CoachActionType } from '../engines/coachActionEngine';
 import { draftMatchesCoachAction } from '../engines/coachActionDismissEngine';
-import { buildProgramAdjustmentDraftFingerprint, dedupeProgramAdjustmentDraftsByFingerprint } from '../engines/coachActionIdentityEngine';
+import {
+  buildPlanAdjustmentFingerprintFromDraft,
+  dedupePlanAdjustmentDraftsByFingerprint,
+} from '../engines/planAdjustmentIdentityEngine';
 import type { MuscleVolumeAdaptation, VolumeAdaptationReport } from '../engines/volumeAdaptationEngine';
 import { formatExerciseName, formatMuscleName, formatRiskLevel, formatTemplateName } from '../i18n/formatters';
 import type { ProgramAdjustmentDraft } from '../models/training-model';
@@ -76,7 +79,7 @@ const draftActionIds = (drafts: ProgramAdjustmentDraft[]) =>
   );
 
 const draftFingerprints = (drafts: ProgramAdjustmentDraft[]) =>
-  new Set(drafts.map((draft) => buildProgramAdjustmentDraftFingerprint(draft)).filter(Boolean));
+  new Set(drafts.map((draft) => buildPlanAdjustmentFingerprintFromDraft(draft)).filter(Boolean));
 
 const draftTargets = (drafts: ProgramAdjustmentDraft[]) =>
   new Set(
@@ -265,7 +268,7 @@ const buildGroupedActionAdvice = (category: AggregatedPlanAdviceCategory, action
 };
 
 const buildDraftAdvice = (drafts: ProgramAdjustmentDraft[]): AggregatedPlanAdvice[] =>
-  dedupeProgramAdjustmentDraftsByFingerprint(drafts.filter(isRealDraft)).map((draft) => ({
+  dedupePlanAdjustmentDraftsByFingerprint(drafts.filter(isRealDraft)).map((draft) => ({
     id: `plan-advice-draft-${draft.id}`,
     category: 'draft',
     title: cleanText(draft.title || draft.experimentalTemplateName, '调整草案'),

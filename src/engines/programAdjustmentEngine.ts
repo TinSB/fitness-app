@@ -29,6 +29,7 @@ import type {
   WeeklyActionRecommendation,
 } from '../models/training-model';
 import { clone, enrichExercise, number } from './engineUtils';
+import { buildPlanAdjustmentFingerprintFromDraft } from './planAdjustmentIdentityEngine';
 
 export interface AdjustmentDraftContext {
   programTemplate?: ProgramTemplate | null;
@@ -476,6 +477,7 @@ export const createAdjustmentDraftFromRecommendations = (
   };
   return {
     ...draft,
+    sourceFingerprint: draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft),
     diffPreview: buildAdjustmentDiff(draft, resolvedSourceTemplate, context.programTemplate || DEFAULT_PROGRAM_TEMPLATE, availableTemplates),
   };
 };
@@ -850,7 +852,7 @@ export const applyAdjustmentDraft = (
     sourceProgramTemplateId: sourceProgramTemplate.id,
     experimentalProgramTemplateId: experimentalTemplate.id,
     sourceCoachActionId: draft.sourceCoachActionId,
-    sourceFingerprint: draft.sourceFingerprint,
+    sourceFingerprint: draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft),
     sourceProgramTemplateName: sourceProgramTemplate.name,
     experimentalProgramTemplateName: experimentalTemplate.name,
     mainChangeSummary: experimentalTemplate.adjustmentSummary,
@@ -868,6 +870,7 @@ export const applyAdjustmentDraft = (
       ...draft,
       status: 'applied',
       appliedAt,
+      sourceFingerprint: draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft),
       experimentalProgramTemplateId: experimentalTemplate.id,
     },
     experimentalTemplate,

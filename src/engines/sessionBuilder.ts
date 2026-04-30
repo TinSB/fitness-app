@@ -220,6 +220,8 @@ export const createSession = (
     programTemplateId: template.id,
     programTemplateName: adjustedPlan.name,
     isExperimentalTemplate: Boolean(template.isExperimentalTemplate),
+    sourceProgramTemplateId: template.sourceTemplateId,
+    sourceProgramTemplateName: template.sourceTemplateName,
     focus: adjustedPlan.focus,
     trainingMode: resolvedTrainingMode,
     status: clone(resolvedStatus),

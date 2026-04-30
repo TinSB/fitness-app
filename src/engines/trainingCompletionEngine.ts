@@ -41,6 +41,8 @@ export const finalizeTrainingSession = (session: TrainingSession, finishedAt = n
     programTemplateId: session.programTemplateId || session.templateId,
     programTemplateName: session.programTemplateName || session.templateName,
     isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
+    sourceProgramTemplateId: session.sourceProgramTemplateId,
+    sourceProgramTemplateName: session.sourceProgramTemplateName,
     supportExerciseLogs: Array.isArray(session.supportExerciseLogs) ? session.supportExerciseLogs : [],
     focusWarmupSetLogs,
   };

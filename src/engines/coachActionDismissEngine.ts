@@ -2,9 +2,11 @@ import type { CoachAction } from './coachActionEngine';
 import type { ProgramAdjustmentDraft, ProgramAdjustmentHistoryItem } from '../models/training-model';
 import {
   buildCoachActionFingerprint,
-  buildProgramAdjustmentDraftFingerprint,
-  buildProgramAdjustmentHistoryFingerprint,
 } from './coachActionIdentityEngine';
+import {
+  buildPlanAdjustmentFingerprintFromDraft,
+  buildPlanAdjustmentFingerprintFromHistory,
+} from './planAdjustmentIdentityEngine';
 
 export type DismissedCoachAction = {
   actionId: string;
@@ -75,7 +77,7 @@ export const draftMatchesCoachAction = (
 ) => {
   if (draft.status === 'recommendation') return false;
   const recommendationId = coachRecommendationId(action);
-  const draftFingerprint = buildProgramAdjustmentDraftFingerprint(draft);
+  const draftFingerprint = buildPlanAdjustmentFingerprintFromDraft(draft);
   return (
     draft.sourceCoachActionId === action.id ||
     Boolean(draftFingerprint && draftFingerprint === sourceFingerprint) ||
@@ -93,7 +95,7 @@ export const historyMatchesCoachAction = (
   sourceFingerprint = action.sourceFingerprint || buildCoachActionFingerprint(action, { sourceTemplateId: historyItem.sourceProgramTemplateId }),
 ) => {
   const recommendationId = coachRecommendationId(action);
-  const historyFingerprint = buildProgramAdjustmentHistoryFingerprint(historyItem);
+  const historyFingerprint = buildPlanAdjustmentFingerprintFromHistory(historyItem);
   return (
     historyItem.sourceCoachActionId === action.id ||
     Boolean(historyFingerprint && historyFingerprint === sourceFingerprint) ||
@@ -142,3 +144,4 @@ export function filterVisibleCoachActions(
 }
 
 export const filterResolvedCoachActions = filterVisibleCoachActions;
+export const filterResolvedPlanActions = filterVisibleCoachActions;

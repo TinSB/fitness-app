@@ -50,7 +50,10 @@ import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
 import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
 import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from '../engines/replacementEngine';
 import { DEFAULT_UNIT_SETTINGS, sanitizeUnitSettings } from '../engines/unitConversionEngine';
-import { buildProgramAdjustmentDraftFingerprint, buildProgramAdjustmentHistoryFingerprint } from '../engines/coachActionIdentityEngine';
+import {
+  buildPlanAdjustmentFingerprintFromDraft,
+  buildPlanAdjustmentFingerprintFromHistory,
+} from '../engines/planAdjustmentIdentityEngine';
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
 export const validateProgramSchema = ajv.compile(schema);
@@ -672,6 +675,7 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
       experimentalProgramTemplateId: pickString(raw.experimentalProgramTemplateId) || undefined,
       experimentalTemplateName: pickString(raw.experimentalTemplateName) || undefined,
       appliedAt: pickString(raw.appliedAt) || undefined,
+      rolledBackAt: pickString(raw.rolledBackAt) || undefined,
       sourceTemplateSnapshotHash: pickString(raw.sourceTemplateSnapshotHash) || undefined,
       sourceTemplateUpdatedAt: pickString(raw.sourceTemplateUpdatedAt) || undefined,
       title: pickString(raw.title, '下周实验调整'),
@@ -685,7 +689,7 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
     };
     return {
       ...sanitizedDraft,
-      sourceFingerprint: sanitizedDraft.sourceFingerprint || buildProgramAdjustmentDraftFingerprint(sanitizedDraft),
+      sourceFingerprint: sanitizedDraft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(sanitizedDraft),
     };
   });
 
@@ -738,7 +742,7 @@ const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHi
       };
       return {
         ...sanitizedItem,
-        sourceFingerprint: sanitizedItem.sourceFingerprint || buildProgramAdjustmentHistoryFingerprint(sanitizedItem),
+        sourceFingerprint: sanitizedItem.sourceFingerprint || buildPlanAdjustmentFingerprintFromHistory(sanitizedItem),
       };
     })
     .filter(Boolean) as ProgramAdjustmentHistoryItem[];
@@ -757,6 +761,8 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
     programTemplateId: pickString(raw.programTemplateId) || pickString(raw.templateId) || undefined,
     programTemplateName: pickString(raw.programTemplateName) || pickString(raw.templateName) || undefined,
     isExperimentalTemplate: Boolean(raw.isExperimentalTemplate),
+    sourceProgramTemplateId: pickString(raw.sourceProgramTemplateId) || undefined,
+    sourceProgramTemplateName: pickString(raw.sourceProgramTemplateName) || undefined,
     dataFlag: pickEnum(raw.dataFlag, SESSION_DATA_FLAGS, 'normal'),
     trainingMode: normalizeTrainingMode(raw.trainingMode, 'hybrid'),
     status: sanitizeTodayStatus(raw.status),
