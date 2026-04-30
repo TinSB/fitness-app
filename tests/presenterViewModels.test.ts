@@ -39,7 +39,7 @@ describe('page presenters', () => {
 
   it('summarizes Plan and Profile page entry points without changing data', () => {
     const data = makeAppData();
-    expect(buildPlanViewModel(data).sections).toContain('计划调整');
+    expect(buildPlanViewModel(data).sections).toEqual(['当前计划', '本周安排', '待处理建议', '调整草案']);
     expect(buildProfileViewModel(data).sections).toContain('健康数据导入');
     expect(buildProfileViewModel(data).unitLabel).toBe('kg');
   });

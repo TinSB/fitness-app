@@ -611,15 +611,15 @@ export function PlanView({
   const renderCoachInbox = () => {
     const inbox = planViewModel.coachInbox;
     return (
-      <PageSection data-plan-primary-section="coach-inbox" title="待处理建议" description="同类建议已合并显示，生成草案前不会修改当前计划。">
-        {inbox.visibleActions.length ? (
+      <PageSection data-plan-primary-section="coach-inbox" title="待处理建议" description="同类建议已合并显示，处理前不会修改当前计划。">
+        {inbox.visibleItems.length ? (
           <div className="space-y-3">
             <p className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">{inbox.summary}</p>
-            <div className="space-y-2">{inbox.visibleAdvice.map(renderCoachInboxAction)}</div>
-            {inbox.hiddenAdvice.length ? (
+            <div className="space-y-2">{inbox.visibleItems.map(renderCoachInboxAction)}</div>
+            {inbox.hiddenItems.length ? (
               <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                 <summary className="cursor-pointer font-semibold text-slate-700">查看全部建议（还有 {inbox.hiddenCount} 条）</summary>
-                <div className="mt-3 space-y-2">{inbox.hiddenAdvice.map(renderCoachInboxAction)}</div>
+                <div className="mt-3 space-y-2">{inbox.hiddenItems.map(renderCoachInboxAction)}</div>
               </details>
             ) : null}
           </div>

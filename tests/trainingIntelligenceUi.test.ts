@@ -46,7 +46,7 @@ describe('Training Intelligence UI wiring', () => {
     expect(planSource).toContain('volumeAdaptation: trainingIntelligenceSummary?.volumeAdaptation');
     expect(planSource).toContain('待处理建议');
     expect(planSource).toContain('同类建议已合并显示');
-    expect(planSource).toContain('生成草案前不会修改当前计划');
+    expect(planSource).toContain('处理前不会修改当前计划');
     expect(planSource).not.toContain('volumeAdaptationItems');
     expect(planSource).not.toContain('applyAdjustmentDraft(');
   });
@@ -61,7 +61,7 @@ describe('Training Intelligence UI wiring', () => {
       '训练质量',
       '平台期提示',
       '待处理建议',
-      '同类建议已合并显示，生成草案前不会修改当前计划。',
+      '同类建议已合并显示，处理前不会修改当前计划。',
       '查看肌群详情',
       '查看全部建议',
     ].join('\n');

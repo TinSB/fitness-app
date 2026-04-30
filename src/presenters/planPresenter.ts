@@ -67,10 +67,9 @@ export type PlanViewModel = {
   };
   coachInbox: {
     summary: string;
-    visibleAdvice: PlanCoachInboxActionView[];
-    hiddenAdvice: PlanCoachInboxActionView[];
-    visibleActions: PlanCoachInboxActionView[];
-    hiddenActions: PlanCoachInboxActionView[];
+    visibleItems: PlanCoachInboxActionView[];
+    hiddenItems: PlanCoachInboxActionView[];
+    visibleCount: number;
     hiddenCount: number;
     totalCount: number;
     confirmationCount: number;
@@ -223,13 +222,15 @@ const buildCoachInbox = (
   drafts: ProgramAdjustmentDraft[] = [],
   maxVisible = 3,
 ): PlanViewModel['coachInbox'] => {
+  const visibleLimit = Math.min(Math.max(maxVisible, 0), 2);
   const advice = aggregatePlanAdvice(actions, volumeAdaptation, drafts).filter(
     (item) => item.category !== 'draft' && (item.status === 'suggestion' || item.status === 'needs_confirmation'),
   );
   const views = advice.map(adviceToCoachInboxView);
-  const visibleActions = views.slice(0, maxVisible);
-  const hiddenActions = views.slice(maxVisible);
-  const hiddenCount = hiddenActions.length;
+  const visibleItems = views.slice(0, visibleLimit);
+  const hiddenItems = views.slice(visibleLimit);
+  const visibleCount = visibleItems.length;
+  const hiddenCount = hiddenItems.length;
   const totalCount = advice.reduce((sum, item) => sum + Math.max(item.affectedItems.length, item.sourceActionIds.length, 1), 0);
   const confirmationCount = views.filter((view) => view.requiresConfirmation).length;
   const summary = views.length
@@ -238,10 +239,9 @@ const buildCoachInbox = (
 
   return {
     summary,
-    visibleAdvice: visibleActions,
-    hiddenAdvice: hiddenActions,
-    visibleActions,
-    hiddenActions,
+    visibleItems,
+    hiddenItems,
+    visibleCount,
     hiddenCount,
     totalCount,
     confirmationCount,
@@ -284,7 +284,7 @@ const buildLatestPlanReminder = (
 ) => {
   const readyDraft = adjustmentDrafts.drafts.find((draft) => draft.statusLabel === '待确认' || draft.statusLabel === '草案已生成');
   if (readyDraft) return '有调整草案待确认，应用前请先查看差异。';
-  const firstAction = coachInbox.visibleActions[0] || coachInbox.hiddenActions[0];
+  const firstAction = coachInbox.visibleItems[0] || coachInbox.hiddenItems[0];
   if (firstAction) return firstAction.title;
   if (experimentStatus) return experimentStatus;
   return '当前计划暂无需要处理的提醒。';
@@ -335,14 +335,14 @@ export const buildPlanViewModel = (data: AppData, options: BuildPlanViewModelOpt
     adjustmentDrafts,
     sideSummary: {
       currentTemplate: templateName,
-      pendingActionCount: coachInbox.visibleActions.length + coachInbox.hiddenCount,
+      pendingActionCount: coachInbox.visibleCount + coachInbox.hiddenCount,
       draftCount: adjustmentDrafts.drafts.length,
       experimentStatus,
       latestReminder: buildLatestPlanReminder(coachInbox, adjustmentDrafts, experimentStatus),
     },
     currentTemplateName: templateName,
     templateStateLabel: hasExperimentalTemplate ? '实验模板' : '原始模板',
-    sections: ['当前计划', '本周安排', '待处理建议', '调整草案', '计划调整'],
+    sections: ['当前计划', '本周安排', '待处理建议', '调整草案'],
     hasExperimentalTemplate,
   };
 };

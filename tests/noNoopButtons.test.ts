@@ -43,8 +43,8 @@ describe('no noop user buttons', () => {
   it('keeps Plan advice buttons on aggregated actions instead of raw repeated lists', () => {
     const source = readFileSync(resolve(root, 'src/features/PlanView.tsx'), 'utf8');
 
-    expect(source).toContain('inbox.visibleAdvice.map');
-    expect(source).toContain('inbox.hiddenAdvice.map');
+    expect(source).toContain('inbox.visibleItems.map');
+    expect(source).toContain('inbox.hiddenItems.map');
     expect(source).not.toContain('coachActions.map');
     expect(source).not.toContain('volumeAdaptation?.muscles?.map');
   });

@@ -87,9 +87,9 @@ describe('Plan coach inbox dedupe', () => {
       ],
     });
 
-    expect(vm.coachInbox.visibleActions[0].title).toBe('训练量建议');
-    expect(vm.coachInbox.visibleActions[0].description).toContain('背、腿、胸低于目标');
-    expect(vm.coachInbox.visibleActions[0].detailItems).toHaveLength(3);
+    expect(vm.coachInbox.visibleItems[0].title).toBe('训练量建议');
+    expect(vm.coachInbox.visibleItems[0].description).toContain('背、腿、胸低于目标');
+    expect(vm.coachInbox.visibleItems[0].detailItems).toHaveLength(3);
     expect(vm.coachInbox.summary).toBe('系统发现 3 条计划相关建议，其中 1 条需要确认。');
   });
 
@@ -111,9 +111,9 @@ describe('Plan coach inbox dedupe', () => {
       ],
     });
 
-    expect(vm.coachInbox.visibleActions).toHaveLength(2);
+    expect(vm.coachInbox.visibleItems).toHaveLength(2);
     expect(vm.coachInbox.hiddenCount).toBe(1);
-    expect(vm.coachInbox.hiddenActions).toHaveLength(1);
+    expect(vm.coachInbox.hiddenItems).toHaveLength(1);
   });
 
   it('uses secondary buttons for view-only actions and primary for draft generation', () => {
@@ -134,8 +134,8 @@ describe('Plan coach inbox dedupe', () => {
       ],
     });
 
-    expect(viewOnly.coachInbox.visibleActions[0].primaryVariant).toBe('secondary');
-    expect(executable.coachInbox.visibleActions[0].primaryVariant).toBe('primary');
+    expect(viewOnly.coachInbox.visibleItems[0].primaryVariant).toBe('secondary');
+    expect(executable.coachInbox.visibleItems[0].primaryVariant).toBe('primary');
   });
 
   it('renders one compact pending-advice area instead of repeated volume cards', () => {
@@ -170,8 +170,8 @@ describe('Plan coach inbox dedupe', () => {
   });
 
   it('keeps PlanView on aggregated advice instead of raw coach action mapping', () => {
-    expect(planViewSource).toContain('inbox.visibleAdvice.map');
-    expect(planViewSource).toContain('inbox.hiddenAdvice.map');
+    expect(planViewSource).toContain('inbox.visibleItems.map');
+    expect(planViewSource).toContain('inbox.hiddenItems.map');
     expect(planViewSource).not.toContain('coachActions.map');
   });
 });

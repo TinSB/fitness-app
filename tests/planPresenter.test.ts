@@ -79,7 +79,7 @@ const visibleTextFromPlan = (vm: ReturnType<typeof buildPlanViewModel>) =>
     vm.currentPlan.experimentStatus,
     ...vm.weeklySchedule.days.flatMap((day) => [day.name, day.focus, ...day.primaryExercises]),
     vm.coachInbox.summary,
-    ...vm.coachInbox.visibleActions.flatMap((action) => [
+    ...vm.coachInbox.visibleItems.flatMap((action) => [
       action.title,
       action.description,
       action.sourceLabel,
@@ -155,7 +155,7 @@ describe('planPresenter', () => {
       ],
     });
 
-    const volumeItems = vm.coachInbox.visibleActions.filter((action) => action.sourceLabel === '训练量');
+    const volumeItems = vm.coachInbox.visibleItems.filter((action) => action.sourceLabel === '训练量');
     expect(volumeItems).toHaveLength(1);
     expect(volumeItems[0].title).toBe('训练量建议');
     expect(volumeItems[0].description).toContain('背、胸');
