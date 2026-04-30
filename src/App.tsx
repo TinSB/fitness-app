@@ -35,11 +35,11 @@ import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import {
   buildCoachActionAdjustmentDraftInput,
   buildCoachActions,
-  buildCoachActionSourceFingerprint,
   type CoachAction,
   type CoachActionExecutionResult,
 } from './engines/coachActionEngine';
 import { dismissCoachActionToday, filterVisibleCoachActions, findExistingAdjustmentForCoachAction } from './engines/coachActionDismissEngine';
+import { buildCoachActionFingerprint } from './engines/coachActionIdentityEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -957,7 +957,7 @@ function App() {
       };
     }
 
-    const sourceFingerprint = buildCoachActionSourceFingerprint(action, {
+    const sourceFingerprint = action.sourceFingerprint || buildCoachActionFingerprint(action, {
       sourceTemplateId: draftInput.sourceTemplate.id,
       suggestedChange: draftInput.recommendation.suggestedChange,
     });
@@ -1002,7 +1002,7 @@ function App() {
         highlightedTargetId: existingAdjustment.draft?.id || existingAdjustment.historyItem?.experimentalProgramTemplateId,
       };
     }
-    if (existingAdjustment?.state === 'rolled_back') {
+    if (existingAdjustment?.state === 'rolled_back' || existingAdjustment?.state === 'dismissed' || existingAdjustment?.state === 'expired') {
       setPlanTarget({
         section: 'adjustment_drafts',
         draftId: existingAdjustment.draft?.id,
@@ -1013,7 +1013,7 @@ function App() {
       setActiveTab('plan');
       return {
         status: 'success',
-        message: '该建议对应的实验模板已回滚。',
+        message: '该建议之前已处理，可在调整历史中查看。',
         openedTab: 'plan',
         openedSection: 'adjustment_drafts',
         highlightedTargetId: existingAdjustment.draft?.id || existingAdjustment.historyItem?.experimentalProgramTemplateId,

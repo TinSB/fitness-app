@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCoachActionAdjustmentDraftInput,
-  buildCoachActionSourceFingerprint,
   type CoachAction,
 } from '../src/engines/coachActionEngine';
 import { findExistingAdjustmentForCoachAction } from '../src/engines/coachActionDismissEngine';
+import { buildCoachActionFingerprint } from '../src/engines/coachActionIdentityEngine';
 import { createAdjustmentDraftFromRecommendations } from '../src/engines/programAdjustmentEngine';
 import type { ProgramAdjustmentDraft } from '../src/models/training-model';
 import type { VolumeAdaptationReport } from '../src/engines/volumeAdaptationEngine';
@@ -48,7 +48,7 @@ const makeDraftFromAction = (action = makeAction(), status: ProgramAdjustmentDra
     volumeAdaptation,
   });
   if (!draftInput) throw new Error('Missing draft input');
-  const sourceFingerprint = buildCoachActionSourceFingerprint(action, {
+  const sourceFingerprint = buildCoachActionFingerprint(action, {
     sourceTemplateId: draftInput.sourceTemplate.id,
     suggestedChange: draftInput.recommendation.suggestedChange,
   });
@@ -88,12 +88,12 @@ describe('CoachAction draft dedupe', () => {
     expect(existing?.draft?.status).toBe('applied');
   });
 
-  it('allows regeneration after a dismissed or expired draft', () => {
+  it('treats dismissed or expired same-source drafts as already handled by default', () => {
     const action = makeAction();
     const dismissed = makeDraftFromAction(action, 'dismissed');
     const expired = makeDraftFromAction(action, 'expired');
 
-    expect(findExistingAdjustmentForCoachAction(action, [dismissed], [], dismissed.sourceFingerprint)).toBeNull();
-    expect(findExistingAdjustmentForCoachAction(action, [expired], [], expired.sourceFingerprint)).toBeNull();
+    expect(findExistingAdjustmentForCoachAction(action, [dismissed], [], dismissed.sourceFingerprint)?.state).toBe('dismissed');
+    expect(findExistingAdjustmentForCoachAction(action, [expired], [], expired.sourceFingerprint)?.state).toBe('expired');
   });
 });

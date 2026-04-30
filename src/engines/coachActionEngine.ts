@@ -10,6 +10,7 @@ import type { RecoveryAwareRecommendation } from './recoveryAwareScheduler';
 import type { SessionQualityResult } from './sessionQualityEngine';
 import type { SetAnomaly } from './setAnomalyEngine';
 import type { VolumeAdaptationReport, MuscleVolumeAdaptation } from './volumeAdaptationEngine';
+import { buildCoachActionFingerprint, type CoachActionFingerprintContext } from './coachActionIdentityEngine';
 
 export type CoachActionSource =
   | 'dailyAdjustment'
@@ -132,41 +133,22 @@ const confidenceFromActionPriority = (priority: CoachActionPriority): WeeklyActi
 
 const normalizeText = (value: unknown) => String(value || '').trim().toLowerCase();
 
-const fingerprintPart = (value: unknown) =>
-  String(value ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9._:-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'none';
+export { buildCoachActionFingerprint } from './coachActionIdentityEngine';
 
 export const buildCoachActionSourceFingerprint = (
-  action: Pick<CoachAction, 'id' | 'actionType' | 'source' | 'targetId' | 'targetType'>,
-  options: {
-    sourceTemplateId?: string;
-    suggestedChange?: WeeklyActionRecommendation['suggestedChange'];
-    weekId?: string;
-    cycleId?: string;
-  } = {},
-) => {
-  const change = options.suggestedChange;
-  const setsDelta = Number(change?.setsDelta || 0);
-  const changeDirection = setsDelta > 0 ? 'add' : setsDelta < 0 ? 'remove' : 'none';
-  return [
-    'coach-action',
-    action.actionType,
-    action.source,
-    action.targetType || 'none',
-    action.targetId || action.id,
-    options.sourceTemplateId || 'template-unknown',
-    change?.muscleId || action.targetId || 'target-unknown',
-    change?.exerciseIds?.join(',') || 'exercise-unknown',
-    changeDirection,
-    change?.supportDoseAdjustment || 'support-none',
-    options.weekId || options.cycleId || 'current-cycle',
-  ].map(fingerprintPart).join('|');
-};
+  action: Pick<CoachAction, 'actionType' | 'source' | 'targetId' | 'targetType'> &
+    Partial<Pick<CoachAction, 'title' | 'description' | 'reason'>>,
+  options: CoachActionFingerprintContext = {},
+) =>
+  buildCoachActionFingerprint(
+    {
+      ...action,
+      title: action.title || '',
+      description: action.description || '',
+      reason: action.reason || '',
+    },
+    options,
+  );
 
 const muscleAliases = (muscleId?: string) => {
   const id = normalizeText(muscleId);
@@ -290,14 +272,21 @@ const makeAction = (
     reason: unknown;
     createdAt: string;
     status?: CoachActionStatus;
+    sourceFingerprint?: string;
   },
-): CoachAction => ({
-  ...input,
-  status: input.status || 'pending',
-  title: cleanVisibleText(input.title, '教练建议'),
-  description: cleanVisibleText(input.description, '请先查看详情，再决定是否采用。'),
-  reason: cleanVisibleText(input.reason, '当前建议来自训练记录和状态信号。'),
-});
+): CoachAction => {
+  const action: CoachAction = {
+    ...input,
+    status: input.status || 'pending',
+    title: cleanVisibleText(input.title, '教练建议'),
+    description: cleanVisibleText(input.description, '请先查看详情，再决定是否采用。'),
+    reason: cleanVisibleText(input.reason, '当前建议来自训练记录和状态信号。'),
+  };
+  return {
+    ...action,
+    sourceFingerprint: input.sourceFingerprint || buildCoachActionFingerprint(action),
+  };
+};
 
 const dataHealthPriority = (issue?: DataHealthIssue): CoachActionPriority => {
   if (!issue) return 'medium';
@@ -429,12 +418,22 @@ const plateauPriority = (result: PlateauDetectionResult): CoachActionPriority =>
   return 'low';
 };
 
-const plateauActions = (results: PlateauDetectionResult[] | null | undefined, createdAt: string) =>
+const plateauActions = (results: PlateauDetectionResult[] | null | undefined, createdAt: string, templates: TrainingTemplate[] = []) =>
   (results || [])
     .filter((result) => result.status !== 'none' && result.status !== 'insufficient_data')
     .slice(0, 3)
     .map((result) => {
       const actionType = plateauActionType(result);
+      const sourceTemplate = findTemplateByExercise(templates, result.exerciseId);
+      const actionSeed = {
+        source: 'plateau' as const,
+        actionType,
+        targetType: 'exercise' as const,
+        targetId: result.exerciseId,
+        title: actionType === 'create_plan_adjustment_preview' ? '生成动作调整预览' : '查看动作进展',
+        description: result.title,
+        reason: result.summary || result.signals?.[0]?.reason || result.suggestedActions?.[0] || '',
+      };
       return makeAction({
         id: `plateau-${result.exerciseId}-${result.status}`,
         source: 'plateau',
@@ -448,6 +447,11 @@ const plateauActions = (results: PlateauDetectionResult[] | null | undefined, cr
         title: actionType === 'create_plan_adjustment_preview' ? '生成动作调整预览' : '查看动作进展',
         description: result.title,
         reason: result.summary || result.signals?.[0]?.reason || result.suggestedActions?.[0],
+        sourceFingerprint: buildCoachActionFingerprint(actionSeed, {
+          sourceTemplateId: sourceTemplate?.id,
+          exerciseId: result.exerciseId,
+          suggestedChangeType: 'remove_sets',
+        }),
         confirmTitle: actionType === 'create_plan_adjustment_preview' ? '生成计划调整预览？' : undefined,
         confirmDescription: actionType === 'create_plan_adjustment_preview' ? '只生成预览，不会直接修改正式计划。' : undefined,
       });
@@ -456,9 +460,19 @@ const plateauActions = (results: PlateauDetectionResult[] | null | undefined, cr
 const shouldCreateVolumePreview = (item: MuscleVolumeAdaptation) =>
   item.decision === 'increase' || item.decision === 'decrease';
 
-const volumeActions = (report: VolumeAdaptationReport | null | undefined, createdAt: string) => {
+const volumeActions = (report: VolumeAdaptationReport | null | undefined, createdAt: string, templates: TrainingTemplate[] = []) => {
   const target = (report?.muscles || []).find(shouldCreateVolumePreview);
   if (!target) return [];
+  const sourceTemplate = findTemplateByMuscle(templates, target.muscleId);
+  const previewActionSeed = {
+    source: 'volumeAdaptation' as const,
+    actionType: 'create_plan_adjustment_preview' as const,
+    targetType: 'muscle' as const,
+    targetId: target.muscleId,
+    title: '生成训练量调整预览',
+    description: target.title,
+    reason: target.reason || report?.summary || '',
+  };
   return [
     makeAction({
       id: `volume-preview-${target.muscleId}-${target.decision}`,
@@ -473,6 +487,13 @@ const volumeActions = (report: VolumeAdaptationReport | null | undefined, create
       title: '生成训练量调整预览',
       description: target.title,
       reason: target.reason || report?.summary,
+      sourceFingerprint: buildCoachActionFingerprint(previewActionSeed, {
+        sourceTemplateId: sourceTemplate?.id,
+        suggestedChange: {
+          muscleId: target.muscleId,
+          setsDelta: target.setsDelta,
+        },
+      }),
       confirmTitle: '生成计划调整预览？',
       confirmDescription: '只生成可检查的草案，不会自动覆盖当前训练计划。',
     }),
@@ -582,8 +603,8 @@ export function buildCoachActions({
     nextWorkoutAction(nextWorkout, createdAt),
     recoveryAction(recoveryRecommendation || nextWorkout?.recovery, createdAt),
     sessionQualityAction(sessionQuality, createdAt),
-    ...plateauActions(plateauResults, createdAt),
-    ...volumeActions(volumeAdaptation, createdAt),
+    ...plateauActions(plateauResults, createdAt, appData.templates || []),
+    ...volumeActions(volumeAdaptation, createdAt, appData.templates || []),
     ...recommendationConfidenceActions(recommendationConfidence, createdAt),
   ].filter((action): action is CoachAction => Boolean(action)));
 

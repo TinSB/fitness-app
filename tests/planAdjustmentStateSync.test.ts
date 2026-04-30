@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { CoachAction } from '../src/engines/coachActionEngine';
 import {
   buildCoachActionAdjustmentDraftInput,
-  buildCoachActionSourceFingerprint,
 } from '../src/engines/coachActionEngine';
+import { buildCoachActionFingerprint } from '../src/engines/coachActionIdentityEngine';
 import { applyAdjustmentDraft, createAdjustmentDraftFromRecommendations, rollbackAdjustment } from '../src/engines/programAdjustmentEngine';
 import type { VolumeAdaptationReport } from '../src/engines/volumeAdaptationEngine';
 import { makeAppData } from './fixtures';
@@ -46,7 +46,7 @@ const makeLinkedDraft = () => {
     volumeAdaptation,
   });
   if (!draftInput) throw new Error('Missing draft input');
-  const sourceFingerprint = buildCoachActionSourceFingerprint(action, {
+  const sourceFingerprint = buildCoachActionFingerprint(action, {
     sourceTemplateId: draftInput.sourceTemplate.id,
     suggestedChange: draftInput.recommendation.suggestedChange,
   });

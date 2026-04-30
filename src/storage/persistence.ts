@@ -50,6 +50,7 @@ import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
 import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
 import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from '../engines/replacementEngine';
 import { DEFAULT_UNIT_SETTINGS, sanitizeUnitSettings } from '../engines/unitConversionEngine';
+import { buildProgramAdjustmentDraftFingerprint, buildProgramAdjustmentHistoryFingerprint } from '../engines/coachActionIdentityEngine';
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
 export const validateProgramSchema = ajv.compile(schema);
@@ -617,6 +618,15 @@ const ADJUSTMENT_STATUSES = [
   'previewed',
   'stale',
 ] as const;
+const ADJUSTMENT_HISTORY_STATUSES = [
+  'recommendation',
+  'draft_created',
+  'ready_to_apply',
+  'applied',
+  'dismissed',
+  'expired',
+  'rolled_back',
+] as const;
 const ADJUSTMENT_CHANGE_TYPES = ['add_sets', 'remove_sets', 'add_new_exercise', 'swap_exercise', 'reduce_support', 'increase_support', 'keep'] as const;
 
 const sanitizeAdjustmentChange = (entry: unknown, fallbackId: string) => {
@@ -650,7 +660,7 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
   pickArray(drafts).map((draft, draftIndex) => {
     const raw = pickRecord(draft);
     const id = pickString(raw.id, `adjustment-draft-${draftIndex + 1}`);
-    return {
+    const sanitizedDraft: ProgramAdjustmentDraft = {
       id,
       createdAt: pickString(raw.createdAt, new Date().toISOString()),
       status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'draft'),
@@ -673,6 +683,10 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
       explanation: pickString(raw.explanation) || undefined,
       notes: pickStringArray(raw.notes),
     };
+    return {
+      ...sanitizedDraft,
+      sourceFingerprint: sanitizedDraft.sourceFingerprint || buildProgramAdjustmentDraftFingerprint(sanitizedDraft),
+    };
   });
 
 const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHistoryItem[] =>
@@ -683,7 +697,7 @@ const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHi
       const experimentalProgramTemplateId = pickString(raw.experimentalProgramTemplateId);
       if (!sourceProgramTemplateId || !experimentalProgramTemplateId) return null;
       const id = pickString(raw.id, `adjustment-history-${itemIndex + 1}`);
-      return {
+      const sanitizedItem: ProgramAdjustmentHistoryItem = {
         id,
         appliedAt: pickString(raw.appliedAt, new Date().toISOString()),
         sourceProgramTemplateId,
@@ -695,7 +709,7 @@ const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHi
         mainChangeSummary: pickString(raw.mainChangeSummary) || undefined,
         selectedRecommendationIds: pickStringArray(raw.selectedRecommendationIds),
         changes: pickArray(raw.changes).map((change, index) => sanitizeAdjustmentChange(change, `${id}-change-${index + 1}`)),
-        status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'applied'),
+        status: pickEnum(raw.status, ADJUSTMENT_HISTORY_STATUSES, 'applied'),
         explanation: pickString(raw.explanation) || undefined,
         rollbackAvailable: Boolean(raw.rollbackAvailable) && !raw.rolledBackAt,
         rolledBackAt: pickString(raw.rolledBackAt) || undefined,
@@ -721,6 +735,10 @@ const sanitizeProgramAdjustmentHistory = (history: unknown): ProgramAdjustmentHi
               };
             })()
           : undefined,
+      };
+      return {
+        ...sanitizedItem,
+        sourceFingerprint: sanitizedItem.sourceFingerprint || buildProgramAdjustmentHistoryFingerprint(sanitizedItem),
       };
     })
     .filter(Boolean) as ProgramAdjustmentHistoryItem[];

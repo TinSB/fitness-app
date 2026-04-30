@@ -1,5 +1,6 @@
 import type { CoachAction, CoachActionPriority, CoachActionType } from '../engines/coachActionEngine';
 import { draftMatchesCoachAction } from '../engines/coachActionDismissEngine';
+import { buildProgramAdjustmentDraftFingerprint, dedupeProgramAdjustmentDraftsByFingerprint } from '../engines/coachActionIdentityEngine';
 import type { MuscleVolumeAdaptation, VolumeAdaptationReport } from '../engines/volumeAdaptationEngine';
 import { formatExerciseName, formatMuscleName, formatRiskLevel, formatTemplateName } from '../i18n/formatters';
 import type { ProgramAdjustmentDraft } from '../models/training-model';
@@ -73,6 +74,9 @@ const draftActionIds = (drafts: ProgramAdjustmentDraft[]) =>
       ...(draft.selectedRecommendationIds || []),
     ]).filter(Boolean) as string[],
   );
+
+const draftFingerprints = (drafts: ProgramAdjustmentDraft[]) =>
+  new Set(drafts.map((draft) => buildProgramAdjustmentDraftFingerprint(draft)).filter(Boolean));
 
 const draftTargets = (drafts: ProgramAdjustmentDraft[]) =>
   new Set(
@@ -261,7 +265,7 @@ const buildGroupedActionAdvice = (category: AggregatedPlanAdviceCategory, action
 };
 
 const buildDraftAdvice = (drafts: ProgramAdjustmentDraft[]): AggregatedPlanAdvice[] =>
-  drafts.filter(isRealDraft).map((draft) => ({
+  dedupeProgramAdjustmentDraftsByFingerprint(drafts.filter(isRealDraft)).map((draft) => ({
     id: `plan-advice-draft-${draft.id}`,
     category: 'draft',
     title: cleanText(draft.title || draft.experimentalTemplateName, '调整草案'),
@@ -283,11 +287,13 @@ export const aggregatePlanAdvice = (
   drafts: ProgramAdjustmentDraft[] = [],
 ): AggregatedPlanAdvice[] => {
   const knownDraftActionIds = draftActionIds(drafts.filter(isRealDraft));
+  const knownDraftFingerprints = draftFingerprints(drafts.filter(isRealDraft));
   const knownDraftTargets = draftTargets(drafts.filter(isRealDraft));
   const realDrafts = drafts.filter(isRealDraft);
   const pendingActions = dedupeActions(
     actions
       .filter((action) => action.status === 'pending')
+      .filter((action) => !action.sourceFingerprint || !knownDraftFingerprints.has(action.sourceFingerprint))
       .filter((action) => !shouldExcludeActionForDraft(action, knownDraftActionIds, knownDraftTargets))
       .filter((action) => !realDrafts.some((draft) => draftMatchesCoachAction(action, draft))),
   );
