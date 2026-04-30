@@ -28,6 +28,7 @@ import {
   TRAINING_LEVELS,
   TRAINING_MODES,
   type AppData,
+  type DismissedCoachAction,
   type HealthIntegrationSettings,
   type HealthImportBatch,
   type HealthMetricSample,
@@ -919,6 +920,17 @@ const sanitizeHealthImportBatches = (entries: unknown): HealthImportBatch[] =>
     })
     .filter(Boolean) as HealthImportBatch[];
 
+const sanitizeDismissedCoachActions = (entries: unknown): DismissedCoachAction[] =>
+  pickArray(entries)
+    .map((entry) => {
+      const raw = pickRecord(entry);
+      const actionId = pickString(raw.actionId);
+      const dismissedAt = pickString(raw.dismissedAt);
+      if (!actionId || !dismissedAt || raw.scope !== 'today') return null;
+      return { actionId, dismissedAt, scope: 'today' as const };
+    })
+    .filter(Boolean) as DismissedCoachAction[];
+
 const sanitizeTodayStatus = (status: unknown): TodayStatus => {
   const raw = pickRecord(status);
   const soreness = pickArray(raw.soreness, DEFAULT_STATUS.soreness)
@@ -951,6 +963,9 @@ export const sanitizeData = (saved: unknown): AppData => {
   const importedWorkoutSamples = sanitizeImportedWorkoutSamples(migrated.importedWorkoutSamples ?? pickRecord(migrated.settings).importedWorkoutSamples);
   const healthImportBatches = sanitizeHealthImportBatches(migrated.healthImportBatches ?? pickRecord(migrated.settings).healthImportBatches);
   const healthIntegrationSettings = sanitizeHealthIntegrationSettings(pickRecord(migrated.settings).healthIntegrationSettings);
+  const dismissedCoachActions = sanitizeDismissedCoachActions(
+    migrated.dismissedCoachActions ?? pickRecord(migrated.settings).dismissedCoachActions,
+  );
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
     templates,
@@ -971,6 +986,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     healthMetricSamples,
     importedWorkoutSamples,
     healthImportBatches,
+    dismissedCoachActions,
     settings: {
       ...pickRecord(migrated.settings),
       schemaVersion: STORAGE_VERSION,
@@ -979,6 +995,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       unitSettings,
       healthIntegrationSettings,
       activeProgramTemplateId,
+      dismissedCoachActions,
     },
   };
 
@@ -998,6 +1015,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     sanitized.healthMetricSamples = sanitizeHealthMetricSamples(sanitized.healthMetricSamples);
     sanitized.importedWorkoutSamples = sanitizeImportedWorkoutSamples(sanitized.importedWorkoutSamples);
     sanitized.healthImportBatches = sanitizeHealthImportBatches(sanitized.healthImportBatches);
+    sanitized.dismissedCoachActions = sanitizeDismissedCoachActions(sanitized.dismissedCoachActions);
     sanitized.settings.healthIntegrationSettings = sanitizeHealthIntegrationSettings(sanitized.settings.healthIntegrationSettings);
     sanitized.activeProgramTemplateId = sanitized.templates.some((template) => template.id === sanitized.activeProgramTemplateId)
       ? sanitized.activeProgramTemplateId
@@ -1010,6 +1028,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       unitSettings: sanitized.unitSettings,
       healthIntegrationSettings: sanitized.settings.healthIntegrationSettings,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
+      dismissedCoachActions: sanitized.dismissedCoachActions,
     };
   }
 
@@ -1037,6 +1056,7 @@ export const emptyData = (): AppData =>
     healthMetricSamples: [],
     importedWorkoutSamples: [],
     healthImportBatches: [],
+    dismissedCoachActions: [],
     settings: { healthIntegrationSettings: DEFAULT_HEALTH_INTEGRATION_SETTINGS },
   });
 
@@ -1068,6 +1088,7 @@ export const loadData = (): AppData => {
           healthImportBatches: parseJson(localStorage.getItem(STORAGE_KEYS.healthImportBatches), pickRecord(settings).healthImportBatches || []),
           programAdjustmentDrafts: pickRecord(settings).programAdjustmentDrafts,
           programAdjustmentHistory: pickRecord(settings).programAdjustmentHistory,
+          dismissedCoachActions: pickRecord(settings).dismissedCoachActions,
           activeProgramTemplateId: pickRecord(settings).activeProgramTemplateId,
           selectedTemplateId: pickRecord(settings).selectedTemplateId,
           trainingMode: pickRecord(settings).trainingMode,
@@ -1112,6 +1133,7 @@ export const saveData = (data: AppData) => {
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
       programAdjustmentDrafts: sanitized.programAdjustmentDrafts || [],
       programAdjustmentHistory: sanitized.programAdjustmentHistory || [],
+      dismissedCoachActions: sanitized.dismissedCoachActions || [],
     })
   );
 };

@@ -473,7 +473,7 @@ export function TodayView({
     () => splitCoachReminders(rawCoachReminders, 2),
     [rawCoachReminders],
   );
-  const shouldShowCoachActionList = coachActionListViewModel.pending.length > 0;
+  const shouldShowCoachActionList = coachActionListViewModel.pending.length > 0 || Boolean(coachActions);
   const shouldShowCoachAdvice = !shouldShowCoachActionList && coachReminders.length > 0;
   const coachActionForReminder = (reminder: CoachReminderView) =>
     rawCoachActions.find((action) => reminder.source === `action:${action.id}` || reminder.id === action.id);
@@ -635,6 +635,7 @@ export function TodayView({
                 onAction={onCoachAction}
                 onDismiss={onDismissCoachAction}
                 onDetail={onCoachAction}
+                emptyText="暂无待处理建议"
               />
             ) : null}
 

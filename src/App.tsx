@@ -38,6 +38,7 @@ import {
   type CoachAction,
   type CoachActionExecutionResult,
 } from './engines/coachActionEngine';
+import { dismissCoachActionToday, filterDismissedCoachActions } from './engines/coachActionDismissEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -301,8 +302,8 @@ function App() {
   const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
   const coachActions = React.useMemo(
-    () =>
-      buildCoachActions({
+    () => {
+      const actions = buildCoachActions({
         appData: data,
         dailyAdjustment: coachAutomationSummary.todayAdjustment,
         nextWorkout: coachAutomationSummary.nextWorkout,
@@ -312,7 +313,9 @@ function App() {
         volumeAdaptation: trainingIntelligenceSummary.volumeAdaptation,
         recommendationConfidence: trainingIntelligenceSummary.recommendationConfidence,
         recoveryRecommendation,
-      }),
+      });
+      return filterDismissedCoachActions(actions, data.dismissedCoachActions || [], todayKey());
+    },
     [data, coachAutomationSummary, trainingIntelligenceSummary, recoveryRecommendation],
   );
 
@@ -1131,14 +1134,35 @@ function App() {
       return;
     }
     if (action.actionType === 'dismiss') {
-      showAppToast('已暂不处理。', 'info');
+      handleDismissCoachAction(action.id);
       return;
     }
     showAppToast('已记录为继续观察。', 'info');
   };
 
-  const dismissCoachAction = (_action: CoachAction) => {
-    showAppToast('已暂不处理。', 'info');
+  const handleDismissCoachAction = (actionId: string) => {
+    setData((current) => {
+      const dismissedAt = todayKey();
+      const nextDismissed = [
+        ...(current.dismissedCoachActions || []).filter(
+          (item) => !(item.scope === 'today' && item.actionId === actionId && item.dismissedAt.slice(0, 10) === dismissedAt),
+        ),
+        dismissCoachActionToday(actionId, dismissedAt),
+      ];
+      return {
+        ...current,
+        dismissedCoachActions: nextDismissed,
+        settings: {
+          ...current.settings,
+          dismissedCoachActions: nextDismissed,
+        },
+      };
+    });
+    showAppToast('已暂不处理，今天不再提醒。', 'info');
+  };
+
+  const dismissCoachAction = (action: CoachAction) => {
+    handleDismissCoachAction(action.id);
   };
 
   const revertTemporarySessionPatches = () => {

@@ -1104,7 +1104,14 @@ export interface AppSettings {
   trainingMode?: TrainingMode;
   unitSettings?: UnitSettings;
   healthIntegrationSettings?: HealthIntegrationSettings;
+  dismissedCoachActions?: DismissedCoachAction[];
   [key: string]: unknown;
+}
+
+export interface DismissedCoachAction {
+  actionId: string;
+  dismissedAt: string;
+  scope: 'today';
 }
 
 export interface AppData {
@@ -1127,5 +1134,6 @@ export interface AppData {
   healthMetricSamples?: HealthMetricSample[];
   importedWorkoutSamples?: ImportedWorkoutSample[];
   healthImportBatches?: HealthImportBatch[];
+  dismissedCoachActions?: DismissedCoachAction[];
   settings: AppSettings;
 }
