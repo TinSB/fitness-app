@@ -962,9 +962,12 @@ export interface ProgramAdjustmentDraft {
   status: AdjustmentApplicationStatus;
   sourceProgramTemplateId: string;
   sourceTemplateId?: string;
+  sourceCoachActionId?: string;
   sourceRecommendationId?: string;
+  sourceFingerprint?: string;
   experimentalProgramTemplateId?: string;
   experimentalTemplateName?: string;
+  appliedAt?: string;
   sourceTemplateSnapshotHash?: string;
   sourceTemplateUpdatedAt?: string;
   title: string;
@@ -983,6 +986,8 @@ export interface ProgramAdjustmentHistoryItem {
   appliedAt: string;
   sourceProgramTemplateId: string;
   experimentalProgramTemplateId: string;
+  sourceCoachActionId?: string;
+  sourceFingerprint?: string;
   sourceProgramTemplateName?: string;
   experimentalProgramTemplateName?: string;
   mainChangeSummary?: string;

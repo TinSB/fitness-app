@@ -128,6 +128,8 @@ const canCreateAdjustmentDraft = (action: CoachAction) =>
   Boolean(action.targetId && (action.targetType === 'muscle' || action.targetType === 'exercise'));
 
 export const getCoachActionPrimaryLabel = (actionType: CoachActionType, source?: CoachActionSource, action?: CoachAction) => {
+  if (action?.status === 'applied' && actionType === 'create_plan_adjustment_preview') return '查看实验模板';
+  if (action?.status === 'dismissed' || action?.status === 'expired') return '查看原因';
   if (actionType === 'open_data_health') return '查看数据';
   if (actionType === 'open_record_detail' || actionType === 'review_session') return '查看训练详情';
   if (actionType === 'create_plan_adjustment_preview') return action && !canCreateAdjustmentDraft(action) ? '查看建议' : '生成调整草案';

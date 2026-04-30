@@ -35,10 +35,11 @@ import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import {
   buildCoachActionAdjustmentDraftInput,
   buildCoachActions,
+  buildCoachActionSourceFingerprint,
   type CoachAction,
   type CoachActionExecutionResult,
 } from './engines/coachActionEngine';
-import { dismissCoachActionToday, filterDismissedCoachActions } from './engines/coachActionDismissEngine';
+import { dismissCoachActionToday, filterVisibleCoachActions, findExistingAdjustmentForCoachAction } from './engines/coachActionDismissEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -314,7 +315,13 @@ function App() {
         recommendationConfidence: trainingIntelligenceSummary.recommendationConfidence,
         recoveryRecommendation,
       });
-      return filterDismissedCoachActions(actions, data.dismissedCoachActions || [], todayKey());
+      return filterVisibleCoachActions(
+        actions,
+        data.programAdjustmentDrafts || [],
+        data.programAdjustmentHistory || [],
+        data.dismissedCoachActions || [],
+        todayKey(),
+      );
     },
     [data, coachAutomationSummary, trainingIntelligenceSummary, recoveryRecommendation],
   );
@@ -950,6 +957,69 @@ function App() {
       };
     }
 
+    const sourceFingerprint = buildCoachActionSourceFingerprint(action, {
+      sourceTemplateId: draftInput.sourceTemplate.id,
+      suggestedChange: draftInput.recommendation.suggestedChange,
+    });
+    const existingAdjustment = findExistingAdjustmentForCoachAction(
+      action,
+      data.programAdjustmentDrafts || [],
+      data.programAdjustmentHistory || [],
+      sourceFingerprint,
+    );
+    if (existingAdjustment?.draft && existingAdjustment.state === 'draft_ready') {
+      setPlanTarget({
+        section: 'adjustment_drafts',
+        draftId: existingAdjustment.draft.id,
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      return {
+        status: 'success',
+        message: '已打开已有调整草案。',
+        openedTab: 'plan',
+        openedSection: 'adjustment_drafts',
+        createdDraftId: existingAdjustment.draft.id,
+        highlightedTargetId: existingAdjustment.draft.id,
+      };
+    }
+    if (existingAdjustment?.state === 'applied') {
+      setPlanTarget({
+        section: 'adjustment_drafts',
+        draftId: existingAdjustment.draft?.id,
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      return {
+        status: 'success',
+        message: '该建议已应用为实验模板。',
+        openedTab: 'plan',
+        openedSection: 'adjustment_drafts',
+        highlightedTargetId: existingAdjustment.draft?.id || existingAdjustment.historyItem?.experimentalProgramTemplateId,
+      };
+    }
+    if (existingAdjustment?.state === 'rolled_back') {
+      setPlanTarget({
+        section: 'adjustment_drafts',
+        draftId: existingAdjustment.draft?.id,
+        actionId: action.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      return {
+        status: 'success',
+        message: '该建议对应的实验模板已回滚。',
+        openedTab: 'plan',
+        openedSection: 'adjustment_drafts',
+        highlightedTargetId: existingAdjustment.draft?.id || existingAdjustment.historyItem?.experimentalProgramTemplateId,
+      };
+    }
+
     try {
       const { createAdjustmentDraftFromRecommendations } = await import('./engines/programAdjustmentEngine');
       const { buildAdjustmentDiff } = await import('./engines/programAdjustmentEngine');
@@ -959,8 +1029,18 @@ function App() {
         screeningProfile: data.screeningProfile,
         painPatterns: recoveryPainPatterns,
       });
-      const draft = {
+      const draft: ProgramAdjustmentDraft = {
         ...baseDraft,
+        sourceCoachActionId: action.id,
+        sourceRecommendationId: baseDraft.sourceRecommendationId || draftInput.recommendation.id,
+        sourceFingerprint,
+        selectedRecommendationIds: [
+          ...new Set([
+            ...(baseDraft.selectedRecommendationIds || []),
+            draftInput.recommendation.id,
+            action.id,
+          ]),
+        ],
         diffPreview: buildAdjustmentDiff(baseDraft, draftInput.sourceTemplate, data.programTemplate, data.templates),
       };
       if (!draft.changes.length) {
@@ -983,7 +1063,12 @@ function App() {
 
       setData((current) => ({
         ...current,
-        programAdjustmentDrafts: [draft, ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id)],
+        programAdjustmentDrafts: [
+          draft,
+          ...(current.programAdjustmentDrafts || []).filter(
+            (item) => item.id !== draft.id && item.sourceFingerprint !== draft.sourceFingerprint && item.sourceCoachActionId !== action.id,
+          ),
+        ],
       }));
       setPlanTarget({
         section: 'adjustment_drafts',

@@ -67,6 +67,7 @@ export type CoachAction = {
   reason: string;
   confirmTitle?: string;
   confirmDescription?: string;
+  sourceFingerprint?: string;
 };
 
 export type BuildCoachActionsInput = {
@@ -130,6 +131,42 @@ const confidenceFromActionPriority = (priority: CoachActionPriority): WeeklyActi
 };
 
 const normalizeText = (value: unknown) => String(value || '').trim().toLowerCase();
+
+const fingerprintPart = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9._:-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'none';
+
+export const buildCoachActionSourceFingerprint = (
+  action: Pick<CoachAction, 'id' | 'actionType' | 'source' | 'targetId' | 'targetType'>,
+  options: {
+    sourceTemplateId?: string;
+    suggestedChange?: WeeklyActionRecommendation['suggestedChange'];
+    weekId?: string;
+    cycleId?: string;
+  } = {},
+) => {
+  const change = options.suggestedChange;
+  const setsDelta = Number(change?.setsDelta || 0);
+  const changeDirection = setsDelta > 0 ? 'add' : setsDelta < 0 ? 'remove' : 'none';
+  return [
+    'coach-action',
+    action.actionType,
+    action.source,
+    action.targetType || 'none',
+    action.targetId || action.id,
+    options.sourceTemplateId || 'template-unknown',
+    change?.muscleId || action.targetId || 'target-unknown',
+    change?.exerciseIds?.join(',') || 'exercise-unknown',
+    changeDirection,
+    change?.supportDoseAdjustment || 'support-none',
+    options.weekId || options.cycleId || 'current-cycle',
+  ].map(fingerprintPart).join('|');
+};
 
 const muscleAliases = (muscleId?: string) => {
   const id = normalizeText(muscleId);

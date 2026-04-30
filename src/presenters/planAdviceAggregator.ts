@@ -1,4 +1,5 @@
 import type { CoachAction, CoachActionPriority, CoachActionType } from '../engines/coachActionEngine';
+import { draftMatchesCoachAction } from '../engines/coachActionDismissEngine';
 import type { MuscleVolumeAdaptation, VolumeAdaptationReport } from '../engines/volumeAdaptationEngine';
 import { formatExerciseName, formatMuscleName, formatRiskLevel, formatTemplateName } from '../i18n/formatters';
 import type { ProgramAdjustmentDraft } from '../models/training-model';
@@ -66,7 +67,9 @@ const draftStatus = (draft: ProgramAdjustmentDraft): AggregatedPlanAdviceStatus 
 const draftActionIds = (drafts: ProgramAdjustmentDraft[]) =>
   new Set(
     drafts.flatMap((draft) => [
+      draft.sourceCoachActionId,
       draft.sourceRecommendationId,
+      draft.sourceFingerprint,
       ...(draft.selectedRecommendationIds || []),
     ]).filter(Boolean) as string[],
   );
@@ -88,6 +91,7 @@ const isRealDraft = (draft: ProgramAdjustmentDraft) => draft.status !== 'recomme
 
 const shouldExcludeActionForDraft = (action: CoachAction, knownDraftActionIds: Set<string>, knownDraftTargets: Set<string>) => {
   if (knownDraftActionIds.has(action.id)) return true;
+  if (action.sourceFingerprint && knownDraftActionIds.has(action.sourceFingerprint)) return true;
   const key = actionTargetKey(action);
   return Boolean(key && knownDraftTargets.has(key));
 };
@@ -280,10 +284,12 @@ export const aggregatePlanAdvice = (
 ): AggregatedPlanAdvice[] => {
   const knownDraftActionIds = draftActionIds(drafts.filter(isRealDraft));
   const knownDraftTargets = draftTargets(drafts.filter(isRealDraft));
+  const realDrafts = drafts.filter(isRealDraft);
   const pendingActions = dedupeActions(
     actions
       .filter((action) => action.status === 'pending')
-      .filter((action) => !shouldExcludeActionForDraft(action, knownDraftActionIds, knownDraftTargets)),
+      .filter((action) => !shouldExcludeActionForDraft(action, knownDraftActionIds, knownDraftTargets))
+      .filter((action) => !realDrafts.some((draft) => draftMatchesCoachAction(action, draft))),
   );
   const grouped = new Map<AggregatedPlanAdviceCategory, CoachAction[]>();
   pendingActions.forEach((action) => {

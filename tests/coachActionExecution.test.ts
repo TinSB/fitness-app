@@ -35,7 +35,8 @@ describe('coach action execution', () => {
 
     expect(app).toContain('createPlanAdjustmentDraftFromCoachAction');
     expect(app).toContain('createAdjustmentDraftFromRecommendations');
-    expect(app).toContain("programAdjustmentDrafts: [draft");
+    expect(app).toContain('programAdjustmentDrafts: [');
+    expect(app).toContain('sourceFingerprint');
     expect(app).toContain("section: 'adjustment_drafts'");
     expect(app).toContain('已生成调整草案，应用前请确认。');
     expect(app).not.toContain('已打开计划页；这里只引导生成草案');

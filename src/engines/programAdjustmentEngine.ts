@@ -849,6 +849,8 @@ export const applyAdjustmentDraft = (
     appliedAt,
     sourceProgramTemplateId: sourceProgramTemplate.id,
     experimentalProgramTemplateId: experimentalTemplate.id,
+    sourceCoachActionId: draft.sourceCoachActionId,
+    sourceFingerprint: draft.sourceFingerprint,
     sourceProgramTemplateName: sourceProgramTemplate.name,
     experimentalProgramTemplateName: experimentalTemplate.name,
     mainChangeSummary: experimentalTemplate.adjustmentSummary,
@@ -865,6 +867,7 @@ export const applyAdjustmentDraft = (
     draft: {
       ...draft,
       status: 'applied',
+      appliedAt,
       experimentalProgramTemplateId: experimentalTemplate.id,
     },
     experimentalTemplate,
