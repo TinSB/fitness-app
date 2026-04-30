@@ -66,6 +66,7 @@ interface PlanViewProps {
   onApplyProgramAdjustmentDraft?: (draft: ProgramAdjustmentDraft) => void;
   onDismissProgramAdjustmentDraft?: (draftId: string) => void;
   onDeleteProgramAdjustmentDraft?: (draftId: string) => void;
+  onRegenerateProgramAdjustmentDraft?: (draft: ProgramAdjustmentDraft) => void;
   onCoachAction?: (action: CoachAction) => void;
   onDismissCoachAction?: (action: CoachAction) => void;
   onRollbackProgramAdjustment?: (historyItemId: string) => void;
@@ -174,6 +175,7 @@ export function PlanView({
   onApplyProgramAdjustmentDraft,
   onDismissProgramAdjustmentDraft,
   onDeleteProgramAdjustmentDraft,
+  onRegenerateProgramAdjustmentDraft,
   onCoachAction,
   onDismissCoachAction,
   onRollbackProgramAdjustment,
@@ -185,6 +187,7 @@ export function PlanView({
   const [scheduleDetailTemplate, setScheduleDetailTemplate] = React.useState<TrainingTemplate | null>(null);
   const adjustmentSectionRef = React.useRef<HTMLDivElement | null>(null);
   const draftSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const historySectionRef = React.useRef<HTMLDivElement | null>(null);
   const [highlightTarget, setHighlightTarget] = React.useState<PlanTarget | null>(() => (target?.highlight === false ? null : target || null));
   const fallbackTemplateId = data.templates.some((item) => item.id === selectedTemplateId) ? selectedTemplateId : data.templates[0]?.id || selectedTemplateId;
   const selectedTemplate = findTemplate(data.templates, fallbackTemplateId) as TrainingTemplate;
@@ -516,6 +519,16 @@ export function PlanView({
                 回滚到原模板
               </ActionButton>
             ) : null}
+            {isRolledBack && onRegenerateProgramAdjustmentDraft ? (
+              <ActionButton size="sm" variant="secondary" onClick={() => onRegenerateProgramAdjustmentDraft(draft)}>
+                重新生成草案
+              </ActionButton>
+            ) : null}
+            {isRolledBack ? (
+              <ActionButton size="sm" variant="secondary" onClick={() => scrollToPlanSection(historySectionRef)}>
+                查看历史
+              </ActionButton>
+            ) : null}
             {!isApplied && !isRolledBack && draft.status !== 'dismissed' && onDismissProgramAdjustmentDraft ? (
               <ActionButton size="sm" variant="secondary" onClick={() => onDismissProgramAdjustmentDraft(draft.id)}>
                 暂不采用
@@ -790,7 +803,9 @@ export function PlanView({
           </div>
 
           {renderExperimentalTemplates()}
-          {renderVersionHistory()}
+          <div ref={historySectionRef} className="scroll-mt-24">
+            {renderVersionHistory()}
+          </div>
         </div>
         <aside className="hidden space-y-3 xl:block xl:sticky xl:top-4 xl:self-start" aria-label="计划侧栏摘要">
           {renderPlanSideSummary()}

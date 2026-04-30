@@ -91,6 +91,52 @@ export const buildPlanAdjustmentFingerprintFromHistory = (item: ProgramAdjustmen
 
 export const dedupePlanAdjustmentDraftsByFingerprint = dedupeProgramAdjustmentDraftsByFingerprint;
 
+const reusableDraftStatuses = new Set(['draft_created', 'ready_to_apply', 'draft', 'previewed']);
+
+export const findReusablePlanAdjustmentDraft = (
+  sourceDraft: ProgramAdjustmentDraft,
+  drafts: ProgramAdjustmentDraft[] = [],
+) => {
+  const sourceFingerprint = sourceDraft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(sourceDraft);
+  return drafts.find((item) => {
+    if (item.id === sourceDraft.id) return false;
+    const itemFingerprint = item.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(item);
+    return itemFingerprint === sourceFingerprint && reusableDraftStatuses.has(String(item.status));
+  });
+};
+
+export const buildRegeneratedPlanAdjustmentDraft = (
+  sourceDraft: ProgramAdjustmentDraft,
+  drafts: ProgramAdjustmentDraft[] = [],
+  options: { now?: string; draftId?: string } = {},
+): { sourceFingerprint: string; existingDraft?: ProgramAdjustmentDraft; draft?: ProgramAdjustmentDraft } => {
+  const sourceFingerprint = sourceDraft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(sourceDraft);
+  const existingDraft = findReusablePlanAdjustmentDraft(sourceDraft, drafts);
+  if (existingDraft) {
+    return { sourceFingerprint, existingDraft };
+  }
+
+  const sameSourceDrafts = drafts.filter(
+    (item) => (item.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(item)) === sourceFingerprint,
+  );
+  const nextRevision = Math.max(1, ...sameSourceDrafts.map((item) => item.draftRevision || 1)) + 1;
+  const now = options.now || new Date().toISOString();
+  const nextDraft: ProgramAdjustmentDraft = {
+    ...sourceDraft,
+    id: options.draftId || `adjustment-draft-${sourceDraft.id}-r${nextRevision}`,
+    parentDraftId: sourceDraft.id,
+    draftRevision: nextRevision,
+    createdAt: now,
+    status: 'ready_to_apply',
+    sourceFingerprint,
+    appliedAt: undefined,
+    rolledBackAt: undefined,
+    experimentalProgramTemplateId: undefined,
+  };
+
+  return { sourceFingerprint, draft: nextDraft };
+};
+
 export const buildPlanAdjustmentFingerprintFromChange = (
   change: AdjustmentChange,
   input: Pick<PlanAdjustmentFingerprintInput, 'source' | 'sourceCoachActionId' | 'sourceTemplateId' | 'sourceProgramTemplateId' | 'weekId' | 'cycleId'> = {},

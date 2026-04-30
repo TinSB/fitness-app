@@ -11,7 +11,13 @@ import type { ActionButtonVariant } from '../ui/ActionButton';
 
 export type AggregatedPlanAdviceCategory = 'volume' | 'plateau' | 'recovery' | 'data_health' | 'draft' | 'template' | 'other';
 
-export type AggregatedPlanAdviceStatus = 'suggestion' | 'draft_ready' | 'needs_confirmation' | 'applied' | 'dismissed';
+export type AggregatedPlanAdviceStatus =
+  | 'suggestion'
+  | 'draft_ready'
+  | 'needs_confirmation'
+  | 'applied'
+  | 'dismissed'
+  | 'rolled_back';
 
 export type AggregatedPlanAdviceAffectedItem = {
   type: 'muscle' | 'exercise' | 'template' | 'session';
@@ -48,7 +54,7 @@ const priorityRank: Record<CoachActionPriority, number> = {
 };
 
 const rawTokenPattern =
-  /\b(undefined|null|increase|decrease|maintain|hold|pending|applied|dismissed|expired|failed|urgent|high|medium|low|create_plan_adjustment_preview|review_volume|review_exercise|volumeAdaptation|plateau|dataHealth)\b/gi;
+  /\b(undefined|null|increase|decrease|maintain|hold|pending|applied|dismissed|expired|failed|rolled_back|urgent|high|medium|low|create_plan_adjustment_preview|review_volume|review_exercise|volumeAdaptation|plateau|dataHealth)\b/gi;
 
 const cleanText = (value: unknown, fallback: string) => {
   const text = String(value ?? '')
@@ -64,7 +70,7 @@ const strongestPriority = (priorities: CoachActionPriority[]): CoachActionPriori
 const draftStatus = (draft: ProgramAdjustmentDraft): AggregatedPlanAdviceStatus => {
   if (draft.status === 'applied') return 'applied';
   if (draft.status === 'dismissed') return 'dismissed';
-  if (draft.status === 'rolled_back') return 'dismissed';
+  if (draft.status === 'rolled_back') return 'rolled_back';
   return 'draft_ready';
 };
 
@@ -95,6 +101,8 @@ const draftTargets = (drafts: ProgramAdjustmentDraft[]) =>
 const actionTargetKey = (action: CoachAction) => (action.targetId && action.targetType ? `${action.targetType}:${action.targetId}` : '');
 
 const isRealDraft = (draft: ProgramAdjustmentDraft) => draft.status !== 'recommendation';
+const isBlockingDraftForAdvice = (draft: ProgramAdjustmentDraft) =>
+  isRealDraft(draft) && draft.status !== 'rolled_back';
 
 const shouldExcludeActionForDraft = (action: CoachAction, knownDraftActionIds: Set<string>, knownDraftTargets: Set<string>) => {
   if (knownDraftActionIds.has(action.id)) return true;
@@ -289,16 +297,16 @@ export const aggregatePlanAdvice = (
   volumeAdaptation?: VolumeAdaptationReport | null,
   drafts: ProgramAdjustmentDraft[] = [],
 ): AggregatedPlanAdvice[] => {
-  const knownDraftActionIds = draftActionIds(drafts.filter(isRealDraft));
-  const knownDraftFingerprints = draftFingerprints(drafts.filter(isRealDraft));
-  const knownDraftTargets = draftTargets(drafts.filter(isRealDraft));
-  const realDrafts = drafts.filter(isRealDraft);
+  const blockingDrafts = drafts.filter(isBlockingDraftForAdvice);
+  const knownDraftActionIds = draftActionIds(blockingDrafts);
+  const knownDraftFingerprints = draftFingerprints(blockingDrafts);
+  const knownDraftTargets = draftTargets(blockingDrafts);
   const pendingActions = dedupeActions(
     actions
       .filter((action) => action.status === 'pending')
       .filter((action) => !action.sourceFingerprint || !knownDraftFingerprints.has(action.sourceFingerprint))
       .filter((action) => !shouldExcludeActionForDraft(action, knownDraftActionIds, knownDraftTargets))
-      .filter((action) => !realDrafts.some((draft) => draftMatchesCoachAction(action, draft))),
+      .filter((action) => !blockingDrafts.some((draft) => draftMatchesCoachAction(action, draft))),
   );
   const grouped = new Map<AggregatedPlanAdviceCategory, CoachAction[]>();
   pendingActions.forEach((action) => {

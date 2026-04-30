@@ -960,6 +960,8 @@ export interface AdjustmentChange {
 
 export interface ProgramAdjustmentDraft {
   id: string;
+  parentDraftId?: string;
+  draftRevision?: number;
   createdAt: string;
   status: AdjustmentApplicationStatus;
   sourceProgramTemplateId: string;

@@ -46,7 +46,7 @@ export function filterDismissedCoachActions(
 }
 
 const activeDraftStatuses = new Set(['draft_created', 'ready_to_apply', 'draft', 'previewed']);
-const handledDraftStatuses = new Set(['applied', 'rolled_back', 'dismissed', 'expired', 'stale']);
+const resolvedDraftStatuses = new Set(['applied', 'dismissed', 'expired', 'stale']);
 
 const coachRecommendationId = (action: CoachAction) => `coach-action-${action.id}`;
 
@@ -111,22 +111,31 @@ export function findExistingAdjustmentForCoachAction(
   adjustmentHistory: ProgramAdjustmentHistoryItem[] = [],
   sourceFingerprint?: string,
 ): { draft?: ProgramAdjustmentDraft; historyItem?: ProgramAdjustmentHistoryItem; state?: 'draft_ready' | 'applied' | 'rolled_back' | 'dismissed' | 'expired' } | null {
-  const matchingDraft = drafts.find((draft) => draftMatchesCoachAction(action, draft, sourceFingerprint));
-  if (matchingDraft) {
-    if (activeDraftStatuses.has(String(matchingDraft.status))) return { draft: matchingDraft, state: 'draft_ready' };
-    if (matchingDraft.status === 'applied') return { draft: matchingDraft, state: 'applied' };
-    if (matchingDraft.status === 'rolled_back') return { draft: matchingDraft, state: 'rolled_back' };
-    if (matchingDraft.status === 'dismissed') return { draft: matchingDraft, state: 'dismissed' };
-    if (handledDraftStatuses.has(String(matchingDraft.status))) return { draft: matchingDraft, state: 'expired' };
+  const matchingDrafts = drafts.filter((draft) => draftMatchesCoachAction(action, draft, sourceFingerprint));
+  const activeDraft = matchingDrafts.find((draft) => activeDraftStatuses.has(String(draft.status)));
+  if (activeDraft) return { draft: activeDraft, state: 'draft_ready' };
+  const appliedDraft = matchingDrafts.find((draft) => draft.status === 'applied');
+  if (appliedDraft) return { draft: appliedDraft, state: 'applied' };
+  const dismissedDraft = matchingDrafts.find((draft) => draft.status === 'dismissed');
+  if (dismissedDraft) return { draft: dismissedDraft, state: 'dismissed' };
+  const expiredDraft = matchingDrafts.find((draft) => draft.status === 'expired' || draft.status === 'stale');
+  if (expiredDraft) return { draft: expiredDraft, state: 'expired' };
+  const rolledBackDraft = matchingDrafts.find((draft) => draft.status === 'rolled_back');
+  if (rolledBackDraft) {
+    const hasBlockingDraft = matchingDrafts.some((draft) => resolvedDraftStatuses.has(String(draft.status)) || activeDraftStatuses.has(String(draft.status)));
+    if (!hasBlockingDraft) return { draft: rolledBackDraft, state: 'rolled_back' };
   }
 
-  const matchingHistory = adjustmentHistory.find((item) => historyMatchesCoachAction(action, item, sourceFingerprint));
+  const matchingHistories = adjustmentHistory.filter((item) => historyMatchesCoachAction(action, item, sourceFingerprint));
+  const matchingHistory = matchingHistories.find((item) => item.status !== 'rolled_back' && !item.rolledBackAt);
   if (matchingHistory) {
     return {
       historyItem: matchingHistory,
-      state: matchingHistory.status === 'rolled_back' || matchingHistory.rolledBackAt ? 'rolled_back' : 'applied',
+      state: 'applied',
     };
   }
+  const rolledBackHistory = matchingHistories.find((item) => item.status === 'rolled_back' || item.rolledBackAt);
+  if (rolledBackHistory) return { historyItem: rolledBackHistory, state: 'rolled_back' };
 
   return null;
 }
@@ -139,7 +148,10 @@ export function filterVisibleCoachActions(
   currentDate: string,
 ): CoachAction[] {
   return filterDismissedCoachActions(actions, dismissedActions, currentDate).filter(
-    (action) => !findExistingAdjustmentForCoachAction(action, drafts, adjustmentHistory),
+    (action) => {
+      const existing = findExistingAdjustmentForCoachAction(action, drafts, adjustmentHistory);
+      return !existing || existing.state === 'rolled_back';
+    },
   );
 }
 

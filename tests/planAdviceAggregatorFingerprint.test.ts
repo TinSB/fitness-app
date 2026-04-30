@@ -58,6 +58,14 @@ describe('Plan advice aggregator fingerprint dedupe', () => {
     expect(advice.filter((item) => item.category === 'draft')).toHaveLength(1);
   });
 
+  it('does not use a rolled-back draft to suppress a still-valid pending action', () => {
+    const action = makeAction('back');
+    const advice = aggregatePlanAdvice([action], null, [makeDraft(action, 'rolled_back')]);
+
+    expect(advice.some((item) => item.category === 'volume')).toBe(true);
+    expect(advice.some((item) => item.category === 'draft' && item.status === 'rolled_back')).toBe(true);
+  });
+
   it('shows only one draft for duplicate legacy entries with the same fingerprint, preferring applied', () => {
     const action = makeAction('back');
     const ready = makeDraft(action, 'ready_to_apply');

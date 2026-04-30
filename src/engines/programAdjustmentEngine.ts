@@ -452,6 +452,7 @@ export const createAdjustmentDraftFromRecommendations = (
 
   const draft: ProgramAdjustmentDraft = {
     id: makeId('adjustment-draft'),
+    draftRevision: 1,
     createdAt: new Date().toISOString(),
     status: 'ready_to_apply',
     sourceProgramTemplateId: resolvedSourceTemplate.id,

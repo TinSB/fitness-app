@@ -39,7 +39,10 @@ import {
   type CoachActionExecutionResult,
 } from './engines/coachActionEngine';
 import { dismissCoachActionToday, filterVisibleCoachActions, findExistingAdjustmentForCoachAction } from './engines/coachActionDismissEngine';
-import { buildPlanAdjustmentFingerprintFromCoachAction } from './engines/planAdjustmentIdentityEngine';
+import {
+  buildRegeneratedPlanAdjustmentDraft,
+  buildPlanAdjustmentFingerprintFromCoachAction,
+} from './engines/planAdjustmentIdentityEngine';
 import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -780,6 +783,41 @@ function App() {
     showAppToast('已删除调整草案。', 'success');
   };
 
+  const regenerateProgramAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
+    const result = buildRegeneratedPlanAdjustmentDraft(draft, data.programAdjustmentDrafts || [], {
+      now: new Date().toISOString(),
+      draftId: `adjustment-draft-${Date.now()}`,
+    });
+
+    if (result.existingDraft) {
+      setPlanTarget({
+        section: 'adjustment_drafts',
+        draftId: result.existingDraft.id,
+        highlight: true,
+        version: Date.now(),
+      });
+      setActiveTab('plan');
+      showAppToast('已打开已有调整草案。', 'info');
+      return;
+    }
+
+    const nextDraft = result.draft;
+    if (!nextDraft) return;
+
+    setData((current) => ({
+      ...current,
+      programAdjustmentDrafts: [nextDraft, ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== nextDraft.id)],
+    }));
+    setPlanTarget({
+      section: 'adjustment_drafts',
+      draftId: nextDraft.id,
+      highlight: true,
+      version: Date.now(),
+    });
+    setActiveTab('plan');
+    showAppToast('已重新生成调整草案，应用前请确认。', 'success');
+  };
+
   const updateUserProfile = (field: string, value: string) => {
     setData((current) => ({
       ...current,
@@ -1002,7 +1040,7 @@ function App() {
         highlightedTargetId: existingAdjustment.draft?.id || existingAdjustment.historyItem?.experimentalProgramTemplateId,
       };
     }
-    if (existingAdjustment?.state === 'rolled_back' || existingAdjustment?.state === 'dismissed' || existingAdjustment?.state === 'expired') {
+    if (existingAdjustment?.state === 'dismissed' || existingAdjustment?.state === 'expired') {
       setPlanTarget({
         section: 'adjustment_drafts',
         draftId: existingAdjustment.draft?.id,
@@ -1018,6 +1056,40 @@ function App() {
         openedSection: 'adjustment_drafts',
         highlightedTargetId: existingAdjustment.draft?.id || existingAdjustment.historyItem?.experimentalProgramTemplateId,
       };
+    }
+    if (existingAdjustment?.state === 'rolled_back' && existingAdjustment.draft) {
+      const result = buildRegeneratedPlanAdjustmentDraft(existingAdjustment.draft, data.programAdjustmentDrafts || [], {
+        now: new Date().toISOString(),
+        draftId: `adjustment-draft-${Date.now()}`,
+      });
+      const targetDraft = result.existingDraft || result.draft;
+      if (targetDraft) {
+        if (result.draft) {
+          setData((current) => ({
+            ...current,
+            programAdjustmentDrafts: [
+              result.draft!,
+              ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== result.draft!.id),
+            ],
+          }));
+        }
+        setPlanTarget({
+          section: 'adjustment_drafts',
+          draftId: targetDraft.id,
+          actionId: action.id,
+          highlight: true,
+          version: Date.now(),
+        });
+        setActiveTab('plan');
+        return {
+          status: 'success',
+          message: result.existingDraft ? '已打开已有调整草案。' : '已重新生成调整草案，应用前请确认。',
+          openedTab: 'plan',
+          openedSection: 'adjustment_drafts',
+          createdDraftId: targetDraft.id,
+          highlightedTargetId: targetDraft.id,
+        };
+      }
     }
 
     try {
@@ -1065,9 +1137,7 @@ function App() {
         ...current,
         programAdjustmentDrafts: [
           draft,
-          ...(current.programAdjustmentDrafts || []).filter(
-            (item) => item.id !== draft.id && item.sourceFingerprint !== draft.sourceFingerprint && item.sourceCoachActionId !== action.id,
-          ),
+          ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
         ],
       }));
       setPlanTarget({
@@ -1421,6 +1491,7 @@ function App() {
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onDismissProgramAdjustmentDraft={dismissProgramAdjustmentDraft}
                       onDeleteProgramAdjustmentDraft={deleteProgramAdjustmentDraft}
+                      onRegenerateProgramAdjustmentDraft={regenerateProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
                     />
                   </Suspense>

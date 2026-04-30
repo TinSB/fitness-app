@@ -77,11 +77,11 @@ describe('resolved coach action filter', () => {
     expect(filterResolvedPlanActions([back, chest], [], [makeHistory(back)], [], '2026-04-30')).toEqual([chest]);
   });
 
-  it('hides rolled back and dismissed same-source drafts without deleting actions', () => {
+  it('allows rolled back same-source drafts while hiding dismissed drafts', () => {
     const back = makeAction('back');
     const chest = makeAction('chest');
 
-    expect(filterResolvedPlanActions([back, chest], [makeDraft(back, 'rolled_back')], [], [], '2026-04-30')).toEqual([chest]);
+    expect(filterResolvedPlanActions([back, chest], [makeDraft(back, 'rolled_back')], [], [], '2026-04-30')).toEqual([back, chest]);
     expect(filterResolvedPlanActions([back, chest], [makeDraft(back, 'dismissed')], [], [], '2026-04-30')).toEqual([chest]);
   });
 

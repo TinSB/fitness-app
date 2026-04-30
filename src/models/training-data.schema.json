@@ -426,6 +426,8 @@
       "required": ["id", "createdAt", "status", "sourceProgramTemplateId", "title", "summary", "selectedRecommendationIds", "changes", "confidence", "notes"],
       "properties": {
         "id": { "type": "string" },
+        "parentDraftId": { "type": "string" },
+        "draftRevision": { "type": "integer", "minimum": 1 },
         "createdAt": { "type": "string" },
         "status": { "type": "string", "enum": ["recommendation", "draft_created", "ready_to_apply", "draft", "previewed", "applied", "rolled_back", "dismissed", "expired", "stale"] },
         "sourceProgramTemplateId": { "type": "string" },

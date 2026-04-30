@@ -665,6 +665,8 @@ const sanitizeProgramAdjustmentDrafts = (drafts: unknown): ProgramAdjustmentDraf
     const id = pickString(raw.id, `adjustment-draft-${draftIndex + 1}`);
     const sanitizedDraft: ProgramAdjustmentDraft = {
       id,
+      parentDraftId: pickString(raw.parentDraftId) || undefined,
+      draftRevision: Number.isFinite(number(raw.draftRevision)) ? Math.max(1, Math.round(number(raw.draftRevision))) : undefined,
       createdAt: pickString(raw.createdAt, new Date().toISOString()),
       status: pickEnum(raw.status, ADJUSTMENT_STATUSES, 'draft'),
       sourceProgramTemplateId: pickString(raw.sourceProgramTemplateId),
