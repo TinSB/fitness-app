@@ -17,12 +17,24 @@ export type WarmupPolicyInput = {
   exercise: ExercisePrescription;
   exerciseIndex: number;
   previousExercises?: ExercisePrescription[];
+  previousWarmupDecisions?: WarmupDecision[];
+  warmedMuscles?: string[];
+  warmedMovementPatterns?: string[];
+  warmupContext?: Partial<WarmupContext>;
   completedWarmupPatterns?: string[];
   plannedWeight?: number;
   sessionContext?: {
     highLoadThresholdKg?: number;
     allExercisesWarmup?: boolean;
   };
+};
+
+export type WarmupContext = {
+  exerciseIndex: number;
+  previousExercises: ExercisePrescription[];
+  previousWarmupDecisions: WarmupDecision[];
+  warmedMuscles: string[];
+  warmedMovementPatterns: string[];
 };
 
 const horizontalPushTerms = ['bench', 'press', 'push', 'chest', 'incline', '卧推', '推胸', '上斜', '胸推', '水平推'];
@@ -82,6 +94,19 @@ const canonicalMovementPattern = (value?: string) => {
   return normalized;
 };
 
+const movementFamily = (pattern?: string) => {
+  const canonical = canonicalMovementPattern(pattern);
+  if (canonical === 'vertical_pull' || canonical === 'horizontal_pull') return 'pull';
+  if (canonical === 'vertical_push' || canonical === 'horizontal_push') return 'push';
+  return canonical;
+};
+
+const sameMovementFamily = (a?: string, b?: string) => {
+  const first = movementFamily(a);
+  const second = movementFamily(b);
+  return Boolean(first && second && first === second);
+};
+
 export const getWarmupMovementPattern = (exercise: ExercisePrescription): string => {
   const explicit = canonicalMovementPattern(exercise.movementPattern || exercise.equivalence?.pattern);
   if (explicit) return explicit;
@@ -104,6 +129,12 @@ const isMainExercise = (exercise: ExercisePrescription) =>
 const isHighSkill = (exercise: ExercisePrescription) => exercise.skillDemand === 'high';
 const isHighFatigue = (exercise: ExercisePrescription) => exercise.fatigueCost === 'high';
 const isMachine = (exercise: ExercisePrescription) => exercise.kind === 'machine';
+const isStableMachineLike = (exercise: ExercisePrescription) => {
+  const text = `${exercise.id} ${exercise.baseId || ''} ${exercise.canonicalExerciseId || ''} ${exercise.name || ''} ${
+    exercise.alias || ''
+  } ${exercise.kind || ''}`.toLowerCase();
+  return isMachine(exercise) || includesAny(text, ['seated-row', 'lat-pulldown', 'machine', 'cable', '坐姿', '器械']);
+};
 const warmupPreference = (exercise: ExercisePrescription): ExerciseWarmupPreference =>
   exercise.warmupPreference === 'always' || exercise.warmupPreference === 'optional' || exercise.warmupPreference === 'never'
     ? exercise.warmupPreference
@@ -116,11 +147,19 @@ const isIsolationExercise = (exercise: ExercisePrescription) => {
 };
 
 const primaryMuscles = (exercise: ExercisePrescription) =>
-  (exercise.primaryMuscles?.length ? exercise.primaryMuscles : [exercise.muscle]).filter(Boolean).map((item) => String(item));
+  (exercise.primaryMuscles?.length ? exercise.primaryMuscles : [exercise.muscle])
+    .filter(Boolean)
+    .map((item) => String(item).trim().toLowerCase())
+    .filter(Boolean);
 
 const hasPrimaryMuscleOverlap = (exercise: ExercisePrescription, previousExercises: ExercisePrescription[]) => {
   const current = new Set(primaryMuscles(exercise));
   return previousExercises.some((previous) => primaryMuscles(previous).some((muscle) => current.has(muscle)));
+};
+
+const hasWarmedPrimaryMuscle = (exercise: ExercisePrescription, warmedMuscles: string[]) => {
+  const current = new Set(primaryMuscles(exercise));
+  return warmedMuscles.some((muscle) => current.has(String(muscle).trim().toLowerCase()));
 };
 
 const decision = (
@@ -142,15 +181,34 @@ export const decideWarmupPolicy = ({
   exercise,
   exerciseIndex,
   previousExercises = [],
+  previousWarmupDecisions = [],
+  warmedMuscles = [],
+  warmedMovementPatterns = [],
+  warmupContext,
   completedWarmupPatterns = [],
   plannedWeight,
   sessionContext,
 }: WarmupPolicyInput): WarmupPolicyDecision => {
   const movementPattern = getWarmupMovementPattern(exercise);
-  const completedPatterns = new Set(completedWarmupPatterns.map(canonicalMovementPattern));
-  const previousPatternSeen = previousExercises.some((item) => getWarmupMovementPattern(item) === movementPattern);
-  const previousPrimaryMuscleSeen = hasPrimaryMuscleOverlap(exercise, previousExercises);
-  const previousWarmupCoverage = completedPatterns.has(movementPattern) || previousPatternSeen || previousPrimaryMuscleSeen;
+  const effectiveExerciseIndex = warmupContext?.exerciseIndex ?? exerciseIndex;
+  const contextPreviousExercises = warmupContext?.previousExercises ?? previousExercises;
+  const contextWarmedPatterns = [...completedWarmupPatterns, ...(warmupContext?.warmedMovementPatterns ?? warmedMovementPatterns)];
+  const contextWarmedMuscles = warmupContext?.warmedMuscles ?? warmedMuscles;
+  const contextWarmupDecisions = warmupContext?.previousWarmupDecisions ?? previousWarmupDecisions;
+  const completedPatterns = new Set(contextWarmedPatterns.map(canonicalMovementPattern));
+  const completedPatternFamilies = new Set(contextWarmedPatterns.map(movementFamily));
+  const previousPatternSeen = contextPreviousExercises.some((item) => getWarmupMovementPattern(item) === movementPattern);
+  const previousPatternFamilySeen = contextPreviousExercises.some((item) => sameMovementFamily(getWarmupMovementPattern(item), movementPattern));
+  const previousPrimaryMuscleSeen = hasPrimaryMuscleOverlap(exercise, contextPreviousExercises);
+  const warmedPrimaryMuscleSeen = hasWarmedPrimaryMuscle(exercise, contextWarmedMuscles);
+  const previousWarmupCoverage =
+    completedPatterns.has(movementPattern) ||
+    completedPatternFamilies.has(movementFamily(movementPattern)) ||
+    previousPatternSeen ||
+    previousPatternFamilySeen ||
+    previousPrimaryMuscleSeen ||
+    warmedPrimaryMuscleSeen ||
+    (contextWarmupDecisions.some((item) => item === 'full_warmup' || item === 'feeder_set') && previousPatternFamilySeen);
   const highLoadThresholdKg = sessionContext?.highLoadThresholdKg ?? 80;
   const highLoad = number(plannedWeight ?? exercise.startWeight) >= highLoadThresholdKg;
   const highDemand = isHighSkill(exercise) || isHighFatigue(exercise) || highLoad;
@@ -184,12 +242,12 @@ export const decideWarmupPolicy = ({
     );
   }
 
-  if (exerciseIndex === 0 && isMainExercise(exercise)) {
+  if (effectiveExerciseIndex === 0 && isMainExercise(exercise)) {
     return decision(exercise, movementPattern, 'full_warmup', 'required', '本次训练第一个主动作安排完整热身。');
   }
 
   if (previousWarmupCoverage) {
-    if (highDemand && !isMachine(exercise)) {
+    if (highDemand && !isStableMachineLike(exercise)) {
       return decision(
         exercise,
         movementPattern,

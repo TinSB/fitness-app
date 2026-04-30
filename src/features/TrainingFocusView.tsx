@@ -57,6 +57,7 @@ interface TrainingFocusViewProps {
       actualRir?: number;
       techniqueQuality?: TrainingSetLog['techniqueQuality'];
       painFlag?: boolean;
+      source?: 'prescription' | 'manual' | 'copy_previous';
     },
   ) => void;
   onSwitchExercise: (exerciseIndex: number) => void;
@@ -372,9 +373,10 @@ export function TrainingFocusView({
       exerciseId: mainExercisePoolId || mainExercise?.id,
       previousSets: mainSets,
       recentHistory: trainingHistory || [],
+      currentSessionId: session.id,
       unitSettings,
       plannedPrescription: {
-        plannedWeight: currentStep.plannedWeight,
+        plannedWeightKg: currentStep.plannedWeight,
         plannedReps: currentStep.plannedReps,
         repMin: mainExercise?.repMin,
         repMax: mainExercise?.repMax,
@@ -424,17 +426,18 @@ export function TrainingFocusView({
       actualWeightKg: parseDisplayWeightToKg(safeDisplayWeight, weightUnit),
       displayWeight: safeDisplayWeight,
       displayUnit: weightUnit,
+      source: 'manual',
     });
   };
 
   const updateActualReps = (nextReps: number) => {
     if (mainIndex < 0) return;
-    onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(nextReps)) });
+    onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(nextReps)), source: 'manual' });
   };
 
   const updateActualRir = (nextRir: number) => {
     if (mainIndex < 0) return;
-    onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))) });
+    onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))), source: 'manual' });
   };
 
   const renderCompletedState = () => (

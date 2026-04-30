@@ -257,6 +257,7 @@ export interface TrainingSetLog {
 }
 
 export type FocusStepType = 'correction' | 'warmup' | 'working' | 'functional' | 'support' | 'completed';
+export type ActualSetDraftSource = 'prescription' | 'manual' | 'copy_previous';
 
 export interface ActualSetDraft {
   exerciseId: string;
@@ -270,6 +271,7 @@ export interface ActualSetDraft {
   actualRir?: number;
   techniqueQuality?: TechniqueQuality;
   painFlag?: boolean;
+  source?: ActualSetDraftSource;
 }
 
 export interface ExerciseEquivalenceChain {

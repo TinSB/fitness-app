@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectSetAnomalies } from '../src/engines/setAnomalyEngine';
-import type { ActualSetDraft, TrainingSetLog, UnitSettings } from '../src/models/training-model';
+import type { ActualSetDraft, TrainingSession, TrainingSetLog, UnitSettings } from '../src/models/training-model';
 
 const kgSettings: UnitSettings = {
   weightUnit: 'kg',
@@ -24,6 +24,35 @@ const previousSet = (weight: number, reps = 8): TrainingSetLog => ({
   rir: 2,
   done: true,
 });
+
+const historySession = (
+  exerciseId: string,
+  sets: TrainingSetLog[],
+  overrides: Partial<TrainingSession> = {},
+): TrainingSession =>
+  ({
+    id: `history-${exerciseId}`,
+    date: '2026-04-20',
+    templateId: 'pull-a',
+    templateName: '拉 A',
+    trainingMode: 'hypertrophy',
+    completed: true,
+    finishedAt: '2026-04-20T10:00:00.000Z',
+    exercises: [
+      {
+        id: exerciseId,
+        name: '高位下拉',
+        muscle: 'back',
+        kind: 'machine',
+        sets,
+        repMin: 8,
+        repMax: 12,
+        rest: 90,
+        startWeight: sets[0]?.weight || 0,
+      },
+    ],
+    ...overrides,
+  }) as TrainingSession;
 
 const draft = (overrides: Partial<ActualSetDraft> = {}): ActualSetDraft => ({
   exerciseId: 'bench-press',
@@ -109,6 +138,82 @@ describe('setAnomalyEngine', () => {
 
     expect(issueIds(anomalies)).toContain('weight-jump-over-50-percent');
     expect(anomalies.find((item) => item.id === 'weight-jump-over-50-percent')?.message).toContain('超过 50%');
+  });
+
+  it('does not flag the current suggested warmup weight as a history jump', () => {
+    const anomalies = detectSetAnomalies({
+      currentDraft: draft({
+        stepType: 'warmup',
+        actualWeightKg: 30,
+        displayWeight: 30,
+        actualReps: 8,
+      }),
+      exerciseId: 'bench-press',
+      previousSets: [],
+      recentHistory: [historySession('bench-press', [previousSet(15)])],
+      unitSettings: kgSettings,
+      plannedPrescription: { plannedWeightKg: 30, plannedReps: 8, repMax: 12, stepType: 'warmup', isWarmup: true },
+    });
+
+    expect(issueIds(anomalies)).not.toContain('weight-jump-over-50-percent');
+    expect(issueIds(anomalies)).not.toContain('unit-kg-looks-like-lb');
+    expect(anomalies.filter((item) => item.requiresConfirmation)).toEqual([]);
+  });
+
+  it('does not flag the current suggested working weight as a history jump', () => {
+    const anomalies = detectSetAnomalies({
+      currentDraft: draft({ actualWeightKg: 110, displayWeight: 110, actualReps: 8 }),
+      exerciseId: 'bench-press',
+      previousSets: [previousSet(70)],
+      unitSettings: kgSettings,
+      plannedPrescription: { plannedWeightKg: 110, plannedReps: 8, repMax: 10, stepType: 'working' },
+    });
+
+    expect(issueIds(anomalies)).not.toContain('weight-jump-over-50-percent');
+    expect(issueIds(anomalies)).not.toContain('planned-weight-large-diff');
+  });
+
+  it('does not use other exercises as same-exercise history', () => {
+    const anomalies = detectSetAnomalies({
+      currentDraft: draft({ exerciseId: 'lat-pulldown', actualWeightKg: 60, displayWeight: 60, actualReps: 10 }),
+      exerciseId: 'lat-pulldown',
+      previousSets: [],
+      recentHistory: [historySession('seated-row', [previousSet(30)])],
+      unitSettings: kgSettings,
+      plannedPrescription: { plannedWeightKg: 60, plannedReps: 10, repMax: 12, stepType: 'working' },
+    });
+
+    expect(issueIds(anomalies)).not.toContain('weight-jump-over-50-percent');
+  });
+
+  it('does not use warmup history as the same-exercise working baseline', () => {
+    const warmupOnly = { ...previousSet(20), id: 'warmup-only', type: 'warmup' };
+    const anomalies = detectSetAnomalies({
+      currentDraft: draft({ exerciseId: 'lat-pulldown', actualWeightKg: 60, displayWeight: 60, actualReps: 10 }),
+      exerciseId: 'lat-pulldown',
+      previousSets: [],
+      recentHistory: [historySession('lat-pulldown', [warmupOnly])],
+      unitSettings: kgSettings,
+      plannedPrescription: { plannedWeightKg: 60, plannedReps: 10, repMax: 12, stepType: 'working' },
+    });
+
+    expect(issueIds(anomalies)).not.toContain('weight-jump-over-50-percent');
+  });
+
+  it('does not use test or excluded sessions as the same-exercise baseline', () => {
+    const anomalies = detectSetAnomalies({
+      currentDraft: draft({ exerciseId: 'lat-pulldown', actualWeightKg: 60, displayWeight: 60, actualReps: 10 }),
+      exerciseId: 'lat-pulldown',
+      previousSets: [],
+      recentHistory: [
+        historySession('lat-pulldown', [previousSet(30)], { id: 'test-history', dataFlag: 'test' }),
+        historySession('lat-pulldown', [previousSet(35)], { id: 'excluded-history', dataFlag: 'excluded' }),
+      ],
+      unitSettings: kgSettings,
+      plannedPrescription: { plannedWeightKg: 60, plannedReps: 10, repMax: 12, stepType: 'working' },
+    });
+
+    expect(issueIds(anomalies)).not.toContain('weight-jump-over-50-percent');
   });
 
   it('detects warmup sets that are heavier than formal working references', () => {

@@ -3,7 +3,7 @@ import { clone, number, sessionCompletedSets, sessionVolume } from './engineUtil
 import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from './currentExerciseSelector';
 import { createRestTimerState } from './restTimerEngine';
 import { convertKgToDisplayWeight } from './unitConversionEngine';
-import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupPolicyDecision } from './warmupPolicyEngine';
+import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupDecision, type WarmupPolicyDecision } from './warmupPolicyEngine';
 
 export type { ActualSetDraft, FocusStepType };
 
@@ -64,6 +64,11 @@ const COMPLETED_STEP: FocusTrainingStep = {
 
 const getSets = (exercise: ExercisePrescription | undefined): TrainingSetLog[] => (Array.isArray(exercise?.sets) ? exercise.sets : []);
 const getWarmupSets = (exercise: ExercisePrescription | undefined) => (Array.isArray(exercise?.warmupSets) ? exercise.warmupSets : []);
+const getWarmupMuscles = (exercise: ExercisePrescription | undefined): string[] =>
+  (exercise?.primaryMuscles?.length ? exercise.primaryMuscles : [exercise?.muscle])
+    .filter(Boolean)
+    .map((item) => String(item).trim().toLowerCase())
+    .filter(Boolean);
 const stepId = (exerciseId: string, stepType: FocusStepType, setIndex: number, suffix = '') => `main:${exerciseId}:${stepType}:${setIndex}${suffix}`;
 const supportStepId = (blockType: 'correction' | 'functional', moduleId: string, exerciseId: string, setIndex: number) =>
   `${blockType}:${moduleId}:${exerciseId}:${setIndex}`;
@@ -129,6 +134,9 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
   if (!session) return [COMPLETED_STEP];
   const steps: FocusTrainingStep[] = [...buildSupportSteps(session, 'correction')];
   const previousExercises: ExercisePrescription[] = [];
+  const previousWarmupDecisions: WarmupDecision[] = [];
+  const warmedMuscles: string[] = [];
+  const warmedMovementPatterns: string[] = [...(session.focusCompletedWarmupPatterns || [])];
 
   (session.exercises || []).forEach((exercise, exerciseIndex) => {
     const identity = getExerciseIdentityFromExercise(exercise, exercise.id);
@@ -139,6 +147,16 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
       exercise,
       exerciseIndex,
       previousExercises,
+      previousWarmupDecisions,
+      warmedMuscles,
+      warmedMovementPatterns,
+      warmupContext: {
+        exerciseIndex,
+        previousExercises,
+        previousWarmupDecisions,
+        warmedMuscles,
+        warmedMovementPatterns,
+      },
       completedWarmupPatterns: session.focusCompletedWarmupPatterns || [],
       plannedWeight: number(sets[0]?.weight ?? exercise.startWeight),
     });
@@ -161,6 +179,12 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
           warmupPolicy,
         });
       });
+    }
+
+    previousWarmupDecisions.push(warmupPolicy.warmupDecision);
+    if (warmupPolicy.shouldShowWarmupSets) {
+      warmedMovementPatterns.push(getWarmupMovementPattern(exercise));
+      warmedMuscles.push(...getWarmupMuscles(exercise));
     }
 
     sets.forEach((set, setIndex) => {
@@ -421,7 +445,7 @@ export const switchFocusExercise = (session: TrainingSession, exerciseIndex: num
 export const updateFocusActualDraft = (
   session: TrainingSession,
   exerciseIndex: number,
-  updates: Partial<Pick<ActualSetDraft, 'actualWeightKg' | 'displayWeight' | 'displayUnit' | 'actualReps' | 'actualRir' | 'techniqueQuality' | 'painFlag'>>
+  updates: Partial<Pick<ActualSetDraft, 'actualWeightKg' | 'displayWeight' | 'displayUnit' | 'actualReps' | 'actualRir' | 'techniqueQuality' | 'painFlag' | 'source'>>
 ): TrainingSession => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
@@ -445,9 +469,9 @@ export const adjustFocusSetValue = (
   const draftStep = { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
   const draft = getActualSetDraft(nextSession, step);
   if (field === 'weight') {
-    upsertDraft(nextSession, draftStep, { actualWeightKg: Math.max(0, number(draft?.actualWeightKg) + delta) });
+    upsertDraft(nextSession, draftStep, { actualWeightKg: Math.max(0, number(draft?.actualWeightKg) + delta), source: 'manual' });
   } else {
-    upsertDraft(nextSession, draftStep, { actualReps: Math.max(0, number(draft?.actualReps) + delta) });
+    upsertDraft(nextSession, draftStep, { actualReps: Math.max(0, number(draft?.actualReps) + delta), source: 'manual' });
   }
   setCurrentStep(nextSession, step);
   return nextSession;
@@ -463,6 +487,7 @@ export const applySuggestedFocusStep = (session: TrainingSession, exerciseIndex:
     ...(typeof step.plannedWeight === 'number' ? { actualWeightKg: step.plannedWeight } : {}),
     ...(typeof step.plannedReps === 'number' ? { actualReps: step.plannedReps } : {}),
     ...(typeof step.plannedRir === 'number' ? { actualRir: step.plannedRir } : {}),
+    source: 'prescription',
   });
   setCurrentStep(nextSession, step);
   return nextSession;
@@ -492,6 +517,7 @@ export const copyPreviousFocusActualDraft = (session: TrainingSession, exerciseI
     actualRir: isDraft ? (source as ActualSetDraft).actualRir : number((source as TrainingSetLog).rir),
     painFlag: Boolean(source.painFlag),
     techniqueQuality: source.techniqueQuality || 'acceptable',
+    source: 'copy_previous',
   });
   setCurrentStep(nextSession, step);
   return nextSession;

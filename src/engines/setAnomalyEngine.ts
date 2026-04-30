@@ -45,6 +45,7 @@ export type DetectSetAnomaliesInput = {
   exerciseId?: string;
   previousSets?: TrainingSetLog[];
   recentHistory?: TrainingSession[];
+  currentSessionId?: string;
   unitSettings?: Partial<UnitSettings>;
   plannedPrescription?: PlannedPrescriptionLike | null;
 };
@@ -117,30 +118,70 @@ const resolveDraft = (currentDraft: DraftLike | null | undefined, unitSettings?:
   };
 };
 
-const completedWorkSet = (set: TrainingSetLog) =>
+const reliableWorkSet = (set: TrainingSetLog) =>
   set.done !== false && set.type !== 'warmup' && setTypeOf(set) !== 'warmup' && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
+
+const completedCurrentSessionWorkSet = (set: TrainingSetLog) => set.done === true && reliableWorkSet(set);
 
 const setWeightKg = (set: TrainingSetLog) => number(set.actualWeightKg ?? set.weight);
 
-const latestPreviousSet = (exerciseId: string | undefined, previousSets: TrainingSetLog[] = [], recentHistory: TrainingSession[] = []) => {
-  const direct = [...previousSets].reverse().find(completedWorkSet);
-  if (direct) return direct;
-  if (!exerciseId) return undefined;
-  const sessions = [...recentHistory].sort((left, right) => String(right.finishedAt || right.startedAt || right.date || '').localeCompare(String(left.finishedAt || left.startedAt || left.date || '')));
+type ReliablePreviousWorkingSetsInput = {
+  exerciseId?: string;
+  history?: TrainingSession[];
+  currentSessionId?: string;
+};
+
+const recordPoolIdOfExercise = (exercise: TrainingSession['exercises'][number]) =>
+  String(
+    exercise.actualExerciseId ||
+      exercise.replacementExerciseId ||
+      exercise.canonicalExerciseId ||
+      (exercise.replacedFromId ? exercise.id : exercise.baseId || exercise.id) ||
+      '',
+  );
+
+const isSameExerciseRecord = (exercise: TrainingSession['exercises'][number], exerciseId: string) => {
+  const poolId = recordPoolIdOfExercise(exercise);
+  return (
+    poolId === exerciseId ||
+    exercise.id === exerciseId ||
+    exercise.actualExerciseId === exerciseId ||
+    exercise.replacementExerciseId === exerciseId ||
+    exercise.canonicalExerciseId === exerciseId ||
+    exercise.baseId === exerciseId
+  );
+};
+
+export const getReliablePreviousWorkingSetsForExercise = ({
+  exerciseId,
+  history = [],
+  currentSessionId,
+}: ReliablePreviousWorkingSetsInput): TrainingSetLog[] => {
+  if (!exerciseId) return [];
+  const sessions = [...history].sort((left, right) =>
+    String(right.finishedAt || right.startedAt || right.date || '').localeCompare(String(left.finishedAt || left.startedAt || left.date || '')),
+  );
+  const sets: TrainingSetLog[] = [];
   for (const session of sessions) {
+    if (currentSessionId && session.id === currentSessionId) continue;
     if (session.dataFlag === 'test' || session.dataFlag === 'excluded') continue;
-    const exercise = (session.exercises || []).find(
-      (item) =>
-        item.id === exerciseId ||
-        item.baseId === exerciseId ||
-        item.canonicalExerciseId === exerciseId ||
-        item.actualExerciseId === exerciseId ||
-        item.replacementExerciseId === exerciseId,
-    );
-    const set = Array.isArray(exercise?.sets) ? [...exercise.sets].reverse().find(completedWorkSet) : undefined;
-    if (set) return set;
+    for (const exercise of session.exercises || []) {
+      if (!isSameExerciseRecord(exercise, exerciseId)) continue;
+      if (Array.isArray(exercise.sets)) sets.push(...[...exercise.sets].reverse().filter(reliableWorkSet));
+    }
   }
-  return undefined;
+  return sets;
+};
+
+const latestPreviousSet = (
+  exerciseId: string | undefined,
+  previousSets: TrainingSetLog[] = [],
+  recentHistory: TrainingSession[] = [],
+  currentSessionId?: string,
+) => {
+  const direct = [...previousSets].reverse().find(completedCurrentSessionWorkSet);
+  if (direct) return direct;
+  return getReliablePreviousWorkingSetsForExercise({ exerciseId, history: recentHistory, currentSessionId })[0];
 };
 
 const plannedWeightKg = (planned?: PlannedPrescriptionLike | null, displayUnit: WeightUnit = 'kg') => {
@@ -165,10 +206,16 @@ const plannedRepMax = (planned?: PlannedPrescriptionLike | null) => {
   return undefined;
 };
 
+const isNearPlannedWeight = (draftWeightKg?: number, plannedKg?: number) => {
+  if (!draftWeightKg || !plannedKg || plannedKg <= 0) return false;
+  const toleranceKg = Math.max(1, plannedKg * 0.03);
+  return Math.abs(draftWeightKg - plannedKg) <= toleranceKg;
+};
+
 const workingWeightReference = (previousSets: TrainingSetLog[] = [], planned?: PlannedPrescriptionLike | null, displayUnit: WeightUnit = 'kg') => {
   const plannedWorking = plannedWeightKg(planned, displayUnit);
   if (plannedWorking && !isWarmupLike(planned)) return plannedWorking;
-  const previousWorking = [...previousSets].reverse().find(completedWorkSet);
+  const previousWorking = [...previousSets].reverse().find(reliableWorkSet);
   return previousWorking ? setWeightKg(previousWorking) : plannedWorking;
 };
 
@@ -211,15 +258,19 @@ export const detectSetAnomalies = ({
   exerciseId,
   previousSets = [],
   recentHistory = [],
+  currentSessionId,
   unitSettings = DEFAULT_UNIT_SETTINGS,
   plannedPrescription = null,
 }: DetectSetAnomaliesInput): SetAnomaly[] => {
   const draft = resolveDraft(currentDraft, unitSettings, plannedPrescription);
   const issues: SetAnomaly[] = [];
-  const latestSet = latestPreviousSet(exerciseId, previousSets, recentHistory);
-  const baselineKg = latestSet ? setWeightKg(latestSet) : plannedWeightKg(plannedPrescription, draft.displayUnit);
+  const latestSet = latestPreviousSet(exerciseId, previousSets, recentHistory, currentSessionId);
+  const historyBaselineKg = latestSet ? setWeightKg(latestSet) : undefined;
   const plannedKg = plannedWeightKg(plannedPrescription, draft.displayUnit);
+  const baselineKg = historyBaselineKg ?? plannedKg;
   const repMax = plannedRepMax(plannedPrescription);
+  const matchesPlannedWeight = isNearPlannedWeight(draft.weightKg, plannedKg);
+  const draftSource = currentDraft?.source;
 
   if (!draft.hasWeightInput && !draft.hasRepsInput) {
     issues.push(anomaly({
@@ -241,17 +292,19 @@ export const detectSetAnomalies = ({
     }));
   }
 
-  if (draft.weightKg && baselineKg && draft.weightKg > baselineKg * 1.5) {
+  if (draft.weightKg && historyBaselineKg && draft.weightKg > historyBaselineKg * 1.5 && !matchesPlannedWeight) {
     issues.push(anomaly({
       id: 'weight-jump-over-50-percent',
-      severity: draft.weightKg >= baselineKg * 2 ? 'critical' : 'warning',
+      severity: draft.weightKg >= historyBaselineKg * 2 ? 'critical' : 'warning',
       title: '重量比近期记录高很多',
       message: `本组重量比上次同动作高出超过 50%。这可能是正常突破，也可能是输入错误。`,
       suggestedAction: '确认重量和单位后再保存。',
     }));
   }
 
-  issues.push(...detectUnitMismatch(draft, baselineKg));
+  if (!matchesPlannedWeight) {
+    issues.push(...detectUnitMismatch(draft, baselineKg));
+  }
 
   if (draft.reps !== undefined && draft.reps > 50) {
     issues.push(anomaly({
@@ -297,7 +350,9 @@ export const detectSetAnomalies = ({
 
   if (draft.weightKg && plannedKg && plannedKg > 0) {
     const ratio = draft.weightKg / plannedKg;
-    if (ratio >= 1.5 || ratio <= 0.5) {
+    const copyPreviousNeedsConfirmation = draftSource === 'copy_previous' && (ratio >= 2.5 || ratio <= 0.25);
+    const shouldReportPlanDiff = draftSource === 'copy_previous' ? copyPreviousNeedsConfirmation : ratio >= 1.5 || ratio <= 0.5;
+    if (shouldReportPlanDiff) {
       issues.push(anomaly({
         id: 'planned-weight-large-diff',
         severity: 'warning',
