@@ -62,7 +62,25 @@ describe('coach action button semantics', () => {
 
     expect(markup).toContain('查看训练量建议');
     expect(markup).toContain('bg-white');
+    expect(markup).not.toContain('disabled');
     expect(markup).not.toContain('undefined');
     expect(markup).not.toContain('review_volume');
+  });
+
+  it('does not render fake secondary or detail buttons when handlers are missing', () => {
+    const view = buildCoachActionView(makeAction({ actionType: 'review_volume', targetId: 'back', targetType: 'muscle' }));
+    const markup = renderToStaticMarkup(<CoachActionCard action={view} onPrimary={() => undefined} />);
+
+    expect(markup).toContain('查看训练量建议');
+    expect(markup).not.toContain('暂不处理');
+    expect(markup).not.toContain('查看详情');
+  });
+
+  it('shows a clear unavailable state if no action handler is wired', () => {
+    const view = buildCoachActionView(makeAction({ actionType: 'review_volume', targetId: 'back', targetType: 'muscle' }));
+    const markup = renderToStaticMarkup(<CoachActionCard action={view} />);
+
+    expect(markup).toContain('当前入口暂不可用');
+    expect(markup).not.toContain('disabled');
   });
 });

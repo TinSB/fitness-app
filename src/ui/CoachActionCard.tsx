@@ -13,6 +13,8 @@ type CoachActionCardProps = {
 };
 
 export function CoachActionCard({ action, compact = false, onPrimary, onSecondary, onDetail }: CoachActionCardProps) {
+  const hasAnyAction = Boolean(onPrimary || onSecondary || onDetail);
+
   return (
     <Card className={compact ? 'space-y-3 p-3' : 'space-y-3'}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -35,17 +37,27 @@ export function CoachActionCard({ action, compact = false, onPrimary, onSecondar
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{action.disabledReason}</div>
       ) : null}
 
-      <div className={compact ? 'grid gap-2 sm:grid-cols-[1fr_auto_auto]' : 'grid gap-2 sm:grid-cols-[1fr_auto_auto]'}>
-        <ActionButton type="button" size={compact ? 'sm' : 'md'} variant={action.primaryVariant} fullWidth disabled={!onPrimary} onClick={() => onPrimary?.(action.action)}>
-          {action.primaryLabel}
-        </ActionButton>
-        <ActionButton type="button" size={compact ? 'sm' : 'md'} variant="secondary" disabled={!onSecondary} onClick={() => onSecondary?.(action.action)}>
-          {action.secondaryLabel}
-        </ActionButton>
-        <ActionButton type="button" size={compact ? 'sm' : 'md'} variant="ghost" disabled={!onDetail} onClick={() => onDetail?.(action.action)}>
-          {action.detailLabel}
-        </ActionButton>
-      </div>
+      {hasAnyAction ? (
+        <div className={compact ? 'grid gap-2 sm:grid-cols-[1fr_auto_auto]' : 'grid gap-2 sm:grid-cols-[1fr_auto_auto]'}>
+          {onPrimary ? (
+            <ActionButton type="button" size={compact ? 'sm' : 'md'} variant={action.primaryVariant} fullWidth onClick={() => onPrimary(action.action)}>
+              {action.primaryLabel}
+            </ActionButton>
+          ) : null}
+          {onSecondary ? (
+            <ActionButton type="button" size={compact ? 'sm' : 'md'} variant="secondary" onClick={() => onSecondary(action.action)}>
+              {action.secondaryLabel}
+            </ActionButton>
+          ) : null}
+          {onDetail ? (
+            <ActionButton type="button" size={compact ? 'sm' : 'md'} variant="ghost" onClick={() => onDetail(action.action)}>
+              {action.detailLabel}
+            </ActionButton>
+          ) : null}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-xs leading-5 text-slate-600">当前入口暂不可用。</div>
+      )}
     </Card>
   );
 }

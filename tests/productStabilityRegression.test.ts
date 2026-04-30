@@ -11,12 +11,16 @@ import { updateSessionSet, markSessionEdited } from '../src/engines/sessionEditE
 import { buildSessionDetailSummary } from '../src/engines/sessionDetailSummaryEngine';
 import { completeTrainingSessionIntoHistory } from '../src/engines/trainingCompletionEngine';
 import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionStateMachine';
+import { buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
 import { TrainingFocusView } from '../src/features/TrainingFocusView';
+import { PlanView } from '../src/features/PlanView';
 import type { DataHealthIssue } from '../src/engines/dataHealthEngine';
+import type { CoachAction } from '../src/engines/coachActionEngine';
+import type { VolumeAdaptationReport } from '../src/engines/volumeAdaptationEngine';
 import type { TodayTrainingState } from '../src/engines/todayStateEngine';
 import type { TrainingSession, UnitSettings } from '../src/models/training-model';
 import { emptyData } from '../src/storage/persistence';
-import { getTemplate, makeSession } from './fixtures';
+import { getTemplate, makeAppData, makeSession } from './fixtures';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
 
 const unitSettings: UnitSettings = {
@@ -29,6 +33,7 @@ const unitSettings: UnitSettings = {
 
 const noop = (..._args: unknown[]) => undefined;
 const setStateNoop = (() => undefined) as React.Dispatch<React.SetStateAction<number>>;
+const now = '2026-04-30T12:00:00.000Z';
 
 const visibleText = (node: React.ReactElement) =>
   renderToStaticMarkup(node)
@@ -84,6 +89,55 @@ const dataHealthIssue = (id: string, severity: DataHealthIssue['severity']): Dat
   message: 'summary cache mismatch with internal details',
   canAutoFix: false,
 });
+
+const makeCoachAction = (overrides: Partial<CoachAction> = {}): CoachAction => ({
+  id: overrides.id || 'volume-preview-back',
+  title: overrides.title || '生成训练量调整草案',
+  description: overrides.description || '训练量建议需要查看。',
+  source: overrides.source || 'volumeAdaptation',
+  actionType: overrides.actionType || 'create_plan_adjustment_preview',
+  priority: overrides.priority || 'medium',
+  status: overrides.status || 'pending',
+  requiresConfirmation: overrides.requiresConfirmation ?? true,
+  reversible: overrides.reversible ?? true,
+  createdAt: overrides.createdAt || now,
+  targetId: overrides.targetId || 'back',
+  targetType: overrides.targetType || 'muscle',
+  reason: overrides.reason || '近期训练记录提示可以复查训练量。',
+});
+
+const volumeReport: VolumeAdaptationReport = {
+  summary: '背、腿、胸建议小幅增加。',
+  muscles: [
+    {
+      muscleId: 'back',
+      decision: 'increase',
+      setsDelta: 1,
+      title: '背：增加训练量',
+      reason: '背部有效组低于目标。',
+      confidence: 'medium',
+      suggestedActions: ['下周增加 1 组。'],
+    },
+    {
+      muscleId: 'legs',
+      decision: 'increase',
+      setsDelta: 1,
+      title: '腿：增加训练量',
+      reason: '腿部有效组低于目标。',
+      confidence: 'medium',
+      suggestedActions: ['下周增加 1 组。'],
+    },
+    {
+      muscleId: 'chest',
+      decision: 'increase',
+      setsDelta: 1,
+      title: '胸：增加训练量',
+      reason: '胸部有效组低于目标。',
+      confidence: 'medium',
+      suggestedActions: ['下周增加 1 组。'],
+    },
+  ],
+};
 
 describe('product stability regression', () => {
   it('keeps Today start and completed states focused on the correct action', () => {
@@ -222,5 +276,42 @@ describe('product stability regression', () => {
     expect(vm.secondaryIssues).toHaveLength(1);
     expect(vm.primaryIssues[0].severityLabel).toBe('需要处理');
     expect(vm.primaryIssues.map((issue) => issue.title).join(' ')).not.toMatch(/summary cache mismatch|undefined|null/);
+  });
+
+  it('keeps Plan advice aggregated and low-noise', () => {
+    const data = makeAppData();
+    const text = visibleText(
+      React.createElement(PlanView, {
+        data,
+        weeklyPrescription: buildWeeklyPrescription(data),
+        trainingIntelligenceSummary: { volumeAdaptation: volumeReport, keyInsights: [], recommendedActions: [] },
+        coachActions: [
+          makeCoachAction({ id: 'volume-preview-back', targetId: 'back' }),
+          makeCoachAction({ id: 'volume-preview-legs', targetId: 'legs' }),
+          makeCoachAction({ id: 'volume-preview-chest', targetId: 'chest' }),
+          makeCoachAction({ id: 'plateau-bench', source: 'plateau', actionType: 'review_exercise', title: '查看卧推进展', targetId: 'bench-press', targetType: 'exercise', requiresConfirmation: false, reversible: false }),
+          makeCoachAction({ id: 'recovery-upper', source: 'recovery', actionType: 'keep_observing', title: '查看恢复建议', targetId: 'upper-a', targetType: 'template', requiresConfirmation: false, reversible: false }),
+        ],
+        selectedTemplateId: data.selectedTemplateId,
+        onSelectTemplate: noop,
+        onStartTemplate: noop,
+        onUpdateExercise: noop,
+        onResetTemplates: noop,
+        onCoachAction: noop,
+        onDismissCoachAction: noop,
+      }),
+    );
+
+    expect(text).toContain('当前计划');
+    expect(text).toContain('本周安排');
+    expect(text).toContain('待处理建议');
+    expect(text).toContain('调整草案');
+    expect(text).toContain('训练量建议');
+    expect(text).toContain('背、腿、胸低于目标');
+    expect(text).toContain('查看全部建议');
+    expect(text).not.toContain('背：增加训练量');
+    expect(text).not.toContain('腿：增加训练量');
+    expect(text).not.toContain('胸：增加训练量');
+    expect(text).not.toMatch(/\b(undefined|null|review_volume|create_plan_adjustment_preview|increase|medium|low|high)\b/);
   });
 });
