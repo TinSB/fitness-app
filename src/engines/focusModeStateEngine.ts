@@ -68,6 +68,10 @@ const stepId = (exerciseId: string, stepType: FocusStepType, setIndex: number, s
 const supportStepId = (blockType: 'correction' | 'functional', moduleId: string, exerciseId: string, setIndex: number) =>
   `${blockType}:${moduleId}:${exerciseId}:${setIndex}`;
 const exerciseCompletedStepId = (exerciseId: string) => stepId(exerciseId, 'completed', 0);
+const warmupLabel = (decision: WarmupPolicyDecision, setIndex: number, totalSets: number) =>
+  decision.warmupDecision === 'feeder_set' ? `适应组 ${setIndex + 1} / ${totalSets}` : `热身组 ${setIndex + 1} / ${totalSets}`;
+const warmupSetsForDecision = <T,>(warmups: T[], decision: WarmupPolicyDecision) =>
+  decision.warmupDecision === 'feeder_set' ? warmups.slice(-1) : warmups;
 const isSupportFocusStep = (step: FocusTrainingStep) => step.stepType === 'correction' || step.stepType === 'functional' || step.stepType === 'support';
 const findSupportLog = (session: TrainingSession, step: FocusTrainingStep) => {
   const [legacyModuleId, legacyExerciseId] = step.exerciseId.split('::');
@@ -139,23 +143,24 @@ export const buildFocusStepQueue = (session: TrainingSession | null | undefined)
       plannedWeight: number(sets[0]?.weight ?? exercise.startWeight),
     });
     if (warmupPolicy.shouldShowWarmupSets) {
-    warmups.forEach((warmup, setIndex) => {
-      steps.push({
-        id: stepId(stepExerciseId, 'warmup', setIndex),
-        exerciseId: stepExerciseId,
-        exerciseIndex,
-        blockType: 'main',
-        stepType: 'warmup',
-        setIndex,
-        totalSetsForStepType: warmups.length,
-        label: `热身组 ${setIndex + 1} / ${warmups.length}`,
-        plannedWeight: number(warmup.weight),
-        plannedReps: number(warmup.reps),
-        plannedRestSec: Math.min(60, number(exercise.rest) || 60),
-        source: 'warmup',
-        warmupPolicy,
+      const visibleWarmups = warmupSetsForDecision(warmups, warmupPolicy);
+      visibleWarmups.forEach((warmup, setIndex) => {
+        steps.push({
+          id: stepId(stepExerciseId, 'warmup', setIndex),
+          exerciseId: stepExerciseId,
+          exerciseIndex,
+          blockType: 'main',
+          stepType: 'warmup',
+          setIndex,
+          totalSetsForStepType: visibleWarmups.length,
+          label: warmupLabel(warmupPolicy, setIndex, visibleWarmups.length),
+          plannedWeight: number(warmup.weight),
+          plannedReps: number(warmup.reps),
+          plannedRestSec: Math.min(60, number(exercise.rest) || 60),
+          source: 'warmup',
+          warmupPolicy,
+        });
       });
-    });
     }
 
     sets.forEach((set, setIndex) => {

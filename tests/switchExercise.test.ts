@@ -12,7 +12,7 @@ const patterned = (exercise: ExercisePrescription, pattern: string) =>
 describe('switch focus exercise', () => {
   it('moves to the selected exercise first incomplete step without reusing the previous set index', () => {
     const bench = patterned(makeExercise('bench', 2), 'horizontal_push');
-    const row = patterned(makeExercise('row', 2, 0, 2), 'horizontal_pull');
+    const row = patterned({ ...makeExercise('row', 2, 0, 2), muscle: '背', primaryMuscles: ['背'] }, 'horizontal_pull');
     let session = makeFocusSession([bench, row]);
     session.currentFocusStepId = 'main:bench:working:1';
     session.currentSetIndex = 1;

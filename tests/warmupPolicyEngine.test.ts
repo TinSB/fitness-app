@@ -15,6 +15,7 @@ describe('warmup policy engine', () => {
   it('requires warmup for first main compound exercise', () => {
     const decision = decideWarmupPolicy({ exercise: exercise('bench'), exerciseIndex: 0 });
     expect(decision.policy).toBe('required');
+    expect(decision.warmupDecision).toBe('full_warmup');
     expect(decision.shouldShowWarmupSets).toBe(true);
   });
 
@@ -26,11 +27,12 @@ describe('warmup policy engine', () => {
       completedWarmupPatterns: ['horizontal_push'],
     });
     expect(decision.policy).toBe('skipped_by_policy');
+    expect(decision.warmupDecision).toBe('no_warmup');
     expect(decision.shouldShowWarmupSets).toBe(false);
     expect(decision.reason).toContain('同模式热身');
   });
 
-  it('keeps warmup for high load exercises', () => {
+  it('keeps a feeder set instead of repeating full warmup for high load exercises already covered', () => {
     const decision = decideWarmupPolicy({
       exercise: exercise('heavy_press', 2, { startWeight: 90 }),
       exerciseIndex: 1,
@@ -39,12 +41,14 @@ describe('warmup policy engine', () => {
       plannedWeight: 90,
     });
     expect(decision.policy).toBe('required');
+    expect(decision.warmupDecision).toBe('feeder_set');
     expect(decision.shouldShowWarmupSets).toBe(true);
   });
 
   it('returns none when no warmup sets are planned', () => {
     const decision = decideWarmupPolicy({ exercise: exercise('fly', 0), exerciseIndex: 1 });
     expect(decision.policy).toBe('none');
+    expect(decision.warmupDecision).toBe('no_warmup');
     expect(decision.shouldShowWarmupSets).toBe(false);
   });
 
@@ -57,6 +61,7 @@ describe('warmup policy engine', () => {
     });
     const decision = decideWarmupPolicy({ exercise: triceps, exerciseIndex: 4, previousExercises: [exercise('bench')] });
     expect(decision.policy).not.toBe('required');
+    expect(decision.warmupDecision).toBe('no_warmup');
     expect(decision.shouldShowWarmupSets).toBe(false);
     expect(decision.reason).toContain('孤立动作');
   });
@@ -70,6 +75,7 @@ describe('warmup policy engine', () => {
     });
     const decision = decideWarmupPolicy({ exercise: lateralRaise, exerciseIndex: 5 });
     expect(decision.policy).not.toBe('required');
+    expect(decision.warmupDecision).toBe('no_warmup');
     expect(decision.shouldShowWarmupSets).toBe(false);
   });
 
@@ -82,6 +88,7 @@ describe('warmup policy engine', () => {
     });
     const decision = decideWarmupPolicy({ exercise: triceps, exerciseIndex: 4 });
     expect(decision.policy).toBe('required');
+    expect(decision.warmupDecision).toBe('full_warmup');
     expect(decision.shouldShowWarmupSets).toBe(true);
   });
 

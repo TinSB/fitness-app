@@ -29,6 +29,7 @@ import {
   formatTrainingDayName,
   formatTrainingMode,
   formatWarmupPolicy,
+  formatWarmupDecision,
   formatWeeklyActionCategory,
   formatWeeklyActionPriority,
 } from '../src/i18n/formatters';
@@ -88,6 +89,7 @@ describe('i18n formatters', () => {
       formatSkillDemand('high'),
       formatRomPriority('medium'),
       formatWarmupPolicy('skipped_by_policy'),
+      formatWarmupDecision('feeder_set'),
       formatDataFlag('test'),
       formatRiskLevel('high'),
       formatMuscleName('chest'),

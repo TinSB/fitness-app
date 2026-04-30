@@ -334,6 +334,20 @@ export const formatWarmupPolicy = (value: unknown) =>
     },
   );
 
+export const formatWarmupDecision = (value: unknown) =>
+  lookupLabel(
+    'formatWarmupDecision',
+    value,
+    {
+      full_warmup: '完整热身',
+      'full-warmup': '完整热身',
+      feeder_set: '适应组',
+      'feeder-set': '适应组',
+      no_warmup: '无需热身',
+      'no-warmup': '无需热身',
+    },
+  );
+
 export const formatDataFlag = (value: unknown) =>
   lookupLabel(
     'formatDataFlag',

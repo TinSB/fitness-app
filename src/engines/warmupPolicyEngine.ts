@@ -2,11 +2,13 @@ import type { ExercisePrescription, ExerciseWarmupPreference } from '../models/t
 import { number } from './engineUtils';
 
 export type WarmupPolicy = 'required' | 'optional' | 'skipped_by_policy' | 'none';
+export type WarmupDecision = 'full_warmup' | 'feeder_set' | 'no_warmup';
 
 export type WarmupPolicyDecision = {
   exerciseId: string;
   movementPattern?: string;
   policy: WarmupPolicy;
+  warmupDecision: WarmupDecision;
   reason: string;
   shouldShowWarmupSets: boolean;
 };
@@ -23,18 +25,29 @@ export type WarmupPolicyInput = {
   };
 };
 
-const horizontalPushTerms = ['bench', 'press', 'push', 'chest', 'incline', '卧推', '推胸', '上斜', '胸推'];
+const horizontalPushTerms = ['bench', 'press', 'push', 'chest', 'incline', '卧推', '推胸', '上斜', '胸推', '水平推'];
+const verticalPushTerms = ['overhead', 'shoulder_press', 'shoulder-press', '肩推', '垂直推'];
+const horizontalPullTerms = ['row', '划船', '水平拉'];
+const verticalPullTerms = ['pullup', 'pull-up', 'pulldown', 'pull_down', 'lat', '下拉', '引体', '垂直拉'];
+const squatTerms = ['squat', 'leg_press', 'leg-press', 'hack', '深蹲', '腿举'];
+const hingeTerms = ['deadlift', 'rdl', 'hinge', '硬拉', '髋铰链'];
 const isolationTerms = [
   'triceps',
   'pushdown',
   'extension',
   'curl',
   'lateral_raise',
+  'lateral-raise',
   'raise',
   'leg_extension',
+  'leg-extension',
   'leg_curl',
+  'leg-curl',
   'fly',
   'cable_fly',
+  'cable-fly',
+  'face_pull',
+  'face-pull',
   '三头',
   '下压',
   '伸展',
@@ -45,6 +58,7 @@ const isolationTerms = [
   '腿弯举',
   '夹胸',
   '飞鸟',
+  '面拉',
 ];
 
 const normalizePatternText = (value?: string) =>
@@ -53,25 +67,43 @@ const normalizePatternText = (value?: string) =>
     .toLowerCase()
     .replace(/\s+/g, '_');
 
+const includesAny = (text: string, terms: string[]) => terms.some((term) => text.includes(term.toLowerCase()));
+
+const canonicalMovementPattern = (value?: string) => {
+  const normalized = normalizePatternText(value);
+  if (!normalized) return '';
+  const text = normalized.toLowerCase();
+  if (includesAny(text, horizontalPushTerms)) return 'horizontal_push';
+  if (includesAny(text, verticalPushTerms)) return 'vertical_push';
+  if (includesAny(text, horizontalPullTerms)) return 'horizontal_pull';
+  if (includesAny(text, verticalPullTerms)) return 'vertical_pull';
+  if (includesAny(text, squatTerms)) return 'squat';
+  if (includesAny(text, hingeTerms)) return 'hinge';
+  return normalized;
+};
+
 export const getWarmupMovementPattern = (exercise: ExercisePrescription): string => {
-  const explicit = normalizePatternText(exercise.movementPattern || exercise.equivalence?.pattern);
+  const explicit = canonicalMovementPattern(exercise.movementPattern || exercise.equivalence?.pattern);
   if (explicit) return explicit;
 
   const text = `${exercise.id} ${exercise.baseId || ''} ${exercise.canonicalExerciseId || ''} ${exercise.name || ''} ${
     exercise.alias || ''
   } ${exercise.muscle || ''}`.toLowerCase();
-  if (horizontalPushTerms.some((term) => text.includes(term.toLowerCase()))) return 'horizontal_push';
-  if (text.includes('row') || text.includes('划船')) return 'horizontal_pull';
-  if (text.includes('pull') || text.includes('下拉')) return 'vertical_pull';
-  if (text.includes('squat') || text.includes('leg_press') || text.includes('深蹲') || text.includes('腿举')) return 'squat';
-  if (text.includes('deadlift') || text.includes('rdl') || text.includes('硬拉')) return 'hinge';
+  if (includesAny(text, horizontalPushTerms)) return 'horizontal_push';
+  if (includesAny(text, verticalPushTerms)) return 'vertical_push';
+  if (includesAny(text, horizontalPullTerms)) return 'horizontal_pull';
+  if (includesAny(text, verticalPullTerms)) return 'vertical_pull';
+  if (includesAny(text, squatTerms)) return 'squat';
+  if (includesAny(text, hingeTerms)) return 'hinge';
   return normalizePatternText(exercise.muscle) || exercise.id;
 };
 
 const hasWarmupSets = (exercise: ExercisePrescription) => Array.isArray(exercise.warmupSets) && exercise.warmupSets.length > 0;
 const isMainExercise = (exercise: ExercisePrescription) =>
-  exercise.kind === 'compound' || (typeof exercise.orderPriority === 'number' && number(exercise.orderPriority) <= 2);
+  exercise.kind === 'compound' || exercise.kind === 'machine' || (typeof exercise.orderPriority === 'number' && number(exercise.orderPriority) <= 2);
 const isHighSkill = (exercise: ExercisePrescription) => exercise.skillDemand === 'high';
+const isHighFatigue = (exercise: ExercisePrescription) => exercise.fatigueCost === 'high';
+const isMachine = (exercise: ExercisePrescription) => exercise.kind === 'machine';
 const warmupPreference = (exercise: ExercisePrescription): ExerciseWarmupPreference =>
   exercise.warmupPreference === 'always' || exercise.warmupPreference === 'optional' || exercise.warmupPreference === 'never'
     ? exercise.warmupPreference
@@ -80,8 +112,31 @@ const isIsolationExercise = (exercise: ExercisePrescription) => {
   const text = `${exercise.id} ${exercise.baseId || ''} ${exercise.canonicalExerciseId || ''} ${exercise.name || ''} ${
     exercise.alias || ''
   } ${exercise.kind || ''}`.toLowerCase();
-  return exercise.kind === 'isolation' || isolationTerms.some((term) => text.includes(term.toLowerCase()));
+  return exercise.kind === 'isolation' || includesAny(text, isolationTerms);
 };
+
+const primaryMuscles = (exercise: ExercisePrescription) =>
+  (exercise.primaryMuscles?.length ? exercise.primaryMuscles : [exercise.muscle]).filter(Boolean).map((item) => String(item));
+
+const hasPrimaryMuscleOverlap = (exercise: ExercisePrescription, previousExercises: ExercisePrescription[]) => {
+  const current = new Set(primaryMuscles(exercise));
+  return previousExercises.some((previous) => primaryMuscles(previous).some((muscle) => current.has(muscle)));
+};
+
+const decision = (
+  exercise: ExercisePrescription,
+  movementPattern: string,
+  warmupDecision: WarmupDecision,
+  policy: WarmupPolicy,
+  reason: string,
+): WarmupPolicyDecision => ({
+  exerciseId: exercise.id,
+  movementPattern,
+  policy,
+  warmupDecision,
+  reason,
+  shouldShowWarmupSets: warmupDecision !== 'no_warmup',
+});
 
 export const decideWarmupPolicy = ({
   exercise,
@@ -92,97 +147,75 @@ export const decideWarmupPolicy = ({
   sessionContext,
 }: WarmupPolicyInput): WarmupPolicyDecision => {
   const movementPattern = getWarmupMovementPattern(exercise);
-  const completedPatterns = new Set(completedWarmupPatterns.map(normalizePatternText));
+  const completedPatterns = new Set(completedWarmupPatterns.map(canonicalMovementPattern));
   const previousPatternSeen = previousExercises.some((item) => getWarmupMovementPattern(item) === movementPattern);
+  const previousPrimaryMuscleSeen = hasPrimaryMuscleOverlap(exercise, previousExercises);
+  const previousWarmupCoverage = completedPatterns.has(movementPattern) || previousPatternSeen || previousPrimaryMuscleSeen;
   const highLoadThresholdKg = sessionContext?.highLoadThresholdKg ?? 80;
   const highLoad = number(plannedWeight ?? exercise.startWeight) >= highLoadThresholdKg;
+  const highDemand = isHighSkill(exercise) || isHighFatigue(exercise) || highLoad;
   const preference = warmupPreference(exercise);
 
   if (!hasWarmupSets(exercise)) {
-    return {
-      exerciseId: exercise.id,
-      movementPattern,
-      policy: 'none',
-      reason: '当前动作没有预设热身组。',
-      shouldShowWarmupSets: false,
-    };
+    return decision(exercise, movementPattern, 'no_warmup', 'none', '当前动作没有预设热身组。');
   }
 
   if (preference === 'never') {
-    return {
-      exerciseId: exercise.id,
-      movementPattern,
-      policy: 'none',
-      reason: '该动作已设置为不使用热身组。',
-      shouldShowWarmupSets: false,
-    };
+    return decision(exercise, movementPattern, 'no_warmup', 'none', '该动作已设置为不使用热身组。');
   }
 
   if (preference === 'always' || sessionContext?.allExercisesWarmup) {
-    return {
-      exerciseId: exercise.id,
+    return decision(
+      exercise,
       movementPattern,
-      policy: 'required',
-      reason: preference === 'always' ? '该动作已手动设置为必须热身。' : '已开启所有动作热身。',
-      shouldShowWarmupSets: true,
-    };
+      'full_warmup',
+      'required',
+      preference === 'always' ? '该动作已手动设置为完整热身。' : '已开启所有动作完整热身。',
+    );
   }
 
   if (isIsolationExercise(exercise) && !highLoad && !isHighSkill(exercise)) {
-    return {
-      exerciseId: exercise.id,
+    return decision(
+      exercise,
       movementPattern,
-      policy: preference === 'optional' ? 'optional' : 'skipped_by_policy',
-      reason: '孤立动作默认不强制热身，直接进入正式组。',
-      shouldShowWarmupSets: false,
-    };
+      'no_warmup',
+      preference === 'optional' ? 'optional' : 'skipped_by_policy',
+      '孤立动作和小肌群动作默认不重复安排热身，直接进入正式组。',
+    );
   }
 
   if (exerciseIndex === 0 && isMainExercise(exercise)) {
-    return {
-      exerciseId: exercise.id,
-      movementPattern,
-      policy: 'required',
-      reason: '本次训练第一个主动作需要先完成热身。',
-      shouldShowWarmupSets: true,
-    };
+    return decision(exercise, movementPattern, 'full_warmup', 'required', '本次训练第一个主动作安排完整热身。');
   }
 
-  if (highLoad || isHighSkill(exercise)) {
-    return {
-      exerciseId: exercise.id,
+  if (previousWarmupCoverage) {
+    if (highDemand && !isMachine(exercise)) {
+      return decision(
+        exercise,
+        movementPattern,
+        'feeder_set',
+        'required',
+        '前面已覆盖相关肌群，当前动作只保留 1 组适应组。',
+      );
+    }
+    return decision(
+      exercise,
       movementPattern,
-      policy: 'required',
-      reason: highLoad ? '本动作推荐负荷较高，保留热身组。' : '本动作技术要求较高，保留热身组。',
-      shouldShowWarmupSets: true,
-    };
+      'no_warmup',
+      preference === 'optional' ? 'optional' : 'skipped_by_policy',
+      completedPatterns.has(movementPattern)
+        ? '已完成同模式热身，直接进入正式组。'
+        : '前面已覆盖相关肌群，不再重复完整热身。',
+    );
   }
 
-  if (completedPatterns.has(movementPattern)) {
-    return {
-      exerciseId: exercise.id,
-      movementPattern,
-      policy: 'skipped_by_policy',
-      reason: '已完成同模式热身，直接进入正式组。',
-      shouldShowWarmupSets: false,
-    };
+  if (isMainExercise(exercise)) {
+    return decision(exercise, movementPattern, 'full_warmup', 'required', '该动作是本次训练首次出现的主训练模式，安排完整热身。');
   }
 
-  if (!previousPatternSeen && isMainExercise(exercise)) {
-    return {
-      exerciseId: exercise.id,
-      movementPattern,
-      policy: 'required',
-      reason: '该动作模式本次训练第一次出现，需要热身。',
-      shouldShowWarmupSets: true,
-    };
+  if (highDemand) {
+    return decision(exercise, movementPattern, 'feeder_set', 'required', '当前动作负荷或技术要求较高，保留 1 组适应组。');
   }
 
-  return {
-    exerciseId: exercise.id,
-    movementPattern,
-    policy: 'optional',
-    reason: '同模式动作已出现，热身可选；默认直接进入正式组。',
-    shouldShowWarmupSets: false,
-  };
+  return decision(exercise, movementPattern, 'no_warmup', 'optional', '当前动作热身可选，默认直接进入正式组。');
 };
