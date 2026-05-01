@@ -160,7 +160,7 @@ describe('persistence', () => {
     expect(sanitized.history[0]?.dataFlag).toBe('normal');
   });
 
-  it('repairs synthetic replacement ids during sanitize', () => {
+  it('preserves synthetic replacement ids for manual repair review during sanitize', () => {
     const sanitized = sanitizeData({
       history: [
         {
@@ -191,8 +191,9 @@ describe('persistence', () => {
     });
     const exercise = sanitized.history[0]?.exercises[0];
 
-    expect(exercise?.id).toBe('bench-press');
-    expect(exercise?.actualExerciseId).toBe('bench-press');
+    expect(exercise?.id).toBe('bench-press__auto_alt_alt');
+    expect(exercise?.actualExerciseId).toBe('bench-press__auto_alt_alt');
+    expect(exercise?.legacyActualExerciseId).toBe('bench-press__auto_alt_alt');
     expect(exercise?.replacementExerciseId).toBe('');
     expect(exercise?.warning).toContain('合成动作 ID');
   });

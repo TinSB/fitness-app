@@ -16,7 +16,7 @@ import type {
 } from '../models/training-model';
 import { applyAdaptiveExerciseRules, buildAdaptiveConservativeDecision, buildAdaptiveDeloadDecision } from './adaptiveFeedbackEngine';
 import { buildAdherenceReport } from './analytics';
-import { clamp, clone, enrichExercise, getPrimaryMuscles, number, resolveMode, safeNumber } from './engineUtils';
+import { actionableSorenessAreas, clamp, clone, enrichExercise, getPrimaryMuscles, number, resolveMode, safeNumber } from './engineUtils';
 import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
 import { getCurrentMesocycleWeek } from './mesocycleEngine';
 import { buildPainPatterns, getExercisePainPattern } from './painPatternEngine';
@@ -29,7 +29,7 @@ const NONE_SORENESS: TodayStatus['soreness'][number] = '无';
 const POOR_SLEEP: TodayStatus['sleep'] = '差';
 const LOW_ENERGY: TodayStatus['energy'] = '低';
 
-const statusHitsMuscle = (status: TodayStatus, muscle: string) => (status.soreness || []).includes(muscle as never);
+const statusHitsMuscle = (status: TodayStatus, muscle: string) => actionableSorenessAreas(status.soreness).includes(muscle);
 const hasPoorSleep = (status: TodayStatus) => status.sleep === POOR_SLEEP;
 const hasLowEnergy = (status: TodayStatus) => status.energy === LOW_ENERGY;
 

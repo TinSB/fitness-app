@@ -10,7 +10,7 @@ import type {
   TrainingSession,
   TrainingSetLog,
 } from '../models/training-model';
-import { completedSets, enrichExercise, number, setVolume } from './engineUtils';
+import { actionableSorenessAreas, completedSets, enrichExercise, number, setVolume } from './engineUtils';
 import { inferCorrectionPriority, ISSUE_LABELS } from './screeningEngine';
 
 type ExerciseLike = ExerciseTemplate | ExercisePrescription;
@@ -427,7 +427,7 @@ export const getAdaptiveBudgetAdjustment = (
   const reasons: string[] = [];
   let targetMultiplier = 1;
 
-  if ((data.todayStatus?.soreness || []).includes(muscle as never)) {
+  if (actionableSorenessAreas(data.todayStatus?.soreness).includes(muscle)) {
     targetMultiplier -= 0.1;
     reasons.push(`${muscle} 今天有酸痛`);
   }
@@ -475,7 +475,7 @@ export const buildAdaptiveDeloadDecision = (
   const repeatedPainCount = Object.values(adaptive.painByExercise || {}).filter((count) => number(count) >= 2).length;
   const performanceDropCount = (adaptive.performanceDrops || []).length;
   const highIssueCount = Object.values(adaptive.issueScores || {}).filter((count) => number(count) >= 4).length;
-  const currentSorenessCount = (currentStatus.soreness || []).filter((item) => item !== '无').length;
+  const currentSorenessCount = actionableSorenessAreas(currentStatus.soreness).length;
 
   if (performanceDropCount >= 2) {
     score += 2;

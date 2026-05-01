@@ -6,6 +6,7 @@ import { buildDailyTrainingAdjustment, type DailyTrainingAdjustment } from './da
 import { buildNextWorkoutRecommendation, type NextWorkoutRecommendation } from './nextWorkoutScheduler';
 import { buildTodayTrainingState, type TodayTrainingState } from './todayStateEngine';
 import { buildTrainingDecisionContext, type TrainingDecisionContext } from './trainingDecisionContext';
+import { actionableSorenessAreas } from './engineUtils';
 
 export type EnginePipelineResult = {
   context: TrainingDecisionContext;
@@ -24,9 +25,6 @@ export type BuildEnginePipelineOptions = {
 };
 
 const activeSessionInProgress = (data: AppData) => Boolean(data.activeSession && data.activeSession.completed !== true);
-
-const actionableSoreness = (items: string[] = []) =>
-  items.filter((item) => item && item !== '无' && item.toLowerCase() !== 'none');
 
 export function buildEnginePipeline(
   appData: AppData,
@@ -52,7 +50,7 @@ export function buildEnginePipeline(
     templates: context.templates,
     todayState,
     painPatterns: context.painPatterns,
-    sorenessAreas: actionableSoreness(context.todayStatus.soreness as string[]),
+    sorenessAreas: actionableSorenessAreas(context.todayStatus.soreness),
     painAreas: context.painPatterns.map((pattern) => pattern.area),
     readinessResult: context.readinessResult,
     trainingMode: context.trainingMode,
@@ -71,7 +69,7 @@ export function buildEnginePipeline(
           : undefined,
         recentHistory: context.normalHistory,
         painPatterns: context.painPatterns,
-        sorenessAreas: actionableSoreness(context.todayStatus.soreness as string[]),
+        sorenessAreas: actionableSorenessAreas(context.todayStatus.soreness),
         painAreas: context.painPatterns.map((pattern) => pattern.area),
         loadFeedbackSummary: context.loadFeedbackSummary,
         trainingLevel: context.trainingLevel,

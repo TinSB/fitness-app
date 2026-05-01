@@ -238,7 +238,12 @@ export interface ReadinessSignal {
 
 export interface TrainingSetLog {
   id: string;
+  exerciseId?: string;
+  originalExerciseId?: string;
+  actualExerciseId?: string;
   type?: TrainingSetType | string;
+  warmupType?: 'full_warmup' | 'feeder_set' | 'unknown';
+  setIndex?: number;
   weight: number;
   reps: number;
   actualWeightKg?: number;
@@ -352,6 +357,7 @@ export interface ExercisePrescription extends Omit<ExerciseTemplate, 'sets'> {
   originalName?: string;
   originalExerciseId?: string;
   actualExerciseId?: string;
+  legacyActualExerciseId?: string;
   replacementExerciseId?: string;
   sameTemplateSlot?: boolean;
   replacementReason?: string;
@@ -1134,6 +1140,7 @@ export interface AppSettings {
   unitSettings?: UnitSettings;
   healthIntegrationSettings?: HealthIntegrationSettings;
   dismissedCoachActions?: DismissedCoachAction[];
+  dataRepairLogs?: DataRepairLogEntry[];
   [key: string]: unknown;
 }
 
@@ -1141,6 +1148,17 @@ export interface DismissedCoachAction {
   actionId: string;
   dismissedAt: string;
   scope: 'today';
+}
+
+export interface DataRepairLogEntry {
+  id: string;
+  createdAt: string;
+  sourceFileName?: string;
+  category: string;
+  action: string;
+  affectedIds: string[];
+  before?: unknown;
+  after?: unknown;
 }
 
 export interface AppData {

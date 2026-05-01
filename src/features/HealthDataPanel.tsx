@@ -39,6 +39,7 @@ type HealthImportStatus = 'idle' | 'reading' | 'parsing' | 'preview_ready' | 'er
 const HEALTH_IMPORT_WARNING_DISPLAY_LIMIT = 20;
 const HEALTH_IMPORT_ERROR_TITLE = '健康数据导入失败';
 const HEALTH_IMPORT_ERROR_DESCRIPTION = '文件可能过大或格式不受支持。请尝试导入最近 30 天数据，或使用 CSV/JSON。';
+const APP_BACKUP_IN_HEALTH_IMPORT_MESSAGE = '这是 IronPath 应用备份 JSON，请到“我的 → 备份与恢复”导入。健康数据导入不会处理完整应用备份。';
 
 const xmlMetricOptions: Array<{ id: HealthMetricType; label: string }> = [
   { id: 'sleep_duration', label: '睡眠' },
@@ -51,6 +52,21 @@ const xmlMetricOptions: Array<{ id: HealthMetricType; label: string }> = [
 ];
 
 const defaultXmlMetricTypes: HealthMetricType[] = ['sleep_duration', 'resting_heart_rate', 'hrv', 'steps', 'workout'];
+
+const looksLikeAppDataBackup = (fileText: string) => {
+  try {
+    const parsed = JSON.parse(fileText) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+    return (
+      Array.isArray(parsed.history) ||
+      Array.isArray(parsed.templates) ||
+      typeof parsed.programTemplate === 'object' ||
+      typeof parsed.todayStatus === 'object'
+    );
+  } catch {
+    return false;
+  }
+};
 
 const buildXmlDateOptions = (range: XmlDateRangeOption) => {
   if (range === 'all') return {};
@@ -331,6 +347,15 @@ function HealthDataPanelContent({ data, onUpdateData }: HealthDataPanelProps) {
       setMessage('正在解析健康数据…');
       await new Promise<void>((resolve) => (typeof window === 'undefined' ? resolve() : window.setTimeout(resolve, 0)));
       if (job.cancelled || importJobRef.current?.id !== job.id) return;
+
+      if (file.name.toLowerCase().endsWith('.json') && looksLikeAppDataBackup(fileText)) {
+        fileText = '';
+        setPreview(null);
+        setImportStatus('error');
+        setImportError(APP_BACKUP_IN_HEALTH_IMPORT_MESSAGE);
+        setMessage(APP_BACKUP_IN_HEALTH_IMPORT_MESSAGE);
+        return;
+      }
 
       const result = parseHealthImportFile(fileText, file.name);
       fileText = '';

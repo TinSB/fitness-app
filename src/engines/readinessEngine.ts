@@ -1,5 +1,6 @@
 import type { AppData, ReadinessInput, ReadinessResult, TodayStatus, TrainingSession, TrainingTemplate } from '../models/training-model';
 import { buildHealthSummary, type HealthSummary } from './healthSummaryEngine';
+import { actionableSorenessAreas } from './engineUtils';
 
 const sleepMap: Record<TodayStatus['sleep'], ReadinessInput['sleep']> = {
   差: 'poor',
@@ -20,7 +21,7 @@ export const mapTodayStatusToReadinessInput = (
 ): ReadinessInput => ({
   sleep: sleepMap[status.sleep],
   energy: energyMap[status.energy],
-  sorenessAreas: (status.soreness || []).filter((item) => item !== '无') as string[],
+  sorenessAreas: actionableSorenessAreas(status.soreness),
   painAreas,
   availableTimeMin: Number(status.time),
   plannedTimeMin: template?.duration,

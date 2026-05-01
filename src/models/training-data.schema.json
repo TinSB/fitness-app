@@ -86,6 +86,10 @@
           "type": "array",
           "items": { "$ref": "#/$defs/dismissedCoachAction" }
         },
+        "dataRepairLogs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/dataRepairLog" }
+        },
         "healthIntegrationSettings": {
           "type": "object",
           "properties": {
@@ -107,6 +111,21 @@
         "actionId": { "type": "string" },
         "dismissedAt": { "type": "string" },
         "scope": { "type": "string", "enum": ["today"] }
+      },
+      "additionalProperties": true
+    },
+    "dataRepairLog": {
+      "type": "object",
+      "required": ["id", "createdAt", "category", "action", "affectedIds"],
+      "properties": {
+        "id": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "sourceFileName": { "type": "string" },
+        "category": { "type": "string" },
+        "action": { "type": "string" },
+        "affectedIds": { "type": "array", "items": { "type": "string" } },
+        "before": {},
+        "after": {}
       },
       "additionalProperties": true
     },
@@ -271,7 +290,12 @@
       "required": ["id", "weight", "reps"],
       "properties": {
         "id": { "type": "string" },
+        "exerciseId": { "type": "string" },
+        "originalExerciseId": { "type": "string" },
+        "actualExerciseId": { "type": "string" },
         "type": { "type": "string" },
+        "warmupType": { "type": "string", "enum": ["full_warmup", "feeder_set", "unknown"] },
+        "setIndex": { "type": "number", "minimum": 0 },
         "weight": { "type": "number", "minimum": 0 },
         "reps": { "type": "number", "minimum": 0 },
         "rpe": {},
@@ -293,6 +317,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "alias": { "type": "string" },
+        "legacyActualExerciseId": { "type": "string" },
         "muscle": { "type": "string" },
         "kind": { "type": "string" },
         "sets": {

@@ -22,6 +22,7 @@ import { buildTodayReadiness } from './readinessEngine';
 import { filterAnalyticsHistory, isAnalyticsSession } from './sessionHistoryEngine';
 import { buildTrainingLevelAssessment, type AutoTrainingLevel, type TrainingLevelAssessment } from './trainingLevelEngine';
 import { DEFAULT_UNIT_SETTINGS } from './unitConversionEngine';
+import { normalizeSoreness } from './engineUtils';
 
 export type TrainingDecisionContext = {
   todayStatus: TodayStatus;
@@ -123,7 +124,7 @@ export const scopeTodayStatusToDate = (status: TodayStatus | undefined, currentD
   return {
     ...DEFAULT_STATUS,
     ...rawStatus,
-    soreness: statusDate === currentDateLocalKey ? rawStatus.soreness || DEFAULT_STATUS.soreness : DEFAULT_STATUS.soreness,
+    soreness: statusDate === currentDateLocalKey ? normalizeSoreness(rawStatus.soreness) : normalizeSoreness(DEFAULT_STATUS.soreness),
     date: statusDate === currentDateLocalKey ? statusDate : currentDateLocalKey,
   };
 };

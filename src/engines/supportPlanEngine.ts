@@ -20,7 +20,7 @@ import type {
 } from '../models/training-model';
 import { formatCyclePhase } from '../i18n/formatters';
 import { buildAdherenceAdjustment } from './adherenceAdjustmentEngine';
-import { clamp, completedSets, number, resolveMode, todayKey } from './engineUtils';
+import { actionableSorenessAreas, clamp, completedSets, number, resolveMode, todayKey } from './engineUtils';
 import { buildAdaptiveDeloadDecision, getAdaptiveBudgetAdjustment } from './adaptiveFeedbackEngine';
 import { buildAdherenceReport } from './analytics';
 import { evaluateEffectiveSet, getMuscleContribution } from './effectiveSetEngine';
@@ -340,10 +340,10 @@ const recoveryMultiplierForMuscle = (data: Partial<AppData>, muscle: string) => 
 
   if (status?.sleep === '差') multiplier -= 0.15;
   if (status?.energy === '低') multiplier -= 0.15;
-  if ((status?.soreness || []).includes(muscle as never)) multiplier -= 0.25;
+  if (actionableSorenessAreas(status?.soreness).includes(muscle)) multiplier -= 0.25;
 
   const recentSessions = filterRecommendationHistory(data.history).slice(0, 6);
-  const sorenessHits = recentSessions.filter((session) => (session.status?.soreness || []).includes(muscle as never)).length;
+  const sorenessHits = recentSessions.filter((session) => actionableSorenessAreas(session.status?.soreness).includes(muscle)).length;
   if (sorenessHits >= 2) multiplier -= 0.15;
 
   const adaptiveState = data.screeningProfile?.adaptiveState;

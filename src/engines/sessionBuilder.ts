@@ -11,7 +11,7 @@ import type {
   TrainingTemplate,
   WeeklyPrescription,
 } from '../models/training-model';
-import { clone, findTemplate, getPrimaryMuscles, todayKey } from './engineUtils';
+import { actionableSorenessAreas, clone, findTemplate, getPrimaryMuscles, todayKey } from './engineUtils';
 import { buildAdaptiveDeloadDecision, reconcileScreeningProfile } from './adaptiveFeedbackEngine';
 import { buildSessionExplanations, buildTodayExplanations } from './explainability/trainingExplainability';
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
@@ -279,7 +279,7 @@ export const scoreSuggestedTemplates = (data: Partial<AppData>, decisionContext:
     screeningProfile: screening,
     programTemplate: context.programTemplate || data.programTemplate,
   });
-  const soreness = status.soreness || [];
+  const soreness = actionableSorenessAreas(status.soreness);
   const templates = data.templates || [];
   const statusRulesContext = toStatusRulesDecisionContext(context);
 
@@ -288,7 +288,7 @@ export const scoreSuggestedTemplates = (data: Partial<AppData>, decisionContext:
     const score = prescribed.exercises.reduce((sum, exercise) => {
       const primary = getPrimaryMuscles(exercise)[0];
       const remaining = getMuscleRemaining(weekly, primary);
-      const sorenessPenalty = soreness.includes(primary as never) ? 8 : 0;
+      const sorenessPenalty = soreness.includes(primary) ? 8 : 0;
       const fatiguePenalty = exercise.fatigueCost === 'high' && status.energy === '低' ? 3 : 0;
       const replacementPenalty = exercise.replacementSuggested ? 1.5 : 0;
       const conservativePenalty = exercise.conservativeTopSet ? 1 : 0;

@@ -5,8 +5,8 @@ import { buildPrs, buildExerciseTrend } from '../src/engines/analytics';
 import { buildE1RMProfile } from '../src/engines/e1rmEngine';
 import { formatTrainingVolume, formatWeight } from '../src/engines/unitConversionEngine';
 import { auditGoalModeConsistency } from '../src/engines/goalConsistencyEngine';
-import { buildSystemConsistencyReport } from '../src/engines/systemConsistencyEngine';
 import { sanitizeData } from '../src/storage/persistence';
+import { analyzeImportedAppData, repairImportedAppData } from '../src/engines/dataRepairEngine';
 
 describe('real export regression fixtures', () => {
   it('keeps hypertrophy export unit display stable in lb', () => {
@@ -20,14 +20,16 @@ describe('real export regression fixtures', () => {
     expect(formatTrainingVolume(100, data.unitSettings)).toBe('220lb');
   });
 
-  it('repairs legacy synthetic replacement ids from exported data', () => {
-    const data = sanitizeData(fatLossHybridExport);
-    const exercise = data.history[0]?.exercises[0];
+  it('keeps legacy synthetic replacement ids for data repair review instead of silent fallback', () => {
+    const report = analyzeImportedAppData(fatLossHybridExport);
+    const result = repairImportedAppData(fatLossHybridExport, { repairDate: '2026-05-01', sourceFileName: 'fixture.json' });
+    const exercise = result.repairedData.history[0]?.exercises[0];
 
-    expect(exercise?.id).not.toContain('__auto_alt');
-    expect(exercise?.actualExerciseId).not.toContain('__auto_alt');
+    expect(report.issues.some((issue) => issue.id === 'replacement.synthetic_id')).toBe(true);
+    expect(exercise?.id).toContain('__auto_alt');
+    expect(exercise?.actualExerciseId).toContain('__auto_alt');
+    expect(exercise?.legacyActualExerciseId).toContain('__auto_alt');
     expect(exercise?.replacementExerciseId).not.toContain('__auto_alt');
-    expect(buildSystemConsistencyReport(data).errors.some((item) => item.includes('__auto_alt'))).toBe(false);
   });
 
   it('keeps fat_loss + hybrid legal and explains hypertrophy-style mesocycle as support work', () => {

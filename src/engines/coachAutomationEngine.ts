@@ -5,12 +5,12 @@ import { buildHealthSummary } from './healthSummaryEngine';
 import { buildLoadFeedbackSummary } from './loadFeedbackEngine';
 import { buildNextWorkoutRecommendation, type NextWorkoutRecommendation } from './nextWorkoutScheduler';
 import { buildPainPatterns } from './painPatternEngine';
+import { actionableSorenessAreas, todayKey } from './engineUtils';
 import { filterAnalyticsHistory } from './sessionHistoryEngine';
 import { buildTodayReadiness } from './readinessEngine';
 import { buildTodayTrainingState } from './todayStateEngine';
 import { buildTrainingDecisionContext } from './trainingDecisionContext';
 import { buildTrainingLevelAssessment } from './trainingLevelEngine';
-import { todayKey } from './engineUtils';
 
 export type CoachAutomationSummary = {
   todayAdjustment?: DailyTrainingAdjustment;
@@ -147,7 +147,7 @@ export const buildCoachAutomationSummary = (appData: AppData): CoachAutomationSu
           : undefined,
         recentHistory: analyticsHistory,
         painPatterns,
-        sorenessAreas: appData.todayStatus?.soreness?.filter((area) => area !== '无') || [],
+        sorenessAreas: actionableSorenessAreas(appData.todayStatus?.soreness),
         painAreas: painPatterns.map((pattern) => pattern.area),
         loadFeedbackSummary,
         trainingLevel,
@@ -160,7 +160,7 @@ export const buildCoachAutomationSummary = (appData: AppData): CoachAutomationSu
     templates: appData.templates || [],
     todayState,
     painPatterns,
-    sorenessAreas: appData.todayStatus?.soreness?.filter((area) => area !== '无') || [],
+    sorenessAreas: actionableSorenessAreas(appData.todayStatus?.soreness),
     painAreas: painPatterns.map((pattern) => pattern.area),
     readinessResult,
     trainingMode: appData.trainingMode,

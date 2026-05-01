@@ -185,3 +185,19 @@ export const getSecondaryMuscles = (exercise: Partial<Pick<ExerciseTemplate, 'se
 
 export const trainingModeOptions = Object.values(TRAINING_MODE_META);
 export const sorenessOptions = [...SORENESS_OPTIONS] as TodayStatus['soreness'];
+
+const noSorenessValues = new Set(['无', '鏃?', 'none', 'no', '']);
+
+export const isNoSoreness = (value: unknown): boolean => {
+  if (Array.isArray(value)) return value.length === 0 || value.every(isNoSoreness);
+  const text = String(value ?? '').trim();
+  return noSorenessValues.has(text) || text.toLowerCase() === 'none';
+};
+
+export const normalizeSoreness = (value: unknown): TodayStatus['soreness'] => {
+  const items = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value];
+  const normalized = items.map((item) => String(item ?? '').trim()).filter((item) => item && !isNoSoreness(item));
+  return (normalized.length ? [...new Set(normalized)] : ['无']) as TodayStatus['soreness'];
+};
+
+export const actionableSorenessAreas = (value: unknown): string[] => normalizeSoreness(value).filter((item) => !isNoSoreness(item));

@@ -24,7 +24,7 @@ import { buildTemplateBodyPartConflictScore } from './recoveryAwareScheduler';
 import { buildWeeklyPrescription, getMuscleBudget } from './supportPlanEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './trainingDecisionContext';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel, type AutoTrainingLevel } from './trainingLevelEngine';
-import { findTemplate, getPrimaryMuscles, number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { actionableSorenessAreas, findTemplate, getPrimaryMuscles, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 
 export type RecommendationFactor = {
   id: string;
@@ -283,7 +283,7 @@ export const buildRecommendationTrace = (context: RecommendationTraceContext): R
     trainingLevelFactor(trainingLevel, decisionContext.history.length),
     recentHistoryFactor(decisionContext.history),
   ];
-  const sorenessAreas = (decisionContext.todayStatus?.soreness || []).filter((area) => area !== '无');
+  const sorenessAreas = actionableSorenessAreas(decisionContext.todayStatus?.soreness);
   const recoveryConflict = buildTemplateBodyPartConflictScore({
     template,
     sorenessAreas,

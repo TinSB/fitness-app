@@ -28,6 +28,7 @@ import {
   TRAINING_LEVELS,
   TRAINING_MODES,
   type AppData,
+  type DataRepairLogEntry,
   type DismissedCoachAction,
   type HealthIntegrationSettings,
   type HealthImportBatch,
@@ -45,7 +46,7 @@ import {
   type TrainingSession,
   type UserProfile,
 } from '../models/training-model';
-import { clamp, clone, hydrateTemplates, number } from '../engines/engineUtils';
+import { clamp, clone, hydrateTemplates, normalizeSoreness, number } from '../engines/engineUtils';
 import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
 import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
 import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from '../engines/replacementEngine';
@@ -126,10 +127,13 @@ const normalizeExerciseIdentity = (raw: Record<string, unknown>, rawId: string) 
   const validReplacementId = validateReplacementExerciseId(rawReplacementId) ? rawReplacementId : '';
   const validActualId = validateReplacementExerciseId(rawActualId) ? rawActualId : '';
   const hasSyntheticId = [rawId, rawActualId, rawReplacementId].some(isSyntheticReplacementExerciseId);
+  const legacyActualExerciseId =
+    pickString(raw.legacyActualExerciseId) ||
+    (!validActualId && rawActualId ? rawActualId : '');
   const fallbackActualId = originalExerciseId || baseId || rawId;
-  const actualExerciseId = validActualId || validReplacementId || (hasSyntheticId ? fallbackActualId : rawActualId || fallbackActualId);
+  const actualExerciseId = validActualId || validReplacementId || legacyActualExerciseId || (hasSyntheticId ? rawActualId || rawId : rawActualId || fallbackActualId);
   const replacementExerciseId = validReplacementId || (validActualId && validActualId !== originalExerciseId ? validActualId : '');
-  const id = hasSyntheticId ? actualExerciseId : rawId;
+  const id = hasSyntheticId ? actualExerciseId || rawId : rawId;
   const warning = hasSyntheticId ? [pickString(raw.warning), '已修复无效替代动作 ID，避免继续使用合成动作 ID。'].filter(Boolean).join(' / ') : pickString(raw.warning);
 
   return {
@@ -138,6 +142,7 @@ const normalizeExerciseIdentity = (raw: Record<string, unknown>, rawId: string) 
     canonicalExerciseId: pickString(raw.canonicalExerciseId, actualExerciseId || id),
     originalExerciseId,
     actualExerciseId,
+    legacyActualExerciseId: legacyActualExerciseId || undefined,
     replacementExerciseId,
     warning,
   };
@@ -494,16 +499,28 @@ export const sanitizeScreeningProfile = (screening: unknown, history: TrainingSe
 
 const sanitizeSet = (set: unknown, fallbackId: string, fallbackType = 'straight') => {
   const raw = pickRecord(set);
-  const weight = Math.max(0, number(raw.actualWeightKg ?? raw.weight));
+  const rawWeightSource = raw.actualWeightKg ?? raw.weight;
+  const hasWeightSource = raw.actualWeightKg !== undefined || (raw.weight !== undefined && number(raw.weight) > 0);
+  const parsedWeight = Number(rawWeightSource);
+  const weight = hasWeightSource && Number.isFinite(parsedWeight) ? Math.max(0, number(rawWeightSource)) : 0;
+  const parsedDisplayWeight = Number(raw.displayWeight);
   const reps = Math.max(0, number(raw.reps));
   const done = typeof raw.done === 'boolean' ? raw.done : weight > 0 && reps > 0;
   return {
     id: pickString(raw.id, fallbackId),
+    exerciseId: pickString(raw.exerciseId) || undefined,
+    originalExerciseId: pickString(raw.originalExerciseId) || undefined,
+    actualExerciseId: pickString(raw.actualExerciseId) || undefined,
     type: pickString(raw.type || raw.setType || raw.stepType, fallbackType),
+    warmupType:
+      typeof raw.warmupType === 'string'
+        ? pickEnum(raw.warmupType, ['full_warmup', 'feeder_set', 'unknown'] as const, 'unknown')
+        : undefined,
+    setIndex: Number.isFinite(number(raw.setIndex)) ? Math.max(0, Math.floor(number(raw.setIndex))) : undefined,
     weight,
-    actualWeightKg: Number.isFinite(number(raw.actualWeightKg ?? raw.weight)) ? weight : undefined,
-    displayWeight: Number.isFinite(number(raw.displayWeight)) ? Math.max(0, number(raw.displayWeight)) : undefined,
-    displayUnit: pickEnum(raw.displayUnit, WEIGHT_UNITS, 'kg'),
+    actualWeightKg: hasWeightSource && Number.isFinite(parsedWeight) ? weight : undefined,
+    displayWeight: raw.displayWeight !== undefined && Number.isFinite(parsedDisplayWeight) ? Math.max(0, number(raw.displayWeight)) : undefined,
+    displayUnit: raw.displayUnit === 'kg' || raw.displayUnit === 'lb' ? raw.displayUnit : undefined,
     reps,
     rpe: raw.rpe ?? '',
     rir: raw.rir ?? '',
@@ -962,17 +979,37 @@ const sanitizeDismissedCoachActions = (entries: unknown): DismissedCoachAction[]
     })
     .filter(Boolean) as DismissedCoachAction[];
 
+const sanitizeDataRepairLogs = (entries: unknown): DataRepairLogEntry[] =>
+  pickArray(entries)
+    .map((entry) => {
+      const raw = pickRecord(entry);
+      const id = pickString(raw.id);
+      const createdAt = pickString(raw.createdAt);
+      const category = pickString(raw.category);
+      const action = pickString(raw.action);
+      if (!id || !createdAt || !category || !action) return null;
+      return {
+        id,
+        createdAt,
+        sourceFileName: pickString(raw.sourceFileName) || undefined,
+        category,
+        action,
+        affectedIds: pickStringArray(raw.affectedIds).slice(0, 100),
+        before: raw.before,
+        after: raw.after,
+      };
+    })
+    .filter(Boolean)
+    .slice(-200) as DataRepairLogEntry[];
+
 const sanitizeTodayStatus = (status: unknown): TodayStatus => {
   const raw = pickRecord(status);
-  const soreness = pickArray(raw.soreness, DEFAULT_STATUS.soreness)
-    .map(normalizeTextValue)
-    .filter((item) => item === '无' || item === '胸' || item === '背' || item === '腿' || item === '肩' || item === '手臂') as TodayStatus['soreness'];
   return {
     ...DEFAULT_STATUS,
     ...raw,
     sleep: pickEnum(normalizeTextValue(raw.sleep), SLEEP_STATES, DEFAULT_STATUS.sleep),
     energy: pickEnum(normalizeTextValue(raw.energy), ENERGY_STATES, DEFAULT_STATUS.energy),
-    soreness: soreness.length ? soreness : DEFAULT_STATUS.soreness,
+    soreness: normalizeSoreness(pickArray(raw.soreness, DEFAULT_STATUS.soreness).map(normalizeTextValue)),
     time: pickString(raw.time, DEFAULT_STATUS.time) as TodayStatus['time'],
     date: pickString(raw.date),
   };
@@ -998,6 +1035,7 @@ export const sanitizeData = (saved: unknown): AppData => {
   const dismissedCoachActions = sanitizeDismissedCoachActions(
     migrated.dismissedCoachActions ?? pickRecord(migrated.settings).dismissedCoachActions,
   );
+  const dataRepairLogs = sanitizeDataRepairLogs(pickRecord(migrated.settings).dataRepairLogs);
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
     templates,
@@ -1028,6 +1066,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       healthIntegrationSettings,
       activeProgramTemplateId,
       dismissedCoachActions,
+      dataRepairLogs,
     },
   };
 
@@ -1048,6 +1087,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     sanitized.importedWorkoutSamples = sanitizeImportedWorkoutSamples(sanitized.importedWorkoutSamples);
     sanitized.healthImportBatches = sanitizeHealthImportBatches(sanitized.healthImportBatches);
     sanitized.dismissedCoachActions = sanitizeDismissedCoachActions(sanitized.dismissedCoachActions);
+    sanitized.settings.dataRepairLogs = sanitizeDataRepairLogs(sanitized.settings.dataRepairLogs);
     sanitized.settings.healthIntegrationSettings = sanitizeHealthIntegrationSettings(sanitized.settings.healthIntegrationSettings);
     sanitized.activeProgramTemplateId = sanitized.templates.some((template) => template.id === sanitized.activeProgramTemplateId)
       ? sanitized.activeProgramTemplateId
@@ -1061,6 +1101,7 @@ export const sanitizeData = (saved: unknown): AppData => {
       healthIntegrationSettings: sanitized.settings.healthIntegrationSettings,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
       dismissedCoachActions: sanitized.dismissedCoachActions,
+      dataRepairLogs: sanitized.settings.dataRepairLogs,
     };
   }
 
@@ -1089,7 +1130,7 @@ export const emptyData = (): AppData =>
     importedWorkoutSamples: [],
     healthImportBatches: [],
     dismissedCoachActions: [],
-    settings: { healthIntegrationSettings: DEFAULT_HEALTH_INTEGRATION_SETTINGS },
+    settings: { healthIntegrationSettings: DEFAULT_HEALTH_INTEGRATION_SETTINGS, dataRepairLogs: [] },
   });
 
 export const loadData = (): AppData => {
@@ -1166,6 +1207,7 @@ export const saveData = (data: AppData) => {
       programAdjustmentDrafts: sanitized.programAdjustmentDrafts || [],
       programAdjustmentHistory: sanitized.programAdjustmentHistory || [],
       dismissedCoachActions: sanitized.dismissedCoachActions || [],
+      dataRepairLogs: sanitized.settings.dataRepairLogs || [],
     })
   );
 };

@@ -25,7 +25,8 @@ describe('Profile layout', () => {
     expect(source).toContain('导入恢复');
     expect(source).toContain('<ConfirmDialog');
     expect(source).toContain('导入备份？');
-    expect(source).toContain('confirmText="导入"');
+    expect(source).toContain('confirmText={restoreConfirmText(pendingRestore.report)}');
+    expect(source).toContain('下载修复后的 JSON');
   });
 
   it('does not become another training or record page', () => {

@@ -5,6 +5,13 @@ import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
+import {
+  analyzeImportedAppData,
+  canImportDataRepairReport,
+  repairImportedAppData,
+  type DataRepairReport,
+  type DataRepairResult,
+} from '../engines/dataRepairEngine';
 import { formatGoal } from '../i18n/formatters';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
@@ -41,7 +48,9 @@ export type ProfileTargetSection = 'unit_settings' | 'health_data' | 'data_manag
 
 type PendingRestore = {
   fileName: string;
-  data: AppData;
+  rawData: unknown;
+  report: DataRepairReport;
+  repairResult?: DataRepairResult;
 };
 
 const Notice = ({
@@ -130,9 +139,20 @@ export function ProfileView({
   const handleImportFile = async (file?: File) => {
     if (!file) return;
     try {
-      const parsed = JSON.parse(await file.text()) as AppData;
-      setPendingRestore({ fileName: file.name, data: parsed });
-      setMessage('');
+      const parsed = JSON.parse(await file.text()) as unknown;
+      const report = analyzeImportedAppData(parsed);
+      const repairResult = report.status === 'unsafe'
+        ? undefined
+        : repairImportedAppData(parsed, {
+            repairDate: todayKey(),
+            sourceFileName: file.name,
+            maxRepairLogEntries: 200,
+          });
+      setPendingRestore({ fileName: file.name, rawData: parsed, report, repairResult });
+      if (report.status === 'clean') setMessage('备份文件已通过检查，可以导入。');
+      else if (report.status === 'repairable') setMessage('发现可修复问题，确认后将导入修复副本。');
+      else if (report.status === 'needs_review') setMessage('部分历史记录需要人工检查，但 cleaned data 可继续导入。');
+      else setMessage('该 JSON 不是安全的 IronPath 应用备份，禁止导入。');
     } catch {
       setMessage('导入失败，请确认文件是 IronPath JSON 备份。');
     } finally {
@@ -140,12 +160,47 @@ export function ProfileView({
     }
   };
 
+  const downloadCleanedBackup = () => {
+    if (!pendingRestore?.repairResult) return;
+    downloadText(
+      `ironpath-cleaned-${todayKey()}.json`,
+      JSON.stringify(pendingRestore.repairResult.repairedData, null, 2),
+      'application/json',
+    );
+    setMessage('已生成 cleaned JSON。原始文件未被覆盖。');
+  };
+
   const confirmRestore = () => {
     if (!pendingRestore) return;
-    onRestoreData(pendingRestore.data);
-    setPendingRestore(null);
-    setMessage('已导入备份。');
+    if (!canImportDataRepairReport(pendingRestore.report) || !pendingRestore.repairResult) {
+      setMessage('该备份不安全，已阻止导入。');
+      return;
+    }
+    try {
+      onRestoreData(pendingRestore.repairResult.repairedData);
+      setPendingRestore(null);
+      setMessage(
+        pendingRestore.report.status === 'needs_review'
+          ? '已导入 cleaned data。部分历史记录仍需人工检查。'
+          : pendingRestore.report.status === 'repairable'
+            ? '已导入修复后的备份副本。'
+            : '已导入备份。',
+      );
+    } catch {
+      setMessage('导入失败，当前 AppData 未被替换。');
+    }
   };
+
+  const restoreStatusLabel = (report: DataRepairReport) =>
+    ({
+      clean: '检查通过',
+      repairable: '发现可修复问题',
+      needs_review: '需要人工复核',
+      unsafe: '禁止导入',
+    })[report.status];
+
+  const restoreConfirmText = (report: DataRepairReport) =>
+    report.status === 'needs_review' ? '我已了解，导入修复副本' : report.status === 'repairable' ? '导入修复副本' : '导入';
 
   return (
     <ResponsivePageLayout>
@@ -403,15 +458,74 @@ export function ProfileView({
 
       {pendingRestore ? (
         <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
-          <ConfirmDialog
-            title="导入备份？"
-            description={`导入会替换或合并当前数据，请确认备份来源可靠。文件：${pendingRestore.fileName}`}
-            confirmText="导入"
-            cancelText="取消"
-            variant="warning"
-            onCancel={() => setPendingRestore(null)}
-            onConfirm={confirmRestore}
-          />
+          {pendingRestore.report.status === 'unsafe' ? (
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-label="导入备份被阻止"
+              className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10"
+            >
+              <h2 className="text-lg font-semibold leading-7 text-slate-950">导入备份被阻止</h2>
+              <div className="mt-2 space-y-3 text-sm leading-6 text-slate-600">
+                <Notice tone="rose" title={restoreStatusLabel(pendingRestore.report)}>
+                  该文件不是安全的 IronPath 应用备份，当前 AppData 未被修改。
+                </Notice>
+                <div>文件：{pendingRestore.fileName}</div>
+                {pendingRestore.report.issues.slice(0, 4).map((item) => (
+                  <div key={item.id} className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2">
+                    <div className="font-semibold text-rose-950">{item.title}</div>
+                    <div className="text-xs text-rose-800">{item.message}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4">
+                <ActionButton variant="secondary" size="lg" className="w-full" onClick={() => setPendingRestore(null)}>
+                  关闭
+                </ActionButton>
+              </div>
+            </section>
+          ) : (
+            <ConfirmDialog
+              title="导入备份？"
+              description={
+                <div className="space-y-3">
+                  <p>导入会替换当前浏览器里的 IronPath 数据。导入前请先导出现有备份；原始 JSON 文件不会被覆盖。</p>
+                  <Notice tone={pendingRestore.report.status === 'needs_review' ? 'amber' : pendingRestore.report.status === 'repairable' ? 'amber' : 'emerald'} title={restoreStatusLabel(pendingRestore.report)}>
+                    {pendingRestore.report.status === 'needs_review'
+                      ? '部分历史记录需要人工检查，但 cleaned data 可继续导入。'
+                      : pendingRestore.report.status === 'repairable'
+                        ? '确认后会导入修复副本，不会写回原始文件。'
+                        : '备份文件已通过检查，可以导入。'}
+                  </Notice>
+                  <div className="text-xs text-slate-500">文件：{pendingRestore.fileName}</div>
+                  {pendingRestore.report.issues.length ? (
+                    <div className="space-y-2">
+                      {pendingRestore.report.issues.slice(0, 5).map((item) => (
+                        <div key={item.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
+                          <div className="font-semibold text-slate-950">{item.title}</div>
+                          <div className="text-xs leading-5 text-slate-600">{item.message}</div>
+                        </div>
+                      ))}
+                      {pendingRestore.report.issues.length > 5 ? (
+                        <div className="text-xs text-slate-500">还有 {pendingRestore.report.issues.length - 5} 条问题已写入修复预览。</div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {pendingRestore.repairResult ? (
+                    <ActionButton type="button" variant="secondary" size="sm" onClick={downloadCleanedBackup}>
+                      <Download className="h-4 w-4" />
+                      下载修复后的 JSON
+                    </ActionButton>
+                  ) : null}
+                </div>
+              }
+              confirmText={restoreConfirmText(pendingRestore.report)}
+              cancelText="取消"
+              variant="warning"
+              onCancel={() => setPendingRestore(null)}
+              onConfirm={confirmRestore}
+            />
+          )}
         </div>
       ) : null}
     </ResponsivePageLayout>

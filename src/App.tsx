@@ -6,7 +6,17 @@ import { TrainingFocusView } from './features/TrainingFocusView';
 import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
-import { clone, enrichExercise, findTemplate, hydrateTemplates, number, todayKey } from './engines/engineUtils';
+import {
+  actionableSorenessAreas,
+  clone,
+  enrichExercise,
+  findTemplate,
+  hydrateTemplates,
+  isNoSoreness,
+  normalizeSoreness,
+  number,
+  todayKey,
+} from './engines/engineUtils';
 import { createSession, pickSuggestedTemplate } from './engines/sessionBuilder';
 import {
   extendRestTimer,
@@ -307,12 +317,12 @@ function App() {
       buildRecoveryAwareRecommendation({
         preferredTemplate: baseSuggestedTemplate,
         templates: data.templates || [],
-        sorenessAreas: (data.todayStatus?.soreness || []).filter((area) => area !== '无'),
+        sorenessAreas: actionableSorenessAreas(decisionContext.todayStatus.soreness),
         painAreas: recoveryPainPatterns.map((pattern) => pattern.area),
         readinessResult: recoveryReadinessResult,
-        availableTimeMin: number(data.todayStatus?.time),
+        availableTimeMin: number(decisionContext.todayStatus.time),
       }),
-    [baseSuggestedTemplate, data.templates, data.todayStatus?.soreness, data.todayStatus?.time, recoveryPainPatterns, recoveryReadinessResult],
+    [baseSuggestedTemplate, data.templates, decisionContext.todayStatus.soreness, decisionContext.todayStatus.time, recoveryPainPatterns, recoveryReadinessResult],
   );
   const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
@@ -398,7 +408,7 @@ function App() {
       todayStatus: {
         ...current.todayStatus,
         date: currentDate,
-        soreness: current.todayStatus.date === currentDate ? current.todayStatus.soreness : ['无'],
+        soreness: current.todayStatus.date === currentDate ? normalizeSoreness(current.todayStatus.soreness) : ['无'],
         [field]: value,
       },
     }));
@@ -411,11 +421,11 @@ function App() {
   const toggleSoreness = (part: SorenessPart) => {
     const currentDate = todayKey();
     setData((current) => {
-      const currentList = current.todayStatus.date === currentDate ? current.todayStatus.soreness || ['无'] : ['无'];
+      const currentList = current.todayStatus.date === currentDate ? normalizeSoreness(current.todayStatus.soreness) : (['无'] as TodayStatus['soreness']);
       let next: TodayStatus['soreness'];
-      if (part === '无') next = ['无'];
+      if (isNoSoreness(part)) next = ['无'];
       else if (currentList.includes(part)) next = currentList.filter((item) => item !== part) as TodayStatus['soreness'];
-      else next = [...currentList.filter((item) => item !== '无'), part] as TodayStatus['soreness'];
+      else next = [...currentList.filter((item) => !isNoSoreness(item)), part] as TodayStatus['soreness'];
       if (!next.length) next = ['无'];
       return {
         ...current,
