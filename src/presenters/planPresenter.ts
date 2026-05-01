@@ -20,6 +20,7 @@ import type {
 import { buildCoachActionView, type CoachActionView } from './coachActionPresenter';
 import { aggregatePlanAdvice, type AggregatedPlanAdvice } from './planAdviceAggregator';
 import { dedupePlanAdjustmentDraftsByFingerprint } from '../engines/planAdjustmentIdentityEngine';
+import { getOrderedProgramDayTemplates } from '../engines/nextWorkoutScheduler';
 
 export type WeeklyScheduleDayView = {
   id: string;
@@ -147,7 +148,7 @@ const buildDayView = (templates: TrainingTemplate[], day: DayTemplate, index: nu
 
 const buildWeeklySchedule = (data: AppData): PlanViewModel['weeklySchedule'] => {
   const dayTemplates = data.programTemplate?.dayTemplates?.length
-    ? data.programTemplate.dayTemplates
+    ? getOrderedProgramDayTemplates(data.programTemplate)
     : data.templates.map((template) => ({
         id: template.id,
         name: template.name,

@@ -2,6 +2,7 @@ import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_SCREENING_PROFILE, DEFAULT_STATUS } f
 import type {
   AppData,
   ExercisePrescription,
+  ProgramTemplate,
   ScreeningProfile,
   SupportExerciseLog,
   TodayStatus,
@@ -17,6 +18,7 @@ import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel, type TrainingLevelAssessment } from './trainingLevelEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext, type TrainingDecisionContext } from './trainingDecisionContext';
+import { getOrderedTrainingTemplates } from './nextWorkoutScheduler';
 
 const TEMPLATE_ROTATION: Record<string, string> = {
   'push-a': 'pull-a',
@@ -42,15 +44,20 @@ export const getLatestCompletedSession = (history: TrainingSession[] = []) =>
 export const getNextTemplateAfterLastCompletedSession = (
   history: TrainingSession[] = [],
   templates: TrainingTemplate[] = [],
+  programTemplate?: ProgramTemplate,
 ): string | null => {
   const latest = getLatestCompletedSession(history);
-  const latestTemplateId = latest?.templateId;
+  const orderedTemplates = getOrderedTrainingTemplates(templates, programTemplate).templates;
+  const latestTemplateId = latest?.programTemplateId || latest?.templateId;
   if (!latestTemplateId) return null;
-  const rotatedId = TEMPLATE_ROTATION[latestTemplateId];
-  if (rotatedId && findTemplate(templates, rotatedId)) return rotatedId;
-  const templateIds = templates.map((template) => template.id);
-  const latestIndex = templateIds.indexOf(latestTemplateId);
-  if (latestIndex >= 0 && templateIds.length > 1) return templateIds[(latestIndex + 1) % templateIds.length];
+  const sourceTemplateId = latest?.sourceProgramTemplateId || orderedTemplates.find((template) => template.id === latestTemplateId)?.sourceTemplateId;
+  const rotationKey = sourceTemplateId || latestTemplateId;
+  const rotatedId = TEMPLATE_ROTATION[rotationKey];
+  if (rotatedId && findTemplate(orderedTemplates, rotatedId)) return rotatedId;
+  const latestIndex = orderedTemplates.findIndex(
+    (template) => template.id === rotationKey || template.sourceTemplateId === rotationKey || template.id === latestTemplateId
+  );
+  if (latestIndex >= 0 && orderedTemplates.length > 1) return orderedTemplates[(latestIndex + 1) % orderedTemplates.length].id;
   return null;
 };
 
@@ -314,7 +321,8 @@ export const pickSuggestedTemplate = (data: Partial<AppData>, decisionContext: P
   const scores = scoreSuggestedTemplates(data, context);
   const templates = data.templates || [];
   const latestCompleted = getLatestCompletedSession(context.history || []);
-  const nextAfterCompleted = getNextTemplateAfterLastCompletedSession(context.history || [], templates);
+  const nextAfterCompleted = getNextTemplateAfterLastCompletedSession(context.history || [], templates, context.programTemplate || data.programTemplate);
+  if (nextAfterCompleted) return nextAfterCompleted;
 
   const best = [...scores].sort((left, right) => right.score - left.score)[0];
   if (best?.score > 0) {

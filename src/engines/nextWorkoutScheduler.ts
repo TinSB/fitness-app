@@ -11,6 +11,7 @@ import type { TodayTrainingState } from './todayStateEngine';
 import { number } from './engineUtils';
 import {
   buildRecoveryAwareRecommendation,
+  buildTemplateRecoveryConflict,
   type DailyRecommendationKind,
   type RecoveryAwareRecommendation,
   type RecoveryConflictLevel,
@@ -18,6 +19,10 @@ import {
 
 export type NextWorkoutRecommendation = {
   kind?: DailyRecommendationKind;
+  plannedTemplateId?: string;
+  plannedTemplateName?: string;
+  recommendedTemplateId?: string;
+  overrideReason?: string;
   templateId?: string;
   templateName: string;
   confidence: 'low' | 'medium' | 'high';
@@ -123,8 +128,25 @@ const resolveProgramDayTemplate = (day: ProgramTemplate['dayTemplates'][number],
     templates.find((template) => templateAliases(template).has(dayKey) || templateAliases(template).has(dayNameKey));
 };
 
-const orderedTemplates = (templates: TrainingTemplate[] = [], programTemplate?: ProgramTemplate) => {
-  const dayTemplates = programTemplate?.dayTemplates || [];
+const explicitDayOrderValue = (day: ProgramTemplate['dayTemplates'][number], index: number) => {
+  const raw = day as ProgramTemplate['dayTemplates'][number] & {
+    order?: number;
+    sortIndex?: number;
+    dayNumber?: number;
+    sequence?: number;
+  };
+  const value = number(raw.order ?? raw.sortIndex ?? raw.dayNumber ?? raw.sequence);
+  return value > 0 ? value : index + 1;
+};
+
+export const getOrderedProgramDayTemplates = (programTemplate?: ProgramTemplate) =>
+  [...(programTemplate?.dayTemplates || [])]
+    .map((day, index) => ({ day, index, order: explicitDayOrderValue(day, index) }))
+    .sort((left, right) => left.order - right.order || left.index - right.index)
+    .map((item) => item.day);
+
+export const getOrderedTrainingTemplates = (templates: TrainingTemplate[] = [], programTemplate?: ProgramTemplate) => {
+  const dayTemplates = getOrderedProgramDayTemplates(programTemplate);
   const ordered = dayTemplates.map((day) => resolveProgramDayTemplate(day, templates)).filter(Boolean) as TrainingTemplate[];
   const remaining = templates.filter((template) => !ordered.some((item) => item.id === template.id));
   return {
@@ -291,26 +313,6 @@ const candidateFor = (template: TrainingTemplate, painPatterns: PainPattern[], d
   return { template, muscles, riskScore: pain.riskScore, deficitScore, reasons, warnings };
 };
 
-const choosePainSafeAlternative = (base: TrainingTemplate, candidates: TemplateCandidate[]) => {
-  const baseCandidate = candidates.find((candidate) => candidate.template.id === base.id);
-  if (!baseCandidate || baseCandidate.riskScore <= 0) return base;
-  const baseIndex = candidates.findIndex((candidate) => candidate.template.id === base.id);
-  const rotated = [...candidates.slice(baseIndex + 1), ...candidates.slice(0, baseIndex)];
-  const nextSafe = rotated.find((candidate) => candidate.riskScore === 0);
-  if (nextSafe) return nextSafe.template;
-  return [...candidates]
-    .filter((candidate) => candidate.riskScore === 0)
-    .sort((left, right) => right.deficitScore - left.deficitScore)[0]?.template || base;
-};
-
-const chooseWeeklyVolumeAlternative = (base: TrainingTemplate, candidates: TemplateCandidate[], readinessLow: boolean) => {
-  if (readinessLow) return base;
-  const baseCandidate = candidates.find((candidate) => candidate.template.id === base.id);
-  const best = [...candidates].filter((candidate) => candidate.riskScore === 0).sort((left, right) => right.deficitScore - left.deficitScore)[0];
-  if (!best || !baseCandidate) return base;
-  return best.deficitScore >= baseCandidate.deficitScore + 3 ? best.template : base;
-};
-
 const lowLoadTemplate = (templates: TrainingTemplate[]) =>
   templates.find((template) => template.id === 'quick-30') ||
   [...templates].sort((left, right) => left.duration - right.duration)[0];
@@ -358,7 +360,7 @@ export const buildNextWorkoutRecommendation = ({
     };
   }
 
-  const orderedResult = orderedTemplates(templates, programTemplate);
+  const orderedResult = getOrderedTrainingTemplates(templates, programTemplate);
   const ordered = orderedResult.templates;
   if (!ordered.length) {
     return {
@@ -376,6 +378,8 @@ export const buildNextWorkoutRecommendation = ({
   const anchorSession = (todayCompletedId ? normalCompleted.find((session) => session.id === todayCompletedId) : undefined) || normalCompleted[0];
   const anchorTemplateKey = resolveSessionTemplateKey(anchorSession, ordered, programTemplate);
   const baseTemplate = nextByDefaultRotation(anchorTemplateKey, ordered, !orderedResult.usedProgramOrder) || ordered[0];
+  const plannedTemplateId = baseTemplate.id;
+  const plannedTemplateName = localizedTemplateName(baseTemplate);
   const deficits = weeklyDeficitEntries(weeklyVolumeSummary);
   const candidates = ordered.map((template) => candidateFor(template, painPatterns, deficits));
   const readinessScore = readinessResult?.score;
@@ -384,6 +388,7 @@ export const buildNextWorkoutRecommendation = ({
   let selected = baseTemplate;
   const warnings: string[] = [];
   const reasonParts: string[] = [];
+  let scheduleOverrideReason: string | undefined;
   const modeLabel = trainingMode ? formatTrainingMode(trainingMode) : '';
 
   if (anchorSession) {
@@ -398,36 +403,13 @@ export const buildNextWorkoutRecommendation = ({
 
   if (modeLabel) reasonParts.push(`当前训练侧重为${modeLabel}，仅用于解释本次建议，不会改变计划顺序。`);
 
-  const painSafe = choosePainSafeAlternative(selected, candidates);
-  if (painSafe.id !== selected.id) {
-    const baseCandidate = candidates.find((candidate) => candidate.template.id === selected.id);
-    selected = painSafe;
-    appendWarning(warnings, baseCandidate?.warnings[0] || '近期不适记录与默认训练日相关，已优先选择风险更低的训练日。');
-    reasonParts.push(`考虑近期不适记录，建议先改为${localizedTemplateName(selected)}。`);
-  }
-  if (directPainRiskForTemplate(selected, painPatterns)) {
-    const selectedIndex = ordered.findIndex((template) => template.id === selected.id);
-    const safeByFamily = [...ordered.slice(selectedIndex + 1), ...ordered.slice(0, selectedIndex)].find((template) => !directPainRiskForTemplate(template, painPatterns));
-    if (safeByFamily) {
-      selected = safeByFamily;
-      appendWarning(warnings, '近期不适记录与默认训练日相关，已优先选择风险更低的训练日。');
-      reasonParts.push(`考虑近期不适记录，建议先改为${localizedTemplateName(selected)}。`);
-    }
-  }
-
-  const volumeAdjusted = chooseWeeklyVolumeAlternative(selected, candidates, readinessLow);
-  if (volumeAdjusted.id !== selected.id) {
-    const selectedCandidate = candidates.find((candidate) => candidate.template.id === volumeAdjusted.id);
-    selected = volumeAdjusted;
-    reasonParts.push(selectedCandidate?.reasons[0] || `本周训练量分布提示${localizedTemplateName(selected)}更值得优先安排。`);
-  }
-
   if (readinessLow) {
     const lowLoad = lowLoadTemplate(ordered);
     if (lowLoad && lowLoad.id !== selected.id) {
       appendWarning(warnings, '准备度较低，建议把下次训练作为恢复或低负荷日执行。');
       selected = lowLoad;
-      reasonParts.push(`准备度较低，本次更适合安排${localizedTemplateName(selected)}作为低负荷日，或降低训练负荷。`);
+      scheduleOverrideReason = `原计划下次是 ${plannedTemplateName}，但准备度较低，因此当前建议改为 ${localizedTemplateName(selected)} 或低负荷安排。`;
+      reasonParts.push(scheduleOverrideReason);
     } else {
       appendWarning(warnings, '准备度较低，建议降低负荷、减少组数或缩短训练。');
       reasonParts.push('准备度较低，建议保守执行下次训练。');
@@ -443,22 +425,55 @@ export const buildNextWorkoutRecommendation = ({
 
   const selectedCandidate = candidates.find((candidate) => candidate.template.id === selected.id);
   selectedCandidate?.warnings.forEach((warning) => appendWarning(warnings, warning));
+  const baseRotationFamily = rotationFamilyKey(baseTemplate);
+  const familyRecoveryTemplates = baseRotationFamily
+    ? ordered.filter((template) => rotationFamilyKey(template) === baseRotationFamily)
+    : [];
+  const recoveryTemplates = (familyRecoveryTemplates.length > 1 ? familyRecoveryTemplates : ordered).filter(
+    (template) => template.id === selected.id || !templateMatchesKey(template, anchorTemplateKey),
+  );
+  const recoverySorenessAreas = [...sorenessAreas, ...painPatterns.map((pattern) => pattern.area)];
+  const recoveryPainAreas = painAreas;
 
-  const recovery = buildRecoveryAwareRecommendation({
+  let recovery = buildRecoveryAwareRecommendation({
     preferredTemplate: selected,
-    templates: ordered,
-    sorenessAreas,
-    painAreas,
+    templates: recoveryTemplates.length ? recoveryTemplates : ordered,
+    sorenessAreas: recoverySorenessAreas,
+    painAreas: recoveryPainAreas,
     readinessResult,
     availableTimeMin: number(todayState && 'availableTimeMin' in todayState ? todayState.availableTimeMin : undefined),
   });
+  if ((recovery.kind === 'rest' || recovery.kind === 'active_recovery') && !readinessLow) {
+    const fallbackTemplate = (recoveryTemplates.length ? recoveryTemplates : ordered)
+      .filter((template) => template.id !== selected.id)
+      .map((template) => ({
+        template,
+        conflict: buildTemplateRecoveryConflict({ template, sorenessAreas: recoverySorenessAreas, painAreas: recoveryPainAreas, readinessResult }),
+      }))
+      .find((item) => item.conflict.kind === 'modified_train' || item.conflict.conflictLevel === 'low' || item.conflict.conflictLevel === 'none')?.template;
+    if (fallbackTemplate) {
+      recovery = buildRecoveryAwareRecommendation({
+        preferredTemplate: fallbackTemplate,
+        templates: recoveryTemplates.length ? recoveryTemplates : ordered,
+        sorenessAreas: recoverySorenessAreas,
+        painAreas: recoveryPainAreas,
+        readinessResult,
+        availableTimeMin: number(todayState && 'availableTimeMin' in todayState ? todayState.availableTimeMin : undefined),
+      });
+    }
+  }
   if (recovery.kind !== 'train' || recovery.templateId !== selected.id || recovery.conflictLevel !== 'none') {
     reasonParts.push(recovery.summary);
     recovery.reasons.slice(0, 2).forEach((reason) => appendWarning(warnings, reason));
   }
-  if (recovery.kind === 'train' && recovery.templateId && recovery.templateId !== selected.id) {
+  if (recovery.templateId && recovery.templateId !== selected.id) {
     const recoveryTemplate = ordered.find((template) => template.id === recovery.templateId);
-    if (recoveryTemplate) selected = recoveryTemplate;
+    if (recoveryTemplate) {
+      selected = recoveryTemplate;
+      scheduleOverrideReason = `原计划下次是 ${plannedTemplateName}，但近期不适或恢复信号与该训练日冲突，因此当前建议改为 ${localizedTemplateName(selected)}。`;
+      reasonParts.push(scheduleOverrideReason);
+      appendWarning(warnings, scheduleOverrideReason);
+    }
   }
 
   const confidence: NextWorkoutRecommendation['confidence'] =
@@ -471,6 +486,10 @@ export const buildNextWorkoutRecommendation = ({
   if (recovery.kind === 'rest' || recovery.kind === 'active_recovery' || recovery.kind === 'mobility_only') {
     return {
       kind: recovery.kind,
+      plannedTemplateId,
+      plannedTemplateName,
+      recommendedTemplateId: recovery.templateId,
+      overrideReason: scheduleOverrideReason || recovery.summary,
       templateName: recovery.templateName || recovery.title.replace('今日建议：', ''),
       confidence,
       reason: reasonParts.join(' '),
@@ -483,6 +502,10 @@ export const buildNextWorkoutRecommendation = ({
 
   return {
     kind: recovery.kind,
+    plannedTemplateId,
+    plannedTemplateName,
+    recommendedTemplateId: selected.id,
+    overrideReason: selected.id !== baseTemplate.id ? scheduleOverrideReason || recovery.summary : undefined,
     templateId: selected.id,
     templateName: localizedTemplateName(selected),
     confidence,

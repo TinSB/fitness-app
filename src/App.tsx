@@ -264,7 +264,7 @@ function App() {
       trainingLevel: data.userProfile.trainingLevel,
     });
   }, [data.history, data.userProfile.trainingLevel, weeklyPrescription]);
-  const baseSuggestedTemplateId = pickSuggestedTemplate(data, decisionContext);
+  const baseSuggestedTemplateId = coachAutomationSummary.nextWorkout?.templateId || pickSuggestedTemplate(data, decisionContext);
   const baseSuggestedTemplate = findTemplate(data.templates, baseSuggestedTemplateId);
   const recoveryReadinessResult = React.useMemo(
     () =>
