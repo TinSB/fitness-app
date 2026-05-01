@@ -1,4 +1,4 @@
-import type { AdjustmentEffectReview, ProgramAdjustmentHistoryItem, TrainingSession } from '../models/training-model';
+﻿import type { AdjustmentEffectReview, ProgramAdjustmentHistoryItem, TrainingSession } from '../models/training-model';
 import { buildAdherenceReport } from './analytics';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 import { number } from './engineUtils';
@@ -180,7 +180,7 @@ export const reviewAdjustmentEffect = (
       historyItemId: historyItem.id,
       status: 'worse',
       confidence,
-      summary: '实验模板后不适信号明显上升，先不要硬顶，建议优先人工复核，必要时回滚。',
+      summary: '实验模板后不适记录明显上升，先不要硬顶，建议优先人工复核，必要时回滚。',
       metrics,
       recommendation: painSignalChange >= 4 ? 'rollback' : 'review_manually',
     };

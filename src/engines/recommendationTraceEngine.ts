@@ -41,7 +41,10 @@ export type RecommendationFactor = {
     | 'muscleVolume'
     | 'loadFeedback'
     | 'techniqueQuality'
+    | 'soreness'
+    | 'recoveryConflict'
     | 'painPattern'
+    | 'screeningRestriction'
     | 'healthData'
     | 'template'
     | 'defaultPolicy';
@@ -280,9 +283,10 @@ export const buildRecommendationTrace = (context: RecommendationTraceContext): R
     trainingLevelFactor(trainingLevel, decisionContext.history.length),
     recentHistoryFactor(decisionContext.history),
   ];
+  const sorenessAreas = (decisionContext.todayStatus?.soreness || []).filter((area) => area !== '无');
   const recoveryConflict = buildTemplateBodyPartConflictScore({
     template,
-    sorenessAreas: (decisionContext.todayStatus?.soreness || []).filter((area) => area !== '无'),
+    sorenessAreas,
     painAreas: painPatterns.map((pattern) => pattern.area),
   });
   if (recoveryConflict.level === 'moderate' || recoveryConflict.level === 'high') {
@@ -292,8 +296,19 @@ export const buildRecommendationTrace = (context: RecommendationTraceContext): R
         label: '恢复冲突',
         effect: 'decrease',
         magnitude: recoveryConflict.level === 'high' ? 'large' : 'moderate',
-        source: 'painPattern',
-        reason: `你标记了${recoveryConflict.affectedAreas.join('、')}，而 ${formatTemplateName(template)} 包含相关参与动作，因此系统建议今天选择低冲突安排或保守执行。`,
+        source: 'recoveryConflict',
+        reason: `你今天标记了${recoveryConflict.affectedAreas.join('、')}酸痛，${formatTemplateName(template)} 包含相关参与动作，因此系统会对相关动作保持保守。`,
+      }),
+    );
+  } else if (sorenessAreas.length) {
+    globalFactors.push(
+      factor({
+        id: 'today-soreness',
+        label: '酸痛状态',
+        effect: 'informational',
+        magnitude: 'small',
+        source: 'soreness',
+        reason: `你今天标记了${sorenessAreas.join('、')}酸痛，系统会观察相关动作的恢复情况。`,
       }),
     );
   }
@@ -370,14 +385,41 @@ export const buildRecommendationTrace = (context: RecommendationTraceContext): R
         }),
       );
     }
-    if (exercise.warning) {
+    if (exercise.warningSignals?.length) {
+      exercise.warningSignals.forEach((signal, index) => {
+        items.push(
+          factor({
+            id: `${exerciseId}-warning-${index}-${signal.source}`,
+            label:
+              signal.source === 'screeningRestriction'
+                ? '限制提醒'
+                : signal.source === 'recoveryConflict'
+                  ? '恢复提醒'
+                  : signal.source === 'soreness'
+                    ? '酸痛状态'
+                    : '不适记录',
+            effect: 'decrease',
+            magnitude: signal.source === 'screeningRestriction' || signal.source === 'painPattern' ? 'moderate' : 'small',
+            source: signal.source,
+            reason: signal.message,
+          }),
+        );
+      });
+    } else if (exercise.warning && exercise.warningSource) {
       items.push(
         factor({
           id: `${exerciseId}-warning`,
-          label: '不适风险',
+          label:
+            exercise.warningSource === 'screeningRestriction'
+              ? '限制提醒'
+              : exercise.warningSource === 'recoveryConflict'
+                ? '恢复提醒'
+                : exercise.warningSource === 'soreness'
+                  ? '酸痛状态'
+                  : '不适记录',
           effect: 'decrease',
-          magnitude: 'moderate',
-          source: 'painPattern',
+          magnitude: exercise.warningSource === 'screeningRestriction' || exercise.warningSource === 'painPattern' ? 'moderate' : 'small',
+          source: exercise.warningSource,
           reason: exercise.warning,
         }),
       );

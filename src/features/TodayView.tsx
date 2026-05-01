@@ -3,12 +3,11 @@ import { CalendarDays, ChevronDown, ChevronRight, Clock3, Dumbbell, Play, Rotate
 import { AVAILABLE_TIME_OPTIONS, ENERGY_STATES, SLEEP_STATES } from '../models/training-model';
 import { classNames, number, todayKey } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
-import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
-import { buildTrainingLevelAssessment, type AutoTrainingLevel } from '../engines/trainingLevelEngine';
-import { buildTodayTrainingState } from '../engines/todayStateEngine';
-import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
+import { type AutoTrainingLevel } from '../engines/trainingLevelEngine';
+import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
+import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
@@ -40,7 +39,6 @@ interface TodayViewProps {
   suggestedTemplate: TrainingTemplate;
   recoveryRecommendation?: RecoveryAwareRecommendation;
   weeklyPrescription: WeeklyPrescription;
-  coachAutomationSummary?: CoachAutomationSummary;
   coachActions?: CoachAction[];
   trainingIntelligenceSummary?: TrainingIntelligenceSummary;
   trainingMode: TrainingMode;
@@ -209,7 +207,6 @@ export function TodayView({
   suggestedTemplate,
   recoveryRecommendation,
   weeklyPrescription,
-  coachAutomationSummary,
   coachActions,
   trainingIntelligenceSummary,
   trainingMode,
@@ -231,19 +228,14 @@ export function TodayView({
 }: TodayViewProps) {
   const [coachActionFeedback, setCoachActionFeedback] = React.useState('');
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
+  const enginePipeline = React.useMemo(
+    () => buildEnginePipeline(data, todayKey(), { trainingMode, coachActions }),
+    [data, trainingMode, coachActions],
+  );
   const decisionContext = React.useMemo(
-    () => buildTrainingDecisionContext(data, { trainingMode }),
+    () => enginePipeline.context,
     [
-      data.todayStatus,
-      data.history,
-      data.activeSession,
-      data.healthMetricSamples,
-      data.importedWorkoutSamples,
-      data.settings?.healthIntegrationSettings?.useHealthDataForReadiness,
-      data.screeningProfile,
-      data.mesocyclePlan,
-      data.programTemplate,
-      trainingMode,
+      enginePipeline.context,
     ],
   );
 
@@ -258,14 +250,7 @@ export function TodayView({
     toStatusRulesDecisionContext(decisionContext),
   );
 
-  const todayTrainingState = buildTodayTrainingState({
-    activeSession: data.activeSession,
-    history: data.history,
-    currentLocalDate: todayKey(),
-    templates: data.templates,
-    programTemplate: data.programTemplate,
-    plannedTemplateId: data.selectedTemplateId,
-  });
+  const todayTrainingState = enginePipeline.todayState;
   const completedSession =
     todayTrainingState.status === 'completed'
       ? data.history.find((session) => session.id === todayTrainingState.lastCompletedSessionId)
@@ -282,15 +267,14 @@ export function TodayView({
     completedTemplateName: completedTrainingName,
     activeTemplateName: activeTrainingName,
     nextSuggestion: suggestedTemplate,
-    nextWorkout: coachAutomationSummary?.nextWorkout,
+    nextWorkout: enginePipeline.nextWorkout,
     recoveryRecommendation,
   });
 
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
   const previewExercises = adjustedExercises.slice(0, 4);
   const hiddenExerciseCount = Math.max(0, adjustedExercises.length - previewExercises.length);
-  const analyticsHistory = filterAnalyticsHistory(data.history || []);
-  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: analyticsHistory });
+  const trainingLevelAssessment = decisionContext.trainingLevelAssessment;
   const supportPlan = buildSupportPlan(data, selectedTemplate);
   const temporaryAdjustmentSummaries = React.useMemo(
     () => temporaryPatchSummary(pendingSessionPatches, supportPlan),
@@ -339,18 +323,16 @@ export function TodayView({
     (trainingLevelAssessment.level === 'unknown'
       ? '系统还在建立训练基线，今天的建议会保持保守。'
       : '今天优先完成主训练，细节记录放到训练页处理。');
-  const rawCoachActions = coachAutomationSummary?.recommendedActions || [];
   const coachActionListViewModel = React.useMemo(
-    () => buildCoachActionListViewModel(coachActions || [], { surface: 'today', maxVisible: 2 }),
-    [coachActions],
+    () => buildCoachActionListViewModel(enginePipeline.visibleCoachActions, { surface: 'today', maxVisible: 2 }),
+    [enginePipeline.visibleCoachActions],
   );
   const dataHealthViewModel = React.useMemo(
-    () => (coachAutomationSummary?.dataHealth ? buildDataHealthViewModel(coachAutomationSummary.dataHealth) : null),
-    [coachAutomationSummary?.dataHealth],
+    () => buildDataHealthViewModel(enginePipeline.dataHealth),
+    [enginePipeline.dataHealth],
   );
-  const rawCoachWarnings = coachAutomationSummary?.keyWarnings || [];
   const shouldUseDataHealthActionCopy = dataHealthViewModel && dataHealthViewModel.statusTone !== 'healthy';
-  const displayCoachWarnings = shouldUseDataHealthActionCopy ? [] : rawCoachWarnings;
+  const displayCoachWarnings: string[] = shouldUseDataHealthActionCopy ? [] : [];
   const recommendationConfidence = trainingIntelligenceSummary?.recommendationConfidence?.find((item) => item.level !== 'high');
   const confidenceCopy =
     recommendationConfidence?.level === 'low'
@@ -442,22 +424,6 @@ export function TodayView({
   };
 
   const rawCoachReminders = React.useMemo<CoachReminderView[]>(() => {
-    const actionReminders = rawCoachActions.map((action, index) => ({
-      id: action.id || `coach-action-${index}`,
-      title: coachActionTitle(action),
-      message: coachActionReason(action),
-      tone: coachReminderTone(action),
-      source: `action:${action.id}`,
-      priority:
-        action.actionType === 'review_data'
-          ? 100
-          : action.requiresConfirmation
-            ? 85
-            : action.actionType === 'apply_daily_adjustment'
-              ? 75
-              : 60,
-    }));
-
     const warningReminders = displayCoachWarnings.map((warning, index) => ({
       id: `coach-warning-${index}`,
       title: /酸痛|不适|恢复|冲突|保守/.test(warning) ? '恢复提醒' : '教练提醒',
@@ -467,8 +433,8 @@ export function TodayView({
       priority: 70 - index,
     }));
 
-    return [...actionReminders, ...warningReminders];
-  }, [rawCoachActions, displayCoachWarnings, dataHealthViewModel]);
+    return warningReminders;
+  }, [displayCoachWarnings, dataHealthViewModel]);
 
   const { visible: coachReminders, hidden: hiddenCoachReminders } = React.useMemo(
     () => splitCoachReminders(rawCoachReminders, 2),
@@ -477,7 +443,7 @@ export function TodayView({
   const shouldShowCoachActionList = coachActionListViewModel.pending.length > 0 || Boolean(coachActions);
   const shouldShowCoachAdvice = !shouldShowCoachActionList && coachReminders.length > 0;
   const coachActionForReminder = (reminder: CoachReminderView) =>
-    rawCoachActions.find((action) => reminder.source === `action:${action.id}` || reminder.id === action.id);
+    ([] as CoachAutomationSummary['recommendedActions']).find((action) => reminder.source === `action:${action.id}` || reminder.id === action.id);
   const reminderToneBadge = (tone: CoachReminderView['tone']) =>
     tone === 'danger' ? ('rose' as const) : tone === 'warning' ? ('amber' as const) : tone === 'success' ? ('emerald' as const) : ('sky' as const);
 
@@ -491,12 +457,12 @@ export function TodayView({
       return;
     }
     if (action.actionType === 'open_next_workout') {
-      const nextWorkout = coachAutomationSummary?.nextWorkout;
+      const nextWorkout = enginePipeline.nextWorkout;
       setCoachActionFeedback(nextWorkout ? `下次建议详情：${nextWorkout.templateName}。${nextWorkout.reason}` : action.reason);
       return;
     }
     if (action.actionType === 'apply_daily_adjustment') {
-      const adjustment = coachAutomationSummary?.todayAdjustment;
+      const adjustment = enginePipeline.todayAdjustment;
       setCoachActionFeedback(adjustment ? `今日自动调整：${adjustment.summary} 本轮只提供查看，不会自动覆盖计划。` : '本轮只提供查看，不会自动覆盖计划。');
       return;
     }
@@ -629,7 +595,7 @@ export function TodayView({
 
             {shouldShowCoachActionList ? (
               <CoachActionList
-                title="教练建议"
+                title="教练提醒"
                 description="只显示当前最重要的 1–2 条；采用临时调整前会再次确认。"
                 viewModel={coachActionListViewModel}
                 compact
@@ -661,7 +627,7 @@ export function TodayView({
                     <div className="text-base font-semibold text-slate-950">教练提醒</div>
                     <p className="mt-1 text-sm leading-6 text-slate-500">默认只显示当前最重要的 1–2 条；所有建议都可忽略，采用前仍需你确认。</p>
                   </div>
-                  <StatusBadge tone={coachAutomationSummary?.dataHealth?.status === 'has_errors' ? 'rose' : 'emerald'}>可忽略</StatusBadge>
+                  <StatusBadge tone={enginePipeline.dataHealth.status === 'has_errors' ? 'rose' : 'emerald'}>可忽略</StatusBadge>
                 </div>
                 <div className="space-y-2">
                   {coachReminders.map((reminder) => {
@@ -815,16 +781,16 @@ export function TodayView({
               <Card className="space-y-4">
                 <div>
                   <div className="mb-2 text-xs font-semibold text-slate-500">睡眠</div>
-                  <ChoiceRow value={data.todayStatus.sleep} options={SLEEP_STATES} onChange={(value) => onStatusChange('sleep', value)} />
+                  <ChoiceRow value={decisionContext.todayStatus.sleep} options={SLEEP_STATES} onChange={(value) => onStatusChange('sleep', value)} />
                 </div>
                 <div>
                   <div className="mb-2 text-xs font-semibold text-slate-500">精力</div>
-                  <ChoiceRow value={data.todayStatus.energy} options={ENERGY_STATES} onChange={(value) => onStatusChange('energy', value)} />
+                  <ChoiceRow value={decisionContext.todayStatus.energy} options={ENERGY_STATES} onChange={(value) => onStatusChange('energy', value)} />
                 </div>
                 <div>
                   <div className="mb-2 text-xs font-semibold text-slate-500">可用时间</div>
                   <ChoiceRow
-                    value={data.todayStatus.time}
+                    value={decisionContext.todayStatus.time}
                     options={AVAILABLE_TIME_OPTIONS}
                     labels={{ 30: '30 分', 60: '60 分', 90: '90 分' }}
                     onChange={(value) => onStatusChange('time', value)}
@@ -840,7 +806,7 @@ export function TodayView({
                         onClick={() => onSorenessToggle(part)}
                         className={classNames(
                           'min-h-10 rounded-lg border px-3 text-sm font-medium transition',
-                          data.todayStatus.soreness.includes(part)
+                          decisionContext.todayStatus.soreness.includes(part)
                             ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
                             : 'border-slate-200 bg-white text-slate-600 hover:bg-stone-50',
                         )}

@@ -4,6 +4,7 @@ import type {
   DeloadDecision,
   ExercisePrescription,
   ExerciseTemplate,
+  ExerciseWarningSignal,
   PerformanceSnapshot,
   ScreeningProfile,
   TrainingSession,
@@ -38,6 +39,7 @@ type AdaptiveConservativeDecision = AdaptiveExerciseProfile & {
   preferStableAlternatives: boolean;
   preferRegression: boolean;
   reasons: string[];
+  warningSignals: ExerciseWarningSignal[];
 };
 
 const ISSUE_FROM_PATTERN: Array<{ match: (exercise: ExerciseLike) => boolean; issues: string[] }> = [
@@ -285,47 +287,52 @@ export const buildAdaptiveConservativeDecision = (
 ): AdaptiveConservativeDecision => {
   const profile = getExerciseAdaptiveProfile(exercise, screening);
   const reasons: string[] = [];
+  const warningSignals: ExerciseWarningSignal[] = [];
+  const addReason = (message: string, source: ExerciseWarningSignal['source'], type: ExerciseWarningSignal['type']) => {
+    reasons.push(message);
+    warningSignals.push({ message, source, type });
+  };
   let conservativeLevel = 0;
 
   if (readinessLevel === 'yellow') {
     conservativeLevel += 1;
-    reasons.push('今日恢复信号一般');
+    addReason('今日恢复信号一般', 'recoveryConflict', 'recovery_conflict');
   }
   if (readinessLevel === 'red') {
     conservativeLevel += 2;
-    reasons.push('今日恢复信号偏差');
+    addReason('今日恢复信号偏差', 'recoveryConflict', 'recovery_conflict');
   }
   if (profile.performanceDrop) {
     conservativeLevel += 2;
-    reasons.push('最近表现连续回落');
+    addReason('最近表现连续回落', 'recoveryConflict', 'recovery_conflict');
   }
   if (profile.painCount >= 2) {
     conservativeLevel += 2;
-    reasons.push('同动作 pain flag 累积偏多');
+    addReason('同动作不适记录累积偏多', 'painPattern', 'pain_history');
   }
   if (profile.restricted) {
     conservativeLevel += 1;
-    reasons.push('动作已进入限制列表');
+    addReason('动作已进入限制列表', 'screeningRestriction', 'screening_restriction');
   }
   if (profile.issueScore >= 4) {
     conservativeLevel += 1;
-    reasons.push('相关纠偏问题分值较高');
+    addReason('当前筛查记录提示该动作模式需要保守处理', 'screeningRestriction', 'screening_restriction');
   }
   if (profile.contraindicated) {
     conservativeLevel += 2;
-    reasons.push('与当前限制问题冲突');
+    addReason('当前筛查记录提示该动作模式需要保守处理或替代', 'screeningRestriction', 'screening_restriction');
   }
   if (deloadLevel === 'watch') {
     conservativeLevel += 1;
-    reasons.push('疲劳闸门提示观察');
+    addReason('疲劳闸门提示观察', 'recoveryConflict', 'recovery_conflict');
   }
   if (deloadLevel === 'yellow') {
     conservativeLevel += 2;
-    reasons.push('疲劳闸门建议减量');
+    addReason('疲劳闸门建议减量', 'recoveryConflict', 'recovery_conflict');
   }
   if (deloadLevel === 'red') {
     conservativeLevel += 3;
-    reasons.push('疲劳闸门建议恢复优先');
+    addReason('疲劳闸门建议恢复优先', 'recoveryConflict', 'recovery_conflict');
   }
 
   const lockProgress = profile.painCount >= 2 || profile.performanceDrop || profile.contraindicated || deloadLevel === 'red';
@@ -345,6 +352,7 @@ export const buildAdaptiveConservativeDecision = (
     preferStableAlternatives: conservativeLevel >= 2 || profile.boost,
     preferRegression: conservativeLevel >= 4 || profile.contraindicated,
     reasons,
+    warningSignals,
   };
 };
 
@@ -370,6 +378,7 @@ export const applyAdaptiveExerciseRules = (
     adaptiveBackoffFactor: decision.backoffFactor,
     adaptiveRestPenaltySec: decision.extraRestSec,
     adaptiveReasons: decision.reasons,
+    warningSignals: [...((exercise as ExercisePrescription).warningSignals || []), ...decision.warningSignals],
   };
 
   if (decision.conservativeLevel >= 4) {
@@ -385,13 +394,22 @@ export const applyAdaptiveExerciseRules = (
   }
 
   if (decision.boost && next.kind !== 'isolation') {
-    next.warning = [next.warning, `纠偏模块已上调：${decision.linkedIssues.map((issue) => ISSUE_LABELS[issue] || issue).join(' / ')}`]
+    const message = `纠偏模块已上调：${decision.linkedIssues.map((issue) => ISSUE_LABELS[issue] || issue).join(' / ')}`;
+    const signal: ExerciseWarningSignal = { message, source: 'screeningRestriction', type: 'screening_restriction' };
+    next.warningSignals = [...(next.warningSignals || []), signal];
+    next.warningSource = signal.source;
+    next.warningType = signal.type;
+    next.warning = [next.warning, message]
       .filter(Boolean)
       .join(' / ');
   }
 
   if (decision.reasons.length) {
     next.warning = [next.warning, ...decision.reasons].filter(Boolean).join(' / ');
+    if (!next.warningSource && decision.warningSignals[0]) {
+      next.warningSource = decision.warningSignals[0].source;
+      next.warningType = decision.warningSignals[0].type;
+    }
   }
 
   return next;

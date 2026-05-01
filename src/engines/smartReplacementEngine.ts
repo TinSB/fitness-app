@@ -1,4 +1,4 @@
-import {
+﻿import {
   EXERCISE_DISPLAY_NAMES,
   EXERCISE_EQUIVALENCE_CHAINS,
   EXERCISE_KNOWLEDGE_OVERRIDES,
@@ -369,7 +369,7 @@ const applyContextScoring = (
   if (matchedPain.length) {
     const severe = matchedPain.some((pattern) => pattern.suggestedAction === 'substitute' || pattern.suggestedAction === 'deload' || pattern.severityAvg >= 3.5);
     candidate.score -= severe ? 42 : 18;
-    candidate.warnings.push('近期不适信号命中相关动作，建议降低优先级。');
+    candidate.warnings.push('近期不适记录命中相关动作，建议降低优先级。');
   }
 
   if ((context.trainingLevel === 'unknown' || context.trainingLevel === 'beginner') && skillDemand === 'high') {

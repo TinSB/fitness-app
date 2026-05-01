@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AdherenceReport,
   E1RMProfile,
   EffectiveVolumeSummary,
@@ -219,7 +219,7 @@ export const buildTrainingLevelAssessment = ({
   const painScore = painSeverity >= 8 ? 25 : painSeverity >= 4 ? 48 : resolvedPainPatterns.length ? 65 : 88;
   signals.push(
     signal(
-      '不适信号',
+      '不适记录',
       painScore,
       resolvedPainPatterns.length >= 2 ? 'medium' : sessionCount >= 6 ? 'medium' : 'low',
       resolvedPainPatterns.length
@@ -292,7 +292,7 @@ export const buildTrainingLevelAssessment = ({
   const lowAdherence = resolvedAdherence.recentSessionCount > 0 && resolvedAdherence.overallRate < 75;
   const unstableFrequency = frequency.average > 0 && frequency.average < 2;
 
-  if (highPain) limitations.push('近期不适信号偏高，高级训练功能保持关闭或保守。');
+  if (highPain) limitations.push('近期不适记录偏高，高级训练功能保持关闭或保守。');
   if (poorTechnique) limitations.push('poor technique 比例偏高，不允许判定为高阶。');
   if (lowAdherence) limitations.push('完成率不足，暂不启用高训练量建议。');
   if (unstableFrequency) limitations.push('训练频率还不稳定，暂不建议高容量模板。');

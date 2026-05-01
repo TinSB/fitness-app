@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   E1RMProfile,
   EffectiveVolumeSummary,
   EstimatedOneRepMax,
@@ -398,7 +398,7 @@ export const detectExercisePlateau = ({
 
   if (fatigueLimited) {
     signals.push(
-      signal('pain-or-fatigue', '疲劳或不适信号', '近期出现不适标记或相关不适模式，建议把风险控制放在加重之前。', 'serious'),
+      signal('pain-or-fatigue', '疲劳或不适记录', '近期出现不适标记或相关不适模式，建议把风险控制放在加重之前。', 'serious'),
     );
   }
 

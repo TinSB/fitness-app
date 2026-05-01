@@ -1,4 +1,4 @@
-import { EXERCISE_DISPLAY_NAMES, EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/exerciseLibrary';
+﻿import { EXERCISE_DISPLAY_NAMES, EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/exerciseLibrary';
 import type {
   AdherenceReport,
   E1RMProfile,
@@ -97,7 +97,7 @@ export const recommendExercisesForMuscleGap = (
 
       if (restrictedExercise || painRisk) {
         priority = 'avoid';
-        reasons.push(restrictedExercise ? '该动作已被当前筛查限制。' : '该动作近期有重复不适信号。');
+        reasons.push(restrictedExercise ? '该动作已被当前筛查限制。' : '该动作近期有重复不适记录。');
       } else {
         if (fatigueCost === 'high' || heavyFeedback || lowAdherence) priority = 'secondary';
         if (contribution >= 0.9 && fatigueCost !== 'high') reasons.push(`能直接补充${muscleId}训练量。`);
@@ -314,7 +314,7 @@ export const buildWeeklyActionRecommendations = (input: WeeklyCoachActionInput):
         targetType: pattern.exerciseId ? 'exercise' : 'program',
         targetId: pattern.exerciseId,
         targetLabel: pattern.exerciseId || pattern.area,
-        issue: `${pattern.area} 近期出现重复不适信号。`,
+        issue: `${pattern.area} 近期出现重复不适记录。`,
         recommendation: pattern.exerciseId ? '下周避免把该动作作为补量首选，优先使用更稳定的替代动作。' : '下周降低相关部位训练压力，并观察不适是否持续。',
         reason: `频率 ${pattern.frequency}，平均强度 ${pattern.severityAvg.toFixed(1)}，系统建议采取保守训练处理。`,
         suggestedChange: pattern.exerciseId ? { removeExerciseIds: [pattern.exerciseId] } : { volumeMultiplier: 0.9 },

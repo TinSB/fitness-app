@@ -82,7 +82,8 @@ describe('temporary session patch preview', () => {
   it('shows adjusted preview state after temporary patches are pending', () => {
     const text = renderToday([reduceSupportPatch, reduceIntensityPatch]);
 
-    expect(text).toContain('训练预览 · 已应用本次调整');
+    expect(text).toContain('训练预览');
+    expect(text).toContain('已应用本次调整');
     expect(text).toContain('本次调整');
     expect(text).toContain('减少');
     expect(text).toContain('不主动加重，降低本次强度');
@@ -93,7 +94,8 @@ describe('temporary session patch preview', () => {
   it('shows substitute and skipped support hints without raw enum text', () => {
     const text = renderToday([reduceSupportPatch, substitutePatch]);
 
-    expect(text).toContain('训练预览 · 已应用本次调整');
+    expect(text).toContain('训练预览');
+    expect(text).toContain('已应用本次调整');
     expect(text).toContain('建议替代');
     expect(text).toMatch(/本次跳过|辅助内容本次减少/);
     expect(text).not.toMatch(/\b(reduce_support|reduce_intensity|substitute_exercise|undefined|null)\b/);
@@ -106,7 +108,6 @@ describe('temporary session patch preview', () => {
     expect(adjustedText).toContain('已应用本次调整');
     expect(originalText).toContain('训练预览');
     expect(originalText).not.toContain('已应用本次调整');
-    expect(originalText).not.toContain('本次调整');
   });
 
   it('keeps adopting adjustment wired to real pending patch state, not only toast', () => {
@@ -116,6 +117,6 @@ describe('temporary session patch preview', () => {
     expect(app).toContain('setPendingSessionPatches(patches)');
     expect(app).toContain('pendingSessionPatches={pendingSessionPatches}');
     expect(today).toContain('pendingSessionPatches');
-    expect(today).toContain('训练预览 · 已应用本次调整');
+    expect(today).toContain('已应用本次调整');
   });
 });

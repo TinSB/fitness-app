@@ -1,4 +1,4 @@
-import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_SCREENING_PROFILE, DEFAULT_STATUS } from '../data/trainingData';
+﻿import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_SCREENING_PROFILE, DEFAULT_STATUS } from '../data/trainingData';
 import type {
   AppData,
   ExercisePrescription,
@@ -216,7 +216,7 @@ export const createSession = (
     trainingLevelAssessment.level === 'unknown'
       ? '系统仍在建立训练基线，因此本次默认关闭激进进阶和复杂顶组/回退组。完成 2–3 次训练后，会开始估算当前力量、有效组和训练等级。'
       : trainingLevelAssessment.limitations.some((item) => item.includes('不适') || item.includes('poor'))
-        ? `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，但动作质量或不适信号限制了高级推荐。`
+        ? `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，但动作质量或不适记录限制了高级推荐。`
         : `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，系统会按真实记录逐步开放更完整的训练处方。`;
 
   const session: TrainingSession = {

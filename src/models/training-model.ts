@@ -332,7 +332,20 @@ export interface ExerciseTemplate extends ExerciseMetadata {
   recommendedRestSec?: [number, number];
   adjustment?: string;
   warning?: string;
+  warningSource?: ExerciseWarningSource;
+  warningType?: ExerciseWarningType;
+  warningSignals?: ExerciseWarningSignal[];
 }
+
+export type ExerciseWarningSource = 'soreness' | 'recoveryConflict' | 'painPattern' | 'screeningRestriction';
+
+export type ExerciseWarningType = 'soreness' | 'recovery_conflict' | 'pain_history' | 'screening_restriction';
+
+export type ExerciseWarningSignal = {
+  message: string;
+  source: ExerciseWarningSource;
+  type: ExerciseWarningType;
+};
 
 export interface ExercisePrescription extends Omit<ExerciseTemplate, 'sets'> {
   baseId?: string;
@@ -365,6 +378,9 @@ export interface ExercisePrescription extends Omit<ExerciseTemplate, 'sets'> {
   targetSummary?: string;
   adjustment?: string;
   warning?: string;
+  warningSource?: ExerciseWarningSource;
+  warningType?: ExerciseWarningType;
+  warningSignals?: ExerciseWarningSignal[];
   progressLocked?: boolean;
   conservativeTopSet?: boolean;
   adaptiveTopSetFactor?: number;
@@ -456,6 +472,7 @@ export interface TodayStatus {
   energy: EnergyState;
   soreness: Array<'无' | MuscleGroup>;
   time: AvailableTime;
+  date?: string;
 }
 
 export interface TrainingTemplate {

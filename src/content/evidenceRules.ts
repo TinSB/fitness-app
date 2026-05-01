@@ -1,4 +1,4 @@
-import { EVIDENCE_AUTHORITIES, getEvidenceAuthority } from './evidenceAuthorities';
+﻿import { EVIDENCE_AUTHORITIES, getEvidenceAuthority } from './evidenceAuthorities';
 import { validateEvidenceRuleAuthorityUsage } from './evidenceGovernance';
 import { getEvidenceSource } from './evidenceSources';
 
@@ -58,7 +58,7 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
     implementationType: 'research_supported',
     evidenceTier: 'B',
     confidence: 'moderate',
-    caveat: '高负荷训练对技术和恢复要求更高，不应在动作质量或不适信号较差时强行推进。',
+    caveat: '高负荷训练对技术和恢复要求更高，不应在动作质量或不适记录较差时强行推进。',
   },
   {
     id: 'rir_effort_control',
@@ -123,7 +123,7 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
     implementationType: 'research_supported',
     evidenceTier: 'B',
     confidence: 'moderate',
-    caveat: '减量幅度应根据疲劳、睡眠、表现下降和不适信号动态调整，固定百分比只是产品默认值。',
+    caveat: '减量幅度应根据疲劳、睡眠、表现下降和不适记录动态调整，固定百分比只是产品默认值。',
   },
   {
     id: 'technique_quality_gate',
@@ -140,8 +140,8 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
   },
   {
     id: 'pain_conservative_rule',
-    title: '不适信号保守处理',
-    label: '不适信号保守处理',
+    title: '不适记录保守处理',
+    label: '不适记录保守处理',
     practicalSummary: '出现不适时优先降低压力、缩小幅度、替代动作或进入减量策略；反复出现时提高保守等级。',
     appliesTo: ['不适模式', '替代动作', '进阶建议'],
     sourceIds: ['acsm_resistance_training_guidance', 'pain_training_boundary_consensus'],
@@ -233,7 +233,7 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
     id: 'auto_training_level_assessment',
     title: '自动训练等级评估',
     label: '自动训练等级评估',
-    practicalSummary: '系统根据真实训练记录、力量稳定性、动作质量、完成度、不适信号、频率和有效组质量估算训练等级。',
+    practicalSummary: '系统根据真实训练记录、力量稳定性、动作质量、完成度、不适记录、频率和有效组质量估算训练等级。',
     appliesTo: ['训练基线', '训练等级', '高级功能开放'],
     sourceIds: ['acsm_resistance_training_guidance', 'nsca_strength_conditioning_reference', 'strength_programming_consensus'],
     authorityIds: ['acsm', 'nsca'],
@@ -259,7 +259,7 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
     id: 'level_gated_progression',
     title: '等级门控进阶',
     label: '等级门控进阶',
-    practicalSummary: '在数据不足、完成度低、动作质量差或不适信号偏高时，系统关闭激进进阶和高容量建议。',
+    practicalSummary: '在数据不足、完成度低、动作质量差或不适记录偏高时，系统关闭激进进阶和高容量建议。',
     appliesTo: ['进阶建议', 'top/backoff', '高容量模板'],
     sourceIds: ['acsm_resistance_training_guidance', 'strength_programming_consensus'],
     authorityIds: ['acsm', 'nsca'],
@@ -272,7 +272,7 @@ export const EVIDENCE_RULES: EvidenceRule[] = [
     id: 'level_gated_exercise_complexity',
     title: '等级门控动作复杂度',
     label: '等级门控动作复杂度',
-    practicalSummary: '系统根据等级、动作质量、不适信号和完成度逐步开放更复杂动作选择。',
+    practicalSummary: '系统根据等级、动作质量、不适记录和完成度逐步开放更复杂动作选择。',
     appliesTo: ['动作选择', '模板建议', '辅助层剂量'],
     sourceIds: ['acsm_resistance_training_guidance', 'nsca_strength_conditioning_reference'],
     authorityIds: ['acsm', 'nsca'],

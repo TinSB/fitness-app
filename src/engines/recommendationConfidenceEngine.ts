@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   E1RMProfile,
   EffectiveVolumeSummary,
   EstimatedOneRepMax,
@@ -284,7 +284,7 @@ export const buildRecommendationConfidence = ({
 
   if (matchedPainPatterns.length) {
     score -= 18;
-    reasons.push(reason('pain-pattern', '不适信号明显', 'lower_confidence', '近期不适信号与当前推荐相关，建议优先保守执行。'));
+    reasons.push(reason('pain-pattern', '不适记录明显', 'lower_confidence', '近期不适记录与当前推荐相关，建议优先保守执行。'));
   } else if (sets.length >= 4 && sets.every((set) => !set.painFlag)) {
     score += 8;
     reasons.push(reason('no-pain', '无明显不适', 'raise_confidence', '近期同动作记录没有明显不适标记。'));

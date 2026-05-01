@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   EffectiveVolumeSummary,
   LoadFeedback,
   LoadFeedbackValue,
@@ -247,7 +247,7 @@ export const buildSessionQualityResult = ({
     issues.push(makeSignal('pain-flag', '出现不适标记', 'negative', `${painSets.length} 组正式组记录了不适，这些组不会作为高质量亮点。`));
   }
   if (matchedPainPatterns.length) {
-    issues.push(makeSignal('pain-pattern', '近期不适需要关注', 'warning', '近期不适信号与本次训练相关，下次应优先确认动作选择和负荷。'));
+    issues.push(makeSignal('pain-pattern', '近期不适需要关注', 'warning', '近期不适记录与本次训练相关，下次应优先确认动作选择和负荷。'));
   }
   if (poorTechniqueSets.length) {
     issues.push(makeSignal('poor-technique', '动作质量偏低', 'negative', `${poorTechniqueSets.length} 组动作质量较差，会降低本次训练质量评分。`));

@@ -1,4 +1,4 @@
-import type { PainPattern, TrainingSession } from '../models/training-model';
+import type { PainPattern, SessionDataFlag, TrainingSession } from '../models/training-model';
 import { number } from './engineUtils';
 
 type PainAccumulator = {
@@ -9,6 +9,45 @@ type PainAccumulator = {
   lastOccurredAt: string;
 };
 
+export type BuildPainPatternsOptions = {
+  currentDate?: string;
+  lookbackDays?: number;
+  maxSessions?: number;
+};
+
+const excludedFlags = new Set<SessionDataFlag>(['test', 'excluded']);
+
+const isTrainingSession = (session: TrainingSession | undefined | null): session is TrainingSession =>
+  Boolean(session && typeof session === 'object');
+
+const sessionSortKey = (session?: TrainingSession | null) => session?.finishedAt || session?.startedAt || session?.date || '';
+
+const toTime = (value?: string) => {
+  if (!value) return Number.NaN;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Number.NaN : parsed;
+};
+
+const recentNormalSessions = (history: Array<TrainingSession | undefined | null>, options: BuildPainPatternsOptions) => {
+  const lookbackDays = options.lookbackDays ?? 30;
+  const maxSessions = options.maxSessions ?? 12;
+  const sorted = history
+    .filter(isTrainingSession)
+    .filter((session) => !excludedFlags.has((session.dataFlag || 'normal') as SessionDataFlag))
+    .slice()
+    .sort((left, right) => String(sessionSortKey(right)).localeCompare(String(sessionSortKey(left))));
+  const anchorTime = toTime(options.currentDate) || toTime(sessionSortKey(sorted[0]));
+  const minTime = Number.isNaN(anchorTime) ? Number.NaN : anchorTime - lookbackDays * 24 * 60 * 60 * 1000;
+  return sorted
+    .filter((session) => {
+      if (Number.isNaN(minTime)) return true;
+      const time = toTime(sessionSortKey(session));
+      if (Number.isNaN(time)) return false;
+      return time >= minTime && time <= anchorTime + 24 * 60 * 60 * 1000;
+    })
+    .slice(0, maxSessions);
+};
+
 const painSeverityFromSet = (set: { painSeverity?: number; note?: string }) => {
   if (number(set.painSeverity) > 0) return number(set.painSeverity);
   if (/sharp|刺痛|剧烈/i.test(String(set.note || ''))) return 4;
@@ -16,11 +55,11 @@ const painSeverityFromSet = (set: { painSeverity?: number; note?: string }) => {
   return 2;
 };
 
-export const buildPainPatterns = (history: TrainingSession[] = []): PainPattern[] => {
+export const buildPainPatterns = (history: TrainingSession[] = [], options: BuildPainPatternsOptions = {}): PainPattern[] => {
   const byArea = new Map<string, PainAccumulator>();
   const byExercise = new Map<string, PainAccumulator>();
 
-  history.slice(0, 24).forEach((session) => {
+  recentNormalSessions(history, options).forEach((session) => {
     session.exercises.forEach((exercise) => {
       const sets = Array.isArray(exercise.sets) ? exercise.sets : [];
       sets.filter((set) => set.painFlag).forEach((set) => {

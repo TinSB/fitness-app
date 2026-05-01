@@ -429,19 +429,27 @@ export const applyStatusRules = (
 
     const painPattern = getExercisePainPattern(painPatterns, next.baseId || next.id);
     if (painPattern?.suggestedAction === 'substitute') {
+      const message = `该动作近期在 ${painPattern.area} 反复出现不适，今天优先使用替代动作。`;
       next = {
         ...next,
         progressLocked: true,
         conservativeTopSet: true,
-        warning: [next.warning, `该动作近期在 ${painPattern.area} 反复出现不适，今天优先使用替代动作。`].filter(Boolean).join(' / '),
+        warning: [next.warning, message].filter(Boolean).join(' / '),
+        warningSource: 'painPattern',
+        warningType: 'pain_history',
+        warningSignals: [...(next.warningSignals || []), { message, source: 'painPattern', type: 'pain_history' }],
       };
     } else if (painPattern?.suggestedAction === 'deload' || painPattern?.suggestedAction === 'seek_professional') {
+      const message = `近期 ${painPattern.area} 不适频率偏高，今天先按保守版本执行。`;
       next = {
         ...next,
         sets: Math.max(1, number(next.sets) - 1),
         progressLocked: true,
         conservativeTopSet: true,
-        warning: [next.warning, `近期 ${painPattern.area} 不适频率偏高，今天先按保守版本执行。`].filter(Boolean).join(' / '),
+        warning: [next.warning, message].filter(Boolean).join(' / '),
+        warningSource: 'painPattern',
+        warningType: 'pain_history',
+        warningSignals: [...(next.warningSignals || []), { message, source: 'painPattern', type: 'pain_history' }],
       };
     }
 

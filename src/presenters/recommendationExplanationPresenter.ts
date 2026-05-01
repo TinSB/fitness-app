@@ -43,7 +43,10 @@ const sourceLabels: Record<RecommendationFactor['source'], string> = {
   muscleVolume: '肌群训练量',
   loadFeedback: '重量反馈',
   techniqueQuality: '动作质量',
-  painPattern: '不适信号',
+  soreness: '酸痛状态',
+  recoveryConflict: '恢复提醒',
+  painPattern: '不适记录',
+  screeningRestriction: '限制提醒',
   healthData: '健康数据',
   template: '计划模板',
   defaultPolicy: '默认规则',
@@ -80,11 +83,14 @@ const effectScore: Record<RecommendationFactor['effect'], number> = {
 };
 
 const sourceScore: Record<RecommendationFactor['source'], number> = {
+  screeningRestriction: 96,
   painPattern: 95,
+  recoveryConflict: 92,
   techniqueQuality: 90,
   readiness: 85,
   loadFeedback: 80,
   muscleVolume: 65,
+  soreness: 60,
   primaryGoal: 55,
   trainingMode: 55,
   trainingLevel: 50,
@@ -94,7 +100,7 @@ const sourceScore: Record<RecommendationFactor['source'], number> = {
   defaultPolicy: 10,
 };
 
-const rawTokenPattern = /\b(increase|decrease|maintain|block|informational|primaryGoal|trainingMode|trainingLevel|readiness|loadFeedback|techniqueQuality|painPattern|muscleVolume|healthData|template|defaultPolicy|modified_train|active_recovery|mobility_only|reduce_volume|reduce_intensity|skip_accessory|choose_alternative_template|high|medium|low|undefined|null)\b/gi;
+const rawTokenPattern = /\b(increase|decrease|maintain|block|informational|primaryGoal|trainingMode|trainingLevel|readiness|loadFeedback|techniqueQuality|soreness|recoveryConflict|painPattern|screeningRestriction|muscleVolume|healthData|template|defaultPolicy|modified_train|active_recovery|mobility_only|reduce_volume|reduce_intensity|skip_accessory|choose_alternative_template|high|medium|low|undefined|null)\b/gi;
 
 const cleanText = (value: unknown, fallback: string) => {
   const text = String(value ?? '').replace(rawTokenPattern, '').replace(/\s+/g, ' ').trim();
@@ -146,7 +152,7 @@ const buildRecoveryFactor = (recommendation?: RecoveryAwareRecommendation | null
       : `你标记了${affectedCopy}。${templateName} 中${conflicting || '部分动作'}恢复冲突较高，因此系统建议${recoveryKindLabel(recommendation.kind)}。需要时你仍可覆盖建议，但会先确认。`;
   return {
     id: `recovery-${recommendation.kind}-${conflict.templateId}`,
-    label: '恢复信号',
+    label: '恢复提醒',
     effectLabel: recommendation.kind === 'modified_train' ? '保守建议' : '恢复优先',
     effectTone: recommendation.kind === 'rest' || recommendation.kind === 'active_recovery' ? 'warning' : 'warning',
     reason: cleanText(reason, DEFAULT_SUMMARY),
@@ -220,13 +226,16 @@ export const buildRecommendationExplanationViewModel = (
     .map((factor) => ({ factor, view: toFactorView(factor) }))
     .sort((left, right) => right.view.priority - left.view.priority);
 
-  const primaryFactorsFromTrace = sorted.filter(({ factor }) => isPrimaryFactor(factor)).map(({ view }) => view);
-  const secondaryFactorsFromTrace = sorted.filter(({ factor }) => !isPrimaryFactor(factor)).map(({ view }) => view);
+  const traceItems = recoveryFactor
+    ? sorted.filter(({ factor }) => factor.source !== 'soreness' && factor.source !== 'recoveryConflict')
+    : sorted;
+  const primaryFactorsFromTrace = traceItems.filter(({ factor }) => isPrimaryFactor(factor)).map(({ view }) => view);
+  const secondaryFactorsFromTrace = traceItems.filter(({ factor }) => !isPrimaryFactor(factor)).map(({ view }) => view);
   const primaryFactors = recoveryFactor
-    ? [recoveryFactor, ...primaryFactorsFromTrace.filter((factor) => factor.label !== '不适信号')]
+    ? [recoveryFactor, ...primaryFactorsFromTrace]
     : primaryFactorsFromTrace;
   const secondaryFactors = recoveryFactor
-    ? secondaryFactorsFromTrace.filter((factor) => factor.label !== '不适信号')
+    ? secondaryFactorsFromTrace
     : secondaryFactorsFromTrace;
   const summary = cleanText(trace.finalSummary, DEFAULT_SUMMARY);
   const normalMessage = normalDifferenceMessage(primaryFactors);

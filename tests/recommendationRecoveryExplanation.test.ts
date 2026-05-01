@@ -65,7 +65,7 @@ describe('recommendation recovery explanation', () => {
     const labels = vm.primaryFactors.map((factor) => factor.label);
     const text = vm.primaryFactors.map((factor) => factor.reason).join('\n');
 
-    expect(labels.filter((label) => label === '恢复信号')).toHaveLength(1);
+    expect(labels.filter((label) => label === '恢复提醒')).toHaveLength(1);
     expect(labels).not.toContain('不适信号');
     expect(text.match(/罗马尼亚硬拉/g)).toHaveLength(1);
   });

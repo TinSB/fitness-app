@@ -31,12 +31,12 @@ describe('recommendationExplanationPresenter', () => {
     const vm = buildRecommendationExplanationViewModel(
       trace([
         factor({ id: 'goal', source: 'primaryGoal', effect: 'informational', magnitude: 'small', reason: '主目标用于长期方向。' }),
-        factor({ id: 'pain', source: 'painPattern', effect: 'decrease', magnitude: 'large', reason: '近期有不适信号，本次建议更保守。' }),
+        factor({ id: 'pain', source: 'painPattern', effect: 'decrease', magnitude: 'large', reason: '近期有不适记录，本次建议更保守。' }),
         factor({ id: 'feedback', source: 'loadFeedback', effect: 'decrease', magnitude: 'moderate', reason: '最近反馈偏重，本次略保守。' }),
       ]),
     );
 
-    expect(vm.primaryFactors[0]?.label).toBe('不适信号');
+    expect(vm.primaryFactors[0]?.label).toBe('不适记录');
     expect(vm.primaryFactors[0]?.effectLabel).toBe('保守建议');
     expect(vm.primaryFactors[1]?.label).toBe('重量反馈');
   });

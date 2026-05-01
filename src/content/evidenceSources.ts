@@ -1,4 +1,4 @@
-export type EvidenceSourceType =
+﻿export type EvidenceSourceType =
   | 'position_stand'
   | 'systematic_review'
   | 'guideline'
@@ -83,7 +83,7 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     id: 'pain_training_boundary_consensus',
     title: 'Pain-aware training boundary consensus',
     type: 'expert_consensus',
-    note: '用于训练中不适信号的保守处理边界；不作为医疗诊断依据。',
+    note: '用于训练中不适记录的保守处理边界；不作为医疗诊断依据。',
     useFor: ['不适模式', '动作替代', '疼痛信号保守处理'],
     lastReviewedAt: '2026-04-27',
   },

@@ -1,4 +1,4 @@
-export const DEFINITIONS = {
+﻿export const DEFINITIONS = {
   readinessScore: {
     title: '准备度评分',
     body: '把睡眠、精力、酸痛、不适和可训练时间合并成 0-100 分，用来判断今天更适合推进、维持还是保守训练。',
@@ -25,7 +25,7 @@ export const DEFINITIONS = {
   },
   oneRmPercent: {
     title: '1RM 百分比',
-    body: '1RM 百分比只用于估算负荷区间。实际训练仍以目标次数、RIR、动作质量和不适信号为准。',
+    body: '1RM 百分比只用于估算负荷区间。实际训练仍以目标次数、RIR、动作质量和不适记录为准。',
   },
   rom: {
     title: 'ROM（动作幅度）',

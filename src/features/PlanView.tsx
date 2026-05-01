@@ -1,14 +1,15 @@
 import React from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { DEFAULT_PROGRAM_TEMPLATE } from '../data/trainingData';
-import { classNames, enrichExercise, findTemplate, getPrimaryMuscles } from '../engines/engineUtils';
+import { classNames, enrichExercise, findTemplate, getPrimaryMuscles, todayKey } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
+import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildAdjustmentDiff } from '../engines/programAdjustmentEngine';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
-import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
+import { formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import { buildPlanViewModel, type AdjustmentDraftView, type PlanCoachInboxActionView } from '../presenters/planPresenter';
 import {
@@ -208,14 +209,18 @@ export function PlanView({
       }),
     [data, selectedTemplate, weeklyPrescription]
   );
-  const trainingLevelAssessment = buildTrainingLevelAssessment({ history: data.history || [] });
+  const enginePipeline = React.useMemo(
+    () => buildEnginePipeline(data, todayKey(), { coachActions }),
+    [data, coachActions],
+  );
+  const trainingLevelAssessment = enginePipeline.context.trainingLevelAssessment;
   const adjustmentHistory = data.programAdjustmentHistory || [];
   const activeHistoryItem = adjustmentHistory.find((item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id);
   const experimentalTemplates = data.templates.filter((template) => template.isExperimentalTemplate || template.sourceTemplateId);
   const activeTemplateMissing = Boolean(data.activeProgramTemplateId && !data.templates.some((item) => item.id === data.activeProgramTemplateId));
   const planViewModel = React.useMemo(
-    () => buildPlanViewModel(data, { coachActions, volumeAdaptation: trainingIntelligenceSummary?.volumeAdaptation }),
-    [data, coachActions, trainingIntelligenceSummary?.volumeAdaptation],
+    () => buildPlanViewModel(data, { coachActions: enginePipeline.visibleCoachActions, volumeAdaptation: trainingIntelligenceSummary?.volumeAdaptation }),
+    [data, enginePipeline.visibleCoachActions, trainingIntelligenceSummary?.volumeAdaptation],
   );
   const adjustmentDraftViews = planViewModel.adjustmentDrafts.drafts;
   const adjustmentDrafts = adjustmentDraftViews

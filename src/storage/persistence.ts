@@ -974,6 +974,7 @@ const sanitizeTodayStatus = (status: unknown): TodayStatus => {
     energy: pickEnum(normalizeTextValue(raw.energy), ENERGY_STATES, DEFAULT_STATUS.energy),
     soreness: soreness.length ? soreness : DEFAULT_STATUS.soreness,
     time: pickString(raw.time, DEFAULT_STATUS.time) as TodayStatus['time'],
+    date: pickString(raw.date),
   };
 };
 

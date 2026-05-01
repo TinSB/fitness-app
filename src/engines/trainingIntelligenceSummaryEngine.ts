@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   E1RMProfile,
   EffectiveVolumeSummary,
   LoadFeedback,
@@ -110,7 +110,7 @@ const plateauInsight = (result: PlateauDetectionResult, label: string) => {
   if (result.status === 'possible_plateau') return `${label} 近期进展放缓，先继续观察并提高完成质量。`;
   if (result.status === 'load_too_aggressive') return `${label} 反馈偏重，下一次不宜急于加重。`;
   if (result.status === 'technique_limited') return `${label} 更受动作质量限制，先稳定动作再推进。`;
-  if (result.status === 'fatigue_limited') return `${label} 有疲劳或不适信号，先降低风险再加量。`;
+  if (result.status === 'fatigue_limited') return `${label} 有疲劳或不适记录，先降低风险再加量。`;
   if (result.status === 'volume_limited') return `${label} 可能受有效训练量不足限制。`;
   return '';
 };

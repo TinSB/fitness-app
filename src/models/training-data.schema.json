@@ -200,7 +200,8 @@
         "sleep": { "type": "string", "enum": ["差", "一般", "好"] },
         "energy": { "type": "string", "enum": ["低", "中", "高"] },
         "soreness": { "type": "array", "items": { "type": "string" } },
-        "time": { "type": "string", "enum": ["30", "60", "90"] }
+        "time": { "type": "string", "enum": ["30", "60", "90"] },
+        "date": { "type": "string" }
       },
       "additionalProperties": true
     },

@@ -22,7 +22,7 @@ import {
 } from './engines/focusModeStateEngine';
 import { dispatchWorkoutExecutionEvent } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
-import { deleteTrainingSession, filterAnalyticsHistory, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
 import { buildMuscleVolumeDashboard } from './engines/analytics';
 import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
 import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligenceSummaryEngine';
@@ -31,6 +31,8 @@ import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
 import { applyStatusRules } from './engines/progressionEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './engines/trainingDecisionContext';
+import { buildEnginePipeline } from './engines/enginePipeline';
+import { buildDerivedStateInvalidation, type AppMutationEvent } from './engines/derivedStateInvalidationEngine';
 import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import {
   buildCoachActionAdjustmentDraftInput,
@@ -38,12 +40,11 @@ import {
   type CoachAction,
   type CoachActionExecutionResult,
 } from './engines/coachActionEngine';
-import { dismissCoachActionToday, filterVisibleCoachActions, findExistingAdjustmentForCoachAction } from './engines/coachActionDismissEngine';
+import { dismissCoachActionToday, findExistingAdjustmentForCoachAction } from './engines/coachActionDismissEngine';
 import {
   buildRegeneratedPlanAdjustmentDraft,
   buildPlanAdjustmentFingerprintFromCoachAction,
 } from './engines/planAdjustmentIdentityEngine';
-import { buildPainPatterns } from './engines/painPatternEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
   applySessionPatches,
@@ -203,12 +204,18 @@ function App() {
   const [planTarget, setPlanTarget] = useState<PlanTarget | null>(null);
   const [pendingSessionPatches, setPendingSessionPatches] = useState<SessionPatch[]>([]);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
+  const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
 
   const showAppToast = (message: string, tone: AppToast['tone'] = 'info') => {
     setAppToast({ message, tone });
   };
+
+  const invalidateDerivedState = React.useCallback((event: AppMutationEvent) => {
+    buildDerivedStateInvalidation(event);
+    setPipelineRevision((current) => current + 1);
+  }, []);
 
   useEffect(() => {
     saveData(data);
@@ -246,10 +253,14 @@ function App() {
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
   const selectedTemplate = findTemplate(data.templates, activeTemplateId);
   const weeklyPrescription = buildWeeklyPrescription(data);
-  const decisionContext = buildTrainingDecisionContext(data);
+  const baseEnginePipeline = React.useMemo(
+    () => buildEnginePipeline(data, todayKey(), { trainingMode: data.trainingMode, coachActions: [] }),
+    [data, pipelineRevision],
+  );
+  const decisionContext = baseEnginePipeline.context;
   const coachAutomationSummary = React.useMemo(() => buildCoachAutomationSummary(data), [data]);
   const trainingIntelligenceSummary = React.useMemo(() => {
-    const analyticsHistory = filterAnalyticsHistory(data.history || []);
+    const analyticsHistory = decisionContext.normalHistory;
     const latestSession = [...analyticsHistory].sort((left, right) =>
       (right.finishedAt || right.startedAt || right.date || '').localeCompare(left.finishedAt || left.startedAt || left.date || ''),
     )[0];
@@ -263,8 +274,8 @@ function App() {
       loadFeedback: analyticsHistory.flatMap((session) => session.loadFeedback || []),
       trainingLevel: data.userProfile.trainingLevel,
     });
-  }, [data.history, data.userProfile.trainingLevel, weeklyPrescription]);
-  const baseSuggestedTemplateId = coachAutomationSummary.nextWorkout?.templateId || pickSuggestedTemplate(data, decisionContext);
+  }, [decisionContext.normalHistory, data.userProfile.trainingLevel, weeklyPrescription]);
+  const baseSuggestedTemplateId = baseEnginePipeline.nextWorkout.templateId || pickSuggestedTemplate(data, decisionContext);
   const baseSuggestedTemplate = findTemplate(data.templates, baseSuggestedTemplateId);
   const recoveryReadinessResult = React.useMemo(
     () =>
@@ -290,7 +301,7 @@ function App() {
       decisionContext.useHealthDataForReadiness,
     ],
   );
-  const recoveryPainPatterns = React.useMemo(() => buildPainPatterns(filterAnalyticsHistory(data.history || [])), [data.history]);
+  const recoveryPainPatterns = decisionContext.painPatterns;
   const recoveryRecommendation = React.useMemo(
     () =>
       buildRecoveryAwareRecommendation({
@@ -305,35 +316,33 @@ function App() {
   );
   const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
-  const coachActions = React.useMemo(
+  const rawCoachActions = React.useMemo(
     () => {
-      const actions = buildCoachActions({
+      return buildCoachActions({
         appData: data,
-        dailyAdjustment: coachAutomationSummary.todayAdjustment,
-        nextWorkout: coachAutomationSummary.nextWorkout,
-        dataHealthReport: coachAutomationSummary.dataHealth,
+        dailyAdjustment: baseEnginePipeline.todayAdjustment,
+        nextWorkout: baseEnginePipeline.nextWorkout,
+        dataHealthReport: baseEnginePipeline.dataHealth,
         sessionQuality: trainingIntelligenceSummary.sessionQuality,
         plateauResults: trainingIntelligenceSummary.plateauResults,
         volumeAdaptation: trainingIntelligenceSummary.volumeAdaptation,
         recommendationConfidence: trainingIntelligenceSummary.recommendationConfidence,
         recoveryRecommendation,
       });
-      return filterVisibleCoachActions(
-        actions,
-        data.programAdjustmentDrafts || [],
-        data.programAdjustmentHistory || [],
-        data.dismissedCoachActions || [],
-        todayKey(),
-      );
     },
-    [data, coachAutomationSummary, trainingIntelligenceSummary, recoveryRecommendation],
+    [data, baseEnginePipeline.todayAdjustment, baseEnginePipeline.nextWorkout, baseEnginePipeline.dataHealth, trainingIntelligenceSummary, recoveryRecommendation],
   );
+  const enginePipeline = React.useMemo(
+    () => buildEnginePipeline(data, todayKey(), { trainingMode: data.trainingMode, coachActions: rawCoachActions }),
+    [data, rawCoachActions, pipelineRevision],
+  );
+  const coachActions = enginePipeline.visibleCoachActions;
 
   const startSession = (templateId = activeTemplateId, explicitPatches?: SessionPatch[]) => {
     const template = findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
-    const workingData = { ...data, screeningProfile };
-    const sessionDecisionContext = buildTrainingDecisionContext(workingData, { screeningProfile });
+    const workingData = { ...data, screeningProfile, selectedTemplateId: templateId, activeProgramTemplateId: templateId };
+    const sessionDecisionContext = buildTrainingDecisionContext(workingData, todayKey(), { screeningProfile });
     const baseSession = createSession(
       template,
       data.todayStatus,
@@ -379,13 +388,17 @@ function App() {
       setProgressTarget({ section: target, sessionId: finishedSession.id, date: finishedSession.date });
     }
     setActiveTab(target === 'today' ? 'today' : 'record');
+    invalidateDerivedState('session_completed');
   };
 
   const updateStatus = (field: StatusField, value: string) => {
+    const currentDate = todayKey();
     setData((current) => ({
       ...current,
       todayStatus: {
         ...current.todayStatus,
+        date: currentDate,
+        soreness: current.todayStatus.date === currentDate ? current.todayStatus.soreness : ['无'],
         [field]: value,
       },
     }));
@@ -396,8 +409,9 @@ function App() {
   };
 
   const toggleSoreness = (part: SorenessPart) => {
+    const currentDate = todayKey();
     setData((current) => {
-      const currentList = current.todayStatus.soreness || ['无'];
+      const currentList = current.todayStatus.date === currentDate ? current.todayStatus.soreness || ['无'] : ['无'];
       let next: TodayStatus['soreness'];
       if (part === '无') next = ['无'];
       else if (currentList.includes(part)) next = currentList.filter((item) => item !== part) as TodayStatus['soreness'];
@@ -407,6 +421,7 @@ function App() {
         ...current,
         todayStatus: {
           ...current.todayStatus,
+          date: currentDate,
           soreness: next,
         },
       };
@@ -531,6 +546,7 @@ function App() {
       return { ...current, activeSession: result.updatedSession };
     });
     setExpandedExercise(exerciseIndex);
+    invalidateDerivedState('replacement_applied');
   };
 
   const switchActiveExercise = (exerciseIndex: number) => {
@@ -733,6 +749,7 @@ function App() {
       version: Date.now(),
     });
     setActiveTab('plan');
+    invalidateDerivedState('template_applied');
     showAppToast('已应用实验模板，可随时回滚。', 'success');
   };
 
@@ -762,6 +779,7 @@ function App() {
           : draft
       ),
     }));
+    invalidateDerivedState('template_rolled_back');
     showAppToast('已回滚到原模板。', 'success');
   };
 
@@ -869,6 +887,7 @@ function App() {
       const result = deleteTrainingSession(current, sessionId, true);
       return result.data;
     });
+    invalidateDerivedState('session_deleted');
   };
 
   const updateUnitSettings = (updates: Partial<UnitSettings>) => {
@@ -883,10 +902,12 @@ function App() {
         },
       };
     });
+    invalidateDerivedState('unit_changed');
   };
 
   const updateHistorySessionFlag = (sessionId: string, dataFlag: SessionDataFlag) => {
     setData((current) => markSessionDataFlag(current, sessionId, dataFlag, true).data);
+    invalidateDerivedState('session_dataflag_changed');
   };
 
   const editHistorySession = (session: TrainingSession) => {
@@ -898,6 +919,7 @@ function App() {
         screeningProfile: reconcileScreeningProfile(current.screeningProfile, history),
       };
     });
+    invalidateDerivedState('session_edited');
   };
 
   const openProfileTarget = (target: ProfileTargetSection) => {
@@ -1250,7 +1272,7 @@ function App() {
         showAppToast('已打开今日页查看恢复建议。', 'info');
         return;
       }
-      const patches = buildSessionPatchesFromDailyAdjustment(coachAutomationSummary.todayAdjustment);
+      const patches = buildSessionPatchesFromDailyAdjustment(baseEnginePipeline.todayAdjustment);
       if (!patches.length) {
         showAppToast('当前没有可应用的本次临时调整。', 'info');
         return;
@@ -1313,6 +1335,7 @@ function App() {
         },
       };
     });
+    invalidateDerivedState('coach_action_dismissed');
     showAppToast('已暂不处理，今天不再提醒。', 'info');
   };
 
@@ -1375,7 +1398,6 @@ function App() {
                     suggestedTemplate={suggestedTemplate}
                     recoveryRecommendation={recoveryRecommendation}
                     weeklyPrescription={weeklyPrescription}
-                    coachAutomationSummary={coachAutomationSummary}
                     coachActions={coachActions}
                     onCoachAction={handleCoachAction}
                     onDismissCoachAction={dismissCoachAction}
@@ -1518,6 +1540,7 @@ function App() {
                       onRestoreData={(nextData) => {
                         setData(nextData);
                         setActiveTab('today');
+                        invalidateDerivedState('backup_restored');
                       }}
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
@@ -1543,8 +1566,12 @@ function App() {
                       onRestoreData={(nextData) => {
                         setData(nextData);
                         setActiveTab('today');
+                        invalidateDerivedState('backup_restored');
                       }}
-                      onUpdateHealthData={(nextData) => setData(nextData)}
+                      onUpdateHealthData={(nextData) => {
+                        setData(nextData);
+                        invalidateDerivedState('health_data_imported');
+                      }}
                       onOpenAssessment={() => setProfileSection('assessment')}
                       onDataHealthAction={handleDataHealthAction}
                       targetSection={profileTargetSection}

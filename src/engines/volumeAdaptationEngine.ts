@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AdherenceReport,
   EffectiveVolumeSummary,
   LoadFeedback,
@@ -321,7 +321,7 @@ export const buildVolumeAdaptationReport = ({
     if (strongRisk || volumeIsHigh(row)) {
       const reasons = [
         volumeIsHigh(row) ? '训练量已经偏高' : '',
-        painRisk ? '近期有相关不适信号' : '',
+        painRisk ? '近期有相关不适记录' : '',
         adherencePoor ? '近期完成率下降' : '',
         heavyFeedbackRisk ? '重量反馈多次偏重' : '',
         qualityRisk ? '训练质量或动作质量不够稳定' : '',
