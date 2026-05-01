@@ -16,6 +16,7 @@ import {
   type RecoveryAwareRecommendation,
   type RecoveryConflictLevel,
 } from './recoveryAwareScheduler';
+import { buildWorkoutCycleState } from './workoutCycleScheduler';
 
 export type NextWorkoutRecommendation = {
   kind?: DailyRecommendationKind;
@@ -206,6 +207,13 @@ const nextByDefaultRotation = (lastTemplateKey: string | undefined, templates: T
   return templates[(index + 1) % templates.length];
 };
 
+const cycleTemplatesFor = (templates: TrainingTemplate[], lastTemplateKey: string | undefined) => {
+  if (!templates.length) return [];
+  const index = lastTemplateKey ? templates.findIndex((template) => templateMatchesKey(template, lastTemplateKey)) : 0;
+  const familyGroup = contiguousFamilyGroup(templates, index >= 0 ? index : 0);
+  return familyGroup.length > 1 ? familyGroup : templates;
+};
+
 const muscleAliases: Record<string, string[]> = {
   push: ['chest', 'shoulders', 'triceps', '胸', '肩', '手臂'],
   pull: ['back', 'lats', 'biceps', '背', '背阔肌', '手臂'],
@@ -377,7 +385,16 @@ export const buildNextWorkoutRecommendation = ({
   const todayCompletedId = todayState?.status === 'completed' ? todayState.lastCompletedSessionId : undefined;
   const anchorSession = (todayCompletedId ? normalCompleted.find((session) => session.id === todayCompletedId) : undefined) || normalCompleted[0];
   const anchorTemplateKey = resolveSessionTemplateKey(anchorSession, ordered, programTemplate);
-  const baseTemplate = nextByDefaultRotation(anchorTemplateKey, ordered, !orderedResult.usedProgramOrder) || ordered[0];
+  const cycleTemplates = cycleTemplatesFor(ordered, anchorTemplateKey);
+  const cycleState = buildWorkoutCycleState({
+    history,
+    orderedTemplateIds: cycleTemplates.map((template) => template.id),
+    currentDate: todayState?.date,
+  });
+  const cycleTemplate = ordered.find((template) => templateMatchesKey(template, cycleState.nextTemplateId));
+  const rotationTemplate = nextByDefaultRotation(anchorTemplateKey, ordered, !orderedResult.usedProgramOrder);
+  const shouldUseCycleTemplate = !anchorSession || cycleState.isCycleComplete || cycleState.completedInCurrentCycle.length > 1;
+  const baseTemplate = (shouldUseCycleTemplate ? cycleTemplate : rotationTemplate) || cycleTemplate || rotationTemplate || ordered[0];
   const plannedTemplateId = baseTemplate.id;
   const plannedTemplateName = localizedTemplateName(baseTemplate);
   const deficits = weeklyDeficitEntries(weeklyVolumeSummary);
@@ -391,9 +408,8 @@ export const buildNextWorkoutRecommendation = ({
   let scheduleOverrideReason: string | undefined;
   const modeLabel = trainingMode ? formatTrainingMode(trainingMode) : '';
 
-  if (anchorSession) {
-    reasonParts.push(`最近一次正式完成的是${localizedTemplateName(anchorSession)}，下次默认按计划轮转到${localizedTemplateName(baseTemplate)}。`);
-  } else {
+  reasonParts.push(`按计划轮转判断：${cycleState.reason}`);
+  if (!anchorSession) {
     reasonParts.push(`还没有可用于轮转的正式训练记录，先从${localizedTemplateName(baseTemplate)}开始。`);
   }
 

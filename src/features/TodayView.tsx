@@ -282,6 +282,7 @@ export function TodayView({
     completedTemplateName: completedTrainingName,
     activeTemplateName: activeTrainingName,
     nextSuggestion: suggestedTemplate,
+    nextWorkout: coachAutomationSummary?.nextWorkout,
     recoveryRecommendation,
   });
 

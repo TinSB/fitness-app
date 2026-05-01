@@ -1,7 +1,18 @@
 import type { TrainingTemplate } from '../models/training-model';
 import type { TodayTrainingState } from '../engines/todayStateEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
+import type { NextWorkoutRecommendation } from '../engines/nextWorkoutScheduler';
 import { formatTemplateName } from '../i18n/formatters';
+
+export type TodayNextSuggestionView = {
+  templateId?: string;
+  templateName: string;
+  description: string;
+  reason?: string;
+  plannedTemplateName?: string;
+  recommendedTemplateName?: string;
+  overrideReason?: string;
+};
 
 export type TodayViewModel = {
   state: TodayTrainingState['status'];
@@ -12,11 +23,7 @@ export type TodayViewModel = {
   statusText: string;
   currentTrainingName: string;
   decisionText: string;
-  nextSuggestion: {
-    templateId?: string;
-    templateName: string;
-    description: string;
-  };
+  nextSuggestion: TodayNextSuggestionView;
   recommendationKind?: RecoveryAwareRecommendation['kind'];
   recoverySummary?: string;
   recoveryReasons?: string[];
@@ -26,14 +33,70 @@ export type TodayViewModel = {
   recommendedTemplateId?: string;
 };
 
-const buildNextSuggestion = (template?: Pick<TrainingTemplate, 'id' | 'name'> | null): TodayViewModel['nextSuggestion'] => {
+const cleanText = (value?: string) => (value || '').replace(/\b(undefined|null)\b/gi, '').replace(/\s+/g, ' ').trim();
+
+const templateNameFrom = (value: unknown, fallbackLabel = '暂无下次建议') => formatTemplateName(value, fallbackLabel);
+
+const normalizeCycleReason = (reason?: string) => {
+  const cleaned = cleanText(reason);
+  if (!cleaned) return '';
+  if (cleaned.includes('上一轮推、拉、腿都已完成')) return cleaned;
+  if (cleaned.includes('新一轮') && cleaned.includes('推') && cleaned.includes('拉') && cleaned.includes('腿')) {
+    return `上一轮推、拉、腿都已完成，下次进入新一轮。${cleaned}`;
+  }
+  return cleaned;
+};
+
+const buildSchedulerNextSuggestion = (recommendation: NextWorkoutRecommendation): TodayNextSuggestionView => {
+  const templateId = recommendation.templateId || recommendation.recommendedTemplateId;
+  const templateName = templateNameFrom(templateId || recommendation.templateName, recommendation.templateName || '暂无下次建议');
+  const reason = normalizeCycleReason(recommendation.reason);
+  const plannedTemplateName =
+    recommendation.plannedTemplateId || recommendation.plannedTemplateName
+      ? templateNameFrom(recommendation.plannedTemplateId || recommendation.plannedTemplateName, recommendation.plannedTemplateName || '原计划')
+      : undefined;
+  const recommendedTemplateName =
+    recommendation.recommendedTemplateId || recommendation.templateId || recommendation.templateName
+      ? templateNameFrom(recommendation.recommendedTemplateId || recommendation.templateId || recommendation.templateName, recommendation.templateName)
+      : templateName;
+  const overrideReason = cleanText(recommendation.overrideReason);
+  const hasOverride = Boolean(overrideReason && plannedTemplateName && recommendedTemplateName && plannedTemplateName !== recommendedTemplateName);
+
+  if (hasOverride) {
+    return {
+      templateId,
+      templateName,
+      description: cleanText(`下次建议：${recommendedTemplateName}。原计划：${plannedTemplateName}。当前建议：${recommendedTemplateName}。原因：${overrideReason}`),
+      reason,
+      plannedTemplateName,
+      recommendedTemplateName,
+      overrideReason,
+    };
+  }
+
+  return {
+    templateId,
+    templateName,
+    description: cleanText(`下次建议：${templateName}。${reason || '系统会按当前计划顺序安排下一次训练。'} 这是下一次训练参考，不会覆盖今日已完成状态。`),
+    reason,
+    plannedTemplateName,
+    recommendedTemplateName,
+  };
+};
+
+const buildNextSuggestion = (
+  template?: Pick<TrainingTemplate, 'id' | 'name'> | null,
+  schedulerRecommendation?: NextWorkoutRecommendation,
+): TodayViewModel['nextSuggestion'] => {
+  if (schedulerRecommendation) return buildSchedulerNextSuggestion(schedulerRecommendation);
+
   if (!template?.id && !template?.name) {
     return {
       templateName: '暂无下次建议',
       description: '暂无下次建议。已完成的训练记录会保留在记录页。',
     };
   }
-  const templateName = formatTemplateName(template.id || template.name, '暂无下次建议');
+  const templateName = templateNameFrom(template.id || template.name, '暂无下次建议');
   return {
     templateId: template.id,
     templateName,
@@ -47,6 +110,7 @@ export const buildTodayViewModel = ({
   completedTemplateName,
   activeTemplateName,
   nextSuggestion,
+  nextWorkout,
   recoveryRecommendation,
 }: {
   todayState: TodayTrainingState;
@@ -54,13 +118,15 @@ export const buildTodayViewModel = ({
   completedTemplateName?: string;
   activeTemplateName?: string;
   nextSuggestion?: Pick<TrainingTemplate, 'id' | 'name'> | null;
+  nextWorkout?: NextWorkoutRecommendation;
   recoveryRecommendation?: RecoveryAwareRecommendation;
 }): TodayViewModel => {
-  const selectedTemplateName = formatTemplateName(selectedTemplate);
+  const selectedTemplateName = templateNameFrom(selectedTemplate);
   const resolvedNextSuggestion = buildNextSuggestion(nextSuggestion);
 
   if (todayState.status === 'completed') {
-    const completedName = completedTemplateName ? formatTemplateName(completedTemplateName, '本次训练') : '本次训练';
+    const completedName = completedTemplateName ? templateNameFrom(completedTemplateName, '本次训练') : '本次训练';
+    const completedNextSuggestion = buildNextSuggestion(nextSuggestion, nextWorkout);
     return {
       state: 'completed',
       pageTitle: '今日训练已完成',
@@ -68,14 +134,14 @@ export const buildTodayViewModel = ({
       primaryActionLabel: '查看本次训练',
       secondaryActionLabels: ['查看训练日历', '再练一场'],
       statusText: `已完成 ${completedName}。下次建议只作为参考，不代表今天必须继续训练。`,
-      currentTrainingName: resolvedNextSuggestion.templateName,
+      currentTrainingName: completedNextSuggestion.templateName,
       decisionText: `已完成 ${completedName}。下次建议只作为参考，不是今天必须继续训练。`,
-      nextSuggestion: resolvedNextSuggestion,
+      nextSuggestion: completedNextSuggestion,
     };
   }
 
   if (todayState.status === 'in_progress') {
-    const currentTrainingName = activeTemplateName ? formatTemplateName(activeTemplateName, '当前训练') : '当前训练';
+    const currentTrainingName = activeTemplateName ? templateNameFrom(activeTemplateName, '当前训练') : '当前训练';
     return {
       state: 'in_progress',
       pageTitle: '训练进行中',
@@ -130,7 +196,7 @@ export const buildTodayViewModel = ({
       primaryActionLabel: '开始训练',
       secondaryActionLabels: ['查看动作安排'],
       statusText: recoveryRecommendation.summary,
-      currentTrainingName: recoveryRecommendation.templateName || formatTemplateName(recoveryRecommendation.templateId),
+      currentTrainingName: recoveryRecommendation.templateName || templateNameFrom(recoveryRecommendation.templateId),
       decisionText: recoveryRecommendation.summary,
       nextSuggestion: resolvedNextSuggestion,
       recommendationKind: recoveryRecommendation.kind,
