@@ -8,7 +8,7 @@
   UnitSettings,
 } from '../models/training-model';
 import type { LoadFeedbackSummary } from './loadFeedbackEngine';
-import { completedSets, number, setWeightKg } from './engineUtils';
+import { completedSets, isCompletedSet, isIncompleteSet, number, setWeightKg } from './engineUtils';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 import { buildWorkingOnlySession, groupSessionSetsByType } from './sessionDetailSummaryEngine';
 
@@ -51,7 +51,7 @@ export type BuildSessionQualityParams = {
 const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max, value));
 const roundScore = (value: number) => Math.round(clamp(value));
 
-const isCompletedSet = (set: TrainingSetLog) => set.done !== false && setWeightKg(set) > 0 && number(set.reps) > 0;
+const isRecordedCompletedSet = (set: TrainingSetLog) => isCompletedSet(set) && setWeightKg(set) > 0 && number(set.reps) > 0;
 
 const hasRecordedRir = (set: TrainingSetLog) => set.rir !== undefined && set.rir !== '';
 
@@ -125,8 +125,8 @@ export const buildSessionQualityResult = ({
   painPatterns,
 }: BuildSessionQualityParams): SessionQualityResult => {
   const grouped = groupSessionSetsByType(session);
-  const completedWorkingSets = grouped.workingSets.filter((item) => isCompletedSet(item.set));
-  const completedWarmupSets = grouped.warmupSets.filter((item) => isCompletedSet(item.set));
+  const completedWorkingSets = grouped.workingSets.filter((item) => isRecordedCompletedSet(item.set));
+  const completedWarmupSets = grouped.warmupSets.filter((item) => isRecordedCompletedSet(item.set));
   const supportPlanned = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.plannedSets)), 0);
   const supportCompleted = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.completedSets)), 0);
   const plannedWorkingSets = grouped.exerciseGroups.reduce((sum, group) => {
@@ -135,7 +135,7 @@ export const buildSessionQualityResult = ({
     if (typeof group.exercise.sets === 'number') return sum + Math.max(0, number(group.exercise.sets));
     return sum + Math.max(group.workingSets.length, completedSets(group.exercise).filter((set) => set.type !== 'warmup').length);
   }, 0);
-  const skippedMainSets = grouped.workingSets.filter((item) => item.set.done === false).length;
+  const skippedMainSets = grouped.workingSets.filter((item) => isIncompleteSet(item.set)).length;
   const supportSkipped = grouped.supportSets.filter((item) => number(item.completedSets) < number(item.plannedSets)).length;
   const totalCompletedSets = completedWorkingSets.length + supportCompleted;
 
@@ -204,7 +204,7 @@ export const buildSessionQualityResult = ({
   );
 
   const firstMainGroup = grouped.exerciseGroups.find((group) => group.workingSets.length || number(group.exercise.prescription?.sets) > 0);
-  const keyExerciseCompleted = firstMainGroup ? firstMainGroup.workingSets.some((item) => isCompletedSet(item.set)) : completedWorkingSets.length > 0;
+  const keyExerciseCompleted = firstMainGroup ? firstMainGroup.workingSets.some((item) => isRecordedCompletedSet(item.set)) : completedWorkingSets.length > 0;
   const skippedPenalty = Math.min(35, skippedMainSets * 10 + supportSkipped * 5);
   const feedbackPenalty = Math.min(15, feedback.tooHeavy * 6 + feedback.tooLight * 3);
   const stabilityScore = clamp((keyExerciseCompleted ? 100 : 50) - skippedPenalty - feedbackPenalty);

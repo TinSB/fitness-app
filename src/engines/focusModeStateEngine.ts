@@ -1,5 +1,5 @@
 import type { ActualSetDraft, ExercisePrescription, FocusStepType, SupportSkipReason, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
-import { clone, number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { clone, isCompletedSet, isIncompleteSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from './currentExerciseSelector';
 import { createRestTimerState } from './restTimerEngine';
 import { convertKgToDisplayWeight } from './unitConversionEngine';
@@ -88,7 +88,7 @@ const findSupportLog = (session: TrainingSession, step: FocusTrainingStep) => {
 const isStepCompleted = (session: TrainingSession, step: FocusTrainingStep): boolean => {
   if (step.stepType === 'completed') return true;
   if (step.stepType === 'warmup') return Boolean(session.focusCompletedStepIds?.includes(step.id));
-  if (step.stepType === 'working') return Boolean(getSets(session.exercises[step.exerciseIndex])?.[step.setIndex]?.done);
+  if (step.stepType === 'working') return isCompletedSet(getSets(session.exercises[step.exerciseIndex])?.[step.setIndex]);
   if (isSupportFocusStep(step)) {
     const log = findSupportLog(session, step);
     return Boolean(log?.skippedReason) || number(log?.completedSets) > step.setIndex;
@@ -327,7 +327,7 @@ const findStepForExercise = (session: TrainingSession, exerciseIndex: number): F
 };
 
 export const getNextIncompleteSetInExercise = (exercise: ExercisePrescription | undefined): number =>
-  getSets(exercise).findIndex((set) => !set.done);
+  getSets(exercise).findIndex((set) => isIncompleteSet(set));
 
 export const isSessionComplete = isFocusSessionComplete;
 

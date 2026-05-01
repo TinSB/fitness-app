@@ -1,5 +1,5 @@
 import type { E1RMProfile, EstimatedOneRepMax, EstimateConfidence, TrainingSession, TrainingSetLog } from '../models/training-model';
-import { completedSets, number } from './engineUtils';
+import { completedSets, isCompletedSet, number } from './engineUtils';
 import { filterAnalyticsHistory } from './sessionHistoryEngine';
 
 type SourceCandidate = {
@@ -23,7 +23,7 @@ const parseRir = (value: unknown) => {
 
 const epley = (weightKg: number, reps: number) => weightKg * (1 + reps / 30);
 
-const isWorkSet = (set: TrainingSetLog) => set.type !== 'warmup' && number(set.weight) > 0 && number(set.reps) > 0 && Boolean(set.done);
+const isWorkSet = (set: TrainingSetLog) => set.type !== 'warmup' && number(set.weight) > 0 && number(set.reps) > 0 && isCompletedSet(set);
 
 export const getExerciseRecordPoolId = (
   exercise: Pick<TrainingSession['exercises'][number], 'id' | 'baseId' | 'replacedFromId'> & {

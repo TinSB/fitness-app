@@ -505,7 +505,19 @@ const sanitizeSet = (set: unknown, fallbackId: string, fallbackType = 'straight'
   const weight = hasWeightSource && Number.isFinite(parsedWeight) ? Math.max(0, number(rawWeightSource)) : 0;
   const parsedDisplayWeight = Number(raw.displayWeight);
   const reps = Math.max(0, number(raw.reps));
-  const done = typeof raw.done === 'boolean' ? raw.done : weight > 0 && reps > 0;
+  const done = typeof raw.done === 'boolean' ? raw.done : undefined;
+  const completedAt = pickString(raw.completedAt);
+  const rawCompletionStatus = pickString(raw.completionStatus);
+  const completionStatus =
+    rawCompletionStatus === 'completed' || rawCompletionStatus === 'incomplete' || rawCompletionStatus === 'draft' || rawCompletionStatus === 'legacy_completed'
+      ? rawCompletionStatus
+      : done === true
+        ? 'completed'
+        : done === false
+          ? 'incomplete'
+          : completedAt
+            ? 'legacy_completed'
+            : 'draft';
   return {
     id: pickString(raw.id, fallbackId),
     exerciseId: pickString(raw.exerciseId) || undefined,
@@ -529,8 +541,10 @@ const sanitizeSet = (set: unknown, fallbackId: string, fallbackType = 'straight'
     painArea: pickString(raw.painArea),
     painSeverity: Math.max(0, Math.min(5, number(raw.painSeverity) || 0)),
     techniqueQuality: pickString(raw.techniqueQuality, 'acceptable'),
-    done,
-    completedAt: pickString(raw.completedAt),
+    ...(done !== undefined ? { done } : {}),
+    completedAt,
+    completionStatus,
+    incompleteReason: pickString(raw.incompleteReason) || undefined,
   };
 };
 
@@ -575,6 +589,11 @@ const sanitizeExerciseLog = (exercise: unknown) => {
     sets: Array.isArray(raw.sets)
       ? raw.sets.map((set, index) => sanitizeSet(set, `${identity.id}-${index + 1}`))
       : raw.sets,
+    completionStatus:
+      raw.completionStatus === 'completed' || raw.completionStatus === 'partial' || raw.completionStatus === 'not_started'
+        ? raw.completionStatus
+        : undefined,
+    incompleteReason: pickString(raw.incompleteReason) || undefined,
   };
 };
 

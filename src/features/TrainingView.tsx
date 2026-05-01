@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle } from 'lucide-react';
-import { classNames, formatTimer, number, resolveMode, sessionVolume } from '../engines/engineUtils';
+import { classNames, formatTimer, isCompletedSet, isIncompleteSet, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
 import { buildSessionComposition } from '../engines/sessionCompositionEngine';
@@ -128,12 +128,12 @@ const exerciseStatusTone: Record<ExerciseStatus, 'slate' | 'emerald' | 'amber' |
   skipped: 'rose',
 };
 
-const findNextUnfinishedSetIndex = (exercise: LoggedExercise) => getSets(exercise).findIndex((set) => !set.done);
+const findNextUnfinishedSetIndex = (exercise: LoggedExercise) => getSets(exercise).findIndex((set) => isIncompleteSet(set));
 
 const getExerciseStatus = (exercise: LoggedExercise, isCurrent: boolean): ExerciseStatus => {
   const sets = getSets(exercise);
   if (!sets.length) return 'skipped';
-  const done = sets.filter((set) => set.done).length;
+  const done = sets.filter((set) => isCompletedSet(set)).length;
   if (done >= sets.length) return 'completed';
   if (done > 0 || isCurrent) return 'in_progress';
   return 'not_started';
@@ -198,12 +198,10 @@ export function TrainingView({
   onGoToday,
 }: TrainingViewProps) {
   const [supportReasonDrafts, setSupportReasonDrafts] = React.useState<Record<string, SupportSkipReason>>({});
-  const [showFinishConfirm, setShowFinishConfirm] = React.useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = React.useState(false);
 
   React.useEffect(() => {
     setSupportReasonDrafts({});
-    setShowFinishConfirm(false);
     setShowAbandonConfirm(false);
   }, [session?.id]);
 
@@ -235,7 +233,7 @@ export function TrainingView({
 
   const mainExercises = session.exercises as LoggedExercise[];
   const totalSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).length, 0);
-  const doneSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).filter((set) => set.done).length, 0);
+  const doneSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).filter((set) => isCompletedSet(set)).length, 0);
   const currentVolume = sessionVolume(session);
   const nextExerciseIndex = mainExercises.findIndex((exercise) => findNextUnfinishedSetIndex(exercise) >= 0);
   const activeExerciseIndex = nextExerciseIndex >= 0 ? nextExerciseIndex : Math.max(0, Math.min(expandedExercise, mainExercises.length - 1));
@@ -281,11 +279,7 @@ export function TrainingView({
 
   const requestFinish = (target?: 'calendar' | 'today') => {
     const finish = target === 'calendar' ? onFinishToCalendar || onFinish : target === 'today' ? onFinishToToday || onFinish : onFinish;
-    if (workoutFinished) {
-      finish();
-      return;
-    }
-    setShowFinishConfirm(true);
+    finish();
   };
 
   const renderSetSummary = (set: TrainingSetLog, setIndex: number) => {
@@ -334,6 +328,7 @@ export function TrainingView({
         <div className="mt-4 space-y-3">
           {sets.map((set, setIndex) => {
             const isNext = setIndex === nextSetIndex;
+            const completed = isCompletedSet(set);
             const weightKg = set.actualWeightKg ?? set.weight;
             const displayWeight = convertKgToDisplayWeight(weightKg, unitSettings.weightUnit);
             return (
@@ -341,15 +336,15 @@ export function TrainingView({
                 key={set.id}
                 className={classNames(
                   'border-slate-200',
-                  set.done && 'bg-emerald-50/50',
+                  completed && 'bg-emerald-50/50',
                   isNext && 'border-emerald-300 ring-1 ring-emerald-100'
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <StatusBadge tone={set.done ? 'emerald' : isNext ? 'amber' : 'slate'}>
-                        {set.done ? '已完成' : isNext ? '当前组' : '待完成'}
+                      <StatusBadge tone={completed ? 'emerald' : isNext ? 'amber' : 'slate'}>
+                        {completed ? '已完成' : isNext ? '当前组' : '待完成'}
                       </StatusBadge>
                       <h3 className="text-sm font-semibold text-slate-950">
                         {formatSetType(set.type)} {setIndex + 1}
@@ -359,7 +354,7 @@ export function TrainingView({
                       推荐处方与实际记录分开；这里用于补记或修正本组数据。
                     </div>
                   </div>
-                  {!set.done && isNext ? (
+                  {isIncompleteSet(set) && isNext ? (
                     <ActionButton
                       size="sm"
                       variant="primary"
@@ -495,10 +490,10 @@ export function TrainingView({
 
   const renderExerciseCard = (exercise: LoggedExercise, exerciseIndex: number) => {
     const sets = getSets(exercise);
-    const done = sets.filter((set) => set.done).length;
+    const done = sets.filter((set) => isCompletedSet(set)).length;
     const active = expandedExercise === exerciseIndex;
     const status = getExerciseStatus(exercise, exerciseIndex === activeExerciseIndex);
-    const completedSets = sets.filter((set) => set.done);
+    const completedSets = sets.filter((set) => isCompletedSet(set));
 
     return (
       <Card key={`${exercise.id}-${exerciseIndex}`} padded={false} className={classNames(active && 'border-emerald-300 ring-1 ring-emerald-100')}>
@@ -839,23 +834,6 @@ export function TrainingView({
           </ActionButton>
         </div>
       </WorkoutActionBar>
-
-      {showFinishConfirm ? (
-        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-[1px]">
-          <ConfirmDialog
-            title="确认结束未完成训练？"
-            description="当前还有动作或辅助项目没有处理。确认后会按现有记录保存本次训练，未完成内容不会自动补齐。"
-            confirmText="保存并结束"
-            cancelText="继续训练"
-            variant="warning"
-            onCancel={() => setShowFinishConfirm(false)}
-            onConfirm={() => {
-              setShowFinishConfirm(false);
-              onFinish();
-            }}
-          />
-        </div>
-      ) : null}
 
       {showAbandonConfirm ? (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-[1px]">

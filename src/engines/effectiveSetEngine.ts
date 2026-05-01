@@ -1,5 +1,5 @@
 import type { EffectiveSetResult, EffectiveVolumeSummary, ExercisePrescription, TrainingSession, TrainingSetLog } from '../models/training-model';
-import { completedSets, getPrimaryMuscles, getSecondaryMuscles, number } from './engineUtils';
+import { completedSets, getPrimaryMuscles, getSecondaryMuscles, isCompletedSet, number } from './engineUtils';
 
 const clampScore = (score: number) => Math.max(0, Math.min(1, score));
 
@@ -22,7 +22,7 @@ export const evaluateEffectiveSet = (
     };
   }
 
-  if (!set.done || number(set.weight) <= 0 || number(set.reps) <= 0) {
+  if (!isCompletedSet(set) || number(set.weight) <= 0 || number(set.reps) <= 0) {
     return {
       isEffective: false,
       score: 0,

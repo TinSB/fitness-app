@@ -1,5 +1,5 @@
 import type { SupportBlockType, SupportExerciseLog, TrainingSession } from '../models/training-model';
-import { number } from './engineUtils';
+import { isCompletedSet, number } from './engineUtils';
 
 export type SessionComposition = {
   mainPlannedSteps: number;
@@ -25,7 +25,7 @@ const plannedMainSteps = (session: TrainingSession) => mainSets(session).length;
 
 const completedMainSteps = (session: TrainingSession) =>
   mainSets(session).filter(
-    (set) => set.done !== false && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0,
+    (set) => isCompletedSet(set) && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0,
   ).length;
 
 const supportLogs = (session: TrainingSession, blockType: SupportBlockType) =>

@@ -11,6 +11,8 @@ import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenc
 import {
   classNames,
   completedSets,
+  isCompletedSet,
+  isIncompleteSet,
   number,
   setVolume,
   todayKey,
@@ -954,7 +956,16 @@ export function RecordView({
 
     const renderSetLine = (entry: SessionSetEntry, index: number) => {
       const set = entry.set;
+      const plannedText = `${formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}`;
       const label = entry.category === 'warmup' ? formatSetType('warmup') : entry.category === 'working' ? formatSetType('working') : '未分类组';
+      if (entry.category === 'working' && isIncompleteSet(set)) {
+        return (
+          <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-amber-50 px-3 py-2 text-amber-900">
+            未完成 · 计划 {plannedText}
+            {set.note ? ` / ${set.note}` : ''}
+          </div>
+        );
+      }
       return (
         <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
           {label} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
@@ -996,11 +1007,16 @@ export function RecordView({
             </div>
             <div className="mt-1 text-sm text-slate-500">{session.date} · {formatSessionTime(session)} · {formatSessionDuration(session)}</div>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <MetricCard label="完成组数" value={`${summary.workingSetCount}`} helper="正式组" />
+              <MetricCard label="完成正式组" value={`${summary.completedWorkingSetCount}`} helper="只统计已完成组" />
               <MetricCard label="有效组" value={`${summary.effectiveSetCount}`} helper="正式有效组" tone="emerald" />
               <MetricCard label={formatSessionVolumeLabel()} value={summary.totalDisplayVolume} helper="正式组训练量" />
-              <MetricCard label="热身组" value={`${summary.warmupSetCount}`} helper={`热身量 ${formatTrainingVolume(summary.warmupVolumeKg, unitSettings)}`} />
+              <MetricCard label="未完成组" value={`${summary.incompleteSetCount}`} helper={summary.incompleteSetCount ? '不计入训练量' : '无'} tone={summary.incompleteSetCount ? 'amber' : 'slate'} />
             </div>
+            {summary.earlyEndSummary ? (
+              <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                {summary.earlyEndSummary}
+              </div>
+            ) : null}
             <div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
               <span className="font-semibold text-slate-950">训练构成：</span>
               主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%。
@@ -1100,9 +1116,17 @@ export function RecordView({
           <PageSection title="动作记录">
             {summary.groupedSets.exerciseGroups.map((group) => {
               const exercise = group.exercise;
+              const completedWorkingSets = group.workingSets.filter((entry) => isCompletedSet(entry.set));
+              const incompleteWorkingSets = group.workingSets.filter((entry) => isIncompleteSet(entry.set));
+              const exerciseNotStarted = group.workingSets.length > 0 && completedWorkingSets.length <= 0 && incompleteWorkingSets.length > 0;
               return (
                 <Card key={`${session.id}-${exercise.id}`} className="space-y-2">
                   <div className="font-semibold text-slate-950">{formatExerciseName(exercise)}</div>
+                  {exerciseNotStarted ? (
+                    <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                      {formatExerciseName(exercise)}：未完成
+                    </div>
+                  ) : null}
                   {exercise.originalExerciseId && exercise.actualExerciseId && exercise.originalExerciseId !== exercise.actualExerciseId ? (
                     <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
                       原计划：{formatExerciseName(exercise.originalExerciseId)} / 实际执行：{formatExerciseName(exercise.actualExerciseId)}
@@ -1112,7 +1136,8 @@ export function RecordView({
                     {group.warmupSets.length || group.workingSets.length || group.uncategorizedSets.length ? (
                       <>
                         {renderSetSection('热身组', group.warmupSets)}
-                        {renderSetSection('正式组', group.workingSets)}
+                        {renderSetSection('已完成正式组', completedWorkingSets)}
+                        {renderSetSection('未完成组', incompleteWorkingSets)}
                         {renderSetSection('未分类组', group.uncategorizedSets)}
                       </>
                     ) : (

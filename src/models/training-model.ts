@@ -258,6 +258,8 @@ export interface TrainingSetLog {
   painSeverity?: number;
   techniqueQuality?: TechniqueQuality;
   completedAt?: string;
+  completionStatus?: 'completed' | 'incomplete' | 'draft' | 'legacy_completed';
+  incompleteReason?: 'ended_early' | string;
   targetRir?: [number, number];
 }
 
@@ -387,6 +389,8 @@ export interface ExercisePrescription extends Omit<ExerciseTemplate, 'sets'> {
   warningSource?: ExerciseWarningSource;
   warningType?: ExerciseWarningType;
   warningSignals?: ExerciseWarningSignal[];
+  completionStatus?: 'completed' | 'partial' | 'not_started';
+  incompleteReason?: 'ended_early' | string;
   progressLocked?: boolean;
   conservativeTopSet?: boolean;
   adaptiveTopSetFactor?: number;
@@ -676,6 +680,8 @@ export interface TrainingSession {
   adjustmentNotes?: string[];
   adjustmentType?: string;
   adjustmentReasons?: string[];
+  earlyEndReason?: 'incomplete_main_work' | string;
+  earlyEndSummary?: string;
   editedAt?: string;
   editHistory?: SessionEditHistoryItem[];
 }

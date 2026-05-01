@@ -36,7 +36,7 @@ import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHis
 import { buildMuscleVolumeDashboard } from './engines/analytics';
 import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
 import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligenceSummaryEngine';
-import { completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
+import { buildIncompleteMainWorkGuard, completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
 import { applyStatusRules } from './engines/progressionEngine';
@@ -383,14 +383,26 @@ function App() {
     setActiveTab('training');
   };
 
-  const finishSession = (target: ProgressSectionTarget | 'today' = 'list') => {
+  const finishSession = async (target: ProgressSectionTarget | 'today' = 'list') => {
     if (!data.activeSession) return;
     const finishedAt = new Date().toISOString();
-    const completed = completeTrainingSessionIntoHistory(data, finishedAt);
+    const incompleteGuard = buildIncompleteMainWorkGuard(data.activeSession);
+    if (incompleteGuard.hasIncompleteMainWork) {
+      const confirmed = await confirm({
+        title: '仍有未完成动作，是否结束训练？',
+        description: '未完成动作会保留在历史详情中，但不会计入有效组、总量、PR 或 e1RM。',
+        confirmText: '结束并保存',
+        cancelText: '继续训练',
+        variant: 'warning',
+      });
+      if (!confirmed) return;
+    }
+    const completed = completeTrainingSessionIntoHistory(data, finishedAt, { endedEarly: incompleteGuard.hasIncompleteMainWork });
     const finishedSession = completed.session;
 
     setData((current) => {
-      const result = completeTrainingSessionIntoHistory(current, finishedAt);
+      const currentGuard = buildIncompleteMainWorkGuard(current.activeSession);
+      const result = completeTrainingSessionIntoHistory(current, finishedAt, { endedEarly: currentGuard.hasIncompleteMainWork });
       return result.data;
     });
 

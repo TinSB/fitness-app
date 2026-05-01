@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('full workout page structure', () => {
   const source = readFileSync('src/features/TrainingView.tsx', 'utf8');
+  const appSource = readFileSync('src/App.tsx', 'utf8');
 
   it('renders the full workout review and editing shell', () => {
     expect(source).toContain('本次训练进度');
@@ -21,7 +22,8 @@ describe('full workout page structure', () => {
 
   it('keeps focus mode and unfinished-finish confirmation reachable', () => {
     expect(source).toContain('返回极简模式');
-    expect(source).toContain('确认结束未完成训练？');
-    expect(source).toContain('保存并结束');
+    expect(source).toContain('onFinish');
+    expect(appSource).toContain('仍有未完成动作，是否结束训练？');
+    expect(appSource).toContain('结束并保存');
   });
 });

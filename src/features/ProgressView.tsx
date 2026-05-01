@@ -23,7 +23,7 @@ import { buildWeeklyActionExplanation, buildWeeklyCoachReview } from '../engines
 import { formatExplanationEvidence } from '../engines/explainability/evidenceExplainability';
 import { formatExplanationItem } from '../engines/explainability/shared';
 import { buildWeeklyActionRecommendations } from '../engines/weeklyCoachActionEngine';
-import { classNames, formatDate, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
+import { classNames, formatDate, isCompletedSet, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
@@ -546,14 +546,18 @@ export function ProgressView({
               ) : null}
               <div className="mt-2 space-y-1 text-sm font-bold text-slate-700">
                 {Array.isArray(exercise.sets) && exercise.sets.length ? (
-                  exercise.sets.map((set, index) => (
-                    <div key={set.id || `${exercise.id}-${index}`} className={set.done ? '' : 'text-slate-400'}>
-                      {formatSetType(set.type)} {index + 1}：{set.done ? `${formatWeight(set.weight, unitSettings)} x ${set.reps}` : '未完成'}
-                      {set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}
-                      {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
-                      {set.painFlag ? ' / 不适' : ''}
-                    </div>
-                  ))
+                  exercise.sets.map((set, index) => {
+                    const completed = isCompletedSet(set);
+                    return (
+                      <div key={set.id || `${exercise.id}-${index}`} className={completed ? '' : 'text-slate-400'}>
+                        {formatSetType(set.type)} {index + 1}：
+                        {completed ? `${formatWeight(set.weight, unitSettings)} x ${set.reps}` : `未完成 · 计划 ${formatWeight(set.weight, unitSettings)} x ${set.reps}`}
+                        {set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}
+                        {set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
+                        {set.painFlag ? ' / 不适' : ''}
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="text-slate-500">没有主训练组记录。</div>
                 )}
@@ -1640,7 +1644,7 @@ export function ProgressView({
                             <div className="text-xs font-bold text-slate-500">
                               {Array.isArray(exercise.sets)
                                 ? exercise.sets
-                                    .filter((set) => set.done)
+                                    .filter((set) => isCompletedSet(set))
                                     .map((set) => `${formatWeight(set.weight, unitSettings)} x ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}${set.painFlag ? ' / 不适' : ''}`)
                                     .join('；') || '未完成'
                                 : '未记录'}

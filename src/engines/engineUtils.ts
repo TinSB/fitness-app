@@ -70,11 +70,20 @@ const isTrainingSetLog = (value: unknown): value is TrainingSetLog =>
 export const setWeightKg = (set: Pick<TrainingSetLog, 'weight'> & Partial<Pick<TrainingSetLog, 'actualWeightKg'>>) =>
   number(set.actualWeightKg ?? set.weight);
 
+export const isLegacyCompletedSet = (set: Partial<TrainingSetLog> | null | undefined) =>
+  Boolean(set && set.done === undefined && String(set.completedAt || '').trim());
+
+export const isCompletedSet = (set: Partial<TrainingSetLog> | null | undefined) =>
+  Boolean(set && (set.done === true || isLegacyCompletedSet(set)));
+
+export const isIncompleteSet = (set: Partial<TrainingSetLog> | null | undefined) =>
+  Boolean(set && (set.done === false || (set.done === undefined && !String(set.completedAt || '').trim())));
+
 export const completedSets = (exercise: Pick<ExercisePrescription, 'sets'> | { sets?: TrainingSetLog[] | number }): TrainingSetLog[] => {
   if (!Array.isArray(exercise?.sets)) return [];
   return exercise.sets.filter(
     (set): set is TrainingSetLog =>
-      isTrainingSetLog(set) && set.done !== false && setWeightKg(set) > 0 && number(set.reps) > 0,
+      isTrainingSetLog(set) && isCompletedSet(set) && setWeightKg(set) > 0 && number(set.reps) > 0,
   );
 };
 

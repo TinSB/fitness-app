@@ -15,7 +15,7 @@ import { buildRecommendationTrace, type RecommendationTraceContext } from './rec
 import { buildWeeklyPrescription } from './supportPlanEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './trainingDecisionContext';
 import { buildTrainingLevelAssessment } from './trainingLevelEngine';
-import { findTemplate, getPrimaryMuscles, number, setVolume } from './engineUtils';
+import { completedSets, findTemplate, getPrimaryMuscles, number, setVolume } from './engineUtils';
 
 export type RecommendationDifferenceCategory =
   | 'primaryGoal'
@@ -158,8 +158,7 @@ const historyVolume = (history: TrainingSession[]) =>
       (sum, session) =>
         sum +
         (session.exercises || []).reduce(
-          (exerciseSum, exercise) =>
-            exerciseSum + (Array.isArray(exercise.sets) ? exercise.sets.filter((set) => set.done !== false).reduce((setSum, set) => setSum + setVolume(set), 0) : 0),
+          (exerciseSum, exercise) => exerciseSum + completedSets(exercise).reduce((setSum, set) => setSum + setVolume(set), 0),
           0,
         ),
       0,

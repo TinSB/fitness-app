@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Copy, Dumbbell, ListChecks, Replace, SkipForward, Timer, XCircle } from 'lucide-react';
-import { classNames, formatTimer, number } from '../engines/engineUtils';
+import { classNames, formatTimer, isCompletedSet, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
@@ -190,7 +190,7 @@ export function TrainingFocusView({
   const remainingSec = getRestTimerRemainingSec(restTimer);
   const weightUnit = unitSettings.weightUnit;
   const mainExercisePoolId = currentExerciseIdentity.recordExerciseId || mainExercise?.actualExerciseId || mainExercise?.replacementExerciseId || mainExercise?.id || '';
-  const completedMainSets = mainSets.filter((set) => set.done);
+  const completedMainSets = mainSets.filter((set) => isCompletedSet(set));
   const existingLoadFeedback = mainExercisePoolId ? (session.loadFeedback || []).find((item) => item.exerciseId === mainExercisePoolId) : undefined;
   const replacementOptions = React.useMemo(
     () =>
@@ -484,7 +484,7 @@ export function TrainingFocusView({
       <div className="space-y-2">
         {session.exercises.map((exercise, index) => {
           const sets = getSets(exercise);
-          const done = sets.filter((set) => set.done).length;
+          const done = sets.filter((set) => isCompletedSet(set)).length;
           const selected = index === mainIndex;
           return (
             <button
@@ -893,7 +893,7 @@ export function TrainingFocusView({
           <div className="mt-3 space-y-2">
             {session.exercises.map((exercise, index) => {
               const sets = getSets(exercise);
-              const done = sets.filter((set) => set.done).length;
+              const done = sets.filter((set) => isCompletedSet(set)).length;
               const selected = index === mainIndex;
               return (
                 <button

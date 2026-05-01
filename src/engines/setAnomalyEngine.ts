@@ -1,5 +1,5 @@
 import type { ActualSetDraft, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
-import { number } from './engineUtils';
+import { isCompletedSet, number } from './engineUtils';
 import { convertLbToKg, DEFAULT_UNIT_SETTINGS, parseDisplayWeightToKg } from './unitConversionEngine';
 
 export type SetAnomalySeverity = 'info' | 'warning' | 'critical';
@@ -119,9 +119,9 @@ const resolveDraft = (currentDraft: DraftLike | null | undefined, unitSettings?:
 };
 
 const reliableWorkSet = (set: TrainingSetLog) =>
-  set.done !== false && set.type !== 'warmup' && setTypeOf(set) !== 'warmup' && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
+  isCompletedSet(set) && set.type !== 'warmup' && setTypeOf(set) !== 'warmup' && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
 
-const completedCurrentSessionWorkSet = (set: TrainingSetLog) => set.done === true && reliableWorkSet(set);
+const completedCurrentSessionWorkSet = (set: TrainingSetLog) => isCompletedSet(set) && reliableWorkSet(set);
 
 const setWeightKg = (set: TrainingSetLog) => number(set.actualWeightKg ?? set.weight);
 

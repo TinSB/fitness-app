@@ -1,7 +1,7 @@
 import type { ExercisePrescription, SupportExerciseLog, TrainingSession, TrainingSetLog, UnitSettings } from '../models/training-model';
 import { formatDataFlag } from '../i18n/formatters';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
-import { number, setVolume } from './engineUtils';
+import { isCompletedSet, isIncompleteSet, number, setVolume } from './engineUtils';
 import { formatTrainingVolume } from './unitConversionEngine';
 
 export type SessionSetCategory = 'warmup' | 'working' | 'uncategorized';
@@ -78,12 +78,14 @@ const classifySet = (set: TrainingSetLog, source: SessionSetEntry['source']): { 
   return { category: 'uncategorized', inferred: false };
 };
 
-const isCompletedDisplaySet = (set: TrainingSetLog) => set.done !== false && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
+const isCompletedDisplaySet = (set: TrainingSetLog) => isCompletedSet(set) && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
 
 const completedVolume = (items: SessionSetEntry[]) =>
   items.filter((item) => isCompletedDisplaySet(item.set)).reduce((sum, item) => sum + setVolume(item.set), 0);
 
 const completedCount = (items: SessionSetEntry[]) => items.filter((item) => isCompletedDisplaySet(item.set)).length;
+
+const incompleteCount = (items: SessionSetEntry[]) => items.filter((item) => isIncompleteSet(item.set)).length;
 
 export const groupSessionSetsByType = (session: TrainingSession): GroupedSessionSets => {
   const groups = (session.exercises || []).map<SessionExerciseSetGroup>((exercise) => ({
@@ -126,7 +128,7 @@ export const groupSessionSetsByType = (session: TrainingSession): GroupedSession
     group.warmupSets.push({
       exercise: group.exercise,
       exerciseId: group.exerciseId,
-      set: { ...set, type: 'warmup', done: set.done !== false },
+      set: { ...set, type: 'warmup', done: isCompletedSet(set) },
       setIndex: index,
       category: 'warmup',
       inferred: false,
@@ -169,10 +171,27 @@ export const buildSessionDetailSummary = (session: TrainingSession, unitSettings
   const workingVolumeKg = completedVolume(grouped.workingSets);
   const warmupVolumeKg = completedVolume(grouped.warmupSets);
   const supportSetCount = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.completedSets)), 0);
+  const incompleteSetCount = incompleteCount(grouped.workingSets);
+  const incompleteExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.some((item) => isIncompleteSet(item.set))).length;
+  const mainExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.length).length;
+  const allMainWorkIncomplete = mainExerciseCount > 0 && grouped.exerciseGroups
+    .filter((group) => group.workingSets.length)
+    .every((group) => !group.workingSets.some((item) => isCompletedDisplaySet(item.set)));
+  const earlyEndSummary =
+    session.earlyEndSummary ||
+    (allMainWorkIncomplete
+      ? '训练提前结束，主训练未完成。'
+      : incompleteSetCount > 0
+        ? '本次有效组较少，因为部分动作未完成。未完成动作不会计入有效组、总量、PR 或 e1RM。'
+        : '');
 
   return {
     warmupSetCount: completedCount(grouped.warmupSets),
     workingSetCount: completedCount(grouped.workingSets),
+    completedWorkingSetCount: completedCount(grouped.workingSets),
+    incompleteSetCount,
+    incompleteExerciseCount,
+    earlyEndSummary,
     supportSetCount,
     effectiveSetCount: effectiveSummary.effectiveSets,
     workingVolumeKg,

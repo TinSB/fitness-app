@@ -1,6 +1,6 @@
 import { EXERCISE_DISPLAY_NAMES, EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/trainingData';
 import type { AppData, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
-import { number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { isCompletedSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
 
 export type DataHealthSeverity = 'info' | 'warning' | 'error';
@@ -132,7 +132,7 @@ const hasAnySetLogs = (session: TrainingSession) =>
   (session.exercises || []).some((exercise) => Array.isArray(exercise.sets) && exercise.sets.length > 0) || Boolean(session.focusWarmupSetLogs?.length);
 
 const hasCompletedSetLogs = (session: TrainingSession) =>
-  collectAllSessionSets(session).some(({ set }) => set.done !== false && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0);
+  collectAllSessionSets(session).some(({ set }) => isCompletedSet(set) && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0);
 
 const isExternalWorkoutSession = (session: TrainingSession, importedWorkoutIds: Set<string>) => {
   const raw = session as TrainingSession & Record<string, unknown>;
