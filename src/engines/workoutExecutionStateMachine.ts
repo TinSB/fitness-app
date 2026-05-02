@@ -4,6 +4,7 @@ import {
   applySuggestedFocusStep,
   completeFocusSet,
   copyPreviousFocusActualDraft,
+  endFocusRest,
   getCurrentFocusStep,
   getFocusNavigationState,
   skipFocusSupportBlock,
@@ -145,8 +146,11 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
       forcedState = 'resting';
       break;
     case 'END_REST':
-      updatedSession = { ...session, restTimerState: null };
-      feedback = '休息结束';
+      {
+        const result = endFocusRest(session);
+        updatedSession = result.session;
+        feedback = result.feedback;
+      }
       break;
     case 'FINISH_SESSION':
       forcedState = 'completed';

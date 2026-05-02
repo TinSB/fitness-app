@@ -60,5 +60,16 @@ export const resumeRestTimer = (timer?: RestTimerState | null, now: Date | numbe
   };
 };
 
+export const resetRestTimer = (timer?: RestTimerState | null, now: Date | number = Date.now()): RestTimerState | null =>
+  timer
+    ? {
+        ...timer,
+        startedAt: new Date(nowMs(now)).toISOString(),
+        durationSec: Math.max(0, Math.round(timer.durationSec)),
+        pausedRemainingSec: undefined,
+        isRunning: true,
+      }
+    : null;
+
 export const getSessionRestTimer = (session?: TrainingSession | null): RestTimerState | null =>
   session?.restTimerState && session.restTimerState.isRunning ? session.restTimerState : null;

@@ -1,26 +1,17 @@
-import type { AppliedCoachActionPatch, ExercisePrescription, SupportExerciseLog, TrainingSession } from '../models/training-model';
+import type {
+  AppliedCoachActionPatch,
+  ExercisePrescription,
+  PendingSessionPatch,
+  SessionPatch,
+  SessionPatchType,
+  SupportExerciseLog,
+  TrainingSession,
+} from '../models/training-model';
 import type { DailyTrainingAdjustment } from './dailyTrainingAdjustmentEngine';
 import { clone, number } from './engineUtils';
 import { getCurrentFocusStep } from './focusModeStateEngine';
 
-export type SessionPatchType =
-  | 'reduce_support'
-  | 'main_only'
-  | 'reduce_intensity'
-  | 'reduce_volume'
-  | 'substitute_exercise'
-  | 'extend_rest'
-  | 'skip_optional';
-
-export type SessionPatch = {
-  id: string;
-  type: SessionPatchType;
-  targetId?: string;
-  title: string;
-  description: string;
-  reason: string;
-  reversible: boolean;
-};
+export type { PendingSessionPatch, SessionPatch, SessionPatchType };
 
 export type PatchedSessionResult = {
   session: TrainingSession;
@@ -52,6 +43,18 @@ const patchTypeDescriptions: Record<SessionPatchType, string> = {
 
 const rawTokenPattern =
   /\b(undefined|null|reduce_support|main_only|reduce_intensity|reduce_volume|substitute_exercise|extend_rest|skip_optional|normal|conservative|low|medium|high)\b/gi;
+
+const dateKey = (value: string) => String(value || '').slice(0, 10);
+
+const cleanIdentityPart = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 96);
+
+const patchIdentity = (patches: SessionPatch[]) =>
+  patches.map((patch) => `${patch.type}:${patch.targetId || ''}:${patch.id}`).sort().join('|');
 
 const cleanText = (value: unknown, fallback: string) => {
   const text = String(value ?? '')
@@ -104,6 +107,104 @@ export function buildSessionPatchesFromDailyAdjustment(adjustment?: DailyTrainin
     seen.add(key);
     return true;
   });
+}
+
+export function buildPendingSessionPatch(input: {
+  patches: SessionPatch[];
+  createdAt: string;
+  sourceCoachActionId?: string;
+  sourceFingerprint?: string;
+  targetTemplateId?: string;
+}): PendingSessionPatch {
+  const identity = cleanIdentityPart(
+    input.sourceFingerprint ||
+      [input.sourceCoachActionId, input.targetTemplateId, patchIdentity(input.patches)].filter(Boolean).join('|'),
+  );
+  return {
+    id: `pending-session-patch-${dateKey(input.createdAt) || 'today'}-${identity || 'temporary'}`,
+    createdAt: input.createdAt,
+    sourceCoachActionId: input.sourceCoachActionId,
+    sourceFingerprint: input.sourceFingerprint,
+    targetTemplateId: input.targetTemplateId,
+    patches: clone(input.patches || []),
+    status: 'pending',
+  };
+}
+
+export function isPendingSessionPatchActive(
+  pendingPatch: PendingSessionPatch,
+  currentDate: string,
+  targetTemplateId?: string,
+) {
+  if (!pendingPatch || pendingPatch.status !== 'pending') return false;
+  if (dateKey(pendingPatch.createdAt) !== dateKey(currentDate)) return false;
+  if (targetTemplateId && pendingPatch.targetTemplateId && pendingPatch.targetTemplateId !== targetTemplateId) return false;
+  return Array.isArray(pendingPatch.patches) && pendingPatch.patches.length > 0;
+}
+
+export function findActivePendingSessionPatch(
+  pendingPatches: PendingSessionPatch[] = [],
+  currentDate: string,
+  targetTemplateId?: string,
+) {
+  return pendingPatches.find((pendingPatch) => isPendingSessionPatchActive(pendingPatch, currentDate, targetTemplateId));
+}
+
+export function upsertPendingSessionPatch(
+  pendingPatches: PendingSessionPatch[] = [],
+  pendingPatch: PendingSessionPatch,
+): { pendingPatches: PendingSessionPatch[]; created: boolean; existing?: PendingSessionPatch } {
+  const existing = pendingPatches.find((entry) => {
+    if (entry.status !== 'pending') return false;
+    if (dateKey(entry.createdAt) !== dateKey(pendingPatch.createdAt)) return false;
+    if (pendingPatch.sourceFingerprint && entry.sourceFingerprint === pendingPatch.sourceFingerprint) return true;
+    return entry.id === pendingPatch.id;
+  });
+  if (existing) return { pendingPatches: [...pendingPatches], created: false, existing };
+  return { pendingPatches: [...pendingPatches, pendingPatch], created: true };
+}
+
+export function markPendingSessionPatchConsumed(
+  pendingPatches: PendingSessionPatch[] = [],
+  pendingPatchId: string,
+  consumedAt: string,
+) {
+  return pendingPatches.map((pendingPatch) =>
+    pendingPatch.id === pendingPatchId
+      ? { ...pendingPatch, status: 'consumed' as const, consumedAt }
+      : pendingPatch,
+  );
+}
+
+export function markPendingSessionPatchDismissed(
+  pendingPatches: PendingSessionPatch[] = [],
+  pendingPatchId: string,
+  dismissedAt: string,
+) {
+  return pendingPatches.map((pendingPatch) =>
+    pendingPatch.id === pendingPatchId
+      ? { ...pendingPatch, status: 'dismissed' as const, dismissedAt }
+      : pendingPatch,
+  );
+}
+
+export function markExpiredPendingSessionPatches(
+  pendingPatches: PendingSessionPatch[] = [],
+  currentDate: string,
+) {
+  return pendingPatches.map((pendingPatch) =>
+    pendingPatch.status === 'pending' && dateKey(pendingPatch.createdAt) !== dateKey(currentDate)
+      ? { ...pendingPatch, status: 'expired' as const, expiredAt: currentDate }
+      : pendingPatch,
+  );
+}
+
+export function getActivePendingSessionPatches(
+  pendingPatches: PendingSessionPatch[] = [],
+  currentDate: string,
+  targetTemplateId?: string,
+): SessionPatch[] {
+  return findActivePendingSessionPatch(pendingPatches, currentDate, targetTemplateId)?.patches || [];
 }
 
 const makeSnapshot = (session: TrainingSession): PatchSnapshot => ({

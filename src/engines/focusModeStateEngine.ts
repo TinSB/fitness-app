@@ -287,6 +287,28 @@ export const getNextFocusStep = (session: TrainingSession | null | undefined): F
   return null;
 };
 
+export type EndFocusRestResult = {
+  session: TrainingSession;
+  nextStep: FocusTrainingStep;
+  feedback: string;
+};
+
+export const endFocusRest = (session: TrainingSession): EndFocusRestResult => {
+  const nextSession = clone(session) as TrainingSession;
+  const completedExerciseId = nextSession.restTimerState?.exerciseId;
+  nextSession.restTimerState = null;
+
+  const nextStep = getCurrentFocusStep(nextSession);
+  if (nextStep.stepType !== 'completed') {
+    setCurrentStep(nextSession, nextStep, { preserveManualOverride: true });
+    const feedback = completedExerciseId && nextStep.exerciseId !== completedExerciseId ? '当前动作已完成。' : '已进入下一组。';
+    return { session: nextSession, nextStep, feedback };
+  }
+
+  setCurrentStep(nextSession, COMPLETED_STEP, { clearManualOverride: true });
+  return { session: nextSession, nextStep: COMPLETED_STEP, feedback: '当前动作已完成。需要结束训练时请手动点击结束。' };
+};
+
 const getDrafts = (session: TrainingSession): ActualSetDraft[] => (Array.isArray(session.focusActualSetDrafts) ? session.focusActualSetDrafts : []);
 
 export const getActualSetDraft = (session: TrainingSession, step: FocusTrainingStep): ActualSetDraft | null => {

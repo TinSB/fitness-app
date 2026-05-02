@@ -1,5 +1,5 @@
 import { EXERCISE_DISPLAY_NAMES, EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/trainingData';
-import type { AppData, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
+import type { AppData, DismissedDataHealthIssue, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
 import { isCompletedSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
 
@@ -42,6 +42,29 @@ export const sortDataHealthIssues = (issues: DataHealthIssue[] = []) =>
     if (severityDiff !== 0) return severityDiff;
     return left.title.localeCompare(right.title, 'zh-CN');
   });
+
+const dateKey = (value: string) => String(value || '').slice(0, 10);
+
+export const dismissDataHealthIssueToday = (issueId: string, now: string): DismissedDataHealthIssue => ({
+  issueId,
+  dismissedAt: now,
+  scope: 'today',
+});
+
+export const filterDismissedDataHealthIssues = <T extends { id: string }>(
+  issues: T[] = [],
+  dismissedIssues: DismissedDataHealthIssue[] = [],
+  currentDate: string,
+): T[] => {
+  const currentDateKey = dateKey(currentDate);
+  const dismissedToday = new Set(
+    (dismissedIssues || [])
+      .filter((item) => item.scope === 'today' && dateKey(item.dismissedAt) === currentDateKey)
+      .map((item) => item.issueId),
+  );
+  if (!dismissedToday.size) return [...issues];
+  return issues.filter((issue) => !dismissedToday.has(issue.id));
+};
 
 type SessionSource = 'active' | 'history';
 type IssueInput = Omit<DataHealthIssue, 'affectedIds' | 'suggestedAction'> & {

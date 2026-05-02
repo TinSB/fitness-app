@@ -114,7 +114,8 @@ describe('temporary session patch preview', () => {
     const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
     const today = readFileSync(resolve(process.cwd(), 'src/features/TodayView.tsx'), 'utf8');
 
-    expect(app).toContain('setPendingSessionPatches(patches)');
+    expect(app).toContain('buildPendingSessionPatch');
+    expect(app).toContain('upsertPendingSessionPatch');
     expect(app).toContain('pendingSessionPatches={pendingSessionPatches}');
     expect(today).toContain('pendingSessionPatches');
     expect(today).toContain('已应用本次调整');

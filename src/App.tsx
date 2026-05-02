@@ -21,6 +21,7 @@ import { createSession, pickSuggestedTemplate } from './engines/sessionBuilder';
 import {
   extendRestTimer,
   pauseRestTimer,
+  resetRestTimer,
   resumeRestTimer,
 } from './engines/restTimerEngine';
 import { reconcileScreeningProfile } from './engines/adaptiveFeedbackEngine';
@@ -33,6 +34,7 @@ import {
 import { dispatchWorkoutExecutionEvent } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { dismissDataHealthIssueToday } from './engines/dataHealthEngine';
 import { buildMuscleVolumeDashboard } from './engines/analytics';
 import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
 import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligenceSummaryEngine';
@@ -58,12 +60,19 @@ import {
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
   applySessionPatches,
+  buildPendingSessionPatch,
   buildSessionPatchesFromDailyAdjustment,
+  findActivePendingSessionPatch,
+  getActivePendingSessionPatches,
+  markExpiredPendingSessionPatches,
+  markPendingSessionPatchConsumed,
+  markPendingSessionPatchDismissed,
   revertSessionPatches,
   type SessionPatch,
+  upsertPendingSessionPatch,
 } from './engines/sessionPatchEngine';
 import { formatTemplateName } from './i18n/formatters';
-import type { AppData, LoadFeedbackValue, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
+import type { AppData, LoadFeedbackValue, PendingSessionPatch, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
@@ -212,7 +221,6 @@ function App() {
   const [profileSection, setProfileSection] = useState<ProfileSection>('home');
   const [profileTargetSection, setProfileTargetSection] = useState<ProfileTargetSection | null>(null);
   const [planTarget, setPlanTarget] = useState<PlanTarget | null>(null);
-  const [pendingSessionPatches, setPendingSessionPatches] = useState<SessionPatch[]>([]);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
   const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
@@ -227,9 +235,27 @@ function App() {
     setPipelineRevision((current) => current + 1);
   }, []);
 
+  const writePendingSessionPatches = React.useCallback((current: AppData, pendingSessionPatches: PendingSessionPatch[]): AppData => ({
+    ...current,
+    pendingSessionPatches,
+    settings: {
+      ...current.settings,
+      pendingSessionPatches,
+    },
+  }), []);
+
   useEffect(() => {
     saveData(data);
   }, [data]);
+
+  useEffect(() => {
+    setData((current) => {
+      const existing = current.pendingSessionPatches || current.settings?.pendingSessionPatches || [];
+      const next = markExpiredPendingSessionPatches(existing, todayKey());
+      if (JSON.stringify(existing) === JSON.stringify(next)) return current;
+      return writePendingSessionPatches(current, next);
+    });
+  }, [writePendingSessionPatches]);
 
   useEffect(() => {
     if (!appToast || typeof window === 'undefined') return undefined;
@@ -347,6 +373,15 @@ function App() {
     [data, rawCoachActions, pipelineRevision],
   );
   const coachActions = enginePipeline.visibleCoachActions;
+  const pendingSessionPatchRecords = data.pendingSessionPatches || data.settings?.pendingSessionPatches || [];
+  const activePendingSessionPatch = React.useMemo(
+    () => findActivePendingSessionPatch(pendingSessionPatchRecords, todayKey(), activeTemplateId),
+    [pendingSessionPatchRecords, activeTemplateId],
+  );
+  const pendingSessionPatches = React.useMemo(
+    () => getActivePendingSessionPatches(pendingSessionPatchRecords, todayKey(), activeTemplateId),
+    [pendingSessionPatchRecords, activeTemplateId],
+  );
 
   const startSession = (templateId = activeTemplateId, explicitPatches?: SessionPatch[]) => {
     const template = findTemplate(data.templates, templateId);
@@ -364,19 +399,30 @@ function App() {
       data.mesocyclePlan,
       sessionDecisionContext
     ) as TrainingSession;
-    const patches = explicitPatches ?? pendingSessionPatches;
+    const pendingPatch = explicitPatches ? undefined : findActivePendingSessionPatch(data.pendingSessionPatches || data.settings?.pendingSessionPatches || [], todayKey(), templateId);
+    const patches = explicitPatches ?? pendingPatch?.patches ?? [];
     const patchResult = patches.length ? applySessionPatches(baseSession, patches) : null;
     const session = patchResult?.session || baseSession;
 
-    setData((current) => ({
-      ...current,
-      screeningProfile,
-      selectedTemplateId: templateId,
-      activeProgramTemplateId: templateId,
-      activeSession: session,
-    }));
+    setData((current) => {
+      const nextPendingPatches = pendingPatch
+        ? markPendingSessionPatchConsumed(current.pendingSessionPatches || current.settings?.pendingSessionPatches || [], pendingPatch.id, new Date().toISOString())
+        : current.pendingSessionPatches || current.settings?.pendingSessionPatches || [];
+      return {
+        ...current,
+        screeningProfile,
+        selectedTemplateId: templateId,
+        activeProgramTemplateId: templateId,
+        activeSession: session,
+        pendingSessionPatches: nextPendingPatches,
+        settings: {
+          ...current.settings,
+          pendingSessionPatches: nextPendingPatches,
+        },
+      };
+    });
     if (patches.length) {
-      setPendingSessionPatches([]);
+      invalidateDerivedState('pending_patch_consumed');
       if (patchResult?.warnings.length) showAppToast(patchResult.warnings[0], 'warning');
     }
     setExpandedExercise(0);
@@ -606,12 +652,33 @@ function App() {
   };
 
   const extendActiveRestTimer = (seconds: number) => updateRestTimer((timer) => extendRestTimer(timer, seconds));
-  const toggleActiveRestTimer = () =>
+  const toggleActiveRestTimer = () => {
+    let message = '';
     updateRestTimer((timer) => {
       if (!timer) return null;
+      message = timer.isRunning ? '已暂停休息计时。' : '继续休息计时。';
       return timer.isRunning ? pauseRestTimer(timer) : resumeRestTimer(timer);
     });
-  const clearActiveRestTimer = () => updateRestTimer(() => null);
+    if (message) showAppToast(message, 'info');
+  };
+  const resetActiveRestTimer = () => {
+    let didReset = false;
+    updateRestTimer((timer) => {
+      didReset = Boolean(timer);
+      return resetRestTimer(timer);
+    });
+    if (didReset) showAppToast('已重置休息计时。', 'info');
+  };
+  const endActiveRestTimer = () => {
+    let feedback = '';
+    setData((current) => {
+      if (!current.activeSession?.restTimerState) return current;
+      const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'END_REST' });
+      feedback = result.feedback || '';
+      return { ...current, activeSession: result.updatedSession };
+    });
+    if (feedback) showAppToast(feedback, 'info');
+  };
 
   const updateSupportLog = (moduleId: string, exerciseId: string, updates: Partial<NonNullable<TrainingSession['supportExerciseLogs']>[number]>) => {
     setData((current) => {
@@ -953,7 +1020,26 @@ function App() {
   const handleDataHealthAction = (action: DataHealthActionView) => {
     if (!action || action.type === 'none') return;
     if (action.type === 'dismiss') {
-      showAppToast('已忽略此提醒。', 'info');
+      const issueId = action.issueId || action.id.replace(/-dismiss$/, '');
+      setData((current) => {
+        const dismissedAt = todayKey();
+        const nextDismissed = [
+          ...(current.dismissedDataHealthIssues || []).filter(
+            (item) => !(item.scope === 'today' && item.issueId === issueId && item.dismissedAt.slice(0, 10) === dismissedAt),
+          ),
+          dismissDataHealthIssueToday(issueId, dismissedAt),
+        ];
+        return {
+          ...current,
+          dismissedDataHealthIssues: nextDismissed,
+          settings: {
+            ...current.settings,
+            dismissedDataHealthIssues: nextDismissed,
+          },
+        };
+      });
+      invalidateDerivedState('data_health_issue_dismissed');
+      showAppToast('已暂不处理，今天不再提醒。', 'info');
       return;
     }
     if (action.type === 'open_session_detail') {
@@ -1314,8 +1400,25 @@ function App() {
             const result = applySessionPatches(current.activeSession, patches);
             return { ...current, activeSession: result.session };
           });
+          invalidateDerivedState('pending_patch_consumed');
         } else {
-          setPendingSessionPatches(patches);
+          const pendingPatch = buildPendingSessionPatch({
+            patches,
+            createdAt: todayKey(),
+            sourceCoachActionId: action.id,
+            sourceFingerprint: action.sourceFingerprint,
+            targetTemplateId: activeTemplateId,
+          });
+          const upsert = upsertPendingSessionPatch(data.pendingSessionPatches || data.settings?.pendingSessionPatches || [], pendingPatch);
+          if (!upsert.created) {
+            showAppToast('本次调整已应用。', 'info');
+            return;
+          }
+          setData((current) => {
+            const result = upsertPendingSessionPatch(current.pendingSessionPatches || current.settings?.pendingSessionPatches || [], pendingPatch);
+            return writePendingSessionPatches(current, result.pendingPatches);
+          });
+          invalidateDerivedState('pending_patch_created');
         }
         setActiveTab(data.activeSession ? 'training' : 'today');
         showAppToast(data.activeSession ? '已应用本次临时调整。' : '已应用本次临时调整。开始训练时生效。', 'success');
@@ -1376,8 +1479,16 @@ function App() {
       showAppToast('已撤销本次临时调整。', 'success');
       return;
     }
-    if (pendingSessionPatches.length) {
-      setPendingSessionPatches([]);
+    if (activePendingSessionPatch) {
+      setData((current) => {
+        const nextPendingPatches = markPendingSessionPatchDismissed(
+          current.pendingSessionPatches || current.settings?.pendingSessionPatches || [],
+          activePendingSessionPatch.id,
+          todayKey(),
+        );
+        return writePendingSessionPatches(current, nextPendingPatches);
+      });
+      invalidateDerivedState('pending_patch_dismissed');
       showAppToast('已撤销本次临时调整。', 'success');
       return;
     }
@@ -1472,6 +1583,9 @@ function App() {
                       onFinishToCalendar={() => finishSession('calendar')}
                       onFinishToToday={() => finishSession('today')}
                       onShowFullTraining={() => setForceFullTrainingView(true)}
+                      onToggleRestTimer={toggleActiveRestTimer}
+                      onResetRestTimer={resetActiveRestTimer}
+                      onEndRest={endActiveRestTimer}
                       onCompleteSupportSet={completeSupportSet}
                       onSkipSupportExercise={skipSupportExercise}
                       onSkipSupportBlock={skipSupportBlock}
@@ -1511,7 +1625,8 @@ function App() {
                       onReturnFocusMode={() => setForceFullTrainingView(false)}
                       onExtendRestTimer={extendActiveRestTimer}
                       onToggleRestTimer={toggleActiveRestTimer}
-                      onClearRestTimer={clearActiveRestTimer}
+                      onResetRestTimer={resetActiveRestTimer}
+                      onEndRest={endActiveRestTimer}
                       onGoToday={() => setActiveTab('today')}
                     />
                   </Suspense>

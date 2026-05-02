@@ -83,7 +83,8 @@ interface TrainingViewProps {
   onReturnFocusMode?: () => void;
   onExtendRestTimer: (seconds: number) => void;
   onToggleRestTimer: () => void;
-  onClearRestTimer: () => void;
+  onResetRestTimer: () => void;
+  onEndRest: () => void;
   onGoToday: () => void;
 }
 
@@ -194,7 +195,8 @@ export function TrainingView({
   onReturnFocusMode,
   onExtendRestTimer,
   onToggleRestTimer,
-  onClearRestTimer,
+  onResetRestTimer,
+  onEndRest,
   onGoToday,
 }: TrainingViewProps) {
   const [supportReasonDrafts, setSupportReasonDrafts] = React.useState<Record<string, SupportSkipReason>>({});
@@ -778,15 +780,18 @@ export function TrainingView({
               <div className="mt-2 text-4xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
               <div className="mt-1 text-xs opacity-70">{restTimer && remainingSec <= 0 ? '休息结束' : restTimer?.isRunning ? '计时中' : '未运行'}</div>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <ActionButton size="sm" variant="secondary" onClick={() => onExtendRestTimer(30)} disabled={!restTimer}>
                 +30秒
               </ActionButton>
               <ActionButton size="sm" variant="secondary" onClick={onToggleRestTimer} disabled={!restTimer}>
                 {restTimer?.isRunning ? '暂停' : '继续'}
               </ActionButton>
-              <ActionButton size="sm" variant="secondary" onClick={onClearRestTimer} disabled={!restTimer}>
-                清零
+              <ActionButton size="sm" variant="primary" onClick={onEndRest} disabled={!restTimer}>
+                结束休息
+              </ActionButton>
+              <ActionButton size="sm" variant="secondary" onClick={onResetRestTimer} disabled={!restTimer}>
+                重置计时
               </ActionButton>
             </div>
           </Card>

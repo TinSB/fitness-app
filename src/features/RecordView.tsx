@@ -249,7 +249,17 @@ export function RecordView({
 
   const analyticsHistory = React.useMemo(() => filterAnalyticsHistory(rawHistory), [rawHistory]);
   const dataHealth = coachAutomationSummary?.dataHealth;
-  const dataHealthViewModel = React.useMemo(() => (dataHealth ? buildDataHealthViewModel(dataHealth) : null), [dataHealth]);
+  const dismissedDataHealthIssues = data.dismissedDataHealthIssues || data.settings?.dismissedDataHealthIssues || [];
+  const dataHealthViewModel = React.useMemo(
+    () =>
+      dataHealth
+        ? buildDataHealthViewModel(dataHealth, {
+            dismissedIssues: dismissedDataHealthIssues,
+            currentDate: todayKey(),
+          })
+        : null,
+    [dataHealth, dismissedDataHealthIssues],
+  );
   const recordCoachActionViewModel = React.useMemo(
     () => buildCoachActionListViewModel(coachActions || [], { surface: 'record' }),
     [coachActions],
@@ -825,11 +835,18 @@ export function RecordView({
                   <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
                     <div className="font-semibold text-slate-950">{issue.title}</div>
                     <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                    {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                      <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction(issue.action!)}>
-                        {issue.action.label}
-                      </ActionButton>
-                    ) : null}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                        <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction(issue.action!)}>
+                          {issue.action.label}
+                        </ActionButton>
+                      ) : null}
+                      {onDataHealthAction && issue.dismissAction ? (
+                        <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction(issue.dismissAction!)}>
+                          {issue.dismissAction.label}
+                        </ActionButton>
+                      ) : null}
+                    </div>
                     {issue.technicalDetails ? (
                       <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                         <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -840,7 +857,9 @@ export function RecordView({
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">数据健康良好。未发现会影响训练统计的问题。</div>
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
+                {dataHealthViewModel.statusTone === 'healthy' ? '数据健康良好。未发现会影响训练统计的问题。' : '暂无待处理数据健康问题。'}
+              </div>
             )}
             {hiddenIssues.length ? (
               <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
@@ -850,11 +869,18 @@ export function RecordView({
                     <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
                       <div className="font-semibold text-slate-950">{issue.title}</div>
                       <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                      {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                        <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction(issue.action!)}>
-                          {issue.action.label}
-                        </ActionButton>
-                      ) : null}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                          <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction(issue.action!)}>
+                            {issue.action.label}
+                          </ActionButton>
+                        ) : null}
+                        {onDataHealthAction && issue.dismissAction ? (
+                          <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction(issue.dismissAction!)}>
+                            {issue.dismissAction.label}
+                          </ActionButton>
+                        ) : null}
+                      </div>
                       {issue.technicalDetails ? (
                         <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                           <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>

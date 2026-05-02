@@ -781,6 +781,40 @@ export interface AppliedCoachActionPatch {
   };
 }
 
+export type SessionPatchType =
+  | 'reduce_support'
+  | 'main_only'
+  | 'reduce_intensity'
+  | 'reduce_volume'
+  | 'substitute_exercise'
+  | 'extend_rest'
+  | 'skip_optional';
+
+export interface SessionPatch {
+  id: string;
+  type: SessionPatchType;
+  targetId?: string;
+  title: string;
+  description: string;
+  reason: string;
+  reversible: boolean;
+}
+
+export type PendingSessionPatchStatus = 'pending' | 'consumed' | 'dismissed' | 'expired';
+
+export interface PendingSessionPatch {
+  id: string;
+  createdAt: string;
+  sourceCoachActionId?: string;
+  sourceFingerprint?: string;
+  targetTemplateId?: string;
+  patches: SessionPatch[];
+  status: PendingSessionPatchStatus;
+  consumedAt?: string;
+  dismissedAt?: string;
+  expiredAt?: string;
+}
+
 export interface AdherenceReport {
   recentSessionCount: number;
   plannedSets: number;
@@ -1146,12 +1180,20 @@ export interface AppSettings {
   unitSettings?: UnitSettings;
   healthIntegrationSettings?: HealthIntegrationSettings;
   dismissedCoachActions?: DismissedCoachAction[];
+  dismissedDataHealthIssues?: DismissedDataHealthIssue[];
+  pendingSessionPatches?: PendingSessionPatch[];
   dataRepairLogs?: DataRepairLogEntry[];
   [key: string]: unknown;
 }
 
 export interface DismissedCoachAction {
   actionId: string;
+  dismissedAt: string;
+  scope: 'today';
+}
+
+export interface DismissedDataHealthIssue {
+  issueId: string;
   dismissedAt: string;
   scope: 'today';
 }
@@ -1188,5 +1230,7 @@ export interface AppData {
   importedWorkoutSamples?: ImportedWorkoutSample[];
   healthImportBatches?: HealthImportBatch[];
   dismissedCoachActions?: DismissedCoachAction[];
+  dismissedDataHealthIssues?: DismissedDataHealthIssue[];
+  pendingSessionPatches?: PendingSessionPatch[];
   settings: AppSettings;
 }

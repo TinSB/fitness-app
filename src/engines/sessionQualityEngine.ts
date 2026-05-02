@@ -213,6 +213,7 @@ export const buildSessionQualityResult = ({
   if (session.dataFlag === 'test' || session.dataFlag === 'excluded') score = Math.min(score, 82);
   if (painSets.length >= 2) score = Math.min(score, 72);
   if (poorTechniqueSets.length >= 2) score = Math.min(score, 70);
+  if (skippedMainSets > 0 || session.earlyEndReason) score = Math.min(score, 72);
   if (mainCompletionRate < 0.5) score = Math.min(score, 55);
 
   const level: SessionQualityLevel = score >= 82 ? 'high' : score >= 58 ? 'medium' : 'low';
@@ -267,6 +268,9 @@ export const buildSessionQualityResult = ({
   if (supportSkipped) {
     issues.push(makeSignal('support-skipped', '辅助训练未完全完成', 'neutral', '部分辅助动作未完成，主要影响本次训练完整度。'));
   }
+  if (skippedMainSets > 0 || session.earlyEndReason) {
+    issues.push(makeSignal('main-incomplete', '主训练未完全完成', 'warning', '部分主训练动作或正式组未完成，不会计入有效组、总量、PR 或 e1RM。'));
+  }
   const flag = dataFlagLabel(session.dataFlag);
   if (flag) {
     issues.push(makeSignal('data-flag', '不参与统计', 'warning', `这次训练已标记为${flag}，可以查看质量报告，但不会参与训练统计。`));
@@ -282,6 +286,7 @@ export const buildSessionQualityResult = ({
   if (level === 'medium') summaryParts.push('你完成了主要训练，但仍有影响质量或置信度的信号。');
   if (level === 'low') summaryParts.push('本次训练完成度或执行质量偏低，建议先复查关键记录。');
   if (feedback.tooHeavy > 0) summaryParts.push('重量反馈偏重。');
+  if (skippedMainSets > 0 || session.earlyEndReason) summaryParts.push('部分主训练未完成，未完成组不会计入有效组、总量、PR 或 e1RM。');
   if (painSets.length) summaryParts.push('部分正式组记录了不适。');
   if (poorTechniqueSets.length) summaryParts.push('动作质量记录存在偏低。');
   if (missingRirSets.length) summaryParts.push('余力（RIR）记录不完整。');

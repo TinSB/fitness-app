@@ -30,12 +30,14 @@ import {
   type AppData,
   type DataRepairLogEntry,
   type DismissedCoachAction,
+  type DismissedDataHealthIssue,
   type HealthIntegrationSettings,
   type HealthImportBatch,
   type HealthMetricSample,
   type ImportedWorkoutSample,
   type LoadFeedback,
   type MesocyclePlan,
+  type PendingSessionPatch,
   type ProgramAdjustmentDraft,
   type ProgramAdjustmentHistoryItem,
   type ProgramTemplate,
@@ -998,6 +1000,73 @@ const sanitizeDismissedCoachActions = (entries: unknown): DismissedCoachAction[]
     })
     .filter(Boolean) as DismissedCoachAction[];
 
+const sanitizeDismissedDataHealthIssues = (entries: unknown): DismissedDataHealthIssue[] =>
+  pickArray(entries)
+    .map((entry) => {
+      const raw = pickRecord(entry);
+      const issueId = pickString(raw.issueId);
+      const dismissedAt = pickString(raw.dismissedAt);
+      if (!issueId || !dismissedAt || raw.scope !== 'today') return null;
+      return { issueId, dismissedAt, scope: 'today' as const };
+    })
+    .filter(Boolean) as DismissedDataHealthIssue[];
+
+const PENDING_SESSION_PATCH_STATUSES = ['pending', 'consumed', 'dismissed', 'expired'] as const;
+const SESSION_PATCH_TYPES = [
+  'reduce_support',
+  'main_only',
+  'reduce_intensity',
+  'reduce_volume',
+  'substitute_exercise',
+  'extend_rest',
+  'skip_optional',
+] as const;
+
+const sanitizePendingSessionPatches = (entries: unknown): PendingSessionPatch[] =>
+  pickArray(entries)
+    .map((entry) => {
+      const raw = pickRecord(entry);
+      const id = pickString(raw.id);
+      const createdAt = pickString(raw.createdAt);
+      const status = pickEnum(raw.status, PENDING_SESSION_PATCH_STATUSES, 'pending');
+      const patches = pickArray(raw.patches)
+        .map((patch) => {
+          const patchRaw = pickRecord(patch);
+          const patchId = pickString(patchRaw.id);
+          const patchType = typeof patchRaw.type === 'string' && SESSION_PATCH_TYPES.includes(patchRaw.type as typeof SESSION_PATCH_TYPES[number])
+            ? patchRaw.type as typeof SESSION_PATCH_TYPES[number]
+            : '';
+          const title = pickString(patchRaw.title);
+          const description = pickString(patchRaw.description);
+          const reason = pickString(patchRaw.reason);
+          if (!patchId || !patchType || !title || !description || !reason) return null;
+          return {
+            id: patchId,
+            type: patchType,
+            targetId: pickString(patchRaw.targetId) || undefined,
+            title,
+            description,
+            reason,
+            reversible: typeof patchRaw.reversible === 'boolean' ? patchRaw.reversible : true,
+          };
+        })
+        .filter(Boolean) as PendingSessionPatch['patches'];
+      if (!id || !createdAt || !patches.length) return null;
+      return {
+        id,
+        createdAt,
+        sourceCoachActionId: pickString(raw.sourceCoachActionId) || undefined,
+        sourceFingerprint: pickString(raw.sourceFingerprint) || undefined,
+        targetTemplateId: pickString(raw.targetTemplateId) || undefined,
+        patches,
+        status,
+        consumedAt: pickString(raw.consumedAt) || undefined,
+        dismissedAt: pickString(raw.dismissedAt) || undefined,
+        expiredAt: pickString(raw.expiredAt) || undefined,
+      };
+    })
+    .filter(Boolean) as PendingSessionPatch[];
+
 const sanitizeDataRepairLogs = (entries: unknown): DataRepairLogEntry[] =>
   pickArray(entries)
     .map((entry) => {
@@ -1054,6 +1123,12 @@ export const sanitizeData = (saved: unknown): AppData => {
   const dismissedCoachActions = sanitizeDismissedCoachActions(
     migrated.dismissedCoachActions ?? pickRecord(migrated.settings).dismissedCoachActions,
   );
+  const dismissedDataHealthIssues = sanitizeDismissedDataHealthIssues(
+    migrated.dismissedDataHealthIssues ?? pickRecord(migrated.settings).dismissedDataHealthIssues,
+  );
+  const pendingSessionPatches = sanitizePendingSessionPatches(
+    migrated.pendingSessionPatches ?? pickRecord(migrated.settings).pendingSessionPatches,
+  );
   const dataRepairLogs = sanitizeDataRepairLogs(pickRecord(migrated.settings).dataRepairLogs);
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
@@ -1076,6 +1151,8 @@ export const sanitizeData = (saved: unknown): AppData => {
     importedWorkoutSamples,
     healthImportBatches,
     dismissedCoachActions,
+    dismissedDataHealthIssues,
+    pendingSessionPatches,
     settings: {
       ...pickRecord(migrated.settings),
       schemaVersion: STORAGE_VERSION,
@@ -1085,6 +1162,8 @@ export const sanitizeData = (saved: unknown): AppData => {
       healthIntegrationSettings,
       activeProgramTemplateId,
       dismissedCoachActions,
+      dismissedDataHealthIssues,
+      pendingSessionPatches,
       dataRepairLogs,
     },
   };
@@ -1106,6 +1185,8 @@ export const sanitizeData = (saved: unknown): AppData => {
     sanitized.importedWorkoutSamples = sanitizeImportedWorkoutSamples(sanitized.importedWorkoutSamples);
     sanitized.healthImportBatches = sanitizeHealthImportBatches(sanitized.healthImportBatches);
     sanitized.dismissedCoachActions = sanitizeDismissedCoachActions(sanitized.dismissedCoachActions);
+    sanitized.dismissedDataHealthIssues = sanitizeDismissedDataHealthIssues(sanitized.dismissedDataHealthIssues);
+    sanitized.pendingSessionPatches = sanitizePendingSessionPatches(sanitized.pendingSessionPatches);
     sanitized.settings.dataRepairLogs = sanitizeDataRepairLogs(sanitized.settings.dataRepairLogs);
     sanitized.settings.healthIntegrationSettings = sanitizeHealthIntegrationSettings(sanitized.settings.healthIntegrationSettings);
     sanitized.activeProgramTemplateId = sanitized.templates.some((template) => template.id === sanitized.activeProgramTemplateId)
@@ -1120,6 +1201,8 @@ export const sanitizeData = (saved: unknown): AppData => {
       healthIntegrationSettings: sanitized.settings.healthIntegrationSettings,
       activeProgramTemplateId: sanitized.activeProgramTemplateId,
       dismissedCoachActions: sanitized.dismissedCoachActions,
+      dismissedDataHealthIssues: sanitized.dismissedDataHealthIssues,
+      pendingSessionPatches: sanitized.pendingSessionPatches,
       dataRepairLogs: sanitized.settings.dataRepairLogs,
     };
   }
@@ -1149,6 +1232,8 @@ export const emptyData = (): AppData =>
     importedWorkoutSamples: [],
     healthImportBatches: [],
     dismissedCoachActions: [],
+    dismissedDataHealthIssues: [],
+    pendingSessionPatches: [],
     settings: { healthIntegrationSettings: DEFAULT_HEALTH_INTEGRATION_SETTINGS, dataRepairLogs: [] },
   });
 
@@ -1181,6 +1266,8 @@ export const loadData = (): AppData => {
           programAdjustmentDrafts: pickRecord(settings).programAdjustmentDrafts,
           programAdjustmentHistory: pickRecord(settings).programAdjustmentHistory,
           dismissedCoachActions: pickRecord(settings).dismissedCoachActions,
+          dismissedDataHealthIssues: pickRecord(settings).dismissedDataHealthIssues,
+          pendingSessionPatches: pickRecord(settings).pendingSessionPatches,
           activeProgramTemplateId: pickRecord(settings).activeProgramTemplateId,
           selectedTemplateId: pickRecord(settings).selectedTemplateId,
           trainingMode: pickRecord(settings).trainingMode,
@@ -1226,6 +1313,8 @@ export const saveData = (data: AppData) => {
       programAdjustmentDrafts: sanitized.programAdjustmentDrafts || [],
       programAdjustmentHistory: sanitized.programAdjustmentHistory || [],
       dismissedCoachActions: sanitized.dismissedCoachActions || [],
+      dismissedDataHealthIssues: sanitized.dismissedDataHealthIssues || [],
+      pendingSessionPatches: sanitized.pendingSessionPatches || [],
       dataRepairLogs: sanitized.settings.dataRepairLogs || [],
     })
   );

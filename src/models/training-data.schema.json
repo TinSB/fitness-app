@@ -54,6 +54,14 @@
       "type": "array",
       "items": { "$ref": "#/$defs/dismissedCoachAction" }
     },
+    "dismissedDataHealthIssues": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/dismissedDataHealthIssue" }
+    },
+    "pendingSessionPatches": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pendingSessionPatch" }
+    },
     "userProfile": { "$ref": "#/$defs/userProfile" },
     "screeningProfile": { "$ref": "#/$defs/screeningProfile" },
     "programTemplate": { "$ref": "training-program.schema.json" },
@@ -86,6 +94,14 @@
           "type": "array",
           "items": { "$ref": "#/$defs/dismissedCoachAction" }
         },
+        "dismissedDataHealthIssues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/dismissedDataHealthIssue" }
+        },
+        "pendingSessionPatches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pendingSessionPatch" }
+        },
         "dataRepairLogs": {
           "type": "array",
           "items": { "$ref": "#/$defs/dataRepairLog" }
@@ -111,6 +127,64 @@
         "actionId": { "type": "string" },
         "dismissedAt": { "type": "string" },
         "scope": { "type": "string", "enum": ["today"] }
+      },
+      "additionalProperties": true
+    },
+    "dismissedDataHealthIssue": {
+      "type": "object",
+      "required": ["issueId", "dismissedAt", "scope"],
+      "properties": {
+        "issueId": { "type": "string" },
+        "dismissedAt": { "type": "string" },
+        "scope": { "type": "string", "enum": ["today"] }
+      },
+      "additionalProperties": true
+    },
+    "sessionPatch": {
+      "type": "object",
+      "required": ["id", "type", "title", "description", "reason", "reversible"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "reduce_support",
+            "main_only",
+            "reduce_intensity",
+            "reduce_volume",
+            "substitute_exercise",
+            "extend_rest",
+            "skip_optional"
+          ]
+        },
+        "targetId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "reason": { "type": "string" },
+        "reversible": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "pendingSessionPatch": {
+      "type": "object",
+      "required": ["id", "createdAt", "patches", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "sourceCoachActionId": { "type": "string" },
+        "sourceFingerprint": { "type": "string" },
+        "targetTemplateId": { "type": "string" },
+        "patches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sessionPatch" }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "consumed", "dismissed", "expired"]
+        },
+        "consumedAt": { "type": "string" },
+        "dismissedAt": { "type": "string" },
+        "expiredAt": { "type": "string" }
       },
       "additionalProperties": true
     },

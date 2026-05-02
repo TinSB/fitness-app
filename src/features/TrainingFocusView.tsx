@@ -67,6 +67,9 @@ interface TrainingFocusViewProps {
   onFinishToCalendar?: () => void;
   onFinishToToday?: () => void;
   onShowFullTraining?: () => void;
+  onToggleRestTimer?: () => void;
+  onResetRestTimer?: () => void;
+  onEndRest?: () => void;
   onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
@@ -161,6 +164,9 @@ export function TrainingFocusView({
   onFinishToCalendar,
   onFinishToToday,
   onShowFullTraining,
+  onToggleRestTimer,
+  onResetRestTimer,
+  onEndRest,
   onCompleteSupportSet,
   onSkipSupportExercise,
   onSkipSupportBlock,
@@ -595,7 +601,7 @@ export function TrainingFocusView({
   };
 
   const renderRestTimer = () =>
-    remainingSec > 0 ? (
+    restTimer ? (
       <Card className="border-white/10 bg-white/10 text-white">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -606,6 +612,17 @@ export function TrainingFocusView({
             <div className="mt-1 text-sm text-slate-300">下一步：{currentStep.label}</div>
           </div>
           <div className="text-3xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <ActionButton type="button" variant="secondary" size="sm" onClick={onToggleRestTimer} disabled={!onToggleRestTimer}>
+            {restTimer.isRunning ? '暂停' : '继续'}
+          </ActionButton>
+          <ActionButton type="button" variant="primary" size="sm" onClick={onEndRest} disabled={!onEndRest}>
+            结束休息
+          </ActionButton>
+          <ActionButton type="button" variant="secondary" size="sm" onClick={onResetRestTimer} disabled={!onResetRestTimer}>
+            重置计时
+          </ActionButton>
         </div>
       </Card>
     ) : null;

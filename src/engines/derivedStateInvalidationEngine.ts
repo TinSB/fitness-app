@@ -6,6 +6,10 @@ export type AppMutationEvent =
   | 'template_applied'
   | 'template_rolled_back'
   | 'coach_action_dismissed'
+  | 'data_health_issue_dismissed'
+  | 'pending_patch_created'
+  | 'pending_patch_consumed'
+  | 'pending_patch_dismissed'
   | 'health_data_imported'
   | 'unit_changed'
   | 'replacement_applied'
@@ -84,6 +88,42 @@ export function buildDerivedStateInvalidation(event: AppMutationEvent): Invalida
         invalidateCoachActions: true,
       },
       '暂不处理教练建议后，今日和计划中的可见建议需要重新过滤。',
+    );
+  }
+  if (event === 'data_health_issue_dismissed') {
+    return result(
+      {
+        invalidateToday: false,
+        invalidatePlan: false,
+        invalidateRecord: true,
+        invalidateAnalytics: false,
+        invalidateCoachActions: false,
+      },
+      '暂不处理数据健康问题后，记录和我的页面中的可见问题需要重新过滤。',
+    );
+  }
+  if (event === 'pending_patch_created' || event === 'pending_patch_dismissed') {
+    return result(
+      {
+        invalidateToday: true,
+        invalidatePlan: false,
+        invalidateRecord: false,
+        invalidateAnalytics: false,
+        invalidateCoachActions: true,
+      },
+      '本次临时调整状态变更后，今日页和教练建议需要重新计算。',
+    );
+  }
+  if (event === 'pending_patch_consumed') {
+    return result(
+      {
+        invalidateToday: true,
+        invalidatePlan: false,
+        invalidateRecord: false,
+        invalidateAnalytics: false,
+        invalidateCoachActions: true,
+      },
+      '本次临时调整已进入训练，今日页、训练页和教练建议需要重新计算。',
     );
   }
   if (event === 'health_data_imported') {

@@ -37,10 +37,11 @@ describe('session patch startSession flow', () => {
   it('documents that App startSession consumes and clears pending patches', () => {
     const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
 
-    expect(app).toContain('const patches = explicitPatches ?? pendingSessionPatches');
+    expect(app).toContain('findActivePendingSessionPatch');
     expect(app).toContain('applySessionPatches(baseSession, patches)');
-    expect(app).toContain('setPendingSessionPatches([])');
+    expect(app).toContain('markPendingSessionPatchConsumed');
     expect(app).toContain('pendingSessionPatches={pendingSessionPatches}');
+    expect(app).not.toContain('setPendingSessionPatches([])');
   });
 
   it('writes applied patches and adjustment notes into the active session only', () => {

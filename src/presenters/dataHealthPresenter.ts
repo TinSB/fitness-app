@@ -1,4 +1,10 @@
-import { sortDataHealthIssues, type DataHealthIssue, type DataHealthReport } from '../engines/dataHealthEngine';
+import {
+  filterDismissedDataHealthIssues,
+  sortDataHealthIssues,
+  type DataHealthIssue,
+  type DataHealthReport,
+} from '../engines/dataHealthEngine';
+import type { DismissedDataHealthIssue } from '../models/training-model';
 
 export type DataHealthActionType =
   | 'open_session_detail'
@@ -15,6 +21,7 @@ export type DataHealthActionView = {
   id: string;
   label: string;
   type: DataHealthActionType;
+  issueId?: string;
   targetId?: string;
   targetDate?: string;
   requiresConfirmation?: boolean;
@@ -34,7 +41,13 @@ export type DataHealthIssueView = {
   userMessage: string;
   severityLabel: string;
   action?: DataHealthActionView;
+  dismissAction?: DataHealthActionView;
   technicalDetails?: string;
+};
+
+export type DataHealthViewModelOptions = {
+  dismissedIssues?: DismissedDataHealthIssue[];
+  currentDate?: string;
 };
 
 const severityLabel = (severity: DataHealthIssue['severity']) => {
@@ -70,9 +83,17 @@ const action = (
     id: `${issue.id}-${type}`,
     label,
     type,
+    issueId: issue.id,
     ...(targetId ? { targetId } : {}),
   };
 };
+
+const dismissAction = (issue: DataHealthIssue): DataHealthActionView => ({
+  id: `${issue.id}-dismiss`,
+  label: '暂不处理',
+  type: 'dismiss',
+  issueId: issue.id,
+});
 
 const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'title' | 'userMessage' | 'action'> => {
   const id = issue.id.toLowerCase();
@@ -216,17 +237,25 @@ const toIssueView = (issue: DataHealthIssue): DataHealthIssueView => {
     userMessage: copy.userMessage,
     severityLabel: severityLabel(issue.severity),
     action: copy.action,
+    dismissAction: dismissAction(issue),
     technicalDetails: technicalDetails(issue),
   };
 };
 
-export const buildDataHealthViewModel = (report: DataHealthReport): DataHealthViewModel => {
-  const issues = sortDataHealthIssues(report.issues || []).map(toIssueView);
+export const buildDataHealthViewModel = (report: DataHealthReport, options: DataHealthViewModelOptions = {}): DataHealthViewModel => {
+  const filteredIssues = filterDismissedDataHealthIssues(
+    report.issues || [],
+    options.dismissedIssues || [],
+    options.currentDate || '',
+  );
+  const issues = sortDataHealthIssues(filteredIssues).map(toIssueView);
   const status = statusTone(report.status);
   const summary =
     report.status === 'healthy'
       ? '未发现会影响训练统计的问题。'
-      : `发现 ${issues.length} 条需要检查的数据问题。所有项目只提示，不会自动修改你的数据。`;
+      : issues.length
+        ? `发现 ${issues.length} 条需要检查的数据问题。所有项目只提示，不会自动修改你的数据。`
+        : '暂无待处理数据健康问题。';
 
   return {
     statusLabel: statusLabel(report.status),

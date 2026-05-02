@@ -106,7 +106,17 @@ export function ProfileView({
   const testSessionCount = (data.history || []).filter((session) => session.dataFlag === 'test').length;
   const healthBatchCount = data.healthImportBatches?.length || 0;
   const dataHealth = coachAutomationSummary?.dataHealth;
-  const dataHealthViewModel = React.useMemo(() => (dataHealth ? buildDataHealthViewModel(dataHealth) : null), [dataHealth]);
+  const dismissedDataHealthIssues = data.dismissedDataHealthIssues || data.settings?.dismissedDataHealthIssues || [];
+  const dataHealthViewModel = React.useMemo(
+    () =>
+      dataHealth
+        ? buildDataHealthViewModel(dataHealth, {
+            dismissedIssues: dismissedDataHealthIssues,
+            currentDate: todayKey(),
+          })
+        : null,
+    [dataHealth, dismissedDataHealthIssues],
+  );
   const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
   const visibleDataHealthIssues = dataHealthViewModel?.primaryIssues || [];
   const hiddenDataHealthIssues = dataHealthViewModel?.secondaryIssues || [];
@@ -305,11 +315,18 @@ export function ProfileView({
                           </StatusBadge>
                         </div>
                         <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                        {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                          <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction?.(issue.action!)}>
-                            {issue.action.label}
-                          </ActionButton>
-                        ) : null}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                            <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction?.(issue.action!)}>
+                              {issue.action.label}
+                            </ActionButton>
+                          ) : null}
+                          {onDataHealthAction && issue.dismissAction ? (
+                            <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction?.(issue.dismissAction!)}>
+                              {issue.dismissAction.label}
+                            </ActionButton>
+                          ) : null}
+                        </div>
                         {issue.technicalDetails ? (
                           <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                             <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -320,7 +337,9 @@ export function ProfileView({
                     ))}
                   </div>
                 ) : (
-                  <Notice tone="emerald">数据健康良好。未发现会影响训练统计的问题。</Notice>
+                  <Notice tone="emerald">
+                    {dataHealthViewModel.statusTone === 'healthy' ? '数据健康良好。未发现会影响训练统计的问题。' : '暂无待处理数据健康问题。'}
+                  </Notice>
                 )}
                 {hiddenDataHealthIssues.length ? (
                   <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
@@ -330,11 +349,18 @@ export function ProfileView({
                         <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
                           <div className="font-semibold text-slate-950">{issue.title}</div>
                           <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                          {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                            <ActionButton type="button" size="sm" variant="secondary" className="mt-2" onClick={() => onDataHealthAction?.(issue.action!)}>
-                              {issue.action.label}
-                            </ActionButton>
-                          ) : null}
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
+                              <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction?.(issue.action!)}>
+                                {issue.action.label}
+                              </ActionButton>
+                            ) : null}
+                            {onDataHealthAction && issue.dismissAction ? (
+                              <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction?.(issue.dismissAction!)}>
+                                {issue.dismissAction.label}
+                              </ActionButton>
+                            ) : null}
+                          </div>
                           {issue.technicalDetails ? (
                             <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                               <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
