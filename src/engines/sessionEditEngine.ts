@@ -17,6 +17,21 @@ export type SessionEditValidationResult = {
   errors: string[];
 };
 
+export type SessionEditResult = {
+  ok: boolean;
+  changed: boolean;
+  session?: TrainingSession;
+  message: string;
+};
+
+export const sessionEditFeedbackMessage = (fields: string[]) => {
+  const fieldSet = new Set(fields);
+  if (fieldSet.has('sets')) return '已保存修正，相关统计会重新计算。';
+  if (fieldSet.has('dataFlag')) return '数据状态已更新。';
+  if (fieldSet.has('warmupSets')) return '已更新热身组，不影响 PR、e1RM 和有效组。';
+  return '已保存修正，相关统计会重新计算。';
+};
+
 const matchesExercise = (exercise: TrainingSession['exercises'][number], exerciseId: string) =>
   exercise.id === exerciseId ||
   exercise.actualExerciseId === exerciseId ||

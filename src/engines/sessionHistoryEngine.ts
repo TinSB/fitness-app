@@ -23,24 +23,44 @@ export const listSessionHistory = (history: TrainingSession[] = [], filter: Sess
 
 export const getSessionLocalDate = (session: TrainingSession) => toLocalDateKey(session.date || session.startedAt || session.finishedAt);
 
+export type SessionHistoryMutationResult = {
+  ok: boolean;
+  changed: boolean;
+  data: AppData;
+  message: string;
+  session?: TrainingSession;
+};
+
+export const dataFlagFeedbackMessage = (dataFlag: SessionDataFlag) => {
+  if (dataFlag === 'test') return '已标记为测试数据，不参与训练统计。';
+  if (dataFlag === 'excluded') return '已排除该训练，不参与 PR、e1RM、有效组和统计。';
+  return '已恢复为正常数据，相关统计会重新计算。';
+};
+
 export const deleteTrainingSession = (
   data: AppData,
   sessionId: string,
   confirmed: boolean,
-): { ok: boolean; data: AppData; message: string } => {
+): SessionHistoryMutationResult => {
   if (!confirmed) {
-    return { ok: false, data, message: '删除训练需要二次确认。' };
+    return { ok: false, changed: false, data, message: '删除训练需要二次确认。' };
+  }
+
+  const exists = (data.history || []).some((session) => session.id === sessionId);
+  if (!exists) {
+    return { ok: false, changed: false, data, message: '暂时无法定位到这次训练。' };
   }
 
   const history = (data.history || []).filter((session) => session.id !== sessionId);
   return {
     ok: true,
+    changed: true,
     data: {
       ...data,
       history,
       screeningProfile: reconcileScreeningProfile(data.screeningProfile, filterAnalyticsHistory(history)),
     },
-    message: '训练历史已删除。进度、PR、e1RM 和日历会基于剩余记录重新计算。',
+    message: '训练已删除。',
   };
 };
 
@@ -49,19 +69,42 @@ export const markSessionDataFlag = (
   sessionId: string,
   dataFlag: SessionDataFlag,
   confirmed = true,
-): { ok: boolean; data: AppData; message: string } => {
+): SessionHistoryMutationResult => {
   if (!confirmed) {
-    return { ok: false, data, message: '标记训练数据需要确认。' };
+    return { ok: false, changed: false, data, message: '标记训练数据需要确认。' };
+  }
+
+  const target = (data.history || []).find((session) => session.id === sessionId);
+  if (!target) {
+    return { ok: false, changed: false, data, message: '暂时无法定位到这次训练。' };
+  }
+
+  if ((target.dataFlag || 'normal') === dataFlag) {
+    return {
+      ok: true,
+      changed: false,
+      data,
+      session: target,
+      message:
+        dataFlag === 'normal'
+          ? '这次训练已经是正常数据。'
+          : dataFlag === 'test'
+            ? '这次训练已经标记为测试数据。'
+            : '这次训练已经排除统计。',
+    };
   }
 
   const history = (data.history || []).map((session) => (session.id === sessionId ? { ...session, dataFlag } : session));
+  const updated = history.find((session) => session.id === sessionId);
   return {
     ok: true,
+    changed: true,
     data: {
       ...data,
       history,
       screeningProfile: reconcileScreeningProfile(data.screeningProfile, filterAnalyticsHistory(history)),
     },
-    message: dataFlag === 'normal' ? '已恢复为正式训练数据。' : '已标记为测试/排除数据，不再计入进度分析。',
+    session: updated,
+    message: dataFlagFeedbackMessage(dataFlag),
   };
 };

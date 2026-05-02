@@ -18,7 +18,7 @@ import {
   todayKey,
 } from '../engines/engineUtils';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
-import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../engines/sessionEditEngine';
+import { markSessionEdited, sessionEditFeedbackMessage, updateSessionSet, validateSessionEdit, type SessionEditResult } from '../engines/sessionEditEngine';
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import {
   addCalendarMonths,
@@ -80,9 +80,10 @@ export interface RecordViewProps {
   bodyWeightInput: string;
   setBodyWeightInput: React.Dispatch<React.SetStateAction<string>>;
   onSaveBodyWeight: () => void;
-  onDeleteSession: (sessionId: string) => void;
-  onMarkSessionDataFlag: (sessionId: string, dataFlag: SessionDataFlag) => void;
-  onEditSession?: (session: TrainingSession) => void;
+  onDeleteSession: (sessionId: string) => SessionEditResult;
+  onMarkSessionDataFlag: (sessionId: string, dataFlag: SessionDataFlag) => SessionEditResult;
+  onEditSession?: (session: TrainingSession) => SessionEditResult;
+  onOperationFeedback?: (message: string, tone?: 'success' | 'warning' | 'danger' | 'info') => void;
   onUpdateUnitSettings: (updates: Partial<UnitSettings>) => void;
   onRestoreData: (data: AppData) => void;
   onApplyProgramAdjustmentDraft?: unknown;
@@ -102,7 +103,8 @@ type PrSetFilter = 'all' | 'no_pain' | 'work_sets';
 type PendingRecordAction =
   | { type: 'delete'; sessionId: string }
   | { type: 'flag'; sessionId: string; dataFlag: SessionDataFlag }
-  | { type: 'edit'; session: TrainingSession };
+  | { type: 'edit'; session: TrainingSession }
+  | { type: 'cancel-edit' };
 
 const recordSections: Array<{ id: RecordSectionId; label: string; mobileLabel: string }> = [
   { id: 'calendar', label: '日历', mobileLabel: '日历' },
@@ -222,6 +224,7 @@ export function RecordView({
   onDeleteSession,
   onMarkSessionDataFlag,
   onEditSession,
+  onOperationFeedback,
   onDataHealthAction,
   onCoachAction,
   onDismissCoachAction,
@@ -360,6 +363,10 @@ export function RecordView({
     setSelectedSession(session);
   };
 
+  const notifyRecordOperation = (message: string, tone: 'success' | 'warning' | 'danger' | 'info' = 'info') => {
+    if (message) onOperationFeedback?.(message, tone);
+  };
+
   const requestFlagChange = (sessionId: string, dataFlag: SessionDataFlag) => {
     setPendingAction({ type: 'flag', sessionId, dataFlag });
   };
@@ -370,6 +377,10 @@ export function RecordView({
   };
 
   const cancelEditingSession = () => {
+    if (editDraft && selectedSession && editDraft.id === selectedSession.id && JSON.stringify(editDraft) !== JSON.stringify(selectedSession)) {
+      setPendingAction({ type: 'cancel-edit' });
+      return;
+    }
     setEditDraft(null);
     setEditError('');
   };
@@ -387,6 +398,7 @@ export function RecordView({
     const validation = validateSessionEdit(editDraft);
     if (!validation.valid) {
       setEditError('修正内容包含无效数值，请检查重量、次数和 RIR。');
+      notifyRecordOperation('保存失败，请检查输入后重试。', 'danger');
       return;
     }
     const editedFields: string[] = [];
@@ -395,25 +407,42 @@ export function RecordView({
       editedFields.push('sets');
     }
     if ((selectedSession?.dataFlag || 'normal') !== (editDraft.dataFlag || 'normal')) editedFields.push('dataFlag');
-    if (!editedFields.length) editedFields.push('sets');
+    if (!editedFields.length) {
+      setEditError('');
+      notifyRecordOperation('没有需要保存的修改。', 'info');
+      return;
+    }
     setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, editedFields, '历史训练详情修正') });
   };
 
   const confirmPendingAction = () => {
     if (!pendingAction) return;
     if (pendingAction.type === 'delete') {
-      onDeleteSession(pendingAction.sessionId);
-      setSelectedSession(null);
-      setEditDraft(null);
+      const result = onDeleteSession(pendingAction.sessionId);
+      if (result.ok) {
+        setSelectedSession(null);
+        setEditDraft(null);
+      }
     } else if (pendingAction.type === 'flag') {
-      onMarkSessionDataFlag(pendingAction.sessionId, pendingAction.dataFlag);
-      setSelectedSession((current) => (current?.id === pendingAction.sessionId ? { ...current, dataFlag: pendingAction.dataFlag } : current));
-      setEditDraft((current) => (current?.id === pendingAction.sessionId ? { ...current, dataFlag: pendingAction.dataFlag } : current));
-    } else {
-      onEditSession?.(pendingAction.session);
-      setSelectedSession(pendingAction.session);
+      const result = onMarkSessionDataFlag(pendingAction.sessionId, pendingAction.dataFlag);
+      if (result.ok && result.session) {
+        setSelectedSession((current) => (current?.id === pendingAction.sessionId ? result.session || current : current));
+        setEditDraft((current) => (current?.id === pendingAction.sessionId ? result.session || current : current));
+      }
+    } else if (pendingAction.type === 'cancel-edit') {
       setEditDraft(null);
       setEditError('');
+      notifyRecordOperation('已放弃本次修改。', 'info');
+    } else {
+      const result = onEditSession?.(pendingAction.session) || { ok: false, changed: false, message: '保存失败，请检查输入后重试。' };
+      if (result.ok && result.session) {
+        setSelectedSession(result.session);
+        setEditDraft(null);
+        setEditError('');
+      } else {
+        setEditError(result.message || '保存失败，请检查输入后重试。');
+        notifyRecordOperation(result.message || '保存失败，请检查输入后重试。', 'danger');
+      }
     }
     setPendingAction(null);
   };
@@ -1324,11 +1353,19 @@ export function RecordView({
       : pendingAction?.type === 'edit'
         ? {
             title: '保存修正？',
-            description: '修改后，PR、e1RM、有效组和总量会根据新数据重新计算。',
+            description: sessionEditFeedbackMessage(pendingAction.session.editHistory?.at(-1)?.fields || []),
             confirmText: '保存修正',
             cancelText: '继续编辑',
             variant: 'warning' as const,
           }
+        : pendingAction?.type === 'cancel-edit'
+          ? {
+              title: '放弃修正？',
+              description: '当前修改不会保存。',
+              confirmText: '放弃修改',
+              cancelText: '继续编辑',
+              variant: 'warning' as const,
+            }
         : pendingAction?.dataFlag === 'normal'
         ? {
             title: '恢复为正常数据？',

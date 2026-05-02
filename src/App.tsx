@@ -34,6 +34,7 @@ import {
 import { dispatchWorkoutExecutionEvent } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
+import { sessionEditFeedbackMessage } from './engines/sessionEditEngine';
 import { dismissDataHealthIssueToday } from './engines/dataHealthEngine';
 import { buildMuscleVolumeDashboard } from './engines/analytics';
 import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
@@ -972,11 +973,17 @@ function App() {
   };
 
   const deleteHistorySession = (sessionId: string) => {
-    setData((current) => {
-      const result = deleteTrainingSession(current, sessionId, true);
-      return result.data;
-    });
-    invalidateDerivedState('session_deleted');
+    const result = deleteTrainingSession(data, sessionId, true);
+    if (!result.ok) {
+      showAppToast(result.message || '删除失败，请稍后重试。', 'danger');
+      return result;
+    }
+    if (result.changed) {
+      setData(result.data);
+      invalidateDerivedState('session_deleted');
+    }
+    showAppToast(result.message || '训练已删除。', result.changed ? 'success' : 'info');
+    return result;
   };
 
   const updateUnitSettings = (updates: Partial<UnitSettings>) => {
@@ -995,20 +1002,43 @@ function App() {
   };
 
   const updateHistorySessionFlag = (sessionId: string, dataFlag: SessionDataFlag) => {
-    setData((current) => markSessionDataFlag(current, sessionId, dataFlag, true).data);
-    invalidateDerivedState('session_dataflag_changed');
+    const result = markSessionDataFlag(data, sessionId, dataFlag, true);
+    if (!result.ok) {
+      showAppToast(result.message || '操作失败，请稍后重试。', 'danger');
+      return result;
+    }
+    if (result.changed) {
+      setData(result.data);
+      invalidateDerivedState('session_dataflag_changed');
+    }
+    showAppToast(result.message || '数据状态已更新。', result.changed ? 'success' : 'info');
+    return result;
   };
 
   const editHistorySession = (session: TrainingSession) => {
-    setData((current) => {
-      const history = (current.history || []).map((item) => (item.id === session.id ? session : item));
-      return {
-        ...current,
-        history,
-        screeningProfile: reconcileScreeningProfile(current.screeningProfile, history),
-      };
-    });
-    invalidateDerivedState('session_edited');
+    const existing = (data.history || []).find((item) => item.id === session.id);
+    if (!existing) {
+      const result = { ok: false, changed: false, message: '暂时无法定位到这次训练。' };
+      showAppToast(result.message, 'danger');
+      return result;
+    }
+    const fields = session.editHistory?.at(-1)?.fields || [];
+    if (!fields.length || JSON.stringify(existing) === JSON.stringify(session)) {
+      const result = { ok: true, changed: false, session: existing, message: '没有需要保存的修改。' };
+      showAppToast(result.message, 'info');
+      return result;
+    }
+    const history = (data.history || []).map((item) => (item.id === session.id ? session : item));
+    const nextData = {
+      ...data,
+      history,
+      screeningProfile: reconcileScreeningProfile(data.screeningProfile, history),
+    };
+    setData(nextData);
+    invalidateDerivedState(fields.includes('dataFlag') ? 'session_dataflag_changed' : 'session_edited');
+    const result = { ok: true, changed: true, session, message: sessionEditFeedbackMessage(fields) };
+    showAppToast(result.message, 'success');
+    return result;
   };
 
   const openProfileTarget = (target: ProfileTargetSection) => {
@@ -1673,6 +1703,7 @@ function App() {
                       onDeleteSession={deleteHistorySession}
                       onMarkSessionDataFlag={updateHistorySessionFlag}
                       onEditSession={editHistorySession}
+                      onOperationFeedback={showAppToast}
                       onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
                         setData(nextData);
