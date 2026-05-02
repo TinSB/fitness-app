@@ -37,6 +37,12 @@ export interface FocusTrainingStep {
   warmupPolicy?: WarmupPolicyDecision;
 }
 
+export type SetCurrentFocusStepOptions = {
+  manualOverride?: boolean;
+  preserveManualOverride?: boolean;
+  clearManualOverride?: boolean;
+};
+
 export interface FocusNavigationState {
   currentExerciseIndex: number;
   currentExercise: ExercisePrescription | null;
@@ -253,7 +259,17 @@ export const getCurrentFocusStep = (session: TrainingSession | null | undefined)
   const savedIndex = queue.findIndex((step) => step.id === session.currentFocusStepId);
   const saved = savedIndex >= 0 ? queue[savedIndex] : undefined;
   const firstIncompleteIndex = queue.findIndex((step) => step.stepType !== 'completed' && !isStepCompleted(session, step));
-  if (session.focusManualStepOverride && saved && !isStepCompleted(session, saved)) return saved;
+  if (session.focusManualStepOverride && saved) {
+    if (!isStepCompleted(session, saved)) return saved;
+    const nextInSameExercise = queue
+      .slice(Math.max(0, savedIndex + 1))
+      .find((step) => step.exerciseIndex === saved.exerciseIndex && step.stepType !== 'completed' && !isStepCompleted(session, step));
+    if (nextInSameExercise) return nextInSameExercise;
+    const nextAfterSaved = queue
+      .slice(Math.max(0, savedIndex + 1))
+      .find((step) => step.stepType !== 'completed' && !isStepCompleted(session, step));
+    if (nextAfterSaved) return nextAfterSaved;
+  }
   if (saved && !isStepCompleted(session, saved) && (firstIncompleteIndex < 0 || savedIndex <= firstIncompleteIndex)) return saved;
 
   return firstIncompleteIndex >= 0 ? queue[firstIncompleteIndex] : COMPLETED_STEP;
@@ -297,13 +313,23 @@ const upsertDraft = (session: TrainingSession, step: FocusTrainingStep, updates:
   return draft;
 };
 
-const setCurrentStep = (session: TrainingSession, step: FocusTrainingStep) => {
+export const setCurrentStep = (session: TrainingSession, step: FocusTrainingStep, options: SetCurrentFocusStepOptions = {}) => {
   session.currentFocusStepId = step.id;
   session.currentFocusStepType = step.stepType;
   session.currentExerciseId = step.exerciseId;
   session.currentSetIndex = step.setIndex;
   session.focusSessionComplete = step.stepType === 'completed' && step.exerciseIndex < 0;
-  session.focusManualStepOverride = false;
+  if (options.manualOverride) {
+    session.focusManualStepOverride = true;
+    return;
+  }
+  if (options.clearManualOverride || session.focusSessionComplete) {
+    session.focusManualStepOverride = false;
+    return;
+  }
+  if (options.preserveManualOverride === false) {
+    session.focusManualStepOverride = false;
+  }
 };
 
 const getNextIncompleteStepAfter = (session: TrainingSession, completedStepId: string): FocusTrainingStep | null => {
@@ -437,8 +463,7 @@ export const switchFocusExercise = (session: TrainingSession, exerciseIndex: num
       : null;
   const target = step || completedTarget || fallback;
   if (!target) return session;
-  setCurrentStep(nextSession, target);
-  nextSession.focusManualStepOverride = true;
+  setCurrentStep(nextSession, target, { manualOverride: true });
   return nextSession;
 };
 
@@ -452,7 +477,7 @@ export const updateFocusActualDraft = (
   if (step.stepType === 'completed') return session;
   const identity = getCurrentExerciseIdentity(step, nextSession);
   upsertDraft(nextSession, { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) }, updates);
-  setCurrentStep(nextSession, step);
+  setCurrentStep(nextSession, step, { preserveManualOverride: true });
   return nextSession;
 };
 
@@ -473,7 +498,7 @@ export const adjustFocusSetValue = (
   } else {
     upsertDraft(nextSession, draftStep, { actualReps: Math.max(0, number(draft?.actualReps) + delta), source: 'manual' });
   }
-  setCurrentStep(nextSession, step);
+  setCurrentStep(nextSession, step, { preserveManualOverride: true });
   return nextSession;
 };
 
@@ -489,7 +514,7 @@ export const applySuggestedFocusStep = (session: TrainingSession, exerciseIndex:
     ...(typeof step.plannedRir === 'number' ? { actualRir: step.plannedRir } : {}),
     source: 'prescription',
   });
-  setCurrentStep(nextSession, step);
+  setCurrentStep(nextSession, step, { preserveManualOverride: true });
   return nextSession;
 };
 
@@ -519,7 +544,7 @@ export const copyPreviousFocusActualDraft = (session: TrainingSession, exerciseI
     techniqueQuality: source.techniqueQuality || 'acceptable',
     source: 'copy_previous',
   });
-  setCurrentStep(nextSession, step);
+  setCurrentStep(nextSession, step, { preserveManualOverride: true });
   return nextSession;
 };
 
