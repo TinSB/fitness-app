@@ -1,4 +1,5 @@
 import type { ExercisePrescription, TrainingSession } from '../models/training-model';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 
 export type ExerciseStepLike = {
   exerciseId?: string;
@@ -41,6 +42,7 @@ export const getExerciseIdentityFromExercise = (
   plannedExerciseId?: string,
 ): CurrentExerciseIdentity => {
   const plannedId = text(plannedExerciseId);
+  const identityInvalid = hasInvalidExerciseIdentity(exercise);
   const originalExerciseId =
     text(exercise?.originalExerciseId) ||
     text(exercise?.replacedFromId) ||
@@ -48,25 +50,26 @@ export const getExerciseIdentityFromExercise = (
     text(exercise?.canonicalExerciseId) ||
     text(exercise?.id) ||
     plannedId;
-  const actualExerciseId =
-    text(exercise?.actualExerciseId) ||
-    text(exercise?.replacementExerciseId) ||
-    text(exercise?.canonicalExerciseId) ||
-    text(exercise?.id) ||
-    originalExerciseId ||
-    plannedId;
+  const actualExerciseId = identityInvalid
+    ? ''
+    : text(exercise?.actualExerciseId) ||
+      text(exercise?.replacementExerciseId) ||
+      text(exercise?.canonicalExerciseId) ||
+      text(exercise?.id) ||
+      originalExerciseId ||
+      plannedId;
   const displayExerciseId =
-    text(exercise?.actualExerciseId) ||
-    text(exercise?.replacementExerciseId) ||
+    (identityInvalid ? '' : text(exercise?.actualExerciseId) || text(exercise?.replacementExerciseId)) ||
     originalExerciseId ||
     plannedId ||
     actualExerciseId;
-  const recordExerciseId =
-    text(exercise?.actualExerciseId) ||
-    text(exercise?.replacementExerciseId) ||
-    originalExerciseId ||
-    plannedId ||
-    actualExerciseId;
+  const recordExerciseId = identityInvalid
+    ? ''
+    : text(exercise?.actualExerciseId) ||
+      text(exercise?.replacementExerciseId) ||
+      originalExerciseId ||
+      plannedId ||
+      actualExerciseId;
   const replacementId = text(exercise?.replacementExerciseId);
   const explicitActualId = text(exercise?.actualExerciseId);
   const isReplacement = Boolean(
@@ -79,9 +82,9 @@ export const getExerciseIdentityFromExercise = (
 
   return {
     originalExerciseId: originalExerciseId || recordExerciseId || displayExerciseId,
-    actualExerciseId: actualExerciseId || recordExerciseId || displayExerciseId,
+    actualExerciseId: identityInvalid ? '' : actualExerciseId || recordExerciseId || displayExerciseId,
     displayExerciseId: displayExerciseId || actualExerciseId || originalExerciseId,
-    recordExerciseId: recordExerciseId || actualExerciseId || originalExerciseId,
+    recordExerciseId: identityInvalid ? '' : recordExerciseId || actualExerciseId || originalExerciseId,
     isReplacement,
   };
 };

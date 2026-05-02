@@ -1,7 +1,7 @@
 import { EXERCISE_DISPLAY_NAMES, EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/trainingData';
 import type { AppData, DismissedDataHealthIssue, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
 import { isCompletedSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
-import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
+import { hasInvalidExerciseIdentity, isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
 
 export type DataHealthSeverity = 'info' | 'warning' | 'error';
 
@@ -174,6 +174,24 @@ const scanReplacementIssues = (appData: Partial<AppData>) => {
 
   sessionSources(appData).forEach(({ source, session }) => {
     (session.exercises || []).forEach((exercise, exerciseIndex) => {
+      if (hasInvalidExerciseIdentity(exercise)) {
+        const legacyIds = [
+          exercise.legacyActualExerciseId,
+          exercise.legacyReplacementExerciseId,
+          exercise.legacyOriginalExerciseId,
+        ].filter(Boolean).map(String);
+        issues.push(issue({
+          id: `exercise-identity-review-${session.id}-${exerciseIndex}`,
+          severity: 'error',
+          category: 'replacement',
+          title: '动作记录身份需要检查',
+          message: '部分历史记录来自旧版替代动作逻辑，系统已保留原始记录，但不会把它用于 PR、e1RM 或有效组。',
+          affectedIds: [session.id, ...legacyIds],
+          canAutoFix: false,
+          suggestedAction: '打开相关历史记录，确认真实执行动作后再修正。',
+        }));
+      }
+
       const ids = {
         exerciseId: exercise.id,
         originalExerciseId: exercise.originalExerciseId,

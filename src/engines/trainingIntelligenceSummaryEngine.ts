@@ -22,6 +22,7 @@ import {
 import type { LoadFeedbackSummary } from './loadFeedbackEngine';
 import type { AutoTrainingLevel } from './trainingLevelEngine';
 import { filterAnalyticsHistory } from './sessionHistoryEngine';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 
 export type TrainingIntelligenceSummary = {
   sessionQuality?: SessionQualityResult;
@@ -70,16 +71,18 @@ const isNormalSession = (session?: TrainingSession | null) =>
   Boolean(session && session.dataFlag !== 'test' && session.dataFlag !== 'excluded');
 
 const getExerciseIds = (exercise: TrainingSession['exercises'][number]) =>
-  [
-    exercise.canonicalExerciseId,
-    exercise.baseId,
-    exercise.actualExerciseId,
-    exercise.replacementExerciseId,
-    exercise.originalExerciseId,
-    exercise.id,
-  ]
-    .filter(Boolean)
-    .map(String);
+  hasInvalidExerciseIdentity(exercise)
+    ? []
+    : [
+        exercise.canonicalExerciseId,
+        exercise.baseId,
+        exercise.actualExerciseId,
+        exercise.replacementExerciseId,
+        exercise.originalExerciseId,
+        exercise.id,
+      ]
+        .filter(Boolean)
+        .map(String);
 
 const exerciseLabelFromHistory = (exerciseId: string, latestSession?: TrainingSession | null, history: TrainingSession[] = []) => {
   const sessions = [latestSession, ...history].filter(Boolean) as TrainingSession[];

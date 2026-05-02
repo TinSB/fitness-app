@@ -27,9 +27,10 @@ describe('real export regression fixtures', () => {
 
     expect(report.issues.some((issue) => issue.id === 'replacement.synthetic_id')).toBe(true);
     expect(exercise?.id).toContain('__auto_alt');
-    expect(exercise?.actualExerciseId).toContain('__auto_alt');
+    expect(exercise?.actualExerciseId).toBeUndefined();
     expect(exercise?.legacyActualExerciseId).toContain('__auto_alt');
-    expect(exercise?.replacementExerciseId).not.toContain('__auto_alt');
+    expect(exercise?.replacementExerciseId).toBeUndefined();
+    expect(exercise?.identityInvalid).toBe(true);
   });
 
   it('keeps fat_loss + hybrid legal and explains hypertrophy-style mesocycle as support work', () => {

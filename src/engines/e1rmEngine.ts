@@ -1,5 +1,6 @@
 import type { E1RMProfile, EstimatedOneRepMax, EstimateConfidence, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { completedSets, isCompletedSet, number } from './engineUtils';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 import { filterAnalyticsHistory } from './sessionHistoryEngine';
 
 type SourceCandidate = {
@@ -30,10 +31,21 @@ export const getExerciseRecordPoolId = (
     actualExerciseId?: string;
     replacementExerciseId?: string;
     canonicalExerciseId?: string;
+    legacyActualExerciseId?: string;
+    legacyReplacementExerciseId?: string;
+    legacyOriginalExerciseId?: string;
+    identityInvalid?: boolean;
   }
-) => exercise.actualExerciseId || exercise.replacementExerciseId || exercise.canonicalExerciseId || (exercise.replacedFromId ? exercise.id : exercise.baseId || exercise.id);
+) => {
+  if (hasInvalidExerciseIdentity(exercise)) return '';
+  return exercise.actualExerciseId || exercise.replacementExerciseId || exercise.canonicalExerciseId || (exercise.replacedFromId ? exercise.id : exercise.baseId || exercise.id);
+};
 
-const matchesExercise = (exercise: TrainingSession['exercises'][number], exerciseId: string) => getExerciseRecordPoolId(exercise) === exerciseId || exercise.id === exerciseId;
+const matchesExercise = (exercise: TrainingSession['exercises'][number], exerciseId: string) => {
+  const poolId = getExerciseRecordPoolId(exercise);
+  if (!poolId) return false;
+  return poolId === exerciseId || exercise.id === exerciseId;
+};
 
 const isCurrentQualityCandidate = (candidate: SourceCandidate) => {
   const rir = parseRir(candidate.set.rir);
@@ -106,6 +118,7 @@ const collectCandidates = (history: TrainingSession[], exerciseId: string): Sour
         .filter((exercise) => matchesExercise(exercise, exerciseId))
         .flatMap((exercise) => {
           const poolId = getExerciseRecordPoolId(exercise);
+          if (!poolId) return [];
           return completedSets(exercise)
             .filter(isWorkSet)
             .map((set) => ({

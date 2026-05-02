@@ -13,6 +13,7 @@ import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from './effectiveSe
 import { buildE1RMProfile, getExerciseRecordPoolId } from './e1rmEngine';
 import { formatExerciseName } from '../i18n/formatters';
 import { completedSets, formatDate, monthKey, number, sessionCompletedSets, sessionVolume, setVolume } from './engineUtils';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 export { buildDeloadSignal } from './deloadSignalEngine';
 
 type ExerciseTrendPoint = {
@@ -77,7 +78,9 @@ const combineRecordQuality = (sets: TrainingSetLog[]): Pick<PersonalRecord, 'qua
 };
 
 const completedHighQualitySets = (sessionExercise: TrainingSession['exercises'][number]) =>
-  completedSets(sessionExercise).filter((set) => recordQualityForSet(set).quality !== 'low_confidence');
+  hasInvalidExerciseIdentity(sessionExercise)
+    ? []
+    : completedSets(sessionExercise).filter((set) => recordQualityForSet(set).quality !== 'low_confidence');
 
 export const CORE_TREND_EXERCISES = [
   { id: 'bench-press', label: '卧推' },
@@ -192,10 +195,12 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
 
   history.forEach((session) => {
     session.exercises.forEach((exercise) => {
+      if (hasInvalidExerciseIdentity(exercise)) return;
       const sets = completedSets(exercise).filter((set) => set.type !== 'warmup');
       const usableSets = completedHighQualitySets(exercise);
       const total = sets.reduce((sum, set) => sum + setVolume(set), 0);
       const poolId = getExerciseRecordPoolId(exercise);
+      if (!poolId) return;
       const sessionKey = `${poolId}-volume`;
       const currentSessionTotal = sessionTotals.get(sessionKey);
       const totalQuality = combineRecordQuality(sets);

@@ -67,7 +67,7 @@ describe('coachAutomationEngine', () => {
     expect(summary.dataHealth?.status).toBe('has_errors');
     expect(summary.recommendedActions[0]?.actionType).toBe('review_data');
     expect(summary.recommendedActions[0]?.label).toContain('数据');
-    expect(summary.keyWarnings[0]).toContain('无效替代动作编号');
+    expect(summary.keyWarnings[0]).toContain('动作记录身份需要检查');
   });
 
   it('outputs a daily adjustment when readiness is low', () => {

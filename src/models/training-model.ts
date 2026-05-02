@@ -144,7 +144,15 @@ export type PainSuggestedAction = 'watch' | 'substitute' | 'deload' | 'seek_prof
 export type TechniqueQuality = 'good' | 'acceptable' | 'poor';
 export type EstimateConfidence = 'low' | 'medium' | 'high';
 export type EvidenceConfidence = 'high' | 'moderate' | 'low';
-export type EffectiveSetFlag = 'warmup' | 'poor_technique' | 'pain' | 'too_easy' | 'incomplete' | 'valid_effort' | 'unknown_rir';
+export type EffectiveSetFlag =
+  | 'warmup'
+  | 'poor_technique'
+  | 'pain'
+  | 'too_easy'
+  | 'incomplete'
+  | 'valid_effort'
+  | 'unknown_rir'
+  | 'identity_invalid';
 export type PersonalRecordQuality = 'standard' | 'high_quality' | 'low_confidence';
 export type LoadFeedbackValue = 'too_light' | 'good' | 'too_heavy';
 export type WeightUnit = 'kg' | 'lb';
@@ -241,6 +249,11 @@ export interface TrainingSetLog {
   exerciseId?: string;
   originalExerciseId?: string;
   actualExerciseId?: string;
+  legacyActualExerciseId?: string;
+  legacyReplacementExerciseId?: string;
+  legacyOriginalExerciseId?: string;
+  identityInvalid?: boolean;
+  identityReviewReason?: string;
   type?: TrainingSetType | string;
   warmupType?: 'full_warmup' | 'feeder_set' | 'unknown';
   setIndex?: number;
@@ -360,6 +373,10 @@ export interface ExercisePrescription extends Omit<ExerciseTemplate, 'sets'> {
   originalExerciseId?: string;
   actualExerciseId?: string;
   legacyActualExerciseId?: string;
+  legacyReplacementExerciseId?: string;
+  legacyOriginalExerciseId?: string;
+  identityInvalid?: boolean;
+  identityReviewReason?: string;
   replacementExerciseId?: string;
   sameTemplateSlot?: boolean;
   replacementReason?: string;

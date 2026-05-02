@@ -192,10 +192,11 @@ describe('persistence', () => {
     const exercise = sanitized.history[0]?.exercises[0];
 
     expect(exercise?.id).toBe('bench-press__auto_alt_alt');
-    expect(exercise?.actualExerciseId).toBe('bench-press__auto_alt_alt');
+    expect(exercise?.actualExerciseId).toBeUndefined();
     expect(exercise?.legacyActualExerciseId).toBe('bench-press__auto_alt_alt');
-    expect(exercise?.replacementExerciseId).toBe('');
-    expect(exercise?.warning).toContain('合成动作 ID');
+    expect(exercise?.replacementExerciseId).toBeUndefined();
+    expect(exercise?.identityInvalid).toBe(true);
+    expect(exercise?.warning).toContain('动作身份需要检查');
   });
 
   it('migrates health import arrays and validates schema', () => {

@@ -97,6 +97,10 @@ const safeSnippet = (value: unknown): unknown => {
     'originalExerciseId',
     'replacementExerciseId',
     'legacyActualExerciseId',
+    'legacyReplacementExerciseId',
+    'legacyOriginalExerciseId',
+    'identityInvalid',
+    'identityReviewReason',
     'displayWeight',
     'displayUnit',
     'actualWeightKg',
@@ -173,8 +177,14 @@ const countInvalidHistoryExerciseRefs = (data: MutableRecord, ids: Set<string>) 
         const value = pickString(raw[field]);
         return Boolean(value && !isKnownExerciseId(value, ids));
       }).length
-    );
-  }, 0);
+      );
+    }, 0);
+
+const countIdentityReviewExerciseRefs = (data: MutableRecord) =>
+  exerciseList(data).filter((exercise) => {
+    const raw = pickRecord(exercise);
+    return Boolean(raw.identityInvalid || raw.legacyActualExerciseId || raw.legacyReplacementExerciseId || raw.legacyOriginalExerciseId);
+  }).length;
 
 const warmupNeedsRepair = (entry: unknown) => {
   if (typeof entry === 'string') return true;
@@ -306,6 +316,16 @@ export const analyzeImportedAppData = (rawData: unknown): DataRepairReport => {
     '历史动作身份需要人工检查；修复不会把它静默改回原计划动作。',
     false,
     countInvalidHistoryExerciseRefs(rawData, knownIds),
+  );
+  issue(
+    issues,
+    'exerciseReference.identity_review',
+    'exerciseReference',
+    'error',
+    '动作记录身份需要检查',
+    '部分历史记录来自旧版替代动作逻辑，系统已保留原始记录，但不会把它用于 PR、e1RM 或有效组。',
+    false,
+    countIdentityReviewExerciseRefs(rawData),
   );
   issue(
     issues,
@@ -461,9 +481,17 @@ const repairTodayStatus = (data: MutableRecord, log: ReturnType<typeof createRep
 const displayNameForActual = (actualExerciseId: string) => EXERCISE_DISPLAY_NAMES[actualExerciseId] || formatExerciseName(actualExerciseId);
 
 const repairExerciseIdentity = (exercise: MutableRecord, knownIds: Set<string>, log: ReturnType<typeof createRepairLogger>, affectedIdPrefix: string) => {
-  const actualExerciseId = pickString(exercise.actualExerciseId || exercise.id);
+  const rawId = pickString(exercise.id);
+  const explicitActualExerciseId = pickString(exercise.actualExerciseId);
+  const actualExerciseId = explicitActualExerciseId || rawId;
+  const replacementExerciseId = pickString(exercise.replacementExerciseId);
+  const originalExerciseId = pickString(exercise.originalExerciseId);
   const name = pickString(exercise.exerciseName || exercise.name);
-  if (actualExerciseId && isKnownExerciseId(actualExerciseId, knownIds)) {
+  const invalidActual = Boolean(actualExerciseId && !isKnownExerciseId(actualExerciseId, knownIds)) || isSyntheticReplacementExerciseId(actualExerciseId);
+  const invalidReplacement = Boolean(replacementExerciseId && !isKnownExerciseId(replacementExerciseId, knownIds));
+  const invalidOriginal = Boolean(originalExerciseId && !isKnownExerciseId(originalExerciseId, knownIds));
+
+  if (actualExerciseId && !invalidActual && isKnownExerciseId(actualExerciseId, knownIds)) {
     const expected = displayNameForActual(actualExerciseId);
     if (name && expected && name !== expected) {
       const before = { id: exercise.id, name: exercise.name, exerciseName: exercise.exerciseName, actualExerciseId };
@@ -480,8 +508,36 @@ const repairExerciseIdentity = (exercise: MutableRecord, knownIds: Set<string>, 
     }
   }
 
-  if (actualExerciseId && !isKnownExerciseId(actualExerciseId, knownIds)) {
-    exercise.legacyActualExerciseId = pickString(exercise.legacyActualExerciseId) || actualExerciseId;
+  if (invalidActual || invalidReplacement || invalidOriginal) {
+    const before = safeSnippet(exercise);
+    if (invalidActual && actualExerciseId) {
+      exercise.legacyActualExerciseId = pickString(exercise.legacyActualExerciseId) || actualExerciseId;
+      delete exercise.actualExerciseId;
+    }
+    if (invalidReplacement && replacementExerciseId) {
+      exercise.legacyReplacementExerciseId = pickString(exercise.legacyReplacementExerciseId) || replacementExerciseId;
+      delete exercise.replacementExerciseId;
+    }
+    if (invalidOriginal && originalExerciseId) {
+      exercise.legacyOriginalExerciseId = pickString(exercise.legacyOriginalExerciseId) || originalExerciseId;
+      delete exercise.originalExerciseId;
+    }
+    exercise.identityInvalid = true;
+    exercise.identityReviewReason =
+      pickString(exercise.identityReviewReason) ||
+      (invalidActual
+        ? 'invalid_actual_exercise_id'
+        : invalidReplacement
+          ? 'invalid_replacement_exercise_id'
+          : 'invalid_original_exercise_id');
+    log.add({
+      id: `repair-exercise-identity-${affectedIdPrefix}`,
+      category: 'replacement',
+      action: '保留无效动作身份为 legacy，并标记需要人工检查',
+      affectedIds: [`${affectedIdPrefix}:${rawId || actualExerciseId || replacementExerciseId || originalExerciseId}`],
+      before,
+      after: safeSnippet(exercise),
+    });
   }
 };
 

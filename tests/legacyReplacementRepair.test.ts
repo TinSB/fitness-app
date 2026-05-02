@@ -33,9 +33,10 @@ describe('legacy replacement repair', () => {
     const result = repairImportedAppData(data, { repairDate: '2026-05-01' });
     const exercise = result.repairedData.history[0]?.exercises[0];
 
-    expect(exercise?.actualExerciseId).toBe('__auto_alt_alt');
+    expect(exercise?.actualExerciseId).toBeUndefined();
     expect(exercise?.actualExerciseId).not.toBe('bench-press');
     expect(exercise?.legacyActualExerciseId).toBe('__auto_alt_alt');
+    expect(exercise?.identityInvalid).toBe(true);
     expect(result.report.status).toBe('needs_review');
   });
 

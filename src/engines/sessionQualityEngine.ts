@@ -11,6 +11,7 @@ import type { LoadFeedbackSummary } from './loadFeedbackEngine';
 import { completedSets, isCompletedSet, isIncompleteSet, number, setWeightKg } from './engineUtils';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 import { buildWorkingOnlySession, groupSessionSetsByType } from './sessionDetailSummaryEngine';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 
 export type SessionQualityLevel = 'high' | 'medium' | 'low' | 'insufficient_data';
 
@@ -125,7 +126,7 @@ export const buildSessionQualityResult = ({
   painPatterns,
 }: BuildSessionQualityParams): SessionQualityResult => {
   const grouped = groupSessionSetsByType(session);
-  const completedWorkingSets = grouped.workingSets.filter((item) => isRecordedCompletedSet(item.set));
+  const completedWorkingSets = grouped.workingSets.filter((item) => !hasInvalidExerciseIdentity(item.exercise) && isRecordedCompletedSet(item.set));
   const completedWarmupSets = grouped.warmupSets.filter((item) => isRecordedCompletedSet(item.set));
   const supportPlanned = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.plannedSets)), 0);
   const supportCompleted = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.completedSets)), 0);

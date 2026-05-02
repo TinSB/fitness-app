@@ -2,6 +2,7 @@ import type { ExercisePrescription, SupportExerciseLog, TrainingSession, Trainin
 import { formatDataFlag } from '../i18n/formatters';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
 import { isCompletedSet, isIncompleteSet, number, setVolume } from './engineUtils';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 import { formatTrainingVolume } from './unitConversionEngine';
 
 export type SessionSetCategory = 'warmup' | 'working' | 'uncategorized';
@@ -173,6 +174,8 @@ export const buildSessionDetailSummary = (session: TrainingSession, unitSettings
   const supportSetCount = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.completedSets)), 0);
   const incompleteSetCount = incompleteCount(grouped.workingSets);
   const incompleteExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.some((item) => isIncompleteSet(item.set))).length;
+  const identityReviewExerciseCount = grouped.exerciseGroups.filter((group) => hasInvalidExerciseIdentity(group.exercise)).length;
+  const identityReviewSetCount = grouped.workingSets.filter((item) => hasInvalidExerciseIdentity(item.exercise)).length;
   const mainExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.length).length;
   const allMainWorkIncomplete = mainExerciseCount > 0 && grouped.exerciseGroups
     .filter((group) => group.workingSets.length)
@@ -191,6 +194,11 @@ export const buildSessionDetailSummary = (session: TrainingSession, unitSettings
     completedWorkingSetCount: completedCount(grouped.workingSets),
     incompleteSetCount,
     incompleteExerciseCount,
+    identityReviewExerciseCount,
+    identityReviewSetCount,
+    identityReviewSummary: identityReviewSetCount
+      ? '动作身份需要检查：相关组会保留在历史详情中，但暂不计入 PR、e1RM 或有效组。'
+      : '',
     earlyEndSummary,
     supportSetCount,
     effectiveSetCount: effectiveSummary.effectiveSets,

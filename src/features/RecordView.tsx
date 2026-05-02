@@ -3,6 +3,7 @@ import { CalendarDays, Medal, Trash2 } from 'lucide-react';
 import { buildMonthStats, buildPrs } from '../engines/analytics';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/effectiveSetEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
+import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
@@ -1081,29 +1082,32 @@ export function RecordView({
       .filter((item) => item.status !== 'none' && item.status !== 'insufficient_data');
     const primaryPlateau = plateauResults[0];
 
-    const renderSetLine = (entry: SessionSetEntry, index: number) => {
-      const set = entry.set;
-      const plannedText = `${formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}`;
-      const label = entry.category === 'warmup' ? formatSetType('warmup') : entry.category === 'working' ? formatSetType('working') : '未分类组';
-      if (entry.category === 'working' && isIncompleteSet(set)) {
-        return (
-          <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-amber-50 px-3 py-2 text-amber-900">
-            未完成 · 计划 {plannedText}
-            {set.note ? ` / ${set.note}` : ''}
-          </div>
-        );
-      }
+      const renderSetLine = (entry: SessionSetEntry, index: number) => {
+        const set = entry.set;
+        const plannedText = `${formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}`;
+        const label = entry.category === 'warmup' ? formatSetType('warmup') : entry.category === 'working' ? formatSetType('working') : '未分类组';
+        const identityWarning = hasInvalidExerciseIdentity(entry.exercise) || set.identityInvalid ? ' / 动作身份需要检查' : '';
+        if (entry.category === 'working' && isIncompleteSet(set)) {
+          return (
+            <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-amber-50 px-3 py-2 text-amber-900">
+              未完成 · 计划 {plannedText}
+              {identityWarning}
+              {set.note ? ` / ${set.note}` : ''}
+            </div>
+          );
+        }
       return (
         <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
           {label} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
           {' / '}
-          {formatRirLabel(set.rir)}
-          {entry.category !== 'warmup' && set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
-          {entry.category !== 'warmup' && set.painFlag ? ' / 有不适' : ''}
-          {set.note ? ` / ${set.note}` : ''}
-        </div>
-      );
-    };
+            {formatRirLabel(set.rir)}
+            {entry.category !== 'warmup' && set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
+            {entry.category !== 'warmup' && set.painFlag ? ' / 有不适' : ''}
+            {identityWarning}
+            {set.note ? ` / ${set.note}` : ''}
+          </div>
+        );
+      };
 
     const renderSetSection = (title: string, entries: SessionSetEntry[]) =>
       entries.length ? (
@@ -1139,12 +1143,17 @@ export function RecordView({
               <MetricCard label={formatSessionVolumeLabel()} value={summary.totalDisplayVolume} helper="正式组训练量" />
               <MetricCard label="未完成组" value={`${summary.incompleteSetCount}`} helper={summary.incompleteSetCount ? '不计入训练量' : '无'} tone={summary.incompleteSetCount ? 'amber' : 'slate'} />
             </div>
-            {summary.earlyEndSummary ? (
-              <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
-                {summary.earlyEndSummary}
-              </div>
-            ) : null}
-            <div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
+              {summary.earlyEndSummary ? (
+                <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                  {summary.earlyEndSummary}
+                </div>
+              ) : null}
+              {summary.identityReviewSummary ? (
+                <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                  {summary.identityReviewSummary}
+                </div>
+              ) : null}
+              <div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
               <span className="font-semibold text-slate-950">训练构成：</span>
               主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%。
               {composition.summary}

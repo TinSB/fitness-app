@@ -51,7 +51,7 @@ import {
 import { clamp, clone, hydrateTemplates, normalizeSoreness, number } from '../engines/engineUtils';
 import { reconcileScreeningProfile } from '../engines/adaptiveFeedbackEngine';
 import { createMesocyclePlan, sanitizeMesocyclePlan } from '../engines/mesocycleEngine';
-import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from '../engines/replacementEngine';
+import { isKnownExerciseId, isSyntheticReplacementExerciseId } from '../engines/replacementEngine';
 import { DEFAULT_UNIT_SETTINGS, sanitizeUnitSettings } from '../engines/unitConversionEngine';
 import {
   buildPlanAdjustmentFingerprintFromDraft,
@@ -122,30 +122,57 @@ const normalizeTrainingMode = (value: unknown, fallback: AppData['trainingMode']
 };
 
 const normalizeExerciseIdentity = (raw: Record<string, unknown>, rawId: string) => {
-  const baseId = pickString(raw.baseId, rawId.split('__auto_alt')[0] || rawId);
-  const originalExerciseId = pickString(raw.originalExerciseId, pickString(raw.replacedFromId, baseId));
+  const rawBaseId = pickString(raw.baseId);
+  const strippedSyntheticBase = rawId.split('__auto_alt')[0].split('__alt_')[0];
+  const baseId = rawBaseId || (isKnownExerciseId(strippedSyntheticBase) ? strippedSyntheticBase : rawId);
+  const explicitOriginalId = pickString(raw.originalExerciseId || raw.replacedFromId);
+  const originalExerciseId = explicitOriginalId
+    ? (isKnownExerciseId(explicitOriginalId) ? explicitOriginalId : '')
+    : (isKnownExerciseId(baseId) ? baseId : '');
   const rawReplacementId = pickString(raw.replacementExerciseId);
-  const rawActualId = pickString(raw.actualExerciseId, rawReplacementId || rawId);
-  const validReplacementId = validateReplacementExerciseId(rawReplacementId) ? rawReplacementId : '';
-  const validActualId = validateReplacementExerciseId(rawActualId) ? rawActualId : '';
+  const explicitActualId = pickString(raw.actualExerciseId);
+  const rawActualId = explicitActualId || rawReplacementId || rawId;
+  const validReplacementId = isKnownExerciseId(rawReplacementId) ? rawReplacementId : '';
+  const validActualId = isKnownExerciseId(rawActualId) ? rawActualId : '';
   const hasSyntheticId = [rawId, rawActualId, rawReplacementId].some(isSyntheticReplacementExerciseId);
+  const invalidActualId = Boolean(explicitActualId && !isKnownExerciseId(explicitActualId)) || isSyntheticReplacementExerciseId(rawActualId);
+  const invalidReplacementId = Boolean(rawReplacementId && !isKnownExerciseId(rawReplacementId));
+  const invalidOriginalId = Boolean(explicitOriginalId && !isKnownExerciseId(explicitOriginalId));
+  const identityInvalid = Boolean(raw.identityInvalid) || invalidActualId || invalidReplacementId || invalidOriginalId || hasSyntheticId;
   const legacyActualExerciseId =
     pickString(raw.legacyActualExerciseId) ||
-    (!validActualId && rawActualId ? rawActualId : '');
-  const fallbackActualId = originalExerciseId || baseId || rawId;
-  const actualExerciseId = validActualId || validReplacementId || legacyActualExerciseId || (hasSyntheticId ? rawActualId || rawId : rawActualId || fallbackActualId);
-  const replacementExerciseId = validReplacementId || (validActualId && validActualId !== originalExerciseId ? validActualId : '');
-  const id = hasSyntheticId ? actualExerciseId || rawId : rawId;
-  const warning = hasSyntheticId ? [pickString(raw.warning), '已修复无效替代动作 ID，避免继续使用合成动作 ID。'].filter(Boolean).join(' / ') : pickString(raw.warning);
+    (invalidActualId && rawActualId ? rawActualId : '');
+  const legacyReplacementExerciseId =
+    pickString(raw.legacyReplacementExerciseId) ||
+    (invalidReplacementId && rawReplacementId ? rawReplacementId : '');
+  const legacyOriginalExerciseId =
+    pickString(raw.legacyOriginalExerciseId) ||
+    (invalidOriginalId && explicitOriginalId ? explicitOriginalId : '');
+  const actualExerciseId = identityInvalid ? undefined : (validActualId || validReplacementId || (isKnownExerciseId(rawId) ? rawId : undefined));
+  const replacementExerciseId = identityInvalid ? undefined : (validReplacementId || (validActualId && validActualId !== originalExerciseId ? validActualId : undefined));
+  const reviewReasons = [
+    pickString(raw.identityReviewReason),
+    invalidActualId ? 'invalid_actual_exercise_id' : '',
+    invalidReplacementId ? 'invalid_replacement_exercise_id' : '',
+    invalidOriginalId ? 'invalid_original_exercise_id' : '',
+    hasSyntheticId ? 'synthetic_replacement_id' : '',
+  ].filter(Boolean);
+  const warning = identityInvalid
+    ? [pickString(raw.warning), '动作身份需要检查，已保留原始记录但不会用于 PR、e1RM 或有效组。'].filter(Boolean).join(' / ')
+    : pickString(raw.warning);
 
   return {
-    id,
+    id: rawId,
     baseId,
-    canonicalExerciseId: pickString(raw.canonicalExerciseId, actualExerciseId || id),
+    canonicalExerciseId: pickString(raw.canonicalExerciseId, actualExerciseId || originalExerciseId || baseId || rawId),
     originalExerciseId,
     actualExerciseId,
     legacyActualExerciseId: legacyActualExerciseId || undefined,
+    legacyReplacementExerciseId: legacyReplacementExerciseId || undefined,
+    legacyOriginalExerciseId: legacyOriginalExerciseId || undefined,
     replacementExerciseId,
+    identityInvalid: identityInvalid || undefined,
+    identityReviewReason: reviewReasons[0] || undefined,
     warning,
   };
 };
@@ -525,6 +552,11 @@ const sanitizeSet = (set: unknown, fallbackId: string, fallbackType = 'straight'
     exerciseId: pickString(raw.exerciseId) || undefined,
     originalExerciseId: pickString(raw.originalExerciseId) || undefined,
     actualExerciseId: pickString(raw.actualExerciseId) || undefined,
+    legacyActualExerciseId: pickString(raw.legacyActualExerciseId) || undefined,
+    legacyReplacementExerciseId: pickString(raw.legacyReplacementExerciseId) || undefined,
+    legacyOriginalExerciseId: pickString(raw.legacyOriginalExerciseId) || undefined,
+    identityInvalid: raw.identityInvalid === true || undefined,
+    identityReviewReason: pickString(raw.identityReviewReason) || undefined,
     type: pickString(raw.type || raw.setType || raw.stepType, fallbackType),
     warmupType:
       typeof raw.warmupType === 'string'

@@ -1,16 +1,27 @@
 import type { EffectiveSetResult, EffectiveVolumeSummary, ExercisePrescription, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { completedSets, getPrimaryMuscles, getSecondaryMuscles, isCompletedSet, number } from './engineUtils';
+import { hasInvalidExerciseIdentity } from './replacementEngine';
 
 const clampScore = (score: number) => Math.max(0, Math.min(1, score));
 
 export const evaluateEffectiveSet = (
   set: TrainingSetLog,
-  exercise?: Partial<Pick<ExercisePrescription, 'repMin' | 'repMax' | 'kind' | 'primaryMuscles' | 'muscle'>>,
+  exercise?: Partial<Pick<ExercisePrescription, 'repMin' | 'repMax' | 'kind' | 'primaryMuscles' | 'muscle' | 'identityInvalid' | 'legacyActualExerciseId' | 'legacyReplacementExerciseId' | 'legacyOriginalExerciseId' | 'actualExerciseId' | 'replacementExerciseId' | 'originalExerciseId'>>,
   context?: { plannedReps?: [number, number] }
 ): EffectiveSetResult => {
   const flags: EffectiveSetResult['flags'] = [];
   const reasons: string[] = [];
   let score = 1;
+
+  if (hasInvalidExerciseIdentity(exercise) || set.identityInvalid) {
+    return {
+      isEffective: false,
+      score: 0,
+      confidence: 'low',
+      flags: ['identity_invalid'],
+      reasons: ['动作身份需要检查，暂不计入有效组。'],
+    };
+  }
 
   if (set.type === 'warmup') {
     return {
@@ -95,7 +106,9 @@ export const countEffectiveSets = (session: TrainingSession, options?: { minScor
   return (session.exercises || []).reduce(
     (sum, exercise) =>
       sum +
-      completedSets(exercise).filter((set) => evaluateEffectiveSet(set, exercise).score >= minScore && set.type !== 'corrective' && set.type !== 'functional').length,
+      (hasInvalidExerciseIdentity(exercise)
+        ? 0
+        : completedSets(exercise).filter((set) => evaluateEffectiveSet(set, exercise).score >= minScore && set.type !== 'corrective' && set.type !== 'functional').length),
     0
   );
 };
@@ -146,6 +159,11 @@ export const buildEffectiveVolumeSummary = (history: TrainingSession[], dateRang
 
   sessions.forEach((session) => {
     (session.exercises || []).forEach((exercise) => {
+      if (hasInvalidExerciseIdentity(exercise)) {
+        const reason = '动作身份需要检查，相关组暂不计入有效组。';
+        if (!summary.reasons.includes(reason)) summary.reasons.push(reason);
+        return;
+      }
       const contributions = getMuscleContribution(exercise);
       completedSets(exercise).forEach((set) => {
         if (set.type === 'corrective' || set.type === 'functional') return;

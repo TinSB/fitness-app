@@ -42,6 +42,35 @@ export const validateReplacementExerciseId = (id: unknown) => {
   return Boolean(EXERCISE_DISPLAY_NAMES[value] || EXERCISE_KNOWLEDGE_OVERRIDES[value]);
 };
 
+export const isKnownExerciseId = (id: unknown) => validateReplacementExerciseId(id);
+
+export type ExerciseIdentityLike = {
+  id?: unknown;
+  actualExerciseId?: unknown;
+  replacementExerciseId?: unknown;
+  originalExerciseId?: unknown;
+  legacyActualExerciseId?: unknown;
+  legacyReplacementExerciseId?: unknown;
+  legacyOriginalExerciseId?: unknown;
+  identityInvalid?: unknown;
+};
+
+export const hasInvalidExerciseIdentity = (exercise: ExerciseIdentityLike | null | undefined) => {
+  if (!exercise) return false;
+  if (exercise.identityInvalid === true) return true;
+  return Boolean(
+    exercise.legacyActualExerciseId ||
+      exercise.legacyReplacementExerciseId ||
+      exercise.legacyOriginalExerciseId ||
+      isSyntheticReplacementExerciseId(exercise.id) ||
+      isSyntheticReplacementExerciseId(exercise.actualExerciseId) ||
+      isSyntheticReplacementExerciseId(exercise.replacementExerciseId) ||
+      (exercise.actualExerciseId && !isKnownExerciseId(exercise.actualExerciseId)) ||
+      (exercise.replacementExerciseId && !isKnownExerciseId(exercise.replacementExerciseId)) ||
+      (exercise.originalExerciseId && !isKnownExerciseId(exercise.originalExerciseId))
+  );
+};
+
 const baseExerciseId = (
   exercise: Pick<ExercisePrescription, 'baseId' | 'replacedFromId' | 'canonicalExerciseId' | 'id' | 'originalExerciseId' | 'actualExerciseId' | 'replacementExerciseId'>
 ) => exercise.originalExerciseId || exercise.replacedFromId || exercise.baseId || String(exercise.canonicalExerciseId || exercise.id).split('__alt_')[0];

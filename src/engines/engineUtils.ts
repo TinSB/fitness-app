@@ -67,6 +67,22 @@ export const classNames = (...items: Array<string | false | null | undefined>) =
 const isTrainingSetLog = (value: unknown): value is TrainingSetLog =>
   typeof value === 'object' && value !== null && ('weight' in value || 'actualWeightKg' in value) && 'reps' in value;
 
+const hasSyntheticReplacementId = (id: unknown) => /__(?:auto_)?alt(?:_|$)/.test(String(id || ''));
+
+const hasInvalidExerciseIdentityForStats = (exercise: unknown) => {
+  if (!exercise || typeof exercise !== 'object') return false;
+  const raw = exercise as Partial<ExercisePrescription>;
+  return Boolean(
+    raw.identityInvalid ||
+      raw.legacyActualExerciseId ||
+      raw.legacyReplacementExerciseId ||
+      raw.legacyOriginalExerciseId ||
+      hasSyntheticReplacementId(raw.id) ||
+      hasSyntheticReplacementId(raw.actualExerciseId) ||
+      hasSyntheticReplacementId(raw.replacementExerciseId)
+  );
+};
+
 export const setWeightKg = (set: Pick<TrainingSetLog, 'weight'> & Partial<Pick<TrainingSetLog, 'actualWeightKg'>>) =>
   number(set.actualWeightKg ?? set.weight);
 
@@ -80,6 +96,7 @@ export const isIncompleteSet = (set: Partial<TrainingSetLog> | null | undefined)
   Boolean(set && (set.done === false || (set.done === undefined && !String(set.completedAt || '').trim())));
 
 export const completedSets = (exercise: Pick<ExercisePrescription, 'sets'> | { sets?: TrainingSetLog[] | number }): TrainingSetLog[] => {
+  if (hasInvalidExerciseIdentityForStats(exercise)) return [];
   if (!Array.isArray(exercise?.sets)) return [];
   return exercise.sets.filter(
     (set): set is TrainingSetLog =>
