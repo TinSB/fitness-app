@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -9,6 +8,7 @@ import { buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
 import { DEFAULT_UNIT_SETTINGS } from '../src/engines/unitConversionEngine';
 import { ProfileView } from '../src/features/ProfileView';
 import { RecordView } from '../src/features/RecordView';
+import { buildDataHealthViewModel } from '../src/presenters/dataHealthPresenter';
 import { makeAppData } from './fixtures';
 
 const noop = (..._args: unknown[]) => undefined;
@@ -118,15 +118,29 @@ describe('Profile and Record DataHealth dismiss UI', () => {
     expect(after).toContain('暂无待处理数据健康问题');
   });
 
-  it('wires DataHealth dismiss to AppData state instead of a toast-only path', () => {
-    const appSource = readFileSync('src/App.tsx', 'utf8');
-    const presenterSource = readFileSync('src/presenters/dataHealthPresenter.ts', 'utf8');
+  it('wires DataHealth dismiss to AppData state and visible issue filtering instead of toast-only success', () => {
+    const dismissed = dismissDataHealthIssueToday('summary-volume-zero-session-1', todayKey());
+    const data = makeAppData({
+      dismissedDataHealthIssues: [dismissed],
+      settings: { dismissedDataHealthIssues: [dismissed] },
+    });
+    const todayVm = buildDataHealthViewModel(report, {
+      dismissedIssues: data.dismissedDataHealthIssues,
+      currentDate: todayKey(),
+    });
+    const tomorrowVm = buildDataHealthViewModel(report, {
+      dismissedIssues: data.dismissedDataHealthIssues,
+      currentDate: '2099-01-01',
+    });
 
-    expect(appSource).toContain("action.type === 'dismiss'");
-    expect(appSource).toContain('dismissedDataHealthIssues: nextDismissed');
-    expect(appSource).toContain('dismissDataHealthIssueToday(issueId, dismissedAt)');
-    expect(appSource).toContain('已暂不处理，今天不再提醒。');
-    expect(presenterSource).toContain('filterDismissedDataHealthIssues');
-    expect(presenterSource).toContain('dismissAction');
+    expect(data.dismissedDataHealthIssues).toEqual([
+      expect.objectContaining({ issueId: 'summary-volume-zero-session-1', scope: 'today' }),
+    ]);
+    expect(data.settings.dismissedDataHealthIssues).toEqual(data.dismissedDataHealthIssues);
+    expect(todayVm.primaryIssues).toHaveLength(0);
+    expect(todayVm.secondaryIssues).toHaveLength(0);
+    expect(renderProfile(true)).toContain('暂无待处理数据健康问题');
+    expect(renderRecord(true)).toContain('暂无待处理数据健康问题');
+    expect(tomorrowVm.primaryIssues.map((issue) => issue.id)).toEqual(['summary-volume-zero-session-1']);
   });
 });

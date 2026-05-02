@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildPendingSessionPatch,
@@ -7,6 +5,7 @@ import {
   markPendingSessionPatchDismissed,
   type SessionPatch,
 } from '../src/engines/sessionPatchEngine';
+import { makeAppData } from './fixtures';
 
 const patch: SessionPatch = {
   id: 'session-patch-reduce-volume',
@@ -32,11 +31,28 @@ describe('pending session patch dismiss', () => {
     expect(findActivePendingSessionPatch(dismissed, '2026-05-01', 'pull-a')).toBeUndefined();
   });
 
-  it('documents that App revert flow dismisses persisted pending patch instead of clearing local state', () => {
-    const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
+  it('mirrors dismissed pending patch state through root AppData and settings', () => {
+    const pending = buildPendingSessionPatch({
+      patches: [patch],
+      createdAt: '2026-05-01',
+      sourceFingerprint: 'daily-adjustment:pull-a',
+      targetTemplateId: 'pull-a',
+    });
+    const data = makeAppData({
+      pendingSessionPatches: [pending],
+      settings: { pendingSessionPatches: [pending] },
+    });
+    const nextPendingPatches = markPendingSessionPatchDismissed(data.pendingSessionPatches, pending.id, '2026-05-01T08:00:00.000Z');
+    const nextData = {
+      ...data,
+      pendingSessionPatches: nextPendingPatches,
+      settings: { ...data.settings, pendingSessionPatches: nextPendingPatches },
+    };
 
-    expect(app).toContain('markPendingSessionPatchDismissed');
-    expect(app).toContain('pending_patch_dismissed');
-    expect(app).not.toContain('setPendingSessionPatches([])');
+    expect(nextData.pendingSessionPatches).toEqual([
+      expect.objectContaining({ id: pending.id, status: 'dismissed', dismissedAt: '2026-05-01T08:00:00.000Z' }),
+    ]);
+    expect(nextData.settings.pendingSessionPatches).toEqual(nextData.pendingSessionPatches);
+    expect(findActivePendingSessionPatch(nextData.pendingSessionPatches, '2026-05-01', 'pull-a')).toBeUndefined();
   });
 });

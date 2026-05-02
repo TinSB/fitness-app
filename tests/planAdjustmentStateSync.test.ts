@@ -75,7 +75,7 @@ describe('plan adjustment state sync', () => {
 
     expect(result.ok).toBe(true);
     expect(result.draft.status).toBe('applied');
-    expect(result.draft.appliedAt).toBeTruthy();
+    expect(result.draft.appliedAt).toEqual(expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/));
     expect(result.draft.experimentalProgramTemplateId).toBe(result.experimentalTemplate?.id);
     expect(result.draft.sourceCoachActionId).toBe(action.id);
     expect(result.draft.sourceFingerprint).toBe(draft.sourceFingerprint);

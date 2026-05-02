@@ -1,8 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createSession } from '../src/engines/sessionBuilder';
-import { applySessionPatches, type SessionPatch } from '../src/engines/sessionPatchEngine';
+import {
+  applySessionPatches,
+  buildPendingSessionPatch,
+  findActivePendingSessionPatch,
+  markPendingSessionPatchConsumed,
+  type SessionPatch,
+} from '../src/engines/sessionPatchEngine';
 import { buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
 import { completeTrainingSessionIntoHistory } from '../src/engines/trainingCompletionEngine';
 import { getTemplate, makeAppData } from './fixtures';
@@ -34,14 +38,42 @@ const createBaseSession = () => {
 };
 
 describe('session patch startSession flow', () => {
-  it('documents that App startSession consumes and clears pending patches', () => {
-    const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
+  it('consumes a matching pending patch through the same state transition used by startSession', () => {
+    const { data, session } = createBaseSession();
+    const pending = buildPendingSessionPatch({
+      patches: [temporaryPatch],
+      createdAt: '2026-05-01',
+      sourceFingerprint: 'daily-adjustment:push-a:main-only',
+      targetTemplateId: 'push-a',
+    });
+    const currentData = {
+      ...data,
+      pendingSessionPatches: [pending],
+      settings: { ...data.settings, pendingSessionPatches: [pending] },
+    };
 
-    expect(app).toContain('findActivePendingSessionPatch');
-    expect(app).toContain('applySessionPatches(baseSession, patches)');
-    expect(app).toContain('markPendingSessionPatchConsumed');
-    expect(app).toContain('pendingSessionPatches={pendingSessionPatches}');
-    expect(app).not.toContain('setPendingSessionPatches([])');
+    const activePending = findActivePendingSessionPatch(currentData.pendingSessionPatches, '2026-05-01', 'push-a');
+    expect(activePending).toMatchObject({ id: pending.id, status: 'pending', targetTemplateId: 'push-a' });
+
+    const patched = applySessionPatches(session, activePending?.patches || []);
+    const consumed = markPendingSessionPatchConsumed(currentData.pendingSessionPatches, pending.id, '2026-05-01T08:00:00.000Z');
+    const nextData = {
+      ...currentData,
+      activeSession: patched.session,
+      pendingSessionPatches: consumed,
+      settings: { ...currentData.settings, pendingSessionPatches: consumed },
+    };
+
+    expect(nextData.activeSession.appliedCoachActions).toEqual([
+      expect.objectContaining({ id: temporaryPatch.id, type: temporaryPatch.type, title: temporaryPatch.title }),
+    ]);
+    expect(nextData.activeSession.adjustmentNotes).toEqual(expect.arrayContaining([temporaryPatch.title, temporaryPatch.description]));
+    expect(nextData.activeSession.adjustmentType).toBe('temporary_main_only');
+    expect(nextData.pendingSessionPatches).toEqual([
+      expect.objectContaining({ id: pending.id, status: 'consumed', consumedAt: '2026-05-01T08:00:00.000Z' }),
+    ]);
+    expect(nextData.settings.pendingSessionPatches).toEqual(nextData.pendingSessionPatches);
+    expect(findActivePendingSessionPatch(nextData.pendingSessionPatches, '2026-05-01', 'push-a')).toBeUndefined();
   });
 
   it('writes applied patches and adjustment notes into the active session only', () => {
@@ -59,7 +91,7 @@ describe('session patch startSession flow', () => {
     });
     expect(result.session.adjustmentNotes?.join(' ')).toContain('只做主训练');
     expect(result.session.adjustmentReasons?.join(' ')).toContain('优先完成主训练');
-    expect(result.session.adjustmentType).toBeTruthy();
+    expect(result.session.adjustmentType).toBe('temporary_main_only');
     expect(JSON.stringify(data.programTemplate)).toBe(originalProgramTemplate);
     expect(JSON.stringify(data.mesocyclePlan)).toBe(originalMesocyclePlan);
     expect(JSON.stringify(data.templates)).toBe(originalTemplates);

@@ -21,10 +21,16 @@ describe('DataHealth identity issue', () => {
     const report = buildDataHealthReport(data);
     const identityIssue = report.issues.find((issue) => issue.title === '动作记录身份需要检查');
 
-    expect(identityIssue).toBeTruthy();
-    expect(identityIssue?.message).toContain('不会把它用于 PR、e1RM 或有效组');
-    expect(identityIssue?.message).not.toContain('__auto_alt');
-    expect(identityIssue?.affectedIds).toContain('__auto_alt');
+    if (!identityIssue) throw new Error('expected identity issue');
+    expect(identityIssue).toMatchObject({
+      severity: 'error',
+      category: 'replacement',
+      title: '动作记录身份需要检查',
+      canAutoFix: false,
+    });
+    expect(identityIssue.message).toContain('不会把它用于 PR、e1RM 或有效组');
+    expect(identityIssue.message).not.toContain('__auto_alt');
+    expect(identityIssue.affectedIds).toEqual(expect.arrayContaining(['identity-health-session', '__auto_alt']));
     expect(report.status).toBe('has_errors');
     expect(JSON.stringify(report)).not.toContain('undefined');
     expect(JSON.stringify(report)).not.toContain('null');

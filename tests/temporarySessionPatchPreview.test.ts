@@ -1,10 +1,13 @@
 import React from 'react';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
-import type { SessionPatch } from '../src/engines/sessionPatchEngine';
+import {
+  buildPendingSessionPatch,
+  getActivePendingSessionPatches,
+  upsertPendingSessionPatch,
+  type SessionPatch,
+} from '../src/engines/sessionPatchEngine';
 import { TodayView } from '../src/features/TodayView';
 import type { TrainingMode } from '../src/models/training-model';
 import { getTemplate, makeAppData } from './fixtures';
@@ -111,13 +114,41 @@ describe('temporary session patch preview', () => {
   });
 
   it('keeps adopting adjustment wired to real pending patch state, not only toast', () => {
-    const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
-    const today = readFileSync(resolve(process.cwd(), 'src/features/TodayView.tsx'), 'utf8');
+    const data = makeAppData({
+      selectedTemplateId: 'pull-a',
+      activeProgramTemplateId: 'pull-a',
+      unitSettings,
+      pendingSessionPatches: [],
+      settings: { pendingSessionPatches: [] },
+    });
+    const pending = buildPendingSessionPatch({
+      patches: [reduceSupportPatch, reduceIntensityPatch],
+      createdAt: '2026-05-01',
+      sourceFingerprint: 'daily-adjustment:pull-a:preview',
+      targetTemplateId: 'pull-a',
+    });
+    const upserted = upsertPendingSessionPatch(data.pendingSessionPatches, pending);
+    const nextData = {
+      ...data,
+      pendingSessionPatches: upserted.pendingPatches,
+      settings: { ...data.settings, pendingSessionPatches: upserted.pendingPatches },
+    };
+    const activePatches = getActivePendingSessionPatches(nextData.pendingSessionPatches, '2026-05-01', 'pull-a');
+    const text = renderToday(activePatches);
 
-    expect(app).toContain('buildPendingSessionPatch');
-    expect(app).toContain('upsertPendingSessionPatch');
-    expect(app).toContain('pendingSessionPatches={pendingSessionPatches}');
-    expect(today).toContain('pendingSessionPatches');
-    expect(today).toContain('已应用本次调整');
+    expect(upserted.created).toBe(true);
+    expect(nextData.pendingSessionPatches).toEqual([
+      expect.objectContaining({
+        id: pending.id,
+        status: 'pending',
+        sourceFingerprint: 'daily-adjustment:pull-a:preview',
+        targetTemplateId: 'pull-a',
+      }),
+    ]);
+    expect(nextData.settings.pendingSessionPatches).toEqual(nextData.pendingSessionPatches);
+    expect(activePatches).toHaveLength(2);
+    expect(text).toContain('已应用本次调整');
+    expect(text).toContain('本次调整');
+    expect(text).not.toMatch(/\b(undefined|null|pending)\b/);
   });
 });
