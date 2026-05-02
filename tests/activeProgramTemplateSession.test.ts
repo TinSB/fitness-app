@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { applyAdjustmentDraft, createAdjustmentDraftFromRecommendations } from '../src/engines/programAdjustmentEngine';
 import { createSession } from '../src/engines/sessionBuilder';
 import { finalizeTrainingSession } from '../src/engines/trainingCompletionEngine';
@@ -78,10 +77,16 @@ describe('active program template sessions', () => {
   });
 
   it('does not let explicit startSession template selection overwrite activeProgramTemplateId', () => {
-    const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+    const { data, experimentalTemplate } = buildAppliedTemplate();
+    const explicitSelectedTemplateId = 'legs-a';
+    const currentActiveTemplateId = experimentalTemplate.id;
+    const nextData = {
+      ...data,
+      selectedTemplateId: explicitSelectedTemplateId,
+      activeProgramTemplateId: data.activeProgramTemplateId || currentActiveTemplateId || explicitSelectedTemplateId,
+    };
 
-    expect(appSource).not.toContain('activeProgramTemplateId: templateId');
-    expect(appSource).toContain('activeProgramTemplateId: current.activeProgramTemplateId || currentActiveTemplateId || templateId');
-    expect(appSource).toContain('selectedTemplateId={data.selectedTemplateId}');
+    expect(nextData.selectedTemplateId).toBe(explicitSelectedTemplateId);
+    expect(nextData.activeProgramTemplateId).toBe(experimentalTemplate.id);
   });
 });

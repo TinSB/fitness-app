@@ -114,7 +114,7 @@ describe('planAdviceAggregator', () => {
     );
     const volume = advice.find((item) => item.category === 'volume');
 
-    expect(volume).toBeTruthy();
+    expect(volume).toMatchObject({ category: 'volume', status: 'needs_confirmation' });
     expect(volume?.title).toBe('训练量建议');
     expect(volume?.summary).toContain('背、腿、胸低于目标');
     expect(volume?.affectedItems.map((item) => item.label)).toEqual(['背', '腿', '胸']);
@@ -154,6 +154,44 @@ describe('planAdviceAggregator', () => {
     expect(pendingVolume?.affectedItems.map((item) => item.label)).toEqual(['腿', '胸']);
     expect(pendingVolume?.primaryAction?.label).not.toBe('生成调整草案');
     expect(draft?.title).toBe('背部训练量调整草案');
+  });
+
+  it('uses sourceFingerprint to keep same-source pending actions out of the plan inbox', () => {
+    const sourceFingerprint = 'coach-action|volume|back|pull-a|add-sets';
+    const advice = aggregatePlanAdvice(
+      [
+        makeAction({
+          id: 'fresh-action-id',
+          actionType: 'create_plan_adjustment_preview',
+          targetId: 'back',
+          targetType: 'muscle',
+          requiresConfirmation: true,
+          reversible: true,
+          sourceFingerprint,
+        }),
+      ],
+      volumeReport,
+      [makeDraft({ id: 'existing-ready-draft', sourceFingerprint })],
+    );
+
+    expect(advice.filter((item) => item.primaryAction?.coachAction?.id === 'fresh-action-id')).toHaveLength(0);
+    expect(advice.filter((item) => item.category === 'draft')).toHaveLength(1);
+  });
+
+  it('shows one draft card for duplicate legacy drafts with the same sourceFingerprint', () => {
+    const sourceFingerprint = 'coach-action|volume|back|pull-a|add-sets';
+    const advice = aggregatePlanAdvice(
+      [],
+      null,
+      [
+        makeDraft({ id: 'older-ready-draft', sourceFingerprint, status: 'ready_to_apply', createdAt: '2026-04-30T10:00:00.000Z' }),
+        makeDraft({ id: 'applied-draft', sourceFingerprint, status: 'applied', appliedAt: '2026-04-30T11:00:00.000Z' }),
+      ],
+    );
+    const draftAdvice = advice.filter((item) => item.category === 'draft');
+
+    expect(draftAdvice).toHaveLength(1);
+    expect(draftAdvice[0].status).toBe('applied');
   });
 
   it('groups plateau advice instead of rendering one card per exercise', () => {

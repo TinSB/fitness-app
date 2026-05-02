@@ -92,17 +92,180 @@ export const buildPlanAdjustmentFingerprintFromHistory = (item: ProgramAdjustmen
 export const dedupePlanAdjustmentDraftsByFingerprint = dedupeProgramAdjustmentDraftsByFingerprint;
 
 const reusableDraftStatuses = new Set(['draft_created', 'ready_to_apply', 'draft', 'previewed']);
+const handledDraftStatuses = new Set(['dismissed', 'expired', 'stale']);
+
+const draftTime = (draft: ProgramAdjustmentDraft) => draft.appliedAt || draft.rolledBackAt || draft.createdAt || '';
+
+const newestDraft = (drafts: ProgramAdjustmentDraft[]) =>
+  [...drafts].sort((left, right) => draftTime(right).localeCompare(draftTime(left)))[0];
+
+const stableHash = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const stableIdPart = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48) || stableHash(value);
+
+export const buildPlanAdjustmentDraftInstanceId = (
+  sourceFingerprint: string,
+  revision = 1,
+  parentDraftId?: string,
+) => {
+  const fingerprintPart = stableIdPart(sourceFingerprint);
+  const parentPart = parentDraftId ? `-${stableIdPart(parentDraftId).slice(0, 24)}` : '';
+  return `adjustment-draft-${fingerprintPart}${parentPart}-r${Math.max(1, Math.round(revision))}`;
+};
+
+export type PlanAdjustmentDraftUpsertOutcome =
+  | 'created'
+  | 'opened_existing'
+  | 'already_applied'
+  | 'previously_handled';
+
+export type PlanAdjustmentDraftUpsertResult = {
+  drafts: ProgramAdjustmentDraft[];
+  sourceFingerprint: string;
+  targetDraft?: ProgramAdjustmentDraft;
+  historyItem?: ProgramAdjustmentHistoryItem;
+  outcome: PlanAdjustmentDraftUpsertOutcome;
+  createdDraft?: ProgramAdjustmentDraft;
+};
+
+const draftFingerprintEquals = (draft: ProgramAdjustmentDraft, sourceFingerprint: string) =>
+  (draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft)) === sourceFingerprint;
+
+const historyFingerprintEquals = (item: ProgramAdjustmentHistoryItem, sourceFingerprint: string) =>
+  (item.sourceFingerprint || buildPlanAdjustmentFingerprintFromHistory(item)) === sourceFingerprint;
+
+const normalizeDraftForUpsert = (
+  draft: ProgramAdjustmentDraft,
+  sourceFingerprint: string,
+  drafts: ProgramAdjustmentDraft[],
+): ProgramAdjustmentDraft => {
+  const sameSourceDrafts = drafts.filter((item) => draftFingerprintEquals(item, sourceFingerprint));
+  const revision =
+    draft.draftRevision ||
+    Math.max(0, ...sameSourceDrafts.map((item) => item.draftRevision || 1)) + 1;
+  return {
+    ...draft,
+    id: buildPlanAdjustmentDraftInstanceId(sourceFingerprint, revision, draft.parentDraftId),
+    draftRevision: revision,
+    sourceFingerprint,
+  };
+};
+
+export function upsertPlanAdjustmentDraftByFingerprint(
+  drafts: ProgramAdjustmentDraft[] = [],
+  adjustmentHistory: ProgramAdjustmentHistoryItem[] = [],
+  candidateDraft: ProgramAdjustmentDraft,
+  sourceFingerprint = candidateDraft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(candidateDraft),
+): PlanAdjustmentDraftUpsertResult {
+  const matchingDrafts = drafts.filter((draft) => draftFingerprintEquals(draft, sourceFingerprint));
+
+  if (candidateDraft.parentDraftId) {
+    const existingChild = newestDraft(
+      matchingDrafts.filter(
+        (draft) =>
+          draft.parentDraftId === candidateDraft.parentDraftId &&
+          reusableDraftStatuses.has(String(draft.status)),
+      ),
+    );
+    if (existingChild) {
+      return {
+        drafts: [...drafts],
+        sourceFingerprint,
+        targetDraft: existingChild,
+        outcome: 'opened_existing',
+      };
+    }
+  }
+
+  const activeDraft = newestDraft(matchingDrafts.filter((draft) => reusableDraftStatuses.has(String(draft.status))));
+  if (activeDraft) {
+    return {
+      drafts: [...drafts],
+      sourceFingerprint,
+      targetDraft: activeDraft,
+      outcome: 'opened_existing',
+    };
+  }
+
+  const appliedDraft = newestDraft(matchingDrafts.filter((draft) => draft.status === 'applied'));
+  if (appliedDraft) {
+    return {
+      drafts: [...drafts],
+      sourceFingerprint,
+      targetDraft: appliedDraft,
+      outcome: 'already_applied',
+    };
+  }
+
+  const appliedHistory = adjustmentHistory.find(
+    (item) => historyFingerprintEquals(item, sourceFingerprint) && item.status !== 'rolled_back' && !item.rolledBackAt,
+  );
+  if (appliedHistory) {
+    return {
+      drafts: [...drafts],
+      sourceFingerprint,
+      historyItem: appliedHistory,
+      outcome: 'already_applied',
+    };
+  }
+
+  const handledDraft = newestDraft(matchingDrafts.filter((draft) => handledDraftStatuses.has(String(draft.status))));
+  if (handledDraft) {
+    return {
+      drafts: [...drafts],
+      sourceFingerprint,
+      targetDraft: handledDraft,
+      outcome: 'previously_handled',
+    };
+  }
+
+  if (!candidateDraft.parentDraftId) {
+    const rolledBackDraft = newestDraft(matchingDrafts.filter((draft) => draft.status === 'rolled_back'));
+    if (rolledBackDraft) {
+      return {
+        drafts: [...drafts],
+        sourceFingerprint,
+        targetDraft: rolledBackDraft,
+        outcome: 'previously_handled',
+      };
+    }
+  }
+
+  const draft = normalizeDraftForUpsert(candidateDraft, sourceFingerprint, drafts);
+  return {
+    drafts: [draft, ...drafts.filter((item) => item.id !== draft.id)],
+    sourceFingerprint,
+    targetDraft: draft,
+    outcome: 'created',
+    createdDraft: draft,
+  };
+}
 
 export const findReusablePlanAdjustmentDraft = (
   sourceDraft: ProgramAdjustmentDraft,
   drafts: ProgramAdjustmentDraft[] = [],
 ) => {
   const sourceFingerprint = sourceDraft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(sourceDraft);
-  return drafts.find((item) => {
+  return newestDraft(drafts.filter((item) => {
     if (item.id === sourceDraft.id) return false;
     const itemFingerprint = item.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(item);
-    return itemFingerprint === sourceFingerprint && reusableDraftStatuses.has(String(item.status));
-  });
+    if (itemFingerprint !== sourceFingerprint || !reusableDraftStatuses.has(String(item.status))) return false;
+    return sourceDraft.status !== 'rolled_back' || !sourceDraft.id || item.parentDraftId === sourceDraft.id;
+  }));
 };
 
 export const buildRegeneratedPlanAdjustmentDraft = (

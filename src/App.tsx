@@ -57,6 +57,7 @@ import { dismissCoachActionToday, findExistingAdjustmentForCoachAction } from '.
 import {
   buildRegeneratedPlanAdjustmentDraft,
   buildPlanAdjustmentFingerprintFromCoachAction,
+  upsertPlanAdjustmentDraftByFingerprint,
 } from './engines/planAdjustmentIdentityEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
 import {
@@ -210,6 +211,7 @@ const AppAuxiliaryPanel = ({
 
 function App() {
   const [data, setData] = useState<AppData>(() => loadData() as AppData);
+  const dataRef = useRef<AppData>(data);
   const [activeTab, setActiveTab] = useState<ActiveTab>('today');
   const [expandedExercise, setExpandedExercise] = useState(0);
   const [, setTimerTick] = useState(0);
@@ -230,6 +232,15 @@ function App() {
   const showAppToast = (message: string, tone: AppToast['tone'] = 'info') => {
     setAppToast({ message, tone });
   };
+
+  const commitData = React.useCallback((nextData: AppData) => {
+    dataRef.current = nextData;
+    setData(nextData);
+  }, []);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const invalidateDerivedState = React.useCallback((event: AppMutationEvent) => {
     buildDerivedStateInvalidation(event);
@@ -904,14 +915,35 @@ function App() {
   };
 
   const regenerateProgramAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
-    const result = buildRegeneratedPlanAdjustmentDraft(draft, data.programAdjustmentDrafts || [], {
+    const current = dataRef.current;
+    const regenerated = buildRegeneratedPlanAdjustmentDraft(draft, current.programAdjustmentDrafts || [], {
       now: new Date().toISOString(),
     });
-
-    if (result.existingDraft) {
+    const upsertResult = regenerated.existingDraft
+      ? {
+          drafts: current.programAdjustmentDrafts || [],
+          sourceFingerprint: regenerated.sourceFingerprint,
+          targetDraft: regenerated.existingDraft,
+          outcome: 'opened_existing' as const,
+        }
+      : regenerated.draft
+        ? upsertPlanAdjustmentDraftByFingerprint(
+            current.programAdjustmentDrafts || [],
+            current.programAdjustmentHistory || [],
+            regenerated.draft,
+            regenerated.sourceFingerprint,
+          )
+        : {
+            drafts: current.programAdjustmentDrafts || [],
+            sourceFingerprint: regenerated.sourceFingerprint,
+            targetDraft: draft,
+            outcome: 'previously_handled' as const,
+          };
+    const targetDraft = upsertResult?.targetDraft || draft;
+    if (upsertResult?.outcome === 'opened_existing') {
       setPlanTarget({
         section: 'adjustment_drafts',
-        draftId: result.existingDraft.id,
+        draftId: targetDraft.id,
         highlight: true,
         version: Date.now(),
       });
@@ -920,16 +952,14 @@ function App() {
       return;
     }
 
-    const nextDraft = result.draft;
-    if (!nextDraft) return;
-
-    setData((current) => ({
+    if (!upsertResult?.createdDraft) return;
+    commitData({
       ...current,
-      programAdjustmentDrafts: [nextDraft, ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== nextDraft.id)],
-    }));
+      programAdjustmentDrafts: upsertResult.drafts,
+    });
     setPlanTarget({
       section: 'adjustment_drafts',
-      draftId: nextDraft.id,
+      draftId: upsertResult.createdDraft.id,
       highlight: true,
       version: Date.now(),
     });
@@ -1229,20 +1259,33 @@ function App() {
       };
     }
     if (existingAdjustment?.state === 'rolled_back' && existingAdjustment.draft) {
-      const result = buildRegeneratedPlanAdjustmentDraft(existingAdjustment.draft, data.programAdjustmentDrafts || [], {
+      const current = dataRef.current;
+      const regenerated = buildRegeneratedPlanAdjustmentDraft(existingAdjustment.draft, current.programAdjustmentDrafts || [], {
         now: new Date().toISOString(),
       });
-      const targetDraft = result.existingDraft || result.draft;
+      const upsertResult = regenerated.existingDraft
+        ? {
+            drafts: current.programAdjustmentDrafts || [],
+            sourceFingerprint: regenerated.sourceFingerprint,
+            targetDraft: regenerated.existingDraft,
+            outcome: 'opened_existing' as const,
+          }
+        : regenerated.draft
+          ? upsertPlanAdjustmentDraftByFingerprint(
+              current.programAdjustmentDrafts || [],
+              current.programAdjustmentHistory || [],
+              regenerated.draft,
+              regenerated.sourceFingerprint,
+            )
+          : null;
+      if (upsertResult?.createdDraft) {
+        commitData({
+          ...current,
+          programAdjustmentDrafts: upsertResult.drafts,
+        });
+      }
+      const targetDraft = upsertResult?.targetDraft;
       if (targetDraft) {
-        if (result.draft) {
-          setData((current) => ({
-            ...current,
-            programAdjustmentDrafts: [
-              result.draft!,
-              ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== result.draft!.id),
-            ],
-          }));
-        }
         setPlanTarget({
           section: 'adjustment_drafts',
           draftId: targetDraft.id,
@@ -1253,7 +1296,7 @@ function App() {
         setActiveTab('plan');
         return {
           status: 'success',
-          message: result.existingDraft ? '已打开已有调整草案。' : '已重新生成调整草案，应用前请确认。',
+          message: upsertResult?.outcome === 'opened_existing' ? '已打开已有调整草案。' : '已重新生成调整草案，应用前请确认。',
           openedTab: 'plan',
           openedSection: 'adjustment_drafts',
           createdDraftId: targetDraft.id,
@@ -1303,16 +1346,31 @@ function App() {
         };
       }
 
-      setData((current) => ({
-        ...current,
-        programAdjustmentDrafts: [
-          draft,
-          ...(current.programAdjustmentDrafts || []).filter((item) => item.id !== draft.id),
-        ],
-      }));
+      const current = dataRef.current;
+      const upsertResult = upsertPlanAdjustmentDraftByFingerprint(
+        current.programAdjustmentDrafts || [],
+        current.programAdjustmentHistory || [],
+        draft,
+        sourceFingerprint,
+      );
+      if (upsertResult.outcome === 'created') {
+        commitData({
+          ...current,
+          programAdjustmentDrafts: upsertResult.drafts,
+        });
+      }
+      const targetDraft = upsertResult?.targetDraft || draft;
+      const resultMessage =
+        upsertResult?.outcome === 'opened_existing'
+          ? '已打开已有调整草案。'
+          : upsertResult?.outcome === 'already_applied'
+            ? '该建议已应用为实验模板。'
+            : upsertResult?.outcome === 'previously_handled'
+              ? '该建议之前已处理，可在调整历史中查看。'
+              : '已生成调整草案，应用前请确认。';
       setPlanTarget({
         section: 'adjustment_drafts',
-        draftId: draft.id,
+        draftId: targetDraft.id,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
@@ -1320,11 +1378,11 @@ function App() {
       setActiveTab('plan');
       return {
         status: 'success',
-        message: '已生成调整草案，应用前请确认。',
+        message: resultMessage,
         openedTab: 'plan',
         openedSection: 'adjustment_drafts',
-        createdDraftId: draft.id,
-        highlightedTargetId: draft.id,
+        createdDraftId: targetDraft.id,
+        highlightedTargetId: targetDraft.id,
       };
     } catch {
       return {

@@ -29,7 +29,10 @@ import type {
   WeeklyActionRecommendation,
 } from '../models/training-model';
 import { clone, enrichExercise, number } from './engineUtils';
-import { buildPlanAdjustmentFingerprintFromDraft } from './planAdjustmentIdentityEngine';
+import {
+  buildPlanAdjustmentDraftInstanceId,
+  buildPlanAdjustmentFingerprintFromDraft,
+} from './planAdjustmentIdentityEngine';
 
 export interface AdjustmentDraftContext {
   programTemplate?: ProgramTemplate | null;
@@ -95,6 +98,36 @@ export const hashProgramTemplate = (programTemplate: TrainingTemplate | ProgramT
   }
   return `tpl-${(hash >>> 0).toString(16)}`;
 };
+
+const stableIdHash = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const buildAdjustmentChangeId = (
+  recommendation: WeeklyActionRecommendation,
+  sourceTemplate: TrainingTemplate,
+  suffix = 'change',
+) =>
+  [
+    recommendation.id,
+    suffix,
+    stableIdHash(stableStringify({ sourceTemplateId: sourceTemplate.id, suggestedChange: recommendation.suggestedChange || {} })).slice(0, 10),
+  ]
+    .map((part) =>
+      String(part || 'none')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, ''),
+    )
+    .filter(Boolean)
+    .join('-');
 
 const cloneTemplate = (template: TrainingTemplate): TrainingTemplate => clone(template);
 const cloneProgram = (program: ProgramTemplate): ProgramTemplate => clone(program);
@@ -301,7 +334,7 @@ const changeFromRecommendation = (
   if (!change) return [];
 
   const base = {
-    id: `${recommendation.id}-${Math.random().toString(36).slice(2, 7)}`,
+    id: buildAdjustmentChangeId(recommendation, sourceTemplate),
     muscleId: change.muscleId,
     reason: recommendation.recommendation,
     sourceRecommendationId: recommendation.id,
@@ -451,7 +484,7 @@ export const createAdjustmentDraftFromRecommendations = (
   const notes = changes.flatMap((change) => (change.previewNote ? [change.previewNote] : []));
 
   const draft: ProgramAdjustmentDraft = {
-    id: makeId('adjustment-draft'),
+    id: 'adjustment-draft-pending',
     draftRevision: 1,
     createdAt: new Date().toISOString(),
     status: 'ready_to_apply',
@@ -476,9 +509,11 @@ export const createAdjustmentDraftFromRecommendations = (
     explanation: actionable.map((item) => item.reason || item.recommendation).filter(Boolean).join('；') || '根据近期训练记录生成，应用前需要用户确认。',
     notes: notes.length ? notes : actionable.length ? [] : ['当前建议更适合作为人工参考，暂不生成自动调整。'],
   };
+  const sourceFingerprint = draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft);
   return {
     ...draft,
-    sourceFingerprint: draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft),
+    id: buildPlanAdjustmentDraftInstanceId(sourceFingerprint, draft.draftRevision || 1, draft.parentDraftId),
+    sourceFingerprint,
     diffPreview: buildAdjustmentDiff(draft, resolvedSourceTemplate, context.programTemplate || DEFAULT_PROGRAM_TEMPLATE, availableTemplates),
   };
 };

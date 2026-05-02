@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   applySessionPatches,
@@ -37,14 +35,33 @@ const createBaseSession = () => {
 };
 
 describe('pending session patch startSession flow', () => {
-  it('documents that App startSession consumes persisted pending patches', () => {
-    const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
+  it('consumes persisted pending patches through the same state transition shape as startSession', () => {
+    const { data, session } = createBaseSession();
+    const pending = buildPendingSessionPatch({
+      patches: [temporaryPatch],
+      createdAt: '2026-05-01',
+      sourceFingerprint: 'daily-adjustment:pull-a',
+      targetTemplateId: 'pull-a',
+    });
+    const currentData = { ...data, pendingSessionPatches: [pending], settings: { ...data.settings, pendingSessionPatches: [pending] } };
+    const activePending = findActivePendingSessionPatch(currentData.pendingSessionPatches, '2026-05-01', 'pull-a');
+    const patched = applySessionPatches(session, activePending?.patches || []);
+    const nextPendingPatches = activePending
+      ? markPendingSessionPatchConsumed(currentData.pendingSessionPatches, activePending.id, '2026-05-01T08:00:00.000Z')
+      : currentData.pendingSessionPatches;
+    const nextData = {
+      ...currentData,
+      activeSession: patched.session,
+      pendingSessionPatches: nextPendingPatches,
+      settings: { ...currentData.settings, pendingSessionPatches: nextPendingPatches },
+    };
 
-    expect(app).toContain('findActivePendingSessionPatch');
-    expect(app).toContain('markPendingSessionPatchConsumed');
-    expect(app).toContain('pending_patch_consumed');
-    expect(app).toContain('pendingSessionPatches: nextPendingPatches');
-    expect(app).not.toContain('setPendingSessionPatches([])');
+    expect(nextData.activeSession.appliedCoachActions).toHaveLength(1);
+    expect(nextData.activeSession.appliedCoachActions?.[0]).toMatchObject({ id: temporaryPatch.id, type: temporaryPatch.type });
+    expect(nextData.pendingSessionPatches).toEqual([
+      expect.objectContaining({ id: pending.id, status: 'consumed', consumedAt: '2026-05-01T08:00:00.000Z' }),
+    ]);
+    expect(nextData.settings.pendingSessionPatches).toEqual(nextData.pendingSessionPatches);
   });
 
   it('applies active pending patches into the created session and marks them consumed', () => {

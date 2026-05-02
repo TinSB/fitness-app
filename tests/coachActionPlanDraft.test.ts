@@ -50,7 +50,7 @@ describe('coach action plan draft creation', () => {
       volumeAdaptation,
     });
 
-    expect(draftInput).toBeTruthy();
+    expect(draftInput).not.toBeNull();
     expect(draftInput?.sourceTemplate.id).toBe('pull-a');
     expect(draftInput?.recommendation.suggestedChange?.muscleId).toBe('back');
     expect(draftInput?.recommendation.suggestedChange?.setsDelta).toBe(1);
@@ -63,7 +63,7 @@ describe('coach action plan draft creation', () => {
     });
 
     expect(draft.status).toBe('ready_to_apply');
-    expect(draft.riskLevel).toBeTruthy();
+    expect(draft.riskLevel).toBe('low');
     expect(draft.explanation).toContain('背部');
     expect(draft.diffPreview?.changes.length).toBeGreaterThan(0);
     expect(draft.changes.length).toBeGreaterThan(0);
