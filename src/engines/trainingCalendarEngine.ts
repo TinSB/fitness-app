@@ -49,6 +49,12 @@ export type TrainingCalendarOptions = {
   includeExternalDataFlags?: Array<SessionDataFlag | 'unset'> | 'all';
 };
 
+export type TrainingCalendarMonthRange = {
+  earliestMonth: string;
+  latestMonth: string;
+  hasHistory: boolean;
+};
+
 export const toLocalDateKey = (value?: string) => {
   if (!value) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -56,6 +62,69 @@ export const toLocalDateKey = (value?: string) => {
   if (Number.isNaN(parsed.getTime())) return String(value).slice(0, 10);
   const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
+};
+
+export const getSessionCalendarDate = (session: TrainingSession) => toLocalDateKey(session.finishedAt || session.startedAt || session.date);
+
+export const normalizeCalendarMonth = (month?: string, fallback = monthKey()) => {
+  const candidate = String(month || '').slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(candidate) ? candidate : fallback;
+};
+
+export const addCalendarMonths = (month: string, delta: number) => {
+  const normalized = normalizeCalendarMonth(month);
+  const [yearText, monthText] = normalized.split('-');
+  const cursor = new Date(Number(yearText), Number(monthText) - 1 + delta, 1);
+  const year = cursor.getFullYear();
+  const nextMonth = String(cursor.getMonth() + 1).padStart(2, '0');
+  return `${year}-${nextMonth}`;
+};
+
+export const buildTrainingCalendarMonthRange = (
+  history: TrainingSession[] = [],
+  currentMonth = monthKey()
+): TrainingCalendarMonthRange => {
+  const months = history
+    .map((session) => getSessionCalendarDate(session).slice(0, 7))
+    .filter((month): month is string => /^\d{4}-\d{2}$/.test(month))
+    .sort();
+  if (!months.length) {
+    return { earliestMonth: currentMonth, latestMonth: currentMonth, hasHistory: false };
+  }
+  const earliestMonth = months[0];
+  const latestHistoryMonth = months[months.length - 1];
+  const latestMonth = latestHistoryMonth > currentMonth ? latestHistoryMonth : currentMonth;
+  return { earliestMonth, latestMonth, hasHistory: true };
+};
+
+export const clampCalendarMonth = (month: string, range: TrainingCalendarMonthRange) => {
+  const normalized = normalizeCalendarMonth(month);
+  if (normalized < range.earliestMonth) return range.earliestMonth;
+  if (normalized > range.latestMonth) return range.latestMonth;
+  return normalized;
+};
+
+export const getLatestTrainingDateKey = (history: TrainingSession[] = [], month?: string) => {
+  const dates = history
+    .map(getSessionCalendarDate)
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .filter((date) => !month || date.startsWith(month))
+    .sort((left, right) => right.localeCompare(left));
+  return dates[0] || '';
+};
+
+export const getInitialCalendarMonth = (history: TrainingSession[] = [], selectedDate?: string, currentMonth = monthKey()) => {
+  if (selectedDate) return normalizeCalendarMonth(selectedDate.slice(0, 7), currentMonth);
+  const latestTrainingDate = getLatestTrainingDateKey(history);
+  return latestTrainingDate ? latestTrainingDate.slice(0, 7) : currentMonth;
+};
+
+export const getDefaultCalendarDateForMonth = (history: TrainingSession[] = [], month: string, fallbackDate?: string) => {
+  const normalizedMonth = normalizeCalendarMonth(month);
+  const latestTrainingDate = getLatestTrainingDateKey(history, normalizedMonth);
+  if (latestTrainingDate) return latestTrainingDate;
+  if (fallbackDate?.startsWith(normalizedMonth)) return fallbackDate;
+  return `${normalizedMonth}-01`;
 };
 
 const shouldIncludeSession = (session: TrainingSession, includeDataFlags: TrainingCalendarOptions['includeDataFlags']) => {
@@ -108,7 +177,7 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
   const externalWorkoutsByDate = new Map<string, ImportedWorkoutSample[]>();
 
   calendarHistory.forEach((session) => {
-    const date = toLocalDateKey(session.date || session.startedAt);
+    const date = getSessionCalendarDate(session);
     if (!date || !date.startsWith(month)) return;
     const list = sessionsByDate.get(date) || [];
     list.push(session);
@@ -167,7 +236,7 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
 
   const weekCounts = new Map<string, number>();
   calendarHistory.forEach((session) => {
-    const date = toLocalDateKey(session.date || session.startedAt);
+    const date = getSessionCalendarDate(session);
     if (!date) return;
     const weekStart = startOfWeekKey(date);
     weekCounts.set(weekStart, (weekCounts.get(weekStart) || 0) + 1);

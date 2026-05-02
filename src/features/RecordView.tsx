@@ -20,7 +20,14 @@ import {
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { markSessionEdited, updateSessionSet, validateSessionEdit } from '../engines/sessionEditEngine';
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
-import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
+import {
+  addCalendarMonths,
+  buildTrainingCalendar,
+  buildTrainingCalendarMonthRange,
+  clampCalendarMonth,
+  getDefaultCalendarDateForMonth,
+  getInitialCalendarMonth,
+} from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
@@ -223,9 +230,14 @@ export function RecordView({
   selectedSessionId,
   selectedDate,
 }: RecordViewProps) {
+  const rawHistory = data.history || [];
+  const initialCalendarMonth = getInitialCalendarMonth(rawHistory, selectedDate);
   const [activeSection, setActiveSection] = React.useState<RecordSectionId>(() => normalizeSection(initialSection));
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
-  const [selectedDateKey, setSelectedDateKey] = React.useState(selectedDate || todayKey());
+  const [calendarMonth, setCalendarMonth] = React.useState(initialCalendarMonth);
+  const [selectedDateKey, setSelectedDateKey] = React.useState(() =>
+    selectedDate || getDefaultCalendarDateForMonth(rawHistory, initialCalendarMonth, todayKey())
+  );
   const [selectedSession, setSelectedSession] = React.useState<TrainingSession | null>(() =>
     selectedSessionId ? (data.history || []).find((session) => session.id === selectedSessionId) || null : null,
   );
@@ -235,7 +247,6 @@ export function RecordView({
   const [selectedPrExerciseId, setSelectedPrExerciseId] = React.useState('');
   const [prSetFilter, setPrSetFilter] = React.useState<PrSetFilter>('all');
 
-  const rawHistory = data.history || [];
   const analyticsHistory = React.useMemo(() => filterAnalyticsHistory(rawHistory), [rawHistory]);
   const dataHealth = coachAutomationSummary?.dataHealth;
   const dataHealthViewModel = React.useMemo(() => (dataHealth ? buildDataHealthViewModel(dataHealth) : null), [dataHealth]);
@@ -244,14 +255,15 @@ export function RecordView({
     [coachActions],
   );
   const sortedHistory = React.useMemo(() => listSessionHistory(rawHistory, historyFilter), [rawHistory, historyFilter]);
+  const calendarRange = React.useMemo(() => buildTrainingCalendarMonthRange(rawHistory), [rawHistory]);
   const calendar = React.useMemo(
     () =>
-      buildTrainingCalendar(rawHistory, undefined, {
+      buildTrainingCalendar(rawHistory, calendarMonth, {
         includeDataFlags: 'all',
         importedWorkouts: data.importedWorkoutSamples || [],
         includeExternalWorkouts: data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false,
       }),
-    [rawHistory, data.importedWorkoutSamples, data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar],
+    [rawHistory, calendarMonth, data.importedWorkoutSamples, data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar],
   );
   const prs = React.useMemo(() => buildPrs(analyticsHistory), [analyticsHistory]);
   const prDates = React.useMemo(() => new Set(prs.map((item) => item.date).filter(Boolean)), [prs]);
@@ -269,6 +281,25 @@ export function RecordView({
     calendar.days.find((day) => day.date === selectedDateKey) ||
     calendar.days.find((day) => day.totalSessions > 0 || day.totalExternalWorkouts > 0) ||
     calendar.days[0];
+  const selectedMonthHasRecords = calendar.days.some((day) => day.totalSessions > 0 || day.totalExternalWorkouts > 0);
+  const previousCalendarMonth = clampCalendarMonth(addCalendarMonths(calendarMonth, -1), calendarRange);
+  const nextCalendarMonth = clampCalendarMonth(addCalendarMonths(calendarMonth, 1), calendarRange);
+  const canGoPreviousMonth = previousCalendarMonth !== calendarMonth;
+  const canGoNextMonth = nextCalendarMonth !== calendarMonth;
+  const selectCalendarMonth = React.useCallback(
+    (month: string) => {
+      const nextMonth = clampCalendarMonth(month, calendarRange);
+      setCalendarMonth(nextMonth);
+      setSelectedDateKey(getDefaultCalendarDateForMonth(rawHistory, nextMonth, todayKey()));
+    },
+    [calendarRange, rawHistory],
+  );
+  const goToTodayInCalendar = React.useCallback(() => {
+    const today = todayKey();
+    const nextMonth = clampCalendarMonth(today.slice(0, 7), calendarRange);
+    setCalendarMonth(nextMonth);
+    setSelectedDateKey(today);
+  }, [calendarRange]);
 
   const exerciseOptions = React.useMemo(() => {
     const items = new Map<string, string>();
@@ -286,8 +317,24 @@ export function RecordView({
   }, [exerciseOptions, selectedPrExerciseId]);
 
   React.useEffect(() => {
+    const clampedMonth = clampCalendarMonth(calendarMonth, calendarRange);
+    if (clampedMonth !== calendarMonth) {
+      setCalendarMonth(clampedMonth);
+      setSelectedDateKey(getDefaultCalendarDateForMonth(rawHistory, clampedMonth, todayKey()));
+    }
+  }, [calendarMonth, calendarRange, rawHistory]);
+
+  React.useEffect(() => {
+    if (!calendar.days.length) return;
+    if (!calendar.days.some((day) => day.date === selectedDateKey)) {
+      setSelectedDateKey(getDefaultCalendarDateForMonth(rawHistory, calendar.month, todayKey()));
+    }
+  }, [calendar.days, calendar.month, rawHistory, selectedDateKey]);
+
+  React.useEffect(() => {
     if (initialSection) setActiveSection(normalizeSection(initialSection));
     if (selectedDate) {
+      setCalendarMonth(clampCalendarMonth(selectedDate.slice(0, 7), calendarRange));
       setSelectedDateKey(selectedDate);
       setActiveSection(normalizeSection(initialSection || 'calendar'));
     }
@@ -296,7 +343,7 @@ export function RecordView({
       setSelectedSession(next);
       setActiveSection(normalizeSection(initialSection || 'list'));
     }
-  }, [initialSection, selectedDate, selectedSessionId, rawHistory]);
+  }, [initialSection, selectedDate, selectedSessionId, rawHistory, calendarRange]);
 
   const openSession = (sessionId: string) => {
     const session = rawHistory.find((item) => item.id === sessionId) || null;
@@ -431,7 +478,30 @@ export function RecordView({
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_380px]">
             <Card>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-700">
-                <span>{calendar.month}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <ActionButton
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => selectCalendarMonth(previousCalendarMonth)}
+                    disabled={!canGoPreviousMonth}
+                    aria-label="上一月"
+                  >
+                    上一月
+                  </ActionButton>
+                  <span className="min-w-20 text-center text-base font-bold text-slate-950">{calendar.month}</span>
+                  <ActionButton
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => selectCalendarMonth(nextCalendarMonth)}
+                    disabled={!canGoNextMonth}
+                    aria-label="下一月"
+                  >
+                    下一月
+                  </ActionButton>
+                  <ActionButton size="sm" variant="ghost" onClick={goToTodayInCalendar} aria-label="回到今天">
+                    今天
+                  </ActionButton>
+                </div>
                 <div className="flex flex-wrap gap-2 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />训练</span>
                   <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" />PR</span>
@@ -499,7 +569,9 @@ export function RecordView({
                   />
                 ))}
                 {!(selectedCalendarDay?.sessions || []).length && !(selectedCalendarDay?.externalWorkouts || []).length ? (
-                  <div className="rounded-lg bg-stone-50 p-4 text-sm text-slate-500">当天没有训练记录。</div>
+                  <div className="rounded-lg bg-stone-50 p-4 text-sm text-slate-500">
+                    {selectedMonthHasRecords ? '当天没有训练记录。' : '本月没有训练记录。'}
+                  </div>
                 ) : null}
               </div>
             </Card>

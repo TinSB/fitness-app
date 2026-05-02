@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildTrainingCalendar, toLocalDateKey } from '../src/engines/trainingCalendarEngine';
+import {
+  buildTrainingCalendar,
+  buildTrainingCalendarMonthRange,
+  getDefaultCalendarDateForMonth,
+  getInitialCalendarMonth,
+  toLocalDateKey,
+} from '../src/engines/trainingCalendarEngine';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
 
 const completedSession = (id: string, date: string, dataFlag: 'normal' | 'test' | 'excluded' = 'normal') => ({
@@ -55,5 +61,39 @@ describe('training calendar', () => {
   it('uses local date key for ISO timestamps', () => {
     expect(toLocalDateKey('2026-04-27T23:30:00-04:00')).toBe('2026-04-27');
     expect(toLocalDateKey('2026-04-27T02:30:00Z')).toBe('2026-04-26');
+  });
+
+  it('uses finishedAt before startedAt and date when assigning sessions to calendar days', () => {
+    const session = {
+      ...completedSession('late-april', '2026-05-01'),
+      startedAt: '2026-05-01T00:30:00.000Z',
+      finishedAt: '2026-05-01T01:30:00.000Z',
+    };
+
+    const april = buildTrainingCalendar([session], '2026-04');
+    const may = buildTrainingCalendar([session], '2026-05');
+
+    expect(april.days.find((item) => item.date === '2026-04-30')?.totalSessions).toBe(1);
+    expect(may.days.reduce((sum, day) => sum + day.totalSessions, 0)).toBe(0);
+  });
+
+  it('builds a navigable month range from history and keeps the current month visible', () => {
+    const range = buildTrainingCalendarMonthRange(
+      [completedSession('april', '2026-04-30'), completedSession('early-may', '2026-05-01')],
+      '2026-05',
+    );
+
+    expect(range).toEqual({
+      earliestMonth: '2026-04',
+      latestMonth: '2026-05',
+      hasHistory: true,
+    });
+  });
+
+  it('defaults to the latest training date instead of today when history exists', () => {
+    const history = [completedSession('push', '2026-04-27'), completedSession('pull', '2026-04-30')];
+
+    expect(getInitialCalendarMonth(history, undefined, '2026-05')).toBe('2026-04');
+    expect(getDefaultCalendarDateForMonth(history, '2026-04', '2026-05-01')).toBe('2026-04-30');
   });
 });
