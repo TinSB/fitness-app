@@ -300,7 +300,11 @@ export const endFocusRest = (session: TrainingSession): EndFocusRestResult => {
 
   const nextStep = getCurrentFocusStep(nextSession);
   if (nextStep.stepType !== 'completed') {
-    setCurrentStep(nextSession, nextStep, { preserveManualOverride: true });
+    const preserveManualOverride = Boolean(completedExerciseId && nextStep.exerciseId === completedExerciseId);
+    setCurrentStep(nextSession, nextStep, {
+      preserveManualOverride,
+      clearManualOverride: !preserveManualOverride,
+    });
     const feedback = completedExerciseId && nextStep.exerciseId !== completedExerciseId ? '当前动作已完成。' : '已进入下一组。';
     return { session: nextSession, nextStep, feedback };
   }
@@ -367,6 +371,7 @@ const getNextIncompleteStepAfter = (session: TrainingSession, completedStepId: s
 
 const findStepForExercise = (session: TrainingSession, exerciseIndex: number): FocusTrainingStep => {
   const current = getCurrentFocusStep(session);
+  if (session.focusManualStepOverride && current.stepType !== 'completed' && current.exerciseIndex >= 0) return current;
   if (current.exerciseIndex === exerciseIndex || current.stepType === 'support') return current;
   return (
     buildFocusStepQueue(session).find((step) => step.exerciseIndex === exerciseIndex && step.stepType !== 'completed' && !isStepCompleted(session, step)) ||
@@ -590,7 +595,8 @@ export const completeFocusSet = (
   displayUnit: WeightUnit = 'kg'
 ): CompleteFocusSetResult | null => {
   const nextSession = clone(session) as TrainingSession;
-  const step = findStepForExercise(nextSession, exerciseIndex);
+  const step = getCurrentFocusStep(nextSession);
+  if (!isSupportFocusStep(step) && step.exerciseIndex !== exerciseIndex) return null;
   if (expectedStepId && step.id !== expectedStepId) return null;
   if (step.stepType === 'completed' || isStepCompleted(nextSession, step)) return null;
 
@@ -657,7 +663,11 @@ export const completeFocusSet = (
 
   nextSession.restTimerState = createRestTimerState(step.exerciseId, step.setIndex, step.plannedRestSec || 60, nowMs, step.label);
   const nextStep = getNextIncompleteStepAfter(nextSession, step.id);
-  setCurrentStep(nextSession, nextStep || COMPLETED_STEP);
+  const preserveManualOverride = Boolean(nextStep && nextStep.stepType !== 'completed' && nextStep.exerciseIndex === step.exerciseIndex);
+  setCurrentStep(nextSession, nextStep || COMPLETED_STEP, {
+    preserveManualOverride,
+    clearManualOverride: !preserveManualOverride,
+  });
 
   return {
     session: nextSession,

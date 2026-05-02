@@ -88,6 +88,29 @@ describe('CoachAction draft dedupe', () => {
     expect(existing?.draft?.status).toBe('applied');
   });
 
+  it('matches same-source drafts by fingerprint even when ids differ', () => {
+    const action = makeAction({ id: 'fresh-volume-preview-back-increase' });
+    const originalAction = makeAction();
+    const draft = makeDraftFromAction(originalAction);
+    const sameBusinessAction = {
+      ...action,
+      sourceFingerprint: draft.sourceFingerprint,
+    };
+    const existing = findExistingAdjustmentForCoachAction(sameBusinessAction, [draft], [], draft.sourceFingerprint);
+
+    expect(existing?.state).toBe('draft_ready');
+    expect(existing?.draft?.id).toBe(draft.id);
+  });
+
+  it('keeps rolled-back same-source drafts reopenable instead of permanently resolved', () => {
+    const action = makeAction();
+    const draft = makeDraftFromAction(action, 'rolled_back');
+    const existing = findExistingAdjustmentForCoachAction(action, [draft], [], draft.sourceFingerprint);
+
+    expect(existing?.state).toBe('rolled_back');
+    expect(existing?.draft?.status).toBe('rolled_back');
+  });
+
   it('treats dismissed or expired same-source drafts as already handled by default', () => {
     const action = makeAction();
     const dismissed = makeDraftFromAction(action, 'dismissed');

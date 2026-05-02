@@ -3,6 +3,7 @@ import {
   adjustFocusSetValue,
   applySuggestedFocusStep,
   copyPreviousFocusActualDraft,
+  getActualSetDraft,
   getCurrentFocusStep,
   switchFocusExercise,
   updateFocusActualDraft,
@@ -41,6 +42,24 @@ describe('focus actions preserve manual exercise cursor', () => {
     const session = applySuggestedFocusStep(switchFocusExercise(makePushSession(), 1), 1);
 
     expectStillOnIncline(session);
+  });
+
+  it('uses the manual cursor even if an adjust event carries a stale earlier exercise index', () => {
+    const session = adjustFocusSetValue(switchFocusExercise(makePushSession(), 1), 0, 'weight', 2.5);
+    const draft = getActualSetDraft(session, getCurrentFocusStep(session));
+
+    expectStillOnIncline(session);
+    expect(draft?.exerciseId).toBe('incline-db-press');
+    expect(draft?.actualWeightKg).toBe(2.5);
+  });
+
+  it('uses the manual cursor even if apply prescription carries a stale earlier exercise index', () => {
+    const session = applySuggestedFocusStep(switchFocusExercise(makePushSession(), 1), 0);
+    const draft = getActualSetDraft(session, getCurrentFocusStep(session));
+
+    expectStillOnIncline(session);
+    expect(draft?.exerciseId).toBe('incline-db-press');
+    expect(draft?.source).toBe('prescription');
   });
 
   it('does not jump back to bench after marking discomfort', () => {

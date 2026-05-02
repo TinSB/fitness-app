@@ -104,6 +104,9 @@ const isRealDraft = (draft: ProgramAdjustmentDraft) => draft.status !== 'recomme
 const isBlockingDraftForAdvice = (draft: ProgramAdjustmentDraft) =>
   isRealDraft(draft) && draft.status !== 'rolled_back';
 
+const hasRolledBackDraftForAction = (action: CoachAction, drafts: ProgramAdjustmentDraft[] = []) =>
+  drafts.some((draft) => draft.status === 'rolled_back' && draftMatchesCoachAction(action, draft));
+
 const shouldExcludeActionForDraft = (action: CoachAction, knownDraftActionIds: Set<string>, knownDraftTargets: Set<string>) => {
   if (knownDraftActionIds.has(action.id)) return true;
   if (action.sourceFingerprint && knownDraftActionIds.has(action.sourceFingerprint)) return true;
@@ -177,6 +180,7 @@ const buildVolumeAdvice = (
   actions: CoachAction[],
   volumeAdaptation?: VolumeAdaptationReport | null,
   knownDraftTargets?: Set<string>,
+  drafts: ProgramAdjustmentDraft[] = [],
 ): AggregatedPlanAdvice | null => {
   const items = volumeItems(volumeAdaptation, knownDraftTargets);
   if (!items.length && !actions.length) return null;
@@ -197,9 +201,10 @@ const buildVolumeAdvice = (
   const draftAction = actions.find((action) => action.actionType === 'create_plan_adjustment_preview' && action.targetId);
   const reviewAction = actions.find((action) => action.actionType === 'review_volume') || actions[0];
   const primaryCoachAction = draftAction || reviewAction;
+  const isReopenAction = draftAction ? hasRolledBackDraftForAction(draftAction, drafts) : false;
   const primaryAction: AggregatedPlanAdviceAction | undefined = primaryCoachAction
     ? {
-        label: draftAction ? '生成调整草案' : '查看训练量建议',
+        label: draftAction ? (isReopenAction ? '重新生成草案' : '生成调整草案') : '查看训练量建议',
         actionType: primaryCoachAction.actionType,
         variant: draftAction ? 'primary' : 'secondary',
         coachAction: primaryCoachAction,
@@ -229,9 +234,15 @@ const buildVolumeAdvice = (
   };
 };
 
-const buildGroupedActionAdvice = (category: AggregatedPlanAdviceCategory, actions: CoachAction[]): AggregatedPlanAdvice | null => {
+const buildGroupedActionAdvice = (
+  category: AggregatedPlanAdviceCategory,
+  actions: CoachAction[],
+  drafts: ProgramAdjustmentDraft[] = [],
+): AggregatedPlanAdvice | null => {
   if (!actions.length) return null;
   const primary = actions.find((action) => action.actionType === 'create_plan_adjustment_preview' && action.targetId) || actions[0];
+  const isDraftAction = primary.actionType === 'create_plan_adjustment_preview' && Boolean(primary.targetId);
+  const isReopenAction = isDraftAction ? hasRolledBackDraftForAction(primary, drafts) : false;
   const affected = uniqueAffectedItems(actions.filter((action) => action.targetId).map(affectedFromAction));
   const labels = affected.map((item) => item.label).filter(Boolean);
   const labelText = labels.length ? labels.slice(0, 4).join('、') : '相关项目';
@@ -258,9 +269,9 @@ const buildGroupedActionAdvice = (category: AggregatedPlanAdviceCategory, action
     status: primary.requiresConfirmation ? 'needs_confirmation' : 'suggestion',
     affectedItems: affected,
     primaryAction: {
-      label: primary.actionType === 'create_plan_adjustment_preview' && primary.targetId ? '生成调整草案' : category === 'plateau' ? '查看动作进展' : '查看建议',
+      label: isDraftAction ? (isReopenAction ? '重新生成草案' : '生成调整草案') : category === 'plateau' ? '查看动作进展' : '查看建议',
       actionType: primary.actionType,
-      variant: primary.actionType === 'create_plan_adjustment_preview' && primary.targetId ? 'primary' : 'secondary',
+      variant: isDraftAction ? 'primary' : 'secondary',
       coachAction: primary,
     },
     secondaryActions: [
@@ -316,12 +327,12 @@ export const aggregatePlanAdvice = (
   });
 
   const advice = [
-    buildVolumeAdvice(grouped.get('volume') || [], volumeAdaptation, knownDraftTargets),
-    buildGroupedActionAdvice('plateau', grouped.get('plateau') || []),
-    buildGroupedActionAdvice('recovery', grouped.get('recovery') || []),
-    buildGroupedActionAdvice('data_health', grouped.get('data_health') || []),
-    buildGroupedActionAdvice('template', grouped.get('template') || []),
-    buildGroupedActionAdvice('other', grouped.get('other') || []),
+    buildVolumeAdvice(grouped.get('volume') || [], volumeAdaptation, knownDraftTargets, drafts),
+    buildGroupedActionAdvice('plateau', grouped.get('plateau') || [], drafts),
+    buildGroupedActionAdvice('recovery', grouped.get('recovery') || [], drafts),
+    buildGroupedActionAdvice('data_health', grouped.get('data_health') || [], drafts),
+    buildGroupedActionAdvice('template', grouped.get('template') || [], drafts),
+    buildGroupedActionAdvice('other', grouped.get('other') || [], drafts),
     ...buildDraftAdvice(drafts),
   ].filter((item): item is AggregatedPlanAdvice => Boolean(item));
 

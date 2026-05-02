@@ -93,11 +93,12 @@ describe('Plan visual density', () => {
     expect(text).not.toMatch(/\b(undefined|null|hybrid|hypertrophy|strength|fat_loss|warmup|working|support|compound|isolation|machine|review_volume|create_plan_adjustment_preview|increase|medium|low|high)\b/);
   });
 
-  it('does not add extra primary action buttons for the density pass', () => {
+  it('keeps primary action buttons reserved for real execution', () => {
     const literalPrimaryButtons = source.match(/variant="primary"/g) || [];
 
-    expect(literalPrimaryButtons).toHaveLength(1);
+    expect(literalPrimaryButtons).toHaveLength(2);
     expect(source).toContain('应用为实验模板');
+    expect(source).toContain('重新生成草案');
     expect(source).not.toContain('size="lg"');
   });
 });

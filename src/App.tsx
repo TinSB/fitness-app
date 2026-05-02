@@ -387,8 +387,20 @@ function App() {
   const startSession = (templateId = activeTemplateId, explicitPatches?: SessionPatch[]) => {
     const template = findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
-    const workingData = { ...data, screeningProfile, selectedTemplateId: templateId, activeProgramTemplateId: templateId };
-    const sessionDecisionContext = buildTrainingDecisionContext(workingData, todayKey(), { screeningProfile });
+    const currentActiveTemplateId = data.activeProgramTemplateId || activeTemplateId || templateId;
+    const workingData = {
+      ...data,
+      screeningProfile,
+      selectedTemplateId: templateId,
+      activeProgramTemplateId: currentActiveTemplateId,
+    };
+    const sessionDecisionContext = buildTrainingDecisionContext(workingData, todayKey(), {
+      screeningProfile,
+      selectedTemplateId: templateId,
+      activeProgramTemplateId: currentActiveTemplateId,
+      currentTrainingTemplate: template,
+      activeTemplate: template,
+    });
     const baseSession = createSession(
       template,
       data.todayStatus,
@@ -413,7 +425,7 @@ function App() {
         ...current,
         screeningProfile,
         selectedTemplateId: templateId,
-        activeProgramTemplateId: templateId,
+        activeProgramTemplateId: current.activeProgramTemplateId || currentActiveTemplateId || templateId,
         activeSession: session,
         pendingSessionPatches: nextPendingPatches,
         settings: {
@@ -894,7 +906,6 @@ function App() {
   const regenerateProgramAdjustmentDraft = (draft: ProgramAdjustmentDraft) => {
     const result = buildRegeneratedPlanAdjustmentDraft(draft, data.programAdjustmentDrafts || [], {
       now: new Date().toISOString(),
-      draftId: `adjustment-draft-${Date.now()}`,
     });
 
     if (result.existingDraft) {
@@ -1220,7 +1231,6 @@ function App() {
     if (existingAdjustment?.state === 'rolled_back' && existingAdjustment.draft) {
       const result = buildRegeneratedPlanAdjustmentDraft(existingAdjustment.draft, data.programAdjustmentDrafts || [], {
         now: new Date().toISOString(),
-        draftId: `adjustment-draft-${Date.now()}`,
       });
       const targetDraft = result.existingDraft || result.draft;
       if (targetDraft) {
@@ -1572,7 +1582,7 @@ function App() {
                     onModeChange={updateTrainingMode}
                     onStatusChange={updateStatus}
                     onSorenessToggle={toggleSoreness}
-                    onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
+                    onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
                     onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId, activeProgramTemplateId: suggestedTemplateId }))}
                     onStart={() => startSession()}
                     onStartRecommended={(templateId) => startSession(templateId)}
@@ -1672,8 +1682,8 @@ function App() {
                       target={planTarget}
                       onCoachAction={handleCoachAction}
                       onDismissCoachAction={dismissCoachAction}
-                      selectedTemplateId={activeTemplateId}
-                      onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id, activeProgramTemplateId: id }))}
+                      selectedTemplateId={data.selectedTemplateId}
+                      onSelectTemplate={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
                       onStartTemplate={(id) => startSession(id)}
                       onUpdateExercise={updateTemplateExercise}
                       onResetTemplates={resetTemplates}

@@ -59,6 +59,17 @@ describe('focus cursor persistence', () => {
     expect(session.exercises[0].sets[0].done).toBe(false);
   });
 
+  it('rejects a stale exercise index instead of completing the first incomplete exercise', () => {
+    const session = applySuggestedFocusStep(switchFocusExercise(makePushSession(), 1), 1);
+    const current = getCurrentFocusStep(session);
+
+    const result = completeFocusSet(session, 0, '2026-05-01T10:00:00.000Z', 1000, current.id);
+
+    expect(result).toBeNull();
+    expect(session.exercises[1].sets[0].done).toBe(false);
+    expect(session.exercises[0].sets[0].done).toBe(false);
+  });
+
   it('switchFocusExercise only changes the focus cursor and not replacement identity fields', () => {
     const replacedBench: ExercisePrescription = {
       ...makeExercise('bench-press', 2),

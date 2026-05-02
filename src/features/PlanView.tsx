@@ -525,7 +525,7 @@ export function PlanView({
               </ActionButton>
             ) : null}
             {isRolledBack && onRegenerateProgramAdjustmentDraft ? (
-              <ActionButton size="sm" variant="secondary" onClick={() => onRegenerateProgramAdjustmentDraft(draft)}>
+              <ActionButton size="sm" variant="primary" onClick={() => onRegenerateProgramAdjustmentDraft(draft)}>
                 重新生成草案
               </ActionButton>
             ) : null}
