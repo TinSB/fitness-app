@@ -10,7 +10,7 @@ import { formatFatigueCost, formatReplacementCategory } from '../i18n/formatters
 import { clone } from './engineUtils';
 import type { ExercisePrescription, TrainingSession } from '../models/training-model';
 
-export type ReplacementRank = 'priority' | 'optional' | 'angle';
+export type ReplacementRank = 'priority' | 'acceptable' | 'angle' | 'optional' | 'equipment_fallback' | 'fatigue_reduction';
 type ReplacementPriorityValue = ReplacementRank | 'not_recommended' | 'avoid' | string;
 
 export interface ReplacementOption {
@@ -26,8 +26,20 @@ export interface ReplacementOption {
 
 const rankLabels: Record<ReplacementRank, string> = {
   priority: '优先',
+  acceptable: '可接受',
+  angle: '角度相近',
   optional: '可选',
-  angle: '角度变化',
+  equipment_fallback: '器械不可用时',
+  fatigue_reduction: '降低疲劳',
+};
+
+const rankOrder: Record<ReplacementRank, number> = {
+  priority: 0,
+  acceptable: 1,
+  angle: 1,
+  optional: 2,
+  equipment_fallback: 3,
+  fatigue_reduction: 3,
 };
 
 const forbiddenBenchReplacementIds = new Set(['triceps-pushdown', 'shoulder-press', 'machine-shoulder-press', 'cable-fly']);
@@ -114,11 +126,57 @@ const optionFromId = (id: string, rank: ReplacementRank, reason: string): Replac
 
 const rankFromPriority = (value: ReplacementPriorityValue | undefined, fallback: ReplacementRank): ReplacementRank | null => {
   if (value === 'not_recommended' || value === 'avoid') return null;
-  if (value === 'priority' || value === 'optional' || value === 'angle') return value;
+  if (value === 'priority' || value === 'acceptable' || value === 'optional' || value === 'angle' || value === 'equipment_fallback' || value === 'fatigue_reduction') return value;
   return fallback;
 };
 
 const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRank) => {
+  if (sourceId === 'lat-pulldown') {
+    if (id === 'assisted-pull-up') return '同属垂直拉，动作目标接近；会按辅助引体向上独立记录 PR / e1RM。';
+    if (id === 'pull-up') return '同属垂直拉，强度和技能要求更高；适合状态好时替代。';
+    if (id === 'single-arm-lat-pulldown') return '同属垂直拉，但改为单侧角度，适合需要更细致控制背阔发力时使用。';
+    if (id === 'machine-row' || id === 'seated-row') return '这是背部补量选择，不是一线垂直拉等价替代；仅在下拉器械不可用时使用。';
+  }
+  if (sourceId === 'seated-row') {
+    if (id === 'chest-supported-row') return '同属水平拉，胸托能降低躯干代偿，适合作为坐姿划船的一线替代。';
+    if (id === 'machine-row') return '同属水平拉，轨迹稳定，适合作为坐姿划船的一线替代。';
+    if (id === 'one-arm-db-row') return '同属水平拉，但改为单侧自由重量，需要更多稳定控制。';
+    if (id === 'barbell-row') return '同属水平拉但疲劳和技术要求更高，适合作为可选替代，不是默认降阶。';
+  }
+  if (sourceId === 'barbell-row') {
+    if (id === 'chest-supported-row') return '同属水平拉，胸托能降低腰背疲劳，同时保留背部主训练刺激。';
+    if (id === 't-bar-row') return '同属水平拉，负荷路径接近，适合作为杠铃划船的一线替代。';
+    if (id === 'one-arm-db-row' || id === 'seated-row') return '同属水平拉，但器械或单侧形式不同；会按实际动作独立记录。';
+    if (id === 'machine-row') return '同属背部水平拉补量，稳定性更高，但不是完全等价的杠铃划船替代。';
+  }
+  if (sourceId === 'face-pull') {
+    if (id === 'reverse-pec-deck') return '同样偏向肩后束和肩胛控制，适合替代面拉，不作为背部主训练替代。';
+    if (id === 'cable-rear-delt-fly') return '同样偏向肩后束控制，适合替代面拉，不提高背部主训练量权重。';
+    if (id === 'lateral-raise') return '这是肩部补量选择，方向不同，只作为可选替代。';
+  }
+  if (sourceId === 'squat') {
+    if (id === 'hack-squat') return '同属深蹲链，轨迹更稳定，适合作为深蹲的一线替代。';
+    if (id === 'smith-squat') return '同属深蹲链，轨迹固定，适合器械可用时替代深蹲，并按史密斯深蹲独立记录。';
+    if (id === 'leg-press') return '同属深蹲模式的腿部主训练，但躯干和稳定要求不同，是可接受替代，不是完全等价。';
+    if (id === 'belt-squat') return '同属深蹲模式，能减少脊柱负担，是可接受替代，不是完全等价。';
+    if (id === 'goblet-squat') return '同属深蹲模式，但负荷上限较低，适合作为可选替代或技术保守方案。';
+  }
+  if (sourceId === 'romanian-deadlift') {
+    if (id === 'db-rdl') return '同属髋铰链，负荷形式更灵活，适合作为 RDL 的一线替代。';
+    if (id === 'hip-thrust') return '臀推更偏髋伸和臀腿后链，降低下背压力，但不是髋铰链完全等价。';
+    if (id === 'leg-curl' || id === 'seated-leg-curl' || id === 'lying-leg-curl') return '这是腿后侧补量选择，不是髋铰链等价替代，会按实际动作独立记录。';
+  }
+  if (sourceId === 'leg-curl') {
+    if (id === 'seated-leg-curl') return '同属膝屈链，适合作为腿弯举的一线替代。';
+    if (id === 'lying-leg-curl') return '同属膝屈链，适合作为腿弯举的一线替代。';
+    if (id === 'nordic-curl') return '同属膝屈链，但疲劳和技术要求更高，适合作为可接受替代。';
+    if (id === 'romanian-deadlift') return '这是后链补量选择，不是腿弯举同模式优先替代。';
+  }
+  if (sourceId === 'calf-raise') {
+    if (id === 'seated-calf-raise') return '同属跖屈链，适合作为提踵的一线替代。';
+    if (id === 'standing-calf-raise') return '同属跖屈链，适合作为提踵的一线替代。';
+    if (id === 'leg-press-calf-raise') return '同属跖屈链，器械角度不同，是可接受替代。';
+  }
   if (sourceId === 'bench-press') {
     if (id === 'db-bench-press') return '同为水平推，胸部刺激接近，器械占用时适合直接替代卧推。';
     if (id === 'machine-chest-press') return '同为水平推，轨迹更稳定，适合在卧推架不可用或需要降低技术压力时替代。';
@@ -126,6 +184,10 @@ const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRan
     if (id === 'incline-db-press') return '同属胸部推举，但角度偏上胸，适合作为较低优先级替代。';
   }
   if (rank === 'angle') return '同属相近动作链，但角度或刺激重点不同，适合作为较低优先级替代。';
+  if (rank === 'acceptable') return '动作模式接近但不完全等价，会按实际动作独立记录。';
+  if (rank === 'equipment_fallback') return '这是器械不可用时的备用方案，不代表与原动作完全等价。';
+  if (rank === 'fatigue_reduction') return '这是降低疲劳的替代方案，会按实际动作独立记录。';
+  if (rank === 'optional') return '这是可选替代，适合特殊器械或疲劳限制场景，不代表完全等价。';
   return '同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。';
 };
 
@@ -158,7 +220,8 @@ export const buildReplacementOptions = (exercise: ExercisePrescription): Replace
       const rank = rankFromPriority(priorityMap[id], index <= 1 ? 'priority' : 'optional');
       return rank ? optionFromId(id, rank, reasonForReplacement(sourceId, id, rank)) : null;
     })
-    .filter(Boolean) as ReplacementOption[];
+    .filter(Boolean)
+    .sort((left, right) => rankOrder[left!.rank] - rankOrder[right!.rank]) as ReplacementOption[];
 };
 
 export const applyExerciseReplacement = (session: TrainingSession, exerciseIndex: number, replacementId: string): TrainingSession => {

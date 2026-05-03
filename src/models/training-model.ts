@@ -132,7 +132,14 @@ export type SupportExerciseCategory = 'corrective' | 'functional' | 'mobility' |
 export type ExerciseKind = 'compound' | 'machine' | 'isolation';
 export type ExerciseFatigueCost = 'low' | 'medium' | 'high';
 export type ExerciseSkillDemand = 'low' | 'medium' | 'high';
-export type ExerciseReplacementPriority = 'priority' | 'optional' | 'angle' | 'not_recommended';
+export type ExerciseReplacementPriority =
+  | 'priority'
+  | 'acceptable'
+  | 'angle'
+  | 'optional'
+  | 'equipment_fallback'
+  | 'fatigue_reduction'
+  | 'not_recommended';
 export type SupportBlockType = 'correction' | 'functional';
 export type SupportSkipReason = 'time' | 'pain' | 'equipment' | 'forgot' | 'too_tired' | 'not_needed' | 'other';
 export type CyclePhase = 'base' | 'build' | 'overload' | 'deload';
