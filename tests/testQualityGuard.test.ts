@@ -22,6 +22,7 @@ const criticalTestFiles = [
   'tests/profileDataHealthDismiss.test.ts',
   'tests/dataHealthIdentityIssue.test.ts',
   'tests/historyExerciseIdentitySanitize.test.ts',
+  'tests/realUserFlowRegression.test.ts',
 ].filter((file) => existsSync(resolve(process.cwd(), file)));
 
 const readCriticalFile = (file: string) => readFileSync(resolve(process.cwd(), file), 'utf8');
