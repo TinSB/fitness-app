@@ -317,6 +317,8 @@ export const formatReplacementCategory = (value: unknown) =>
       'equipment-fallback': '器械不可用时',
       fatigue_reduction: '降低疲劳',
       'fatigue-reduction': '降低疲劳',
+      compound_fallback: '复合动作替代',
+      'compound-fallback': '复合动作替代',
       not_recommended: '不推荐',
       'not-recommended': '不推荐',
       avoid: '不推荐',

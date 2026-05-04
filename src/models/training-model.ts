@@ -139,6 +139,7 @@ export type ExerciseReplacementPriority =
   | 'optional'
   | 'equipment_fallback'
   | 'fatigue_reduction'
+  | 'compound_fallback'
   | 'not_recommended';
 export type SupportBlockType = 'correction' | 'functional';
 export type SupportSkipReason = 'time' | 'pain' | 'equipment' | 'forgot' | 'too_tired' | 'not_needed' | 'other';

@@ -10,7 +10,7 @@ import { formatFatigueCost, formatReplacementCategory } from '../i18n/formatters
 import { clone } from './engineUtils';
 import type { ExercisePrescription, TrainingSession } from '../models/training-model';
 
-export type ReplacementRank = 'priority' | 'acceptable' | 'angle' | 'optional' | 'equipment_fallback' | 'fatigue_reduction';
+export type ReplacementRank = 'priority' | 'acceptable' | 'angle' | 'optional' | 'equipment_fallback' | 'fatigue_reduction' | 'compound_fallback';
 type ReplacementPriorityValue = ReplacementRank | 'not_recommended' | 'avoid' | string;
 
 export interface ReplacementOption {
@@ -31,6 +31,7 @@ const rankLabels: Record<ReplacementRank, string> = {
   optional: '可选',
   equipment_fallback: '器械不可用时',
   fatigue_reduction: '降低疲劳',
+  compound_fallback: '复合动作替代',
 };
 
 const rankOrder: Record<ReplacementRank, number> = {
@@ -40,6 +41,7 @@ const rankOrder: Record<ReplacementRank, number> = {
   optional: 2,
   equipment_fallback: 3,
   fatigue_reduction: 3,
+  compound_fallback: 3,
 };
 
 const forbiddenBenchReplacementIds = new Set(['triceps-pushdown', 'shoulder-press', 'machine-shoulder-press', 'cable-fly']);
@@ -126,7 +128,16 @@ const optionFromId = (id: string, rank: ReplacementRank, reason: string): Replac
 
 const rankFromPriority = (value: ReplacementPriorityValue | undefined, fallback: ReplacementRank): ReplacementRank | null => {
   if (value === 'not_recommended' || value === 'avoid') return null;
-  if (value === 'priority' || value === 'acceptable' || value === 'optional' || value === 'angle' || value === 'equipment_fallback' || value === 'fatigue_reduction') return value;
+  if (
+    value === 'priority' ||
+    value === 'acceptable' ||
+    value === 'optional' ||
+    value === 'angle' ||
+    value === 'equipment_fallback' ||
+    value === 'fatigue_reduction' ||
+    value === 'compound_fallback'
+  )
+    return value;
   return fallback;
 };
 
@@ -177,6 +188,35 @@ const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRan
     if (id === 'standing-calf-raise') return '同属跖屈链，适合作为提踵的一线替代。';
     if (id === 'leg-press-calf-raise') return '同属跖屈链，器械角度不同，是可接受替代。';
   }
+  if (sourceId === 'shoulder-press') {
+    if (id === 'machine-shoulder-press') return '同属垂直推链，轨迹更稳定，适合作为哑铃肩推的一线替代。';
+    if (id === 'smith-shoulder-press') return '同属垂直推链，轨迹固定，适合需要更稳定推举路径时替代。';
+    if (id === 'landmine-press') return '地雷管推举是斜向推，肩部目标接近但不是垂直推完全等价替代。';
+    if (id === 'db-bench-press') return '这是推类补量选择，角度偏水平推，不是肩推等价替代。';
+  }
+  if (sourceId === 'lateral-raise') {
+    if (id === 'cable-lateral-raise') return '同属侧平举链，阻力曲线更连续，适合作为哑铃侧平举的一线替代。';
+    if (id === 'machine-lateral-raise') return '同属侧平举链，轨迹更稳定，适合作为哑铃侧平举的一线替代。';
+    if (id === 'rear-delt-raise') return '这是肩后束补量选择，动作方向不同，不作为侧平举主替代。';
+  }
+  if (sourceId === 'db-curl') {
+    if (id === 'ez-bar-curl') return '同属二头弯举链，握距和器械不同，会按 EZ 杠弯举独立记录。';
+    if (id === 'preacher-curl') return '同属二头弯举链，支撑更稳定，适合作为哑铃弯举的一线替代。';
+    if (id === 'cable-curl') return '同属二头弯举链，张力更连续，适合作为哑铃弯举的一线替代。';
+    if (id === 'incline-db-curl') return '同属二头训练，但肩位和拉伸重点不同，是可接受替代。';
+    if (id === 'hammer-curl') return '锤式握法侧重点不同，只作为可选替代，不是完全等价二头弯举。';
+  }
+  if (sourceId === 'hammer-curl') {
+    if (id === 'rope-hammer-curl') return '同属锤式弯举链，握法和侧重点接近，适合作为一线替代。';
+    if (id === 'db-curl') return '哑铃弯举可接受，但握法和侧重点不同，不是锤式弯举完全等价替代。';
+    if (id === 'ez-bar-curl') return '这是二头弯举补量选择，握法不同，只作为可选替代。';
+  }
+  if (sourceId === 'triceps-pushdown') {
+    if (id === 'straight-bar-pushdown') return '同属三头下压模式，手柄不同，适合作为绳索下压的一线替代。';
+    if (id === 'overhead-cable-triceps-extension') return '同属三头伸展训练，但手臂位置不同，是可接受替代。';
+    if (id === 'skull-crusher') return '同属三头伸展训练，器械和关节压力不同，只作为可选替代。';
+    if (id === 'close-grip-bench' || id === 'assisted-dip') return '复合推类替代，疲劳成本更高，不是孤立下压等价替代。';
+  }
   if (sourceId === 'bench-press') {
     if (id === 'db-bench-press') return '同为水平推，胸部刺激接近，器械占用时适合直接替代卧推。';
     if (id === 'machine-chest-press') return '同为水平推，轨迹更稳定，适合在卧推架不可用或需要降低技术压力时替代。';
@@ -187,6 +227,7 @@ const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRan
   if (rank === 'acceptable') return '动作模式接近但不完全等价，会按实际动作独立记录。';
   if (rank === 'equipment_fallback') return '这是器械不可用时的备用方案，不代表与原动作完全等价。';
   if (rank === 'fatigue_reduction') return '这是降低疲劳的替代方案，会按实际动作独立记录。';
+  if (rank === 'compound_fallback') return '复合动作替代，疲劳成本更高，不是孤立动作完全等价替代。';
   if (rank === 'optional') return '这是可选替代，适合特殊器械或疲劳限制场景，不代表完全等价。';
   return '同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。';
 };
@@ -207,7 +248,7 @@ export const buildReplacementOptions = (exercise: ExercisePrescription): Replace
       ];
   const seenNames = new Set<string>();
   const uniqueIds = Array.from(new Set(candidateIds)).filter((id) => {
-    if (id === sourceId || forbiddenBenchReplacementIds.has(id) || isSelfOrAlias(id, identity)) return false;
+    if (id === sourceId || (sourceId === 'bench-press' && forbiddenBenchReplacementIds.has(id)) || isSelfOrAlias(id, identity)) return false;
     if (priorityMap[id] === 'not_recommended' || priorityMap[id] === 'avoid') return false;
     const nameKey = normalizeName(canonicalIdForAliasFilter(id));
     if (seenNames.has(nameKey)) return false;
