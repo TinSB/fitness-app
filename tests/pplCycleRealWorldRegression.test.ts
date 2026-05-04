@@ -85,7 +85,7 @@ describe('PPL cycle real world regression', () => {
     expect(recommendation.templateId).toBe('push-a');
     expect(recommendation.plannedTemplateId).toBe('push-a');
     expect(recommendation.templateId).not.toBe('legs-a');
-    expect(recommendation.reason).toContain('已完成 推 A、拉 A、腿 A');
+    expect(recommendation.reason).toContain('上一轮推、拉、腿已完成');
     expect(recommendation.reason).toContain('新一轮');
   });
 

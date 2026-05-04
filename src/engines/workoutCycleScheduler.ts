@@ -35,6 +35,20 @@ const dateKey = (value?: string) => {
 const sessionSortKey = (session: TrainingSession) =>
   String(session.finishedAt || session.startedAt || session.date || '');
 
+const dayNumber = (key: string) => {
+  const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return Number.NaN;
+  const [, year, month, day] = match;
+  return Date.UTC(Number(year), Number(month) - 1, Number(day)) / 86400000;
+};
+
+const daysBetween = (from?: string, to?: string) => {
+  const start = dayNumber(dateKey(from));
+  const end = dayNumber(dateKey(to));
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return end - start;
+};
+
 const isNormalCompletedSession = (session: TrainingSession, currentDate?: string) => {
   if (session.completed !== true) return false;
   const flag = session.dataFlag || 'normal';
@@ -63,6 +77,11 @@ const templateLabel = (id: string) => {
 
 const templateListLabel = (ids: string[]) => ids.map(templateLabel).join('、');
 
+const completedSetFrom = (ids: string[], ordered: string[]) => {
+  const completed = new Set(ids);
+  return ordered.filter((id) => completed.has(id));
+};
+
 export const buildWorkoutCycleState = ({
   history = [],
   orderedTemplateIds,
@@ -82,29 +101,50 @@ export const buildWorkoutCycleState = ({
   const orderedSet = new Set(ordered);
   const completedSessions = [...history]
     .filter((session) => isNormalCompletedSession(session, currentDate))
-    .sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
+    .sort((left, right) => sessionSortKey(left).localeCompare(sessionSortKey(right)));
 
-  const completed = new Set<string>();
+  const latestPplSession = completedSessions[completedSessions.length - 1];
+  if (latestPplSession && currentDate && daysBetween(latestPplSession.finishedAt || latestPplSession.startedAt || latestPplSession.date, currentDate) > 30) {
+    return {
+      orderedTemplateIds: ordered,
+      completedInCurrentCycle: [],
+      missingInCurrentCycle: ordered,
+      lastCompletedTemplateId: resolveSessionTemplateId(latestPplSession, orderedSet),
+      isCycleComplete: false,
+      nextTemplateId: ordered[0],
+      reason: `距离上次主轮转较久，系统从新一轮开始，建议从${templateLabel(ordered[0])}开始。`,
+    };
+  }
+
+  const currentCycleCompleted = new Set<string>();
+  let lastClosedCycleCompleted: string[] = [];
   let lastCompletedTemplateId: string | undefined;
+  let closedCycleCount = 0;
 
   for (const session of completedSessions) {
     const templateId = resolveSessionTemplateId(session, orderedSet);
     if (!templateId) continue;
-    lastCompletedTemplateId ||= templateId;
-    if (!completed.has(templateId)) completed.add(templateId);
-    if (completed.size === ordered.length) break;
+    lastCompletedTemplateId = templateId;
+    currentCycleCompleted.add(templateId);
+    if (currentCycleCompleted.size === ordered.length) {
+      lastClosedCycleCompleted = completedSetFrom([...currentCycleCompleted], ordered);
+      currentCycleCompleted.clear();
+      closedCycleCount += 1;
+    }
   }
 
-  const completedInCurrentCycle = ordered.filter((id) => completed.has(id));
-  const missingInCurrentCycle = ordered.filter((id) => !completed.has(id));
-  const isCycleComplete = missingInCurrentCycle.length === 0;
-  const nextTemplateId = isCycleComplete ? ordered[0] : missingInCurrentCycle[0];
+  const hasOpenCycle = currentCycleCompleted.size > 0;
+  const completedInCurrentCycle = hasOpenCycle ? ordered.filter((id) => currentCycleCompleted.has(id)) : closedCycleCount > 0 ? lastClosedCycleCompleted : [];
+  const openMissingInCurrentCycle = ordered.filter((id) => !currentCycleCompleted.has(id));
+  const missingInCurrentCycle = hasOpenCycle ? openMissingInCurrentCycle : closedCycleCount > 0 ? [] : ordered;
+  const isCycleComplete = !hasOpenCycle && closedCycleCount > 0;
+  const nextTemplateId = isCycleComplete ? ordered[0] : missingInCurrentCycle[0] || ordered[0];
 
   const reason = isCycleComplete
-    ? `最近一轮已完成 ${templateListLabel(ordered)}，下次进入新一轮，建议从 ${templateLabel(ordered[0])} 开始。`
+    ? `上一轮推、拉、腿已完成；下次进入新一轮，建议从${templateLabel(ordered[0])}开始。`
     : completedInCurrentCycle.length
-      ? `最近一轮已完成 ${templateListLabel(completedInCurrentCycle)}，还缺 ${templateListLabel(missingInCurrentCycle)}，下次建议先完成 ${templateLabel(nextTemplateId || ordered[0])}。`
-      : `还没有本轮正式完成记录，建议从 ${templateLabel(ordered[0])} 开始。`;
+      ? `当前这一轮已完成${templateListLabel(completedInCurrentCycle)}，还缺${templateListLabel(missingInCurrentCycle)}，因此今天建议${templateLabel(nextTemplateId || ordered[0])}。`
+      : `还没有本轮正式完成记录，建议从${templateLabel(ordered[0])}开始。`;
 
   return {
     orderedTemplateIds: ordered,

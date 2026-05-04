@@ -112,7 +112,7 @@ describe('workout cycle scheduler', () => {
       completedSession('pull-a', '2026-04-30'),
     ]);
 
-    expect(state.reason).toContain('最近一轮');
+    expect(state.reason).toContain('上一轮推、拉、腿已完成');
     expect(state.reason).toContain('推 A');
     expect(state.reason).not.toMatch(/push-a|pull-a|legs-a|undefined|null/);
   });

@@ -122,7 +122,8 @@ export const buildTodayViewModel = ({
   recoveryRecommendation?: RecoveryAwareRecommendation;
 }): TodayViewModel => {
   const selectedTemplateName = templateNameFrom(selectedTemplate);
-  const resolvedNextSuggestion = buildNextSuggestion(nextSuggestion);
+  const schedulerNextSuggestion = nextWorkout ? buildSchedulerNextSuggestion(nextWorkout) : undefined;
+  const resolvedNextSuggestion = schedulerNextSuggestion || buildNextSuggestion(nextSuggestion || selectedTemplate);
 
   if (todayState.status === 'completed') {
     const completedName = completedTemplateName ? templateNameFrom(completedTemplateName, '本次训练') : '本次训练';
@@ -215,9 +216,12 @@ export const buildTodayViewModel = ({
     recommendationLabel: '今日建议',
     primaryActionLabel: '开始训练',
     secondaryActionLabels: ['查看动作安排'],
-    statusText: `建议执行 ${selectedTemplateName}。`,
-    currentTrainingName: selectedTemplateName,
-    decisionText: `建议今天执行 ${selectedTemplateName}。如果你要采用系统推荐的其他安排，请先切换安排再开始训练。`,
+    statusText: `建议执行 ${resolvedNextSuggestion.templateName || selectedTemplateName}。`,
+    currentTrainingName: resolvedNextSuggestion.templateName || selectedTemplateName,
+    decisionText: resolvedNextSuggestion.reason
+      ? `建议今天执行 ${resolvedNextSuggestion.templateName || selectedTemplateName}。${resolvedNextSuggestion.reason}`
+      : `建议今天执行 ${resolvedNextSuggestion.templateName || selectedTemplateName}。如果你要采用系统推荐的其他安排，请先切换安排再开始训练。`,
     nextSuggestion: resolvedNextSuggestion,
+    recommendedTemplateId: resolvedNextSuggestion.templateId,
   };
 };

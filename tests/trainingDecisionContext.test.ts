@@ -27,7 +27,7 @@ describe('trainingDecisionContext', () => {
         },
       },
     });
-    const context = buildTrainingDecisionContext(data);
+    const context = buildTrainingDecisionContext(data, '2026-04-27');
 
     expect(context.useHealthDataForReadiness).toBe(true);
     expect(context.healthSummary?.latestSleepHours).toBe(5.5);
@@ -44,7 +44,7 @@ describe('trainingDecisionContext', () => {
         },
       },
     });
-    const context = buildTrainingDecisionContext(data);
+    const context = buildTrainingDecisionContext(data, '2026-04-27');
 
     expect(context.useHealthDataForReadiness).toBe(false);
     expect(context.healthSummary?.latestSleepHours).toBe(5.5);
