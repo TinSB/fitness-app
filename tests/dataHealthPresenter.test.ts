@@ -27,7 +27,7 @@ describe('dataHealthPresenter', () => {
     expect(vm.primaryIssues[0].title).toBe('替代动作记录异常');
     expect(vm.primaryIssues[0].userMessage).toBe('有训练记录使用了旧版替代动作标记，可能影响该动作的历史显示。');
     expect(vm.primaryIssues[0].action?.label).toBe('查看相关训练');
-    expect(vm.primaryIssues[0].action?.type).toBe('open_record_history');
+    expect(vm.primaryIssues[0].action?.type).toBe('open_session_detail');
     expect(vm.primaryIssues[0].technicalDetails).toContain('synthetic replacement id detected');
   });
 

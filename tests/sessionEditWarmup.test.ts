@@ -59,6 +59,7 @@ describe('session warmup editing', () => {
       ['warmupSets'],
       '历史训练热身组修正',
       session,
+      unitSettings,
     );
 
     const warmup = getSessionWarmupSets(edited)[0].set;
@@ -69,6 +70,10 @@ describe('session warmup editing', () => {
     expect(warmup.reps).toBe(6);
     expect(warmup.note).toBe('热身重量补正');
     expect(edited.editHistory?.[0].fields).toContain('warmupSets');
+    expect(edited.editHistory?.[0].editType).toBe('warmup_set');
+    expect(edited.editHistory?.[0].changedFields).toEqual(['weight', 'reps', 'rir', 'note']);
+    expect(edited.editHistory?.[0].beforeSummaryText).toContain('热身组 1：20kg × 8');
+    expect(edited.editHistory?.[0].afterSummaryText).toContain('热身组 1：43.1kg × 6');
     expect(edited.editHistory?.[0].affectedStats).toEqual(['none']);
     expect(edited.editHistory?.[0].beforeSummary?.effectiveSets).toBe(edited.editHistory?.[0].afterSummary?.effectiveSets);
   });

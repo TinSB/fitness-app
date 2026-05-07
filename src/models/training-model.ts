@@ -656,7 +656,16 @@ export interface RestTimerState {
   label?: string;
 }
 
-export type SessionEditAffectedStat = 'volume' | 'effectiveSet' | 'PR' | 'e1RM' | 'none';
+export type SessionEditAffectedStat =
+  | 'volume'
+  | 'effectiveSet'
+  | 'PR'
+  | 'e1RM'
+  | 'calendar'
+  | 'sessionQuality'
+  | 'none';
+
+export type SessionEditType = 'working_set' | 'warmup_set' | 'data_flag' | 'note' | 'mixed';
 
 export type SessionEditSummarySnapshot = {
   plannedWorkingSets: number;
@@ -671,10 +680,16 @@ export type SessionEditSummarySnapshot = {
 };
 
 export type SessionEditHistoryItem = {
+  id?: string;
   editedAt: string;
+  editType?: SessionEditType;
   fields: string[];
   editedFields?: string[];
+  changedFields?: string[];
   note?: string;
+  reason?: string;
+  beforeSummaryText?: string;
+  afterSummaryText?: string;
   beforeSummary?: SessionEditSummarySnapshot;
   afterSummary?: SessionEditSummarySnapshot;
   affectedStats?: SessionEditAffectedStat[];

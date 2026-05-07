@@ -673,10 +673,16 @@
             "type": "object",
             "required": ["editedAt", "fields"],
             "properties": {
+              "id": { "type": "string" },
               "editedAt": { "type": "string" },
+              "editType": { "enum": ["working_set", "warmup_set", "data_flag", "note", "mixed"] },
               "fields": { "type": "array", "items": { "type": "string" } },
               "editedFields": { "type": "array", "items": { "type": "string" } },
+              "changedFields": { "type": "array", "items": { "type": "string" } },
               "note": { "type": "string" },
+              "reason": { "type": "string" },
+              "beforeSummaryText": { "type": "string" },
+              "afterSummaryText": { "type": "string" },
               "beforeSummary": {
                 "type": "object",
                 "properties": {
@@ -709,7 +715,7 @@
               },
               "affectedStats": {
                 "type": "array",
-                "items": { "enum": ["volume", "effectiveSet", "PR", "e1RM", "none"] }
+                "items": { "enum": ["volume", "effectiveSet", "PR", "e1RM", "calendar", "sessionQuality", "none"] }
               }
             },
             "additionalProperties": true

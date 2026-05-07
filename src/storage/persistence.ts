@@ -96,7 +96,8 @@ const pickNumberRecord = (value: unknown) =>
       .map(([key, entry]) => [key, number(entry)])
       .filter(([, entry]) => Number.isFinite(entry))
   ) as Record<string, number>;
-const editAffectedStats = ['volume', 'effectiveSet', 'PR', 'e1RM', 'none'] as const;
+const editAffectedStats = ['volume', 'effectiveSet', 'PR', 'e1RM', 'calendar', 'sessionQuality', 'none'] as const;
+const sessionEditTypes = ['working_set', 'warmup_set', 'data_flag', 'note', 'mixed'] as const;
 const pickEnum = <T extends readonly string[]>(value: unknown, allowed: T, fallback: T[number]): T[number] =>
   typeof value === 'string' && allowed.includes(value) ? value : fallback;
 const finiteNumber = (value: unknown) => {
@@ -882,11 +883,22 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
         if (!editedAt) return null;
         const fields = pickArray(entry.fields).map(String).filter(Boolean);
         const editedFields = pickArray(entry.editedFields, fields).map(String).filter(Boolean);
+        const changedFields = pickArray(entry.changedFields).map(String).filter(Boolean);
+        const editType =
+          typeof entry.editType === 'string' && sessionEditTypes.includes(entry.editType as (typeof sessionEditTypes)[number])
+            ? entry.editType
+            : undefined;
         return {
+          id: pickString(entry.id) || undefined,
           editedAt,
+          editType,
           fields: fields.length ? fields : editedFields,
           editedFields: editedFields.length ? editedFields : fields,
+          changedFields: changedFields.length ? changedFields : undefined,
           note: pickString(entry.note) || undefined,
+          reason: pickString(entry.reason) || undefined,
+          beforeSummaryText: pickString(entry.beforeSummaryText) || undefined,
+          afterSummaryText: pickString(entry.afterSummaryText) || undefined,
           beforeSummary: sanitizeSessionEditSummarySnapshot(entry.beforeSummary),
           afterSummary: sanitizeSessionEditSummarySnapshot(entry.afterSummary),
           affectedStats: pickArray(entry.affectedStats)

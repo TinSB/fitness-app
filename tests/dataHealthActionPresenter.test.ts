@@ -24,11 +24,11 @@ const vmFor = (issue: DataHealthIssue) => {
 
 describe('data health action presenter', () => {
   it('maps common issue types to actionable navigation', () => {
-    expect(vmFor(makeIssue('synthetic-replacement-session-1')).action).toMatchObject({ label: '查看相关训练', type: 'open_record_history' });
+    expect(vmFor(makeIssue('synthetic-replacement-session-1')).action).toMatchObject({ label: '查看相关训练', type: 'open_session_detail' });
     expect(vmFor(makeIssue('summary-volume-zero-session-1', { category: 'summary' })).action).toMatchObject({ label: '查看训练详情', type: 'open_session_detail' });
     expect(vmFor(makeIssue('lb-display-decimal-session-1')).action).toMatchObject({ label: '打开单位设置', type: 'open_unit_settings' });
     expect(vmFor(makeIssue('external-workout-in-history-session-1')).action).toMatchObject({ label: '查看健康数据', type: 'open_health_data' });
-    expect(vmFor(makeIssue('missing-actual-exercise-session-1')).action).toMatchObject({ label: '查看相关训练', type: 'open_record_history' });
+    expect(vmFor(makeIssue('missing-actual-exercise-session-1')).action).toMatchObject({ label: '查看相关训练', type: 'open_session_detail' });
     expect(vmFor(makeIssue('template-missing-exercise-template-1', { category: 'template' })).action).toMatchObject({ label: '打开计划页', type: 'open_plan' });
     expect(vmFor(makeIssue('backup-suggestion-1')).action).toMatchObject({ label: '导出备份', type: 'open_backup' });
   });

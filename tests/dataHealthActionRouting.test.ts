@@ -14,7 +14,8 @@ describe('data health action routing', () => {
     expect(source).toContain("setProgressTarget({ section: 'list'");
     expect(source).toContain("action.type === 'open_session_detail'");
     expect(source).toContain("sessionId: session.id");
-    expect(source).toContain('暂时无法定位到对应记录。');
+    expect(source).toContain('暂时无法定位到这次训练，已打开历史列表。');
+    expect(source).toContain('getSessionCalendarDate(session)');
     expect(source).toContain("action.type === 'open_record_data'");
     expect(source).toContain("setProgressTarget({ section: 'data' })");
   });

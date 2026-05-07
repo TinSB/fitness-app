@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { markSessionDataFlag } from '../src/engines/sessionHistoryEngine';
 import { buildSessionDetailSummary } from '../src/engines/sessionDetailSummaryEngine';
@@ -24,8 +23,12 @@ describe('session edit history trust', () => {
     const entry = after.editHistory?.at(-1);
 
     expect(entry).toMatchObject({
+      editType: 'working_set',
       fields: ['sets'],
       editedFields: ['sets'],
+      changedFields: ['weight', 'rir'],
+      beforeSummaryText: '正式组 1：80kg × 8 / RIR 2',
+      afterSummaryText: '正式组 1：100kg × 8 / RIR 1',
       affectedStats: ['volume', 'effectiveSet', 'PR', 'e1RM'],
       beforeSummary: expect.objectContaining({
         completedWorkingSets: beforeSummary.completedWorkingSets,
@@ -35,6 +38,7 @@ describe('session edit history trust', () => {
         workingVolume: buildSessionDetailSummary(afterDraft).workingVolume,
       }),
     });
+    expect(entry?.id).toContain('edit-history-trust:edit');
     expect(entry?.editedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
@@ -42,14 +46,29 @@ describe('session edit history trust', () => {
     const before = {
       ...makeEditableSession(),
       focusWarmupSetLogs: [
-        { id: 'main:bench-press:warmup:0', exerciseId: 'bench-press', type: 'warmup', weight: 20, actualWeightKg: 20, reps: 8, rir: '', done: true },
+        {
+          id: 'main:bench-press:warmup:0',
+          exerciseId: 'bench-press',
+          type: 'warmup',
+          weight: 20,
+          actualWeightKg: 20,
+          reps: 8,
+          rir: '',
+          done: true,
+        },
       ],
     };
     const afterDraft = updateSessionSet(before, 'bench-press', 'main:bench-press:warmup:0', { weightKg: 40, reps: 6 });
     const after = markSessionEdited(afterDraft, ['warmupSets'], '历史训练热身组修正', before);
     const entry = after.editHistory?.at(-1);
 
-    expect(entry?.affectedStats).toEqual(['none']);
+    expect(entry).toMatchObject({
+      editType: 'warmup_set',
+      changedFields: ['weight', 'reps'],
+      affectedStats: ['none'],
+      beforeSummaryText: '热身组 1：20kg × 8',
+      afterSummaryText: '热身组 1：40kg × 6',
+    });
     expect(entry?.beforeSummary?.effectiveSets).toBe(entry?.afterSummary?.effectiveSets);
     expect(entry?.afterSummary?.warmupVolume).toBeGreaterThan(entry?.beforeSummary?.warmupVolume || 0);
   });
@@ -61,9 +80,13 @@ describe('session edit history trust', () => {
 
     expect(result.changed).toBe(true);
     expect(entry).toMatchObject({
+      editType: 'data_flag',
       fields: ['dataFlag'],
       editedFields: ['dataFlag'],
-      affectedStats: ['volume', 'effectiveSet', 'PR', 'e1RM'],
+      changedFields: ['dataFlag'],
+      affectedStats: ['calendar', 'effectiveSet', 'PR', 'e1RM'],
+      beforeSummaryText: '正常数据',
+      afterSummaryText: '排除数据，不参与默认统计',
       beforeSummary: expect.objectContaining({ dataFlag: 'normal' }),
       afterSummary: expect.objectContaining({ dataFlag: 'excluded' }),
     });
@@ -78,7 +101,7 @@ describe('session edit history trust', () => {
     expect(buildSessionDetailSummary(session).workingVolume).toBe(80 * 8);
   });
 
-  it('preserves enhanced edit history through sanitize round-trip', () => {
+  it('preserves enhanced edit history through sanitize round-trip without retaining full objects', () => {
     const before = makeEditableSession();
     const after = markSessionEdited(
       updateSessionSet(before, 'bench-press', 'bench-press-1', { weightKg: 100 }),
@@ -86,21 +109,24 @@ describe('session edit history trust', () => {
       '历史训练详情修正',
       before,
     );
-    const sanitized = sanitizeData(makeAppData({ history: [after] }));
-    const entry = sanitized.history[0].editHistory?.at(-1);
+    const unsafeEntry = {
+      ...(after.editHistory?.at(-1) || {}),
+      session: before,
+      set: before.exercises[0].sets[0],
+      history: [before],
+    };
+    const sanitized = sanitizeData(makeAppData({ history: [{ ...after, editHistory: [unsafeEntry] }] }));
+    const entry = sanitized.history[0].editHistory?.at(-1) as Record<string, unknown> | undefined;
 
     expect(entry?.editedFields).toEqual(['sets']);
+    expect(entry?.changedFields).toEqual(['weight']);
     expect(entry?.affectedStats).toEqual(['volume', 'effectiveSet', 'PR', 'e1RM']);
-    expect(entry?.beforeSummary?.workingVolume).toBe(80 * 8);
-    expect(entry?.afterSummary?.workingVolume).toBe(100 * 8);
-  });
-
-  it('keeps Record detail wired to corrected badge and folded edit history copy', () => {
-    const source = readFileSync('src/features/RecordView.tsx', 'utf8');
-
-    expect(source).toContain('已修正');
-    expect(source).toContain('最近修正时间');
-    expect(source).toContain('查看修正记录');
-    expect(source).toContain('formatAffectedStats');
+    expect(entry?.beforeSummaryText).toBe('正式组 1：80kg × 8 / RIR 2');
+    expect(entry?.afterSummaryText).toBe('正式组 1：100kg × 8 / RIR 2');
+    expect(entry?.beforeSummary).toMatchObject({ workingVolume: 80 * 8 });
+    expect(entry?.afterSummary).toMatchObject({ workingVolume: 100 * 8 });
+    expect(entry?.session).toBeUndefined();
+    expect(entry?.set).toBeUndefined();
+    expect(entry?.history).toBeUndefined();
   });
 });

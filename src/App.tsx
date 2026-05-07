@@ -60,6 +60,7 @@ import {
   upsertPlanAdjustmentDraftByFingerprint,
 } from './engines/planAdjustmentIdentityEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
+import { getSessionCalendarDate } from './engines/trainingCalendarEngine';
 import {
   applySessionPatches,
   buildPendingSessionPatch,
@@ -477,7 +478,7 @@ function App() {
     });
 
     if (finishedSession && target !== 'today') {
-      setProgressTarget({ section: target, sessionId: finishedSession.id, date: finishedSession.date });
+      setProgressTarget({ section: target, sessionId: finishedSession.id, date: getSessionCalendarDate(finishedSession) });
     }
     setActiveTab(target === 'today' ? 'today' : 'record');
     invalidateDerivedState('session_completed');
@@ -1117,12 +1118,12 @@ function App() {
       if (action.targetId) {
         const session = (data.history || []).find((item) => item.id === action.targetId);
         if (session) {
-          setProgressTarget({ section: 'list', sessionId: session.id, date: session.date || action.targetDate });
+          setProgressTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) || action.targetDate });
           setActiveTab('record');
           showAppToast('已打开相关训练。', 'info');
           return;
         }
-        showAppToast('暂时无法定位到对应记录。', 'warning');
+        showAppToast('暂时无法定位到这次训练，已打开历史列表。', 'warning');
       }
       setProgressTarget({ section: 'list', date: action.targetDate });
       setActiveTab('record');
@@ -1403,7 +1404,7 @@ function App() {
       if (action.targetType === 'session' && action.targetId) {
         const session = (data.history || []).find((item) => item.id === action.targetId);
         if (session) {
-          setProgressTarget({ section: 'list', sessionId: session.id, date: session.date });
+          setProgressTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) });
           setActiveTab('record');
           showAppToast('已打开相关训练详情。', 'info');
           return;
@@ -1417,7 +1418,7 @@ function App() {
       if (action.targetId) {
         const session = (data.history || []).find((item) => item.id === action.targetId);
         if (session) {
-          setProgressTarget({ section: 'list', sessionId: session.id, date: session.date });
+          setProgressTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) });
           setActiveTab('record');
           showAppToast('已打开训练详情。', 'info');
           return;

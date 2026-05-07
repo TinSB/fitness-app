@@ -43,7 +43,7 @@ describe('session edit feedback', () => {
   });
 
   it('explains data flag edits separately', () => {
-    expect(sessionEditFeedbackMessage(['dataFlag'])).toBe('数据状态已更新，会改变默认统计参与状态。');
+    expect(sessionEditFeedbackMessage(['dataFlag'])).toBe('数据状态已更新。');
   });
 
   it('updates summary data after a working-set edit and writes edit history', () => {
@@ -59,6 +59,7 @@ describe('session edit feedback', () => {
       ['sets'],
       '历史训练详情修正',
       session,
+      unitSettings,
     );
     const next = buildSessionDetailSummary(edited, unitSettings);
 
@@ -66,7 +67,10 @@ describe('session edit feedback', () => {
     const entry = edited.editHistory?.at(-1);
     expect(entry?.fields).toEqual(['sets']);
     expect(entry?.editedFields).toEqual(['sets']);
+    expect(entry?.changedFields).toEqual(['weight', 'reps', 'rir']);
     expect(entry?.affectedStats).toEqual(['volume', 'effectiveSet', 'PR', 'e1RM']);
+    expect(entry?.beforeSummaryText).toBe('正式组 1：80kg × 6 / RIR 2');
+    expect(entry?.afterSummaryText).toBe('正式组 1：100kg × 8 / RIR 1');
     expect(entry?.beforeSummary?.workingVolume).toBe(baseline.workingVolumeKg);
     expect(entry?.afterSummary?.workingVolume).toBe(next.workingVolumeKg);
     expect(sessionEditFeedbackMessage(entry?.fields || [])).toBe('已保存修正，相关统计会重新计算。');

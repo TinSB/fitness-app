@@ -12,7 +12,11 @@ export const filterAnalyticsHistory = (history: TrainingSession[] = []) => histo
 
 export type SessionHistoryFilter = 'all' | 'normal' | 'test' | 'excluded';
 
-const sessionSortKey = (session: TrainingSession) => session.finishedAt || session.startedAt || session.date || '';
+export const getSessionHistorySortKey = (session: TrainingSession) => {
+  const calendarDate = getSessionCalendarDate(session);
+  const timestamp = session.finishedAt || session.startedAt || '';
+  return `${calendarDate} ${timestamp}`;
+};
 
 export const listSessionHistory = (history: TrainingSession[] = [], filter: SessionHistoryFilter = 'all') =>
   history
@@ -20,7 +24,7 @@ export const listSessionHistory = (history: TrainingSession[] = [], filter: Sess
       const flag = session.dataFlag || 'normal';
       return filter === 'all' ? true : flag === filter;
     })
-    .sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
+    .sort((left, right) => getSessionHistorySortKey(right).localeCompare(getSessionHistorySortKey(left)));
 
 export const getSessionLocalDate = (session: TrainingSession) => getSessionCalendarDate(session);
 

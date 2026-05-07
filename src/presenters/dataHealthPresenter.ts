@@ -150,14 +150,14 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '动作记录身份需要检查',
       userMessage: '部分历史记录来自旧版替代动作逻辑，系统已保留原始记录，但不会把它用于 PR、e1RM 或有效组。',
-      action: action(issue, 'open_record_history', '查看相关训练'),
+      action: action(issue, 'open_session_detail', '查看相关训练'),
     };
   }
   if (id.startsWith('aggregate-incomplete-draft-sets') || id.startsWith('incomplete-draft-set')) {
     return {
       title: '存在未完成草稿组',
       userMessage: '部分组有重量、次数或 RIR，但仍是未完成状态。它们只应显示为草稿，不参与完成组、总量、PR、e1RM 或有效组。',
-      action: action(issue, 'open_record_history', '查看历史训练'),
+      action: action(issue, 'open_session_detail', '查看历史训练'),
     };
   }
   if (
@@ -185,21 +185,21 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '历史动作引用需要检查',
       userMessage: '部分历史记录引用了动作库中不存在的动作。系统会保留原始记录，但不会把它用于 PR、e1RM 或有效组。',
-      action: action(issue, 'open_record_history', '查看相关训练'),
+      action: action(issue, 'open_session_detail', '查看相关训练'),
     };
   }
   if (id.startsWith('aggregate-duplicate-session-timestamp') || id.startsWith('duplicate-session-timestamp')) {
     return {
       title: '发现疑似重复训练记录',
       userMessage: '部分历史训练的开始、结束时间和模板相同。系统不会自动删除，请先人工确认。',
-      action: action(issue, 'open_record_history', '查看历史训练'),
+      action: action(issue, 'open_session_detail', '查看历史训练'),
     };
   }
   if (id.startsWith('aggregate-test-excluded-stat-participation')) {
     return {
       title: '测试或排除数据需要检查',
       userMessage: '测试或排除训练可以继续查看，但默认不应参与 PR、e1RM、有效组或统计。',
-      action: action(issue, 'open_record_history', '查看历史训练'),
+      action: action(issue, 'open_session_detail', '查看历史训练'),
     };
   }
   if (id.startsWith('aggregate-warmup-stat-participation')) {
@@ -213,7 +213,7 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '替代动作记录异常',
       userMessage: '有训练记录使用了旧版替代动作标记，可能影响该动作的历史显示。',
-      action: action(issue, 'open_record_history', '查看相关训练'),
+      action: action(issue, 'open_session_detail', '查看相关训练'),
     };
   }
   if (id.startsWith('lb-display-decimal')) {
@@ -248,7 +248,7 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '测试数据可能参与统计',
       userMessage: '有测试或排除数据可能被计入训练分析，请检查数据状态。',
-      action: action(issue, 'open_record_history', '查看历史训练'),
+      action: action(issue, 'open_session_detail', '查看历史训练'),
     };
   }
   if (id.startsWith('external-workout-in-history')) {
@@ -262,7 +262,7 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '替代动作信息不完整',
       userMessage: '有训练记录的实际执行动作无法在动作库中找到。',
-      action: action(issue, 'open_record_history', '查看相关训练'),
+      action: action(issue, 'open_session_detail', '查看相关训练'),
     };
   }
   if (id.startsWith('mixed-display-unit')) {
@@ -298,7 +298,7 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     return {
       title: '替代动作记录需要检查',
       userMessage: '有替代动作记录信息不完整，可能影响历史回看。',
-      action: action(issue, 'open_record_history', '查看相关训练'),
+      action: action(issue, 'open_session_detail', '查看相关训练'),
     };
   }
   if (issue.category === 'unit') {

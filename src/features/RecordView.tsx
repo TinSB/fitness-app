@@ -17,7 +17,7 @@ import {
   setVolume,
   todayKey,
 } from '../engines/engineUtils';
-import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
+import { filterAnalyticsHistory, getSessionHistorySortKey, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { markSessionEdited, sessionEditFeedbackMessage, updateSessionSet, validateSessionEdit, type SessionEditResult } from '../engines/sessionEditEngine';
 import { buildSessionDetailSummary, groupSessionSetsByType, type SessionSetEntry } from '../engines/sessionDetailSummaryEngine';
 import {
@@ -26,6 +26,7 @@ import {
   buildTrainingCalendarMonthRange,
   clampCalendarMonth,
   getInitialCalendarMonth,
+  getSessionCalendarDate,
   resolveCalendarSelectedDate,
 } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
@@ -50,6 +51,7 @@ import type {
   PersonalRecord,
   SessionEditAffectedStat,
   SessionDataFlag,
+  SessionEditType,
   SupportExerciseLog,
   TechniqueQuality,
   TrainingSession,
@@ -147,8 +149,6 @@ const getSessionTitle = (session: TrainingSession) =>
 const formatCalendarSessionTitle = (session: { title?: string; templateName?: string }) =>
   formatTemplateName(session.templateName || session.title, '未命名训练');
 
-const sessionSortKey = (session: TrainingSession) => session.finishedAt || session.startedAt || session.date || '';
-
 const formatSessionTime = (session: TrainingSession) => {
   const started = session.startedAt ? new Date(session.startedAt) : null;
   if (!started || Number.isNaN(started.getTime())) return '未记录时间';
@@ -191,6 +191,20 @@ const editFieldLabels: Record<string, string> = {
   sets: '正式组',
   warmupSets: '热身组',
   dataFlag: '数据状态',
+  weight: '重量',
+  reps: '次数',
+  rir: 'RIR',
+  techniqueQuality: '动作质量',
+  painFlag: '不适标记',
+  note: '备注',
+};
+
+const editTypeLabels: Record<SessionEditType, string> = {
+  working_set: '修改正式组',
+  warmup_set: '修改热身组',
+  data_flag: '修改数据状态',
+  note: '修改备注',
+  mixed: '多项修正',
 };
 
 const affectedStatLabels: Record<SessionEditAffectedStat, string> = {
@@ -198,6 +212,8 @@ const affectedStatLabels: Record<SessionEditAffectedStat, string> = {
   effectiveSet: '有效组',
   PR: 'PR',
   e1RM: 'e1RM',
+  calendar: '日历',
+  sessionQuality: '训练质量',
   none: '不影响 PR、e1RM 和有效组',
 };
 
@@ -218,6 +234,28 @@ const formatAffectedStats = (stats: SessionEditAffectedStat[] = []) =>
     .map((stat) => affectedStatLabels[stat] || '统计')
     .filter((stat, index, items) => items.indexOf(stat) === index)
     .join('、');
+
+const inferEditTypeFromFields = (fields: string[] = []): SessionEditType => {
+  const fieldSet = new Set(fields);
+  if (fieldSet.has('dataFlag')) return fieldSet.size > 1 ? 'mixed' : 'data_flag';
+  if (fieldSet.has('sets')) return fieldSet.has('warmupSets') ? 'mixed' : 'working_set';
+  if (fieldSet.has('warmupSets')) return 'warmup_set';
+  if (fieldSet.has('note')) return 'note';
+  return 'mixed';
+};
+
+const formatEditType = (item: NonNullable<TrainingSession['editHistory']>[number]) =>
+  editTypeLabels[item.editType || inferEditTypeFromFields(item.editedFields || item.fields || [])] || '多项修正';
+
+const formatEditSummary = (item: NonNullable<TrainingSession['editHistory']>[number]) => {
+  if (item.beforeSummaryText || item.afterSummaryText) {
+    return `${item.beforeSummaryText || '修正前未记录'} → ${item.afterSummaryText || '修正后未记录'}`;
+  }
+  if (item.beforeSummary && item.afterSummary) {
+    return `正式组 ${item.beforeSummary.completedWorkingSets} → ${item.afterSummary.completedWorkingSets}，有效组 ${item.beforeSummary.effectiveSets} → ${item.afterSummary.effectiveSets}，总量 ${item.beforeSummary.workingVolume}kg → ${item.afterSummary.workingVolume}kg`;
+  }
+  return '已记录修正摘要';
+};
 
 const sessionHasPain = (session: TrainingSession) =>
   (session.exercises || []).some((exercise) => Array.isArray(exercise.sets) && exercise.sets.some((set) => Boolean(set.painFlag)));
@@ -391,6 +429,20 @@ export function RecordView({
     }
   }, [initialSection, selectedDate, selectedSessionId, rawHistory, calendarRange]);
 
+  React.useEffect(() => {
+    if (!selectedSession) return;
+    const current = rawHistory.find((session) => session.id === selectedSession.id) || null;
+    if (!current) {
+      setSelectedSession(null);
+      setEditDraft(null);
+      setEditError('');
+      return;
+    }
+    if (!editDraft && current !== selectedSession) {
+      setSelectedSession(current);
+    }
+  }, [rawHistory, selectedSession, editDraft]);
+
   const openSession = (sessionId: string) => {
     const session = rawHistory.find((item) => item.id === sessionId) || null;
     setSelectedSession(session);
@@ -445,7 +497,10 @@ export function RecordView({
       notifyRecordOperation('没有需要保存的修改。', 'info');
       return;
     }
-    setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, editedFields, '历史训练详情修正', selectedSession || undefined) });
+    setPendingAction({
+      type: 'edit',
+      session: markSessionEdited(editDraft, editedFields, '历史训练详情修正', selectedSession || undefined, unitSettings),
+    });
   };
 
   const confirmPendingAction = () => {
@@ -510,7 +565,7 @@ export function RecordView({
   const topSet = selectedExerciseSets[0];
   const formatSessionSummaryDescription = (session: TrainingSession) => {
     const summary = buildSessionDetailSummary(session, unitSettings);
-    return `${session.date} · ${formatSessionDuration(session)} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`;
+    return `${getSessionCalendarDate(session)} · ${formatSessionDuration(session)} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`;
   };
 
   const renderCalendarMarker = (day: (typeof calendar.days)[number]) => {
@@ -617,8 +672,11 @@ export function RecordView({
                 <CalendarDays className="h-5 w-5 text-emerald-600" />
               </div>
               <div className="space-y-2">
-                {(selectedCalendarDay?.sessions || []).map((session) => (
-                  <ListItem
+                {(selectedCalendarDay?.sessions || []).map((session) => {
+                  const sourceSession = rawHistory.find((item) => item.id === session.sessionId);
+                  const summary = sourceSession ? buildSessionDetailSummary(sourceSession, unitSettings) : null;
+                  return (
+                    <ListItem
                     key={session.sessionId}
                     title={
                       <span className="flex flex-wrap items-center gap-2">
@@ -627,11 +685,16 @@ export function RecordView({
                         {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
                       </span>
                     }
-                    description={`${formatCalendarSessionTitle(session)} · ${session.completedSets} 组 · ${session.effectiveSets} 有效组 · ${formatTrainingVolume(session.totalVolumeKg, unitSettings)}`}
-                    meta={session.startTime ? formatSessionTime(rawHistory.find((item) => item.id === session.sessionId) || ({ startedAt: session.startTime } as TrainingSession)) : undefined}
+                    description={
+                      summary
+                        ? `${formatCalendarSessionTitle(session)} · ${summary.completedWorkingSets} 组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`
+                        : formatCalendarSessionTitle(session)
+                    }
+                    meta={sourceSession ? formatSessionTime(sourceSession) : session.startTime ? formatSessionTime({ startedAt: session.startTime } as TrainingSession) : undefined}
                     action={<ActionButton size="sm" variant="secondary" onClick={() => openSession(session.sessionId)}>详情</ActionButton>}
-                  />
-                ))}
+                    />
+                  );
+                })}
                 {(selectedCalendarDay?.externalWorkouts || []).map((workout) => (
                   <ListItem
                     key={workout.workoutId}
@@ -766,7 +829,7 @@ export function RecordView({
                   <ListItem
                     key={`${item.session.id}-${item.exercise.id}-${item.set.id || item.setIndex}`}
                     title={`${formatWeight(item.set.weight, unitSettings)} × ${item.set.reps}`}
-                    description={`${item.session.date} · ${getSessionTitle(item.session)} · ${item.effective.confidence === 'high' ? '高置信' : '可参考'}`}
+                    description={`${getSessionCalendarDate(item.session)} · ${getSessionTitle(item.session)} · ${item.effective.confidence === 'high' ? '高置信' : '可参考'}`}
                     meta={`${item.set.rir === undefined || item.set.rir === '' ? '余力（RIR）未记录' : formatRirLabel(item.set.rir)} · ${formatTechniqueQuality(item.set.techniqueQuality || 'acceptable')}${item.set.painFlag ? ' · 有不适' : ''}`}
                     action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(item.session)}>详情</ActionButton>}
                   />
@@ -853,7 +916,7 @@ export function RecordView({
                     <ListItem
                       key={session.id}
                       title={getSessionTitle(session)}
-                      description={`${session.date} · 有不适组，建议回看动作质量和备注`}
+                      description={`${getSessionCalendarDate(session)} · 有不适组，建议回看动作质量和备注`}
                       action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>详情</ActionButton>}
                     />
                   ))}
@@ -872,7 +935,7 @@ export function RecordView({
     const normalCount = rawHistory.filter((session) => !session.dataFlag || session.dataFlag === 'normal').length;
     const testCount = rawHistory.filter((session) => session.dataFlag === 'test').length;
     const excludedCount = rawHistory.filter((session) => session.dataFlag === 'excluded').length;
-    const dataRows = [...rawHistory].sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
+    const dataRows = [...rawHistory].sort((left, right) => getSessionHistorySortKey(right).localeCompare(getSessionHistorySortKey(left)));
     const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
     const visibleIssues = dataHealthViewModel?.primaryIssues || [];
     const hiddenIssues = dataHealthViewModel?.secondaryIssues || [];
@@ -989,7 +1052,7 @@ export function RecordView({
                       {renderFlagBadge(session.dataFlag)}
                     </span>
                   }
-                  description={`${session.date} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.totalDisplayVolume}`}
+                  description={`${getSessionCalendarDate(session)} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.totalDisplayVolume}`}
                   action={
                     <div className="flex flex-wrap justify-end gap-2">
                       <ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>详情</ActionButton>
@@ -1177,10 +1240,10 @@ export function RecordView({
               {sessionHasPain(session) ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
               {session.editedAt ? <StatusBadge tone="amber">已修正</StatusBadge> : null}
             </div>
-            <div className="mt-1 text-sm text-slate-500">{session.date} · {formatSessionTime(session)} · {formatSessionDuration(session)}</div>
+            <div className="mt-1 text-sm text-slate-500">{getSessionCalendarDate(session)} · {formatSessionTime(session)} · {formatSessionDuration(session)}</div>
             {latestEdit ? (
               <div className="mt-2 text-sm font-semibold text-amber-700">
-                最近修正时间：{formatEditTimestamp(latestEdit.editedAt)}
+                最近修正：{formatEditTimestamp(latestEdit.editedAt)}
               </div>
             ) : null}
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1245,16 +1308,13 @@ export function RecordView({
                 <summary className="cursor-pointer font-semibold text-slate-950">查看修正记录</summary>
                 <div className="mt-2 space-y-2">
                   {editHistory.slice(-5).reverse().map((item) => (
-                    <div key={`${item.editedAt}-${formatEditedFields(item.editedFields || item.fields)}`} className="rounded-lg bg-stone-50 px-3 py-2">
+                    <div key={item.id || `${item.editedAt}-${formatEditedFields(item.changedFields || item.editedFields || item.fields)}`} className="rounded-lg bg-stone-50 px-3 py-2">
                       <div className="font-semibold text-slate-950">{formatEditTimestamp(item.editedAt)}</div>
-                      <div>改动：{formatEditedFields(item.editedFields || item.fields)}</div>
+                      <div>类型：{formatEditType(item)}</div>
+                      <div>字段：{formatEditedFields(item.changedFields || item.editedFields || item.fields)}</div>
+                      <div>修改：{formatEditSummary(item)}</div>
                       <div>影响：{formatAffectedStats(item.affectedStats)}</div>
-                      {item.beforeSummary && item.afterSummary ? (
-                        <div>
-                          变化：正式组 {item.beforeSummary.completedWorkingSets} → {item.afterSummary.completedWorkingSets}，有效组 {item.beforeSummary.effectiveSets} → {item.afterSummary.effectiveSets}，总量 {item.beforeSummary.workingVolume}kg → {item.afterSummary.workingVolume}kg
-                        </div>
-                      ) : null}
-                      {item.note ? <div>备注：{item.note}</div> : null}
+                      {item.reason || item.note ? <div>原因：{item.reason || item.note}</div> : null}
                     </div>
                   ))}
                 </div>
