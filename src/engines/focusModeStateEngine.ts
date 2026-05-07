@@ -4,6 +4,7 @@ import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from './c
 import { createRestTimerState } from './restTimerEngine';
 import { convertKgToDisplayWeight } from './unitConversionEngine';
 import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupDecision, type WarmupPolicyDecision } from './warmupPolicyEngine';
+import type { FocusActionResult } from './workoutExecutionStateMachine';
 
 export type { ActualSetDraft, FocusStepType };
 
@@ -339,6 +340,72 @@ const upsertDraft = (session: TrainingSession, step: FocusTrainingStep, updates:
   return draft;
 };
 
+type FocusActionStateResult = {
+  session: TrainingSession;
+  actionResult: FocusActionResult;
+};
+
+const successResult = (message: string, reasonCode?: FocusActionResult['reasonCode']): FocusActionResult => ({
+  ok: true,
+  changed: true,
+  tone: 'success',
+  message,
+  reasonCode,
+});
+
+const infoResult = (message: string, reasonCode: NonNullable<FocusActionResult['reasonCode']>): FocusActionResult => ({
+  ok: true,
+  changed: false,
+  tone: 'info',
+  message,
+  reasonCode,
+});
+
+const warningResult = (message: string, reasonCode: NonNullable<FocusActionResult['reasonCode']>): FocusActionResult => ({
+  ok: false,
+  changed: false,
+  tone: 'warning',
+  message,
+  reasonCode,
+});
+
+const draftStepForCurrentIdentity = (step: FocusTrainingStep, session: TrainingSession) => {
+  const identity = getCurrentExerciseIdentity(step, session);
+  return { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
+};
+
+const draftForStep = (session: TrainingSession, step: FocusTrainingStep): ActualSetDraft | null =>
+  step.stepType === 'completed' ? null : getDrafts(session).find((draft) => draft.stepId === step.id) || null;
+
+const valuesEqual = (left: unknown, right: unknown) => {
+  if (left === undefined && right === undefined) return true;
+  if (typeof left === 'number' || typeof right === 'number') return number(left) === number(right);
+  return left === right;
+};
+
+const draftMatchesUpdates = (draft: ActualSetDraft | null, updates: Partial<ActualSetDraft>) =>
+  Object.entries(updates).every(([key, value]) => valuesEqual(draft?.[key as keyof ActualSetDraft], value));
+
+const hasMeaningfulDraftInput = (draft: ActualSetDraft | null | undefined) =>
+  Boolean(
+    draft &&
+      (draft.actualWeightKg !== undefined ||
+        draft.actualReps !== undefined ||
+        draft.actualRir !== undefined ||
+        draft.painFlag !== undefined ||
+        draft.techniqueQuality !== undefined)
+  );
+
+const previousValuesMatchCurrentDraft = (draft: ActualSetDraft | null, updates: Partial<ActualSetDraft>) =>
+  Boolean(
+    draft &&
+      valuesEqual(draft.actualWeightKg, updates.actualWeightKg) &&
+      valuesEqual(draft.actualReps, updates.actualReps) &&
+      valuesEqual(draft.actualRir, updates.actualRir) &&
+      Boolean(draft.painFlag) === Boolean(updates.painFlag) &&
+      valuesEqual(draft.techniqueQuality || 'acceptable', updates.techniqueQuality || 'acceptable')
+  );
+
 export const setCurrentStep = (session: TrainingSession, step: FocusTrainingStep, options: SetCurrentFocusStepOptions = {}) => {
   session.currentFocusStepId = step.id;
   session.currentFocusStepType = step.stepType;
@@ -499,13 +566,26 @@ export const updateFocusActualDraft = (
   exerciseIndex: number,
   updates: Partial<Pick<ActualSetDraft, 'actualWeightKg' | 'displayWeight' | 'displayUnit' | 'actualReps' | 'actualRir' | 'techniqueQuality' | 'painFlag' | 'source'>>
 ): TrainingSession => {
+  return updateFocusActualDraftWithResult(session, exerciseIndex, updates).session;
+};
+
+export const updateFocusActualDraftWithResult = (
+  session: TrainingSession,
+  exerciseIndex: number,
+  updates: Partial<Pick<ActualSetDraft, 'actualWeightKg' | 'displayWeight' | 'displayUnit' | 'actualReps' | 'actualRir' | 'techniqueQuality' | 'painFlag' | 'source'>>,
+  successMessage = '当前记录已更新。'
+): FocusActionStateResult => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
-  if (step.stepType === 'completed') return session;
-  const identity = getCurrentExerciseIdentity(step, nextSession);
-  upsertDraft(nextSession, { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) }, updates);
+  if (step.stepType === 'completed') return { session, actionResult: warningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step') };
+  const draftStep = draftStepForCurrentIdentity(step, nextSession);
+  const existing = draftForStep(nextSession, draftStep);
+  if (draftMatchesUpdates(existing, updates)) {
+    return { session, actionResult: infoResult('当前记录未变化。', 'no_change') };
+  }
+  upsertDraft(nextSession, draftStep, updates);
   setCurrentStep(nextSession, step, { preserveManualOverride: true });
-  return nextSession;
+  return { session: nextSession, actionResult: successResult(successMessage) };
 };
 
 export const adjustFocusSetValue = (
@@ -530,49 +610,92 @@ export const adjustFocusSetValue = (
 };
 
 export const applySuggestedFocusStep = (session: TrainingSession, exerciseIndex: number): TrainingSession => {
+  return applySuggestedFocusStepWithResult(session, exerciseIndex).session;
+};
+
+export const applySuggestedFocusStepWithResult = (session: TrainingSession, exerciseIndex: number): FocusActionStateResult => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
-  if (step.stepType === 'completed') return session;
-  const identity = getCurrentExerciseIdentity(step, nextSession);
-  const draftStep = { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
-  upsertDraft(nextSession, draftStep, {
+  if (step.stepType === 'completed') return { session, actionResult: warningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step') };
+  const draftStep = draftStepForCurrentIdentity(step, nextSession);
+  const updates = {
     ...(typeof step.plannedWeight === 'number' ? { actualWeightKg: step.plannedWeight } : {}),
     ...(typeof step.plannedReps === 'number' ? { actualReps: step.plannedReps } : {}),
     ...(typeof step.plannedRir === 'number' ? { actualRir: step.plannedRir } : {}),
     source: 'prescription',
-  });
+  } satisfies Partial<ActualSetDraft>;
+  const existing = draftForStep(nextSession, draftStep);
+  if (draftMatchesUpdates(existing, updates)) {
+    return { session, actionResult: infoResult('当前已是建议值。', 'no_change') };
+  }
+  upsertDraft(nextSession, draftStep, updates);
   setCurrentStep(nextSession, step, { preserveManualOverride: true });
-  return nextSession;
+  return { session: nextSession, actionResult: successResult('已套用建议。') };
 };
 
 export const copyPreviousFocusActualDraft = (session: TrainingSession, exerciseIndex: number): TrainingSession => {
+  return copyPreviousFocusActualDraftWithResult(session, exerciseIndex).session;
+};
+
+export const copyPreviousFocusActualDraftWithResult = (session: TrainingSession, exerciseIndex: number): FocusActionStateResult => {
   const nextSession = clone(session) as TrainingSession;
   const step = findStepForExercise(nextSession, exerciseIndex);
-  if (step.stepType === 'completed' || step.setIndex <= 0) return session;
+  if (step.stepType === 'completed') return { session, actionResult: warningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step') };
+  if (step.setIndex <= 0) return { session, actionResult: infoResult('没有可复制的上一组。', 'no_previous_set') };
   const previousStep = buildFocusStepQueue(nextSession).find(
     (item) => item.exerciseId === step.exerciseId && item.stepType === step.stepType && item.setIndex === step.setIndex - 1
   );
-  if (!previousStep) return session;
+  if (!previousStep) return { session, actionResult: infoResult('没有可复制的上一组。', 'no_previous_set') };
   const previousDraft = getActualSetDraft(nextSession, previousStep);
   const previousWorkingSet =
     previousStep.stepType === 'working' ? getSets(nextSession.exercises[previousStep.exerciseIndex])[previousStep.setIndex] : undefined;
   const previousWarmupSet = previousStep.stepType === 'warmup' ? nextSession.focusWarmupSetLogs?.find((set) => set.id === previousStep.id) : undefined;
   const source = previousDraft || previousWorkingSet || previousWarmupSet;
-  if (!source) return session;
-  const isDraft = 'actualWeightKg' in source || 'actualReps' in source || 'actualRir' in source;
+  if (!source) return { session, actionResult: infoResult('没有可复制的上一组。', 'no_previous_set') };
 
-  const identity = getCurrentExerciseIdentity(step, nextSession);
-  const draftStep = { ...step, exerciseId: identity.recordExerciseId, id: step.id.replace(`main:${step.exerciseId}:`, `main:${identity.recordExerciseId}:`) };
-  upsertDraft(nextSession, draftStep, {
-    actualWeightKg: isDraft ? (source as ActualSetDraft).actualWeightKg : (source as TrainingSetLog).weight,
-    actualReps: isDraft ? (source as ActualSetDraft).actualReps : (source as TrainingSetLog).reps,
-    actualRir: isDraft ? (source as ActualSetDraft).actualRir : number((source as TrainingSetLog).rir),
-    painFlag: Boolean(source.painFlag),
-    techniqueQuality: source.techniqueQuality || 'acceptable',
-    source: 'copy_previous',
-  });
+  const draftStep = draftStepForCurrentIdentity(step, nextSession);
+  const updates = previousDraft
+    ? ({
+        actualWeightKg: previousDraft.actualWeightKg,
+        actualReps: previousDraft.actualReps,
+        actualRir: previousDraft.actualRir,
+        painFlag: Boolean(previousDraft.painFlag),
+        techniqueQuality: previousDraft.techniqueQuality || 'acceptable',
+        source: 'copy_previous',
+      } satisfies Partial<ActualSetDraft>)
+    : ({
+        actualWeightKg: (source as TrainingSetLog).actualWeightKg ?? (source as TrainingSetLog).weight,
+        actualReps: (source as TrainingSetLog).reps,
+        actualRir: number((source as TrainingSetLog).rir),
+        painFlag: Boolean(source.painFlag),
+        techniqueQuality: source.techniqueQuality || 'acceptable',
+        source: 'copy_previous',
+      } satisfies Partial<ActualSetDraft>);
+  const existing = draftForStep(nextSession, draftStep);
+  if (previousValuesMatchCurrentDraft(existing, updates)) {
+    return { session, actionResult: infoResult('当前记录已与上一组一致。', 'no_change') };
+  }
+  const overwritesManualInput = hasMeaningfulDraftInput(existing) && existing?.source === 'manual';
+  upsertDraft(nextSession, draftStep, updates);
   setCurrentStep(nextSession, step, { preserveManualOverride: true });
-  return nextSession;
+  return { session: nextSession, actionResult: successResult(overwritesManualInput ? '已用上组覆盖当前输入。' : '已复制上组。') };
+};
+
+export const updateFocusPainFlagWithResult = (session: TrainingSession, exerciseIndex: number, painFlag: boolean): FocusActionStateResult => {
+  const nextSession = clone(session) as TrainingSession;
+  const step = findStepForExercise(nextSession, exerciseIndex);
+  if (step.stepType === 'completed') return { session, actionResult: warningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step') };
+  const draftStep = draftStepForCurrentIdentity(step, nextSession);
+  const existing = draftForStep(nextSession, draftStep);
+  if (Boolean(existing?.painFlag) === painFlag) {
+    return { session, actionResult: infoResult('当前不适标记未变化。', 'no_change') };
+  }
+  upsertDraft(nextSession, draftStep, { painFlag });
+  setCurrentStep(nextSession, step, { preserveManualOverride: true });
+  return {
+    session: nextSession,
+    actionResult: successResult(painFlag ? '已标记本组不适。' : '已取消本组不适标记。'),
+  };
 };
 
 export interface CompleteFocusSetResult {

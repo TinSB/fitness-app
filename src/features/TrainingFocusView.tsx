@@ -8,6 +8,7 @@ import { buildSmartReplacementRecommendations, type SmartReplacementRecommendati
 import type { ExerciseEquipmentTag } from '../data/exerciseLibrary';
 import { detectSetAnomalies, type SetAnomaly } from '../engines/setAnomalyEngine';
 import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from '../engines/currentExerciseSelector';
+import type { FocusActionResult } from '../engines/workoutExecutionStateMachine';
 import {
   formatExerciseName,
   formatFatigueCost,
@@ -37,6 +38,16 @@ type PendingFocusConfirmation =
   | { type: 'set-anomaly'; anomaly: SetAnomaly; exerciseIndex: number; completionNotice: string }
   | { type: 'skip-support-block'; blockType: 'correction' | 'functional'; reason: SupportSkipReason; label: string };
 
+export type FocusFeedback = { message: string; tone: 'success' | 'info' | 'warning' | 'danger' };
+type FocusActionCallbackResult = FocusActionResult | void;
+
+export const focusFeedbackToneFromActionResult = (tone: FocusActionResult['tone']): FocusFeedback['tone'] => (tone === 'error' ? 'danger' : tone);
+
+export const focusFeedbackFromActionResult = (result: FocusActionResult): FocusFeedback => ({
+  message: result.message,
+  tone: focusFeedbackToneFromActionResult(result.tone),
+});
+
 interface TrainingFocusViewProps {
   session: TrainingSession;
   unitSettings: UnitSettings;
@@ -44,10 +55,10 @@ interface TrainingFocusViewProps {
   expandedExercise: number;
   setExpandedExercise: React.Dispatch<React.SetStateAction<number>>;
   onSetChange: (exerciseIndex: number, setIndex: number, field: EditableSetField, value: string | boolean) => void;
-  onCompleteSet: (exerciseIndex: number, advanceExercise?: boolean) => void;
-  onCopyPrevious: (exerciseIndex: number) => void;
+  onCompleteSet: (exerciseIndex: number, advanceExercise?: boolean) => FocusActionCallbackResult;
+  onCopyPrevious: (exerciseIndex: number) => FocusActionCallbackResult;
   onAdjustSet: (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => void;
-  onApplySuggestion: (exerciseIndex: number) => void;
+  onApplySuggestion: (exerciseIndex: number) => FocusActionCallbackResult;
   onUpdateActualDraft: (
     exerciseIndex: number,
     updates: {
@@ -60,9 +71,9 @@ interface TrainingFocusViewProps {
       painFlag?: boolean;
       source?: 'prescription' | 'manual' | 'copy_previous';
     },
-  ) => void;
+  ) => FocusActionCallbackResult;
   onSwitchExercise: (exerciseIndex: number) => void;
-  onReplaceExercise: (exerciseIndex: number, replacementId?: string) => void;
+  onReplaceExercise: (exerciseIndex: number, replacementId?: string) => FocusActionCallbackResult;
   onLoadFeedback: (exerciseId: string, feedback: LoadFeedbackValue) => void;
   onFinish?: () => void;
   onFinishToCalendar?: () => void;
@@ -224,7 +235,7 @@ export function TrainingFocusView({
   equipmentPreferences,
 }: TrainingFocusViewProps) {
   const [skipReason, setSkipReason] = React.useState<SupportSkipReason>('time');
-  const [feedback, setFeedback] = React.useState('');
+  const [feedback, setFeedback] = React.useState<FocusFeedback | null>(null);
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
   const [selectedUnavailableEquipment, setSelectedUnavailableEquipment] = React.useState<ExerciseEquipmentTag[]>([]);
@@ -342,11 +353,19 @@ export function TrainingFocusView({
           : 'border-slate-200 bg-white text-slate-800 hover:border-emerald-200 hover:bg-emerald-50',
     );
 
-  const notify = (message: string) => setFeedback(message);
+  const notify = (message: string, tone: FocusFeedback['tone'] = 'success') => setFeedback({ message, tone });
+  const notifyResult = (result: FocusActionCallbackResult, fallbackMessage?: string) => {
+    if (!result) {
+      if (fallbackMessage) notify(fallbackMessage, 'info');
+      return;
+    }
+    const nextFeedback = focusFeedbackFromActionResult(result);
+    notify(nextFeedback.message, nextFeedback.tone);
+  };
 
   React.useEffect(() => {
     if (!feedback) return undefined;
-    const timer = window.setTimeout(() => setFeedback(''), 2500);
+    const timer = window.setTimeout(() => setFeedback(null), 2500);
     return () => window.clearTimeout(timer);
   }, [feedback]);
 
@@ -360,15 +379,14 @@ export function TrainingFocusView({
 
   const copyPrevious = () => {
     if (isSupportStep) {
-      notify('当前辅助动作暂无上一组可复制');
+      notify('没有可复制的上一组。', 'info');
       return;
     }
     if (mainIndex < 0 || mainSetIndex <= 0) {
-      notify('暂无上一组可复制');
+      notify('没有可复制的上一组。', 'info');
       return;
     }
-    onCopyPrevious(mainIndex);
-    notify('已复制上一组');
+    notifyResult(onCopyPrevious(mainIndex));
   };
 
   const markPain = (painFlag: boolean) => {
@@ -380,8 +398,7 @@ export function TrainingFocusView({
       return;
     }
     if (mainIndex < 0 || mainSetIndex < 0) return;
-    onUpdateActualDraft(mainIndex, { painFlag });
-    notify(painFlag ? '已标记本组不适' : '已取消不适标记');
+    notifyResult(onUpdateActualDraft(mainIndex, { painFlag }));
   };
 
   const toggleUnavailableEquipment = (tag: ExerciseEquipmentTag) => {
@@ -395,11 +412,11 @@ export function TrainingFocusView({
 
   const openReplacementPicker = () => {
     if (mainIndex < 0 || !mainExercise) {
-      notify('当前动作暂无可替代动作。');
+      notify('当前动作暂无可替代动作。', 'info');
       return;
     }
     if (!visibleReplacementOptions.length) {
-      notify('当前动作暂无可替代动作。');
+      notify('当前动作暂无可替代动作。', 'info');
       return;
     }
     setSelectedUnavailableEquipment([]);
@@ -408,14 +425,14 @@ export function TrainingFocusView({
 
   const chooseReplacement = (option: SmartReplacementRecommendation) => {
     if (mainIndex < 0) return;
-    onReplaceExercise(mainIndex, option.exerciseId);
-    closeReplacementPicker();
-    notify(`已替换为：${displayReplacementName(option)}`);
+    const result = onReplaceExercise(mainIndex, option.exerciseId);
+    if (!result || result.changed) closeReplacementPicker();
+    notifyResult(result, `已替换为：${displayReplacementName(option)}。`);
   };
 
   const completeCurrentSet = () => {
     if (sessionComplete) {
-      notify('训练已完成');
+      notify('训练已完成。', 'info');
       return;
     }
     if (isSupportStep && supportLog) {
@@ -425,7 +442,7 @@ export function TrainingFocusView({
     }
     if (mainIndex < 0 || mainSetIndex < 0) return;
     if (number(actualDraft?.actualWeightKg) <= 0 && number(actualDraft?.actualReps) <= 0) {
-      notify('请先记录重量/次数，或点套用建议');
+      notifyResult(onCompleteSet(mainIndex));
       return;
     }
     const anomalyStepType = currentStep.stepType === 'completed' ? 'working' : currentStep.stepType;
@@ -462,15 +479,18 @@ export function TrainingFocusView({
       return;
     }
     const warningAnomaly = anomalies.find((item) => item.severity !== 'critical' && !item.requiresConfirmation);
-    onCompleteSet(mainIndex);
-    notify(warningAnomaly ? `输入异常提示：${warningAnomaly.title}` : currentStep.stepType === 'warmup' ? '已完成热身组' : '已完成正式组');
+    const result = onCompleteSet(mainIndex);
+    if (warningAnomaly && (!result || result.changed)) {
+      notify(`输入异常提示：${warningAnomaly.title}`, 'warning');
+      return;
+    }
+    notifyResult(result);
   };
 
   const confirmPendingAction = () => {
     if (!pendingConfirmation) return;
     if (pendingConfirmation.type === 'set-anomaly') {
-      onCompleteSet(pendingConfirmation.exerciseIndex);
-      notify(`已确认输入异常并保存：${pendingConfirmation.completionNotice}`);
+      notifyResult(onCompleteSet(pendingConfirmation.exerciseIndex));
     } else {
       onSkipSupportBlock(pendingConfirmation.blockType, pendingConfirmation.reason);
       notify(`已跳过${pendingConfirmation.label}`);
@@ -480,15 +500,15 @@ export function TrainingFocusView({
 
   const cancelPendingAction = () => {
     if (pendingConfirmation?.type === 'set-anomaly') {
-      notify('已返回修改，请先检查本组记录');
+      notify('已返回修改。', 'info');
     }
     setPendingConfirmation(null);
   };
 
   const updateDisplayWeight = (nextDisplayWeight: number) => {
-    if (mainIndex < 0) return;
+    if (mainIndex < 0) return undefined;
     const safeDisplayWeight = Math.max(0, nextDisplayWeight);
-    onUpdateActualDraft(mainIndex, {
+    return onUpdateActualDraft(mainIndex, {
       actualWeightKg: parseDisplayWeightToKg(safeDisplayWeight, weightUnit),
       displayWeight: safeDisplayWeight,
       displayUnit: weightUnit,
@@ -497,13 +517,13 @@ export function TrainingFocusView({
   };
 
   const updateActualReps = (nextReps: number) => {
-    if (mainIndex < 0) return;
-    onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(nextReps)), source: 'manual' });
+    if (mainIndex < 0) return undefined;
+    return onUpdateActualDraft(mainIndex, { actualReps: Math.max(0, Math.round(nextReps)), source: 'manual' });
   };
 
   const updateActualRir = (nextRir: number) => {
-    if (mainIndex < 0) return;
-    onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))), source: 'manual' });
+    if (mainIndex < 0) return undefined;
+    return onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))), source: 'manual' });
   };
 
   const renderCompletedState = () => (
@@ -867,8 +887,7 @@ export function TrainingFocusView({
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  onApplySuggestion(mainIndex);
-                  notify('已套用建议重量和次数');
+                  notifyResult(onApplySuggestion(mainIndex));
                 }}
               >
                 套用建议
@@ -891,8 +910,7 @@ export function TrainingFocusView({
                 type="button"
                 aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
                 onClick={() => {
-                  updateDisplayWeight(number(actualDisplayWeight) + delta);
-                  notify('已调整重量');
+                  notifyResult(updateDisplayWeight(number(actualDisplayWeight) + delta), '已调整重量。');
                 }}
                 className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
               >
@@ -926,8 +944,7 @@ export function TrainingFocusView({
                     type="button"
                     aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
                     onClick={() => {
-                      updateActualReps(number(actualReps) + delta);
-                      notify('已调整次数');
+                      notifyResult(updateActualReps(number(actualReps) + delta), '已调整次数。');
                     }}
                     className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
                   >
@@ -953,7 +970,10 @@ export function TrainingFocusView({
                   <button
                     key={rir}
                     type="button"
-                    onClick={() => updateActualRir(rir)}
+                    onClick={() => {
+                      const result = updateActualRir(rir);
+                      if (result && !result.changed) notifyResult(result);
+                    }}
                     className={classNames(
                       'h-12 rounded-lg border text-sm font-semibold',
                       actualRir === rir ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700',
@@ -1070,7 +1090,7 @@ export function TrainingFocusView({
         {isSupportStep ? renderSupportStep() : renderMainStep()}
       </div>
 
-      {feedback ? <Toast>{feedback}</Toast> : null}
+      {feedback ? <Toast tone={feedback.tone}>{feedback.message}</Toast> : null}
       {renderExercisePicker()}
       {renderReplacementPicker()}
       {renderExplanationSheet()}

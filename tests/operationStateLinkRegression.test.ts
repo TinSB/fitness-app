@@ -87,9 +87,10 @@ describe('operation state link regression', () => {
       ]),
       1,
     );
-    const current = getCurrentFocusStep(switched);
+    const prepared = dispatchWorkoutExecutionEvent(switched, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 1 }).updatedSession;
+    const current = getCurrentFocusStep(prepared);
 
-    const result = dispatchWorkoutExecutionEvent(switched, {
+    const result = dispatchWorkoutExecutionEvent(prepared, {
       type: 'COMPLETE_STEP',
       exerciseIndex: 1,
       expectedStepId: current.id,
@@ -98,6 +99,7 @@ describe('operation state link regression', () => {
     });
 
     expect(current.exerciseId).toBe('incline-db-press');
+    expect(result.actionResult).toMatchObject({ ok: true, changed: true, reasonCode: 'completed' });
     expect(result.updatedSession.exercises[0].sets[0].done).toBe(false);
     expect(result.updatedSession.exercises[1].sets[0].done).toBe(true);
     expect(getCurrentFocusStep(result.updatedSession).exerciseId).toBe('incline-db-press');

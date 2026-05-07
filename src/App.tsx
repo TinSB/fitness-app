@@ -30,8 +30,9 @@ import {
   getCurrentFocusStep,
   switchFocusExercise,
   updateFocusActualDraft,
+  updateFocusActualDraftWithResult,
 } from './engines/focusModeStateEngine';
-import { dispatchWorkoutExecutionEvent } from './engines/workoutExecutionStateMachine';
+import { dispatchWorkoutExecutionEvent, type FocusActionResult } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
 import { sessionEditFeedbackMessage } from './engines/sessionEditEngine';
@@ -233,6 +234,22 @@ function App() {
   const showAppToast = (message: string, tone: AppToast['tone'] = 'info') => {
     setAppToast({ message, tone });
   };
+
+  const focusInfoResult = (message: string, reasonCode: FocusActionResult['reasonCode']): FocusActionResult => ({
+    ok: true,
+    changed: false,
+    tone: 'info',
+    message,
+    reasonCode,
+  });
+
+  const focusWarningResult = (message: string, reasonCode: FocusActionResult['reasonCode']): FocusActionResult => ({
+    ok: false,
+    changed: false,
+    tone: 'warning',
+    message,
+    reasonCode,
+  });
 
   const commitData = React.useCallback((nextData: AppData) => {
     dataRef.current = nextData;
@@ -551,23 +568,28 @@ function App() {
     });
   };
 
-  const completeSet = (exerciseIndex: number, advanceExercise = false) => {
+  const completeSet = (exerciseIndex: number, advanceExercise = false): FocusActionResult => {
     const session = data.activeSession;
-    if (!session) return;
+    if (!session) return focusWarningResult('当前没有进行中的训练。', 'unsupported');
     const step = getCurrentFocusStep(session);
-    if (step.stepType === 'completed' || step.exerciseIndex !== exerciseIndex) return;
+    if (step.stepType === 'completed' || step.exerciseIndex !== exerciseIndex) {
+      return focusWarningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step');
+    }
 
     const completedAt = new Date().toISOString();
     const now = Date.now();
     const guardKey = `${session.id}:${step.id}`;
     const lastGuard = completeSetGuardRef.current;
-    if (lastGuard?.key === guardKey && now - lastGuard.at < 500) return;
-    completeSetGuardRef.current = { key: guardKey, at: now };
+    if (lastGuard?.key === guardKey && now - lastGuard.at < 500) return focusInfoResult('当前组未重复记录。', 'duplicate_submit');
 
     let nextExpandedExercise: number | null = null;
+    let actionResult: FocusActionResult = focusWarningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step');
 
     setData((current) => {
-      if (!current.activeSession) return current;
+      if (!current.activeSession) {
+        actionResult = focusWarningResult('当前没有进行中的训练。', 'unsupported');
+        return current;
+      }
       const result = dispatchWorkoutExecutionEvent(current.activeSession, {
         type: 'COMPLETE_STEP',
         exerciseIndex,
@@ -576,6 +598,8 @@ function App() {
         expectedStepId: step.id,
         displayUnit: current.unitSettings.weightUnit,
       });
+      actionResult = result.actionResult;
+      if (actionResult.changed) completeSetGuardRef.current = { key: guardKey, at: now };
       if (result.updatedSession === current.activeSession && result.warnings.length) return current;
       const nextStep = getCurrentFocusStep(result.updatedSession);
       nextExpandedExercise = result.nextState === 'completed' ? exerciseIndex : nextStep.exerciseIndex;
@@ -585,14 +609,18 @@ function App() {
     if (nextExpandedExercise !== null && nextExpandedExercise >= 0) {
       setExpandedExercise(nextExpandedExercise);
     }
+    return actionResult;
   };
 
-  const copyPreviousSet = (exerciseIndex: number) => {
+  const copyPreviousSet = (exerciseIndex: number): FocusActionResult => {
+    let actionResult: FocusActionResult = focusWarningResult('当前没有进行中的训练。', 'unsupported');
     setData((current) => {
       if (!current.activeSession) return current;
       const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'COPY_PREVIOUS_SET', exerciseIndex });
-      return { ...current, activeSession: result.updatedSession };
+      actionResult = result.actionResult;
+      return result.updatedSession === current.activeSession ? current : { ...current, activeSession: result.updatedSession };
     });
+    return actionResult;
   };
 
   const adjustCurrentSet = (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => {
@@ -607,39 +635,55 @@ function App() {
     });
   };
 
-  const applyFocusSuggestion = (exerciseIndex: number) => {
+  const applyFocusSuggestion = (exerciseIndex: number): FocusActionResult => {
+    let actionResult: FocusActionResult = focusWarningResult('当前没有进行中的训练。', 'unsupported');
     setData((current) => {
       if (!current.activeSession) return current;
       const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'APPLY_PRESCRIPTION', exerciseIndex });
-      return { ...current, activeSession: result.updatedSession };
+      actionResult = result.actionResult;
+      return result.updatedSession === current.activeSession ? current : { ...current, activeSession: result.updatedSession };
     });
+    return actionResult;
   };
 
   const updateFocusDraft = (
     exerciseIndex: number,
     updates: Parameters<typeof updateFocusActualDraft>[2]
-  ) => {
+  ): FocusActionResult => {
+    let actionResult: FocusActionResult = focusWarningResult('当前没有进行中的训练。', 'unsupported');
     setData((current) => {
       if (!current.activeSession) return current;
-      return { ...current, activeSession: updateFocusActualDraft(current.activeSession, exerciseIndex, updates) };
+      const result = updateFocusActualDraftWithResult(current.activeSession, exerciseIndex, updates);
+      actionResult = result.actionResult;
+      return result.session === current.activeSession ? current : { ...current, activeSession: result.session };
     });
+    return actionResult;
   };
 
-  const replaceExercise = (exerciseIndex: number, replacementId?: string) => {
+  const replaceExercise = (exerciseIndex: number, replacementId?: string): FocusActionResult => {
+    let actionResult: FocusActionResult = focusWarningResult('当前没有进行中的训练。', 'unsupported');
     setData((current) => {
       if (!current.activeSession) return current;
       if (replacementId) {
         const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'APPLY_REPLACEMENT', exerciseIndex, replacementId });
-        return { ...current, activeSession: result.updatedSession };
+        actionResult = result.actionResult;
+        return result.updatedSession === current.activeSession ? current : { ...current, activeSession: result.updatedSession };
       }
       const exercise = current.activeSession.exercises[exerciseIndex];
       const nextOption = exercise ? buildReplacementOptions(exercise)[0] : undefined;
-      if (!nextOption) return current;
+      if (!nextOption) {
+        actionResult = focusWarningResult('该替代动作暂不可用。', 'invalid_replacement');
+        return current;
+      }
       const result = dispatchWorkoutExecutionEvent(current.activeSession, { type: 'APPLY_REPLACEMENT', exerciseIndex, replacementId: nextOption.id });
-      return { ...current, activeSession: result.updatedSession };
+      actionResult = result.actionResult;
+      return result.updatedSession === current.activeSession ? current : { ...current, activeSession: result.updatedSession };
     });
-    setExpandedExercise(exerciseIndex);
-    invalidateDerivedState('replacement_applied');
+    if (actionResult.changed) {
+      setExpandedExercise(exerciseIndex);
+      invalidateDerivedState('replacement_applied');
+    }
+    return actionResult;
   };
 
   const switchActiveExercise = (exerciseIndex: number) => {

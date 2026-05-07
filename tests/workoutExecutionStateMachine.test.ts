@@ -35,7 +35,13 @@ describe('workoutExecutionStateMachine', () => {
     });
 
     expect(getCurrentFocusStep(first.updatedSession).id).not.toBe(firstStep.id);
-    expect(duplicate.warnings.join(' ')).toContain('未重复提交');
+    expect(duplicate.actionResult).toMatchObject({
+      ok: false,
+      changed: false,
+      tone: 'warning',
+      message: '当前训练位置已更新，请重新确认后保存。',
+      reasonCode: 'stale_step',
+    });
     expect(getCurrentFocusStep(duplicate.updatedSession).id).toBe(getCurrentFocusStep(first.updatedSession).id);
   });
 
