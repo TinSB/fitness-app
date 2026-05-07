@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import planDraftFixture from './fixtures/realDataRegression/duplicate-plan-draft.json';
 import { filterVisibleCoachActions } from '../src/engines/coachActionDismissEngine';
 import type { CoachAction } from '../src/engines/coachActionEngine';
 import {
@@ -8,13 +7,11 @@ import {
   upsertPlanAdjustmentDraftByFingerprint,
 } from '../src/engines/planAdjustmentIdentityEngine';
 import type { AppData, ProgramAdjustmentDraft } from '../src/models/training-model';
-import { sanitizeData } from '../src/storage/persistence';
-import { makeAppData } from './fixtures';
+import { buildAppDataFromFixture, loadRealDataFixture } from './helpers/realDataFixture';
 
-const rawFixture = planDraftFixture.data as Partial<AppData> & { coachActions: CoachAction[] };
+const rawFixture = loadRealDataFixture<Partial<AppData> & { coachActions: CoachAction[] }>('duplicate-plan-draft').data;
 const fixtureData = () =>
-  sanitizeData({
-    ...makeAppData(),
+  buildAppDataFromFixture('duplicate-plan-draft', {
     programAdjustmentDrafts: rawFixture.programAdjustmentDrafts,
     programAdjustmentHistory: rawFixture.programAdjustmentHistory,
   });

@@ -1,20 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import assistedPullupFixture from './fixtures/realDataRegression/legacy-assisted-pullup-session.json';
 import { EXERCISE_KNOWLEDGE_OVERRIDES } from '../src/data/exerciseLibrary';
 import { buildPrs } from '../src/engines/analytics';
 import { buildDataHealthReport } from '../src/engines/dataHealthEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../src/engines/e1rmEngine';
 import { buildEffectiveVolumeSummary } from '../src/engines/effectiveSetEngine';
 import { validateReplacementExerciseId } from '../src/engines/replacementEngine';
-import type { AppData } from '../src/models/training-model';
-import { sanitizeData } from '../src/storage/persistence';
-import { makeAppData } from './fixtures';
+import { buildAppDataFromFixture } from './helpers/realDataFixture';
 
-const fixtureData = () =>
-  sanitizeData({
-    ...makeAppData(),
-    ...(assistedPullupFixture.data as Partial<AppData>),
-  });
+const fixtureData = () => buildAppDataFromFixture('legacy-assisted-pullup-session');
 
 describe('real data assisted pull-up regression', () => {
   it('keeps assisted-pull-up as a valid vertical-pull exercise after sanitize', () => {

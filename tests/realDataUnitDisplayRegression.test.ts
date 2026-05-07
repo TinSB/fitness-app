@@ -1,18 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import unitFixture from './fixtures/realDataRegression/legacy-unit-display.json';
 import { analyzeImportedAppData, repairImportedAppData } from '../src/engines/dataRepairEngine';
 import { sessionVolume } from '../src/engines/engineUtils';
 import { formatWeight } from '../src/engines/unitConversionEngine';
 import type { AppData } from '../src/models/training-model';
-import { sanitizeData } from '../src/storage/persistence';
 import { makeAppData } from './fixtures';
+import { buildAppDataFromFixture, loadRealDataFixture } from './helpers/realDataFixture';
 
 const rawData = () => ({
   ...makeAppData(),
-  ...(unitFixture.data as Partial<AppData>),
+  ...loadRealDataFixture<Partial<AppData>>('legacy-unit-display').data,
 });
 
-const fixtureData = () => sanitizeData(rawData());
+const fixtureData = () => buildAppDataFromFixture('legacy-unit-display');
 
 describe('real data legacy unit display regression', () => {
   it('uses actualWeightKg as the calculation source and ignores stale display fields for volume', () => {

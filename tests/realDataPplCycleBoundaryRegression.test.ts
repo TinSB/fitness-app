@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import pplFixture from './fixtures/realDataRegression/ppl-cycle-boundary-history.json';
 import { buildEnginePipeline } from '../src/engines/enginePipeline';
 import { buildWorkoutCycleState } from '../src/engines/workoutCycleScheduler';
 import { buildTodayViewModel } from '../src/presenters/todayPresenter';
 import type { AppData } from '../src/models/training-model';
-import { sanitizeData } from '../src/storage/persistence';
-import { makeAppData, getTemplate } from './fixtures';
+import { getTemplate } from './fixtures';
+import { buildAppDataFromFixture } from './helpers/realDataFixture';
 
-const fixtureData = () =>
-  sanitizeData({
-    ...makeAppData(),
-    ...(pplFixture.data as Partial<AppData>),
-  });
+const fixtureData = () => buildAppDataFromFixture('ppl-cycle-boundary-history');
 
 const visibleTodayText = (data: AppData, currentDate: string) => {
   const pipeline = buildEnginePipeline(data, currentDate);

@@ -1,19 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import draftFixture from './fixtures/realDataRegression/incomplete-draft-sets-session.json';
 import { buildPrs } from '../src/engines/analytics';
 import { buildE1RMProfile } from '../src/engines/e1rmEngine';
 import { buildEffectiveVolumeSummary } from '../src/engines/effectiveSetEngine';
 import { completedSets, sessionCompletedSets, sessionVolume, setVolume } from '../src/engines/engineUtils';
 import { buildSessionDetailSummary } from '../src/engines/sessionDetailSummaryEngine';
-import type { AppData } from '../src/models/training-model';
-import { sanitizeData } from '../src/storage/persistence';
-import { makeAppData } from './fixtures';
+import { buildAppDataFromFixture } from './helpers/realDataFixture';
 
-const fixtureData = () =>
-  sanitizeData({
-    ...makeAppData(),
-    ...(draftFixture.data as Partial<AppData>),
-  });
+const fixtureData = () => buildAppDataFromFixture('incomplete-draft-sets-session');
 
 describe('real data incomplete draft set regression', () => {
   it('keeps done=false sets with values as incomplete drafts', () => {

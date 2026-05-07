@@ -1,21 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import sorenessFixture from './fixtures/realDataRegression/stale-today-soreness.json';
 import { buildEnginePipeline } from '../src/engines/enginePipeline';
 import { actionableSorenessAreas, isNoSoreness } from '../src/engines/engineUtils';
 import { buildTrainingDecisionContext } from '../src/engines/trainingDecisionContext';
 import type { AppData, TodayStatus } from '../src/models/training-model';
-import { sanitizeData } from '../src/storage/persistence';
-import { makeAppData } from './fixtures';
+import { buildAppDataFromFixture, loadRealDataFixture } from './helpers/realDataFixture';
 
-const baseData = (todayStatus: unknown) =>
-  sanitizeData({
-    ...makeAppData(),
-    todayStatus,
-  });
+const sorenessFixtureData = loadRealDataFixture<Partial<AppData> & { legacyTodayStatusWithoutDate?: unknown }>('stale-today-soreness').data;
+const baseData = (todayStatus: unknown) => buildAppDataFromFixture('stale-today-soreness', { todayStatus: todayStatus as TodayStatus });
 
 describe('real data Today soreness date regression', () => {
   it('ignores stale dated soreness while preserving sleep, energy, and time', () => {
-    const data = baseData((sorenessFixture.data as Partial<AppData>).todayStatus);
+    const data = baseData(sorenessFixtureData.todayStatus);
     const context = buildTrainingDecisionContext(data, '2026-05-04');
     const pipeline = buildEnginePipeline(data, '2026-05-04');
 
@@ -29,7 +24,7 @@ describe('real data Today soreness date regression', () => {
   });
 
   it('ignores legacy soreness without a date', () => {
-    const raw = (sorenessFixture.data as Record<string, unknown>).legacyTodayStatusWithoutDate;
+    const raw = sorenessFixtureData.legacyTodayStatusWithoutDate;
     const data = baseData(raw);
     const context = buildTrainingDecisionContext(data, '2026-05-04');
 
@@ -40,7 +35,7 @@ describe('real data Today soreness date regression', () => {
   });
 
   it('uses soreness only after the user records it for the current date', () => {
-    const stale = (sorenessFixture.data as Partial<AppData>).todayStatus as TodayStatus;
+    const stale = sorenessFixtureData.todayStatus as TodayStatus;
     const data = baseData({ ...stale, date: '2026-05-04' });
     const context = buildTrainingDecisionContext(data, '2026-05-04');
 
