@@ -93,7 +93,7 @@ describe('FocusActionResult contract', () => {
       ok: false,
       changed: false,
       tone: 'warning',
-      message: '请先记录重量/次数，或点套用建议。',
+      message: '请先填写重量和次数。',
       reasonCode: 'missing_draft',
     });
     expectNoSuccessSemantics(result.actionResult);

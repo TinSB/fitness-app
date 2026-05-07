@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Copy, Dumbbell, ListChecks, Replace, SkipForward, Timer, XCircle } from 'lucide-react';
 import { classNames, formatTimer, isCompletedSet, number } from '../engines/engineUtils';
-import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusModeStateEngine';
+import { dedupeFocusNotices, getFocusNavigationState, type FocusTrainingStep } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildSmartReplacementRecommendations, type SmartReplacementRecommendation } from '../engines/smartReplacementEngine';
@@ -21,7 +21,7 @@ import {
   formatTechniqueQuality,
   formatTemplateName,
 } from '../i18n/formatters';
-import type { LoadFeedbackValue, PainPattern, ReadinessResult, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
+import type { ActualSetDraft, LoadFeedbackValue, PainPattern, ReadinessResult, RestTimerState, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Card } from '../ui/Card';
@@ -47,6 +47,74 @@ export const focusFeedbackFromActionResult = (result: FocusActionResult): FocusF
   message: result.message,
   tone: focusFeedbackToneFromActionResult(result.tone),
 });
+
+export type FocusCurrentSetSummary = {
+  text: string;
+  actualText: string;
+  missingInput: boolean;
+  isSuggestionApplied: boolean;
+  sourceLabel?: string;
+};
+
+const focusDraftSourceLabels: Partial<Record<NonNullable<ActualSetDraft['source']>, string>> = {
+  prescription: '建议',
+  manual: '手动',
+  copy_previous: '复制上组',
+};
+
+const hasPositiveNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+const sameOptionalNumber = (left: unknown, right: unknown) => {
+  if (left === undefined && right === undefined) return true;
+  return typeof left === 'number' && typeof right === 'number' && left === right;
+};
+
+export const isFocusSuggestionApplied = (currentStep: FocusTrainingStep, actualDraft: ActualSetDraft | null | undefined) =>
+  Boolean(
+    actualDraft &&
+      actualDraft.source === 'prescription' &&
+      sameOptionalNumber(actualDraft.actualWeightKg, currentStep.plannedWeight) &&
+      sameOptionalNumber(actualDraft.actualReps, currentStep.plannedReps) &&
+      sameOptionalNumber(actualDraft.actualRir, currentStep.plannedRir),
+  );
+
+export const buildFocusCurrentSetSummary = ({
+  currentStep,
+  actualDraft,
+  unitSettings,
+}: {
+  currentStep: FocusTrainingStep;
+  actualDraft: ActualSetDraft | null | undefined;
+  unitSettings: UnitSettings;
+}): FocusCurrentSetSummary => {
+  if (currentStep.stepType !== 'warmup' && currentStep.stepType !== 'working') {
+    return {
+      text: '当前记录：按支持动作计划完成',
+      actualText: '按支持动作计划完成',
+      missingInput: false,
+      isSuggestionApplied: false,
+    };
+  }
+
+  const hasWeight = hasPositiveNumber(actualDraft?.actualWeightKg);
+  const hasReps = hasPositiveNumber(actualDraft?.actualReps);
+  const missingInput = !hasWeight || !hasReps;
+  const weightText = hasWeight ? formatWeight(actualDraft?.actualWeightKg, unitSettings) : '待输入';
+  const repsText = hasReps ? `${number(actualDraft?.actualReps)} 次` : '待输入';
+  const rirText = typeof actualDraft?.actualRir === 'number' ? formatRirLabel(actualDraft.actualRir) : '';
+  const sourceLabel = actualDraft?.source ? focusDraftSourceLabels[actualDraft.source] : undefined;
+  const isSuggestionApplied = isFocusSuggestionApplied(currentStep, actualDraft);
+  const actualParts = [`${weightText} × ${repsText}`, rirText].filter(Boolean);
+  const summaryParts = [`${weightText} × ${repsText}`, rirText, sourceLabel].filter(Boolean);
+
+  return {
+    text: missingInput ? '当前记录：缺少重量或次数' : `当前记录：${summaryParts.join(' · ')}`,
+    actualText: actualParts.join(' · '),
+    missingInput,
+    isSuggestionApplied,
+    sourceLabel,
+  };
+};
 
 interface TrainingFocusViewProps {
   session: TrainingSession;
@@ -241,6 +309,8 @@ export function TrainingFocusView({
   const [selectedUnavailableEquipment, setSelectedUnavailableEquipment] = React.useState<ExerciseEquipmentTag[]>([]);
   const [showExplanationSheet, setShowExplanationSheet] = React.useState(false);
   const [pendingConfirmation, setPendingConfirmation] = React.useState<PendingFocusConfirmation | null>(null);
+  const [showMissingInputGuide, setShowMissingInputGuide] = React.useState(false);
+  const currentInputRef = React.useRef<HTMLDivElement | null>(null);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
   const mainExercise = focusState.currentExercise;
@@ -334,9 +404,8 @@ export function TrainingFocusView({
   const actualReps = actualDraft?.actualReps;
   const actualRir = actualDraft?.actualRir;
   const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
-  const actualSummary = `${actualDisplayWeight === undefined ? '待输入' : `${actualDisplayWeight}${weightUnit}`} · ${actualReps === undefined ? '待输入' : `${number(actualReps)} 次`}${
-    actualRir === undefined ? '' : ` · ${formatRirLabel(actualRir)}`
-  }`;
+  const currentSetSummary = buildFocusCurrentSetSummary({ currentStep, actualDraft, unitSettings });
+  const actualSummary = currentSetSummary.actualText;
   const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
   const repAdjustments = [-5, -1, 1, 5];
   const canCompleteCurrentStep = isSupportStep || mainSetIndex >= 0;
@@ -353,6 +422,11 @@ export function TrainingFocusView({
           : 'border-slate-200 bg-white text-slate-800 hover:border-emerald-200 hover:bg-emerald-50',
     );
 
+  const requestInputGuide = () => {
+    setShowMissingInputGuide(true);
+    window.setTimeout(() => currentInputRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' }), 0);
+  };
+
   const notify = (message: string, tone: FocusFeedback['tone'] = 'success') => setFeedback({ message, tone });
   const notifyResult = (result: FocusActionCallbackResult, fallbackMessage?: string) => {
     if (!result) {
@@ -360,8 +434,14 @@ export function TrainingFocusView({
       return;
     }
     const nextFeedback = focusFeedbackFromActionResult(result);
+    if (result.reasonCode === 'missing_draft') requestInputGuide();
+    if (result.changed) setShowMissingInputGuide(false);
     notify(nextFeedback.message, nextFeedback.tone);
   };
+
+  React.useEffect(() => {
+    if (!currentSetSummary.missingInput) setShowMissingInputGuide(false);
+  }, [currentSetSummary.missingInput, currentStep.id]);
 
   React.useEffect(() => {
     if (!feedback) return undefined;
@@ -441,7 +521,7 @@ export function TrainingFocusView({
       return;
     }
     if (mainIndex < 0 || mainSetIndex < 0) return;
-    if (number(actualDraft?.actualWeightKg) <= 0 && number(actualDraft?.actualReps) <= 0) {
+    if (currentSetSummary.missingInput) {
       notifyResult(onCompleteSet(mainIndex));
       return;
     }
@@ -875,117 +955,128 @@ export function TrainingFocusView({
 
         {renderRestTimer()}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Card className="border-white/10 bg-white text-slate-950">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-xs font-semibold text-slate-500">推荐处方</div>
-                <div className="mt-2 text-lg font-bold leading-7">{plannedSummary}</div>
+        <div
+          ref={currentInputRef}
+          className={classNames(
+            'space-y-3 rounded-xl',
+            showMissingInputGuide && currentSetSummary.missingInput && 'ring-2 ring-amber-300 ring-offset-2 ring-offset-slate-950',
+          )}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Card className="border-white/10 bg-white text-slate-950">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-slate-500">推荐处方</div>
+                  <div className="mt-2 text-lg font-bold leading-7">{plannedSummary}</div>
+                </div>
+                <ActionButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    notifyResult(onApplySuggestion(mainIndex));
+                  }}
+                >
+                  套用建议
+                </ActionButton>
               </div>
-              <ActionButton
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  notifyResult(onApplySuggestion(mainIndex));
-                }}
-              >
-                套用建议
-              </ActionButton>
-            </div>
-          </Card>
-          <Card className="border-white/10 bg-white text-slate-950">
-            <div className="text-xs font-semibold text-slate-500">实际记录</div>
-            <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
-            <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
-          </Card>
-        </div>
-
-        <Card className="border-white/10 bg-white text-slate-950">
-          <div className="text-sm font-semibold">重量（{weightUnit}）</div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {weightAdjustments.map((delta) => (
-              <button
-                key={`weight-${delta}`}
-                type="button"
-                aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
-                onClick={() => {
-                  notifyResult(updateDisplayWeight(number(actualDisplayWeight) + delta), '已调整重量。');
-                }}
-                className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
-              >
-                {delta > 0 ? `+${delta}` : delta}
-              </button>
-            ))}
+            </Card>
+            <Card className="border-white/10 bg-white text-slate-950">
+              <div className="text-xs font-semibold text-slate-500">实际记录</div>
+              <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
+              {showMissingInputGuide && currentSetSummary.missingInput ? (
+                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">缺少重量或次数</div>
+              ) : null}
+              <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
+            </Card>
           </div>
-          <label className="mt-3 block text-xs font-semibold text-slate-500">
-            自定义重量
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step={weightUnit === 'lb' ? '1' : '0.5'}
-              value={actualDisplayWeight ?? ''}
-              onChange={(event) => updateDisplayWeight(number(event.target.value))}
-              className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
-              placeholder={`0${weightUnit}`}
-            />
-          </label>
-        </Card>
 
-        <Card className="border-white/10 bg-white text-slate-950">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="text-sm font-semibold">次数</div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {repAdjustments.map((delta) => (
-                  <button
-                    key={`rep-${delta}`}
-                    type="button"
-                    aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
-                    onClick={() => {
-                      notifyResult(updateActualReps(number(actualReps) + delta), '已调整次数。');
-                    }}
-                    className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
-                  >
-                    {delta > 0 ? `+${delta}` : delta}
-                  </button>
-                ))}
-              </div>
+          <Card className="border-white/10 bg-white text-slate-950">
+            <div className="text-sm font-semibold">重量（{weightUnit}）</div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {weightAdjustments.map((delta) => (
+                <button
+                  key={`weight-${delta}`}
+                  type="button"
+                  aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
+                  onClick={() => {
+                    notifyResult(updateDisplayWeight(number(actualDisplayWeight) + delta), '已调整重量。');
+                  }}
+                  className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
+                >
+                  {delta > 0 ? `+${delta}` : delta}
+                </button>
+              ))}
+            </div>
+            <label className="mt-3 block text-xs font-semibold text-slate-500">
+              自定义重量
               <input
                 type="number"
-                inputMode="numeric"
+                inputMode="decimal"
                 min="0"
-                step="1"
-                value={actualReps ?? ''}
-                onChange={(event) => updateActualReps(number(event.target.value))}
-                className="mt-2 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
-                placeholder="0 次"
+                step={weightUnit === 'lb' ? '1' : '0.5'}
+                value={actualDisplayWeight ?? ''}
+                onChange={(event) => updateDisplayWeight(number(event.target.value))}
+                className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
+                placeholder={`0${weightUnit}`}
               />
-            </div>
-            <div>
-              <div className="text-sm font-semibold">余力（RIR）</div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {[0, 1, 2, 3, 4, 5].map((rir) => (
-                  <button
-                    key={rir}
-                    type="button"
-                    onClick={() => {
-                      const result = updateActualRir(rir);
-                      if (result && !result.changed) notifyResult(result);
-                    }}
-                    className={classNames(
-                      'h-12 rounded-lg border text-sm font-semibold',
-                      actualRir === rir ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700',
-                    )}
-                  >
-                    {rir}
-                  </button>
-                ))}
+            </label>
+          </Card>
+
+          <Card className="border-white/10 bg-white text-slate-950">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-sm font-semibold">次数</div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {repAdjustments.map((delta) => (
+                    <button
+                      key={`rep-${delta}`}
+                      type="button"
+                      aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
+                      onClick={() => {
+                        notifyResult(updateActualReps(number(actualReps) + delta), '已调整次数。');
+                      }}
+                      className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
+                    >
+                      {delta > 0 ? `+${delta}` : delta}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  value={actualReps ?? ''}
+                  onChange={(event) => updateActualReps(number(event.target.value))}
+                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
+                  placeholder="0 次"
+                />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">余力（RIR）</div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((rir) => (
+                    <button
+                      key={rir}
+                      type="button"
+                      onClick={() => {
+                        const result = updateActualRir(rir);
+                        if (result && !result.changed) notifyResult(result);
+                      }}
+                      className={classNames(
+                        'h-12 rounded-lg border text-sm font-semibold',
+                        actualRir === rir ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700',
+                      )}
+                    >
+                      {rir}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         {completedMainSets.length ? (
           <Card className="border-white/10 bg-white text-slate-950">
@@ -1127,6 +1218,37 @@ export function TrainingFocusView({
               <span className="text-xs font-bold leading-tight">替代动作</span>
             </button>
           </div>
+          {!isSupportStep ? (
+            <div
+              className={classNames(
+                'rounded-xl border px-3 py-2',
+                currentSetSummary.missingInput
+                  ? 'border-amber-200 bg-amber-50 text-amber-950'
+                  : 'border-slate-200 bg-stone-50 text-slate-900',
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{currentSetSummary.text}</div>
+                  {showMissingInputGuide && currentSetSummary.missingInput ? (
+                    <div className="mt-1 text-xs font-semibold text-amber-800">缺少重量或次数</div>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => notifyResult(onApplySuggestion(mainIndex))}
+                  className={classNames(
+                    'shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition',
+                    currentSetSummary.isSuggestionApplied
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-emerald-200 bg-white text-emerald-700 active:scale-[0.98]',
+                  )}
+                >
+                  {currentSetSummary.isSuggestionApplied ? '已套用' : '套用建议'}
+                </button>
+              </div>
+            </div>
+          ) : null}
           <ActionButton
             type="button"
             aria-label="完成一组"

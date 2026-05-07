@@ -118,10 +118,10 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
         break;
       }
       const draft = getActualSetDraft(session, before);
-      if (before.stepType !== 'completed' && number(draft?.actualWeightKg) <= 0 && number(draft?.actualReps) <= 0) {
-        warnings.push('请先记录重量/次数，或点套用建议。');
-        feedback = '请先记录重量/次数，或点套用建议。';
-        actionResult = focusWarningResult('请先记录重量/次数，或点套用建议。', 'missing_draft');
+      if (before.stepType !== 'completed' && (number(draft?.actualWeightKg) <= 0 || number(draft?.actualReps) <= 0)) {
+        warnings.push('请先填写重量和次数。');
+        feedback = '请先填写重量和次数。';
+        actionResult = focusWarningResult('请先填写重量和次数。', 'missing_draft');
         break;
       }
       const result = completeFocusSet(session, event.exerciseIndex, event.completedAt, event.nowMs, event.expectedStepId, event.displayUnit || 'kg');
