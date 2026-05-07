@@ -1,0 +1,69 @@
+{
+  "fixtureMeta": {
+    "bug": "draft sets with values were being confused with completed work",
+    "privacy": "anonymous minimal reconstruction"
+  },
+  "data": {
+    "history": [
+      {
+        "id": "fixture-incomplete-draft",
+        "date": "2026-05-03",
+        "finishedAt": "2026-05-03T10:00:00-04:00",
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "programTemplateId": "push-a",
+        "programTemplateName": "推 A",
+        "trainingMode": "hybrid",
+        "focus": "胸肩",
+        "completed": true,
+        "endedEarly": true,
+        "earlyEndReason": "incomplete_main_work",
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "baseId": "bench-press",
+            "name": "平板卧推",
+            "muscle": "胸",
+            "primaryMuscles": ["chest"],
+            "kind": "compound",
+            "sets": [
+              {
+                "id": "bench-press-1",
+                "type": "top",
+                "weight": 80,
+                "actualWeightKg": 80,
+                "reps": 6,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "done": true,
+                "completedAt": "2026-05-03T09:30:00-04:00"
+              }
+            ]
+          },
+          {
+            "id": "incline-db-press",
+            "baseId": "incline-db-press",
+            "name": "上斜哑铃卧推",
+            "muscle": "胸",
+            "primaryMuscles": ["chest"],
+            "kind": "compound",
+            "sets": [
+              {
+                "id": "incline-db-press-draft-1",
+                "type": "top",
+                "weight": 28,
+                "actualWeightKg": 28,
+                "reps": 10,
+                "rir": 2,
+                "techniqueQuality": "acceptable",
+                "done": false
+              }
+            ]
+          }
+        ],
+        "status": { "sleep": "一般", "energy": "中", "time": "60", "soreness": ["无"] }
+      }
+    ]
+  }
+}

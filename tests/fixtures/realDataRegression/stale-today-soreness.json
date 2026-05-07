@@ -1,0 +1,21 @@
+{
+  "fixtureMeta": {
+    "bug": "old todayStatus.soreness carried into a later day and changed recovery recommendation",
+    "privacy": "anonymous minimal reconstruction"
+  },
+  "data": {
+    "todayStatus": {
+      "date": "2026-05-03",
+      "sleep": "好",
+      "energy": "高",
+      "time": "60",
+      "soreness": ["背"]
+    },
+    "legacyTodayStatusWithoutDate": {
+      "sleep": "好",
+      "energy": "高",
+      "time": "60",
+      "soreness": ["腿"]
+    }
+  }
+}

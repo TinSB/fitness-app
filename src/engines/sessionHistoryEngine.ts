@@ -1,6 +1,7 @@
 import type { AppData, SessionDataFlag, TrainingSession } from '../models/training-model';
 import { reconcileScreeningProfile } from './adaptiveFeedbackEngine';
-import { toLocalDateKey } from './trainingCalendarEngine';
+import { markSessionEdited } from './sessionEditEngine';
+import { getSessionCalendarDate } from './trainingCalendarEngine';
 
 const excludedFlags = new Set<SessionDataFlag>(['test', 'excluded']);
 
@@ -21,7 +22,7 @@ export const listSessionHistory = (history: TrainingSession[] = [], filter: Sess
     })
     .sort((left, right) => sessionSortKey(right).localeCompare(sessionSortKey(left)));
 
-export const getSessionLocalDate = (session: TrainingSession) => toLocalDateKey(session.date || session.startedAt || session.finishedAt);
+export const getSessionLocalDate = (session: TrainingSession) => getSessionCalendarDate(session);
 
 export type SessionHistoryMutationResult = {
   ok: boolean;
@@ -94,7 +95,11 @@ export const markSessionDataFlag = (
     };
   }
 
-  const history = (data.history || []).map((session) => (session.id === sessionId ? { ...session, dataFlag } : session));
+  const history = (data.history || []).map((session) =>
+    session.id === sessionId
+      ? markSessionEdited({ ...session, dataFlag }, ['dataFlag'], '历史训练数据状态修正', session)
+      : session,
+  );
   const updated = history.find((session) => session.id === sessionId);
   return {
     ok: true,

@@ -96,11 +96,28 @@ const pickNumberRecord = (value: unknown) =>
       .map(([key, entry]) => [key, number(entry)])
       .filter(([, entry]) => Number.isFinite(entry))
   ) as Record<string, number>;
+const editAffectedStats = ['volume', 'effectiveSet', 'PR', 'e1RM', 'none'] as const;
 const pickEnum = <T extends readonly string[]>(value: unknown, allowed: T, fallback: T[number]): T[number] =>
   typeof value === 'string' && allowed.includes(value) ? value : fallback;
 const finiteNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const sanitizeSessionEditSummarySnapshot = (value: unknown) => {
+  const raw = pickRecord(value);
+  if (!Object.keys(raw).length) return undefined;
+  return {
+    plannedWorkingSets: number(raw.plannedWorkingSets),
+    completedWorkingSets: number(raw.completedWorkingSets),
+    effectiveSets: number(raw.effectiveSets),
+    warmupSets: number(raw.warmupSets),
+    incompleteSets: number(raw.incompleteSets),
+    workingVolume: number(raw.workingVolume),
+    warmupVolume: number(raw.warmupVolume),
+    dataFlag: pickEnum(raw.dataFlag, ['normal', 'test', 'excluded'] as const, 'normal'),
+    excludedFromStatsReason: pickString(raw.excludedFromStatsReason) || undefined,
+  };
 };
 
 const normalizePrimaryGoal = (value: unknown, fallback: AppData['programTemplate']['primaryGoal'] = 'hypertrophy'): AppData['programTemplate']['primaryGoal'] => {
@@ -863,10 +880,18 @@ export const sanitizeSessionLog = (session: unknown): TrainingSession | null => 
         const entry = pickRecord(item);
         const editedAt = pickString(entry.editedAt);
         if (!editedAt) return null;
+        const fields = pickArray(entry.fields).map(String).filter(Boolean);
+        const editedFields = pickArray(entry.editedFields, fields).map(String).filter(Boolean);
         return {
           editedAt,
-          fields: pickArray(entry.fields).map(String).filter(Boolean),
+          fields: fields.length ? fields : editedFields,
+          editedFields: editedFields.length ? editedFields : fields,
           note: pickString(entry.note) || undefined,
+          beforeSummary: sanitizeSessionEditSummarySnapshot(entry.beforeSummary),
+          afterSummary: sanitizeSessionEditSummarySnapshot(entry.afterSummary),
+          affectedStats: pickArray(entry.affectedStats)
+            .map(String)
+            .filter((stat): stat is (typeof editAffectedStats)[number] => editAffectedStats.includes(stat as (typeof editAffectedStats)[number])),
         };
       })
       .filter(Boolean) as TrainingSession['editHistory'],

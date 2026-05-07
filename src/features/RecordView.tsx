@@ -2,6 +2,7 @@ import React from 'react';
 import { CalendarDays, Medal, Trash2 } from 'lucide-react';
 import { buildMonthStats, buildPrs } from '../engines/analytics';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/effectiveSetEngine';
+import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSetExplanationEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
 import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
@@ -12,8 +13,6 @@ import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenc
 import {
   classNames,
   completedSets,
-  isCompletedSet,
-  isIncompleteSet,
   number,
   setVolume,
   todayKey,
@@ -26,8 +25,8 @@ import {
   buildTrainingCalendar,
   buildTrainingCalendarMonthRange,
   clampCalendarMonth,
-  getDefaultCalendarDateForMonth,
   getInitialCalendarMonth,
+  resolveCalendarSelectedDate,
 } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
@@ -49,6 +48,7 @@ import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisp
 import type {
   AppData,
   PersonalRecord,
+  SessionEditAffectedStat,
   SessionDataFlag,
   SupportExerciseLog,
   TechniqueQuality,
@@ -187,6 +187,38 @@ const supportLogStatusLabel = (log: SupportExerciseLog) => {
   return '\u672a\u5f00\u59cb';
 };
 
+const editFieldLabels: Record<string, string> = {
+  sets: '正式组',
+  warmupSets: '热身组',
+  dataFlag: '数据状态',
+};
+
+const affectedStatLabels: Record<SessionEditAffectedStat, string> = {
+  volume: '总量',
+  effectiveSet: '有效组',
+  PR: 'PR',
+  e1RM: 'e1RM',
+  none: '不影响 PR、e1RM 和有效组',
+};
+
+const formatEditTimestamp = (value?: string) => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  const date = parsed.toISOString().slice(0, 10);
+  const time = parsed.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return `${date} ${time}`;
+};
+
+const formatEditedFields = (fields: string[] = []) =>
+  fields.map((field) => editFieldLabels[field] || '修正内容').filter((field, index, items) => items.indexOf(field) === index).join('、') || '修正内容';
+
+const formatAffectedStats = (stats: SessionEditAffectedStat[] = []) =>
+  (stats.length ? stats : (['none'] as SessionEditAffectedStat[]))
+    .map((stat) => affectedStatLabels[stat] || '统计')
+    .filter((stat, index, items) => items.indexOf(stat) === index)
+    .join('、');
+
 const sessionHasPain = (session: TrainingSession) =>
   (session.exercises || []).some((exercise) => Array.isArray(exercise.sets) && exercise.sets.some((set) => Boolean(set.painFlag)));
 
@@ -240,7 +272,7 @@ export function RecordView({
   const [historyFilter, setHistoryFilter] = React.useState<SessionHistoryFilter>('all');
   const [calendarMonth, setCalendarMonth] = React.useState(initialCalendarMonth);
   const [selectedDateKey, setSelectedDateKey] = React.useState(() =>
-    selectedDate || getDefaultCalendarDateForMonth(rawHistory, initialCalendarMonth, todayKey())
+    resolveCalendarSelectedDate(rawHistory, initialCalendarMonth, selectedDate, todayKey())
   );
   const [selectedSession, setSelectedSession] = React.useState<TrainingSession | null>(() =>
     selectedSessionId ? (data.history || []).find((session) => session.id === selectedSessionId) || null : null,
@@ -304,7 +336,7 @@ export function RecordView({
     (month: string) => {
       const nextMonth = clampCalendarMonth(month, calendarRange);
       setCalendarMonth(nextMonth);
-      setSelectedDateKey(getDefaultCalendarDateForMonth(rawHistory, nextMonth, todayKey()));
+      setSelectedDateKey(resolveCalendarSelectedDate(rawHistory, nextMonth, undefined, todayKey()));
     },
     [calendarRange, rawHistory],
   );
@@ -334,14 +366,14 @@ export function RecordView({
     const clampedMonth = clampCalendarMonth(calendarMonth, calendarRange);
     if (clampedMonth !== calendarMonth) {
       setCalendarMonth(clampedMonth);
-      setSelectedDateKey(getDefaultCalendarDateForMonth(rawHistory, clampedMonth, todayKey()));
+      setSelectedDateKey(resolveCalendarSelectedDate(rawHistory, clampedMonth, selectedDateKey, todayKey()));
     }
-  }, [calendarMonth, calendarRange, rawHistory]);
+  }, [calendarMonth, calendarRange, rawHistory, selectedDateKey]);
 
   React.useEffect(() => {
     if (!calendar.days.length) return;
     if (!calendar.days.some((day) => day.date === selectedDateKey)) {
-      setSelectedDateKey(getDefaultCalendarDateForMonth(rawHistory, calendar.month, todayKey()));
+      setSelectedDateKey(resolveCalendarSelectedDate(rawHistory, calendar.month, selectedDateKey, todayKey()));
     }
   }, [calendar.days, calendar.month, rawHistory, selectedDateKey]);
 
@@ -413,7 +445,7 @@ export function RecordView({
       notifyRecordOperation('没有需要保存的修改。', 'info');
       return;
     }
-    setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, editedFields, '历史训练详情修正') });
+    setPendingAction({ type: 'edit', session: markSessionEdited(editDraft, editedFields, '历史训练详情修正', selectedSession || undefined) });
   };
 
   const confirmPendingAction = () => {
@@ -478,7 +510,7 @@ export function RecordView({
   const topSet = selectedExerciseSets[0];
   const formatSessionSummaryDescription = (session: TrainingSession) => {
     const summary = buildSessionDetailSummary(session, unitSettings);
-    return `${session.date} · ${formatSessionDuration(session)} · ${summary.workingSetCount} 正式组 · ${summary.effectiveSetCount} 有效组 · ${summary.totalDisplayVolume}`;
+    return `${session.date} · ${formatSessionDuration(session)} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`;
   };
 
   const renderCalendarMarker = (day: (typeof calendar.days)[number]) => {
@@ -957,7 +989,7 @@ export function RecordView({
                       {renderFlagBadge(session.dataFlag)}
                     </span>
                   }
-                  description={`${session.date} · ${summary.workingSetCount} 正式组 · ${summary.totalDisplayVolume}`}
+                  description={`${session.date} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.totalDisplayVolume}`}
                   action={
                     <div className="flex flex-wrap justify-end gap-2">
                       <ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>详情</ActionButton>
@@ -1064,6 +1096,11 @@ export function RecordView({
       painPatterns,
       loadFeedback: session.loadFeedback || [],
     });
+    const effectiveExplanation = summary.effectiveSetExplanation;
+    const visibleEffectiveCountedSets = effectiveExplanation.countedSets.slice(0, 3);
+    const visibleEffectiveExcludedSets = effectiveExplanation.excludedSets.slice(0, 6);
+    const editHistory = session.editHistory || [];
+    const latestEdit = editHistory.at(-1);
     const qualityItems = [...sessionQuality.positives, ...sessionQuality.issues].slice(0, 3);
     const plateauResults = summary.groupedSets.exerciseGroups
       .map((group) => getExerciseRecordPoolId(group.exercise))
@@ -1082,12 +1119,16 @@ export function RecordView({
       .filter((item) => item.status !== 'none' && item.status !== 'insufficient_data');
     const primaryPlateau = plateauResults[0];
 
+      const isCompletedSummarySet = (set: TrainingSetLog) =>
+        set.done === true && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
+      const isIncompleteSummarySet = (set: TrainingSetLog) => !isCompletedSummarySet(set);
+
       const renderSetLine = (entry: SessionSetEntry, index: number) => {
         const set = entry.set;
         const plannedText = `${formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}`;
         const label = entry.category === 'warmup' ? formatSetType('warmup') : entry.category === 'working' ? formatSetType('working') : '未分类组';
         const identityWarning = hasInvalidExerciseIdentity(entry.exercise) || set.identityInvalid ? ' / 动作身份需要检查' : '';
-        if (entry.category === 'working' && isIncompleteSet(set)) {
+        if (entry.category === 'working' && isIncompleteSummarySet(set)) {
           return (
             <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-amber-50 px-3 py-2 text-amber-900">
               未完成 · 计划 {plannedText}
@@ -1137,20 +1178,56 @@ export function RecordView({
               {session.editedAt ? <StatusBadge tone="amber">已修正</StatusBadge> : null}
             </div>
             <div className="mt-1 text-sm text-slate-500">{session.date} · {formatSessionTime(session)} · {formatSessionDuration(session)}</div>
+            {latestEdit ? (
+              <div className="mt-2 text-sm font-semibold text-amber-700">
+                最近修正时间：{formatEditTimestamp(latestEdit.editedAt)}
+              </div>
+            ) : null}
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <MetricCard label="完成正式组" value={`${summary.completedWorkingSetCount}`} helper="只统计已完成组" />
-              <MetricCard label="有效组" value={`${summary.effectiveSetCount}`} helper="正式有效组" tone="emerald" />
+              <MetricCard label="完成正式组" value={`${summary.completedWorkingSets}/${summary.plannedWorkingSets}`} helper="只统计已完成正式组" />
+              <MetricCard label="有效组" value={`${summary.effectiveSets}`} helper="按正式组有效条件计算" tone="emerald" />
               <MetricCard label={formatSessionVolumeLabel()} value={summary.totalDisplayVolume} helper="正式组训练量" />
-              <MetricCard label="未完成组" value={`${summary.incompleteSetCount}`} helper={summary.incompleteSetCount ? '不计入训练量' : '无'} tone={summary.incompleteSetCount ? 'amber' : 'slate'} />
+              <MetricCard label="未完成组" value={`${summary.incompleteSets}`} helper={summary.incompleteSets ? '不计入完成、总量和有效组' : '无'} tone={summary.incompleteSets ? 'amber' : 'slate'} />
             </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <MetricCard label="热身组" value={`${summary.warmupSets}/${summary.plannedWarmupSets}`} helper="不计入正式组" />
+              <MetricCard label="热身量" value={formatTrainingVolume(summary.warmupVolumeKg, unitSettings)} helper="只统计已完成热身组" />
+            </div>
+              {summary.effectiveSets < summary.completedWorkingSets && effectiveExplanation.excludedSetCount > 0 ? (
+              <details className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                <summary className="cursor-pointer font-semibold">有效组为什么？</summary>
+                <div className="mt-2 space-y-1">
+                  <div>{effectiveExplanation.summary}</div>
+                  {visibleEffectiveCountedSets.length ? (
+                    <div className="font-semibold text-emerald-800">已计入</div>
+                  ) : null}
+                  {visibleEffectiveCountedSets.map((item) => (
+                    <div key={`counted-${item.exerciseName}-${item.setIndex}`}>
+                      {item.exerciseName} 第 {item.setIndex} 组：{item.reason}
+                    </div>
+                  ))}
+                  {visibleEffectiveExcludedSets.length ? (
+                    <div className="font-semibold text-amber-900">未计入</div>
+                  ) : null}
+                  {visibleEffectiveExcludedSets.map((item) => (
+                    <div key={`${item.exerciseName}-${item.setIndex}-${item.reasonCode}`}>
+                      {item.exerciseName} 第 {item.setIndex} 组：{item.reason || EFFECTIVE_SET_EXPLANATION_REASON_LABELS[item.reasonCode]}
+                    </div>
+                  ))}
+                  {effectiveExplanation.excludedSetCount > visibleEffectiveExcludedSets.length ? (
+                    <div>另有 {effectiveExplanation.excludedSetCount - visibleEffectiveExcludedSets.length} 组未计入。</div>
+                  ) : null}
+                </div>
+              </details>
+              ) : null}
               {summary.earlyEndSummary ? (
                 <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
                   {summary.earlyEndSummary}
                 </div>
               ) : null}
-              {summary.identityReviewSummary ? (
+              {summary.identityIssueCount > 0 ? (
                 <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
-                  {summary.identityReviewSummary}
+                  部分动作身份需要检查，相关组不会进入 PR、e1RM 或有效组。
                 </div>
               ) : null}
               <div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">
@@ -1158,10 +1235,30 @@ export function RecordView({
               主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%。
               {composition.summary}
             </div>
-            {session.dataFlag === 'test' || session.dataFlag === 'excluded' ? (
+            {summary.excludedFromStats ? (
               <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
-                这次训练仍可查看和修正，但当前标记为{formatDataFlag(session.dataFlag)}，不会参与 PR、e1RM、有效组和统计。
+                这次训练不参与默认统计。你仍然可以查看、修正或恢复它。
               </div>
+            ) : null}
+            {editHistory.length ? (
+              <details className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
+                <summary className="cursor-pointer font-semibold text-slate-950">查看修正记录</summary>
+                <div className="mt-2 space-y-2">
+                  {editHistory.slice(-5).reverse().map((item) => (
+                    <div key={`${item.editedAt}-${formatEditedFields(item.editedFields || item.fields)}`} className="rounded-lg bg-stone-50 px-3 py-2">
+                      <div className="font-semibold text-slate-950">{formatEditTimestamp(item.editedAt)}</div>
+                      <div>改动：{formatEditedFields(item.editedFields || item.fields)}</div>
+                      <div>影响：{formatAffectedStats(item.affectedStats)}</div>
+                      {item.beforeSummary && item.afterSummary ? (
+                        <div>
+                          变化：正式组 {item.beforeSummary.completedWorkingSets} → {item.afterSummary.completedWorkingSets}，有效组 {item.beforeSummary.effectiveSets} → {item.afterSummary.effectiveSets}，总量 {item.beforeSummary.workingVolume}kg → {item.afterSummary.workingVolume}kg
+                        </div>
+                      ) : null}
+                      {item.note ? <div>备注：{item.note}</div> : null}
+                    </div>
+                  ))}
+                </div>
+              </details>
             ) : null}
             {isEditing ? (
               <>
@@ -1252,8 +1349,8 @@ export function RecordView({
           <PageSection title="动作记录">
             {summary.groupedSets.exerciseGroups.map((group) => {
               const exercise = group.exercise;
-              const completedWorkingSets = group.workingSets.filter((entry) => isCompletedSet(entry.set));
-              const incompleteWorkingSets = group.workingSets.filter((entry) => isIncompleteSet(entry.set));
+              const completedWorkingSets = group.workingSets.filter((entry) => isCompletedSummarySet(entry.set));
+              const incompleteWorkingSets = group.workingSets.filter((entry) => isIncompleteSummarySet(entry.set));
               const exerciseNotStarted = group.workingSets.length > 0 && completedWorkingSets.length <= 0 && incompleteWorkingSets.length > 0;
               return (
                 <Card key={`${session.id}-${exercise.id}`} className="space-y-2">

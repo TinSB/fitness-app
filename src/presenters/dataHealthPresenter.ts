@@ -72,6 +72,54 @@ const normalizeText = (value?: string) => String(value || '').replace(/\b(undefi
 
 const firstAffectedId = (issue: DataHealthIssue) => issue.affectedIds?.find(Boolean);
 
+const severityRank: Record<DataHealthIssue['severity'], number> = {
+  error: 3,
+  warning: 2,
+  info: 1,
+};
+
+const aggregateIssueKey = (issue: DataHealthIssue) => {
+  const id = issue.id.toLowerCase();
+  if (id.startsWith('exercise-identity-review')) return 'history-identity-review';
+  if (id.startsWith('invalid-exercise-reference') || id.startsWith('missing-actual-exercise')) return 'invalid-exercise-reference';
+  if (id.startsWith('incomplete-draft-set')) return 'incomplete-draft-sets';
+  if (id.startsWith('summary-') || id.startsWith('incomplete-counted-in-summary') || id.startsWith('warmup-counted-effective')) return 'summary-mismatch';
+  if (id.startsWith('display-weight-without-actual-kg') || id.startsWith('lb-display-decimal') || id.startsWith('mixed-display-unit')) return 'unit-history-review';
+  if (id.startsWith('duplicate-session-timestamp')) return 'duplicate-session-timestamp';
+  if (id.startsWith('excluded-session-in-analytics') || id.startsWith('non-normal-session-present')) return 'test-excluded-stat-participation';
+  if (id.startsWith('warmup-missing-type') || id.startsWith('warmup-analytics-marker')) return 'warmup-stat-participation';
+  if (id.startsWith('synthetic-replacement')) return 'synthetic-replacement';
+  return issue.id;
+};
+
+export const aggregateDataHealthIssuesForDisplay = (issues: DataHealthIssue[] = []): DataHealthIssue[] => {
+  const groups = new Map<string, DataHealthIssue[]>();
+  issues.forEach((issue) => {
+    const key = aggregateIssueKey(issue);
+    const group = groups.get(key) || [];
+    group.push(issue);
+    groups.set(key, group);
+  });
+
+  return [...groups.entries()].flatMap(([key, group]) => {
+    if (group.length === 1) return group;
+    const sorted = sortDataHealthIssues(group);
+    const primary = sorted[0];
+    const severity = sorted.reduce<DataHealthIssue['severity']>(
+      (current, item) => (severityRank[item.severity] > severityRank[current] ? item.severity : current),
+      primary.severity,
+    );
+    return [{
+      ...primary,
+      id: `aggregate-${key}`,
+      severity,
+      message: `${group.length} 条同类问题已合并显示。${normalizeText(primary.message)}`,
+      affectedIds: [...new Set(group.flatMap((item) => item.affectedIds || []))],
+      suggestedAction: primary.suggestedAction,
+    }];
+  });
+};
+
 const action = (
   issue: DataHealthIssue,
   type: DataHealthActionType,
@@ -98,6 +146,69 @@ const dismissAction = (issue: DataHealthIssue): DataHealthActionView => ({
 const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'title' | 'userMessage' | 'action'> => {
   const id = issue.id.toLowerCase();
 
+  if (id.startsWith('aggregate-history-identity-review') || id.startsWith('exercise-identity-review')) {
+    return {
+      title: '动作记录身份需要检查',
+      userMessage: '部分历史记录来自旧版替代动作逻辑，系统已保留原始记录，但不会把它用于 PR、e1RM 或有效组。',
+      action: action(issue, 'open_record_history', '查看相关训练'),
+    };
+  }
+  if (id.startsWith('aggregate-incomplete-draft-sets') || id.startsWith('incomplete-draft-set')) {
+    return {
+      title: '存在未完成草稿组',
+      userMessage: '部分组有重量、次数或 RIR，但仍是未完成状态。它们只应显示为草稿，不参与完成组、总量、PR、e1RM 或有效组。',
+      action: action(issue, 'open_record_history', '查看历史训练'),
+    };
+  }
+  if (
+    id.startsWith('aggregate-summary-mismatch') ||
+    id.startsWith('summary-completed-mismatch') ||
+    id.startsWith('summary-volume-mismatch') ||
+    id.startsWith('summary-effective-mismatch') ||
+    id.startsWith('incomplete-counted-in-summary') ||
+    id.startsWith('warmup-counted-effective')
+  ) {
+    return {
+      title: '历史 Summary 与组记录不一致',
+      userMessage: '部分历史记录的顶部汇总和真实 set logs 不一致。Record 会按真实组记录重新计算，请打开详情复查。',
+      action: action(issue, 'open_session_detail', '查看训练详情'),
+    };
+  }
+  if (id.startsWith('aggregate-unit-history-review') || id.startsWith('display-weight-without-actual-kg')) {
+    return {
+      title: '历史重量记录需要检查',
+      userMessage: '部分历史组缺少用于计算的重量来源。系统不会用旧显示重量替代真实计算重量。',
+      action: action(issue, 'open_unit_settings', '打开单位设置'),
+    };
+  }
+  if (id.startsWith('aggregate-invalid-exercise-reference') || id.startsWith('invalid-exercise-reference')) {
+    return {
+      title: '历史动作引用需要检查',
+      userMessage: '部分历史记录引用了动作库中不存在的动作。系统会保留原始记录，但不会把它用于 PR、e1RM 或有效组。',
+      action: action(issue, 'open_record_history', '查看相关训练'),
+    };
+  }
+  if (id.startsWith('aggregate-duplicate-session-timestamp') || id.startsWith('duplicate-session-timestamp')) {
+    return {
+      title: '发现疑似重复训练记录',
+      userMessage: '部分历史训练的开始、结束时间和模板相同。系统不会自动删除，请先人工确认。',
+      action: action(issue, 'open_record_history', '查看历史训练'),
+    };
+  }
+  if (id.startsWith('aggregate-test-excluded-stat-participation')) {
+    return {
+      title: '测试或排除数据需要检查',
+      userMessage: '测试或排除训练可以继续查看，但默认不应参与 PR、e1RM、有效组或统计。',
+      action: action(issue, 'open_record_history', '查看历史训练'),
+    };
+  }
+  if (id.startsWith('aggregate-warmup-stat-participation')) {
+    return {
+      title: '热身组统计状态需要检查',
+      userMessage: '部分热身组可能缺少分类或带有强度统计标记。热身组不应进入 PR、e1RM 或有效组。',
+      action: action(issue, 'open_session_detail', '查看训练详情'),
+    };
+  }
   if (id.startsWith('synthetic-replacement')) {
     return {
       title: '替代动作记录异常',
@@ -243,8 +354,14 @@ const toIssueView = (issue: DataHealthIssue): DataHealthIssueView => {
 };
 
 export const buildDataHealthViewModel = (report: DataHealthReport, options: DataHealthViewModelOptions = {}): DataHealthViewModel => {
-  const filteredIssues = filterDismissedDataHealthIssues(
+  const rawFilteredIssues = filterDismissedDataHealthIssues(
     report.issues || [],
+    options.dismissedIssues || [],
+    options.currentDate || '',
+  );
+  const aggregatedIssues = aggregateDataHealthIssuesForDisplay(rawFilteredIssues);
+  const filteredIssues = filterDismissedDataHealthIssues(
+    aggregatedIssues,
     options.dismissedIssues || [],
     options.currentDate || '',
   );

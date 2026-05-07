@@ -675,7 +675,42 @@
             "properties": {
               "editedAt": { "type": "string" },
               "fields": { "type": "array", "items": { "type": "string" } },
-              "note": { "type": "string" }
+              "editedFields": { "type": "array", "items": { "type": "string" } },
+              "note": { "type": "string" },
+              "beforeSummary": {
+                "type": "object",
+                "properties": {
+                  "plannedWorkingSets": { "type": "number" },
+                  "completedWorkingSets": { "type": "number" },
+                  "effectiveSets": { "type": "number" },
+                  "warmupSets": { "type": "number" },
+                  "incompleteSets": { "type": "number" },
+                  "workingVolume": { "type": "number" },
+                  "warmupVolume": { "type": "number" },
+                  "dataFlag": { "type": "string" },
+                  "excludedFromStatsReason": { "type": "string" }
+                },
+                "additionalProperties": true
+              },
+              "afterSummary": {
+                "type": "object",
+                "properties": {
+                  "plannedWorkingSets": { "type": "number" },
+                  "completedWorkingSets": { "type": "number" },
+                  "effectiveSets": { "type": "number" },
+                  "warmupSets": { "type": "number" },
+                  "incompleteSets": { "type": "number" },
+                  "workingVolume": { "type": "number" },
+                  "warmupVolume": { "type": "number" },
+                  "dataFlag": { "type": "string" },
+                  "excludedFromStatsReason": { "type": "string" }
+                },
+                "additionalProperties": true
+              },
+              "affectedStats": {
+                "type": "array",
+                "items": { "enum": ["volume", "effectiveSet", "PR", "e1RM", "none"] }
+              }
             },
             "additionalProperties": true
           }

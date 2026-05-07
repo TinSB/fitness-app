@@ -68,9 +68,9 @@ describe('pull/back exercise library coverage', () => {
     const reversePecDeck = overrideOf('reverse-pec-deck');
     const cableRearDeltFly = overrideOf('cable-rear-delt-fly');
 
-    expect(facePull).toMatchObject({ primaryMuscles: ['肩'], equivalenceChainId: 'rear-delt-scapular' });
-    expect(reversePecDeck).toMatchObject({ primaryMuscles: ['肩'], equivalenceChainId: 'rear-delt-scapular' });
-    expect(cableRearDeltFly).toMatchObject({ primaryMuscles: ['肩'], equivalenceChainId: 'rear-delt-scapular' });
+    expect(facePull).toMatchObject({ primaryMuscles: ['肩'], equivalenceChainId: 'rear-delt' });
+    expect(reversePecDeck).toMatchObject({ primaryMuscles: ['肩'], equivalenceChainId: 'rear-delt' });
+    expect(cableRearDeltFly).toMatchObject({ primaryMuscles: ['肩'], equivalenceChainId: 'rear-delt' });
     expect((reversePecDeck.muscleContribution as Record<string, number>).背).toBeLessThan(0.5);
     expect((cableRearDeltFly.muscleContribution as Record<string, number>).背).toBeLessThan(0.5);
   });

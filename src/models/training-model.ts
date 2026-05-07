@@ -656,10 +656,28 @@ export interface RestTimerState {
   label?: string;
 }
 
+export type SessionEditAffectedStat = 'volume' | 'effectiveSet' | 'PR' | 'e1RM' | 'none';
+
+export type SessionEditSummarySnapshot = {
+  plannedWorkingSets: number;
+  completedWorkingSets: number;
+  effectiveSets: number;
+  warmupSets: number;
+  incompleteSets: number;
+  workingVolume: number;
+  warmupVolume: number;
+  dataFlag?: SessionDataFlag;
+  excludedFromStatsReason?: string;
+};
+
 export type SessionEditHistoryItem = {
   editedAt: string;
   fields: string[];
+  editedFields?: string[];
   note?: string;
+  beforeSummary?: SessionEditSummarySnapshot;
+  afterSummary?: SessionEditSummarySnapshot;
+  affectedStats?: SessionEditAffectedStat[];
 };
 
 export interface TrainingSession {

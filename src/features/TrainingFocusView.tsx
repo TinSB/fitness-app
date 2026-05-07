@@ -5,6 +5,7 @@ import { dedupeFocusNotices, getFocusNavigationState } from '../engines/focusMod
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { convertKgToDisplayWeight, formatTrainingVolume, formatWeight, parseDisplayWeightToKg } from '../engines/unitConversionEngine';
 import { buildSmartReplacementRecommendations, type SmartReplacementRecommendation } from '../engines/smartReplacementEngine';
+import type { ExerciseEquipmentTag } from '../data/exerciseLibrary';
 import { detectSetAnomalies, type SetAnomaly } from '../engines/setAnomalyEngine';
 import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from '../engines/currentExerciseSelector';
 import {
@@ -102,6 +103,18 @@ const loadFeedbackOptions: Array<{ value: LoadFeedbackValue; label: string }> = 
   { value: 'too_heavy', label: '偏重' },
 ];
 
+export const replacementEquipmentChips: Array<{ tag: ExerciseEquipmentTag; label: string }> = [
+  { tag: 'dumbbell', label: '哑铃区' },
+  { tag: 'cable', label: '绳索区' },
+  { tag: 'rack', label: '深蹲架' },
+  { tag: 'barbell', label: '杠铃' },
+  { tag: 'smith', label: '史密斯' },
+  { tag: 'machine', label: '固定器械' },
+];
+
+export const toggleReplacementEquipmentTag = (selected: ExerciseEquipmentTag[], tag: ExerciseEquipmentTag): ExerciseEquipmentTag[] =>
+  selected.includes(tag) ? selected.filter((item) => item !== tag) : [...selected, tag];
+
 const getSets = (exercise: TrainingSession['exercises'][number] | undefined): TrainingSetLog[] => (Array.isArray(exercise?.sets) ? exercise.sets : []);
 
 const displayExerciseName = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
@@ -148,6 +161,40 @@ const replacementGroups: Array<{ priority: SmartReplacementRecommendation['prior
 
 const replacementRankLabel = (rank: SmartReplacementRecommendation['priority']) => replacementRankLabels[rank] || formatReplacementCategory(rank);
 
+export function ReplacementEquipmentChips({
+  selected,
+  onToggle,
+}: {
+  selected: ExerciseEquipmentTag[];
+  onToggle: (tag: ExerciseEquipmentTag) => void;
+}) {
+  return (
+    <section className="mb-4 rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <div className="text-sm font-bold text-slate-900">器械被占用？</div>
+      <div className="mt-1 text-xs leading-5 text-slate-500">只调整本次替代排序。</div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {replacementEquipmentChips.map((chip) => {
+          const active = selected.includes(chip.tag);
+          return (
+            <button
+              key={chip.tag}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggle(chip.tag)}
+              className={classNames(
+                'min-h-10 rounded-full border px-3 py-2 text-sm font-semibold transition',
+                active ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50',
+              )}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function TrainingFocusView({
   session,
   unitSettings,
@@ -180,6 +227,7 @@ export function TrainingFocusView({
   const [feedback, setFeedback] = React.useState('');
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
   const [showReplacementPicker, setShowReplacementPicker] = React.useState(false);
+  const [selectedUnavailableEquipment, setSelectedUnavailableEquipment] = React.useState<ExerciseEquipmentTag[]>([]);
   const [showExplanationSheet, setShowExplanationSheet] = React.useState(false);
   const [pendingConfirmation, setPendingConfirmation] = React.useState<PendingFocusConfirmation | null>(null);
   const focusState = getFocusNavigationState(session, expandedExercise);
@@ -209,10 +257,12 @@ export function TrainingFocusView({
             loadFeedback: session.loadFeedback,
             trainingHistory,
             equipmentPreferences,
+            unavailableEquipment: selectedUnavailableEquipment.length ? selectedUnavailableEquipment : undefined,
           })
         : [],
-    [equipmentPreferences, mainExercise, painPatterns, readinessResult, session.exercises, session.loadFeedback, trainingHistory],
+    [equipmentPreferences, mainExercise, painPatterns, readinessResult, selectedUnavailableEquipment, session.exercises, session.loadFeedback, trainingHistory],
   );
+  const visibleReplacementOptions = React.useMemo(() => replacementOptions.filter((option) => option.priority !== 'avoid'), [replacementOptions]);
   const recommendationTrace = React.useMemo(() => buildSessionRecommendationTrace(session), [session]);
 
   const warmupPolicyNotice =
@@ -334,22 +384,32 @@ export function TrainingFocusView({
     notify(painFlag ? '已标记本组不适' : '已取消不适标记');
   };
 
+  const toggleUnavailableEquipment = (tag: ExerciseEquipmentTag) => {
+    setSelectedUnavailableEquipment((current) => toggleReplacementEquipmentTag(current, tag));
+  };
+
+  const closeReplacementPicker = () => {
+    setShowReplacementPicker(false);
+    setSelectedUnavailableEquipment([]);
+  };
+
   const openReplacementPicker = () => {
     if (mainIndex < 0 || !mainExercise) {
       notify('当前动作暂无可替代动作。');
       return;
     }
-    if (!replacementOptions.length) {
+    if (!visibleReplacementOptions.length) {
       notify('当前动作暂无可替代动作。');
       return;
     }
+    setSelectedUnavailableEquipment([]);
     setShowReplacementPicker(true);
   };
 
   const chooseReplacement = (option: SmartReplacementRecommendation) => {
     if (mainIndex < 0) return;
     onReplaceExercise(mainIndex, option.exerciseId);
-    setShowReplacementPicker(false);
+    closeReplacementPicker();
     notify(`已替换为：${displayReplacementName(option)}`);
   };
 
@@ -514,12 +574,40 @@ export function TrainingFocusView({
   );
 
   const renderReplacementPicker = () => (
-    <BottomSheet open={showReplacementPicker} title="选择本次实际执行动作" onClose={() => setShowReplacementPicker(false)}>
+    <BottomSheet open={showReplacementPicker} title="选择本次实际执行动作" onClose={closeReplacementPicker}>
       <p className="mb-3 text-xs leading-5 text-slate-500">保留当前模板位置；训练量计入本次训练，PR / e1RM 按实际动作独立统计。</p>
+      <ReplacementEquipmentChips selected={selectedUnavailableEquipment} onToggle={toggleUnavailableEquipment} />
       <div className="space-y-4">
-        {replacementOptions.length ? (
-          replacementGroups.map((group) => {
-            const groupOptions = replacementOptions.filter((option) => option.priority === group.priority);
+        {visibleReplacementOptions.length ? (
+          selectedUnavailableEquipment.length ? (
+            <section className="space-y-2">
+              <div className="text-xs font-bold text-slate-500">按器械可用性排序</div>
+              {visibleReplacementOptions.map((option) => (
+                <button
+                  key={option.exerciseId}
+                  type="button"
+                  onClick={() => chooseReplacement(option)}
+                  className="w-full rounded-lg border border-slate-200 bg-stone-50 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-semibold text-slate-950">{displayReplacementName(option)}</span>
+                    <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-800">{replacementRankLabel(option.priority)}</span>
+                  </div>
+                  <div className="mt-2 text-xs leading-5 text-slate-600">{option.reason}</div>
+                  {option.warnings.length ? (
+                    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold leading-5 text-amber-900">
+                      {option.warnings[0]}
+                    </div>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
+                    <span>疲劳成本：{formatFatigueCost(option.fatigueCost)}</span>
+                    <span>PR / e1RM 独立统计</span>
+                  </div>
+                </button>
+              ))}
+            </section>
+          ) : replacementGroups.map((group) => {
+            const groupOptions = visibleReplacementOptions.filter((option) => option.priority === group.priority);
             if (!groupOptions.length) return null;
             return (
               <section key={group.priority} className="space-y-2">

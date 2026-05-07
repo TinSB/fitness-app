@@ -3,6 +3,7 @@
   EXERCISE_EQUIVALENCE_CHAINS,
   EXERCISE_KNOWLEDGE_OVERRIDES,
 } from '../data/exerciseLibrary';
+import type { ExerciseEquipmentTag } from '../data/exerciseLibrary';
 import { formatExerciseName } from '../i18n/formatters';
 import type {
   ExerciseFatigueCost,
@@ -16,7 +17,7 @@ import type {
   TrainingLevel,
   TrainingSession,
 } from '../models/training-model';
-import { isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
+import { buildReplacementOptions, isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
 
 export type SmartReplacementPriority = 'primary' | 'secondary' | 'angle_variation' | 'avoid';
 
@@ -44,6 +45,7 @@ type SmartReplacementParams = {
   loadFeedback?: LoadFeedback[] | LoadFeedbackValue | { dominantFeedback?: LoadFeedbackValue; feedback?: LoadFeedbackValue; adjustment?: { dominantFeedback?: LoadFeedbackValue } } | null;
   trainingHistory?: TrainingSession[] | null;
   equipmentPreferences?: string[] | null;
+  unavailableEquipment?: ExerciseEquipmentTag[] | null;
   trainingLevel?: TrainingLevel | 'unknown' | string | null;
 };
 
@@ -418,6 +420,53 @@ const reasonFromCandidate = (candidate: Candidate, priority: SmartReplacementPri
   return '训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。';
 };
 
+const appendReason = (reason: string, note: string) => {
+  const cleanNote = String(note || '').trim();
+  if (!cleanNote || reason.includes(cleanNote)) return reason;
+  return `${reason}${reason.endsWith('。') ? '' : '。'}${cleanNote}`;
+};
+
+const alignWithEquipmentContext = (
+  recommendations: SmartReplacementRecommendation[],
+  currentId: string,
+  currentMetadata: SmartReplacementExercise,
+  unavailableEquipment: ExerciseEquipmentTag[] | null | undefined,
+) => {
+  const context = (unavailableEquipment || []).filter(Boolean);
+  if (!context.length) return recommendations;
+
+  const equipmentOptions = buildReplacementOptions(
+    {
+      ...(currentMetadata as ExercisePrescription),
+      id: currentId,
+      baseId: currentMetadata.baseId || currentId,
+      canonicalExerciseId: currentMetadata.canonicalExerciseId || currentId,
+    },
+    { unavailableEquipment: context },
+  );
+  const optionById = new Map(equipmentOptions.map((option, index) => [option.id, { option, index }]));
+
+  return recommendations
+    .map((recommendation) => {
+      const equipmentOption = optionById.get(recommendation.exerciseId)?.option;
+      if (!equipmentOption) return recommendation;
+      return {
+        ...recommendation,
+        reason: appendReason(recommendation.reason, equipmentOption.reason),
+      };
+    })
+    .sort((left, right) => {
+      const leftIndex = optionById.get(left.exerciseId)?.index;
+      const rightIndex = optionById.get(right.exerciseId)?.index;
+      if (leftIndex !== undefined && rightIndex !== undefined && leftIndex !== rightIndex) return leftIndex - rightIndex;
+      if (leftIndex !== undefined) return -1;
+      if (rightIndex !== undefined) return 1;
+      const priorityDiff = priorityOrder[left.priority] - priorityOrder[right.priority];
+      if (priorityDiff !== 0) return priorityDiff;
+      return left.exerciseName.localeCompare(right.exerciseName, 'zh-Hans-CN');
+    });
+};
+
 export const buildSmartReplacementRecommendations = ({
   currentExercise,
   exerciseLibrary,
@@ -426,6 +475,7 @@ export const buildSmartReplacementRecommendations = ({
   loadFeedback,
   trainingHistory,
   equipmentPreferences,
+  unavailableEquipment,
   trainingLevel,
 }: SmartReplacementParams): SmartReplacementRecommendation[] => {
   const currentId = getExerciseId(currentExercise);
@@ -450,7 +500,7 @@ export const buildSmartReplacementRecommendations = ({
     })
   );
 
-  return candidates
+  const recommendations = candidates
     .map((candidate): SmartReplacementRecommendation => {
       const priority = priorityFromCandidate(candidate);
       return {
@@ -470,4 +520,6 @@ export const buildSmartReplacementRecommendations = ({
       if (fatigueDiff !== 0 && hasHighFatigueSignal(readinessResult)) return fatigueDiff;
       return left.exerciseName.localeCompare(right.exerciseName, 'zh-Hans-CN');
     });
+
+  return alignWithEquipmentContext(recommendations, currentId, currentMetadata, unavailableEquipment);
 };

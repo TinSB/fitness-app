@@ -46,17 +46,19 @@ describe('session warmup editing', () => {
   it('edits warmup weight and keeps the audit history field specific', () => {
     const session = makeSessionWithWarmup();
     const editedWeightKg = parseDisplayWeightToKg(95, 'lb');
-    const edited = markSessionEdited(
-      updateSessionSet(session, 'squat', 'main:squat:warmup:0', {
+    const patched = updateSessionSet(session, 'squat', 'main:squat:warmup:0', {
         weightKg: editedWeightKg,
         displayWeight: 95,
         displayUnit: 'lb',
         reps: 6,
         rir: 4,
         note: '热身重量补正',
-      }),
+      });
+    const edited = markSessionEdited(
+      patched,
       ['warmupSets'],
       '历史训练热身组修正',
+      session,
     );
 
     const warmup = getSessionWarmupSets(edited)[0].set;
@@ -67,6 +69,8 @@ describe('session warmup editing', () => {
     expect(warmup.reps).toBe(6);
     expect(warmup.note).toBe('热身重量补正');
     expect(edited.editHistory?.[0].fields).toContain('warmupSets');
+    expect(edited.editHistory?.[0].affectedStats).toEqual(['none']);
+    expect(edited.editHistory?.[0].beforeSummary?.effectiveSets).toBe(edited.editHistory?.[0].afterSummary?.effectiveSets);
   });
 
   it('does not let warmup edits affect e1RM, PR, or effective sets', () => {

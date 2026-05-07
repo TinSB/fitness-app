@@ -127,6 +127,17 @@ export const getDefaultCalendarDateForMonth = (history: TrainingSession[] = [], 
   return `${normalizedMonth}-01`;
 };
 
+export const resolveCalendarSelectedDate = (
+  history: TrainingSession[] = [],
+  month: string,
+  currentSelectedDate?: string,
+  fallbackDate?: string,
+) => {
+  const normalizedMonth = normalizeCalendarMonth(month);
+  if (currentSelectedDate?.startsWith(normalizedMonth)) return currentSelectedDate;
+  return getDefaultCalendarDateForMonth(history, normalizedMonth, fallbackDate);
+};
+
 const shouldIncludeSession = (session: TrainingSession, includeDataFlags: TrainingCalendarOptions['includeDataFlags']) => {
   if (includeDataFlags === 'all') return true;
   const flag = session.dataFlag || 'normal';
@@ -202,9 +213,9 @@ export const buildTrainingCalendar = (history: TrainingSession[] = [], month = m
         templateName: session.templateName,
         startTime: session.startedAt,
         durationMin: number(session.durationMin),
-        completedSets: summary.workingSetCount,
-        effectiveSets: summary.effectiveSetCount,
-        totalVolumeKg: summary.workingVolumeKg,
+        completedSets: summary.completedWorkingSets,
+        effectiveSets: summary.effectiveSets,
+        totalVolumeKg: summary.workingVolume,
         isExperimentalTemplate: Boolean(session.isExperimentalTemplate),
         dataFlag: session.dataFlag || 'normal',
       };

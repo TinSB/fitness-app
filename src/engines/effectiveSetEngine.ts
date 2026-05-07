@@ -210,3 +210,14 @@ export const buildEffectiveVolumeSummary = (history: TrainingSession[], dateRang
 
   return summary;
 };
+
+export {
+  buildEffectiveSetExplanation,
+  EFFECTIVE_SET_EXPLANATION_REASON_LABELS,
+} from './effectiveSetExplanationEngine';
+export type {
+  EffectiveSetCountedSet,
+  EffectiveSetExcludedSet,
+  EffectiveSetExplanation,
+  EffectiveSetExplanationReason,
+} from './effectiveSetExplanationEngine';

@@ -43,25 +43,32 @@ describe('session edit feedback', () => {
   });
 
   it('explains data flag edits separately', () => {
-    expect(sessionEditFeedbackMessage(['dataFlag'])).toBe('数据状态已更新。');
+    expect(sessionEditFeedbackMessage(['dataFlag'])).toBe('数据状态已更新，会改变默认统计参与状态。');
   });
 
   it('updates summary data after a working-set edit and writes edit history', () => {
     const session = makeSessionWithWarmup();
     const baseline = buildSessionDetailSummary(session, unitSettings);
-    const edited = markSessionEdited(
-      updateSessionSet(session, 'bench-press', 'bench-press-1', {
+    const patched = updateSessionSet(session, 'bench-press', 'bench-press-1', {
         weightKg: 100,
         reps: 8,
         rir: 1,
-      }),
+      });
+    const edited = markSessionEdited(
+      patched,
       ['sets'],
       '历史训练详情修正',
+      session,
     );
     const next = buildSessionDetailSummary(edited, unitSettings);
 
     expect(next.workingVolumeKg).toBeGreaterThan(baseline.workingVolumeKg);
-    expect(edited.editHistory?.at(-1)?.fields).toEqual(['sets']);
-    expect(sessionEditFeedbackMessage(edited.editHistory?.at(-1)?.fields || [])).toBe('已保存修正，相关统计会重新计算。');
+    const entry = edited.editHistory?.at(-1);
+    expect(entry?.fields).toEqual(['sets']);
+    expect(entry?.editedFields).toEqual(['sets']);
+    expect(entry?.affectedStats).toEqual(['volume', 'effectiveSet', 'PR', 'e1RM']);
+    expect(entry?.beforeSummary?.workingVolume).toBe(baseline.workingVolumeKg);
+    expect(entry?.afterSummary?.workingVolume).toBe(next.workingVolumeKg);
+    expect(sessionEditFeedbackMessage(entry?.fields || [])).toBe('已保存修正，相关统计会重新计算。');
   });
 });

@@ -1,3 +1,4 @@
+import { analyzeImportedAppData } from '../engines/dataRepairEngine';
 import type { AppData } from '../models/training-model';
 import { sanitizeData, validateAppDataSchema } from './persistence';
 
@@ -14,6 +15,14 @@ export const exportAppData = (data: AppData) => JSON.stringify(sanitizeData(data
 export const importAppData = (jsonText: string): ImportAppDataResult => {
   try {
     const parsed = JSON.parse(jsonText) as unknown;
+    const importReport = analyzeImportedAppData(parsed);
+    if (importReport.status === 'unsafe') {
+      return {
+        ok: false,
+        error: importReport.issues[0]?.message || '该文件不是 IronPath 应用备份结构，未覆盖当前数据。',
+      };
+    }
+
     const sanitized = sanitizeData(parsed);
 
     if (!validateAppDataSchema(sanitized)) {

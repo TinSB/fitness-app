@@ -1,7 +1,8 @@
 import { EXERCISE_DISPLAY_NAMES, EXERCISE_KNOWLEDGE_OVERRIDES } from '../data/trainingData';
 import type { AppData, DismissedDataHealthIssue, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
-import { isCompletedSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
+import { isCompletedSet, isIncompleteSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { hasInvalidExerciseIdentity, isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
+import { buildSessionDetailSummary } from './sessionDetailSummaryEngine';
 
 export type DataHealthSeverity = 'info' | 'warning' | 'error';
 
@@ -174,6 +175,19 @@ const scanReplacementIssues = (appData: Partial<AppData>) => {
 
   sessionSources(appData).forEach(({ source, session }) => {
     (session.exercises || []).forEach((exercise, exerciseIndex) => {
+      if (exercise.id && !isKnownExerciseId(exercise.id)) {
+        issues.push(issue({
+          id: `invalid-exercise-reference-${session.id}-${exerciseIndex}`,
+          severity: 'error',
+          category: 'replacement',
+          title: '历史记录引用了不存在的动作',
+          message: `${sessionLabel(source, session)} 中有动作不在动作库中。系统会保留原始记录，但该动作不应进入 PR、e1RM 或有效组统计。`,
+          affectedIds: [session.id, String(exercise.id)],
+          canAutoFix: false,
+          suggestedAction: '打开历史详情，确认真实执行动作后再修正。',
+        }));
+      }
+
       if (hasInvalidExerciseIdentity(exercise)) {
         const legacyIds = [
           exercise.legacyActualExerciseId,
@@ -265,6 +279,18 @@ const scanUnitIssues = (appData: Partial<AppData>) => {
     const units = new Set<WeightUnit>();
     collectAllSessionSets(session).forEach(({ set, setIndex }) => {
       const displayUnit = set.displayUnit;
+      if (set.displayWeight !== undefined && set.actualWeightKg === undefined) {
+        issues.push(issue({
+          id: `display-weight-without-actual-kg-${session.id}-${set.id || setIndex}`,
+          severity: 'warning',
+          category: 'unit',
+          title: '历史组缺少计算重量',
+          message: `${sessionLabel(source, session)} 中有组只保留显示重量，缺少用于计算的 actualWeightKg。系统不会用显示重量替代真实计算来源。`,
+          affectedIds: [session.id, set.id],
+          canAutoFix: false,
+          suggestedAction: '打开历史详情，确认单位和真实重量后再修正。',
+        }));
+      }
       if (displayUnit && VALID_DISPLAY_UNITS.has(displayUnit)) units.add(displayUnit);
       if (displayUnit === 'lb' && set.displayWeight !== undefined && !Number.isInteger(number(set.displayWeight))) {
         issues.push(issue({
@@ -333,6 +359,125 @@ const scanSummaryIssues = (appData: Partial<AppData>) => {
         suggestedAction: '重新生成详情摘要，并确认单位显示来自当前单位设置。',
       }));
     }
+  });
+
+  return issues;
+};
+
+const hasDraftValues = (set: TrainingSetLog) =>
+  number(set.actualWeightKg ?? set.weight) > 0 || number(set.reps) > 0 || set.rir !== undefined || String(set.note || '').trim().length > 0;
+
+const scanHistoryTrustIssues = (appData: Partial<AppData>) => {
+  const issues: DataHealthIssue[] = [];
+
+  sessionSources(appData).forEach(({ source, session }) => {
+    if (!hasAnySetLogs(session)) return;
+    const detailSummary = buildSessionDetailSummary(session);
+    const stored = session as TrainingSession & Record<string, unknown>;
+    const storedCompletedSets = stored.completedSets;
+    const storedTotalVolume = stored.totalVolume ?? stored.totalVolumeKg ?? stored.workingVolumeKg;
+    const storedEffectiveSets = stored.effectiveSets ?? stored.effectiveSetCount;
+
+    if (storedCompletedSets !== undefined && number(storedCompletedSets) !== detailSummary.completedWorkingSets) {
+      issues.push(issue({
+        id: `summary-completed-mismatch-${session.id}`,
+        severity: 'warning',
+        category: 'summary',
+        title: '历史 Summary 与组记录不一致',
+        message: `${sessionLabel(source, session)} 的缓存完成组数和真实 set logs 不一致。详情页应从真实组记录重新计算。`,
+        affectedIds: [session.id],
+        canAutoFix: false,
+        suggestedAction: '打开历史详情，按真实组记录检查 Summary。',
+      }));
+    }
+
+    if (storedTotalVolume !== undefined && Math.abs(number(storedTotalVolume) - detailSummary.workingVolume) > 0.01) {
+      issues.push(issue({
+        id: `summary-volume-mismatch-${session.id}`,
+        severity: 'warning',
+        category: 'summary',
+        title: '历史 Summary 与组记录不一致',
+        message: `${sessionLabel(source, session)} 的缓存训练量和真实 set logs 不一致。详情页应从真实组记录重新计算。`,
+        affectedIds: [session.id],
+        canAutoFix: false,
+        suggestedAction: '打开历史详情，按真实组记录检查 Summary。',
+      }));
+    }
+
+    if (storedEffectiveSets !== undefined && number(storedEffectiveSets) !== detailSummary.effectiveSets) {
+      issues.push(issue({
+        id: `summary-effective-mismatch-${session.id}`,
+        severity: 'warning',
+        category: 'summary',
+        title: '历史 Summary 与有效组不一致',
+        message: `${sessionLabel(source, session)} 的缓存有效组和真实 set logs 不一致。有效组应按正式完成组、RIR、动作质量、不适标记和动作身份重新解释。`,
+        affectedIds: [session.id],
+        canAutoFix: false,
+        suggestedAction: '打开历史详情，查看有效组解释。',
+      }));
+    }
+
+    if (detailSummary.incompleteSets > 0 && storedCompletedSets !== undefined && number(storedCompletedSets) > detailSummary.completedWorkingSets) {
+      issues.push(issue({
+        id: `incomplete-counted-in-summary-${session.id}`,
+        severity: 'error',
+        category: 'analytics',
+        title: '未完成组可能被计入统计',
+        message: `${sessionLabel(source, session)} 中有 done=false 的组，但缓存完成组数偏高。未完成组只能显示为草稿，不应进入完成组、总量、PR、e1RM 或有效组。`,
+        affectedIds: [session.id],
+        canAutoFix: false,
+        suggestedAction: '打开历史详情，确认未完成组仍为未完成状态。',
+      }));
+    }
+
+    if (detailSummary.warmupSets > 0 && storedEffectiveSets !== undefined && number(storedEffectiveSets) > detailSummary.effectiveSets) {
+      issues.push(issue({
+        id: `warmup-counted-effective-${session.id}`,
+        severity: 'error',
+        category: 'analytics',
+        title: '热身组可能被计入有效组',
+        message: `${sessionLabel(source, session)} 中有热身组，但缓存有效组数偏高。热身组不应进入 PR、e1RM 或有效组。`,
+        affectedIds: [session.id],
+        canAutoFix: false,
+        suggestedAction: '打开历史详情，确认热身组和正式组分区。',
+      }));
+    }
+
+    collectSessionSets(session).forEach(({ set, setIndex }) => {
+      if (!isIncompleteSet(set) || !hasDraftValues(set)) return;
+      issues.push(issue({
+        id: `incomplete-draft-set-${session.id}-${set.id || setIndex}`,
+        severity: 'warning',
+        category: 'history',
+        title: '发现未完成草稿组',
+        message: `${sessionLabel(source, session)} 中有未完成组保留了重量、次数或 RIR。它可以显示在历史详情中，但不应进入完成组、总量、PR、e1RM 或有效组。`,
+        affectedIds: [session.id, set.id],
+        canAutoFix: false,
+        suggestedAction: '打开历史详情，确认它是未完成草稿还是需要补保存。',
+      }));
+    });
+  });
+
+  const byTimestamp = new Map<string, TrainingSession[]>();
+  (appData.history || []).forEach((session) => {
+    const timestamp = `${session.startedAt || session.date || ''}|${session.finishedAt || ''}|${session.templateId || session.templateName || ''}`;
+    if (!timestamp.replace(/\|/g, '').trim()) return;
+    const list = byTimestamp.get(timestamp) || [];
+    list.push(session);
+    byTimestamp.set(timestamp, list);
+  });
+  byTimestamp.forEach((sessions) => {
+    if (sessions.length < 2) return;
+    issues.push(issue({
+      id: `duplicate-session-timestamp-${sessions.map((session) => session.id).sort().join('-')}`,
+      severity: 'warning',
+      category: 'history',
+      title: '发现疑似重复训练记录',
+      message: '有多条历史训练的开始、结束时间和模板相同。系统不会自动删除，请先人工确认是否为重复导入或重复保存。',
+      affectedIds: sessions.map((session) => session.id),
+      canAutoFix: false,
+      suggestedAction: '打开历史记录，确认是否需要删除重复训练。',
+    }));
   });
 
   return issues;
@@ -562,6 +707,7 @@ export const buildDataHealthReport = (appData: Partial<AppData>): DataHealthRepo
     ...scanReplacementIssues(appData),
     ...scanUnitIssues(appData),
     ...scanSummaryIssues(appData),
+    ...scanHistoryTrustIssues(appData),
     ...scanWarmupIssues(appData),
     ...scanAnalyticsFlagIssues(appData),
     ...scanImportedWorkoutIssues(appData),

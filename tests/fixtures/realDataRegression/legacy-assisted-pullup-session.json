@@ -1,0 +1,92 @@
+{
+  "fixtureMeta": {
+    "bug": "valid assisted-pull-up replacement was previously at risk of being treated as legacy invalid identity",
+    "privacy": "anonymous minimal reconstruction"
+  },
+  "data": {
+    "history": [
+      {
+        "id": "fixture-assisted-valid",
+        "date": "2026-05-02",
+        "finishedAt": "2026-05-02T10:00:00-04:00",
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "programTemplateId": "pull-a",
+        "programTemplateName": "拉 A",
+        "trainingMode": "hybrid",
+        "focus": "背部",
+        "completed": true,
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "assisted-pull-up",
+            "baseId": "lat-pulldown",
+            "canonicalExerciseId": "assisted-pull-up",
+            "originalExerciseId": "lat-pulldown",
+            "actualExerciseId": "assisted-pull-up",
+            "replacementExerciseId": "assisted-pull-up",
+            "name": "辅助引体向上",
+            "muscle": "背",
+            "primaryMuscles": ["back"],
+            "secondaryMuscles": ["arms"],
+            "muscleContribution": { "back": 1, "arms": 0.4 },
+            "kind": "compound",
+            "sets": [
+              {
+                "id": "assisted-pull-up-1",
+                "type": "top",
+                "weight": 45,
+                "actualWeightKg": 45,
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "done": true,
+                "completedAt": "2026-05-02T09:40:00-04:00"
+              }
+            ]
+          }
+        ],
+        "status": { "sleep": "一般", "energy": "中", "time": "60", "soreness": ["无"] }
+      },
+      {
+        "id": "fixture-assisted-legacy-invalid",
+        "date": "2026-05-01",
+        "finishedAt": "2026-05-01T10:00:00-04:00",
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "programTemplateId": "pull-a",
+        "programTemplateName": "拉 A",
+        "trainingMode": "hybrid",
+        "focus": "背部",
+        "completed": true,
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "lat-pulldown",
+            "baseId": "lat-pulldown",
+            "originalExerciseId": "lat-pulldown",
+            "actualExerciseId": "legacy-assisted-pullup",
+            "replacementExerciseId": "__auto_alt_assisted_pullup",
+            "name": "高位下拉",
+            "muscle": "背",
+            "kind": "compound",
+            "sets": [
+              {
+                "id": "legacy-assisted-1",
+                "type": "top",
+                "weight": 60,
+                "actualWeightKg": 60,
+                "reps": 6,
+                "rir": 1,
+                "techniqueQuality": "good",
+                "done": true,
+                "completedAt": "2026-05-01T09:40:00-04:00"
+              }
+            ]
+          }
+        ],
+        "status": { "sleep": "一般", "energy": "中", "time": "60", "soreness": ["无"] }
+      }
+    ]
+  }
+}

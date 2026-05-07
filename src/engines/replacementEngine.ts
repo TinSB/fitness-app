@@ -1,11 +1,13 @@
 import {
   EXERCISE_ALIASES,
   EXERCISE_DISPLAY_NAMES,
+  EXERCISE_EQUIPMENT_TAGS,
   EXERCISE_EQUIVALENCE_CHAINS,
   EXERCISE_KNOWLEDGE_OVERRIDES,
   formatExerciseDisplayName,
   getExerciseNameEntry,
 } from '../data/exerciseLibrary';
+import type { ExerciseEquipmentTag } from '../data/exerciseLibrary';
 import { formatFatigueCost, formatReplacementCategory } from '../i18n/formatters';
 import { clone } from './engineUtils';
 import type { ExercisePrescription, TrainingSession } from '../models/training-model';
@@ -22,6 +24,10 @@ export interface ReplacementOption {
   fatigueCost: string;
   fatigueCostLabel: string;
   prIndependent: boolean;
+}
+
+export interface ReplacementContext {
+  unavailableEquipment?: ExerciseEquipmentTag[];
 }
 
 const rankLabels: Record<ReplacementRank, string> = {
@@ -47,6 +53,69 @@ const rankOrder: Record<ReplacementRank, number> = {
 const forbiddenBenchReplacementIds = new Set(['triceps-pushdown', 'shoulder-press', 'machine-shoulder-press', 'cable-fly']);
 
 const displayName = (id: string, bilingual = false) => formatExerciseDisplayName(id, { bilingual, fallback: '未命名动作' });
+
+const equipmentLabels: Record<ExerciseEquipmentTag, string> = {
+  dumbbell: '哑铃区',
+  barbell: '杠铃区',
+  smith: '史密斯机',
+  cable: '绳索区',
+  machine: '固定器械区',
+  bodyweight: '自重区',
+  bench: '卧推凳',
+  rack: '深蹲架',
+  'plate-loaded': '片加载器械',
+};
+
+const normalizeUnavailableEquipment = (values: unknown[] = []) =>
+  Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean))) as ExerciseEquipmentTag[];
+
+const equipmentTagsFor = (id: string): ExerciseEquipmentTag[] => {
+  const metadataTags = EXERCISE_KNOWLEDGE_OVERRIDES[id]?.equipmentTags;
+  if (Array.isArray(metadataTags)) return metadataTags as ExerciseEquipmentTag[];
+  return EXERCISE_EQUIPMENT_TAGS[id] || [];
+};
+
+const hardUnavailableTagsFor = (id: string, unavailableEquipment: ExerciseEquipmentTag[]) => {
+  const tags = equipmentTagsFor(id);
+  return unavailableEquipment.filter((tag) => tag !== 'machine' && tags.includes(tag));
+};
+
+const appendReasonNotes = (reason: string, notes: string[]) => {
+  const uniqueNotes = Array.from(new Set(notes.filter(Boolean)));
+  if (!uniqueNotes.length) return reason;
+  const suffix = uniqueNotes.join('；');
+  return reason.includes(suffix) ? reason : `${reason}${reason.endsWith('。') ? '' : '。'}${suffix}。`;
+};
+
+const equipmentReasonNotes = (id: string, unavailableEquipment: ExerciseEquipmentTag[]) => {
+  if (!unavailableEquipment.length) return [];
+  const tags = equipmentTagsFor(id);
+  const notes: string[] = [];
+  const hardUnavailable = hardUnavailableTagsFor(id, unavailableEquipment);
+
+  if (hardUnavailable.length) {
+    notes.push(`需要${equipmentLabels[hardUnavailable[0]]}，已降低排序`);
+    return notes;
+  }
+
+  if (unavailableEquipment.includes('dumbbell') && !tags.includes('dumbbell')) notes.push('避开哑铃区');
+  if (unavailableEquipment.includes('cable') && !tags.includes('cable')) notes.push('不依赖绳索');
+  if ((unavailableEquipment.includes('rack') || unavailableEquipment.includes('barbell')) && !tags.includes('rack') && !tags.includes('barbell')) {
+    notes.push('不需要深蹲架');
+  }
+  if ((tags.includes('machine') || tags.includes('smith') || tags.includes('plate-loaded')) && !unavailableEquipment.includes('machine')) {
+    notes.push('可在固定器械区完成');
+  }
+  return notes;
+};
+
+const hasHardUnavailableEquipment = (id: string, unavailableEquipment: ExerciseEquipmentTag[]) => hardUnavailableTagsFor(id, unavailableEquipment).length > 0;
+
+const equipmentAdjustedRankScore = (id: string, rank: ReplacementRank, unavailableEquipment: ExerciseEquipmentTag[]) => {
+  const tags = equipmentTagsFor(id);
+  const weakMachinePenalty = unavailableEquipment.includes('machine') && tags.includes('machine') ? 0.35 : 0;
+  return rankOrder[rank] + weakMachinePenalty;
+};
 
 export const isSyntheticReplacementExerciseId = (id: unknown) => /__(?:auto_)?alt(?:_|$)/.test(String(id || ''));
 
@@ -146,7 +215,7 @@ const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRan
     if (id === 'assisted-pull-up') return '同属垂直拉，动作目标接近；会按辅助引体向上独立记录 PR / e1RM。';
     if (id === 'pull-up') return '同属垂直拉，强度和技能要求更高；适合状态好时替代。';
     if (id === 'single-arm-lat-pulldown') return '同属垂直拉，但改为单侧角度，适合需要更细致控制背阔发力时使用。';
-    if (id === 'machine-row' || id === 'seated-row') return '这是背部补量选择，不是一线垂直拉等价替代；仅在下拉器械不可用时使用。';
+    if (id === 'machine-row' || id === 'seated-row') return '这是器械不可用时可选的背部补量选择，不是一线垂直拉等价替代。';
   }
   if (sourceId === 'seated-row') {
     if (id === 'chest-supported-row') return '同属水平拉，胸托能降低躯干代偿，适合作为坐姿划船的一线替代。';
@@ -215,7 +284,7 @@ const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRan
     if (id === 'straight-bar-pushdown') return '同属三头下压模式，手柄不同，适合作为绳索下压的一线替代。';
     if (id === 'overhead-cable-triceps-extension') return '同属三头伸展训练，但手臂位置不同，是可接受替代。';
     if (id === 'skull-crusher') return '同属三头伸展训练，器械和关节压力不同，只作为可选替代。';
-    if (id === 'close-grip-bench' || id === 'assisted-dip') return '复合推类替代，疲劳成本更高，不是孤立下压等价替代。';
+    if (id === 'close-grip-bench' || id === 'assisted-dip') return '复合动作替代，疲劳成本更高，不是完全等价替代；复合推类替代，疲劳成本更高，不是孤立下压等价替代。';
   }
   if (sourceId === 'bench-press') {
     if (id === 'db-bench-press') return '同为水平推，胸部刺激接近，器械占用时适合直接替代卧推。';
@@ -225,17 +294,18 @@ const reasonForReplacement = (sourceId: string, id: string, rank: ReplacementRan
   }
   if (rank === 'angle') return '同属相近动作链，但角度或刺激重点不同，适合作为较低优先级替代。';
   if (rank === 'acceptable') return '动作模式接近但不完全等价，会按实际动作独立记录。';
-  if (rank === 'equipment_fallback') return '这是器械不可用时的备用方案，不代表与原动作完全等价。';
-  if (rank === 'fatigue_reduction') return '这是降低疲劳的替代方案，会按实际动作独立记录。';
-  if (rank === 'compound_fallback') return '复合动作替代，疲劳成本更高，不是孤立动作完全等价替代。';
+  if (rank === 'equipment_fallback') return '器械不可用时可选，不代表与原动作完全等价。';
+  if (rank === 'fatigue_reduction') return '降低疲劳压力，会按实际动作独立记录。';
+  if (rank === 'compound_fallback') return '复合动作替代，疲劳成本更高，不是完全等价替代。';
   if (rank === 'optional') return '这是可选替代，适合特殊器械或疲劳限制场景，不代表完全等价。';
   return '同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。';
 };
 
-export const buildReplacementOptions = (exercise: ExercisePrescription): ReplacementOption[] => {
+export const buildReplacementOptions = (exercise: ExercisePrescription, context: ReplacementContext = {}): ReplacementOption[] => {
   const sourceId = baseExerciseId(exercise);
   const identity = buildCurrentIdentitySet(exercise);
   const metadata = EXERCISE_KNOWLEDGE_OVERRIDES[sourceId] || {};
+  const unavailableEquipment = normalizeUnavailableEquipment(context.unavailableEquipment || []);
   const chain = Object.values(EXERCISE_EQUIVALENCE_CHAINS).find((item) => item.id === metadata.equivalenceChainId || item.members.includes(sourceId));
   const explicitAlternativeIds = ((metadata.alternativeIds as string[] | undefined) || exercise.alternativeIds || []).filter(Boolean);
   const priorityMap = ((metadata.alternativePriorities as Record<string, ReplacementPriorityValue> | undefined) || exercise.alternativePriorities || {}) as Record<string, ReplacementPriorityValue>;
@@ -256,13 +326,30 @@ export const buildReplacementOptions = (exercise: ExercisePrescription): Replace
     return true;
   });
 
-  return uniqueIds
+  const rankedOptions = uniqueIds
     .map((id, index) => {
       const rank = rankFromPriority(priorityMap[id], index <= 1 ? 'priority' : 'optional');
       return rank ? optionFromId(id, rank, reasonForReplacement(sourceId, id, rank)) : null;
     })
     .filter(Boolean)
     .sort((left, right) => rankOrder[left!.rank] - rankOrder[right!.rank]) as ReplacementOption[];
+
+  if (!unavailableEquipment.length) return rankedOptions;
+
+  return rankedOptions
+    .map((option, index) => ({
+      ...option,
+      reason: appendReasonNotes(option.reason, equipmentReasonNotes(option.id, unavailableEquipment)),
+      equipmentSortIndex: index,
+    }))
+    .sort((left, right) => {
+      const hardUnavailableDiff = Number(hasHardUnavailableEquipment(left.id, unavailableEquipment)) - Number(hasHardUnavailableEquipment(right.id, unavailableEquipment));
+      if (hardUnavailableDiff !== 0) return hardUnavailableDiff;
+      const rankDiff = equipmentAdjustedRankScore(left.id, left.rank, unavailableEquipment) - equipmentAdjustedRankScore(right.id, right.rank, unavailableEquipment);
+      if (rankDiff !== 0) return rankDiff;
+      return left.equipmentSortIndex - right.equipmentSortIndex;
+    })
+    .map(({ equipmentSortIndex, ...option }) => option);
 };
 
 export const applyExerciseReplacement = (session: TrainingSession, exerciseIndex: number, replacementId: string): TrainingSession => {

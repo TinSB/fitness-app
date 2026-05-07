@@ -1,7 +1,8 @@
 import type { ExercisePrescription, SupportExerciseLog, TrainingSession, TrainingSetLog, UnitSettings } from '../models/training-model';
 import { formatDataFlag } from '../i18n/formatters';
 import { buildEffectiveVolumeSummary } from './effectiveSetEngine';
-import { isCompletedSet, isIncompleteSet, number, setVolume } from './engineUtils';
+import { buildEffectiveSetExplanation, type EffectiveSetExplanation } from './effectiveSetExplanationEngine';
+import { number, setVolume } from './engineUtils';
 import { hasInvalidExerciseIdentity } from './replacementEngine';
 import { formatTrainingVolume } from './unitConversionEngine';
 
@@ -31,6 +32,42 @@ export type GroupedSessionSets = {
   workingSets: SessionSetEntry[];
   uncategorizedSets: SessionSetEntry[];
   supportSets: SupportExerciseLog[];
+};
+
+export type SessionDetailSummary = {
+  plannedWorkingSets: number;
+  completedWorkingSets: number;
+  effectiveSets: number;
+  highConfidenceEffectiveSets: number;
+  warmupSets: number;
+  plannedWarmupSets: number;
+  incompleteSets: number;
+  workingVolume: number;
+  warmupVolume: number;
+  excludedFromStats: boolean;
+  excludedReason?: string;
+  excludedFromStatsReason: string;
+  identityIssueCount: number;
+  edited: boolean;
+  effectiveSetGapReasons: string[];
+  effectiveSetExplanation: EffectiveSetExplanation;
+  warmupSetCount: number;
+  workingSetCount: number;
+  completedWorkingSetCount: number;
+  incompleteSetCount: number;
+  incompleteExerciseCount: number;
+  identityReviewExerciseCount: number;
+  identityReviewSetCount: number;
+  identityReviewSummary: string;
+  earlyEndSummary: string;
+  supportSetCount: number;
+  effectiveSetCount: number;
+  workingVolumeKg: number;
+  warmupVolumeKg: number;
+  totalDisplayVolume: string;
+  dataFlagLabel: string;
+  effectiveSummary: ReturnType<typeof buildEffectiveVolumeSummary>;
+  groupedSets: GroupedSessionSets;
 };
 
 const DEFAULT_UNIT_SETTINGS: UnitSettings = {
@@ -79,14 +116,40 @@ const classifySet = (set: TrainingSetLog, source: SessionSetEntry['source']): { 
   return { category: 'uncategorized', inferred: false };
 };
 
-const isCompletedDisplaySet = (set: TrainingSetLog) => isCompletedSet(set) && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
+const isCompletedDisplaySet = (set: TrainingSetLog) => set.done === true && number(set.actualWeightKg ?? set.weight) > 0 && number(set.reps) > 0;
 
 const completedVolume = (items: SessionSetEntry[]) =>
   items.filter((item) => isCompletedDisplaySet(item.set)).reduce((sum, item) => sum + setVolume(item.set), 0);
 
 const completedCount = (items: SessionSetEntry[]) => items.filter((item) => isCompletedDisplaySet(item.set)).length;
 
-const incompleteCount = (items: SessionSetEntry[]) => items.filter((item) => isIncompleteSet(item.set)).length;
+const incompleteCount = (items: SessionSetEntry[]) => items.filter((item) => !isCompletedDisplaySet(item.set)).length;
+
+const excludedFromStatsReason = (dataFlag: TrainingSession['dataFlag']) => {
+  if (dataFlag === 'test') return '当前标记为测试数据，不参与 PR、e1RM、有效组和统计。';
+  if (dataFlag === 'excluded') return '当前标记为排除数据，不参与 PR、e1RM、有效组和统计。';
+  return '';
+};
+
+const effectiveGapReasons = ({
+  completedWorkingSets,
+  effectiveSets,
+  reasons,
+  identityReviewSetCount,
+}: {
+  completedWorkingSets: number;
+  effectiveSets: number;
+  reasons: string[];
+  identityReviewSetCount: number;
+}) => {
+  if (effectiveSets >= completedWorkingSets) return [];
+  const output = [...new Set(reasons.filter(Boolean))];
+  if (identityReviewSetCount > 0 && !output.some((reason) => reason.includes('动作身份'))) {
+    output.push('动作身份需要检查，相关组暂不计入有效组。');
+  }
+  if (!output.length) output.push('部分已完成正式组未达到有效组条件。');
+  return output;
+};
 
 export const groupSessionSetsByType = (session: TrainingSession): GroupedSessionSets => {
   const groups = (session.exercises || []).map<SessionExerciseSetGroup>((exercise) => ({
@@ -129,7 +192,7 @@ export const groupSessionSetsByType = (session: TrainingSession): GroupedSession
     group.warmupSets.push({
       exercise: group.exercise,
       exerciseId: group.exerciseId,
-      set: { ...set, type: 'warmup', done: isCompletedSet(set) },
+      set: { ...set, type: 'warmup', done: set.done === true },
       setIndex: index,
       category: 'warmup',
       inferred: false,
@@ -165,17 +228,40 @@ export const buildWorkingOnlySession = (session: TrainingSession): TrainingSessi
   };
 };
 
-export const buildSessionDetailSummary = (session: TrainingSession, unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS) => {
+const withStrictCompletionState = (session: TrainingSession): TrainingSession => ({
+  ...session,
+  exercises: (session.exercises || []).map((exercise) => ({
+    ...exercise,
+    sets: Array.isArray(exercise.sets)
+      ? exercise.sets.map((set) => (set.done === true ? set : { ...set, done: false }))
+      : exercise.sets,
+  })),
+  focusWarmupSetLogs: Array.isArray(session.focusWarmupSetLogs)
+    ? session.focusWarmupSetLogs.map((set) => (set.done === true ? set : { ...set, done: false }))
+    : session.focusWarmupSetLogs,
+});
+
+export const buildSessionDetailSummary = (session: TrainingSession, unitSettings: UnitSettings = DEFAULT_UNIT_SETTINGS): SessionDetailSummary => {
   const grouped = groupSessionSetsByType(session);
   const workingOnlySession = buildWorkingOnlySession(session);
-  const effectiveSummary = buildEffectiveVolumeSummary([workingOnlySession]);
+  const strictWorkingOnlySession = withStrictCompletionState(workingOnlySession);
+  const strictSession = withStrictCompletionState(session);
+  const effectiveSummary = buildEffectiveVolumeSummary([{ ...strictWorkingOnlySession, dataFlag: session.dataFlag }]);
+  const effectiveSetExplanation = buildEffectiveSetExplanation(strictSession);
   const workingVolumeKg = completedVolume(grouped.workingSets);
   const warmupVolumeKg = completedVolume(grouped.warmupSets);
+  const plannedWorkingSets = grouped.workingSets.length;
+  const completedWorkingSets = completedCount(grouped.workingSets);
+  const warmupSets = completedCount(grouped.warmupSets);
   const supportSetCount = grouped.supportSets.reduce((sum, item) => sum + Math.max(0, number(item.completedSets)), 0);
   const incompleteSetCount = incompleteCount(grouped.workingSets);
-  const incompleteExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.some((item) => isIncompleteSet(item.set))).length;
+  const incompleteExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.some((item) => !isCompletedDisplaySet(item.set))).length;
   const identityReviewExerciseCount = grouped.exerciseGroups.filter((group) => hasInvalidExerciseIdentity(group.exercise)).length;
   const identityReviewSetCount = grouped.workingSets.filter((item) => hasInvalidExerciseIdentity(item.exercise)).length;
+  const excludedReason = excludedFromStatsReason(session.dataFlag);
+  const excludedFromStats = Boolean(excludedReason);
+  const identityIssueCount = identityReviewSetCount;
+  const edited = Boolean(session.editedAt || session.editHistory?.length);
   const mainExerciseCount = grouped.exerciseGroups.filter((group) => group.workingSets.length).length;
   const allMainWorkIncomplete = mainExerciseCount > 0 && grouped.exerciseGroups
     .filter((group) => group.workingSets.length)
@@ -189,9 +275,30 @@ export const buildSessionDetailSummary = (session: TrainingSession, unitSettings
         : '');
 
   return {
-    warmupSetCount: completedCount(grouped.warmupSets),
-    workingSetCount: completedCount(grouped.workingSets),
-    completedWorkingSetCount: completedCount(grouped.workingSets),
+    plannedWorkingSets,
+    completedWorkingSets,
+    effectiveSets: effectiveSetExplanation.countedEffectiveSets,
+    highConfidenceEffectiveSets: effectiveSummary.highConfidenceEffectiveSets,
+    warmupSets,
+    plannedWarmupSets: grouped.warmupSets.length,
+    incompleteSets: incompleteSetCount,
+    workingVolume: workingVolumeKg,
+    warmupVolume: warmupVolumeKg,
+    excludedFromStats,
+    excludedReason: excludedReason || undefined,
+    excludedFromStatsReason: excludedReason,
+    identityIssueCount,
+    edited,
+    effectiveSetGapReasons: effectiveGapReasons({
+      completedWorkingSets,
+      effectiveSets: effectiveSetExplanation.countedEffectiveSets,
+      reasons: effectiveSummary.reasons,
+      identityReviewSetCount,
+    }),
+    effectiveSetExplanation,
+    warmupSetCount: warmupSets,
+    workingSetCount: completedWorkingSets,
+    completedWorkingSetCount: completedWorkingSets,
     incompleteSetCount,
     incompleteExerciseCount,
     identityReviewExerciseCount,
@@ -201,7 +308,7 @@ export const buildSessionDetailSummary = (session: TrainingSession, unitSettings
       : '',
     earlyEndSummary,
     supportSetCount,
-    effectiveSetCount: effectiveSummary.effectiveSets,
+    effectiveSetCount: effectiveSetExplanation.countedEffectiveSets,
     workingVolumeKg,
     warmupVolumeKg,
     totalDisplayVolume: formatTrainingVolume(workingVolumeKg, unitSettings),

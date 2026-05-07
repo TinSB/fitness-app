@@ -22,7 +22,7 @@ describe('shoulder and arm exercise library coverage', () => {
 
     expect(metadata('shoulder-press').equivalenceChainId).toBe('vertical-press');
     expect(metadata('lateral-raise').equivalenceChainId).toBe('lateral-raise');
-    expect(metadata('rear-delt-raise').equivalenceChainId).toBe('rear-delt-scapular');
+    expect(metadata('rear-delt-raise').equivalenceChainId).toBe('rear-delt');
     expect(EXERCISE_EQUIVALENCE_CHAINS['shoulder-press'].members).toEqual([
       'shoulder-press',
       'machine-shoulder-press',

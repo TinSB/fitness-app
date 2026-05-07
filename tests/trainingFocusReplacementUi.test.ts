@@ -15,7 +15,7 @@ describe('TrainingFocusView replacement UI', () => {
     expect(source).toContain('type="button"');
     expect(source).toContain('替代动作');
     expect(source).toContain('onClick={openReplacementPicker}');
-    expect(source).toContain('onClose={() => setShowReplacementPicker(false)}');
+    expect(source).toContain('onClose={closeReplacementPicker}');
   });
 
   it('shows the PR and e1RM independence note in the picker', () => {

@@ -1,5 +1,6 @@
-import type { TechniqueQuality, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
+import type { SessionEditAffectedStat, SessionEditSummarySnapshot, TechniqueQuality, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
 import { clone, number } from './engineUtils';
+import { buildSessionDetailSummary } from './sessionDetailSummaryEngine';
 
 export type SessionSetEditPatch = {
   weightKg?: number;
@@ -27,9 +28,31 @@ export type SessionEditResult = {
 export const sessionEditFeedbackMessage = (fields: string[]) => {
   const fieldSet = new Set(fields);
   if (fieldSet.has('sets')) return '已保存修正，相关统计会重新计算。';
-  if (fieldSet.has('dataFlag')) return '数据状态已更新。';
+  if (fieldSet.has('dataFlag')) return '数据状态已更新，会改变默认统计参与状态。';
   if (fieldSet.has('warmupSets')) return '已更新热身组，不影响 PR、e1RM 和有效组。';
   return '已保存修正，相关统计会重新计算。';
+};
+
+export const buildSessionEditSummarySnapshot = (session: TrainingSession): SessionEditSummarySnapshot => {
+  const summary = buildSessionDetailSummary(session);
+  return {
+    plannedWorkingSets: summary.plannedWorkingSets,
+    completedWorkingSets: summary.completedWorkingSets,
+    effectiveSets: summary.effectiveSets,
+    warmupSets: summary.warmupSets,
+    incompleteSets: summary.incompleteSets,
+    workingVolume: summary.workingVolume,
+    warmupVolume: summary.warmupVolume,
+    dataFlag: session.dataFlag || 'normal',
+    excludedFromStatsReason: summary.excludedFromStatsReason || undefined,
+  };
+};
+
+export const inferSessionEditAffectedStats = (fields: string[]): SessionEditAffectedStat[] => {
+  const fieldSet = new Set(fields);
+  if (fieldSet.has('sets') || fieldSet.has('dataFlag')) return ['volume', 'effectiveSet', 'PR', 'e1RM'];
+  if (fieldSet.has('warmupSets')) return ['none'];
+  return ['none'];
 };
 
 const matchesExercise = (exercise: TrainingSession['exercises'][number], exerciseId: string) =>
@@ -92,9 +115,15 @@ export const updateSessionSet = (
   return next;
 };
 
-export const markSessionEdited = (session: TrainingSession, fields: string[], note?: string): TrainingSession => {
+export const markSessionEdited = (
+  session: TrainingSession,
+  fields: string[],
+  note?: string,
+  beforeSession?: TrainingSession,
+): TrainingSession => {
   const editedAt = new Date().toISOString();
   const uniqueFields = [...new Set(fields.filter(Boolean))];
+  const sourceBefore = beforeSession || session;
   return {
     ...session,
     editedAt,
@@ -103,7 +132,11 @@ export const markSessionEdited = (session: TrainingSession, fields: string[], no
       {
         editedAt,
         fields: uniqueFields,
+        editedFields: uniqueFields,
         note,
+        beforeSummary: buildSessionEditSummarySnapshot(sourceBefore),
+        afterSummary: buildSessionEditSummarySnapshot(session),
+        affectedStats: inferSessionEditAffectedStats(uniqueFields),
       },
     ],
   };
