@@ -37,6 +37,7 @@ import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
 import { sessionEditFeedbackMessage } from './engines/sessionEditEngine';
 import { dismissDataHealthIssueToday } from './engines/dataHealthEngine';
+import { repairLegacyDisplayWeights } from './engines/dataHealthRepairEngine';
 import { buildMuscleVolumeDashboard } from './engines/analytics';
 import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
 import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligenceSummaryEngine';
@@ -1133,8 +1134,37 @@ function App() {
     setActiveTab('profile');
   };
 
-  const handleDataHealthAction = (action: DataHealthActionView) => {
+  const handleDataHealthAction = async (action: DataHealthActionView) => {
     if (!action || action.type === 'none') return;
+    if (action.type === 'repair_legacy_display_weights') {
+      const confirmed = await confirm({
+        title: '修复历史显示重量？',
+        description: '系统只会重新整理历史记录的显示重量，不会改变真实训练重量、PR、e1RM、有效组或训练量。',
+        confirmText: '修复显示重量',
+        cancelText: '取消',
+        variant: 'warning',
+      });
+      if (!confirmed) return;
+      try {
+        const result = repairLegacyDisplayWeights(data);
+        if (result.repairedCount > 0) {
+          setData(result.repairedData);
+          invalidateDerivedState('unit_changed');
+        }
+        if (result.repairedCount > 0 && result.needsReviewCount > 0) {
+          showAppToast('部分记录缺少真实重量来源，已保留为需要复核。', 'warning');
+        } else if (result.repairedCount > 0) {
+          showAppToast('已修复历史显示重量，真实训练重量未改变。', 'success');
+        } else if (result.needsReviewCount > 0) {
+          showAppToast('部分记录缺少真实重量来源，已保留为需要复核。', 'warning');
+        } else {
+          showAppToast('没有需要自动修复的历史显示重量。', 'info');
+        }
+      } catch {
+        showAppToast('修复失败，当前数据未改变。', 'danger');
+      }
+      return;
+    }
     if (action.type === 'dismiss') {
       const issueId = action.issueId || action.id.replace(/-dismiss$/, '');
       setData((current) => {

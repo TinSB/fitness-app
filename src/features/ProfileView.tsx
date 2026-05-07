@@ -327,6 +327,9 @@ export function ProfileView({
                             </ActionButton>
                           ) : null}
                         </div>
+                        {issue.action?.description ? (
+                          <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
+                        ) : null}
                         {issue.technicalDetails ? (
                           <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                             <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -361,6 +364,9 @@ export function ProfileView({
                               </ActionButton>
                             ) : null}
                           </div>
+                          {issue.action?.description ? (
+                            <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
+                          ) : null}
                           {issue.technicalDetails ? (
                             <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                               <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>

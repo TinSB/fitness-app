@@ -14,6 +14,7 @@ export type DataHealthActionType =
   | 'open_unit_settings'
   | 'open_plan'
   | 'open_backup'
+  | 'repair_legacy_display_weights'
   | 'dismiss'
   | 'none';
 
@@ -25,6 +26,7 @@ export type DataHealthActionView = {
   targetId?: string;
   targetDate?: string;
   requiresConfirmation?: boolean;
+  description?: string;
 };
 
 export type DataHealthViewModel = {
@@ -84,7 +86,13 @@ const aggregateIssueKey = (issue: DataHealthIssue) => {
   if (id.startsWith('invalid-exercise-reference') || id.startsWith('missing-actual-exercise')) return 'invalid-exercise-reference';
   if (id.startsWith('incomplete-draft-set')) return 'incomplete-draft-sets';
   if (id.startsWith('summary-') || id.startsWith('incomplete-counted-in-summary') || id.startsWith('warmup-counted-effective')) return 'summary-mismatch';
-  if (id.startsWith('display-weight-without-actual-kg') || id.startsWith('lb-display-decimal') || id.startsWith('mixed-display-unit')) return 'unit-history-review';
+  if (
+    id.startsWith('display-weight-without-actual-kg') ||
+    id.startsWith('lb-display-decimal') ||
+    id.startsWith('mixed-display-unit') ||
+    id.startsWith('historical-display-weight-mismatch') ||
+    id.startsWith('display-weight-unit-untrusted')
+  ) return 'unit-history-review';
   if (id.startsWith('duplicate-session-timestamp')) return 'duplicate-session-timestamp';
   if (id.startsWith('excluded-session-in-analytics') || id.startsWith('non-normal-session-present')) return 'test-excluded-stat-participation';
   if (id.startsWith('warmup-missing-type') || id.startsWith('warmup-analytics-marker')) return 'warmup-stat-participation';
@@ -115,6 +123,7 @@ export const aggregateDataHealthIssuesForDisplay = (issues: DataHealthIssue[] = 
       severity,
       message: `${group.length} 条同类问题已合并显示。${normalizeText(primary.message)}`,
       affectedIds: [...new Set(group.flatMap((item) => item.affectedIds || []))],
+      canAutoFix: group.some((item) => item.canAutoFix),
       suggestedAction: primary.suggestedAction,
     }];
   });
@@ -125,6 +134,7 @@ const action = (
   type: DataHealthActionType,
   label: string,
   targetId = firstAffectedId(issue),
+  options: Partial<Pick<DataHealthActionView, 'requiresConfirmation' | 'description'>> = {},
 ): DataHealthActionView | undefined => {
   if (type === 'none') return undefined;
   return {
@@ -133,8 +143,15 @@ const action = (
     type,
     issueId: issue.id,
     ...(targetId ? { targetId } : {}),
+    ...options,
   };
 };
+
+const legacyDisplayWeightRepairAction = (issue: DataHealthIssue) =>
+  action(issue, 'repair_legacy_display_weights', '一键修复显示重量', undefined, {
+    requiresConfirmation: true,
+    description: '只修复历史显示重量，不改变真实训练重量。',
+  });
 
 const dismissAction = (issue: DataHealthIssue): DataHealthActionView => ({
   id: `${issue.id}-dismiss`,
@@ -175,10 +192,17 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     };
   }
   if (id.startsWith('aggregate-unit-history-review') || id.startsWith('display-weight-without-actual-kg')) {
+    if (issue.canAutoFix) {
+      return {
+        title: '历史重量记录需要检查',
+        userMessage: '部分历史显示重量可以安全整理；系统只会修复显示重量，不改变真实训练重量。缺少真实重量来源的记录会继续保留为需要复核。',
+        action: legacyDisplayWeightRepairAction(issue),
+      };
+    }
     return {
       title: '历史重量记录需要检查',
       userMessage: '部分历史组缺少用于计算的重量来源。系统不会用旧显示重量替代真实计算重量。',
-      action: action(issue, 'open_unit_settings', '打开单位设置'),
+      action: action(issue, 'open_record_history', '查看详情'),
     };
   }
   if (id.startsWith('aggregate-invalid-exercise-reference') || id.startsWith('invalid-exercise-reference')) {
@@ -217,10 +241,33 @@ const matchIssueCopy = (issue: DataHealthIssue): Pick<DataHealthIssueView, 'titl
     };
   }
   if (id.startsWith('lb-display-decimal')) {
+    if (issue.canAutoFix) {
+      return {
+        title: '重量显示需要整理',
+        userMessage: '部分历史记录的磅数显示存在小数。系统可以只清理旧显示字段，真实训练重量不变。',
+        action: legacyDisplayWeightRepairAction(issue),
+      };
+    }
     return {
       title: '重量显示需要整理',
       userMessage: '部分历史记录的磅数显示存在小数，系统会按当前单位设置格式化显示。',
       action: action(issue, 'open_unit_settings', '打开单位设置'),
+    };
+  }
+  if (id.startsWith('historical-display-weight-mismatch')) {
+    return {
+      title: '重量显示需要整理',
+      userMessage: issue.canAutoFix
+        ? '这条历史记录的旧显示重量可以安全整理；修复不会改变真实训练重量。'
+        : '这条历史记录需要先复核动作身份或显示单位，再处理显示重量。',
+      action: issue.canAutoFix ? legacyDisplayWeightRepairAction(issue) : action(issue, 'open_record_history', '查看详情'),
+    };
+  }
+  if (id.startsWith('display-weight-unit-untrusted')) {
+    return {
+      title: '历史显示重量单位需要复核',
+      userMessage: '这条历史记录的显示单位不可信。系统不会从 displayWeight 反推真实重量，需要人工复核。',
+      action: action(issue, 'open_record_history', '查看详情'),
     };
   }
   if (id.startsWith('summary-completed-zero') || id.startsWith('summary-volume-zero') || issue.category === 'summary') {

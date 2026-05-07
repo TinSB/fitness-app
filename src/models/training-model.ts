@@ -1259,10 +1259,14 @@ export interface DismissedDataHealthIssue {
 export interface DataRepairLogEntry {
   id: string;
   createdAt: string;
+  repairId?: string;
+  repairedAt?: string;
   sourceFileName?: string;
   category: string;
   action: string;
   affectedIds: string[];
+  beforeSummary?: string;
+  afterSummary?: string;
   before?: unknown;
   after?: unknown;
 }

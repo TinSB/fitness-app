@@ -1148,10 +1148,14 @@ const sanitizeDataRepairLogs = (entries: unknown): DataRepairLogEntry[] =>
       return {
         id,
         createdAt,
+        repairId: pickString(raw.repairId) || undefined,
+        repairedAt: pickString(raw.repairedAt) || undefined,
         sourceFileName: pickString(raw.sourceFileName) || undefined,
         category,
         action,
         affectedIds: pickStringArray(raw.affectedIds).slice(0, 100),
+        beforeSummary: pickString(raw.beforeSummary) || undefined,
+        afterSummary: pickString(raw.afterSummary) || undefined,
         before: raw.before,
         after: raw.after,
       };

@@ -3,6 +3,7 @@ import type { AppData, DismissedDataHealthIssue, TrainingSession, TrainingSetLog
 import { isCompletedSet, isIncompleteSet, number, sessionCompletedSets, sessionVolume } from './engineUtils';
 import { hasInvalidExerciseIdentity, isSyntheticReplacementExerciseId, validateReplacementExerciseId } from './replacementEngine';
 import { buildSessionDetailSummary } from './sessionDetailSummaryEngine';
+import { convertKgToDisplayWeight } from './unitConversionEngine';
 
 export type DataHealthSeverity = 'info' | 'warning' | 'error';
 
@@ -274,11 +275,25 @@ const scanReplacementIssues = (appData: Partial<AppData>) => {
 
 const scanUnitIssues = (appData: Partial<AppData>) => {
   const issues: DataHealthIssue[] = [];
+  const currentWeightUnit: WeightUnit = appData.unitSettings?.weightUnit === 'lb' ? 'lb' : 'kg';
 
   sessionSources(appData).forEach(({ source, session }) => {
     const units = new Set<WeightUnit>();
-    collectAllSessionSets(session).forEach(({ set, setIndex }) => {
+    collectAllSessionSets(session).forEach(({ exercise, set, setIndex }) => {
       const displayUnit = set.displayUnit;
+      const hasDisplayWeight = set.displayWeight !== undefined;
+      const hasActualWeightKg =
+        set.actualWeightKg !== undefined &&
+        set.actualWeightKg !== null &&
+        String(set.actualWeightKg).trim() !== '' &&
+        Number.isFinite(Number(set.actualWeightKg));
+      const unsafeIdentity = Boolean(
+        (exercise && hasInvalidExerciseIdentity(exercise)) ||
+          set.identityInvalid ||
+          isSyntheticReplacementExerciseId(set.exerciseId) ||
+          isSyntheticReplacementExerciseId(set.actualExerciseId) ||
+          isSyntheticReplacementExerciseId(set.originalExerciseId),
+      );
       if (set.displayWeight !== undefined && set.actualWeightKg === undefined) {
         issues.push(issue({
           id: `display-weight-without-actual-kg-${session.id}-${set.id || setIndex}`,
@@ -292,6 +307,18 @@ const scanUnitIssues = (appData: Partial<AppData>) => {
         }));
       }
       if (displayUnit && VALID_DISPLAY_UNITS.has(displayUnit)) units.add(displayUnit);
+      if (hasDisplayWeight && hasActualWeightKg && displayUnit !== undefined && !VALID_DISPLAY_UNITS.has(displayUnit as WeightUnit)) {
+        issues.push(issue({
+          id: `display-weight-unit-untrusted-${session.id}-${set.id || setIndex}`,
+          severity: 'warning',
+          category: 'unit',
+          title: '历史显示重量单位需要复核',
+          message: `${sessionLabel(source, session)} 中有历史显示重量缺少可信单位。系统不会从显示重量反推真实重量，需要人工复核。`,
+          affectedIds: [session.id, set.id],
+          canAutoFix: false,
+          suggestedAction: '缺少真实显示单位时保留原字段并人工复核。',
+        }));
+      }
       if (displayUnit === 'lb' && set.displayWeight !== undefined && !Number.isInteger(number(set.displayWeight))) {
         issues.push(issue({
           id: `lb-display-decimal-${session.id}-${set.id || setIndex}`,
@@ -300,9 +327,30 @@ const scanUnitIssues = (appData: Partial<AppData>) => {
           title: '磅制重量显示有异常小数',
           message: `${sessionLabel(source, session)} 中有磅制重量显示为小数。磅制显示应按当前单位规则取整，避免用户误以为输入精度发生变化。`,
           affectedIds: [session.id, set.id],
-          canAutoFix: false,
-          suggestedAction: '重新格式化显示重量；保存层仍应保留公斤原始值。',
+          canAutoFix: source === 'history' && hasActualWeightKg && !unsafeIdentity,
+          suggestedAction: hasActualWeightKg
+            ? '一键修复显示重量只会清理旧 displayWeight/displayUnit，不会改变 actualWeightKg。'
+            : '缺少真实重量来源，需要人工复核。',
         }));
+      }
+      if (hasDisplayWeight && hasActualWeightKg && displayUnit && VALID_DISPLAY_UNITS.has(displayUnit)) {
+        const expectedDisplayWeight = convertKgToDisplayWeight(set.actualWeightKg, displayUnit);
+        const hasDisplayMismatch = Math.abs(expectedDisplayWeight - number(set.displayWeight)) > 1.1;
+        const hasCurrentUnitMismatch = displayUnit !== currentWeightUnit;
+        if (hasDisplayMismatch || hasCurrentUnitMismatch) {
+          issues.push(issue({
+            id: `historical-display-weight-mismatch-${session.id}-${set.id || setIndex}`,
+            severity: 'warning',
+            category: 'unit',
+            title: '历史显示重量需要整理',
+            message: `${sessionLabel(source, session)} 中的旧显示重量与当前显示规则不一致。真实训练重量会继续使用 actualWeightKg，不会用 displayWeight 参与计算。`,
+            affectedIds: [session.id, set.id],
+            canAutoFix: source === 'history' && !unsafeIdentity,
+            suggestedAction: unsafeIdentity
+              ? '动作身份需要先复核，暂不自动清理显示重量。'
+              : '一键修复显示重量只会清理旧显示字段，不会改变真实训练重量。',
+          }));
+        }
       }
     });
 

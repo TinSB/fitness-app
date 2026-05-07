@@ -278,6 +278,15 @@ const formatPrValue = (record: PersonalRecord, unitSettings: UnitSettings) => {
   return record.displayValue || String(record.value);
 };
 
+export const formatRecordSetWeightForDisplay = (set: TrainingSetLog, unitSettings: UnitSettings) => {
+  if (Number.isFinite(Number(set.actualWeightKg))) return formatWeight(set.actualWeightKg, unitSettings);
+  if (set.displayWeight !== undefined && (set.displayUnit === 'kg' || set.displayUnit === 'lb')) {
+    return `${number(set.displayWeight)}${set.displayUnit}（需要复核）`;
+  }
+  if (number(set.weight) > 0) return `${formatWeight(set.weight, unitSettings)}（需要复核）`;
+  return '重量需要复核';
+};
+
 const getMonthLeadingBlankCount = (firstDate?: string) => {
   if (!firstDate) return 0;
   const date = new Date(`${firstDate}T00:00:00`);
@@ -798,7 +807,7 @@ export function RecordView({
           <div className="grid gap-3 md:grid-cols-3">
             <MetricCard label="当前 e1RM" value={selectedE1rmProfile?.current ? formatWeight(selectedE1rmProfile.current.e1rmKg, unitSettings) : '数据不足'} tone="emerald" />
             <MetricCard label="历史最佳 e1RM" value={selectedE1rmProfile?.best ? formatWeight(selectedE1rmProfile.best.e1rmKg, unitSettings) : '数据不足'} />
-            <MetricCard label="最佳单组" value={topSet ? `${formatWeight(topSet.set.weight, unitSettings)} × ${topSet.set.reps}` : '数据不足'} />
+            <MetricCard label="最佳单组" value={topSet ? `${formatRecordSetWeightForDisplay(topSet.set, unitSettings)} × ${topSet.set.reps}` : '数据不足'} />
           </div>
 
           <Card>
@@ -828,7 +837,7 @@ export function RecordView({
                 {selectedExerciseSets.slice(0, 8).map((item) => (
                   <ListItem
                     key={`${item.session.id}-${item.exercise.id}-${item.set.id || item.setIndex}`}
-                    title={`${formatWeight(item.set.weight, unitSettings)} × ${item.set.reps}`}
+                    title={`${formatRecordSetWeightForDisplay(item.set, unitSettings)} × ${item.set.reps}`}
                     description={`${getSessionCalendarDate(item.session)} · ${getSessionTitle(item.session)} · ${item.effective.confidence === 'high' ? '高置信' : '可参考'}`}
                     meta={`${item.set.rir === undefined || item.set.rir === '' ? '余力（RIR）未记录' : formatRirLabel(item.set.rir)} · ${formatTechniqueQuality(item.set.techniqueQuality || 'acceptable')}${item.set.painFlag ? ' · 有不适' : ''}`}
                     action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(item.session)}>详情</ActionButton>}
@@ -972,6 +981,9 @@ export function RecordView({
                         </ActionButton>
                       ) : null}
                     </div>
+                    {issue.action?.description ? (
+                      <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
+                    ) : null}
                     {issue.technicalDetails ? (
                       <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                         <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -1006,6 +1018,9 @@ export function RecordView({
                           </ActionButton>
                         ) : null}
                       </div>
+                      {issue.action?.description ? (
+                        <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
+                      ) : null}
                       {issue.technicalDetails ? (
                         <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
                           <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
@@ -1188,7 +1203,7 @@ export function RecordView({
 
       const renderSetLine = (entry: SessionSetEntry, index: number) => {
         const set = entry.set;
-        const plannedText = `${formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}`;
+        const plannedText = `${formatRecordSetWeightForDisplay(set, unitSettings)} × ${set.reps}${set.rir !== undefined && set.rir !== '' ? ` / ${formatRirLabel(set.rir)}` : ''}`;
         const label = entry.category === 'warmup' ? formatSetType('warmup') : entry.category === 'working' ? formatSetType('working') : '未分类组';
         const identityWarning = hasInvalidExerciseIdentity(entry.exercise) || set.identityInvalid ? ' / 动作身份需要检查' : '';
         if (entry.category === 'working' && isIncompleteSummarySet(set)) {
@@ -1202,7 +1217,7 @@ export function RecordView({
         }
       return (
         <div key={set.id || `${entry.exerciseId}-${entry.category}-${index}`} className="rounded-md bg-stone-50 px-3 py-2">
-          {label} {index + 1}：{formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps}
+          {label} {index + 1}：{formatRecordSetWeightForDisplay(set, unitSettings)} × {set.reps}
           {' / '}
             {formatRirLabel(set.rir)}
             {entry.category !== 'warmup' && set.techniqueQuality ? ` / ${formatTechniqueQuality(set.techniqueQuality)}` : ''}
