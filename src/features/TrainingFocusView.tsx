@@ -56,6 +56,11 @@ export type FocusCurrentSetSummary = {
   sourceLabel?: string;
 };
 
+export type FocusPainBoundaryNotice = {
+  title: string;
+  description: string;
+};
+
 const focusDraftSourceLabels: Partial<Record<NonNullable<ActualSetDraft['source']>, string>> = {
   prescription: '建议',
   manual: '手动',
@@ -113,6 +118,22 @@ export const buildFocusCurrentSetSummary = ({
     missingInput,
     isSuggestionApplied,
     sourceLabel,
+  };
+};
+
+export const buildFocusPainBoundaryNotice = ({
+  currentStep,
+  actualDraft,
+}: {
+  currentStep: FocusTrainingStep;
+  actualDraft: ActualSetDraft | null | undefined;
+}): FocusPainBoundaryNotice | null => {
+  if (currentStep.stepType !== 'warmup' && currentStep.stepType !== 'working') return null;
+  if (actualDraft?.stepId !== currentStep.id) return null;
+  if (actualDraft.painFlag !== true) return null;
+  return {
+    title: '本组已标记不适，可再次点击取消。',
+    description: '仅记录本组，不会自动设为长期限制。',
   };
 };
 
@@ -551,6 +572,7 @@ export function TrainingFocusView({
   const actualRir = actualDraft?.actualRir;
   const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
   const currentSetSummary = buildFocusCurrentSetSummary({ currentStep, actualDraft, unitSettings });
+  const painBoundaryNotice = buildFocusPainBoundaryNotice({ currentStep, actualDraft });
   const actualSummary = currentSetSummary.actualText;
   const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
   const repAdjustments = [-5, -1, 1, 5];
@@ -1330,6 +1352,12 @@ export function TrainingFocusView({
                   <div className="truncate text-sm font-semibold">{currentSetSummary.text}</div>
                   {showMissingInputGuide && currentSetSummary.missingInput ? (
                     <div className="mt-1 text-xs font-semibold text-amber-800">缺少重量或次数</div>
+                  ) : null}
+                  {painBoundaryNotice ? (
+                    <div className="mt-1 space-y-0.5 text-xs font-semibold text-rose-800">
+                      <div>{painBoundaryNotice.title}</div>
+                      <div className="font-medium text-rose-700">{painBoundaryNotice.description}</div>
+                    </div>
                   ) : null}
                 </div>
                 <button
