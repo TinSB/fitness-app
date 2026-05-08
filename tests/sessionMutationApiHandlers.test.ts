@@ -69,11 +69,17 @@ describe('session mutation API handlers', () => {
   it('returns 405 or 404 without nextData for unsupported dispatch paths', () => {
     const data = makeAppData();
     const wrongMethod = handleSessionMutationRequest(data, { method: 'GET', path: '/sessions/start' });
+    const deleteActiveSession = handleSessionMutationRequest(data, { method: 'DELETE', path: '/sessions/active' });
+    const deleteDiscard = handleSessionMutationRequest(data, { method: 'DELETE', path: '/sessions/active/discard' });
     const unknownRoute = handleSessionMutationRequest(data, { method: 'POST', path: '/sessions/unknown' });
 
     expect(wrongMethod).toMatchObject({ status: 405, result: { reasonCode: 'unsupported_route' } });
+    expect(deleteActiveSession).toMatchObject({ status: 405, result: { reasonCode: 'unsupported_route' } });
+    expect(deleteDiscard).toMatchObject({ status: 405, result: { reasonCode: 'unsupported_route' } });
     expect(unknownRoute).toMatchObject({ status: 404, result: { reasonCode: 'unsupported_route' } });
     expectNoNextData(wrongMethod);
+    expectNoNextData(deleteActiveSession);
+    expectNoNextData(deleteDiscard);
     expectNoNextData(unknownRoute);
   });
 });
