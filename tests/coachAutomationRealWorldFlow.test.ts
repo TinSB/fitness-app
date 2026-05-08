@@ -12,6 +12,7 @@ import { markSessionEdited, updateSessionSet } from '../src/engines/sessionEditE
 import { filterAnalyticsHistory } from '../src/engines/sessionHistoryEngine';
 import { detectSetAnomalies } from '../src/engines/setAnomalyEngine';
 import { buildSmartReplacementRecommendations } from '../src/engines/smartReplacementEngine';
+import { buildReplacementDisplayGroups } from '../src/features/TrainingFocusView';
 import type { ImportedWorkoutSample, TrainingSession, UnitSettings } from '../src/models/training-model';
 import { getTemplate, makeAppData, makeSession, templates } from './fixtures';
 
@@ -106,10 +107,11 @@ describe('coach automation real workout flow', () => {
     expect(recommendations.filter((item) => item.priority === 'primary').map((item) => item.exerciseId)).toEqual(
       expect.arrayContaining(['db-bench-press', 'machine-chest-press']),
     );
-    expect(focusSource).toContain("title: '推荐'");
-    expect(focusSource).toContain("title: '可选'");
-    expect(focusSource).toContain("title: '角度变化'");
-    expect(focusSource).toContain("title: '不建议'");
+    const groups = buildReplacementDisplayGroups(recommendations.filter((item) => item.priority !== 'avoid'));
+    expect(groups[0].title).toBe('推荐优先');
+    expect(groups[0].options).toHaveLength(2);
+    expect(groups.flatMap((group) => group.options).map((item) => item.exerciseId)).toEqual(recommendations.filter((item) => item.priority !== 'avoid').map((item) => item.exerciseId));
+    expect(focusSource).toContain('buildReplacementDisplayGroups');
   });
 
   it('shows data health issues in My and Record data surfaces', () => {

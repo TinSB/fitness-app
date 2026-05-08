@@ -1,35 +1,75 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import {
+  ReplacementOptionCard,
+  buildReplacementCardCopy,
+  buildReplacementDisplayGroups,
+} from '../src/features/TrainingFocusView';
+import type { SmartReplacementRecommendation } from '../src/engines/smartReplacementEngine';
 
-describe('TrainingFocusView replacement UI', () => {
-  const source = readFileSync(resolve(process.cwd(), 'src/features/TrainingFocusView.tsx'), 'utf8');
+const visibleText = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-  it('opens a replacement picker instead of silently doing nothing', () => {
-    expect(source).toContain('setShowReplacementPicker(true)');
-    expect(source).toContain('<BottomSheet');
-    expect(source).toContain('showReplacementPicker');
+const option = (exerciseId: string, exerciseName: string, priority: SmartReplacementRecommendation['priority']): SmartReplacementRecommendation => ({
+  exerciseId,
+  exerciseName,
+  priority,
+  fatigueCost: 'medium',
+  reason: `${exerciseName} 可以作为本次替代。统计按实际执行动作计算，不污染原动作。`,
+  warnings: [],
+});
+
+describe('TrainingFocusView replacement UI helpers', () => {
+  it('keeps replacement candidates visible while adding top recommendation grouping', () => {
+    const options = [
+      option('assisted-pull-up', '辅助引体向上', 'primary'),
+      option('pull-up', '引体向上', 'primary'),
+      option('single-arm-lat-pulldown', '单臂高位下拉', 'secondary'),
+    ];
+
+    const groups = buildReplacementDisplayGroups(options);
+
+    expect(groups[0].title).toBe('推荐优先');
+    expect(groups[0].options.map((item) => item.exerciseId)).toEqual(['assisted-pull-up', 'pull-up']);
+    expect(groups[1].title).toBe('其他可选');
+    expect(groups[1].options.map((item) => item.exerciseId)).toEqual(['single-arm-lat-pulldown']);
   });
 
-  it('keeps the replacement button touch-safe and accessible', () => {
-    expect(source).toContain('type="button"');
-    expect(source).toContain('替代动作');
-    expect(source).toContain('onClick={openReplacementPicker}');
-    expect(source).toContain('onClose={closeReplacementPicker}');
+  it('renders the compact replacement card and keeps long statistics copy behind details', () => {
+    const compactHtml = renderToStaticMarkup(
+      React.createElement(ReplacementOptionCard, {
+        option: option('chest-supported-row', '胸托划船', 'primary'),
+        expanded: false,
+        onToggleDetails: () => undefined,
+        onChoose: () => undefined,
+      }),
+    );
+    const detailHtml = renderToStaticMarkup(
+      React.createElement(ReplacementOptionCard, {
+        option: option('chest-supported-row', '胸托划船', 'primary'),
+        expanded: true,
+        onToggleDetails: () => undefined,
+        onChoose: () => undefined,
+      }),
+    );
+    const compactText = visibleText(compactHtml);
+    const detailText = visibleText(detailHtml);
+
+    expect(compactText).toContain('胸托划船');
+    expect(compactText).toContain('优先');
+    expect(compactText).toContain('选择此动作');
+    expect(compactText).toContain('查看详情');
+    expect(compactText).not.toContain('统计按实际执行动作计算');
+    expect(detailText).toContain('统计按实际执行动作计算，不污染原动作。');
+    expect(detailText).toContain('疲劳成本：中');
+    expect(`${compactText} ${detailText}`).not.toMatch(/chest-supported-row|primary|undefined|null|__alt_/);
   });
 
-  it('shows the PR and e1RM independence note in the picker', () => {
-    expect(source).toContain('PR / e1RM');
-    expect(source).toContain('formatFatigueCost(option.fatigueCost)');
-    expect(source).toContain('chooseReplacement');
-  });
+  it('uses Chinese replacement labels and short copy without raw priority values', () => {
+    const copy = buildReplacementCardCopy(option('single-arm-lat-pulldown', '单臂高位下拉', 'angle_variation'));
 
-  it('groups smart replacements by recommendation level', () => {
-    expect(source).toContain('buildSmartReplacementRecommendations');
-    expect(source).toContain("title: '推荐'");
-    expect(source).toContain("title: '可选'");
-    expect(source).toContain("title: '角度变化'");
-    expect(source).toContain("title: '不建议'");
-    expect(source).toContain('{option.reason}');
+    expect(copy.rankLabel).toBe('角度相近');
+    expect(copy.shortReason).toBe('单臂高位下拉 可以作为本次替代。');
+    expect(copy.shortReason).not.toMatch(/angle_variation|undefined|null/);
   });
 });
