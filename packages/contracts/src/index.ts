@@ -62,3 +62,52 @@ export type SessionMutationResponse = {
   result: SessionMutationResult;
   nextData?: ContractAppData;
 };
+
+export type RecordDataHealthMutationReasonCode =
+  | 'record_updated'
+  | 'record_not_found'
+  | 'record_no_change'
+  | 'record_edit_invalid'
+  | 'record_edit_requires_confirmation'
+  | 'data_health_issue_dismissed'
+  | 'data_health_issue_not_found'
+  | 'data_health_no_change'
+  | 'data_health_repair_requires_confirmation'
+  | 'data_health_repair_applied'
+  | 'data_health_repair_not_supported'
+  | 'unsafe_import_rejected'
+  | 'backup_import_requires_review'
+  | 'unsupported_route';
+
+export type RecordDataHealthMutationStatus =
+  | 'success'
+  | 'no_change'
+  | 'not_found'
+  | 'requires_confirmation'
+  | 'unsupported'
+  | 'invalid'
+  | 'unsafe'
+  | 'needs_review';
+
+export type RecordDataHealthMutationRequest = {
+  method: string;
+  path: string;
+  body?: unknown;
+  nowIso?: string;
+};
+
+export type RecordDataHealthMutationResult = {
+  ok: boolean;
+  changed: boolean;
+  status: RecordDataHealthMutationStatus;
+  reasonCode: RecordDataHealthMutationReasonCode;
+  message: string;
+  warnings?: string[];
+  requiresConfirmation?: boolean;
+};
+
+export type RecordDataHealthMutationResponse = {
+  status: number;
+  result: RecordDataHealthMutationResult;
+  nextData?: ContractAppData;
+};

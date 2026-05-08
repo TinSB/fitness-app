@@ -42,6 +42,10 @@ This baseline adds the first shared package entrypoints without changing runtime
 - `SessionMutationResult`
 - `SessionMutationResponse`
 - `SessionMutationReasonCode`
+- `RecordDataHealthMutationRequest`
+- `RecordDataHealthMutationResult`
+- `RecordDataHealthMutationResponse`
+- `RecordDataHealthMutationReasonCode`
 - `APP_DATA_SCHEMA_VERSION`
 - `appDataJsonSchema`
 
@@ -134,6 +138,26 @@ Boundary guarantees:
 - The handler composes existing session engines instead of changing training algorithms.
 - `App.tsx`, localStorage, backup import/export, Focus step mutation, record edit, DataHealth repair, scheduler, PR/e1RM, effective-set, and templates are unchanged.
 
+## Record & DataHealth Mutation API Baseline
+
+Task 4.5 adds `apps/api/src/recordDataHealthMutation.ts` as the next pure write-boundary baseline. It accepts `AppData + RecordDataHealthMutationRequest` and returns `RecordDataHealthMutationResponse`, but it does not save data, start a server, connect to SQLite, or change frontend runtime ownership.
+
+Current Record/DataHealth mutation routes are:
+
+- `POST /history/:id/edit`: wraps existing set edit, validation, and editHistory audit helpers for a history session.
+- `POST /history/:id/data-flag`: wraps existing `normal | test | excluded` dataFlag behavior and audit trail.
+- `POST /data-health/issues/:issueId/dismiss`: dismisses an existing DataHealth issue for today without changing training records.
+- `POST /data-health/repair/apply`: applies only the whitelisted `legacy_display_weight` repair after confirmation.
+
+Boundary guarantees:
+
+- Input `AppData` is deep-cloned before mutation logic runs.
+- `nextData` is returned only when `result.ok === true && result.changed === true`.
+- Invalid, no-op, not-found, confirmation-required, unsafe, and unsupported routes never return `nextData`.
+- Record summaries, calendar rows, and DataHealth reports remain derived from existing engines.
+- Legacy display weight repair keeps every `actualWeightKg` unchanged and stores summary-only repair logs.
+- `App.tsx`, localStorage, backup import/export, Focus mutation, scheduler, PR/e1RM, effective-set, templates, UI, server runtime, and SQLite are unchanged.
+
 ## Not Done In This Baseline
 
 This baseline intentionally does not:
@@ -194,6 +218,17 @@ Completed as a pure parity baseline, not a runtime migration:
 - `POST /sessions/active/discard`
 
 This task preserves frontend runtime behavior by leaving `App.tsx` and UI handlers untouched. Focus step-level backend mutation, replacement mutation, record edit, DataHealth repair, backup import/export mutation, auth, cloud sync, and SQLite remain out of scope.
+
+### Task 4.5: Record & DataHealth Mutation API V1
+
+Completed as a pure parity baseline, not a runtime migration:
+
+- `POST /history/:id/edit`
+- `POST /history/:id/data-flag`
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /data-health/repair/apply`
+
+This task preserves frontend runtime behavior by leaving `App.tsx`, UI handlers, persistence, and localStorage untouched. Backup import/export mutation, arbitrary record patching, Focus step mutation, replacement mutation, scheduler mutation, auth, cloud sync, server runtime, and SQLite remain out of scope.
 
 ## High-Risk Files
 

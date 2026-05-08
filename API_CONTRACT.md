@@ -6,7 +6,7 @@ Last updated: 2026-05-08
 
 There is no deployed backend API, auth service, remote sync, SQLite repository, or server persistence in the current IronPath frontend.
 
-A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. A pure session mutation skeleton exists under `apps/api/src/sessionMutation.ts` for pre-backend write-boundary parity. Neither skeleton is wired into `App.tsx`, the UI, localStorage, or any runtime server.
+A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. Pure session and Record/DataHealth mutation skeletons exist under `apps/api/src/sessionMutation.ts` and `apps/api/src/recordDataHealthMutation.ts` for pre-backend write-boundary parity. These skeletons are not wired into `App.tsx`, the UI, localStorage, or any runtime server.
 
 All product data is stored in the user's current browser through `localStorage`, with import/export handled as local JSON files. Future agents must not assume any backend endpoint or remote field exists unless this file is updated first.
 
@@ -66,6 +66,35 @@ Current routes:
 - `POST /sessions/active/discard`: discards the unsaved active session after confirmation and does not write history.
 
 This skeleton must not be extended with record edit, Focus step-level mutation, exercise replacement mutation, DataHealth repair, backup import/export mutation, SQLite repository, auth, or cloud sync behavior without a separate task and parity tests.
+
+## Record & DataHealth Mutation API Skeleton
+
+Owner files:
+
+- `apps/api/src/recordDataHealthMutation.ts`
+- `apps/api/src/index.ts`
+- `packages/contracts/src/index.ts`
+
+Boundary:
+
+- The skeleton is a pure function boundary, not a server runtime.
+- Handlers accept `AppData + RecordDataHealthMutationRequest` and return `RecordDataHealthMutationResponse`.
+- Handlers do not read or write localStorage.
+- Handlers do not save returned data.
+- Handlers do not mutate the input `AppData` object.
+- Handlers do not import SQLite, Fastify, Express, auth, or cloud sync code.
+- `App.tsx`, UI handlers, `loadData`, `saveData`, backup import/export behavior, training algorithms, PR/e1RM, and effective-set rules remain unchanged.
+- `nextData` may only be present when `result.ok === true && result.changed === true`.
+- Invalid, no-op, not-found, requires-confirmation, unsafe, and unsupported route paths must not return `nextData`.
+
+Current routes:
+
+- `POST /history/:id/edit`: applies existing record set-edit helpers to one history session and preserves editHistory.
+- `POST /history/:id/data-flag`: updates an existing session `dataFlag` to `normal`, `test`, or `excluded` through the current audit trail; test/excluded records remain visible but excluded from default statistics.
+- `POST /data-health/issues/:issueId/dismiss`: dismisses an existing DataHealth issue for today without changing training records.
+- `POST /data-health/repair/apply`: applies only the whitelisted `legacy_display_weight` repair after confirmation. It uses `repairLegacyDisplayWeights`, keeps `actualWeightKg` unchanged, and stores summary-only repair logs.
+
+This skeleton does not implement backup import/export mutation, arbitrary record patching, Focus step mutation, replacement mutation, scheduler mutation, SQLite repository, auth, or cloud sync. Import-like unsafe payloads are defensively rejected by the repair boundary and are never sanitized into AppData.
 
 ## Local Persistence
 
