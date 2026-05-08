@@ -158,6 +158,25 @@ Boundary guarantees:
 - Legacy display weight repair keeps every `actualWeightKg` unchanged and stores summary-only repair logs.
 - `App.tsx`, localStorage, backup import/export, Focus mutation, scheduler, PR/e1RM, effective-set, templates, UI, server runtime, and SQLite are unchanged.
 
+## SQLite Repository & Backup Round Trip
+
+Task 4.6 adds `apps/api/src/sqliteRepository.ts` and `apps/api/src/node/index.ts` as a Node-only SQLite snapshot repository for parity testing. It proves that sanitized AppData can be written to SQLite and read back without changing current frontend runtime storage.
+
+The SQLite schema is intentionally conservative:
+
+- `app_meta`: key/value repository metadata.
+- `app_data_snapshots`: complete AppData JSON snapshots with an autoincrement `row_id` for stable latest-snapshot ordering.
+
+Boundary guarantees:
+
+- The repository uses Node built-in `node:sqlite` / `DatabaseSync`; no ORM, framework, or npm SQLite dependency is added.
+- SQLite is not statically exported from the shared API index and is not part of the browser bundle.
+- `writeSnapshot` and `importBackupToSnapshot` use transactions so metadata and snapshots succeed or fail together.
+- Backup import uses existing parse/analyze/import/repair boundaries; unsafe data is rejected before writing.
+- readMirror, sessionMutation, and recordDataHealthMutation remain AppData-only boundaries and do not import SQLite.
+- `App.tsx`, UI, localStorage, `loadData`, `saveData`, server runtime, auth, sync, scheduler, training algorithms, PR/e1RM, effective-set, and templates are unchanged.
+- No normalized session, set, exercise, analytics, or DataHealth tables are introduced.
+
 ## Not Done In This Baseline
 
 This baseline intentionally does not:
@@ -229,6 +248,18 @@ Completed as a pure parity baseline, not a runtime migration:
 - `POST /data-health/repair/apply`
 
 This task preserves frontend runtime behavior by leaving `App.tsx`, UI handlers, persistence, and localStorage untouched. Backup import/export mutation, arbitrary record patching, Focus step mutation, replacement mutation, scheduler mutation, auth, cloud sync, server runtime, and SQLite remain out of scope.
+
+### Task 4.6: SQLite Repository & Backup Round Trip V1
+
+Completed as a Node-only repository parity baseline, not a runtime migration:
+
+- SQLite snapshot schema for complete AppData JSON.
+- AppData write/read round-trip.
+- Backup import/export round-trip through existing safety boundaries.
+- readMirror parity after SQLite round-trip.
+- sessionMutation and recordDataHealthMutation compatibility after SQLite round-trip.
+
+This task preserves frontend runtime behavior by leaving `App.tsx`, UI handlers, persistence, localStorage, and API/mutation handler inputs untouched. Future Task 4.7 may consider a server adapter or repository hardening only after this snapshot repository remains stable under full regression tests.
 
 ## High-Risk Files
 

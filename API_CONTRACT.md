@@ -6,7 +6,7 @@ Last updated: 2026-05-08
 
 There is no deployed backend API, auth service, remote sync, SQLite repository, or server persistence in the current IronPath frontend.
 
-A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. Pure session and Record/DataHealth mutation skeletons exist under `apps/api/src/sessionMutation.ts` and `apps/api/src/recordDataHealthMutation.ts` for pre-backend write-boundary parity. These skeletons are not wired into `App.tsx`, the UI, localStorage, or any runtime server.
+A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. Pure session and Record/DataHealth mutation skeletons exist under `apps/api/src/sessionMutation.ts` and `apps/api/src/recordDataHealthMutation.ts` for pre-backend write-boundary parity. A Node-only SQLite snapshot repository exists under `apps/api/src/sqliteRepository.ts` for repository parity tests. These skeletons are not wired into `App.tsx`, the UI, localStorage, or any runtime server.
 
 All product data is stored in the user's current browser through `localStorage`, with import/export handled as local JSON files. Future agents must not assume any backend endpoint or remote field exists unless this file is updated first.
 
@@ -95,6 +95,38 @@ Current routes:
 - `POST /data-health/repair/apply`: applies only the whitelisted `legacy_display_weight` repair after confirmation. It uses `repairLegacyDisplayWeights`, keeps `actualWeightKg` unchanged, and stores summary-only repair logs.
 
 This skeleton does not implement backup import/export mutation, arbitrary record patching, Focus step mutation, replacement mutation, scheduler mutation, SQLite repository, auth, or cloud sync. Import-like unsafe payloads are defensively rejected by the repair boundary and are never sanitized into AppData.
+
+## SQLite Repository Parity Layer
+
+Owner files:
+
+- `apps/api/src/sqliteRepository.ts`
+- `apps/api/src/node/index.ts`
+
+Boundary:
+
+- The repository is Node-only and used only for parity tests.
+- It uses Node built-in `node:sqlite` / `DatabaseSync`.
+- It is not a runtime API and does not start a server.
+- It does not read or write localStorage.
+- It does not replace `loadData`, `saveData`, or the browser persistence facade.
+- It is not statically re-exported from the shared `apps/api/src/index.ts`, so Vite browser builds do not parse or bundle `node:sqlite`.
+- readMirror, sessionMutation, and recordDataHealthMutation still accept and return `AppData`; they do not depend on SQLite.
+
+Snapshot schema:
+
+- `app_meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)`
+- `app_data_snapshots(row_id INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT UNIQUE NOT NULL, schema_version INTEGER NOT NULL, app_data_json TEXT NOT NULL, created_at TEXT NOT NULL, label TEXT)`
+
+Repository behavior:
+
+- `writeSnapshot(appData)` sanitizes and validates AppData, then writes one JSON snapshot in a SQLite transaction.
+- `readSnapshot(snapshotId?)` reads a specific snapshot or the latest snapshot using `ORDER BY row_id DESC LIMIT 1`, then migrates, sanitizes, and validates.
+- `exportBackupFromSnapshot(snapshotId?)` delegates to existing `exportAppData`.
+- `importBackupToSnapshot(payload)` parses and analyzes import data before writing; unsafe data is rejected, needs-review data requires explicit confirmation, and safe/cleaned data reuses existing backup import behavior.
+- The repository stores AppData snapshots only. It does not create normalized sessions, sets, exercises, analytics, or DataHealth tables.
+
+This layer must not be used by the frontend runtime until a separate server/repository migration task defines that data flow and its recovery path.
 
 ## Local Persistence
 
