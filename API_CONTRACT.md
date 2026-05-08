@@ -1,12 +1,71 @@
 # IronPath API Contract
 
-Last updated: 2026-04-28
+Last updated: 2026-05-08
 
 ## Current Contract Status
 
-There is no backend API, auth service, remote sync, or server persistence in the current IronPath frontend.
+There is no deployed backend API, auth service, remote sync, SQLite repository, or server persistence in the current IronPath frontend.
+
+A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. A pure session mutation skeleton exists under `apps/api/src/sessionMutation.ts` for pre-backend write-boundary parity. Neither skeleton is wired into `App.tsx`, the UI, localStorage, or any runtime server.
 
 All product data is stored in the user's current browser through `localStorage`, with import/export handled as local JSON files. Future agents must not assume any backend endpoint or remote field exists unless this file is updated first.
+
+## Read Mirror API Skeleton
+
+Owner files:
+
+- `apps/api/src/readMirror.ts`
+- `apps/api/src/index.ts`
+
+Boundary:
+
+- The skeleton is read-only.
+- Only `GET` routes are declared.
+- Non-`GET` requests return `405`.
+- Handlers do not read or write localStorage.
+- Handlers do not mutate `AppData`.
+- Handlers do not import SQLite, Fastify, or backend runtime code.
+- `App.tsx`, `loadData`, `saveData`, backup import/export, and Focus Mode mutation behavior remain unchanged.
+
+Current routes:
+
+- `GET /health`: service name, read-only mode, schema version, and route registry.
+- `GET /app-data/summary`: counts and selected AppData state, including template/history counts, selected template ids, unit settings, pending patch count, dismissed counts, and repair log count.
+- `GET /sessions/summary`: active session summary, history counts, analytics-included count, dataFlag counts, and latest session.
+- `GET /history`: history list mirror using existing Record date and summary helpers.
+- `GET /history/:id`: one history session with `getSessionCalendarDate` and `buildSessionDetailSummary`.
+- `GET /data-health/summary`: DataHealth status, summary, issue count, and existing issue payload.
+
+This skeleton is not a write API. It must not be extended with session mutation, record edit, data repair, backup import, SQLite, auth, or sync behavior without a separate migration task and parity tests.
+
+## Session Mutation API Skeleton
+
+Owner files:
+
+- `apps/api/src/sessionMutation.ts`
+- `apps/api/src/index.ts`
+- `packages/contracts/src/index.ts`
+
+Boundary:
+
+- The skeleton is a pure function boundary, not a server runtime.
+- Handlers accept `AppData + SessionMutationRequest` and return `SessionMutationResponse`.
+- Handlers do not read or write localStorage.
+- Handlers do not save returned data.
+- Handlers do not mutate the input `AppData` object.
+- Handlers do not import SQLite, Fastify, Express, auth, or cloud sync code.
+- `App.tsx`, UI handlers, Focus Mode runtime, `loadData`, `saveData`, and backup import/export behavior remain unchanged.
+- `nextData` may only be present when `result.ok === true && result.changed === true`.
+- Invalid, no-op, conflict, requires-confirmation, and unsupported route paths must not return `nextData`.
+
+Current routes:
+
+- `POST /sessions/start`: creates an active session from `body.templateId || activeProgramTemplateId || selectedTemplateId`, and consumes a matching pending session patch only after successful start.
+- `POST /sessions/active/patches`: applies explicit `SessionPatch[]` or a referenced pending patch to the active session.
+- `POST /sessions/active/complete`: completes the active session into history; incomplete main work returns a confirmation-required result until confirmed.
+- `POST /sessions/active/discard`: discards the unsaved active session after confirmation and does not write history.
+
+This skeleton must not be extended with record edit, Focus step-level mutation, exercise replacement mutation, DataHealth repair, backup import/export mutation, SQLite repository, auth, or cloud sync behavior without a separate task and parity tests.
 
 ## Local Persistence
 
@@ -163,4 +222,3 @@ If a backend is introduced later:
 - Keep local-first fallback behavior explicit.
 - Do not replace backup/export until cloud sync has a tested recovery path.
 - Do not add secrets to `.env.example`; document variable names only.
-
