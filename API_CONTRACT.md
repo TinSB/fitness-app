@@ -188,6 +188,40 @@ Repository error mapping:
 - `snapshot_json_invalid`, `snapshot_validation_failed`, `repository_schema_mismatch`, `node_sqlite_unavailable`, `write_failed`, `transaction_failed`, and unknown repository errors: 500
 - Adapter errors expose stable code/message only, not raw stacks.
 
+## HTTP Runtime Adapter Smoke Layer
+
+Owner files:
+
+- `apps/api/src/node/httpRuntimeAdapter.ts`
+- `apps/api/src/node/index.ts`
+
+Boundary:
+
+- The HTTP runtime adapter is Node-only and is not exported from `apps/api/src/index.ts`.
+- It is a smoke-test wrapper, not a production server.
+- It uses Node built-in `node:http` in tests and does not add Fastify, Express, Koa, Hono, tRPC, GraphQL, auth, sync, deployment config, Docker, or serverless runtime.
+- It does not replace `App.tsx`, UI handlers, localStorage, `loadData`, or `saveData`.
+- It does not implement business routes. It forwards method/path/query/body to serverAdapter.
+- It does not add backup import/export endpoints.
+
+Request parsing:
+
+- GET and HEAD do not read a request body.
+- HEAD is forwarded to serverAdapter as `method: "HEAD"` and usually returns `405 / unsupported_route`.
+- POST with an empty body is allowed without `Content-Type` and forwards `body: undefined`.
+- POST with a non-empty body requires `application/json`.
+- Malformed JSON returns `400 / invalid_json`.
+- Body over `maxBodyBytes` returns `413 / request_body_too_large`.
+- Unsupported media type returns `415 / unsupported_media_type`.
+- Query string values are forwarded as `Record<string, string>`.
+
+HTTP response body:
+
+- Success: `{ "result": <adapter.result>, "snapshot": <adapter.snapshot if present> }`
+- Error: `{ "error": { "code": string, "message": string } }`
+- HTTP status comes from serverAdapter or the parsing error.
+- The wrapper does not expose raw stacks, raw SQLite errors, or internal exception objects.
+
 ## Local Persistence
 
 Owner files:
