@@ -121,12 +121,72 @@ Snapshot schema:
 Repository behavior:
 
 - `writeSnapshot(appData)` sanitizes and validates AppData, then writes one JSON snapshot in a SQLite transaction.
-- `readSnapshot(snapshotId?)` reads a specific snapshot or the latest snapshot using `ORDER BY row_id DESC LIMIT 1`, then migrates, sanitizes, and validates.
+- `readSnapshot(snapshotId?)` reads a specific snapshot or the latest snapshot using `ORDER BY row_id DESC LIMIT 1`, then validates, sanitizes, and validates again.
 - `exportBackupFromSnapshot(snapshotId?)` delegates to existing `exportAppData`.
 - `importBackupToSnapshot(payload)` parses and analyzes import data before writing; unsafe data is rejected, needs-review data requires explicit confirmation, and safe/cleaned data reuses existing backup import behavior.
 - The repository stores AppData snapshots only. It does not create normalized sessions, sets, exercises, analytics, or DataHealth tables.
+- `app_meta.latest_snapshot_id` is non-authoritative metadata. Latest snapshot selection must not read it.
+
+Failure-mode contract:
+
+- Repository errors use `SqliteRepositoryError.code`, not raw SQLite errors, for the stable surface.
+- Stable codes are `node_sqlite_unavailable`, `snapshot_not_found`, `snapshot_json_invalid`, `snapshot_validation_failed`, `repository_schema_mismatch`, `write_failed`, `import_rejected`, `transaction_failed`, and `database_closed`.
+- Missing snapshots fail with `snapshot_not_found`.
+- Corrupt snapshot JSON fails with `snapshot_json_invalid`.
+- Parsed JSON that is not valid AppData fails with `snapshot_validation_failed`; the repository must not silently return `emptyData`.
+- A stored `repository_schema_version` mismatch fails with `repository_schema_mismatch`.
+- Failed writes/imports must not leave partial snapshots or point `latest_snapshot_id` at missing/failed data.
+- `close()` is idempotent; repository operations after close fail with `database_closed`.
 
 This layer must not be used by the frontend runtime until a separate server/repository migration task defines that data flow and its recovery path.
+
+## Server Adapter Skeleton
+
+Owner files:
+
+- `apps/api/src/node/serverAdapter.ts`
+- `apps/api/src/node/index.ts`
+
+Boundary:
+
+- The adapter is Node-only and is not statically exported from `apps/api/src/index.ts`.
+- It is not an HTTP server and does not start Fastify, Express, a listener, auth, or sync.
+- It does not replace `App.tsx`, UI handlers, localStorage, `loadData`, or `saveData`.
+- It composes existing boundaries only: SQLite repository, readMirror, sessionMutation, and recordDataHealthMutation.
+- It does not create normalized SQLite tables.
+
+Request shape:
+
+- `method: string`
+- `path: string`
+- optional `body`
+- optional `query`
+- optional `nowIso`
+
+Response shape:
+
+- `status: number`
+- optional `result`
+- optional `error: { code: string; message: string }`
+- optional `snapshot: { snapshotId: string; schemaVersion: number; createdAt: string }`
+
+Route behavior:
+
+- `GET /health` returns skeleton-ready health without requiring an existing AppData snapshot.
+- Non-health GET routes read the latest AppData snapshot with the repository, then delegate to readMirror.
+- Mutation routes read the latest AppData snapshot, delegate to sessionMutation or recordDataHealthMutation, and write a new snapshot only when the mutation response contains `nextData`.
+- A mutation is considered persisted only after `writeSnapshot` succeeds. If snapshot write fails, the adapter returns a repository error response and no success result.
+- No-op, invalid, not-found, requires-confirmation, unsafe, and unsupported mutation results do not write snapshots and do not return snapshot metadata.
+- Route resolution first matches path patterns. A known path with a wrong method returns `405 / unsupported_route`; an unknown path returns `404 / unsupported_route`.
+- Mutation snapshot labels use `mutation:<route-pattern>`.
+
+Repository error mapping:
+
+- `snapshot_not_found`: 404
+- `import_rejected`: 400
+- `database_closed`: 503
+- `snapshot_json_invalid`, `snapshot_validation_failed`, `repository_schema_mismatch`, `node_sqlite_unavailable`, `write_failed`, `transaction_failed`, and unknown repository errors: 500
+- Adapter errors expose stable code/message only, not raw stacks.
 
 ## Local Persistence
 
