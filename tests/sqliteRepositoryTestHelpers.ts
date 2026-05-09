@@ -38,3 +38,13 @@ export const appMetaValue = (
   database: { prepare: (sql: string) => { get: (...params: unknown[]) => unknown } },
   key: string,
 ) => (database.prepare('SELECT value FROM app_meta WHERE key = ?').get(key) as { value?: string } | undefined)?.value;
+
+export const snapshotExists = (
+  database: { prepare: (sql: string) => { get: (...params: unknown[]) => unknown } },
+  snapshotId: string,
+) =>
+  Boolean(
+    database.prepare('SELECT id FROM app_data_snapshots WHERE id = ? LIMIT 1').get(snapshotId) as
+      | { id: string }
+      | undefined,
+  );

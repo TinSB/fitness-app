@@ -121,10 +121,22 @@ Snapshot schema:
 Repository behavior:
 
 - `writeSnapshot(appData)` sanitizes and validates AppData, then writes one JSON snapshot in a SQLite transaction.
-- `readSnapshot(snapshotId?)` reads a specific snapshot or the latest snapshot using `ORDER BY row_id DESC LIMIT 1`, then migrates, sanitizes, and validates.
+- `readSnapshot(snapshotId?)` reads a specific snapshot or the latest snapshot using `ORDER BY row_id DESC LIMIT 1`, then validates, sanitizes, and validates again.
 - `exportBackupFromSnapshot(snapshotId?)` delegates to existing `exportAppData`.
 - `importBackupToSnapshot(payload)` parses and analyzes import data before writing; unsafe data is rejected, needs-review data requires explicit confirmation, and safe/cleaned data reuses existing backup import behavior.
 - The repository stores AppData snapshots only. It does not create normalized sessions, sets, exercises, analytics, or DataHealth tables.
+- `app_meta.latest_snapshot_id` is non-authoritative metadata. Latest snapshot selection must not read it.
+
+Failure-mode contract:
+
+- Repository errors use `SqliteRepositoryError.code`, not raw SQLite errors, for the stable surface.
+- Stable codes are `node_sqlite_unavailable`, `snapshot_not_found`, `snapshot_json_invalid`, `snapshot_validation_failed`, `repository_schema_mismatch`, `write_failed`, `import_rejected`, `transaction_failed`, and `database_closed`.
+- Missing snapshots fail with `snapshot_not_found`.
+- Corrupt snapshot JSON fails with `snapshot_json_invalid`.
+- Parsed JSON that is not valid AppData fails with `snapshot_validation_failed`; the repository must not silently return `emptyData`.
+- A stored `repository_schema_version` mismatch fails with `repository_schema_mismatch`.
+- Failed writes/imports must not leave partial snapshots or point `latest_snapshot_id` at missing/failed data.
+- `close()` is idempotent; repository operations after close fail with `database_closed`.
 
 This layer must not be used by the frontend runtime until a separate server/repository migration task defines that data flow and its recovery path.
 

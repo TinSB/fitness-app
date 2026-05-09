@@ -177,6 +177,14 @@ Boundary guarantees:
 - `App.tsx`, UI, localStorage, `loadData`, `saveData`, server runtime, auth, sync, scheduler, training algorithms, PR/e1RM, effective-set, and templates are unchanged.
 - No normalized session, set, exercise, analytics, or DataHealth tables are introduced.
 
+Task 4.7 hardens this repository without changing its runtime boundary:
+
+- Stable repository error codes cover unavailable Node SQLite, missing snapshots, corrupt JSON, validation failure, schema mismatch, write/import failures, transaction failure, and closed database access.
+- `readSnapshot()` still selects latest by `ORDER BY row_id DESC LIMIT 1`; `latest_snapshot_id` is maintained only as non-authoritative metadata.
+- Failed writes/imports must not leave partial rows or point `latest_snapshot_id` at failed/missing data.
+- File-backed SQLite can be closed and reopened for parity tests.
+- SQLite remains snapshot-only and Node-only; there is still no App runtime storage migration, UI/server/localStorage replacement, normalized database, auth, or sync.
+
 ## Not Done In This Baseline
 
 This baseline intentionally does not:
@@ -259,7 +267,20 @@ Completed as a Node-only repository parity baseline, not a runtime migration:
 - readMirror parity after SQLite round-trip.
 - sessionMutation and recordDataHealthMutation compatibility after SQLite round-trip.
 
-This task preserves frontend runtime behavior by leaving `App.tsx`, UI handlers, persistence, localStorage, and API/mutation handler inputs untouched. Future Task 4.7 may consider a server adapter or repository hardening only after this snapshot repository remains stable under full regression tests.
+This task preserves frontend runtime behavior by leaving `App.tsx`, UI handlers, persistence, localStorage, and API/mutation handler inputs untouched.
+
+### Task 4.7: Repository Hardening & Failure Mode V1
+
+Completed as repository hardening only, not a server adapter:
+
+- stable `SqliteRepositoryError.code` contract
+- schema version guard in `app_meta`
+- strict corrupt snapshot and validation failure handling
+- transaction rollback and `latest_snapshot_id` consistency checks
+- file-backed close/reopen behavior
+- Node-only isolation tests
+
+This task still does not connect SQLite to `App.tsx`, UI, localStorage, server runtime, readMirror, sessionMutation, or recordDataHealthMutation. It does not add normalized tables. Future Task 4.8 can consider a server adapter skeleton only after this hardening remains stable under full regression tests.
 
 ## High-Risk Files
 
