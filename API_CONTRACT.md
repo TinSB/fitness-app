@@ -140,6 +140,54 @@ Failure-mode contract:
 
 This layer must not be used by the frontend runtime until a separate server/repository migration task defines that data flow and its recovery path.
 
+## Server Adapter Skeleton
+
+Owner files:
+
+- `apps/api/src/node/serverAdapter.ts`
+- `apps/api/src/node/index.ts`
+
+Boundary:
+
+- The adapter is Node-only and is not statically exported from `apps/api/src/index.ts`.
+- It is not an HTTP server and does not start Fastify, Express, a listener, auth, or sync.
+- It does not replace `App.tsx`, UI handlers, localStorage, `loadData`, or `saveData`.
+- It composes existing boundaries only: SQLite repository, readMirror, sessionMutation, and recordDataHealthMutation.
+- It does not create normalized SQLite tables.
+
+Request shape:
+
+- `method: string`
+- `path: string`
+- optional `body`
+- optional `query`
+- optional `nowIso`
+
+Response shape:
+
+- `status: number`
+- optional `result`
+- optional `error: { code: string; message: string }`
+- optional `snapshot: { snapshotId: string; schemaVersion: number; createdAt: string }`
+
+Route behavior:
+
+- `GET /health` returns skeleton-ready health without requiring an existing AppData snapshot.
+- Non-health GET routes read the latest AppData snapshot with the repository, then delegate to readMirror.
+- Mutation routes read the latest AppData snapshot, delegate to sessionMutation or recordDataHealthMutation, and write a new snapshot only when the mutation response contains `nextData`.
+- A mutation is considered persisted only after `writeSnapshot` succeeds. If snapshot write fails, the adapter returns a repository error response and no success result.
+- No-op, invalid, not-found, requires-confirmation, unsafe, and unsupported mutation results do not write snapshots and do not return snapshot metadata.
+- Route resolution first matches path patterns. A known path with a wrong method returns `405 / unsupported_route`; an unknown path returns `404 / unsupported_route`.
+- Mutation snapshot labels use `mutation:<route-pattern>`.
+
+Repository error mapping:
+
+- `snapshot_not_found`: 404
+- `import_rejected`: 400
+- `database_closed`: 503
+- `snapshot_json_invalid`, `snapshot_validation_failed`, `repository_schema_mismatch`, `node_sqlite_unavailable`, `write_failed`, `transaction_failed`, and unknown repository errors: 500
+- Adapter errors expose stable code/message only, not raw stacks.
+
 ## Local Persistence
 
 Owner files:

@@ -80,6 +80,10 @@ export const DEFAULT_HEALTH_INTEGRATION_SETTINGS: HealthIntegrationSettings = {
   showExternalWorkoutsInCalendar: true,
 };
 
+const SUPPORT_SKIP_REASONS = new Set(['time', 'pain', 'equipment', 'forgot', 'too_tired', 'not_needed', 'other']);
+const isSupportSkipReason = (value: string): value is NonNullable<SupportExerciseLog['skippedReason']> =>
+  SUPPORT_SKIP_REASONS.has(value);
+
 export const sanitizeHealthIntegrationSettings = (settings: unknown): HealthIntegrationSettings => {
   const raw = pickRecord(settings);
   return {
@@ -269,15 +273,17 @@ const sanitizeSupportExerciseLog = (entry: unknown): SupportExerciseLog | null =
   const moduleId = pickString(raw.moduleId);
   const exerciseId = pickString(raw.exerciseId);
   if (!moduleId || !exerciseId) return null;
+  const blockType = pickString(raw.blockType, 'correction');
+  const skippedReason = pickString(raw.skippedReason);
 
   return {
     moduleId,
     exerciseId,
     exerciseName: pickString(raw.exerciseName),
-    blockType: pickString(raw.blockType, 'correction') as SupportExerciseLog['blockType'],
+    blockType: blockType === 'functional' ? 'functional' : 'correction',
     plannedSets: Math.max(0, number(raw.plannedSets)),
     completedSets: Math.max(0, number(raw.completedSets)),
-    skippedReason: pickString(raw.skippedReason) as SupportExerciseLog['skippedReason'],
+    ...(isSupportSkipReason(skippedReason) ? { skippedReason } : {}),
     notes: pickString(raw.notes),
   };
 };

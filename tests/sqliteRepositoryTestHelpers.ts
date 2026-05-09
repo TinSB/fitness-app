@@ -48,3 +48,12 @@ export const snapshotExists = (
       | { id: string }
       | undefined,
   );
+
+export const latestSnapshotLabel = (
+  database: { prepare: (sql: string) => { get: (...params: unknown[]) => unknown } },
+) =>
+  (
+    database
+      .prepare('SELECT label FROM app_data_snapshots ORDER BY row_id DESC LIMIT 1')
+      .get() as { label?: string } | undefined
+  )?.label;

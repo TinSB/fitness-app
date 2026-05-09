@@ -185,6 +185,17 @@ Task 4.7 hardens this repository without changing its runtime boundary:
 - File-backed SQLite can be closed and reopened for parity tests.
 - SQLite remains snapshot-only and Node-only; there is still no App runtime storage migration, UI/server/localStorage replacement, normalized database, auth, or sync.
 
+Task 4.8 adds a Node-only server adapter skeleton without starting a server:
+
+- `apps/api/src/node/serverAdapter.ts` composes repository + readMirror + sessionMutation + recordDataHealthMutation.
+- `GET /health` works without an existing AppData snapshot.
+- Non-health GET routes read the latest snapshot and delegate to readMirror.
+- Mutation routes write a new snapshot only when the underlying mutation response contains `nextData`.
+- Failed persistence after `nextData` returns a repository error response; it is not treated as a successful mutation.
+- Route resolution distinguishes wrong method (`405`) from unknown path (`404`).
+- The adapter remains outside `apps/api/src/index.ts` and browser builds.
+- There is still no runtime server, App.tsx integration, UI integration, localStorage replacement, auth, sync, or normalized database.
+
 ## Not Done In This Baseline
 
 This baseline intentionally does not:
@@ -280,7 +291,20 @@ Completed as repository hardening only, not a server adapter:
 - file-backed close/reopen behavior
 - Node-only isolation tests
 
-This task still does not connect SQLite to `App.tsx`, UI, localStorage, server runtime, readMirror, sessionMutation, or recordDataHealthMutation. It does not add normalized tables. Future Task 4.8 can consider a server adapter skeleton only after this hardening remains stable under full regression tests.
+This task still does not connect SQLite to `App.tsx`, UI, localStorage, server runtime, readMirror, sessionMutation, or recordDataHealthMutation. It does not add normalized tables.
+
+### Task 4.8: Server Adapter Skeleton V1
+
+Completed as a Node-only adapter skeleton, not an HTTP runtime:
+
+- route-like request dispatcher
+- readMirror delegation for GET routes
+- sessionMutation and recordDataHealthMutation delegation for write routes
+- SQLite snapshot write-through only when `nextData` exists
+- repository error mapping with stable error codes
+- Node-only isolation from browser-facing API exports
+
+This task does not start Fastify/Express, does not connect to `App.tsx`, does not replace localStorage, does not add auth/cloud sync, and does not add normalized tables. Future Task 4.9 can consider an HTTP runtime adapter or server smoke test only after this skeleton remains stable under full regression tests.
 
 ## High-Risk Files
 
