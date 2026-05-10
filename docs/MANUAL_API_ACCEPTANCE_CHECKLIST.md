@@ -190,6 +190,7 @@ Task 4.28 adds a dev-only, explicit opt-in, one-route DataHealth dismiss mutatio
 - [ ] Use `docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPTANCE.md` for the dev-only one-route DataHealth dismiss prototype runbook.
 - [ ] Use `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md` for the human-run App acceptance checklist with `npm run api:dev`, `npm run dev`, browser DevTools, and a dedicated test browser profile.
 - [ ] The only accepted browser mutation route is `POST /data-health/issues/:issueId/dismiss`.
+- [ ] Task 4.31 hardening keeps this one-route scope and adds checks for no-change/already-dismissed, missing snapshot metadata, unavailable/timeout/abort, duplicate-submit, and confirmation reset behavior.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

@@ -633,6 +633,22 @@ Task 4.30 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.30. The next recommended task is `Task 4.31 DataHealth Dismiss Prototype Hardening V1`.
 
+### Task 4.31: DataHealth Dismiss Prototype Hardening V1
+
+Completed as hardening for the existing dev-only, one-route DataHealth dismiss prototype. It does not add a second mutation prototype, expand mutation capability, or add new browser mutation routes.
+
+- `DevApiDataHealthDismissPrototype.tsx` now uses a synchronous pending lock, abort/unmount completion guard, confirmation reset after success/failure, and stale confirmation clearing when the selected issue changes.
+- `devApiDataHealthDismissHardeningNoFakeSuccess.test.ts` locks the strict success shape and missing snapshot/no-change/write-failure behavior.
+- `devApiDataHealthDismissHardeningFailureStates.test.ts` locks unavailable, timeout, abort, malformed response, issue-not-found, requires-confirmation, unsupported-route, database-closed, and raw-stack-safe failure handling.
+- `devApiDataHealthDismissHardeningConcurrency.test.tsx` locks duplicate-submit prevention, pending disabled state, retry lock release, and abort/unmount guard coverage.
+- `devApiDataHealthDismissHardeningConfirmation.test.tsx` locks cancel/no-confirmation behavior, confirmation reset, disabled rendering, and issue-change stale-confirmation clearing.
+- `devApiDataHealthDismissHardeningBoundary.test.ts` keeps browser mutation code one-route-only and keeps read-only client, storage, package, and Node-only boundaries intact.
+- `devApiDataHealthDismissHardeningDocsParity.test.ts` keeps manual/prototype acceptance docs aligned with the hardening edge cases.
+
+Task 4.31 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. The only accepted browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; session/history/DataHealth repair/backup/import/export/reset/recovery routes remain blocked. There is no production backend/auth/sync/deployment, package script or dependency change, lockfile change, or normalized table.
+
+Write-path migration remains blocked after Task 4.31. The next recommended task is `Task 4.32 DataHealth Dismiss Recovery/Observability V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
