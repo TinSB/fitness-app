@@ -1,5 +1,7 @@
 # DataHealth Dismiss Manual App Acceptance
 
+Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. This runbook remains scoped to the DataHealth dismiss prototype's own one-route flow, while the global browser mutation allowlist is exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. No third mutation route is approved, localStorage remains source of truth, and API results never overwrite AppData or localStorage.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual App acceptance for the DataHealth dismiss mutation prototype.

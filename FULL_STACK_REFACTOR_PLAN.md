@@ -763,6 +763,20 @@ Task 4.39 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.39. The next recommended task is `Task 4.40 Write-path Two-route Checkpoint V1` or `Task 4.40 Second-route Observability & Recovery Notes V1`.
 
+### Task 4.40: Write-path Two-route Checkpoint V1
+
+Completed as a checkpoint/audit document and static regression tests for the current two-route write-path prototype state. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, or a broad mutation client.
+
+- `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md` records the current accepted browser mutation allowlist, DataHealth dismiss status, History data-flag status, shared safety rules, route boundary matrix, source-of-truth checkpoint, data semantics checkpoint, manual acceptance inventory, regression test inventory, risk register, gates before any third mutation audit, and decision record.
+- `writePathTwoRouteCheckpoint.test.ts` locks the checkpoint document structure, accepted route list, source-of-truth statement, prototype status summaries, route matrix, data semantics, manual inventory, regression inventory, risk register, and Task 4.41 recommendation.
+- `writePathTwoRouteBoundaryLock.test.ts` keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, with no session/history edit/repair/backup/reset routes, no broad mutation client, read-only GET-only behavior, package boundary, and browser build isolation.
+- `writePathTwoRouteDocsParity.test.ts` keeps DataHealth and History docs aligned with the current two-route checkpoint while preserving historical one-route statements only when scoped to a prototype's own flow.
+- `writePathTwoRouteRegressionMatrix.test.ts` checks that DataHealth dismiss, History data-flag, read-only diagnostics, mutation planning, and runtime boundary regression coverage remain present.
+
+Task 4.40 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third mutation route is approved, and session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.40. The next recommended task is `Task 4.41 Write-path Two-route Manual Regression V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

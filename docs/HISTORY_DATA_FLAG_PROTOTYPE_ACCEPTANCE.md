@@ -6,6 +6,8 @@ Task 4.38 adds the dedicated manual App acceptance runbook at `docs/HISTORY_DATA
 
 Task 4.39 hardens the existing History data-flag prototype with no-fake-success, failure-state, duplicate-submit, abort/unmount, confirmation reset, data semantics, docs parity, and route-boundary tests. It adds no runtime capability and no browser mutation route. The History data-flag prototype remains one-route-only, and the global browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
 
+Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. It confirms the current global browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, no third mutation route is approved, localStorage remains source of truth, and API results never overwrite AppData or localStorage.
+
 ## Scope / Non-goals
 
 - [ ] This is acceptance coverage for the existing History data-flag prototype only.

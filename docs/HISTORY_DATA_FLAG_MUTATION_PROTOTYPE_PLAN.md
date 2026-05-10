@@ -51,6 +51,16 @@ Task 4.35 converts the Task 4.34 second mutation candidate readiness audit into 
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
 - Write-path migration remains blocked.
 
+## Task 4.40 Checkpoint Result
+
+- Task 4.40 adds `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md` as a checkpoint/audit for the current two-route write-path prototype state.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No third mutation route is approved.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- DataHealth dismiss and History data-flag remain dev-only, explicit opt-in, single-route prototypes in their own flows.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
+- The next recommended task is `Task 4.41 Write-path Two-route Manual Regression V1`.
+
 ## Scope / Non-goals
 
 - This is History data-flag mutation prototype planning.

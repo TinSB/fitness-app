@@ -10,6 +10,8 @@ Task 4.33 adds a regression lock for the DataHealth dismiss line. It is tests an
 
 Task 4.34 adds a second mutation candidate readiness audit at `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md`. DataHealth dismiss remains the only implemented mutation prototype. `POST /history/:id/data-flag` is only a future candidate for a planning task, not an implemented route and not approved for direct App wiring.
 
+Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. The DataHealth dismiss prototype remains one-route-only in its own flow: `POST /data-health/issues/:issueId/dismiss`. The global browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third mutation route is approved, localStorage remains source of truth, and API results never overwrite AppData or localStorage.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual acceptance for Task 4.28 DataHealth dismiss mutation prototype.

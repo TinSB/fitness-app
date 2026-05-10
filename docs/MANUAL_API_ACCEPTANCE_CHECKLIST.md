@@ -52,6 +52,8 @@ Task 4.38 adds the History data-flag manual App acceptance runbook at `docs/HIST
 
 Task 4.39 hardens the existing History data-flag prototype. It is hardening/testing only: no third browser mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, success requires the strict result shape plus snapshot metadata, localStorage remains source of truth, and no production readiness or broader write-path migration is implied.
 
+Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. It is checkpoint/audit documentation and static-test coverage only: browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, no third route is approved, localStorage remains source of truth, and no production readiness or broader write-path migration is implied. Use the checkpoint before any future two-route manual regression or third-candidate audit.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
