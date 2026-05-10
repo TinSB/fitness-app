@@ -229,3 +229,36 @@ Task 4.19 result: Plan only.
 Ready for Task 4.20 Read-only App Integration Prototype V1 only if explicit dev-only dual-read comparison mode is maintained.
 
 Formal App.tsx HTTP migration and write-path migration remain blocked.
+
+## Task 4.20 Prototype Result
+
+Task 4.20 implements the minimal dev-only prototype described by this plan.
+
+Implemented opt-in:
+
+- `import.meta.env.DEV` must be true.
+- `VITE_IRONPATH_DEV_API_COMPARE` must be `"1"`.
+- `VITE_IRONPATH_DEV_API_BASE_URL` is optional and defaults to `http://127.0.0.1:8787`.
+- The base URL must be localhost-only: `localhost`, `127.0.0.1`, `[::1]`, or `::1`.
+- `VITE_IRONPATH_DEV_API_TIMEOUT_MS` is optional and defaults to `1500`.
+
+Implemented comparison scope:
+
+- `/app-data/summary`
+- `/sessions/summary`
+- `/history`
+- `/data-health/summary`
+- `/history/:id` only when a stable local history id exists
+
+Prototype behavior:
+
+- localStorage remains the active source of truth.
+- API results never overwrite localStorage.
+- UI never writes to the API.
+- No mutation route is called from App.
+- API unavailable becomes diagnostic `unavailable` state and does not block App usage.
+- Mismatch becomes diagnostic `mismatch` state and does not repair, overwrite, merge, or migrate data.
+- Diagnostics render only when explicitly enabled or when the explicit config is invalid.
+- Diagnostics expose no repair, sync, overwrite, import, export, reset, or mutation controls.
+
+Rollback remains disabling the dev-only comparison flag and stopping the dev API runner. Formal App.tsx HTTP migration and write-path migration remain blocked after Task 4.20.
