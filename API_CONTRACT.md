@@ -62,6 +62,8 @@ Task 4.35 adds `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` as History Da
 
 Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype. It adds only `POST /history/:id/data-flag` as the second single-route browser mutation experiment, guarded by `VITE_IRONPATH_DEV_API_COMPARE="1"` and `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT="history-data-flag"`. DataHealth dismiss remains intact. The only browser mutation prototypes are now `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. localStorage remains source of truth, API results never overwrite AppData or localStorage, success requires strict mutation result plus snapshot metadata, and no session/history edit/DataHealth repair/backup/import/export/reset/recovery routes, broad mutation client, production backend, auth, sync, deployment, package changes, lockfile changes, scripts, normalized tables, or training algorithm changes are added.
 
+Task 4.37 adds History Data-flag Prototype Acceptance V1. It is an acceptance/testing layer and manual runbook for the existing Task 4.36 prototype, not an expansion of mutation capability. The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; localStorage remains source of truth; API results never overwrite AppData or localStorage; no session/history edit/DataHealth repair/backup/import/export/reset/recovery routes, broad mutation client, production backend, auth, sync, deployment, package changes, lockfile changes, scripts, normalized tables, or training algorithm changes are added.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1046,6 +1048,38 @@ Contract facts:
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery HTTP route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
 
 Write-path migration remains blocked after Task 4.36. The next recommended task is `Task 4.37 History Data-flag Prototype Acceptance V1`.
+
+## History Data-flag Prototype Acceptance
+
+Owner files:
+
+- `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md`
+- `tests/devApiHistoryDataFlagAcceptanceFlagMatrix.test.ts`
+- `tests/devApiHistoryDataFlagAcceptanceInteraction.test.ts`
+- `tests/devApiHistoryDataFlagAcceptanceNoFakeSuccess.test.ts`
+- `tests/devApiHistoryDataFlagAcceptanceFailureStates.test.ts`
+- `tests/devApiHistoryDataFlagAcceptanceSourceOfTruth.test.ts`
+- `tests/devApiHistoryDataFlagAcceptanceSemantics.test.ts`
+- `tests/devApiHistoryDataFlagAcceptanceBoundary.test.ts`
+- `tests/devApiHistoryDataFlagManualAcceptanceDocs.test.ts`
+
+Task 4.37 accepts the existing Task 4.36 History data-flag prototype with automated tests and a human-run runbook.
+
+Acceptance facts:
+
+- The flag matrix keeps the prototype disabled unless DEV, read-only comparison, and `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT="history-data-flag"` are all active.
+- DataHealth dismiss and History data-flag experiment flags remain isolated.
+- A stable target history record is required before any request can be sent.
+- Confirmation is required before any POST, cancel prevents POST, pending disables duplicate submit, and retry after failure requires explicit re-confirmation.
+- Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- Missing snapshot metadata, no-change, record-not-found, invalid dataFlag, requires-confirmation, unsupported-route, unavailable, timeout, abort, malformed response, write failure, transaction failure, and database-closed cases must not show success.
+- localStorage remains the active App source of truth.
+- API results never overwrite AppData or localStorage, and snapshot metadata is not stored in localStorage by the prototype.
+- `normal`, `test`, and `excluded` remain the only accepted dataFlag values; test and excluded records remain visible but excluded from default production-like statistics.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery HTTP route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
+
+Write-path migration remains blocked after Task 4.37. The next recommended task is `Task 4.38 History Data-flag Manual App Acceptance V1` or `Task 4.38 History Data-flag Prototype Hardening V1`.
 
 ## Local Persistence
 

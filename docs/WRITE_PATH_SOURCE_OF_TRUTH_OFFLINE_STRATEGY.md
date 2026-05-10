@@ -335,3 +335,11 @@ Task 4.36 implements the explicitly approved History data-flag prototype as the 
 This does not switch source of truth. localStorage remains the active App source of truth, API mutation results never overwrite AppData or localStorage, and no localStorage reconciliation or offline mutation queue is introduced.
 
 The only browser mutation prototypes are `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery, production backend, auth, sync, and deployment remain blocked.
+
+## Task 4.37 Note
+
+Task 4.37 adds acceptance tests and a manual runbook for the History data-flag prototype while keeping the write-path source-of-truth strategy unchanged.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the prototype, and read-only comparison remains separate from the mutation experiment.
+
+The acceptance layer does not add an offline queue, localStorage reconciliation, production backend, auth, sync, deployment, or any browser mutation route beyond DataHealth dismiss and History data-flag.
