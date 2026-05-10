@@ -42,6 +42,8 @@ Task 4.33 adds a regression lock for the DataHealth dismiss line. It is tests/do
 
 Task 4.34 adds a second mutation candidate readiness audit at `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md`. It is audit-only: `POST /history/:id/data-flag` is only a future candidate for a planning task, and no second browser mutation route is implemented or accepted.
 
+Task 4.35 adds the History data-flag mutation prototype plan at `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md`. It is plan-only: no history data-flag browser route is enabled, no second mutation prototype is implemented, and DataHealth dismiss remains the only implemented browser mutation route.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -205,6 +207,8 @@ Task 4.34 adds a second mutation candidate readiness audit at `docs/SECOND_MUTAT
 - [ ] Task 4.34 second mutation audit must remain audit-only before any history data-flag plan begins.
 - [ ] Confirm the only implemented browser mutation route is still `POST /data-health/issues/:issueId/dismiss`.
 - [ ] Confirm `POST /history/:id/data-flag` remains a future candidate only and is not called from browser runtime.
+- [ ] Task 4.35 history data-flag prototype plan must remain plan-only until a later explicitly approved task.
+- [ ] Confirm the history data-flag plan does not change localStorage source-of-truth, AppData overwrite behavior, or browser route boundaries.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

@@ -58,6 +58,8 @@ Task 4.33 adds DataHealth Dismiss Regression Lock V1. It is a regression/testing
 
 Task 4.34 adds `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Second Mutation Candidate Readiness Audit V1. It is audit-only and does not add runtime capability, a second mutation route, App POST wiring, a frontend mutation client, source-of-truth switching, production backend, auth, sync, deployment, package changes, or normalized tables. The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; `POST /history/:id/data-flag` is only the future candidate for a planning task.
 
+Task 4.35 adds `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` as History Data-flag Mutation Prototype Plan V1. It is plan-only and does not add browser runtime behavior, `POST /history/:id/data-flag` App wiring, a second mutation prototype, a frontend mutation client, mutation feature flag runtime wiring, source-of-truth switching, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables. DataHealth dismiss remains the only implemented browser mutation route.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -987,6 +989,31 @@ Audit facts:
 - There is no frontend mutation client, broad mutation client, source-of-truth switch, offline mutation queue, production backend, auth, sync, deployment, package dependency, package script, lockfile change, or normalized table.
 
 Write-path migration remains blocked after Task 4.34. The next recommended task is `Task 4.35 History Data-flag Mutation Prototype Plan V1`, and it should be planning-only unless explicitly approved otherwise.
+
+## History Data-flag Mutation Prototype Plan
+
+Owner files:
+
+- `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md`
+- `tests/historyDataFlagMutationPrototypePlan.test.ts`
+- `tests/historyDataFlagMutationBoundaryStillBlocked.test.ts`
+
+Task 4.35 creates a concrete future prototype plan for `POST /history/:id/data-flag`. It is planning and static-test coverage only.
+
+Plan facts:
+
+- No second mutation is implemented.
+- DataHealth dismiss remains the only implemented browser mutation route.
+- `POST /history/:id/data-flag` remains future prototype candidate only.
+- The plan defines `normal`, `test`, and `excluded` semantics and keeps test/excluded records excluded from default production-like statistics.
+- The plan records impact on history list/detail, calendar summaries, session summaries, readMirror output, DataHealth report context, PR/e1RM, effectiveSet/weighted effectiveSet, audit/editHistory, and backup export/import semantic safety.
+- `identityInvalid` semantics remain unchanged.
+- `actualWeightKg` remains the trusted calculation source.
+- No training algorithm, template, scheduler, PR, e1RM, effectiveSet, backup/import/export, storage, package, schema, auth, sync, deployment, or production backend behavior changes.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+
+Write-path migration remains blocked after Task 4.35. The next recommended task is `Task 4.36 History Data-flag Mutation Prototype V1` only if gates are accepted.
 
 ## Local Persistence
 

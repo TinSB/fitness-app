@@ -692,6 +692,18 @@ Task 4.34 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.34. The next recommended task is `Task 4.35 History Data-flag Mutation Prototype Plan V1`.
 
+### Task 4.35: History Data-flag Mutation Prototype Plan V1
+
+Completed as a plan and decision record only. It does not add runtime features, a second mutation route, App POST wiring, frontend mutation client work, mutation feature flag runtime wiring, source-of-truth switching, AppData/localStorage overwrite behavior, production backend, auth, sync, deployment, package changes, lockfile changes, schema changes, training algorithm changes, or normalized tables.
+
+- `HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` records dataFlag semantics, data semantics impact, future route/payload plan, confirmation UX, pending/success/failure UX, idempotency, source snapshot conflict handling, rollback, audit trail visibility, manual acceptance, rejected scope, decision record, and final recommendation.
+- `historyDataFlagMutationPrototypePlan.test.ts` locks the plan content and confirms `POST /history/:id/data-flag` is only a future prototype candidate.
+- `historyDataFlagMutationBoundaryStillBlocked.test.ts` keeps browser runtime code from adding `POST /history/:id/data-flag`, any other mutation route, broad mutation clients, Node-only imports, package/script changes, or API-backed localStorage behavior.
+
+Task 4.35 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; history data-flag remains plan-only and no second mutation is implemented.
+
+Write-path migration remains blocked after Task 4.35. The next recommended task is `Task 4.36 History Data-flag Mutation Prototype V1` only if gates are accepted.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

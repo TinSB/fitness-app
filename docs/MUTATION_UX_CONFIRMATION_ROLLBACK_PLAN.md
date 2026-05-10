@@ -212,3 +212,11 @@ Task 4.34 audits the second mutation candidate without implementing it.
 The Task 4.26 UX conclusion remains active: history data-flag is a Level 2 candidate that needs explicit confirmation, audit trail visibility, readMirror parity, duplicate-submit prevention, rollback planning, and no-fake-success handling before any future prototype.
 
 No second mutation is implemented. The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`, and write-path migration remains blocked.
+
+## Task 4.35 Note
+
+Task 4.35 adds the History data-flag mutation prototype plan.
+
+The future `POST /history/:id/data-flag` candidate remains Level 2: confirmation must show current and target dataFlag, warn that statistics may change, cancel without a request, block duplicate submit while pending, and show success only after strict server success plus snapshot metadata.
+
+Task 4.35 does not implement the route, does not add App POST calls, and does not change localStorage/AppData behavior.
