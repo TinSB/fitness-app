@@ -200,3 +200,11 @@ Task 4.26 adds mutation UX confirmation and rollback planning at `docs/MUTATION_
 The Task 4.24 conclusion does not change: mutation integration is not ready, write-path migration remains blocked, existing mutation routes remain server/dev API only, and App runtime still does not call mutation routes.
 
 Task 4.26 records no-fake-success rules, confirmation levels, rollback UX, duplicate-submit prevention, and conflict UX. No mutation prototype is implemented.
+
+## Task 4.27 Note
+
+Task 4.27 adds the lowest-risk mutation prototype plan at `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md`.
+
+The Task 4.24 conclusion does not change: mutation integration is not ready, write-path migration remains blocked, existing mutation routes remain server/dev API only, and App runtime still does not call mutation routes.
+
+Task 4.27 selects DataHealth issue dismiss as the first future candidate while keeping implementation blocked until a later explicit task.
