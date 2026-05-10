@@ -577,6 +577,20 @@ Task 4.26 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior,
 
 Task 4.26 result: UX/rollback plan only. Write-path migration remains blocked. App must not call mutation routes yet. No mutation prototype is implemented. The only recommended next task is `Task 4.27 Lowest-risk Mutation Prototype Plan V1`, and that task should still be planning-only.
 
+### Task 4.27: Lowest-risk Mutation Prototype Plan V1
+
+Completed as lowest-risk mutation prototype planning, not as mutation implementation or write-path migration.
+
+- `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` evaluates DataHealth issue dismiss, diagnostics acknowledged state, history data-flag, limited history edit, session mutations, DataHealth repair, backup/import over HTTP, reset/recovery over HTTP, and source-of-truth migration.
+- The unique first future candidate is DataHealth issue dismiss, but Task 4.27 does not implement it and does not approve App POST calls.
+- The first future prototype shape requires issue id, mutation id, idempotency key, request fingerprint, source snapshot hash/version, explicit confirmation, no-fake-success behavior, and snapshot metadata before success.
+- `lowestRiskMutationPrototypePlan.test.ts` locks the plan contents, selected candidate, rejected candidates, prototype gates, source-of-truth handling, rollback plan, manual acceptance requirements, and Task 4.28 recommendation.
+- `lowestRiskMutationBoundaryStillBlocked.test.ts` keeps executable browser/runtime source free of App mutation calls, Node-only imports, frontend mutation clients, mutation feature flag wiring, API-backed localStorage, and package script/dependency expansion.
+
+Task 4.27 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior, localStorage persistence, save/load behavior, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write paths.
+
+Task 4.27 result: plan only. First future candidate is DataHealth issue dismiss. Write-path migration remains blocked. App must not call mutation routes yet. The only recommended next task is `Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1`, and implementation must require explicit user approval.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

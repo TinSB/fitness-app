@@ -180,3 +180,11 @@ App must not call mutation routes yet.
 No mutation prototype is implemented.
 
 Next task should be Task 4.27 Lowest-risk Mutation Prototype Plan V1.
+
+## Task 4.27 Follow-up Note
+
+Task 4.27 adds `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` as planning only.
+
+The Task 4.26 conclusion does not change: no mutation prototype is implemented, App must not call mutation routes, and write-path migration remains blocked.
+
+Task 4.27 selects DataHealth issue dismiss as the first future candidate while keeping it blocked until gates pass. The next recommended task is `Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1`, which should still be a plan unless the user explicitly approves implementation.

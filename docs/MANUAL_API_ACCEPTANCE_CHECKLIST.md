@@ -32,6 +32,8 @@ Task 4.25 adds the write-path source-of-truth and offline strategy at `docs/WRIT
 
 Task 4.26 adds mutation UX confirmation and rollback planning at `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md`. It is planning-only and does not authorize App writes, mutation client work, or write-path migration.
 
+Task 4.27 adds the lowest-risk mutation prototype plan at `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md`. It is planning-only: DataHealth issue dismiss is only a future candidate, and the plan does not authorize App writes or mutation client work.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

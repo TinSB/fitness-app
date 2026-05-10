@@ -42,6 +42,8 @@ Task 4.25 adds `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md` as the writ
 
 Task 4.26 adds `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as mutation UX confirmation and rollback planning. It is UX strategy only, not a runtime API feature. App runtime still does not call mutation routes, no mutation prototype is implemented, and future write UX must follow the no-fake-success rule.
 
+Task 4.27 adds `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` as the first lowest-risk mutation prototype plan. It is planning only, not a runtime API feature. DataHealth issue dismiss is the first future candidate, but App runtime still does not call mutation routes and write-path migration remains blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -750,6 +752,29 @@ Confirmation planning:
 - Level 3: session start, session patches, session complete, and session discard require strong confirmation and are not first-candidate routes.
 
 Task 4.26 result: UX/rollback plan only. Write-path migration remains blocked. App must not call mutation routes yet. No mutation prototype is implemented. Next task should be `Task 4.27 Lowest-risk Mutation Prototype Plan V1`.
+
+## Lowest-risk Mutation Prototype Plan
+
+Owner files:
+
+- `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md`
+- `tests/lowestRiskMutationPrototypePlan.test.ts`
+- `tests/lowestRiskMutationBoundaryStillBlocked.test.ts`
+
+Task 4.27 is planning only, not a runtime API feature.
+
+Contract facts:
+
+- App runtime does not call mutation routes.
+- There is no frontend mutation client, mutation feature flag, API-backed persistence adapter, or source-of-truth switch.
+- There is no mutation prototype implementation.
+- The first future candidate is DataHealth issue dismiss.
+- DataHealth issue dismiss remains blocked until prototype gates pass.
+- Source-of-truth remains localStorage.
+- The first prototype source-of-truth recommendation is shadow-only / diagnostics mode unless a later task explicitly designs localStorage reconciliation.
+- Session mutation, history edit, history data-flag, DataHealth repair, backup/import over HTTP, reset/recovery over HTTP, API source-of-truth switching, and dual-write are rejected as first prototypes.
+
+Task 4.27 result: Plan only. First future candidate: DataHealth issue dismiss. Write-path migration remains blocked. App must not call mutation routes yet. Next task should be `Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1`.
 
 ## Local Persistence
 

@@ -287,3 +287,11 @@ Task 4.26 adds `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as UX/rollback p
 The Task 4.25 conclusion does not change: source-of-truth remains localStorage, no offline mutation queue exists yet, App must not call mutation routes, and write-path migration remains blocked.
 
 Task 4.26 defines confirmation levels, no-fake-success rules, pending/success/failure states, rollback UX, duplicate-submit prevention, and conflict UX. Its next recommended task is `Task 4.27 Lowest-risk Mutation Prototype Plan V1`, which should still be a plan before any App POST calls.
+
+## Task 4.27 Follow-up Note
+
+Task 4.27 adds `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` as planning only.
+
+The Task 4.25 conclusion does not change: source-of-truth remains localStorage, no offline mutation queue exists yet, App must not call mutation routes, and write-path migration remains blocked.
+
+Task 4.27 chooses DataHealth issue dismiss as the first future candidate, but the recommended first prototype source-of-truth mode remains shadow-only / diagnostics unless a later task explicitly designs localStorage reconciliation.
