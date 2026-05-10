@@ -331,3 +331,12 @@ Acceptance:
 - [ ] Browser build result:
 - [ ] Notes:
 - [ ] Pass / Fail:
+
+## Task 4.42 Regression Lock Follow-up
+
+- [ ] Task 4.42 adds `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md` as the two-route regression lock.
+- [ ] Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- [ ] No third mutation route is approved.
+- [ ] localStorage remains source of truth.
+- [ ] API result never overwrites AppData or localStorage.
+- [ ] This follow-up does not imply production readiness or source-of-truth migration.

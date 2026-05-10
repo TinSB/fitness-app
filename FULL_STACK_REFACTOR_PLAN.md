@@ -791,6 +791,20 @@ Task 4.41 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.41. The next recommended task is `Task 4.42 Third Mutation Candidate Readiness Audit V1` or `Task 4.42 Write-path Two-route Regression Lock V1`.
 
+### Task 4.42: Write-path Two-route Regression Lock V1
+
+Completed as a regression-lock decision record and static tests for the current two-route write-path prototype state. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, or a broad mutation client.
+
+- `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md` records the accepted two-route allowlist, explicitly blocked routes, DataHealth dismiss regression state, History data-flag regression state, shared two-route rules, source-of-truth lock, data semantics lock, coverage inventory, manual acceptance inventory, future gates, and decision record.
+- `writePathTwoRouteRegressionLock.test.ts` locks the regression-lock document structure and recommendation.
+- `writePathTwoRouteAllowlistLock.test.ts` and `writePathTwoRouteBoundaryStillBlocked.test.ts` keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, with no session/history edit/repair/backup/reset routes, no broad mutation client, read-only GET-only behavior, package boundary, and browser build isolation.
+- `writePathTwoRouteNoFakeSuccessLock.test.ts` and `writePathTwoRouteCoverageInventory.test.ts` lock the presence of no-fake-success, snapshot metadata, duplicate-submit, acceptance, manual, hardening, regression, read-only, runtime boundary, and server/http/sqlite coverage.
+- `writePathTwoRouteDocsLock.test.ts` keeps contract, refactor, manual, DataHealth, and History docs aligned with Task 4.42 while rejecting production-readiness and forbidden-route instructions.
+
+Task 4.42 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third mutation route is approved, and session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.42. The next recommended task is `Task 4.43 Third Mutation Candidate Readiness Audit V1`, audit-only.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

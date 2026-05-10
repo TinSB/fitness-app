@@ -61,6 +61,15 @@ Task 4.35 converts the Task 4.34 second mutation candidate readiness audit into 
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
 - The next recommended task is `Task 4.41 Write-path Two-route Manual Regression V1`.
 
+## Task 4.42 Regression Lock Result
+
+- Task 4.42 adds `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md` as a regression lock for the current two-route write-path prototype state.
+- The History data-flag prototype remains one-route-only in its own flow.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No third mutation route is approved.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- The next recommended task is `Task 4.43 Third Mutation Candidate Readiness Audit V1`, audit-only.
+
 ## Scope / Non-goals
 
 - This is History data-flag mutation prototype planning.

@@ -199,3 +199,13 @@ Task 4.41 adds `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md` as a manual regr
 - No third mutation route is approved.
 - localStorage remains source of truth and API results never overwrite AppData or localStorage.
 - The runbook verifies experiment-flag isolation, DevTools Network route boundaries, no-fake-success behavior, localStorage integrity, failure recovery, cleanup, and browser build safety.
+
+## Task 4.42 Regression Lock Follow-up
+
+Task 4.42 adds `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md` as the regression lock for the current two-route write-path prototype state.
+
+- It is regression-lock documentation and static-test coverage only.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No third mutation route is approved.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- The next recommended task is `Task 4.43 Third Mutation Candidate Readiness Audit V1`, audit-only.
