@@ -306,3 +306,9 @@ Acceptance:
 - [ ] Browser build result:
 - [ ] Notes:
 - [ ] Pass / Fail:
+
+## Related DataHealth Dismiss Manual App Acceptance
+
+- [ ] For the dev-only one-route DataHealth dismiss prototype, use `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md`.
+- [ ] That runbook does not change this read-only acceptance result.
+- [ ] That runbook does not imply production readiness or broad mutation integration.

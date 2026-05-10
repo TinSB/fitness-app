@@ -1,5 +1,7 @@
 # DataHealth Dismiss Prototype Acceptance
 
+Task 4.30 adds the human-run App acceptance companion at `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md`. Use that runbook when validating the prototype through `npm run api:dev`, `npm run dev`, browser DevTools, and a dedicated test browser profile.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual acceptance for Task 4.28 DataHealth dismiss mutation prototype.
