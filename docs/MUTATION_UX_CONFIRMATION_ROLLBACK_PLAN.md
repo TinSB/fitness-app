@@ -244,3 +244,11 @@ Task 4.46 implements the dev-only Limited History Edit prototype for `POST /hist
 The no-fake-success rule applies to limited history edit: confirmation is required before POST, pending disables duplicate submit, success requires HTTP success plus `ok=true`, `changed=true`, `status="success"`, and snapshot metadata, and every missing success field is failure.
 
 Rollback remains failure-state only because the prototype never optimistically updates AppData or localStorage. The App remains localStorage-first; users can disable the mutation flag, stop the Dev API runner, and use the existing dev DB runbook if needed.
+
+## Task 4.47 Note
+
+Task 4.47 adds acceptance coverage and a manual acceptance runbook for the Limited History Edit prototype.
+
+The accepted UX boundary covers flag matrix isolation, stable target session/exercise/set selection, before/after display, calculation-impact warning, confirmation before POST, cancel with no POST, pending duplicate-submit prevention, retry only after explicit user action and confirmation, strict no-fake-success behavior, and localStorage/AppData integrity.
+
+No new mutation route is added; browser mutation routes remain exactly DataHealth dismiss, History data-flag, and Limited History Edit.

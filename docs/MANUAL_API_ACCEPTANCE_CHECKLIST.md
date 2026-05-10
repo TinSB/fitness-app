@@ -291,3 +291,10 @@ Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED
 - [ ] Confirm this does not imply production readiness.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 - [ ] Confirm no session/DataHealth repair/backup/import/export/reset/recovery browser mutation route is exposed.
+
+## Task 4.47 Limited History Edit Acceptance Runbook
+
+- [ ] Use `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_ACCEPTANCE.md` for Limited History Edit manual acceptance.
+- [ ] Confirm Task 4.47 does not add a new mutation route.
+- [ ] Confirm Task 4.47 docs do not imply production readiness.
+- [ ] Confirm the runbook covers flag matrix, target set, confirmation, pending duplicate-submit, success, failure, field constraints, data semantics, localStorage integrity, route boundary, forbidden UI controls, cleanup, and browser build safety.

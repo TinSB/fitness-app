@@ -373,3 +373,11 @@ Task 4.46 implemented only the approved one-route prototype for `POST /history/:
 - It does not add session mutation, DataHealth repair, backup/import/export/reset/recovery routes, production backend, auth, sync, deployment, package changes, scripts, lockfile changes, or normalized tables.
 - Browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - Task 4.47 Limited History Edit Prototype Acceptance V1 is the next recommended acceptance-only task.
+
+## Task 4.47 Acceptance Note
+
+Task 4.47 adds acceptance tests and `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_ACCEPTANCE.md` for the existing Task 4.46 prototype.
+
+No new browser mutation route is added. The accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+
+Task 4.48 Limited History Edit Manual App Acceptance V1 is the next recommended task.

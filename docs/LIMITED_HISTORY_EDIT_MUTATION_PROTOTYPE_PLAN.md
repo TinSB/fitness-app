@@ -395,3 +395,15 @@ Task 4.46 implements the explicitly user-approved Limited History Edit Mutation 
 - Broader write-path migration remains blocked.
 
 Next recommended task: Task 4.47 Limited History Edit Prototype Acceptance V1.
+
+## Task 4.47 Acceptance Result
+
+Task 4.47 adds acceptance coverage and the manual runbook at `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_ACCEPTANCE.md`.
+
+- No new mutation route is added.
+- The Limited History Edit prototype remains dev-only, explicit opt-in, and one-route only.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Acceptance coverage locks flag isolation, stable target selection, confirmation, pending duplicate-submit behavior, strict no-fake-success, source-of-truth integrity, field constraints, data semantics, and route boundary.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 4.48 Limited History Edit Manual App Acceptance V1.
