@@ -34,6 +34,8 @@ Task 4.21 adds Read-only Runtime Parity Acceptance V1 for the Task 4.20 prototyp
 
 Task 4.22 adds Read-only Diagnostics UX Hardening V1. It is diagnostics UX/testing hardening only, not runtime migration. It keeps diagnostics read-only, presentational, and safe: no mutation route used by App, no localStorage overwrite, no repair/sync/overwrite/import/export/reset/apply/fix controls, and no production backend/auth/sync/deployment behavior.
 
+Task 4.23 adds Read-only Manual App Acceptance V1 at `docs/READONLY_APP_MANUAL_ACCEPTANCE.md`. It is manual acceptance documentation and docs/static-boundary testing only, not a runtime feature. It does not change App runtime, diagnostics runtime, localStorage, write paths, production backend behavior, auth, sync, deployment, package scripts, dependencies, lockfiles, or schemas.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -624,6 +626,34 @@ Contract facts:
 - No mutation route used by App and no localStorage overwrite occurs.
 
 Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.22.
+
+## Read-only Manual App Acceptance
+
+Owner files:
+
+- `docs/READONLY_APP_MANUAL_ACCEPTANCE.md`
+
+Owner test files:
+
+- `tests/readOnlyManualAppAcceptanceDocs.test.ts`
+- `tests/readOnlyManualAppAcceptanceBoundary.test.ts`
+- `tests/readOnlyManualAppAcceptanceDocsParity.test.ts`
+
+Task 4.23 is manual acceptance documentation for the existing dev-only read-only diagnostics prototype. It is not a runtime API feature and does not add routes, mutation methods, UI actions, production server behavior, auth, sync, deployment, package scripts, dependencies, lockfile changes, or schema changes.
+
+Runbook acceptance facts:
+
+- Manual testing must use a dedicated test browser profile and must not clear the daily-use browser profile.
+- Manual mismatch and unavailable testing must not use real personal training data.
+- The App runtime still uses localStorage.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+- No UI writes to API.
+- No mutation routes are called from App.
+- Diagnostics expose no repair/sync/overwrite/import/export/reset/apply/fix controls.
+- Browser bundle pollution checks scan build output only, such as `dist/`.
+
+Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.23.
 
 ## Local Persistence
 

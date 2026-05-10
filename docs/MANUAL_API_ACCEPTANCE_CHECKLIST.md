@@ -24,6 +24,8 @@ Task 4.21 marks read-only runtime parity accepted only for dev diagnostics. It c
 
 Task 4.22 hardens read-only diagnostics UX for dev-only comparison. The panel is clearer and safer, but it remains read-only diagnostics only: localStorage remains source of truth, no data is changed by mismatch, and production readiness is not implied.
 
+Task 4.23 adds the read-only App manual acceptance runbook at `docs/READONLY_APP_MANUAL_ACCEPTANCE.md`. It is for dev-only diagnostics acceptance and does not imply production readiness or write-path migration readiness.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
