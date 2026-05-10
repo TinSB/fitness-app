@@ -208,6 +208,69 @@ Failure criteria:
 - [ ] Fail if abort or navigation-away produces a later success state.
 - [ ] Fail if API response data writes AppData or localStorage.
 
+## Task 4.32 Observability / Recovery Notes
+
+- [ ] Confirm the prototype shows a safe mutation diagnostic summary with:
+  - [ ] issue id
+  - [ ] mutation state: `idle`, `confirming`, `pending`, `success`, or `failure`
+  - [ ] last HTTP status when available
+  - [ ] failure code when available
+  - [ ] short user-safe failure message
+  - [ ] whether snapshot metadata is present
+  - [ ] request start and finish time when available
+  - [ ] duplicate-submit blocked state when a duplicate pending submit is blocked
+- [ ] Confirm diagnostics do not show a raw stack trace.
+- [ ] Confirm diagnostics do not dump a raw API response.
+- [ ] Confirm diagnostics do not dump full AppData.
+- [ ] Confirm diagnostics do not dump localStorage contents.
+- [ ] Confirm diagnostics do not show SQLite internal objects.
+- [ ] Confirm diagnostics do not show environment objects.
+- [ ] Confirm diagnostics do not show any non-localhost URL beyond the configured safe Dev API base URL.
+
+Safe failure reason checklist:
+
+- [ ] `dev_api_unavailable` or `dev_mutation_unavailable`: confirm the Dev API runner is running and the base URL is localhost.
+- [ ] `dev_api_timeout` or `dev_mutation_timeout`: confirm the Dev API is responsive before retrying.
+- [ ] `dev_api_invalid_response` or `dev_mutation_invalid_response`: inspect Dev API logs and response shape; do not treat as persistence success.
+- [ ] `issue_not_found`: refresh read-only diagnostics or verify the issue still exists.
+- [ ] `no_change` / already dismissed: refresh read-only diagnostics or verify the issue is still dismissible.
+- [ ] `requiresConfirmation`: retry only after explicit confirmation.
+- [ ] `write_failed` / `transaction_failed`: stop the runner, back up the dev DB, inspect the dev DB, and use the existing recovery/reset runbook only if needed.
+- [ ] `database_closed`: restart the Dev API runner, then rerun read-only diagnostics before retrying.
+- [ ] `snapshot_validation_failed` / `repository_schema_mismatch`: stop the runner, back up the dev DB, and inspect schema/recovery notes before retrying.
+- [ ] `unsupported_route`: verify the only browser mutation route is `POST /data-health/issues/:issueId/dismiss`.
+- [ ] Missing snapshot metadata: treat as failed persistence and do not mark success.
+- [ ] Aborted request or component unmount: no success should appear after cancellation.
+
+Recovery guidance:
+
+- [ ] If API is unavailable, confirm the dev runner is running and `VITE_IRONPATH_DEV_API_BASE_URL` is localhost.
+- [ ] If `database_closed` appears, restart the Dev API runner.
+- [ ] If `write_failed` or `transaction_failed` appears, stop the runner, back up the dev DB, inspect the dev DB, and use the existing recovery/reset runbook only if needed.
+- [ ] If `issue_not_found` or `no_change` appears, refresh read-only diagnostics or verify the issue still exists.
+- [ ] If snapshot metadata is missing, treat the attempt as failed persistence and do not show success.
+- [ ] If diagnostics mismatch after success, remember localStorage remains source of truth and manually rerun comparison.
+- [ ] Never use production data for this prototype.
+- [ ] Never delete real browser profile localStorage.
+- [ ] Never use HTTP reset because no browser HTTP reset endpoint exists.
+
+Developer checklist:
+
+- [ ] Confirm flags are enabled.
+- [ ] Confirm only `POST /data-health/issues/:issueId/dismiss` appears.
+- [ ] Confirm snapshot metadata exists on success.
+- [ ] Confirm no localStorage overwrite.
+- [ ] Confirm failure code is visible.
+- [ ] Confirm no raw stack is visible.
+- [ ] Confirm recovery path is manual and dev-only.
+- [ ] Confirm no session, history, DataHealth repair, backup, import, export, reset, or recovery routes appear.
+
+Failure criteria:
+
+- [ ] Fail if observability claims localStorage changed.
+- [ ] Fail if recovery guidance offers browser repair, sync, overwrite, import, export, reset, apply, fix, or migration controls.
+- [ ] Fail if recovery guidance implies production readiness.
+
 ## LocalStorage Integrity Manual Check
 
 - [ ] Snapshot localStorage in the dedicated test browser profile before testing.

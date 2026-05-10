@@ -4,6 +4,8 @@ Task 4.30 adds the human-run App acceptance companion at `docs/DATAHEALTH_DISMIS
 
 Task 4.31 hardens the existing one-route prototype without adding mutation capability. It strengthens no-fake-success behavior, no-change/already-dismissed failure handling, missing snapshot metadata failure handling, unavailable/timeout/abort handling, duplicate-submit protection, confirmation reset behavior, and static route isolation. The only browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
 
+Task 4.32 adds dev-only observability and recovery notes for the same one-route prototype. It exposes only safe diagnostic fields, maps failure reasons to manual recovery guidance, adds no HTTP endpoint, adds no browser reset action, and keeps localStorage as source of truth. It does not add a second mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, or normalized table.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual acceptance for Task 4.28 DataHealth dismiss mutation prototype.
@@ -141,6 +143,19 @@ VITE_IRONPATH_DEV_API_COMPARE=1 VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT=datahe
 - [ ] Expected no fake success when snapshot metadata is missing.
 - [ ] Expected no localStorage write.
 - [ ] Expected no AppData mutation.
+
+## Confirm Safe Observability And Recovery Notes
+
+- [ ] Confirm diagnostic fields are limited to issue id, mutation state, last HTTP status, failure code, short safe failure message, snapshot metadata presence, request timing when available, and duplicate-submit blocked state.
+- [ ] Confirm diagnostics do not show raw stack traces, raw API responses, full AppData, localStorage contents, SQLite internal objects, environment objects, or non-localhost URLs beyond the configured safe base URL.
+- [ ] Confirm API unavailable guidance says to verify the Dev API runner and localhost base URL.
+- [ ] Confirm `database_closed` guidance says to restart the Dev API runner.
+- [ ] Confirm `write_failed` and `transaction_failed` guidance says to stop the runner, back up the dev DB, inspect it, and use the existing recovery/reset runbook only if needed.
+- [ ] Confirm `issue_not_found` and `no_change` guidance says to refresh read-only diagnostics or verify the issue still exists.
+- [ ] Confirm missing snapshot metadata guidance says to treat the attempt as failed persistence.
+- [ ] Confirm mismatch after success says localStorage remains source of truth and comparison should be rerun manually.
+- [ ] Confirm there is no HTTP reset endpoint and no browser recovery/reset action.
+- [ ] Confirm recovery guidance remains manual, local, and dev-only.
 
 ## Confirm LocalStorage Integrity
 

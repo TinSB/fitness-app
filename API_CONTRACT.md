@@ -52,6 +52,8 @@ Task 4.30 adds DataHealth Dismiss Manual App Acceptance V1. It is a human-run ma
 
 Task 4.31 adds DataHealth Dismiss Prototype Hardening V1. It hardens the existing one-route prototype only: no new mutation route, no second prototype, no source-of-truth switch, no localStorage overwrite, and no AppData overwrite. Success shape is strict and no-fake-success behavior is hardened for no-change, issue-not-found, missing snapshot metadata, unavailable/timeout/abort, malformed response, and repository/write failure cases.
 
+Task 4.32 adds DataHealth Dismiss Prototype Observability & Recovery Notes V1. It adds dev-only safe diagnostics and manual recovery guidance for the existing one-route prototype only. It adds no HTTP endpoint, no browser reset/recovery action, no localStorage overwrite, no AppData overwrite, no production backend/auth/sync/deployment behavior, no package changes, and no normalized tables.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -902,6 +904,33 @@ Hardening facts:
 - Session mutation, history edit/data-flag, DataHealth repair, backup/import/export, reset, and recovery routes remain blocked from browser code.
 
 Write-path migration remains blocked after Task 4.31. The next recommended task is `Task 4.32 DataHealth Dismiss Recovery/Observability V1`.
+
+## DataHealth Dismiss Prototype Observability & Recovery Notes
+
+Owner files:
+
+- `src/devApi/DevApiDataHealthDismissPrototype.tsx`
+- `src/devApi/devApiDataHealthDismissClient.ts`
+- `tests/devApiDataHealthDismissObservabilitySummary.test.ts`
+- `tests/devApiDataHealthDismissObservabilityFailureMapping.test.ts`
+- `tests/devApiDataHealthDismissRecoveryNotes.test.ts`
+- `tests/devApiDataHealthDismissObservabilityBoundary.test.ts`
+- `tests/devApiDataHealthDismissObservabilityDocsParity.test.ts`
+
+Task 4.32 adds observability and recovery notes for the existing Task 4.28 prototype. It is dev-only diagnostics and manual recovery guidance, not new mutation capability.
+
+Observability facts:
+
+- The only browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
+- Safe diagnostics may show issue id, mutation state, last HTTP status, failure code, short safe failure message, snapshot metadata presence, request timing, and duplicate-submit blocked state.
+- Diagnostics must not show raw stack traces, raw API responses, full AppData, localStorage contents, SQLite internal objects, environment objects, or non-localhost URLs beyond the configured safe base URL.
+- Failure guidance covers unavailable Dev API, timeout, invalid response, `issue_not_found`, `no_change`, `requiresConfirmation`, `write_failed`, `transaction_failed`, `database_closed`, `snapshot_validation_failed`, `repository_schema_mismatch`, `unsupported_route`, missing snapshot metadata, and abort/unmount.
+- Recovery guidance is manual and dev-only. It may point to the existing Node-only recovery/reset runbook, but it adds no HTTP reset endpoint and no browser recovery/reset action.
+- Success still requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- API results never overwrite AppData or localStorage, and localStorage remains the App source of truth.
+- Session mutation, history edit/data-flag, DataHealth repair, backup/import/export, reset, and recovery routes remain blocked from browser code.
+
+Write-path migration remains blocked after Task 4.32. The next recommended task is `Task 4.33 DataHealth Dismiss Regression Lock V1`.
 
 ## Local Persistence
 

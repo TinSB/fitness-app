@@ -36,6 +36,8 @@ Task 4.27 adds the lowest-risk mutation prototype plan at `docs/LOWEST_RISK_MUTA
 
 Task 4.28 adds a dev-only, explicit opt-in, one-route DataHealth dismiss mutation prototype. It only allows `POST /data-health/issues/:issueId/dismiss` under the mutation experiment flag, keeps localStorage as source of truth, requires snapshot metadata before success, and does not imply production readiness or broader write-path migration.
 
+Task 4.32 adds safe observability and manual recovery notes for the existing one-route DataHealth dismiss prototype. It adds no endpoint, no browser reset action, no production readiness, no source-of-truth switch, and no new mutation route.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -191,6 +193,9 @@ Task 4.28 adds a dev-only, explicit opt-in, one-route DataHealth dismiss mutatio
 - [ ] Use `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md` for the human-run App acceptance checklist with `npm run api:dev`, `npm run dev`, browser DevTools, and a dedicated test browser profile.
 - [ ] The only accepted browser mutation route is `POST /data-health/issues/:issueId/dismiss`.
 - [ ] Task 4.31 hardening keeps this one-route scope and adds checks for no-change/already-dismissed, missing snapshot metadata, unavailable/timeout/abort, duplicate-submit, and confirmation reset behavior.
+- [ ] Task 4.32 observability keeps this one-route scope and adds safe diagnostics plus manual recovery notes for unavailable, timeout, invalid response, no-change, issue-not-found, write failure, database closed, missing snapshot metadata, and abort/unmount behavior.
+- [ ] Use the Task 4.32 section in `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md` to confirm no raw stack trace, raw API response, full AppData, localStorage dump, SQLite internals, or environment object is shown.
+- [ ] Confirm recovery guidance is manual and dev-only; there is no HTTP reset endpoint and no browser recovery/reset action.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
