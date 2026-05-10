@@ -360,3 +360,18 @@ No dependency, lockfile, or package script is changed.
 No normalized tables are added.
 
 Do not implement a third mutation automatically after Task 4.44.
+
+## Task 4.45 Follow-up Note
+
+Task 4.45 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` as a readiness gate for this plan.
+
+- Task 4.45 is gate-only and docs/static-test only.
+- Task 4.45 does not implement `POST /history/:id/edit`.
+- Task 4.45 does not add `POST /history/:id/edit` to the App.
+- Task 4.45 does not add a third browser mutation route.
+- Task 4.45 does not modify App.tsx.
+- Task 4.45 does not modify src/devApi runtime behavior.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- The readiness result is ready for a user-approved implementation prompt, but not direct implementation.
+- Task 4.46 Limited History Edit Mutation Prototype V1 requires explicit user approval and must not auto-start.

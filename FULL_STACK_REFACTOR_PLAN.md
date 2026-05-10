@@ -833,6 +833,21 @@ Task 4.44 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.44. There is no automatic next task. A future implementation task remains blocked until a later user-approved single-route prototype task explicitly defines implementation files, gates, validation, and rollback.
 
+### Task 4.45: Limited History Edit Mutation Prototype Readiness Gate V1
+
+Completed as a readiness gate decision record and static tests for the possible future limited history edit prototype. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, offline mutation queues, API-backed persistence, server handler changes, or a broad mutation client.
+
+- `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` records scope and non-goals, current baseline, gate summary, field constraint gate, server contract gate, source snapshot/conflict gate, no-fake-success gate, calculation impact gate, audit before/after gate, UX/confirmation gate, manual acceptance gate, risk gate, decision record, rejected alternatives, and final recommendation.
+- `limitedHistoryEditMutationReadinessGate.test.ts` locks the readiness gate structure, no-implementation statements, no third route boundary, source-of-truth boundary, and Task 4.46 explicit approval requirement.
+- `limitedHistoryEditMutationServerContractReadiness.test.ts` locks the server-side-only route status, future payload compatibility requirement, metadata fallback, and no server changes in Task 4.45.
+- `limitedHistoryEditMutationFieldGate.test.ts` locks allowed fields, rejected fields, broad edit rejection, actualWeightKg trust, display-only fields, and rejected derived summaries/dataFlag/active-session state.
+- `limitedHistoryEditMutationDocsGate.test.ts` keeps contract, refactor, Task 4.43 audit, Task 4.44 plan, and manual checklist docs aligned while rejecting forbidden history-edit implementation, third-route, App wiring, source-of-truth, production, auth, and sync instructions.
+- `limitedHistoryEditMutationBoundaryStillBlocked.test.ts` continues to keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, with no history edit/session/repair/backup/reset routes, no broad mutation client, no history edit feature flag wiring, read-only GET-only behavior, package boundary, storage boundary, and browser build isolation.
+
+Task 4.45 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; `POST /history/:id/edit` remains blocked from browser runtime and no third mutation route is added.
+
+Write-path migration remains blocked after Task 4.45. The next recommended task is `Task 4.46 Limited History Edit Mutation Prototype V1` only with explicit user approval. Task 4.46 must not be auto-started, and it must be a separate one-route, dev-only, explicit opt-in implementation task if the user approves it later.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
