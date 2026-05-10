@@ -60,6 +60,8 @@ Task 4.42 adds the write-path two-route regression lock at `docs/WRITE_PATH_TWO_
 
 Task 4.43 adds the third mutation candidate readiness audit at `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md`. It is audit-only and docs/static-test coverage only: no third mutation route is implemented, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, localStorage remains source of truth, API results never overwrite AppData or localStorage, and no production readiness implication is created. Limited history edit is only a future planning candidate for `Task 4.44 Limited History Edit Mutation Prototype Plan V1`.
 
+Task 4.44 adds the limited history edit mutation prototype plan at `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md`. It is planning-only and docs/static-test coverage only: `POST /history/:id/edit` remains blocked from browser runtime, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, localStorage remains source of truth, API results never overwrite AppData or localStorage, and no production readiness implication is created. The plan defines field-level constraints and rejects broad history edit before any future prototype can be considered.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

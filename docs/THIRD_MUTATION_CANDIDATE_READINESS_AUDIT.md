@@ -250,3 +250,15 @@ Limited History edit is the only plausible future third candidate for planning.
 Next task should be Task 4.44 Limited History Edit Mutation Prototype Plan V1, planning-only.
 
 Write-path migration remains blocked beyond the existing two dev-only prototypes.
+
+## Task 4.44 Follow-up Note
+
+Task 4.44 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` as a planning-only limited history edit prototype plan.
+
+- It does not implement `POST /history/:id/edit`.
+- It does not add a third browser mutation route.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- It defines field-level constraints for one existing set in one existing history session.
+- It rejects broad history edit, session mutation, DataHealth repair, backup/import/export/reset/recovery, source-of-truth migration, production backend/auth/sync/deployment, dependencies, scripts, lockfile changes, normalized tables, and training algorithm changes.
+- There is no automatic next task after Task 4.44.

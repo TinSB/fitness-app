@@ -819,6 +819,20 @@ Task 4.43 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.43. The next recommended task is `Task 4.44 Limited History Edit Mutation Prototype Plan V1`, planning-only. Task 4.44 must not implement `POST /history/:id/edit`; it must define field-level constraints, reject broad history edit, require PR/e1RM/effectiveSet impact documentation, plan audit before/after display, plan rollback UX, and write a manual acceptance plan before any prototype.
 
+### Task 4.44: Limited History Edit Mutation Prototype Plan V1
+
+Completed as a planning-only decision record and static tests for a possible future limited history edit prototype. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, offline mutation queues, API-backed persistence, or a broad mutation client.
+
+- `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` records scope and non-goals, the current two-route baseline, future route boundary, field-level constraints, rejected broad history edit scope, data semantics and calculation impact, readMirror/history surface impact, request metadata plan, confirmation UX, pending/success/failure UX, audit before/after plan, rollback plan, manual acceptance plan, route/source-of-truth gates, prototype gate checklist, decision record, and final recommendation.
+- `limitedHistoryEditMutationPrototypePlan.test.ts` locks the planning-only boundaries, current two-route baseline, future candidate route status, request metadata, confirmation, no-fake-success, audit, rollback, manual acceptance, and no automatic next-task decision.
+- `limitedHistoryEditMutationFieldConstraints.test.ts` locks the allowed future fields, rejected broad edit fields, and calculation-impact statements.
+- `limitedHistoryEditMutationBoundaryStillBlocked.test.ts` keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, with no history edit/session/repair/backup/reset routes, no broad mutation client, no history edit feature flag wiring, read-only GET-only behavior, package boundary, storage boundary, and browser build isolation.
+- `limitedHistoryEditMutationDocsParity.test.ts` keeps contract, refactor, Task 4.43 audit, manual checklist, and Task 4.44 plan docs aligned while rejecting production-readiness and forbidden-route instructions.
+
+Task 4.44 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; `POST /history/:id/edit` remains blocked from browser runtime.
+
+Write-path migration remains blocked after Task 4.44. There is no automatic next task. A future implementation task remains blocked until a later user-approved single-route prototype task explicitly defines implementation files, gates, validation, and rollback.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
