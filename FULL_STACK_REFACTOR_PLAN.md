@@ -805,6 +805,20 @@ Task 4.42 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.42. The next recommended task is `Task 4.43 Third Mutation Candidate Readiness Audit V1`, audit-only.
 
+### Task 4.43: Third Mutation Candidate Readiness Audit V1
+
+Completed as an audit decision record and static tests for possible third browser mutation candidates after the two-route regression lock. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, offline mutation queues, API-backed persistence, or a broad mutation client.
+
+- `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` records scope and non-goals, the current two-route baseline, candidate inventory, evaluation criteria, limited history edit readiness analysis, session mutation readiness analysis, DataHealth repair analysis, backup/import/export/reset/recovery analysis, source-of-truth migration analysis, risk matrix, required gates, decision record, and final recommendation.
+- `thirdMutationCandidateReadinessAudit.test.ts` locks the audit structure, no-implementation statements, current two-route baseline, candidate inventory, evaluation criteria, limited history edit planning-only status, and Task 4.44 recommendation.
+- `thirdMutationCandidateBoundaryStillBlocked.test.ts` keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, with no history edit/session/repair/backup/reset routes, no broad mutation client, no third mutation feature flag wiring, read-only GET-only behavior, package boundary, and browser build isolation.
+- `thirdMutationCandidateRiskMatrix.test.ts` locks the required risk rows, severity/mitigation/gate columns, history edit high-risk planning-only status, and blocked status for session mutation, repair, backup/reset, and source-of-truth migration.
+- `thirdMutationCandidateDocsParity.test.ts` keeps contract, refactor, regression-lock, manual checklist, and audit docs aligned with Task 4.43 while rejecting production-readiness and forbidden-route instructions.
+
+Task 4.43 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third mutation route is approved, and session mutation, DataHealth repair, backup/import/export/reset/recovery routes, source-of-truth migration, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.43. The next recommended task is `Task 4.44 Limited History Edit Mutation Prototype Plan V1`, planning-only. Task 4.44 must not implement `POST /history/:id/edit`; it must define field-level constraints, reject broad history edit, require PR/e1RM/effectiveSet impact documentation, plan audit before/after display, plan rollback UX, and write a manual acceptance plan before any prototype.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

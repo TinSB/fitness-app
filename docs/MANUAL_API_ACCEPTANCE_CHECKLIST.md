@@ -58,6 +58,8 @@ Task 4.41 adds the write-path two-route manual regression runbook at `docs/WRITE
 
 Task 4.42 adds the write-path two-route regression lock at `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md`. It is regression-lock documentation and static-test coverage only: keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, keep localStorage as source of truth, preserve no-fake-success and snapshot-metadata success requirements, and do not treat the flow as production readiness or broader write-path migration.
 
+Task 4.43 adds the third mutation candidate readiness audit at `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md`. It is audit-only and docs/static-test coverage only: no third mutation route is implemented, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, localStorage remains source of truth, API results never overwrite AppData or localStorage, and no production readiness implication is created. Limited history edit is only a future planning candidate for `Task 4.44 Limited History Edit Mutation Prototype Plan V1`.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
