@@ -36,6 +36,8 @@ Task 4.22 adds Read-only Diagnostics UX Hardening V1. It is diagnostics UX/testi
 
 Task 4.23 adds Read-only Manual App Acceptance V1 at `docs/READONLY_APP_MANUAL_ACCEPTANCE.md`. It is manual acceptance documentation and docs/static-boundary testing only, not a runtime feature. It does not change App runtime, diagnostics runtime, localStorage, write paths, production backend behavior, auth, sync, deployment, package scripts, dependencies, lockfiles, or schemas.
 
+Task 4.24 adds `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md` as a mutation integration readiness audit. It is an audit and decision record only, not a runtime API feature. Existing mutation routes remain server/dev API only; App runtime does not call mutation routes, write-path migration remains blocked, and the next recommended task is planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -654,6 +656,39 @@ Runbook acceptance facts:
 - Browser bundle pollution checks scan build output only, such as `dist/`.
 
 Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.23.
+
+## Mutation Integration Readiness Audit
+
+Owner files:
+
+- `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md`
+- `tests/mutationIntegrationReadinessAudit.test.ts`
+- `tests/mutationIntegrationBoundaryStillBlocked.test.ts`
+
+Task 4.24 is a readiness audit and decision record, not a runtime API feature.
+
+Contract facts:
+
+- App runtime still uses localStorage.
+- Read-only diagnostics remain dev-only and explicit opt-in.
+- The frontend Dev API client remains GET-only.
+- Existing mutation routes remain server/dev API only and are not approved for UI integration.
+- App runtime does not call session, history, DataHealth, backup/import, reset, or recovery mutation routes.
+- There is no App.tsx mutation integration, no UI writes to API, no localStorage replacement, no source-of-truth switch, no production backend, no auth/sync/deployment behavior, no package dependency, no package script, and no normalized tables.
+- Future mutation work must first define source-of-truth, offline/PWA, idempotency, reconciliation, confirmation UX, diagnostics, backup/restore checkpoint, and rollback strategy.
+
+Current server/dev API mutation inventory remains:
+
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+- `POST /history/:id/edit`
+- `POST /history/:id/data-flag`
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /data-health/repair/apply`
+
+Task 4.24 result: Not ready for mutation integration. Write-path migration remains blocked. Next task should be planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`; it must not implement App mutation calls or connect POST routes to the UI.
 
 ## Local Persistence
 

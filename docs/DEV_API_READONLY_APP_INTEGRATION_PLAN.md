@@ -307,3 +307,9 @@ The runbook covers flag-off behavior, flag-on read-only diagnostics, Dev API una
 Task 4.23 is documentation and documentation/static-boundary testing only. It does not change `App.tsx`, diagnostics runtime behavior, UI behavior, localStorage persistence, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write-path behavior.
 
 Read-only manual acceptance does not approve write-path migration. localStorage remains source of truth, API results never overwrite AppData or localStorage, no UI writes to API, and no mutation route is used by App.
+
+## Task 4.24 Mutation Readiness Note
+
+Task 4.24 adds `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md` and confirms that read-only diagnostics remain the only approved App integration mode.
+
+Mutation integration is not ready. Existing mutation routes remain server/dev API only, App runtime still does not call them, and write-path migration remains blocked. The next recommended task is planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`; it must not implement App mutation calls, POST route UI wiring, or a source-of-truth switch.
