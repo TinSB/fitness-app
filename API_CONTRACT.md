@@ -32,6 +32,8 @@ Task 4.20 adds a minimal dev-only read-only App integration prototype. It is exp
 
 Task 4.21 adds Read-only Runtime Parity Acceptance V1 for the Task 4.20 prototype. It is an acceptance/testing layer, not a runtime feature. It proves flag-off parity, GET-only reads, API unavailable fallback, mismatch diagnostics-only behavior, localStorage integrity, diagnostics UI safety, and browser/Node isolation. localStorage remains source of truth, API results never overwrite localStorage, no UI writes to API, no mutation route used by App, and write-path migration remains blocked.
 
+Task 4.22 adds Read-only Diagnostics UX Hardening V1. It is diagnostics UX/testing hardening only, not runtime migration. It keeps diagnostics read-only, presentational, and safe: no mutation route used by App, no localStorage overwrite, no repair/sync/overwrite/import/export/reset/apply/fix controls, and no production backend/auth/sync/deployment behavior.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -589,6 +591,39 @@ Acceptance facts:
 - browser build and static boundary checks remain free of `node:http`, `node:sqlite`, `devLauncher`, `httpRuntimeAdapter`, `serverAdapter`, `sqliteRepository`, `devApiRunner`, and `devDbRecovery`.
 
 Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.21.
+
+## Read-only Diagnostics UX Hardening
+
+Owner files:
+
+- `src/devApi/DevApiReadOnlyDiagnostics.tsx`
+- `src/devApi/DevApiReadOnlyDiagnosticsController.tsx`
+- `src/devApi/devApiReadOnlyComparison.ts`
+
+Owner test files:
+
+- `tests/readOnlyDiagnosticsStatusModel.test.ts`
+- `tests/readOnlyDiagnosticsEndpointSummary.test.ts`
+- `tests/readOnlyDiagnosticsMismatchCopy.test.ts`
+- `tests/readOnlyDiagnosticsUnavailableCopy.test.ts`
+- `tests/readOnlyDiagnosticsMisconfiguration.test.ts`
+- `tests/readOnlyDiagnosticsDocsParity.test.ts`
+
+Task 4.22 is a diagnostics UX/testing layer only. It does not expand the Dev API route allowlist, add mutation methods, change App source of truth, add production server behavior, or add auth/sync/deployment.
+
+Contract facts:
+
+- `DevApiReadOnlyDiagnostics.tsx` is presentational only and does not fetch, trigger comparison, read/write localStorage, call persistence helpers, or import Node-only modules.
+- The diagnostics display model covers disabled, checking, matching, mismatch, unavailable, error, and misconfigured states with safe labels, explanations, and severity.
+- Disabled renders no visible panel in normal App usage.
+- Mismatch is warning-level diagnostics only; localStorage remains source of truth and No data was changed.
+- Unavailable is non-fatal diagnostics only; the App continues using localStorage.
+- Misconfiguration copy is safe and localhost-only.
+- Endpoint summaries are compact and do not expose raw stack traces, raw SQLite errors, full response dumps, or personal data dumps.
+- Rendered diagnostics expose no repair, sync, overwrite, import, export, reset, apply, or fix controls.
+- No mutation route used by App and no localStorage overwrite occurs.
+
+Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.22.
 
 ## Local Persistence
 

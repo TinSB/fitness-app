@@ -22,6 +22,8 @@ Task 4.20 adds a dev-only, explicit opt-in read-only App comparison prototype. I
 
 Task 4.21 marks read-only runtime parity accepted only for dev diagnostics. It confirms flag-off parity, GET-only reads, API unavailable fallback, mismatch diagnostics-only behavior, localStorage integrity, diagnostics UI safety, and browser isolation. It does not authorize write-path migration or production readiness.
 
+Task 4.22 hardens read-only diagnostics UX for dev-only comparison. The panel is clearer and safer, but it remains read-only diagnostics only: localStorage remains source of truth, no data is changed by mismatch, and production readiness is not implied.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

@@ -37,8 +37,8 @@ describe('dev API read-only comparison', () => {
       '/app-data/summary',
       '/sessions/summary',
       '/history',
-      '/data-health/summary',
       `/history/${encodeURIComponent(data.history[0].id)}`,
+      '/data-health/summary',
     ]);
   });
 
@@ -79,7 +79,7 @@ describe('dev API read-only comparison', () => {
     expect(result.checkedEndpoints.every((endpoint) => endpoint.status === 'unavailable')).toBe(true);
   });
 
-  it('skips history detail comparison when there is no stable local history id', async () => {
+  it('marks history detail as skipped when there is no stable local history id', async () => {
     const data = { ...buildAppDataFromFixture('legacy-assisted-pullup-session'), history: [] };
     const result = await runDevApiReadOnlyComparison({
       data,
@@ -91,8 +91,13 @@ describe('dev API read-only comparison', () => {
       '/app-data/summary',
       '/sessions/summary',
       '/history',
+      '/history/:id',
       '/data-health/summary',
     ]);
+    expect(result.checkedEndpoints.find((endpoint) => endpoint.path === '/history/:id')).toMatchObject({
+      status: 'skipped',
+      reason: expect.any(String),
+    });
   });
 
   it('uses existing readMirror helpers instead of duplicating summary business logic', () => {

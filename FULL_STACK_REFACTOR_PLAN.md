@@ -511,6 +511,20 @@ Task 4.21 confirms localStorage remains source of truth, API results never overw
 
 Recommended next step is `Task 4.22 Read-only Diagnostics UX Hardening V1` or `Task 4.22 Mutation Integration Readiness Audit V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
 
+### Task 4.22: Read-only Diagnostics UX Hardening V1
+
+Completed as diagnostics UX/testing hardening for the existing dev-only read-only prototype, not as App runtime migration or write-path migration.
+
+- `DevApiReadOnlyDiagnostics.tsx` is presentational only and owns safe status labels, explanations, severity, endpoint summary rendering, and inert panel markup.
+- `DevApiReadOnlyDiagnosticsController.tsx` keeps the existing guarded cancellable comparison effect without adding routes or writes.
+- The status model covers disabled, checking, matching, mismatch, unavailable, error, and misconfigured.
+- Disabled renders no panel; mismatch is warning-only diagnostics; unavailable is non-fatal; misconfigured explains localhost-only requirements safely.
+- Endpoint summaries stay compact and include skipped `/history/:id` when there is no stable local history id.
+- Rendered diagnostics expose no repair, sync, overwrite, import, export, reset, apply, or fix controls.
+- localStorage remains source of truth, API results never overwrite AppData/localStorage, no UI writes to API, and no mutation route is used by App.
+
+Recommended next step is `Task 4.23 Mutation Integration Readiness Audit V1` or `Task 4.23 Read-only Manual App Acceptance V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

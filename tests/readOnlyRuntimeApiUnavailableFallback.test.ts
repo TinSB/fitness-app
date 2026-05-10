@@ -26,7 +26,7 @@ describe('read-only runtime API unavailable fallback', () => {
     const diagnostic = await runDevApiReadOnlyComparison({ data, config, fetchImpl });
 
     expect(diagnostic.status).toBe('unavailable');
-    expect(diagnostic.message).toContain('App remains on localStorage');
+    expect(diagnostic.message).toContain('app continues normally using localStorage');
     expect(JSON.stringify(data)).toBe(before);
     expect(setItem).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
