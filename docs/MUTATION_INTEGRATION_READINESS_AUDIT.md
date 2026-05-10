@@ -192,3 +192,11 @@ Task 4.25 adds `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md` as strategy
 The Task 4.24 conclusion does not change: mutation integration is not ready, write-path migration remains blocked, existing mutation routes remain server/dev API only, and App runtime still does not call mutation routes.
 
 Task 4.25 chooses Option E staged migration as the short-term source-of-truth direction while keeping localStorage as the current App source of truth. It also records that there is no offline mutation queue yet and that the next task should be `Task 4.26 Mutation UX Confirmation & Rollback Plan V1`.
+
+## Task 4.26 Note
+
+Task 4.26 adds mutation UX confirmation and rollback planning at `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md`.
+
+The Task 4.24 conclusion does not change: mutation integration is not ready, write-path migration remains blocked, existing mutation routes remain server/dev API only, and App runtime still does not call mutation routes.
+
+Task 4.26 records no-fake-success rules, confirmation levels, rollback UX, duplicate-submit prevention, and conflict UX. No mutation prototype is implemented.

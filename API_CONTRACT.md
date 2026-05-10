@@ -40,6 +40,8 @@ Task 4.24 adds `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md` as a mutation inte
 
 Task 4.25 adds `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md` as the write-path source-of-truth and offline strategy. It is strategy documentation only, not a runtime API feature. App runtime still does not call mutation routes, source-of-truth remains localStorage, no offline mutation queue exists, and write-path migration remains blocked.
 
+Task 4.26 adds `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as mutation UX confirmation and rollback planning. It is UX strategy only, not a runtime API feature. App runtime still does not call mutation routes, no mutation prototype is implemented, and future write UX must follow the no-fake-success rule.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -719,6 +721,35 @@ Short-term source-of-truth decision:
 - Immediate API source-of-truth switching, dual-write without reconciliation, and App mutation prototype before offline/idempotency/rollback strategy are rejected.
 
 Task 4.25 result: Strategy only. Write-path migration remains blocked. App must not call mutation routes yet. Source-of-truth remains localStorage. No offline mutation queue yet. Next task should be `Task 4.26 Mutation UX Confirmation & Rollback Plan V1`.
+
+## Mutation UX Confirmation & Rollback Plan
+
+Owner files:
+
+- `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md`
+- `tests/mutationUxConfirmationRollbackPlan.test.ts`
+- `tests/mutationUxBoundaryStillBlocked.test.ts`
+
+Task 4.26 is UX strategy and decision record only, not a runtime API feature.
+
+Contract facts:
+
+- App runtime does not call mutation routes.
+- There is no frontend mutation client, mutation feature flag, API-backed persistence adapter, or source-of-truth switch.
+- There is no mutation prototype implementation.
+- Future mutation UX must be user-visible: no fake success, no silent write, no hidden overwrite, no automatic repair, and no automatic sync.
+- Success can only be shown after API snapshot persistence is confirmed.
+- Failure states must stay visible and must not write localStorage or report success.
+- Duplicate-submit prevention, source snapshot checks, idempotency, conflict UX, and rollback UX remain required before any mutation prototype.
+
+Confirmation planning:
+
+- Level 0: DataHealth repair, backup import/export over HTTP, reset/recovery over HTTP, and source-of-truth migration remain unavailable from App runtime.
+- Level 1: DataHealth issue dismiss and a future diagnostics acknowledged state are only low-risk candidates and remain blocked.
+- Level 2: history data-flag and limited history edit require explicit confirmation.
+- Level 3: session start, session patches, session complete, and session discard require strong confirmation and are not first-candidate routes.
+
+Task 4.26 result: UX/rollback plan only. Write-path migration remains blocked. App must not call mutation routes yet. No mutation prototype is implemented. Next task should be `Task 4.27 Lowest-risk Mutation Prototype Plan V1`.
 
 ## Local Persistence
 

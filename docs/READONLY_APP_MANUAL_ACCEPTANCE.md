@@ -6,6 +6,8 @@ Task 4.24 mutation readiness audit confirms that this read-only manual acceptanc
 
 Task 4.25 write-path source-of-truth and offline strategy confirms the same boundary: read-only acceptance does not authorize write-path integration, source-of-truth remains localStorage, and no offline mutation queue exists yet.
 
+Task 4.26 mutation UX confirmation and rollback planning also does not authorize App writes. No mutation prototype is implemented, and App runtime still must not call mutation routes.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is dev-only read-only App manual acceptance.

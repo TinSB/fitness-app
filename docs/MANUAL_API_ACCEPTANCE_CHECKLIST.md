@@ -30,6 +30,8 @@ Task 4.24 adds the mutation integration readiness audit at `docs/MUTATION_INTEGR
 
 Task 4.25 adds the write-path source-of-truth and offline strategy at `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md`. It is planning-only: source-of-truth remains localStorage, no offline mutation queue exists yet, and write-path migration remains blocked.
 
+Task 4.26 adds mutation UX confirmation and rollback planning at `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md`. It is planning-only and does not authorize App writes, mutation client work, or write-path migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

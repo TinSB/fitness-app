@@ -563,6 +563,20 @@ Task 4.25 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior,
 
 Task 4.25 result: strategy only. Write-path migration remains blocked. App must not call mutation routes yet. Source-of-truth remains localStorage. No offline mutation queue exists yet. The only recommended next task is `Task 4.26 Mutation UX Confirmation & Rollback Plan V1`.
 
+### Task 4.26: Mutation UX Confirmation & Rollback Plan V1
+
+Completed as mutation UX confirmation and rollback planning, not as mutation integration or write-path migration.
+
+- `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md` records confirmation levels, pending/success/failure UX, rollback UX, duplicate-submit prevention, conflict UX, mutation category UX matrix, required gates, and decision record.
+- Confirmation levels are defined from Level 0 no-mutation-allowed through Level 3 strong confirmation for high-risk active-session flows.
+- The no-fake-success rule is explicit: success can only be shown after API snapshot persistence is confirmed.
+- `mutationUxConfirmationRollbackPlan.test.ts` locks the plan contents, confirmation levels, UX states, no-fake-success rule, category matrix, and Task 4.27 recommendation.
+- `mutationUxBoundaryStillBlocked.test.ts` keeps executable browser/runtime source free of App mutation calls, Node-only imports, frontend mutation clients, mutation feature flag wiring, API-backed localStorage, and package script/dependency expansion.
+
+Task 4.26 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior, localStorage persistence, save/load behavior, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write paths.
+
+Task 4.26 result: UX/rollback plan only. Write-path migration remains blocked. App must not call mutation routes yet. No mutation prototype is implemented. The only recommended next task is `Task 4.27 Lowest-risk Mutation Prototype Plan V1`, and that task should still be planning-only.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
