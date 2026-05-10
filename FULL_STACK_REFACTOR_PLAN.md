@@ -875,6 +875,19 @@ Completed as acceptance coverage and manual runbook documentation for the existi
 
 The next recommended task is `Task 4.48 Limited History Edit Manual App Acceptance V1`.
 
+### Task 4.48: Limited History Edit Manual App Acceptance V1
+
+Completed as human-run App acceptance documentation and static lock tests for the existing Task 4.46 prototype.
+
+- Adds `docs/LIMITED_HISTORY_EDIT_MANUAL_APP_ACCEPTANCE.md`.
+- Adds manual acceptance docs, boundary, and docs parity tests.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 4.49 Limited History Edit Prototype Hardening V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -193,3 +193,12 @@
 - [ ] Build/token scan result:
 - [ ] Notes:
 - [ ] Pass / Fail:
+
+## Task 4.48 Manual App Acceptance Companion
+
+Task 4.48 adds `docs/LIMITED_HISTORY_EDIT_MANUAL_APP_ACCEPTANCE.md` as the human-run App acceptance checklist for the existing dev-only Limited History Edit prototype.
+
+- It does not add a new mutation route.
+- It does not expand runtime write capability beyond the accepted three-route set.
+- It keeps localStorage as source of truth and keeps API results from overwriting AppData or localStorage.
+- It recommends Task 4.49 Limited History Edit Prototype Hardening V1 as the next task.
