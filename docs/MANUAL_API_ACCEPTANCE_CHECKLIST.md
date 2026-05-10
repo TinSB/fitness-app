@@ -44,6 +44,8 @@ Task 4.34 adds a second mutation candidate readiness audit at `docs/SECOND_MUTAT
 
 Task 4.35 adds the History data-flag mutation prototype plan at `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md`. It is plan-only: no history data-flag browser route is enabled, no second mutation prototype is implemented, and DataHealth dismiss remains the only implemented browser mutation route.
 
+Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype. It is one-route only: `POST /history/:id/data-flag`. DataHealth dismiss remains intact, localStorage remains source of truth, success requires snapshot metadata, and no production readiness or broader write-path migration is implied.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -205,12 +207,13 @@ Task 4.35 adds the History data-flag mutation prototype plan at `docs/HISTORY_DA
 - [ ] Task 4.33 regression lock must remain green before any second mutation candidate is considered.
 - [ ] Confirm Task 4.33 still locks strict success, no fake success, failure mapping, confirmation, pending duplicate-submit prevention, safe observability, and docs/manual acceptance boundaries.
 - [ ] Task 4.34 second mutation audit must remain audit-only before any history data-flag plan begins.
-- [ ] Confirm the only implemented browser mutation route is still `POST /data-health/issues/:issueId/dismiss`.
-- [ ] Confirm `POST /history/:id/data-flag` remains a future candidate only and is not called from browser runtime.
-- [ ] Task 4.35 history data-flag prototype plan must remain plan-only until a later explicitly approved task.
-- [ ] Confirm the history data-flag plan does not change localStorage source-of-truth, AppData overwrite behavior, or browser route boundaries.
+- [ ] Confirm DataHealth dismiss remains `POST /data-health/issues/:issueId/dismiss`.
+- [ ] Confirm Task 4.36 implements History data-flag only as `POST /history/:id/data-flag` under explicit dev-only opt-in.
+- [ ] Confirm the only browser mutation prototypes are DataHealth dismiss and History data-flag.
+- [ ] Task 4.35 history data-flag prototype plan remains the planning record; Task 4.36 is the explicitly approved one-route implementation.
+- [ ] Confirm the history data-flag prototype does not change localStorage source-of-truth, AppData overwrite behavior, or browser route boundaries.
 - [ ] Do not treat this as production readiness.
-- [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
+- [ ] Do not enable session, history edit, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 
 ## Data Semantics Acceptance

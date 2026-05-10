@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
+import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
@@ -16,8 +17,13 @@ const approvedDataHealthDismissFiles = new Set([
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
 ]);
 
+const approvedHistoryDataFlagFiles = new Set([
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
+]);
+
 const forbiddenBrowserMutationRoutes = [
-  '/history/:id/data-flag',
   '/history/:id/edit',
   '/sessions/start',
   '/sessions/active/patches',
@@ -48,9 +54,6 @@ const broadMutationClientPaths = [
   'src/api/mutations.ts',
   'src/api/mutations',
   'src/devApi/devApiMutationClient.ts',
-  'src/devApi/devApiHistoryDataFlagClient.ts',
-  'src/devApi/devApiHistoryDataFlagPrototype.tsx',
-  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
 ];
 
 const collectFilesIfDirectory = (path: string): string[] => {
@@ -67,18 +70,26 @@ const collectFilesIfDirectory = (path: string): string[] => {
 const srcRuntimeEntries = () =>
   collectSrcRuntimeFiles().map((file) => [relativePath(file), stripComments(readFileSync(file, 'utf8'))] as const);
 
-describe('history data-flag mutation plan keeps runtime blocked', () => {
-  it('keeps DataHealth dismiss as the only implemented browser mutation route', () => {
+describe('history data-flag mutation prototype keeps remaining routes blocked', () => {
+  it('keeps implemented browser mutation routes limited to DataHealth dismiss and History data-flag', () => {
     expect(DEV_API_DATA_HEALTH_DISMISS_ROUTE).toBe('/data-health/issues/:issueId/dismiss');
+    expect(DEV_API_HISTORY_DATA_FLAG_ROUTE).toBe('/history/:id/data-flag');
 
     for (const [path, source] of srcRuntimeEntries()) {
-      if (approvedDataHealthDismissFiles.has(path)) continue;
-      expect(source, `${path} should not contain DataHealth dismiss mutation route`).not.toContain('/data-health/issues/');
-      expect(source, `${path} should not issue browser POST requests`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
+      if (!approvedDataHealthDismissFiles.has(path)) {
+        expect(source, `${path} should not contain DataHealth dismiss mutation route`).not.toContain('/data-health/issues/');
+      }
+      if (!approvedHistoryDataFlagFiles.has(path)) {
+        expect(source, `${path} should not contain History data-flag mutation route`).not.toContain('/history/:id/data-flag');
+        expect(source, `${path} should not contain dynamic History data-flag route`).not.toMatch(/\/history\/\$\{[^}]+}\/*data-flag/);
+      }
+      if (!approvedDataHealthDismissFiles.has(path) && !approvedHistoryDataFlagFiles.has(path)) {
+        expect(source, `${path} should not issue browser POST requests`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
+      }
     }
   });
 
-  it('does not add POST /history/:id/data-flag or other blocked route calls to App/browser source', () => {
+  it('does not add blocked route calls to App/browser source', () => {
     const app = stripComments(readSource('src/App.tsx'));
     expect(app).not.toContain('/history/:id/data-flag');
     expect(app).not.toMatch(/fetch\s*\(/);
@@ -88,9 +99,6 @@ describe('history data-flag mutation plan keeps runtime blocked', () => {
       for (const route of forbiddenBrowserMutationRoutes) {
         expect(source, `${path} should not contain ${route}`).not.toContain(route);
       }
-
-      const historyDataFlagRuntimeFlag = /VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT\s*[=:]\s*['"`]history|history[-_]?data[-_]?flag[-_]?mutation/i;
-      expect(source, `${path} should not add history data-flag mutation flag wiring`).not.toMatch(historyDataFlagRuntimeFlag);
     }
   });
 
@@ -125,8 +133,8 @@ describe('history data-flag mutation plan keeps runtime blocked', () => {
 
     for (const [path, source] of srcRuntimeEntries()) {
       if (approvedDataHealthDismissFiles.has(path)) continue;
+      if (approvedHistoryDataFlagFiles.has(path)) continue;
       expect(source, `${path} should not add mutation hooks/providers/context`).not.toMatch(/useMutation|MutationProvider|MutationContext|createContext\([^)]*mutation/i);
-      expect(source, `${path} should not add history mutation experiment runtime`).not.toMatch(/history-data-flag|historyDataFlagMutation|VITE_IRONPATH_HISTORY_DATA_FLAG/i);
     }
 
     const localStorageAdapter = stripComments(readSource('src/storage/localStorageAdapter.ts'));

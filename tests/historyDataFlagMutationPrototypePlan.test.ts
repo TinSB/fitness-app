@@ -171,7 +171,7 @@ describe('history data-flag mutation prototype plan', () => {
     }
   });
 
-  it('rejects out-of-scope routes and recommends Task 4.36 only after gates', () => {
+  it('rejects out-of-scope routes and records the Task 4.36 implementation result', () => {
     const plan = readPlan();
 
     for (const phrase of [
@@ -188,9 +188,10 @@ describe('history data-flag mutation prototype plan', () => {
       'one route only',
       'no broad mutation client',
       'Task 4.36 History Data-flag Prototype Blocker Resolution V1',
-      'No second mutation is implemented.',
-      'DataHealth dismiss remains the only implemented browser mutation.',
-      'Next task should be Task 4.36 History Data-flag Mutation Prototype V1 only if gates are accepted.',
+      'Task 4.36 result: Implemented only as a dev-only single-route prototype.',
+      'Implemented route: POST /history/:id/data-flag.',
+      'DataHealth dismiss and History data-flag are the only implemented browser mutation prototypes.',
+      'Next task should be Task 4.37 History Data-flag Prototype Acceptance V1.',
     ]) {
       expect(plan).toContain(phrase);
     }

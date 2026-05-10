@@ -38,6 +38,9 @@ const approvedDataHealthDismissFiles = new Set([
   'src/devApi/devApiDataHealthDismissClient.ts',
   'src/devApi/devApiDataHealthDismissConfig.ts',
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
 ]);
 
 describe('read-only runtime boundary acceptance', () => {
@@ -68,7 +71,7 @@ describe('read-only runtime boundary acceptance', () => {
     expect(readOnlySources).not.toMatch(/\/data-health\/issues\/:issueId\/dismiss|\/data-health\/repair\/apply/);
     expect(readOnlySources).not.toMatch(/\/backup|backup\/|importBackup|exportBackup|\/reset|\/recovery|resetDev/i);
     expect(approvedSource).not.toMatch(/\bPUT\b|\bPATCH\b|\bDELETE\b/);
-    expect(approvedSource).not.toMatch(/\/sessions\/|\/history\/|\/data-health\/repair\/apply|\/backup|\/reset|\/recovery/i);
+    expect(approvedSource).not.toMatch(/\/sessions\/|\/history\/:id\/edit|\/data-health\/repair\/apply|\/backup|\/reset|\/recovery/i);
     expect(sources.map((file) => file.source).join('\n')).not.toContain('node:http');
     expect(sources.map((file) => file.source).join('\n')).not.toContain('node:sqlite');
     expect(sources.map((file) => file.source).join('\n')).not.toContain('serverAdapter');

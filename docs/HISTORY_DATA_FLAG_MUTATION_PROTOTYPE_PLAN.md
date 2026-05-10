@@ -2,6 +2,21 @@
 
 Task 4.35 converts the Task 4.34 second mutation candidate readiness audit into a concrete future prototype plan for `POST /history/:id/data-flag`.
 
+## Task 4.36 Implementation Result
+
+- Task 4.36 implements the planned History data-flag prototype as a dev-only explicit opt-in experiment.
+- The only new browser mutation route is `POST /history/:id/data-flag`.
+- DataHealth dismiss remains intact as `POST /data-health/issues/:issueId/dismiss`.
+- The only browser mutation prototypes are DataHealth dismiss and History data-flag.
+- The History data-flag prototype sends only `{ dataFlag }` to the current server handler.
+- Mutation metadata remains local diagnostic context: session id, target dataFlag, mutationId, idempotencyKey, request fingerprint, source fingerprint, confirmation state, and request timing.
+- Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- Missing snapshot metadata, no-change, not-found, invalid dataFlag, unavailable, timeout, abort, malformed response, write failure, transaction failure, database closed, unsupported route, and missing source fingerprint remain failure states.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
+- Write-path migration remains blocked.
+
 ## Scope / Non-goals
 
 - This is History data-flag mutation prototype planning.
@@ -283,14 +298,14 @@ If any required gate is unresolved, Task 4.36 should instead be `Task 4.36 Histo
 
 Task 4.35 result: Plan only.
 
-Future prototype candidate: POST /history/:id/data-flag.
+Task 4.36 result: Implemented only as a dev-only single-route prototype.
 
-No second mutation is implemented.
+Implemented route: POST /history/:id/data-flag.
 
-DataHealth dismiss remains the only implemented browser mutation.
+DataHealth dismiss and History data-flag are the only implemented browser mutation prototypes.
 
 localStorage remains source of truth.
 
 Write-path migration remains blocked.
 
-Next task should be Task 4.36 History Data-flag Mutation Prototype V1 only if gates are accepted.
+Next task should be Task 4.37 History Data-flag Prototype Acceptance V1.

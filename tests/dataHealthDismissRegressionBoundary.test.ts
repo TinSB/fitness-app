@@ -30,7 +30,6 @@ const forbiddenBrowserMutationRoutes = [
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/history/:id/edit',
-  '/history/:id/data-flag',
   '/data-health/repair/apply',
   '/backup/',
   '/backup/import',
@@ -76,6 +75,7 @@ describe('DataHealth dismiss regression global boundary lock', () => {
     const storage = stripComments(readSource('src/storage/localStorageAdapter.ts'));
     expect(storage).not.toContain('fetch(');
     expect(storage).not.toContain('/data-health/issues/');
+    expect(storage).not.toContain('/history/:id/data-flag');
 
     const packageJson = JSON.parse(readSource('package.json')) as {
       scripts?: Record<string, string>;
