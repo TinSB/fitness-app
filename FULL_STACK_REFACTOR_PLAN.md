@@ -916,6 +916,21 @@ Completed as safe observability and manual recovery notes for the existing Task 
 
 The next recommended task is `Task 4.51 Limited History Edit Regression Lock V1`.
 
+### Task 4.51: Limited History Edit Regression Lock V1
+
+Completed as a regression lock for the existing Task 4.46 Limited History Edit dev-only prototype.
+
+- Adds `docs/LIMITED_HISTORY_EDIT_REGRESSION_LOCK.md`.
+- Adds regression-lock tests for exact three-route allowlist, Limited History Edit field constraints, source-of-truth integrity, route/build boundary, coverage inventory, and docs parity.
+- Renames Limited History Edit prototype/acceptance interaction tests to `.test.ts` so they run under the repo's configured Vitest include glob.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, fourth mutation route, or training algorithm change is added.
+
+The next recommended task is `Task 4.52 Write-path Three-route Checkpoint V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -1473,3 +1473,21 @@ Manual recovery remains outside browser write capability: disable the mutation e
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
 
 Task 4.51 Limited History Edit Regression Lock V1 is the next recommended task.
+
+## Task 4.51: Limited History Edit Regression Lock V1
+
+Task 4.51 adds `docs/LIMITED_HISTORY_EDIT_REGRESSION_LOCK.md` and regression-lock tests for the existing dev-only Limited History Edit prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The regression lock freezes Limited History Edit as the third dev-only browser mutation prototype after planning, readiness gate, explicit approval, implementation, acceptance, manual acceptance, hardening, and observability/recovery notes.
+
+Allowed Limited History Edit patch fields remain exactly `weightKg`, `displayWeight`, `displayUnit`, `reps`, `rir`, `techniqueQuality`, `painFlag`, and `note`. Broad edit fields, dataFlag through edit route, session mutation, DataHealth repair, backup/import/export/reset/recovery routes, and fourth mutation routes remain blocked.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
+
+Task 4.52 Write-path Three-route Checkpoint V1 is the next recommended task.

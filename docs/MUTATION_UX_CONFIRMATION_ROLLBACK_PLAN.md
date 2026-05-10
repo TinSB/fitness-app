@@ -268,3 +268,9 @@ Task 4.50 documents observability and manual recovery for the Limited History Ed
 Safe diagnostics may show mutation state, redacted target, source fingerprint presence, snapshot metadata presence, HTTP status, failure code, duplicate-submit status, timestamps, and a safe recovery note. They must not expose raw stack traces, raw API responses, full AppData, localStorage dumps, SQLite internals, or environment objects.
 
 Recovery remains manual and outside the browser prototype: disable the mutation flag, stop the Dev API runner, rerun read-only diagnostics, and inspect a copied dev DB if needed.
+
+## Task 4.51 Note
+
+Task 4.51 regression-locks the Limited History Edit UX boundary without adding browser write capability.
+
+The prototype remains confirmation-gated, duplicate-submit guarded, no-fake-success locked, and failure-visible. Rollback remains failure-state only because AppData and localStorage are never optimistically changed by the browser prototype.
