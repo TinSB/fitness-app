@@ -49,10 +49,13 @@ const nodeOnlyTokens = [
 
 const disallowedClientPaths = [
   'src/devApi/devApiHistoryEditClient.ts',
+  'src/devApi/devApiHistoryEditConfig.ts',
   'src/devApi/DevApiHistoryEditPrototype.tsx',
   'src/devApi/devApiLimitedHistoryEditClient.ts',
+  'src/devApi/devApiLimitedHistoryEditConfig.ts',
   'src/devApi/DevApiLimitedHistoryEditPrototype.tsx',
   'src/devApi/devApiThirdMutationClient.ts',
+  'src/devApi/devApiThirdMutationConfig.ts',
   'src/devApi/DevApiThirdMutationPrototype.tsx',
   'src/devApi/devApiMutationClient.ts',
   'src/api/mutations.ts',
@@ -82,6 +85,9 @@ describe('limited history edit mutation boundary still blocked', () => {
     for (const [path, source] of runtimeEntries()) {
       const blocked = blockedBrowserRoutes.filter((route) => source.includes(route));
       expect(blocked, `${path} should not include blocked browser mutation routes`).toEqual([]);
+      expect(source, `${path} should not contain dynamic history edit browser calls`).not.toMatch(/\/history\/\$\{[^}]+}\/*edit/);
+      expect(source, `${path} should not contain dynamic session mutation browser calls`).not.toMatch(/\/sessions\/(?:start|active\/(?:patches|complete|discard))/);
+      expect(source, `${path} should not contain dynamic repair or backup/reset browser calls`).not.toMatch(/\/(?:data-health\/repair|backup\/(?:import|export)|reset|recovery)\//);
 
       if (!approvedMutationFiles.has(path)) {
         expect(source, `${path} should not issue browser POST requests`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);

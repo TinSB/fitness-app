@@ -78,6 +78,8 @@ Task 4.43 adds `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Third Mutat
 
 Task 4.44 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` as Limited History Edit Mutation Prototype Plan V1. It is planning-only and docs/static-test only: `POST /history/:id/edit` remains blocked from browser runtime, no third mutation route is added, no browser allowlist expansion occurs, App.tsx and src/devApi runtime behavior remain unchanged, localStorage remains source of truth, and API results never overwrite AppData or localStorage. The plan defines field-level constraints for a possible future one-set history edit route and rejects broad history edit, source-of-truth migration, production backend/auth/sync/deployment, dependencies, scripts, lockfile changes, normalized tables, and training algorithm changes.
 
+Task 4.45 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` as Limited History Edit Mutation Prototype Readiness Gate V1. It is gate-only and docs/static-test only: no third mutation route is added, `POST /history/:id/edit` remains blocked from browser runtime, App.tsx and src/devApi runtime behavior remain unchanged, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Task 4.45 result is ready for a user-approved implementation prompt, but not direct implementation. Task 4.46 Limited History Edit Mutation Prototype V1 requires explicit user approval and must not auto-start.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1217,6 +1219,22 @@ Task 4.44 creates a planning-only future prototype plan for limited history edit
 - API results never overwrite AppData or localStorage.
 
 Write-path migration remains blocked after Task 4.44. There is no automatic next task. A future implementation task remains blocked until a later user-approved single-route prototype task explicitly defines implementation files, gates, validation, and rollback.
+
+## Task 4.45: Limited History Edit Mutation Prototype Readiness Gate V1
+
+Task 4.45 creates a readiness gate for the possible future limited history edit prototype. It adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` and static tests only.
+
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- `POST /history/:id/edit` remains blocked from browser runtime.
+- No third mutation route is added or approved.
+- No App.tsx integration, src/devApi runtime behavior, frontend mutation client, broad mutation client, or feature flag runtime wiring is added.
+- No server contract, server handler, serverAdapter, httpRuntimeAdapter, sqliteRepository, source-of-truth, storage, training algorithm, package, lockfile, script, dependency, production backend, auth, sync, deployment, or normalized-table change is added.
+- Field constraints from Task 4.44 are sufficient for a future single-route implementation plan, and broad history edit remains rejected.
+- Future implementation must keep source snapshot and conflict checks, strict no-fake-success semantics, calculation impact review, audit before/after display, and manual acceptance gates.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+
+Task 4.45 result: Ready for a user-approved implementation prompt, but not direct implementation. The next recommended task is `Task 4.46 Limited History Edit Mutation Prototype V1` only with explicit user approval. Task 4.46 must not be auto-started.
 
 ## Local Persistence
 

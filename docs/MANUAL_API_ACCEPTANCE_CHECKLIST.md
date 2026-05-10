@@ -62,6 +62,8 @@ Task 4.43 adds the third mutation candidate readiness audit at `docs/THIRD_MUTAT
 
 Task 4.44 adds the limited history edit mutation prototype plan at `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md`. It is planning-only and docs/static-test coverage only: `POST /history/:id/edit` remains blocked from browser runtime, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, localStorage remains source of truth, API results never overwrite AppData or localStorage, and no production readiness implication is created. The plan defines field-level constraints and rejects broad history edit before any future prototype can be considered.
 
+Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md`. It is gate-only and docs/static-test coverage only: limited history edit remains gate-only and not implemented, `POST /history/:id/edit` remains blocked from browser runtime, no third browser mutation route is added, localStorage remains source of truth, API results never overwrite AppData or localStorage, and no production readiness implication is created. Task 4.46 requires explicit user approval and must not auto-start.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -236,6 +238,21 @@ Task 4.44 adds the limited history edit mutation prototype plan at `docs/LIMITED
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history edit, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+
+## Limited History Edit Readiness Gate Acceptance
+
+- [ ] Review `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md`.
+- [ ] Confirm Task 4.45 is readiness gate only.
+- [ ] Confirm limited history edit remains gate-only and not implemented.
+- [ ] Confirm `POST /history/:id/edit` remains blocked from browser runtime.
+- [ ] Confirm no third browser mutation route is added.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- [ ] Confirm App.tsx and src/devApi runtime behavior are unchanged by Task 4.45.
+- [ ] Confirm localStorage remains source of truth.
+- [ ] Confirm API results never overwrite AppData or localStorage.
+- [ ] Confirm no production backend, auth, sync, or deployment is added.
+- [ ] Confirm no dependency, lockfile, package script, or normalized table is added.
+- [ ] Confirm Task 4.46 Limited History Edit Mutation Prototype V1 requires explicit user approval and must not auto-start.
 
 ## Data Semantics Acceptance
 

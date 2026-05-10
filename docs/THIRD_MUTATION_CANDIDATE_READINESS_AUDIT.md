@@ -262,3 +262,15 @@ Task 4.44 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` as a plann
 - It defines field-level constraints for one existing set in one existing history session.
 - It rejects broad history edit, session mutation, DataHealth repair, backup/import/export/reset/recovery, source-of-truth migration, production backend/auth/sync/deployment, dependencies, scripts, lockfile changes, normalized tables, and training algorithm changes.
 - There is no automatic next task after Task 4.44.
+
+## Task 4.45 Follow-up Note
+
+Task 4.45 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` as a readiness gate for the Task 4.44 limited history edit prototype plan.
+
+- It is gate-only and docs/static-test only.
+- It does not implement `POST /history/:id/edit`.
+- It does not add a third browser mutation route.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- It concludes that limited history edit is ready for a user-approved implementation prompt, but not direct implementation.
+- Task 4.46 Limited History Edit Mutation Prototype V1 requires explicit user approval and must not auto-start.
