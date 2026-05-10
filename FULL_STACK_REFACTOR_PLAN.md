@@ -680,6 +680,18 @@ Task 4.33 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.33. The next recommended task is `Task 4.34 Second Mutation Candidate Readiness Audit V1`.
 
+### Task 4.34: Second Mutation Candidate Readiness Audit V1
+
+Completed as an audit and decision record only. It does not add runtime features, a second mutation route, App POST wiring, frontend mutation client work, source-of-truth switching, AppData/localStorage overwrite behavior, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables.
+
+- `SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md` records the candidate inventory, evaluation criteria, data-flag readiness analysis, rejected candidates, required gates, future route boundary rules, decision record, and final recommendation.
+- `secondMutationCandidateReadinessAudit.test.ts` locks the audit content and confirms `POST /history/:id/data-flag` is only a future candidate.
+- `secondMutationCandidateBoundaryStillBlocked.test.ts` keeps browser runtime code from adding `POST /history/:id/data-flag`, any other mutation route, broad mutation clients, Node-only imports, or package/script changes.
+
+Task 4.34 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; the second future candidate is `POST /history/:id/data-flag`, but no second mutation is implemented.
+
+Write-path migration remains blocked after Task 4.34. The next recommended task is `Task 4.35 History Data-flag Mutation Prototype Plan V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

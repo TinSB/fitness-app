@@ -311,3 +311,11 @@ Task 4.29 adds acceptance coverage and a manual acceptance runbook for the one-r
 The acceptance scope confirms the Task 4.25 source-of-truth rule: localStorage remains the active App source of truth, API mutation results do not overwrite AppData or localStorage, and snapshot metadata is not persisted into localStorage by the browser prototype.
 
 Task 4.29 does not add an offline mutation queue, localStorage reconciliation, source-of-truth switching, production backend, auth, sync, deployment, broad mutation client, package changes, lockfile changes, or normalized tables. Write-path migration remains blocked.
+
+## Task 4.34 Note
+
+Task 4.34 adds a second mutation candidate readiness audit only.
+
+The Task 4.25 source-of-truth rule does not change: localStorage remains the active App source of truth, API mutation results do not overwrite AppData or localStorage, and there is still no offline mutation queue, source-of-truth switch, localStorage reconciliation, production backend, auth, sync, deployment, broad mutation client, package change, lockfile change, or normalized table.
+
+The audit identifies `POST /history/:id/data-flag` as the second future candidate for a planning task, but no second mutation is implemented and write-path migration remains blocked.

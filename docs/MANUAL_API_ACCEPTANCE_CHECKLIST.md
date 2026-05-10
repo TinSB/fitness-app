@@ -40,6 +40,8 @@ Task 4.32 adds safe observability and manual recovery notes for the existing one
 
 Task 4.33 adds a regression lock for the DataHealth dismiss line. It is tests/docs hardening only and does not add runtime capability, another mutation route, production readiness, or write-path migration.
 
+Task 4.34 adds a second mutation candidate readiness audit at `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md`. It is audit-only: `POST /history/:id/data-flag` is only a future candidate for a planning task, and no second browser mutation route is implemented or accepted.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -200,6 +202,9 @@ Task 4.33 adds a regression lock for the DataHealth dismiss line. It is tests/do
 - [ ] Confirm recovery guidance is manual and dev-only; there is no HTTP reset endpoint and no browser recovery/reset action.
 - [ ] Task 4.33 regression lock must remain green before any second mutation candidate is considered.
 - [ ] Confirm Task 4.33 still locks strict success, no fake success, failure mapping, confirmation, pending duplicate-submit prevention, safe observability, and docs/manual acceptance boundaries.
+- [ ] Task 4.34 second mutation audit must remain audit-only before any history data-flag plan begins.
+- [ ] Confirm the only implemented browser mutation route is still `POST /data-health/issues/:issueId/dismiss`.
+- [ ] Confirm `POST /history/:id/data-flag` remains a future candidate only and is not called from browser runtime.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

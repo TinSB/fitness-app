@@ -56,6 +56,8 @@ Task 4.32 adds DataHealth Dismiss Prototype Observability & Recovery Notes V1. I
 
 Task 4.33 adds DataHealth Dismiss Regression Lock V1. It is a regression/testing layer only, not new runtime capability. It locks the existing DataHealth dismiss prototype as one-route-only, keeps localStorage as source of truth, keeps API results from overwriting AppData/localStorage, and keeps broader write-path migration blocked.
 
+Task 4.34 adds `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Second Mutation Candidate Readiness Audit V1. It is audit-only and does not add runtime capability, a second mutation route, App POST wiring, a frontend mutation client, source-of-truth switching, production backend, auth, sync, deployment, package changes, or normalized tables. The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; `POST /history/:id/data-flag` is only the future candidate for a planning task.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -961,6 +963,30 @@ Regression lock facts:
 - This lock does not imply production readiness, authorizes no second mutation route, and does not authorize any second mutation prototype.
 
 Write-path migration remains blocked after Task 4.33. The next recommended task is `Task 4.34 Second Mutation Candidate Readiness Audit V1`.
+
+## Second Mutation Candidate Readiness Audit
+
+Owner files:
+
+- `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md`
+- `tests/secondMutationCandidateReadinessAudit.test.ts`
+- `tests/secondMutationCandidateBoundaryStillBlocked.test.ts`
+
+Task 4.34 audits the second possible mutation candidate after the DataHealth dismiss prototype line was implemented, accepted, hardened, observed, and regression-locked. It is an audit and decision record only.
+
+Audit facts:
+
+- The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
+- No second mutation is implemented.
+- `POST /history/:id/data-flag` is identified as the second future candidate only.
+- Task 4.34 does not approve direct implementation or App POST wiring for `POST /history/:id/data-flag`.
+- History data-flag is medium risk because `normal`, `test`, and `excluded` affect default analytics inclusion, readMirror counts, history/calendar display, and PR/e1RM/effectiveSet eligibility.
+- History edit, session mutations, DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, and source-of-truth migration remain rejected or blocked.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+- There is no frontend mutation client, broad mutation client, source-of-truth switch, offline mutation queue, production backend, auth, sync, deployment, package dependency, package script, lockfile change, or normalized table.
+
+Write-path migration remains blocked after Task 4.34. The next recommended task is `Task 4.35 History Data-flag Mutation Prototype Plan V1`, and it should be planning-only unless explicitly approved otherwise.
 
 ## Local Persistence
 
