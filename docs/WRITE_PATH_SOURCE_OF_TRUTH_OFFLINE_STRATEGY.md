@@ -351,3 +351,11 @@ Task 4.46 adds a dev-only, explicit opt-in Limited History Edit prototype for `P
 This does not switch source of truth. localStorage remains the active App source of truth, API mutation results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the browser prototype, and no localStorage reconciliation or offline mutation queue is introduced.
 
 The only accepted browser mutation prototypes are now `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`; session mutation, DataHealth repair, backup/import/export/reset/recovery, production backend, auth, sync, and deployment remain blocked.
+
+## Task 4.47 Note
+
+Task 4.47 adds acceptance tests and a manual runbook for the Limited History Edit prototype while keeping the write-path source-of-truth strategy unchanged.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the prototype, and read-only comparison remains separate from the mutation experiment.
+
+The acceptance layer does not add an offline queue, localStorage reconciliation, production backend, auth, sync, deployment, or any browser mutation route beyond DataHealth dismiss, History data-flag, and Limited History Edit.

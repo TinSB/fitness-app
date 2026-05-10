@@ -862,6 +862,19 @@ Completed as the explicitly user-approved third dev-only browser mutation protot
 
 Write-path migration remains limited to dev-only prototypes. The next recommended task is `Task 4.47 Limited History Edit Prototype Acceptance V1`.
 
+### Task 4.47: Limited History Edit Prototype Acceptance V1
+
+Completed as acceptance coverage and manual runbook documentation for the existing Task 4.46 dev-only prototype.
+
+- Adds `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_ACCEPTANCE.md`.
+- Adds acceptance tests for flag matrix isolation, target set behavior, confirmation and pending states, no-fake-success, source-of-truth integrity, field constraints, data semantics, route boundary, and docs parity.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 4.48 Limited History Edit Manual App Acceptance V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

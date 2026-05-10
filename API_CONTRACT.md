@@ -1411,3 +1411,17 @@ The App source of truth remains localStorage. API results never overwrite AppDat
 Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata. Missing snapshot metadata, no_change, record_not_found, exercise_not_found, set_not_found, invalid patch, validation failure, source snapshot mismatch, write failure, transaction failure, database_closed, and unsupported_route are failures in the browser prototype.
 
 No session mutation, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, source-of-truth switch, localStorage replacement, offline queue, or training algorithm change is added.
+
+## Task 4.47: Limited History Edit Prototype Acceptance V1
+
+Task 4.47 adds acceptance tests and `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_ACCEPTANCE.md` for the existing Task 4.46 prototype.
+
+No new mutation route is added. Browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The acceptance contract locks flag matrix isolation, stable target selection, confirmation, pending duplicate-submit behavior, strict no-fake-success, source-of-truth integrity, field constraints, data semantics, route boundary, and manual cleanup/build-safety checks.
+
+Task 4.48 Limited History Edit Manual App Acceptance V1 is the next recommended task.
