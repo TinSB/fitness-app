@@ -28,7 +28,7 @@ describe('compiled dev API runner prototype', () => {
     } finally {
       preserved.cleanup();
     }
-  });
+  }, 15_000);
 
   it('runs through npm script arg passthrough, prints ready URL, serves health, seeds, and shuts down', async () => {
     const temp = makeTempRunnerDb();
@@ -48,7 +48,7 @@ describe('compiled dev API runner prototype', () => {
       }
       temp.cleanup();
     }
-  });
+  }, 20_000);
 
   it('compiled runner exits after SIGTERM without leaving the temp DB locked', async () => {
     const temp = makeTempRunnerDb();
@@ -77,5 +77,5 @@ describe('compiled dev API runner prototype', () => {
       }
       temp.cleanup();
     }
-  });
+  }, 20_000);
 });

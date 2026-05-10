@@ -494,6 +494,23 @@ This task still does not replace localStorage, switch source of truth, migrate m
 
 Recommended next step is `Task 4.21 Read-only Runtime Parity Acceptance V1` or `Task 4.21 Read-only Diagnostics UX Hardening V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
 
+### Task 4.21: Read-only Runtime Parity Acceptance V1
+
+Completed as runtime parity acceptance for the existing dev-only read-only prototype, not as a new runtime feature and not as write-path migration.
+
+- `readOnlyRuntimeFlagOffParity.test.ts` verifies flag-off and production-like configs render no diagnostics and make no fetch calls.
+- `readOnlyRuntimeGetOnly.test.ts` proves enabled diagnostics use only GET calls against the read-only route allowlist and no mutation, backup/import, reset, or recovery routes.
+- `readOnlyRuntimeApiUnavailableFallback.test.ts` verifies API unavailable fallback stays diagnostic-only and does not block App usage.
+- `readOnlyRuntimeMismatchDiagnostics.test.ts` verifies mismatch results remain diagnostics-only and do not trigger writes, repair, or mutation routes.
+- `readOnlyRuntimeLocalStorageIntegrity.test.ts` verifies disabled, matching, mismatch, unavailable, and snapshot-metadata responses do not write localStorage or mutate AppData.
+- `readOnlyRuntimeDiagnosticsUi.test.ts` verifies the diagnostics UI is minimal and exposes no repair, sync, overwrite, import, export, reset, apply, or fix controls.
+- `readOnlyRuntimeBoundary.test.ts` keeps browser/runtime source free of Node-only imports and API-backed persistence.
+- `readOnlyRuntimeDocsParity.test.ts` keeps documentation aligned with diagnostics-only behavior.
+
+Task 4.21 confirms localStorage remains source of truth, API results never overwrite localStorage, no UI writes to API, no mutation route used by App, and API unavailable fallback remains diagnostic-only.
+
+Recommended next step is `Task 4.22 Read-only Diagnostics UX Hardening V1` or `Task 4.22 Mutation Integration Readiness Audit V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

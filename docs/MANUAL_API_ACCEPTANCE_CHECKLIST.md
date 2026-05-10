@@ -20,6 +20,8 @@ Task 4.19 adds the read-only App integration plan at `docs/DEV_API_READONLY_APP_
 
 Task 4.20 adds a dev-only, explicit opt-in read-only App comparison prototype. It is diagnostic-only: localStorage remains source of truth, API results never overwrite App data, and no App mutation routes are called.
 
+Task 4.21 marks read-only runtime parity accepted only for dev diagnostics. It confirms flag-off parity, GET-only reads, API unavailable fallback, mismatch diagnostics-only behavior, localStorage integrity, diagnostics UI safety, and browser isolation. It does not authorize write-path migration or production readiness.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
