@@ -1,4 +1,15 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn, spawnSync, type ChildProcessWithoutNullStreams, type SpawnOptionsWithoutStdio } from 'node:child_process';
@@ -7,6 +18,53 @@ import { fetchJsonWithTimeout } from './devRuntimeSmokeTestHelpers';
 import { repoRoot } from './runtimeBoundaryTestHelpers';
 
 export const DEV_API_READY_PREFIX = 'IronPath dev API ready: ';
+
+type RunnerProcess = ChildProcessWithoutNullStreams & {
+  releaseRunnerBuildLock?: () => void;
+};
+
+const runnerBuildLockFile = join(tmpdir(), 'ironpath-dev-api-runner-build.lock');
+const sleepSync = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+const acquireRunnerBuildLock = (timeoutMs = 30_000) => {
+  const startedAt = Date.now();
+
+  while (true) {
+    try {
+      const fd = openSync(runnerBuildLockFile, 'wx');
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        try {
+          closeSync(fd);
+        } catch {
+          // Best-effort cleanup for a test-only interprocess lock.
+        }
+        try {
+          unlinkSync(runnerBuildLockFile);
+        } catch {
+          // Best-effort cleanup for a test-only interprocess lock.
+        }
+      };
+    } catch (error) {
+      const code = error instanceof Error && 'code' in error ? (error as NodeJS.ErrnoException).code : undefined;
+      if (code !== 'EEXIST') throw error;
+
+      try {
+        const ageMs = Date.now() - statSync(runnerBuildLockFile).mtimeMs;
+        if (ageMs > 120_000) unlinkSync(runnerBuildLockFile);
+      } catch {
+        // If the stale-lock check races with another worker, retry acquisition.
+      }
+
+      if (Date.now() - startedAt > timeoutMs) {
+        throw new Error(`Timed out waiting for dev API runner build lock: ${runnerBuildLockFile}`);
+      }
+      sleepSync(50);
+    }
+  }
+};
 
 export const npmCommand = () => process.execPath;
 
@@ -74,10 +132,16 @@ export const waitForReadyLine = (
   timeoutMs = 20_000,
 ): Promise<{ url: string; stdout: string; stderr: string }> =>
   new Promise((resolveWait, rejectWait) => {
+    const releaseRunnerBuildLock = () => {
+      const runner = child as RunnerProcess;
+      runner.releaseRunnerBuildLock?.();
+      delete runner.releaseRunnerBuildLock;
+    };
     let stdout = '';
     let stderr = '';
     const timeout = setTimeout(() => {
       cleanup();
+      releaseRunnerBuildLock();
       rejectWait(new Error(`Timed out waiting for dev API ready line. stdout=${stdout} stderr=${stderr}`));
     }, timeoutMs);
 
@@ -93,6 +157,7 @@ export const waitForReadyLine = (
       const line = stdout.split(/\r?\n/).find((item) => item.includes(DEV_API_READY_PREFIX));
       if (!line) return;
       cleanup();
+      releaseRunnerBuildLock();
       resolveWait({
         url: line.slice(line.indexOf(DEV_API_READY_PREFIX) + DEV_API_READY_PREFIX.length).trim(),
         stdout,
@@ -104,10 +169,12 @@ export const waitForReadyLine = (
     };
     const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
       cleanup();
+      releaseRunnerBuildLock();
       rejectWait(new Error(`Runner exited before ready. code=${code} signal=${signal} stdout=${stdout} stderr=${stderr}`));
     };
     const onError = (error: Error) => {
       cleanup();
+      releaseRunnerBuildLock();
       rejectWait(error);
     };
 
@@ -185,11 +252,29 @@ export const terminateRunnerProcessesForDb = (dbFile: string) => {
   );
 };
 
-export const spawnApiDev = (args: string[]) =>
-  spawn(npmCommand(), npmArgs(['run', 'api:dev', '--', ...args]), {
+export const runApiDevBuild = () => {
+  const releaseLock = acquireRunnerBuildLock();
+  try {
+    return spawnSync(npmCommand(), npmArgs(['run', 'api:dev:build']), {
+      ...npmSpawnOptions(),
+      encoding: 'utf8',
+    });
+  } finally {
+    releaseLock();
+  }
+};
+
+export const spawnApiDev = (args: string[]) => {
+  const releaseLock = acquireRunnerBuildLock();
+  const child = spawn(npmCommand(), npmArgs(['run', 'api:dev', '--', ...args]), {
     ...npmSpawnOptions(),
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  (child as RunnerProcess).releaseRunnerBuildLock = releaseLock;
+  child.once('exit', releaseLock);
+  child.once('error', releaseLock);
+  return child;
+};
 
 export const expectRunnerHealth = async (url: string) => {
   const health = await fetchJsonWithTimeout(`${url}/health`, {}, 1_000);

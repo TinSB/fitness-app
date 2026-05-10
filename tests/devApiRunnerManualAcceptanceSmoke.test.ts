@@ -1,11 +1,8 @@
-import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { fetchJsonWithTimeout } from './devRuntimeSmokeTestHelpers';
 import {
   makeTempRunnerDb,
-  npmArgs,
-  npmCommand,
-  npmSpawnOptions,
+  runApiDevBuild,
   spawnApiDev,
   terminateRunner,
   terminateRunnerProcessTree,
@@ -25,10 +22,7 @@ const terminateWithRequiredCleanup = async (child: ReturnType<typeof spawnApiDev
 
 describe('dev API runner manual acceptance smoke', () => {
   it('builds and drives the real npm runner through health, read, and failure smoke', async () => {
-    const build = spawnSync(npmCommand(), npmArgs(['run', 'api:dev:build']), {
-      ...npmSpawnOptions(),
-      encoding: 'utf8',
-    });
+    const build = runApiDevBuild();
     expect(build.status, `${build.stdout}\n${build.stderr}`).toBe(0);
 
     const temp = makeTempRunnerDb();

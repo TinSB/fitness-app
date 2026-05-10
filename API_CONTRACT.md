@@ -26,6 +26,8 @@ Task 4.17 adds a Node-only dev DB recovery/reset utility and `docs/DEV_API_RECOV
 
 Task 4.18 adds `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md` as a readiness audit and decision record. It is not a runtime API feature; App runtime still uses localStorage, formal App HTTP migration remains blocked, and the only recommended next step is `Task 4.19 Dev API Read-only App Integration Plan V1`.
 
+Task 4.19 adds `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md` as a read-only App integration plan. It is plan-only, does not add runtime API features, keeps App runtime on localStorage, and keeps App mutation routes blocked. Task 4.20 is only a candidate next step if 4.19 acceptance passes and remains dev-only dual-read comparison mode.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -495,6 +497,33 @@ Recommendation:
 - Future read-only work must be dev-only, explicit opt-in, localStorage-default, no API writes, no backup/import over HTTP, visible on API failure, and easy to roll back.
 
 Formal App.tsx HTTP migration remains blocked until read-only planning, prototype acceptance, API unavailable fallback, rollback, and later mutation-readiness gates are complete.
+
+## Dev API Read-only App Integration Plan
+
+Owner files:
+
+- `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md`
+- `tests/devApiReadonlyAppIntegrationPlan.test.ts`
+- `tests/devApiReadonlyAppIntegrationBoundary.test.ts`
+
+Boundary:
+
+- This is a plan and decision record, not a runtime API feature.
+- App runtime still uses localStorage through the existing browser persistence path.
+- There is no App.tsx implementation, UI change, frontend API client implementation, feature flag runtime implementation, localStorage replacement, mutation integration, production backend, auth, sync, deployment, package dependency, package script, or normalized tables.
+- Browser-facing `apps/api/src/index.ts` remains safe and must not export Node-only runtime values.
+- No mutation route should be used by App runtime.
+- No backup/import, repair/reset, or delete route should be called from App runtime.
+
+Recommendation:
+
+- Recommended mode is dual-read comparison mode only.
+- localStorage remains the only active App source of truth.
+- Dev API read results are comparison/diagnostics only and must never overwrite localStorage.
+- API unavailable must not block normal App usage.
+- Task 4.20 is only the next recommended task if Task 4.19 acceptance passes, and it must remain dev-only, explicit opt-in, and dual-read comparison only.
+
+Formal App.tsx HTTP migration and write-path migration remain blocked.
 
 ## Local Persistence
 

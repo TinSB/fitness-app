@@ -6,25 +6,21 @@ import {
   ensureIronpathSiblingArtifacts,
   expectRunnerHealth,
   makeTempRunnerDb,
-  npmArgs,
-  npmCommand,
   npmSpawnOptions,
+  runApiDevBuild,
   spawnApiDev,
   terminateRunner,
   terminateRunnerProcessTree,
   waitForReadyLine,
 } from './devApiRunnerTestHelpers';
 import { repoRoot } from './runtimeBoundaryTestHelpers';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 
 describe('compiled dev API runner prototype', () => {
   it('builds only into .ironpath/dev-api-runner and preserves sibling DB artifacts', () => {
     const preserved = ensureIronpathSiblingArtifacts();
     try {
-      const build = spawnSync(npmCommand(), npmArgs(['run', 'api:dev:build']), {
-        ...npmSpawnOptions(),
-        encoding: 'utf8',
-      });
+      const build = runApiDevBuild();
 
       expect(build.status, `${build.stdout}\n${build.stderr}`).toBe(0);
       expect(existsSync(resolve(repoRoot(), '.ironpath/dev-api-runner/devApiRunner.js'))).toBe(true);
@@ -57,10 +53,7 @@ describe('compiled dev API runner prototype', () => {
   it('compiled runner exits after SIGTERM without leaving the temp DB locked', async () => {
     const temp = makeTempRunnerDb();
     const compiledRunner = resolve(repoRoot(), '.ironpath/dev-api-runner/devApiRunner.js');
-    const build = spawnSync(npmCommand(), npmArgs(['run', 'api:dev:build']), {
-      ...npmSpawnOptions(),
-      encoding: 'utf8',
-    });
+    const build = runApiDevBuild();
     expect(build.status, `${build.stdout}\n${build.stderr}`).toBe(0);
 
     const child = spawn(

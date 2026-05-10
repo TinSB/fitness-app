@@ -1,0 +1,231 @@
+# Dev API Read-only App Integration Plan
+
+Task 4.19 defines the safest future path for a dev-only read-only App prototype. It is a plan and decision record only; it does not implement browser runtime integration.
+
+## Scope / Non-goals
+
+- This is a read-only App integration plan.
+- This is not App integration implementation.
+- There is no App.tsx implementation.
+- There is no UI change.
+- There is no frontend API client implementation.
+- There is no feature flag runtime implementation.
+- There is no localStorage replacement.
+- There is no mutation integration.
+- There is no production backend.
+- There is no auth / sync / deployment.
+- There is no package dependency.
+- There is no package script.
+- There are no normalized tables.
+- There is no HTTP backup, import, reset, or delete endpoint.
+- App runtime still uses localStorage by default.
+- Formal App.tsx HTTP migration and write-path migration remain blocked.
+
+## Current Architecture Baseline
+
+Browser runtime:
+
+- `App.tsx`
+- `src/storage/persistence.ts` compatibility facade
+- `src/storage/localStorageAdapter.ts`
+- `AppData`
+
+Shared and pure boundaries:
+
+- `appDataSanitize`
+- `appDataMigration`
+- `appDataValidation`
+- `readMirror`
+- `sessionMutation`
+- `recordDataHealthMutation`
+
+Node-only stack:
+
+- `sqliteRepository`
+- `serverAdapter`
+- `httpRuntimeAdapter`
+- `devLauncher`
+- `devApiRunner`
+- `devDbRecovery`
+
+`apps/api/src/index.ts` is browser-facing. `apps/api/src/node/index.ts` is Node-only. The Dev API is local/dev only. Browser build must remain free of `node:http`, `node:sqlite`, devLauncher, httpRuntimeAdapter, serverAdapter, sqliteRepository, devApiRunner, and devDbRecovery.
+
+## Recommended Mode
+
+Recommended mode: Dual-read comparison mode only.
+
+- localStorage remains the only active App source of truth.
+- Dev API read results are used only for comparison and diagnostics.
+- UI must not write to API.
+- UI must not replace localStorage data.
+- API unavailable must not block normal App usage.
+- There is no automatic sync.
+- There is no automatic migration.
+- There is no silent overwrite.
+- Rollback is done by disabling the future dev-only comparison path.
+
+## Read-only Scope Candidate
+
+Future read-only prototype candidates:
+
+- App data summary
+- Sessions summary
+- History list
+- History detail
+- DataHealth summary
+
+Not included:
+
+- Focus Mode runtime
+- session start / complete / discard from UI
+- record edit from UI
+- DataHealth repair from UI
+- backup import/export over HTTP
+- nutrition / algorithm changes
+- scheduler mutation
+- plan/template mutation
+
+## Future API Client Strategy
+
+Task 4.20, if accepted, must first design a dev-only frontend API client. Task 4.19 does not create API client files.
+
+Future client requirements:
+
+- dev-only client
+- explicit opt-in flag input
+- timeout behavior
+- error normalization
+- no mutation methods
+- no backup import/export methods
+- no automatic retry that changes data
+- no localStorage writes from API result
+- no production base URL assumption
+
+## Future Feature Flag Strategy
+
+Task 4.20, if accepted, must design an explicit dev-only flag. Task 4.19 does not implement a feature flag.
+
+Future flag requirements:
+
+- explicit dev-only flag
+- default off
+- visible label or diagnostic state
+- easy disable
+- no production default
+- no automatic enable when the dev API is running
+- no persisted user-facing migration switch without acceptance
+
+## Source-of-truth Rules
+
+- localStorage is default and active source of truth.
+- Dev API is comparison/shadow read only.
+- API response must never overwrite localStorage.
+- There is no dual-write.
+- There is no mutation route from App.
+- There is no backup/import route from App.
+- There is no repair/reset route from App.
+- There is no automatic merge.
+- There is no automatic migration.
+
+## API-unavailable Fallback Plan
+
+If the Dev API is unavailable:
+
+- App continues using localStorage.
+- There is no user-facing hard failure.
+- Diagnostics can show API unavailable.
+- No data mutation happens.
+- Comparison mode is skipped.
+- User can continue training normally.
+
+## Data Comparison Strategy
+
+Future read-only comparison should compare:
+
+- localStorage-derived readMirror equivalent
+- Dev API readMirror result
+- summary-level outputs first
+
+Comparison rules:
+
+- Avoid comparing volatile timestamps unless normalized.
+- Report mismatch only as diagnostics.
+- Mismatch never overwrites data.
+- Mismatch never blocks training.
+- Mismatch never triggers repair automatically.
+
+## Security / Privacy / Localhost Boundary
+
+- Dev API is localhost-only by default.
+- No auth exists yet.
+- There is no LAN exposure by default.
+- There is no production deployment.
+- There is no personal data upload.
+- There is no cloud sync.
+- Dev DB may contain personal training data and must not be committed.
+- Use `docs/DEV_API_RECOVERY_RESET.md` for dev DB cleanup.
+
+## Rollback Plan
+
+- Remove or disable the future read-only comparison flag.
+- Keep App runtime on localStorage.
+- Stop the dev API runner.
+- There are no API writes to revert.
+- No localStorage overwrite happened.
+- Reset or backup the dev DB using `docs/DEV_API_RECOVERY_RESET.md` if needed.
+- There is no dependency rollback needed.
+- There is no production migration rollback needed.
+
+## Required Acceptance Gates Before Task 4.20
+
+- `npm run api:dev:build`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- Dev runner manual acceptance passed.
+- Recovery/reset runbook exists.
+- Browser build has no `node:http` or `node:sqlite`.
+- No frontend API client yet.
+- No App.tsx integration yet.
+- No mutation route used by App.
+- No localStorage replacement.
+- API unavailable fallback documented.
+- Comparison mismatch behavior documented.
+- Rollback plan documented.
+
+## Proposed Task 4.20
+
+The only next recommended task, if Task 4.19 acceptance passes, is `Task 4.20 Read-only App Integration Prototype V1`.
+
+Task 4.20 must remain:
+
+- dev-only
+- explicit opt-in
+- dual-read comparison mode only
+- no UI writes to API
+- no localStorage replacement
+- no mutation migration
+- no backup/import over HTTP
+- no production server assumption
+- no auth/sync
+- visible fallback
+- easy rollback
+
+## Decision Record
+
+- Date: 2026-05-10
+- Branch / commit: record during manual acceptance
+- Decision: Plan a future dev-only read-only App prototype without implementing it in Task 4.19.
+- Recommendation: Dual-read comparison mode only.
+- Rejected options: direct App.tsx HTTP migration, API-primary source of truth, frontend API client now, feature flag runtime now, UI writes to API, localStorage replacement, mutation migration, production backend.
+- Required next task: `Task 4.20 Read-only App Integration Prototype V1`, only if Task 4.19 acceptance passes.
+- Risks: data loss, stale API snapshots, unavailable dev API, accidental production exposure, browser bundle pollution, user confusion.
+- Rollback plan: keep App runtime on localStorage, stop dev API runner, disable future comparison path, and use recovery/reset runbook for dev DB cleanup.
+
+## Final Recommendation
+
+Task 4.19 result: Plan only.
+
+Ready for Task 4.20 Read-only App Integration Prototype V1 only if explicit dev-only dual-read comparison mode is maintained.
+
+Formal App.tsx HTTP migration and write-path migration remain blocked.

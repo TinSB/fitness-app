@@ -462,6 +462,22 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.19 Dev API Read-only App Integration Plan V1`. Do not migrate `App.tsx` to HTTP/SQLite after Task 4.18; write-path integration is later than read-only plan, read-only prototype, read-only runtime parity acceptance, and mutation integration readiness audit.
 
+### Task 4.19: Dev API Read-only App Integration Plan V1
+
+Completed as a read-only App integration plan and decision record, not as runtime integration.
+
+- `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md` defines dual-read comparison mode only as the recommended mode.
+- localStorage remains the only active App source of truth.
+- Dev API results are comparison/diagnostics only and must never overwrite localStorage.
+- The future read-only candidate scope is App data summary, sessions summary, history list/detail, and DataHealth summary.
+- The plan documents future API client strategy, feature flag strategy, source-of-truth rules, API-unavailable fallback, data comparison strategy, security/privacy boundaries, rollback, acceptance gates, and Task 4.20 constraints.
+- `devApiReadonlyAppIntegrationPlan.test.ts` locks the plan text and rejects action-oriented migration instructions.
+- `devApiReadonlyAppIntegrationBoundary.test.ts` confirms production/runtime source paths still have no frontend API client, feature flag runtime wiring, API-backed localStorage adapter, Node-only imports, or new migration scripts.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production backend runtime. It does not add frontend API clients, React hooks/providers/context, feature flag runtime wiring, package scripts, package dependencies, lockfile changes, backup import/export endpoints, mutation routes from App, or normalized database tables.
+
+Task 4.20 Read-only App Integration Prototype V1 is only the next recommended task if Task 4.19 acceptance passes. Task 4.20 must remain dev-only, explicit opt-in, and dual-read comparison only. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
