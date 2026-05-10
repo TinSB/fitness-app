@@ -945,6 +945,20 @@ Completed as a checkpoint/audit for the current three-route write-path prototype
 
 The next recommended task is `Task 4.53 Write-path Three-route Manual Regression V1`.
 
+### Task 4.53: Write-path Three-route Manual Regression V1
+
+Completed as manual regression documentation and static checks for validating all three accepted dev-only mutation prototypes together.
+
+- Adds `docs/WRITE_PATH_THREE_ROUTE_MANUAL_REGRESSION.md`.
+- Adds manual regression tests for runbook sections, commands, route matrix, cleanup, source-of-truth, docs inventory, and boundary wording.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, fourth mutation route, or training algorithm change is added.
+
+The next recommended task is `Task 4.54 Write-path Three-route Regression Lock V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
