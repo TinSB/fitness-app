@@ -38,6 +38,8 @@ Task 4.28 adds a dev-only, explicit opt-in, one-route DataHealth dismiss mutatio
 
 Task 4.32 adds safe observability and manual recovery notes for the existing one-route DataHealth dismiss prototype. It adds no endpoint, no browser reset action, no production readiness, no source-of-truth switch, and no new mutation route.
 
+Task 4.33 adds a regression lock for the DataHealth dismiss line. It is tests/docs hardening only and does not add runtime capability, another mutation route, production readiness, or write-path migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -196,6 +198,8 @@ Task 4.32 adds safe observability and manual recovery notes for the existing one
 - [ ] Task 4.32 observability keeps this one-route scope and adds safe diagnostics plus manual recovery notes for unavailable, timeout, invalid response, no-change, issue-not-found, write failure, database closed, missing snapshot metadata, and abort/unmount behavior.
 - [ ] Use the Task 4.32 section in `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md` to confirm no raw stack trace, raw API response, full AppData, localStorage dump, SQLite internals, or environment object is shown.
 - [ ] Confirm recovery guidance is manual and dev-only; there is no HTTP reset endpoint and no browser recovery/reset action.
+- [ ] Task 4.33 regression lock must remain green before any second mutation candidate is considered.
+- [ ] Confirm Task 4.33 still locks strict success, no fake success, failure mapping, confirmation, pending duplicate-submit prevention, safe observability, and docs/manual acceptance boundaries.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

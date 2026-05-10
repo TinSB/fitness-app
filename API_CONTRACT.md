@@ -54,6 +54,8 @@ Task 4.31 adds DataHealth Dismiss Prototype Hardening V1. It hardens the existin
 
 Task 4.32 adds DataHealth Dismiss Prototype Observability & Recovery Notes V1. It adds dev-only safe diagnostics and manual recovery guidance for the existing one-route prototype only. It adds no HTTP endpoint, no browser reset/recovery action, no localStorage overwrite, no AppData overwrite, no production backend/auth/sync/deployment behavior, no package changes, and no normalized tables.
 
+Task 4.33 adds DataHealth Dismiss Regression Lock V1. It is a regression/testing layer only, not new runtime capability. It locks the existing DataHealth dismiss prototype as one-route-only, keeps localStorage as source of truth, keeps API results from overwriting AppData/localStorage, and keeps broader write-path migration blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -931,6 +933,34 @@ Observability facts:
 - Session mutation, history edit/data-flag, DataHealth repair, backup/import/export, reset, and recovery routes remain blocked from browser code.
 
 Write-path migration remains blocked after Task 4.32. The next recommended task is `Task 4.33 DataHealth Dismiss Regression Lock V1`.
+
+## DataHealth Dismiss Regression Lock
+
+Owner files:
+
+- `tests/dataHealthDismissRegressionRouteLock.test.ts`
+- `tests/dataHealthDismissRegressionSuccessContract.test.ts`
+- `tests/dataHealthDismissRegressionFailureMapping.test.ts`
+- `tests/dataHealthDismissRegressionUxControls.test.ts`
+- `tests/dataHealthDismissRegressionObservabilityDocs.test.ts`
+- `tests/dataHealthDismissRegressionBoundary.test.ts`
+
+Task 4.33 locks the DataHealth dismiss prototype line as a regression/testing layer. It does not add runtime features, new mutation routes, a second mutation prototype, source-of-truth switching, AppData/localStorage overwrite behavior, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables.
+
+Regression lock facts:
+
+- The only accepted browser mutation route is `POST /data-health/issues/:issueId/dismiss`.
+- No session, history edit/data-flag, DataHealth repair, backup/import/export, reset, or recovery mutation route is accepted from browser code.
+- No broad frontend mutation client may exist.
+- Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- Missing snapshot metadata, no-change, issue-not-found, requires-confirmation, unsupported-route, unavailable, timeout, abort, malformed response, write failure, transaction failure, and database-closed cases must not show success.
+- API results never overwrite AppData or localStorage.
+- localStorage remains source of truth.
+- Observability must not expose raw stack traces, raw API responses, full AppData, localStorage dumps, SQLite internals, or environment objects.
+- Recovery guidance remains manual and dev-only.
+- This lock does not imply production readiness, authorizes no second mutation route, and does not authorize any second mutation prototype.
+
+Write-path migration remains blocked after Task 4.33. The next recommended task is `Task 4.34 Second Mutation Candidate Readiness Audit V1`.
 
 ## Local Persistence
 

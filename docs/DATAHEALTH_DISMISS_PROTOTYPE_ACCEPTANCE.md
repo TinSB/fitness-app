@@ -6,6 +6,8 @@ Task 4.31 hardens the existing one-route prototype without adding mutation capab
 
 Task 4.32 adds dev-only observability and recovery notes for the same one-route prototype. It exposes only safe diagnostic fields, maps failure reasons to manual recovery guidance, adds no HTTP endpoint, adds no browser reset action, and keeps localStorage as source of truth. It does not add a second mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, or normalized table.
 
+Task 4.33 adds a regression lock for the DataHealth dismiss line. It is tests and docs only: no runtime feature, no new mutation route, no second prototype, no source-of-truth switch, no localStorage/AppData overwrite, no production readiness, and no broad write-path migration. The only accepted browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual acceptance for Task 4.28 DataHealth dismiss mutation prototype.
@@ -156,6 +158,19 @@ VITE_IRONPATH_DEV_API_COMPARE=1 VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT=datahe
 - [ ] Confirm mismatch after success says localStorage remains source of truth and comparison should be rerun manually.
 - [ ] Confirm there is no HTTP reset endpoint and no browser recovery/reset action.
 - [ ] Confirm recovery guidance remains manual, local, and dev-only.
+
+## Task 4.33 Regression Lock
+
+- [ ] Confirm the DataHealth dismiss line remains locked as a one-route prototype.
+- [ ] Confirm the only accepted browser mutation route is `POST /data-health/issues/:issueId/dismiss`.
+- [ ] Confirm no session, history, DataHealth repair, backup, import, export, reset, or recovery route is exposed from browser code.
+- [ ] Confirm strict success still requires HTTP success, `result.ok=true`, `changed=true`, `status=success`, and snapshot metadata.
+- [ ] Confirm missing snapshot metadata, `no_change`, `issue_not_found`, `requiresConfirmation`, `unsupported_route`, unavailable, timeout, abort, malformed response, `write_failed`, `transaction_failed`, and `database_closed` do not show success.
+- [ ] Confirm no fake success is shown in any failure state.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- [ ] Confirm safe observability does not expose raw stack traces, raw API responses, full AppData, localStorage dumps, SQLite internals, or environment objects.
+- [ ] Confirm recovery is manual and dev-only.
+- [ ] Confirm this regression lock does not imply production readiness, authorizes no second mutation route, and does not authorize a second mutation prototype.
 
 ## Confirm LocalStorage Integrity
 
