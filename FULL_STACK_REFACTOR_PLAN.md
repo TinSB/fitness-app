@@ -604,6 +604,22 @@ Task 4.28 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.28. The next recommended task is `Task 4.29 DataHealth Dismiss Prototype Acceptance V1`.
 
+### Task 4.29: DataHealth Dismiss Prototype Acceptance V1
+
+Completed as acceptance tests and manual acceptance documentation for the Task 4.28 one-route DataHealth dismiss prototype. It does not expand mutation capability or add any new browser mutation route.
+
+- `docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPTANCE.md` records the manual acceptance runbook for flag matrix, confirmation, duplicate-submit prevention, no-fake-success behavior, API unavailable failure, localStorage integrity, route boundary checks, cleanup, and pass/fail reporting.
+- `devApiDataHealthDismissAcceptanceFlagMatrix.test.ts` proves compare-only, mutation-only, production-like, and fully enabled flag states.
+- `devApiDataHealthDismissAcceptanceInteraction.test.ts` proves confirmation, pending, duplicate-submit, and local-only success copy.
+- `devApiDataHealthDismissAcceptanceFailures.test.ts` proves unavailable, timeout, malformed response, server error, no-change, issue-not-found, write failure, transaction failure, database closed, unsupported route, missing snapshot, and non-2xx success-like responses cannot show success.
+- `devApiDataHealthDismissAcceptanceSourceOfTruth.test.ts` proves AppData and localStorage are not mutated or overwritten by prototype success/failure.
+- `devApiDataHealthDismissAcceptanceBoundary.test.ts` keeps the browser mutation surface to only `POST /data-health/issues/:issueId/dismiss` and keeps Node-only stack tokens out of browser source.
+- `devApiDataHealthDismissManualAcceptanceDocs.test.ts` locks the runbook structure, flags, commands, route allowlist, forbidden routes, cleanup, and pass/fail template.
+
+Task 4.29 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. There is no session/history/DataHealth repair/backup/import/export/reset/recovery browser route, no broad frontend mutation client, no source-of-truth switch, no offline queue, no production backend/auth/sync/deployment, no package script or dependency change, no lockfile change, and no normalized table.
+
+Write-path migration remains blocked after Task 4.29. The next recommended task is `Task 4.30 DataHealth Dismiss Manual App Acceptance V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

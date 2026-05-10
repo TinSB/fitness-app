@@ -196,3 +196,11 @@ Task 4.28 was explicitly approved as `DataHealth Dismiss Mutation Prototype V1`.
 The no-fake-success rule is implemented for the one-route dev-only prototype: the UI requires confirmation, blocks duplicate submit while pending, and shows success only after the Dev API returns a successful mutation result with snapshot metadata.
 
 The Task 4.26 boundary still holds for broader write paths: no session/history/DataHealth repair/backup/reset App mutations are authorized, AppData and localStorage are not overwritten by API results, and write-path migration remains blocked.
+
+## Task 4.29 Note
+
+Task 4.29 adds acceptance coverage and `docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPTANCE.md` for the Task 4.28 DataHealth dismiss prototype.
+
+The no-fake-success rule is covered by tests: API unavailable, timeout, malformed response, server errors, no-change, issue-not-found, write failure, transaction failure, database closed, unsupported route, non-2xx responses, and missing snapshot metadata all remain failure states instead of success states.
+
+The Task 4.26 conclusion remains unchanged for broader write paths: AppData and localStorage are not overwritten by API results, no session/history/DataHealth repair/backup/reset App mutations are authorized, and write-path migration remains blocked.

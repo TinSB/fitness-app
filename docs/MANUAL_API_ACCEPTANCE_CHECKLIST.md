@@ -185,6 +185,14 @@ Task 4.28 adds a dev-only, explicit opt-in, one-route DataHealth dismiss mutatio
 - [ ] Browser build is not polluted by `node:http`.
 - [ ] Browser build is not polluted by `node:sqlite`.
 
+## DataHealth Dismiss Prototype Acceptance
+
+- [ ] Use `docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPTANCE.md` for the dev-only one-route DataHealth dismiss prototype runbook.
+- [ ] The only accepted browser mutation route is `POST /data-health/issues/:issueId/dismiss`.
+- [ ] Do not treat this as production readiness.
+- [ ] Do not enable session, history, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+
 ## Data Semantics Acceptance
 
 - [ ] Backup unsafe import remains rejected by existing backup safety boundaries.

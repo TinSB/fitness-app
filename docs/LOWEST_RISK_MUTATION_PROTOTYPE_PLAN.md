@@ -260,6 +260,24 @@ Rollback remains the same safety model: disable the mutation experiment flag, st
 
 Broader write-path migration remains blocked. The next recommended task is `Task 4.29 DataHealth Dismiss Prototype Acceptance V1`.
 
+## Task 4.29 Acceptance Result
+
+Task 4.29 adds acceptance coverage and a manual acceptance runbook for the Task 4.28 DataHealth dismiss prototype.
+
+Acceptance scope:
+
+- The only accepted browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
+- Flag matrix tests prove read-only compare alone and mutation experiment alone do not enable the prototype.
+- Confirmation and pending tests prove no confirmation means no POST and duplicate submit is blocked while pending.
+- No-fake-success tests prove success requires HTTP success, mutation success, `changed=true`, `status="success"`, and snapshot metadata.
+- Failure tests cover unavailable, timeout, malformed response, server errors, no-change, issue-not-found, write failure, transaction failure, database closed, unsupported route, and missing snapshot metadata.
+- Source-of-truth tests prove API results do not overwrite AppData or localStorage.
+- The manual runbook is `docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPTANCE.md`.
+
+Task 4.29 does not add session mutation, history mutation, DataHealth repair, backup/import/export/reset/recovery HTTP routes, a broad mutation client, source-of-truth switching, localStorage replacement, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables.
+
+Broader write-path migration remains blocked. The next recommended task is `Task 4.30 DataHealth Dismiss Manual App Acceptance V1`.
+
 ## Decision Record
 
 - Date: 2026-05-10
