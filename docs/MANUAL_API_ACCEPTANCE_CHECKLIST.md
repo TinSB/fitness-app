@@ -12,6 +12,8 @@ Task 4.14 records local API runner strategy. Task 4.15 adds a dev-only compiled 
 
 Task 4.16 adds the focused runner runbook at `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md`. Use that document for real `npm run api:dev` command acceptance; this checklist remains the broader local API boundary checklist and is still not App runtime migration.
 
+Task 4.17 adds the dev DB recovery/reset checklist at `docs/DEV_API_RECOVERY_RESET.md`. It is a Node-only/programmatic safety boundary, not an HTTP reset endpoint.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -138,6 +140,7 @@ Task 4.16 adds the focused runner runbook at `docs/DEV_API_RUNNER_MANUAL_ACCEPTA
 
 ## DB File Safety Acceptance
 
+- [ ] Review the dev DB recovery/reset checklist: `docs/DEV_API_RECOVERY_RESET.md`.
 - [ ] `.ironpath/` is ignored by git.
 - [ ] `*.sqlite` is ignored by git.
 - [ ] `*.sqlite-wal` is ignored by git.
