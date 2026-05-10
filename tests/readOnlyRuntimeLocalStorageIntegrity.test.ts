@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { handleReadMirrorRequest } from '../apps/api/src';
-import { DevApiReadOnlyDiagnostics } from '../src/devApi/DevApiReadOnlyDiagnostics';
+import { DevApiReadOnlyDiagnostics } from '../src/devApi/DevApiReadOnlyDiagnosticsController';
 import { runDevApiReadOnlyComparison } from '../src/devApi/devApiReadOnlyComparison';
 import type { DevApiReadOnlyFetch } from '../src/devApi/devApiReadOnlyClient';
 import { buildAppDataFromFixture } from './helpers/realDataFixture';

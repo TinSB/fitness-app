@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { DevApiReadOnlyDiagnostics } from '../src/devApi/DevApiReadOnlyDiagnostics';
+import { DevApiReadOnlyDiagnostics } from '../src/devApi/DevApiReadOnlyDiagnosticsController';
 import { resolveDevApiReadOnlyConfig } from '../src/devApi/devApiReadOnlyConfig';
 import { buildAppDataFromFixture } from './helpers/realDataFixture';
 import { readSource } from './runtimeBoundaryTestHelpers';
@@ -36,10 +36,12 @@ describe('read-only runtime flag-off parity', () => {
   it('keeps App source limited to the guarded diagnostics mount', () => {
     const app = readSource('src/App.tsx');
     const diagnostics = readSource('src/devApi/DevApiReadOnlyDiagnostics.tsx');
+    const controller = readSource('src/devApi/DevApiReadOnlyDiagnosticsController.tsx');
 
-    expect(app.match(/DevApiReadOnlyDiagnostics/g) || []).toHaveLength(3);
+    expect(app.match(/\bDevApiReadOnlyDiagnostics\b/g) || []).toHaveLength(2);
     expect(app).toContain('<DevApiReadOnlyDiagnostics data={data} config={devApiReadOnlyConfig} />');
     expect(app).not.toContain('runDevApiReadOnlyComparison');
-    expect(diagnostics.indexOf('if (!config.enabled)')).toBeLessThan(diagnostics.indexOf('void runDevApiReadOnlyComparison'));
+    expect(diagnostics).not.toContain('runDevApiReadOnlyComparison');
+    expect(controller.indexOf('if (!config.enabled)')).toBeLessThan(controller.indexOf('void runDevApiReadOnlyComparison'));
   });
 });

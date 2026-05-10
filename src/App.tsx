@@ -6,7 +6,7 @@ import { TrainingFocusView } from './features/TrainingFocusView';
 import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
-import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnostics';
+import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnosticsController';
 import { resolveDevApiReadOnlyConfig } from './devApi/devApiReadOnlyConfig';
 import {
   actionableSorenessAreas,

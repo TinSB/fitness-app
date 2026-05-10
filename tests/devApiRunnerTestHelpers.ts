@@ -95,7 +95,16 @@ export const makeTempRunnerDb = () => {
   const dir = mkdtempSync(join(tmpdir(), 'ironpath-dev-api-runner-'));
   const dbFile = join(dir, 'runner.sqlite');
   const cleanup = () => {
-    if (existsSync(dir)) rmSync(dir, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+    terminateRunnerProcessesForDb(dbFile);
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        if (existsSync(dir)) rmSync(dir, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+        return;
+      } catch (error) {
+        if (attempt === 9) throw error;
+        sleepSync(250);
+      }
+    }
   };
   return { dir, dbFile, cleanup };
 };

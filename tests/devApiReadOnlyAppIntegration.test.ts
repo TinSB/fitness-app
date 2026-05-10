@@ -2,9 +2,9 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
-  DevApiReadOnlyDiagnostics,
   DevApiReadOnlyDiagnosticsPanel,
 } from '../src/devApi/DevApiReadOnlyDiagnostics';
+import { DevApiReadOnlyDiagnostics } from '../src/devApi/DevApiReadOnlyDiagnosticsController';
 import { runDevApiReadOnlyComparison } from '../src/devApi/devApiReadOnlyComparison';
 import type { DevApiReadOnlyFetch } from '../src/devApi/devApiReadOnlyClient';
 import { buildAppDataFromFixture } from './helpers/realDataFixture';
@@ -84,6 +84,8 @@ describe('dev API read-only App integration', () => {
     const diagnostics = readSource('src/devApi/DevApiReadOnlyDiagnostics.tsx');
 
     expect(app).toContain('<DevApiReadOnlyDiagnostics data={data} config={devApiReadOnlyConfig} />');
+    expect(diagnostics).not.toContain('runDevApiReadOnlyComparison');
+    expect(diagnostics).not.toContain('useEffect');
     expect(diagnostics).not.toContain('setData');
     expect(diagnostics).not.toContain('saveData');
     expect(diagnostics).not.toContain('loadData');

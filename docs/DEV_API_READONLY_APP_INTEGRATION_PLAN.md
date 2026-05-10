@@ -279,3 +279,21 @@ Accepted parity points:
 - browser isolation proof: browser/runtime source remains free of `node:http`, `node:sqlite`, and the Node-only stack.
 
 API unavailable fallback remains diagnostic-only. Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remains blocked after Task 4.21.
+
+## Task 4.22 Diagnostics UX Hardening Result
+
+Task 4.22 hardens the read-only diagnostics UX for development use only. It does not add runtime features, routes, mutation methods, source-of-truth switching, production backend behavior, auth, sync, deployment, package dependencies, or package scripts.
+
+UX hardening result:
+
+- The diagnostics display model covers disabled, checking, matching, mismatch, unavailable, error, and misconfigured states.
+- Disabled remains model-only and renders no visible panel.
+- Mismatch is warning-level diagnostics only. localStorage remains source of truth, and No data was changed.
+- Unavailable is non-fatal diagnostics only. The App continues using localStorage.
+- Misconfigured explains the localhost-only requirement without exposing raw env values or suggesting production URLs.
+- Endpoint summary stays compact and shows checked, skipped, matching, mismatch, unavailable, or error status with safe short reasons.
+- `/history/:id` is shown as skipped when no stable local history id exists.
+- Rendered diagnostics expose no repair, sync, overwrite, import, export, reset, apply, or fix controls.
+- `DevApiReadOnlyDiagnostics.tsx` is presentational only; the browser-safe controller owns the cancellable comparison effect.
+
+Read-only diagnostics remain comparison-only. API results never overwrite AppData or localStorage. No UI writes to API, no mutation route is used by App, and write-path migration remains blocked after Task 4.22.

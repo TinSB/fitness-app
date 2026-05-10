@@ -32,8 +32,8 @@ describe('read-only runtime GET-only proof', () => {
       '/app-data/summary',
       '/sessions/summary',
       '/history',
-      '/data-health/summary',
       `/history/${encodeURIComponent(data.history[0].id)}`,
+      '/data-health/summary',
     ]);
   });
 

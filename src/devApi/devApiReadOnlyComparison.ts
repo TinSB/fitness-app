@@ -8,12 +8,21 @@ import {
   type DevApiReadOnlyPath,
 } from './devApiReadOnlyClient';
 
-export type DevApiReadOnlyEndpointStatus = 'matching' | 'mismatch' | 'unavailable' | 'error';
-export type DevApiReadOnlyDiagnosticStatus = 'checking' | 'matching' | 'mismatch' | 'unavailable' | 'error';
+export type DevApiReadOnlyEndpointPath = DevApiReadOnlyPath | '/history/:id';
+export type DevApiReadOnlyEndpointStatus = 'skipped' | 'matching' | 'mismatch' | 'unavailable' | 'error';
+export type DevApiReadOnlyDiagnosticStatus =
+  | 'disabled'
+  | 'checking'
+  | 'matching'
+  | 'mismatch'
+  | 'unavailable'
+  | 'error'
+  | 'misconfigured';
 
 export type DevApiReadOnlyEndpointDiagnostic = {
-  path: DevApiReadOnlyPath;
+  path: DevApiReadOnlyEndpointPath;
   status: DevApiReadOnlyEndpointStatus;
+  reason?: string;
   error?: DevApiReadOnlyError;
 };
 
@@ -43,11 +52,33 @@ const stableStringify = (value: unknown) => JSON.stringify(sortForStableComparis
 const localReadMirrorResult = (data: AppData, path: DevApiReadOnlyPath) =>
   handleReadMirrorRequest(data, { method: 'GET', path }).body;
 
-const comparablePaths = (data: AppData): DevApiReadOnlyPath[] => {
-  const paths: DevApiReadOnlyPath[] = ['/app-data/summary', '/sessions/summary', '/history', '/data-health/summary'];
+type ComparisonTarget =
+  | {
+      path: DevApiReadOnlyPath;
+      status?: never;
+      reason?: never;
+    }
+  | {
+      path: '/history/:id';
+      status: 'skipped';
+      reason: string;
+    };
+
+const comparisonTargets = (data: AppData): ComparisonTarget[] => {
   const firstHistoryId = data.history[0]?.id;
-  if (firstHistoryId) paths.push(`/history/${encodeURIComponent(firstHistoryId)}`);
-  return paths;
+  return [
+    { path: '/app-data/summary' },
+    { path: '/sessions/summary' },
+    { path: '/history' },
+    firstHistoryId
+      ? { path: `/history/${encodeURIComponent(firstHistoryId)}` as DevApiReadOnlyPath }
+      : {
+          path: '/history/:id',
+          status: 'skipped',
+          reason: 'No stable local history id is available.',
+        },
+    { path: '/data-health/summary' },
+  ];
 };
 
 export const runDevApiReadOnlyComparison = async ({
@@ -66,12 +97,19 @@ export const runDevApiReadOnlyComparison = async ({
   const client = createDevApiReadOnlyClient(config, fetchImpl);
   const endpoints: DevApiReadOnlyEndpointDiagnostic[] = [];
 
-  for (const path of comparablePaths(data)) {
+  for (const target of comparisonTargets(data)) {
+    if (target.status === 'skipped') {
+      endpoints.push(target);
+      continue;
+    }
+
+    const path = target.path;
     if (signal?.aborted) {
       endpoints.push({
         path,
         status: 'unavailable',
         error: { code: 'dev_api_unavailable', message: 'Dev API read-only comparison was cancelled.' },
+        reason: 'Comparison was cancelled.',
       });
       continue;
     }
@@ -92,6 +130,7 @@ export const runDevApiReadOnlyComparison = async ({
         path,
         status: unavailableCodes.has(remote.error.code) ? 'unavailable' : 'error',
         error: remote.error,
+        reason: remote.error.message,
       });
       continue;
     }
@@ -100,6 +139,10 @@ export const runDevApiReadOnlyComparison = async ({
     endpoints.push({
       path,
       status: stableStringify(local) === stableStringify(remote.result) ? 'matching' : 'mismatch',
+      reason:
+        stableStringify(local) === stableStringify(remote.result)
+          ? 'Local and Dev API summaries match.'
+          : 'Read-only summary differs from local data.',
     });
   }
 
@@ -124,9 +167,9 @@ export const runDevApiReadOnlyComparison = async ({
       status === 'matching'
         ? 'Dev API read-only comparison matches local data.'
         : status === 'mismatch'
-          ? 'Dev API read-only comparison found diagnostic mismatches.'
+          ? 'Read-only comparison found differences. localStorage remains source of truth. No data was changed.'
           : status === 'unavailable'
-            ? 'Dev API read-only comparison is unavailable; App remains on localStorage.'
-            : 'Dev API read-only comparison returned diagnostic errors.',
+            ? 'Dev API unavailable; app continues normally using localStorage. Comparison was unavailable for one or more endpoints.'
+            : 'Read-only comparison returned diagnostic errors. App continues using localStorage.',
   };
 };
