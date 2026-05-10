@@ -271,6 +271,30 @@ Failure criteria:
 - [ ] Fail if recovery guidance offers browser repair, sync, overwrite, import, export, reset, apply, fix, or migration controls.
 - [ ] Fail if recovery guidance implies production readiness.
 
+## Task 4.33 Regression Lock Checklist
+
+- [ ] Before testing a second mutation candidate, confirm the Task 4.33 regression lock remains green.
+- [ ] Confirm only `POST /data-health/issues/:issueId/dismiss` is accepted from browser code.
+- [ ] Confirm no session, history, DataHealth repair, backup, import, export, reset, or recovery mutation route is accepted.
+- [ ] Confirm no broad frontend mutation client exists.
+- [ ] Confirm success still requires HTTP success, `result.ok=true`, `changed=true`, `status=success`, and snapshot metadata.
+- [ ] Confirm missing snapshot metadata remains failure.
+- [ ] Confirm `no_change`, `issue_not_found`, `requiresConfirmation`, `unsupported_route`, unavailable, timeout, abort, malformed response, `write_failed`, `transaction_failed`, and `database_closed` do not show success.
+- [ ] Confirm duplicate submit still sends only one pending POST.
+- [ ] Confirm retry after failure still requires explicit user action and re-confirmation.
+- [ ] Confirm no fake success appears.
+- [ ] Confirm localStorage remains source of truth.
+- [ ] Confirm API results never overwrite AppData or localStorage.
+- [ ] Confirm observability remains safe: no raw stack, raw response, AppData dump, localStorage dump, SQLite internals, or env object.
+- [ ] Confirm recovery remains manual and dev-only.
+- [ ] Confirm docs do not imply production readiness, authorize no second mutation route, and do not authorize a second mutation prototype.
+
+Failure criteria:
+
+- [ ] Fail if any new browser mutation route appears.
+- [ ] Fail if any API result is written into AppData or localStorage.
+- [ ] Fail if recovery guidance becomes an automatic browser action.
+
 ## LocalStorage Integrity Manual Check
 
 - [ ] Snapshot localStorage in the dedicated test browser profile before testing.

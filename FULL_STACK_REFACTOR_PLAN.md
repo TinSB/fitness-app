@@ -665,6 +665,21 @@ Task 4.32 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.32. The next recommended task is `Task 4.33 DataHealth Dismiss Regression Lock V1`.
 
+### Task 4.33: DataHealth Dismiss Regression Lock V1
+
+Completed as a regression/testing lock for the existing dev-only, one-route DataHealth dismiss prototype. It does not add runtime features, a second mutation prototype, new mutation routes, source-of-truth switching, AppData/localStorage overwrite behavior, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables.
+
+- `dataHealthDismissRegressionRouteLock.test.ts` locks the one-route browser mutation boundary and keeps the read-only client GET-only.
+- `dataHealthDismissRegressionSuccessContract.test.ts` locks strict success/no-fake-success behavior and localStorage/AppData integrity.
+- `dataHealthDismissRegressionFailureMapping.test.ts` locks known failure states as non-success with safe recovery copy.
+- `dataHealthDismissRegressionUxControls.test.ts` locks confirmation, pending/duplicate-submit, retry, dev-only copy, source-of-truth copy, and forbidden-control boundaries.
+- `dataHealthDismissRegressionObservabilityDocs.test.ts` locks safe diagnostics, redacted visible issue references, recovery docs, and no production readiness.
+- `dataHealthDismissRegressionBoundary.test.ts` locks global browser/Node/package/storage/build-output boundaries.
+
+Task 4.33 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. The only accepted browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; session/history/DataHealth repair/backup/import/export/reset/recovery routes remain blocked.
+
+Write-path migration remains blocked after Task 4.33. The next recommended task is `Task 4.34 Second Mutation Candidate Readiness Audit V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
