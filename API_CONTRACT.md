@@ -1507,3 +1507,19 @@ The checkpoint records DataHealth dismiss, History data-flag, and Limited Histor
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
 
 Task 4.53 Write-path Three-route Manual Regression V1 is the next recommended task.
+
+## Task 4.53: Write-path Three-route Manual Regression V1
+
+Task 4.53 adds `docs/WRITE_PATH_THREE_ROUTE_MANUAL_REGRESSION.md` as a manual regression runbook for validating all three accepted dev-only mutation prototypes in one local App and Dev API session.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The runbook covers dedicated test data, Dev API runner startup, read-only compare startup, DataHealth dismiss flow, History data-flag flow, Limited History Edit flow, mutation experiment isolation, DevTools Network route boundary, no-fake-success behavior, localStorage integrity, forbidden controls, failure recovery, cleanup, and browser build safety.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
+
+Task 4.54 Write-path Three-route Regression Lock V1 is the next recommended task.

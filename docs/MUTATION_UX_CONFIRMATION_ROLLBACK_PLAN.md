@@ -280,3 +280,9 @@ The prototype remains confirmation-gated, duplicate-submit guarded, no-fake-succ
 Task 4.52 checkpoints the three accepted write-path prototypes without adding browser write capability.
 
 DataHealth dismiss, History data-flag, and Limited History Edit remain dev-only, confirmation-aware, duplicate-submit guarded, strict no-fake-success prototypes. Rollback remains failure-state/manual cleanup only because API results never overwrite AppData or localStorage.
+
+## Task 4.53 Note
+
+Task 4.53 adds the manual regression runbook for the three accepted write-path prototypes without adding browser write capability.
+
+Manual regression must verify each prototype in its own mutation-flag flow, confirm no POST before confirmation, confirm no fake success, and confirm localStorage/AppData integrity before and after success and failure attempts.
