@@ -56,6 +56,8 @@ Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE
 
 Task 4.41 adds the write-path two-route manual regression runbook at `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md`. It is manual regression documentation and static-test coverage only: validate DataHealth dismiss and History data-flag together in one local App/dev API session, keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, keep localStorage as source of truth, and do not treat the flow as production readiness or broader write-path migration.
 
+Task 4.42 adds the write-path two-route regression lock at `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md`. It is regression-lock documentation and static-test coverage only: keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, keep localStorage as source of truth, preserve no-fake-success and snapshot-metadata success requirements, and do not treat the flow as production readiness or broader write-path migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

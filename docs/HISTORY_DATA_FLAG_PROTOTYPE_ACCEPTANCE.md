@@ -8,6 +8,8 @@ Task 4.39 hardens the existing History data-flag prototype with no-fake-success,
 
 Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. It confirms the current global browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, no third mutation route is approved, localStorage remains source of truth, and API results never overwrite AppData or localStorage.
 
+Task 4.42 adds the write-path two-route regression lock at `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md`. The History data-flag prototype remains one-route-only in its own flow, the global browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, and no third mutation route is approved.
+
 ## Scope / Non-goals
 
 - [ ] This is acceptance coverage for the existing History data-flag prototype only.
