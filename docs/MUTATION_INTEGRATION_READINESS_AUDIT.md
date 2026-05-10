@@ -222,3 +222,11 @@ The Task 4.24 readiness conclusion remains true for broader mutation integration
 Task 4.29 adds acceptance coverage and a manual runbook for the Task 4.28 DataHealth dismiss prototype.
 
 The acceptance result does not change the Task 4.24 readiness conclusion for broader mutation integration. The only browser mutation route under acceptance remains `POST /data-health/issues/:issueId/dismiss`; session mutations, history mutations, DataHealth repair, backup/import over HTTP, reset/recovery over HTTP, source-of-truth switching, production backend, auth, sync, and deployment remain blocked.
+
+## Task 4.34 Note
+
+Task 4.34 adds `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md` as audit-only follow-up work.
+
+The Task 4.24 readiness conclusion remains unchanged for broader mutation integration. DataHealth dismiss remains the only implemented browser mutation prototype, `POST /history/:id/data-flag` is only a second future candidate, no second mutation is implemented, and App runtime still does not call session/history/DataHealth repair/backup/reset mutation routes.
+
+Write-path migration remains blocked. The next recommended task is `Task 4.35 History Data-flag Mutation Prototype Plan V1`.

@@ -204,3 +204,11 @@ Task 4.29 adds acceptance coverage and `docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPT
 The no-fake-success rule is covered by tests: API unavailable, timeout, malformed response, server errors, no-change, issue-not-found, write failure, transaction failure, database closed, unsupported route, non-2xx responses, and missing snapshot metadata all remain failure states instead of success states.
 
 The Task 4.26 conclusion remains unchanged for broader write paths: AppData and localStorage are not overwritten by API results, no session/history/DataHealth repair/backup/reset App mutations are authorized, and write-path migration remains blocked.
+
+## Task 4.34 Note
+
+Task 4.34 audits the second mutation candidate without implementing it.
+
+The Task 4.26 UX conclusion remains active: history data-flag is a Level 2 candidate that needs explicit confirmation, audit trail visibility, readMirror parity, duplicate-submit prevention, rollback planning, and no-fake-success handling before any future prototype.
+
+No second mutation is implemented. The only implemented browser mutation route remains `POST /data-health/issues/:issueId/dismiss`, and write-path migration remains blocked.
