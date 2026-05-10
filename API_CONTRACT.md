@@ -76,6 +76,8 @@ Task 4.42 adds `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md` as Write-path Two-
 
 Task 4.43 adds `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Third Mutation Candidate Readiness Audit V1. It is audit-only and docs/static-test only: no third mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, no frontend mutation client is added, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. Limited history edit is the only plausible future third candidate, but it is planning-only for `Task 4.44 Limited History Edit Mutation Prototype Plan V1`; Task 4.43 does not recommend direct implementation.
 
+Task 4.44 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` as Limited History Edit Mutation Prototype Plan V1. It is planning-only and docs/static-test only: `POST /history/:id/edit` remains blocked from browser runtime, no third mutation route is added, no browser allowlist expansion occurs, App.tsx and src/devApi runtime behavior remain unchanged, localStorage remains source of truth, and API results never overwrite AppData or localStorage. The plan defines field-level constraints for a possible future one-set history edit route and rejects broad history edit, source-of-truth migration, production backend/auth/sync/deployment, dependencies, scripts, lockfile changes, normalized tables, and training algorithm changes.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1199,6 +1201,22 @@ Task 4.43 audits possible third browser mutation candidates after the two-route 
 - There is no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline mutation queue, or API-backed persistence adapter.
 
 Write-path migration remains blocked after Task 4.43. The next recommended task is `Task 4.44 Limited History Edit Mutation Prototype Plan V1`, planning-only. Task 4.44 must not implement `POST /history/:id/edit`; it must define field-level constraints and reject broad history edit.
+
+## Task 4.44: Limited History Edit Mutation Prototype Plan V1
+
+Task 4.44 creates a planning-only future prototype plan for limited history edit. It adds `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` and static tests only.
+
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- `POST /history/:id/edit` remains blocked from browser runtime.
+- No third mutation route is added or approved.
+- No App.tsx integration, src/devApi runtime behavior, frontend mutation client, or feature flag runtime wiring is added.
+- The plan constrains a possible future edit to one existing set in one existing history session.
+- Allowed future patch fields are limited to set load, display weight/unit, reps, RIR, technique quality, pain flag, and note, with `exerciseId` and `setId` as locators only.
+- Broad history edit, whole-session patches, arbitrary JSON paths, dataFlag edits, session mutations, DataHealth repair, backup/import/export/reset/recovery, source-of-truth migration, production backend/auth/sync/deployment, dependencies, scripts, lockfile changes, normalized tables, and training algorithm changes remain blocked.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+
+Write-path migration remains blocked after Task 4.44. There is no automatic next task. A future implementation task remains blocked until a later user-approved single-route prototype task explicitly defines implementation files, gates, validation, and rollback.
 
 ## Local Persistence
 
