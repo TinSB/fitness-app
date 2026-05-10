@@ -1425,3 +1425,17 @@ No new mutation route is added. Browser mutation routes remain exactly:
 The acceptance contract locks flag matrix isolation, stable target selection, confirmation, pending duplicate-submit behavior, strict no-fake-success, source-of-truth integrity, field constraints, data semantics, route boundary, and manual cleanup/build-safety checks.
 
 Task 4.48 Limited History Edit Manual App Acceptance V1 is the next recommended task.
+
+## Task 4.48: Limited History Edit Manual App Acceptance V1
+
+Task 4.48 adds `docs/LIMITED_HISTORY_EDIT_MANUAL_APP_ACCEPTANCE.md` for human-run App acceptance of the existing dev-only Limited History Edit prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The manual acceptance contract covers disposable data, localhost-only Dev API, required flags, target session/exercise/set, confirmation, pending duplicate-submit, success, failure/no-fake-success, field constraints, data semantics, localStorage integrity, network route boundary, forbidden UI controls, cleanup, and browser build safety.
+
+Task 4.49 Limited History Edit Prototype Hardening V1 is the next recommended task.

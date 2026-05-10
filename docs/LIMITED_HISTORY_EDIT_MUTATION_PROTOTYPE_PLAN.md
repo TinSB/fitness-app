@@ -407,3 +407,14 @@ Task 4.47 adds acceptance coverage and the manual runbook at `docs/LIMITED_HISTO
 - localStorage remains source of truth and API results never overwrite AppData or localStorage.
 
 Next recommended task: Task 4.48 Limited History Edit Manual App Acceptance V1.
+
+## Task 4.48 Manual App Acceptance Result
+
+Task 4.48 adds `docs/LIMITED_HISTORY_EDIT_MANUAL_APP_ACCEPTANCE.md` and static tests for manual App acceptance of the existing prototype.
+
+- No new mutation route is added.
+- Runtime write capability remains limited to the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- The manual runbook covers disposable data, required flags, target set, confirmation, pending duplicate-submit, success, failure, field constraints, data semantics, localStorage integrity, network route boundary, forbidden controls, cleanup, and browser build safety.
+
+Next recommended task: Task 4.49 Limited History Edit Prototype Hardening V1.
