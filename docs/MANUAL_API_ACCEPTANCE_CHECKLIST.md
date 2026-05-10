@@ -8,6 +8,8 @@ It is a manual local development checklist, not a production backend checklist.
 
 Task 4.13 adds automated smoke coverage for the highest-risk items in this checklist. The manual checklist remains a human acceptance procedure and does not require a package script or App/UI integration.
 
+Task 4.14 records local API runner strategy. No runner is implemented here and no package script exists yet.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

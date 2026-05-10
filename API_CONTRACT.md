@@ -16,6 +16,8 @@ Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance 
 
 Task 4.13 adds automated smoke hardening for the dev-only local API runtime stack. It exercises real HTTP requests against temporary file-backed SQLite repositories, but still does not add runtime features, production server behavior, App/UI integration, package dependencies, or new API routes.
 
+Task 4.14 adds `docs/LOCAL_API_RUNNER_STRATEGY.md` as a runner strategy and decision record. It is not a runtime feature, does not add scripts or dependencies, and keeps devLauncher as a programmatic Node-only API.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -347,6 +349,30 @@ Boundary:
 - Browser-facing builds must remain isolated from `node:http`, `node:sqlite`, devLauncher, httpRuntimeAdapter, serverAdapter, and sqliteRepository.
 
 This hardening is an automated companion to the manual checklist. It is not a signal that the production frontend should call the local API stack.
+
+## Local API Runner Strategy
+
+Owner files:
+
+- `docs/LOCAL_API_RUNNER_STRATEGY.md`
+- `tests/localApiRunnerStrategy.test.ts`
+
+Boundary:
+
+- The strategy is a decision record, not a runner implementation.
+- It does not add package dependencies, package scripts, App UI integration, localStorage replacement, production server behavior, auth, sync, deployment, backup import/export HTTP endpoints, or normalized tables.
+- It keeps `createDevLocalApiLauncher(options)` as a programmatic Node-only API.
+- It documents that browser-facing `apps/api/src/index.ts` does not export Node-only runtime.
+- It records that App runtime still uses localStorage through the existing persistence facade.
+
+Recommendation:
+
+- Short-term recommendation is Option A: no runner yet, keep the programmatic launcher only.
+- Next recommended task is `Task 4.15 Dev API Runner Prototype V1`.
+- Task 4.15 may prototype a compiled JavaScript runner, a TypeScript runtime runner proposal with explicit dependency approval, or continued manual test harness use.
+- Task 4.15 is still not App runtime migration.
+
+This strategy must not be read as evidence that a local API runner already exists, that `App.tsx` is connected, or that the backend is production-ready.
 
 ## Local Persistence
 

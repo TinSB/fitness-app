@@ -392,6 +392,18 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.14 Local API Runner Strategy V1` or `Task 4.14 Dev API Manual Run Script V1`. Do not migrate `App.tsx` to HTTP/SQLite until dev-only launcher behavior, automated smoke, manual acceptance, and recovery expectations are stable.
 
+### Task 4.14: Local API Runner Strategy V1
+
+Completed as a runner strategy and decision record, not as a runner implementation:
+
+- `docs/LOCAL_API_RUNNER_STRATEGY.md` evaluates no-runner, compiled JavaScript runner, TypeScript runtime runner, Node loader, and manual test harness options.
+- The unique short-term recommendation is Option A: no runner yet, keep `createDevLocalApiLauncher(options)` as the programmatic launcher only.
+- `localApiRunnerStrategy.test.ts` verifies the strategy document, no-script/no-dependency boundary, package script absence, and alignment with API contract and the manual checklist.
+
+This task still does not add a package script, package dependency, runner implementation, `App.tsx` integration, UI integration, localStorage replacement, production server behavior, auth, sync, deployment, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.15 Dev API Runner Prototype V1`. Do not migrate `App.tsx` to HTTP/SQLite until a runner prototype, recovery expectations, and manual acceptance remain stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
