@@ -230,3 +230,11 @@ Task 4.34 adds `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md` as audit-only
 The Task 4.24 readiness conclusion remains unchanged for broader mutation integration. DataHealth dismiss remains the only implemented browser mutation prototype, `POST /history/:id/data-flag` is only a second future candidate, no second mutation is implemented, and App runtime still does not call session/history/DataHealth repair/backup/reset mutation routes.
 
 Write-path migration remains blocked. The next recommended task is `Task 4.35 History Data-flag Mutation Prototype Plan V1`.
+
+## Task 4.35 Note
+
+Task 4.35 adds `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` as plan-only follow-up work.
+
+The Task 4.24 readiness conclusion remains unchanged for broader mutation integration. No second mutation is implemented, App runtime still does not call `POST /history/:id/data-flag`, DataHealth dismiss remains the only implemented browser mutation prototype, and session/history edit/DataHealth repair/backup/reset routes remain blocked.
+
+Write-path migration remains blocked. The next recommended task is `Task 4.36 History Data-flag Mutation Prototype V1` only if gates are accepted.

@@ -228,3 +228,11 @@ No second mutation is implemented.
 Write-path migration remains blocked.
 
 Next task should be Task 4.35 History Data-flag Mutation Prototype Plan V1.
+
+## Task 4.35 Follow-up Note
+
+Task 4.35 adds `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` as the planning follow-up for the selected candidate.
+
+The Task 4.34 decision does not change: `POST /history/:id/data-flag` is still a future candidate only, no second mutation is implemented, DataHealth dismiss remains the only implemented browser mutation prototype, localStorage remains source of truth, and write-path migration remains blocked.
+
+Task 4.35 recommends `Task 4.36 History Data-flag Mutation Prototype V1` only if gates are accepted.

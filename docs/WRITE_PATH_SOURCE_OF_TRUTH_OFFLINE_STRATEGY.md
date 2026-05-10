@@ -319,3 +319,11 @@ Task 4.34 adds a second mutation candidate readiness audit only.
 The Task 4.25 source-of-truth rule does not change: localStorage remains the active App source of truth, API mutation results do not overwrite AppData or localStorage, and there is still no offline mutation queue, source-of-truth switch, localStorage reconciliation, production backend, auth, sync, deployment, broad mutation client, package change, lockfile change, or normalized table.
 
 The audit identifies `POST /history/:id/data-flag` as the second future candidate for a planning task, but no second mutation is implemented and write-path migration remains blocked.
+
+## Task 4.35 Note
+
+Task 4.35 plans a future History data-flag mutation prototype without implementing it.
+
+The Task 4.25 source-of-truth rule still applies: localStorage remains the active App source of truth, API mutation results must not overwrite AppData or localStorage, there is no offline mutation queue, and no source-of-truth switch or localStorage reconciliation is introduced.
+
+History data-flag planning must keep DataHealth dismiss as the only implemented browser mutation route until a later explicitly approved task.
