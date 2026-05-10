@@ -236,3 +236,11 @@ Task 4.37 adds acceptance tests and `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE
 The accepted UX boundary covers flag matrix isolation, target record selection, confirmation before POST, cancel with no POST, pending duplicate-submit prevention, retry only after explicit re-confirmation, strict no-fake-success behavior, and localStorage/AppData integrity.
 
 No new mutation route is added; browser mutation routes remain exactly DataHealth dismiss and History data-flag.
+
+## Task 4.46 Note
+
+Task 4.46 implements the dev-only Limited History Edit prototype for `POST /history/:id/edit`.
+
+The no-fake-success rule applies to limited history edit: confirmation is required before POST, pending disables duplicate submit, success requires HTTP success plus `ok=true`, `changed=true`, `status="success"`, and snapshot metadata, and every missing success field is failure.
+
+Rollback remains failure-state only because the prototype never optimistically updates AppData or localStorage. The App remains localStorage-first; users can disable the mutation flag, stop the Dev API runner, and use the existing dev DB runbook if needed.
