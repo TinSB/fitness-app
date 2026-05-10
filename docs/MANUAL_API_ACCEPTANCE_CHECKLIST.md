@@ -334,3 +334,12 @@ Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED
 - [ ] Confirm no fourth mutation route, session mutation, DataHealth repair, backup/import/export/reset/recovery route, or broad mutation client is exposed.
 - [ ] Confirm allowed Limited History Edit patch fields remain exactly `weightKg`, `displayWeight`, `displayUnit`, `reps`, `rir`, `techniqueQuality`, `painFlag`, and `note`.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+
+## Task 4.52 Write-path Three-route Checkpoint
+
+- [ ] Use `docs/WRITE_PATH_THREE_ROUTE_CHECKPOINT.md` as the three-route checkpoint.
+- [ ] Confirm Task 4.52 does not add a new mutation route.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm no fourth mutation route, session mutation, DataHealth repair, backup/import/export/reset/recovery route, or broad mutation client is exposed.
+- [ ] Confirm DataHealth dismiss, History data-flag, and Limited History Edit remain dev-only explicit opt-in prototypes.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

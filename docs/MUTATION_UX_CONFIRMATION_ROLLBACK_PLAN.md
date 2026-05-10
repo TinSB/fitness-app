@@ -274,3 +274,9 @@ Recovery remains manual and outside the browser prototype: disable the mutation 
 Task 4.51 regression-locks the Limited History Edit UX boundary without adding browser write capability.
 
 The prototype remains confirmation-gated, duplicate-submit guarded, no-fake-success locked, and failure-visible. Rollback remains failure-state only because AppData and localStorage are never optimistically changed by the browser prototype.
+
+## Task 4.52 Note
+
+Task 4.52 checkpoints the three accepted write-path prototypes without adding browser write capability.
+
+DataHealth dismiss, History data-flag, and Limited History Edit remain dev-only, confirmation-aware, duplicate-submit guarded, strict no-fake-success prototypes. Rollback remains failure-state/manual cleanup only because API results never overwrite AppData or localStorage.

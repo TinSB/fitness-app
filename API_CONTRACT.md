@@ -1491,3 +1491,19 @@ Allowed Limited History Edit patch fields remain exactly `weightKg`, `displayWei
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
 
 Task 4.52 Write-path Three-route Checkpoint V1 is the next recommended task.
+
+## Task 4.52: Write-path Three-route Checkpoint V1
+
+Task 4.52 adds `docs/WRITE_PATH_THREE_ROUTE_CHECKPOINT.md` as a checkpoint/audit for the current three-route write-path prototype state.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The checkpoint records DataHealth dismiss, History data-flag, and Limited History Edit as dev-only, explicit opt-in, route-specific prototypes with strict no-fake-success behavior, snapshot metadata success requirements, duplicate-submit prevention, confirmation, visible failure states, no localStorage writes, and no AppData overwrite.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
+
+Task 4.53 Write-path Three-route Manual Regression V1 is the next recommended task.
