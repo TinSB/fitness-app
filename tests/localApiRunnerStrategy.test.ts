@@ -87,7 +87,7 @@ describe('local API runner strategy documentation', () => {
     misleadingActionInstructions.forEach((pattern) => expect(strategy).not.toMatch(pattern));
   });
 
-  it('confirms package.json has no local API runner script for Task 4.14', () => {
+  it('confirms package.json has only the approved dev-only runner scripts after Task 4.15', () => {
     const packageJson = JSON.parse(readFileSync(resolve(repoRoot(), 'package.json'), 'utf8')) as {
       scripts?: Record<string, string>;
     };
@@ -97,7 +97,9 @@ describe('local API runner strategy documentation', () => {
       return /local-api|api:dev|api-dev|api:runner|devLauncher|devLauncher\.ts|apps\/api\/src\/node/i.test(text);
     });
 
-    expect(localApiRunnerScripts).toEqual([]);
+    expect(localApiRunnerScripts.map(([name]) => name).sort()).toEqual(['api:dev', 'api:dev:build']);
+    expect(scripts['api:dev:build']).toContain('.ironpath/dev-api-runner');
+    expect(scripts['api:dev']).toContain('.ironpath/dev-api-runner/devApiRunner.js');
   });
 
   it('keeps contract and refactor docs aligned with the strategy', () => {
@@ -116,6 +118,6 @@ describe('local API runner strategy documentation', () => {
     expect(refactorPlan).toContain('Do not migrate `App.tsx` to HTTP/SQLite');
 
     expect(checklist).toContain('Task 4.14 records local API runner strategy');
-    expect(checklist).toContain('no package script exists yet');
+    expect(checklist).toContain('Task 4.15 adds a dev-only compiled runner prototype');
   });
 });

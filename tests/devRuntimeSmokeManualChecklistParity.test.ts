@@ -52,10 +52,12 @@ describe('dev runtime smoke manual checklist parity', () => {
 
     expect(checklist).toContain(`Default host is \`${DEV_LAUNCHER_DEFAULT_HOST}\``);
     expect(checklist).toContain(`The seed snapshot label is \`${DEV_LAUNCHER_SEED_EMPTY_LABEL}\``);
-    expect(checklist).not.toMatch(/\bapi:dev\b/i);
-    expect(checklist).not.toMatch(/\bnpm run api\b/i);
+    expect(checklist).toContain('Task 4.15 adds a dev-only compiled runner prototype');
+    expect(checklist).toContain('npm run api:dev -- --port 0 --seed-empty --db <temp-db>');
     expect(checklist).toContain('no App.tsx integration');
     expect(checklist).toContain('no UI integration');
+    expect(checklist).not.toMatch(/\bconnect App\.tsx to API\b/i);
+    expect(checklist).not.toMatch(/\bproduction backend ready\b/i);
 
     const temp = makeTempDevRuntimeDb();
     const launcher = createDevLocalApiLauncher({

@@ -8,7 +8,7 @@ It is a manual local development checklist, not a production backend checklist.
 
 Task 4.13 adds automated smoke coverage for the highest-risk items in this checklist. The manual checklist remains a human acceptance procedure and does not require a package script or App/UI integration.
 
-Task 4.14 records local API runner strategy. No runner is implemented here and no package script exists yet.
+Task 4.14 records local API runner strategy. Task 4.15 adds a dev-only compiled runner prototype; it is still not App/UI integration or production backend readiness.
 
 ## Scope / Non-goals
 
@@ -31,9 +31,20 @@ Task 4.14 records local API runner strategy. No runner is implemented here and n
 - [ ] Run `npm run typecheck` before manual acceptance.
 - [ ] Run `npm test` before manual acceptance.
 - [ ] Run `npm run build` before manual acceptance.
-- [ ] Confirm there is no package script required for this checklist.
+- [ ] Confirm there is no production package script required for this checklist; only the dev-only runner prototype scripts are used when checking the runner.
 - [ ] Confirm `.ironpath/dev-api.sqlite` is not committed.
 - [ ] Confirm no real training data or local dev SQLite files are committed.
+
+## Dev Runner Prototype Acceptance
+
+- [ ] `npm run api:dev:build` writes generated files only under `.ironpath/dev-api-runner`.
+- [ ] Runner build does not delete `.ironpath/dev-api.sqlite`, `.sqlite-wal`, `.sqlite-shm`, or sibling dev artifacts.
+- [ ] `npm run api:dev -- --port 0 --seed-empty --db <temp-db>` starts the dev-only API runner.
+- [ ] Runner stdout includes `IronPath dev API ready: <url>`.
+- [ ] The ready URL serves `GET /health` as JSON.
+- [ ] With `--seed-empty`, `GET /app-data/summary` is readable.
+- [ ] SIGINT or SIGTERM closes the HTTP server and SQLite repository.
+- [ ] Runner usage remains dev-only and does not require App.tsx or UI integration.
 
 ## Launcher Boundary Verification
 

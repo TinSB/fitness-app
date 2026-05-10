@@ -404,6 +404,21 @@ This task still does not add a package script, package dependency, runner implem
 
 Recommended next step is `Task 4.15 Dev API Runner Prototype V1`. Do not migrate `App.tsx` to HTTP/SQLite until a runner prototype, recovery expectations, and manual acceptance remain stable.
 
+### Task 4.15: Dev API Runner Prototype V1
+
+Completed with Result A: compiled JavaScript runner prototype.
+
+- `apps/api/src/node/devApiRunner.ts` provides a Node-only ESM runner entry guarded so imports do not auto-listen.
+- `api:dev:build` compiles the runner through Vite SSR into `.ironpath/dev-api-runner`.
+- `api:dev` runs the compiled runner and forwards `npm run api:dev -- <args>`.
+- The runner prints `IronPath dev API ready: <url>` after successful start.
+- SIGINT and SIGTERM close the HTTP server and SQLite repository.
+- Tests verify CLI parsing, output directory safety, ready-line startup, `--port 0 --seed-empty --db <temp-db>` passthrough, shutdown, package scripts, Node-only isolation, and build audit documentation.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production server runtime. It does not add package dependencies, lockfile changes, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.16 Dev API Runner Manual Acceptance V1`. Do not migrate `App.tsx` to HTTP/SQLite until runner manual acceptance, recovery expectations, and data migration boundaries are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
