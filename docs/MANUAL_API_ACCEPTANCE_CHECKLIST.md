@@ -306,3 +306,13 @@ Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED
 - [ ] Confirm manual testing uses disposable data and a dedicated browser profile.
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+
+## Task 4.49 Limited History Edit Hardening
+
+- [ ] Use `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_HARDENING.md` for hardening scope.
+- [ ] Confirm Task 4.49 does not add a new mutation route.
+- [ ] Confirm no-fake-success requires HTTP success, `ok=true`, `changed=true`, `status="success"`, and snapshot metadata.
+- [ ] Confirm source fingerprint missing is failure and no request is sent.
+- [ ] Confirm pending duplicate submit stays blocked.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

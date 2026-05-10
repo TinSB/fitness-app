@@ -252,3 +252,11 @@ Task 4.47 adds acceptance coverage and a manual acceptance runbook for the Limit
 The accepted UX boundary covers flag matrix isolation, stable target session/exercise/set selection, before/after display, calculation-impact warning, confirmation before POST, cancel with no POST, pending duplicate-submit prevention, retry only after explicit user action and confirmation, strict no-fake-success behavior, and localStorage/AppData integrity.
 
 No new mutation route is added; browser mutation routes remain exactly DataHealth dismiss, History data-flag, and Limited History Edit.
+
+## Task 4.49 Note
+
+Task 4.49 hardens the Limited History Edit UX boundary without adding runtime write capability.
+
+The no-fake-success rule remains strict: success requires HTTP success plus `ok=true`, `changed=true`, `status="success"`, and snapshot metadata. Missing result, missing snapshot metadata, no_change, not-found, invalid patch, source snapshot mismatch, write failure, transaction failure, database_closed, unsupported_route, timeout, abort, unavailable, and malformed response stay visible failures.
+
+Rollback remains failure-state only because the prototype never optimistically updates AppData or localStorage. Confirmation and pending locks remain required before any retry.

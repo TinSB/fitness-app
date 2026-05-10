@@ -202,3 +202,12 @@ Task 4.48 adds `docs/LIMITED_HISTORY_EDIT_MANUAL_APP_ACCEPTANCE.md` as the human
 - It does not expand runtime write capability beyond the accepted three-route set.
 - It keeps localStorage as source of truth and keeps API results from overwriting AppData or localStorage.
 - It recommends Task 4.49 Limited History Edit Prototype Hardening V1 as the next task.
+
+## Task 4.49 Hardening Companion
+
+Task 4.49 adds `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_HARDENING.md` and hardening tests for the existing dev-only Limited History Edit prototype.
+
+- It does not add a new mutation route.
+- It does not expand runtime write capability beyond the accepted three-route set.
+- It locks strict no-fake-success behavior, source fingerprint diagnostics, confirmation reset, pending duplicate-submit prevention, source-of-truth integrity, field constraints, data semantics, and browser build isolation.
+- It recommends Task 4.50 Limited History Edit Observability & Recovery Notes V1 as the next task.

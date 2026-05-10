@@ -1439,3 +1439,19 @@ No new mutation route is added. Runtime write capability remains limited to:
 The manual acceptance contract covers disposable data, localhost-only Dev API, required flags, target session/exercise/set, confirmation, pending duplicate-submit, success, failure/no-fake-success, field constraints, data semantics, localStorage integrity, network route boundary, forbidden UI controls, cleanup, and browser build safety.
 
 Task 4.49 Limited History Edit Prototype Hardening V1 is the next recommended task.
+
+## Task 4.49: Limited History Edit Prototype Hardening V1
+
+Task 4.49 adds `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_HARDENING.md` and regression coverage that hardens the existing dev-only Limited History Edit prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The hardening contract locks strict no-fake-success behavior, required snapshot metadata, source fingerprint diagnostics, confirmation and pending duplicate-submit behavior, source-of-truth integrity, field constraints, data semantics, and browser build isolation.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
+
+Task 4.50 Limited History Edit Observability & Recovery Notes V1 is the next recommended task.

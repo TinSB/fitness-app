@@ -359,3 +359,11 @@ Task 4.47 adds acceptance tests and a manual runbook for the Limited History Edi
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the prototype, and read-only comparison remains separate from the mutation experiment.
 
 The acceptance layer does not add an offline queue, localStorage reconciliation, production backend, auth, sync, deployment, or any browser mutation route beyond DataHealth dismiss, History data-flag, and Limited History Edit.
+
+## Task 4.49 Note
+
+Task 4.49 hardens the Limited History Edit prototype without changing the write-path source-of-truth strategy.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the prototype, and no localStorage reconciliation or offline mutation queue is introduced.
+
+The hardening layer does not add production backend, auth, sync, deployment, or any browser mutation route beyond DataHealth dismiss, History data-flag, and Limited History Edit.

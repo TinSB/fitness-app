@@ -381,3 +381,13 @@ Task 4.47 adds acceptance tests and `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_ACCEPTA
 No new browser mutation route is added. The accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 
 Task 4.48 Limited History Edit Manual App Acceptance V1 is the next recommended task.
+
+## Task 4.49 Hardening Note
+
+Task 4.49 hardens the existing Limited History Edit prototype after explicit implementation and acceptance.
+
+No new browser mutation route is added. The accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+
+localStorage remains source of truth, API results never overwrite AppData or localStorage, and broader write-path migration remains blocked.
+
+Task 4.50 Limited History Edit Observability & Recovery Notes V1 is the next recommended task.

@@ -888,6 +888,20 @@ Completed as human-run App acceptance documentation and static lock tests for th
 
 The next recommended task is `Task 4.49 Limited History Edit Prototype Hardening V1`.
 
+### Task 4.49: Limited History Edit Prototype Hardening V1
+
+Completed as hardening coverage and documentation for the existing Task 4.46 dev-only prototype.
+
+- Adds `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_HARDENING.md`.
+- Adds hardening tests for strict no-fake-success behavior, source fingerprint diagnostics, confirmation reset, pending duplicate-submit prevention, route boundary, data semantics, and docs parity.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, or training algorithm change is added.
+
+The next recommended task is `Task 4.50 Limited History Edit Observability & Recovery Notes V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

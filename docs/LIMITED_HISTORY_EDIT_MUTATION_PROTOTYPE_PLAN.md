@@ -418,3 +418,15 @@ Task 4.48 adds `docs/LIMITED_HISTORY_EDIT_MANUAL_APP_ACCEPTANCE.md` and static t
 - The manual runbook covers disposable data, required flags, target set, confirmation, pending duplicate-submit, success, failure, field constraints, data semantics, localStorage integrity, network route boundary, forbidden controls, cleanup, and browser build safety.
 
 Next recommended task: Task 4.49 Limited History Edit Prototype Hardening V1.
+
+## Task 4.49 Hardening Result
+
+Task 4.49 adds `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_HARDENING.md` plus hardening tests for the existing dev-only Limited History Edit prototype.
+
+- No new mutation route is added.
+- Runtime write capability remains limited to the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- The hardening locks strict no-fake-success behavior, snapshot metadata, source fingerprint diagnostics, confirmation reset, pending duplicate-submit prevention, source-of-truth integrity, field constraints, data semantics, and browser build isolation.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 4.50 Limited History Edit Observability & Recovery Notes V1.
