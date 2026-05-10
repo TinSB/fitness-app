@@ -848,6 +848,20 @@ Task 4.45 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.45. The next recommended task is `Task 4.46 Limited History Edit Mutation Prototype V1` only with explicit user approval. Task 4.46 must not be auto-started, and it must be a separate one-route, dev-only, explicit opt-in implementation task if the user approves it later.
 
+### Task 4.46: Limited History Edit Mutation Prototype V1
+
+Completed as the explicitly user-approved third dev-only browser mutation prototype.
+
+- Adds only the `POST /history/:id/edit` browser prototype.
+- Keeps DataHealth dismiss and History data-flag intact.
+- Browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Keeps localStorage as the active App source of truth.
+- API results never overwrite AppData or localStorage.
+- Success requires HTTP success, `ok=true`, `changed=true`, `status="success"`, and snapshot metadata.
+- No session mutation, DataHealth repair, backup/import/export/reset/recovery browser route, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, source-of-truth migration, localStorage replacement, offline queue, or training algorithm change is added.
+
+Write-path migration remains limited to dev-only prototypes. The next recommended task is `Task 4.47 Limited History Edit Prototype Acceptance V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

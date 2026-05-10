@@ -94,7 +94,7 @@ const toRequestUrl = (baseUrl: string, issueId: string) =>
 
 export const sanitizeDataHealthDismissMessage = (message: string, fallback = 'DataHealth dismiss experiment failed.') => {
   const normalized = message
-    .replace(/\b(?:Error|TypeError|SqliteRepositoryError):\s*/gi, '')
+    .replace(/\b(?:Error|TypeError|[A-Za-z]+RepositoryError):\s*/gi, '')
     .replace(/\{[\s\S]*?\}/g, '[details omitted]')
     .replace(/\[[\s\S]*?\]/g, '[details omitted]')
     .replace(/\bat\s+[^\n\r]+/gi, '')

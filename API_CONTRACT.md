@@ -1391,3 +1391,23 @@ If a backend is introduced later:
 - Keep local-first fallback behavior explicit.
 - Do not replace backup/export until cloud sync has a tested recovery path.
 - Do not add secrets to `.env.example`; document variable names only.
+
+## Task 4.46: Limited History Edit Mutation Prototype V1
+
+Task 4.46 adds a dev-only, explicit opt-in, one-route Limited History Edit browser mutation prototype.
+
+Implemented route:
+
+- `POST /history/:id/edit`
+
+Accepted browser mutation allowlist is now exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The App source of truth remains localStorage. API results never overwrite AppData or localStorage. The browser prototype sends only server-compatible `exerciseId`, `setId`, `patch`, and optional `reason`; frontend metadata remains local diagnostics.
+
+Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata. Missing snapshot metadata, no_change, record_not_found, exercise_not_found, set_not_found, invalid patch, validation failure, source snapshot mismatch, write failure, transaction failure, database_closed, and unsupported_route are failures in the browser prototype.
+
+No session mutation, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, source-of-truth switch, localStorage replacement, offline queue, or training algorithm change is added.

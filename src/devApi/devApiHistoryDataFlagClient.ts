@@ -107,7 +107,7 @@ const toRequestUrl = (baseUrl: string, sessionId: string) =>
 
 export const sanitizeHistoryDataFlagMessage = (message: string, fallback = 'History data-flag experiment failed.') => {
   const normalized = message
-    .replace(/\b(?:Error|TypeError|SqliteRepositoryError):\s*/gi, '')
+    .replace(/\b(?:Error|TypeError|[A-Za-z]+RepositoryError):\s*/gi, '')
     .replace(/\{[\s\S]*?\}/g, '[details omitted]')
     .replace(/\[[\s\S]*?\]/g, '[details omitted]')
     .replace(/\bat\s+[^\n\r]+/gi, '')

@@ -359,3 +359,17 @@ Task 4.46 Limited History Edit Mutation Prototype V1 may be created only after e
 Task 4.46 requires explicit user approval and must not auto-start.
 
 Do not auto-start Task 4.46.
+
+## Task 4.46 Implementation Note
+
+Explicit user approval was provided for Task 4.46 Limited History Edit Mutation Prototype V1.
+
+Task 4.46 implemented only the approved one-route prototype for `POST /history/:id/edit`.
+
+- It is dev-only and explicit opt-in.
+- It does not add broad history edit.
+- It does not switch source of truth.
+- It does not let API results overwrite AppData or localStorage.
+- It does not add session mutation, DataHealth repair, backup/import/export/reset/recovery routes, production backend, auth, sync, deployment, package changes, scripts, lockfile changes, or normalized tables.
+- Browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Task 4.47 Limited History Edit Prototype Acceptance V1 is the next recommended acceptance-only task.

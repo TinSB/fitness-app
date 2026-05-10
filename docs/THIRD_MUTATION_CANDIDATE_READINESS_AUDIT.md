@@ -274,3 +274,12 @@ Task 4.45 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` as a readi
 - localStorage remains source of truth and API results never overwrite AppData or localStorage.
 - It concludes that limited history edit is ready for a user-approved implementation prompt, but not direct implementation.
 - Task 4.46 Limited History Edit Mutation Prototype V1 requires explicit user approval and must not auto-start.
+
+## Task 4.46 Follow-up Note
+
+Task 4.46 moves limited history edit from planning candidate to dev-only prototype only after explicit user approval.
+
+- The prototype adds only `POST /history/:id/edit` to browser mutation code.
+- The accepted browser mutation routes are now exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Session mutation, DataHealth repair, backup/import/export/reset/recovery, source-of-truth migration, production backend/auth/sync/deployment, and broad mutation clients remain blocked.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.

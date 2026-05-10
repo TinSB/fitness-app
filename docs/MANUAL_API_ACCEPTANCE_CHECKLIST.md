@@ -282,3 +282,12 @@ Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED
 - [ ] Browser build result:
 - [ ] Notes:
 - [ ] Pass / Fail:
+
+## Task 4.46 Limited History Edit Prototype Note
+
+- [ ] Confirm Task 4.46 is dev-only and one-route only.
+- [ ] Confirm the only new route is `POST /history/:id/edit`.
+- [ ] Confirm browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm this does not imply production readiness.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+- [ ] Confirm no session/DataHealth repair/backup/import/export/reset/recovery browser mutation route is exposed.
