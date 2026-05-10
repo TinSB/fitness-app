@@ -14,6 +14,8 @@ Task 4.10 adds acceptance/regression audit tests over these boundaries. It does 
 
 Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance procedure for the dev-only local API stack. It is documentation and consistency testing only; HTTP behavior still comes from devLauncher, httpRuntimeAdapter, and serverAdapter, and the App runtime still uses localStorage.
 
+Task 4.13 adds automated smoke hardening for the dev-only local API runtime stack. It exercises real HTTP requests against temporary file-backed SQLite repositories, but still does not add runtime features, production server behavior, App/UI integration, package dependencies, or new API routes.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -322,6 +324,29 @@ Checklist coverage:
 - backup safety, `actualWeightKg`, `identityInvalid`, `legacyActualExerciseId`, and test/excluded record semantics
 
 The checklist is the hand-run acceptance companion to the automated boundary tests. It must not be used as evidence that the production frontend is ready to switch to HTTP or SQLite.
+
+## Dev Runtime Smoke Hardening
+
+Owner test files:
+
+- `tests/devRuntimeSmokeLifecycle.test.ts`
+- `tests/devRuntimeSmokeSeedAndRead.test.ts`
+- `tests/devRuntimeSmokeMutationPersistence.test.ts`
+- `tests/devRuntimeSmokeFailureNoWrite.test.ts`
+- `tests/devRuntimeSmokeLocalhostSafety.test.ts`
+- `tests/devRuntimeSmokeBrowserIsolation.test.ts`
+- `tests/devRuntimeSmokeManualChecklistParity.test.ts`
+
+Boundary:
+
+- These tests harden the dev-only local stack through real HTTP requests and temporary file-backed SQLite repositories.
+- They do not add business routes, package scripts, package dependencies, backup import/export HTTP endpoints, production server behavior, auth, sync, deployment, App UI integration, or localStorage replacement.
+- Mutation success smoke uses pre-seeded valid AppData with a startable template; it must not weaken session template validation or assume `emptyData` can start a session.
+- Parsing errors, unsupported routes, wrong methods, no-op mutations, invalid mutations, requires-confirmation responses, and unsafe import-like payloads must not write snapshots.
+- Unsupported business routes and wrong methods preserve the existing serverAdapter result shape with `reasonCode: "unsupported_route"`; parsing and repository errors use `{ error: { code, message } }`.
+- Browser-facing builds must remain isolated from `node:http`, `node:sqlite`, devLauncher, httpRuntimeAdapter, serverAdapter, and sqliteRepository.
+
+This hardening is an automated companion to the manual checklist. It is not a signal that the production frontend should call the local API stack.
 
 ## Local Persistence
 

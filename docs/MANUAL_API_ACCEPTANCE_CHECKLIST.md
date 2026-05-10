@@ -6,6 +6,8 @@ This checklist is for manually accepting the dev-only local API stack:
 
 It is a manual local development checklist, not a production backend checklist.
 
+Task 4.13 adds automated smoke coverage for the highest-risk items in this checklist. The manual checklist remains a human acceptance procedure and does not require a package script or App/UI integration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -71,6 +73,7 @@ It is a manual local development checklist, not a production backend checklist.
 - [ ] GET routes do not write snapshots.
 - [ ] Successful responses use `{ "result": <adapter result>, "snapshot": <metadata if present> }`.
 - [ ] Error responses use `{ "error": { "code": string, "message": string } }`.
+- [ ] Unsupported business routes may return `{ "result": { "reasonCode": "unsupported_route" } }` from serverAdapter.
 - [ ] Read routes do not add business logic outside serverAdapter/readMirror.
 
 ## Mutation Route Acceptance

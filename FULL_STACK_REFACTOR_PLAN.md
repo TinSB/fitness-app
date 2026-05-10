@@ -378,6 +378,20 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.13 Dev Runtime Smoke Hardening V1` or `Task 4.13 Local API Runner Strategy V1`. Do not migrate `App.tsx` to HTTP/SQLite until dev-only launcher behavior, manual acceptance, and recovery expectations are stable.
 
+### Task 4.13: Dev Runtime Smoke Hardening V1
+
+Completed as automated smoke hardening for the dev-only local API stack, not as a runtime feature:
+
+- `devRuntimeSmokeLifecycle.test.ts` verifies explicit start, repeated start reuse, JSON health response, idempotent close, and short-timeout post-close failure handling.
+- `devRuntimeSmokeSeedAndRead.test.ts` verifies `seedEmpty=false`, `seedEmpty=true`, seed labeling, GET read routes, no snapshot writes for reads, and file-backed close/reopen behavior.
+- `devRuntimeSmokeMutationPersistence.test.ts` verifies real HTTP mutation persistence using pre-seeded valid AppData with a startable template.
+- `devRuntimeSmokeFailureNoWrite.test.ts` verifies parsing, routing, no-op, invalid, requires-confirmation, and unsafe import-like failures do not write snapshots.
+- `devRuntimeSmokeLocalhostSafety.test.ts`, `devRuntimeSmokeBrowserIsolation.test.ts`, and `devRuntimeSmokeManualChecklistParity.test.ts` lock localhost safety, browser isolation, and checklist/runtime parity.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production server runtime. It does not add package dependencies, package scripts, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.14 Local API Runner Strategy V1` or `Task 4.14 Dev API Manual Run Script V1`. Do not migrate `App.tsx` to HTTP/SQLite until dev-only launcher behavior, automated smoke, manual acceptance, and recovery expectations are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
