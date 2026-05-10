@@ -194,3 +194,14 @@ Browser mutation routes remain exactly DataHealth dismiss and History data-flag.
 No third mutation is approved.
 localStorage remains source of truth.
 Next task should be Task 4.43 Third Mutation Candidate Readiness Audit V1, audit-only.
+
+## Task 4.43 Follow-up Note
+
+Task 4.43 adds `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` as the third mutation candidate readiness audit after this two-route regression lock.
+
+- It is audit documentation and static-test coverage only.
+- No third mutation route is added or approved.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- Limited history edit is only a future planning candidate, not an implementation.
+- The next recommended task is `Task 4.44 Limited History Edit Mutation Prototype Plan V1`, planning-only.

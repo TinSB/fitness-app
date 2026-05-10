@@ -74,6 +74,8 @@ Task 4.41 adds `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md` as Write-path Tw
 
 Task 4.42 adds `docs/WRITE_PATH_TWO_ROUTE_REGRESSION_LOCK.md` as Write-path Two-route Regression Lock V1. It is a regression/testing layer only, not new runtime capability. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third route is added or approved. localStorage remains source of truth, API results never overwrite AppData or localStorage, and production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and broad write-path migration remain blocked.
 
+Task 4.43 adds `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Third Mutation Candidate Readiness Audit V1. It is audit-only and docs/static-test only: no third mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, no frontend mutation client is added, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. Limited history edit is the only plausible future third candidate, but it is planning-only for `Task 4.44 Limited History Edit Mutation Prototype Plan V1`; Task 4.43 does not recommend direct implementation.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1182,6 +1184,21 @@ Task 4.42 locks the current two-route write-path prototype state after the DataH
 - Session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, broad mutation clients, API-backed persistence, offline mutation queues, production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and training algorithm changes remain blocked.
 
 Write-path migration remains blocked after Task 4.42. The next recommended task is `Task 4.43 Third Mutation Candidate Readiness Audit V1`, audit-only.
+
+## Task 4.43: Third Mutation Candidate Readiness Audit V1
+
+Task 4.43 audits possible third browser mutation candidates after the two-route regression lock. It adds `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` and static tests only.
+
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No third mutation route is added or approved.
+- Limited history edit, route `POST /history/:id/edit`, is the only plausible future third candidate for planning.
+- Limited history edit is not implemented and not approved for direct implementation.
+- Session mutations, DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, and source-of-truth migration remain blocked.
+- localStorage remains source of truth.
+- API results never overwrite AppData or localStorage.
+- There is no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline mutation queue, or API-backed persistence adapter.
+
+Write-path migration remains blocked after Task 4.43. The next recommended task is `Task 4.44 Limited History Edit Mutation Prototype Plan V1`, planning-only. Task 4.44 must not implement `POST /history/:id/edit`; it must define field-level constraints and reject broad history edit.
 
 ## Local Persistence
 
