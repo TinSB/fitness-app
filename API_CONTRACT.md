@@ -1,6 +1,6 @@
 # IronPath API Contract
 
-Last updated: 2026-05-08
+Last updated: 2026-05-10
 
 ## Current Contract Status
 
@@ -9,6 +9,8 @@ There is no deployed backend API, auth service, remote sync, SQLite repository, 
 A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. Pure session and Record/DataHealth mutation skeletons exist under `apps/api/src/sessionMutation.ts` and `apps/api/src/recordDataHealthMutation.ts` for pre-backend write-boundary parity. A Node-only SQLite snapshot repository exists under `apps/api/src/sqliteRepository.ts` for repository parity tests. These skeletons are not wired into `App.tsx`, the UI, localStorage, or any runtime server.
 
 All product data is stored in the user's current browser through `localStorage`, with import/export handled as local JSON files. Future agents must not assume any backend endpoint or remote field exists unless this file is updated first.
+
+Task 4.10 adds acceptance/regression audit tests over these boundaries. It does not make the API production-ready, does not switch App runtime storage, and does not connect the frontend to HTTP or SQLite.
 
 ## Read Mirror API Skeleton
 
@@ -221,6 +223,36 @@ HTTP response body:
 - Error: `{ "error": { "code": string, "message": string } }`
 - HTTP status comes from serverAdapter or the parsing error.
 - The wrapper does not expose raw stacks, raw SQLite errors, or internal exception objects.
+
+## Runtime Boundary Acceptance
+
+Owner test files:
+
+- `tests/runtimeBoundaryNodeOnlyIsolation.test.ts`
+- `tests/runtimeBoundaryPersistenceCompatibility.test.ts`
+- `tests/runtimeBoundaryMutationContract.test.ts`
+- `tests/runtimeBoundaryRepositoryContract.test.ts`
+- `tests/runtimeBoundaryServerHttpContract.test.ts`
+- `tests/runtimeBoundaryDataSemanticsRegression.test.ts`
+
+Acceptance contract:
+
+- Static Node-only isolation scans target production/runtime source files, not tests.
+- `src/**` and browser-facing `apps/api/src/index.ts` must not import Node-only runtime modules, `node:http`, or `node:sqlite`.
+- `apps/api/src/node/index.ts` is the Node-only entry for SQLite repository, server adapter, and HTTP smoke wrapper exports.
+- `persistence.ts` remains the frontend compatibility facade and App runtime still uses localStorage.
+- `appDataMigration`, `appDataSanitize`, `appDataValidation`, and `appDataStorageUtils` must not access `window`, `document`, or `localStorage`.
+- `localStorageAdapter` remains the only AppData browser I/O boundary allowed to access localStorage.
+- readMirror remains read-only.
+- sessionMutation and recordDataHealthMutation may return `nextData` only when `result.ok === true && result.changed === true`.
+- Invalid, no-op, not-found, requires-confirmation, unsafe, and unsupported mutation paths must not return `nextData`.
+- SQLite remains Node-only and snapshot-only; latest snapshot selection uses `row_id DESC`.
+- Corrupt or invalid SQLite snapshots must fail with stable repository errors and must not fall back to `emptyData`.
+- serverAdapter only composes repository/read/mutation boundaries; it does not start an HTTP server.
+- httpRuntimeAdapter only parses Node HTTP requests, forwards to serverAdapter, and writes stable JSON responses.
+- Boundary round-trips must preserve backup safety, `actualWeightKg`, legacy display fallback, `identityInvalid`, `legacyActualExerciseId`, test/excluded record exclusion, summary-only repair logs, and readMirror parity.
+
+This acceptance layer is a regression lock for future backend work. It is not a production backend, not a dev server launcher, not an App runtime migration, and not a claim that SQLite should replace browser localStorage.
 
 ## Local Persistence
 

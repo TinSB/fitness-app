@@ -328,6 +328,27 @@ Completed as a smoke-test wrapper only, not a production backend:
 
 This task still does not connect `App.tsx` or UI to HTTP, does not replace localStorage, does not add Fastify/Express, auth, cloud sync, deployment config, or normalized tables. A future task should harden runtime smoke or add a dev-only launch script before considering any frontend data-flow switch.
 
+### Task 4.10: Runtime Boundary Acceptance & Regression Audit V1
+
+Completed as an acceptance and regression audit layer over Task 4.0-4.9 boundaries, not as runtime migration:
+
+- `runtimeBoundaryNodeOnlyIsolation.test.ts` locks production/browser source away from Node-only modules, `node:http`, and `node:sqlite`.
+- `runtimeBoundaryPersistenceCompatibility.test.ts` confirms `persistence.ts` remains the facade, pure storage modules stay browser-global-free, and AppData localStorage access remains isolated to `localStorageAdapter`.
+- `runtimeBoundaryMutationContract.test.ts` confirms readMirror remains read-only and mutation boundaries return `nextData` only on `ok=true && changed=true`.
+- `runtimeBoundaryRepositoryContract.test.ts` confirms SQLite stays Node-only, snapshot-only, row-id ordered, strict on corrupt data, rollback-safe, and stable after close.
+- `runtimeBoundaryServerHttpContract.test.ts` confirms serverAdapter and httpRuntimeAdapter stay composition/parsing layers and do not auto-start a server.
+- `runtimeBoundaryDataSemanticsRegression.test.ts` confirms real, legacy, migrated, and repair fixture semantics survive boundary round-trips.
+
+Acceptance results are intentionally narrow:
+
+- App runtime still uses localStorage through the existing persistence facade.
+- `App.tsx`, UI, Focus Mode runtime, training algorithms, templates, scheduler, PR/e1RM, effective-set rules, backup semantics, and AppData schema meaning are unchanged.
+- Browser builds must not import `node:http`, `node:sqlite`, SQLite repository, server adapter, or HTTP runtime adapter.
+- SQLite remains a Node-only AppData snapshot repository for parity and smoke tests, not the production store.
+- The HTTP wrapper remains a smoke-test entry, not a production backend or deployment target.
+
+Recommended next step is `Task 4.11 Dev-only Local API Launcher V1` or `Task 4.11 Runtime Smoke Hardening V1`. Do not switch `App.tsx` to HTTP/SQLite until a dev-only launcher, recovery story, and acceptance tests are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

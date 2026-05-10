@@ -1,0 +1,31 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import { expect } from 'vitest';
+
+export const repoRoot = () => process.cwd();
+
+export const readSource = (path: string) => readFileSync(resolve(repoRoot(), path), 'utf8');
+
+export const collectRuntimeSourceFiles = (directory: string): string[] =>
+  readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return collectRuntimeSourceFiles(path);
+    return /\.(ts|tsx)$/.test(entry.name) ? [path] : [];
+  });
+
+export const collectSrcRuntimeFiles = () => collectRuntimeSourceFiles(resolve(repoRoot(), 'src'));
+
+export const relativePath = (path: string) => relative(repoRoot(), path).replaceAll('\\', '/');
+
+export const expectSourceNotToContain = (path: string, blocked: string[]) => {
+  const source = readFileSync(path, 'utf8');
+  const offenders = blocked.filter((token) => source.includes(token));
+  expect(offenders, `${relativePath(path)} should not contain ${offenders.join(', ')}`).toEqual([]);
+};
+
+export const expectNoRawStack = (value: unknown) => {
+  const serialized = JSON.stringify(value);
+  expect(serialized).not.toContain('stack');
+  expect(serialized).not.toContain('SqliteRepositoryError');
+  expect(serialized).not.toContain('Error:');
+};
