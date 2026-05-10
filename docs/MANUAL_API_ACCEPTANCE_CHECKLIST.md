@@ -46,6 +46,8 @@ Task 4.35 adds the History data-flag mutation prototype plan at `docs/HISTORY_DA
 
 Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype. It is one-route only: `POST /history/:id/data-flag`. DataHealth dismiss remains intact, localStorage remains source of truth, success requires snapshot metadata, and no production readiness or broader write-path migration is implied.
 
+Task 4.37 adds the History data-flag prototype acceptance runbook at `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md`. It is acceptance/testing only: browser mutation routes remain exactly DataHealth dismiss and History data-flag, localStorage remains source of truth, and no production readiness or broader write-path migration is implied.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -212,6 +214,9 @@ Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype.
 - [ ] Confirm the only browser mutation prototypes are DataHealth dismiss and History data-flag.
 - [ ] Task 4.35 history data-flag prototype plan remains the planning record; Task 4.36 is the explicitly approved one-route implementation.
 - [ ] Confirm the history data-flag prototype does not change localStorage source-of-truth, AppData overwrite behavior, or browser route boundaries.
+- [ ] Use `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md` for the History data-flag prototype acceptance runbook.
+- [ ] Confirm Task 4.37 acceptance keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- [ ] Confirm Task 4.37 acceptance covers flag matrix, target record, confirmation, pending/duplicate-submit, success/failure/no-fake-success, dataFlag semantics, localStorage integrity, Network boundary, forbidden controls, cleanup, and browser build safety.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history edit, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

@@ -717,6 +717,24 @@ Task 4.36 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.36. The next recommended task is `Task 4.37 History Data-flag Prototype Acceptance V1`.
 
+### Task 4.37: History Data-flag Prototype Acceptance V1
+
+Completed as acceptance tests and manual acceptance documentation for the Task 4.36 History data-flag prototype. It does not add a third mutation route, expand mutation capability, add production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, or a broad mutation client.
+
+- `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md` records the checkbox manual runbook for dedicated test profile safety, startup commands, flag matrix, target record checks, confirmation, pending/duplicate-submit behavior, strict success, failure/no-fake-success, dataFlag semantics, localStorage integrity, route boundaries, cleanup, and browser build safety.
+- `devApiHistoryDataFlagAcceptanceFlagMatrix.test.ts` locks DEV/compare/experiment flag behavior and DataHealth dismiss experiment isolation.
+- `devApiHistoryDataFlagAcceptanceInteraction.test.ts` locks target record diagnostics, current/target dataFlag display, confirmation/cancel, pending duplicate-submit prevention, retry re-confirmation, and forbidden control boundaries.
+- `devApiHistoryDataFlagAcceptanceNoFakeSuccess.test.ts` locks strict success shape and no-fake-success behavior.
+- `devApiHistoryDataFlagAcceptanceFailureStates.test.ts` locks unavailable, timeout, abort, malformed response, server error, no-change, record-not-found, invalid dataFlag, requires-confirmation, source mismatch, repository failures, unsupported-route, and missing snapshot failures.
+- `devApiHistoryDataFlagAcceptanceSourceOfTruth.test.ts` locks localStorage/AppData integrity and keeps read-only comparison separate from the mutation prototype.
+- `devApiHistoryDataFlagAcceptanceSemantics.test.ts` locks `normal`, `test`, and `excluded` semantics and readMirror/server parity.
+- `devApiHistoryDataFlagAcceptanceBoundary.test.ts` locks the exact browser mutation route allowlist, browser/Node boundary, package boundary, and storage boundary.
+- `devApiHistoryDataFlagManualAcceptanceDocs.test.ts` locks the manual runbook structure and wording.
+
+Task 4.37 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.37. The next recommended task is `Task 4.38 History Data-flag Manual App Acceptance V1` or `Task 4.38 History Data-flag Prototype Hardening V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -242,3 +242,11 @@ Task 4.35 recommends `Task 4.36 History Data-flag Mutation Prototype V1` only if
 Task 4.36 implements the selected second candidate only as a dev-only, explicit opt-in, one-route browser prototype: `POST /history/:id/data-flag`.
 
 The Task 4.34 audit boundary still holds for broader writes: DataHealth dismiss and History data-flag are the only browser mutation prototypes, localStorage remains source of truth, API results never overwrite AppData or localStorage, no session/history edit/repair/backup/reset routes are exposed, and write-path migration remains blocked.
+
+## Task 4.37 Acceptance Note
+
+Task 4.37 adds acceptance coverage and a manual acceptance runbook for the Task 4.36 History data-flag prototype.
+
+History data-flag is accepted only as a dev-only prototype. This does not approve source-of-truth migration, localStorage replacement, production backend behavior, auth, sync, deployment, session mutation, history edit, DataHealth repair, backup/import/export, reset, or recovery routes.
+
+The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.

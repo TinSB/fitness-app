@@ -228,3 +228,11 @@ Task 4.36 implements the History data-flag prototype as a dev-only one-route exp
 The no-fake-success rule applies to History data-flag: confirmation is required before POST, pending disables duplicate submit, success requires strict server success plus snapshot metadata, and failure states must not look successful.
 
 Rollback remains local-behavior preserving because the prototype does not optimistically update AppData or localStorage. Disable the mutation flag, stop the Dev API runner, and inspect the dev DB if needed.
+
+## Task 4.37 Note
+
+Task 4.37 adds acceptance tests and `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md` for the existing History data-flag prototype.
+
+The accepted UX boundary covers flag matrix isolation, target record selection, confirmation before POST, cancel with no POST, pending duplicate-submit prevention, retry only after explicit re-confirmation, strict no-fake-success behavior, and localStorage/AppData integrity.
+
+No new mutation route is added; browser mutation routes remain exactly DataHealth dismiss and History data-flag.
