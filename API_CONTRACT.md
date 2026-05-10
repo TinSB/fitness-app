@@ -22,6 +22,8 @@ Task 4.15 implements Result A from the runner strategy: a dev-only compiled Java
 
 Task 4.16 adds `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md` as the manual acceptance runbook for the compiled dev API runner. It is an acceptance procedure, not a runtime feature; HTTP behavior still comes from httpRuntimeAdapter/serverAdapter and there is still no App/UI integration, auth, sync, deployment, or production backend.
 
+Task 4.17 adds a Node-only dev DB recovery/reset utility and `docs/DEV_API_RECOVERY_RESET.md`. It is local development safety tooling only; there is no HTTP reset endpoint, no runner reset flag, no production recovery system, and no App runtime migration.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -434,6 +436,37 @@ Boundary:
 - It keeps generated runner output under ignored `.ironpath/dev-api-runner` and keeps dev SQLite artifacts ignored.
 
 This runbook must not be used as evidence that `App.tsx` is connected, that SQLite replaces localStorage, or that a production backend is ready.
+
+## Dev API Recovery & Reset Safety
+
+Owner files:
+
+- `apps/api/src/node/devDbRecovery.ts`
+- `docs/DEV_API_RECOVERY_RESET.md`
+- `tests/devDbRecoveryArtifacts.test.ts`
+- `tests/devDbRecoveryInspect.test.ts`
+- `tests/devDbRecoveryBackup.test.ts`
+- `tests/devDbRecoveryResetSafety.test.ts`
+- `tests/devDbRecoveryNodeOnlyIsolation.test.ts`
+- `tests/devDbRecoveryRunnerCompatibility.test.ts`
+
+Boundary:
+
+- Recovery/reset utilities are Node-only and may only be exported from `apps/api/src/node/index.ts`.
+- Browser-facing `apps/api/src/index.ts` must not export recovery utilities.
+- The utility is for local dev SQLite artifacts only.
+- It does not add HTTP backup, import, reset, or delete endpoints.
+- It does not add runner CLI reset flags, package scripts, dependencies, production recovery behavior, auth, sync, deployment, App UI integration, localStorage replacement, backup import/export HTTP endpoints, or normalized tables.
+- Missing DB inspect must not create a DB file.
+- Existing DB inspect uses read-only SQLite access and must not write snapshots.
+- Main DB paths must end with `.sqlite`.
+- Reset requires `RESET_DEV_API_DB`.
+- Reset defaults to backing up first.
+- Reset may only delete `dbFile`, `dbFile-wal`, `dbFile-shm`, and `dbFile-journal`.
+- Reset must reject symlink and path-escape artifacts.
+- Reset must not delete `.ironpath/dev-api-runner`, backup folders, directories, glob matches, JSON files, source files, fixtures, or unrelated siblings.
+
+This safety layer is not a production recovery system and must not automatically repair or reset corrupt data.
 
 ## Local Persistence
 

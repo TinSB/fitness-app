@@ -432,6 +432,22 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.17 Dev API Recovery & Reset Safety V1` or `Task 4.17 App Runtime Migration Readiness Audit V1`. Formal `App.tsx` HTTP migration remains blocked until runner acceptance, recovery/reset safety, data migration boundaries, and rollback expectations are stable.
 
+### Task 4.17: Dev API Recovery & Reset Safety V1
+
+Completed as Node-only local dev DB safety tooling, not as runtime migration or production recovery.
+
+- `apps/api/src/node/devDbRecovery.ts` resolves, inspects, backs up, and reset-deletes only local dev `.sqlite` artifacts.
+- Inspect does not create missing DB files and uses read-only access for existing DB files.
+- Backup copies only existing main/WAL/SHM/journal artifacts and excludes runner output and unrelated files.
+- Reset requires `RESET_DEV_API_DB`, defaults to backup-first, supports dry-run, enforces `.sqlite` suffix, and rejects symlink/path-escape artifacts.
+- Reset never deletes directories, backup folders, `.ironpath/dev-api-runner`, glob matches, JSON files, source files, fixtures, or unrelated siblings.
+- `docs/DEV_API_RECOVERY_RESET.md` documents the manual inspect/backup/reset checklist.
+- Tests lock artifact resolution, inspect behavior, backup behavior, reset safety, runner compatibility, and Node-only isolation.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production recovery runtime. It does not add HTTP reset endpoints, runner reset flags, package scripts, package dependencies, lockfile changes, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.18 App Runtime Migration Readiness Audit V1` or `Task 4.18 Dev API Read-only App Integration Plan V1`. Formal `App.tsx` HTTP migration remains blocked until recovery/reset safety, manual acceptance, migration boundaries, and rollback expectations are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
