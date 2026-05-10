@@ -34,3 +34,7 @@ Thumbs.db
 *.local
 *.bak
 *.backup
+.ironpath/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
