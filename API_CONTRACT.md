@@ -66,6 +66,8 @@ Task 4.37 adds History Data-flag Prototype Acceptance V1. It is an acceptance/te
 
 Task 4.38 adds History Data-flag Manual App Acceptance V1. It is a human-run manual App acceptance checklist and docs/static-test layer for the existing Task 4.36/4.37 prototype, not new runtime capability. The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; localStorage remains source of truth; API results never overwrite AppData or localStorage; no session/history edit/DataHealth repair/backup/import/export/reset/recovery routes, broad mutation client, production backend, auth, sync, deployment, package changes, lockfile changes, scripts, normalized tables, or training algorithm changes are added.
 
+Task 4.39 adds History Data-flag Prototype Hardening V1. It hardens the existing History data-flag prototype only: no new mutation route, no third prototype, no source-of-truth switch, no localStorage overwrite, and no AppData overwrite. The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. Success shape is strict: HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata are required. no_change, record_not_found, invalid dataFlag, missing snapshot metadata, unavailable, timeout, abort, malformed response, write_failed, transaction_failed, database_closed, snapshot_validation_failed, repository_schema_mismatch, requiresConfirmation, and unsupported_route remain no-fake-success failures.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1111,6 +1113,33 @@ Manual acceptance facts:
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery HTTP route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
 
 Write-path migration remains blocked after Task 4.38. The next recommended task is `Task 4.39 History Data-flag Prototype Hardening V1` or `Task 4.39 Write-path Two-Route Checkpoint V1`.
+
+## History Data-flag Prototype Hardening
+
+Owner files:
+
+- `src/devApi/DevApiHistoryDataFlagPrototype.tsx`
+- `src/devApi/devApiHistoryDataFlagClient.ts`
+- `src/devApi/devApiHistoryDataFlagConfig.ts`
+- `tests/devApiHistoryDataFlagHardeningNoFakeSuccess.test.ts`
+- `tests/devApiHistoryDataFlagHardeningFailureStates.test.ts`
+- `tests/devApiHistoryDataFlagHardeningConcurrency.test.tsx`
+- `tests/devApiHistoryDataFlagHardeningConfirmation.test.tsx`
+- `tests/devApiHistoryDataFlagHardeningSemantics.test.ts`
+- `tests/devApiHistoryDataFlagHardeningBoundary.test.ts`
+- `tests/devApiHistoryDataFlagHardeningDocsParity.test.ts`
+
+Task 4.39 hardens the existing Task 4.36 History data-flag prototype with no-fake-success, failure-state, duplicate-submit, abort/unmount, confirmation reset, data semantics, docs parity, and route-boundary tests.
+
+- This is hardening/testing only and does not add runtime capability beyond the existing History data-flag route.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- Missing snapshot metadata, no_change, record_not_found, invalid dataFlag, requiresConfirmation, unsupported_route, API unavailable, timeout, abort, malformed response, write_failed, transaction_failed, database_closed, snapshot_validation_failed, and repository_schema_mismatch are failures.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- `normal`, `test`, and `excluded` semantics remain locked; test and excluded records stay visible but excluded from default production-like statistics.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
+
+Write-path migration remains blocked after Task 4.39. The next recommended task is `Task 4.40 Write-path Two-route Checkpoint V1` or `Task 4.40 Second-route Observability & Recovery Notes V1`.
 
 ## Local Persistence
 

@@ -4,6 +4,8 @@ This checklist accepts the dev-only History data-flag mutation prototype from Ta
 
 Task 4.38 adds the dedicated manual App acceptance runbook at `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md`. Task 4.38 is manual acceptance documentation and docs/static tests only; it adds no runtime behavior and no mutation route.
 
+Task 4.39 hardens the existing History data-flag prototype with no-fake-success, failure-state, duplicate-submit, abort/unmount, confirmation reset, data semantics, docs parity, and route-boundary tests. It adds no runtime capability and no browser mutation route. The History data-flag prototype remains one-route-only, and the global browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+
 ## Scope / Non-goals
 
 - [ ] This is acceptance coverage for the existing History data-flag prototype only.

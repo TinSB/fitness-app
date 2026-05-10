@@ -50,6 +50,8 @@ Task 4.37 adds the History data-flag prototype acceptance runbook at `docs/HISTO
 
 Task 4.38 adds the History data-flag manual App acceptance runbook at `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md`. It is human-run manual acceptance only: use a dedicated test browser profile and dedicated dev DB file, keep localStorage as source of truth, and do not treat the flow as production readiness or broader write-path migration.
 
+Task 4.39 hardens the existing History data-flag prototype. It is hardening/testing only: no third browser mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, success requires the strict result shape plus snapshot metadata, localStorage remains source of truth, and no production readiness or broader write-path migration is implied.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
