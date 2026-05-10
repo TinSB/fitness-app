@@ -620,6 +620,19 @@ Task 4.29 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.29. The next recommended task is `Task 4.30 DataHealth Dismiss Manual App Acceptance V1`.
 
+### Task 4.30: DataHealth Dismiss Manual App Acceptance V1
+
+Completed as manual App acceptance documentation and docs/static tests for the existing Task 4.28 DataHealth dismiss prototype. It does not add runtime behavior, expand mutation capability, or add new browser mutation routes.
+
+- `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md` records the human-run App acceptance checklist for `npm run api:dev`, `npm run dev`, browser DevTools, dedicated test browser profile, flag matrix checks, confirmation, duplicate-submit prevention, success/failure behavior, localStorage integrity, route boundary checks, forbidden controls, cleanup, and pass/fail reporting.
+- `dataHealthDismissManualAppAcceptanceDocs.test.ts` locks required sections, checkbox format, commands, flags, cleanup, ready line, allowed routes, forbidden routes, safety warnings, localStorage source-of-truth wording, and pass/fail template.
+- `dataHealthDismissManualAppAcceptanceDocsParity.test.ts` keeps the runbook aligned with the Task 4.28 route and required acceptance scenarios while rejecting production-readiness or expanded-mutation instructions.
+- `dataHealthDismissManualAppAcceptanceBoundary.test.ts` keeps runtime source unchanged for Task 4.30, blocks Node-only browser imports, blocks broad mutation clients and API-backed storage, and keeps package scripts/dependencies unchanged.
+
+Task 4.30 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. The only accepted browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; session/history/DataHealth repair/backup/import/export/reset/recovery routes remain blocked. There is no production backend/auth/sync/deployment, package script or dependency change, lockfile change, or normalized table.
+
+Write-path migration remains blocked after Task 4.30. The next recommended task is `Task 4.31 DataHealth Dismiss Prototype Hardening V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

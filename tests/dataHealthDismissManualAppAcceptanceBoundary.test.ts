@@ -1,0 +1,157 @@
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  collectSrcRuntimeFiles,
+  readSource,
+  relativePath,
+  repoRoot,
+} from './runtimeBoundaryTestHelpers';
+
+const stripComments = (source: string) =>
+  source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+const productionSrcFiles = () =>
+  collectSrcRuntimeFiles().filter((path) => {
+    const normalized = relativePath(path);
+    return !normalized.includes('/__tests__/') && !normalized.endsWith('.test.ts') && !normalized.endsWith('.test.tsx');
+  });
+
+const approvedDismissFiles = new Set([
+  'src/devApi/devApiDataHealthDismissClient.ts',
+  'src/devApi/devApiDataHealthDismissConfig.ts',
+  'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+]);
+
+const blockedRoutes = [
+  '/sessions/start',
+  '/sessions/active/patches',
+  '/sessions/active/complete',
+  '/sessions/active/discard',
+  '/history/:id/edit',
+  '/history/:id/data-flag',
+  '/data-health/repair/apply',
+  '/backup/',
+  '/backup/import',
+  '/backup/export',
+  '/reset/',
+  '/recovery/',
+];
+
+const nodeOnlyTokens = [
+  'node:http',
+  'node:sqlite',
+  'devLauncher',
+  'httpRuntimeAdapter',
+  'serverAdapter',
+  'sqliteRepository',
+  'devApiRunner',
+  'devDbRecovery',
+];
+
+const mutationClientPaths = [
+  'src/mutationClient.ts',
+  'src/services/mutationClient.ts',
+  'src/hooks/useMutationApi.ts',
+  'src/api/mutations.ts',
+  'src/api/mutations',
+];
+
+const collectFilesIfDirectory = (path: string): string[] => {
+  if (!existsSync(path)) return [];
+  const stat = statSync(path);
+  if (!stat.isDirectory()) return [path];
+  return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
+    const next = join(path, entry.name);
+    if (entry.isDirectory()) return collectFilesIfDirectory(next);
+    return /\.(ts|tsx)$/.test(entry.name) ? [next] : [];
+  });
+};
+
+describe('DataHealth dismiss manual App acceptance boundaries', () => {
+  it('does not require runtime source changes for Task 4.30', () => {
+    const runtimeSources = productionSrcFiles().map((file) => [relativePath(file), stripComments(readFileSync(file, 'utf8'))] as const);
+    const task430RuntimeMentions = runtimeSources.filter(([, source]) =>
+      /Task 4\.30|DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE|Manual App Acceptance V1/i.test(source),
+    );
+
+    expect(task430RuntimeMentions.map(([path]) => path)).toEqual([]);
+  });
+
+  it('keeps App.tsx, src runtime, and browser-facing API index free of Node-only stack', () => {
+    for (const file of productionSrcFiles()) {
+      const source = stripComments(readFileSync(file, 'utf8'));
+      const normalized = relativePath(file);
+      const offenders = nodeOnlyTokens.filter((token) => source.includes(token));
+      expect(offenders, `${normalized} should not include Node-only tokens`).toEqual([]);
+    }
+
+    const appSource = stripComments(readSource('src/App.tsx'));
+    for (const token of nodeOnlyTokens) expect(appSource).not.toContain(token);
+
+    const apiIndex = stripComments(readSource('apps/api/src/index.ts'));
+    for (const token of nodeOnlyTokens) expect(apiIndex).not.toContain(token);
+  });
+
+  it('keeps browser mutation surface to only the existing DataHealth dismiss prototype route', () => {
+    for (const file of productionSrcFiles()) {
+      const source = stripComments(readFileSync(file, 'utf8'));
+      const normalized = relativePath(file);
+      const blocked = blockedRoutes.filter((route) => source.includes(route));
+      expect(blocked, `${normalized} should not include blocked browser mutation routes`).toEqual([]);
+
+      if (!approvedDismissFiles.has(normalized)) {
+        expect(source, `${normalized} should not contain the DataHealth dismiss route`).not.toContain('/data-health/issues/');
+        expect(source, `${normalized} should not issue browser POST`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
+      }
+    }
+  });
+
+  it('does not add broad mutation clients, browser automation deps, package changes, or API-backed storage', () => {
+    for (const path of mutationClientPaths) {
+      expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
+    }
+
+    const localStorageAdapter = stripComments(readSource('src/storage/localStorageAdapter.ts'));
+    expect(localStorageAdapter).not.toContain('fetch(');
+    expect(localStorageAdapter).not.toContain('/data-health/issues/');
+
+    const packageJson = JSON.parse(readSource('package.json')) as {
+      scripts?: Record<string, string>;
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const scripts = Object.keys(packageJson.scripts || {});
+    expect(scripts.filter((script) => /mutation|integration|prod|production|auth|sync|playwright|cypress/i.test(script))).toEqual([]);
+
+    const deps = { ...(packageJson.dependencies || {}), ...(packageJson.devDependencies || {}) };
+    expect(Object.keys(deps).filter((name) =>
+      /fastify|express|koa|hono|trpc|graphql|auth|sync|mutation-client|playwright|cypress/i.test(name),
+    )).toEqual([]);
+  });
+
+  it('keeps docs from authorizing blocked write-path work', () => {
+    const docs = [
+      'docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md',
+      'docs/DATAHEALTH_DISMISS_PROTOTYPE_ACCEPTANCE.md',
+      'API_CONTRACT.md',
+      'FULL_STACK_REFACTOR_PLAN.md',
+      'docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md',
+      'docs/READONLY_APP_MANUAL_ACCEPTANCE.md',
+    ].filter(existsSync).map(readSource).join('\n');
+
+    for (const pattern of [
+      /replace localStorage now/i,
+      /enable session mutation now/i,
+      /enable history mutation now/i,
+      /enable repair mutation now/i,
+      /enable production backend/i,
+      /enable auth/i,
+      /enable sync/i,
+    ]) {
+      expect(docs).not.toMatch(pattern);
+    }
+  });
+});

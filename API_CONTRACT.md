@@ -48,6 +48,8 @@ Task 4.28 adds a dev-only, explicit opt-in DataHealth issue dismiss mutation pro
 
 Task 4.29 adds DataHealth Dismiss Prototype Acceptance V1. It is an acceptance/testing and manual runbook layer for the existing one-route prototype, not an expansion of mutation capability. The only accepted browser mutation route remains `POST /data-health/issues/:issueId/dismiss`; localStorage remains source of truth; API results never overwrite AppData or localStorage; no session/history/DataHealth repair/backup/import/export/reset/recovery routes are accepted from browser code.
 
+Task 4.30 adds DataHealth Dismiss Manual App Acceptance V1. It is a human-run manual App acceptance checklist for the existing one-route prototype, not new runtime capability. It keeps the only accepted browser mutation route as `POST /data-health/issues/:issueId/dismiss`, requires a dedicated test browser profile, and keeps localStorage as source of truth.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -843,6 +845,33 @@ Acceptance facts:
 - Session mutation, history edit/data-flag, DataHealth repair, backup/import/export, reset, and recovery routes remain blocked from browser code.
 
 Write-path migration remains blocked after Task 4.29. The next recommended task is `Task 4.30 DataHealth Dismiss Manual App Acceptance V1`.
+
+## DataHealth Dismiss Manual App Acceptance
+
+Owner files:
+
+- `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md`
+- `tests/dataHealthDismissManualAppAcceptanceDocs.test.ts`
+- `tests/dataHealthDismissManualAppAcceptanceDocsParity.test.ts`
+- `tests/dataHealthDismissManualAppAcceptanceBoundary.test.ts`
+
+Task 4.30 is a manual App acceptance layer for the Task 4.28/4.29 DataHealth dismiss prototype. It does not add runtime behavior, mutation capability, routes, source-of-truth switching, localStorage replacement, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables.
+
+Manual acceptance facts:
+
+- A dedicated test browser profile is required.
+- Real personal training data must not be used.
+- The manual flow uses `npm run api:dev`, `npm run dev`, browser DevTools Network, and explicit env flags.
+- The flag matrix confirms compare-only and mutation-only states do not enable the prototype.
+- Confirmation is required before the single accepted POST.
+- Pending state must prevent duplicate POSTs and must not show optimistic success.
+- Success is accepted only after HTTP 2xx, mutation success, `changed=true`, `status="success"`, and snapshot metadata.
+- Failure states must not show success, auto-retry, write localStorage, or replace AppData.
+- Browser Network must show only read-only GET routes plus `POST /data-health/issues/:issueId/dismiss` after confirmation.
+- Session mutation, history edit/data-flag, DataHealth repair, backup/import/export, reset, and recovery routes remain blocked from browser code.
+- API results never overwrite AppData or localStorage.
+
+Write-path migration remains blocked after Task 4.30. The next recommended task is `Task 4.31 DataHealth Dismiss Prototype Hardening V1`.
 
 ## Local Persistence
 
