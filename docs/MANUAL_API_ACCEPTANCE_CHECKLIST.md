@@ -316,3 +316,12 @@ Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED
 - [ ] Confirm pending duplicate submit stays blocked.
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+
+## Task 4.50 Limited History Edit Observability & Recovery Notes
+
+- [ ] Use `docs/LIMITED_HISTORY_EDIT_OBSERVABILITY_RECOVERY_NOTES.md` for safe observability and manual recovery guidance.
+- [ ] Confirm Task 4.50 does not add a new mutation route.
+- [ ] Confirm safe diagnostics do not expose raw stack traces, raw API responses, full AppData, localStorage dumps, SQLite internals, or environment objects.
+- [ ] Confirm recovery guidance does not expose browser reset/recovery/import/export/apply/fix controls.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

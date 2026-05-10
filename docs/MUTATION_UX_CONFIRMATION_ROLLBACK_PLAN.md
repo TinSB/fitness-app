@@ -260,3 +260,11 @@ Task 4.49 hardens the Limited History Edit UX boundary without adding runtime wr
 The no-fake-success rule remains strict: success requires HTTP success plus `ok=true`, `changed=true`, `status="success"`, and snapshot metadata. Missing result, missing snapshot metadata, no_change, not-found, invalid patch, source snapshot mismatch, write failure, transaction failure, database_closed, unsupported_route, timeout, abort, unavailable, and malformed response stay visible failures.
 
 Rollback remains failure-state only because the prototype never optimistically updates AppData or localStorage. Confirmation and pending locks remain required before any retry.
+
+## Task 4.50 Note
+
+Task 4.50 documents observability and manual recovery for the Limited History Edit prototype without adding browser write capability.
+
+Safe diagnostics may show mutation state, redacted target, source fingerprint presence, snapshot metadata presence, HTTP status, failure code, duplicate-submit status, timestamps, and a safe recovery note. They must not expose raw stack traces, raw API responses, full AppData, localStorage dumps, SQLite internals, or environment objects.
+
+Recovery remains manual and outside the browser prototype: disable the mutation flag, stop the Dev API runner, rerun read-only diagnostics, and inspect a copied dev DB if needed.

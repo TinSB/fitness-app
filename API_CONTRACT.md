@@ -1455,3 +1455,21 @@ The hardening contract locks strict no-fake-success behavior, required snapshot 
 localStorage remains source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
 
 Task 4.50 Limited History Edit Observability & Recovery Notes V1 is the next recommended task.
+
+## Task 4.50: Limited History Edit Observability & Recovery Notes V1
+
+Task 4.50 adds `docs/LIMITED_HISTORY_EDIT_OBSERVABILITY_RECOVERY_NOTES.md` plus observability/recovery tests for the existing dev-only Limited History Edit prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The observability contract allows only safe diagnostic fields: mutation state, redacted target reference, source fingerprint presence, snapshot metadata presence, HTTP status, failure code, duplicate-submit blocked flag, timestamps, and safe recovery note. It must not expose raw API responses, raw stack traces, full AppData, localStorage dumps, SQLite internals, environment objects, or unrestricted server errors.
+
+Manual recovery remains outside browser write capability: disable the mutation experiment flag, stop the Dev API runner, rerun read-only diagnostics, and make a dev DB copy before inspection if persistence may be inconsistent. The browser prototype adds no reset/recovery action.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
+
+Task 4.51 Limited History Edit Regression Lock V1 is the next recommended task.

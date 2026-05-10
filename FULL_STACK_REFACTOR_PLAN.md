@@ -902,6 +902,20 @@ Completed as hardening coverage and documentation for the existing Task 4.46 dev
 
 The next recommended task is `Task 4.50 Limited History Edit Observability & Recovery Notes V1`.
 
+### Task 4.50: Limited History Edit Observability & Recovery Notes V1
+
+Completed as safe observability and manual recovery notes for the existing Task 4.46 dev-only prototype.
+
+- Adds `docs/LIMITED_HISTORY_EDIT_OBSERVABILITY_RECOVERY_NOTES.md`.
+- Adds observability tests for diagnostic summary, failure-code recovery mapping, route/build boundary, read-only separation, and docs parity.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No browser reset/recovery action, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, or training algorithm change is added.
+
+The next recommended task is `Task 4.51 Limited History Edit Regression Lock V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

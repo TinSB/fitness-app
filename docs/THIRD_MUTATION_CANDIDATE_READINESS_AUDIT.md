@@ -284,6 +284,17 @@ Task 4.46 moves limited history edit from planning candidate to dev-only prototy
 - Session mutation, DataHealth repair, backup/import/export/reset/recovery, source-of-truth migration, production backend/auth/sync/deployment, and broad mutation clients remain blocked.
 - localStorage remains source of truth and API results never overwrite AppData or localStorage.
 
+## Task 4.50 Follow-up Note
+
+Task 4.50 adds observability and recovery notes for the accepted Limited History Edit prototype only.
+
+- No fourth mutation candidate is introduced.
+- No new browser mutation route is added.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Browser recovery actions remain blocked.
+- Session mutation, DataHealth repair, backup/import/export/reset/recovery, source-of-truth migration, production backend/auth/sync/deployment, and broad mutation clients remain blocked.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
 ## Task 4.49 Follow-up Note
 
 Task 4.49 hardens the accepted Limited History Edit prototype only.

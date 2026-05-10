@@ -68,3 +68,13 @@ No other browser mutation route is accepted.
 ## Task Result
 
 Task 4.49 is hardening-only. The next recommended task is Task 4.50 Limited History Edit Observability & Recovery Notes V1.
+
+## Task 4.50 Observability / Recovery Companion
+
+Task 4.50 adds `docs/LIMITED_HISTORY_EDIT_OBSERVABILITY_RECOVERY_NOTES.md` for safe observability and manual recovery guidance on the existing dev-only prototype.
+
+- It does not add a new mutation route.
+- It does not expand runtime write capability beyond the accepted three-route set.
+- It keeps recovery outside browser write capability.
+- It keeps localStorage as source of truth and keeps API results from overwriting AppData or localStorage.
+- It recommends Task 4.51 Limited History Edit Regression Lock V1 as the next task.
