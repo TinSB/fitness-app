@@ -6,6 +6,8 @@ import { TrainingFocusView } from './features/TrainingFocusView';
 import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
+import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnostics';
+import { resolveDevApiReadOnlyConfig } from './devApi/devApiReadOnlyConfig';
 import {
   actionableSorenessAreas,
   clone,
@@ -93,6 +95,7 @@ const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ de
 const ProfileView = lazy(() => import('./features/ProfileView').then((module) => ({ default: module.ProfileView })));
 const RecordView = lazy(() => import('./features/RecordView').then((module) => ({ default: module.RecordView })));
 const TrainingView = lazy(() => import('./features/TrainingView').then((module) => ({ default: module.TrainingView })));
+const devApiReadOnlyConfig = resolveDevApiReadOnlyConfig(import.meta.env);
 
 const navItems = [
   { id: 'today', label: '今日', icon: Flame },
@@ -1916,6 +1919,7 @@ function App() {
         </div>
       ) : null}
       <AddToHomeScreenHint />
+      <DevApiReadOnlyDiagnostics data={data} config={devApiReadOnlyConfig} />
     </>
   );
 }

@@ -28,6 +28,8 @@ Task 4.18 adds `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md` as a readiness au
 
 Task 4.19 adds `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md` as a read-only App integration plan. It is plan-only, does not add runtime API features, keeps App runtime on localStorage, and keeps App mutation routes blocked. Task 4.20 is only a candidate next step if 4.19 acceptance passes and remains dev-only dual-read comparison mode.
 
+Task 4.20 adds a minimal dev-only read-only App integration prototype. It is explicit opt-in only, dual-read comparison mode only, and diagnostic-only. App runtime source of truth remains localStorage; no mutation, backup/import, repair/reset, auth, sync, deployment, package dependency, or production backend behavior is added.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -524,6 +526,40 @@ Recommendation:
 - Task 4.20 is only the next recommended task if Task 4.19 acceptance passes, and it must remain dev-only, explicit opt-in, and dual-read comparison only.
 
 Formal App.tsx HTTP migration and write-path migration remain blocked.
+
+## Read-only App Integration Prototype
+
+Owner files:
+
+- `src/devApi/devApiReadOnlyConfig.ts`
+- `src/devApi/devApiReadOnlyClient.ts`
+- `src/devApi/devApiReadOnlyComparison.ts`
+- `src/devApi/DevApiReadOnlyDiagnostics.tsx`
+- `src/App.tsx`
+
+Boundary:
+
+- This is dev-only, explicit opt-in, dual-read comparison mode only.
+- Enabled only when `import.meta.env.DEV === true` and `VITE_IRONPATH_DEV_API_COMPARE === "1"`.
+- Default Dev API base URL is `http://127.0.0.1:8787`.
+- Allowed base URLs must be localhost-only.
+- App runtime source of truth remains localStorage and existing in-memory AppData.
+- Dev API read results are diagnostics only and must never overwrite localStorage or AppData.
+- UI must not write to API.
+- App must not call mutation, backup/import, repair/reset, or delete routes.
+- API unavailable must not block normal App usage.
+- Diagnostics must expose no repair, sync, overwrite, import, export, reset, or mutation controls.
+- Browser runtime must not import `node:http`, `node:sqlite`, sqliteRepository, serverAdapter, httpRuntimeAdapter, devLauncher, devApiRunner, or devDbRecovery.
+
+Read-only comparison routes:
+
+- `GET /app-data/summary`
+- `GET /sessions/summary`
+- `GET /history`
+- `GET /data-health/summary`
+- `GET /history/:id` only when a stable local history id exists
+
+Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.20.
 
 ## Local Persistence
 

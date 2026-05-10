@@ -478,6 +478,22 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Task 4.20 Read-only App Integration Prototype V1 is only the next recommended task if Task 4.19 acceptance passes. Task 4.20 must remain dev-only, explicit opt-in, and dual-read comparison only. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
 
+### Task 4.20: Read-only App Integration Prototype V1
+
+Completed as a minimal dev-only read-only prototype, not as App runtime migration or write-path migration.
+
+- `src/devApi/devApiReadOnlyConfig.ts` resolves the explicit opt-in config from env-like input and requires `DEV === true` plus `VITE_IRONPATH_DEV_API_COMPARE === "1"`.
+- `src/devApi/devApiReadOnlyClient.ts` exposes only fixed GET read routes with timeout/cancellation and normalized diagnostic errors.
+- `src/devApi/devApiReadOnlyComparison.ts` compares existing readMirror-derived local summaries with Dev API read results.
+- `src/devApi/DevApiReadOnlyDiagnostics.tsx` renders a minimal dev-only diagnostic panel and no mutation controls.
+- `src/App.tsx` only mounts the guarded diagnostics component and passes current in-memory AppData.
+- localStorage remains the active App source of truth; API results never overwrite localStorage or AppData.
+- API unavailable and mismatches are diagnostic only and do not block training.
+
+This task still does not replace localStorage, switch source of truth, migrate mutation paths, add UI writes to API, add backup/import over HTTP, add auth, cloud sync, deployment, package dependencies, package scripts, lockfile changes, production backend behavior, or normalized database tables.
+
+Recommended next step is `Task 4.21 Read-only Runtime Parity Acceptance V1` or `Task 4.21 Read-only Diagnostics UX Hardening V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

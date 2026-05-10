@@ -76,10 +76,9 @@ describe('app runtime migration remains blocked', () => {
     });
   });
 
-  it('does not introduce feature flag or dual-read runtime wiring in src', () => {
+  it('does not introduce source-of-truth migration runtime wiring in src', () => {
     const blockedRuntimeWiringTokens = [
       'APP_RUNTIME_MIGRATION',
-      'DEV_API_BASE_URL',
       'READ_ONLY_API',
       'DUAL_READ',
       'dualReadComparison',

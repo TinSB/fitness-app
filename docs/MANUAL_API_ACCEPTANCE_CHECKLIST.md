@@ -18,6 +18,8 @@ Task 4.18 adds the App runtime migration readiness audit at `docs/APP_RUNTIME_MI
 
 Task 4.19 adds the read-only App integration plan at `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md`. It is still planning-only: no App.tsx integration, no frontend API client, no feature flag runtime, and no localStorage replacement.
 
+Task 4.20 adds a dev-only, explicit opt-in read-only App comparison prototype. It is diagnostic-only: localStorage remains source of truth, API results never overwrite App data, and no App mutation routes are called.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
