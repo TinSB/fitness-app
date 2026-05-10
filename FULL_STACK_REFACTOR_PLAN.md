@@ -349,6 +349,23 @@ Acceptance results are intentionally narrow:
 
 Recommended next step is `Task 4.11 Dev-only Local API Launcher V1` or `Task 4.11 Runtime Smoke Hardening V1`. Do not switch `App.tsx` to HTTP/SQLite until a dev-only launcher, recovery story, and acceptance tests are stable.
 
+### Task 4.11: Dev-only Local API Launcher V1
+
+Completed as a local development launcher only, not a production backend or App runtime migration:
+
+- `apps/api/src/node/devLauncher.ts` creates an explicit local launcher for `node:http -> httpRuntimeAdapter -> serverAdapter -> sqliteRepository`.
+- Importing or creating the launcher has no side effects; `start()` is required to listen.
+- Default bind is `127.0.0.1`; LAN exposure requires `allowNetworkAccess=true`.
+- Default DB path is `.ironpath/dev-api.sqlite`, and `.gitignore` excludes local SQLite dev files.
+- `seedEmpty=false` preserves `snapshot_not_found` behavior for data routes; `seedEmpty=true` creates one empty snapshot only when no latest snapshot exists.
+- Repeated `start()` returns the existing running URL/host/port instead of creating duplicate servers or repositories.
+- Startup failure cleans up opened HTTP/SQLite resources before returning a stable launcher error.
+- `close()` shuts down HTTP and SQLite resources and is idempotent.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production server runtime. It does not add package dependencies, a TypeScript runtime runner, a package script, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.12 Dev Runtime Smoke Hardening V1` or `Task 4.12 Manual API Acceptance Checklist V1`. Do not migrate `App.tsx` to HTTP/SQLite until local launcher behavior and recovery expectations are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -6,7 +6,7 @@ Last updated: 2026-05-10
 
 There is no deployed backend API, auth service, remote sync, SQLite repository, or server persistence in the current IronPath frontend.
 
-A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. Pure session and Record/DataHealth mutation skeletons exist under `apps/api/src/sessionMutation.ts` and `apps/api/src/recordDataHealthMutation.ts` for pre-backend write-boundary parity. A Node-only SQLite snapshot repository exists under `apps/api/src/sqliteRepository.ts` for repository parity tests. These skeletons are not wired into `App.tsx`, the UI, localStorage, or any runtime server.
+A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity testing and future backend extraction. Pure session and Record/DataHealth mutation skeletons exist under `apps/api/src/sessionMutation.ts` and `apps/api/src/recordDataHealthMutation.ts` for pre-backend write-boundary parity. A Node-only SQLite snapshot repository exists under `apps/api/src/sqliteRepository.ts` for repository parity tests. A dev-only local API launcher exists under `apps/api/src/node/devLauncher.ts` for manual local smoke testing. These skeletons are not wired into `App.tsx`, the UI, localStorage, or any production runtime server.
 
 All product data is stored in the user's current browser through `localStorage`, with import/export handled as local JSON files. Future agents must not assume any backend endpoint or remote field exists unless this file is updated first.
 
@@ -223,6 +223,44 @@ HTTP response body:
 - Error: `{ "error": { "code": string, "message": string } }`
 - HTTP status comes from serverAdapter or the parsing error.
 - The wrapper does not expose raw stacks, raw SQLite errors, or internal exception objects.
+
+## Dev-only Local API Launcher
+
+Owner files:
+
+- `apps/api/src/node/devLauncher.ts`
+- `apps/api/src/node/index.ts`
+
+Boundary:
+
+- The launcher is Node-only and is exported only from `apps/api/src/node/index.ts`.
+- It is a local development launcher for manual smoke tests, not a production backend.
+- It does not connect to `App.tsx`, UI, browser localStorage, `loadData`, or `saveData`.
+- It does not add Fastify, Express, auth, sync, deployment config, Docker, serverless runtime, or normalized database tables.
+- It does not add business routes or backup import/export endpoints.
+- HTTP behavior still comes from `httpRuntimeAdapter` and `serverAdapter`.
+- Browser-facing `apps/api/src/index.ts` must not export the launcher.
+
+Launcher API:
+
+- `createDevLocalApiLauncher(options)` returns `{ start, close }`.
+- Importing or creating the launcher has no listen, SQLite, or file side effects.
+- `start()` explicitly opens a file-backed SQLite snapshot repository and starts a Node HTTP server.
+- Calling `start()` again while already running returns the existing `{ url, host, port }` instead of creating another server or repository.
+- `close()` closes the HTTP server and SQLite repository and is idempotent.
+- Startup failures clean up any opened resources before surfacing a stable launcher error.
+
+Defaults and safety:
+
+- Default host is `127.0.0.1`.
+- `localhost`, `127.0.0.1`, and `::1` are local-safe.
+- `0.0.0.0` and other non-localhost hosts require `allowNetworkAccess=true`.
+- Default DB path is `.ironpath/dev-api.sqlite`.
+- `seedEmpty=false` does not create an AppData snapshot; `/health` still works, while data routes may return `snapshot_not_found`.
+- `seedEmpty=true` creates one empty AppData snapshot only when no latest snapshot exists.
+- Seed snapshots use label `dev-launcher:seed-empty`.
+
+This launcher is useful for local smoke tests only. It is not a signal that the frontend should call HTTP, that SQLite should replace localStorage, or that a production backend is ready.
 
 ## Runtime Boundary Acceptance
 
