@@ -140,6 +140,21 @@ export const canSubmitDataHealthDismissPrototype = ({
   && confirmed
   && !pending;
 
+export const createDataHealthDismissSubmitLock = () => {
+  let locked = false;
+  return {
+    acquire: () => {
+      if (locked) return false;
+      locked = true;
+      return true;
+    },
+    release: () => {
+      locked = false;
+    },
+    isLocked: () => locked,
+  };
+};
+
 const safeErrorMessage = (error?: DevApiDataHealthDismissError) => {
   if (!error) return 'DataHealth dismiss experiment failed.';
   return `${error.serverCode || error.code}: ${error.message}`.replace(/\s+/g, ' ').slice(0, 160);
@@ -297,6 +312,8 @@ export const DevApiDataHealthDismissPrototype = ({
     return { status: 'idle' };
   });
   const controllerRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  const submitLockRef = useRef(createDataHealthDismissSubmitLock());
 
   const sourceContext = useMemo(
     () => (config.enabled ? createDataHealthDismissSourceContext(data, selectedIssueId || undefined) : null),
@@ -311,11 +328,16 @@ export const DevApiDataHealthDismissPrototype = ({
   }, [selectedIssueId, sourceContext]);
 
   useEffect(() => () => {
+    mountedRef.current = false;
+    submitLockRef.current.release();
     controllerRef.current?.abort();
   }, []);
 
   useEffect(() => {
     if (config.status === 'invalid') {
+      submitLockRef.current.release();
+      controllerRef.current?.abort();
+      setConfirmed(false);
       setState({
         status: 'misconfigured',
         message: 'Config is invalid. Use a localhost Dev API base URL. No request was sent.',
@@ -323,11 +345,20 @@ export const DevApiDataHealthDismissPrototype = ({
       return;
     }
     if (!config.enabled) {
+      submitLockRef.current.release();
+      controllerRef.current?.abort();
+      setConfirmed(false);
       setState({ status: 'idle' });
     }
   }, [config]);
 
   if (config.status === 'disabled') return null;
+
+  const changeIssue = (issueId: string) => {
+    setSelectedIssueId(issueId);
+    setConfirmed(false);
+    if (state.status !== 'pending') setState({ status: 'idle', issueId });
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -344,6 +375,7 @@ export const DevApiDataHealthDismissPrototype = ({
       return;
     }
     if (!confirmed || state.status === 'pending') return;
+    if (!submitLockRef.current.acquire()) return;
 
     const metadata = createDataHealthDismissMetadata({
       issueId: sourceContext.issueId,
@@ -364,9 +396,13 @@ export const DevApiDataHealthDismissPrototype = ({
       signal: controller.signal,
     });
 
-    if (controller.signal.aborted) return;
+    if (controller.signal.aborted || !mountedRef.current) {
+      submitLockRef.current.release();
+      return;
+    }
 
     if (result.ok) {
+      submitLockRef.current.release();
       setState({
         status: 'success',
         issueId: result.issueId,
@@ -378,6 +414,7 @@ export const DevApiDataHealthDismissPrototype = ({
       return;
     }
 
+    submitLockRef.current.release();
     setState({
       status: 'failure',
       issueId: result.issueId,
@@ -385,6 +422,7 @@ export const DevApiDataHealthDismissPrototype = ({
       metadata: result.metadata,
       message: safeErrorMessage(result.error),
     });
+    setConfirmed(false);
   };
 
   return (
@@ -392,7 +430,7 @@ export const DevApiDataHealthDismissPrototype = ({
       config={config}
       confirmed={confirmed}
       onConfirmedChange={setConfirmed}
-      onIssueChange={setSelectedIssueId}
+      onIssueChange={changeIssue}
       onSubmit={submit}
       pending={state.status === 'pending'}
       selectedIssueId={sourceContext?.issueId || selectedIssueId}

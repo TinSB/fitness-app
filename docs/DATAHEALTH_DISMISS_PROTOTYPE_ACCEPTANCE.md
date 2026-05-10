@@ -2,6 +2,8 @@
 
 Task 4.30 adds the human-run App acceptance companion at `docs/DATAHEALTH_DISMISS_MANUAL_APP_ACCEPTANCE.md`. Use that runbook when validating the prototype through `npm run api:dev`, `npm run dev`, browser DevTools, and a dedicated test browser profile.
 
+Task 4.31 hardens the existing one-route prototype without adding mutation capability. It strengthens no-fake-success behavior, no-change/already-dismissed failure handling, missing snapshot metadata failure handling, unavailable/timeout/abort handling, duplicate-submit protection, confirmation reset behavior, and static route isolation. The only browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual acceptance for Task 4.28 DataHealth dismiss mutation prototype.

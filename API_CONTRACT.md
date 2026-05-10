@@ -50,6 +50,8 @@ Task 4.29 adds DataHealth Dismiss Prototype Acceptance V1. It is an acceptance/t
 
 Task 4.30 adds DataHealth Dismiss Manual App Acceptance V1. It is a human-run manual App acceptance checklist for the existing one-route prototype, not new runtime capability. It keeps the only accepted browser mutation route as `POST /data-health/issues/:issueId/dismiss`, requires a dedicated test browser profile, and keeps localStorage as source of truth.
 
+Task 4.31 adds DataHealth Dismiss Prototype Hardening V1. It hardens the existing one-route prototype only: no new mutation route, no second prototype, no source-of-truth switch, no localStorage overwrite, and no AppData overwrite. Success shape is strict and no-fake-success behavior is hardened for no-change, issue-not-found, missing snapshot metadata, unavailable/timeout/abort, malformed response, and repository/write failure cases.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -872,6 +874,34 @@ Manual acceptance facts:
 - API results never overwrite AppData or localStorage.
 
 Write-path migration remains blocked after Task 4.30. The next recommended task is `Task 4.31 DataHealth Dismiss Prototype Hardening V1`.
+
+## DataHealth Dismiss Prototype Hardening
+
+Owner files:
+
+- `src/devApi/DevApiDataHealthDismissPrototype.tsx`
+- `src/devApi/devApiDataHealthDismissClient.ts`
+- `tests/devApiDataHealthDismissHardeningNoFakeSuccess.test.ts`
+- `tests/devApiDataHealthDismissHardeningFailureStates.test.ts`
+- `tests/devApiDataHealthDismissHardeningConcurrency.test.tsx`
+- `tests/devApiDataHealthDismissHardeningConfirmation.test.tsx`
+- `tests/devApiDataHealthDismissHardeningBoundary.test.ts`
+- `tests/devApiDataHealthDismissHardeningDocsParity.test.ts`
+
+Task 4.31 hardens the existing Task 4.28 prototype. It does not add runtime route capability, a broad mutation client, source-of-truth switching, localStorage replacement, an offline queue, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables.
+
+Hardening facts:
+
+- The only browser mutation route remains `POST /data-health/issues/:issueId/dismiss`.
+- Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- Missing snapshot metadata is failure.
+- `no_change`, already-dismissed, `issue_not_found`, `requiresConfirmation`, `unsupported_route`, `write_failed`, `transaction_failed`, `database_closed`, `snapshot_validation_failed`, and `repository_schema_mismatch` do not show success.
+- Timeout, unavailable, abort, malformed response, and server error responses do not show success and do not expose raw stack text.
+- Duplicate submit is guarded while pending, and retry after failure requires explicit confirmation.
+- API results never overwrite AppData or localStorage.
+- Session mutation, history edit/data-flag, DataHealth repair, backup/import/export, reset, and recovery routes remain blocked from browser code.
+
+Write-path migration remains blocked after Task 4.31. The next recommended task is `Task 4.32 DataHealth Dismiss Recovery/Observability V1`.
 
 ## Local Persistence
 

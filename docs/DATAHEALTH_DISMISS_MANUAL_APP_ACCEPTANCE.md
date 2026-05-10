@@ -190,6 +190,24 @@ Failure criteria:
 
 - [ ] Fail if unavailable, timeout, no-change, not-found, write failure, or missing snapshot metadata shows success.
 
+## Task 4.31 Hardening Manual Checks
+
+- [ ] Confirm `no_change` or already dismissed responses show a failure/diagnostic state, not success.
+- [ ] Confirm missing snapshot metadata shows failure and preserves no fake success behavior.
+- [ ] Confirm API unavailable, timeout, abort, or navigation-away behavior does not produce success.
+- [ ] Confirm duplicate-submit hardening: repeated click or Enter while pending sends only one request.
+- [ ] Confirm changing the selected issue requires a fresh confirmation.
+- [ ] Confirm retry after failure requires explicit re-confirmation.
+- [ ] Confirm successful dismiss may be followed by manual refresh/recheck, but does not overwrite localStorage.
+- [ ] Confirm localStorage remains the only active App source of truth.
+
+Failure criteria:
+
+- [ ] Fail if `no_change`, already dismissed, issue-not-found, timeout, abort, unavailable, write failure, or missing snapshot metadata appears as success.
+- [ ] Fail if duplicate-submit hardening allows more than one POST for one pending request.
+- [ ] Fail if abort or navigation-away produces a later success state.
+- [ ] Fail if API response data writes AppData or localStorage.
+
 ## LocalStorage Integrity Manual Check
 
 - [ ] Snapshot localStorage in the dedicated test browser profile before testing.
