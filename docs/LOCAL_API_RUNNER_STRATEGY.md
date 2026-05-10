@@ -271,3 +271,19 @@ Runner behavior:
 Recommended next task:
 
 - Task 4.16 Dev API Runner Manual Acceptance V1.
+
+## Task 4.16 Manual Acceptance Result
+
+Task 4.16 adds `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md` as the manual acceptance runbook for the compiled JavaScript dev API runner.
+
+Result:
+
+- The runner remains dev-only and localhost-only by default.
+- The runbook documents `npm run api:dev:build` and `npm run api:dev -- <args>` manual checks.
+- The runbook covers deterministic ready-line verification, health/read smoke, failure smoke, shutdown, localhost safety, DB file safety, and browser safety.
+- Automated tests keep the runbook aligned with real runner behavior.
+- This is still not App runtime migration and not production backend readiness.
+
+Recommended next task:
+
+- Task 4.17 Dev API Recovery & Reset Safety V1, or Task 4.17 App Runtime Migration Readiness Audit V1.

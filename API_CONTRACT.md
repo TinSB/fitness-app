@@ -20,6 +20,8 @@ Task 4.14 adds `docs/LOCAL_API_RUNNER_STRATEGY.md` as a runner strategy and deci
 
 Task 4.15 implements Result A from the runner strategy: a dev-only compiled JavaScript runner prototype. It adds dev-only `api:dev:build` and `api:dev` scripts without new dependencies or lockfile changes, keeps output under `.ironpath/dev-api-runner`, and does not connect App runtime to HTTP or SQLite.
 
+Task 4.16 adds `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md` as the manual acceptance runbook for the compiled dev API runner. It is an acceptance procedure, not a runtime feature; HTTP behavior still comes from httpRuntimeAdapter/serverAdapter and there is still no App/UI integration, auth, sync, deployment, or production backend.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -410,6 +412,28 @@ Supported runner args:
 - `--help`
 
 This prototype is not production backend readiness and is not App runtime migration.
+
+## Dev API Runner Manual Acceptance
+
+Owner files:
+
+- `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md`
+- `tests/devApiRunnerManualAcceptanceDocs.test.ts`
+- `tests/devApiRunnerManualAcceptanceSmoke.test.ts`
+- `tests/devApiRunnerManualAcceptanceBoundary.test.ts`
+
+Boundary:
+
+- The runbook is a manual acceptance procedure, not a runtime feature.
+- It does not add new package scripts beyond `api:dev:build` and `api:dev`.
+- It does not add package dependencies, lockfile changes, production server behavior, Fastify, Express, auth, sync, deployment, App UI integration, localStorage replacement, backup import/export HTTP endpoints, or normalized tables.
+- It documents real command acceptance for `npm run api:dev:build` and `npm run api:dev -- <args>`.
+- It requires the deterministic ready line: `IronPath dev API ready: <url>`.
+- It states `seedEmpty` is enough for read smoke only; mutation success smoke requires a valid preseeded AppData snapshot with a startable template.
+- It keeps the existing HTTP response shapes from httpRuntimeAdapter/serverAdapter.
+- It keeps generated runner output under ignored `.ironpath/dev-api-runner` and keeps dev SQLite artifacts ignored.
+
+This runbook must not be used as evidence that `App.tsx` is connected, that SQLite replaces localStorage, or that a production backend is ready.
 
 ## Local Persistence
 
