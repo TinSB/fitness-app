@@ -538,6 +538,18 @@ Task 4.23 does not change `App.tsx`, runtime source behavior, diagnostics behavi
 
 Recommended next step is `Task 4.24 Mutation Integration Readiness Audit V1` or `Task 4.24 Read-only Diagnostic Manual Regression V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
 
+### Task 4.24: Mutation Integration Readiness Audit V1
+
+Completed as mutation integration readiness audit and static/docs boundary testing, not as mutation integration or write-path migration.
+
+- `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md` records the current safe baseline, existing server/dev API mutation inventory, remaining blockers, risk analysis, mutation category readiness matrix, source-of-truth rules, required gates, rollback requirements, and decision record.
+- `mutationIntegrationReadinessAudit.test.ts` locks the audit sections, route inventory, blockers, risk table, readiness matrix, source-of-truth rules, rollback requirements, and unique planning-only recommendation.
+- `mutationIntegrationBoundaryStillBlocked.test.ts` keeps executable browser/runtime source free of App mutation route calls, Node-only imports, frontend mutation clients, mutation feature flag wiring, API-backed localStorage, and package script/dependency expansion.
+
+Task 4.24 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior, localStorage persistence, save/load behavior, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write paths. Existing mutation routes remain server/dev API only and are not approved for UI integration.
+
+Task 4.24 result: not ready for mutation integration. Write-path migration remains blocked. The only recommended next task is planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`; it must not implement App mutation calls, connect POST routes to the UI, or switch source of truth.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

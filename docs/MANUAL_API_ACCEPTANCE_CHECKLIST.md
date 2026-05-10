@@ -26,6 +26,8 @@ Task 4.22 hardens read-only diagnostics UX for dev-only comparison. The panel is
 
 Task 4.23 adds the read-only App manual acceptance runbook at `docs/READONLY_APP_MANUAL_ACCEPTANCE.md`. It is for dev-only diagnostics acceptance and does not imply production readiness or write-path migration readiness.
 
+Task 4.24 adds the mutation integration readiness audit at `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md`. The result is not ready for mutation integration; write-path integration remains blocked and the next step is planning-only source-of-truth/offline strategy work.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
