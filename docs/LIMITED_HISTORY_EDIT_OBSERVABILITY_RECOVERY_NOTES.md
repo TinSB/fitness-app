@@ -78,3 +78,13 @@ Browser source and browser build output must remain free of `node:http`, `node:s
 ## Task Result
 
 Task 4.50 is observability/recovery-notes only. The next recommended task is Task 4.51 Limited History Edit Regression Lock V1.
+
+## Task 4.51 Regression Lock Companion
+
+Task 4.51 adds `docs/LIMITED_HISTORY_EDIT_REGRESSION_LOCK.md` for the existing dev-only Limited History Edit prototype.
+
+- It does not add a new mutation route.
+- It does not expand runtime write capability beyond the accepted three-route set.
+- It keeps recovery outside browser write capability.
+- It keeps localStorage as source of truth and keeps API results from overwriting AppData or localStorage.
+- It recommends Task 4.52 Write-path Three-route Checkpoint V1 as the next task.

@@ -375,3 +375,11 @@ Task 4.50 adds observability and recovery notes for the Limited History Edit pro
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the prototype, and no localStorage reconciliation or offline mutation queue is introduced.
 
 Manual recovery remains outside browser write capability. The prototype does not add reset/recovery/import/export/apply controls and does not add production backend, auth, sync, deployment, or any browser mutation route beyond DataHealth dismiss, History data-flag, and Limited History Edit.
+
+## Task 4.51 Note
+
+Task 4.51 regression-locks the Limited History Edit prototype without changing source-of-truth strategy.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage, snapshot metadata is not stored in localStorage by the prototype, and no localStorage reconciliation or offline mutation queue is introduced.
+
+The regression lock does not add production backend, auth, sync, deployment, or any browser mutation route beyond DataHealth dismiss, History data-flag, and Limited History Edit.

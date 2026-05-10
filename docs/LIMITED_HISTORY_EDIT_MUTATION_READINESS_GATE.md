@@ -401,3 +401,13 @@ No new browser mutation route is added. The accepted browser mutation routes rem
 localStorage remains source of truth, API results never overwrite AppData or localStorage, browser reset/recovery actions remain blocked, and broader write-path migration remains blocked.
 
 Task 4.51 Limited History Edit Regression Lock V1 is the next recommended task.
+
+## Task 4.51 Regression Lock Note
+
+Task 4.51 locks the existing Limited History Edit prototype after implementation, acceptance, manual acceptance, hardening, and observability/recovery notes.
+
+No new browser mutation route is added. The accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+
+localStorage remains source of truth, API results never overwrite AppData or localStorage, fourth mutation routes remain blocked, and broader write-path migration remains blocked.
+
+Task 4.52 Write-path Three-route Checkpoint V1 is the next recommended task.

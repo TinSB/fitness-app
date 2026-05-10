@@ -443,3 +443,16 @@ Task 4.50 adds `docs/LIMITED_HISTORY_EDIT_OBSERVABILITY_RECOVERY_NOTES.md` and t
 - localStorage remains source of truth and API results never overwrite AppData or localStorage.
 
 Next recommended task: Task 4.51 Limited History Edit Regression Lock V1.
+
+## Task 4.51 Regression Lock Result
+
+Task 4.51 adds `docs/LIMITED_HISTORY_EDIT_REGRESSION_LOCK.md` and regression-lock tests for the existing Limited History Edit prototype.
+
+- No new mutation route is added.
+- Runtime write capability remains limited to the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Allowed patch fields remain exactly `weightKg`, `displayWeight`, `displayUnit`, `reps`, `rir`, `techniqueQuality`, `painFlag`, and `note`.
+- Broad edit fields, dataFlag through edit route, session mutation, DataHealth repair, backup/import/export/reset/recovery routes, and fourth mutation routes remain blocked.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 4.52 Write-path Three-route Checkpoint V1.
