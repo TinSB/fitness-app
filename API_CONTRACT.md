@@ -68,6 +68,8 @@ Task 4.38 adds History Data-flag Manual App Acceptance V1. It is a human-run man
 
 Task 4.39 adds History Data-flag Prototype Hardening V1. It hardens the existing History data-flag prototype only: no new mutation route, no third prototype, no source-of-truth switch, no localStorage overwrite, and no AppData overwrite. The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. Success shape is strict: HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata are required. no_change, record_not_found, invalid dataFlag, missing snapshot metadata, unavailable, timeout, abort, malformed response, write_failed, transaction_failed, database_closed, snapshot_validation_failed, repository_schema_mismatch, requiresConfirmation, and unsupported_route remain no-fake-success failures.
 
+Task 4.40 adds `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md` as Write-path Two-route Checkpoint V1. It is checkpoint/audit documentation and static tests only, not new runtime capability. The accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third browser mutation route is approved. localStorage remains source of truth, API results never overwrite AppData or localStorage, and production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and broad write-path migration remain blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1140,6 +1142,19 @@ Task 4.39 hardens the existing Task 4.36 History data-flag prototype with no-fak
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
 
 Write-path migration remains blocked after Task 4.39. The next recommended task is `Task 4.40 Write-path Two-route Checkpoint V1` or `Task 4.40 Second-route Observability & Recovery Notes V1`.
+
+## Task 4.40: Write-path Two-route Checkpoint V1
+
+Task 4.40 checkpoints the complete dev-only two-route write-path prototype state after DataHealth dismiss and History data-flag hardening. It adds `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md` and static/docs tests only.
+
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- This is checkpoint/audit coverage, not new runtime capability and not a third mutation route.
+- DataHealth dismiss remains implemented, accepted, manually accepted, hardened, observable/recoverable, regression locked, dev-only, and localStorage-source-of-truth.
+- History data-flag remains planned, implemented, accepted, manually accepted, hardened, semantics-locked, dev-only, and localStorage-source-of-truth.
+- Both prototypes preserve strict no-fake-success behavior, snapshot metadata success requirements, duplicate-submit prevention, confirmation, visible failure states, no localStorage writes, and no AppData overwrite.
+- Session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, broad mutation clients, API-backed persistence, offline mutation queues, production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and training algorithm changes remain blocked.
+
+Write-path migration remains blocked after Task 4.40. The next recommended task is `Task 4.41 Write-path Two-route Manual Regression V1`.
 
 ## Local Persistence
 
