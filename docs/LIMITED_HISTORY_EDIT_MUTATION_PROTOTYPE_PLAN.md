@@ -430,3 +430,16 @@ Task 4.49 adds `docs/LIMITED_HISTORY_EDIT_PROTOTYPE_HARDENING.md` plus hardening
 - localStorage remains source of truth and API results never overwrite AppData or localStorage.
 
 Next recommended task: Task 4.50 Limited History Edit Observability & Recovery Notes V1.
+
+## Task 4.50 Observability / Recovery Result
+
+Task 4.50 adds `docs/LIMITED_HISTORY_EDIT_OBSERVABILITY_RECOVERY_NOTES.md` and tests for safe observability and manual recovery notes.
+
+- No new mutation route is added.
+- Runtime write capability remains limited to the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- Safe diagnostics are limited to mutation state, redacted target, source fingerprint presence, snapshot metadata presence, HTTP status, failure code, duplicate-submit flag, timestamps, and recovery note.
+- The browser prototype exposes no reset/recovery action and no raw stack, raw response, full AppData, localStorage dump, SQLite internals, or environment dump.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 4.51 Limited History Edit Regression Lock V1.
