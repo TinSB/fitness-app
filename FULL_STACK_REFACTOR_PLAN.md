@@ -748,6 +748,21 @@ Task 4.38 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.38. The next recommended task is `Task 4.39 History Data-flag Prototype Hardening V1` or `Task 4.39 Write-path Two-Route Checkpoint V1`.
 
+### Task 4.39: History Data-flag Prototype Hardening V1
+
+Completed as hardening tests and docs parity for the existing Task 4.36 History data-flag prototype. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, or a broad mutation client.
+
+- `devApiHistoryDataFlagHardeningNoFakeSuccess.test.ts` locks the strict success shape and no-fake-success behavior for missing snapshot metadata, no_change, status mismatch, HTTP errors, and repository/write failures.
+- `devApiHistoryDataFlagHardeningFailureStates.test.ts` locks unavailable, timeout, abort, malformed response, record_not_found, invalid flag, requiresConfirmation, unsupported_route, database_closed, and no raw stack behavior.
+- `devApiHistoryDataFlagHardeningConcurrency.test.tsx` and `devApiHistoryDataFlagHardeningConfirmation.test.tsx` lock duplicate-submit prevention, pending-state behavior, abort/unmount guards, and confirmation reset.
+- `devApiHistoryDataFlagHardeningSemantics.test.ts` locks `normal | test | excluded` semantics and keeps PR/e1RM/effectiveSet/training and backup/import rules unchanged.
+- `devApiHistoryDataFlagHardeningBoundary.test.ts` keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, with no session/history edit/repair/backup/reset routes.
+- `devApiHistoryDataFlagHardeningDocsParity.test.ts` keeps the manual runbook, contract, and refactor docs aligned with the hardening boundary.
+
+Task 4.39 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.39. The next recommended task is `Task 4.40 Write-path Two-route Checkpoint V1` or `Task 4.40 Second-route Observability & Recovery Notes V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

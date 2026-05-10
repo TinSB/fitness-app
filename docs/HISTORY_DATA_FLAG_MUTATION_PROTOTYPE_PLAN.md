@@ -39,6 +39,18 @@ Task 4.35 converts the Task 4.34 second mutation candidate readiness audit into 
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
 - Write-path migration remains blocked.
 
+## Task 4.39 Hardening Result
+
+- Task 4.39 hardens the existing History data-flag prototype and does not add runtime capability beyond the existing route.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- History data-flag success remains strict: HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata are required.
+- no_change, record_not_found, invalid dataFlag, requiresConfirmation, unsupported_route, missing snapshot metadata, unavailable, timeout, abort, malformed response, write_failed, transaction_failed, database_closed, snapshot_validation_failed, and repository_schema_mismatch remain failure states.
+- Confirmation reset, duplicate-submit prevention, abort/unmount guard, and local-only rollback behavior remain locked.
+- `normal`, `test`, and `excluded` semantics remain locked: test and excluded records stay visible but excluded from default production-like statistics.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, source-of-truth switch, localStorage replacement, or training algorithm change is added.
+- Write-path migration remains blocked.
+
 ## Scope / Non-goals
 
 - This is History data-flag mutation prototype planning.

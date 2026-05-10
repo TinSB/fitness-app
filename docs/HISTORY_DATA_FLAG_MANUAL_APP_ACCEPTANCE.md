@@ -25,6 +25,34 @@ Expected results:
 Failure criteria:
 - [ ] Fail if manual testing requires a runtime source change, a third route, source-of-truth switch, or production backend behavior.
 
+## Task 4.39 Hardening Checks
+
+- [ ] Confirm already-current dataFlag attempts are failures, not successes:
+  - [ ] `normal -> normal`
+  - [ ] `test -> test`
+  - [ ] `excluded -> excluded`
+- [ ] Confirm no_change / already-current dataFlag does not write localStorage, mutate AppData, or auto-retry.
+- [ ] Confirm `record_not_found` remains a visible failure and does not show success.
+- [ ] Confirm invalid dataFlag is not selectable in the UI and invalid dataFlag responses do not show success.
+- [ ] Confirm missing snapshot metadata is treated as failed persistence.
+- [ ] Confirm API unavailable, timeout, and navigation away / abort do not show success.
+- [ ] Confirm duplicate-submit hardening: repeated click or repeated Enter while pending sends at most one request.
+- [ ] Confirm confirmation resets after success, after failure, when target dataFlag changes, and when the target record changes.
+- [ ] Success requires HTTP 2xx, result.ok === true, result.changed === true, result.status === "success", and snapshot metadata.
+- [ ] No-fake-success remains enforced for write_failed, transaction_failed, database_closed, snapshot_validation_failed, repository_schema_mismatch, requiresConfirmation, and unsupported_route.
+- [ ] localStorage remains source of truth.
+- [ ] API result never overwrites AppData or localStorage.
+- [ ] `normal` participates in default statistics.
+- [ ] `test` remains visible but excluded from default production-like statistics.
+- [ ] `excluded` remains visible but excluded from default production-like statistics.
+- [ ] Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+
+Expected results:
+- [ ] Task 4.39 hardening confirms edge failures remain visible and local App data remains untouched.
+
+Failure criteria:
+- [ ] Fail if any hardening case shows success without the strict success shape, writes localStorage, mutates AppData, or introduces another browser mutation route.
+
 ## Safety Before Testing
 
 - [ ] Do not use real personal training data.
