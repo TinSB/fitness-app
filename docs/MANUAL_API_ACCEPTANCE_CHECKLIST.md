@@ -16,6 +16,8 @@ Task 4.17 adds the dev DB recovery/reset checklist at `docs/DEV_API_RECOVERY_RES
 
 Task 4.18 adds the App runtime migration readiness audit at `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md`. The audit result is that App runtime migration remains blocked; this checklist does not authorize App.tsx integration.
 
+Task 4.19 adds the read-only App integration plan at `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md`. It is still planning-only: no App.tsx integration, no frontend API client, no feature flag runtime, and no localStorage replacement.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

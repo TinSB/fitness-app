@@ -222,3 +222,7 @@ Short-term recommendation: Option C. It is the safest next step because it does 
 ## Final Recommendation
 
 Task 4.18 result: Not ready for App.tsx migration. Ready for Task 4.19 Dev API Read-only App Integration Plan V1. Formal App.tsx HTTP migration remains blocked.
+
+## Task 4.19 Follow-up
+
+Task 4.19 adds `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md` as the follow-up read-only plan. It keeps the Task 4.18 conclusion unchanged: direct App.tsx HTTP migration and write-path migration remain blocked. The only acceptable next prototype path is dev-only, explicit opt-in, and dual-read comparison mode only, and only if Task 4.19 acceptance passes.
