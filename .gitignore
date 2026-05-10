@@ -38,3 +38,6 @@ Thumbs.db
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+
+# Local Codex task prompts/logs
+.codex-tasks/
