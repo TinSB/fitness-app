@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 3000",
+    "api:dev:build": "node ./node_modules/vite/bin/vite.js build --ssr apps/api/src/node/devApiRunner.ts --outDir .ironpath/dev-api-runner --emptyOutDir",
+    "api:dev": "npm run api:dev:build && node ./.ironpath/dev-api-runner/devApiRunner.js",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "build:stats": "node ./node_modules/vite/bin/vite.js build && node ./scripts/print-dist-assets.mjs",
     "build:size-check": "node ./node_modules/vite/bin/vite.js build && node ./scripts/check-dist-size.mjs",

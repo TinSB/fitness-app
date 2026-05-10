@@ -18,6 +18,8 @@ Task 4.13 adds automated smoke hardening for the dev-only local API runtime stac
 
 Task 4.14 adds `docs/LOCAL_API_RUNNER_STRATEGY.md` as a runner strategy and decision record. It is not a runtime feature, does not add scripts or dependencies, and keeps devLauncher as a programmatic Node-only API.
 
+Task 4.15 implements Result A from the runner strategy: a dev-only compiled JavaScript runner prototype. It adds dev-only `api:dev:build` and `api:dev` scripts without new dependencies or lockfile changes, keeps output under `.ironpath/dev-api-runner`, and does not connect App runtime to HTTP or SQLite.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -373,6 +375,41 @@ Recommendation:
 - Task 4.15 is still not App runtime migration.
 
 This strategy must not be read as evidence that a local API runner already exists, that `App.tsx` is connected, or that the backend is production-ready.
+
+## Dev API Runner Prototype
+
+Owner files:
+
+- `apps/api/src/node/devApiRunner.ts`
+- `tests/devApiRunnerCli.test.ts`
+- `tests/devApiRunnerCompiledPrototype.test.ts`
+- `tests/devApiRunnerNodeOnlyIsolation.test.ts`
+- `tests/devApiRunnerPackageScripts.test.ts`
+- `tests/devApiRunnerStrategyAudit.test.ts`
+
+Boundary:
+
+- Result A is implemented: dev-only compiled JavaScript runner.
+- The runner is Node-only and may only be exported from `apps/api/src/node/index.ts`.
+- Browser-facing `apps/api/src/index.ts` must not export the runner.
+- The runner builds to `.ironpath/dev-api-runner`; generated output is ignored and not committed.
+- `api:dev:build` may clear `.ironpath/dev-api-runner` only. It must not delete `.ironpath/dev-api.sqlite`, `.sqlite-wal`, `.sqlite-shm`, or sibling dev artifacts.
+- `api:dev` forwards `npm run api:dev -- <args>` to the compiled runner.
+- Ready output is deterministic: `IronPath dev API ready: <url>`.
+- The runner is dev-only and localhost-only by default.
+- It does not add production server behavior, Fastify, Express, auth, sync, deployment, App UI integration, localStorage replacement, backup import/export HTTP endpoints, or normalized tables.
+
+Supported runner args:
+
+- `--host`
+- `--port`
+- `--db`
+- `--seed-empty`
+- `--allow-network-access`
+- `--max-body-bytes`
+- `--help`
+
+This prototype is not production backend readiness and is not App runtime migration.
 
 ## Local Persistence
 

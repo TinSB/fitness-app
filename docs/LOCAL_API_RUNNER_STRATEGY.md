@@ -233,3 +233,41 @@ Suggested record for Task 4.14:
 - Next task: Task 4.15 Dev API Runner Prototype V1.
 - Risks: Manual local API startup remains inconvenient until Task 4.15.
 - Rollback plan: Keep using automated smoke tests and the manual acceptance checklist; no runtime rollback is needed because no runner was implemented.
+
+## Task 4.15 Prototype Result
+
+Result A: Compiled JS runner prototype is implemented.
+
+Build audit:
+
+- Existing `npm run build` is browser-only and does not output Node API runner files.
+- Existing `tsconfig.json` is no-emit and browser/bundler-oriented.
+- Direct `tsc` CommonJS is blocked by `import.meta` usage in the current dependency graph.
+- NodeNext ESM is blocked by extensionless relative imports unless source import style changes.
+- Vite SSR build can compile the Node-only runner without new dependencies and without browser bundle pollution.
+- The compiled runner output is generated under `.ironpath/dev-api-runner`, which is ignored and not committed.
+- `--emptyOutDir` is scoped only to `.ironpath/dev-api-runner`; it must not clear `.ironpath/` or touch `.ironpath/dev-api.sqlite`, `.sqlite-wal`, `.sqlite-shm`, or sibling dev artifacts.
+
+Implemented dev-only scripts:
+
+- `npm run api:dev:build`
+- `npm run api:dev -- <args>`
+
+Manual runner example:
+
+```powershell
+npm run api:dev -- --port 0 --seed-empty --db <temp-db>
+```
+
+Runner behavior:
+
+- Defaults remain localhost-only: host `127.0.0.1`, port `8787`, DB `.ironpath/dev-api.sqlite`, and `seedEmpty=false`.
+- The ready line is deterministic: `IronPath dev API ready: <url>`.
+- `SIGINT` and `SIGTERM` close the HTTP server and SQLite repository.
+- The runner does not add business routes or backup import/export HTTP endpoints.
+- The runner does not add App.tsx integration, UI integration, localStorage replacement, auth, sync, deployment, production server behavior, or normalized tables.
+- Task 4.15 is still not App runtime migration.
+
+Recommended next task:
+
+- Task 4.16 Dev API Runner Manual Acceptance V1.
