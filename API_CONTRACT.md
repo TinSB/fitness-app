@@ -64,6 +64,8 @@ Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype.
 
 Task 4.37 adds History Data-flag Prototype Acceptance V1. It is an acceptance/testing layer and manual runbook for the existing Task 4.36 prototype, not an expansion of mutation capability. The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; localStorage remains source of truth; API results never overwrite AppData or localStorage; no session/history edit/DataHealth repair/backup/import/export/reset/recovery routes, broad mutation client, production backend, auth, sync, deployment, package changes, lockfile changes, scripts, normalized tables, or training algorithm changes are added.
 
+Task 4.38 adds History Data-flag Manual App Acceptance V1. It is a human-run manual App acceptance checklist and docs/static-test layer for the existing Task 4.36/4.37 prototype, not new runtime capability. The browser mutation allowlist remains exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; localStorage remains source of truth; API results never overwrite AppData or localStorage; no session/history edit/DataHealth repair/backup/import/export/reset/recovery routes, broad mutation client, production backend, auth, sync, deployment, package changes, lockfile changes, scripts, normalized tables, or training algorithm changes are added.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1080,6 +1082,35 @@ Acceptance facts:
 - No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery HTTP route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
 
 Write-path migration remains blocked after Task 4.37. The next recommended task is `Task 4.38 History Data-flag Manual App Acceptance V1` or `Task 4.38 History Data-flag Prototype Hardening V1`.
+
+## History Data-flag Manual App Acceptance
+
+Owner files:
+
+- `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md`
+- `tests/historyDataFlagManualAppAcceptanceDocs.test.ts`
+- `tests/historyDataFlagManualAppAcceptanceDocsParity.test.ts`
+- `tests/historyDataFlagManualAppAcceptanceBoundary.test.ts`
+
+Task 4.38 adds manual App acceptance documentation and docs/static boundary tests for the existing History data-flag prototype.
+
+Manual acceptance facts:
+
+- A dedicated test browser profile is required.
+- Real personal training data must not be used.
+- The manual flow uses `npm run api:dev`, `npm run dev`, browser DevTools Network, a dedicated dev DB file, and explicit env flags.
+- The flag matrix confirms compare-only, mutation-only, DataHealth-dismiss flag, and production-like states do not enable the History data-flag prototype.
+- A stable target history record is required for success testing.
+- Confirmation is required before the History data-flag POST, cancel prevents POST, and pending state must block duplicate submits.
+- Success is accepted only after HTTP 2xx, mutation success, `changed=true`, `status="success"`, and snapshot metadata.
+- Failure states must not show success, auto-retry, write localStorage, or replace AppData.
+- `normal`, `test`, and `excluded` semantics remain locked; test and excluded records remain visible but excluded from default production-like statistics.
+- Browser Network must show only read-only GET routes plus accepted prototype POST routes after explicit confirmation.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- API results never overwrite AppData or localStorage.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery HTTP route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
+
+Write-path migration remains blocked after Task 4.38. The next recommended task is `Task 4.39 History Data-flag Prototype Hardening V1` or `Task 4.39 Write-path Two-Route Checkpoint V1`.
 
 ## Local Persistence
 

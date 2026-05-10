@@ -48,6 +48,8 @@ Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype.
 
 Task 4.37 adds the History data-flag prototype acceptance runbook at `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md`. It is acceptance/testing only: browser mutation routes remain exactly DataHealth dismiss and History data-flag, localStorage remains source of truth, and no production readiness or broader write-path migration is implied.
 
+Task 4.38 adds the History data-flag manual App acceptance runbook at `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md`. It is human-run manual acceptance only: use a dedicated test browser profile and dedicated dev DB file, keep localStorage as source of truth, and do not treat the flow as production readiness or broader write-path migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -215,8 +217,10 @@ Task 4.37 adds the History data-flag prototype acceptance runbook at `docs/HISTO
 - [ ] Task 4.35 history data-flag prototype plan remains the planning record; Task 4.36 is the explicitly approved one-route implementation.
 - [ ] Confirm the history data-flag prototype does not change localStorage source-of-truth, AppData overwrite behavior, or browser route boundaries.
 - [ ] Use `docs/HISTORY_DATA_FLAG_PROTOTYPE_ACCEPTANCE.md` for the History data-flag prototype acceptance runbook.
+- [ ] Use `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md` for the human-run History data-flag manual App acceptance checklist.
 - [ ] Confirm Task 4.37 acceptance keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
 - [ ] Confirm Task 4.37 acceptance covers flag matrix, target record, confirmation, pending/duplicate-submit, success/failure/no-fake-success, dataFlag semantics, localStorage integrity, Network boundary, forbidden controls, cleanup, and browser build safety.
+- [ ] Confirm Task 4.38 manual acceptance requires a dedicated test browser profile, no real personal training data, a dedicated dev DB file, DevTools Network route checks, target record checks, normal/test/excluded semantics checks, cleanup, and pass/fail reporting.
 - [ ] Do not treat this as production readiness.
 - [ ] Do not enable session, history edit, DataHealth repair, backup/import/export, reset, or recovery routes from browser code.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.

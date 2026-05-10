@@ -29,6 +29,16 @@ Task 4.35 converts the Task 4.34 second mutation candidate readiness audit into 
 - Write-path migration remains blocked.
 - The next recommended task is `Task 4.38 History Data-flag Manual App Acceptance V1` or `Task 4.38 History Data-flag Prototype Hardening V1`.
 
+## Task 4.38 Manual App Acceptance Result
+
+- Task 4.38 adds `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md` as the human manual App acceptance runbook for the existing History data-flag prototype.
+- This is manual acceptance documentation and docs/static tests only.
+- No new mutation route is added.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
+- Write-path migration remains blocked.
+
 ## Scope / Non-goals
 
 - This is History data-flag mutation prototype planning.
@@ -313,6 +323,8 @@ Task 4.35 result: Plan only.
 Task 4.36 result: Implemented only as a dev-only single-route prototype.
 
 Task 4.37 result: Accepted with automated and manual acceptance coverage only.
+
+Task 4.38 result: Manual App acceptance documentation only.
 
 Implemented route: POST /history/:id/data-flag.
 
