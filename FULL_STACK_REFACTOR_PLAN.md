@@ -196,6 +196,15 @@ Task 4.8 adds a Node-only server adapter skeleton without starting a server:
 - The adapter remains outside `apps/api/src/index.ts` and browser builds.
 - There is still no runtime server, App.tsx integration, UI integration, localStorage replacement, auth, sync, or normalized database.
 
+Task 4.9 adds a Node-only HTTP smoke wrapper around the server adapter:
+
+- `apps/api/src/node/httpRuntimeAdapter.ts` converts Node `http` requests into `ServerAdapterRequest`.
+- It parses method, path, query string, and JSON body, then writes stable JSON responses.
+- It does not implement business routes and does not call readMirror, mutation handlers, or SQLite directly.
+- It does not auto-listen or provide a production server.
+- It has parsing contracts for malformed JSON, body too large, and unsupported media types.
+- It remains outside browser-facing exports and does not affect `App.tsx`, UI, localStorage, auth, sync, deployment, or normalized database work.
+
 ## Not Done In This Baseline
 
 This baseline intentionally does not:
@@ -304,7 +313,20 @@ Completed as a Node-only adapter skeleton, not an HTTP runtime:
 - repository error mapping with stable error codes
 - Node-only isolation from browser-facing API exports
 
-This task does not start Fastify/Express, does not connect to `App.tsx`, does not replace localStorage, does not add auth/cloud sync, and does not add normalized tables. Future Task 4.9 can consider an HTTP runtime adapter or server smoke test only after this skeleton remains stable under full regression tests.
+This task does not start Fastify/Express, does not connect to `App.tsx`, does not replace localStorage, does not add auth/cloud sync, and does not add normalized tables.
+
+### Task 4.9: HTTP Runtime Adapter Smoke Test V1
+
+Completed as a smoke-test wrapper only, not a production backend:
+
+- Node `http` request listener factory
+- stable success/error JSON body contract
+- request parsing for JSON POST bodies
+- route forwarding to serverAdapter
+- HTTP-level smoke tests through an ephemeral port
+- Node-only isolation from browser-facing API exports
+
+This task still does not connect `App.tsx` or UI to HTTP, does not replace localStorage, does not add Fastify/Express, auth, cloud sync, deployment config, or normalized tables. A future task should harden runtime smoke or add a dev-only launch script before considering any frontend data-flow switch.
 
 ## High-Risk Files
 
