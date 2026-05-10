@@ -735,6 +735,19 @@ Task 4.37 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.37. The next recommended task is `Task 4.38 History Data-flag Manual App Acceptance V1` or `Task 4.38 History Data-flag Prototype Hardening V1`.
 
+### Task 4.38: History Data-flag Manual App Acceptance V1
+
+Completed as manual App acceptance documentation and docs/static tests for the existing Task 4.36/4.37 History data-flag prototype. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, or a broad mutation client.
+
+- `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md` records the human-run App acceptance checklist for `npm run api:dev`, `npm run dev`, browser DevTools, a dedicated test browser profile, dedicated dev DB file, flag matrix checks, target record checks, confirmation, duplicate-submit prevention, success/failure behavior, `normal | test | excluded` semantics, localStorage integrity, route boundary checks, forbidden controls, cleanup, and pass/fail reporting.
+- `historyDataFlagManualAppAcceptanceDocs.test.ts` locks required sections, checkbox format, commands, flags, cleanup, ready line, target record preparation, allowed routes, forbidden routes, safety warnings, localStorage source-of-truth wording, dataFlag semantics, and pass/fail template.
+- `historyDataFlagManualAppAcceptanceDocsParity.test.ts` keeps the manual runbook aligned with the Task 4.36 route and required acceptance scenarios while rejecting production-readiness or expanded-mutation instructions.
+- `historyDataFlagManualAppAcceptanceBoundary.test.ts` keeps runtime source unchanged for Task 4.38, blocks Node-only browser imports, blocks broad mutation clients and API-backed storage, and keeps package scripts/dependencies unchanged.
+
+Task 4.38 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.38. The next recommended task is `Task 4.39 History Data-flag Prototype Hardening V1` or `Task 4.39 Write-path Two-Route Checkpoint V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -2,6 +2,8 @@
 
 This checklist accepts the dev-only History data-flag mutation prototype from Task 4.36.
 
+Task 4.38 adds the dedicated manual App acceptance runbook at `docs/HISTORY_DATA_FLAG_MANUAL_APP_ACCEPTANCE.md`. Task 4.38 is manual acceptance documentation and docs/static tests only; it adds no runtime behavior and no mutation route.
+
 ## Scope / Non-goals
 
 - [ ] This is acceptance coverage for the existing History data-flag prototype only.
