@@ -123,6 +123,23 @@ export const createDataHealthDismissMetadata = ({
   };
 };
 
+export const canSubmitDataHealthDismissPrototype = ({
+  config,
+  sourceContext,
+  confirmed,
+  pending,
+}: {
+  config: DevApiDataHealthDismissConfig;
+  sourceContext: DataHealthDismissSourceContext | null;
+  confirmed: boolean;
+  pending: boolean;
+}) =>
+  config.enabled
+  && Boolean(sourceContext?.issueId)
+  && Boolean(sourceContext?.sourceFingerprint)
+  && confirmed
+  && !pending;
+
 const safeErrorMessage = (error?: DevApiDataHealthDismissError) => {
   if (!error) return 'DataHealth dismiss experiment failed.';
   return `${error.serverCode || error.code}: ${error.message}`.replace(/\s+/g, ' ').slice(0, 160);
@@ -151,8 +168,12 @@ export const DevApiDataHealthDismissPrototypePanel = ({
 }) => {
   if (config.status === 'disabled') return null;
 
-  const enabled = config.enabled && sourceContext !== null;
-  const canSubmit = enabled && confirmed && selectedIssueId && !pending;
+  const canSubmit = canSubmitDataHealthDismissPrototype({
+    config,
+    sourceContext,
+    confirmed,
+    pending,
+  });
   const selectedIssueIndex = sourceContext
     ? Math.max(0, sourceContext.issues.findIndex((issue) => issue.id === selectedIssueId))
     : 0;

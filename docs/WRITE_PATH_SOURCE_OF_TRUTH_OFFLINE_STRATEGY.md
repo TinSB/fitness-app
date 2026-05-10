@@ -303,3 +303,11 @@ Task 4.28 was explicitly approved as `DataHealth Dismiss Mutation Prototype V1`.
 It implements only the one-route dev-only DataHealth dismiss prototype. It does not switch source of truth, does not add an offline mutation queue, and does not add localStorage reconciliation.
 
 The Task 4.25 source-of-truth rule still governs broader write-path work: localStorage remains the active App source of truth, API results do not overwrite AppData or localStorage, and write-path migration remains blocked.
+
+## Task 4.29 Note
+
+Task 4.29 adds acceptance coverage and a manual acceptance runbook for the one-route DataHealth dismiss prototype.
+
+The acceptance scope confirms the Task 4.25 source-of-truth rule: localStorage remains the active App source of truth, API mutation results do not overwrite AppData or localStorage, and snapshot metadata is not persisted into localStorage by the browser prototype.
+
+Task 4.29 does not add an offline mutation queue, localStorage reconciliation, source-of-truth switching, production backend, auth, sync, deployment, broad mutation client, package changes, lockfile changes, or normalized tables. Write-path migration remains blocked.
