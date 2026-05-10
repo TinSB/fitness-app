@@ -70,6 +70,8 @@ Task 4.39 adds History Data-flag Prototype Hardening V1. It hardens the existing
 
 Task 4.40 adds `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md` as Write-path Two-route Checkpoint V1. It is checkpoint/audit documentation and static tests only, not new runtime capability. The accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third browser mutation route is approved. localStorage remains source of truth, API results never overwrite AppData or localStorage, and production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and broad write-path migration remain blocked.
 
+Task 4.41 adds `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md` as Write-path Two-route Manual Regression V1. It is manual regression documentation and static tests only, not new runtime capability. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third route is added or approved. localStorage remains source of truth, API results never overwrite AppData or localStorage, and production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and broad write-path migration remain blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1155,6 +1157,18 @@ Task 4.40 checkpoints the complete dev-only two-route write-path prototype state
 - Session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, broad mutation clients, API-backed persistence, offline mutation queues, production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and training algorithm changes remain blocked.
 
 Write-path migration remains blocked after Task 4.40. The next recommended task is `Task 4.41 Write-path Two-route Manual Regression V1`.
+
+## Task 4.41: Write-path Two-route Manual Regression V1
+
+Task 4.41 adds a manual regression runbook for validating DataHealth dismiss and History data-flag together in one local App and Dev API session. It adds documentation and static tests only.
+
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- This is manual regression coverage, not new runtime capability and not a third mutation route.
+- The runbook covers read-only compare startup, DataHealth dismiss flag flow, History data-flag flag flow, mutation experiment isolation, DevTools Network boundaries, no-fake-success behavior, localStorage integrity, failure recovery, cleanup/env reset, and browser build safety.
+- DataHealth dismiss and History data-flag remain single-route dev-only prototypes in their own flows.
+- Session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, broad mutation clients, API-backed persistence, offline mutation queues, production backend/auth/sync/deployment, package changes, lockfile changes, package scripts, normalized tables, source-of-truth migration, and training algorithm changes remain blocked.
+
+Write-path migration remains blocked after Task 4.41. The next recommended task is `Task 4.42 Third Mutation Candidate Readiness Audit V1` or `Task 4.42 Write-path Two-route Regression Lock V1`.
 
 ## Local Persistence
 

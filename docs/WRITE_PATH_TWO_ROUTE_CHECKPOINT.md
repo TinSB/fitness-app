@@ -189,3 +189,13 @@ Browser mutation routes remain exactly DataHealth dismiss and History data-flag.
 No third mutation is approved.
 localStorage remains source of truth.
 Next task should be Task 4.41 Write-path Two-route Manual Regression V1.
+
+## Task 4.41 Manual Regression Follow-up
+
+Task 4.41 adds `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md` as a manual regression runbook for validating both accepted dev-only mutation prototypes in one local App and Dev API session.
+
+- It is manual regression documentation and static-test coverage only.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No third mutation route is approved.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- The runbook verifies experiment-flag isolation, DevTools Network route boundaries, no-fake-success behavior, localStorage integrity, failure recovery, cleanup, and browser build safety.

@@ -54,6 +54,8 @@ Task 4.39 hardens the existing History data-flag prototype. It is hardening/test
 
 Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. It is checkpoint/audit documentation and static-test coverage only: browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, no third route is approved, localStorage remains source of truth, and no production readiness or broader write-path migration is implied. Use the checkpoint before any future two-route manual regression or third-candidate audit.
 
+Task 4.41 adds the write-path two-route manual regression runbook at `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md`. It is manual regression documentation and static-test coverage only: validate DataHealth dismiss and History data-flag together in one local App/dev API session, keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`, keep localStorage as source of truth, and do not treat the flow as production readiness or broader write-path migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

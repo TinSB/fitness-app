@@ -4,6 +4,8 @@ This is the human-run App acceptance checklist for the existing dev-only History
 
 Task 4.40 adds the write-path two-route checkpoint at `docs/WRITE_PATH_TWO_ROUTE_CHECKPOINT.md`. This runbook remains scoped to the History data-flag prototype's own one-route flow, while the global browser mutation allowlist is exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. No third mutation route is approved, localStorage remains source of truth, and API results never overwrite AppData or localStorage.
 
+Task 4.41 adds the two-route manual regression companion at `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md`. Use that runbook when validating History data-flag and DataHealth dismiss together in one local App/dev API session; this History data-flag runbook remains scoped to the History data-flag flow.
+
 ## Scope / Non-goals
 
 - [ ] This is dev-only manual App acceptance.
