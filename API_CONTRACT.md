@@ -60,6 +60,8 @@ Task 4.34 adds `docs/SECOND_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Second Mut
 
 Task 4.35 adds `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` as History Data-flag Mutation Prototype Plan V1. It is plan-only and does not add browser runtime behavior, `POST /history/:id/data-flag` App wiring, a second mutation prototype, a frontend mutation client, mutation feature flag runtime wiring, source-of-truth switching, production backend, auth, sync, deployment, package changes, lockfile changes, or normalized tables. DataHealth dismiss remains the only implemented browser mutation route.
 
+Task 4.36 adds a dev-only, explicit opt-in History data-flag mutation prototype. It adds only `POST /history/:id/data-flag` as the second single-route browser mutation experiment, guarded by `VITE_IRONPATH_DEV_API_COMPARE="1"` and `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT="history-data-flag"`. DataHealth dismiss remains intact. The only browser mutation prototypes are now `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`. localStorage remains source of truth, API results never overwrite AppData or localStorage, success requires strict mutation result plus snapshot metadata, and no session/history edit/DataHealth repair/backup/import/export/reset/recovery routes, broad mutation client, production backend, auth, sync, deployment, package changes, lockfile changes, scripts, normalized tables, or training algorithm changes are added.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1014,6 +1016,36 @@ Plan facts:
 - API results never overwrite AppData or localStorage.
 
 Write-path migration remains blocked after Task 4.35. The next recommended task is `Task 4.36 History Data-flag Mutation Prototype V1` only if gates are accepted.
+
+## History Data-flag Mutation Prototype
+
+Owner files:
+
+- `src/devApi/devApiHistoryDataFlagConfig.ts`
+- `src/devApi/devApiHistoryDataFlagClient.ts`
+- `src/devApi/DevApiHistoryDataFlagPrototype.tsx`
+- `tests/devApiHistoryDataFlagConfig.test.ts`
+- `tests/devApiHistoryDataFlagClient.test.ts`
+- `tests/devApiHistoryDataFlagPrototype.test.ts`
+- `tests/devApiHistoryDataFlagBoundary.test.ts`
+- `tests/devApiHistoryDataFlagServerParity.test.ts`
+- `tests/devApiHistoryDataFlagSemantics.test.ts`
+
+Task 4.36 implements `POST /history/:id/data-flag` as a dev-only explicit opt-in one-route prototype.
+
+Contract facts:
+
+- The browser prototype is enabled only in DEV when read-only comparison is enabled and `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT` is `history-data-flag`.
+- The browser sends only the server-compatible body `{ dataFlag }`.
+- Accepted target values are `normal`, `test`, and `excluded`.
+- `normal` records participate in default statistics; `test` and `excluded` records remain visible but excluded from default production-like statistics.
+- Success requires HTTP success, `result.ok === true`, `result.changed === true`, `result.status === "success"`, and snapshot metadata.
+- Missing snapshot metadata, no-change, record-not-found, invalid dataFlag, unavailable, timeout, abort, malformed response, write failure, transaction failure, database closed, unsupported route, and source fingerprint failure remain failure states.
+- The prototype does not update localStorage, call `saveData` or `loadData`, mutate AppData, or auto-apply API results locally.
+- The only browser mutation prototypes are `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`.
+- No session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery HTTP route, broad mutation client, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, or training algorithm change is added.
+
+Write-path migration remains blocked after Task 4.36. The next recommended task is `Task 4.37 History Data-flag Prototype Acceptance V1`.
 
 ## Local Persistence
 

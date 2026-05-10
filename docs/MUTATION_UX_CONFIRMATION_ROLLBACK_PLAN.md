@@ -220,3 +220,11 @@ Task 4.35 adds the History data-flag mutation prototype plan.
 The future `POST /history/:id/data-flag` candidate remains Level 2: confirmation must show current and target dataFlag, warn that statistics may change, cancel without a request, block duplicate submit while pending, and show success only after strict server success plus snapshot metadata.
 
 Task 4.35 does not implement the route, does not add App POST calls, and does not change localStorage/AppData behavior.
+
+## Task 4.36 Note
+
+Task 4.36 implements the History data-flag prototype as a dev-only one-route experiment.
+
+The no-fake-success rule applies to History data-flag: confirmation is required before POST, pending disables duplicate submit, success requires strict server success plus snapshot metadata, and failure states must not look successful.
+
+Rollback remains local-behavior preserving because the prototype does not optimistically update AppData or localStorage. Disable the mutation flag, stop the Dev API runner, and inspect the dev DB if needed.

@@ -19,6 +19,9 @@ const approvedBrowserMutationFiles = new Set([
   'src/devApi/devApiDataHealthDismissClient.ts',
   'src/devApi/devApiDataHealthDismissConfig.ts',
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
 ]);
 
 const forbiddenRoutes = [
@@ -27,7 +30,6 @@ const forbiddenRoutes = [
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/history/:id/edit',
-  '/history/:id/data-flag',
   '/data-health/repair/apply',
   '/backup/',
   '/backup/import',
@@ -88,6 +90,8 @@ describe('DataHealth dismiss regression route lock', () => {
 
       if (!approvedBrowserMutationFiles.has(normalized)) {
         expect(source, `${normalized} should not contain dismiss mutation route`).not.toContain('/data-health/issues/');
+        expect(source, `${normalized} should not contain history data-flag route`).not.toContain('/history/:id/data-flag');
+        expect(source, `${normalized} should not contain dynamic history data-flag route`).not.toMatch(/\/history\/\$\{[^}]+}\/*data-flag/);
         expect(source, `${normalized} should not issue browser POST`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
       }
     }

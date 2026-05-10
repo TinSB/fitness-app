@@ -327,3 +327,11 @@ Task 4.35 plans a future History data-flag mutation prototype without implementi
 The Task 4.25 source-of-truth rule still applies: localStorage remains the active App source of truth, API mutation results must not overwrite AppData or localStorage, there is no offline mutation queue, and no source-of-truth switch or localStorage reconciliation is introduced.
 
 History data-flag planning must keep DataHealth dismiss as the only implemented browser mutation route until a later explicitly approved task.
+
+## Task 4.36 Note
+
+Task 4.36 implements the explicitly approved History data-flag prototype as the second dev-only browser mutation experiment.
+
+This does not switch source of truth. localStorage remains the active App source of truth, API mutation results never overwrite AppData or localStorage, and no localStorage reconciliation or offline mutation queue is introduced.
+
+The only browser mutation prototypes are `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery, production backend, auth, sync, and deployment remain blocked.

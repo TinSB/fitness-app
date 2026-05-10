@@ -26,13 +26,18 @@ const approvedDismissFiles = new Set([
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
 ]);
 
+const approvedHistoryDataFlagFiles = new Set([
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
+]);
+
 const blockedRoutes = [
   '/sessions/start',
   '/sessions/active/patches',
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/history/:id/edit',
-  '/history/:id/data-flag',
   '/data-health/repair/apply',
   '/backup/',
   '/backup/import',
@@ -105,6 +110,12 @@ describe('DataHealth dismiss observability boundaries', () => {
 
       if (!approvedDismissFiles.has(normalized)) {
         expect(source, `${normalized} should not contain DataHealth dismiss route`).not.toContain('/data-health/issues/');
+      }
+      if (!approvedHistoryDataFlagFiles.has(normalized)) {
+        expect(source, `${normalized} should not contain History data-flag route`).not.toContain('/history/:id/data-flag');
+        expect(source, `${normalized} should not contain dynamic History data-flag route`).not.toMatch(/\/history\/\$\{[^}]+}\/*data-flag/);
+      }
+      if (!approvedDismissFiles.has(normalized) && !approvedHistoryDataFlagFiles.has(normalized)) {
         expect(source, `${normalized} should not issue browser POST`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
       }
     }

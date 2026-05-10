@@ -21,7 +21,6 @@ const mutationRouteLiterals = [
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/history/:id/edit',
-  '/history/:id/data-flag',
   '/data-health/repair/apply',
 ];
 
@@ -29,6 +28,12 @@ const approvedDataHealthDismissFiles = new Set([
   'src/devApi/devApiDataHealthDismissClient.ts',
   'src/devApi/devApiDataHealthDismissConfig.ts',
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+]);
+
+const approvedHistoryDataFlagFiles = new Set([
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
 ]);
 
 const blockedNodeOnlyTokens = [
@@ -74,6 +79,12 @@ describe('mutation integration remains blocked in browser runtime', () => {
 
       if (!approvedDataHealthDismissFiles.has(normalized)) {
         expect(source, `${normalized} should not contain the approved one-route prototype`).not.toContain('/data-health/issues/');
+      }
+      if (!approvedHistoryDataFlagFiles.has(normalized)) {
+        expect(source, `${normalized} should not contain the approved history data-flag prototype`).not.toContain('/history/:id/data-flag');
+        expect(source, `${normalized} should not contain dynamic history data-flag route`).not.toMatch(/\/history\/\$\{[^}]+}\/*data-flag/);
+      }
+      if (!approvedDataHealthDismissFiles.has(normalized) && !approvedHistoryDataFlagFiles.has(normalized)) {
         expect(source, `${normalized} should not issue browser POST requests`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
       }
     }
@@ -113,6 +124,7 @@ describe('mutation integration remains blocked in browser runtime', () => {
     const runtimeSources = productionSrcFiles().map((file) => [relativePath(file), stripComments(readFileSync(file, 'utf8'))] as const);
     const mutationFlagOffenders = runtimeSources.filter(([path, source]) =>
       !approvedDataHealthDismissFiles.has(path)
+      && !approvedHistoryDataFlagFiles.has(path)
       && /MUTATION_API|MUTATION_INTEGRATION|VITE_IRONPATH_DEV_API_MUTATION|useMutationApi/i.test(source),
     );
     expect(mutationFlagOffenders.map(([path]) => path)).toEqual([]);

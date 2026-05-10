@@ -26,13 +26,18 @@ const approvedDismissFiles = new Set([
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
 ]);
 
+const approvedHistoryDataFlagFiles = new Set([
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
+]);
+
 const blockedRoutes = [
   '/sessions/start',
   '/sessions/active/patches',
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/history/:id/edit',
-  '/history/:id/data-flag',
   '/data-health/repair/apply',
   '/backup/',
   '/backup/import',
@@ -84,7 +89,7 @@ describe('DataHealth dismiss acceptance boundaries', () => {
     for (const token of nodeOnlyTokens) expect(apiIndex).not.toContain(token);
   });
 
-  it('exposes only the single approved DataHealth dismiss browser mutation route', () => {
+  it('exposes only the approved browser mutation prototype routes', () => {
     for (const file of productionSrcFiles()) {
       const source = stripComments(readFileSync(file, 'utf8'));
       const normalized = relativePath(file);
@@ -93,6 +98,12 @@ describe('DataHealth dismiss acceptance boundaries', () => {
 
       if (!approvedDismissFiles.has(normalized)) {
         expect(source, `${normalized} should not contain the approved dismiss route`).not.toContain('/data-health/issues/');
+      }
+      if (!approvedHistoryDataFlagFiles.has(normalized)) {
+        expect(source, `${normalized} should not contain the approved history data-flag route`).not.toContain('/history/:id/data-flag');
+        expect(source, `${normalized} should not contain dynamic history data-flag route`).not.toMatch(/\/history\/\$\{[^}]+}\/*data-flag/);
+      }
+      if (!approvedDismissFiles.has(normalized) && !approvedHistoryDataFlagFiles.has(normalized)) {
         expect(source, `${normalized} should not use browser POST`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
       }
     }

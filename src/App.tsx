@@ -7,6 +7,7 @@ import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
 import { DevApiDataHealthDismissPrototype } from './devApi/DevApiDataHealthDismissPrototype';
+import { DevApiHistoryDataFlagPrototype } from './devApi/DevApiHistoryDataFlagPrototype';
 import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnosticsController';
 import { resolveDevApiReadOnlyConfig } from './devApi/devApiReadOnlyConfig';
 import {
@@ -1922,6 +1923,7 @@ function App() {
       <AddToHomeScreenHint />
       <DevApiReadOnlyDiagnostics data={data} config={devApiReadOnlyConfig} />
       <DevApiDataHealthDismissPrototype data={data} />
+      <DevApiHistoryDataFlagPrototype data={data} />
     </>
   );
 }

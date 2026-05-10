@@ -38,6 +38,9 @@ const approvedDataHealthDismissFiles = new Set([
   'src/devApi/devApiDataHealthDismissClient.ts',
   'src/devApi/devApiDataHealthDismissConfig.ts',
   'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+  'src/devApi/devApiHistoryDataFlagClient.ts',
+  'src/devApi/devApiHistoryDataFlagConfig.ts',
+  'src/devApi/DevApiHistoryDataFlagPrototype.tsx',
 ]);
 
 const misleadingInstructions = [
@@ -78,7 +81,7 @@ describe('read-only App manual acceptance boundaries', () => {
     expect(readOnlySource).not.toMatch(/\/data-health\/issues\/:issueId\/dismiss|\/data-health\/repair\/apply/);
     expect(readOnlySource).not.toMatch(/\/backup|backup\/|importBackup|exportBackup|\/reset|\/recovery|resetDev/i);
     expect(approvedSource).not.toMatch(/\bPUT\b|\bPATCH\b|\bDELETE\b/);
-    expect(approvedSource).not.toMatch(/\/sessions\/|\/history\/|\/data-health\/repair\/apply|\/backup|\/reset|\/recovery/i);
+    expect(approvedSource).not.toMatch(/\/sessions\/|\/history\/:id\/edit|\/data-health\/repair\/apply|\/backup|\/reset|\/recovery/i);
     expect(adapter).not.toContain('fetch(');
     expect(adapter).not.toContain('DevApiReadOnly');
     expect(adapter).not.toContain('/app-data/summary');

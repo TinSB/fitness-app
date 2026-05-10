@@ -238,3 +238,11 @@ Task 4.35 adds `docs/HISTORY_DATA_FLAG_MUTATION_PROTOTYPE_PLAN.md` as plan-only 
 The Task 4.24 readiness conclusion remains unchanged for broader mutation integration. No second mutation is implemented, App runtime still does not call `POST /history/:id/data-flag`, DataHealth dismiss remains the only implemented browser mutation prototype, and session/history edit/DataHealth repair/backup/reset routes remain blocked.
 
 Write-path migration remains blocked. The next recommended task is `Task 4.36 History Data-flag Mutation Prototype V1` only if gates are accepted.
+
+## Task 4.36 Note
+
+Task 4.36 implements the approved History data-flag prototype as a dev-only, explicit opt-in, one-route browser experiment: `POST /history/:id/data-flag`.
+
+The broader Task 4.24 readiness conclusion still remains blocked. DataHealth dismiss and History data-flag are now the only browser mutation prototypes. Session mutations, history edit, DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, source-of-truth switching, production backend, auth, sync, deployment, broad mutation clients, package changes, and normalized tables remain blocked.
+
+Write-path migration remains blocked. The next recommended task is `Task 4.37 History Data-flag Prototype Acceptance V1`.
