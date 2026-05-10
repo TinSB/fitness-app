@@ -44,6 +44,8 @@ Task 4.26 adds `docs/MUTATION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as mutation UX c
 
 Task 4.27 adds `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` as the first lowest-risk mutation prototype plan. It is planning only, not a runtime API feature. DataHealth issue dismiss is the first future candidate, but App runtime still does not call mutation routes and write-path migration remains blocked.
 
+Task 4.28 adds a dev-only, explicit opt-in DataHealth issue dismiss mutation prototype. It is a one-route experiment only: `POST /data-health/issues/:issueId/dismiss`. It does not switch source of truth, does not replace localStorage, does not add a broad frontend mutation client, does not add session/history/DataHealth repair/backup/reset routes to the App, and does not add production backend/auth/sync/deployment behavior. Success requires HTTP success, a successful mutation result, and snapshot metadata; API results never overwrite AppData or localStorage.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -775,6 +777,42 @@ Contract facts:
 - Session mutation, history edit, history data-flag, DataHealth repair, backup/import over HTTP, reset/recovery over HTTP, API source-of-truth switching, and dual-write are rejected as first prototypes.
 
 Task 4.27 result: Plan only. First future candidate: DataHealth issue dismiss. Write-path migration remains blocked. App must not call mutation routes yet. Next task should be `Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1`.
+
+## DataHealth Dismiss Mutation Prototype
+
+Owner files:
+
+- `src/devApi/devApiDataHealthDismissConfig.ts`
+- `src/devApi/devApiDataHealthDismissClient.ts`
+- `src/devApi/DevApiDataHealthDismissPrototype.tsx`
+
+Owner test files:
+
+- `tests/devApiDataHealthDismissConfig.test.ts`
+- `tests/devApiDataHealthDismissClient.test.ts`
+- `tests/devApiDataHealthDismissPrototype.test.ts`
+- `tests/devApiDataHealthDismissBoundary.test.ts`
+
+Task 4.28 is a dev-only one-route mutation experiment, not full mutation integration or write-path migration.
+
+Opt-in:
+
+- `import.meta.env.DEV === true`
+- `VITE_IRONPATH_DEV_API_COMPARE === "1"`
+- `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT === "datahealth-dismiss"`
+- Optional `VITE_IRONPATH_DEV_API_BASE_URL` remains localhost-only.
+
+Contract facts:
+
+- The only browser mutation route allowed by this prototype is `POST /data-health/issues/:issueId/dismiss`.
+- The read-only client remains GET-only.
+- No session mutation route, history edit/data-flag route, DataHealth repair route, backup/import/export/reset/recovery route, broad mutation client, mutation hook/provider, API-backed persistence adapter, production backend, auth, sync, deployment, package dependency, package script, lockfile change, or normalized table is added.
+- localStorage remains the active App source of truth.
+- API mutation results never overwrite AppData or localStorage.
+- The UI requires explicit confirmation, disables duplicate submit while pending, shows failure states, does not auto-retry a write, and does not show success without snapshot metadata.
+- Because no optimistic local write occurs, rollback is disabling the mutation flag, stopping the dev API runner, preserving localStorage App behavior, and using existing dev DB recovery/reset procedures if needed.
+
+Write-path migration remains blocked after Task 4.28. The next recommended task is `Task 4.29 DataHealth Dismiss Prototype Acceptance V1`.
 
 ## Local Persistence
 

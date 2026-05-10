@@ -208,3 +208,11 @@ Task 4.27 adds the lowest-risk mutation prototype plan at `docs/LOWEST_RISK_MUTA
 The Task 4.24 conclusion does not change: mutation integration is not ready, write-path migration remains blocked, existing mutation routes remain server/dev API only, and App runtime still does not call mutation routes.
 
 Task 4.27 selects DataHealth issue dismiss as the first future candidate while keeping implementation blocked until a later explicit task.
+
+## Task 4.28 Note
+
+Task 4.28 was explicitly approved as `DataHealth Dismiss Mutation Prototype V1`.
+
+It creates a narrow exception for the single dev-only browser route `POST /data-health/issues/:issueId/dismiss`, gated by explicit comparison and mutation experiment flags.
+
+The Task 4.24 readiness conclusion remains true for broader mutation integration: session mutations, history mutations, DataHealth repair, backup/import over HTTP, reset/recovery over HTTP, source-of-truth switching, production backend, auth, sync, and deployment remain blocked.

@@ -241,6 +241,25 @@ Next task should be Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1.
 
 Task 4.28 should still be a plan. If implementation is ever considered, it must be explicitly approved by the user.
 
+## Task 4.28 Implementation Result
+
+Task 4.28 was explicitly approved as `DataHealth Dismiss Mutation Prototype V1`.
+
+Implemented scope:
+
+- Only `POST /data-health/issues/:issueId/dismiss` is exposed to browser App code.
+- The prototype is dev-only and explicit opt-in.
+- Required flags are `DEV === true`, `VITE_IRONPATH_DEV_API_COMPARE === "1"`, and `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT === "datahealth-dismiss"`.
+- `VITE_IRONPATH_DEV_API_BASE_URL` remains localhost-only.
+- localStorage remains source of truth.
+- API mutation results never overwrite AppData or localStorage.
+- Success requires HTTP success, successful mutation result, and snapshot metadata.
+- No session mutation, history edit, history data-flag, DataHealth repair, backup/import over HTTP, reset/recovery over HTTP, broad mutation client, source-of-truth switch, offline queue, production backend, auth, sync, deployment, dependency, package script, lockfile change, or normalized table was added.
+
+Rollback remains the same safety model: disable the mutation experiment flag, stop the dev API runner, keep localStorage App behavior, and use the existing dev DB recovery/reset runbook if the dev DB needs cleanup.
+
+Broader write-path migration remains blocked. The next recommended task is `Task 4.29 DataHealth Dismiss Prototype Acceptance V1`.
+
 ## Decision Record
 
 - Date: 2026-05-10

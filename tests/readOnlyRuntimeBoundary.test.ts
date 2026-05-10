@@ -34,6 +34,12 @@ const allowedScriptNames = new Set([
   'test:watch',
 ]);
 
+const approvedDataHealthDismissFiles = new Set([
+  'src/devApi/devApiDataHealthDismissClient.ts',
+  'src/devApi/devApiDataHealthDismissConfig.ts',
+  'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+]);
+
 describe('read-only runtime boundary acceptance', () => {
   it('keeps production browser runtime free of Node-only imports', () => {
     expectSourceNotToContain(resolve(repoRoot(), 'src/App.tsx'), nodeOnlyRuntimeTokens);
@@ -43,18 +49,30 @@ describe('read-only runtime boundary acceptance', () => {
   });
 
   it('keeps dev API frontend code read-only and browser-safe', () => {
-    const source = collectRuntimeSourceFiles(resolve(repoRoot(), 'src/devApi'))
-      .map((file) => readFileSync(file, 'utf8'))
+    const sources = collectRuntimeSourceFiles(resolve(repoRoot(), 'src/devApi'))
+      .map((file) => ({
+        path: file.replace(repoRoot(), '').replace(/^[/\\]/, '').replaceAll('\\', '/'),
+        source: readFileSync(file, 'utf8'),
+      }));
+    const readOnlySources = sources
+      .filter((file) => !approvedDataHealthDismissFiles.has(file.path))
+      .map((file) => file.source)
+      .join('\n');
+    const approvedSource = sources
+      .filter((file) => approvedDataHealthDismissFiles.has(file.path))
+      .map((file) => file.source)
       .join('\n');
 
-    expect(source).not.toMatch(/\bPOST\b|\bPUT\b|\bPATCH\b|\bDELETE\b/);
-    expect(source).not.toMatch(/\/sessions\/start|\/sessions\/active|\/history\/:id\/edit|\/history\/:id\/data-flag/);
-    expect(source).not.toMatch(/\/data-health\/issues\/:issueId\/dismiss|\/data-health\/repair\/apply/);
-    expect(source).not.toMatch(/\/backup|backup\/|importBackup|exportBackup|\/reset|\/recovery|resetDev/i);
-    expect(source).not.toContain('node:http');
-    expect(source).not.toContain('node:sqlite');
-    expect(source).not.toContain('serverAdapter');
-    expect(source).not.toContain('sqliteRepository');
+    expect(readOnlySources).not.toMatch(/\bPOST\b|\bPUT\b|\bPATCH\b|\bDELETE\b/);
+    expect(readOnlySources).not.toMatch(/\/sessions\/start|\/sessions\/active|\/history\/:id\/edit|\/history\/:id\/data-flag/);
+    expect(readOnlySources).not.toMatch(/\/data-health\/issues\/:issueId\/dismiss|\/data-health\/repair\/apply/);
+    expect(readOnlySources).not.toMatch(/\/backup|backup\/|importBackup|exportBackup|\/reset|\/recovery|resetDev/i);
+    expect(approvedSource).not.toMatch(/\bPUT\b|\bPATCH\b|\bDELETE\b/);
+    expect(approvedSource).not.toMatch(/\/sessions\/|\/history\/|\/data-health\/repair\/apply|\/backup|\/reset|\/recovery/i);
+    expect(sources.map((file) => file.source).join('\n')).not.toContain('node:http');
+    expect(sources.map((file) => file.source).join('\n')).not.toContain('node:sqlite');
+    expect(sources.map((file) => file.source).join('\n')).not.toContain('serverAdapter');
+    expect(sources.map((file) => file.source).join('\n')).not.toContain('sqliteRepository');
   });
 
   it('keeps localStorageAdapter and package metadata unchanged as runtime boundaries', () => {

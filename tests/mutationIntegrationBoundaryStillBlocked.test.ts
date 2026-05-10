@@ -22,9 +22,14 @@ const mutationRouteLiterals = [
   '/sessions/active/discard',
   '/history/:id/edit',
   '/history/:id/data-flag',
-  '/data-health/issues/:issueId/dismiss',
   '/data-health/repair/apply',
 ];
+
+const approvedDataHealthDismissFiles = new Set([
+  'src/devApi/devApiDataHealthDismissClient.ts',
+  'src/devApi/devApiDataHealthDismissConfig.ts',
+  'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+]);
 
 const blockedNodeOnlyTokens = [
   'node:http',
@@ -66,6 +71,11 @@ describe('mutation integration remains blocked in browser runtime', () => {
 
       const routeOffenders = mutationRouteLiterals.filter((route) => source.includes(route));
       expect(routeOffenders, `${normalized} should not call App mutation routes`).toEqual([]);
+
+      if (!approvedDataHealthDismissFiles.has(normalized)) {
+        expect(source, `${normalized} should not contain the approved one-route prototype`).not.toContain('/data-health/issues/');
+        expect(source, `${normalized} should not issue browser POST requests`).not.toMatch(/method\s*:\s*['"`]POST['"`]/);
+      }
     }
   });
 
@@ -101,8 +111,9 @@ describe('mutation integration remains blocked in browser runtime', () => {
     }
 
     const runtimeSources = productionSrcFiles().map((file) => [relativePath(file), stripComments(readFileSync(file, 'utf8'))] as const);
-    const mutationFlagOffenders = runtimeSources.filter(([, source]) =>
-      /MUTATION_API|MUTATION_INTEGRATION|VITE_IRONPATH_DEV_API_MUTATION|useMutationApi/i.test(source),
+    const mutationFlagOffenders = runtimeSources.filter(([path, source]) =>
+      !approvedDataHealthDismissFiles.has(path)
+      && /MUTATION_API|MUTATION_INTEGRATION|VITE_IRONPATH_DEV_API_MUTATION|useMutationApi/i.test(source),
     );
     expect(mutationFlagOffenders.map(([path]) => path)).toEqual([]);
 
