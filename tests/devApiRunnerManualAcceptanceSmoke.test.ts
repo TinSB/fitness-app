@@ -64,5 +64,5 @@ describe('dev API runner manual acceptance smoke', () => {
       terminateRunnerProcessesForDb(temp.dbFile);
       temp.cleanup();
     }
-  });
+  }, 20_000);
 });

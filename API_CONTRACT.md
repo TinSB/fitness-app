@@ -30,6 +30,8 @@ Task 4.19 adds `docs/DEV_API_READONLY_APP_INTEGRATION_PLAN.md` as a read-only Ap
 
 Task 4.20 adds a minimal dev-only read-only App integration prototype. It is explicit opt-in only, dual-read comparison mode only, and diagnostic-only. App runtime source of truth remains localStorage; no mutation, backup/import, repair/reset, auth, sync, deployment, package dependency, or production backend behavior is added.
 
+Task 4.21 adds Read-only Runtime Parity Acceptance V1 for the Task 4.20 prototype. It is an acceptance/testing layer, not a runtime feature. It proves flag-off parity, GET-only reads, API unavailable fallback, mismatch diagnostics-only behavior, localStorage integrity, diagnostics UI safety, and browser/Node isolation. localStorage remains source of truth, API results never overwrite localStorage, no UI writes to API, no mutation route used by App, and write-path migration remains blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -560,6 +562,33 @@ Read-only comparison routes:
 - `GET /history/:id` only when a stable local history id exists
 
 Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.20.
+
+## Read-only Runtime Parity Acceptance
+
+Owner test files:
+
+- `tests/readOnlyRuntimeFlagOffParity.test.ts`
+- `tests/readOnlyRuntimeGetOnly.test.ts`
+- `tests/readOnlyRuntimeApiUnavailableFallback.test.ts`
+- `tests/readOnlyRuntimeMismatchDiagnostics.test.ts`
+- `tests/readOnlyRuntimeLocalStorageIntegrity.test.ts`
+- `tests/readOnlyRuntimeDiagnosticsUi.test.ts`
+- `tests/readOnlyRuntimeBoundary.test.ts`
+- `tests/readOnlyRuntimeDocsParity.test.ts`
+
+Task 4.21 is acceptance coverage for the existing read-only prototype. It does not add a runtime API feature, App write integration, production backend, auth, sync, deployment, package dependency, package script, or normalized table.
+
+Acceptance facts:
+
+- flag-off parity keeps diagnostics inert: no panel, no fetch calls, no AppData mutation, and no localStorage writes.
+- enabled diagnostics use only GET reads for the fixed read-only route allowlist.
+- API unavailable fallback is diagnostic-only and keeps the App on localStorage.
+- mismatch results are diagnostics only; API results never overwrite localStorage or AppData.
+- no UI writes to API and no mutation route used by App.
+- diagnostics UI exposes no repair, sync, overwrite, import, export, reset, apply, or fix controls.
+- browser build and static boundary checks remain free of `node:http`, `node:sqlite`, `devLauncher`, `httpRuntimeAdapter`, `serverAdapter`, `sqliteRepository`, `devApiRunner`, and `devDbRecovery`.
+
+Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remain blocked after Task 4.21.
 
 ## Local Persistence
 

@@ -262,3 +262,20 @@ Prototype behavior:
 - Diagnostics expose no repair, sync, overwrite, import, export, reset, or mutation controls.
 
 Rollback remains disabling the dev-only comparison flag and stopping the dev API runner. Formal App.tsx HTTP migration and write-path migration remain blocked after Task 4.20.
+
+## Task 4.21 Acceptance Result
+
+Task 4.21 adds read-only runtime parity acceptance for the existing Task 4.20 prototype. It is an acceptance/testing layer only and does not add runtime features, widen read-only routes, connect write routes, or change App state flow.
+
+Accepted parity points:
+
+- flag-off parity: when the explicit dev flag is off, diagnostics render null, no fetch calls are made, AppData is not changed, localStorage is not written, and production-like env keeps comparison disabled even if `VITE_IRONPATH_DEV_API_COMPARE="1"`.
+- GET-only runtime proof: enabled diagnostics may call only read-only GET routes for `/health`, `/app-data/summary`, `/sessions/summary`, `/history`, `/history/:id`, and `/data-health/summary`.
+- API unavailable fallback proof: network failure or timeout returns unavailable/error diagnostics only; App usage remains on localStorage and does not throw to the App root.
+- mismatch diagnostics-only proof: local/remote readMirror differences produce mismatch diagnostics and mismatch counts only.
+- localStorage remains source of truth: API results never overwrite localStorage or AppData, snapshot metadata from API responses is ignored for persistence, and no dual-write path exists.
+- no UI writes to API: the diagnostics panel has no mutation, repair, sync, overwrite, import, export, reset, apply, or fix controls.
+- no mutation route used by App: App code does not call session, history, DataHealth, backup/import, reset, or recovery mutation endpoints.
+- browser isolation proof: browser/runtime source remains free of `node:http`, `node:sqlite`, and the Node-only stack.
+
+API unavailable fallback remains diagnostic-only. Formal App.tsx HTTP migration, source-of-truth switching, and write-path migration remains blocked after Task 4.21.
