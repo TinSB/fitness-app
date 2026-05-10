@@ -6,6 +6,7 @@ export type DevApiDataHealthDismissFetch = (
 ) => Promise<Response>;
 
 export type DevApiDataHealthDismissErrorCode =
+  | 'dev_mutation_aborted'
   | 'dev_mutation_fetch_unavailable'
   | 'dev_mutation_timeout'
   | 'dev_mutation_unavailable'
@@ -91,6 +92,21 @@ const isSnapshot = (value: unknown): value is DevApiDataHealthDismissSnapshot =>
 const toRequestUrl = (baseUrl: string, issueId: string) =>
   `${baseUrl.replace(/\/$/, '')}/data-health/issues/${encodeURIComponent(issueId)}/dismiss`;
 
+export const sanitizeDataHealthDismissMessage = (message: string, fallback = 'DataHealth dismiss experiment failed.') => {
+  const normalized = message
+    .replace(/\b(?:Error|TypeError|SqliteRepositoryError):\s*/gi, '')
+    .replace(/\{[\s\S]*?\}/g, '[details omitted]')
+    .replace(/\[[\s\S]*?\]/g, '[details omitted]')
+    .replace(/\bat\s+[^\n\r]+/gi, '')
+    .replace(/stack/gi, 'diagnostic')
+    .replace(/\bAppData\b/g, 'app data')
+    .replace(/\blocalStorage\b/g, 'local data')
+    .replace(/\bSQLite\b/gi, 'repository')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return (normalized || fallback).slice(0, 180);
+};
+
 const failure = (
   issueId: string,
   error: DevApiDataHealthDismissError,
@@ -100,7 +116,10 @@ const failure = (
   ok: false,
   issueId,
   status,
-  error,
+  error: {
+    ...error,
+    message: sanitizeDataHealthDismissMessage(error.message),
+  },
   metadata,
 });
 
@@ -217,11 +236,18 @@ export const dismissDataHealthIssueViaDevApi = async ({
       metadata,
     };
   } catch {
+    const abortedByParent = !didTimeout && (signal?.aborted || controller.signal.aborted);
     return failure(issueId, {
-      code: didTimeout ? 'dev_mutation_timeout' : 'dev_mutation_unavailable',
+      code: didTimeout
+        ? 'dev_mutation_timeout'
+        : abortedByParent
+          ? 'dev_mutation_aborted'
+          : 'dev_mutation_unavailable',
       message: didTimeout
         ? 'DataHealth dismiss request timed out.'
-        : 'DataHealth dismiss request is unavailable.',
+        : abortedByParent
+          ? 'DataHealth dismiss request was canceled before completion.'
+          : 'DataHealth dismiss request is unavailable.',
     }, undefined, metadata);
   } finally {
     globalThis.clearTimeout(timeout);

@@ -107,7 +107,7 @@ describe('DataHealth dismiss hardening failure states', () => {
 
       expect(unavailable).toMatchObject({ ok: false, error: { code: 'dev_mutation_unavailable' } });
       expect(timeout).toMatchObject({ ok: false, error: { code: 'dev_mutation_timeout' } });
-      expect(aborted).toMatchObject({ ok: false, error: { code: 'dev_mutation_unavailable' } });
+      expect(aborted).toMatchObject({ ok: false, error: { code: 'dev_mutation_aborted' } });
       expect(malformed).toMatchObject({ ok: false, error: { code: 'dev_mutation_invalid_response' } });
       expect(unavailableCalls).toBe(1);
       expect(timeoutCalls).toBe(1);

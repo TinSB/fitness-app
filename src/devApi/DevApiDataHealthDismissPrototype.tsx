@@ -4,6 +4,7 @@ import type { DataHealthIssue } from '../engines/dataHealthEngine';
 import type { AppData } from '../models/training-model';
 import {
   dismissDataHealthIssueViaDevApi,
+  sanitizeDataHealthDismissMessage,
   type DevApiDataHealthDismissError,
   type DevApiDataHealthDismissFetch,
   type DevApiDataHealthDismissMetadata,
@@ -16,6 +17,7 @@ import {
 } from './devApiDataHealthDismissConfig';
 
 type ExperimentStatus = 'idle' | 'blocked' | 'pending' | 'success' | 'failure' | 'misconfigured';
+export type DataHealthDismissDiagnosticState = 'idle' | 'confirming' | 'pending' | 'success' | 'failure';
 
 export type DataHealthDismissSourceContext = {
   issueId: string;
@@ -32,6 +34,23 @@ export type DataHealthDismissPrototypeState = {
   error?: DevApiDataHealthDismissError;
   snapshot?: DevApiDataHealthDismissSnapshot;
   metadata?: DevApiDataHealthDismissMetadata;
+  startedAt?: string;
+  finishedAt?: string;
+  lastAttemptStatus?: number;
+  duplicateSubmitBlocked?: boolean;
+};
+
+export type DataHealthDismissDiagnosticSummary = {
+  issueId?: string;
+  state: DataHealthDismissDiagnosticState;
+  lastAttemptStatus?: number;
+  failureCode?: string;
+  failureMessage?: string;
+  snapshotMetadataPresent: boolean;
+  startedAt?: string;
+  finishedAt?: string;
+  duplicateSubmitBlocked: boolean;
+  recoveryNote?: string;
 };
 
 type DevApiDataHealthDismissPrototypeProps = {
@@ -71,6 +90,9 @@ const compactIssue = (issue: DataHealthIssue) => ({
   severity: issue.severity,
   category: issue.category,
 });
+
+export const formatDataHealthDismissIssueReference = (issueId?: string) =>
+  issueId ? `issue-${hashString(issueId)}` : 'unavailable';
 
 export const createDataHealthDismissSourceContext = (
   data: AppData,
@@ -157,7 +179,84 @@ export const createDataHealthDismissSubmitLock = () => {
 
 const safeErrorMessage = (error?: DevApiDataHealthDismissError) => {
   if (!error) return 'DataHealth dismiss experiment failed.';
-  return `${error.serverCode || error.code}: ${error.message}`.replace(/\s+/g, ' ').slice(0, 160);
+  return `${error.serverCode || error.code}: ${sanitizeDataHealthDismissMessage(error.message)}`.replace(/\s+/g, ' ').slice(0, 180);
+};
+
+export const getDataHealthDismissRecoveryNote = (error?: DevApiDataHealthDismissError) => {
+  const code = error?.serverCode || error?.code;
+  switch (code) {
+    case 'dev_mutation_fetch_unavailable':
+      return 'Fetch is unavailable in this browser. The App remains localStorage-only.';
+    case 'dev_mutation_unavailable':
+      return 'Confirm the Dev API runner is running and the base URL is localhost.';
+    case 'dev_mutation_timeout':
+      return 'Confirm the Dev API is responsive, then retry only after explicit confirmation.';
+    case 'dev_mutation_invalid_response':
+      return 'Inspect Dev API logs and response shape before trusting persistence.';
+    case 'dev_mutation_missing_snapshot':
+      return 'Treat this as failed persistence because snapshot metadata was missing.';
+    case 'dev_mutation_aborted':
+      return 'The request was canceled or the component unmounted. No local data was changed.';
+    case 'issue_not_found':
+      return 'Refresh read-only diagnostics or verify the issue still exists before retrying.';
+    case 'no_change':
+      return 'The issue may already be dismissed. Refresh read-only diagnostics before retrying.';
+    case 'requiresConfirmation':
+    case 'requires_confirmation':
+      return 'Confirm the one-route dev request again before retrying.';
+    case 'write_failed':
+    case 'transaction_failed':
+      return 'Stop the Dev API runner, back up the dev DB, inspect it, and use the existing recovery runbook only if needed.';
+    case 'database_closed':
+      return 'Restart the Dev API runner, then rerun read-only diagnostics before retrying.';
+    case 'snapshot_validation_failed':
+    case 'repository_schema_mismatch':
+      return 'Stop the Dev API runner, back up the dev DB, and inspect schema notes before retrying.';
+    case 'unsupported_route':
+      return 'Verify only POST /data-health/issues/:issueId/dismiss is enabled from browser code.';
+    case 'dev_mutation_source_fingerprint_missing':
+      return 'Rebuild read-only diagnostics first so the request has source context.';
+    default:
+      return 'Check Dev API logs and rerun read-only diagnostics before retrying.';
+  }
+};
+
+export const createDataHealthDismissDiagnosticSummary = ({
+  state,
+  sourceContext,
+  selectedIssueId,
+  confirmed,
+}: {
+  state: DataHealthDismissPrototypeState;
+  sourceContext: DataHealthDismissSourceContext | null;
+  selectedIssueId: string;
+  confirmed: boolean;
+}): DataHealthDismissDiagnosticSummary => {
+  const issueId = state.issueId || sourceContext?.issueId || selectedIssueId || undefined;
+  const failureCode = state.error ? state.error.serverCode || state.error.code : undefined;
+  const diagnosticState: DataHealthDismissDiagnosticState =
+    state.status === 'pending'
+      ? 'pending'
+      : state.status === 'success'
+        ? 'success'
+        : state.status === 'failure' || state.status === 'blocked' || state.status === 'misconfigured'
+          ? 'failure'
+          : confirmed && Boolean(sourceContext?.issueId)
+            ? 'confirming'
+            : 'idle';
+
+  return {
+    issueId,
+    state: diagnosticState,
+    lastAttemptStatus: state.lastAttemptStatus,
+    failureCode,
+    failureMessage: state.error ? safeErrorMessage(state.error) : undefined,
+    snapshotMetadataPresent: Boolean(state.snapshot?.snapshotId && state.snapshot.createdAt),
+    startedAt: state.startedAt,
+    finishedAt: state.finishedAt,
+    duplicateSubmitBlocked: Boolean(state.duplicateSubmitBlocked),
+    recoveryNote: state.error ? getDataHealthDismissRecoveryNote(state.error) : undefined,
+  };
 };
 
 export const DevApiDataHealthDismissPrototypePanel = ({
@@ -204,6 +303,12 @@ export const DevApiDataHealthDismissPrototypePanel = ({
             : state.status === 'blocked'
               ? 'Blocked'
               : 'Ready';
+  const diagnostic = createDataHealthDismissDiagnosticSummary({
+    state,
+    sourceContext,
+    selectedIssueId,
+    confirmed,
+  });
 
   return (
     <section
@@ -275,10 +380,42 @@ export const DevApiDataHealthDismissPrototypePanel = ({
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
         <dt className="font-medium">Status</dt>
         <dd>{statusLabel}</dd>
+        <dt className="font-medium">Mutation state</dt>
+        <dd>{diagnostic.state}</dd>
+        <dt className="font-medium">Target issue</dt>
+        <dd>{formatDataHealthDismissIssueReference(diagnostic.issueId)}</dd>
         <dt className="font-medium">Local issues</dt>
         <dd>{sourceContext?.issueCount ?? 0}</dd>
         <dt className="font-medium">Source</dt>
         <dd>{sourceContext?.sourceFingerprint || 'unavailable'}</dd>
+        <dt className="font-medium">Snapshot metadata</dt>
+        <dd>{diagnostic.snapshotMetadataPresent ? 'present' : 'absent'}</dd>
+        {typeof diagnostic.lastAttemptStatus === 'number' ? (
+          <>
+            <dt className="font-medium">HTTP status</dt>
+            <dd>{diagnostic.lastAttemptStatus}</dd>
+          </>
+        ) : null}
+        {diagnostic.failureCode ? (
+          <>
+            <dt className="font-medium">Failure code</dt>
+            <dd>{diagnostic.failureCode}</dd>
+          </>
+        ) : null}
+        {diagnostic.startedAt ? (
+          <>
+            <dt className="font-medium">Started</dt>
+            <dd>{diagnostic.startedAt}</dd>
+          </>
+        ) : null}
+        {diagnostic.finishedAt ? (
+          <>
+            <dt className="font-medium">Finished</dt>
+            <dd>{diagnostic.finishedAt}</dd>
+          </>
+        ) : null}
+        <dt className="font-medium">Duplicate attempt</dt>
+        <dd>{diagnostic.duplicateSubmitBlocked ? 'blocked' : 'none'}</dd>
       </dl>
 
       {state.status === 'success' ? (
@@ -288,7 +425,12 @@ export const DevApiDataHealthDismissPrototypePanel = ({
       ) : null}
 
       {state.status === 'failure' || state.status === 'blocked' || state.status === 'misconfigured' ? (
-        <p className="mt-2 font-medium text-rose-700">{state.message || safeErrorMessage(state.error)}</p>
+        <>
+          <p className="mt-2 font-medium text-rose-700">{state.message || safeErrorMessage(state.error)}</p>
+          {diagnostic.recoveryNote ? (
+            <p className="mt-1 text-slate-700">Safe recovery note: {diagnostic.recoveryNote}</p>
+          ) : null}
+        </>
       ) : null}
     </section>
   );
@@ -375,18 +517,31 @@ export const DevApiDataHealthDismissPrototype = ({
       return;
     }
     if (!confirmed || state.status === 'pending') return;
-    if (!submitLockRef.current.acquire()) return;
+    if (!submitLockRef.current.acquire()) {
+      setState((current) => current.status === 'pending'
+        ? { ...current, duplicateSubmitBlocked: true }
+        : current);
+      return;
+    }
+
+    const startedAt = now();
 
     const metadata = createDataHealthDismissMetadata({
       issueId: sourceContext.issueId,
       sourceFingerprint: sourceContext.sourceFingerprint,
-      nowIso: now(),
+      nowIso: startedAt,
     });
 
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
-    setState({ status: 'pending', issueId: sourceContext.issueId, metadata });
+    setState({
+      status: 'pending',
+      issueId: sourceContext.issueId,
+      metadata,
+      startedAt,
+      duplicateSubmitBlocked: false,
+    });
 
     const result: DevApiDataHealthDismissResult = await dismissDataHealthIssueViaDevApi({
       issueId: sourceContext.issueId,
@@ -408,6 +563,9 @@ export const DevApiDataHealthDismissPrototype = ({
         issueId: result.issueId,
         snapshot: result.snapshot,
         metadata: result.metadata,
+        startedAt,
+        finishedAt: now(),
+        lastAttemptStatus: result.status,
         message: 'Snapshot metadata was returned. No data was changed locally.',
       });
       setConfirmed(false);
@@ -420,6 +578,9 @@ export const DevApiDataHealthDismissPrototype = ({
       issueId: result.issueId,
       error: result.error,
       metadata: result.metadata,
+      startedAt,
+      finishedAt: now(),
+      lastAttemptStatus: result.status,
       message: safeErrorMessage(result.error),
     });
     setConfirmed(false);
