@@ -12,6 +12,8 @@ All product data is stored in the user's current browser through `localStorage`,
 
 Task 4.10 adds acceptance/regression audit tests over these boundaries. It does not make the API production-ready, does not switch App runtime storage, and does not connect the frontend to HTTP or SQLite.
 
+Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance procedure for the dev-only local API stack. It is documentation and consistency testing only; HTTP behavior still comes from devLauncher, httpRuntimeAdapter, and serverAdapter, and the App runtime still uses localStorage.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -291,6 +293,35 @@ Acceptance contract:
 - Boundary round-trips must preserve backup safety, `actualWeightKg`, legacy display fallback, `identityInvalid`, `legacyActualExerciseId`, test/excluded record exclusion, summary-only repair logs, and readMirror parity.
 
 This acceptance layer is a regression lock for future backend work. It is not a production backend, not a dev server launcher, not an App runtime migration, and not a claim that SQLite should replace browser localStorage.
+
+## Manual API Acceptance Checklist
+
+Owner files:
+
+- `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md`
+- `tests/manualApiAcceptanceChecklist.test.ts`
+
+Boundary:
+
+- The checklist is a manual local acceptance procedure, not a runtime feature.
+- It does not add production server behavior, Fastify, Express, auth, sync, deployment, App UI integration, or localStorage replacement.
+- It does not add package dependencies, package scripts, backup import/export HTTP endpoints, or normalized database tables.
+- It documents how to manually verify `devLauncher -> httpRuntimeAdapter -> serverAdapter -> sqliteRepository`.
+- HTTP route behavior remains owned by the existing dev launcher, HTTP runtime adapter, and server adapter.
+- App runtime remains browser localStorage through the existing persistence facade.
+
+Checklist coverage:
+
+- branch, command, and artifact prerequisites
+- launcher start/close boundary and localhost safety
+- health behavior without a required snapshot
+- `seedEmpty=false` and `seedEmpty=true` behavior
+- read route and mutation route acceptance
+- HTTP parsing errors and stable response body shapes
+- DB file safety and browser build safety
+- backup safety, `actualWeightKg`, `identityInvalid`, `legacyActualExerciseId`, and test/excluded record semantics
+
+The checklist is the hand-run acceptance companion to the automated boundary tests. It must not be used as evidence that the production frontend is ready to switch to HTTP or SQLite.
 
 ## Local Persistence
 

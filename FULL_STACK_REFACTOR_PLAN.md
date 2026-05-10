@@ -366,6 +366,18 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.12 Dev Runtime Smoke Hardening V1` or `Task 4.12 Manual API Acceptance Checklist V1`. Do not migrate `App.tsx` to HTTP/SQLite until local launcher behavior and recovery expectations are stable.
 
+### Task 4.12: Manual API Acceptance Checklist V1
+
+Completed as a manual acceptance checklist and documentation consistency gate, not as a runtime feature:
+
+- `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` gives developers a checkbox-based procedure for validating the dev-only local API stack.
+- The checklist covers launcher lifecycle, health behavior, seed-empty behavior, read routes, mutation routes, HTTP parsing, localhost safety, DB file safety, browser build safety, and data semantics.
+- `manualApiAcceptanceChecklist.test.ts` keeps the checklist aligned with the current boundary contract and rejects misleading action instructions such as dependency installation, App runtime switching, localStorage replacement, production deployment, or connecting UI to the API.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production server runtime. It does not add package dependencies, package scripts, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.13 Dev Runtime Smoke Hardening V1` or `Task 4.13 Local API Runner Strategy V1`. Do not migrate `App.tsx` to HTTP/SQLite until dev-only launcher behavior, manual acceptance, and recovery expectations are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
