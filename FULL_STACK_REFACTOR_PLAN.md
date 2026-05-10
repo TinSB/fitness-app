@@ -448,6 +448,20 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.18 App Runtime Migration Readiness Audit V1` or `Task 4.18 Dev API Read-only App Integration Plan V1`. Formal `App.tsx` HTTP migration remains blocked until recovery/reset safety, manual acceptance, migration boundaries, and rollback expectations are stable.
 
+### Task 4.18: App Runtime Migration Readiness Audit V1
+
+Completed as a readiness audit and decision record, not as App runtime migration.
+
+- `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md` summarizes the current browser, pure boundary, and Node-only architecture.
+- The audit records completed gates from Task 4.0-4.17, remaining blockers, risk analysis, required acceptance gates, rollback plan, and source-of-truth options.
+- The short-term source-of-truth recommendation is Option C: dual-read comparison mode only.
+- `appRuntimeMigrationReadinessAudit.test.ts` locks the audit content and rejects action-oriented migration instructions.
+- `appRuntimeMigrationBoundaryStillBlocked.test.ts` confirms `App.tsx`, `src/**`, browser-facing API exports, package scripts, localStorageAdapter, frontend client paths, and feature-flag/runtime wiring remain blocked from Node-only API integration.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production backend runtime. It does not add frontend API clients, feature flag wiring, package scripts, package dependencies, lockfile changes, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.19 Dev API Read-only App Integration Plan V1`. Do not migrate `App.tsx` to HTTP/SQLite after Task 4.18; write-path integration is later than read-only plan, read-only prototype, read-only runtime parity acceptance, and mutation integration readiness audit.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

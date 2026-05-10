@@ -4,6 +4,8 @@ This runbook manually accepts the dev-only compiled JavaScript API runner added 
 
 If the dev SQLite DB is corrupt, has a schema mismatch, or needs a safe local reset, use `docs/DEV_API_RECOVERY_RESET.md`. Do not use an HTTP reset endpoint or runner reset flag; neither exists in this task.
 
+Runner acceptance does not authorize App runtime migration. See `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md`; formal App.tsx HTTP migration remains blocked.
+
 Use it as a local smoke procedure for:
 
 ```text
