@@ -419,6 +419,19 @@ This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, 
 
 Recommended next step is `Task 4.16 Dev API Runner Manual Acceptance V1`. Do not migrate `App.tsx` to HTTP/SQLite until runner manual acceptance, recovery expectations, and data migration boundaries are stable.
 
+### Task 4.16: Dev API Runner Manual Acceptance V1
+
+Completed as a manual runbook and consistency gate for the compiled JavaScript dev API runner, not as a runtime feature.
+
+- `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md` documents copyable commands, expected output, pass/fail checks, and runner boundaries.
+- The runbook covers `api:dev:build`, `api:dev`, deterministic ready-line parsing, health/read routes, conditional mutation smoke, failure smoke, shutdown, localhost safety, DB file safety, and browser safety.
+- Tests verify the runbook contents, run the real npm runner through a temporary DB and port 0, and keep package/browser boundaries locked.
+- `seedEmpty` remains read-smoke only; successful mutation smoke still requires a valid preseeded AppData snapshot with a startable template.
+
+This task still does not connect `App.tsx`, UI, localStorage, auth, cloud sync, deployment, or production server runtime. It does not add package scripts beyond the existing Task 4.15 `api:dev` scripts, package dependencies, lockfile changes, backup import/export endpoints, or normalized database tables.
+
+Recommended next step is `Task 4.17 Dev API Recovery & Reset Safety V1` or `Task 4.17 App Runtime Migration Readiness Audit V1`. Formal `App.tsx` HTTP migration remains blocked until runner acceptance, recovery/reset safety, data migration boundaries, and rollback expectations are stable.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

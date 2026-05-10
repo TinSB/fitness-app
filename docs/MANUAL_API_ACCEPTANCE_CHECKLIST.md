@@ -10,6 +10,8 @@ Task 4.13 adds automated smoke coverage for the highest-risk items in this check
 
 Task 4.14 records local API runner strategy. Task 4.15 adds a dev-only compiled runner prototype; it is still not App/UI integration or production backend readiness.
 
+Task 4.16 adds the focused runner runbook at `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md`. Use that document for real `npm run api:dev` command acceptance; this checklist remains the broader local API boundary checklist and is still not App runtime migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -37,6 +39,7 @@ Task 4.14 records local API runner strategy. Task 4.15 adds a dev-only compiled 
 
 ## Dev Runner Prototype Acceptance
 
+- [ ] Review the dedicated runner runbook: `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md`.
 - [ ] `npm run api:dev:build` writes generated files only under `.ironpath/dev-api-runner`.
 - [ ] Runner build does not delete `.ironpath/dev-api.sqlite`, `.sqlite-wal`, `.sqlite-shm`, or sibling dev artifacts.
 - [ ] `npm run api:dev -- --port 0 --seed-empty --db <temp-db>` starts the dev-only API runner.

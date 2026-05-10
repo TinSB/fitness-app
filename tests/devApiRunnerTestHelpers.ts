@@ -168,6 +168,23 @@ export const terminateRunnerProcessTree = async (child: ChildProcessWithoutNullS
   }
 };
 
+export const terminateRunnerProcessesForDb = (dbFile: string) => {
+  if (process.platform !== 'win32') return;
+  const escapedDbFile = dbFile.replaceAll("'", "''");
+  spawnSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-Command',
+      [
+        `$needle = '${escapedDbFile}'`,
+        "Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like \"*$needle*\" -and ($_.Name -match 'node|npm|cmd') } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }",
+      ].join('; '),
+    ],
+    { stdio: 'ignore' },
+  );
+};
+
 export const spawnApiDev = (args: string[]) =>
   spawn(npmCommand(), npmArgs(['run', 'api:dev', '--', ...args]), {
     ...npmSpawnOptions(),
