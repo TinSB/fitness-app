@@ -777,6 +777,20 @@ Task 4.40 keeps localStorage as the active App source of truth. API mutation res
 
 Write-path migration remains blocked after Task 4.40. The next recommended task is `Task 4.41 Write-path Two-route Manual Regression V1`.
 
+### Task 4.41: Write-path Two-route Manual Regression V1
+
+Completed as a manual regression runbook and static tests for validating both accepted dev-only mutation prototypes together in one local App and Dev API session. It does not add runtime behavior, mutation capability, a third route, production backend behavior, auth, sync, deployment, package changes, lockfile changes, package scripts, normalized tables, training algorithm changes, localStorage replacement, AppData overwrite behavior, or a broad mutation client.
+
+- `docs/WRITE_PATH_TWO_ROUTE_MANUAL_REGRESSION.md` records the human-run two-route regression checklist for Dev API runner startup, App read-only compare startup, DataHealth dismiss flag flow, History data-flag flag flow, mutation experiment isolation, Network route boundaries, no-fake-success, localStorage integrity, failure recovery, forbidden controls, cleanup, and browser build safety.
+- `writePathTwoRouteManualRegressionDocs.test.ts` locks required runbook sections, checkbox format, commands, flags, cleanup, ready line, allowed routes, forbidden routes, safety warnings, no-fake-success wording, localStorage source-of-truth wording, and pass/fail template.
+- `writePathTwoRouteManualRegressionDocsParity.test.ts` keeps the runbook aligned with the current two-route allowlist and existing manual runbooks while rejecting production-readiness or third-route instructions.
+- `writePathTwoRouteManualRegressionBoundary.test.ts` keeps Task 4.41 docs/static-only, blocks Node-only browser imports, blocks broad mutation clients and API-backed storage, and keeps package scripts/dependencies unchanged.
+- `writePathTwoRouteManualRegressionMatrix.test.ts` verifies the DataHealth manual runbook, History manual runbook, Task 4.40 checkpoint, read-only GET-only docs, exact two-route allowlist, and write-path blocked status remain present.
+
+Task 4.41 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss` and `POST /history/:id/data-flag`; no third mutation route is approved, and session mutation, history edit, DataHealth repair, backup/import/export/reset/recovery routes, and broader write-path migration remain blocked.
+
+Write-path migration remains blocked after Task 4.41. The next recommended task is `Task 4.42 Third Mutation Candidate Readiness Audit V1` or `Task 4.42 Write-path Two-route Regression Lock V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
