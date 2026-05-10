@@ -24,6 +24,8 @@ Task 4.16 adds `docs/DEV_API_RUNNER_MANUAL_ACCEPTANCE.md` as the manual acceptan
 
 Task 4.17 adds a Node-only dev DB recovery/reset utility and `docs/DEV_API_RECOVERY_RESET.md`. It is local development safety tooling only; there is no HTTP reset endpoint, no runner reset flag, no production recovery system, and no App runtime migration.
 
+Task 4.18 adds `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md` as a readiness audit and decision record. It is not a runtime API feature; App runtime still uses localStorage, formal App HTTP migration remains blocked, and the only recommended next step is `Task 4.19 Dev API Read-only App Integration Plan V1`.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -467,6 +469,32 @@ Boundary:
 - Reset must not delete `.ironpath/dev-api-runner`, backup folders, directories, glob matches, JSON files, source files, fixtures, or unrelated siblings.
 
 This safety layer is not a production recovery system and must not automatically repair or reset corrupt data.
+
+## App Runtime Migration Readiness Audit
+
+Owner files:
+
+- `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md`
+- `tests/appRuntimeMigrationReadinessAudit.test.ts`
+- `tests/appRuntimeMigrationBoundaryStillBlocked.test.ts`
+
+Boundary:
+
+- This is a readiness audit and decision record, not a runtime API feature.
+- App runtime still uses localStorage through `App.tsx`, `persistence.ts`, and `localStorageAdapter`.
+- There is no App.tsx integration, UI integration, localStorage replacement, frontend API client, feature flag wiring, production backend, auth, sync, deployment, normalized tables, package dependency, or package script.
+- Browser-facing `apps/api/src/index.ts` remains safe and must not export Node-only runtime values.
+- `apps/api/src/node/index.ts` remains the Node-only entry for sqliteRepository, serverAdapter, httpRuntimeAdapter, devLauncher, devApiRunner, and devDbRecovery.
+- The readiness result is not permission to connect the frontend to HTTP or SQLite.
+
+Recommendation:
+
+- Task 4.18 result: not ready for direct App.tsx HTTP migration.
+- The only recommended next task is `Task 4.19 Dev API Read-only App Integration Plan V1`.
+- Short-term source-of-truth recommendation is Option C: dual-read comparison mode only.
+- Future read-only work must be dev-only, explicit opt-in, localStorage-default, no API writes, no backup/import over HTTP, visible on API failure, and easy to roll back.
+
+Formal App.tsx HTTP migration remains blocked until read-only planning, prototype acceptance, API unavailable fallback, rollback, and later mutation-readiness gates are complete.
 
 ## Local Persistence
 

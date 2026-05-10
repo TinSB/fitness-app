@@ -14,6 +14,8 @@ Task 4.16 adds the focused runner runbook at `docs/DEV_API_RUNNER_MANUAL_ACCEPTA
 
 Task 4.17 adds the dev DB recovery/reset checklist at `docs/DEV_API_RECOVERY_RESET.md`. It is a Node-only/programmatic safety boundary, not an HTTP reset endpoint.
 
+Task 4.18 adds the App runtime migration readiness audit at `docs/APP_RUNTIME_MIGRATION_READINESS_AUDIT.md`. The audit result is that App runtime migration remains blocked; this checklist does not authorize App.tsx integration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
