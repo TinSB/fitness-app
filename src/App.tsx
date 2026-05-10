@@ -6,6 +6,7 @@ import { TrainingFocusView } from './features/TrainingFocusView';
 import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
+import { DevApiDataHealthDismissPrototype } from './devApi/DevApiDataHealthDismissPrototype';
 import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnosticsController';
 import { resolveDevApiReadOnlyConfig } from './devApi/devApiReadOnlyConfig';
 import {
@@ -1920,6 +1921,7 @@ function App() {
       ) : null}
       <AddToHomeScreenHint />
       <DevApiReadOnlyDiagnostics data={data} config={devApiReadOnlyConfig} />
+      <DevApiDataHealthDismissPrototype data={data} />
     </>
   );
 }

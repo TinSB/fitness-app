@@ -188,3 +188,11 @@ Task 4.27 adds `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` as planning only.
 The Task 4.26 conclusion does not change: no mutation prototype is implemented, App must not call mutation routes, and write-path migration remains blocked.
 
 Task 4.27 selects DataHealth issue dismiss as the first future candidate while keeping it blocked until gates pass. The next recommended task is `Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1`, which should still be a plan unless the user explicitly approves implementation.
+
+## Task 4.28 Note
+
+Task 4.28 was explicitly approved as `DataHealth Dismiss Mutation Prototype V1`.
+
+The no-fake-success rule is implemented for the one-route dev-only prototype: the UI requires confirmation, blocks duplicate submit while pending, and shows success only after the Dev API returns a successful mutation result with snapshot metadata.
+
+The Task 4.26 boundary still holds for broader write paths: no session/history/DataHealth repair/backup/reset App mutations are authorized, AppData and localStorage are not overwritten by API results, and write-path migration remains blocked.

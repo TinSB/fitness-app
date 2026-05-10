@@ -34,6 +34,12 @@ const allowedScripts = new Set([
   'test:watch',
 ]);
 
+const approvedDataHealthDismissFiles = new Set([
+  'src/devApi/devApiDataHealthDismissClient.ts',
+  'src/devApi/devApiDataHealthDismissConfig.ts',
+  'src/devApi/DevApiDataHealthDismissPrototype.tsx',
+]);
+
 const misleadingInstructions = [
   /(^|\n)\s*(-\s*)?connect App\.tsx to API(\.|$)/i,
   /(^|\n)\s*(-\s*)?replace localStorage(\.|$)/i,
@@ -52,15 +58,27 @@ describe('read-only App manual acceptance boundaries', () => {
   });
 
   it('does not introduce frontend write clients or API-backed storage', () => {
-    const devApiSource = collectRuntimeSourceFiles(resolve(repoRoot(), 'src/devApi'))
-      .map((file) => readFileSync(file, 'utf8'))
+    const devApiFiles = collectRuntimeSourceFiles(resolve(repoRoot(), 'src/devApi'))
+      .map((file) => ({
+        path: file.replace(repoRoot(), '').replace(/^[/\\]/, '').replaceAll('\\', '/'),
+        source: readFileSync(file, 'utf8'),
+      }));
+    const readOnlySource = devApiFiles
+      .filter((file) => !approvedDataHealthDismissFiles.has(file.path))
+      .map((file) => file.source)
+      .join('\n');
+    const approvedSource = devApiFiles
+      .filter((file) => approvedDataHealthDismissFiles.has(file.path))
+      .map((file) => file.source)
       .join('\n');
     const adapter = readSource('src/storage/localStorageAdapter.ts');
 
-    expect(devApiSource).not.toMatch(/\bPOST\b|\bPUT\b|\bPATCH\b|\bDELETE\b/);
-    expect(devApiSource).not.toMatch(/\/sessions\/start|\/sessions\/active|\/history\/:id\/edit|\/history\/:id\/data-flag/);
-    expect(devApiSource).not.toMatch(/\/data-health\/issues\/:issueId\/dismiss|\/data-health\/repair\/apply/);
-    expect(devApiSource).not.toMatch(/\/backup|backup\/|importBackup|exportBackup|\/reset|\/recovery|resetDev/i);
+    expect(readOnlySource).not.toMatch(/\bPOST\b|\bPUT\b|\bPATCH\b|\bDELETE\b/);
+    expect(readOnlySource).not.toMatch(/\/sessions\/start|\/sessions\/active|\/history\/:id\/edit|\/history\/:id\/data-flag/);
+    expect(readOnlySource).not.toMatch(/\/data-health\/issues\/:issueId\/dismiss|\/data-health\/repair\/apply/);
+    expect(readOnlySource).not.toMatch(/\/backup|backup\/|importBackup|exportBackup|\/reset|\/recovery|resetDev/i);
+    expect(approvedSource).not.toMatch(/\bPUT\b|\bPATCH\b|\bDELETE\b/);
+    expect(approvedSource).not.toMatch(/\/sessions\/|\/history\/|\/data-health\/repair\/apply|\/backup|\/reset|\/recovery/i);
     expect(adapter).not.toContain('fetch(');
     expect(adapter).not.toContain('DevApiReadOnly');
     expect(adapter).not.toContain('/app-data/summary');

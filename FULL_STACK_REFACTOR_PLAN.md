@@ -591,6 +591,19 @@ Task 4.27 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior,
 
 Task 4.27 result: plan only. First future candidate is DataHealth issue dismiss. Write-path migration remains blocked. App must not call mutation routes yet. The only recommended next task is `Task 4.28 DataHealth Dismiss Mutation Prototype Plan V1`, and implementation must require explicit user approval.
 
+### Task 4.28: DataHealth Dismiss Mutation Prototype V1
+
+Completed as a dev-only, explicit opt-in, one-route mutation prototype for DataHealth issue dismiss. It is not full mutation integration, source-of-truth migration, localStorage replacement, or production backend work.
+
+- `src/devApi/devApiDataHealthDismissConfig.ts` gates the prototype behind `DEV === true`, `VITE_IRONPATH_DEV_API_COMPARE === "1"`, and `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT === "datahealth-dismiss"`, with localhost-only Dev API base URL validation.
+- `src/devApi/devApiDataHealthDismissClient.ts` exposes only the DataHealth issue dismiss request for `POST /data-health/issues/:issueId/dismiss`; it does not expose session, history, repair, backup, reset, or recovery write paths.
+- `src/devApi/DevApiDataHealthDismissPrototype.tsx` mounts as a minimal dev-only experiment, requires confirmation, blocks duplicate submit while pending, preserves local AppData/localStorage, and only reports success after snapshot metadata is returned.
+- Task 4.28 tests lock config gating, one-route client behavior, no-fake-success behavior, UI safety, localStorage/AppData preservation, and browser/runtime isolation.
+
+Task 4.28 keeps localStorage as the active App source of truth. API mutation results never overwrite AppData or localStorage. There is no broad frontend mutation client, no source-of-truth switch, no offline queue, no production backend/auth/sync/deployment, no package script or dependency change, no lockfile change, and no normalized table.
+
+Write-path migration remains blocked after Task 4.28. The next recommended task is `Task 4.29 DataHealth Dismiss Prototype Acceptance V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

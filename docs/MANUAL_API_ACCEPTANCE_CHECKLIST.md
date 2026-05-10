@@ -34,6 +34,8 @@ Task 4.26 adds mutation UX confirmation and rollback planning at `docs/MUTATION_
 
 Task 4.27 adds the lowest-risk mutation prototype plan at `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md`. It is planning-only: DataHealth issue dismiss is only a future candidate, and the plan does not authorize App writes or mutation client work.
 
+Task 4.28 adds a dev-only, explicit opt-in, one-route DataHealth dismiss mutation prototype. It only allows `POST /data-health/issues/:issueId/dismiss` under the mutation experiment flag, keeps localStorage as source of truth, requires snapshot metadata before success, and does not imply production readiness or broader write-path migration.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

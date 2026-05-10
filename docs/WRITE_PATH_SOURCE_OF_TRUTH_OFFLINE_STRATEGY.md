@@ -295,3 +295,11 @@ Task 4.27 adds `docs/LOWEST_RISK_MUTATION_PROTOTYPE_PLAN.md` as planning only.
 The Task 4.25 conclusion does not change: source-of-truth remains localStorage, no offline mutation queue exists yet, App must not call mutation routes, and write-path migration remains blocked.
 
 Task 4.27 chooses DataHealth issue dismiss as the first future candidate, but the recommended first prototype source-of-truth mode remains shadow-only / diagnostics unless a later task explicitly designs localStorage reconciliation.
+
+## Task 4.28 Note
+
+Task 4.28 was explicitly approved as `DataHealth Dismiss Mutation Prototype V1`.
+
+It implements only the one-route dev-only DataHealth dismiss prototype. It does not switch source of truth, does not add an offline mutation queue, and does not add localStorage reconciliation.
+
+The Task 4.25 source-of-truth rule still governs broader write-path work: localStorage remains the active App source of truth, API results do not overwrite AppData or localStorage, and write-path migration remains blocked.
