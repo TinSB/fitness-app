@@ -297,3 +297,13 @@ UX hardening result:
 - `DevApiReadOnlyDiagnostics.tsx` is presentational only; the browser-safe controller owns the cancellable comparison effect.
 
 Read-only diagnostics remain comparison-only. API results never overwrite AppData or localStorage. No UI writes to API, no mutation route is used by App, and write-path migration remains blocked after Task 4.22.
+
+## Task 4.23 Manual App Acceptance Result
+
+Task 4.23 adds the manual acceptance runbook at `docs/READONLY_APP_MANUAL_ACCEPTANCE.md`.
+
+The runbook covers flag-off behavior, flag-on read-only diagnostics, Dev API unavailable behavior, matching and mismatch checks, misconfigured localhost-only checks, localStorage integrity, GET-only Network verification, shutdown cleanup, temporary env var cleanup, dev DB artifact safety, and build-output-only browser bundle scanning.
+
+Task 4.23 is documentation and documentation/static-boundary testing only. It does not change `App.tsx`, diagnostics runtime behavior, UI behavior, localStorage persistence, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write-path behavior.
+
+Read-only manual acceptance does not approve write-path migration. localStorage remains source of truth, API results never overwrite AppData or localStorage, no UI writes to API, and no mutation route is used by App.

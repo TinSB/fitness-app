@@ -525,6 +525,19 @@ Completed as diagnostics UX/testing hardening for the existing dev-only read-onl
 
 Recommended next step is `Task 4.23 Mutation Integration Readiness Audit V1` or `Task 4.23 Read-only Manual App Acceptance V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
 
+### Task 4.23: Read-only Manual App Acceptance V1
+
+Completed as manual acceptance documentation and docs/static-boundary testing for the existing dev-only read-only diagnostics prototype.
+
+- `docs/READONLY_APP_MANUAL_ACCEPTANCE.md` defines the manual runbook for flag-off, flag-on, matching, mismatch, unavailable, misconfigured, localStorage integrity, GET-only Network, cleanup, and browser build safety checks.
+- The runbook requires a dedicated test browser profile, no real personal training data for mismatch/unavailable testing, and temporary env var cleanup after testing.
+- The browser bundle safety check targets build output only, such as `dist/`.
+- `readOnlyManualAppAcceptanceDocs.test.ts`, `readOnlyManualAppAcceptanceBoundary.test.ts`, and `readOnlyManualAppAcceptanceDocsParity.test.ts` lock the runbook content and static boundaries.
+
+Task 4.23 does not change `App.tsx`, runtime source behavior, diagnostics behavior, UI behavior, localStorage persistence, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write paths.
+
+Recommended next step is `Task 4.24 Mutation Integration Readiness Audit V1` or `Task 4.24 Read-only Diagnostic Manual Regression V1`. Formal `App.tsx` HTTP migration and write-path migration remain blocked.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
