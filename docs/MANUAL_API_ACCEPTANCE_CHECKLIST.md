@@ -28,6 +28,8 @@ Task 4.23 adds the read-only App manual acceptance runbook at `docs/READONLY_APP
 
 Task 4.24 adds the mutation integration readiness audit at `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md`. The result is not ready for mutation integration; write-path integration remains blocked and the next step is planning-only source-of-truth/offline strategy work.
 
+Task 4.25 adds the write-path source-of-truth and offline strategy at `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md`. It is planning-only: source-of-truth remains localStorage, no offline mutation queue exists yet, and write-path migration remains blocked.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.

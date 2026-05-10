@@ -550,6 +550,19 @@ Task 4.24 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior,
 
 Task 4.24 result: not ready for mutation integration. Write-path migration remains blocked. The only recommended next task is planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`; it must not implement App mutation calls, connect POST routes to the UI, or switch source of truth.
 
+### Task 4.25: Write-path Source-of-truth & Offline Strategy V1
+
+Completed as write-path source-of-truth and offline strategy, not as mutation integration or write-path migration.
+
+- `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md` records source-of-truth options, the short-term source-of-truth rule, offline/PWA strategy, idempotency strategy, conflict/reconciliation strategy, rollback strategy, mutation category strategy, required gates, and the decision record.
+- The unique short-term source-of-truth recommendation is Option E: staged migration with read-only comparison first, a later lowest-risk mutation prototype only after gates, and source-of-truth switch only after explicit future acceptance.
+- `writePathSourceOfTruthOfflineStrategy.test.ts` locks the strategy document, boundaries, Option E recommendation, offline/idempotency/conflict/rollback content, mutation category strategy, and Task 4.26 next step.
+- `writePathMutationBoundaryStillBlocked.test.ts` keeps executable browser/runtime source free of App mutation calls, Node-only imports, frontend mutation clients, mutation feature flag wiring, API-backed localStorage, and package script/dependency expansion.
+
+Task 4.25 does not change `App.tsx`, UI behavior, `src/devApi` runtime behavior, localStorage persistence, save/load behavior, package scripts, dependencies, lockfiles, schemas, production backend behavior, auth, sync, deployment, or write paths.
+
+Task 4.25 result: strategy only. Write-path migration remains blocked. App must not call mutation routes yet. Source-of-truth remains localStorage. No offline mutation queue exists yet. The only recommended next task is `Task 4.26 Mutation UX Confirmation & Rollback Plan V1`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

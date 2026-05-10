@@ -4,6 +4,8 @@ This runbook manually accepts the dev-only read-only App diagnostics prototype f
 
 Task 4.24 mutation readiness audit confirms that this read-only manual acceptance does not authorize mutation integration. Existing mutation routes remain server/dev API only, App runtime does not call them, and write-path migration remains blocked.
 
+Task 4.25 write-path source-of-truth and offline strategy confirms the same boundary: read-only acceptance does not authorize write-path integration, source-of-truth remains localStorage, and no offline mutation queue exists yet.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is dev-only read-only App manual acceptance.

@@ -38,6 +38,8 @@ Task 4.23 adds Read-only Manual App Acceptance V1 at `docs/READONLY_APP_MANUAL_A
 
 Task 4.24 adds `docs/MUTATION_INTEGRATION_READINESS_AUDIT.md` as a mutation integration readiness audit. It is an audit and decision record only, not a runtime API feature. Existing mutation routes remain server/dev API only; App runtime does not call mutation routes, write-path migration remains blocked, and the next recommended task is planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`.
 
+Task 4.25 adds `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md` as the write-path source-of-truth and offline strategy. It is strategy documentation only, not a runtime API feature. App runtime still does not call mutation routes, source-of-truth remains localStorage, no offline mutation queue exists, and write-path migration remains blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -689,6 +691,34 @@ Current server/dev API mutation inventory remains:
 - `POST /data-health/repair/apply`
 
 Task 4.24 result: Not ready for mutation integration. Write-path migration remains blocked. Next task should be planning-only `Task 4.25 Write-path Source-of-truth & Offline Strategy V1`; it must not implement App mutation calls or connect POST routes to the UI.
+
+## Write-path Source-of-truth & Offline Strategy
+
+Owner files:
+
+- `docs/WRITE_PATH_SOURCE_OF_TRUTH_OFFLINE_STRATEGY.md`
+- `tests/writePathSourceOfTruthOfflineStrategy.test.ts`
+- `tests/writePathMutationBoundaryStillBlocked.test.ts`
+
+Task 4.25 is a strategy and decision record, not a runtime API feature.
+
+Contract facts:
+
+- Source-of-truth remains localStorage.
+- App runtime does not call mutation routes.
+- There is no frontend mutation client, mutation feature flag, API-backed persistence adapter, or source-of-truth switch.
+- There is no offline mutation queue yet.
+- API responses must not overwrite localStorage.
+- No dual-write path is approved.
+- Future mutation prototypes must require source snapshot checks, idempotency, conflict handling, confirmation UX, rollback UX, and explicit failed-write behavior.
+- Existing mutation routes remain server/dev API only and are not approved for App runtime use.
+
+Short-term source-of-truth decision:
+
+- Option E is the unique recommendation: staged migration with read-only comparison, then a later lowest-risk mutation prototype, then explicit source-of-truth switch only after future acceptance.
+- Immediate API source-of-truth switching, dual-write without reconciliation, and App mutation prototype before offline/idempotency/rollback strategy are rejected.
+
+Task 4.25 result: Strategy only. Write-path migration remains blocked. App must not call mutation routes yet. Source-of-truth remains localStorage. No offline mutation queue yet. Next task should be `Task 4.26 Mutation UX Confirmation & Rollback Plan V1`.
 
 ## Local Persistence
 
