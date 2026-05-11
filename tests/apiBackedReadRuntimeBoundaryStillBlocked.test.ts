@@ -8,20 +8,20 @@ const stripComments = (source: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
-describe('API-backed read runtime boundary remains blocked', () => {
-  it('does not add read runtime implementation files in Task 5.7', () => {
+describe('API-backed read runtime boundary remains constrained', () => {
+  it('does not add source switch or storage implementation files before the approved runtime tasks', () => {
     for (const path of [
-      'src/devApi/apiBackedReadConfig.ts',
-      'src/devApi/apiBackedReadClient.ts',
-      'src/devApi/ApiBackedReadDiagnostics.tsx',
       'src/storage/runtimeSourceSelector.ts',
+      'src/storage/runtimeSourceConfig.ts',
       'src/storage/apiStorageAdapter.ts',
+      'src/storage/bootFromApiSnapshot.ts',
+      'src/storage/apiWriteThroughRuntime.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
   });
 
-  it('keeps browser source free of read runtime implementation and Node-only runtime tokens', () => {
+  it('keeps browser source free of source-switch/storage implementation and Node-only runtime tokens', () => {
     const forbidden = [
       'node:http',
       'node:sqlite',
@@ -31,11 +31,10 @@ describe('API-backed read runtime boundary remains blocked', () => {
       'sqliteRepository',
       'devApiRunner',
       'devDbRecovery',
-      'apiBackedReadClient',
-      'ApiBackedReadDiagnostics',
-      'VITE_IRONPATH_RUNTIME_SOURCE',
       'api-primary-dev',
       'replaceLocalStorage',
+      'apiStorageAdapter',
+      'apiWriteThroughRuntime',
     ];
 
     for (const file of collectSrcRuntimeFiles()) {

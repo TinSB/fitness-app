@@ -1305,6 +1305,38 @@ Task 5.7 plans boot data from API snapshot, localStorage fallback, API unavailab
 
 Next recommended task: Task 5.8 API-backed Read Client Prototype V1.
 
+### Task 5.8: API-backed Read Client Prototype V1
+
+Status: Completed in this branch as a dev/local GET-only API-backed read client prototype.
+
+Task 5.8 adds:
+
+- `src/devApi/apiBackedReadConfig.ts`
+- `src/devApi/apiBackedReadClient.ts`
+- `src/devApi/ApiBackedReadDiagnostics.tsx`
+
+The prototype is explicit opt-in only with `VITE_IRONPATH_RUNTIME_SOURCE=api-readonly`, development mode, and a localhost Dev API base URL. It allows only:
+
+- `GET /health`
+- `GET /app-data/summary`
+- `GET /sessions/summary`
+- `GET /history`
+- `GET /history/:id`
+- `GET /data-health/summary`
+
+Task 5.8 adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no source-of-truth migration, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no cloud, no deployment, no package change, no normalized table, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.9 API-backed Read Runtime Acceptance V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

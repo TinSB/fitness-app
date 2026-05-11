@@ -699,3 +699,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.8 API-backed Read Client Prototype V1`.
+
+## Task 5.8 API-backed Read Client Prototype
+
+- [ ] Confirm `src/devApi/apiBackedReadConfig.ts`, `src/devApi/apiBackedReadClient.ts`, and `src/devApi/ApiBackedReadDiagnostics.tsx` exist.
+- [ ] Confirm the prototype is development/local only and requires `VITE_IRONPATH_RUNTIME_SOURCE=api-readonly`.
+- [ ] Confirm the Dev API base URL remains localhost-only.
+- [ ] Confirm allowed GET routes are exactly `GET /health`, `GET /app-data/summary`, `GET /sessions/summary`, `GET /history`, `GET /history/:id`, and `GET /data-health/summary`.
+- [ ] Confirm no POST write is added by Task 5.8.
+- [ ] Confirm no runtime source selector, API-backed persistence adapter, App.tsx mount, source-of-truth migration, localStorage write, or AppData overwrite is added.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm production backend, auth, sync, cloud, deployment, and monitoring remain out of scope.
+- [ ] Confirm next recommended task is `Task 5.9 API-backed Read Runtime Acceptance V1`.
