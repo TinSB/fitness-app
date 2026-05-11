@@ -102,6 +102,8 @@ Task 4.72 adds the Phase 4 manual final acceptance runbook at `docs/PHASE4_MANUA
 
 Task 4.73 adds the Phase 4 exit regression lock at `docs/PHASE4_EXIT_REGRESSION_LOCK.md`. It is regression-lock documentation only: final accepted routes, blocked routes, localStorage source-of-truth, browser build isolation, no production/auth/sync/deployment, no source-of-truth migration, and Phase 5 handoff-only next step are locked without runtime changes.
 
+Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is handoff planning only: Phase 4 final state, source-of-truth migration prerequisites, API-backed runtime prerequisites, production/auth/sync prerequisites, risk register, and recommended Phase 5 first task are recorded without starting Phase 5.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -601,3 +603,12 @@ Task 4.73 adds the Phase 4 exit regression lock at `docs/PHASE4_EXIT_REGRESSION_
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm Phase 5 handoff is the only next step.
 - [ ] Confirm next recommended task is `Task 4.74 Phase 5 Handoff Plan V1`.
+
+## Task 4.74 Phase 5 Handoff Plan
+
+- [ ] Use `docs/PHASE5_HANDOFF_PLAN.md` as the Phase 5 handoff plan.
+- [ ] Confirm Task 4.74 does not start Phase 5 implementation.
+- [ ] Confirm source-of-truth migration, API-backed runtime, production backend, auth, sync, and deployment remain prerequisites only.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended Phase 4 task is `Task 4.75 Phase 4 Completion & Archive V1`.

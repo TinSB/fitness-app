@@ -104,3 +104,12 @@ localStorage remains source of truth.
 No production backend, auth, sync, or deployment is added.
 No source-of-truth migration is implemented.
 Next task should be Task 4.74 Phase 5 Handoff Plan V1, planning-only.
+
+## Task 4.74 Phase 5 Handoff Follow-up
+
+Task 4.74 adds `docs/PHASE5_HANDOFF_PLAN.md` as a handoff-only plan.
+
+- It does not start Phase 5 implementation.
+- It keeps localStorage as source of truth at Phase 4 exit.
+- It documents source-of-truth migration, API-backed runtime, production, auth, sync, and deployment prerequisites.
+- It recommends Task 4.75 Phase 4 Completion & Archive V1 as the final Phase 4 task.
