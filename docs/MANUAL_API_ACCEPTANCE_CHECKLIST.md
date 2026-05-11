@@ -612,3 +612,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended Phase 4 task is `Task 4.75 Phase 4 Completion & Archive V1`.
+
+## Task 4.75 Phase 4 Completion & Archive
+
+- [ ] Use `docs/PHASE4_COMPLETION_ARCHIVE.md` as the Phase 4 completion archive.
+- [ ] Confirm Phase 4 is complete.
+- [ ] Confirm Phase 5 is not started automatically.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, fifth mutation, and source-of-truth migration remain blocked.
+- [ ] Confirm localStorage remains source of truth at Phase 4 exit and API results never overwrite AppData/localStorage.
+- [ ] Confirm API-backed runtime is Phase 5 work.
+- [ ] Confirm production backend, auth, sync, and deployment are Phase 5+ work.
+- [ ] Confirm recommended Phase 5 starting task is `Task 5.1 Source-of-truth Migration Architecture Gate V1`.

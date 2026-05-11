@@ -94,3 +94,14 @@ localStorage remains source of truth at Phase 4 exit.
 API-backed runtime is Phase 5 work.
 production backend, auth, sync, and deployment are Phase 5+ work.
 Next Phase 4 task should be Task 4.75 Phase 4 Completion & Archive V1.
+
+## Task 4.75 Phase 4 Completion Follow-up
+
+Task 4.75 adds `docs/PHASE4_COMPLETION_ARCHIVE.md` as the final Phase 4 archive.
+
+- It marks Phase 4 complete.
+- It does not start Phase 5 automatically.
+- It keeps localStorage as source of truth at Phase 4 exit.
+- It keeps API-backed runtime as Phase 5 work.
+- It keeps production backend, auth, sync, and deployment as Phase 5+ work.
+- It recommends Task 5.1 Source-of-truth Migration Architecture Gate V1 as the Phase 5 starting task only.

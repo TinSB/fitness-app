@@ -1912,3 +1912,22 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 - `POST /sessions/start`
 
 The next recommended Phase 4 task is `Task 4.75 Phase 4 Completion & Archive V1`.
+
+## Task 4.75: Phase 4 Completion & Archive V1
+
+Task 4.75 adds `docs/PHASE4_COMPLETION_ARCHIVE.md` and completion/archive boundary tests.
+
+Phase 4 is complete. Do not start Phase 5 automatically.
+
+Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth at Phase 4 exit. API results never overwrite AppData or localStorage.
+
+API-backed runtime is Phase 5 work. production backend, auth, sync, and deployment are Phase 5+ work. Task 4.75 adds no package dependency, package script, lockfile change, normalized table, storage adapter change, schema change, runtime behavior change, source-of-truth migration, or mutation route.
+
+The recommended Phase 5 starting task is `Task 5.1 Source-of-truth Migration Architecture Gate V1`.
