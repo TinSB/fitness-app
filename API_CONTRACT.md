@@ -108,6 +108,8 @@ Task 4.67 Write-path Four-route Manual Regression V1 adds `docs/WRITE_PATH_FOUR_
 
 Task 4.68 Write-path Four-route Regression Lock V1 adds `docs/WRITE_PATH_FOUR_ROUTE_REGRESSION_LOCK.md` as a regression-lock and decision record for the current four dev-only mutation prototypes. It adds no runtime capability and no new route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, localStorage replacement, package change, lockfile change, package script, normalized table, and training algorithm changes remain blocked. The next task is an audit-only source-of-truth migration readiness review.
 
+Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1 adds `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md` as audit-only documentation and static boundary coverage. It does not switch source of truth, replace localStorage, add API-backed runtime persistence, add dual-write, add offline mutation queue, add production backend/auth/sync/deployment, or add another mutation route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1810,3 +1812,18 @@ The regression lock keeps active patch, active complete, active discard, DataHea
 localStorage remains current source of truth. API results never overwrite AppData or localStorage. Task 4.68 adds no package dependency, package script, lockfile change, normalized table, storage adapter change, schema change, runtime behavior change, or training algorithm change.
 
 The next recommended task is `Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1`.
+
+## Task 4.69: Phase 4 Source-of-truth Migration Readiness Audit V1
+
+Task 4.69 adds `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md` and static boundary tests.
+
+Phase 4 is not ready to switch source of truth. localStorage remains source of truth. API results never overwrite AppData or localStorage. No API-backed runtime persistence, dual-write, offline mutation queue, production backend, auth, sync, deployment, normalized tables, storage adapter change, schema change, runtime behavior change, or training algorithm change is added.
+
+Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The next recommended task is `Task 4.70 API-backed Runtime Strategy Plan V1`.

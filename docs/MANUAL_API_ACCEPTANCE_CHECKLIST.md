@@ -92,6 +92,8 @@ Task 4.67 adds the four-route manual regression runbook at `docs/WRITE_PATH_FOUR
 
 Task 4.68 locks the current four-route write-path state at `docs/WRITE_PATH_FOUR_ROUTE_REGRESSION_LOCK.md`. It is regression-lock documentation and static-test coverage only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, active patch/complete/discard remain blocked, localStorage remains source of truth, and API results never overwrite AppData/localStorage.
 
+Task 4.69 adds the Phase 4 source-of-truth migration readiness audit at `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md`. It is audit-only: localStorage remains source of truth, API results never overwrite AppData/localStorage, no API-backed runtime persistence is added, and Phase 5 is required before any source-of-truth migration implementation.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -542,3 +544,13 @@ Task 4.68 locks the current four-route write-path state at `docs/WRITE_PATH_FOUR
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm no fifth mutation is approved.
 - [ ] Confirm next recommended task is `Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1`.
+
+## Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit
+
+- [ ] Use `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md` as the source-of-truth migration readiness audit.
+- [ ] Confirm Task 4.69 does not switch source of truth.
+- [ ] Confirm Task 4.69 does not add localStorage replacement.
+- [ ] Confirm Task 4.69 does not add API-backed runtime persistence, dual-write, or offline mutation queue.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 4.70 API-backed Runtime Strategy Plan V1`.
