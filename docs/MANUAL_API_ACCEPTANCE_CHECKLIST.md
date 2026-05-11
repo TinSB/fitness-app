@@ -82,6 +82,8 @@ Task 4.62 adds the session-start manual App acceptance runbook at `docs/SESSION_
 
 Task 4.63 hardens the existing Session Start prototype at `docs/SESSION_START_PROTOTYPE_HARDENING.md`. It is hardening/testing only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, localStorage remains source of truth, API results never overwrite AppData/localStorage, and active patch/complete/discard remain blocked.
 
+Task 4.64 adds safe observability and manual recovery notes at `docs/SESSION_START_OBSERVABILITY_RECOVERY_NOTES.md`. It is observability/testing only: no browser reset/recovery action is added, no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, localStorage remains source of truth, API results never overwrite AppData/localStorage, and recovery remains manual/dev-only.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -478,3 +480,14 @@ Task 4.63 hardens the existing Session Start prototype at `docs/SESSION_START_PR
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
 - [ ] Confirm next recommended task is `Task 4.64 Session Start Observability & Recovery Notes V1`.
+
+## Task 4.64 Session Start Observability & Recovery Notes
+
+- [ ] Use `docs/SESSION_START_OBSERVABILITY_RECOVERY_NOTES.md` as the Session Start observability and recovery note.
+- [ ] Confirm Task 4.64 does not add a new mutation route.
+- [ ] Confirm safe diagnostics are limited to state, redacted target reference, source snapshot/idempotency presence, snapshot metadata presence, HTTP status, failure code, duplicate-submit blocked flag, timestamps, and safe recovery note.
+- [ ] Confirm raw stack traces, raw API responses, AppData dumps, localStorage dumps, SQLite internals, and unrestricted server errors are not exposed.
+- [ ] Confirm no browser repair, sync, overwrite, import, export, reset, apply, fix, migrate, active patch, active complete, or active discard control is added.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 4.65 Session Start Regression Lock V1`.

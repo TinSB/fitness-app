@@ -61,3 +61,13 @@ Task 4.63 result: hardening only.
 The Session Start prototype remains one-route-only and dev-only.
 
 Next task should be Task 4.64 Session Start Observability & Recovery Notes V1.
+
+## Task 4.64 Observability Companion
+
+Task 4.64 adds `docs/SESSION_START_OBSERVABILITY_RECOVERY_NOTES.md` as safe observability and manual recovery guidance for the same one-route Session Start prototype.
+
+- It does not add a new mutation route.
+- It does not add browser reset/recovery controls.
+- It keeps active patch, complete, discard, repair, backup/import/export, reset/recovery, and source-of-truth migration blocked.
+- It keeps localStorage as source of truth and keeps API results from overwriting AppData or localStorage.
+- It recommends Task 4.65 Session Start Regression Lock V1 as the next task.
