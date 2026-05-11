@@ -90,6 +90,8 @@ Task 4.66 checkpoints the current four-route write-path state at `docs/WRITE_PAT
 
 Task 4.67 adds the four-route manual regression runbook at `docs/WRITE_PATH_FOUR_ROUTE_MANUAL_REGRESSION.md`. It is manual regression documentation and static-test coverage only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, active patch/complete/discard remain blocked, localStorage remains source of truth, and API results never overwrite AppData/localStorage.
 
+Task 4.68 locks the current four-route write-path state at `docs/WRITE_PATH_FOUR_ROUTE_REGRESSION_LOCK.md`. It is regression-lock documentation and static-test coverage only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, active patch/complete/discard remain blocked, localStorage remains source of truth, and API results never overwrite AppData/localStorage.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -530,3 +532,13 @@ Task 4.67 adds the four-route manual regression runbook at `docs/WRITE_PATH_FOUR
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm no fifth mutation is approved.
 - [ ] Confirm next recommended task is `Task 4.68 Write-path Four-route Regression Lock V1`.
+
+## Task 4.68 Write-path Four-route Regression Lock
+
+- [ ] Use `docs/WRITE_PATH_FOUR_ROUTE_REGRESSION_LOCK.md` as the four-route regression lock.
+- [ ] Confirm Task 4.68 does not add a new mutation route.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm no fifth mutation is approved.
+- [ ] Confirm next recommended task is `Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1`.

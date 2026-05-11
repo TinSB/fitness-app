@@ -1153,6 +1153,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.68 Write-path Four-route Regression Lock V1.
 
+### Task 4.68: Write-path Four-route Regression Lock V1
+
+Status: Completed in this branch as regression-lock documentation and static coverage for the current four-route write-path prototype state.
+
+Task 4.68 adds `docs/WRITE_PATH_FOUR_ROUTE_REGRESSION_LOCK.md`.
+
+Task 4.68 adds regression-lock tests for exact four-route allowlist, active patch/complete/discard still blocked, no broad mutation client, no API-backed storage, localStorage/AppData integrity, data semantics, coverage inventory, manual inventory, future gates, and docs parity.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
