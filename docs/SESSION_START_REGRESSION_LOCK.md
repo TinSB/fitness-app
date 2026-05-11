@@ -206,3 +206,13 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Li
 No fifth mutation is approved.
 localStorage remains source of truth.
 Next task should be Task 4.66 Write-path Four-route Checkpoint V1, checkpoint-only.
+
+## Task 4.66 Checkpoint Follow-up
+
+Task 4.66 adds `docs/WRITE_PATH_FOUR_ROUTE_CHECKPOINT.md` as a checkpoint for the accepted four-route write-path prototype state.
+
+- It is checkpoint/audit documentation and static-test coverage only.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- No fifth mutation route is approved.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- The next recommended task is `Task 4.67 Write-path Four-route Manual Regression V1`.
