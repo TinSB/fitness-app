@@ -689,3 +689,13 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.7 API-backed Read Runtime Plan V1`.
+
+## Task 5.7 API-backed Read Runtime Plan
+
+- [ ] Use `docs/API_BACKED_READ_RUNTIME_PLAN.md` as the API-backed read runtime plan.
+- [ ] Confirm boot data from API snapshot, localStorage fallback, API unavailable UI, snapshot metadata display, readMirror parity, and GET-only boundaries are documented.
+- [ ] Confirm Task 5.7 adds no API-backed read runtime implementation.
+- [ ] Confirm Task 5.7 adds no POST writes and no runtime source switch implementation.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.8 API-backed Read Client Prototype V1`.

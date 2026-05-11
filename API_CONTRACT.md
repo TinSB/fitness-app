@@ -2033,3 +2033,20 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.7 API-backed Read Runtime Plan V1`.
+
+## Task 5.7: API-backed Read Runtime Plan V1
+
+Task 5.7 adds `docs/API_BACKED_READ_RUNTIME_PLAN.md` and API-backed read runtime boundary tests.
+
+This is planning-only. It plans boot data from API snapshot, localStorage fallback, API unavailable UI, snapshot metadata display, readMirror parity, GET-only boundaries, and source-switch boundaries. It adds no API-backed read runtime implementation, API client implementation, POST write, runtime source selection, source-of-truth migration, localStorage replacement, App.tsx integration, package changes, production backend, auth, sync, cloud, deployment, monitoring, or browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.8 API-backed Read Client Prototype V1`.

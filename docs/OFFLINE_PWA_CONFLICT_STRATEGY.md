@@ -137,3 +137,13 @@ No source-of-truth switch is implemented.
 No API-backed runtime is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.7 API-backed Read Runtime Plan V1.
+
+## Task 5.7 API-backed Read Runtime Follow-up
+
+Task 5.7 adds `docs/API_BACKED_READ_RUNTIME_PLAN.md` as a read-runtime plan only.
+
+- It covers boot data from API snapshot, localStorage fallback, API unavailable UI, snapshot metadata display, readMirror parity, and GET-only boundaries.
+- It does not implement API-backed read runtime.
+- It does not add POST writes.
+- It does not implement runtime source switching.
+- It recommends Task 5.8 API-backed Read Client Prototype V1 as the first GET-only prototype step.
