@@ -1215,6 +1215,16 @@ Task 4.73 locks the final accepted route allowlist, final blocked route list, lo
 
 Next recommended task: Task 4.74 Phase 5 Handoff Plan V1.
 
+### Task 4.74: Phase 5 Handoff Plan V1
+
+Status: Completed in this branch as Phase 5 handoff planning and static boundary coverage.
+
+Task 4.74 adds `docs/PHASE5_HANDOFF_PLAN.md`.
+
+Task 4.74 records Phase 4 final state, source-of-truth migration prerequisites, API-backed runtime prerequisites, production/auth/sync prerequisites, risk register, and recommended Phase 5 first task. It does not implement Phase 5, source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, deployment, package changes, or mutation routes.
+
+Next recommended task: Task 4.75 Phase 4 Completion & Archive V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -118,6 +118,8 @@ Task 4.72 Phase 4 Manual Final Acceptance V1 adds `docs/PHASE4_MANUAL_FINAL_ACCE
 
 Task 4.73 Phase 4 Exit Regression Lock V1 adds `docs/PHASE4_EXIT_REGRESSION_LOCK.md` as the Phase 4 exit regression lock and static boundary coverage. It locks the final accepted route allowlist, blocked route list, localStorage source-of-truth, browser build isolation, no production/auth/sync/deployment, no source-of-truth migration, and Phase 5 handoff-only next step. It does not add runtime behavior or another mutation route.
 
+Task 4.74 Phase 5 Handoff Plan V1 adds `docs/PHASE5_HANDOFF_PLAN.md` as handoff-only planning documentation and static boundary coverage. It records Phase 4 final state, source-of-truth migration prerequisites, API-backed runtime prerequisites, production/auth/sync prerequisites, a risk register, and the recommended Phase 5 first task. It does not start Phase 5 implementation, switch source of truth, replace localStorage, add API-backed runtime behavior, add production backend/auth/sync/deployment, or add another mutation route.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1895,3 +1897,18 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 - `POST /sessions/start`
 
 The next recommended task is `Task 4.74 Phase 5 Handoff Plan V1`.
+
+## Task 4.74: Phase 5 Handoff Plan V1
+
+Task 4.74 adds `docs/PHASE5_HANDOFF_PLAN.md` and Phase 5 handoff boundary tests.
+
+The handoff records Phase 4 final state, source-of-truth migration prerequisites, API-backed runtime prerequisites, production/auth/sync prerequisites, risk register, and recommended Phase 5 first task.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The next recommended Phase 4 task is `Task 4.75 Phase 4 Completion & Archive V1`.
