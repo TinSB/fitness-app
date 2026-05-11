@@ -635,3 +635,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm production backend, auth, sync, cloud, deployment, and monitoring remain Phase 6+ work.
 - [ ] Confirm next recommended task is `Task 5.2 AppData Ownership Matrix V1`.
+
+## Task 5.2 AppData Ownership Matrix
+
+- [ ] Use `docs/APPDATA_OWNERSHIP_MATRIX.md` as the AppData ownership matrix.
+- [ ] Confirm training history, active session, program templates, settings, screening profile, DataHealth, backup metadata, readMirror summaries, derived analytics, migration-only state, fallback-only state, and blocked capabilities are classified.
+- [ ] Confirm categories include API-owned, local-only, derived, migration-only, fallback-only, and blocked.
+- [ ] Confirm Task 5.2 adds no API-backed runtime implementation.
+- [ ] Confirm Task 5.2 adds no source-of-truth migration and no localStorage replacement.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.3 API Client Runtime Strategy V1`.

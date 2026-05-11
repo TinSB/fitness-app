@@ -1245,6 +1245,16 @@ Task 5.1 records the Phase 4 exit state, localStorage source-of-truth baseline, 
 
 Next recommended task: Task 5.2 AppData Ownership Matrix V1.
 
+### Task 5.2: AppData Ownership Matrix V1
+
+Status: Completed in this branch as ownership-matrix documentation and static boundary coverage.
+
+Task 5.2 adds `docs/APPDATA_OWNERSHIP_MATRIX.md`.
+
+Task 5.2 classifies training history, active session, program templates, settings, screening profile, DataHealth, backup metadata, readMirror summaries, derived analytics, migration-only state, fallback-only state, and blocked capabilities into API-owned, local-only, derived, migration-only, fallback-only, or blocked categories. It does not implement source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, storage adapters, or mutation routes.
+
+Next recommended task: Task 5.3 API Client Runtime Strategy V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

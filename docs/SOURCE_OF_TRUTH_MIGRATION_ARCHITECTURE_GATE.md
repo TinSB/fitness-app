@@ -124,3 +124,13 @@ No source-of-truth migration is implemented.
 No API-backed runtime is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.2 AppData Ownership Matrix V1.
+
+## Task 5.2 AppData Ownership Matrix Follow-up
+
+Task 5.2 adds `docs/APPDATA_OWNERSHIP_MATRIX.md` as an ownership matrix only.
+
+- It classifies AppData areas as API-owned, local-only, derived, migration-only, fallback-only, or blocked.
+- It does not implement API-backed runtime.
+- It keeps localStorage as source of truth.
+- It keeps API results from overwriting AppData/localStorage.
+- It recommends Task 5.3 API Client Runtime Strategy V1 as docs/static tests only.

@@ -1948,3 +1948,20 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.2 AppData Ownership Matrix V1`.
+
+## Task 5.2: AppData Ownership Matrix V1
+
+Task 5.2 adds `docs/APPDATA_OWNERSHIP_MATRIX.md` and AppData ownership matrix boundary tests.
+
+This is ownership planning only. It classifies training history, active session, program templates, settings, screening profile, DataHealth, backup metadata, readMirror summaries, derived analytics, migration-only state, fallback-only state, and blocked capabilities. It does not implement API-backed runtime, source-of-truth migration, localStorage replacement, App.tsx integration, storage adapters, package changes, production backend, auth, sync, cloud, deployment, monitoring, or a browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.3 API Client Runtime Strategy V1`.
