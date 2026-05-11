@@ -2016,3 +2016,20 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.6 Offline / PWA Conflict Strategy V1`.
+
+## Task 5.6: Offline / PWA Conflict Strategy V1
+
+Task 5.6 adds `docs/OFFLINE_PWA_CONFLICT_STRATEGY.md` and offline/PWA conflict boundary tests.
+
+This is strategy-only. It plans API unavailable behavior, offline training behavior, active session persistence risk handling, visible failure states, conflict diagnostics, and the decision that no full offline mutation queue is approved by this task. It adds no offline mutation queue, background sync, queued write replay, API-backed runtime, source-of-truth migration, localStorage replacement, App.tsx integration, package changes, production backend, auth, sync, cloud, deployment, monitoring, or browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.7 API-backed Read Runtime Plan V1`.

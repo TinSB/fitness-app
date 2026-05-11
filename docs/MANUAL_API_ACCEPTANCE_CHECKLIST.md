@@ -679,3 +679,13 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.6 Offline / PWA Conflict Strategy V1`.
+
+## Task 5.6 Offline / PWA Conflict Strategy
+
+- [ ] Use `docs/OFFLINE_PWA_CONFLICT_STRATEGY.md` as the offline/PWA conflict strategy.
+- [ ] Confirm API unavailable, offline training, active session persistence, visible failure, and conflict diagnostics are documented.
+- [ ] Confirm Task 5.6 adds no offline mutation queue, background sync, or queued write replay.
+- [ ] Confirm Task 5.6 adds no source-of-truth switch and no API-backed runtime.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.7 API-backed Read Runtime Plan V1`.

@@ -1285,6 +1285,16 @@ Task 5.5 plans localStorage backup, SQLite snapshot backup, dry-run behavior, ap
 
 Next recommended task: Task 5.6 Offline / PWA Conflict Strategy V1.
 
+### Task 5.6: Offline / PWA Conflict Strategy V1
+
+Status: Completed in this branch as offline/PWA conflict strategy documentation and static boundary coverage.
+
+Task 5.6 adds `docs/OFFLINE_PWA_CONFLICT_STRATEGY.md`.
+
+Task 5.6 plans API unavailable behavior, offline training behavior, active session persistence risk handling, visible failure states, conflict diagnostics, and the decision that no full offline mutation queue is approved by this task. It does not implement offline mutation queue, background sync, queued write replay, API-backed runtime, source-of-truth migration, localStorage replacement, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, storage adapters, or mutation routes.
+
+Next recommended task: Task 5.7 API-backed Read Runtime Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
