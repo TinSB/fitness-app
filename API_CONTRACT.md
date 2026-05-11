@@ -96,6 +96,8 @@ Task 4.61 adds `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md` as Session Start Pro
 
 Task 4.62 adds `docs/SESSION_START_MANUAL_APP_ACCEPTANCE.md` as Session Start Manual App Acceptance V1. It is a human-run manual browser acceptance runbook and docs/static-test layer for the existing Task 4.60 prototype, not new runtime capability. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. localStorage remains source of truth; API results never overwrite AppData or localStorage; active patch, complete, discard, repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, source-of-truth migration, and training algorithm changes remain blocked.
 
+Task 4.63 adds `docs/SESSION_START_PROTOTYPE_HARDENING.md` as Session Start Prototype Hardening V1. It hardens the existing Task 4.60 prototype only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, and active patch/complete/discard remain blocked. Hardening locks duplicate-submit/pending behavior, missing source snapshot/idempotency failure, active_session_exists failure, missing snapshot metadata failure, unavailable/timeout/abort/malformed response failure, repository error failure, confirmation reset, no localStorage write, and no AppData mutation.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1696,3 +1698,20 @@ The runbook requires a dedicated test browser profile, dedicated dev DB, no real
 localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.62 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, active patch, active complete, active discard, or training algorithm change.
 
 The next recommended task is `Task 4.63 Session Start Prototype Hardening V1`.
+
+## Task 4.63: Session Start Prototype Hardening V1
+
+Task 4.63 adds `docs/SESSION_START_PROTOTYPE_HARDENING.md` and hardening tests for the existing Session Start prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+Hardening locks strict no-fake-success behavior, required snapshot metadata, source snapshot and idempotency metadata, active_session_exists failure, missing target failure, unavailable, timeout, abort, malformed response, write_failed, transaction_failed, database_closed, duplicate-submit/pending behavior, confirmation requirements, no localStorage write, no AppData mutation, and route boundary.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.63 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, active patch, active complete, active discard, or training algorithm change.
+
+The next recommended task is `Task 4.64 Session Start Observability & Recovery Notes V1`.
