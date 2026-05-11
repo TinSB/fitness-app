@@ -973,6 +973,22 @@ Completed as the regression lock for the current three-route write-path prototyp
 
 The next recommended task is `Task 4.55 Fourth Mutation Candidate Readiness Audit V1`, audit-only. Do not auto-start it.
 
+### Task 4.55: Fourth Mutation Candidate Readiness Audit V1
+
+Completed as an audit and decision record for possible fourth browser mutation candidates after the three-route regression lock.
+
+- Adds `docs/FOURTH_MUTATION_CANDIDATE_READINESS_AUDIT.md`.
+- Adds static tests for audit content, route/build boundary, candidate risk matrix, and docs parity.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, fourth mutation route, or training algorithm change is added.
+
+Task 4.55 rejects direct fourth-mutation implementation. Active-session mutation is the only plausible future product-value candidate area, but it requires planning first.
+
+The next recommended task is `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`, planning-only. It must not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

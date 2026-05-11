@@ -220,3 +220,14 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, an
 No fourth mutation is approved.
 localStorage remains source of truth.
 Next task should be Task 4.55 Fourth Mutation Candidate Readiness Audit V1, audit-only.
+
+## Task 4.55 Fourth Mutation Candidate Readiness Audit Follow-up
+
+Task 4.55 adds `docs/FOURTH_MUTATION_CANDIDATE_READINESS_AUDIT.md` as audit-only follow-up to this three-route regression lock.
+
+- It does not implement a fourth mutation.
+- It does not add a browser route.
+- It keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- It keeps localStorage as source of truth and API results from overwriting AppData or localStorage.
+- It keeps session mutation, DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, source-of-truth migration, broad mutation clients, and production backend/auth/sync/deployment blocked.
+- It recommends `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`, planning-only, before any active-session prototype can be considered.

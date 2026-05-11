@@ -1,6 +1,6 @@
 # IronPath API Contract
 
-Last updated: 2026-05-10
+Last updated: 2026-05-11
 
 ## Current Contract Status
 
@@ -79,6 +79,8 @@ Task 4.43 adds `docs/THIRD_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Third Mutat
 Task 4.44 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_PROTOTYPE_PLAN.md` as Limited History Edit Mutation Prototype Plan V1. It is planning-only and docs/static-test only: `POST /history/:id/edit` remains blocked from browser runtime, no third mutation route is added, no browser allowlist expansion occurs, App.tsx and src/devApi runtime behavior remain unchanged, localStorage remains source of truth, and API results never overwrite AppData or localStorage. The plan defines field-level constraints for a possible future one-set history edit route and rejects broad history edit, source-of-truth migration, production backend/auth/sync/deployment, dependencies, scripts, lockfile changes, normalized tables, and training algorithm changes.
 
 Task 4.45 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` as Limited History Edit Mutation Prototype Readiness Gate V1. It is gate-only and docs/static-test only: no third mutation route is added, `POST /history/:id/edit` remains blocked from browser runtime, App.tsx and src/devApi runtime behavior remain unchanged, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Task 4.45 result is ready for a user-approved implementation prompt, but not direct implementation. Task 4.46 Limited History Edit Mutation Prototype V1 requires explicit user approval and must not auto-start.
+
+Task 4.55 adds `docs/FOURTH_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Fourth Mutation Candidate Readiness Audit V1. It is audit-only and docs/static-test only: no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, no frontend mutation client is added, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. Active-session mutation is only a future planning candidate area for `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`; Task 4.55 does not recommend direct implementation.
 
 ## Read Mirror API Skeleton
 
@@ -1539,3 +1541,19 @@ The regression lock freezes DataHealth dismiss, History data-flag, and Limited H
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
 
 Task 4.55 Fourth Mutation Candidate Readiness Audit V1 is the next recommended task. It must be audit/planning only and must not implement a fourth mutation.
+
+## Task 4.55: Fourth Mutation Candidate Readiness Audit V1
+
+Task 4.55 adds `docs/FOURTH_MUTATION_CANDIDATE_READINESS_AUDIT.md` as a fourth mutation candidate readiness audit and decision record.
+
+No fourth mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The audit evaluates session start, session patches, session complete, session discard, DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, source-of-truth migration, and the option to continue three-route hardening without a fourth mutation.
+
+The result is audit-only: do not implement a fourth mutation next. Active-session mutation is the only plausible future product-value candidate area, but only for planning. The next recommended task is `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`, planning-only. It must not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change is added.
