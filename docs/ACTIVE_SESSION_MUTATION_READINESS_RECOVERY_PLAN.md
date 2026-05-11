@@ -248,3 +248,13 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, an
 localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 No automatic next task is approved without explicit user approval.
+
+## Task 4.57 Active Session Source Snapshot & Idempotency Plan V1 Follow-up
+
+Task 4.57 adds `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md` as planning-only follow-up.
+
+- It does not implement an active-session route.
+- It keeps `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard` blocked from browser runtime.
+- It keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- It defines `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, `requestFingerprint`, target identity, duplicate-start prevention, conflict detection, no auto-merge, no-fake-success, and source-of-truth gates.
+- The next recommended task is `Task 4.58 Active Session UX Confirmation & Rollback Plan V1`.
