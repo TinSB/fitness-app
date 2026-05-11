@@ -1141,6 +1141,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.67 Write-path Four-route Manual Regression V1.
 
+### Task 4.67: Write-path Four-route Manual Regression V1
+
+Status: Completed in this branch as manual regression documentation and static coverage for the current four-route write-path prototype state.
+
+Task 4.67 adds `docs/WRITE_PATH_FOUR_ROUTE_MANUAL_REGRESSION.md`.
+
+Task 4.67 adds manual-regression tests for read-only diagnostics, DataHealth dismiss, History data-flag, Limited History Edit, Session Start, experiment isolation, DevTools Network route boundary, no-fake-success, localStorage integrity, failure recovery, cleanup/env reset, browser build safety, and docs parity.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.68 Write-path Four-route Regression Lock V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

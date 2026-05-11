@@ -104,6 +104,8 @@ Task 4.65 Session Start Regression Lock V1 adds `docs/SESSION_START_REGRESSION_L
 
 Task 4.66 Write-path Four-route Checkpoint V1 adds `docs/WRITE_PATH_FOUR_ROUTE_CHECKPOINT.md` as a checkpoint/audit document and static-test layer for the current four dev-only mutation prototypes. It adds no runtime capability and no new route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, localStorage replacement, package change, lockfile change, package script, normalized table, and training algorithm changes remain blocked.
 
+Task 4.67 Write-path Four-route Manual Regression V1 adds `docs/WRITE_PATH_FOUR_ROUTE_MANUAL_REGRESSION.md` as a manual regression runbook and static-test layer for validating all four dev-only mutation prototypes together in one local App and Dev API session. It adds no runtime capability and no new route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, localStorage replacement, package change, lockfile change, package script, normalized table, and training algorithm changes remain blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1772,3 +1774,20 @@ The checkpoint records DataHealth dismiss, History data-flag, Limited History Ed
 localStorage remains current source of truth. API results never overwrite AppData or localStorage. Task 4.66 adds no package dependency, package script, lockfile change, normalized table, storage adapter change, schema change, runtime behavior change, or training algorithm change.
 
 The next recommended task is `Task 4.67 Write-path Four-route Manual Regression V1`.
+
+## Task 4.67: Write-path Four-route Manual Regression V1
+
+Task 4.67 adds `docs/WRITE_PATH_FOUR_ROUTE_MANUAL_REGRESSION.md` and manual-regression static tests for the current four-route write-path prototype state.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The runbook validates read-only diagnostics, DataHealth dismiss, History data-flag, Limited History Edit, and Session Start in one local App and Dev API session. It covers experiment isolation, DevTools Network route boundary, no-fake-success, localStorage integrity, failure recovery, cleanup/env reset, and browser build safety.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.67 adds no package dependency, package script, lockfile change, normalized table, storage adapter change, schema change, runtime behavior change, or training algorithm change.
+
+The next recommended task is `Task 4.68 Write-path Four-route Regression Lock V1`.
