@@ -147,3 +147,13 @@ No migration apply is implemented.
 No API-backed runtime is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.6 Offline / PWA Conflict Strategy V1.
+
+## Task 5.6 Offline / PWA Conflict Follow-up
+
+Task 5.6 adds `docs/OFFLINE_PWA_CONFLICT_STRATEGY.md` as a strategy document only.
+
+- It covers API unavailable behavior, offline training, active session persistence, visible failure, and conflict diagnostics.
+- It keeps full offline mutation queue implementation blocked.
+- It keeps localStorage as source of truth.
+- It does not implement API-backed runtime.
+- It recommends Task 5.7 API-backed Read Runtime Plan V1 as docs/static tests only.
