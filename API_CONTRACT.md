@@ -1999,3 +1999,20 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.5 Migration Backup & Rollback Strategy V1`.
+
+## Task 5.5: Migration Backup & Rollback Strategy V1
+
+Task 5.5 adds `docs/MIGRATION_BACKUP_ROLLBACK_STRATEGY.md` and migration backup/rollback boundary tests.
+
+This is strategy-only. It plans localStorage backup, SQLite snapshot backup, dry-run behavior, apply behavior, rollback to localStorage, corrupt snapshot handling, schema mismatch handling, and the backup-first rule. It adds no migration dry-run implementation, migration apply implementation, SQLite snapshot write, localStorage deletion, localStorage replacement, API-backed runtime, source-of-truth migration, App.tsx integration, package changes, production backend, auth, sync, cloud, deployment, monitoring, or browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.6 Offline / PWA Conflict Strategy V1`.

@@ -1275,6 +1275,16 @@ Task 5.4 plans `localStorage`, `api-readonly`, and `api-primary-dev` runtime sou
 
 Next recommended task: Task 5.5 Migration Backup & Rollback Strategy V1.
 
+### Task 5.5: Migration Backup & Rollback Strategy V1
+
+Status: Completed in this branch as migration backup/rollback strategy documentation and static boundary coverage.
+
+Task 5.5 adds `docs/MIGRATION_BACKUP_ROLLBACK_STRATEGY.md`.
+
+Task 5.5 plans localStorage backup, SQLite snapshot backup, dry-run behavior, apply behavior, rollback to localStorage, corrupt snapshot handling, schema mismatch handling, and backup-first rules. It does not implement migration dry-run, migration apply, SQLite writes, localStorage deletion, source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, storage adapters, or mutation routes.
+
+Next recommended task: Task 5.6 Offline / PWA Conflict Strategy V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
