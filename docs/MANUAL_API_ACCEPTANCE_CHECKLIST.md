@@ -657,3 +657,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.4 Runtime Source Switch Feature Flag Plan V1`.
+
+## Task 5.4 Runtime Source Switch Feature Flag Plan
+
+- [ ] Use `docs/RUNTIME_SOURCE_SWITCH_FEATURE_FLAG_PLAN.md` as the runtime source switch feature flag plan.
+- [ ] Confirm planned modes are `localStorage`, `api-readonly`, and `api-primary-dev`.
+- [ ] Confirm `localStorage` remains the default and fallback mode.
+- [ ] Confirm non-localStorage modes require explicit dev/local opt-in.
+- [ ] Confirm Task 5.4 adds no runtime source selector and no API-backed runtime.
+- [ ] Confirm Task 5.4 adds no source-of-truth migration and no localStorage replacement.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm next recommended task is `Task 5.5 Migration Backup & Rollback Strategy V1`.

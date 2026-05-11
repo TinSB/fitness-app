@@ -1982,3 +1982,20 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.4 Runtime Source Switch Feature Flag Plan V1`.
+
+## Task 5.4: Runtime Source Switch Feature Flag Plan V1
+
+Task 5.4 adds `docs/RUNTIME_SOURCE_SWITCH_FEATURE_FLAG_PLAN.md` and runtime source switch boundary tests.
+
+This is feature-flag planning only. It plans `localStorage`, `api-readonly`, and `api-primary-dev` runtime source modes, keeps `localStorage` as default, requires explicit dev/local opt-in for non-localStorage modes, and defines fallback behavior. It adds no runtime source selector, API-backed runtime, source-of-truth migration, localStorage replacement, App.tsx integration, storage adapter, package change, production backend, auth, sync, cloud, deployment, monitoring, or browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.5 Migration Backup & Rollback Strategy V1`.
