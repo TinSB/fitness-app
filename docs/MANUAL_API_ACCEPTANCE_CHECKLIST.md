@@ -72,6 +72,8 @@ Task 4.57 adds the active-session source snapshot and idempotency plan at `docs/
 
 Task 4.58 adds the active-session UX confirmation and rollback plan at `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md`. It is planning-only and docs/static-test coverage only: no active-session route is implemented, no fourth mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`, and future session-start UX must require confirmation, pending duplicate-submit protection, visible failure, no optimistic success, no auto retry, rollback by disabling the mutation experiment flag, and local App fallback.
 
+Task 4.59 adds the session-start mutation prototype plan at `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md`. It is planning-only and docs/static-test coverage only: `POST /sessions/start` remains blocked from browser runtime, no fourth mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`, and future session-start implementation must remain one-route, dev-only, explicit opt-in, source-snapshot/idempotency guarded, no-fake-success guarded, and localStorage-source-of-truth.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -416,3 +418,15 @@ Task 4.58 adds the active-session UX confirmation and rollback plan at `docs/ACT
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 - [ ] Confirm next recommended task is `Task 4.59 Session Start Mutation Prototype Plan V1`.
+
+## Task 4.59 Session Start Mutation Prototype Plan
+
+- [ ] Use `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as the future session-start prototype plan.
+- [ ] Confirm Task 4.59 does not add a new mutation route.
+- [ ] Confirm `POST /sessions/start` remains blocked from browser runtime during Task 4.59.
+- [ ] Confirm the future accepted request payload includes `templateId`, `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, `requestFingerprint`, and `confirmed`.
+- [ ] Confirm confirmation UX, duplicate start prevention, strict no-fake-success, recovery behavior, and manual acceptance plan are documented.
+- [ ] Confirm active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+- [ ] Confirm next recommended task is `Task 4.60 Session Start Mutation Prototype V1` only if gates pass.

@@ -164,3 +164,11 @@ Task 4.58 adds `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as plannin
 It adds no active-session route and no fourth browser mutation route. It locks the UX requirements that sit on top of this source snapshot plan: explicit confirmation, pending state, duplicate start protection, visible safe failure, no optimistic success, no auto retry, rollback by disabling the mutation experiment flag, App usability on Dev API failure, and local App fallback from localStorage.
 
 The next recommended task is Task 4.59 Session Start Mutation Prototype Plan V1, planning-only.
+
+## Task 4.59 Session Start Mutation Prototype Plan V1 Follow-up
+
+Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as planning-only follow-up.
+
+It keeps `POST /sessions/start` blocked from browser runtime while defining the future one-route request shape, source snapshot metadata, idempotency metadata, request fingerprint, confirmation UX, duplicate start prevention, no-fake-success contract, manual recovery behavior, and manual acceptance requirements.
+
+The next recommended task is Task 4.60 Session Start Mutation Prototype V1 only if gates pass.

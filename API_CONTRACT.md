@@ -88,6 +88,8 @@ Task 4.57 adds `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md` as Acti
 
 Task 4.58 adds `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as Active Session UX Confirmation & Rollback Plan V1. It is planning-only and docs/static-test only: no active-session route is implemented, no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, and browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. The plan locks future session-start confirmation, pending, duplicate-submit, visible failure, no optimistic success, no auto-retry, rollback, and local App fallback requirements while keeping localStorage as source of truth and preventing API results from overwriting AppData or localStorage.
 
+Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as Session Start Mutation Prototype Plan V1. It is planning-only and docs/static-test only: `POST /sessions/start` remains blocked from browser runtime, no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, and browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. The plan defines the future route, request payload metadata, source snapshot/idempotency/fingerprint gates, confirmation UX, duplicate start prevention, strict no-fake-success, recovery behavior, and manual acceptance plan for a possible Task 4.60 implementation.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1613,3 +1615,19 @@ The plan requires explicit start confirmation, duplicate start protection, visib
 localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.58 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change.
 
 The next recommended task is `Task 4.59 Session Start Mutation Prototype Plan V1`, docs/static-tests only.
+
+## Task 4.59: Session Start Mutation Prototype Plan V1
+
+Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as a planning-only future prototype plan for `POST /sessions/start`.
+
+No session-start route is implemented. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The plan defines the future one-route session-start scope, required opt-in flags, accepted request payload shape, `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, `requestFingerprint`, target identity, confirmation UX, duplicate start prevention, strict no-fake-success contract, manual recovery behavior, and manual acceptance plan.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.59 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, active patch, active complete, active discard, or training algorithm change.
+
+The next recommended task is `Task 4.60 Session Start Mutation Prototype V1` only if gates pass.
