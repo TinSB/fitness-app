@@ -808,3 +808,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm `POST /sessions/active/discard` remains blocked.
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, and `POST /sessions/active/patches`.
 - [ ] Confirm next recommended task is `Task 5.17 Session Complete Mutation Prototype V1`.
+
+## Task 5.17 Session Complete Mutation Prototype
+
+- [ ] Confirm `src/devApi/devApiSessionCompleteConfig.ts`, `src/devApi/devApiSessionCompleteClient.ts`, and `src/devApi/DevApiSessionCompletePrototype.tsx` exist.
+- [ ] Confirm the prototype is dev-only, localhost-only, default off, and enabled only by `VITE_IRONPATH_DEV_API_COMPARE === "1"` plus `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT === "session-complete"`.
+- [ ] Confirm the browser mutation route added by this task is exactly `POST /sessions/active/complete`.
+- [ ] Confirm `POST /sessions/active/discard` remains blocked.
+- [ ] Confirm no DataHealth repair, backup/import/export, reset/recovery, broad mutation client, API primary runtime, package change, production backend, auth, sync, cloud, or deployment is added.
+- [ ] Confirm source snapshot metadata, idempotency key, request fingerprint, explicit confirmation, duplicate-submit lock, strict success shape, and snapshot metadata are required.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, and `POST /sessions/active/complete`.
+- [ ] Confirm next recommended task is `Task 5.18 Session Complete Acceptance / Hardening V1`.

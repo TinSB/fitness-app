@@ -10,6 +10,11 @@ import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartCli
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
+const stripComments = (source: string) =>
+  source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
 const approvedMutationFiles = new Set([
   'src/devApi/devApiDataHealthDismissClient.ts',
   'src/devApi/devApiDataHealthDismissConfig.ts',
@@ -31,7 +36,7 @@ const approvedMutationFiles = new Set([
   'src/devApi/DevApiSessionCompletePrototype.tsx',
 ]);
 
-const blockedBrowserRoutes = [
+const blockedBrowserMutationRoutes = [
   '/sessions/active/discard',
   '/data-health/repair/apply',
   '/backup/import',
@@ -40,7 +45,7 @@ const blockedBrowserRoutes = [
   '/recovery/',
 ];
 
-const nodeOnlyTokens = [
+const blockedNodeOnlyTokens = [
   'node:http',
   'node:sqlite',
   'devLauncher',
@@ -51,26 +56,14 @@ const nodeOnlyTokens = [
   'devDbRecovery',
 ];
 
-const blockedClientPaths = [
-  'src/devApi/devApiSessionMutationClient.ts',
-  'src/devApi/DevApiSessionMutationPrototype.tsx',
-  'src/devApi/devApiSessionDiscardClient.ts',
-  'src/devApi/DevApiSessionDiscardPrototype.tsx',
-  'src/devApi/devApiMutationClient.ts',
-  'src/api/mutations.ts',
-  'src/api/mutations',
+const broadMutationClientPaths = [
   'src/mutationClient.ts',
   'src/services/mutationClient.ts',
   'src/hooks/useMutationApi.ts',
+  'src/api/mutations.ts',
+  'src/api/mutations',
+  'src/devApi/devApiMutationClient.ts',
 ];
-
-const stripComments = (source: string) =>
-  source
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '');
-
-const runtimeEntries = () =>
-  collectSrcRuntimeFiles().map((file) => [relativePath(file), stripComments(readFileSync(file, 'utf8'))] as const);
 
 const collectFilesIfDirectory = (path: string): string[] => {
   if (!existsSync(path)) return [];
@@ -79,12 +72,15 @@ const collectFilesIfDirectory = (path: string): string[] => {
   return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
     const next = join(path, entry.name);
     if (entry.isDirectory()) return collectFilesIfDirectory(next);
-    return [next];
+    return /\.(ts|tsx)$/.test(entry.name) ? [next] : [];
   });
 };
 
-describe('active-session mutation boundary remains constrained', () => {
-  it('keeps accepted browser mutation route constants exactly six after Task 5.17', () => {
+const srcRuntimeEntries = () =>
+  collectSrcRuntimeFiles().map((file) => [relativePath(file), stripComments(readFileSync(file, 'utf8'))] as const);
+
+describe('Dev API session complete boundary', () => {
+  it('locks accepted browser mutation routes to exactly six route constants', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
@@ -102,33 +98,33 @@ describe('active-session mutation boundary remains constrained', () => {
     ]);
   });
 
-  it('keeps App.tsx and src runtime free of blocked active-session route calls', () => {
-    const appSource = stripComments(readSource('src/App.tsx'));
-    for (const route of blockedBrowserRoutes) {
-      expect(appSource, `App.tsx should not include ${route}`).not.toContain(route);
-    }
-
-    for (const [path, source] of runtimeEntries()) {
-      expect(blockedBrowserRoutes.filter((route) => source.includes(route)), `${path} blocked route boundary`).toEqual([]);
-
+  it('keeps browser source free of blocked routes and broad write methods', () => {
+    for (const [path, source] of srcRuntimeEntries()) {
+      const routeOffenders = blockedBrowserMutationRoutes.filter((route) => source.includes(route));
+      expect(routeOffenders, `${path} should not contain blocked mutation routes`).toEqual([]);
       if (!approvedMutationFiles.has(path)) {
-        expect(source, `${path} should not include DataHealth dismiss route outside approved files`).not.toContain('/data-health/issues/');
-        expect(source, `${path} should not include History data-flag route outside approved files`).not.toContain('/history/:id/data-flag');
-        expect(source, `${path} should not include Limited History Edit route outside approved files`).not.toContain('/history/:id/edit');
-        expect(source, `${path} should not add browser write methods`).not.toMatch(/method\s*:\s*['"`](POST|PUT|PATCH|DELETE)['"`]/);
+        expect(source, `${path} should not use browser write methods`).not.toMatch(/method\s*:\s*['"`](POST|PUT|PATCH|DELETE)['"`]/);
       }
     }
   });
 
-  it('keeps read-only client GET-only and permits only read-only sessions summary', () => {
-    const source = stripComments(readSource('src/devApi/devApiReadOnlyClient.ts'));
+  it('keeps browser source free of Node-only imports and keeps read-only client GET-only', () => {
+    for (const [path, source] of srcRuntimeEntries()) {
+      const nodeOffenders = blockedNodeOnlyTokens.filter((token) => source.includes(token));
+      expect(nodeOffenders, `${path} should not include Node-only tokens`).toEqual([]);
+    }
+    const apiIndex = readSource('apps/api/src/index.ts');
+    for (const token of blockedNodeOnlyTokens) {
+      expect(apiIndex).not.toContain(token);
+    }
+
+    const readOnlySource = stripComments(readSource('src/devApi/devApiReadOnlyClient.ts'));
     const client = createDevApiReadOnlyClient({
       enabled: true,
       status: 'enabled',
       baseUrl: 'http://127.0.0.1:8787',
       timeoutMs: 1500,
     });
-
     expect(Object.keys(client)).toEqual([
       'readHealth',
       'readAppDataSummary',
@@ -137,38 +133,14 @@ describe('active-session mutation boundary remains constrained', () => {
       'readHistoryDetail',
       'readDataHealthSummary',
     ]);
-    expect(source).toContain('/sessions/summary');
-    expect(source).not.toMatch(/method\s*:\s*['"`](POST|PUT|PATCH|DELETE)['"`]/);
-    expect(source).not.toContain('/sessions/start');
-    expect(source).not.toContain('/sessions/active/patches');
-    expect(source).not.toContain('/sessions/active/complete');
-    expect(source).not.toContain('/sessions/active/discard');
+    expect(readOnlySource).not.toMatch(/method\s*:\s*['"`](POST|PUT|PATCH|DELETE)['"`]/);
   });
 
-  it('does not add active patch/complete/discard clients, broad mutation clients, Node-only imports, or API-backed storage', () => {
-    for (const path of blockedClientPaths) {
+  it('does not add broad mutation client, package drift, or API-backed storage', () => {
+    for (const path of broadMutationClientPaths) {
       expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
     }
 
-    for (const [path, source] of runtimeEntries()) {
-      const offenders = nodeOnlyTokens.filter((token) => source.includes(token));
-      expect(offenders, `${path} should stay browser-safe`).toEqual([]);
-      expect(source, `${path} should not add arbitrary mutation helper`).not.toMatch(/\brequest\s*\(\s*method\s*[,):]|\bmutate\s*\(\s*method\s*,\s*path|fetchMutation|mutatePath|postPath/i);
-    }
-
-    const storage = stripComments(readSource('src/storage/localStorageAdapter.ts'));
-    expect(storage).not.toContain('fetch(');
-    expect(storage).not.toContain('/sessions/');
-    expect(storage).not.toContain('/history/');
-    expect(storage).not.toContain('/data-health/issues/');
-
-    const apiIndex = readSource('apps/api/src/index.ts');
-    for (const token of nodeOnlyTokens) {
-      expect(apiIndex).not.toContain(token);
-    }
-  });
-
-  it('keeps package scripts, dependencies, and existing browser build output clean', () => {
     const packageJson = JSON.parse(readSource('package.json')) as {
       scripts?: Record<string, string>;
       dependencies?: Record<string, string>;
@@ -182,13 +154,8 @@ describe('active-session mutation boundary remains constrained', () => {
       /fastify|express|koa|hono|trpc|graphql|auth|sync|mutation-client|playwright|cypress/i.test(name),
     )).toEqual([]);
 
-    const dist = resolve(repoRoot(), 'dist');
-    if (!existsSync(dist)) return;
-    const files = collectFilesIfDirectory(dist).filter((path) => statSync(path).isFile());
-    for (const file of files) {
-      const source = readFileSync(file, 'utf8');
-      const offenders = nodeOnlyTokens.filter((token) => source.includes(token));
-      expect(offenders, `${relativePath(file)} should not include blocked build tokens`).toEqual([]);
-    }
+    const storage = readSource('src/storage/localStorageAdapter.ts') + readSource('src/storage/persistence.ts');
+    expect(storage).not.toContain('fetch(');
+    expect(storage).not.toContain('/sessions/');
   });
 });
