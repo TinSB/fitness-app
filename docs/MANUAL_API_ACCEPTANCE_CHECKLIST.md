@@ -786,3 +786,13 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, and `POST /sessions/active/patches`.
 - [ ] Confirm next recommended task is `Task 5.15 Session Patch Prototype Acceptance / Hardening V1`.
+
+## Task 5.15 Session Patch Prototype Acceptance / Hardening
+
+- [ ] Use `docs/SESSION_PATCH_PROTOTYPE_ACCEPTANCE_HARDENING.md` as the acceptance and hardening record.
+- [ ] Confirm duplicate patch submit, out-of-order patch risk, stale source snapshot, invalid active session or patch target, timeout, unavailable Dev API, malformed response, missing snapshot metadata, server non-success states, and no-fake-success are covered.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm the accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, and `POST /sessions/active/patches`.
+- [ ] Confirm `POST /sessions/active/complete` and `POST /sessions/active/discard` remain blocked.
+- [ ] Confirm no DataHealth repair, backup/import/export, reset/recovery, broad mutation client, API primary runtime, package change, production backend, auth, sync, cloud, or deployment is added.
+- [ ] Confirm next recommended task is `Task 5.16 Session Complete Mutation Prototype Plan V1`.

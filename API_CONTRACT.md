@@ -2260,3 +2260,23 @@ Accepted browser mutation routes are now exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.15 Session Patch Prototype Acceptance / Hardening V1`.
+
+## Task 5.15: Session Patch Prototype Acceptance / Hardening V1
+
+Task 5.15 adds acceptance and hardening coverage for the dev-only `POST /sessions/active/patches` prototype.
+
+The acceptance and hardening layer covers duplicate patch submit prevention, stale source snapshot and target mismatch, invalid active session or patch target, timeout, unavailable Dev API, malformed response, missing snapshot metadata, server non-success states, no-fake-success behavior, localStorage integrity, AppData integrity, and route boundary.
+
+Task 5.15 does not add a browser route, does not implement `POST /sessions/active/complete`, does not implement `POST /sessions/active/discard`, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, does not add a broad mutation client, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.16 Session Complete Mutation Prototype Plan V1`.
