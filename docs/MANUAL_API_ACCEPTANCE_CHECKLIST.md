@@ -96,6 +96,8 @@ Task 4.69 adds the Phase 4 source-of-truth migration readiness audit at `docs/PH
 
 Task 4.70 adds the API-backed runtime strategy plan at `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md`. It is planning-only: localStorage remains source of truth, API results never overwrite AppData/localStorage, no API-backed runtime behavior is added, and production backend/auth/sync/deployment remain future assumptions.
 
+Task 4.71 adds the Phase 4 final data safety audit at `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md`. It is audit-only: accepted/blocked routes, source-of-truth lock, localStorage integrity, no-fake-success, backup/import safety, readMirror parity, and runtime boundary are recorded without runtime changes.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -566,3 +568,12 @@ Task 4.70 adds the API-backed runtime strategy plan at `docs/API_BACKED_RUNTIME_
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 4.71 Phase 4 Final Data Safety Audit V1`.
+
+## Task 4.71 Phase 4 Final Data Safety Audit
+
+- [ ] Use `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md` as the final data safety audit.
+- [ ] Confirm Task 4.71 does not add runtime behavior.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, fifth mutation, and source-of-truth migration remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 4.72 Phase 4 Manual Final Acceptance V1`.

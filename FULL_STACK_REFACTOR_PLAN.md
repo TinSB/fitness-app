@@ -1185,6 +1185,16 @@ Task 4.70 covers localStorage fallback models, migration approach, feature flags
 
 Next recommended task: Task 4.71 Phase 4 Final Data Safety Audit V1.
 
+### Task 4.71: Phase 4 Final Data Safety Audit V1
+
+Status: Completed in this branch as audit-only documentation and static boundary coverage.
+
+Task 4.71 adds `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md`.
+
+Task 4.71 records accepted routes, blocked routes, source-of-truth lock, localStorage integrity, no-fake-success, backup/import safety, readMirror parity, and runtime boundary. It does not implement runtime behavior, source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, deployment, package changes, or mutation routes.
+
+Next recommended task: Task 4.72 Phase 4 Manual Final Acceptance V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

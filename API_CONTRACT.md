@@ -112,6 +112,8 @@ Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1 adds `docs/PHASE4
 
 Task 4.70 API-backed Runtime Strategy Plan V1 adds `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md` as planning-only documentation and static boundary coverage. It does not implement API-backed runtime behavior, switch source of truth, replace localStorage, add dual-write, add offline mutation queue, add production backend/auth/sync/deployment, or add another mutation route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 
+Task 4.71 Phase 4 Final Data Safety Audit V1 adds `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md` as audit-only documentation and static boundary coverage. It records accepted routes, blocked routes, source-of-truth lock, localStorage integrity, no-fake-success lock, backup/import safety, readMirror parity, and runtime boundary. It does not add runtime behavior, switch source of truth, replace localStorage, add API-backed runtime behavior, add production backend/auth/sync/deployment, or add another mutation route.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1844,3 +1846,18 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 - `POST /sessions/start`
 
 The next recommended task is `Task 4.71 Phase 4 Final Data Safety Audit V1`.
+
+## Task 4.71: Phase 4 Final Data Safety Audit V1
+
+Task 4.71 adds `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md` and final data safety boundary tests.
+
+The audit covers accepted routes, blocked routes, source-of-truth lock, localStorage integrity, no-fake-success, backup/import safety, readMirror parity, and runtime boundary.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The next recommended task is `Task 4.72 Phase 4 Manual Final Acceptance V1`.
