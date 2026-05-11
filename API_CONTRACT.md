@@ -92,6 +92,8 @@ Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as Session Start 
 
 Task 4.60 adds a dev-only, explicit opt-in Session Start mutation prototype. It adds exactly one browser mutation route: `POST /sessions/start`. Browser mutation routes are now exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. The prototype is guarded by DEV, read-only compare, `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT="session-start"`, localhost-only Dev API base URL, source snapshot metadata, idempotency metadata, and explicit confirmation. localStorage remains source of truth; API results never overwrite AppData or localStorage; no active patch, complete, discard, repair, backup/import/export, reset/recovery, broad mutation client, source-of-truth migration, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, or training algorithm change is added.
 
+Task 4.61 adds `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md` as Session Start Prototype Acceptance V1. It is acceptance documentation and test coverage for the existing Task 4.60 prototype, not new runtime capability. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. localStorage remains source of truth; API results never overwrite AppData or localStorage; no active patch, complete, discard, repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, source-of-truth migration, or training algorithm change is added.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1658,3 +1660,20 @@ Success requires HTTP success, `result.ok === true`, `result.changed === true`, 
 No active patch, active complete, active discard, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change is added.
 
 The next recommended task is `Task 4.61 Session Start Prototype Acceptance V1`.
+
+## Task 4.61: Session Start Prototype Acceptance V1
+
+Task 4.61 adds `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md` and acceptance tests for the existing Task 4.60 Session Start prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+Acceptance locks flag matrix isolation, no-stable-target behavior, confirmation/cancel, pending duplicate-submit behavior, strict no-fake-success, localStorage integrity, route boundary, blocked active patch/complete/discard routes, and manual runbook requirements.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.61 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change.
+
+The next recommended task is `Task 4.62 Session Start Manual App Acceptance V1`.
