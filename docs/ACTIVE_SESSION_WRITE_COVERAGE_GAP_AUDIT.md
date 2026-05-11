@@ -157,3 +157,28 @@ It covers patch ordering, stale step/set risk, duplicate patch risk, partial upd
 Task 5.13 does not implement `POST /sessions/active/patches`, does not add session complete/discard, and does not change source-of-truth behavior.
 
 Next task: `Task 5.14 Session Patch Mutation Prototype V1`.
+
+## Task 5.14 Follow-up: Session Patch Prototype
+
+Task 5.14 implements only `POST /sessions/active/patches` as a dev-only, explicit opt-in browser mutation prototype.
+
+Accepted browser mutation routes are now exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+
+Still blocked from browser runtime:
+
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+- `POST /data-health/repair/apply`
+- backup/import/export over HTTP
+- reset/recovery over HTTP
+- source-of-truth migration outside approved Phase 5 runtime tasks
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next task: `Task 5.15 Session Patch Prototype Acceptance / Hardening V1`.

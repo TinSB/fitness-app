@@ -166,3 +166,15 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Li
 localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 Next task should be Task 5.14 Session Patch Mutation Prototype V1 only if gates pass.
+
+## Task 5.14 Follow-up: Session Patch Prototype
+
+Task 5.14 implements the planned dev-only single-route browser prototype for `POST /sessions/active/patches`.
+
+The implementation keeps the plan constraints: explicit `session-patch` mutation experiment flag, localhost-only Dev API base URL, source snapshot metadata, source snapshot version, mutation id, idempotency key, request fingerprint, confirmation, duplicate-submit protection, strict no-fake-success behavior, and required snapshot metadata.
+
+Task 5.14 does not implement session complete, session discard, DataHealth repair, backup/import/export/reset/recovery HTTP routes, source-of-truth migration, localStorage replacement, API primary runtime, broad mutation client, package change, production backend, auth, sync, cloud, or deployment.
+
+Accepted browser mutation routes are now exactly DataHealth dismiss, History data-flag, Limited History Edit, Session Start, and Session Patch.
+
+Next task should be Task 5.15 Session Patch Prototype Acceptance / Hardening V1.

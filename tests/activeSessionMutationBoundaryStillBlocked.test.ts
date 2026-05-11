@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
+import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
@@ -21,10 +22,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiSessionStartClient.ts',
   'src/devApi/devApiSessionStartConfig.ts',
   'src/devApi/DevApiSessionStartPrototype.tsx',
+  'src/devApi/devApiSessionPatchClient.ts',
+  'src/devApi/devApiSessionPatchConfig.ts',
+  'src/devApi/DevApiSessionPatchPrototype.tsx',
 ]);
 
 const blockedBrowserRoutes = [
-  '/sessions/active/patches',
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/data-health/repair/apply',
@@ -48,8 +51,6 @@ const nodeOnlyTokens = [
 const blockedClientPaths = [
   'src/devApi/devApiSessionMutationClient.ts',
   'src/devApi/DevApiSessionMutationPrototype.tsx',
-  'src/devApi/devApiSessionPatchClient.ts',
-  'src/devApi/DevApiSessionPatchPrototype.tsx',
   'src/devApi/devApiSessionCompleteClient.ts',
   'src/devApi/DevApiSessionCompletePrototype.tsx',
   'src/devApi/devApiSessionDiscardClient.ts',
@@ -82,17 +83,19 @@ const collectFilesIfDirectory = (path: string): string[] => {
 };
 
 describe('active-session mutation boundary remains constrained', () => {
-  it('keeps accepted browser mutation route constants exactly four after Task 4.60', () => {
+  it('keeps accepted browser mutation route constants exactly five after Task 5.14', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
       `POST ${DEV_API_HISTORY_SET_EDIT_ROUTE}`,
       `POST ${DEV_API_SESSION_START_ROUTE}`,
+      `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
       'POST /history/:id/edit',
       'POST /sessions/start',
+      'POST /sessions/active/patches',
     ]);
   });
 

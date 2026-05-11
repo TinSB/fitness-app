@@ -2240,3 +2240,23 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.14 Session Patch Mutation Prototype V1`.
+
+## Task 5.14: Session Patch Mutation Prototype V1
+
+Task 5.14 implements a dev-only, explicit opt-in browser mutation prototype for `POST /sessions/active/patches`.
+
+The prototype is route-specific and guarded by `import.meta.env.DEV`, `VITE_IRONPATH_DEV_API_COMPARE === "1"`, `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT === "session-patch"`, and the existing localhost-only Dev API base URL validation. It uses source snapshot metadata, source snapshot version, mutation id, idempotency key, request fingerprint, explicit confirmation, duplicate-submit prevention, strict no-fake-success handling, and snapshot metadata validation.
+
+Task 5.14 does not implement `POST /sessions/active/complete`, does not implement `POST /sessions/active/discard`, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, does not add a broad mutation client, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes are now exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.15 Session Patch Prototype Acceptance / Hardening V1`.

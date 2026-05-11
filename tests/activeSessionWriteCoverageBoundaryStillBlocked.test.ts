@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
+import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
@@ -25,10 +26,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiSessionStartClient.ts',
   'src/devApi/devApiSessionStartConfig.ts',
   'src/devApi/DevApiSessionStartPrototype.tsx',
+  'src/devApi/devApiSessionPatchClient.ts',
+  'src/devApi/devApiSessionPatchConfig.ts',
+  'src/devApi/DevApiSessionPatchPrototype.tsx',
 ]);
 
 const blockedBrowserRoutes = [
-  '/sessions/active/patches',
   '/sessions/active/complete',
   '/sessions/active/discard',
   '/data-health/repair/apply',
@@ -50,21 +53,23 @@ const blockedNodeOnlyTokens = [
 ];
 
 describe('active session write coverage browser boundary remains blocked', () => {
-  it('keeps accepted browser mutation routes exactly four before session patch planning', () => {
+  it('keeps accepted browser mutation routes exactly five after session patch prototype', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
       `POST ${DEV_API_HISTORY_SET_EDIT_ROUTE}`,
       `POST ${DEV_API_SESSION_START_ROUTE}`,
+      `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
       'POST /history/:id/edit',
       'POST /sessions/start',
+      'POST /sessions/active/patches',
     ]);
   });
 
-  it('keeps browser runtime free of active patch, complete, and discard routes', () => {
+  it('keeps browser runtime free of complete, discard, and other blocked routes', () => {
     for (const file of collectSrcRuntimeFiles()) {
       const path = relativePath(file);
       const source = stripComments(readFileSync(file, 'utf8'));
@@ -77,7 +82,15 @@ describe('active session write coverage browser boundary remains blocked', () =>
     }
   });
 
-  it('does not add session patch, complete, or discard devApi browser prototype files', () => {
+  it('adds only session patch devApi browser prototype files and keeps complete/discard absent', () => {
+    for (const path of [
+      'src/devApi/devApiSessionPatchConfig.ts',
+      'src/devApi/devApiSessionPatchClient.ts',
+      'src/devApi/DevApiSessionPatchPrototype.tsx',
+    ]) {
+      expect(existsSync(resolve(repoRoot(), path)), `${path} should exist after Task 5.14`).toBe(true);
+    }
+
     for (const path of [
       'src/devApi/devApiSessionPatchConfig.ts',
       'src/devApi/devApiSessionPatchClient.ts',
@@ -88,7 +101,7 @@ describe('active session write coverage browser boundary remains blocked', () =>
       'src/devApi/devApiSessionDiscardConfig.ts',
       'src/devApi/devApiSessionDiscardClient.ts',
       'src/devApi/DevApiSessionDiscardPrototype.tsx',
-    ]) {
+    ].filter((path) => !path.includes('SessionPatch'))) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
   });
