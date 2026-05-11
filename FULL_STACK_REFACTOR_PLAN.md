@@ -1020,6 +1020,18 @@ Task 4.57 defines `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `
 
 The next recommended task is `Task 4.58 Active Session UX Confirmation & Rollback Plan V1`, docs/static-tests only.
 
+### Task 4.58: Active Session UX Confirmation & Rollback Plan V1
+
+Status: Completed in this branch as planning-only docs/static tests.
+
+Task 4.58 adds `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md`.
+
+Task 4.58 defines future session-start confirmation, pending, duplicate-submit protection, visible failure, no optimistic success, no auto-retry, rollback by disabling the mutation experiment flag, App usability on Dev API failure, and local App fallback requirements.
+
+No active-session route is implemented. Runtime write capability remains limited to DataHealth dismiss, History data-flag, and Limited History Edit. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.59 Session Start Mutation Prototype Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

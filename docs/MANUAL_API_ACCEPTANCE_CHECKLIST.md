@@ -70,6 +70,8 @@ Task 4.56 adds the active-session mutation readiness and recovery plan at `docs/
 
 Task 4.57 adds the active-session source snapshot and idempotency plan at `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md`. It is planning-only and docs/static-test coverage only: no active-session route is implemented, no fourth mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`, and source snapshot/idempotency metadata is documented before any future session-start prototype.
 
+Task 4.58 adds the active-session UX confirmation and rollback plan at `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md`. It is planning-only and docs/static-test coverage only: no active-session route is implemented, no fourth mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`, and future session-start UX must require confirmation, pending duplicate-submit protection, visible failure, no optimistic success, no auto retry, rollback by disabling the mutation experiment flag, and local App fallback.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -402,3 +404,15 @@ Task 4.57 adds the active-session source snapshot and idempotency plan at `docs/
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 - [ ] Confirm next recommended task is `Task 4.58 Active Session UX Confirmation & Rollback Plan V1`.
+
+## Task 4.58 Active Session UX Confirmation & Rollback Plan
+
+- [ ] Use `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as the active-session UX confirmation and rollback plan.
+- [ ] Confirm Task 4.58 does not add a new mutation route.
+- [ ] Confirm no active-session route is implemented.
+- [ ] Confirm future session-start confirmation and cancel-prevents-POST behavior are documented.
+- [ ] Confirm pending state, duplicate start protection, no optimistic success, no auto retry, and visible safe failure requirements are documented.
+- [ ] Confirm rollback by disabling `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT` and using local App state is documented.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+- [ ] Confirm next recommended task is `Task 4.59 Session Start Mutation Prototype Plan V1`.
