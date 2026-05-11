@@ -1295,6 +1295,16 @@ Task 5.6 plans API unavailable behavior, offline training behavior, active sessi
 
 Next recommended task: Task 5.7 API-backed Read Runtime Plan V1.
 
+### Task 5.7: API-backed Read Runtime Plan V1
+
+Status: Completed in this branch as API-backed read runtime planning and static boundary coverage.
+
+Task 5.7 adds `docs/API_BACKED_READ_RUNTIME_PLAN.md`.
+
+Task 5.7 plans boot data from API snapshot, localStorage fallback, API unavailable UI, snapshot metadata display, readMirror parity, GET-only boundaries, and source-switch boundaries. It does not implement API-backed read runtime, API clients, POST writes, runtime source selection, source-of-truth migration, localStorage replacement, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, storage adapters, or mutation routes.
+
+Next recommended task: Task 5.8 API-backed Read Client Prototype V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
