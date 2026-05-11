@@ -1005,6 +1005,21 @@ Task 4.56 defines required future gates for active-session recovery, source snap
 
 No automatic next task is approved. Any future active-session prototype plan requires explicit user approval before starting.
 
+### Task 4.57: Active Session Source Snapshot & Idempotency Plan V1
+
+Completed as a planning-only source snapshot and idempotency plan for future active-session mutation work.
+
+- Adds `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md`.
+- Adds static tests for plan content, blocked browser route boundaries, and docs parity.
+- Does not add any new mutation route.
+- Does not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+
+Task 4.57 defines `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, `requestFingerprint`, activeSession and plan-template target identity, duplicate start prevention, conflict detection, no auto-merge, and no-fake-success gates.
+
+The next recommended task is `Task 4.58 Active Session UX Confirmation & Rollback Plan V1`, docs/static-tests only.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

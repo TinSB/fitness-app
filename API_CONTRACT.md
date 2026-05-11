@@ -84,6 +84,8 @@ Task 4.55 adds `docs/FOURTH_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Fourth Mut
 
 Task 4.56 adds `docs/ACTIVE_SESSION_MUTATION_READINESS_RECOVERY_PLAN.md` as Active Session Mutation Readiness & Recovery Plan V1. It is planning-only and docs/static-test only: no active-session mutation is implemented, no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, no frontend mutation client is added, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. Session start, patch, complete, and discard routes remain blocked from browser runtime, and no automatic next task is approved without explicit user approval.
 
+Task 4.57 adds `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md` as Active Session Source Snapshot & Idempotency Plan V1. It is planning-only and docs/static-test only: no active-session route is implemented, no fourth mutation route is added, and browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. The plan defines required `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, and `requestFingerprint` metadata for any future session-start prototype while keeping localStorage as source of truth and preventing API results from overwriting AppData or localStorage.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1577,3 +1579,19 @@ The plan does not implement `POST /sessions/start`, `POST /sessions/active/patch
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change is added.
 
 No automatic next task is approved by Task 4.56. Any future active-session prototype plan requires explicit user approval before starting.
+
+## Task 4.57: Active Session Source Snapshot & Idempotency Plan V1
+
+Task 4.57 adds `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md` as a planning-only source snapshot and idempotency plan for future active-session work.
+
+No active-session route is implemented. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The plan defines `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, `requestFingerprint`, activeSession target identity, planTemplate/session-start target identity, duplicate start prevention, duplicate patch/complete/discard risks, conflict detection, no auto-merge, no localStorage overwrite, no AppData overwrite, and no-fake-success gates.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.57 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change.
+
+The next recommended task is `Task 4.58 Active Session UX Confirmation & Rollback Plan V1`, docs/static-tests only.
