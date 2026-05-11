@@ -959,6 +959,20 @@ Completed as manual regression documentation and static checks for validating al
 
 The next recommended task is `Task 4.54 Write-path Three-route Regression Lock V1`.
 
+### Task 4.54: Write-path Three-route Regression Lock V1
+
+Completed as the regression lock for the current three-route write-path prototype state.
+
+- Adds `docs/WRITE_PATH_THREE_ROUTE_REGRESSION_LOCK.md`.
+- Adds regression-lock tests for exact three-route allowlist, blocked fourth-route/source-of-truth migration, source/build boundary, coverage inventory, and docs parity.
+- Does not add any new mutation route.
+- Does not expand runtime write capability beyond the accepted three-route set.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, fourth mutation route, or training algorithm change is added.
+
+The next recommended task is `Task 4.55 Fourth Mutation Candidate Readiness Audit V1`, audit-only. Do not auto-start it.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

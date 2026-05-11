@@ -1523,3 +1523,19 @@ The runbook covers dedicated test data, Dev API runner startup, read-only compar
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
 
 Task 4.54 Write-path Three-route Regression Lock V1 is the next recommended task.
+
+## Task 4.54: Write-path Three-route Regression Lock V1
+
+Task 4.54 adds `docs/WRITE_PATH_THREE_ROUTE_REGRESSION_LOCK.md` as the regression lock for the current three-route write-path prototype state.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The regression lock freezes DataHealth dismiss, History data-flag, and Limited History Edit as the only accepted dev-only browser mutation prototypes. All remain explicit opt-in, route-specific, no-fake-success locked, snapshot-metadata guarded, duplicate-submit guarded, confirmation-gated where they mutate data, localStorage-source-of-truth, and browser-build isolated.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No session mutation, DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, or training algorithm change is added.
+
+Task 4.55 Fourth Mutation Candidate Readiness Audit V1 is the next recommended task. It must be audit/planning only and must not implement a fourth mutation.

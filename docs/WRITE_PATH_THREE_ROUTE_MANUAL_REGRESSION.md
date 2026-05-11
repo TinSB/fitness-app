@@ -384,3 +384,13 @@ Acceptance:
 - [ ] localStorage remains source of truth.
 - [ ] API result never overwrites AppData or localStorage.
 - [ ] This follow-up does not imply production readiness or source-of-truth migration.
+
+## Task 4.54 Regression Lock Result
+
+Task 4.54 adds `docs/WRITE_PATH_THREE_ROUTE_REGRESSION_LOCK.md` as the regression lock for the current three-route write-path prototype state.
+
+- It is regression-lock documentation and static-test coverage only.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- No fourth mutation route is approved.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- The next recommended task is `Task 4.55 Fourth Mutation Candidate Readiness Audit V1`, audit-only.
