@@ -152,3 +152,13 @@ localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 No POST write, runtime source selector, API-backed persistence adapter, production backend, auth, sync, cloud, deployment, package change, normalized table, or browser mutation route is added.
 Next task should be Task 5.10 API-backed Read Manual App Acceptance V1.
+
+## Task 5.10 Follow-up: Manual App Acceptance
+
+Task 5.10 adds `docs/API_BACKED_READ_MANUAL_APP_ACCEPTANCE.md` as the human browser runbook for the Task 5.8 GET-only prototype and Task 5.9 acceptance state.
+
+It requires a dedicated test browser profile, dedicated dev DB, Dev API runner, App dev server, DevTools Network GET-only check, API available scenario, API unavailable fallback scenario, localStorage integrity check, forbidden controls check, browser build safety check, cleanup steps, and pass/fail template.
+
+Task 5.10 adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no deployment, and no browser mutation route.
+
+Next task: `Task 5.11 API-backed Read Runtime Regression Lock V1`.
