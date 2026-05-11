@@ -1225,6 +1225,16 @@ Task 4.74 records Phase 4 final state, source-of-truth migration prerequisites, 
 
 Next recommended task: Task 4.75 Phase 4 Completion & Archive V1.
 
+### Task 4.75: Phase 4 Completion & Archive V1
+
+Status: Completed in this branch as Phase 4 completion archive documentation and static boundary coverage.
+
+Task 4.75 adds `docs/PHASE4_COMPLETION_ARCHIVE.md`.
+
+Task 4.75 marks Phase 4 complete, records the final accepted routes and blocked routes, records final validation commands, and stops the automatic Phase 4 chain before Phase 5. It does not implement Phase 5, source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, deployment, package changes, or mutation routes.
+
+Recommended Phase 5 starting task: Task 5.1 Source-of-truth Migration Architecture Gate V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
