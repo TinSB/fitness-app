@@ -751,3 +751,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm browser build isolation remains locked.
 - [ ] Confirm coverage inventory and manual acceptance inventory are documented.
 - [ ] Confirm next recommended task is `Task 5.12 Active Session Write Coverage Gap Audit V1`.
+
+## Task 5.12 Active Session Write Coverage Gap Audit
+
+- [ ] Use `docs/ACTIVE_SESSION_WRITE_COVERAGE_GAP_AUDIT.md` as the active-session write gap audit.
+- [ ] Confirm `POST /sessions/active/patches` remains blocked from browser runtime.
+- [ ] Confirm `POST /sessions/active/complete` remains blocked from browser runtime.
+- [ ] Confirm `POST /sessions/active/discard` remains blocked from browser runtime.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm no browser route, broad mutation client, runtime source selector, API-backed persistence adapter, App.tsx mount, source-of-truth migration, localStorage write, or AppData overwrite is added.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.13 Session Patch Mutation Prototype Plan V1`.
