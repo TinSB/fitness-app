@@ -86,6 +86,8 @@ Task 4.56 adds `docs/ACTIVE_SESSION_MUTATION_READINESS_RECOVERY_PLAN.md` as Acti
 
 Task 4.57 adds `docs/ACTIVE_SESSION_SOURCE_SNAPSHOT_IDEMPOTENCY_PLAN.md` as Active Session Source Snapshot & Idempotency Plan V1. It is planning-only and docs/static-test only: no active-session route is implemented, no fourth mutation route is added, and browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. The plan defines required `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `idempotencyKey`, and `requestFingerprint` metadata for any future session-start prototype while keeping localStorage as source of truth and preventing API results from overwriting AppData or localStorage.
 
+Task 4.58 adds `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as Active Session UX Confirmation & Rollback Plan V1. It is planning-only and docs/static-test only: no active-session route is implemented, no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, and browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. The plan locks future session-start confirmation, pending, duplicate-submit, visible failure, no optimistic success, no auto-retry, rollback, and local App fallback requirements while keeping localStorage as source of truth and preventing API results from overwriting AppData or localStorage.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1595,3 +1597,19 @@ The plan defines `sourceSnapshotHash`, `sourceSnapshotVersion`, `mutationId`, `i
 localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.57 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change.
 
 The next recommended task is `Task 4.58 Active Session UX Confirmation & Rollback Plan V1`, docs/static-tests only.
+
+## Task 4.58: Active Session UX Confirmation & Rollback Plan V1
+
+Task 4.58 adds `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as a planning-only confirmation, pending, failure, rollback, and recovery UX plan for future active-session work.
+
+No active-session route is implemented. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The plan requires explicit start confirmation, duplicate start protection, visible pending state, visible safe failure, no optimistic success, no automatic retry, App usability on Dev API failure, rollback by disabling the mutation experiment flag, and local App fallback from localStorage.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Task 4.58 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change.
+
+The next recommended task is `Task 4.59 Session Start Mutation Prototype Plan V1`, docs/static-tests only.

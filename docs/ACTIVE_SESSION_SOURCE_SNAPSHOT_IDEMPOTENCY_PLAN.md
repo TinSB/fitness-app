@@ -156,3 +156,11 @@ No active-session route is implemented. The next recommended task is `Task 4.58 
 
 Proceed to Task 4.58 only within the approved Phase 4 chain.
 Do not implement `POST /sessions/start` until Task 4.60 and only if Tasks 4.57-4.59 gates remain green.
+
+## Task 4.58 Active Session UX Confirmation & Rollback Plan V1 Follow-up
+
+Task 4.58 adds `docs/ACTIVE_SESSION_UX_CONFIRMATION_ROLLBACK_PLAN.md` as planning-only follow-up.
+
+It adds no active-session route and no fourth browser mutation route. It locks the UX requirements that sit on top of this source snapshot plan: explicit confirmation, pending state, duplicate start protection, visible safe failure, no optimistic success, no auto retry, rollback by disabling the mutation experiment flag, App usability on Dev API failure, and local App fallback from localStorage.
+
+The next recommended task is Task 4.59 Session Start Mutation Prototype Plan V1, planning-only.
