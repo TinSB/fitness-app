@@ -76,6 +76,8 @@ Task 4.59 adds the session-start mutation prototype plan at `docs/SESSION_START_
 
 Task 4.60 adds the dev-only session-start mutation prototype. Browser mutation routes are now exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. The session-start prototype is DEV-only, compare-gated, `session-start` experiment-gated, localhost-only, source-snapshot/idempotency-gated, confirmation-gated, no-fake-success guarded, and localStorage-source-of-truth. It adds no active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, production backend, auth, sync, deployment, package, lockfile, script, normalized table, broad mutation client, or source-of-truth migration behavior.
 
+Task 4.61 adds the session-start prototype acceptance runbook at `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md`. It is acceptance documentation and test coverage only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, localStorage remains source of truth, API results never overwrite AppData/localStorage, and active patch/complete/discard remain blocked.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -442,3 +444,13 @@ Task 4.60 adds the dev-only session-start mutation prototype. Browser mutation r
 - [ ] Confirm strict success requires HTTP success, result success, changed true, status success, and snapshot metadata.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 - [ ] Confirm next recommended task is `Task 4.61 Session Start Prototype Acceptance V1`.
+
+## Task 4.61 Session Start Prototype Acceptance
+
+- [ ] Use `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md` as the Session Start acceptance runbook.
+- [ ] Confirm Task 4.61 does not add a new mutation route.
+- [ ] Confirm flag matrix, no stable target, confirmation/cancel, pending duplicate-submit, strict success, failure/no-fake-success, localStorage integrity, and route boundary checks are covered.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+- [ ] Confirm next recommended task is `Task 4.62 Session Start Manual App Acceptance V1`.

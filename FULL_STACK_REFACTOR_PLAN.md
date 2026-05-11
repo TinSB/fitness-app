@@ -1069,6 +1069,18 @@ localStorage remains source of truth. API results never overwrite AppData/localS
 
 Next recommended task: Task 4.61 Session Start Prototype Acceptance V1.
 
+### Task 4.61: Session Start Prototype Acceptance V1
+
+Status: Completed in this branch as acceptance documentation and test coverage for the existing Task 4.60 prototype.
+
+Task 4.61 adds `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md`.
+
+Task 4.61 adds acceptance tests for flag matrix isolation, no stable target, confirmation/cancel, pending duplicate-submit, strict no-fake-success, localStorage integrity, route boundary, blocked active patch/complete/discard routes, and manual runbook coverage.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.62 Session Start Manual App Acceptance V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

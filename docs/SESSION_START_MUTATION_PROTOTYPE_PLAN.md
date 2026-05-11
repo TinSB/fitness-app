@@ -266,3 +266,11 @@ The implementation remains default-off, DEV-only, compare-gated, `session-start`
 localStorage remains source of truth. API results never overwrite AppData/localStorage. No active patch, complete, discard, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, source-of-truth migration, localStorage replacement, offline queue, or training algorithm change is added.
 
 The next recommended task is Task 4.61 Session Start Prototype Acceptance V1.
+
+## Task 4.61 Session Start Prototype Acceptance V1 Follow-up
+
+Task 4.61 adds `docs/SESSION_START_PROTOTYPE_ACCEPTANCE.md` as acceptance coverage for the existing dev-only Session Start prototype.
+
+It adds no new mutation route. Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. It locks the flag matrix, no-stable-target handling, confirmation/cancel, pending duplicate-submit, strict no-fake-success, localStorage integrity, route boundary, blocked active patch/complete/discard routes, and manual runbook requirements.
+
+The next recommended task is Task 4.62 Session Start Manual App Acceptance V1.
