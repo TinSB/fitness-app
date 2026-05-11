@@ -1931,3 +1931,20 @@ localStorage remains source of truth at Phase 4 exit. API results never overwrit
 API-backed runtime is Phase 5 work. production backend, auth, sync, and deployment are Phase 5+ work. Task 4.75 adds no package dependency, package script, lockfile change, normalized table, storage adapter change, schema change, runtime behavior change, source-of-truth migration, or mutation route.
 
 The recommended Phase 5 starting task is `Task 5.1 Source-of-truth Migration Architecture Gate V1`.
+
+## Task 5.1: Source-of-truth Migration Architecture Gate V1
+
+Task 5.1 adds `docs/SOURCE_OF_TRUTH_MIGRATION_ARCHITECTURE_GATE.md` and source-of-truth migration gate boundary tests.
+
+This is an architecture gate only. No source-of-truth migration, API-backed runtime, App.tsx integration, localStorage replacement, package dependency, package script, lockfile change, normalized table, production backend, auth, sync, cloud, deployment, monitoring, or browser mutation route is added.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.2 AppData Ownership Matrix V1`.

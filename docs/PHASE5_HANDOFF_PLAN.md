@@ -105,3 +105,14 @@ Task 4.75 adds `docs/PHASE4_COMPLETION_ARCHIVE.md` as the final Phase 4 archive.
 - It keeps API-backed runtime as Phase 5 work.
 - It keeps production backend, auth, sync, and deployment as Phase 5+ work.
 - It recommends Task 5.1 Source-of-truth Migration Architecture Gate V1 as the Phase 5 starting task only.
+
+## Task 5.1 Source-of-truth Migration Architecture Gate Follow-up
+
+Task 5.1 adds `docs/SOURCE_OF_TRUTH_MIGRATION_ARCHITECTURE_GATE.md` as the first Phase 5 gate.
+
+- It does not implement source-of-truth migration.
+- It does not modify `App.tsx`.
+- It keeps localStorage as source of truth.
+- It keeps API-backed runtime as future Phase 5 work.
+- It keeps production backend, auth, sync, cloud, deployment, and monitoring as Phase 6+ work.
+- It recommends Task 5.2 AppData Ownership Matrix V1 as docs/static tests only.
