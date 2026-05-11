@@ -1129,6 +1129,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.66 Write-path Four-route Checkpoint V1.
 
+### Task 4.66: Write-path Four-route Checkpoint V1
+
+Status: Completed in this branch as checkpoint documentation and static coverage for the current four-route write-path prototype state.
+
+Task 4.66 adds `docs/WRITE_PATH_FOUR_ROUTE_CHECKPOINT.md`.
+
+Task 4.66 adds checkpoint tests for exact four-route allowlist, active patch/complete/discard still blocked, no broad mutation client, no API-backed storage, source-of-truth checkpoint, data semantics checkpoint, coverage inventory, manual inventory, risk register, and docs parity.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.67 Write-path Four-route Manual Regression V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -102,6 +102,8 @@ Task 4.64 Session Start Observability & Recovery Notes V1 adds `docs/SESSION_STA
 
 Task 4.65 Session Start Regression Lock V1 adds `docs/SESSION_START_REGRESSION_LOCK.md` as a regression-lock and decision record for the existing Task 4.60 prototype. It adds no runtime capability and no new route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, localStorage replacement, package change, lockfile change, package script, normalized table, and training algorithm changes remain blocked.
 
+Task 4.66 Write-path Four-route Checkpoint V1 adds `docs/WRITE_PATH_FOUR_ROUTE_CHECKPOINT.md` as a checkpoint/audit document and static-test layer for the current four dev-only mutation prototypes. It adds no runtime capability and no new route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, localStorage replacement, package change, lockfile change, package script, normalized table, and training algorithm changes remain blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1753,3 +1755,20 @@ The Session Start route remains one-route-only and dev-only. It requires the ses
 localStorage remains current source of truth. API results never overwrite AppData or localStorage. Task 4.65 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, active patch, active complete, active discard, or training algorithm change.
 
 The next recommended task is `Task 4.66 Write-path Four-route Checkpoint V1`.
+
+## Task 4.66: Write-path Four-route Checkpoint V1
+
+Task 4.66 adds `docs/WRITE_PATH_FOUR_ROUTE_CHECKPOINT.md` and checkpoint tests for the current four-route write-path prototype state.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The checkpoint records DataHealth dismiss, History data-flag, Limited History Edit, and Session Start as accepted dev-only prototypes. It keeps active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, source-of-truth migration, and production backend/auth/sync/deployment blocked.
+
+localStorage remains current source of truth. API results never overwrite AppData or localStorage. Task 4.66 adds no package dependency, package script, lockfile change, normalized table, storage adapter change, schema change, runtime behavior change, or training algorithm change.
+
+The next recommended task is `Task 4.67 Write-path Four-route Manual Regression V1`.
