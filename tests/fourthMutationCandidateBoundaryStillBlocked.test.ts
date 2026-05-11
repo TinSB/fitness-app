@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
+import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
@@ -17,10 +18,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiHistorySetEditClient.ts',
   'src/devApi/devApiHistorySetEditConfig.ts',
   'src/devApi/DevApiHistorySetEditExperiment.tsx',
+  'src/devApi/devApiSessionStartClient.ts',
+  'src/devApi/devApiSessionStartConfig.ts',
+  'src/devApi/DevApiSessionStartPrototype.tsx',
 ]);
 
 const blockedBrowserRoutes = [
-  '/sessions/start',
   '/sessions/active/patches',
   '/sessions/active/complete',
   '/sessions/active/discard',
@@ -47,8 +50,6 @@ const fourthMutationClientPaths = [
   'src/devApi/DevApiFourthMutationPrototype.tsx',
   'src/devApi/devApiSessionMutationClient.ts',
   'src/devApi/DevApiSessionMutationPrototype.tsx',
-  'src/devApi/devApiSessionStartClient.ts',
-  'src/devApi/DevApiSessionStartPrototype.tsx',
   'src/devApi/devApiSessionPatchClient.ts',
   'src/devApi/DevApiSessionPatchPrototype.tsx',
   'src/devApi/devApiSessionCompleteClient.ts',
@@ -87,7 +88,6 @@ const collectFilesIfDirectory = (path: string): string[] => {
 describe('fourth mutation candidate boundary still blocked', () => {
   it('keeps App.tsx and src runtime from calling session, repair, backup, reset, or recovery mutation routes', () => {
     const appSource = stripComments(readSource('src/App.tsx'));
-    expect(appSource).not.toContain('/sessions/start');
     expect(appSource).not.toContain('/sessions/active/patches');
     expect(appSource).not.toContain('/sessions/active/complete');
     expect(appSource).not.toContain('/sessions/active/discard');
@@ -106,26 +106,28 @@ describe('fourth mutation candidate boundary still blocked', () => {
     }
   });
 
-  it('keeps the browser mutation allowlist exactly to the three accepted routes', () => {
+  it('keeps the browser mutation allowlist exactly to the four accepted routes after Task 4.60', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
       `POST ${DEV_API_HISTORY_SET_EDIT_ROUTE}`,
+      `POST ${DEV_API_SESSION_START_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
       'POST /history/:id/edit',
+      'POST /sessions/start',
     ]);
   });
 
-  it('does not add frontend mutation clients or fourth mutation feature flag runtime wiring', () => {
+  it('does not add broad mutation clients or fifth mutation feature flag runtime wiring', () => {
     for (const path of fourthMutationClientPaths) {
       expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
     }
 
     const allSrc = runtimeEntries().map(([, source]) => source).join('\n');
     expect(allSrc).not.toMatch(/fourth-mutation|datahealth-repair/i);
-    expect(allSrc).not.toMatch(/VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT\s*={0,2}\s*['"`](fourth-mutation|session-mutation|session-start|session-patch|session-complete|session-discard|datahealth-repair)['"`]/i);
+    expect(allSrc).not.toMatch(/VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT\s*={0,2}\s*['"`](fourth-mutation|session-mutation|session-patch|session-complete|session-discard|datahealth-repair)['"`]/i);
   });
 
   it('keeps the read-only client GET-only and separate from mutation routes', () => {

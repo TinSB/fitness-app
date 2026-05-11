@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
+import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
@@ -17,10 +18,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiHistorySetEditClient.ts',
   'src/devApi/devApiHistorySetEditConfig.ts',
   'src/devApi/DevApiHistorySetEditExperiment.tsx',
+  'src/devApi/devApiSessionStartClient.ts',
+  'src/devApi/devApiSessionStartConfig.ts',
+  'src/devApi/DevApiSessionStartPrototype.tsx',
 ]);
 
 const blockedBrowserRoutes = [
-  '/sessions/start',
   '/sessions/active/patches',
   '/sessions/active/complete',
   '/sessions/active/discard',
@@ -45,8 +48,6 @@ const nodeOnlyTokens = [
 const blockedClientPaths = [
   'src/devApi/devApiSessionMutationClient.ts',
   'src/devApi/DevApiSessionMutationPrototype.tsx',
-  'src/devApi/devApiSessionStartClient.ts',
-  'src/devApi/DevApiSessionStartPrototype.tsx',
   'src/devApi/devApiSessionPatchClient.ts',
   'src/devApi/DevApiSessionPatchPrototype.tsx',
   'src/devApi/devApiSessionCompleteClient.ts',
@@ -80,20 +81,22 @@ const collectFilesIfDirectory = (path: string): string[] => {
   });
 };
 
-describe('active-session mutation boundary remains blocked', () => {
-  it('keeps accepted browser mutation route constants exactly three', () => {
+describe('active-session mutation boundary remains constrained', () => {
+  it('keeps accepted browser mutation route constants exactly four after Task 4.60', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
       `POST ${DEV_API_HISTORY_SET_EDIT_ROUTE}`,
+      `POST ${DEV_API_SESSION_START_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
       'POST /history/:id/edit',
+      'POST /sessions/start',
     ]);
   });
 
-  it('keeps App.tsx and src runtime free of session mutation route calls', () => {
+  it('keeps App.tsx and src runtime free of blocked active-session route calls', () => {
     const appSource = stripComments(readSource('src/App.tsx'));
     for (const route of blockedBrowserRoutes) {
       expect(appSource, `App.tsx should not include ${route}`).not.toContain(route);
@@ -136,7 +139,7 @@ describe('active-session mutation boundary remains blocked', () => {
     expect(source).not.toContain('/sessions/active/discard');
   });
 
-  it('does not add session mutation clients, broad mutation clients, Node-only imports, or API-backed storage', () => {
+  it('does not add active patch/complete/discard clients, broad mutation clients, Node-only imports, or API-backed storage', () => {
     for (const path of blockedClientPaths) {
       expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
     }

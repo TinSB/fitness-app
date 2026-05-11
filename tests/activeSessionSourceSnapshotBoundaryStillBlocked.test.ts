@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
+import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
 const stripComments = (source: string) =>
@@ -23,22 +24,23 @@ const collectFilesIfDirectory = (path: string): string[] => {
   });
 };
 
-describe('active-session source snapshot boundary still blocked', () => {
-  it('keeps the browser mutation allowlist at three routes before Task 4.60', () => {
+describe('active-session source snapshot boundary remains constrained', () => {
+  it('keeps the browser mutation allowlist at four routes after Task 4.60', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
       `POST ${DEV_API_HISTORY_SET_EDIT_ROUTE}`,
+      `POST ${DEV_API_SESSION_START_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
       'POST /history/:id/edit',
+      'POST /sessions/start',
     ]);
   });
 
-  it('keeps session start, patch, complete, and discard out of browser runtime source', () => {
+  it('keeps active patch, complete, and discard out of browser runtime source', () => {
     const blocked = [
-      '/sessions/start',
       '/sessions/active/patches',
       '/sessions/active/complete',
       '/sessions/active/discard',
@@ -54,11 +56,16 @@ describe('active-session source snapshot boundary still blocked', () => {
     }
   });
 
-  it('does not add session-start clients, broad mutation clients, or API-backed storage', () => {
+  it('allows only the session-start prototype and blocks broad mutation clients or API-backed storage', () => {
     for (const path of [
       'src/devApi/devApiSessionStartClient.ts',
       'src/devApi/devApiSessionStartConfig.ts',
       'src/devApi/DevApiSessionStartPrototype.tsx',
+    ]) {
+      expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should exist`).not.toEqual([]);
+    }
+
+    for (const path of [
       'src/devApi/devApiSessionMutationClient.ts',
       'src/devApi/devApiMutationClient.ts',
       'src/mutationClient.ts',

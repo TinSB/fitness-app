@@ -172,3 +172,9 @@ Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as planning-only 
 It keeps `POST /sessions/start` blocked from browser runtime while defining the future one-route request shape, source snapshot metadata, idempotency metadata, request fingerprint, confirmation UX, duplicate start prevention, no-fake-success contract, manual recovery behavior, and manual acceptance requirements.
 
 The next recommended task is Task 4.60 Session Start Mutation Prototype V1 only if gates pass.
+
+## Task 4.60 Session Start Mutation Prototype V1 Result
+
+Task 4.60 uses this source snapshot and idempotency plan to guard the dev-only `POST /sessions/start` browser prototype.
+
+The browser route allowlist is now exactly DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and active patch, complete, discard, repair, backup/import/export, reset/recovery, source-of-truth migration, and broad mutation clients remain blocked.
