@@ -353,3 +353,12 @@ Task 4.45 adds the limited history edit mutation readiness gate at `docs/LIMITED
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - [ ] Confirm no fourth mutation route, session mutation, DataHealth repair, backup/import/export/reset/recovery route, or broad mutation client is exposed.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+
+## Task 4.54 Write-path Three-route Regression Lock
+
+- [ ] Use `docs/WRITE_PATH_THREE_ROUTE_REGRESSION_LOCK.md` as the final three-route regression lock.
+- [ ] Confirm Task 4.54 does not add a new mutation route.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- [ ] Confirm no fourth mutation route, session mutation, DataHealth repair, backup/import/export/reset/recovery route, or broad mutation client is exposed.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+- [ ] Confirm next recommended task is `Task 4.55 Fourth Mutation Candidate Readiness Audit V1`, audit-only.
