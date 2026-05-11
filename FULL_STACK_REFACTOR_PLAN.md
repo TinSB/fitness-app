@@ -1165,6 +1165,16 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1.
 
+### Task 4.69: Phase 4 Source-of-truth Migration Readiness Audit V1
+
+Status: Completed in this branch as audit-only documentation and static boundary coverage.
+
+Task 4.69 adds `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md`.
+
+Task 4.69 finds Phase 4 is not ready to switch source of truth. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains Phase 5 work. No runtime behavior, storage adapter, package, schema, production backend, auth, sync, deployment, or mutation route is added.
+
+Next recommended task: Task 4.70 API-backed Runtime Strategy Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
