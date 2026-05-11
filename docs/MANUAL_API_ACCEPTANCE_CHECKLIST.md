@@ -98,6 +98,8 @@ Task 4.70 adds the API-backed runtime strategy plan at `docs/API_BACKED_RUNTIME_
 
 Task 4.71 adds the Phase 4 final data safety audit at `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md`. It is audit-only: accepted/blocked routes, source-of-truth lock, localStorage integrity, no-fake-success, backup/import safety, readMirror parity, and runtime boundary are recorded without runtime changes.
 
+Task 4.72 adds the Phase 4 manual final acceptance runbook at `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md`. It is manual acceptance documentation only: validate the Dev API runner, read-only diagnostics, all four accepted mutation prototypes, route boundaries, localStorage integrity, failure recovery, cleanup/env reset, and browser build safety without runtime changes.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -577,3 +579,13 @@ Task 4.71 adds the Phase 4 final data safety audit at `docs/PHASE4_FINAL_DATA_SA
 - [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, fifth mutation, and source-of-truth migration remain blocked.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 4.72 Phase 4 Manual Final Acceptance V1`.
+
+## Task 4.72 Phase 4 Manual Final Acceptance
+
+- [ ] Use `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md` as the Phase 4 final manual acceptance runbook.
+- [ ] Confirm Task 4.72 does not add runtime behavior.
+- [ ] Confirm Dev API runner, read-only diagnostics, DataHealth dismiss, History data-flag, Limited History Edit, and Session Start are covered.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, fifth mutation, and source-of-truth migration remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 4.73 Phase 4 Exit Regression Lock V1`.

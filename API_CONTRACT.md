@@ -114,6 +114,8 @@ Task 4.70 API-backed Runtime Strategy Plan V1 adds `docs/API_BACKED_RUNTIME_STRA
 
 Task 4.71 Phase 4 Final Data Safety Audit V1 adds `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md` as audit-only documentation and static boundary coverage. It records accepted routes, blocked routes, source-of-truth lock, localStorage integrity, no-fake-success lock, backup/import safety, readMirror parity, and runtime boundary. It does not add runtime behavior, switch source of truth, replace localStorage, add API-backed runtime behavior, add production backend/auth/sync/deployment, or add another mutation route.
 
+Task 4.72 Phase 4 Manual Final Acceptance V1 adds `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md` as manual final acceptance documentation and static boundary coverage. It covers the Dev API runner, read-only diagnostics, all four accepted mutation prototypes, route boundaries, localStorage integrity, failure recovery, cleanup/env reset, browser build safety, and pass/fail recording. It does not add runtime behavior, switch source of truth, replace localStorage, add API-backed runtime behavior, add production backend/auth/sync/deployment, or add another mutation route.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1861,3 +1863,18 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 - `POST /sessions/start`
 
 The next recommended task is `Task 4.72 Phase 4 Manual Final Acceptance V1`.
+
+## Task 4.72: Phase 4 Manual Final Acceptance V1
+
+Task 4.72 adds `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md` and final manual-acceptance boundary tests.
+
+The runbook covers the Dev API runner, read-only diagnostics, DataHealth dismiss, History data-flag, Limited History Edit, Session Start, route boundaries, localStorage integrity, no-fake-success, failure recovery, cleanup/env reset, browser build safety, and pass/fail recording.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The next recommended task is `Task 4.73 Phase 4 Exit Regression Lock V1`.
