@@ -100,6 +100,8 @@ Task 4.71 adds the Phase 4 final data safety audit at `docs/PHASE4_FINAL_DATA_SA
 
 Task 4.72 adds the Phase 4 manual final acceptance runbook at `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md`. It is manual acceptance documentation only: validate the Dev API runner, read-only diagnostics, all four accepted mutation prototypes, route boundaries, localStorage integrity, failure recovery, cleanup/env reset, and browser build safety without runtime changes.
 
+Task 4.73 adds the Phase 4 exit regression lock at `docs/PHASE4_EXIT_REGRESSION_LOCK.md`. It is regression-lock documentation only: final accepted routes, blocked routes, localStorage source-of-truth, browser build isolation, no production/auth/sync/deployment, no source-of-truth migration, and Phase 5 handoff-only next step are locked without runtime changes.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -589,3 +591,13 @@ Task 4.72 adds the Phase 4 manual final acceptance runbook at `docs/PHASE4_MANUA
 - [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, fifth mutation, and source-of-truth migration remain blocked.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 4.73 Phase 4 Exit Regression Lock V1`.
+
+## Task 4.73 Phase 4 Exit Regression Lock
+
+- [ ] Use `docs/PHASE4_EXIT_REGRESSION_LOCK.md` as the Phase 4 exit regression lock.
+- [ ] Confirm Task 4.73 does not add runtime behavior.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, fifth mutation, and source-of-truth migration remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm Phase 5 handoff is the only next step.
+- [ ] Confirm next recommended task is `Task 4.74 Phase 5 Handoff Plan V1`.

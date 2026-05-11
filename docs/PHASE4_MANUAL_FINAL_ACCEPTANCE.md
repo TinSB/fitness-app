@@ -208,3 +208,13 @@ localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 No source-of-truth migration is implemented.
 Next task should be Task 4.73 Phase 4 Exit Regression Lock V1.
+
+## Task 4.73 Exit Regression Lock Follow-up
+
+Task 4.73 adds `docs/PHASE4_EXIT_REGRESSION_LOCK.md` as the Phase 4 exit regression lock.
+
+- It does not add runtime behavior.
+- It keeps the final accepted and blocked route lists explicit.
+- It keeps localStorage as source of truth.
+- It keeps browser build isolation locked.
+- It recommends Task 4.74 Phase 5 Handoff Plan V1, planning-only.
