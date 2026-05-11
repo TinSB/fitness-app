@@ -1105,6 +1105,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.64 Session Start Observability & Recovery Notes V1.
 
+### Task 4.64: Session Start Observability & Recovery Notes V1
+
+Status: Completed in this branch as safe observability and manual recovery notes for the existing Task 4.60 prototype.
+
+Task 4.64 adds `docs/SESSION_START_OBSERVABILITY_RECOVERY_NOTES.md`.
+
+Task 4.64 adds tests for safe diagnostic summaries, safe failure-to-recovery-note mapping, no raw stack/raw response/AppData/localStorage/SQLite leaks, no browser recovery controls, read-only GET-only separation, and route boundary.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.65 Session Start Regression Lock V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
