@@ -668,3 +668,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm Task 5.4 adds no source-of-truth migration and no localStorage replacement.
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm next recommended task is `Task 5.5 Migration Backup & Rollback Strategy V1`.
+
+## Task 5.5 Migration Backup & Rollback Strategy
+
+- [ ] Use `docs/MIGRATION_BACKUP_ROLLBACK_STRATEGY.md` as the migration backup and rollback strategy.
+- [ ] Confirm backup-first, localStorage backup, SQLite snapshot backup, dry-run, apply, rollback to localStorage, corrupt snapshot, and schema mismatch handling are documented.
+- [ ] Confirm Task 5.5 adds no migration dry-run implementation.
+- [ ] Confirm Task 5.5 adds no migration apply implementation.
+- [ ] Confirm Task 5.5 does not delete localStorage or auto-switch runtime source.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.6 Offline / PWA Conflict Strategy V1`.

@@ -131,3 +131,13 @@ No runtime source selector is implemented.
 No API-backed runtime is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.5 Migration Backup & Rollback Strategy V1.
+
+## Task 5.5 Migration Backup & Rollback Follow-up
+
+Task 5.5 adds `docs/MIGRATION_BACKUP_ROLLBACK_STRATEGY.md` as a strategy document only.
+
+- It requires backup-first migration planning.
+- It covers localStorage backup, SQLite snapshot backup, dry-run, apply, rollback to localStorage, corrupt snapshot handling, and schema mismatch handling.
+- It does not implement dry-run or apply.
+- It keeps localStorage as source of truth.
+- It recommends Task 5.6 Offline / PWA Conflict Strategy V1 as docs/static tests only.
