@@ -712,3 +712,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm production backend, auth, sync, cloud, deployment, and monitoring remain out of scope.
 - [ ] Confirm next recommended task is `Task 5.9 API-backed Read Runtime Acceptance V1`.
+
+## Task 5.9 API-backed Read Runtime Acceptance
+
+- [ ] Use `docs/API_BACKED_READ_RUNTIME_ACCEPTANCE.md` as the API-backed read acceptance record.
+- [ ] Confirm API available, API unavailable, malformed response, timeout, abort, missing snapshot metadata, and snapshot mismatch diagnostics are covered.
+- [ ] Confirm readMirror parity and localStorage integrity are covered.
+- [ ] Confirm allowed GET routes remain exactly `GET /health`, `GET /app-data/summary`, `GET /sessions/summary`, `GET /history`, `GET /history/:id`, and `GET /data-health/summary`.
+- [ ] Confirm no POST write is added by Task 5.9.
+- [ ] Confirm no runtime source selector, API-backed persistence adapter, App.tsx mount, source-of-truth migration, localStorage write, or AppData overwrite is added.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.10 API-backed Read Manual App Acceptance V1`.

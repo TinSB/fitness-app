@@ -163,3 +163,13 @@ Allowed GET routes remain:
 Task 5.8 adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no deployment, and no browser mutation route. localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 Next task: `Task 5.9 API-backed Read Runtime Acceptance V1`.
+
+## Task 5.9 Follow-up: API-backed Read Runtime Acceptance
+
+Task 5.9 adds `docs/API_BACKED_READ_RUNTIME_ACCEPTANCE.md` and acceptance coverage for the Task 5.8 GET-only client prototype.
+
+Acceptance covers API available, API unavailable, malformed response, timeout, abort, missing snapshot metadata, snapshot mismatch diagnostics, readMirror parity, localStorage integrity, GET-only boundaries, and browser build safety.
+
+Task 5.9 adds no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no POST write, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no deployment, and no browser mutation route. localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next task: `Task 5.10 API-backed Read Manual App Acceptance V1`.
