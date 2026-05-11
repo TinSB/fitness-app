@@ -88,6 +88,8 @@ Task 4.65 locks the existing Session Start prototype at `docs/SESSION_START_REGR
 
 Task 4.66 checkpoints the current four-route write-path state at `docs/WRITE_PATH_FOUR_ROUTE_CHECKPOINT.md`. It is checkpoint/audit documentation and static-test coverage only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, active patch/complete/discard remain blocked, localStorage remains source of truth, and API results never overwrite AppData/localStorage.
 
+Task 4.67 adds the four-route manual regression runbook at `docs/WRITE_PATH_FOUR_ROUTE_MANUAL_REGRESSION.md`. It is manual regression documentation and static-test coverage only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, active patch/complete/discard remain blocked, localStorage remains source of truth, and API results never overwrite AppData/localStorage.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -517,3 +519,14 @@ Task 4.66 checkpoints the current four-route write-path state at `docs/WRITE_PAT
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm no fifth mutation is approved.
 - [ ] Confirm next recommended task is `Task 4.67 Write-path Four-route Manual Regression V1`.
+
+## Task 4.67 Write-path Four-route Manual Regression
+
+- [ ] Use `docs/WRITE_PATH_FOUR_ROUTE_MANUAL_REGRESSION.md` as the four-route manual regression runbook.
+- [ ] Confirm Task 4.67 does not add a new mutation route.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm DataHealth dismiss, History data-flag, Limited History Edit, and Session Start are each verified under their own experiment flag.
+- [ ] Confirm active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm no fifth mutation is approved.
+- [ ] Confirm next recommended task is `Task 4.68 Write-path Four-route Regression Lock V1`.
