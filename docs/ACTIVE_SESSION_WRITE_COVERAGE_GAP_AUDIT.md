@@ -147,3 +147,13 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Li
 localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 Next task should be Task 5.13 Session Patch Mutation Prototype Plan V1, planning-only.
+
+## Task 5.13 Follow-up: Session Patch Prototype Plan
+
+Task 5.13 adds `docs/SESSION_PATCH_MUTATION_PROTOTYPE_PLAN.md` as a planning-only route-specific plan for future `POST /sessions/active/patches`.
+
+It covers patch ordering, stale step/set risk, duplicate patch risk, partial update risk, current set corruption risk, source snapshot metadata, idempotency key, request fingerprint, no-fake-success requirements, and manual acceptance planning.
+
+Task 5.13 does not implement `POST /sessions/active/patches`, does not add session complete/discard, and does not change source-of-truth behavior.
+
+Next task: `Task 5.14 Session Patch Mutation Prototype V1`.
