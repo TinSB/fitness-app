@@ -152,3 +152,13 @@ No broad mutation client is added.
 No API-backed runtime is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.4 Runtime Source Switch Feature Flag Plan V1.
+
+## Task 5.4 Runtime Source Switch Feature Flag Follow-up
+
+Task 5.4 adds `docs/RUNTIME_SOURCE_SWITCH_FEATURE_FLAG_PLAN.md` as a feature-flag plan only.
+
+- It plans `localStorage`, `api-readonly`, and `api-primary-dev` runtime source modes.
+- It keeps `localStorage` as the default.
+- It requires explicit dev/local opt-in for non-localStorage modes.
+- It does not implement a runtime source selector.
+- It recommends Task 5.5 Migration Backup & Rollback Strategy V1 as docs/static tests only.

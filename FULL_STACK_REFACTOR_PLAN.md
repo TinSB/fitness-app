@@ -1265,6 +1265,16 @@ Task 5.3 plans typed route clients, GET-only read client boundaries, route-speci
 
 Next recommended task: Task 5.4 Runtime Source Switch Feature Flag Plan V1.
 
+### Task 5.4: Runtime Source Switch Feature Flag Plan V1
+
+Status: Completed in this branch as runtime-source flag planning and static boundary coverage.
+
+Task 5.4 adds `docs/RUNTIME_SOURCE_SWITCH_FEATURE_FLAG_PLAN.md`.
+
+Task 5.4 plans `localStorage`, `api-readonly`, and `api-primary-dev` runtime source modes, keeps `localStorage` as default, requires explicit dev/local opt-in for non-localStorage modes, and defines fallback behavior. It does not implement a runtime source selector, API-backed runtime, source-of-truth migration, localStorage replacement, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, storage adapters, or mutation routes.
+
+Next recommended task: Task 5.5 Migration Backup & Rollback Strategy V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
