@@ -2050,3 +2050,41 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.8 API-backed Read Client Prototype V1`.
+
+## Task 5.8: API-backed Read Client Prototype V1
+
+Task 5.8 adds a dev/local GET-only API-backed read client prototype.
+
+Added browser-facing prototype files:
+
+- `src/devApi/apiBackedReadConfig.ts`
+- `src/devApi/apiBackedReadClient.ts`
+- `src/devApi/ApiBackedReadDiagnostics.tsx`
+
+The prototype is explicit opt-in only:
+
+- development mode only.
+- `VITE_IRONPATH_RUNTIME_SOURCE=api-readonly`.
+- localhost-only `VITE_IRONPATH_DEV_API_BASE_URL`.
+
+Accepted API-backed read routes are:
+
+- `GET /health`
+- `GET /app-data/summary`
+- `GET /sessions/summary`
+- `GET /history`
+- `GET /history/:id`
+- `GET /data-health/summary`
+
+This task adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx integration, no source-of-truth migration, no localStorage write, no AppData overwrite, no package change, no production backend, no auth, no sync, no cloud, no deployment, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.9 API-backed Read Runtime Acceptance V1`.

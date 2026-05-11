@@ -21,7 +21,7 @@ describe('runtime source switch boundary remains blocked', () => {
     }
   });
 
-  it('keeps browser source free of runtime source switch and Node-only runtime tokens', () => {
+  it('keeps browser source free of API-primary source switch and Node-only runtime tokens', () => {
     const forbidden = [
       'node:http',
       'node:sqlite',
@@ -31,9 +31,7 @@ describe('runtime source switch boundary remains blocked', () => {
       'sqliteRepository',
       'devApiRunner',
       'devDbRecovery',
-      'VITE_IRONPATH_RUNTIME_SOURCE',
       'api-primary-dev',
-      'api-readonly',
       'makeApiSourceOfTruth',
       'replaceLocalStorage',
       'offlineMutationQueue',

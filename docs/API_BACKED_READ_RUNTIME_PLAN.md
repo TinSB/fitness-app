@@ -140,3 +140,26 @@ No POST write is added.
 No runtime source switch is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.8 API-backed Read Client Prototype V1.
+
+## Task 5.8 Follow-up: API-backed Read Client Prototype
+
+Task 5.8 implements the dev/local GET-only API-backed read client prototype files:
+
+- `src/devApi/apiBackedReadConfig.ts`
+- `src/devApi/apiBackedReadClient.ts`
+- `src/devApi/ApiBackedReadDiagnostics.tsx`
+
+The prototype is enabled only in development with `VITE_IRONPATH_RUNTIME_SOURCE=api-readonly` and a localhost Dev API base URL. It is a diagnostic read surface only.
+
+Allowed GET routes remain:
+
+- `GET /health`
+- `GET /app-data/summary`
+- `GET /sessions/summary`
+- `GET /history`
+- `GET /history/:id`
+- `GET /data-health/summary`
+
+Task 5.8 adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no deployment, and no browser mutation route. localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next task: `Task 5.9 API-backed Read Runtime Acceptance V1`.
