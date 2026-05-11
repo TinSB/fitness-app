@@ -2158,3 +2158,41 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.11 API-backed Read Runtime Regression Lock V1`.
+
+## Task 5.11: API-backed Read Runtime Regression Lock V1
+
+Task 5.11 adds `docs/API_BACKED_READ_RUNTIME_REGRESSION_LOCK.md` as the regression lock for the dev/local GET-only API-backed read prototype.
+
+The lock covers:
+
+- exact GET-only route list.
+- no POST writes.
+- no runtime source selector.
+- no API-backed persistence adapter.
+- localStorage/AppData integrity.
+- API unavailable, timeout, abort, malformed response, and server error behavior.
+- coverage inventory.
+- manual acceptance inventory.
+- browser Node-only boundary.
+
+Accepted API-backed read routes remain:
+
+- `GET /health`
+- `GET /app-data/summary`
+- `GET /sessions/summary`
+- `GET /history`
+- `GET /history/:id`
+- `GET /data-health/summary`
+
+This task adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx integration, no source-of-truth migration, no localStorage write, no AppData overwrite, no package change, no production backend, no auth, no sync, no cloud, no deployment, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.12 Active Session Write Coverage Gap Audit V1`.

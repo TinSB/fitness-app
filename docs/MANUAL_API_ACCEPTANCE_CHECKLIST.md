@@ -739,3 +739,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.11 API-backed Read Runtime Regression Lock V1`.
+
+## Task 5.11 API-backed Read Runtime Regression Lock
+
+- [ ] Use `docs/API_BACKED_READ_RUNTIME_REGRESSION_LOCK.md` as the API-backed read regression lock.
+- [ ] Confirm API-backed read routes remain GET-only.
+- [ ] Confirm allowed GET routes are exactly `GET /health`, `GET /app-data/summary`, `GET /sessions/summary`, `GET /history`, `GET /history/:id`, and `GET /data-health/summary`.
+- [ ] Confirm no POST write is added by Task 5.11.
+- [ ] Confirm no runtime source selector, API-backed persistence adapter, App.tsx mount, source-of-truth migration, localStorage write, or AppData overwrite is added.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm browser build isolation remains locked.
+- [ ] Confirm coverage inventory and manual acceptance inventory are documented.
+- [ ] Confirm next recommended task is `Task 5.12 Active Session Write Coverage Gap Audit V1`.

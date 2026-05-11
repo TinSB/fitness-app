@@ -1388,6 +1388,36 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 
 Next recommended task: Task 5.11 API-backed Read Runtime Regression Lock V1.
 
+### Task 5.11: API-backed Read Runtime Regression Lock V1
+
+Status: Completed in this branch as the regression lock for the dev/local GET-only API-backed read prototype.
+
+Task 5.11 adds `docs/API_BACKED_READ_RUNTIME_REGRESSION_LOCK.md`.
+
+The lock covers the exact GET-only route list, source switch boundary, localStorage/AppData integrity, visible failure behavior, browser Node-only boundary, coverage inventory, manual acceptance inventory, and future work gate.
+
+Accepted API-backed read routes remain:
+
+- `GET /health`
+- `GET /app-data/summary`
+- `GET /sessions/summary`
+- `GET /history`
+- `GET /history/:id`
+- `GET /data-health/summary`
+
+Task 5.11 adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no source-of-truth migration, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no cloud, no deployment, no package change, no normalized table, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.12 Active Session Write Coverage Gap Audit V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
