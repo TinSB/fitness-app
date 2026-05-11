@@ -74,6 +74,8 @@ Task 4.58 adds the active-session UX confirmation and rollback plan at `docs/ACT
 
 Task 4.59 adds the session-start mutation prototype plan at `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md`. It is planning-only and docs/static-test coverage only: `POST /sessions/start` remains blocked from browser runtime, no fourth mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`, and future session-start implementation must remain one-route, dev-only, explicit opt-in, source-snapshot/idempotency guarded, no-fake-success guarded, and localStorage-source-of-truth.
 
+Task 4.60 adds the dev-only session-start mutation prototype. Browser mutation routes are now exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. The session-start prototype is DEV-only, compare-gated, `session-start` experiment-gated, localhost-only, source-snapshot/idempotency-gated, confirmation-gated, no-fake-success guarded, and localStorage-source-of-truth. It adds no active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, production backend, auth, sync, deployment, package, lockfile, script, normalized table, broad mutation client, or source-of-truth migration behavior.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -430,3 +432,13 @@ Task 4.59 adds the session-start mutation prototype plan at `docs/SESSION_START_
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 - [ ] Confirm next recommended task is `Task 4.60 Session Start Mutation Prototype V1` only if gates pass.
+
+## Task 4.60 Session Start Mutation Prototype
+
+- [ ] Confirm `src/devApi/devApiSessionStartConfig.ts`, `src/devApi/devApiSessionStartClient.ts`, and `src/devApi/DevApiSessionStartPrototype.tsx` exist.
+- [ ] Confirm the prototype is DEV-only, read-only-compare-gated, `session-start` experiment-gated, localhost-only, source-snapshot/idempotency-gated, and confirmation-gated.
+- [ ] Confirm browser mutation routes are now exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
+- [ ] Confirm strict success requires HTTP success, result success, changed true, status success, and snapshot metadata.
+- [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
+- [ ] Confirm next recommended task is `Task 4.61 Session Start Prototype Acceptance V1`.

@@ -9,6 +9,7 @@ import { buildWeeklyPrescription } from './engines/supportPlanEngine';
 import { DevApiDataHealthDismissPrototype } from './devApi/DevApiDataHealthDismissPrototype';
 import { DevApiHistoryDataFlagPrototype } from './devApi/DevApiHistoryDataFlagPrototype';
 import { DevApiHistorySetEditExperiment } from './devApi/DevApiHistorySetEditExperiment';
+import { DevApiSessionStartPrototype } from './devApi/DevApiSessionStartPrototype';
 import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnosticsController';
 import { resolveDevApiReadOnlyConfig } from './devApi/devApiReadOnlyConfig';
 import {
@@ -1926,6 +1927,7 @@ function App() {
       <DevApiDataHealthDismissPrototype data={data} />
       <DevApiHistoryDataFlagPrototype data={data} />
       <DevApiHistorySetEditExperiment data={data} />
+      <DevApiSessionStartPrototype data={data} />
     </>
   );
 }

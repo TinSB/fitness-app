@@ -249,3 +249,20 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, an
 localStorage remains source of truth, and API results never overwrite AppData or localStorage.
 
 Next task should be Task 4.60 Session Start Mutation Prototype V1 only if gates pass.
+
+## Task 4.60 Session Start Mutation Prototype V1 Result
+
+Task 4.60 implements the planned dev-only one-route browser prototype for `POST /sessions/start`.
+
+Browser mutation routes are now exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The implementation remains default-off, DEV-only, compare-gated, `session-start` experiment-gated, localhost-only, source-snapshot/idempotency-gated, and confirmation-gated.
+
+localStorage remains source of truth. API results never overwrite AppData/localStorage. No active patch, complete, discard, DataHealth repair, backup/import/export/reset/recovery route, production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, source-of-truth migration, localStorage replacement, offline queue, or training algorithm change is added.
+
+The next recommended task is Task 4.61 Session Start Prototype Acceptance V1.

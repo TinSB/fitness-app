@@ -1044,6 +1044,31 @@ No session-start route is implemented. Runtime write capability remains limited 
 
 Next recommended task: Task 4.60 Session Start Mutation Prototype V1 only if gates pass.
 
+### Task 4.60: Session Start Mutation Prototype V1
+
+Status: Completed in this branch as the fourth dev-only explicit opt-in browser mutation prototype.
+
+Task 4.60 adds:
+
+- `src/devApi/devApiSessionStartConfig.ts`
+- `src/devApi/devApiSessionStartClient.ts`
+- `src/devApi/DevApiSessionStartPrototype.tsx`
+
+Task 4.60 minimally mounts the guarded prototype in `src/App.tsx`.
+
+Runtime write capability is now limited to exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The session-start prototype is default-off, DEV-only, read-only-compare-gated, `session-start` experiment-gated, localhost-only, source-snapshot/idempotency-gated, and confirmation-gated. Success requires HTTP success, `ok=true`, `changed=true`, `status="success"`, and snapshot metadata.
+
+localStorage remains source of truth. API results never overwrite AppData/localStorage. No active patch, complete, discard, DataHealth repair, backup/import/export/reset/recovery route, broad mutation client, source-of-truth migration, production backend/auth/sync/deployment, package dependency, package script, lockfile change, normalized table, offline queue, or training algorithm change is added.
+
+Next recommended task: Task 4.61 Session Start Prototype Acceptance V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
