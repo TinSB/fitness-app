@@ -100,6 +100,8 @@ Task 4.63 adds `docs/SESSION_START_PROTOTYPE_HARDENING.md` as Session Start Prot
 
 Task 4.64 Session Start Observability & Recovery Notes V1 adds `docs/SESSION_START_OBSERVABILITY_RECOVERY_NOTES.md` as safe observability and manual recovery guidance for the existing Task 4.60 prototype. It adds no runtime capability and no browser reset/recovery action. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Safe diagnostics may expose state, redacted target reference, source snapshot/idempotency presence, snapshot metadata presence, HTTP status, failure code, duplicate-submit blocked flag, timestamps, and a safe recovery note only. Raw stack traces, raw API responses, AppData dumps, localStorage dumps, SQLite internals, active patch, active complete, active discard, repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, and training algorithm changes remain blocked.
 
+Task 4.65 Session Start Regression Lock V1 adds `docs/SESSION_START_REGRESSION_LOCK.md` as a regression-lock and decision record for the existing Task 4.60 prototype. It adds no runtime capability and no new route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`. Active patch, active complete, active discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend, auth, sync, deployment, source-of-truth migration, localStorage replacement, package change, lockfile change, package script, normalized table, and training algorithm changes remain blocked.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1734,3 +1736,20 @@ Observability is limited to safe diagnostic fields: mutation state, redacted tar
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. Task 4.64 adds no browser reset/recovery action, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, active patch, active complete, active discard, or training algorithm change.
 
 The next recommended task is `Task 4.65 Session Start Regression Lock V1`.
+
+## Task 4.65: Session Start Regression Lock V1
+
+Task 4.65 adds `docs/SESSION_START_REGRESSION_LOCK.md` and regression-lock tests for the existing Session Start prototype.
+
+No new mutation route is added. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The Session Start route remains one-route-only and dev-only. It requires the session-start mutation flag, compare flag, localhost Dev API base URL, source snapshot metadata, mutation id, idempotency key, request fingerprint, and explicit confirmation. It does not implement active patch, active complete, active discard, repair, backup/import/export, reset/recovery, broad mutation client, or source-of-truth migration.
+
+localStorage remains current source of truth. API results never overwrite AppData or localStorage. Task 4.65 adds no production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, active patch, active complete, active discard, or training algorithm change.
+
+The next recommended task is `Task 4.66 Write-path Four-route Checkpoint V1`.
