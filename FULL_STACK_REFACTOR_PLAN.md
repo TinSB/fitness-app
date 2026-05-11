@@ -989,6 +989,22 @@ Task 4.55 rejects direct fourth-mutation implementation. Active-session mutation
 
 The next recommended task is `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`, planning-only. It must not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
 
+### Task 4.56: Active Session Mutation Readiness & Recovery Plan V1
+
+Completed as a planning-only readiness and recovery plan for possible future active-session mutation work.
+
+- Adds `docs/ACTIVE_SESSION_MUTATION_READINESS_RECOVERY_PLAN.md`.
+- Adds static tests for plan content, blocked session mutation boundaries, recovery gates, and docs parity.
+- Does not add any new mutation route.
+- Does not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
+- Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- localStorage remains source of truth and API results never overwrite AppData or localStorage.
+- No production backend, auth, sync, deployment, package change, lockfile change, package script, normalized table, broad mutation client, offline queue, source-of-truth migration, localStorage replacement, fourth mutation route, or training algorithm change is added.
+
+Task 4.56 defines required future gates for active-session recovery, source snapshot strategy, idempotency, duplicate-submit prevention, patch sequencing, offline failure behavior, confirmation UX, rollback/recovery UX, no-fake-success behavior, data semantics impact, and manual acceptance planning.
+
+No automatic next task is approved. Any future active-session prototype plan requires explicit user approval before starting.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

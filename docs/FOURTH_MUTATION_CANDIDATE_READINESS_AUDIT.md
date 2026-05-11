@@ -254,3 +254,14 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, an
 Active session mutation is the only plausible future fourth candidate area for planning.
 Next task should be Task 4.56 Active Session Mutation Readiness & Recovery Plan V1, planning-only.
 Write-path migration remains blocked beyond the existing three dev-only prototypes.
+
+## Task 4.56 Active Session Readiness Follow-up
+
+Task 4.56 adds `docs/ACTIVE_SESSION_MUTATION_READINESS_RECOVERY_PLAN.md` as planning-only follow-up to this audit.
+
+- It does not implement active-session mutation.
+- It does not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
+- It keeps browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`.
+- It keeps localStorage as source of truth and API results from overwriting AppData or localStorage.
+- It defines recovery, source snapshot, idempotency, duplicate-submit, patch sequencing, offline failure, confirmation, rollback, no-fake-success, and manual acceptance gates.
+- It approves no automatic next task without explicit user approval.

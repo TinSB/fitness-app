@@ -82,6 +82,8 @@ Task 4.45 adds `docs/LIMITED_HISTORY_EDIT_MUTATION_READINESS_GATE.md` as Limited
 
 Task 4.55 adds `docs/FOURTH_MUTATION_CANDIDATE_READINESS_AUDIT.md` as Fourth Mutation Candidate Readiness Audit V1. It is audit-only and docs/static-test only: no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, no frontend mutation client is added, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. Active-session mutation is only a future planning candidate area for `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`; Task 4.55 does not recommend direct implementation.
 
+Task 4.56 adds `docs/ACTIVE_SESSION_MUTATION_READINESS_RECOVERY_PLAN.md` as Active Session Mutation Readiness & Recovery Plan V1. It is planning-only and docs/static-test only: no active-session mutation is implemented, no fourth mutation route is added, App.tsx and src/devApi runtime behavior remain unchanged, no frontend mutation client is added, localStorage remains source of truth, and API results never overwrite AppData or localStorage. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, and `POST /history/:id/edit`. Session start, patch, complete, and discard routes remain blocked from browser runtime, and no automatic next task is approved without explicit user approval.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1557,3 +1559,21 @@ The audit evaluates session start, session patches, session complete, session di
 The result is audit-only: do not implement a fourth mutation next. Active-session mutation is the only plausible future product-value candidate area, but only for planning. The next recommended task is `Task 4.56 Active Session Mutation Readiness & Recovery Plan V1`, planning-only. It must not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`.
 
 localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No DataHealth repair, backup/import/export/reset/recovery route, fourth mutation route, production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change is added.
+
+## Task 4.56: Active Session Mutation Readiness & Recovery Plan V1
+
+Task 4.56 adds `docs/ACTIVE_SESSION_MUTATION_READINESS_RECOVERY_PLAN.md` as a planning-only readiness and recovery plan for possible future active-session mutation work.
+
+No active-session mutation is implemented. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+
+The plan defines required gates for active-session recovery, source snapshot strategy, idempotency, duplicate-submit prevention, patch sequencing, offline failure behavior, confirmation UX, rollback/recovery UX, no-fake-success behavior, data semantics impact, and manual acceptance planning.
+
+The plan does not implement `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, or `POST /sessions/active/discard`. It does not add a fourth browser mutation route.
+
+localStorage remains the active App source of truth. API results never overwrite AppData or localStorage. No production backend, auth, sync, deployment, package dependency, package script, lockfile change, normalized table, broad mutation client, offline queue, source-of-truth switch, localStorage replacement, or training algorithm change is added.
+
+No automatic next task is approved by Task 4.56. Any future active-session prototype plan requires explicit user approval before starting.
