@@ -1367,6 +1367,27 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 
 Next recommended task: Task 5.10 API-backed Read Manual App Acceptance V1.
 
+### Task 5.10: API-backed Read Manual App Acceptance V1
+
+Status: Completed in this branch as a human browser manual acceptance runbook for the Task 5.8 GET-only prototype.
+
+Task 5.10 adds `docs/API_BACKED_READ_MANUAL_APP_ACCEPTANCE.md`.
+
+The runbook covers a dedicated test browser profile, dedicated dev DB, Dev API runner, App dev server, Network GET-only verification, API available scenario, API unavailable fallback scenario, localStorage integrity, forbidden UI controls, browser build safety, cleanup/env reset, and pass/fail template.
+
+Task 5.10 adds no POST write, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no source-of-truth migration, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no cloud, no deployment, no package change, no normalized table, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.11 API-backed Read Runtime Regression Lock V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

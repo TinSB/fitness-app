@@ -724,3 +724,18 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.10 API-backed Read Manual App Acceptance V1`.
+
+## Task 5.10 API-backed Read Manual App Acceptance
+
+- [ ] Use `docs/API_BACKED_READ_MANUAL_APP_ACCEPTANCE.md` as the human browser runbook.
+- [ ] Confirm the runbook requires a dedicated test browser profile and dedicated dev DB.
+- [ ] Confirm the runbook warns against real personal training data.
+- [ ] Confirm Dev API runner and App dev server commands are included.
+- [ ] Confirm `VITE_IRONPATH_RUNTIME_SOURCE=api-readonly` setup and cleanup are included.
+- [ ] Confirm DevTools Network GET-only verification is included.
+- [ ] Confirm API available and API unavailable fallback scenarios are included.
+- [ ] Confirm localStorage integrity and forbidden UI controls checks are included.
+- [ ] Confirm no POST write is added by Task 5.10.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.11 API-backed Read Runtime Regression Lock V1`.
