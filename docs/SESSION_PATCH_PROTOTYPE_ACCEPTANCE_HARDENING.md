@@ -109,3 +109,11 @@ Next recommended task: `Task 5.16 Session Complete Mutation Prototype Plan V1`.
 - Still blocked: session complete, session discard, DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend/auth/sync/cloud/deployment, source-of-truth migration.
 - Source of truth: localStorage remains source of truth.
 - Rollback requirement: revert the Task 5.15 docs/static-test commit.
+
+## Task 5.16 Follow-up: Session Complete Plan
+
+Task 5.16 adds `docs/SESSION_COMPLETE_MUTATION_PROTOTYPE_PLAN.md` as a planning-only route-specific plan for future `POST /sessions/active/complete`.
+
+It does not implement session complete, does not implement session discard, and does not change source-of-truth behavior.
+
+Next task: `Task 5.17 Session Complete Mutation Prototype V1`.
