@@ -178,3 +178,13 @@ Task 5.14 does not implement session complete, session discard, DataHealth repai
 Accepted browser mutation routes are now exactly DataHealth dismiss, History data-flag, Limited History Edit, Session Start, and Session Patch.
 
 Next task should be Task 5.15 Session Patch Prototype Acceptance / Hardening V1.
+
+## Task 5.15 Follow-up: Acceptance / Hardening
+
+Task 5.15 adds `docs/SESSION_PATCH_PROTOTYPE_ACCEPTANCE_HARDENING.md` and test coverage for the accepted session patch prototype.
+
+The follow-up covers duplicate patch submit prevention, stale source snapshot and target mismatch, invalid active session or patch target, timeout, unavailable Dev API, malformed response, missing snapshot metadata, server non-success states, no-fake-success behavior, localStorage/AppData integrity, and route boundary.
+
+Task 5.15 does not add session complete, session discard, DataHealth repair, backup/import/export/reset/recovery HTTP routes, source-of-truth migration, localStorage replacement, API primary runtime, broad mutation client, package change, production backend, auth, sync, cloud, or deployment.
+
+Next task should be Task 5.16 Session Complete Mutation Prototype Plan V1.
