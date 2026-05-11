@@ -110,6 +110,8 @@ Task 4.68 Write-path Four-route Regression Lock V1 adds `docs/WRITE_PATH_FOUR_RO
 
 Task 4.69 Phase 4 Source-of-truth Migration Readiness Audit V1 adds `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md` as audit-only documentation and static boundary coverage. It does not switch source of truth, replace localStorage, add API-backed runtime persistence, add dual-write, add offline mutation queue, add production backend/auth/sync/deployment, or add another mutation route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 
+Task 4.70 API-backed Runtime Strategy Plan V1 adds `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md` as planning-only documentation and static boundary coverage. It does not implement API-backed runtime behavior, switch source of truth, replace localStorage, add dual-write, add offline mutation queue, add production backend/auth/sync/deployment, or add another mutation route. Browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1827,3 +1829,18 @@ Runtime write capability remains limited to:
 - `POST /sessions/start`
 
 The next recommended task is `Task 4.70 API-backed Runtime Strategy Plan V1`.
+
+## Task 4.70: API-backed Runtime Strategy Plan V1
+
+Task 4.70 adds `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md` and static boundary tests.
+
+The plan covers localStorage fallback models, migration approach, feature flag strategy, read/write client architecture, offline strategy, rollback strategy, and production/auth/sync assumptions. It is planning-only and adds no API-backed runtime behavior.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The next recommended task is `Task 4.71 Phase 4 Final Data Safety Audit V1`.
