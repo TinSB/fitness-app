@@ -1081,6 +1081,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.62 Session Start Manual App Acceptance V1.
 
+### Task 4.62: Session Start Manual App Acceptance V1
+
+Status: Completed in this branch as human-run manual App acceptance documentation and static tests for the existing Task 4.60 prototype.
+
+Task 4.62 adds `docs/SESSION_START_MANUAL_APP_ACCEPTANCE.md`.
+
+The runbook covers dedicated test profile/dev DB safety, flag matrix, confirmation/cancel, duplicate start, strict success/no-fake-success, localStorage integrity, DevTools Network route boundary, cleanup/env reset, and browser build safety.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.63 Session Start Prototype Hardening V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

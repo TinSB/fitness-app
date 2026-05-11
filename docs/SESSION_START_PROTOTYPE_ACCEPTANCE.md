@@ -142,3 +142,11 @@ Task 4.61 result: acceptance coverage only.
 The Session Start prototype remains dev-only, explicit opt-in, one-route-only, strict-success guarded, source-snapshot/idempotency guarded, and localStorage-source-of-truth.
 
 Next task should be Task 4.62 Session Start Manual App Acceptance V1.
+
+## Task 4.62 Session Start Manual App Acceptance V1 Follow-up
+
+Task 4.62 adds `docs/SESSION_START_MANUAL_APP_ACCEPTANCE.md` as the dedicated browser manual acceptance runbook for the existing Session Start prototype.
+
+It adds no new mutation route. Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. It requires a dedicated test browser profile, dedicated dev DB, no real personal training data, flag matrix checks, confirmation/cancel checks, duplicate start checks, no-fake-success checks, localStorage integrity, Network route boundary, cleanup/env reset, and browser build safety.
+
+The next recommended task is Task 4.63 Session Start Prototype Hardening V1.
