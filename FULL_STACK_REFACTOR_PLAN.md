@@ -1093,6 +1093,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.63 Session Start Prototype Hardening V1.
 
+### Task 4.63: Session Start Prototype Hardening V1
+
+Status: Completed in this branch as hardening coverage and documentation for the existing Task 4.60 prototype.
+
+Task 4.63 adds `docs/SESSION_START_PROTOTYPE_HARDENING.md`.
+
+Task 4.63 adds hardening tests for strict no-fake-success, missing source snapshot/idempotency metadata, active_session_exists, missing snapshot metadata, unavailable/timeout/abort/malformed response, repository errors, duplicate-submit/pending lock, confirmation requirements, no localStorage/AppData mutation, and route boundary.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.64 Session Start Observability & Recovery Notes V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

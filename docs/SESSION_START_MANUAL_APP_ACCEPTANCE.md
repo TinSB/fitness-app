@@ -229,3 +229,9 @@ unset VITE_IRONPATH_DEV_API_BASE_URL
 - [ ] Browser build result:
 - [ ] Notes:
 - [ ] Pass / Fail:
+
+## Task 4.63 Session Start Prototype Hardening V1 Follow-up
+
+- [ ] Review `docs/SESSION_START_PROTOTYPE_HARDENING.md`.
+- [ ] Confirm hardening covers duplicate-submit/pending lock, source snapshot missing, idempotency missing, active session exists, missing snapshot metadata, unavailable/timeout/abort, malformed response, repository errors, confirmation reset, no localStorage/AppData mutation, and route boundary.
+- [ ] Confirm no new mutation route is added.

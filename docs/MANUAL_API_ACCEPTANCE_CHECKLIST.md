@@ -80,6 +80,8 @@ Task 4.61 adds the session-start prototype acceptance runbook at `docs/SESSION_S
 
 Task 4.62 adds the session-start manual App acceptance runbook at `docs/SESSION_START_MANUAL_APP_ACCEPTANCE.md`. It is human-run manual acceptance only: use a dedicated test browser profile and dedicated dev DB, do not use real personal training data, keep browser mutation routes exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, keep localStorage as source of truth, and do not treat the flow as production readiness.
 
+Task 4.63 hardens the existing Session Start prototype at `docs/SESSION_START_PROTOTYPE_HARDENING.md`. It is hardening/testing only: no new mutation route is added, browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`, localStorage remains source of truth, API results never overwrite AppData/localStorage, and active patch/complete/discard remain blocked.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -467,3 +469,12 @@ Task 4.62 adds the session-start manual App acceptance runbook at `docs/SESSION_
 - [ ] Confirm active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
 - [ ] Confirm localStorage remains source of truth and API results do not overwrite AppData or localStorage.
 - [ ] Confirm next recommended task is `Task 4.63 Session Start Prototype Hardening V1`.
+
+## Task 4.63 Session Start Prototype Hardening
+
+- [ ] Use `docs/SESSION_START_PROTOTYPE_HARDENING.md` as the Session Start hardening note.
+- [ ] Confirm Task 4.63 does not add a new mutation route.
+- [ ] Confirm duplicate submit/pending lock, source snapshot missing, idempotency missing, active session exists, missing snapshot metadata, unavailable/timeout/abort, malformed response, repository errors, confirmation reset, no localStorage/AppData mutation, and route boundary are covered.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm active patch, complete, discard, DataHealth repair, backup/import/export, reset/recovery, and source-of-truth migration routes remain blocked.
+- [ ] Confirm next recommended task is `Task 4.64 Session Start Observability & Recovery Notes V1`.
