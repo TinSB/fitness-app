@@ -79,3 +79,13 @@ Browser source and browser build output must remain free of `node:http`, `node:s
 ## Task Result
 
 Task 4.64 is observability/recovery-notes only. The next recommended task is Task 4.65 Session Start Regression Lock V1.
+
+## Task 4.65 Regression Lock Companion
+
+Task 4.65 adds `docs/SESSION_START_REGRESSION_LOCK.md` for the existing dev-only Session Start prototype.
+
+- It does not add a new mutation route.
+- It does not expand runtime write capability beyond the accepted four-route set.
+- It keeps active patch, complete, discard, repair, backup/import/export, reset/recovery, and source-of-truth migration blocked.
+- It keeps localStorage as source of truth and keeps API results from overwriting AppData or localStorage.
+- It recommends Task 4.66 Write-path Four-route Checkpoint V1 as the next task.

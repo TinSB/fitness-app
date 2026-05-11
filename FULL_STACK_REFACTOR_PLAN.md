@@ -1117,6 +1117,18 @@ No new mutation route is added. Runtime write capability remains limited to Data
 
 Next recommended task: Task 4.65 Session Start Regression Lock V1.
 
+### Task 4.65: Session Start Regression Lock V1
+
+Status: Completed in this branch as regression-lock documentation and static coverage for the existing Task 4.60 prototype.
+
+Task 4.65 adds `docs/SESSION_START_REGRESSION_LOCK.md`.
+
+Task 4.65 adds regression tests for exact four-route allowlist, active patch/complete/discard still blocked, no broad mutation client, no API-backed storage, coverage inventory, manual inventory, no-fake-success expectations, localStorage/AppData integrity, and docs parity.
+
+No new mutation route is added. Runtime write capability remains limited to DataHealth dismiss, History data-flag, Limited History Edit, and Session Start. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.66 Write-path Four-route Checkpoint V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
