@@ -796,3 +796,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm `POST /sessions/active/complete` and `POST /sessions/active/discard` remain blocked.
 - [ ] Confirm no DataHealth repair, backup/import/export, reset/recovery, broad mutation client, API primary runtime, package change, production backend, auth, sync, cloud, or deployment is added.
 - [ ] Confirm next recommended task is `Task 5.16 Session Complete Mutation Prototype Plan V1`.
+
+## Task 5.16 Session Complete Mutation Prototype Plan
+
+- [ ] Use `docs/SESSION_COMPLETE_MUTATION_PROTOTYPE_PLAN.md` as the session complete prototype plan.
+- [ ] Confirm future route is exactly `POST /sessions/active/complete`.
+- [ ] Confirm duplicate complete, active session missing, history duplicate, source snapshot mismatch, and failure recovery are documented.
+- [ ] Confirm source snapshot metadata, request fingerprint, and idempotency key are documented.
+- [ ] Confirm no-fake-success, localStorage integrity, route boundary, and manual acceptance plan are documented.
+- [ ] Confirm Task 5.16 does not implement `POST /sessions/active/complete`.
+- [ ] Confirm `POST /sessions/active/discard` remains blocked.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, and `POST /sessions/active/patches`.
+- [ ] Confirm next recommended task is `Task 5.17 Session Complete Mutation Prototype V1`.

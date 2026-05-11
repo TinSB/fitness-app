@@ -1510,6 +1510,28 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 
 Next recommended task: Task 5.16 Session Complete Mutation Prototype Plan V1.
 
+### Task 5.16: Session Complete Mutation Prototype Plan V1
+
+Status: Completed in this branch as a planning-only route-specific plan for future `POST /sessions/active/complete`.
+
+Task 5.16 adds `docs/SESSION_COMPLETE_MUTATION_PROTOTYPE_PLAN.md`.
+
+The plan covers duplicate complete risk, active session missing behavior, history duplicate risk, source snapshot mismatch, idempotency key, request fingerprint, incomplete-main-work confirmation, failure recovery, strict no-fake-success behavior, localStorage/AppData integrity, route boundary, and manual acceptance requirements.
+
+Task 5.16 does not implement `POST /sessions/active/complete`, does not add browser route exposure, does not implement session discard, does not add a broad mutation client, does not add App.tsx wiring, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.17 Session Complete Mutation Prototype V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
