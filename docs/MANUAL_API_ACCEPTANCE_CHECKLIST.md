@@ -624,3 +624,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm API-backed runtime is Phase 5 work.
 - [ ] Confirm production backend, auth, sync, and deployment are Phase 5+ work.
 - [ ] Confirm recommended Phase 5 starting task is `Task 5.1 Source-of-truth Migration Architecture Gate V1`.
+
+## Task 5.1 Source-of-truth Migration Architecture Gate
+
+- [ ] Use `docs/SOURCE_OF_TRUTH_MIGRATION_ARCHITECTURE_GATE.md` as the source-of-truth migration architecture gate.
+- [ ] Confirm Task 5.1 does not implement source-of-truth migration.
+- [ ] Confirm Task 5.1 does not modify `App.tsx`.
+- [ ] Confirm Task 5.1 adds no localStorage replacement and no API-backed runtime.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm production backend, auth, sync, cloud, deployment, and monitoring remain Phase 6+ work.
+- [ ] Confirm next recommended task is `Task 5.2 AppData Ownership Matrix V1`.

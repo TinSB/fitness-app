@@ -1235,6 +1235,16 @@ Task 4.75 marks Phase 4 complete, records the final accepted routes and blocked 
 
 Recommended Phase 5 starting task: Task 5.1 Source-of-truth Migration Architecture Gate V1.
 
+### Task 5.1: Source-of-truth Migration Architecture Gate V1
+
+Status: Completed in this branch as architecture-gate documentation and static boundary coverage.
+
+Task 5.1 adds `docs/SOURCE_OF_TRUTH_MIGRATION_ARCHITECTURE_GATE.md`.
+
+Task 5.1 records the Phase 4 exit state, localStorage source-of-truth baseline, API/SQLite candidate ownership area, migration risks, fallback strategy, rollback strategy, and required gates before implementation. It does not implement source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, or mutation routes.
+
+Next recommended task: Task 5.2 AppData Ownership Matrix V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
