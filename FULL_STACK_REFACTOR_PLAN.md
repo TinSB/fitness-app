@@ -1032,6 +1032,18 @@ No active-session route is implemented. Runtime write capability remains limited
 
 Next recommended task: Task 4.59 Session Start Mutation Prototype Plan V1.
 
+### Task 4.59: Session Start Mutation Prototype Plan V1
+
+Status: Completed in this branch as planning-only docs/static tests.
+
+Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md`.
+
+Task 4.59 defines a possible future `POST /sessions/start` prototype, accepted request payload metadata, source snapshot/idempotency/fingerprint requirements, target identity, confirmation UX, duplicate start prevention, strict no-fake-success, manual recovery behavior, and manual acceptance plan.
+
+No session-start route is implemented. Runtime write capability remains limited to DataHealth dismiss, History data-flag, and Limited History Edit. localStorage remains source of truth, API results never overwrite AppData/localStorage, and source-of-truth migration remains blocked.
+
+Next recommended task: Task 4.60 Session Start Mutation Prototype V1 only if gates pass.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

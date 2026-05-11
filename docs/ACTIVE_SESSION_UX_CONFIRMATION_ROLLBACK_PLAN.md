@@ -211,3 +211,11 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, an
 localStorage remains source of truth, and API results never overwrite AppData or localStorage.
 
 Next task should be Task 4.59 Session Start Mutation Prototype Plan V1, planning-only.
+
+## Task 4.59 Session Start Mutation Prototype Plan V1 Follow-up
+
+Task 4.59 adds `docs/SESSION_START_MUTATION_PROTOTYPE_PLAN.md` as planning-only follow-up.
+
+It adds no session-start route and no fourth browser mutation route. It defines the future route `POST /sessions/start`, accepted request payload metadata, source snapshot/idempotency/fingerprint gates, confirmation UX, duplicate start prevention, strict no-fake-success, recovery behavior, and manual acceptance requirements before any implementation task.
+
+The next recommended task is Task 4.60 Session Start Mutation Prototype V1 only if gates pass.
