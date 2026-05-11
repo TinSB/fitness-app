@@ -1175,6 +1175,16 @@ Task 4.69 finds Phase 4 is not ready to switch source of truth. localStorage rem
 
 Next recommended task: Task 4.70 API-backed Runtime Strategy Plan V1.
 
+### Task 4.70: API-backed Runtime Strategy Plan V1
+
+Status: Completed in this branch as planning-only documentation and static boundary coverage.
+
+Task 4.70 adds `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md`.
+
+Task 4.70 covers localStorage fallback models, migration approach, feature flags, read/write client architecture, offline strategy, rollback strategy, and production/auth/sync assumptions. It does not implement API-backed runtime behavior, source-of-truth migration, localStorage replacement, production backend, auth, sync, deployment, package changes, or mutation routes.
+
+Next recommended task: Task 4.71 Phase 4 Final Data Safety Audit V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

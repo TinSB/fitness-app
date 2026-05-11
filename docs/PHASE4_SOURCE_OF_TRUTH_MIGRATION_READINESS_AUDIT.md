@@ -86,3 +86,14 @@ API results never overwrite AppData or localStorage.
 No API-backed runtime is implemented.
 No production backend, auth, sync, or deployment is added.
 Next task should be Task 4.70 API-backed Runtime Strategy Plan V1, planning-only.
+
+## Task 4.70 API-backed Runtime Strategy Follow-up
+
+Task 4.70 adds `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md` as a planning-only strategy document.
+
+- It does not implement API-backed runtime behavior.
+- It does not switch source of truth.
+- It does not replace localStorage.
+- It does not add production backend, auth, sync, or deployment.
+- It keeps browser mutation routes exactly four.
+- It recommends Task 4.71 Phase 4 Final Data Safety Audit V1 as audit-only.

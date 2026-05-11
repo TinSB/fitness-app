@@ -94,6 +94,8 @@ Task 4.68 locks the current four-route write-path state at `docs/WRITE_PATH_FOUR
 
 Task 4.69 adds the Phase 4 source-of-truth migration readiness audit at `docs/PHASE4_SOURCE_OF_TRUTH_MIGRATION_READINESS_AUDIT.md`. It is audit-only: localStorage remains source of truth, API results never overwrite AppData/localStorage, no API-backed runtime persistence is added, and Phase 5 is required before any source-of-truth migration implementation.
 
+Task 4.70 adds the API-backed runtime strategy plan at `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md`. It is planning-only: localStorage remains source of truth, API results never overwrite AppData/localStorage, no API-backed runtime behavior is added, and production backend/auth/sync/deployment remain future assumptions.
+
 ## Scope / Non-goals
 
 - [ ] Confirm this is a dev-only manual checklist.
@@ -554,3 +556,13 @@ Task 4.69 adds the Phase 4 source-of-truth migration readiness audit at `docs/PH
 - [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 4.70 API-backed Runtime Strategy Plan V1`.
+
+## Task 4.70 API-backed Runtime Strategy Plan
+
+- [ ] Use `docs/API_BACKED_RUNTIME_STRATEGY_PLAN.md` as the API-backed runtime strategy plan.
+- [ ] Confirm Task 4.70 does not implement API-backed runtime behavior.
+- [ ] Confirm Task 4.70 does not switch source of truth.
+- [ ] Confirm Task 4.70 does not add localStorage replacement, dual-write, or offline mutation queue.
+- [ ] Confirm browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 4.71 Phase 4 Final Data Safety Audit V1`.
