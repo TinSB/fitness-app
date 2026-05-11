@@ -151,3 +151,13 @@ localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 No POST write, runtime source selector, API-backed persistence adapter, production backend, auth, sync, cloud, deployment, package change, normalized table, or browser mutation route is added.
 Next task should be Task 5.12 Active Session Write Coverage Gap Audit V1.
+
+## Task 5.12 Follow-up: Active Session Write Coverage Gap Audit
+
+Task 5.12 adds `docs/ACTIVE_SESSION_WRITE_COVERAGE_GAP_AUDIT.md` as an audit-only review of the remaining active-session browser write gaps: session patch, session complete, and session discard.
+
+It keeps `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard` blocked from browser runtime until route-specific planning and prototype tasks.
+
+Task 5.12 adds no browser route, no runtime source selector, no API-backed persistence adapter, no App.tsx mount, no localStorage write, no AppData overwrite, no production backend, no auth, no sync, no deployment, and no browser mutation route.
+
+Next task: `Task 5.13 Session Patch Mutation Prototype Plan V1`.

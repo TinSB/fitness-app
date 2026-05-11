@@ -2196,3 +2196,28 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.12 Active Session Write Coverage Gap Audit V1`.
+
+## Task 5.12: Active Session Write Coverage Gap Audit V1
+
+Task 5.12 adds `docs/ACTIVE_SESSION_WRITE_COVERAGE_GAP_AUDIT.md` as an audit-only review of remaining active-session browser write gaps.
+
+Gap routes:
+
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+These routes remain blocked from browser runtime by Task 5.12. The lower-level server contract may know the routes, but browser exposure requires explicit future route-specific planning and prototype tasks.
+
+This task adds no browser route, no session patch prototype, no session complete prototype, no session discard prototype, no broad mutation client, no runtime source selector, no API-backed persistence adapter, no App.tsx integration, no source-of-truth migration, no localStorage write, no AppData overwrite, no package change, no production backend, no auth, no sync, no cloud, and no deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.13 Session Patch Mutation Prototype Plan V1`.
