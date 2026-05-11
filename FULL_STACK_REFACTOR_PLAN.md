@@ -1255,6 +1255,16 @@ Task 5.2 classifies training history, active session, program templates, setting
 
 Next recommended task: Task 5.3 API Client Runtime Strategy V1.
 
+### Task 5.3: API Client Runtime Strategy V1
+
+Status: Completed in this branch as API client strategy documentation and static boundary coverage.
+
+Task 5.3 adds `docs/API_CLIENT_RUNTIME_STRATEGY.md`.
+
+Task 5.3 plans typed route clients, GET-only read client boundaries, route-specific mutation client boundaries, safe error shape, timeout, abort, retry policy, request fingerprint, snapshot metadata handling, and source snapshot strategy. It does not implement API clients, a broad mutation client, API-backed runtime, source-of-truth migration, localStorage replacement, production backend, auth, sync, cloud, deployment, package changes, normalized tables, App.tsx changes, storage adapters, or mutation routes.
+
+Next recommended task: Task 5.4 Runtime Source Switch Feature Flag Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -1965,3 +1965,20 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.3 API Client Runtime Strategy V1`.
+
+## Task 5.3: API Client Runtime Strategy V1
+
+Task 5.3 adds `docs/API_CLIENT_RUNTIME_STRATEGY.md` and API client runtime strategy boundary tests.
+
+This is strategy-only. It plans typed route clients, GET-only read client boundaries, route-specific mutation client boundaries, safe error shape, timeout, abort, retry policy, request fingerprint, snapshot metadata handling, and source snapshot strategy. It adds no API client implementation, broad mutation client, API-backed runtime, source-of-truth migration, localStorage replacement, App.tsx integration, package changes, production backend, auth, sync, cloud, deployment, monitoring, or browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.4 Runtime Source Switch Feature Flag Plan V1`.

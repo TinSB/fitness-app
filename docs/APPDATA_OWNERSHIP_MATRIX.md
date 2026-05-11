@@ -106,3 +106,13 @@ No API-backed runtime is implemented.
 No source-of-truth migration is implemented.
 No production backend, auth, sync, cloud, deployment, or monitoring is added.
 Next task should be Task 5.3 API Client Runtime Strategy V1.
+
+## Task 5.3 API Client Runtime Strategy Follow-up
+
+Task 5.3 adds `docs/API_CLIENT_RUNTIME_STRATEGY.md` as a strategy document only.
+
+- It plans typed route clients and route-specific mutation client boundaries.
+- It rejects a broad browser mutation client.
+- It documents error shape, timeout, abort, retry, request fingerprint, snapshot metadata, and source snapshot handling.
+- It does not implement API clients or API-backed runtime.
+- It recommends Task 5.4 Runtime Source Switch Feature Flag Plan V1 as docs/static tests only.

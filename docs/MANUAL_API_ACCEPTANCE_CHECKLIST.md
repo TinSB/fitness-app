@@ -646,3 +646,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.3 API Client Runtime Strategy V1`.
+
+## Task 5.3 API Client Runtime Strategy
+
+- [ ] Use `docs/API_CLIENT_RUNTIME_STRATEGY.md` as the API client runtime strategy.
+- [ ] Confirm typed route clients, read client boundaries, route-specific mutation client boundaries, and no broad mutation client are documented.
+- [ ] Confirm error shape, timeout, abort, retry policy, request fingerprint, snapshot metadata handling, and source snapshot strategy are documented.
+- [ ] Confirm Task 5.3 adds no API client implementation and no API-backed runtime.
+- [ ] Confirm Task 5.3 adds no source-of-truth migration and no localStorage replacement.
+- [ ] Confirm accepted routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.4 Runtime Source Switch Feature Flag Plan V1`.
