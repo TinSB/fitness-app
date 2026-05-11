@@ -820,3 +820,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, and `POST /sessions/active/complete`.
 - [ ] Confirm next recommended task is `Task 5.18 Session Complete Acceptance / Hardening V1`.
+
+## Task 5.18 Session Complete Acceptance / Hardening
+
+- [ ] Use `docs/SESSION_COMPLETE_ACCEPTANCE_HARDENING.md` as the session complete acceptance and hardening checklist.
+- [ ] Confirm duplicate complete, missing active session, invalid active session, incomplete main work confirmation, timeout, unavailable, malformed response, write failure, transaction failure, database closed, and no-fake-success behavior are covered.
+- [ ] Confirm pending duplicate-submit lock and confirmation reset behavior are covered.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm AppData is not locally cleared or appended from the API result.
+- [ ] Confirm DevTools Network allows only `POST /sessions/active/complete` for the session complete flow.
+- [ ] Confirm `POST /sessions/active/discard`, `POST /data-health/repair/apply`, backup/import/export over HTTP, and reset/recovery over HTTP remain blocked.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, and `POST /sessions/active/complete`.
+- [ ] Confirm no production backend, auth, sync, cloud, deployment, dependency, package script, normalized table, broad mutation client, or API primary runtime is added.
+- [ ] Confirm next recommended task is `Task 5.19 Session Discard Mutation Prototype Plan V1`.
