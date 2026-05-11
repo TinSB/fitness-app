@@ -762,3 +762,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm no browser route, broad mutation client, runtime source selector, API-backed persistence adapter, App.tsx mount, source-of-truth migration, localStorage write, or AppData overwrite is added.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.13 Session Patch Mutation Prototype Plan V1`.
+
+## Task 5.13 Session Patch Mutation Prototype Plan
+
+- [ ] Use `docs/SESSION_PATCH_MUTATION_PROTOTYPE_PLAN.md` as the session patch prototype plan.
+- [ ] Confirm future route is exactly `POST /sessions/active/patches`.
+- [ ] Confirm patch ordering, stale step/set risk, duplicate patch, partial update, and current set corruption are documented.
+- [ ] Confirm source snapshot metadata, request fingerprint, and idempotency key are documented.
+- [ ] Confirm no-fake-success, localStorage integrity, route boundary, and manual acceptance plan are documented.
+- [ ] Confirm Task 5.13 does not implement `POST /sessions/active/patches`.
+- [ ] Confirm `POST /sessions/active/complete` and `POST /sessions/active/discard` remain blocked.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, and `POST /sessions/start`.
+- [ ] Confirm next recommended task is `Task 5.14 Session Patch Mutation Prototype V1`.

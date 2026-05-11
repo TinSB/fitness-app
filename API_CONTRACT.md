@@ -2221,3 +2221,22 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.13 Session Patch Mutation Prototype Plan V1`.
+
+## Task 5.13: Session Patch Mutation Prototype Plan V1
+
+Task 5.13 adds `docs/SESSION_PATCH_MUTATION_PROTOTYPE_PLAN.md` as a planning-only route-specific plan for future `POST /sessions/active/patches`.
+
+The plan covers patch ordering, stale step/set risk, duplicate patch risk, partial update risk, current set corruption risk, source snapshot metadata, request fingerprint, idempotency key, strict no-fake-success behavior, localStorage/AppData integrity, route boundary, and manual acceptance.
+
+Task 5.13 does not implement `POST /sessions/active/patches`, does not add browser route exposure, does not implement session complete or discard, does not add a broad mutation client, does not add App.tsx wiring, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.14 Session Patch Mutation Prototype V1`.
