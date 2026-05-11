@@ -126,3 +126,13 @@ API results never overwrite AppData or localStorage.
 No API-backed runtime is implemented.
 No production backend, auth, sync, or deployment is added.
 Next task should be Task 4.71 Phase 4 Final Data Safety Audit V1, audit-only.
+
+## Task 4.71 Final Data Safety Audit Follow-up
+
+Task 4.71 adds `docs/PHASE4_FINAL_DATA_SAFETY_AUDIT.md` as an audit-only final safety record.
+
+- It does not implement API-backed runtime behavior.
+- It does not switch source of truth.
+- It does not replace localStorage.
+- It keeps all accepted and blocked browser routes explicit.
+- It recommends Task 4.72 Phase 4 Manual Final Acceptance V1.
