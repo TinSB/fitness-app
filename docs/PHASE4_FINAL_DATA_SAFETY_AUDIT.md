@@ -130,3 +130,13 @@ API results never overwrite AppData or localStorage.
 No production backend, auth, sync, or deployment is added.
 No source-of-truth migration is implemented.
 Next task should be Task 4.72 Phase 4 Manual Final Acceptance V1.
+
+## Task 4.72 Manual Final Acceptance Follow-up
+
+Task 4.72 adds `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md` as the final manual acceptance runbook.
+
+- It does not add runtime behavior.
+- It does not add a mutation route.
+- It keeps localStorage as source of truth.
+- It covers Dev API runner, read-only diagnostics, all four accepted mutation prototypes, route boundaries, localStorage integrity, failure recovery, cleanup, and pass/fail recording.
+- It recommends Task 4.73 Phase 4 Exit Regression Lock V1.

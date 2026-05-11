@@ -1195,6 +1195,16 @@ Task 4.71 records accepted routes, blocked routes, source-of-truth lock, localSt
 
 Next recommended task: Task 4.72 Phase 4 Manual Final Acceptance V1.
 
+### Task 4.72: Phase 4 Manual Final Acceptance V1
+
+Status: Completed in this branch as final manual acceptance documentation and static boundary coverage.
+
+Task 4.72 adds `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md`.
+
+Task 4.72 covers the Dev API runner, read-only diagnostics, all four accepted mutation prototypes, route boundaries, localStorage integrity, no-fake-success, failure recovery, cleanup/env reset, browser build safety, and pass/fail recording. It does not implement runtime behavior, source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, deployment, package changes, or mutation routes.
+
+Next recommended task: Task 4.73 Phase 4 Exit Regression Lock V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
