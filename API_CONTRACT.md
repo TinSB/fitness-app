@@ -116,6 +116,8 @@ Task 4.71 Phase 4 Final Data Safety Audit V1 adds `docs/PHASE4_FINAL_DATA_SAFETY
 
 Task 4.72 Phase 4 Manual Final Acceptance V1 adds `docs/PHASE4_MANUAL_FINAL_ACCEPTANCE.md` as manual final acceptance documentation and static boundary coverage. It covers the Dev API runner, read-only diagnostics, all four accepted mutation prototypes, route boundaries, localStorage integrity, failure recovery, cleanup/env reset, browser build safety, and pass/fail recording. It does not add runtime behavior, switch source of truth, replace localStorage, add API-backed runtime behavior, add production backend/auth/sync/deployment, or add another mutation route.
 
+Task 4.73 Phase 4 Exit Regression Lock V1 adds `docs/PHASE4_EXIT_REGRESSION_LOCK.md` as the Phase 4 exit regression lock and static boundary coverage. It locks the final accepted route allowlist, blocked route list, localStorage source-of-truth, browser build isolation, no production/auth/sync/deployment, no source-of-truth migration, and Phase 5 handoff-only next step. It does not add runtime behavior or another mutation route.
+
 ## Read Mirror API Skeleton
 
 Owner files:
@@ -1878,3 +1880,18 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 - `POST /sessions/start`
 
 The next recommended task is `Task 4.73 Phase 4 Exit Regression Lock V1`.
+
+## Task 4.73: Phase 4 Exit Regression Lock V1
+
+Task 4.73 adds `docs/PHASE4_EXIT_REGRESSION_LOCK.md` and Phase 4 exit regression-lock tests.
+
+The lock covers the final accepted route allowlist, final blocked route list, localStorage source-of-truth, browser build isolation, no production/auth/sync/deployment, no source-of-truth migration, and Phase 5 handoff-only next step.
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage. Runtime write capability remains limited to:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+
+The next recommended task is `Task 4.74 Phase 5 Handoff Plan V1`.

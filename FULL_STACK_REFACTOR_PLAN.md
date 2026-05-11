@@ -1205,6 +1205,16 @@ Task 4.72 covers the Dev API runner, read-only diagnostics, all four accepted mu
 
 Next recommended task: Task 4.73 Phase 4 Exit Regression Lock V1.
 
+### Task 4.73: Phase 4 Exit Regression Lock V1
+
+Status: Completed in this branch as Phase 4 exit regression-lock documentation and static boundary coverage.
+
+Task 4.73 adds `docs/PHASE4_EXIT_REGRESSION_LOCK.md`.
+
+Task 4.73 locks the final accepted route allowlist, final blocked route list, localStorage source-of-truth, browser build isolation, no production/auth/sync/deployment, no source-of-truth migration, and Phase 5 handoff-only next step. It does not implement runtime behavior, source-of-truth migration, localStorage replacement, API-backed runtime, production backend, auth, sync, deployment, package changes, or mutation routes.
+
+Next recommended task: Task 4.74 Phase 5 Handoff Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
