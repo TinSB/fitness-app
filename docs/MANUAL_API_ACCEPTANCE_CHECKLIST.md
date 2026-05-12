@@ -883,3 +883,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm no-fake-success, source snapshot metadata, idempotency, request fingerprint, pending lock, visible failure, and snapshot metadata requirements remain covered for active-session prototypes.
 - [ ] Confirm browser build isolation remains clean.
 - [ ] Confirm next recommended task is `Task 5.23 API-backed Persistence Facade Plan V1`.
+
+## Task 5.23 API-backed Persistence Facade Plan
+
+- [ ] Use `docs/API_BACKED_PERSISTENCE_FACADE_PLAN.md` as the persistence facade plan.
+- [ ] Confirm the planned boundary is `App.tsx -> persistence facade -> localStorageAdapter or apiStorageAdapter -> AppData`.
+- [ ] Confirm Task 5.23 does not implement `src/storage/apiStorageAdapter.ts`.
+- [ ] Confirm Task 5.23 does not add a runtime source selector.
+- [ ] Confirm Task 5.23 does not modify App.tsx.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, broad mutation clients, package changes, production backend, auth, sync, cloud, and deployment remain blocked.
+- [ ] Confirm next recommended task is `Task 5.24 API-backed Persistence Adapter Prototype V1`.

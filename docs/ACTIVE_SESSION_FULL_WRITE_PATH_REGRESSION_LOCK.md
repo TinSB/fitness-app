@@ -201,3 +201,11 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Li
 No eighth mutation is approved.
 localStorage remains source of truth.
 Next task should be Task 5.23 API-backed Persistence Facade Plan V1, planning-only.
+
+## Task 5.23 Follow-up: API-backed Persistence Facade Plan
+
+Task 5.23 adds `docs/API_BACKED_PERSISTENCE_FACADE_PLAN.md` as a planning-only design for `App.tsx -> persistence facade -> localStorageAdapter or apiStorageAdapter -> AppData`.
+
+It does not implement `src/storage/apiStorageAdapter.ts`, does not add a runtime source selector, does not modify App.tsx, does not switch source of truth, does not replace localStorage, does not add API primary runtime, does not add a browser mutation route, and keeps production backend/auth/sync/cloud/deployment blocked.
+
+Next task should be Task 5.24 API-backed Persistence Adapter Prototype V1 only if gates pass.
