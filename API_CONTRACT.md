@@ -2919,3 +2919,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.3 defines anonymous local user, future account identity, local data to account linking, account creation lifecycle, account deletion lifecycle, export/delete responsibilities, auth failure behavior, identity mismatch risk, and localStorage fallback boundaries before any auth implementation.
 
 Recommended next task is `Task 6.4 Production Backend & Database Architecture Decision V1`, planning/docs/static tests only. Task 6.4 must not implement production backend, normalized schema, auth, sync, deployment, migration, or source-of-truth switching.
+
+## Task 6.4: Production Backend & Database Architecture Decision V1
+
+Task 6.4 adds `docs/PRODUCTION_BACKEND_DATABASE_ARCHITECTURE_DECISION.md` as a planning-level production backend and database architecture decision.
+
+This task adds no runtime behavior, no production backend, no Fastify/Express/Koa/Hono server, no production database, no normalized schema, no migration, no auth, no sync, no deployment, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.4 evaluates no backend yet, single Node backend, serverless API, hosted backend/database, local-first desktop backend, current SQLite snapshot repository, normalized schema risk, migration/rollback requirements, and backup requirements without implementation.
+
+Recommended next task is `Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1`, docs/static tests only. Task 6.5 must not implement cloud sync, remote writes, background sync, production backend, auth, deployment, migration, or source-of-truth switching.

@@ -1174,3 +1174,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.4 Production Backend & Database Architecture Decision V1`, planning/docs/static tests only.
+
+## Task 6.4 Production Backend & Database Architecture Decision
+
+- [ ] Confirm `docs/PRODUCTION_BACKEND_DATABASE_ARCHITECTURE_DECISION.md` exists.
+- [ ] Confirm Task 6.4 is planning/docs/static tests only and has no production runtime implication.
+- [ ] Confirm no production backend, Fastify/Express/Koa/Hono server, production database, normalized schema, migration, auth, sync, deployment, source-of-truth migration, package/script/lockfile change, or browser route is added.
+- [ ] Confirm no backend yet, single Node backend, serverless API, hosted backend/database, local-first desktop backend, current SQLite snapshot repository, normalized schema risk, migration/rollback requirements, and backup requirements are evaluated.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1`, docs/static tests only.

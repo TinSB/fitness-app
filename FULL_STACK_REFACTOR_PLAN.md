@@ -2229,6 +2229,32 @@ Next recommended task: Task 6.4 Production Backend & Database Architecture Decis
 
 Task 6.4 must be planning/docs/static tests only. It must not implement production backend, normalized schema, auth, sync, deployment, migration, source-of-truth switching, routes, package changes, or real personal training data use.
 
+### Task 6.4: Production Backend & Database Architecture Decision V1
+
+Status: Completed in this branch as Phase 6 production backend and database architecture decision documentation and static boundary tests.
+
+Task 6.4 adds `docs/PRODUCTION_BACKEND_DATABASE_ARCHITECTURE_DECISION.md`, `tests/productionBackendDatabaseArchitectureDecision.test.ts`, `tests/productionBackendDatabaseBoundaryStillBlocked.test.ts`, and `tests/productionBackendDatabaseDocsParity.test.ts`.
+
+Task 6.4 evaluates no backend yet, single Node backend, serverless API, hosted backend/database, local-first desktop backend, current SQLite snapshot repository, normalized schema risk, migration/rollback requirements, and backup requirements without implementation.
+
+This task adds no runtime behavior, no production backend, no Fastify/Express/Koa/Hono server, no production database, no normalized schema, no migration, no auth, no sync, no deployment, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1.
+
+Task 6.5 must be docs/static tests only. It must not implement cloud sync, remote writes, background sync, production backend, auth, deployment, migration, source-of-truth switching, routes, package changes, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
