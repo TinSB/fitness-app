@@ -2771,3 +2771,23 @@ Accepted browser mutation routes remain exactly:
 - `POST /sessions/active/discard`
 
 The next recommended task is `Task 5.39 Phase 5 Exit Regression Lock V1`.
+
+## Task 5.39: Phase 5 Exit Regression Lock V1
+
+Task 5.39 adds `docs/PHASE5_EXIT_REGRESSION_LOCK.md` as the Phase 5 exit regression lock.
+
+The lock records accepted runtime modes (`localStorage`, `api-readonly`, `api-primary-dev`), accepted browser mutation routes, blocked routes, source-of-truth rules, fallback rules, migration rules, browser build isolation, and final Phase 5 coverage inventory.
+
+This task does not add runtime behavior, does not delete localStorage, does not silently overwrite localStorage or AppData, does not make API primary production default, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+The next recommended task is `Task 5.40 Phase 6 Handoff Plan V1`.
