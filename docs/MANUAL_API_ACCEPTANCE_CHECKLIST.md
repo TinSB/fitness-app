@@ -1048,3 +1048,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.36 Migration Regression Lock V1`.
+
+## Task 5.36 Migration Regression Lock
+
+- [ ] Confirm `docs/MIGRATION_REGRESSION_LOCK.md` exists.
+- [ ] Confirm dry-run remains warning-only and no-write.
+- [ ] Confirm migration apply remains dev-only, explicit-confirmation only, backup-first, and injected-writer only.
+- [ ] Confirm rollback/recovery remains dev-only, explicit-confirmation only, backup metadata required, and callback-only.
+- [ ] Confirm no destructive import, no localStorage deletion, no silent localStorage/AppData overwrite, and no automatic source switch.
+- [ ] Confirm dedicated test browser profile, dedicated dev DB, and no real personal training data remain required.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.37 Phase 5 Final Source-of-truth Audit V1`.

@@ -2709,3 +2709,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains available as fallback and migration source. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
 
 The next recommended task is `Task 5.36 Migration Regression Lock V1`.
+
+## Task 5.36: Migration Regression Lock V1
+
+Task 5.36 adds `docs/MIGRATION_REGRESSION_LOCK.md` as the regression lock for the Phase 5 migration dry-run, apply, acceptance, rollback, and recovery state from Tasks 5.32 through 5.35.
+
+The lock keeps migration dry-run warning-only, migration apply dev-only and backup-first, rollback/recovery dev-only and callback-based, and all migration flows non-destructive. It explicitly locks no localStorage deletion, no silent localStorage/AppData overwrite, no automatic source switch, and no HTTP migration/reset/recovery surface.
+
+This task does not add runtime behavior, does not delete localStorage, does not write localStorage, does not auto-switch source of truth, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
+
+The next recommended task is `Task 5.37 Phase 5 Final Source-of-truth Audit V1`.
