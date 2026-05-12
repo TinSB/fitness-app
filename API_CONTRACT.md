@@ -3623,3 +3623,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.36 Production Monitoring & Logging Privacy Lock V1`, docs/static tests only. Task 6.36 must not add external monitoring service, production telemetry runtime, package changes, routes, source-of-truth switching, or real-data logging.
+
+## Task 6.36: Production Monitoring & Logging Privacy Lock V1
+
+Task 6.36 adds `docs/PRODUCTION_MONITORING_LOGGING_PRIVACY_LOCK.md` as production monitoring/logging privacy lock documentation.
+
+This task adds no external monitoring service, no production telemetry runtime, no analytics runtime, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.36 locks sensitive data redaction, no raw AppData logging, no localStorage dump logging, no token or secret logging, privacy-safe diagnostics, and future observability gates.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.37 Production Release Candidate Regression Lock V1`, docs/static tests only. Task 6.37 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.

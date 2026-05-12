@@ -521,3 +521,13 @@ Task 6.35 audits environments, secrets, branch rules, required checks, rollback,
 Task 6.35 keeps production deployment, deployment config that changes production behavior, hosted backend activation, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.36 Production Monitoring & Logging Privacy Lock V1, docs/static tests only. Task 6.36 must not add external monitoring service, production telemetry runtime, package changes, routes, source-of-truth switching, or real-data logging.
+
+## Task 6.36 Production Monitoring Logging Privacy Lock Alignment
+
+Task 6.36 Production Monitoring & Logging Privacy Lock V1 adds `docs/PRODUCTION_MONITORING_LOGGING_PRIVACY_LOCK.md` as production monitoring/logging privacy lock documentation.
+
+Task 6.36 locks sensitive data redaction, no raw AppData logging, no localStorage dump logging, no token or secret logging, privacy-safe diagnostics, and future observability gates.
+
+Task 6.36 keeps external monitoring services, production telemetry runtime, analytics runtime, package changes, route additions, source-of-truth switching, and real personal training data logging unimplemented.
+
+The next recommended task is Task 6.37 Production Release Candidate Regression Lock V1, docs/static tests only. Task 6.37 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
