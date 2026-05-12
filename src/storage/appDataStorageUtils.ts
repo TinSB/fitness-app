@@ -64,18 +64,18 @@ export const sanitizeSessionEditSummarySnapshot = (value: unknown) => {
 export const normalizePrimaryGoal = (value: unknown, fallback: AppData['programTemplate']['primaryGoal'] = 'hypertrophy'): AppData['programTemplate']['primaryGoal'] => {
   const text = String(value || '').trim();
   const normalized = text.toLowerCase().replace(/[\s-]+/g, '_');
-  if (text === '增肌' || text === '肌肥大' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
-  if (text === '力量' || normalized === 'strength') return 'strength';
-  if (text === '减脂' || normalized === 'fat_loss' || normalized === 'fatloss') return 'fat_loss';
+  if (text === '???' || text === '?????' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
+  if (text === '???' || normalized === 'strength') return 'strength';
+  if (text === '???' || normalized === 'fat_loss' || normalized === 'fatloss') return 'fat_loss';
   return pickEnum(value, PRIMARY_GOALS, fallback);
 };
 
 export const normalizeTrainingMode = (value: unknown, fallback: AppData['trainingMode'] = 'hybrid'): AppData['trainingMode'] => {
   const text = String(value || '').trim();
   const normalized = text.toLowerCase().replace(/[\s-]+/g, '_');
-  if (text === '增肌' || text === '肌肥大' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
-  if (text === '力量' || normalized === 'strength') return 'strength';
-  if (text === '综合' || normalized === 'hybrid') return 'hybrid';
+  if (text === '???' || text === '?????' || normalized === 'hypertrophy' || normalized === 'muscle_gain' || normalized === 'musclegrowth' || normalized === 'muscle_growth') return 'hypertrophy';
+  if (text === '???' || normalized === 'strength') return 'strength';
+  if (text === '???' || normalized === 'hybrid') return 'hybrid';
   return pickEnum(value, TRAINING_MODES, fallback);
 };
 
@@ -154,12 +154,12 @@ export const HEALTH_METRIC_TYPES = [
 ] as const;
 
 export const LEGACY_TEXT_MAP: Record<string, string> = {
-  poor: '差',
-  ok: '一般',
-  good: '好',
-  low: '低',
-  medium: '中',
-  high: '高',
+  poor: '??',
+  ok: '????',
+  good: '??',
+  low: '??',
+  medium: '??',
+  high: '??',
 };
 
 export const normalizeTextValue = (value: unknown) => {
