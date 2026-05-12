@@ -2411,6 +2411,32 @@ Next recommended task: Task 6.11 Production Backend Adapter Acceptance V1.
 
 Task 6.11 must not add auth runtime, deployment, auto-listen behavior, database migration, production data use, browser runtime integration, routes, package changes, source-of-truth switching, or real personal training data use.
 
+### Task 6.11: Production Backend Adapter Acceptance V1
+
+Status: Completed in this branch as acceptance and boundary coverage for the Task 6.10 Node-only adapter skeleton.
+
+Task 6.11 adds `docs/PRODUCTION_BACKEND_ADAPTER_ACCEPTANCE.md`, `tests/productionBackendAdapterAcceptance.test.ts`, `tests/productionBackendAdapterBoundaryLock.test.ts`, and `tests/productionBackendAdapterAcceptanceDocsParity.test.ts`.
+
+Task 6.11 accepts the skeleton as Node-only, inert by default, dependency-free, not exported from browser-facing API index files, and safe-error-only with no fake success.
+
+This task adds no runtime activation, no auto-listen behavior, no auth runtime, no deployment runtime, no database migration, no production data use, no browser runtime integration, no package changes, no source-of-truth switch, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.12 Auth Boundary & Account Model Plan V1.
+
+Task 6.12 must be docs/static tests only. It must not implement auth runtime, login/signup, token/session handling, OAuth, user table, production backend activation, routes, package changes, source-of-truth switching, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
