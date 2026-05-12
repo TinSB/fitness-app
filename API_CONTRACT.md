@@ -2813,3 +2813,23 @@ Accepted browser mutation routes remain exactly:
 Recommended Phase 6 first task after Phase 5 closes: `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`.
 
 The next recommended Phase 5 task is `Task 5.41 Phase 5 Completion Archive V1`.
+
+## Task 5.41: Phase 5 Completion Archive V1
+
+Task 5.41 adds `docs/PHASE5_COMPLETION_ARCHIVE.md` as the Phase 5 completion archive.
+
+The archive marks Phase 5 complete; records API primary dev runtime status, localStorage fallback status, migration dry-run/apply/rollback status, final accepted runtime modes, final accepted browser mutation routes, final blocked routes/capabilities, final validation commands, and the Phase 6 handoff recommendation.
+
+This task does not start Phase 6, does not add runtime behavior, does not implement production backend/auth/user accounts/cloud sync/deployment/monitoring, does not delete localStorage, does not silently overwrite localStorage or AppData, does not make API primary production default, does not modify App.tsx, does not add a browser mutation route, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+Recommended next task, only with explicit future approval, is `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`.
