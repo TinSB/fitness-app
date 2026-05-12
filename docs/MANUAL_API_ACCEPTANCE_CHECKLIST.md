@@ -1162,3 +1162,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.3 Auth & User Account Lifecycle Architecture Gate V1`, docs/static tests only.
 - [ ] Confirm Task 6.3 is not auto-started.
+
+## Task 6.3 Auth & User Account Lifecycle Architecture Gate
+
+- [ ] Confirm `docs/AUTH_USER_ACCOUNT_LIFECYCLE_ARCHITECTURE_GATE.md` exists.
+- [ ] Confirm Task 6.3 is docs/static tests only and has no auth production readiness implication.
+- [ ] Confirm no auth runtime, login/signup, OAuth, token/session handling, user table, production backend, cloud sync, deployment, source-of-truth migration, normalized tables, package/script/lockfile change, or browser route is added.
+- [ ] Confirm anonymous local user, future account identity, local data to account linking, account creation lifecycle, account deletion lifecycle, export/delete responsibilities, auth failure behavior, identity mismatch risk, and localStorage fallback are documented.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.4 Production Backend & Database Architecture Decision V1`, planning/docs/static tests only.
