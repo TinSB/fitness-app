@@ -1649,6 +1649,30 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 
 Next recommended task: Task 5.22 Active Session Full Write-path Regression Lock V1.
 
+### Task 5.22: Active Session Full Write-path Regression Lock V1
+
+Status: Completed in this branch as a docs/static regression lock for the full active-session write path.
+
+Task 5.22 adds `docs/ACTIVE_SESSION_FULL_WRITE_PATH_REGRESSION_LOCK.md`, `tests/activeSessionFullWritePathRegressionLock.test.ts`, `tests/activeSessionFullWritePathBoundaryLock.test.ts`, `tests/activeSessionFullWritePathCoverageInventory.test.ts`, and `tests/activeSessionFullWritePathDocsParity.test.ts`.
+
+The lock covers the exact seven-route allowlist, blocked DataHealth repair, backup/import/export, reset/recovery, broad mutation client, eighth-route, production/auth/sync/cloud/deployment boundaries, active-session no-fake-success rules, localStorage/AppData integrity, coverage inventory, manual acceptance inventory, and browser build isolation.
+
+Task 5.22 does not add a browser route, does not add an eighth mutation route, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, does not add a broad mutation client, does not implement API-backed persistence, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.23 API-backed Persistence Facade Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -123,3 +123,9 @@ Next recommended task: `Task 5.22 Active Session Full Write-path Regression Lock
 - Still blocked: DataHealth repair, backup/import/export, reset/recovery, broad mutation client, production backend/auth/sync/cloud/deployment, source-of-truth migration outside approved Phase 5 runtime work, and any eighth browser mutation route.
 - Source of truth: localStorage remains source of truth.
 - Rollback requirement: revert the Task 5.21 docs/static-test commit.
+
+## Task 5.22 Follow-up: Active Session Full Write-path Regression Lock
+
+Task 5.22 adds `docs/ACTIVE_SESSION_FULL_WRITE_PATH_REGRESSION_LOCK.md` as the regression lock for the accepted active-session write path.
+
+It locks the exact seven-route browser mutation allowlist, keeps DataHealth repair, backup/import/export, reset/recovery, broad mutation clients, eighth routes, production backend/auth/sync/cloud/deployment, and source-of-truth migration blocked, and recommends Task 5.23 API-backed Persistence Facade Plan V1 as planning-only.
