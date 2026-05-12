@@ -1889,6 +1889,30 @@ localStorage remains the default runtime source and remains fallback/migration s
 
 Next recommended task: Task 5.32 LocalStorage to SQLite Migration Dry-run V1.
 
+### Task 5.32: LocalStorage to SQLite Migration Dry-run V1
+
+Status: Completed in this branch as a no-write migration dry-run helper.
+
+Task 5.32 adds `src/storage/localStorageToSqliteMigrationDryRun.ts`, `docs/LOCALSTORAGE_TO_SQLITE_MIGRATION_DRY_RUN.md`, `tests/localStorageToSqliteMigrationDryRun.test.ts`, `tests/localStorageToSqliteMigrationDryRunBoundary.test.ts`, and `tests/localStorageToSqliteMigrationDryRunDocs.test.ts`.
+
+The dry-run validates localStorage AppData, sanitizes and schema-checks payloads, summarizes schema/history/template/active-session/settings state, compares optional API snapshot summary fields as warnings, and keeps `shouldWriteSqlite`, `shouldWriteLocalStorage`, and `shouldSwitchSource` false.
+
+Task 5.32 does not write SQLite, does not write localStorage, does not delete localStorage, does not switch source of truth, does not auto-apply migration, does not modify App.tsx, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains the default runtime source and remains fallback/migration source. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.33 LocalStorage to SQLite Migration Apply Prototype V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

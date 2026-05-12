@@ -19,6 +19,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/storage/apiStorageAdapter.ts',
   'src/storage/apiWriteThroughRuntime.ts',
   'src/storage/bootFromApiSnapshot.ts',
+  'src/storage/localStorageToSqliteMigrationDryRun.ts',
   'src/storage/runtimeSourceConfig.ts',
   'src/storage/runtimeSourceSelector.ts',
 ]);

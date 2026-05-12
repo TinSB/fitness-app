@@ -1000,3 +1000,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.32 LocalStorage to SQLite Migration Dry-run V1`.
+
+## Task 5.32 LocalStorage to SQLite Migration Dry-run
+
+- [ ] Confirm `src/storage/localStorageToSqliteMigrationDryRun.ts` exists.
+- [ ] Confirm dry-run validates localStorage AppData and reports schema/count summary.
+- [ ] Confirm optional API snapshot comparison reports warnings only.
+- [ ] Confirm dry-run returns `shouldWriteSqlite: false`, `shouldWriteLocalStorage: false`, and `shouldSwitchSource: false`.
+- [ ] Confirm no SQLite write, localStorage write, localStorage deletion, source switch, or migration apply occurs.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.33 LocalStorage to SQLite Migration Apply Prototype V1`.
