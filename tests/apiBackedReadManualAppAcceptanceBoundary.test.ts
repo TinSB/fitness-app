@@ -21,7 +21,7 @@ const blockedNodeOnlyTokens = [
 ];
 
 describe('API-backed read manual App acceptance boundary', () => {
-  it('keeps read prototype GET-only and leaves source-switch/storage implementation absent', () => {
+  it('keeps read prototype GET-only and leaves source-switch implementation absent', () => {
     expect(API_BACKED_READ_ROUTES).toEqual([
       '/health',
       '/app-data/summary',
@@ -34,13 +34,17 @@ describe('API-backed read manual App acceptance boundary', () => {
     for (const path of [
       'src/storage/runtimeSourceSelector.ts',
       'src/storage/runtimeSourceConfig.ts',
-      'src/storage/apiStorageAdapter.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
       'src/devApi/devApiMutationClient.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+
+    expect(
+      existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')),
+      'Task 5.24 API storage adapter may exist default-off',
+    ).toBe(true);
   });
 
   it('keeps browser source free of Node-only runtime tokens and read client free of POST writes', () => {

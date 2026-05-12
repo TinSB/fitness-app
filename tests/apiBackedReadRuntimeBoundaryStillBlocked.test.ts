@@ -13,12 +13,12 @@ describe('API-backed read runtime boundary remains constrained', () => {
     for (const path of [
       'src/storage/runtimeSourceSelector.ts',
       'src/storage/runtimeSourceConfig.ts',
-      'src/storage/apiStorageAdapter.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')), 'Task 5.24 adapter may exist default-off').toBe(true);
   });
 
   it('keeps browser source free of source-switch/storage implementation and Node-only runtime tokens', () => {
@@ -38,8 +38,10 @@ describe('API-backed read runtime boundary remains constrained', () => {
     ];
 
     for (const file of collectSrcRuntimeFiles()) {
+      const path = relativePath(file);
       const source = stripComments(readFileSync(file, 'utf8'));
-      expect(forbidden.filter((token) => source.includes(token)), `${relativePath(file)} boundary`).toEqual([]);
+      const allowed = path === 'src/storage/apiStorageAdapter.ts' ? ['api-primary-dev', 'apiStorageAdapter'] : [];
+      expect(forbidden.filter((token) => source.includes(token) && !allowed.includes(token)), `${path} boundary`).toEqual([]);
     }
   });
 

@@ -9,9 +9,8 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('source-of-truth migration boundary remains blocked', () => {
-  it('does not add migration/runtime source implementation files in Task 5.1', () => {
+  it('does not add migration/runtime source implementation files beyond the Task 5.24 adapter', () => {
     for (const path of [
-      'src/storage/apiStorageAdapter.ts',
       'src/storage/runtimeSourceSelector.ts',
       'src/storage/runtimeSourceConfig.ts',
       'src/storage/localStorageToSqliteMigration.ts',
@@ -20,6 +19,11 @@ describe('source-of-truth migration boundary remains blocked', () => {
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
+
+    expect(
+      existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')),
+      'Task 5.24 API storage adapter may exist default-off',
+    ).toBe(true);
   });
 
   it('keeps browser source free of migration implementation and Node-only runtime tokens', () => {

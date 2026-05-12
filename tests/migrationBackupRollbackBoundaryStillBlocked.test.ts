@@ -9,17 +9,21 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('migration backup and rollback boundary remains blocked', () => {
-  it('does not add migration implementation files in Task 5.5', () => {
+  it('does not add migration implementation files beyond the Task 5.24 adapter', () => {
     for (const path of [
       'src/storage/localStorageToSqliteMigrationDryRun.ts',
       'src/storage/localStorageToSqliteMigrationApply.ts',
       'src/storage/migrationRollback.ts',
       'src/storage/migrationBackup.ts',
-      'src/storage/apiStorageAdapter.ts',
       'src/storage/runtimeSourceSelector.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
+
+    expect(
+      existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')),
+      'Task 5.24 API storage adapter may exist default-off',
+    ).toBe(true);
   });
 
   it('keeps browser source free of migration implementation and Node-only runtime tokens', () => {

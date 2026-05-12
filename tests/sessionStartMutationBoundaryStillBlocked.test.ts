@@ -4,6 +4,9 @@ import { join, resolve } from 'node:path';
 import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealthDismissClient';
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
+import { DEV_API_SESSION_COMPLETE_ROUTE } from '../src/devApi/devApiSessionCompleteClient';
+import { DEV_API_SESSION_DISCARD_ROUTE } from '../src/devApi/devApiSessionDiscardClient';
+import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 
 const root = process.cwd();
@@ -26,26 +29,41 @@ const stripComments = (source: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-describe('session start mutation remains one-route after implementation', () => {
-  it('keeps current browser mutation allowlist at four routes', () => {
+describe('session start mutation remains constrained after active-session follow-up prototypes', () => {
+  it('keeps current browser mutation allowlist at seven routes', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
       `POST ${DEV_API_HISTORY_SET_EDIT_ROUTE}`,
       `POST ${DEV_API_SESSION_START_ROUTE}`,
+      `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
+      `POST ${DEV_API_SESSION_COMPLETE_ROUTE}`,
+      `POST ${DEV_API_SESSION_DISCARD_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
       'POST /history/:id/edit',
       'POST /sessions/start',
+      'POST /sessions/active/patches',
+      'POST /sessions/active/complete',
+      'POST /sessions/active/discard',
     ]);
   });
 
-  it('adds only session-start runtime files and blocks other active-session route calls', () => {
+  it('allows active-session runtime files and blocks destructive route calls', () => {
     [
       'src/devApi/devApiSessionStartConfig.ts',
       'src/devApi/devApiSessionStartClient.ts',
       'src/devApi/DevApiSessionStartPrototype.tsx',
+      'src/devApi/devApiSessionPatchConfig.ts',
+      'src/devApi/devApiSessionPatchClient.ts',
+      'src/devApi/DevApiSessionPatchPrototype.tsx',
+      'src/devApi/devApiSessionCompleteConfig.ts',
+      'src/devApi/devApiSessionCompleteClient.ts',
+      'src/devApi/DevApiSessionCompletePrototype.tsx',
+      'src/devApi/devApiSessionDiscardConfig.ts',
+      'src/devApi/devApiSessionDiscardClient.ts',
+      'src/devApi/DevApiSessionDiscardPrototype.tsx',
     ].forEach((path) => expect(existsSync(resolve(root, path))).toBe(true));
 
     const runtimeSource = listFiles('src')
@@ -54,9 +72,6 @@ describe('session start mutation remains one-route after implementation', () => 
       .join('\n');
 
     [
-      '/sessions/active/patches',
-      '/sessions/active/complete',
-      '/sessions/active/discard',
       '/data-health/repair/apply',
       '/backup/import',
       '/backup/export',

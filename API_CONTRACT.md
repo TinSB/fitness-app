@@ -2449,3 +2449,25 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.24 API-backed Persistence Adapter Prototype V1`.
+
+## Task 5.24: API-backed Persistence Adapter Prototype V1
+
+Task 5.24 adds `src/storage/apiStorageAdapter.ts` as a default-off, dev/local-only API storage adapter prototype.
+
+The adapter is not mounted in App.tsx, is not used by `loadData` or `saveData`, and does not replace localStorage. It requires development mode plus `VITE_IRONPATH_RUNTIME_SOURCE === "api-primary-dev"` and a localhost-only Dev API base URL. It exposes typed route-specific read/write facade methods only; it does not add a broad mutation client or route dispatcher.
+
+Task 5.24 does not switch source of truth, does not add a runtime source selector, does not add boot-from-API snapshot behavior, does not add API write-through runtime, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains source of truth by default. The API storage adapter never silently overwrites AppData or localStorage.
+
+The next recommended task is `Task 5.25 Runtime Source Selector Prototype V1`.
