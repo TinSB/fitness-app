@@ -9,16 +9,20 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('offline/PWA conflict boundary remains blocked', () => {
-  it('does not add offline queue or runtime source implementation files in Task 5.6', () => {
+  it('does not add offline queue or runtime source implementation files beyond the Task 5.24 adapter', () => {
     for (const path of [
       'src/storage/offlineMutationQueue.ts',
       'src/storage/offlineReplay.ts',
       'src/storage/backgroundSync.ts',
       'src/storage/runtimeSourceSelector.ts',
-      'src/storage/apiStorageAdapter.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
+
+    expect(
+      existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')),
+      'Task 5.24 API storage adapter may exist default-off',
+    ).toBe(true);
   });
 
   it('keeps browser source free of offline queue and Node-only runtime tokens', () => {

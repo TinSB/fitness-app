@@ -35,12 +35,12 @@ describe('API-backed read prototype boundary', () => {
     for (const path of [
       'src/storage/runtimeSourceSelector.ts',
       'src/storage/runtimeSourceConfig.ts',
-      'src/storage/apiStorageAdapter.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')), 'Task 5.24 adapter may exist default-off').toBe(true);
   });
 
   it('locks the API-backed read route surface to GET-only read routes', () => {
@@ -116,7 +116,6 @@ describe('API-backed read prototype boundary', () => {
       'src/hooks/useMutationApi.ts',
       'src/api/mutations.ts',
       'src/devApi/devApiMutationClient.ts',
-      'src/storage/apiStorageAdapter.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }

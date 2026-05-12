@@ -48,7 +48,6 @@ describe('API-backed read runtime acceptance boundary', () => {
     for (const path of [
       'src/storage/runtimeSourceSelector.ts',
       'src/storage/runtimeSourceConfig.ts',
-      'src/storage/apiStorageAdapter.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
       'src/devApi/devApiMutationClient.ts',
@@ -59,6 +58,7 @@ describe('API-backed read runtime acceptance boundary', () => {
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')), 'Task 5.24 adapter may exist default-off').toBe(true);
 
     const packageJson = JSON.parse(readSource('package.json')) as {
       scripts?: Record<string, string>;

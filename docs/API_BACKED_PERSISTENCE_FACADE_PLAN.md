@@ -162,3 +162,11 @@ No runtime source selector is implemented.
 No App.tsx integration is added.
 localStorage remains source of truth.
 Next task should be Task 5.24 API-backed Persistence Adapter Prototype V1 only if gates pass.
+
+## Task 5.24 Follow-up: API-backed Persistence Adapter Prototype
+
+Task 5.24 adds `src/storage/apiStorageAdapter.ts` as a default-off dev/local API storage adapter prototype.
+
+It does not modify App.tsx, does not wire `loadData` or `saveData`, does not replace localStorage, does not switch source of truth, does not add a runtime source selector, does not add boot-from-API snapshot behavior, does not add API write-through runtime, and does not add production backend/auth/sync/cloud/deployment.
+
+Next task should be Task 5.25 Runtime Source Selector Prototype V1.

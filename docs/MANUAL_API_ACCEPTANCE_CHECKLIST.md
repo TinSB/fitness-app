@@ -895,3 +895,17 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, broad mutation clients, package changes, production backend, auth, sync, cloud, and deployment remain blocked.
 - [ ] Confirm next recommended task is `Task 5.24 API-backed Persistence Adapter Prototype V1`.
+
+## Task 5.24 API-backed Persistence Adapter Prototype
+
+- [ ] Confirm `src/storage/apiStorageAdapter.ts` exists.
+- [ ] Confirm the adapter is default-off and requires development mode plus `VITE_IRONPATH_RUNTIME_SOURCE === "api-primary-dev"`.
+- [ ] Confirm the Dev API base URL remains localhost-only.
+- [ ] Confirm App.tsx, `loadData`, and `saveData` are not wired to the adapter.
+- [ ] Confirm localStorage remains source of truth by default and remains fallback/migration source.
+- [ ] Confirm the adapter exposes route-specific typed read/write facade methods only and no broad mutation client.
+- [ ] Confirm write success requires HTTP success, `ok=true`, `changed=true`, `status="success"`, and snapshot metadata.
+- [ ] Confirm disabled config, invalid target, timeout, unavailable API, malformed response, missing snapshot, and server non-success states are visible failures.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.25 Runtime Source Selector Prototype V1`.

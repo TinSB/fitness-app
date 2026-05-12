@@ -68,7 +68,7 @@ describe('session patch mutation browser boundary remains constrained', () => {
     }
   });
 
-  it('keeps broad mutation client, source selector, and API storage absent', () => {
+  it('keeps broad mutation client and source selector absent while allowing the Task 5.24 adapter', () => {
     for (const path of [
       'src/devApi/devApiMutationClient.ts',
       'src/mutationClient.ts',
@@ -76,10 +76,14 @@ describe('session patch mutation browser boundary remains constrained', () => {
       'src/hooks/useMutationApi.ts',
       'src/api/mutations.ts',
       'src/storage/runtimeSourceSelector.ts',
-      'src/storage/apiStorageAdapter.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+
+    expect(
+      existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')),
+      'Task 5.24 API storage adapter may exist default-off',
+    ).toBe(true);
 
     const packageJson = readSource('package.json');
     expect(packageJson).not.toMatch(/playwright|cypress|mutation-client|auth|sync|cloud/i);

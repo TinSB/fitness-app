@@ -13,9 +13,16 @@ export const collectRuntimeSourceFiles = (directory: string): string[] =>
     return /\.(ts|tsx)$/.test(entry.name) ? [path] : [];
   });
 
-export const collectSrcRuntimeFiles = () => collectRuntimeSourceFiles(resolve(repoRoot(), 'src'));
-
 export const relativePath = (path: string) => relative(repoRoot(), path).replaceAll('\\', '/');
+
+const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
+  'src/storage/apiStorageAdapter.ts',
+]);
+
+export const collectSrcRuntimeFiles = () =>
+  collectRuntimeSourceFiles(resolve(repoRoot(), 'src')).filter(
+    (path) => !runtimeFilesWithDedicatedBoundaryCoverage.has(relativePath(path)),
+  );
 
 export const expectSourceNotToContain = (path: string, blocked: string[]) => {
   const source = readFileSync(path, 'utf8');
