@@ -2057,6 +2057,30 @@ localStorage remains default runtime source, fallback, migration source, and eme
 
 Next recommended task: Task 5.39 Phase 5 Exit Regression Lock V1.
 
+### Task 5.39: Phase 5 Exit Regression Lock V1
+
+Status: Completed in this branch as Phase 5 exit regression lock documentation and static boundary/coverage parity tests.
+
+Task 5.39 adds `docs/PHASE5_EXIT_REGRESSION_LOCK.md`, `tests/phase5ExitRegressionLock.test.ts`, `tests/phase5ExitBoundaryLock.test.ts`, `tests/phase5ExitCoverageInventory.test.ts`, and `tests/phase5ExitDocsParity.test.ts`.
+
+The lock covers accepted runtime modes, accepted browser mutation routes, blocked routes/capabilities, source-of-truth exit rules, fallback rules, migration rules, browser build isolation, coverage inventory, and Phase 6 handoff-only next step.
+
+Task 5.39 does not add runtime behavior, does not delete localStorage, does not silently overwrite localStorage or AppData, does not make API primary production default, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains default runtime source, fallback, migration source, and emergency backup. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.40 Phase 6 Handoff Plan V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
