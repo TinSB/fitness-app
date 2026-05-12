@@ -71,6 +71,11 @@ import {
   upsertPlanAdjustmentDraftByFingerprint,
 } from './engines/planAdjustmentIdentityEngine';
 import { buildRecoveryAwareRecommendation } from './engines/recoveryAwareScheduler';
+import {
+  buildTodayFocusOverrideSessionMetadata,
+  buildTodayTrainingFocusSelection,
+  type TodayTrainingFocusOverrideOption,
+} from './engines/todayTrainingFocusOverrideEngine';
 import { getSessionCalendarDate } from './engines/trainingCalendarEngine';
 import {
   applySessionPatches,
@@ -86,7 +91,7 @@ import {
   upsertPendingSessionPatch,
 } from './engines/sessionPatchEngine';
 import { formatTemplateName } from './i18n/formatters';
-import type { AppData, LoadFeedbackValue, PendingSessionPatch, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, UnitSettings } from './models/training-model';
+import type { AppData, LoadFeedbackValue, PendingSessionPatch, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, TrainingTemplate, UnitSettings } from './models/training-model';
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
@@ -119,6 +124,12 @@ type AppToast = { message: string; tone: 'success' | 'warning' | 'danger' | 'inf
 type StatusField = 'sleep' | 'energy' | 'time';
 type SorenessPart = TodayStatus['soreness'][number];
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
+type StartSessionOptions = {
+  explicitPatches?: SessionPatch[];
+  templateOverride?: TrainingTemplate;
+  preservePlanSelection?: boolean;
+  todayFocusOverride?: TrainingSession['todayFocusOverride'];
+};
 
 const getSetList = (session: TrainingSession | null, exerciseIndex: number): TrainingSetLog[] => {
   if (!session) return [];
@@ -238,6 +249,7 @@ function App() {
   const [profileTargetSection, setProfileTargetSection] = useState<ProfileTargetSection | null>(null);
   const [planTarget, setPlanTarget] = useState<PlanTarget | null>(null);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
+  const [todayFocusOverride, setTodayFocusOverride] = useState<TodayTrainingFocusOverrideOption>('system');
   const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
@@ -393,6 +405,30 @@ function App() {
   );
   const suggestedTemplateId = recoveryRecommendation.templateId || baseSuggestedTemplateId;
   const suggestedTemplate = findTemplate(data.templates, suggestedTemplateId);
+  const todayFocusSelection = React.useMemo(
+    () =>
+      buildTodayTrainingFocusSelection({
+        systemTemplate: suggestedTemplate,
+        templates: data.templates || [],
+        override: todayFocusOverride,
+        todayStatus: decisionContext.todayStatus,
+        readinessResult: recoveryReadinessResult,
+        history: decisionContext.history,
+        painAreas: recoveryPainPatterns.map((pattern) => pattern.area),
+        today: todayKey(),
+      }),
+    [
+      suggestedTemplate,
+      data.templates,
+      todayFocusOverride,
+      decisionContext.todayStatus,
+      recoveryReadinessResult,
+      decisionContext.history,
+      recoveryPainPatterns,
+    ],
+  );
+  const todaySelectedTemplate = todayFocusSelection.selectedTemplate;
+  const todayRecoveryRecommendation = todayFocusSelection.overrideActive ? undefined : recoveryRecommendation;
   const rawCoachActions = React.useMemo(
     () => {
       return buildCoachActions({
@@ -404,10 +440,10 @@ function App() {
         plateauResults: trainingIntelligenceSummary.plateauResults,
         volumeAdaptation: trainingIntelligenceSummary.volumeAdaptation,
         recommendationConfidence: trainingIntelligenceSummary.recommendationConfidence,
-        recoveryRecommendation,
+        recoveryRecommendation: todayRecoveryRecommendation,
       });
     },
-    [data, baseEnginePipeline.todayAdjustment, baseEnginePipeline.nextWorkout, baseEnginePipeline.dataHealth, trainingIntelligenceSummary, recoveryRecommendation],
+    [data, baseEnginePipeline.todayAdjustment, baseEnginePipeline.nextWorkout, baseEnginePipeline.dataHealth, trainingIntelligenceSummary, todayRecoveryRecommendation],
   );
   const enginePipeline = React.useMemo(
     () => buildEnginePipeline(data, todayKey(), { trainingMode: data.trainingMode, coachActions: rawCoachActions }),
@@ -416,27 +452,30 @@ function App() {
   const coachActions = enginePipeline.visibleCoachActions;
   const pendingSessionPatchRecords = data.pendingSessionPatches || data.settings?.pendingSessionPatches || [];
   const activePendingSessionPatch = React.useMemo(
-    () => findActivePendingSessionPatch(pendingSessionPatchRecords, todayKey(), activeTemplateId),
-    [pendingSessionPatchRecords, activeTemplateId],
+    () => findActivePendingSessionPatch(pendingSessionPatchRecords, todayKey(), todaySelectedTemplate.id),
+    [pendingSessionPatchRecords, todaySelectedTemplate.id],
   );
   const pendingSessionPatches = React.useMemo(
-    () => getActivePendingSessionPatches(pendingSessionPatchRecords, todayKey(), activeTemplateId),
-    [pendingSessionPatchRecords, activeTemplateId],
+    () => getActivePendingSessionPatches(pendingSessionPatchRecords, todayKey(), todaySelectedTemplate.id),
+    [pendingSessionPatchRecords, todaySelectedTemplate.id],
   );
 
-  const startSession = (templateId = activeTemplateId, explicitPatches?: SessionPatch[]) => {
-    const template = findTemplate(data.templates, templateId);
+  const startSession = (templateId = activeTemplateId, options: SessionPatch[] | StartSessionOptions = {}) => {
+    const startOptions: StartSessionOptions = Array.isArray(options) ? { explicitPatches: options } : options;
+    const template = startOptions.templateOverride || findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
-    const currentActiveTemplateId = data.activeProgramTemplateId || activeTemplateId || templateId;
+    const currentActiveTemplateId = startOptions.preservePlanSelection
+      ? data.activeProgramTemplateId || activeTemplateId
+      : data.activeProgramTemplateId || activeTemplateId || templateId;
     const workingData = {
       ...data,
       screeningProfile,
-      selectedTemplateId: templateId,
+      selectedTemplateId: template.id,
       activeProgramTemplateId: currentActiveTemplateId,
     };
     const sessionDecisionContext = buildTrainingDecisionContext(workingData, todayKey(), {
       screeningProfile,
-      selectedTemplateId: templateId,
+      selectedTemplateId: template.id,
       activeProgramTemplateId: currentActiveTemplateId,
       currentTrainingTemplate: template,
       activeTemplate: template,
@@ -452,10 +491,13 @@ function App() {
       data.mesocyclePlan,
       sessionDecisionContext
     ) as TrainingSession;
-    const pendingPatch = explicitPatches ? undefined : findActivePendingSessionPatch(data.pendingSessionPatches || data.settings?.pendingSessionPatches || [], todayKey(), templateId);
-    const patches = explicitPatches ?? pendingPatch?.patches ?? [];
+    const pendingPatch = startOptions.explicitPatches ? undefined : findActivePendingSessionPatch(data.pendingSessionPatches || data.settings?.pendingSessionPatches || [], todayKey(), template.id);
+    const patches = startOptions.explicitPatches ?? pendingPatch?.patches ?? [];
     const patchResult = patches.length ? applySessionPatches(baseSession, patches) : null;
-    const session = patchResult?.session || baseSession;
+    const session = {
+      ...(patchResult?.session || baseSession),
+      ...(startOptions.todayFocusOverride ? { todayFocusOverride: startOptions.todayFocusOverride } : {}),
+    };
 
     setData((current) => {
       const nextPendingPatches = pendingPatch
@@ -464,8 +506,8 @@ function App() {
       return {
         ...current,
         screeningProfile,
-        selectedTemplateId: templateId,
-        activeProgramTemplateId: current.activeProgramTemplateId || currentActiveTemplateId || templateId,
+        selectedTemplateId: startOptions.preservePlanSelection ? current.selectedTemplateId : template.id,
+        activeProgramTemplateId: startOptions.preservePlanSelection ? current.activeProgramTemplateId : current.activeProgramTemplateId || currentActiveTemplateId || template.id,
         activeSession: session,
         pendingSessionPatches: nextPendingPatches,
         settings: {
@@ -1678,6 +1720,14 @@ function App() {
     showAppToast('当前没有可撤销的本次调整。', 'info');
   };
 
+  const startTodayFocusSelection = () => {
+    startSession(todaySelectedTemplate.id, {
+      templateOverride: todaySelectedTemplate,
+      preservePlanSelection: todayFocusSelection.overrideActive,
+      todayFocusOverride: buildTodayFocusOverrideSessionMetadata(todayFocusSelection, new Date().toISOString()),
+    });
+  };
+
   const navigate = (tab: ActiveTab) => {
     setActiveTab(tab);
     if (tab === 'profile') {
@@ -1710,9 +1760,10 @@ function App() {
                 {activeTab === 'today' && (
                   <TodayView
                     data={data}
-                    selectedTemplate={selectedTemplate}
+                    selectedTemplate={todaySelectedTemplate}
                     suggestedTemplate={suggestedTemplate}
-                    recoveryRecommendation={recoveryRecommendation}
+                    todayFocusSelection={todayFocusSelection}
+                    recoveryRecommendation={todayRecoveryRecommendation}
                     weeklyPrescription={weeklyPrescription}
                     coachActions={coachActions}
                     onCoachAction={handleCoachAction}
@@ -1725,9 +1776,13 @@ function App() {
                     onModeChange={updateTrainingMode}
                     onStatusChange={updateStatus}
                     onSorenessToggle={toggleSoreness}
+                    onFocusOverrideChange={setTodayFocusOverride}
                     onTemplateSelect={(id) => setData((current) => ({ ...current, selectedTemplateId: id }))}
-                    onUseSuggestion={() => setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId, activeProgramTemplateId: suggestedTemplateId }))}
-                    onStart={() => startSession()}
+                    onUseSuggestion={() => {
+                      setTodayFocusOverride('system');
+                      setData((current) => ({ ...current, selectedTemplateId: suggestedTemplateId, activeProgramTemplateId: suggestedTemplateId }));
+                    }}
+                    onStart={startTodayFocusSelection}
                     onStartRecommended={(templateId) => startSession(templateId)}
                     onResume={() => setActiveTab('training')}
                     onViewSession={(sessionId, date) => {
