@@ -2853,6 +2853,32 @@ Next recommended task: Task 6.28 Production Data Export / Delete Plan V1.
 
 Task 6.28 must be docs/static tests only. It must not add export/delete runtime, account deletion runtime, backup retention runtime, audit retention runtime, package changes, routes, or source-of-truth switching.
 
+### Task 6.28: Production Data Export / Delete Plan V1
+
+Status: Completed in this branch as production data export/delete planning documentation and static boundary tests.
+
+Task 6.28 adds `docs/PRODUCTION_DATA_EXPORT_DELETE_PLAN.md`, `tests/productionDataExportDeletePlan.test.ts`, `tests/productionDataExportDeleteBoundaryStillBlocked.test.ts`, and `tests/productionDataExportDeleteDocsParity.test.ts`.
+
+Task 6.28 plans export, delete, account deletion, backup retention, and audit record retention responsibilities without implementation.
+
+This task adds no export/delete runtime, no account deletion runtime, no backup retention runtime, no audit retention runtime, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.29 Production Phase Implementation Boundary Lock V1.
+
+Task 6.29 must be docs/static tests only. It must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
