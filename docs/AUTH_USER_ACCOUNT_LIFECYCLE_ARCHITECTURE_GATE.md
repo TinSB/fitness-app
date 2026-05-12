@@ -133,3 +133,11 @@ Task 6.4 must be planning/docs/static tests only. Task 6.4 must not implement pr
 Task 6.3 is complete after this task.
 
 Do not start auth implementation yet. Next task should be Task 6.4 Production Backend & Database Architecture Decision V1. Do not auto-start unapproved work outside the Phase 6 chain.
+
+## Task 6.4 Follow-up
+
+Task 6.4 Production Backend & Database Architecture Decision V1 adds `docs/PRODUCTION_BACKEND_DATABASE_ARCHITECTURE_DECISION.md` as a planning-level backend and database architecture decision.
+
+Task 6.4 remains planning/docs/static tests only. It does not implement production backend, Fastify/Express/Koa/Hono server, production database, normalized schema, migration, auth, sync, deployment, source-of-truth migration, package changes, browser routes, or real personal training data migration.
+
+The next recommended task after Task 6.4 is Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1, docs/static tests only.

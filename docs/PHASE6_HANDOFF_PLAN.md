@@ -201,3 +201,13 @@ Task 6.3 defines anonymous local user, future account identity, local data to ac
 Task 6.3 keeps auth runtime, login/signup, OAuth, token/session handling, user tables, production backend, cloud sync, deployment, source-of-truth migration, normalized tables, package changes, browser route changes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.4 Production Backend & Database Architecture Decision V1, planning/docs/static tests only. Task 6.4 must not implement production backend, normalized schema, auth, sync, deployment, migration, or source-of-truth switching.
+
+## Task 6.4 Backend Database Alignment
+
+Task 6.4 Production Backend & Database Architecture Decision V1 adds `docs/PRODUCTION_BACKEND_DATABASE_ARCHITECTURE_DECISION.md` as a planning-level backend and database architecture decision.
+
+Task 6.4 evaluates no backend yet, single Node backend, serverless API, hosted backend/database, local-first desktop backend, current SQLite snapshot repository, normalized schema risk, migration/rollback requirements, and backup requirements without implementation.
+
+Task 6.4 keeps production backend runtime, production database runtime, normalized schema, migration, auth, sync, deployment, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1, docs/static tests only. Task 6.5 must not implement cloud sync, remote writes, background sync, production backend, auth, deployment, migration, or source-of-truth switching.
