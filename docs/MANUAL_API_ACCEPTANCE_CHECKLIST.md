@@ -1118,3 +1118,18 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm recommended next task with explicit future approval is `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`.
+
+## Task 6.0 Phase 6 Preflight Production Boundary Lock
+
+- [ ] Confirm `docs/PHASE6_PREFLIGHT_PRODUCTION_BOUNDARY_LOCK.md` exists.
+- [ ] Confirm Phase 6 preflight is a boundary lock only.
+- [ ] Confirm no production backend, auth, user accounts, cloud sync, deployment, or monitoring is implemented.
+- [ ] Confirm no source-of-truth migration, normalized tables, dependency/script/lockfile change, or browser route is added.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm required PR check remains GitHub Actions `IronPath Validation` and use `gh pr checks <PR_NUMBER> --required --watch`.
+- [ ] Confirm optional Vercel checks do not block merge if GitHub allows normal squash merge.
+- [ ] Confirm never use `--admin`, never bypass branch protection, and IronPath Validation failure blocks merge.
+- [ ] Confirm next recommended task is `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`, architecture gate only.
+- [ ] Confirm Task 6.1 is not auto-started.

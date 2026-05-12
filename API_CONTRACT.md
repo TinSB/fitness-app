@@ -2833,3 +2833,23 @@ Accepted browser mutation routes remain exactly:
 - `POST /sessions/active/discard`
 
 Recommended next task, only with explicit future approval, is `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`.
+
+## Task 6.0: Phase 6 Preflight & Production Boundary Lock V1
+
+Task 6.0 adds `docs/PHASE6_PREFLIGHT_PRODUCTION_BOUNDARY_LOCK.md` as the Phase 6 preflight and production boundary lock.
+
+This task adds no runtime behavior, no production backend/auth/user accounts/cloud sync/deployment/monitoring, no source-of-truth migration, no normalized tables, no package changes, no browser mutation route, no DataHealth repair, and no backup/import/export/reset/recovery HTTP routes.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`, architecture gate only. Task 6.1 must not implement production backend/auth/sync/deployment and must not auto-start from Task 6.0.
