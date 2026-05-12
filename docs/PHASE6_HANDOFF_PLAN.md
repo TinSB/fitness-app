@@ -381,3 +381,13 @@ Task 6.21 documents `local`, `development`, `staging`, and `production` names, s
 Task 6.21 keeps deployment implementation, production runtime enablement, secret values, auth provider configuration, sync provider configuration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.22 Deployment Runtime Strategy & Staging Plan V1, docs/static tests only. Task 6.22 must not implement production deployment, hosted production runtime, secret provisioning, routes, dependencies, or source-of-truth switching.
+
+## Task 6.22 Deployment Runtime Strategy Alignment
+
+Task 6.22 Deployment Runtime Strategy & Staging Plan V1 adds `docs/DEPLOYMENT_RUNTIME_STRATEGY_STAGING_PLAN.md` as deployment runtime strategy and staging planning documentation.
+
+Task 6.22 documents staging vs production, rollback, preview deployments optional for Codex PRs, IronPath Validation as required, and no production deployment implementation.
+
+Task 6.22 keeps production deployment, hosted production runtime, deployment config, secret values, auth provider configuration, sync provider configuration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.23 Secrets & Environment Validation Skeleton V1. Task 6.23 may add a safe environment validation skeleton only if no dependency is needed and must not add secret values, production deployment, auth provider, sync provider, package changes, routes, or source-of-truth switching.

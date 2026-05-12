@@ -3315,3 +3315,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.21 documents `local`, `development`, `staging`, and `production` names, secrets separation, no secret values, no production deploy, and no runtime production enable by default.
 
 Recommended next task is `Task 6.22 Deployment Runtime Strategy & Staging Plan V1`, docs/static tests only. Task 6.22 must not implement production deployment, hosted production runtime, secret provisioning, routes, dependencies, or source-of-truth switching.
+
+## Task 6.22: Deployment Runtime Strategy & Staging Plan V1
+
+Task 6.22 adds `docs/DEPLOYMENT_RUNTIME_STRATEGY_STAGING_PLAN.md` as deployment runtime strategy and staging planning documentation.
+
+This task adds no production deployment, no hosted production runtime, no deployment config, no secret values, no auth provider configuration, no sync provider configuration, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.22 documents staging vs production, rollback, preview deployments optional for Codex PRs, IronPath Validation as required, and no production deployment implementation.
+
+Recommended next task is `Task 6.23 Secrets & Environment Validation Skeleton V1`. Task 6.23 may add a safe environment validation skeleton only if no dependency is needed. It must not add secret values, production deployment, auth provider, sync provider, package changes, routes, or source-of-truth switching.
