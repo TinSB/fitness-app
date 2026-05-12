@@ -989,3 +989,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.31 API Primary Runtime Regression Lock V1`.
+
+## Task 5.31 API Primary Runtime Regression Lock
+
+- [ ] Confirm `docs/API_PRIMARY_RUNTIME_REGRESSION_LOCK.md` exists.
+- [ ] Confirm runtime source modes remain exactly `localStorage`, `api-readonly`, and `api-primary-dev`.
+- [ ] Confirm `localStorage` remains default and fallback/migration source.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm boot, read, write, no-fake-success, localStorage integrity, browser build isolation, coverage inventory, and manual inventory are locked.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.32 LocalStorage to SQLite Migration Dry-run V1`.

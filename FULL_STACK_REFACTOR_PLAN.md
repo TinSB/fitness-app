@@ -1865,6 +1865,30 @@ localStorage remains the default runtime source and remains fallback/migration s
 
 Next recommended task: Task 5.31 API Primary Runtime Regression Lock V1.
 
+### Task 5.31: API Primary Runtime Regression Lock V1
+
+Status: Completed in this branch as the API primary runtime regression lock.
+
+Task 5.31 adds `docs/API_PRIMARY_RUNTIME_REGRESSION_LOCK.md`, `tests/apiPrimaryRuntimeRegressionLock.test.ts`, `tests/apiPrimaryRuntimeBoundaryLock.test.ts`, `tests/apiPrimaryRuntimeCoverageInventory.test.ts`, and `tests/apiPrimaryRuntimeDocsParity.test.ts`.
+
+The lock proves the runtime source selector works, localStorage fallback works, `api-primary-dev` does not silently pollute localStorage, browser build isolation remains clean, and no production mode is introduced.
+
+Task 5.31 does not modify App.tsx, does not wire API primary as default, does not replace or delete localStorage, does not add a browser mutation route, does not add a broad mutation client, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains the default runtime source and remains fallback/migration source. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.32 LocalStorage to SQLite Migration Dry-run V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
