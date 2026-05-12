@@ -281,3 +281,13 @@ Task 6.11 accepts the skeleton as Node-only, inert by default, dependency-free, 
 Task 6.11 keeps runtime activation, auto-listen behavior, auth runtime, deployment runtime, database migration, production data use, browser runtime integration, package changes, route additions, source-of-truth switching, and real personal training data migration blocked.
 
 The next recommended task is Task 6.12 Auth Boundary & Account Model Plan V1, docs/static tests only. Task 6.12 must not implement auth runtime, login/signup, token/session handling, OAuth, user table, production backend activation, routes, package changes, or source-of-truth switching.
+
+## Task 6.12 Auth Boundary Account Model Alignment
+
+Task 6.12 Auth Boundary & Account Model Plan V1 adds `docs/AUTH_BOUNDARY_ACCOUNT_MODEL_PLAN.md` as an auth boundary and account model plan.
+
+Task 6.12 documents account identity, local user to account mapping, account deletion, export/delete responsibilities, token/session requirements, auth failure behavior, and localStorage fallback without implementation.
+
+Task 6.12 keeps auth runtime, login/signup, token/session handling, OAuth, user table, account linking runtime, production backend activation, package changes, route additions, source-of-truth switching, and real personal training data migration blocked.
+
+The next recommended task is Task 6.13 Auth Provider Adapter Skeleton V1. Task 6.13 may add type/interface-only auth boundary files if safe and must not implement real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, or source-of-truth switching.

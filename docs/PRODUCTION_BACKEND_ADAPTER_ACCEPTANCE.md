@@ -91,3 +91,9 @@ Task 6.12 must be docs/static tests only. Task 6.12 must not implement auth runt
 Task 6.11 is complete after this task.
 
 Do not start auth or production backend activation yet. Next task should be Task 6.12 Auth Boundary & Account Model Plan V1.
+
+## Task 6.12 Follow-up
+
+Task 6.12 Auth Boundary & Account Model Plan V1 records account identity, local user to account mapping, account deletion, export/delete responsibilities, token/session requirements, auth failure behavior, and localStorage fallback as docs/static tests only.
+
+It must keep auth runtime, login/signup, token/session handling, OAuth, user table, account linking runtime, production backend activation, package changes, route additions, and source-of-truth switching blocked.
