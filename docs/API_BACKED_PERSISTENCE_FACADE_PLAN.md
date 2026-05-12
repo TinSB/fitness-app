@@ -178,3 +178,11 @@ Task 5.25 adds `src/storage/runtimeSourceConfig.ts` and `src/storage/runtimeSour
 It does not modify App.tsx, does not wire `loadData` or `saveData`, does not add boot-from-API snapshot behavior, does not add API write-through runtime, does not replace localStorage, does not silently overwrite AppData/localStorage, and does not add production backend/auth/sync/cloud/deployment.
 
 Next task should be Task 5.26 Boot From API Snapshot Prototype V1.
+
+## Task 5.26 Follow-up: Boot From API Snapshot Prototype
+
+Task 5.26 adds `src/storage/bootFromApiSnapshot.ts` as a guarded helper for explicit dev/local `api-primary-dev` boot from a validated API snapshot payload.
+
+It does not modify App.tsx, does not wire `loadData` or `saveData`, does not add a new server route, does not add API write-through runtime, does not write localStorage, does not silently overwrite AppData/localStorage, and does not add production backend/auth/sync/cloud/deployment.
+
+Next task should be Task 5.27 API Write-through Runtime Prototype V1.

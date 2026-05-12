@@ -8,7 +8,7 @@ describe('runtime source selector boundary', () => {
   it('adds only selector/config files and does not wire App.tsx or persistence', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts'))).toBe(false);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts')), 'Task 5.26 boot helper may exist default-off').toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts'))).toBe(false);
 
     const app = readSource('src/App.tsx');
