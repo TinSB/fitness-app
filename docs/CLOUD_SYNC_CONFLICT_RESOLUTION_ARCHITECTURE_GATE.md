@@ -96,3 +96,9 @@ Task 6.6 must be docs/static tests only. Task 6.6 must not implement deployment,
 Task 6.5 is complete after this task.
 
 Do not start cloud sync implementation yet. Next task should be Task 6.6 Deployment, Environment & Secrets Strategy V1.
+
+## Task 6.6 Follow-up
+
+Task 6.6 Deployment, Environment & Secrets Strategy V1 records local/dev/staging/production environments, secrets storage, environment variables, branch rules, required checks, Vercel optional behavior, and rollback strategy as docs/static tests only.
+
+It must keep production deployment, hosted production configuration, deployment config, secret values, secrets runtime, production backend runtime, auth runtime, cloud sync runtime, production migration, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.

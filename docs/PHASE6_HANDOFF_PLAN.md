@@ -221,3 +221,13 @@ Task 6.5 evaluates no sync, manual backup sync, single-device cloud backup, mult
 Task 6.5 keeps cloud sync runtime, remote writes, background sync workers, automatic conflict merge, production backend runtime, auth runtime, deployment runtime, production migration, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.6 Deployment, Environment & Secrets Strategy V1, docs/static tests only. Task 6.6 must not implement deployment, production hosting, secrets runtime, auth, cloud sync, production backend, migration, routes, or source-of-truth switching.
+
+## Task 6.6 Deployment Environment Secrets Alignment
+
+Task 6.6 Deployment, Environment & Secrets Strategy V1 adds `docs/DEPLOYMENT_ENVIRONMENT_SECRETS_STRATEGY.md` as a planning-level deployment, environment, and secrets strategy.
+
+Task 6.6 documents local/dev/staging/production environments, secrets storage, environment variables, branch rules, required checks, Vercel optional behavior for Codex PRs, and rollback strategy without implementation.
+
+Task 6.6 keeps production deployment, hosted production configuration, deployment config, secret values, secrets runtime, production backend runtime, auth runtime, cloud sync runtime, production migration, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.7 Production Migration, Backup & Rollback Strategy V1, docs/static tests only. Task 6.7 must not implement destructive migration, real-data automation, production source-of-truth switching, routes, deployment, auth, cloud sync, production backend runtime, or package changes.
