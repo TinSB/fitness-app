@@ -2255,6 +2255,32 @@ Next recommended task: Task 6.5 Cloud Sync & Conflict Resolution Architecture Ga
 
 Task 6.5 must be docs/static tests only. It must not implement cloud sync, remote writes, background sync, production backend, auth, deployment, migration, source-of-truth switching, routes, package changes, or real personal training data use.
 
+### Task 6.5: Cloud Sync & Conflict Resolution Architecture Gate V1
+
+Status: Completed in this branch as Phase 6 cloud sync and conflict resolution architecture gate documentation and static boundary tests.
+
+Task 6.5 adds `docs/CLOUD_SYNC_CONFLICT_RESOLUTION_ARCHITECTURE_GATE.md`, `tests/cloudSyncConflictResolutionArchitectureGate.test.ts`, `tests/cloudSyncConflictBoundaryStillBlocked.test.ts`, and `tests/cloudSyncConflictDocsParity.test.ts`.
+
+Task 6.5 evaluates no sync, manual backup sync, single-device cloud backup, multi-device bidirectional sync, conflict detection, conflict merge policy, remote write duplication, and offline queue risk without implementation.
+
+This task adds no runtime behavior, no cloud sync, no remote writes, no background sync worker, no automatic conflict merge, no production backend, no auth, no deployment, no production migration, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.6 Deployment, Environment & Secrets Strategy V1.
+
+Task 6.6 must be docs/static tests only. It must not implement deployment, production hosting, secrets runtime, auth, cloud sync, production backend, migration, routes, source-of-truth switching, package changes, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

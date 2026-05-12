@@ -2941,3 +2941,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.4 evaluates no backend yet, single Node backend, serverless API, hosted backend/database, local-first desktop backend, current SQLite snapshot repository, normalized schema risk, migration/rollback requirements, and backup requirements without implementation.
 
 Recommended next task is `Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1`, docs/static tests only. Task 6.5 must not implement cloud sync, remote writes, background sync, production backend, auth, deployment, migration, or source-of-truth switching.
+
+## Task 6.5: Cloud Sync & Conflict Resolution Architecture Gate V1
+
+Task 6.5 adds `docs/CLOUD_SYNC_CONFLICT_RESOLUTION_ARCHITECTURE_GATE.md` as a planning-level cloud sync and conflict resolution architecture gate.
+
+This task adds no runtime behavior, no cloud sync, no multi-device sync runtime, no remote write queue, no background sync worker, no automatic conflict merge, no production backend, no auth, no deployment, no production migration, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.5 evaluates no sync, manual backup sync, single-device cloud backup, multi-device bidirectional sync, conflict detection, conflict merge policy, remote write duplication, and offline queue risk without implementation.
+
+Recommended next task is `Task 6.6 Deployment, Environment & Secrets Strategy V1`, docs/static tests only. Task 6.6 must not implement deployment, production hosting, secrets runtime, auth, cloud sync, production backend, migration, routes, or source-of-truth switching.
