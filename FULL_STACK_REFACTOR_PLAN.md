@@ -3087,6 +3087,32 @@ Next recommended task: Task 6.37 Production Release Candidate Regression Lock V1
 
 Task 6.37 must be docs/static tests only. It must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
 
+### Task 6.37: Production Release Candidate Regression Lock V1
+
+Status: Completed in this branch as production release candidate regression lock documentation and static tests.
+
+Task 6.37 adds `docs/PRODUCTION_RELEASE_CANDIDATE_REGRESSION_LOCK.md`, `tests/productionReleaseCandidateRegressionLock.test.ts`, `tests/productionReleaseCandidateBoundary.test.ts`, `tests/productionReleaseCandidateCoverageInventory.test.ts`, and `tests/productionReleaseCandidateDocsParity.test.ts`.
+
+Task 6.37 locks accepted production capabilities, blocked capabilities, source-of-truth rules, auth/sync/deployment status, migration/rollback status, CI/ruleset status, browser build isolation, no unapproved routes, and coverage inventory.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no monitoring runtime, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.38 Phase 6 Final Manual Acceptance V1.
+
+Task 6.38 must be docs/static tests only. It must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

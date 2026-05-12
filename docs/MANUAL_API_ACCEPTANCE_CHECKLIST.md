@@ -1562,3 +1562,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm next recommended task is `Task 6.37 Production Release Candidate Regression Lock V1`, docs/static tests only.
+
+## Task 6.37 Production Release Candidate Regression Lock
+
+- [ ] Confirm `docs/PRODUCTION_RELEASE_CANDIDATE_REGRESSION_LOCK.md` exists.
+- [ ] Confirm accepted production capabilities, blocked capabilities, source-of-truth rules, auth/sync/deployment status, migration/rollback status, CI/ruleset status, browser build isolation, no unapproved routes, and coverage inventory are documented.
+- [ ] Confirm no production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm no real personal training data is used.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm next recommended task is `Task 6.38 Phase 6 Final Manual Acceptance V1`, docs/static tests only.
