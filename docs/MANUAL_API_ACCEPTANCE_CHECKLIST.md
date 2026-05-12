@@ -951,3 +951,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.28 API Primary Runtime Acceptance V1`.
+
+## Task 5.28 API Primary Runtime Acceptance
+
+- [ ] Confirm `docs/API_PRIMARY_RUNTIME_ACCEPTANCE.md` exists.
+- [ ] Confirm acceptance covers API primary boot, read, DataHealth dismiss, History dataFlag, Limited History Edit, Session Start, Session Patch, Session Complete, and Session Discard.
+- [ ] Confirm API unavailable states remain visible failures and do not fake success.
+- [ ] Confirm write success requires HTTP success, `ok=true`, `changed=true`, `status="success"`, and snapshot metadata.
+- [ ] Confirm `localStorage` remains the default runtime source and fallback/migration source.
+- [ ] Confirm API primary remains explicit dev/local `api-primary-dev` and is not production-ready.
+- [ ] Confirm App.tsx, `loadData`, and `saveData` are not newly wired by this acceptance task.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.29 API Primary Runtime Manual Acceptance V1`.
