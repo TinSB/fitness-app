@@ -2151,6 +2151,32 @@ Next recommended task: Task 6.1 Production Backend, Auth, Sync & Deployment Arch
 
 Task 6.1 must be architecture gate only. It must not implement production backend/auth/sync/deployment and must not auto-start from Task 6.0.
 
+### Task 6.1: Production Backend, Auth, Sync & Deployment Architecture Gate V1
+
+Status: Completed in this branch as Phase 6 architecture gate documentation and static boundary tests.
+
+Task 6.1 adds `docs/PRODUCTION_BACKEND_AUTH_SYNC_DEPLOYMENT_ARCHITECTURE_GATE.md`, `tests/productionArchitectureGate.test.ts`, `tests/productionArchitectureBoundaryStillBlocked.test.ts`, `tests/productionArchitectureRiskMatrix.test.ts`, and `tests/productionArchitectureDocsParity.test.ts`.
+
+Phase 6 architecture gating has started. Production backend, production database/storage, auth/user identity, cloud sync, deployment/environment, privacy/security, production migration/rollback, and CI/ruleset categories are evaluated as planning gates only.
+
+This task adds no runtime behavior, no production backend/auth/user accounts/cloud sync/deployment/monitoring, no source-of-truth migration, no normalized tables, no package changes, no browser mutation route, no DataHealth repair, and no backup/import/export/reset/recovery HTTP routes.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.2 Production Data Ownership, Privacy & Security Matrix V1.
+
+Task 6.2 must be docs/static tests only. It must not implement production backend/auth/sync/deployment, migration, source-of-truth switching, normalized tables, routes, package changes, or real personal training data use, and must not auto-start from Task 6.1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
