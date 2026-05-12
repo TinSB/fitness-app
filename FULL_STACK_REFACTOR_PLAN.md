@@ -2671,6 +2671,32 @@ Next recommended task: Task 6.21 Production Environment Config Boundary V1.
 
 Task 6.21 must be docs/static tests only. It must not enable production runtime by default, deploy production, add secret values, add routes, add dependencies, or switch source of truth.
 
+### Task 6.21: Production Environment Config Boundary V1
+
+Status: Completed in this branch as production environment config boundary documentation and static tests.
+
+Task 6.21 adds `docs/PRODUCTION_ENVIRONMENT_CONFIG_BOUNDARY.md`, `tests/productionEnvironmentConfigBoundary.test.ts`, and `tests/productionEnvironmentConfigDocsParity.test.ts`.
+
+Task 6.21 documents `local`, `development`, `staging`, and `production` environment names, secrets separation, no secret values, no production deploy, and no runtime production enable by default.
+
+This task adds no deployment implementation, no production runtime enablement, no secret values, no auth provider configuration, no sync provider configuration, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.22 Deployment Runtime Strategy & Staging Plan V1.
+
+Task 6.22 must be docs/static tests only. It must not implement production deployment, hosted production runtime, secret provisioning, routes, dependencies, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

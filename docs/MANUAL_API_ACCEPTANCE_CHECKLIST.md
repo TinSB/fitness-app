@@ -1380,3 +1380,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.21 Production Environment Config Boundary V1`, docs/static tests only.
+
+## Task 6.21 Production Environment Config Boundary
+
+- [ ] Confirm `docs/PRODUCTION_ENVIRONMENT_CONFIG_BOUNDARY.md` exists.
+- [ ] Confirm Task 6.21 is docs/static tests only and has no deployment runtime implication.
+- [ ] Confirm `local`, `development`, `staging`, and `production` names, secrets separation, no secret values, no production deploy, and no runtime production enable by default are documented.
+- [ ] Confirm no deployment implementation, production runtime enablement, secret values, auth provider configuration, sync provider configuration, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.22 Deployment Runtime Strategy & Staging Plan V1`, docs/static tests only.
