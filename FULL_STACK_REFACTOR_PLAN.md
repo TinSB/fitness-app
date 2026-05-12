@@ -2983,6 +2983,32 @@ Next recommended task: Task 6.33 Production Backup, Export, Delete & Recovery Ac
 
 Task 6.33 must be docs/static tests only. It must not add destructive automated real-data operations, backup/import/export HTTP routes, reset/recovery HTTP routes, package changes, source-of-truth switching, or real-data migration.
 
+### Task 6.33: Production Backup, Export, Delete & Recovery Acceptance V1
+
+Status: Completed in this branch as production backup/export/delete/recovery acceptance documentation and static tests.
+
+Task 6.33 adds `docs/PRODUCTION_BACKUP_EXPORT_DELETE_RECOVERY_ACCEPTANCE.md`, `tests/productionBackupExportDeleteRecoveryAcceptance.test.ts`, `tests/productionBackupExportDeleteRecoveryBoundary.test.ts`, and `tests/productionBackupExportDeleteRecoveryDocsParity.test.ts`.
+
+Task 6.33 documents export policy acceptance, delete policy acceptance, account deletion implications if accounts exist, backup-first rule, restore verification, rollback drill, no destructive automated real-data operation, and no silent overwrite.
+
+This task adds no backup runtime, no export runtime, no delete runtime, no recovery runtime, no destructive automated real-data operation, no backup/import/export HTTP route, no reset/recovery HTTP route, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.34 Production Sync / Conflict Final Audit V1.
+
+Task 6.34 must be docs/static tests only. It must not add sync runtime, network writes, cloud writes, background sync workers, remote write queues, package changes, source-of-truth switching, or real-data migration.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

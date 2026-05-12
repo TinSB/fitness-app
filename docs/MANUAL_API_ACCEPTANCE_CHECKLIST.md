@@ -1518,3 +1518,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm next recommended task is `Task 6.33 Production Backup, Export, Delete & Recovery Acceptance V1`, docs/static tests only.
+
+## Task 6.33 Production Backup Export Delete Recovery Acceptance
+
+- [ ] Confirm `docs/PRODUCTION_BACKUP_EXPORT_DELETE_RECOVERY_ACCEPTANCE.md` exists.
+- [ ] Confirm export policy, delete policy, account deletion implications, backup-first rule, restore verification, rollback drill, no destructive automated real-data operation, and no silent overwrite are documented.
+- [ ] Confirm no backup runtime, export runtime, delete runtime, recovery runtime, backup/import/export HTTP route, reset/recovery HTTP route, destructive migration, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm no real personal training data is used.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm next recommended task is `Task 6.34 Production Sync / Conflict Final Audit V1`, docs/static tests only.

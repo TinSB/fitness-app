@@ -491,3 +491,13 @@ Task 6.32 locks secret leakage controls, sensitive data logging controls, privac
 Task 6.32 keeps production runtime, auth runtime, sync runtime, deployment runtime, monitoring service, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.33 Production Backup, Export, Delete & Recovery Acceptance V1, docs/static tests only. Task 6.33 must not add destructive automated real-data operations, backup/import/export HTTP routes, reset/recovery HTTP routes, package changes, source-of-truth switching, or real-data migration.
+
+## Task 6.33 Production Backup Export Delete Recovery Acceptance Alignment
+
+Task 6.33 Production Backup, Export, Delete & Recovery Acceptance V1 adds `docs/PRODUCTION_BACKUP_EXPORT_DELETE_RECOVERY_ACCEPTANCE.md` as production backup/export/delete/recovery acceptance documentation.
+
+Task 6.33 documents export policy acceptance, delete policy acceptance, account deletion implications if accounts exist, backup-first rule, restore verification, rollback drill, no destructive automated real-data operation, and no silent overwrite.
+
+Task 6.33 keeps backup runtime, export runtime, delete runtime, recovery runtime, backup/import/export HTTP routes, reset/recovery HTTP routes, destructive migration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.34 Production Sync / Conflict Final Audit V1, docs/static tests only. Task 6.34 must not add sync runtime, network writes, cloud writes, background sync workers, remote write queues, package changes, source-of-truth switching, or real-data migration.
