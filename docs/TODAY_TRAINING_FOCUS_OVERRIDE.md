@@ -20,9 +20,9 @@ Today can now resolve a session-only training focus choice before the user start
 
 When the user chooses 系统推荐, Today uses the system recommendation.
 
-When the user chooses another target, Today keeps the system recommendation visible as 系统原建议 and shows the selected target as 今日使用. Existing templates are selected where possible, for example 胸 maps to 推 A and 背 maps to 拉 A. 核心 and 恢复 / 活动度 use generated session-only templates so the permanent template list is not mutated.
+When the user chooses another target, Today keeps the system recommendation visible as 原计划 and shows the selected target as 已切换为. Existing templates are selected where possible, for example 胸 maps to 推 A and 背 maps to 拉 A. 核心 and 恢复 / 活动度 use generated session-only templates so the permanent template list is not mutated.
 
-Warnings are advisory. If the selected focus overlaps soreness, readiness, pain/recovery signals, or very recent load, Today shows a warning and keeps the start action available. Existing recovery safety behavior is not broadened into a new blocker.
+Warnings are advisory and begin with 可能影响恢复. If the selected focus overlaps soreness, readiness, pain/recovery signals, or very recent load, Today shows a warning and keeps the start action available. Existing recovery safety behavior is not broadened into a new blocker.
 
 ## Persistence
 

@@ -48,11 +48,12 @@ describe('today training focus override UI', () => {
       }),
     );
 
-    expect(text).toContain('今日训练目标');
-    expect(text).toContain('系统原建议：腿 A');
-    expect(text).toContain('今日使用：胸 · 推 A');
+    expect(text).toContain('今天想练');
+    expect(text).toContain('原计划：腿 A');
+    expect(text).toContain('已切换为：胸 · 推 A');
     expect(text).toContain('手动目标');
     expect(text).toContain('平板卧推');
+    expect(text).toContain('可能影响恢复');
     expect(text).toContain('恢复信号有冲突');
   });
 

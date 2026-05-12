@@ -220,14 +220,14 @@ const TodayFocusOverrideControl = ({
   <div className="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <div className="text-sm font-semibold text-slate-950">今日训练目标</div>
-        <div className="mt-1 text-xs leading-5 text-slate-500">可手动选择今天练什么；只影响今天，不修改长期计划。</div>
+        <div className="text-sm font-semibold text-slate-950">今天想练</div>
+        <div className="mt-1 text-xs leading-5 text-slate-500">选择只影响今天；可随时回到系统推荐，不修改长期计划。</div>
       </div>
       <StatusBadge tone={selection.overrideActive ? 'amber' : 'emerald'}>
-        {selection.overrideActive ? '手动选择' : '系统推荐'}
+        {selection.overrideActive ? `已切换为 ${selection.selectedFocusLabel}` : '系统推荐'}
       </StatusBadge>
     </div>
-    <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="今日训练目标">
+    <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="今天想练">
       {TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS.map((option) => {
         const selected = selection.override === option;
         return (
@@ -249,9 +249,11 @@ const TodayFocusOverrideControl = ({
       })}
     </div>
     <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
-      <div className="rounded-lg bg-white px-3 py-2">系统原建议：{selection.systemTemplateName}</div>
+      <div className="rounded-lg bg-white px-3 py-2">原计划：{selection.systemTemplateName}</div>
       <div className="rounded-lg bg-white px-3 py-2">
-        今日使用：{selection.overrideActive ? `${selection.selectedFocusLabel} · ${selection.selectedTemplateName}` : selection.systemTemplateName}
+        {selection.overrideActive
+          ? `已切换为：${selection.selectedFocusLabel} · ${selection.selectedTemplateName}`
+          : `今日使用：${selection.systemTemplateName}`}
       </div>
     </div>
     {selection.warnings.length ? (

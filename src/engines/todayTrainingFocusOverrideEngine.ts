@@ -216,7 +216,7 @@ const recentLoadWarning = (
   if (!recent) return null;
   return {
     id: 'recent-load',
-    message: `最近 2 天已经训练过相近部位，今天选择 ${formatTemplateName(selectedTemplate)} 时建议降低强度或减少总量。`,
+    message: `可能影响恢复：最近 2 天已经训练过相近部位，今天选择 ${formatTemplateName(selectedTemplate)} 时建议降低强度或减少总量。`,
   };
 };
 
@@ -225,7 +225,7 @@ const readinessWarning = (readinessResult?: ReadinessResult | null): TodayTraini
   if (readinessResult.trainingAdjustment !== 'recovery' && readinessResult.score >= 50) return null;
   return {
     id: 'readiness',
-    message: '今天准备度偏低，手动选择训练目标时建议保留更多余力，不要强行加重量或加组。',
+    message: '可能影响恢复：今天准备度偏低，手动选择训练目标时建议保留更多余力，不要强行加重量或加组。',
   };
 };
 
@@ -245,7 +245,7 @@ const conflictWarning = (
   if (!actionableLevels.includes(conflict.conflictLevel)) return null;
   return {
     id: 'recovery-conflict',
-    message: `${conflict.templateName} 与今天的酸痛、疲劳或恢复信号有冲突。你仍可开始，但建议按保守版本执行。`,
+    message: `可能影响恢复：${conflict.templateName} 与今天的酸痛、疲劳或恢复信号有冲突。你仍可开始，但建议按保守版本执行。`,
   };
 };
 
