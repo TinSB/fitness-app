@@ -738,6 +738,16 @@ export interface TrainingSession {
   adjustmentNotes?: string[];
   adjustmentType?: string;
   adjustmentReasons?: string[];
+  todayFocusOverride?: {
+    source: 'user';
+    selectedFocus: string;
+    selectedFocusLabel: string;
+    selectedTemplateId: string;
+    selectedTemplateName: string;
+    systemTemplateId?: string;
+    systemTemplateName?: string;
+    appliedAt: string;
+  };
   earlyEndReason?: 'incomplete_main_work' | string;
   earlyEndSummary?: string;
   editedAt?: string;

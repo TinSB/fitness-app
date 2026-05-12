@@ -15,6 +15,13 @@ import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
 import type { SessionPatch } from '../engines/sessionPatchEngine';
+import {
+  buildTodayTrainingFocusSelection,
+  TODAY_TRAINING_FOCUS_OVERRIDE_LABELS,
+  TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS,
+  type TodayTrainingFocusOverrideOption,
+  type TodayTrainingFocusSelection,
+} from '../engines/todayTrainingFocusOverrideEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { splitCoachReminders, type CoachReminderView } from '../presenters/coachReminderPresenter';
@@ -37,6 +44,7 @@ interface TodayViewProps {
   data: AppData;
   selectedTemplate: TrainingTemplate;
   suggestedTemplate: TrainingTemplate;
+  todayFocusSelection?: TodayTrainingFocusSelection;
   recoveryRecommendation?: RecoveryAwareRecommendation;
   weeklyPrescription: WeeklyPrescription;
   coachActions?: CoachAction[];
@@ -45,6 +53,7 @@ interface TodayViewProps {
   onModeChange: (mode: TrainingMode) => void;
   onStatusChange: (field: 'sleep' | 'energy' | 'time', value: string) => void;
   onSorenessToggle: (part: AppData['todayStatus']['soreness'][number]) => void;
+  onFocusOverrideChange?: (override: TodayTrainingFocusOverrideOption) => void;
   onTemplateSelect: (id: string) => void;
   onUseSuggestion: () => void;
   onStart: () => void;
@@ -201,10 +210,67 @@ const ChoiceRow = ({
   </div>
 );
 
+const TodayFocusOverrideControl = ({
+  selection,
+  onChange,
+}: {
+  selection: TodayTrainingFocusSelection;
+  onChange?: (override: TodayTrainingFocusOverrideOption) => void;
+}) => (
+  <div className="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-3">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <div className="text-sm font-semibold text-slate-950">今日训练目标</div>
+        <div className="mt-1 text-xs leading-5 text-slate-500">可手动选择今天练什么；只影响今天，不修改长期计划。</div>
+      </div>
+      <StatusBadge tone={selection.overrideActive ? 'amber' : 'emerald'}>
+        {selection.overrideActive ? '手动选择' : '系统推荐'}
+      </StatusBadge>
+    </div>
+    <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="今日训练目标">
+      {TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS.map((option) => {
+        const selected = selection.override === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange?.(option)}
+            className={classNames(
+              'min-h-9 rounded-lg border px-3 text-sm font-medium transition',
+              selected
+                ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950',
+            )}
+            aria-pressed={selected}
+          >
+            {TODAY_TRAINING_FOCUS_OVERRIDE_LABELS[option]}
+          </button>
+        );
+      })}
+    </div>
+    <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
+      <div className="rounded-lg bg-white px-3 py-2">系统原建议：{selection.systemTemplateName}</div>
+      <div className="rounded-lg bg-white px-3 py-2">
+        今日使用：{selection.overrideActive ? `${selection.selectedFocusLabel} · ${selection.selectedTemplateName}` : selection.systemTemplateName}
+      </div>
+    </div>
+    {selection.warnings.length ? (
+      <div className="mt-3 space-y-2">
+        {selection.warnings.map((warning) => (
+          <div key={warning.id} className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+            {warning.message}
+          </div>
+        ))}
+      </div>
+    ) : null}
+  </div>
+);
+
 export function TodayView({
   data,
   selectedTemplate,
   suggestedTemplate,
+  todayFocusSelection,
   recoveryRecommendation,
   weeklyPrescription,
   coachActions,
@@ -213,6 +279,7 @@ export function TodayView({
   onModeChange,
   onStatusChange,
   onSorenessToggle,
+  onFocusOverrideChange,
   onUseSuggestion,
   onStart,
   onStartRecommended,
@@ -237,6 +304,18 @@ export function TodayView({
     [
       enginePipeline.context,
     ],
+  );
+  const resolvedTodayFocusSelection = React.useMemo(
+    () =>
+      todayFocusSelection ||
+      buildTodayTrainingFocusSelection({
+        systemTemplate: suggestedTemplate,
+        templates: data.templates || [],
+        override: 'system',
+        todayStatus: decisionContext.todayStatus,
+        history: decisionContext.history,
+      }),
+    [todayFocusSelection, suggestedTemplate, data.templates, decisionContext.todayStatus, decisionContext.history],
   );
 
   const adjustedPlan = applyStatusRules(
@@ -266,8 +345,8 @@ export function TodayView({
     selectedTemplate: { ...selectedTemplate, name: selectedTemplateName },
     completedTemplateName: completedTrainingName,
     activeTemplateName: activeTrainingName,
-    nextSuggestion: suggestedTemplate,
-    nextWorkout: enginePipeline.nextWorkout,
+    nextSuggestion: resolvedTodayFocusSelection.overrideActive ? selectedTemplate : suggestedTemplate,
+    nextWorkout: resolvedTodayFocusSelection.overrideActive ? undefined : enginePipeline.nextWorkout,
     recoveryRecommendation,
   });
 
@@ -317,7 +396,7 @@ export function TodayView({
   const currentTrainingName = todayViewModel.currentTrainingName;
   const decisionText = todayViewModel.decisionText;
   const nextSuggestion = todayViewModel.nextSuggestion;
-  const hasAlternativeSuggestion = Boolean(nextSuggestion.templateId && nextSuggestion.templateId !== selectedTemplate.id);
+  const hasAlternativeSuggestion = !resolvedTodayFocusSelection.overrideActive && Boolean(nextSuggestion.templateId && nextSuggestion.templateId !== selectedTemplate.id);
   const todayNote =
     readinessReasons[0] ||
     (trainingLevelAssessment.level === 'unknown'
@@ -516,6 +595,7 @@ export function TodayView({
               <div className="border-b border-emerald-100 bg-emerald-50/70 px-4 py-3 md:px-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge tone={statusTone(todayViewModel.state)}>{todayViewModel.pageTitle}</StatusBadge>
+                  {resolvedTodayFocusSelection.overrideActive ? <StatusBadge tone="amber">手动目标</StatusBadge> : null}
                   <span className="text-xs font-medium text-slate-500">{todayTrainingState.date}</span>
                 </div>
               </div>
@@ -524,6 +604,9 @@ export function TodayView({
                   <div className="text-sm font-semibold text-emerald-700">{recommendationLabel}</div>
                   <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">{currentTrainingName}</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{decisionText}</p>
+                  {todayTrainingState.status === 'not_started' ? (
+                    <TodayFocusOverrideControl selection={resolvedTodayFocusSelection} onChange={onFocusOverrideChange} />
+                  ) : null}
                   {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
                     <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
                       {todayViewModel.recoverySummary}
