@@ -2437,6 +2437,32 @@ Next recommended task: Task 6.12 Auth Boundary & Account Model Plan V1.
 
 Task 6.12 must be docs/static tests only. It must not implement auth runtime, login/signup, token/session handling, OAuth, user table, production backend activation, routes, package changes, source-of-truth switching, or real personal training data use.
 
+### Task 6.12: Auth Boundary & Account Model Plan V1
+
+Status: Completed in this branch as auth boundary and account model planning documentation and static boundary tests.
+
+Task 6.12 adds `docs/AUTH_BOUNDARY_ACCOUNT_MODEL_PLAN.md`, `tests/authBoundaryAccountModelPlan.test.ts`, `tests/authBoundaryStillBlocked.test.ts`, and `tests/authBoundaryDocsParity.test.ts`.
+
+Task 6.12 documents account identity, local user to account mapping, account deletion, export/delete responsibilities, token/session requirements, auth failure behavior, and localStorage fallback without implementation.
+
+This task adds no auth runtime, no login/signup, no token/session handling, no OAuth, no user table, no account linking runtime, no production backend activation, no package changes, no source-of-truth switch, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.13 Auth Provider Adapter Skeleton V1.
+
+Task 6.13 may add type/interface-only auth boundary files if safe. It must not implement real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, source-of-truth switching, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -3095,3 +3095,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.12 Auth Boundary & Account Model Plan V1`, docs/static tests only. Task 6.12 must not implement auth runtime, login/signup, token/session handling, OAuth, user table, production backend activation, routes, package changes, or source-of-truth switching.
+
+## Task 6.12: Auth Boundary & Account Model Plan V1
+
+Task 6.12 adds `docs/AUTH_BOUNDARY_ACCOUNT_MODEL_PLAN.md` as an auth boundary and account model plan.
+
+This task adds no auth runtime, no login/signup, no token/session handling, no OAuth, no user table, no account linking runtime, no production backend activation, no package changes, no source-of-truth switch, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.12 documents account identity, local user to account mapping, account deletion, export/delete responsibilities, token/session requirements, auth failure behavior, and localStorage fallback without implementation.
+
+Recommended next task is `Task 6.13 Auth Provider Adapter Skeleton V1`. Task 6.13 may add type/interface-only auth boundary files if safe. It must not implement real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, or source-of-truth switching.
