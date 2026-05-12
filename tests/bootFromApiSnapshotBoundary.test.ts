@@ -31,10 +31,10 @@ describe('boot from API snapshot boundary', () => {
       'src/services/mutationClient.ts',
       'src/hooks/useMutationApi.ts',
       'src/api/mutations.ts',
-      'src/storage/localStorageToSqliteMigrationApply.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/localStorageToSqliteMigrationApply.ts')), 'Task 5.33 apply helper may exist default-off').toBe(true);
 
     const packageJson = JSON.parse(readSource('package.json')) as {
       scripts?: Record<string, string>;
