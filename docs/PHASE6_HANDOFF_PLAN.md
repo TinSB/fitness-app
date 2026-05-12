@@ -361,3 +361,13 @@ Task 6.19 classifies no conflict, stale client, stale server, divergent edits, d
 Task 6.19 keeps sync runtime, network calls, cloud writes, remote queue, background sync worker, automatic merge runtime, auth runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.20 Sync Conflict Acceptance V1, docs/static tests only. Task 6.20 must not add remote writes, sync runtime, automatic merge, network calls, cloud provider configuration, auth runtime, routes, dependencies, or source-of-truth switching.
+
+## Task 6.20 Sync Conflict Acceptance Alignment
+
+Task 6.20 Sync Conflict Acceptance V1 adds `docs/SYNC_CONFLICT_ACCEPTANCE.md` as acceptance documentation for the Task 6.19 detector.
+
+Task 6.20 accepts conflict cases, keeps `canAutoApply` false, blocks automatic merge, blocks remote writes, and requires future user-visible conflict policy before sync runtime.
+
+Task 6.20 keeps sync runtime, remote writes, cloud writes, network calls, remote queue, background sync worker, automatic merge runtime, auth runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.21 Production Environment Config Boundary V1, docs/static tests only. Task 6.21 must not enable production runtime by default, deploy production, add secret values, add routes, add dependencies, or switch source of truth.

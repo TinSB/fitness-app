@@ -3271,3 +3271,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.19 classifies synthetic metadata conflict states and idempotency state without reading or writing app data.
 
 Recommended next task is `Task 6.20 Sync Conflict Acceptance V1`, docs/static tests only. Task 6.20 must not add remote writes, sync runtime, automatic merge, network calls, cloud provider configuration, auth runtime, routes, dependencies, or source-of-truth switching.
+
+## Task 6.20: Sync Conflict Acceptance V1
+
+Task 6.20 adds `docs/SYNC_CONFLICT_ACCEPTANCE.md` as acceptance documentation for the Task 6.19 pure sync conflict detector.
+
+This task adds no sync runtime, no remote writes, no cloud writes, no network calls, no remote queue, no background sync worker, no automatic merge runtime, no auth runtime, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.20 accepts detector conflict cases, keeps `canAutoApply` false, and requires user-visible conflict policy before future sync runtime.
+
+Recommended next task is `Task 6.21 Production Environment Config Boundary V1`, docs/static tests only. Task 6.21 must not enable production runtime by default, deploy production, add secret values, add routes, add dependencies, or switch source of truth.

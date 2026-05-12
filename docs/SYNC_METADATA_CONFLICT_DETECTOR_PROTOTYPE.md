@@ -84,3 +84,11 @@ Task 6.20 must be docs/static tests only. It must not add remote writes, sync ru
 Task 6.19 is complete after this task.
 
 Do not start sync runtime yet. Next task should be Task 6.20 Sync Conflict Acceptance V1.
+
+## Task 6.20 Follow-up
+
+Task 6.20 Sync Conflict Acceptance V1 follows this pure local detector with docs/static acceptance only.
+
+Task 6.20 must document conflict cases, no auto-merge, no remote writes, no sync runtime, and user-visible conflict policy. It must not add remote writes, sync runtime, automatic merge, network calls, cloud provider configuration, auth runtime, routes, dependencies, package scripts, lockfile changes, or source-of-truth switching.
+
+The next recommended task after Task 6.20 is `Task 6.21 Production Environment Config Boundary V1`, docs/static tests only.
