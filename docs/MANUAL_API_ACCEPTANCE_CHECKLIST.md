@@ -1540,3 +1540,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm next recommended task is `Task 6.35 Production Deployment & Environment Final Audit V1`, docs/static tests only.
+
+## Task 6.35 Production Deployment Environment Final Audit
+
+- [ ] Confirm `docs/PRODUCTION_DEPLOYMENT_ENVIRONMENT_FINAL_AUDIT.md` exists.
+- [ ] Confirm environments, secrets, branch rules, required checks, rollback, preview vs production distinction, no Vercel required check assumption, and no deployment if deployment was not implemented are documented.
+- [ ] Confirm no production deployment, deployment config that changes production behavior, hosted backend activation, secret values, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm no real personal training data is used.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm next recommended task is `Task 6.36 Production Monitoring & Logging Privacy Lock V1`, docs/static tests only.
