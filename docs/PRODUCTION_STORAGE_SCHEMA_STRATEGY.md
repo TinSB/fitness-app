@@ -83,3 +83,9 @@ Task 6.16 may add docs/tests and a pure dry-run utility only if safe. It must no
 Task 6.15 is complete after this task.
 
 Do not create normalized tables yet. Next task should be Task 6.16 Production Storage Migration Dry-run Prototype V1.
+
+## Task 6.16 Follow-up
+
+Task 6.16 Production Storage Migration Dry-run Prototype V1 adds `src/storage/productionStorageMigrationDryRun.ts` as a pure inspection-only dry-run utility with `writesPerformed: false`.
+
+It must keep database writes, schema migration, normalized tables, real-data automation, migration apply, production source-of-truth migration, package changes, route additions, and real personal training data migration unimplemented.

@@ -3183,3 +3183,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.15 documents snapshot repository strategy, normalized schema future risk, migration strategy, rollback, and backup without implementation.
 
 Recommended next task is `Task 6.16 Production Storage Migration Dry-run Prototype V1`. Task 6.16 may add docs/tests and a pure dry-run utility only if safe. It must not write a database, create schema migration, use real personal training data, add routes, add dependencies, or switch source of truth.
+
+## Task 6.16: Production Storage Migration Dry-run Prototype V1
+
+Task 6.16 adds `src/storage/productionStorageMigrationDryRun.ts` as a pure production storage migration dry-run utility plus `docs/PRODUCTION_STORAGE_MIGRATION_DRY_RUN.md`.
+
+This task adds no database write, no schema migration, no normalized tables, no real-data automation, no migration apply, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+The utility is inspection-only and returns structured results with `writesPerformed: false`.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.17 Production Storage Backup / Restore Acceptance V1`, docs/static tests only. Task 6.17 must not perform real data automation, destructive restore, database writes, route additions, package changes, or source-of-truth switching.
