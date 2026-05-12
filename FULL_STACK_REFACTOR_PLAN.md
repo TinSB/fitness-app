@@ -2203,6 +2203,32 @@ Next recommended task: Task 6.3 Auth & User Account Lifecycle Architecture Gate 
 
 Task 6.3 must be docs/static tests only. It must not implement production backend/auth/sync/deployment, migration, source-of-truth switching, normalized tables, routes, package changes, or real personal training data use, and must not auto-start from Task 6.2.
 
+### Task 6.3: Auth & User Account Lifecycle Architecture Gate V1
+
+Status: Completed in this branch as Phase 6 auth and user account lifecycle architecture gate documentation and static boundary tests.
+
+Task 6.3 adds `docs/AUTH_USER_ACCOUNT_LIFECYCLE_ARCHITECTURE_GATE.md`, `tests/authUserAccountLifecycleArchitectureGate.test.ts`, `tests/authUserAccountBoundaryStillBlocked.test.ts`, `tests/authUserAccountDocsParity.test.ts`, and `tests/authUserAccountRiskMatrix.test.ts`.
+
+Task 6.3 defines anonymous local user, future account identity, local data to account linking, account creation lifecycle, account deletion lifecycle, export/delete responsibilities, auth failure behavior, identity mismatch risk, and localStorage fallback boundaries before implementation.
+
+This task adds no runtime behavior, no auth runtime, no login/signup, no OAuth, no token/session handling, no user table, no production backend, no cloud sync, no deployment, no source-of-truth migration, no normalized tables, no package changes, no browser mutation route, no DataHealth repair, and no backup/import/export/reset/recovery HTTP routes.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.4 Production Backend & Database Architecture Decision V1.
+
+Task 6.4 must be planning/docs/static tests only. It must not implement production backend, normalized schema, auth, sync, deployment, migration, source-of-truth switching, routes, package changes, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -150,3 +150,13 @@ Task 6.3 must be docs/static tests only. Task 6.3 must not implement auth, produ
 Task 6.2 is complete after this task.
 
 Do not start production implementation yet. Next task should be Task 6.3 Auth & User Account Lifecycle Architecture Gate V1. Do not auto-start Task 6.3.
+
+## Task 6.3 Follow-up
+
+Task 6.3 Auth & User Account Lifecycle Architecture Gate V1 adds `docs/AUTH_USER_ACCOUNT_LIFECYCLE_ARCHITECTURE_GATE.md` as an auth and user account lifecycle architecture gate.
+
+Task 6.3 remains docs/static tests only. It does not implement auth runtime, login/signup, OAuth, token/session handling, user table, production backend, cloud sync, deployment, source-of-truth migration, normalized tables, package changes, browser route changes, or real personal training data migration.
+
+Task 6.3 keeps `localStorage` as default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+The next recommended task after Task 6.3 is Task 6.4 Production Backend & Database Architecture Decision V1, planning/docs/static tests only.

@@ -191,3 +191,13 @@ Task 6.2 classifies production data ownership, privacy, sensitivity, retention, 
 Task 6.2 keeps production backend, auth/user accounts, cloud sync, deployment, monitoring, production source-of-truth migration, normalized tables, package changes, browser route changes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.3 Auth & User Account Lifecycle Architecture Gate V1, docs/static tests only. Task 6.3 must not implement auth, production backend, sync, deployment, migration, or source-of-truth switching, and must not auto-start from Task 6.2.
+
+## Task 6.3 Auth Account Lifecycle Alignment
+
+Task 6.3 Auth & User Account Lifecycle Architecture Gate V1 adds `docs/AUTH_USER_ACCOUNT_LIFECYCLE_ARCHITECTURE_GATE.md` as an auth and user account lifecycle architecture gate and decision record.
+
+Task 6.3 defines anonymous local user, future account identity, local data to account linking, account creation lifecycle, account deletion lifecycle, export/delete responsibilities, auth failure behavior, identity mismatch risk, and localStorage fallback boundaries before implementation.
+
+Task 6.3 keeps auth runtime, login/signup, OAuth, token/session handling, user tables, production backend, cloud sync, deployment, source-of-truth migration, normalized tables, package changes, browser route changes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.4 Production Backend & Database Architecture Decision V1, planning/docs/static tests only. Task 6.4 must not implement production backend, normalized schema, auth, sync, deployment, migration, or source-of-truth switching.
