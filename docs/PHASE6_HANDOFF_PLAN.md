@@ -231,3 +231,13 @@ Task 6.6 documents local/dev/staging/production environments, secrets storage, e
 Task 6.6 keeps production deployment, hosted production configuration, deployment config, secret values, secrets runtime, production backend runtime, auth runtime, cloud sync runtime, production migration, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.7 Production Migration, Backup & Rollback Strategy V1, docs/static tests only. Task 6.7 must not implement destructive migration, real-data automation, production source-of-truth switching, routes, deployment, auth, cloud sync, production backend runtime, or package changes.
+
+## Task 6.7 Production Migration Backup Rollback Alignment
+
+Task 6.7 Production Migration, Backup & Rollback Strategy V1 adds `docs/PRODUCTION_MIGRATION_BACKUP_ROLLBACK_STRATEGY.md` as a planning-level migration, backup, rollback, and recovery strategy.
+
+Task 6.7 documents backup-first, dry-run, apply, rollback, recovery drill, export/delete implications, no destructive migration, and no real-data automation without implementation.
+
+Task 6.7 keeps migration runtime, destructive migration, real-data automation, backup/restore runtime, export/delete runtime, production source-of-truth migration, production backend runtime, auth runtime, cloud sync runtime, deployment runtime, package changes, browser routes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1, docs/static tests only. Task 6.8 must not implement production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, routes, package changes, or source-of-truth switching.
