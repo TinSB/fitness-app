@@ -2009,6 +2009,30 @@ localStorage remains default runtime source, fallback, migration source, and eme
 
 Next recommended task: Task 5.37 Phase 5 Final Source-of-truth Audit V1.
 
+### Task 5.37: Phase 5 Final Source-of-truth Audit V1
+
+Status: Completed in this branch as final source-of-truth audit documentation and static boundary coverage.
+
+Task 5.37 adds `docs/PHASE5_FINAL_SOURCE_OF_TRUTH_AUDIT.md`, `tests/phase5FinalSourceOfTruthAudit.test.ts`, and `tests/phase5FinalSourceOfTruthBoundary.test.ts`.
+
+The audit clarifies API primary dev mode status, localStorage fallback status, migration rollback status, production non-readiness, seven accepted browser mutation routes, blocked routes/capabilities, manual acceptance inputs, and browser build isolation.
+
+Task 5.37 does not add runtime behavior, does not delete localStorage, does not silently overwrite localStorage or AppData, does not switch the default runtime source, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains default runtime source, fallback, migration source, and emergency backup. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.38 Phase 5 Final Manual Acceptance V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

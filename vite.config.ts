@@ -10,6 +10,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['tests/**/*.test.ts'],
+    maxWorkers: '50%',
   },
   build: {
     rolldownOptions: {

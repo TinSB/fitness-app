@@ -2731,3 +2731,23 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
 
 The next recommended task is `Task 5.37 Phase 5 Final Source-of-truth Audit V1`.
+
+## Task 5.37: Phase 5 Final Source-of-truth Audit V1
+
+Task 5.37 adds `docs/PHASE5_FINAL_SOURCE_OF_TRUTH_AUDIT.md` as the final Phase 5 source-of-truth audit before final manual acceptance.
+
+The audit records that accepted runtime modes are `localStorage`, `api-readonly`, and `api-primary-dev`; `localStorage` remains the default runtime source and fallback/migration source; `api-primary-dev` remains explicit dev/local only and not production-ready; migration dry-run/apply/rollback remains backup-first, non-destructive, and reversible.
+
+This task does not add runtime behavior, does not delete localStorage, does not silently overwrite localStorage or AppData, does not switch the default runtime source, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+The next recommended task is `Task 5.38 Phase 5 Final Manual Acceptance V1`.
