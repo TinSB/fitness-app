@@ -171,3 +171,13 @@ Task 6.0 Phase 6 Preflight & Production Boundary Lock V1 adds `docs/PHASE6_PREFL
 The Task 6.0 boundary keeps production backend, auth/user accounts, cloud sync, deployment, monitoring, source-of-truth migration, normalized tables, package changes, browser route changes, and real personal training data migration unimplemented.
 
 Task 6.1 remains the recommended Phase 6 first task as architecture gate only. It must not implement production backend/auth/sync/deployment and must not auto-start from Task 6.0.
+
+## Task 6.1 Architecture Gate Alignment
+
+Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1 adds `docs/PRODUCTION_BACKEND_AUTH_SYNC_DEPLOYMENT_ARCHITECTURE_GATE.md` as an architecture gate and decision record.
+
+Task 6.1 evaluates production backend, production database/storage, auth/user identity, cloud sync, deployment/environment, privacy/security, production migration/rollback, backup/recovery, and CI/ruleset categories without implementing production runtime.
+
+Task 6.1 keeps production backend, auth/user accounts, cloud sync, deployment, monitoring, production source-of-truth migration, normalized tables, package changes, browser route changes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.2 Production Data Ownership, Privacy & Security Matrix V1, docs/static tests only. Task 6.2 must not implement auth, production backend, sync, deployment, migration, or source-of-truth switching, and must not auto-start from Task 6.1.

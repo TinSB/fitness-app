@@ -207,3 +207,13 @@ Task 6.1 must be architecture gate only. Task 6.1 must not implement production 
 Phase 6 preflight is complete after this task.
 
 Do not start production implementation yet. Next task should be Task 6.1 architecture gate only. Do not auto-start Task 6.1.
+
+## Task 6.1 Follow-up
+
+Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1 adds a Phase 6 architecture gate and decision record after this preflight.
+
+Task 6.1 remains architecture gate only. It does not implement production backend, auth, user accounts, cloud sync, deployment, monitoring, production source-of-truth migration, normalized tables, package changes, or browser routes.
+
+The Task 6.1 follow-up keeps `localStorage` as default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+The next recommended task after Task 6.1 is Task 6.2 Production Data Ownership, Privacy & Security Matrix V1, docs/static tests only. Task 6.2 must not auto-start.
