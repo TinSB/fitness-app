@@ -2957,6 +2957,32 @@ Next recommended task: Task 6.32 Production Security & Privacy Final Hardening V
 
 Task 6.32 must be docs/static tests and narrow privacy/security fixes only. It must not add a new auth provider, sync engine, production deployment surface, route, package dependency, package script, lockfile change, production source-of-truth switch, or real-data migration.
 
+### Task 6.32: Production Security & Privacy Final Hardening V1
+
+Status: Completed in this branch as final security/privacy hardening documentation and static tests.
+
+Task 6.32 adds `docs/PRODUCTION_SECURITY_PRIVACY_FINAL_HARDENING.md`, `tests/productionSecurityPrivacyFinalHardening.test.ts`, `tests/productionSecurityPrivacyBoundary.test.ts`, and `tests/productionSecurityPrivacyDocsParity.test.ts`.
+
+Task 6.32 locks secret leakage controls, sensitive data logging controls, privacy controls, route boundaries, source-of-truth boundaries, and final hardening checks. Raw AppData logging is blocked. localStorage dump logging is blocked. Token and secret logging is blocked. Automated checks remain synthetic data only.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no monitoring service, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.33 Production Backup, Export, Delete & Recovery Acceptance V1.
+
+Task 6.33 must be docs/static tests only. It must not add destructive automated real-data operations, backup/import/export HTTP routes, reset/recovery HTTP routes, package changes, source-of-truth switching, or real-data migration.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

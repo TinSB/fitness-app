@@ -481,3 +481,13 @@ Task 6.31 records dedicated test environment, no real personal data, source-of-t
 Task 6.31 keeps production runtime, auth runtime, sync runtime, deployment runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.32 Production Security & Privacy Final Hardening V1, docs/static tests and narrow privacy/security fixes only. Task 6.32 must not add a new auth provider, sync engine, production deployment surface, route, package dependency, package script, lockfile change, production source-of-truth switch, or real-data migration.
+
+## Task 6.32 Production Security Privacy Final Hardening Alignment
+
+Task 6.32 Production Security & Privacy Final Hardening V1 adds `docs/PRODUCTION_SECURITY_PRIVACY_FINAL_HARDENING.md` as final security/privacy hardening documentation.
+
+Task 6.32 locks secret leakage controls, sensitive data logging controls, privacy controls, route boundaries, source-of-truth boundaries, and final hardening checks. Raw AppData logging is blocked. localStorage dump logging is blocked. Token and secret logging is blocked. Automated checks remain synthetic data only.
+
+Task 6.32 keeps production runtime, auth runtime, sync runtime, deployment runtime, monitoring service, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.33 Production Backup, Export, Delete & Recovery Acceptance V1, docs/static tests only. Task 6.33 must not add destructive automated real-data operations, backup/import/export HTTP routes, reset/recovery HTTP routes, package changes, source-of-truth switching, or real-data migration.
