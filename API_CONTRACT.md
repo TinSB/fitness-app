@@ -2985,3 +2985,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.6 documents local/dev/staging/production environments, secrets storage, environment variables, branch rules, required checks, Vercel optional behavior for Codex PRs, and rollback strategy without implementation.
 
 Recommended next task is `Task 6.7 Production Migration, Backup & Rollback Strategy V1`, docs/static tests only. Task 6.7 must not implement destructive migration, real-data automation, production source-of-truth switching, routes, deployment, auth, cloud sync, production backend runtime, or package changes.
+
+## Task 6.7: Production Migration, Backup & Rollback Strategy V1
+
+Task 6.7 adds `docs/PRODUCTION_MIGRATION_BACKUP_ROLLBACK_STRATEGY.md` as a planning-level production migration, backup, rollback, and recovery strategy.
+
+This task adds no runtime behavior, no migration implementation, no destructive migration, no production source-of-truth migration, no database writes, no normalized tables, no backup/restore runtime, no export/delete runtime, no production backend, no auth, no cloud sync, no deployment, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.7 documents backup-first, dry-run, apply, rollback, recovery drill, export/delete implications, no destructive migration, and no real-data automation without implementation.
+
+Recommended next task is `Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1`, docs/static tests only. Task 6.8 must not implement production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, routes, package changes, or source-of-truth switching.

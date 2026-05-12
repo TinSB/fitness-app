@@ -100,3 +100,9 @@ Task 6.7 must be docs/static tests only. Task 6.7 must not implement destructive
 Task 6.6 is complete after this task.
 
 Do not start production deployment implementation yet. Next task should be Task 6.7 Production Migration, Backup & Rollback Strategy V1.
+
+## Task 6.7 Follow-up
+
+Task 6.7 Production Migration, Backup & Rollback Strategy V1 records backup-first, dry-run, apply, rollback, recovery drill, export/delete implications, no destructive migration, and no real-data automation as docs/static tests only.
+
+It must keep migration runtime, destructive migration, real-data automation, backup/restore runtime, export/delete runtime, production source-of-truth migration, production backend runtime, auth runtime, cloud sync runtime, deployment runtime, package changes, browser routes, and real personal training data migration unimplemented.
