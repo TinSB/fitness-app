@@ -2081,6 +2081,30 @@ localStorage remains default runtime source, fallback, migration source, and eme
 
 Next recommended task: Task 5.40 Phase 6 Handoff Plan V1.
 
+### Task 5.40: Phase 6 Handoff Plan V1
+
+Status: Completed in this branch as Phase 6 handoff planning documentation and static boundary tests.
+
+Task 5.40 adds `docs/PHASE6_HANDOFF_PLAN.md`, `tests/phase6HandoffPlan.test.ts`, and `tests/phase6HandoffBoundaryStillBlocked.test.ts`.
+
+The handoff covers production backend, auth, user accounts, cloud sync, deployment, monitoring, privacy/security, Phase 6 entry gates, and the recommended Phase 6 first task.
+
+Task 5.40 does not start Phase 6 implementation, does not add runtime behavior, does not implement production backend/auth/user accounts/cloud sync/deployment/monitoring, does not delete localStorage, does not silently overwrite localStorage or AppData, does not make API primary production default, does not modify App.tsx, does not add a browser mutation route, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+Recommended Phase 6 first task after Phase 5 closes: Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1.
+
+Next recommended Phase 5 task: Task 5.41 Phase 5 Completion Archive V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

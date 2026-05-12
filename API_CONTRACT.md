@@ -2791,3 +2791,25 @@ Accepted browser mutation routes remain exactly:
 - `POST /sessions/active/discard`
 
 The next recommended task is `Task 5.40 Phase 6 Handoff Plan V1`.
+
+## Task 5.40: Phase 6 Handoff Plan V1
+
+Task 5.40 adds `docs/PHASE6_HANDOFF_PLAN.md` as a planning-only handoff from Phase 5 to Phase 6.
+
+The handoff covers production backend prerequisites, auth and user account prerequisites, cloud sync prerequisites, deployment prerequisites, monitoring and operations prerequisites, privacy/security prerequisites, Phase 6 entry gates, and the recommended planning-only first Phase 6 task.
+
+This task does not start Phase 6 implementation, does not add runtime behavior, does not implement production backend/auth/user accounts/cloud sync/deployment/monitoring, does not delete localStorage, does not silently overwrite localStorage or AppData, does not make API primary production default, does not modify App.tsx, does not add a browser mutation route, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+Recommended Phase 6 first task after Phase 5 closes: `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`.
+
+The next recommended Phase 5 task is `Task 5.41 Phase 5 Completion Archive V1`.

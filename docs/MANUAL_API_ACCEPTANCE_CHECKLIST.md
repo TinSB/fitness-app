@@ -1094,3 +1094,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.40 Phase 6 Handoff Plan V1`.
+
+## Task 5.40 Phase 6 Handoff Plan
+
+- [ ] Confirm `docs/PHASE6_HANDOFF_PLAN.md` exists.
+- [ ] Confirm the handoff covers production backend, auth, user accounts, cloud sync, deployment, monitoring, privacy, and security prerequisites.
+- [ ] Confirm Task 5.40 does not start Phase 6 implementation.
+- [ ] Confirm recommended Phase 6 first task is `Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1`.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended Phase 5 task is `Task 5.41 Phase 5 Completion Archive V1`.
