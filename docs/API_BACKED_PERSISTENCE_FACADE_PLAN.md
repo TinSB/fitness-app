@@ -186,3 +186,11 @@ Task 5.26 adds `src/storage/bootFromApiSnapshot.ts` as a guarded helper for expl
 It does not modify App.tsx, does not wire `loadData` or `saveData`, does not add a new server route, does not add API write-through runtime, does not write localStorage, does not silently overwrite AppData/localStorage, and does not add production backend/auth/sync/cloud/deployment.
 
 Next task should be Task 5.27 API Write-through Runtime Prototype V1.
+
+## Task 5.27 Follow-up: API Write-through Runtime Prototype
+
+Task 5.27 adds `src/storage/apiWriteThroughRuntime.ts` as a default-off helper for explicit dev/local `api-primary-dev` writes through the route-specific API storage adapter.
+
+It does not modify App.tsx, does not wire `loadData` or `saveData`, does not add a broad mutation client, does not write localStorage, does not silently overwrite AppData/localStorage, and does not add production backend/auth/sync/cloud/deployment.
+
+Next task should be Task 5.28 API Primary Runtime Acceptance V1.

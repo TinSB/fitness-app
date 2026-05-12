@@ -6,7 +6,7 @@ import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 describe('boot from API snapshot boundary', () => {
   it('adds only the boot helper and does not wire App.tsx or persistence', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts'))).toBe(false);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts')), 'Task 5.27 write-through helper may exist default-off').toBe(true);
 
     const app = readSource('src/App.tsx');
     const persistence = readSource('src/storage/persistence.ts');
@@ -31,7 +31,6 @@ describe('boot from API snapshot boundary', () => {
       'src/services/mutationClient.ts',
       'src/hooks/useMutationApi.ts',
       'src/api/mutations.ts',
-      'src/storage/apiWriteThroughRuntime.ts',
       'src/storage/localStorageToSqliteMigrationApply.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);

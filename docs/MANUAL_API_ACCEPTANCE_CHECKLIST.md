@@ -938,3 +938,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.27 API Write-through Runtime Prototype V1`.
+
+## Task 5.27 API Write-through Runtime Prototype
+
+- [ ] Confirm `src/storage/apiWriteThroughRuntime.ts` exists.
+- [ ] Confirm the helper is enabled only by explicit dev/local `api-primary-dev`.
+- [ ] Confirm App.tsx, `loadData`, and `saveData` are not wired to API write-through by default.
+- [ ] Confirm write-through delegates only to route-specific API storage adapter methods.
+- [ ] Confirm no broad mutation client exists.
+- [ ] Confirm disabled runtime, invalid adapter config, unavailable API, malformed response, missing snapshot metadata, and server non-success states are visible failures.
+- [ ] Confirm no localStorage read/write happens on success or failure.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.28 API Primary Runtime Acceptance V1`.

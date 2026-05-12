@@ -48,8 +48,8 @@ describe('API-backed read runtime acceptance boundary', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts')), 'Task 5.25 selector may exist default-off').toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts')), 'Task 5.25 config may exist default-off').toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts')), 'Task 5.26 boot helper may exist default-off').toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts')), 'Task 5.27 write-through helper may exist default-off').toBe(true);
     for (const path of [
-      'src/storage/apiWriteThroughRuntime.ts',
       'src/devApi/devApiMutationClient.ts',
       'src/mutationClient.ts',
       'src/services/mutationClient.ts',

@@ -13,11 +13,7 @@ describe('runtime source switch boundary remains blocked', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts')), 'Task 5.26 boot helper may exist default-off').toBe(true);
-    for (const path of [
-      'src/storage/apiWriteThroughRuntime.ts',
-    ]) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
-    }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts')), 'Task 5.27 write-through helper may exist default-off').toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')), 'Task 5.24 adapter may exist default-off').toBe(true);
   });
 

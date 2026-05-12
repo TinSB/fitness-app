@@ -2515,3 +2515,25 @@ Accepted browser mutation routes remain exactly:
 localStorage remains the default source of truth and remains fallback/migration source. API snapshot boot results never silently overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.27 API Write-through Runtime Prototype V1`.
+
+## Task 5.27: API Write-through Runtime Prototype V1
+
+Task 5.27 adds `src/storage/apiWriteThroughRuntime.ts` as a default-off dev/local API write-through runtime helper for explicit `api-primary-dev` mode.
+
+The helper is not mounted in App.tsx and is not wired to `loadData`, `saveData`, or localStorage. It delegates only to the Task 5.24 route-specific API storage adapter methods for the seven accepted browser mutation routes. It returns visible failures when `api-primary-dev` is not selected, when adapter configuration is invalid, or when the adapter reports timeout, unavailable API, malformed response, missing snapshot metadata, or server non-success.
+
+Task 5.27 does not add a broad mutation client, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains the default runtime source and remains fallback/migration source. API write-through results never silently write localStorage.
+
+The next recommended task is `Task 5.28 API Primary Runtime Acceptance V1`.

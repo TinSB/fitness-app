@@ -9,7 +9,7 @@ describe('runtime source selector boundary', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts')), 'Task 5.26 boot helper may exist default-off').toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts'))).toBe(false);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/apiWriteThroughRuntime.ts')), 'Task 5.27 write-through helper may exist default-off').toBe(true);
 
     const app = readSource('src/App.tsx');
     const persistence = readSource('src/storage/persistence.ts');
