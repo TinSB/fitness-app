@@ -88,3 +88,11 @@ Task 6.22 must be docs/static tests only. It must not implement production deplo
 Task 6.21 is complete after this task.
 
 Do not enable production runtime yet. Next task should be Task 6.22 Deployment Runtime Strategy & Staging Plan V1.
+
+## Task 6.22 Follow-up
+
+Task 6.22 Deployment Runtime Strategy & Staging Plan V1 follows this environment boundary with docs/static tests only.
+
+Task 6.22 must document staging vs production, rollback, preview deployments optional for Codex PRs, IronPath Validation as required, and no production deployment implementation. It must not implement production deployment, hosted production runtime, secret provisioning, routes, dependencies, or source-of-truth switching.
+
+The next recommended task after Task 6.22 is `Task 6.23 Secrets & Environment Validation Skeleton V1`, safe skeleton only if no dependency is needed.

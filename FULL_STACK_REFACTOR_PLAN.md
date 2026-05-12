@@ -2697,6 +2697,32 @@ Next recommended task: Task 6.22 Deployment Runtime Strategy & Staging Plan V1.
 
 Task 6.22 must be docs/static tests only. It must not implement production deployment, hosted production runtime, secret provisioning, routes, dependencies, or source-of-truth switching.
 
+### Task 6.22: Deployment Runtime Strategy & Staging Plan V1
+
+Status: Completed in this branch as deployment runtime strategy and staging plan documentation with static boundary tests.
+
+Task 6.22 adds `docs/DEPLOYMENT_RUNTIME_STRATEGY_STAGING_PLAN.md`, `tests/deploymentRuntimeStrategyStagingPlan.test.ts`, `tests/deploymentRuntimeBoundaryStillBlocked.test.ts`, and `tests/deploymentRuntimeDocsParity.test.ts`.
+
+Task 6.22 documents staging vs production, rollback, preview deployments optional for Codex PRs, IronPath Validation as required, and no production deployment implementation.
+
+This task adds no production deployment, no hosted production runtime, no deployment config, no secret values, no auth provider configuration, no sync provider configuration, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.23 Secrets & Environment Validation Skeleton V1.
+
+Task 6.23 may add a safe environment validation skeleton only if no dependency is needed. It must not add secret values, production deployment, auth provider, sync provider, package changes, routes, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
