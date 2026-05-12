@@ -241,3 +241,13 @@ Task 6.7 documents backup-first, dry-run, apply, rollback, recovery drill, expor
 Task 6.7 keeps migration runtime, destructive migration, real-data automation, backup/restore runtime, export/delete runtime, production source-of-truth migration, production backend runtime, auth runtime, cloud sync runtime, deployment runtime, package changes, browser routes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1, docs/static tests only. Task 6.8 must not implement production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, routes, package changes, or source-of-truth switching.
+
+## Task 6.8 Architecture Checkpoint Alignment
+
+Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1 adds `docs/PHASE6_ARCHITECTURE_CHECKPOINT_BOUNDARY_LOCK.md` as the architecture checkpoint before skeleton/prototype work.
+
+Task 6.8 locks architecture decisions, still-blocked implementation, source-of-truth status, route allowlist, CI/ruleset policy, and coverage inventory before narrow skeleton planning.
+
+Task 6.8 keeps production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, production source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.9 Production Backend Adapter Skeleton Plan V1, docs/static tests only. Task 6.9 must not implement production backend runtime, auth, deployment, database migration, production runtime activation, routes, package changes, or source-of-truth switching.

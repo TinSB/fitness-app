@@ -3007,3 +3007,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.7 documents backup-first, dry-run, apply, rollback, recovery drill, export/delete implications, no destructive migration, and no real-data automation without implementation.
 
 Recommended next task is `Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1`, docs/static tests only. Task 6.8 must not implement production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, routes, package changes, or source-of-truth switching.
+
+## Task 6.8: Phase 6 Architecture Checkpoint & Boundary Lock V1
+
+Task 6.8 adds `docs/PHASE6_ARCHITECTURE_CHECKPOINT_BOUNDARY_LOCK.md` as the architecture checkpoint and boundary lock before skeleton/prototype work.
+
+This task adds no runtime behavior, no production backend runtime, no auth runtime, no sync runtime, no deployment runtime, no normalized schema, no migration runtime, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.8 locks architecture decisions, still-blocked implementation, source-of-truth status, route allowlist, CI/ruleset policy, and coverage inventory before narrow skeleton planning.
+
+Recommended next task is `Task 6.9 Production Backend Adapter Skeleton Plan V1`, docs/static tests only. Task 6.9 must not implement production backend runtime, auth, deployment, database migration, production runtime activation, routes, package changes, or source-of-truth switching.
