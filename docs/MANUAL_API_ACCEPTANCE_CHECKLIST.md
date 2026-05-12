@@ -1147,3 +1147,18 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm required PR check remains GitHub Actions `IronPath Validation` and use `gh pr checks <PR_NUMBER> --required --watch`.
 - [ ] Confirm next recommended task is `Task 6.2 Production Data Ownership, Privacy & Security Matrix V1`, docs/static tests only.
 - [ ] Confirm Task 6.2 is not auto-started.
+
+## Task 6.2 Production Data Ownership, Privacy & Security Matrix
+
+- [ ] Confirm `docs/PRODUCTION_DATA_OWNERSHIP_PRIVACY_SECURITY_MATRIX.md` exists.
+- [ ] Confirm Task 6.2 is docs/static tests only and has no production readiness implication.
+- [ ] Confirm no production backend, auth, user accounts, cloud sync, deployment, monitoring, source-of-truth migration, normalized tables, package/script/lockfile change, or browser route is added.
+- [ ] Confirm training history, active session, program templates, settings, screening profile, DataHealth state, backup metadata, readMirror summaries, derived analytics, migration state, account identity metadata, auth/session metadata, sync metadata, audit/security logs, support/diagnostic data, and deletion/export records are classified.
+- [ ] Confirm each data domain records owner, production owner candidate, privacy classification, sensitivity, retention, export/delete, backup/restore, logging, sync eligibility, migration risk, and required future gate.
+- [ ] Confirm privacy/security controls cover log redaction, secrets handling, least privilege, user data isolation, account-linking boundaries, retention/export/delete policy, backup encryption future requirement, audit logging future requirement, and real-data safety.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.3 Auth & User Account Lifecycle Architecture Gate V1`, docs/static tests only.
+- [ ] Confirm Task 6.3 is not auto-started.

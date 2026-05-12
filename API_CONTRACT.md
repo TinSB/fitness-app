@@ -2875,3 +2875,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.1 evaluates production backend, production database/storage, auth/user identity, cloud sync, deployment/environment, privacy/security, production migration/rollback, and CI/ruleset architecture categories without selecting or implementing production runtime.
 
 Recommended next task is `Task 6.2 Production Data Ownership, Privacy & Security Matrix V1`, docs/static tests only. Task 6.2 must not implement auth, production backend, sync, deployment, migration, or source-of-truth switching, and must not auto-start from Task 6.1.
+
+## Task 6.2: Production Data Ownership, Privacy & Security Matrix V1
+
+Task 6.2 adds `docs/PRODUCTION_DATA_OWNERSHIP_PRIVACY_SECURITY_MATRIX.md` as a production data ownership, privacy, and security matrix and decision record.
+
+This task adds no runtime behavior, no production backend/auth/user accounts/cloud sync/deployment/monitoring, no source-of-truth migration, no normalized tables, no package changes, no browser mutation route, no DataHealth repair, and no backup/import/export/reset/recovery HTTP routes.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.2 classifies production data ownership, privacy, sensitivity, retention, export/delete, backup/restore, logging, sync eligibility, migration risk, and required future gates for training history, active session, templates, settings, screening, DataHealth, backups, readMirror summaries, analytics, migration state, account identity, auth/session metadata, sync metadata, audit/security logs, support diagnostics, and deletion/export records.
+
+Recommended next task is `Task 6.3 Auth & User Account Lifecycle Architecture Gate V1`, docs/static tests only. Task 6.3 must not implement auth, production backend, sync, deployment, migration, or source-of-truth switching, and must not auto-start from Task 6.2.

@@ -2177,6 +2177,32 @@ Next recommended task: Task 6.2 Production Data Ownership, Privacy & Security Ma
 
 Task 6.2 must be docs/static tests only. It must not implement production backend/auth/sync/deployment, migration, source-of-truth switching, normalized tables, routes, package changes, or real personal training data use, and must not auto-start from Task 6.1.
 
+### Task 6.2: Production Data Ownership, Privacy & Security Matrix V1
+
+Status: Completed in this branch as Phase 6 production data ownership, privacy, and security matrix documentation and static boundary tests.
+
+Task 6.2 adds `docs/PRODUCTION_DATA_OWNERSHIP_PRIVACY_SECURITY_MATRIX.md`, `tests/productionDataOwnershipPrivacySecurityMatrix.test.ts`, `tests/productionDataOwnershipBoundaryStillBlocked.test.ts`, `tests/productionDataOwnershipPrivacySecurityControls.test.ts`, and `tests/productionDataOwnershipDocsParity.test.ts`.
+
+Task 6.2 classifies production data ownership, privacy, sensitivity, retention, export/delete, backup/restore, logging, sync eligibility, migration risk, and future gates for current and future data domains.
+
+This task adds no runtime behavior, no production backend/auth/user accounts/cloud sync/deployment/monitoring, no source-of-truth migration, no normalized tables, no package changes, no browser mutation route, no DataHealth repair, and no backup/import/export/reset/recovery HTTP routes.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.3 Auth & User Account Lifecycle Architecture Gate V1.
+
+Task 6.3 must be docs/static tests only. It must not implement production backend/auth/sync/deployment, migration, source-of-truth switching, normalized tables, routes, package changes, or real personal training data use, and must not auto-start from Task 6.2.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

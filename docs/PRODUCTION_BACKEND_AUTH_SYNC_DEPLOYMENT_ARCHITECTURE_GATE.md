@@ -165,3 +165,13 @@ Task 6.2 must be docs/static tests only. Task 6.2 must not implement auth, produ
 Task 6.1 is complete after this task.
 
 Do not start production implementation yet. Next task should be Task 6.2 Production Data Ownership, Privacy & Security Matrix V1. Do not auto-start Task 6.2.
+
+## Task 6.2 Follow-up
+
+Task 6.2 Production Data Ownership, Privacy & Security Matrix V1 adds a production data ownership, privacy, and security matrix after this architecture gate.
+
+Task 6.2 remains docs/static tests only. It does not implement production backend, auth, user accounts, cloud sync, deployment, monitoring, production source-of-truth migration, normalized tables, package changes, browser route changes, or real personal training data migration.
+
+Task 6.2 keeps `localStorage` as default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+The next recommended task after Task 6.2 is Task 6.3 Auth & User Account Lifecycle Architecture Gate V1, docs/static tests only. Task 6.3 must not auto-start.
