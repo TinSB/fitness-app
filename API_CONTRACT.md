@@ -3403,3 +3403,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.26 Production Manual Acceptance Runbook V1`, docs/static tests only. Task 6.26 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.26: Production Manual Acceptance Runbook V1
+
+Task 6.26 adds `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md` as a production-readiness manual acceptance runbook.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no production backend activation, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.26 requires a dedicated test environment, dedicated browser profile, dedicated dev DB where applicable, synthetic data, source-of-truth checks, auth/account status checks, sync status checks, backup/export/delete/recovery checks, deployment status checks, rollback checks, and pass/fail template.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.27 Production Rollback & Incident Runbook V1`, docs/static tests only. Task 6.27 must not add runtime incident handling, production deployment, auth runtime, sync runtime, package changes, routes, or source-of-truth switching.

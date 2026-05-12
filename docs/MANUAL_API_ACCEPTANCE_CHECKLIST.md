@@ -1437,3 +1437,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.26 Production Manual Acceptance Runbook V1`, docs/static tests only.
+
+## Task 6.26 Production Manual Acceptance Runbook
+
+- [ ] Confirm `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md` exists.
+- [ ] Confirm dedicated test environment, dedicated browser profile, dedicated dev DB where applicable, synthetic data, and no real personal data are required.
+- [ ] Confirm source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery, deployment if implemented, rollback checks, and pass/fail template are documented.
+- [ ] Confirm no production runtime, auth runtime, sync runtime, deployment runtime, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.27 Production Rollback & Incident Runbook V1`, docs/static tests only.
