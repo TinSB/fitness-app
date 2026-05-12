@@ -21,6 +21,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/storage/bootFromApiSnapshot.ts',
   'src/storage/localStorageToSqliteMigrationApply.ts',
   'src/storage/localStorageToSqliteMigrationDryRun.ts',
+  'src/storage/migrationRollbackRecovery.ts',
   'src/storage/runtimeSourceConfig.ts',
   'src/storage/runtimeSourceSelector.ts',
 ]);

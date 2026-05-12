@@ -1961,6 +1961,30 @@ localStorage remains available as fallback and migration source. API primary rem
 
 Next recommended task: Task 5.35 Migration Rollback & Recovery Hardening V1.
 
+### Task 5.35: Migration Rollback & Recovery Hardening V1
+
+Status: Completed in this branch as migration rollback/recovery hardening docs and helper coverage.
+
+Task 5.35 adds `src/storage/migrationRollbackRecovery.ts`, `docs/MIGRATION_ROLLBACK_RECOVERY_HARDENING.md`, `tests/migrationRollbackRecoveryHardening.test.ts`, `tests/migrationRollbackRecoveryHardeningBoundary.test.ts`, and `tests/migrationRollbackRecoveryHardeningDocs.test.ts`.
+
+The helper covers restore localStorage backup, restore dev DB backup, corrupt snapshot handling, schema mismatch handling, clear success/failure state, injected restore callbacks, and no HTTP reset/recovery route.
+
+Task 5.35 does not delete localStorage, does not auto-switch source of truth, does not modify App.tsx, does not add an HTTP reset/recovery route, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains available as fallback and migration source. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.36 Migration Regression Lock V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
