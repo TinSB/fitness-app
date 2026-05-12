@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
-describe('localStorage to SQLite migration dry-run boundary', () => {
-  it('keeps dry-run helper and allows only the Task 5.33 apply helper without source-switch implementation', () => {
+describe('localStorage to SQLite migration apply boundary', () => {
+  it('adds only the apply helper and does not wire App.tsx or persistence', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/localStorageToSqliteMigrationDryRun.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/localStorageToSqliteMigrationApply.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/migrationRollback.ts'))).toBe(false);
@@ -12,15 +12,15 @@ describe('localStorage to SQLite migration dry-run boundary', () => {
 
     const app = readSource('src/App.tsx');
     const persistence = readSource('src/storage/persistence.ts');
-    expect(app).not.toMatch(/localStorageToSqliteMigrationDryRun|localStorageToSqliteMigrationApply|VITE_IRONPATH_MIGRATION/);
-    expect(persistence).not.toMatch(/localStorageToSqliteMigrationDryRun|localStorageToSqliteMigrationApply|api-primary-dev/);
+    expect(app).not.toMatch(/localStorageToSqliteMigrationApply|VITE_IRONPATH_MIGRATION_APPLY|api-primary-dev/);
+    expect(persistence).not.toMatch(/localStorageToSqliteMigrationApply|localStorageToSqliteMigrationDryRun|api-primary-dev/);
   });
 
-  it('keeps dry-run browser-safe and no-write', () => {
-    const source = readSource('src/storage/localStorageToSqliteMigrationDryRun.ts');
+  it('keeps apply helper browser-safe, route-free, and localStorage-delete-free', () => {
+    const source = readSource('src/storage/localStorageToSqliteMigrationApply.ts');
 
     expect(source).not.toMatch(/from ['"`]node:|node:http|node:sqlite|devLauncher|httpRuntimeAdapter|serverAdapter|sqliteRepository|devApiRunner|devDbRecovery/);
-    expect(source).not.toMatch(/setItem\(|removeItem\(|clear\(|writeAppDataToLocalStorage|saveData|deleteLocalStorage|replaceLocalStorage/);
+    expect(source).not.toMatch(/localStorage\.(setItem|removeItem|clear)|window\.localStorage|globalThis\.localStorage|writeAppDataToLocalStorage|saveData|deleteLocalStorage|replaceLocalStorage/);
     expect(source).not.toMatch(/method\s*:\s*['"`](POST|PUT|PATCH|DELETE)['"`]|fetch\(|\/data-health\/repair\/apply|\/backup\/import|\/backup\/export|\/reset\/|\/recovery\//);
     expect(source).not.toMatch(/\b(auth|oauth|sync|cloud|deploy)\b|productionReady:\s*true/i);
   });
