@@ -421,3 +421,13 @@ Task 6.25 locks secret leakage controls, sensitive data logging controls, route 
 Task 6.25 keeps auth runtime, deployment runtime, sync runtime, production backend activation, production monitoring service, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.26 Production Manual Acceptance Runbook V1, docs/static tests only. Task 6.26 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.26 Production Manual Acceptance Alignment
+
+Task 6.26 Production Manual Acceptance Runbook V1 adds `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md` as production-readiness manual acceptance documentation.
+
+Task 6.26 requires dedicated test environment, dedicated browser profile, dedicated dev DB where applicable, synthetic data, source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery, deployment if implemented, rollback checks, and pass/fail template.
+
+Task 6.26 keeps production runtime, auth runtime, sync runtime, deployment runtime, production backend activation, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.27 Production Rollback & Incident Runbook V1, docs/static tests only. Task 6.27 must not add runtime incident handling, production deployment, auth runtime, sync runtime, package changes, routes, or source-of-truth switching.
