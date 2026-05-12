@@ -3191,6 +3191,16 @@ Recommended next task: Phase 7 Task 7.1 Production Runtime Implementation Author
 
 Do not auto-start Phase 7. Do not auto-start Task 6.41.
 
+### Task 7.1: Production Runtime Implementation Authorization Gate V1
+
+Status: Phase 7 starts with a docs/static authorization gate.
+
+Task 7.1 adds `docs/PHASE7_PRODUCTION_RUNTIME_IMPLEMENTATION_AUTHORIZATION_GATE.md` and `tests/phase7ProductionRuntimeAuthorizationGate.test.ts`.
+
+This task records Task 6.40 / PR #152 / merge commit `790c49d`, preserves `localStorage` as default/fallback/migration/emergency source, preserves `api-primary-dev` as explicit dev/local only, and authorizes no production backend/auth/sync/deployment/monitoring/source-of-truth implementation.
+
+Next recommended task: Task 7.2 Production Runtime Contract Scaffold Authorization V1. Task 7.2 is not started by Task 7.1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

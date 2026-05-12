@@ -3733,3 +3733,13 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Phase 7 Task 7.1 Production Runtime Implementation Authorization Gate V1`. Do not auto-start Phase 7. Do not auto-start Task 6.41.
+
+## Task 7.1: Production Runtime Implementation Authorization Gate V1
+
+Task 7.1 opens Phase 7 with `docs/PHASE7_PRODUCTION_RUNTIME_IMPLEMENTATION_AUTHORIZATION_GATE.md`.
+
+This task authorizes docs/static tests only. It adds no production backend, auth runtime, cloud sync runtime, deployment runtime, monitoring runtime, production source-of-truth switch, route, package change, normalized table, or destructive real-data migration.
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 7.2 Production Runtime Contract Scaffold Authorization V1`. Task 7.2 is not started by Task 7.1.
