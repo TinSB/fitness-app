@@ -13,6 +13,8 @@ jobs:
     name: IronPath Validation
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      TZ: America/New_York
 
     steps:
       - name: Checkout
