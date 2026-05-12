@@ -2827,6 +2827,32 @@ Next recommended task: Task 6.27 Production Rollback & Incident Runbook V1.
 
 Task 6.27 must be docs/static tests only. It must not add runtime incident handling, production deployment, auth runtime, sync runtime, package changes, routes, or source-of-truth switching.
 
+### Task 6.27: Production Rollback & Incident Runbook V1
+
+Status: Completed in this branch as production rollback and incident runbook documentation with static boundary tests.
+
+Task 6.27 adds `docs/PRODUCTION_ROLLBACK_INCIDENT_RUNBOOK.md`, `tests/productionRollbackIncidentRunbook.test.ts`, `tests/productionRollbackIncidentBoundary.test.ts`, and `tests/productionRollbackIncidentDocsParity.test.ts`.
+
+Task 6.27 documents rollback, incident detection, data safety, restore verification, privacy incident handling, and rollback procedure template without implementation.
+
+This task adds no runtime incident handling, no production deployment, no auth runtime, no sync runtime, no production backend activation, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.28 Production Data Export / Delete Plan V1.
+
+Task 6.28 must be docs/static tests only. It must not add export/delete runtime, account deletion runtime, backup retention runtime, audit retention runtime, package changes, routes, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

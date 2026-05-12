@@ -431,3 +431,13 @@ Task 6.26 requires dedicated test environment, dedicated browser profile, dedica
 Task 6.26 keeps production runtime, auth runtime, sync runtime, deployment runtime, production backend activation, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.27 Production Rollback & Incident Runbook V1, docs/static tests only. Task 6.27 must not add runtime incident handling, production deployment, auth runtime, sync runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.27 Production Rollback Incident Alignment
+
+Task 6.27 Production Rollback & Incident Runbook V1 adds `docs/PRODUCTION_ROLLBACK_INCIDENT_RUNBOOK.md` as rollback and incident documentation.
+
+Task 6.27 documents rollback, incident detection, data safety, restore verification, privacy incident handling, and rollback procedure template without implementation.
+
+Task 6.27 keeps runtime incident handling, production deployment, auth runtime, sync runtime, production backend activation, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.28 Production Data Export / Delete Plan V1, docs/static tests only. Task 6.28 must not add export/delete runtime, account deletion runtime, backup retention runtime, audit retention runtime, package changes, routes, or source-of-truth switching.
