@@ -2281,6 +2281,32 @@ Next recommended task: Task 6.6 Deployment, Environment & Secrets Strategy V1.
 
 Task 6.6 must be docs/static tests only. It must not implement deployment, production hosting, secrets runtime, auth, cloud sync, production backend, migration, routes, source-of-truth switching, package changes, or real personal training data use.
 
+### Task 6.6: Deployment, Environment & Secrets Strategy V1
+
+Status: Completed in this branch as Phase 6 deployment, environment, and secrets strategy documentation and static boundary tests.
+
+Task 6.6 adds `docs/DEPLOYMENT_ENVIRONMENT_SECRETS_STRATEGY.md`, `tests/deploymentEnvironmentSecretsStrategy.test.ts`, `tests/deploymentEnvironmentSecretsBoundaryStillBlocked.test.ts`, and `tests/deploymentEnvironmentSecretsDocsParity.test.ts`.
+
+Task 6.6 documents local/dev/staging/production environments, secrets storage, environment variables, branch rules, required checks, Vercel optional behavior for Codex PRs, and rollback strategy without implementation.
+
+This task adds no runtime behavior, no production deployment, no hosted production configuration, no deployment config, no secret values, no secrets runtime, no auth, no cloud sync, no production backend, no migration, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.7 Production Migration, Backup & Rollback Strategy V1.
+
+Task 6.7 must be docs/static tests only. It must not implement destructive migration, real-data automation, production source-of-truth switching, routes, deployment, auth, cloud sync, production backend runtime, package changes, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -2963,3 +2963,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.5 evaluates no sync, manual backup sync, single-device cloud backup, multi-device bidirectional sync, conflict detection, conflict merge policy, remote write duplication, and offline queue risk without implementation.
 
 Recommended next task is `Task 6.6 Deployment, Environment & Secrets Strategy V1`, docs/static tests only. Task 6.6 must not implement deployment, production hosting, secrets runtime, auth, cloud sync, production backend, migration, routes, or source-of-truth switching.
+
+## Task 6.6: Deployment, Environment & Secrets Strategy V1
+
+Task 6.6 adds `docs/DEPLOYMENT_ENVIRONMENT_SECRETS_STRATEGY.md` as a planning-level deployment, environment, and secrets strategy.
+
+This task adds no runtime behavior, no production deployment, no hosted production configuration, no deployment config, no secret values, no secrets runtime, no auth, no cloud sync, no production backend, no migration, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.6 documents local/dev/staging/production environments, secrets storage, environment variables, branch rules, required checks, Vercel optional behavior for Codex PRs, and rollback strategy without implementation.
+
+Recommended next task is `Task 6.7 Production Migration, Backup & Rollback Strategy V1`, docs/static tests only. Task 6.7 must not implement destructive migration, real-data automation, production source-of-truth switching, routes, deployment, auth, cloud sync, production backend runtime, or package changes.
