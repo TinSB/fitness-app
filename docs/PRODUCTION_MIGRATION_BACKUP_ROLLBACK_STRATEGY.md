@@ -97,3 +97,9 @@ Task 6.8 must be docs/static tests only. Task 6.8 must not implement production 
 Task 6.7 is complete after this task.
 
 Do not start production migration implementation yet. Next task should be Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1.
+
+## Task 6.8 Follow-up
+
+Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock V1 records architecture decisions, still-blocked implementation, source-of-truth status, route allowlist, CI/ruleset policy, and coverage inventory as docs/static tests only.
+
+It must keep production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, production source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.

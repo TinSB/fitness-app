@@ -2333,6 +2333,32 @@ Next recommended task: Task 6.8 Phase 6 Architecture Checkpoint & Boundary Lock 
 
 Task 6.8 must be docs/static tests only. It must not implement production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, routes, package changes, source-of-truth switching, or real personal training data use.
 
+### Task 6.8: Phase 6 Architecture Checkpoint & Boundary Lock V1
+
+Status: Completed in this branch as Phase 6 architecture checkpoint and boundary lock documentation and static boundary tests.
+
+Task 6.8 adds `docs/PHASE6_ARCHITECTURE_CHECKPOINT_BOUNDARY_LOCK.md`, `tests/phase6ArchitectureCheckpointBoundaryLock.test.ts`, `tests/phase6ArchitectureCheckpointDocsParity.test.ts`, and `tests/phase6ArchitectureCheckpointCoverageInventory.test.ts`.
+
+Task 6.8 locks architecture decisions, still-blocked implementation, source-of-truth status, route allowlist, CI/ruleset policy, and coverage inventory before narrow skeleton planning.
+
+This task adds no runtime behavior, no production backend runtime, no auth runtime, no sync runtime, no deployment runtime, no normalized schema, no migration runtime, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.9 Production Backend Adapter Skeleton Plan V1.
+
+Task 6.9 must be docs/static tests only. It must not implement production backend runtime, auth, deployment, database migration, production runtime activation, routes, package changes, source-of-truth switching, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
