@@ -1607,3 +1607,13 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm recommended next task is `Phase 7 Task 7.1 Production Runtime Implementation Authorization Gate V1`.
 - [ ] Confirm Phase 7 and Task 6.41 are not auto-started.
+
+## Task 7.1 Production Runtime Implementation Authorization Gate
+
+- [ ] Confirm `docs/PHASE7_PRODUCTION_RUNTIME_IMPLEMENTATION_AUTHORIZATION_GATE.md` exists.
+- [ ] Confirm Task 6.40 / PR #152 / merge commit `790c49d` and final Phase 6 validation evidence are recorded.
+- [ ] Confirm authorization categories are documented.
+- [ ] Confirm no production backend, auth runtime, cloud sync runtime, deployment runtime, monitoring runtime, source-of-truth switch, route, package change, normalized table, or destructive real-data migration is authorized.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm next recommended task is `Task 7.2 Production Runtime Contract Scaffold Authorization V1` and is not started by Task 7.1.

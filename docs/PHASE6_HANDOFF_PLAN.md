@@ -571,3 +571,11 @@ Task 6.40 states Phase 6 complete, production readiness status, source-of-truth 
 Task 6.40 keeps Phase 7 work, Task 6.41 work, production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 Recommended next task is Phase 7 Task 7.1 Production Runtime Implementation Authorization Gate V1. Do not auto-start Phase 7. Do not auto-start Task 6.41.
+
+## Task 7.1 Production Runtime Implementation Authorization Gate Alignment
+
+Task 7.1 opens Phase 7 with `docs/PHASE7_PRODUCTION_RUNTIME_IMPLEMENTATION_AUTHORIZATION_GATE.md`.
+
+Task 7.1 authorizes docs/static tests only and keeps production backend, auth runtime, cloud sync runtime, deployment runtime, monitoring runtime, source-of-truth switching, route additions, package changes, normalized tables, and destructive real-data migration blocked.
+
+The next recommended task is Task 7.2 Production Runtime Contract Scaffold Authorization V1. Task 7.2 is not started by Task 7.1.
