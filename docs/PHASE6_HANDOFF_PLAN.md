@@ -531,3 +531,13 @@ Task 6.36 locks sensitive data redaction, no raw AppData logging, no localStorag
 Task 6.36 keeps external monitoring services, production telemetry runtime, analytics runtime, package changes, route additions, source-of-truth switching, and real personal training data logging unimplemented.
 
 The next recommended task is Task 6.37 Production Release Candidate Regression Lock V1, docs/static tests only. Task 6.37 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
+
+## Task 6.37 Production Release Candidate Regression Lock Alignment
+
+Task 6.37 Production Release Candidate Regression Lock V1 adds `docs/PRODUCTION_RELEASE_CANDIDATE_REGRESSION_LOCK.md` as production release candidate regression lock documentation.
+
+Task 6.37 locks accepted production capabilities, blocked capabilities, source-of-truth rules, auth/sync/deployment status, migration/rollback status, CI/ruleset status, browser build isolation, no unapproved routes, and coverage inventory.
+
+Task 6.37 keeps production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.38 Phase 6 Final Manual Acceptance V1, docs/static tests only. Task 6.38 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
