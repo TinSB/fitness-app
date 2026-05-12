@@ -551,3 +551,13 @@ Task 6.38 documents the production readiness scenario matrix, local/dev fallback
 Task 6.38 keeps production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, real personal training data migration, and Phase 7 work unimplemented.
 
 The next recommended task is Task 6.39 Phase 6 Exit Regression Lock V1, docs/static tests only. Task 6.39 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, real-data migration, or Phase 7 work.
+
+## Task 6.39 Phase 6 Exit Regression Lock Alignment
+
+Task 6.39 Phase 6 Exit Regression Lock V1 adds `docs/PHASE6_EXIT_REGRESSION_LOCK.md` as Phase 6 exit regression lock documentation.
+
+Task 6.39 locks final Phase 6 accepted capabilities, final blocked capabilities, final source-of-truth status, final auth/sync/deployment status, final migration/rollback status, final route allowlist, final CI/ruleset policy, and no Phase 7 auto-start.
+
+Task 6.39 keeps Phase 7 work, production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.40 Phase 6 Completion Archive V1, docs/static tests only. Task 6.40 must not start Phase 7, Task 6.41, production runtime implementation, auth runtime, sync runtime, deployment runtime, source-of-truth switching, routes, package changes, or real-data migration.

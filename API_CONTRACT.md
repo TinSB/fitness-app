@@ -3689,3 +3689,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.39 Phase 6 Exit Regression Lock V1`, docs/static tests only. Task 6.39 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, real-data migration, or Phase 7 work.
+
+## Task 6.39: Phase 6 Exit Regression Lock V1
+
+Task 6.39 adds `docs/PHASE6_EXIT_REGRESSION_LOCK.md` as Phase 6 exit regression lock documentation.
+
+This task adds no Phase 7 work, no production runtime, no auth runtime, no sync runtime, no deployment runtime, no monitoring runtime, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.39 locks final Phase 6 accepted capabilities, final blocked capabilities, final source-of-truth status, final auth/sync/deployment status, final migration/rollback status, final route allowlist, final CI/ruleset policy, and no Phase 7 auto-start.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.40 Phase 6 Completion Archive V1`, docs/static tests only. Task 6.40 must not start Phase 7, Task 6.41, production runtime implementation, auth runtime, sync runtime, deployment runtime, source-of-truth switching, routes, package changes, or real-data migration.
