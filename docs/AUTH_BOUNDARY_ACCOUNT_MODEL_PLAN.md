@@ -93,3 +93,9 @@ Task 6.13 may add type/interface-only auth boundary files if safe. It must not i
 Task 6.12 is complete after this task.
 
 Do not start auth implementation yet. Next task should be Task 6.13 Auth Provider Adapter Skeleton V1, limited to type/interface-only scaffolding if safe.
+
+## Task 6.13 Follow-up
+
+Task 6.13 Auth Provider Adapter Skeleton V1 adds `src/auth/authProviderTypes.ts` and `src/auth/authBoundary.ts` as type/interface-only auth provider adapter skeleton files.
+
+It must keep real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, package changes, source-of-truth switching, and real personal training data migration unimplemented.

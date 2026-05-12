@@ -3117,3 +3117,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.12 documents account identity, local user to account mapping, account deletion, export/delete responsibilities, token/session requirements, auth failure behavior, and localStorage fallback without implementation.
 
 Recommended next task is `Task 6.13 Auth Provider Adapter Skeleton V1`. Task 6.13 may add type/interface-only auth boundary files if safe. It must not implement real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, or source-of-truth switching.
+
+## Task 6.13: Auth Provider Adapter Skeleton V1
+
+Task 6.13 adds `src/auth/authProviderTypes.ts` and `src/auth/authBoundary.ts` as type/interface-only auth provider adapter skeleton files.
+
+This task adds no real auth, no login UI, no token storage, no OAuth, no provider integration, no dependencies, no routes, no production backend activation, no package changes, no source-of-truth switch, and no browser mutation route.
+
+The skeleton returns a pure unavailable result with `auth_runtime_not_implemented`. It stores no credentials, starts no provider flow, performs no network request, and writes no browser storage.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.14 Auth Account Lifecycle Acceptance V1`, docs/static tests only. Task 6.14 must not implement login/signup runtime, token/session runtime, OAuth, auth provider integration, user table, routes, production backend activation, package changes, or source-of-truth switching.

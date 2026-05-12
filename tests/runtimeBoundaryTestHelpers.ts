@@ -16,6 +16,8 @@ export const collectRuntimeSourceFiles = (directory: string): string[] =>
 export const relativePath = (path: string) => relative(repoRoot(), path).replaceAll('\\', '/');
 
 const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
+  'src/auth/authBoundary.ts',
+  'src/auth/authProviderTypes.ts',
   'src/storage/apiStorageAdapter.ts',
   'src/storage/apiWriteThroughRuntime.ts',
   'src/storage/bootFromApiSnapshot.ts',

@@ -2463,6 +2463,32 @@ Next recommended task: Task 6.13 Auth Provider Adapter Skeleton V1.
 
 Task 6.13 may add type/interface-only auth boundary files if safe. It must not implement real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, source-of-truth switching, or real personal training data use.
 
+### Task 6.13: Auth Provider Adapter Skeleton V1
+
+Status: Completed in this branch as type/interface-only auth provider adapter skeleton files and tests.
+
+Task 6.13 adds `src/auth/authProviderTypes.ts`, `src/auth/authBoundary.ts`, and `tests/authProviderAdapterSkeleton.test.ts`.
+
+The skeleton returns a pure unavailable result with `auth_runtime_not_implemented`. It stores no credentials, starts no provider flow, performs no network request, and writes no browser storage.
+
+This task adds no real auth, no login UI, no token storage, no OAuth, no provider integration, no dependencies, no routes, no production backend activation, no package changes, no source-of-truth switch, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.14 Auth Account Lifecycle Acceptance V1.
+
+Task 6.14 must be docs/static tests only. It must not implement login/signup runtime, token/session runtime, OAuth, auth provider integration, user table, routes, production backend activation, package changes, source-of-truth switching, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -1,13 +1,13 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { API_STORAGE_ADAPTER_ACCEPTED_WRITE_ROUTES } from '../src/storage/apiStorageAdapter';
 import { createRuntimeSourceSelector } from '../src/storage/runtimeSourceSelector';
-import { collectSrcRuntimeFiles, expectSourceNotToContain, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
+import { collectSrcRuntimeFiles, expectSourceNotToContain, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
 describe('auth boundary still blocked', () => {
   it('keeps browser runtime free of auth/account routes and provider runtime', () => {
-    for (const file of collectSrcRuntimeFiles()) {
+    for (const file of collectSrcRuntimeFiles().filter((path) => !relativePath(path).startsWith('src/auth/'))) {
       expectSourceNotToContain(file, [
         '/auth',
         '/login',
@@ -51,7 +51,7 @@ describe('auth boundary still blocked', () => {
     });
   });
 
-  it('keeps package files and auth directories unchanged before skeleton task', () => {
+  it('keeps package files unchanged and limits auth skeleton files after Task 6.13', () => {
     const packageJson = JSON.parse(readSource('package.json')) as {
       scripts: Record<string, string>;
       dependencies: Record<string, string>;
@@ -70,6 +70,9 @@ describe('auth boundary still blocked', () => {
       'vite',
       'vitest',
     ]);
-    expect(existsSync(resolve(repoRoot(), 'src/auth'))).toBe(false);
+    expect(readdirSync(resolve(repoRoot(), 'src/auth')).sort()).toEqual([
+      'authBoundary.ts',
+      'authProviderTypes.ts',
+    ]);
   });
 });
