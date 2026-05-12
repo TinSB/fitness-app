@@ -9,10 +9,10 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('source-of-truth migration boundary remains blocked', () => {
-  it('does not add migration/runtime source implementation files beyond the Task 5.24 adapter', () => {
+  it('does not add migration implementation files beyond the Task 5.24 adapter and Task 5.25 selector', () => {
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
       'src/storage/localStorageToSqliteMigration.ts',
       'src/storage/offlineMutationQueue.ts',
       'src/services/sourceOfTruthMigration.ts',

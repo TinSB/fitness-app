@@ -36,10 +36,10 @@ describe('API-backed read runtime regression boundary', () => {
     expect(source).not.toMatch(/\/sessions\/start|\/sessions\/active|\/history\/:id\/edit|\/data-health\/repair|\/backup\/|\/reset\/|\/recovery\//);
   });
 
-  it('keeps source switch and API storage implementation absent', () => {
+  it('allows Task 5.25 selector/config and keeps later runtime implementation absent', () => {
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts')), 'Task 5.25 selector may exist default-off').toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts')), 'Task 5.25 config may exist default-off').toBe(true);
     for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
     ]) {

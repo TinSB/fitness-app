@@ -9,10 +9,10 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('AppData ownership boundary remains blocked', () => {
-  it('does not add runtime source or API ownership implementation files beyond the Task 5.24 adapter', () => {
+  it('does not add API ownership implementation files beyond the Task 5.24 adapter and Task 5.25 selector', () => {
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
       'src/storage/appDataOwnership.ts',
       'src/storage/dualWriteAdapter.ts',
       'src/storage/offlineMutationQueue.ts',

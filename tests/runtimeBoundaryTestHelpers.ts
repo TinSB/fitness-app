@@ -17,6 +17,8 @@ export const relativePath = (path: string) => relative(repoRoot(), path).replace
 
 const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/storage/apiStorageAdapter.ts',
+  'src/storage/runtimeSourceConfig.ts',
+  'src/storage/runtimeSourceSelector.ts',
 ]);
 
 export const collectSrcRuntimeFiles = () =>

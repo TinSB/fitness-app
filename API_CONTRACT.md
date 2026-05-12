@@ -2471,3 +2471,25 @@ Accepted browser mutation routes remain exactly:
 localStorage remains source of truth by default. The API storage adapter never silently overwrites AppData or localStorage.
 
 The next recommended task is `Task 5.25 Runtime Source Selector Prototype V1`.
+
+## Task 5.25: Runtime Source Selector Prototype V1
+
+Task 5.25 adds `src/storage/runtimeSourceConfig.ts` and `src/storage/runtimeSourceSelector.ts` as a default-off dev/local runtime source selector prototype.
+
+The selector defines only three Phase 5 modes: `localStorage`, `api-readonly`, and `api-primary-dev`. Missing, empty, invalid, non-dev, or non-localhost API mode inputs fall back to `localStorage`. `localStorage` remains the default runtime source. `api-readonly` keeps App writes on localStorage and allows only API diagnostics. `api-primary-dev` is explicit dev/local opt-in only and is not production-ready.
+
+Task 5.25 does not modify App.tsx, does not wire `loadData` or `saveData`, does not boot the App from an API snapshot, does not add API write-through runtime, does not silently overwrite AppData or localStorage, does not replace localStorage, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains the default source of truth and remains the fallback/migration source. API results never silently overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.26 Boot From API Snapshot Prototype V1`.

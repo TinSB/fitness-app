@@ -1721,6 +1721,30 @@ localStorage remains source of truth by default. The API storage adapter never s
 
 Next recommended task: Task 5.25 Runtime Source Selector Prototype V1.
 
+### Task 5.25: Runtime Source Selector Prototype V1
+
+Status: Completed in this branch as a default-off runtime source selector prototype.
+
+Task 5.25 adds `src/storage/runtimeSourceConfig.ts`, `src/storage/runtimeSourceSelector.ts`, `tests/runtimeSourceConfig.test.ts`, `tests/runtimeSourceSelector.test.ts`, and `tests/runtimeSourceSelectorBoundary.test.ts`.
+
+The selector resolves only `localStorage`, `api-readonly`, and `api-primary-dev`. `localStorage` remains the default and fallback. Non-localStorage modes require development mode, explicit `VITE_IRONPATH_RUNTIME_SOURCE`, and a localhost-only Dev API base URL. `api-readonly` keeps App writes on localStorage. `api-primary-dev` is marked dev/local only and not production-ready.
+
+Task 5.25 does not modify App.tsx, does not wire `loadData` or `saveData`, does not add boot-from-API snapshot behavior, does not add API write-through runtime, does not replace localStorage, does not silently overwrite AppData/localStorage, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains source of truth by default and remains fallback/migration source.
+
+Next recommended task: Task 5.26 Boot From API Snapshot Prototype V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

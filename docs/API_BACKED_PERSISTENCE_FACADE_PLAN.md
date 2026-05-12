@@ -170,3 +170,11 @@ Task 5.24 adds `src/storage/apiStorageAdapter.ts` as a default-off dev/local API
 It does not modify App.tsx, does not wire `loadData` or `saveData`, does not replace localStorage, does not switch source of truth, does not add a runtime source selector, does not add boot-from-API snapshot behavior, does not add API write-through runtime, and does not add production backend/auth/sync/cloud/deployment.
 
 Next task should be Task 5.25 Runtime Source Selector Prototype V1.
+
+## Task 5.25 Follow-up: Runtime Source Selector Prototype
+
+Task 5.25 adds `src/storage/runtimeSourceConfig.ts` and `src/storage/runtimeSourceSelector.ts` as default-off selector/config helpers for `localStorage`, `api-readonly`, and `api-primary-dev`.
+
+It does not modify App.tsx, does not wire `loadData` or `saveData`, does not add boot-from-API snapshot behavior, does not add API write-through runtime, does not replace localStorage, does not silently overwrite AppData/localStorage, and does not add production backend/auth/sync/cloud/deployment.
+
+Next task should be Task 5.26 Boot From API Snapshot Prototype V1.

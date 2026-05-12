@@ -21,7 +21,7 @@ const blockedNodeOnlyTokens = [
 ];
 
 describe('API-backed read manual App acceptance boundary', () => {
-  it('keeps read prototype GET-only and leaves source-switch implementation absent', () => {
+  it('keeps read prototype GET-only and leaves later runtime implementation absent', () => {
     expect(API_BACKED_READ_ROUTES).toEqual([
       '/health',
       '/app-data/summary',
@@ -31,9 +31,9 @@ describe('API-backed read manual App acceptance boundary', () => {
       '/data-health/summary',
     ]);
 
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts')), 'Task 5.25 selector may exist default-off').toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts')), 'Task 5.25 config may exist default-off').toBe(true);
     for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
       'src/devApi/devApiMutationClient.ts',
