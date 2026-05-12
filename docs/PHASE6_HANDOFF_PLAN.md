@@ -461,3 +461,13 @@ Task 6.29 locks accepted capabilities, planned-only capabilities, blocked capabi
 Task 6.29 keeps production runtime, auth runtime, sync runtime, deployment runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.30 Production Release Readiness Checkpoint V1, docs/static tests only. Task 6.30 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.30 Production Release Readiness Alignment
+
+Task 6.30 Production Release Readiness Checkpoint V1 adds `docs/PRODUCTION_RELEASE_READINESS_CHECKPOINT.md` as release readiness checkpoint documentation.
+
+Task 6.30 checkpoints implemented production capabilities, still blocked production capabilities, auth/account status, backend status, sync status, deployment status, source-of-truth status, data migration status, privacy/security status, rollback status, and CI/ruleset status.
+
+Task 6.30 keeps production runtime, auth runtime, sync runtime, deployment runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.31 Production Manual Acceptance Runbook V1, docs/static tests only. Task 6.31 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
