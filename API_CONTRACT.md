@@ -3579,3 +3579,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.34 Production Sync / Conflict Final Audit V1`, docs/static tests only. Task 6.34 must not add sync runtime, network writes, cloud writes, background sync workers, remote write queues, package changes, source-of-truth switching, or real-data migration.
+
+## Task 6.34: Production Sync / Conflict Final Audit V1
+
+Task 6.34 adds `docs/PRODUCTION_SYNC_CONFLICT_FINAL_AUDIT.md` as production sync/conflict final audit documentation.
+
+This task adds no sync runtime, no network writes, no cloud writes, no background sync worker, no remote write queue, no automatic merge runtime, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.34 audits no sync runtime, sync scope if implemented later, conflict model, idempotency, duplicate cloud write prevention, offline behavior, source-of-truth rules, rollback, and route boundaries.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.35 Production Deployment & Environment Final Audit V1`, docs/static tests only. Task 6.35 must not add production deployment, deployment config that changes production behavior, secret values, package changes, routes, source-of-truth switching, or real-data migration.

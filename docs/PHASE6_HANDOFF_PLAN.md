@@ -501,3 +501,13 @@ Task 6.33 documents export policy acceptance, delete policy acceptance, account 
 Task 6.33 keeps backup runtime, export runtime, delete runtime, recovery runtime, backup/import/export HTTP routes, reset/recovery HTTP routes, destructive migration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.34 Production Sync / Conflict Final Audit V1, docs/static tests only. Task 6.34 must not add sync runtime, network writes, cloud writes, background sync workers, remote write queues, package changes, source-of-truth switching, or real-data migration.
+
+## Task 6.34 Production Sync Conflict Final Audit Alignment
+
+Task 6.34 Production Sync / Conflict Final Audit V1 adds `docs/PRODUCTION_SYNC_CONFLICT_FINAL_AUDIT.md` as production sync/conflict final audit documentation.
+
+Task 6.34 audits no sync runtime, sync scope if implemented later, conflict model, idempotency, duplicate cloud write prevention, offline behavior, source-of-truth rules, rollback, and route boundaries.
+
+Task 6.34 keeps sync runtime, network writes, cloud writes, background sync workers, remote write queues, automatic merge runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.35 Production Deployment & Environment Final Audit V1, docs/static tests only. Task 6.35 must not add production deployment, deployment config that changes production behavior, secret values, package changes, routes, source-of-truth switching, or real-data migration.
