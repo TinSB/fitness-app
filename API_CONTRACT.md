@@ -3601,3 +3601,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.35 Production Deployment & Environment Final Audit V1`, docs/static tests only. Task 6.35 must not add production deployment, deployment config that changes production behavior, secret values, package changes, routes, source-of-truth switching, or real-data migration.
+
+## Task 6.35: Production Deployment & Environment Final Audit V1
+
+Task 6.35 adds `docs/PRODUCTION_DEPLOYMENT_ENVIRONMENT_FINAL_AUDIT.md` as production deployment/environment final audit documentation.
+
+This task adds no production deployment, no deployment config that changes production behavior, no hosted backend activation, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.35 audits environments, secrets, branch rules, required checks, rollback, preview vs production distinction, no Vercel required check assumption for Codex PRs, and no deployment if deployment was not implemented.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.36 Production Monitoring & Logging Privacy Lock V1`, docs/static tests only. Task 6.36 must not add external monitoring service, production telemetry runtime, package changes, routes, source-of-truth switching, or real-data logging.

@@ -511,3 +511,13 @@ Task 6.34 audits no sync runtime, sync scope if implemented later, conflict mode
 Task 6.34 keeps sync runtime, network writes, cloud writes, background sync workers, remote write queues, automatic merge runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.35 Production Deployment & Environment Final Audit V1, docs/static tests only. Task 6.35 must not add production deployment, deployment config that changes production behavior, secret values, package changes, routes, source-of-truth switching, or real-data migration.
+
+## Task 6.35 Production Deployment Environment Final Audit Alignment
+
+Task 6.35 Production Deployment & Environment Final Audit V1 adds `docs/PRODUCTION_DEPLOYMENT_ENVIRONMENT_FINAL_AUDIT.md` as production deployment/environment final audit documentation.
+
+Task 6.35 audits environments, secrets, branch rules, required checks, rollback, preview vs production distinction, no Vercel required check assumption for Codex PRs, and no deployment if deployment was not implemented.
+
+Task 6.35 keeps production deployment, deployment config that changes production behavior, hosted backend activation, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.36 Production Monitoring & Logging Privacy Lock V1, docs/static tests only. Task 6.36 must not add external monitoring service, production telemetry runtime, package changes, routes, source-of-truth switching, or real-data logging.
