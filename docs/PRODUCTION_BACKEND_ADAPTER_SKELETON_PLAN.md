@@ -89,3 +89,9 @@ Task 6.10 may add a Node-only adapter skeleton only if safe. It must not add aut
 Task 6.9 is complete after this task.
 
 Do not start production backend runtime activation yet. Next task should be Task 6.10 Production Backend Adapter Skeleton V1, limited to an inert Node-only skeleton if safe.
+
+## Task 6.10 Follow-up
+
+Task 6.10 Production Backend Adapter Skeleton V1 adds `apps/api/src/node/productionBackendAdapter.ts` as an inert Node-only adapter skeleton.
+
+The skeleton must remain dependency-free, not exported from browser-facing API index files, without auto-listen behavior, hosted deployment, auth runtime, database migration, normalized tables, production data use, browser runtime integration, package changes, route additions, or source-of-truth switching.

@@ -2385,6 +2385,32 @@ Next recommended task: Task 6.10 Production Backend Adapter Skeleton V1.
 
 Task 6.10 may add a Node-only adapter skeleton only if safe. It must not add auto-listen behavior, deployment, auth, normalized tables, production data use, browser runtime integration, package dependencies, routes, source-of-truth switching, or real personal training data use.
 
+### Task 6.10: Production Backend Adapter Skeleton V1
+
+Status: Completed in this branch as a minimal Node-only production backend adapter skeleton with isolation tests.
+
+Task 6.10 adds `apps/api/src/node/productionBackendAdapter.ts`, `tests/productionBackendAdapterSkeleton.test.ts`, and `tests/productionBackendAdapterIsolation.test.ts`.
+
+The skeleton is inert by default and exposes typed request/response shapes, the existing seven-route browser mutation allowlist, and safe error envelopes. Accepted routes return `ok: false` with `production_backend_not_activated`; unapproved routes return `route_not_allowed`.
+
+This task adds no auto-listen behavior, no Fastify/Express/Koa/Hono server, no deployment, no auth, no normalized tables, no database migration, no production data use, no browser runtime integration, no package changes, no source-of-truth switch, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.11 Production Backend Adapter Acceptance V1.
+
+Task 6.11 must not add auth runtime, deployment, auto-listen behavior, database migration, production data use, browser runtime integration, routes, package changes, source-of-truth switching, or real personal training data use.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

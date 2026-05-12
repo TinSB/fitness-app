@@ -261,3 +261,13 @@ Task 6.9 defines backend adapter boundary, request/response shape, environment b
 Task 6.9 keeps production backend runtime, auto-listening server behavior, hosted deployment, auth runtime, database migration, production runtime activation, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.10 Production Backend Adapter Skeleton V1. Task 6.10 may add a Node-only adapter skeleton only if safe and must not add auto-listen behavior, deployment, auth, normalized tables, production data use, browser runtime integration, package dependencies, routes, or source-of-truth switching.
+
+## Task 6.10 Production Backend Adapter Skeleton Alignment
+
+Task 6.10 Production Backend Adapter Skeleton V1 adds `apps/api/src/node/productionBackendAdapter.ts` as an inert Node-only adapter skeleton.
+
+Task 6.10 exposes typed request/response shapes, the existing seven-route browser mutation allowlist, and safe error envelopes. Accepted routes return `ok: false` with `production_backend_not_activated`; unapproved routes return `route_not_allowed`.
+
+Task 6.10 keeps auto-listen behavior, Fastify/Express/Koa/Hono server runtime, deployment, auth runtime, normalized tables, database migration, production data use, browser runtime integration, package changes, source-of-truth switching, browser route additions, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.11 Production Backend Adapter Acceptance V1. Task 6.11 must not add auth runtime, deployment, auto-listen behavior, database migration, production data use, browser runtime integration, routes, package changes, or source-of-truth switching.
