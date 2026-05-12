@@ -964,3 +964,17 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.29 API Primary Runtime Manual Acceptance V1`.
+
+## Task 5.29 API Primary Runtime Manual Acceptance
+
+- [ ] Confirm `docs/API_PRIMARY_RUNTIME_MANUAL_ACCEPTANCE.md` exists.
+- [ ] Confirm manual testing requires a dedicated test browser profile.
+- [ ] Confirm manual testing requires a dedicated dev DB.
+- [ ] Confirm manual testing forbids real personal training data.
+- [ ] Confirm explicit `api-primary-dev` and localhost-only Dev API base URL are required.
+- [ ] Confirm manual coverage includes API primary boot, read, DataHealth dismiss, History dataFlag, Limited History Edit, Session Start, Session Patch, Session Complete, and Session Discard.
+- [ ] Confirm API unavailable fallback and no-fake-success checks are present.
+- [ ] Confirm localStorage integrity and cleanup checks are present.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.30 API Primary Runtime Hardening V1`.

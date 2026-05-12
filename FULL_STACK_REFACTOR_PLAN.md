@@ -1817,6 +1817,30 @@ localStorage remains the default runtime source and remains fallback/migration s
 
 Next recommended task: Task 5.29 API Primary Runtime Manual Acceptance V1.
 
+### Task 5.29: API Primary Runtime Manual Acceptance V1
+
+Status: Completed in this branch as a manual App acceptance runbook for API primary dev runtime.
+
+Task 5.29 adds `docs/API_PRIMARY_RUNTIME_MANUAL_ACCEPTANCE.md`, `tests/apiPrimaryRuntimeManualAcceptanceDocs.test.ts`, `tests/apiPrimaryRuntimeManualAcceptanceBoundary.test.ts`, and `tests/apiPrimaryRuntimeManualAcceptanceDocsParity.test.ts`.
+
+The runbook requires a dedicated test browser profile, dedicated dev DB, no real personal training data, explicit `api-primary-dev`, API primary boot/read/all-seven-write checks, API unavailable fallback, localStorage integrity, forbidden network/UI checks, browser build safety, cleanup, and pass/fail template.
+
+Task 5.29 does not modify App.tsx, does not wire API primary as default, does not replace localStorage, does not delete localStorage, does not add a browser mutation route, does not add a broad mutation client, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains the default runtime source and remains fallback/migration source. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.30 API Primary Runtime Hardening V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
