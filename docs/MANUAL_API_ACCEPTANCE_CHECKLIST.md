@@ -1024,3 +1024,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.34 Migration Acceptance / Manual Acceptance V1`.
+
+## Task 5.34 Migration Acceptance / Manual Acceptance
+
+- [ ] Confirm `docs/MIGRATION_ACCEPTANCE_MANUAL.md` exists.
+- [ ] Confirm acceptance covers valid localStorage, invalid localStorage, legacy data, backup restore, SQLite snapshot read, and rollback.
+- [ ] Confirm manual acceptance requires dedicated test browser profile, dedicated dev DB, and no real personal training data.
+- [ ] Confirm backup-first and explicit confirmation remain required before apply.
+- [ ] Confirm localStorage is not written, deleted, or replaced.
+- [ ] Confirm source of truth is not auto-switched after apply.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.35 Migration Rollback & Recovery Hardening V1`.
