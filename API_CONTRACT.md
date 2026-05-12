@@ -2665,3 +2665,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains available as fallback and migration source. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
 
 The next recommended task is `Task 5.34 Migration Acceptance / Manual Acceptance V1`.
+
+## Task 5.34: Migration Acceptance / Manual Acceptance V1
+
+Task 5.34 adds `docs/MIGRATION_ACCEPTANCE_MANUAL.md` as acceptance and manual acceptance coverage for the Task 5.32 dry-run helper and Task 5.33 apply prototype.
+
+Acceptance covers valid localStorage, invalid localStorage, legacy monolith payloads, backup restore expectations, SQLite snapshot read metadata, rollback expectations, dedicated test browser profile, dedicated dev DB, no real personal training data, localStorage preservation, and no automatic source switch.
+
+This task does not add runtime behavior, does not delete localStorage, does not write localStorage, does not auto-switch source of truth, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains available as fallback and migration source. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
+
+The next recommended task is `Task 5.35 Migration Rollback & Recovery Hardening V1`.
