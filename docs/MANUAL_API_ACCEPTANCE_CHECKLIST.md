@@ -1309,3 +1309,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.15 Production Storage Schema Strategy V1`, docs/static tests only.
+
+## Task 6.15 Production Storage Schema Strategy
+
+- [ ] Confirm `docs/PRODUCTION_STORAGE_SCHEMA_STRATEGY.md` exists.
+- [ ] Confirm Task 6.15 is docs/static tests only and has no schema runtime implication.
+- [ ] Confirm snapshot repository strategy, normalized schema future risk, migration strategy, rollback, and backup are documented.
+- [ ] Confirm no schema implementation, normalized tables, production database migration, database writes, production source-of-truth migration, production backend activation, package/script/lockfile change, or browser route is added.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.16 Production Storage Migration Dry-run Prototype V1`, pure dry-run only if safe.

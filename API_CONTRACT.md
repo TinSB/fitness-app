@@ -3161,3 +3161,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.15 Production Storage Schema Strategy V1`, docs/static tests only. Task 6.15 must not create normalized tables, implement schema migration, perform database writes, use real personal training data, add routes, add dependencies, or switch source of truth.
+
+## Task 6.15: Production Storage Schema Strategy V1
+
+Task 6.15 adds `docs/PRODUCTION_STORAGE_SCHEMA_STRATEGY.md` as production storage schema strategy documentation.
+
+This task adds no schema implementation, no normalized tables, no production database migration, no database writes, no production source-of-truth migration, no production backend activation, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.15 documents snapshot repository strategy, normalized schema future risk, migration strategy, rollback, and backup without implementation.
+
+Recommended next task is `Task 6.16 Production Storage Migration Dry-run Prototype V1`. Task 6.16 may add docs/tests and a pure dry-run utility only if safe. It must not write a database, create schema migration, use real personal training data, add routes, add dependencies, or switch source of truth.

@@ -86,3 +86,9 @@ Task 6.15 must be docs/static tests only. Task 6.15 must not create normalized t
 Task 6.14 is complete after this task.
 
 Do not start auth implementation yet. Next task should be Task 6.15 Production Storage Schema Strategy V1.
+
+## Task 6.15 Follow-up
+
+Task 6.15 Production Storage Schema Strategy V1 records snapshot repository strategy, normalized schema future risk, migration strategy, rollback, and backup as docs/static tests only.
+
+It must keep schema implementation, normalized tables, production database migration, database writes, production source-of-truth migration, production backend activation, package changes, route additions, and real personal training data migration unimplemented.
