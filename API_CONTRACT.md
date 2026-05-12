@@ -3029,3 +3029,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.8 locks architecture decisions, still-blocked implementation, source-of-truth status, route allowlist, CI/ruleset policy, and coverage inventory before narrow skeleton planning.
 
 Recommended next task is `Task 6.9 Production Backend Adapter Skeleton Plan V1`, docs/static tests only. Task 6.9 must not implement production backend runtime, auth, deployment, database migration, production runtime activation, routes, package changes, or source-of-truth switching.
+
+## Task 6.9: Production Backend Adapter Skeleton Plan V1
+
+Task 6.9 adds `docs/PRODUCTION_BACKEND_ADAPTER_SKELETON_PLAN.md` as a planning-level production backend adapter skeleton plan.
+
+This task adds no runtime behavior, no production backend runtime, no auto-listening server, no hosted deployment, no auth, no database migration, no production runtime activation, no source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.9 defines backend adapter boundary, request/response shape, environment boundary, no hosted deployment, no auth, no database migration, and no production runtime activation without implementation.
+
+Recommended next task is `Task 6.10 Production Backend Adapter Skeleton V1`. Task 6.10 may add a Node-only adapter skeleton only if safe. It must not add auto-listen behavior, deployment, auth, normalized tables, production data use, browser runtime integration, package dependencies, routes, or source-of-truth switching.

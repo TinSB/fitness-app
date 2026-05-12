@@ -96,3 +96,9 @@ Task 6.9 must be docs/static tests only. Task 6.9 must not implement production 
 Task 6.8 is complete after this task.
 
 Do not start production backend runtime implementation yet. Next task should be Task 6.9 Production Backend Adapter Skeleton Plan V1.
+
+## Task 6.9 Follow-up
+
+Task 6.9 Production Backend Adapter Skeleton Plan V1 records backend adapter boundary, request/response shape, environment boundary, no hosted deployment, no auth, no database migration, and no production runtime activation as docs/static tests only.
+
+It must keep production backend runtime, auto-listening server behavior, hosted deployment, auth runtime, database migration, production runtime activation, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.

@@ -251,3 +251,13 @@ Task 6.8 locks architecture decisions, still-blocked implementation, source-of-t
 Task 6.8 keeps production backend runtime, auth runtime, sync runtime, deployment runtime, normalized schema, migration runtime, production source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.9 Production Backend Adapter Skeleton Plan V1, docs/static tests only. Task 6.9 must not implement production backend runtime, auth, deployment, database migration, production runtime activation, routes, package changes, or source-of-truth switching.
+
+## Task 6.9 Production Backend Adapter Plan Alignment
+
+Task 6.9 Production Backend Adapter Skeleton Plan V1 adds `docs/PRODUCTION_BACKEND_ADAPTER_SKELETON_PLAN.md` as a planning-level backend adapter skeleton plan.
+
+Task 6.9 defines backend adapter boundary, request/response shape, environment boundary, no hosted deployment, no auth, no database migration, and no production runtime activation without implementation.
+
+Task 6.9 keeps production backend runtime, auto-listening server behavior, hosted deployment, auth runtime, database migration, production runtime activation, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.10 Production Backend Adapter Skeleton V1. Task 6.10 may add a Node-only adapter skeleton only if safe and must not add auto-listen behavior, deployment, auth, normalized tables, production data use, browser runtime integration, package dependencies, routes, or source-of-truth switching.
