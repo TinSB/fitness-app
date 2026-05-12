@@ -5,6 +5,7 @@ import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealt
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
 import { DEV_API_SESSION_COMPLETE_ROUTE } from '../src/devApi/devApiSessionCompleteClient';
+import { DEV_API_SESSION_DISCARD_ROUTE } from '../src/devApi/devApiSessionDiscardClient';
 import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
@@ -15,7 +16,6 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 const blockedBrowserRoutes = [
-  '/sessions/active/discard',
   '/data-health/repair/apply',
   '/backup/import',
   '/backup/export',
@@ -24,7 +24,7 @@ const blockedBrowserRoutes = [
 ];
 
 describe('session patch mutation browser boundary remains constrained', () => {
-  it('adds only the approved session patch and complete browser prototype files through Task 5.17', () => {
+  it('adds the approved session patch, complete, and discard browser prototype files through Task 5.20', () => {
     for (const path of [
       'src/devApi/devApiSessionPatchConfig.ts',
       'src/devApi/devApiSessionPatchClient.ts',
@@ -32,19 +32,15 @@ describe('session patch mutation browser boundary remains constrained', () => {
       'src/devApi/devApiSessionCompleteConfig.ts',
       'src/devApi/devApiSessionCompleteClient.ts',
       'src/devApi/DevApiSessionCompletePrototype.tsx',
-    ]) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should exist`).toBe(true);
-    }
-    for (const path of [
       'src/devApi/devApiSessionDiscardConfig.ts',
       'src/devApi/devApiSessionDiscardClient.ts',
       'src/devApi/DevApiSessionDiscardPrototype.tsx',
     ]) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
+      expect(existsSync(resolve(repoRoot(), path)), `${path} should exist`).toBe(true);
     }
   });
 
-  it('locks the browser mutation route allowlist to six routes', () => {
+  it('locks the browser mutation route allowlist to seven routes', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
@@ -52,6 +48,7 @@ describe('session patch mutation browser boundary remains constrained', () => {
       `POST ${DEV_API_SESSION_START_ROUTE}`,
       `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
       `POST ${DEV_API_SESSION_COMPLETE_ROUTE}`,
+      `POST ${DEV_API_SESSION_DISCARD_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
@@ -59,10 +56,11 @@ describe('session patch mutation browser boundary remains constrained', () => {
       'POST /sessions/start',
       'POST /sessions/active/patches',
       'POST /sessions/active/complete',
+      'POST /sessions/active/discard',
     ]);
   });
 
-  it('keeps src browser runtime free of session discard route strings', () => {
+  it('keeps src browser runtime free of destructive route strings', () => {
     for (const file of collectSrcRuntimeFiles()) {
       const source = stripComments(readFileSync(file, 'utf8'));
       const offenders = blockedBrowserRoutes.filter((route) => source.includes(route));

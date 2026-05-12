@@ -5,6 +5,7 @@ import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealt
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
 import { DEV_API_SESSION_COMPLETE_ROUTE } from '../src/devApi/devApiSessionCompleteClient';
+import { DEV_API_SESSION_DISCARD_ROUTE } from '../src/devApi/devApiSessionDiscardClient';
 import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
@@ -33,10 +34,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiSessionCompleteClient.ts',
   'src/devApi/devApiSessionCompleteConfig.ts',
   'src/devApi/DevApiSessionCompletePrototype.tsx',
+  'src/devApi/devApiSessionDiscardClient.ts',
+  'src/devApi/devApiSessionDiscardConfig.ts',
+  'src/devApi/DevApiSessionDiscardPrototype.tsx',
 ]);
 
 const blockedRoutes = [
-  '/sessions/active/discard',
   '/data-health/repair/apply',
   '/backup/import',
   '/backup/export',
@@ -67,7 +70,7 @@ const collectFilesIfDirectory = (path: string): string[] => {
 };
 
 describe('session complete acceptance boundary', () => {
-  it('keeps accepted browser mutation routes exactly six', () => {
+  it('keeps accepted browser mutation routes exactly seven after session discard', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
@@ -75,6 +78,7 @@ describe('session complete acceptance boundary', () => {
       `POST ${DEV_API_SESSION_START_ROUTE}`,
       `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
       `POST ${DEV_API_SESSION_COMPLETE_ROUTE}`,
+      `POST ${DEV_API_SESSION_DISCARD_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
@@ -82,10 +86,11 @@ describe('session complete acceptance boundary', () => {
       'POST /sessions/start',
       'POST /sessions/active/patches',
       'POST /sessions/active/complete',
+      'POST /sessions/active/discard',
     ]);
   });
 
-  it('blocks session discard, repair, backup, reset, and broad mutation clients', () => {
+  it('blocks repair, backup, reset, and broad mutation clients', () => {
     for (const file of collectSrcRuntimeFiles()) {
       const path = relativePath(file);
       const source = stripComments(readFileSync(file, 'utf8'));
@@ -102,8 +107,6 @@ describe('session complete acceptance boundary', () => {
       'src/services/mutationClient.ts',
       'src/hooks/useMutationApi.ts',
       'src/api/mutations.ts',
-      'src/devApi/devApiSessionDiscardClient.ts',
-      'src/devApi/DevApiSessionDiscardPrototype.tsx',
     ]) {
       expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
     }

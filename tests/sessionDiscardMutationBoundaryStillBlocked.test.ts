@@ -5,6 +5,7 @@ import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealt
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
 import { DEV_API_SESSION_COMPLETE_ROUTE } from '../src/devApi/devApiSessionCompleteClient';
+import { DEV_API_SESSION_DISCARD_ROUTE } from '../src/devApi/devApiSessionDiscardClient';
 import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { collectSrcRuntimeFiles, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
@@ -15,7 +16,6 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 const blockedBrowserRoutes = [
-  '/sessions/active/discard',
   '/data-health/repair/apply',
   '/backup/import',
   '/backup/export',
@@ -24,17 +24,17 @@ const blockedBrowserRoutes = [
 ];
 
 describe('session discard mutation browser boundary remains blocked', () => {
-  it('does not add session discard browser prototype files in Task 5.19', () => {
+  it('adds only the approved session discard browser prototype files in Task 5.20', () => {
     for (const path of [
       'src/devApi/devApiSessionDiscardConfig.ts',
       'src/devApi/devApiSessionDiscardClient.ts',
       'src/devApi/DevApiSessionDiscardPrototype.tsx',
     ]) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
+      expect(existsSync(resolve(repoRoot(), path)), `${path} should exist`).toBe(true);
     }
   });
 
-  it('keeps accepted browser mutation routes exactly six', () => {
+  it('keeps accepted browser mutation routes exactly seven after session discard', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
@@ -42,6 +42,7 @@ describe('session discard mutation browser boundary remains blocked', () => {
       `POST ${DEV_API_SESSION_START_ROUTE}`,
       `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
       `POST ${DEV_API_SESSION_COMPLETE_ROUTE}`,
+      `POST ${DEV_API_SESSION_DISCARD_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
@@ -49,6 +50,7 @@ describe('session discard mutation browser boundary remains blocked', () => {
       'POST /sessions/start',
       'POST /sessions/active/patches',
       'POST /sessions/active/complete',
+      'POST /sessions/active/discard',
     ]);
   });
 

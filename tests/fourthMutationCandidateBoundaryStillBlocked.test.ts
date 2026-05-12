@@ -5,6 +5,7 @@ import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealt
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
 import { DEV_API_SESSION_COMPLETE_ROUTE } from '../src/devApi/devApiSessionCompleteClient';
+import { DEV_API_SESSION_DISCARD_ROUTE } from '../src/devApi/devApiSessionDiscardClient';
 import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
@@ -29,10 +30,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiSessionCompleteClient.ts',
   'src/devApi/devApiSessionCompleteConfig.ts',
   'src/devApi/DevApiSessionCompletePrototype.tsx',
+  'src/devApi/devApiSessionDiscardClient.ts',
+  'src/devApi/devApiSessionDiscardConfig.ts',
+  'src/devApi/DevApiSessionDiscardPrototype.tsx',
 ]);
 
 const blockedBrowserRoutes = [
-  '/sessions/active/discard',
   '/data-health/repair/apply',
   '/backup/import',
   '/backup/export',
@@ -56,8 +59,6 @@ const fourthMutationClientPaths = [
   'src/devApi/DevApiFourthMutationPrototype.tsx',
   'src/devApi/devApiSessionMutationClient.ts',
   'src/devApi/DevApiSessionMutationPrototype.tsx',
-  'src/devApi/devApiSessionDiscardClient.ts',
-  'src/devApi/DevApiSessionDiscardPrototype.tsx',
   'src/devApi/devApiDataHealthRepairClient.ts',
   'src/devApi/DevApiDataHealthRepairPrototype.tsx',
   'src/devApi/devApiMutationClient.ts',
@@ -90,7 +91,6 @@ const collectFilesIfDirectory = (path: string): string[] => {
 describe('fourth mutation candidate boundary still blocked', () => {
   it('keeps App.tsx and src runtime from calling session, repair, backup, reset, or recovery mutation routes', () => {
     const appSource = stripComments(readSource('src/App.tsx'));
-    expect(appSource).not.toContain('/sessions/active/discard');
 
     for (const [path, source] of runtimeEntries()) {
       const blocked = blockedBrowserRoutes.filter((route) => source.includes(route));
@@ -106,7 +106,7 @@ describe('fourth mutation candidate boundary still blocked', () => {
     }
   });
 
-  it('keeps the browser mutation allowlist exactly to the six accepted routes after Task 5.17', () => {
+  it('keeps the browser mutation allowlist exactly to the seven accepted routes after Task 5.20', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
@@ -114,6 +114,7 @@ describe('fourth mutation candidate boundary still blocked', () => {
       `POST ${DEV_API_SESSION_START_ROUTE}`,
       `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
       `POST ${DEV_API_SESSION_COMPLETE_ROUTE}`,
+      `POST ${DEV_API_SESSION_DISCARD_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
@@ -121,17 +122,18 @@ describe('fourth mutation candidate boundary still blocked', () => {
       'POST /sessions/start',
       'POST /sessions/active/patches',
       'POST /sessions/active/complete',
+      'POST /sessions/active/discard',
     ]);
   });
 
-  it('does not add broad mutation clients or next active-session feature flag runtime wiring', () => {
+  it('does not add broad mutation clients or unapproved feature flag runtime wiring', () => {
     for (const path of fourthMutationClientPaths) {
       expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
     }
 
     const allSrc = runtimeEntries().map(([, source]) => source).join('\n');
     expect(allSrc).not.toMatch(/fourth-mutation|datahealth-repair/i);
-    expect(allSrc).not.toMatch(/VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT\s*={0,2}\s*['"`](fourth-mutation|session-mutation|session-discard|datahealth-repair)['"`]/i);
+    expect(allSrc).not.toMatch(/VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT\s*={0,2}\s*['"`](fourth-mutation|session-mutation|datahealth-repair)['"`]/i);
   });
 
   it('keeps the read-only client GET-only and separate from mutation routes', () => {

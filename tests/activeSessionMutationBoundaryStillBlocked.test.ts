@@ -5,6 +5,7 @@ import { DEV_API_DATA_HEALTH_DISMISS_ROUTE } from '../src/devApi/devApiDataHealt
 import { DEV_API_HISTORY_DATA_FLAG_ROUTE } from '../src/devApi/devApiHistoryDataFlagClient';
 import { DEV_API_HISTORY_SET_EDIT_ROUTE } from '../src/devApi/devApiHistorySetEditClient';
 import { DEV_API_SESSION_COMPLETE_ROUTE } from '../src/devApi/devApiSessionCompleteClient';
+import { DEV_API_SESSION_DISCARD_ROUTE } from '../src/devApi/devApiSessionDiscardClient';
 import { DEV_API_SESSION_PATCH_ROUTE } from '../src/devApi/devApiSessionPatchClient';
 import { DEV_API_SESSION_START_ROUTE } from '../src/devApi/devApiSessionStartClient';
 import { createDevApiReadOnlyClient } from '../src/devApi/devApiReadOnlyClient';
@@ -29,10 +30,12 @@ const approvedMutationFiles = new Set([
   'src/devApi/devApiSessionCompleteClient.ts',
   'src/devApi/devApiSessionCompleteConfig.ts',
   'src/devApi/DevApiSessionCompletePrototype.tsx',
+  'src/devApi/devApiSessionDiscardClient.ts',
+  'src/devApi/devApiSessionDiscardConfig.ts',
+  'src/devApi/DevApiSessionDiscardPrototype.tsx',
 ]);
 
 const blockedBrowserRoutes = [
-  '/sessions/active/discard',
   '/data-health/repair/apply',
   '/backup/import',
   '/backup/export',
@@ -54,8 +57,6 @@ const nodeOnlyTokens = [
 const blockedClientPaths = [
   'src/devApi/devApiSessionMutationClient.ts',
   'src/devApi/DevApiSessionMutationPrototype.tsx',
-  'src/devApi/devApiSessionDiscardClient.ts',
-  'src/devApi/DevApiSessionDiscardPrototype.tsx',
   'src/devApi/devApiMutationClient.ts',
   'src/api/mutations.ts',
   'src/api/mutations',
@@ -84,7 +85,7 @@ const collectFilesIfDirectory = (path: string): string[] => {
 };
 
 describe('active-session mutation boundary remains constrained', () => {
-  it('keeps accepted browser mutation route constants exactly six after Task 5.17', () => {
+  it('keeps accepted browser mutation route constants exactly seven after Task 5.20', () => {
     expect([
       `POST ${DEV_API_DATA_HEALTH_DISMISS_ROUTE}`,
       `POST ${DEV_API_HISTORY_DATA_FLAG_ROUTE}`,
@@ -92,6 +93,7 @@ describe('active-session mutation boundary remains constrained', () => {
       `POST ${DEV_API_SESSION_START_ROUTE}`,
       `POST ${DEV_API_SESSION_PATCH_ROUTE}`,
       `POST ${DEV_API_SESSION_COMPLETE_ROUTE}`,
+      `POST ${DEV_API_SESSION_DISCARD_ROUTE}`,
     ]).toEqual([
       'POST /data-health/issues/:issueId/dismiss',
       'POST /history/:id/data-flag',
@@ -99,6 +101,7 @@ describe('active-session mutation boundary remains constrained', () => {
       'POST /sessions/start',
       'POST /sessions/active/patches',
       'POST /sessions/active/complete',
+      'POST /sessions/active/discard',
     ]);
   });
 
@@ -145,7 +148,7 @@ describe('active-session mutation boundary remains constrained', () => {
     expect(source).not.toContain('/sessions/active/discard');
   });
 
-  it('does not add active patch/complete/discard clients, broad mutation clients, Node-only imports, or API-backed storage', () => {
+  it('does not add broad mutation clients, Node-only imports, or API-backed storage', () => {
     for (const path of blockedClientPaths) {
       expect(collectFilesIfDirectory(resolve(repoRoot(), path)), `${path} should not exist`).toEqual([]);
     }

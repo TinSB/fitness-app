@@ -197,3 +197,15 @@ Browser mutation routes remain exactly DataHealth dismiss, History data-flag, Li
 localStorage remains source of truth.
 API results never overwrite AppData or localStorage.
 Next task should be Task 5.20 Session Discard Mutation Prototype V1 only if gates pass.
+
+## Task 5.20 Follow-up: Session Discard Prototype
+
+Task 5.20 implements the planned dev-only single-route browser prototype for `POST /sessions/active/discard`.
+
+The implementation keeps the plan constraints: explicit `session-discard` mutation experiment flag, localhost-only Dev API base URL, source snapshot metadata, source snapshot version, mutation id, idempotency key, request fingerprint, strong confirmation, duplicate-submit protection, strict no-fake-success behavior, and required snapshot metadata.
+
+Task 5.20 does not change session patch or session complete behavior, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, does not add source-of-truth migration, does not replace localStorage, does not add API primary runtime, does not add a broad mutation client, does not change package files, and does not add production backend, auth, sync, cloud, or deployment.
+
+Accepted browser mutation routes are now exactly DataHealth dismiss, History data-flag, Limited History Edit, Session Start, Session Patch, Session Complete, and Session Discard.
+
+Next task should be Task 5.21 Session Discard Acceptance / Hardening V1.
