@@ -3139,3 +3139,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.14 Auth Account Lifecycle Acceptance V1`, docs/static tests only. Task 6.14 must not implement login/signup runtime, token/session runtime, OAuth, auth provider integration, user table, routes, production backend activation, package changes, or source-of-truth switching.
+
+## Task 6.14: Auth Account Lifecycle Acceptance V1
+
+Task 6.14 adds `docs/AUTH_ACCOUNT_LIFECYCLE_ACCEPTANCE.md` as auth account lifecycle acceptance and boundary documentation.
+
+This task adds no login/signup runtime, no token/session runtime, no OAuth, no auth provider integration, no user table, no account lifecycle runtime, no export/delete runtime, no production backend activation, no package changes, no source-of-truth switch, and no browser mutation route.
+
+The Task 6.13 auth skeleton remains pure and unavailable by design with `auth_runtime_not_implemented`.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.15 Production Storage Schema Strategy V1`, docs/static tests only. Task 6.15 must not create normalized tables, implement schema migration, perform database writes, use real personal training data, add routes, add dependencies, or switch source of truth.
