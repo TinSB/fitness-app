@@ -441,3 +441,13 @@ Task 6.27 documents rollback, incident detection, data safety, restore verificat
 Task 6.27 keeps runtime incident handling, production deployment, auth runtime, sync runtime, production backend activation, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.28 Production Data Export / Delete Plan V1, docs/static tests only. Task 6.28 must not add export/delete runtime, account deletion runtime, backup retention runtime, audit retention runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.28 Production Data Export Delete Alignment
+
+Task 6.28 Production Data Export / Delete Plan V1 adds `docs/PRODUCTION_DATA_EXPORT_DELETE_PLAN.md` as export/delete planning documentation.
+
+Task 6.28 plans export, delete, account deletion, backup retention, and audit record retention responsibilities without implementation.
+
+Task 6.28 keeps export/delete runtime, account deletion runtime, backup retention runtime, audit retention runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.29 Production Phase Implementation Boundary Lock V1, docs/static tests only. Task 6.29 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
