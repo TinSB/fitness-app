@@ -2687,3 +2687,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains available as fallback and migration source. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
 
 The next recommended task is `Task 5.35 Migration Rollback & Recovery Hardening V1`.
+
+## Task 5.35: Migration Rollback & Recovery Hardening V1
+
+Task 5.35 adds `src/storage/migrationRollbackRecovery.ts` and `docs/MIGRATION_ROLLBACK_RECOVERY_HARDENING.md` for dev-only rollback and recovery hardening.
+
+The helper requires `VITE_IRONPATH_MIGRATION_ROLLBACK="localstorage-to-sqlite-rollback"`, explicit confirmation, backup metadata, and injected localStorage/dev DB restore callbacks. It validates AppData backups, validates SQLite snapshot metadata, surfaces corrupt snapshot and schema mismatch failures, and returns clear failure-state indicators.
+
+This task does not add an HTTP reset route, does not add an HTTP recovery route, does not delete localStorage, does not auto-switch source of truth, does not modify App.tsx, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains available as fallback and migration source. API primary remains explicit dev/local `api-primary-dev` only and is not production-ready.
+
+The next recommended task is `Task 5.36 Migration Regression Lock V1`.
