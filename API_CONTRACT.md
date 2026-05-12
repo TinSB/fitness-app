@@ -3491,3 +3491,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.30 Production Release Readiness Checkpoint V1`, docs/static tests only. Task 6.30 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.30: Production Release Readiness Checkpoint V1
+
+Task 6.30 adds `docs/PRODUCTION_RELEASE_READINESS_CHECKPOINT.md` as the production release readiness checkpoint.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.30 checkpoints implemented production capabilities, still blocked production capabilities, auth/account status, backend status, sync status, deployment status, source-of-truth status, data migration status, privacy/security status, rollback status, and CI/ruleset status.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.31 Production Manual Acceptance Runbook V1`, docs/static tests only. Task 6.31 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
