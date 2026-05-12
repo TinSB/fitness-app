@@ -871,3 +871,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no production backend, auth, sync, cloud, deployment, dependency, package script, normalized table, broad mutation client, or API primary runtime is added.
 - [ ] Confirm next recommended task is `Task 5.22 Active Session Full Write-path Regression Lock V1`.
+
+## Task 5.22 Active Session Full Write-path Regression Lock
+
+- [ ] Use `docs/ACTIVE_SESSION_FULL_WRITE_PATH_REGRESSION_LOCK.md` as the full active-session write-path regression lock.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no eighth browser mutation route is accepted.
+- [ ] Confirm `POST /data-health/repair/apply`, backup/import/export over HTTP, and reset/recovery over HTTP remain blocked.
+- [ ] Confirm no broad mutation client, API-backed persistence implementation, API primary runtime implementation, package change, production backend, auth, sync, cloud, or deployment is added.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm no-fake-success, source snapshot metadata, idempotency, request fingerprint, pending lock, visible failure, and snapshot metadata requirements remain covered for active-session prototypes.
+- [ ] Confirm browser build isolation remains clean.
+- [ ] Confirm next recommended task is `Task 5.23 API-backed Persistence Facade Plan V1`.
