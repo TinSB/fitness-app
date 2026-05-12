@@ -3711,3 +3711,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.40 Phase 6 Completion Archive V1`, docs/static tests only. Task 6.40 must not start Phase 7, Task 6.41, production runtime implementation, auth runtime, sync runtime, deployment runtime, source-of-truth switching, routes, package changes, or real-data migration.
+
+## Task 6.40: Phase 6 Completion Archive V1
+
+Task 6.40 adds `docs/PHASE6_COMPLETION_ARCHIVE.md` as Phase 6 completion archive documentation.
+
+This task adds no Phase 7 work, no Task 6.41 work, no production runtime, no auth runtime, no sync runtime, no deployment runtime, no monitoring runtime, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.40 states Phase 6 complete, production readiness status, source-of-truth status, auth/account status, sync status, deployment status, privacy/security status, migration/backup/recovery status, final accepted routes, final blocked routes, final validation commands, final CI/ruleset policy, and recommended next task only.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Phase 7 Task 7.1 Production Runtime Implementation Authorization Gate V1`. Do not auto-start Phase 7. Do not auto-start Task 6.41.

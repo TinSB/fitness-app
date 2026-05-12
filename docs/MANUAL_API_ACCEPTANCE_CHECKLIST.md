@@ -1595,3 +1595,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm next recommended task is `Task 6.40 Phase 6 Completion Archive V1`, docs/static tests only.
+
+## Task 6.40 Phase 6 Completion Archive
+
+- [ ] Confirm `docs/PHASE6_COMPLETION_ARCHIVE.md` exists.
+- [ ] Confirm Phase 6 complete, production readiness status, source-of-truth status, auth/account status, sync status, deployment status, privacy/security status, migration/backup/recovery status, final accepted routes, final blocked routes, final validation commands, and final CI/ruleset policy are documented.
+- [ ] Confirm no Phase 7 work, Task 6.41 work, production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm no real personal training data is used.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm recommended next task is `Phase 7 Task 7.1 Production Runtime Implementation Authorization Gate V1`.
+- [ ] Confirm Phase 7 and Task 6.41 are not auto-started.

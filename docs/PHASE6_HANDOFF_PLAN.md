@@ -561,3 +561,13 @@ Task 6.39 locks final Phase 6 accepted capabilities, final blocked capabilities,
 Task 6.39 keeps Phase 7 work, production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.40 Phase 6 Completion Archive V1, docs/static tests only. Task 6.40 must not start Phase 7, Task 6.41, production runtime implementation, auth runtime, sync runtime, deployment runtime, source-of-truth switching, routes, package changes, or real-data migration.
+
+## Task 6.40 Phase 6 Completion Archive Alignment
+
+Task 6.40 Phase 6 Completion Archive V1 adds `docs/PHASE6_COMPLETION_ARCHIVE.md` as Phase 6 completion archive documentation.
+
+Task 6.40 states Phase 6 complete, production readiness status, source-of-truth status, auth/account status, sync status, deployment status, privacy/security status, migration/backup/recovery status, final accepted routes, final blocked routes, final validation commands, final CI/ruleset policy, and recommended next task only.
+
+Task 6.40 keeps Phase 7 work, Task 6.41 work, production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+Recommended next task is Phase 7 Task 7.1 Production Runtime Implementation Authorization Gate V1. Do not auto-start Phase 7. Do not auto-start Task 6.41.
