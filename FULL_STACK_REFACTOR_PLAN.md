@@ -2619,6 +2619,32 @@ Next recommended task: Task 6.19 Sync Metadata & Conflict Detector Prototype V1.
 
 Task 6.19 may add pure local sync metadata/conflict detector functions if safe. It must not add network calls, cloud writes, background sync, auth runtime, routes, dependencies, or source-of-truth switching.
 
+### Task 6.19: Sync Metadata & Conflict Detector Prototype V1
+
+Status: Completed in this branch as a pure local sync metadata conflict detector prototype with docs/static tests.
+
+Task 6.19 adds `src/sync/syncConflictDetector.ts`, `docs/SYNC_METADATA_CONFLICT_DETECTOR_PROTOTYPE.md`, `tests/syncConflictDetector.test.ts`, `tests/syncConflictDetectorBoundary.test.ts`, and `tests/syncConflictDetectorDocsParity.test.ts`.
+
+Task 6.19 classifies no conflict, stale client, stale server, divergent edits, deletion conflict, duplicate operation, account mismatch, and invalid metadata from synthetic metadata only.
+
+This task adds no sync runtime, no network calls, no cloud writes, no remote queue, no background sync worker, no automatic merge runtime, no auth runtime, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.20 Sync Conflict Acceptance V1.
+
+Task 6.20 must be docs/static tests only. It must not add remote writes, sync runtime, automatic merge, network calls, cloud provider configuration, auth runtime, routes, dependencies, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

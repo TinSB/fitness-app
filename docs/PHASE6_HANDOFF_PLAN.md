@@ -351,3 +351,13 @@ Task 6.18 documents sync model, device identity, conflict policy, idempotency, o
 Task 6.18 keeps sync runtime, network writes, cloud writes, remote queue, background sync worker, conflict merge runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.19 Sync Metadata & Conflict Detector Prototype V1. Task 6.19 may add pure local sync metadata/conflict detector functions if safe and must not add network calls, cloud writes, background sync, auth runtime, routes, dependencies, or source-of-truth switching.
+
+## Task 6.19 Sync Metadata Conflict Detector Alignment
+
+Task 6.19 Sync Metadata & Conflict Detector Prototype V1 adds `src/sync/syncConflictDetector.ts` and `docs/SYNC_METADATA_CONFLICT_DETECTOR_PROTOTYPE.md` as a pure local metadata classifier.
+
+Task 6.19 classifies no conflict, stale client, stale server, divergent edits, deletion conflict, duplicate operation, account mismatch, and invalid metadata from synthetic metadata only.
+
+Task 6.19 keeps sync runtime, network calls, cloud writes, remote queue, background sync worker, automatic merge runtime, auth runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.20 Sync Conflict Acceptance V1, docs/static tests only. Task 6.20 must not add remote writes, sync runtime, automatic merge, network calls, cloud provider configuration, auth runtime, routes, dependencies, or source-of-truth switching.

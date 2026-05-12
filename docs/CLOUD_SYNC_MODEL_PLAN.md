@@ -79,3 +79,11 @@ Task 6.19 may add pure local sync metadata/conflict detector functions if safe. 
 Task 6.18 is complete after this task.
 
 Do not start cloud sync runtime yet. Next task should be Task 6.19 Sync Metadata & Conflict Detector Prototype V1.
+
+## Task 6.19 Follow-up
+
+Task 6.19 Sync Metadata & Conflict Detector Prototype V1 follows this model plan with a pure local metadata classifier.
+
+Task 6.19 may add `src/sync/syncConflictDetector.ts` and docs/static tests. It must not add sync runtime, network calls, cloud writes, remote queue, background sync worker, automatic merge runtime, auth runtime, routes, dependencies, package scripts, lockfile changes, or source-of-truth switching.
+
+The next recommended task after Task 6.19 is `Task 6.20 Sync Conflict Acceptance V1`, docs/static tests only.
