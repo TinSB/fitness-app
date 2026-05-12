@@ -401,3 +401,13 @@ Task 6.23 validates environment names, runtime source boundaries, secret referen
 Task 6.23 keeps secret values, production deployment, auth provider configuration, sync provider configuration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.24 Observability / Logging Privacy Skeleton V1. Task 6.24 may add a privacy-safe redaction utility only if safe and must not add an external logging service, dependency, raw AppData logging, localStorage dumps, token/secret logging, routes, or source-of-truth switching.
+
+## Task 6.24 Observability Logging Privacy Alignment
+
+Task 6.24 Observability / Logging Privacy Skeleton V1 adds `src/observability/redaction.ts` as a privacy-safe redaction utility.
+
+Task 6.24 redacts sensitive keys, long strings, and bearer-like credentials from synthetic log payloads. It performs no network, storage, provider, deployment, or logging service behavior.
+
+Task 6.24 keeps external logging service integration, dependencies, raw AppData logging, localStorage dump, token/secret logging, production monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.25 Production Readiness Security Hardening V1, docs/static tests and tiny redaction/env validation fixes only. Task 6.25 must not add auth runtime, deployment runtime, sync runtime, routes, dependencies, or source-of-truth switching.
