@@ -2723,6 +2723,32 @@ Next recommended task: Task 6.23 Secrets & Environment Validation Skeleton V1.
 
 Task 6.23 may add a safe environment validation skeleton only if no dependency is needed. It must not add secret values, production deployment, auth provider, sync provider, package changes, routes, or source-of-truth switching.
 
+### Task 6.23: Secrets & Environment Validation Skeleton V1
+
+Status: Completed in this branch as a safe environment validation skeleton with static tests.
+
+Task 6.23 adds `src/config/environmentValidation.ts`, `tests/environmentValidation.test.ts`, and `tests/environmentValidationDocsParity.test.ts`.
+
+The skeleton validates environment names, runtime source boundaries, secret reference placeholders, and production runtime disabled status. It accepts no secret values and performs no network, storage, provider, or deployment behavior.
+
+This task adds no secret values, no production deployment, no auth provider, no sync provider, no package changes, no routes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.24 Observability / Logging Privacy Skeleton V1.
+
+Task 6.24 may add a privacy-safe redaction utility only if safe. It must not add an external logging service, dependency, raw AppData logging, localStorage dumps, token/secret logging, routes, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

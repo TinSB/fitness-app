@@ -391,3 +391,13 @@ Task 6.22 documents staging vs production, rollback, preview deployments optiona
 Task 6.22 keeps production deployment, hosted production runtime, deployment config, secret values, auth provider configuration, sync provider configuration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.23 Secrets & Environment Validation Skeleton V1. Task 6.23 may add a safe environment validation skeleton only if no dependency is needed and must not add secret values, production deployment, auth provider, sync provider, package changes, routes, or source-of-truth switching.
+
+## Task 6.23 Secrets Environment Validation Alignment
+
+Task 6.23 Secrets & Environment Validation Skeleton V1 adds `src/config/environmentValidation.ts` as a safe environment validation skeleton.
+
+Task 6.23 validates environment names, runtime source boundaries, secret reference placeholders, and production runtime disabled status. It accepts no secret values and performs no network, storage, provider, or deployment behavior.
+
+Task 6.23 keeps secret values, production deployment, auth provider configuration, sync provider configuration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.24 Observability / Logging Privacy Skeleton V1. Task 6.24 may add a privacy-safe redaction utility only if safe and must not add an external logging service, dependency, raw AppData logging, localStorage dumps, token/secret logging, routes, or source-of-truth switching.

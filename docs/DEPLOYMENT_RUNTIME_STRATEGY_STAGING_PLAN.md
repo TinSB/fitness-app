@@ -83,3 +83,11 @@ Task 6.23 may add a safe environment validation skeleton only if no dependency i
 Task 6.22 is complete after this task.
 
 Do not deploy production yet. Next task should be Task 6.23 Secrets & Environment Validation Skeleton V1.
+
+## Task 6.23 Follow-up
+
+Task 6.23 Secrets & Environment Validation Skeleton V1 follows this deployment strategy with a safe environment validation skeleton.
+
+Task 6.23 may add `src/config/environmentValidation.ts` and tests only. It must not add secret values, production deployment, auth provider, sync provider, package changes, routes, or source-of-truth switching.
+
+The next recommended task after Task 6.23 is `Task 6.24 Observability / Logging Privacy Skeleton V1`, privacy-safe redaction utility only if safe.
