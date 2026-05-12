@@ -93,3 +93,9 @@ Task 6.5 must be docs/static tests only. Task 6.5 must not implement cloud sync,
 Task 6.4 is complete after this task.
 
 Do not start production backend or database implementation yet. Next task should be Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1.
+
+## Task 6.5 Follow-up
+
+Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1 records cloud sync and conflict resolution architecture as docs/static tests only.
+
+It must keep cloud sync runtime, remote writes, background sync workers, automatic conflict merge, production backend runtime, auth runtime, deployment runtime, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.

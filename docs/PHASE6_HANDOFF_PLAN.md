@@ -211,3 +211,13 @@ Task 6.4 evaluates no backend yet, single Node backend, serverless API, hosted b
 Task 6.4 keeps production backend runtime, production database runtime, normalized schema, migration, auth, sync, deployment, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1, docs/static tests only. Task 6.5 must not implement cloud sync, remote writes, background sync, production backend, auth, deployment, migration, or source-of-truth switching.
+
+## Task 6.5 Cloud Sync Conflict Alignment
+
+Task 6.5 Cloud Sync & Conflict Resolution Architecture Gate V1 adds `docs/CLOUD_SYNC_CONFLICT_RESOLUTION_ARCHITECTURE_GATE.md` as a planning-level sync/conflict architecture gate.
+
+Task 6.5 evaluates no sync, manual backup sync, single-device cloud backup, multi-device bidirectional sync, conflict detection, conflict merge policy, remote write duplication, and offline queue risk without implementation.
+
+Task 6.5 keeps cloud sync runtime, remote writes, background sync workers, automatic conflict merge, production backend runtime, auth runtime, deployment runtime, production migration, source-of-truth migration, package changes, browser routes, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.6 Deployment, Environment & Secrets Strategy V1, docs/static tests only. Task 6.6 must not implement deployment, production hosting, secrets runtime, auth, cloud sync, production backend, migration, routes, or source-of-truth switching.
