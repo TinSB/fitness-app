@@ -1285,3 +1285,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.13 Auth Provider Adapter Skeleton V1`, type/interface-only if safe.
+
+## Task 6.13 Auth Provider Adapter Skeleton
+
+- [ ] Confirm `src/auth/authProviderTypes.ts` and `src/auth/authBoundary.ts` exist.
+- [ ] Confirm the skeleton is type/interface-only, pure, and returns unavailable auth status.
+- [ ] Confirm no real auth, login UI, token storage, OAuth, provider integration, dependency, route, production backend activation, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm the skeleton stores no credentials, starts no provider flow, performs no network request, and writes no browser storage.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.14 Auth Account Lifecycle Acceptance V1`, docs/static tests only.

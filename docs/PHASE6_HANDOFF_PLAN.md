@@ -291,3 +291,13 @@ Task 6.12 documents account identity, local user to account mapping, account del
 Task 6.12 keeps auth runtime, login/signup, token/session handling, OAuth, user table, account linking runtime, production backend activation, package changes, route additions, source-of-truth switching, and real personal training data migration blocked.
 
 The next recommended task is Task 6.13 Auth Provider Adapter Skeleton V1. Task 6.13 may add type/interface-only auth boundary files if safe and must not implement real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, or source-of-truth switching.
+
+## Task 6.13 Auth Provider Adapter Skeleton Alignment
+
+Task 6.13 Auth Provider Adapter Skeleton V1 adds `src/auth/authProviderTypes.ts` and `src/auth/authBoundary.ts` as type/interface-only auth provider adapter skeleton files.
+
+Task 6.13 returns a pure unavailable result with `auth_runtime_not_implemented`. It stores no credentials, starts no provider flow, performs no network request, and writes no browser storage.
+
+Task 6.13 keeps real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, package changes, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.14 Auth Account Lifecycle Acceptance V1, docs/static tests only. Task 6.14 must not implement login/signup runtime, token/session runtime, OAuth, auth provider integration, user table, routes, production backend activation, package changes, or source-of-truth switching.
