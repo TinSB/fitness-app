@@ -858,3 +858,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm next recommended task is `Task 5.21 Session Discard Acceptance / Hardening V1`.
+
+## Task 5.21 Session Discard Acceptance / Hardening
+
+- [ ] Use `docs/SESSION_DISCARD_ACCEPTANCE_HARDENING.md` as the session discard acceptance and hardening checklist.
+- [ ] Confirm duplicate discard, missing active session, invalid active session, strong confirmation, cancel behavior, timeout, unavailable, malformed response, write failure, transaction failure, database closed, and no-fake-success behavior are covered.
+- [ ] Confirm pending duplicate-submit lock and confirmation reset behavior are covered.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm AppData is not locally cleared and history is not locally changed from the API result.
+- [ ] Confirm DevTools Network allows only `POST /sessions/active/discard` for the session discard flow.
+- [ ] Confirm `POST /data-health/repair/apply`, backup/import/export over HTTP, reset/recovery over HTTP, and any eighth browser mutation route remain blocked.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no production backend, auth, sync, cloud, deployment, dependency, package script, normalized table, broad mutation client, or API primary runtime is added.
+- [ ] Confirm next recommended task is `Task 5.22 Active Session Full Write-path Regression Lock V1`.

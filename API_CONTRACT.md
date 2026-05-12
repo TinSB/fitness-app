@@ -2385,3 +2385,25 @@ Accepted browser mutation routes are now exactly:
 localStorage remains source of truth. API results never overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.21 Session Discard Acceptance / Hardening V1`.
+
+## Task 5.21: Session Discard Acceptance / Hardening V1
+
+Task 5.21 accepts and hardens the existing dev-only, explicit opt-in browser mutation prototype for `POST /sessions/active/discard`.
+
+The coverage locks duplicate discard prevention, missing active session behavior, invalid active session identity, strong confirmation and cancel behavior, write failure, transaction failure, database closed, timeout/unavailable/malformed response handling, missing snapshot metadata, strict no-fake-success behavior, pending lock behavior, confirmation reset behavior, localStorage/AppData integrity, no history write behavior, and route boundary.
+
+Task 5.21 does not add a browser route, does not add an eighth mutation route, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, does not add a broad mutation client, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.22 Active Session Full Write-path Regression Lock V1`.

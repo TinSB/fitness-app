@@ -209,3 +209,13 @@ Task 5.20 does not change session patch or session complete behavior, does not a
 Accepted browser mutation routes are now exactly DataHealth dismiss, History data-flag, Limited History Edit, Session Start, Session Patch, Session Complete, and Session Discard.
 
 Next task should be Task 5.21 Session Discard Acceptance / Hardening V1.
+
+## Task 5.21 Follow-up: Session Discard Acceptance / Hardening
+
+Task 5.21 accepts and hardens the dev-only `POST /sessions/active/discard` prototype without adding another route.
+
+The acceptance and hardening coverage locks duplicate discard prevention, missing active session behavior, invalid active session identity, strong confirmation and cancel behavior, timeout/unavailable/malformed response handling, server non-success states, no-fake-success behavior, pending lock behavior, confirmation reset behavior, localStorage/AppData integrity, no history write behavior, and route boundary.
+
+Accepted browser mutation routes remain exactly DataHealth dismiss, History data-flag, Limited History Edit, Session Start, Session Patch, Session Complete, and Session Discard.
+
+Next task should be Task 5.22 Active Session Full Write-path Regression Lock V1.
