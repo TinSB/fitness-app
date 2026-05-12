@@ -17,6 +17,13 @@ describe('production manual acceptance docs parity', () => {
     expect(readSource('docs/PHASE6_HANDOFF_PLAN.md')).toContain('Task 6.26 Production Manual Acceptance Alignment');
   });
 
+  it('records Task 6.31 across contract, plan, checklist, and handoff docs', () => {
+    expect(readSource('API_CONTRACT.md')).toContain('## Task 6.31: Production Manual Acceptance Runbook V1');
+    expect(readSource('FULL_STACK_REFACTOR_PLAN.md')).toContain('### Task 6.31: Production Manual Acceptance Runbook V1');
+    expect(readSource('docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md')).toContain('Task 6.31 Production Manual Acceptance Runbook Final Readiness');
+    expect(readSource('docs/PHASE6_HANDOFF_PLAN.md')).toContain('Task 6.31 Production Manual Acceptance Final Alignment');
+  });
+
   it('keeps docs aligned on manual acceptance boundaries', () => {
     const docs = allDocs();
 
@@ -29,7 +36,12 @@ describe('production manual acceptance docs parity', () => {
       'sync if implemented',
       'backup/export/delete/recovery',
       'rollback checks',
+      'Task 6.31 Production Manual Acceptance Runbook V1',
+      'Task 6.31 final readiness update',
+      'auth/account if implemented',
+      'sync if implemented',
       'Task 6.27 Production Rollback & Incident Runbook V1',
+      'Task 6.32 Production Security & Privacy Final Hardening V1',
     ]) {
       expect(docs).toContain(expected);
     }

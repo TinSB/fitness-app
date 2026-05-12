@@ -1493,3 +1493,17 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.31 Production Manual Acceptance Runbook V1`, docs/static tests only.
+
+## Task 6.31 Production Manual Acceptance Runbook Final Readiness
+
+- [ ] Confirm `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md` includes the Task 6.31 final readiness update.
+- [ ] Confirm dedicated test environment, dedicated browser profile, dedicated dev DB when applicable, and synthetic data only are required.
+- [ ] Confirm no real personal data is used and no destructive migration is performed.
+- [ ] Confirm source-of-truth checks keep localStorage as default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm auth/account checks are conditional on future implementation and do not instruct login/signup now.
+- [ ] Confirm sync checks are conditional on future implementation and do not instruct cloud writes now.
+- [ ] Confirm backup/export/delete/recovery and rollback checks are documented as manual acceptance gates.
+- [ ] Confirm deployment checks do not instruct production deployment now.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm next recommended task is `Task 6.32 Production Security & Privacy Final Hardening V1`, docs/static tests and narrow privacy/security fixes only.
