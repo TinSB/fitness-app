@@ -1578,6 +1578,29 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 
 Next recommended task: Task 5.19 Session Discard Mutation Prototype Plan V1.
 
+### Task 5.19: Session Discard Mutation Prototype Plan V1
+
+Status: Completed in this branch as a planning-only route-specific plan for future `POST /sessions/active/discard`.
+
+Task 5.19 adds `docs/SESSION_DISCARD_MUTATION_PROTOTYPE_PLAN.md`, `tests/sessionDiscardMutationPrototypePlan.test.ts`, `tests/sessionDiscardMutationBoundaryStillBlocked.test.ts`, and `tests/sessionDiscardMutationDocsParity.test.ts`.
+
+The plan covers unsaved training state loss risk, strong confirmation, visible recovery policy, no history write behavior, source snapshot metadata, mutation id, idempotency key, request fingerprint, duplicate discard prevention, strict no-fake-success behavior, localStorage/AppData integrity, route boundary, and manual acceptance requirements.
+
+Task 5.19 does not implement `POST /sessions/active/discard`, does not add browser route exposure, does not change session patch or session complete behavior, does not add a broad mutation client, does not add App.tsx wiring, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.20 Session Discard Mutation Prototype V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

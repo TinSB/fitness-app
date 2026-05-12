@@ -833,3 +833,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, and `POST /sessions/active/complete`.
 - [ ] Confirm no production backend, auth, sync, cloud, deployment, dependency, package script, normalized table, broad mutation client, or API primary runtime is added.
 - [ ] Confirm next recommended task is `Task 5.19 Session Discard Mutation Prototype Plan V1`.
+
+## Task 5.19 Session Discard Mutation Prototype Plan
+
+- [ ] Use `docs/SESSION_DISCARD_MUTATION_PROTOTYPE_PLAN.md` as the session discard prototype plan.
+- [ ] Confirm future route is exactly `POST /sessions/active/discard`.
+- [ ] Confirm unsaved training state loss risk, strong confirmation, visible recovery policy, and no history write behavior are documented.
+- [ ] Confirm source snapshot metadata, request fingerprint, mutation id, and idempotency key are documented.
+- [ ] Confirm duplicate discard prevention, no-fake-success, localStorage integrity, AppData integrity, route boundary, and manual acceptance plan are documented.
+- [ ] Confirm Task 5.19 does not implement `POST /sessions/active/discard`.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, and `POST /sessions/active/complete`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, broad mutation client, API primary runtime, production backend, auth, sync, cloud, and deployment remain blocked.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm next recommended task is `Task 5.20 Session Discard Mutation Prototype V1`.

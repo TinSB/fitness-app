@@ -129,3 +129,13 @@ Task 5.19 adds `docs/SESSION_DISCARD_MUTATION_PROTOTYPE_PLAN.md` as a planning-o
 It does not implement session discard, does not add another browser route, and does not change source-of-truth behavior.
 
 Next task: `Task 5.19 Session Discard Mutation Prototype Plan V1`.
+
+## Task 5.19 Follow-up: Session Discard Plan
+
+Task 5.19 plans the future dev-only `POST /sessions/active/discard` prototype and keeps implementation blocked.
+
+The plan documents unsaved training state loss risk, strong confirmation, visible recovery policy, no history write behavior, source snapshot metadata, idempotency, duplicate discard prevention, no-fake-success behavior, and localStorage/AppData integrity.
+
+Accepted browser mutation routes remain exactly DataHealth dismiss, History data-flag, Limited History Edit, Session Start, Session Patch, and Session Complete.
+
+Next task should be Task 5.20 Session Discard Mutation Prototype V1 only if gates pass.
