@@ -924,3 +924,17 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.26 Boot From API Snapshot Prototype V1`.
+
+## Task 5.26 Boot From API Snapshot Prototype
+
+- [ ] Confirm `src/storage/bootFromApiSnapshot.ts` exists.
+- [ ] Confirm boot helper is enabled only by explicit dev/local `api-primary-dev`.
+- [ ] Confirm App.tsx, `loadData`, and `saveData` are not wired to API boot.
+- [ ] Confirm the helper requires AppData-shaped payloads and snapshot metadata.
+- [ ] Confirm schema-invalid API snapshots fall back visibly to localStorage.
+- [ ] Confirm API unavailable, missing reader, malformed response, and missing metadata are visible failures.
+- [ ] Confirm the helper does not write localStorage and does not silently overwrite AppData/localStorage.
+- [ ] Confirm no new server route, no POST write, and no API write-through runtime is added.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.27 API Write-through Runtime Prototype V1`.

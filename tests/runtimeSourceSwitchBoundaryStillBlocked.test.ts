@@ -12,8 +12,8 @@ describe('runtime source switch boundary remains blocked', () => {
   it('allows the Task 5.25 runtime source selector and keeps later runtime files absent', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/bootFromApiSnapshot.ts')), 'Task 5.26 boot helper may exist default-off').toBe(true);
     for (const path of [
-      'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);

@@ -2493,3 +2493,25 @@ Accepted browser mutation routes remain exactly:
 localStorage remains the default source of truth and remains the fallback/migration source. API results never silently overwrite AppData or localStorage.
 
 The next recommended task is `Task 5.26 Boot From API Snapshot Prototype V1`.
+
+## Task 5.26: Boot From API Snapshot Prototype V1
+
+Task 5.26 adds `src/storage/bootFromApiSnapshot.ts` as a guarded API snapshot boot helper for explicit dev/local `api-primary-dev` mode.
+
+The helper is not mounted in App.tsx and is not wired to `loadData` or `saveData`. It accepts an explicit snapshot reader, requires `api-primary-dev`, requires AppData-shaped payloads, requires snapshot metadata, validates the AppData schema before accepting the payload, and returns visible localStorage fallback failures when disabled, unavailable, malformed, missing metadata, or schema-invalid.
+
+Task 5.26 does not add a new server route, does not add a POST route, does not add API write-through runtime, does not silently overwrite AppData or localStorage, does not write localStorage, does not replace localStorage, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains the default source of truth and remains fallback/migration source. API snapshot boot results never silently overwrite AppData or localStorage.
+
+The next recommended task is `Task 5.27 API Write-through Runtime Prototype V1`.
