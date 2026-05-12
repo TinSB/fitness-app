@@ -54,6 +54,10 @@ describe('production manual acceptance runbook', () => {
       'rollback owner',
       'Final result: Pass / Fail',
       'Task 6.27 Production Rollback & Incident Runbook V1',
+      '## Task 6.31 Final Readiness Update',
+      '## Task 6.31 Final Readiness Scenario Matrix',
+      'Task 6.31 result: final production manual acceptance runbook alignment only',
+      'Task 6.32 Production Security & Privacy Final Hardening V1',
     ]) {
       expect(doc).toContain(expected);
     }

@@ -471,3 +471,13 @@ Task 6.30 checkpoints implemented production capabilities, still blocked product
 Task 6.30 keeps production runtime, auth runtime, sync runtime, deployment runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.31 Production Manual Acceptance Runbook V1, docs/static tests only. Task 6.31 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.31 Production Manual Acceptance Final Alignment
+
+Task 6.31 Production Manual Acceptance Runbook V1 updates `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md` with final readiness alignment for Phase 6 manual acceptance.
+
+Task 6.31 records dedicated test environment, no real personal data, source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery checks, deployment if implemented, rollback checks, and privacy/security checks.
+
+Task 6.31 keeps production runtime, auth runtime, sync runtime, deployment runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.32 Production Security & Privacy Final Hardening V1, docs/static tests and narrow privacy/security fixes only. Task 6.32 must not add a new auth provider, sync engine, production deployment surface, route, package dependency, package script, lockfile change, production source-of-truth switch, or real-data migration.

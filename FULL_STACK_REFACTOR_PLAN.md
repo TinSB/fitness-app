@@ -2931,6 +2931,32 @@ Next recommended task: Task 6.31 Production Manual Acceptance Runbook V1.
 
 Task 6.31 must be docs/static tests only. It must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
 
+### Task 6.31: Production Manual Acceptance Runbook V1
+
+Status: Completed in this branch as final production manual acceptance runbook alignment and static tests.
+
+Task 6.31 updates `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md`, `tests/productionManualAcceptanceRunbook.test.ts`, `tests/productionManualAcceptanceBoundary.test.ts`, and `tests/productionManualAcceptanceDocsParity.test.ts`.
+
+Task 6.31 records final manual acceptance expectations for dedicated test environment, no real personal data, source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery checks, deployment if implemented, rollback checks, and privacy/security checks.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.32 Production Security & Privacy Final Hardening V1.
+
+Task 6.32 must be docs/static tests and narrow privacy/security fixes only. It must not add a new auth provider, sync engine, production deployment surface, route, package dependency, package script, lockfile change, production source-of-truth switch, or real-data migration.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

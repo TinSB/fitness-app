@@ -3513,3 +3513,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.31 Production Manual Acceptance Runbook V1`, docs/static tests only. Task 6.31 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.31: Production Manual Acceptance Runbook V1
+
+Task 6.31 updates `docs/PRODUCTION_MANUAL_ACCEPTANCE_RUNBOOK.md` with final readiness alignment for Phase 6 manual acceptance.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.31 records final manual acceptance expectations for dedicated test environment, synthetic data only, source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery checks, deployment if implemented, rollback checks, and privacy/security checks.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.32 Production Security & Privacy Final Hardening V1`, docs/static tests and narrow privacy/security fixes only. Task 6.32 must not add a new auth provider, sync engine, production deployment surface, route, package dependency, package script, lockfile change, production source-of-truth switch, or real-data migration.

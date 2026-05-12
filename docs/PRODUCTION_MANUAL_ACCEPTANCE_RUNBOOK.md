@@ -100,3 +100,50 @@ Task 6.27 must be docs/static tests only. It must not add runtime incident handl
 Task 6.26 is complete after this task.
 
 Do not deploy production yet. Next task should be Task 6.27 Production Rollback & Incident Runbook V1.
+
+## Task 6.31 Final Readiness Update
+
+Task 6.31 extends this production manual acceptance runbook for final Phase 6 readiness review.
+
+This update is docs/static tests only. It adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no package changes, no route changes, no production source-of-truth switch, and no real personal training data use.
+
+Final manual acceptance must confirm the current Phase 6 implementation state before the security/privacy final hardening task:
+
+- Source of truth: `localStorage` remains the default runtime source, fallback, migration source, and emergency backup.
+- API runtime: `api-primary-dev` remains explicit dev/local only and not production-ready.
+- Backend: production backend activation remains unimplemented unless a future approved task changes it.
+- Auth/account: auth runtime, login/signup, token/session handling, and account runtime remain unimplemented unless a future approved task changes them.
+- Sync: cloud sync runtime, background sync workers, remote write queues, and automatic conflict merge remain unimplemented unless a future approved task changes them.
+- Backup/export/delete/recovery: policies and runbooks exist, but no destructive automated real-data operation is performed by this task.
+- Deployment: production deployment runtime remains unimplemented unless a future approved task changes it.
+- Rollback: rollback and incident runbooks must be available before any future production operation.
+- Privacy/security: redaction and environment validation skeletons remain narrow safeguards, not production monitoring deployment.
+
+## Task 6.31 Final Readiness Scenario Matrix
+
+| Scenario | Expected status | Manual acceptance requirement |
+| --- | --- | --- |
+| Dedicated environment | Required | Use a dedicated test environment, dedicated browser profile, dedicated dev DB when applicable, and synthetic data only. |
+| Source-of-truth default | Local-first | Confirm default startup uses `localStorage` and no API result silently overwrites AppData or localStorage. |
+| Auth/account flow | Not implemented unless future approved | Record `not implemented`; do not attempt login/signup or account linking without a future approved auth task. |
+| Sync flow | Not implemented unless future approved | Record `not implemented`; do not perform cloud writes, background sync, or automatic conflict merge. |
+| Backup/export/delete/recovery | Policy and runbook only | Confirm backup-first, export/delete responsibility, restore verification, and rollback drill documentation. |
+| Deployment | Not implemented unless future approved | Record `not implemented`; do not deploy production. |
+| Rollback | Runbook required | Confirm rollback owner, trigger, validation, privacy response, and recovery path are documented. |
+| Privacy/security | Safeguards only | Confirm no raw AppData, localStorage dumps, tokens, secrets, or real personal training data are logged or used. |
+
+## Task 6.31 Decision
+
+Task 6.31 result: final production manual acceptance runbook alignment only.
+
+Decision: keep production manual acceptance as a documented, synthetic-data-only gate that records implemented versus not-implemented capabilities without activating production backend, auth, sync, deployment, or source-of-truth migration.
+
+Recommended next task: `Task 6.32 Production Security & Privacy Final Hardening V1`.
+
+Task 6.32 must not add a new auth provider, sync engine, production deployment surface, route, package dependency, package script, lockfile change, production source-of-truth switch, or real-data migration.
+
+## Task 6.31 Final Recommendation
+
+Task 6.31 is complete after this task.
+
+Do not deploy production yet. Next task should be Task 6.32 Production Security & Privacy Final Hardening V1.
