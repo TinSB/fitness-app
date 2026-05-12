@@ -163,3 +163,11 @@ Do not start Phase 6 automatically.
 No production backend, auth, user accounts, cloud sync, deployment, monitoring, package change, normalized table, DataHealth repair, backup/import/export HTTP, reset/recovery HTTP, or eighth browser mutation route is added.
 localStorage remains default runtime source, fallback, migration source, and emergency backup at Phase 5 exit.
 Next Phase 5 task should be Task 5.41 Phase 5 Completion Archive V1.
+
+## Task 6.0 Preflight Alignment
+
+Task 6.0 Phase 6 Preflight & Production Boundary Lock V1 adds `docs/PHASE6_PREFLIGHT_PRODUCTION_BOUNDARY_LOCK.md` as the Phase 6 preflight production boundary lock before Task 6.1.
+
+The Task 6.0 boundary keeps production backend, auth/user accounts, cloud sync, deployment, monitoring, source-of-truth migration, normalized tables, package changes, browser route changes, and real personal training data migration unimplemented.
+
+Task 6.1 remains the recommended Phase 6 first task as architecture gate only. It must not implement production backend/auth/sync/deployment and must not auto-start from Task 6.0.

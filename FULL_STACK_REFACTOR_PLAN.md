@@ -2127,6 +2127,30 @@ Accepted browser mutation routes remain exactly:
 
 Recommended next task, only with explicit future approval, is Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1.
 
+### Task 6.0: Phase 6 Preflight & Production Boundary Lock V1
+
+Status: Completed in this branch as Phase 6 preflight documentation and static boundary tests.
+
+Task 6.0 adds `docs/PHASE6_PREFLIGHT_PRODUCTION_BOUNDARY_LOCK.md`, `tests/phase6PreflightProductionBoundaryLock.test.ts`, `tests/phase6PreflightBoundaryStillBlocked.test.ts`, `tests/phase6PreflightDocsParity.test.ts`, and `tests/phase6PreflightCiRules.test.ts`.
+
+Phase 5 is complete. Phase 6 preflight has started as a boundary lock only.
+
+This task adds no runtime behavior, no production backend/auth/user accounts/cloud sync/deployment/monitoring, no source-of-truth migration, no normalized tables, no package changes, no browser mutation route, no DataHealth repair, and no backup/import/export/reset/recovery HTTP routes.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+Next recommended task: Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1.
+
+Task 6.1 must be architecture gate only. It must not implement production backend/auth/sync/deployment and must not auto-start from Task 6.0.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

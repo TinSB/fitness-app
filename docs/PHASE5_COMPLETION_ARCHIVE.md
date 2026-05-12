@@ -140,3 +140,11 @@ No production backend, auth, user accounts, cloud sync, deployment, monitoring, 
 localStorage remains default runtime source, fallback, migration source, and emergency backup.
 API primary remains explicit dev/local `api-primary-dev` and not production-ready.
 Recommended next task, with explicit future approval, is Task 6.1 Production Backend, Auth, Sync & Deployment Architecture Gate V1.
+
+## Task 6.0 Phase 6 Preflight Handoff Note
+
+Task 6.0 Phase 6 Preflight & Production Boundary Lock V1 adds `docs/PHASE6_PREFLIGHT_PRODUCTION_BOUNDARY_LOCK.md` before Task 6.1.
+
+Task 6.0 is preflight and production boundary lock only. It does not start Phase 6 implementation, does not implement production backend/auth/user accounts/cloud sync/deployment/monitoring, does not implement source-of-truth migration, does not add normalized tables, does not add package changes, and does not add a browser route.
+
+Task 6.1 remains the recommended next task only as architecture gate work and must not auto-start.
