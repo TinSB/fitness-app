@@ -311,3 +311,13 @@ Task 6.14 locks no login/signup runtime, no token/session runtime, account lifec
 Task 6.14 keeps auth runtime, account lifecycle runtime, export/delete runtime, auth provider integration, user table, routes, package changes, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.15 Production Storage Schema Strategy V1, docs/static tests only. Task 6.15 must not create normalized tables, implement schema migration, perform database writes, use real personal training data, add routes, add dependencies, or switch source of truth.
+
+## Task 6.15 Production Storage Schema Strategy Alignment
+
+Task 6.15 Production Storage Schema Strategy V1 adds `docs/PRODUCTION_STORAGE_SCHEMA_STRATEGY.md` as production storage schema strategy documentation.
+
+Task 6.15 documents snapshot repository strategy, normalized schema future risk, migration strategy, rollback, and backup without implementation.
+
+Task 6.15 keeps schema implementation, normalized tables, production database migration, database writes, production source-of-truth migration, production backend activation, package changes, route additions, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.16 Production Storage Migration Dry-run Prototype V1. Task 6.16 may add docs/tests and a pure dry-run utility only if safe and must not write a database, create schema migration, use real personal training data, add routes, add dependencies, or switch source of truth.
