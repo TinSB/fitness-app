@@ -2751,3 +2751,23 @@ Accepted browser mutation routes remain exactly:
 - `POST /sessions/active/discard`
 
 The next recommended task is `Task 5.38 Phase 5 Final Manual Acceptance V1`.
+
+## Task 5.38: Phase 5 Final Manual Acceptance V1
+
+Task 5.38 adds `docs/PHASE5_FINAL_MANUAL_ACCEPTANCE.md` as the final manual acceptance runbook for Phase 5.
+
+The runbook requires a dedicated test browser profile, dedicated dev DB, no real personal training data, local Dev API only, default localStorage boot, `api-readonly` diagnostics, `api-primary-dev` boot and failure behavior, full workout flow, history edit, data-flag, DataHealth dismiss, migration dry-run/apply/rollback, API unavailable fallback, route boundary checks, cleanup/env reset, and pass/fail recording.
+
+This task does not add runtime behavior, does not delete localStorage, does not silently overwrite localStorage or AppData, does not switch the default runtime source, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+The next recommended task is `Task 5.39 Phase 5 Exit Regression Lock V1`.
