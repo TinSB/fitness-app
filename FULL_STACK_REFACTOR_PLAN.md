@@ -2749,6 +2749,32 @@ Next recommended task: Task 6.24 Observability / Logging Privacy Skeleton V1.
 
 Task 6.24 may add a privacy-safe redaction utility only if safe. It must not add an external logging service, dependency, raw AppData logging, localStorage dumps, token/secret logging, routes, or source-of-truth switching.
 
+### Task 6.24: Observability / Logging Privacy Skeleton V1
+
+Status: Completed in this branch as a privacy-safe redaction utility with static tests.
+
+Task 6.24 adds `src/observability/redaction.ts`, `tests/observabilityRedaction.test.ts`, and `tests/observabilityRedactionDocsParity.test.ts`.
+
+The skeleton redacts sensitive keys, long strings, and bearer-like credentials from synthetic log payloads. It performs no network, storage, provider, deployment, or logging service behavior.
+
+This task adds no external logging service, no dependency, no raw AppData logging, no localStorage dump, no token/secret logging, no production monitoring runtime, no routes, no production source-of-truth migration, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.25 Production Readiness Security Hardening V1.
+
+Task 6.25 must be docs/static tests and tiny redaction/env validation fixes only. It must not add auth runtime, deployment runtime, sync runtime, routes, dependencies, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
