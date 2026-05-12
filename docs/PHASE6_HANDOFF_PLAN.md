@@ -371,3 +371,13 @@ Task 6.20 accepts conflict cases, keeps `canAutoApply` false, blocks automatic m
 Task 6.20 keeps sync runtime, remote writes, cloud writes, network calls, remote queue, background sync worker, automatic merge runtime, auth runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.21 Production Environment Config Boundary V1, docs/static tests only. Task 6.21 must not enable production runtime by default, deploy production, add secret values, add routes, add dependencies, or switch source of truth.
+
+## Task 6.21 Production Environment Config Alignment
+
+Task 6.21 Production Environment Config Boundary V1 adds `docs/PRODUCTION_ENVIRONMENT_CONFIG_BOUNDARY.md` as environment configuration boundary documentation.
+
+Task 6.21 documents `local`, `development`, `staging`, and `production` names, secrets separation, no secret values, no production deploy, and no runtime production enable by default.
+
+Task 6.21 keeps deployment implementation, production runtime enablement, secret values, auth provider configuration, sync provider configuration, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.22 Deployment Runtime Strategy & Staging Plan V1, docs/static tests only. Task 6.22 must not implement production deployment, hosted production runtime, secret provisioning, routes, dependencies, or source-of-truth switching.

@@ -88,3 +88,11 @@ Task 6.21 must be docs/static tests only. It must not enable production runtime 
 Task 6.20 is complete after this task.
 
 Do not start sync runtime yet. Next task should be Task 6.21 Production Environment Config Boundary V1.
+
+## Task 6.21 Follow-up
+
+Task 6.21 Production Environment Config Boundary V1 follows this sync conflict acceptance work with docs/static tests only.
+
+Task 6.21 must document `local`, `development`, `staging`, and `production` names, secrets separation, no secret values, no production deploy, and no runtime production enable by default. It must not enable production runtime, deploy production, add secret values, add routes, add dependencies, or switch source of truth.
+
+The next recommended task after Task 6.21 is `Task 6.22 Deployment Runtime Strategy & Staging Plan V1`, docs/static tests only.
