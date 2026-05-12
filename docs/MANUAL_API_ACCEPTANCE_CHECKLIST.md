@@ -1260,3 +1260,16 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.11 Production Backend Adapter Acceptance V1`.
+
+## Task 6.11 Production Backend Adapter Acceptance
+
+- [ ] Confirm `docs/PRODUCTION_BACKEND_ADAPTER_ACCEPTANCE.md` exists.
+- [ ] Confirm the Task 6.10 skeleton remains Node-only, inert by default, and not exported from browser-facing API index files.
+- [ ] Confirm no browser pollution, auto-listen behavior, auth runtime, deployment runtime, database migration, production data use, browser runtime integration, package/script/lockfile change, source-of-truth switch, or browser route addition is introduced.
+- [ ] Confirm accepted routes return safe unavailable responses without fake success.
+- [ ] Confirm safe errors do not include raw AppData, localStorage dumps, tokens, secrets, request body echoes, or real personal training data.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.12 Auth Boundary & Account Model Plan V1`, docs/static tests only.

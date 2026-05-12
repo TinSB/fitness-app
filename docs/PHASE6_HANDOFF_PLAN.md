@@ -271,3 +271,13 @@ Task 6.10 exposes typed request/response shapes, the existing seven-route browse
 Task 6.10 keeps auto-listen behavior, Fastify/Express/Koa/Hono server runtime, deployment, auth runtime, normalized tables, database migration, production data use, browser runtime integration, package changes, source-of-truth switching, browser route additions, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.11 Production Backend Adapter Acceptance V1. Task 6.11 must not add auth runtime, deployment, auto-listen behavior, database migration, production data use, browser runtime integration, routes, package changes, or source-of-truth switching.
+
+## Task 6.11 Production Backend Adapter Acceptance Alignment
+
+Task 6.11 Production Backend Adapter Acceptance V1 adds `docs/PRODUCTION_BACKEND_ADAPTER_ACCEPTANCE.md` and acceptance/boundary tests for the Task 6.10 Node-only adapter skeleton.
+
+Task 6.11 accepts the skeleton as Node-only, inert by default, dependency-free, not exported from browser-facing API index files, and safe-error-only with no fake success.
+
+Task 6.11 keeps runtime activation, auto-listen behavior, auth runtime, deployment runtime, database migration, production data use, browser runtime integration, package changes, route additions, source-of-truth switching, and real personal training data migration blocked.
+
+The next recommended task is Task 6.12 Auth Boundary & Account Model Plan V1, docs/static tests only. Task 6.12 must not implement auth runtime, login/signup, token/session handling, OAuth, user table, production backend activation, routes, package changes, or source-of-truth switching.
