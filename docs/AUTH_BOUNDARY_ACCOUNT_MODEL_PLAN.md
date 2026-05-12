@@ -99,3 +99,9 @@ Do not start auth implementation yet. Next task should be Task 6.13 Auth Provide
 Task 6.13 Auth Provider Adapter Skeleton V1 adds `src/auth/authProviderTypes.ts` and `src/auth/authBoundary.ts` as type/interface-only auth provider adapter skeleton files.
 
 It must keep real auth, login UI, token storage, OAuth, provider integration, dependencies, routes, production backend activation, package changes, source-of-truth switching, and real personal training data migration unimplemented.
+
+## Task 6.14 Follow-up
+
+Task 6.14 Auth Account Lifecycle Acceptance V1 locks no login/signup runtime, no token/session runtime, account lifecycle gates, deletion/export policy, and identity mismatch prevention as docs/static tests only.
+
+It must keep auth runtime, account lifecycle runtime, export/delete runtime, auth provider integration, routes, package changes, source-of-truth switching, and real personal training data migration unimplemented.
