@@ -9,10 +9,10 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('API-backed read runtime boundary remains constrained', () => {
-  it('does not add source switch or storage implementation files before the approved runtime tasks', () => {
+  it('allows Task 5.25 selector/config and blocks later runtime files', () => {
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts')), 'Task 5.25 selector may exist default-off').toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts')), 'Task 5.25 config may exist default-off').toBe(true);
     for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
     ]) {

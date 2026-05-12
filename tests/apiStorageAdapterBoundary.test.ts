@@ -9,10 +9,10 @@ import {
 import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
 describe('API storage adapter boundary', () => {
-  it('adds only the default-off adapter and does not wire App.tsx or runtime selector', () => {
+  it('keeps adapter and runtime selector default-off and does not wire App.tsx or persistence', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(false);
-    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(false);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
 
     const app = readSource('src/App.tsx');
     const persistence = readSource('src/storage/persistence.ts');

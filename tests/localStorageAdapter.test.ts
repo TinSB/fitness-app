@@ -36,6 +36,7 @@ class ThrowingStorage implements AppDataStorageLike {
 }
 
 const storageSourceFiles = () => readdirSync(join(process.cwd(), 'src', 'storage')).filter((file) => file.endsWith('.ts'));
+const directLocalStorageAccessPattern = /(?:\b(?:window|globalThis)\.localStorage\b|\blocalStorage\s*[.\[]|typeof\s+localStorage\b)/;
 
 describe('localStorage adapter boundary', () => {
   it('writes and reads the existing split-key AppData shape', () => {
@@ -107,7 +108,7 @@ describe('localStorage adapter boundary', () => {
     const offenders = storageSourceFiles().filter((file) => {
       if (file === 'localStorageAdapter.ts' || file === 'persistence.ts') return false;
       const source = readFileSync(join(process.cwd(), 'src', 'storage', file), 'utf8');
-      return /\blocalStorage\b/.test(source);
+      return directLocalStorageAccessPattern.test(source);
     });
 
     expect(offenders).toEqual([]);

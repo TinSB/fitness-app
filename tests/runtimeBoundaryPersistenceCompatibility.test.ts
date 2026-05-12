@@ -37,6 +37,8 @@ const PURE_STORAGE_FILES = [
   'src/storage/appDataStorageUtils.ts',
 ];
 
+const directLocalStorageAccessPattern = /(?:\b(?:window|globalThis)\.localStorage\b|\blocalStorage\s*[.\[]|typeof\s+localStorage\b)/;
+
 describe('runtime boundary persistence compatibility acceptance', () => {
   it('keeps persistence.ts as the compatibility facade for existing public exports', () => {
     expect(typeof loadData).toBe('function');
@@ -59,7 +61,7 @@ describe('runtime boundary persistence compatibility acceptance', () => {
   it('keeps localStorageAdapter as the only AppData localStorage access point in storage modules', () => {
     const offenders = collectRuntimeSourceFiles(resolve(repoRoot(), 'src/storage'))
       .filter((file) => !file.endsWith('localStorageAdapter.ts'))
-      .filter((file) => /\blocalStorage\b/.test(readFileSync(file, 'utf8')));
+      .filter((file) => directLocalStorageAccessPattern.test(readFileSync(file, 'utf8')));
 
     expect(offenders.map((file) => file.replaceAll('\\', '/'))).toEqual([]);
   });

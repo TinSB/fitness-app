@@ -9,12 +9,13 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('offline/PWA conflict boundary remains blocked', () => {
-  it('does not add offline queue or runtime source implementation files beyond the Task 5.24 adapter', () => {
+  it('does not add offline queue implementation files beyond the Task 5.24 adapter and Task 5.25 selector', () => {
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     for (const path of [
       'src/storage/offlineMutationQueue.ts',
       'src/storage/offlineReplay.ts',
       'src/storage/backgroundSync.ts',
-      'src/storage/runtimeSourceSelector.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
     }

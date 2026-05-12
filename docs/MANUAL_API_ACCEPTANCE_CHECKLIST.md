@@ -909,3 +909,18 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.25 Runtime Source Selector Prototype V1`.
+
+## Task 5.25 Runtime Source Selector Prototype
+
+- [ ] Confirm `src/storage/runtimeSourceConfig.ts` and `src/storage/runtimeSourceSelector.ts` exist.
+- [ ] Confirm accepted runtime source modes are exactly `localStorage`, `api-readonly`, and `api-primary-dev`.
+- [ ] Confirm missing, empty, invalid, non-dev, and non-localhost API mode inputs fall back to `localStorage`.
+- [ ] Confirm `localStorage` remains the default runtime source and fallback/migration source.
+- [ ] Confirm `api-readonly` does not route App writes through the API.
+- [ ] Confirm `api-primary-dev` is explicit dev/local opt-in only and not production-ready.
+- [ ] Confirm App.tsx, `loadData`, and `saveData` are not wired to the selector.
+- [ ] Confirm no boot-from-API snapshot behavior and no API write-through runtime is added.
+- [ ] Confirm no silent AppData/localStorage overwrite is added.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.26 Boot From API Snapshot Prototype V1`.

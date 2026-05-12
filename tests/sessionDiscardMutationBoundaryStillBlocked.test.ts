@@ -62,18 +62,18 @@ describe('session discard mutation browser boundary remains blocked', () => {
     }
   });
 
-  it('keeps broad mutation client and source selector absent while allowing the Task 5.24 adapter', () => {
+  it('keeps broad mutation client absent while allowing storage runtime prototypes', () => {
     for (const path of [
       'src/devApi/devApiMutationClient.ts',
       'src/mutationClient.ts',
       'src/services/mutationClient.ts',
       'src/hooks/useMutationApi.ts',
       'src/api/mutations.ts',
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
 
     expect(
       existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts')),

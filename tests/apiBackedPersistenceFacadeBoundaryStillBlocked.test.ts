@@ -59,20 +59,17 @@ const nodeOnlyTokens = [
 ];
 
 describe('API-backed persistence facade boundaries remain blocked', () => {
-  it('allows only the Task 5.24 default-off adapter and keeps selector, App mount, and source switch blocked', () => {
+  it('allows Task 5.24 adapter and Task 5.25 selector while keeping App mount and source switch blocked', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/apiStorageAdapter.ts'))).toBe(true);
-    for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
-    ]) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist yet`).toBe(false);
-    }
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
 
     const app = readSource('src/App.tsx');
     expect(app).not.toMatch(/apiStorageAdapter|runtimeSourceSelector|api-primary-dev|VITE_IRONPATH_RUNTIME_SOURCE/);
     expect(readSource('src/storage/localStorageAdapter.ts')).not.toContain('fetch(');
     expect(readSource('src/storage/persistence.ts')).not.toMatch(/apiStorageAdapter|runtimeSourceSelector|api-primary-dev/);
     expect(readSource('src/storage/apiStorageAdapter.ts')).toContain("API_STORAGE_ADAPTER_RUNTIME_SOURCE = 'api-primary-dev'");
+    expect(readSource('src/storage/runtimeSourceSelector.ts')).toContain("fallbackMode: 'localStorage'");
   });
 
   it('keeps browser mutation routes exactly seven and blocks repair/backup/reset routes', () => {

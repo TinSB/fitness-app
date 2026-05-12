@@ -9,10 +9,10 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('runtime source switch boundary remains blocked', () => {
-  it('does not add runtime source implementation files in Task 5.4', () => {
+  it('allows the Task 5.25 runtime source selector and keeps later runtime files absent', () => {
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
     for (const path of [
-      'src/storage/runtimeSourceSelector.ts',
-      'src/storage/runtimeSourceConfig.ts',
       'src/storage/bootFromApiSnapshot.ts',
       'src/storage/apiWriteThroughRuntime.ts',
     ]) {
@@ -31,7 +31,6 @@ describe('runtime source switch boundary remains blocked', () => {
       'sqliteRepository',
       'devApiRunner',
       'devDbRecovery',
-      'api-primary-dev',
       'makeApiSourceOfTruth',
       'replaceLocalStorage',
       'offlineMutationQueue',
@@ -40,8 +39,7 @@ describe('runtime source switch boundary remains blocked', () => {
     for (const file of collectSrcRuntimeFiles()) {
       const path = relativePath(file);
       const source = stripComments(readFileSync(file, 'utf8'));
-      const allowed = path === 'src/storage/apiStorageAdapter.ts' ? ['api-primary-dev'] : [];
-      expect(forbidden.filter((token) => source.includes(token) && !allowed.includes(token)), `${path} boundary`).toEqual([]);
+      expect(forbidden.filter((token) => source.includes(token)), `${path} boundary`).toEqual([]);
     }
   });
 
