@@ -1625,6 +1625,30 @@ localStorage remains source of truth. API results never overwrite AppData or loc
 
 Next recommended task: Task 5.21 Session Discard Acceptance / Hardening V1.
 
+### Task 5.21: Session Discard Acceptance / Hardening V1
+
+Status: Completed in this branch as acceptance and hardening coverage for the dev-only `POST /sessions/active/discard` prototype.
+
+Task 5.21 adds `docs/SESSION_DISCARD_ACCEPTANCE_HARDENING.md`, `tests/devApiSessionDiscardAcceptance.test.ts`, `tests/devApiSessionDiscardHardening.test.ts`, `tests/sessionDiscardAcceptanceBoundary.test.ts`, and `tests/sessionDiscardAcceptanceDocsParity.test.ts`.
+
+The coverage locks duplicate discard prevention, missing active session behavior, invalid active session identity, strong confirmation and cancel behavior, write failure, transaction failure, database closed, timeout/unavailable/malformed response handling, missing snapshot metadata, strict no-fake-success behavior, pending lock behavior, confirmation reset behavior, localStorage/AppData integrity, no history write behavior, route boundary, and manual acceptance requirements.
+
+Task 5.21 does not add a browser route, does not add an eighth mutation route, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, does not add a broad mutation client, does not add API primary runtime, does not switch source of truth, does not write localStorage, does not overwrite AppData, does not add package changes, and does not add production backend/auth/sync/cloud/deployment.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains source of truth. API results never overwrite AppData or localStorage.
+
+Next recommended task: Task 5.22 Active Session Full Write-path Regression Lock V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
