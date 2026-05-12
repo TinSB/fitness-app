@@ -321,3 +321,13 @@ Task 6.15 documents snapshot repository strategy, normalized schema future risk,
 Task 6.15 keeps schema implementation, normalized tables, production database migration, database writes, production source-of-truth migration, production backend activation, package changes, route additions, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.16 Production Storage Migration Dry-run Prototype V1. Task 6.16 may add docs/tests and a pure dry-run utility only if safe and must not write a database, create schema migration, use real personal training data, add routes, add dependencies, or switch source of truth.
+
+## Task 6.16 Production Storage Migration Dry-run Alignment
+
+Task 6.16 Production Storage Migration Dry-run Prototype V1 adds `src/storage/productionStorageMigrationDryRun.ts` as a pure inspection-only dry-run utility and `docs/PRODUCTION_STORAGE_MIGRATION_DRY_RUN.md`.
+
+Task 6.16 returns structured dry-run results with `writesPerformed: false`.
+
+Task 6.16 keeps database writes, schema migration, normalized tables, real-data automation, migration apply, production source-of-truth migration, package changes, route additions, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.17 Production Storage Backup / Restore Acceptance V1, docs/static tests only. Task 6.17 must not perform real data automation, destructive restore, database writes, route additions, package changes, or source-of-truth switching.
