@@ -10,6 +10,7 @@ import { DevApiDataHealthDismissPrototype } from './devApi/DevApiDataHealthDismi
 import { DevApiHistoryDataFlagPrototype } from './devApi/DevApiHistoryDataFlagPrototype';
 import { DevApiHistorySetEditExperiment } from './devApi/DevApiHistorySetEditExperiment';
 import { DevApiSessionCompletePrototype } from './devApi/DevApiSessionCompletePrototype';
+import { DevApiSessionDiscardPrototype } from './devApi/DevApiSessionDiscardPrototype';
 import { DevApiSessionPatchPrototype } from './devApi/DevApiSessionPatchPrototype';
 import { DevApiSessionStartPrototype } from './devApi/DevApiSessionStartPrototype';
 import { DevApiReadOnlyDiagnostics } from './devApi/DevApiReadOnlyDiagnosticsController';
@@ -1932,6 +1933,7 @@ function App() {
       <DevApiSessionStartPrototype data={data} />
       <DevApiSessionPatchPrototype data={data} />
       <DevApiSessionCompletePrototype data={data} />
+      <DevApiSessionDiscardPrototype data={data} />
     </>
   );
 }

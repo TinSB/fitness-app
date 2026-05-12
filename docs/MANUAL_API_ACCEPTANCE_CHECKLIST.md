@@ -846,3 +846,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, broad mutation client, API primary runtime, production backend, auth, sync, cloud, and deployment remain blocked.
 - [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
 - [ ] Confirm next recommended task is `Task 5.20 Session Discard Mutation Prototype V1`.
+
+## Task 5.20 Session Discard Mutation Prototype
+
+- [ ] Confirm `src/devApi/devApiSessionDiscardConfig.ts`, `src/devApi/devApiSessionDiscardClient.ts`, and `src/devApi/DevApiSessionDiscardPrototype.tsx` exist.
+- [ ] Confirm the prototype is dev-only, localhost-only, default off, and enabled only by `VITE_IRONPATH_DEV_API_COMPARE === "1"` plus `VITE_IRONPATH_DEV_API_MUTATION_EXPERIMENT === "session-discard"`.
+- [ ] Confirm the browser mutation route added by this task is exactly `POST /sessions/active/discard`.
+- [ ] Confirm no session patch or session complete behavior changes are added.
+- [ ] Confirm no DataHealth repair, backup/import/export, reset/recovery, broad mutation client, API primary runtime, package change, production backend, auth, sync, cloud, or deployment is added.
+- [ ] Confirm source snapshot metadata, idempotency key, request fingerprint, strong confirmation, duplicate-submit lock, strict success shape, and snapshot metadata are required.
+- [ ] Confirm localStorage remains source of truth and API results never overwrite AppData/localStorage.
+- [ ] Confirm accepted browser mutation routes are exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm next recommended task is `Task 5.21 Session Discard Acceptance / Hardening V1`.
