@@ -1985,6 +1985,30 @@ localStorage remains available as fallback and migration source. API primary rem
 
 Next recommended task: Task 5.36 Migration Regression Lock V1.
 
+### Task 5.36: Migration Regression Lock V1
+
+Status: Completed in this branch as migration regression lock docs and static/runtime-boundary coverage.
+
+Task 5.36 adds `docs/MIGRATION_REGRESSION_LOCK.md`, `tests/migrationRegressionLock.test.ts`, `tests/migrationRegressionBoundaryLock.test.ts`, `tests/migrationRegressionCoverageInventory.test.ts`, and `tests/migrationRegressionDocsParity.test.ts`.
+
+The lock covers dry-run warning-only behavior, backup-first apply, rollback/recovery callback boundaries, corrupt snapshot handling, schema mismatch handling, no destructive import, no silent overwrite, no automatic source switch, and no HTTP migration/reset/recovery surface.
+
+Task 5.36 does not add runtime behavior, does not delete localStorage, does not write localStorage, does not auto-switch source of truth, does not modify App.tsx, does not add an HTTP migration endpoint, does not add a browser mutation route, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains default runtime source, fallback, migration source, and emergency backup. API primary remains explicit dev/local `api-primary-dev` only.
+
+Next recommended task: Task 5.37 Phase 5 Final Source-of-truth Audit V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
