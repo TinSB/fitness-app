@@ -1769,6 +1769,30 @@ localStorage remains the default source of truth and fallback/migration source.
 
 Next recommended task: Task 5.27 API Write-through Runtime Prototype V1.
 
+### Task 5.27: API Write-through Runtime Prototype V1
+
+Status: Completed in this branch as a default-off API write-through runtime helper.
+
+Task 5.27 adds `src/storage/apiWriteThroughRuntime.ts`, `tests/apiWriteThroughRuntimePrototype.test.ts`, `tests/apiWriteThroughRuntimeBoundary.test.ts`, `tests/apiWriteThroughRuntimeFailureModes.test.ts`, and `tests/apiWriteThroughRuntimeLocalStorageIntegrity.test.ts`.
+
+The helper requires explicit dev/local `api-primary-dev`, delegates only to route-specific `apiStorageAdapter` methods, preserves strict no-fake-success and snapshot metadata behavior through the adapter, returns visible failure for disabled/invalid/API failure states, and never reads or writes localStorage.
+
+Task 5.27 does not modify App.tsx, does not wire `loadData` or `saveData`, does not add a broad mutation client, does not add production backend/auth/sync/cloud/deployment, does not add package changes, does not add DataHealth repair, does not add backup/import/export/reset/recovery HTTP routes, and does not add an eighth browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+localStorage remains default runtime source and fallback/migration source.
+
+Next recommended task: Task 5.28 API Primary Runtime Acceptance V1.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
