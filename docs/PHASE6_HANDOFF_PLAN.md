@@ -411,3 +411,13 @@ Task 6.24 redacts sensitive keys, long strings, and bearer-like credentials from
 Task 6.24 keeps external logging service integration, dependencies, raw AppData logging, localStorage dump, token/secret logging, production monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.25 Production Readiness Security Hardening V1, docs/static tests and tiny redaction/env validation fixes only. Task 6.25 must not add auth runtime, deployment runtime, sync runtime, routes, dependencies, or source-of-truth switching.
+
+## Task 6.25 Production Readiness Security Hardening Alignment
+
+Task 6.25 Production Readiness Security Hardening V1 adds `docs/PRODUCTION_READINESS_SECURITY_HARDENING.md` as production readiness security hardening documentation.
+
+Task 6.25 locks secret leakage controls, sensitive data logging controls, route boundaries, privacy controls, and continued no-auth/no-deployment runtime status.
+
+Task 6.25 keeps auth runtime, deployment runtime, sync runtime, production backend activation, production monitoring service, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.26 Production Manual Acceptance Runbook V1, docs/static tests only. Task 6.26 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
