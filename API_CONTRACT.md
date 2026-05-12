@@ -3469,3 +3469,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.29 Production Phase Implementation Boundary Lock V1`, docs/static tests only. Task 6.29 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.29: Production Phase Implementation Boundary Lock V1
+
+Task 6.29 adds `docs/PRODUCTION_PHASE_IMPLEMENTATION_BOUNDARY_LOCK.md` as the production phase implementation boundary lock.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no secret values, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.29 locks accepted capabilities, planned-only capabilities, blocked capabilities, route allowlist, source-of-truth status, and auth/sync/deployment status.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.30 Production Release Readiness Checkpoint V1`, docs/static tests only. Task 6.30 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.

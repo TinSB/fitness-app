@@ -451,3 +451,13 @@ Task 6.28 plans export, delete, account deletion, backup retention, and audit re
 Task 6.28 keeps export/delete runtime, account deletion runtime, backup retention runtime, audit retention runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.29 Production Phase Implementation Boundary Lock V1, docs/static tests only. Task 6.29 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
+
+## Task 6.29 Production Phase Implementation Boundary Alignment
+
+Task 6.29 Production Phase Implementation Boundary Lock V1 adds `docs/PRODUCTION_PHASE_IMPLEMENTATION_BOUNDARY_LOCK.md` as the implementation boundary lock before finalization.
+
+Task 6.29 locks accepted capabilities, planned-only capabilities, blocked capabilities, route allowlist, source-of-truth status, and auth/sync/deployment status.
+
+Task 6.29 keeps production runtime, auth runtime, sync runtime, deployment runtime, secret values, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.30 Production Release Readiness Checkpoint V1, docs/static tests only. Task 6.30 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, or source-of-truth switching.
