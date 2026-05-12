@@ -978,3 +978,14 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.30 API Primary Runtime Hardening V1`.
+
+## Task 5.30 API Primary Runtime Hardening
+
+- [ ] Confirm `docs/API_PRIMARY_RUNTIME_HARDENING.md` exists.
+- [ ] Confirm hardening covers startup race, API unavailable, snapshot mismatch, reload behavior, stale AppData, failure rollback, and no silent overwrite.
+- [ ] Confirm failed boot and failed writes fall back visibly to localStorage.
+- [ ] Confirm missing write snapshot metadata and `changed=false` are not accepted as success.
+- [ ] Confirm localStorage is not silently written, deleted, or replaced.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.31 API Primary Runtime Regression Lock V1`.
