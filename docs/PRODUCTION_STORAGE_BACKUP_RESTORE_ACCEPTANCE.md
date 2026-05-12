@@ -77,3 +77,11 @@ Task 6.18 must be docs/static tests only. Task 6.18 must not implement sync runt
 Task 6.17 is complete after this task.
 
 Do not start backup/restore runtime yet. Next task should be Task 6.18 Cloud Sync Model Plan V1.
+
+## Task 6.18 Follow-up
+
+Task 6.18 Cloud Sync Model Plan V1 follows this backup/restore acceptance work with docs/static tests only.
+
+Task 6.18 documents sync model, device identity, conflict policy, idempotency, and no sync runtime. It must not implement sync runtime, network writes, cloud writes, remote queue, background sync worker, conflict merge runtime, routes, dependencies, package scripts, lockfile changes, or source-of-truth switching.
+
+The next recommended task after Task 6.18 is `Task 6.19 Sync Metadata & Conflict Detector Prototype V1`, pure local metadata/conflict detector only if safe.
