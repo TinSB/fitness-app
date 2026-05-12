@@ -3667,3 +3667,25 @@ Accepted browser mutation routes remain exactly:
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 6.38 Phase 6 Final Manual Acceptance V1`, docs/static tests only. Task 6.38 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
+
+## Task 6.38: Phase 6 Final Manual Acceptance V1
+
+Task 6.38 adds `docs/PHASE6_FINAL_MANUAL_ACCEPTANCE.md` as Phase 6 final manual acceptance documentation.
+
+This task adds no production runtime, no auth runtime, no sync runtime, no deployment runtime, no monitoring runtime, no route additions, no package changes, no production source-of-truth migration, and no browser mutation route.
+
+Task 6.38 documents the production readiness scenario matrix, local/dev fallback, source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery, deployment if implemented, rollback, and pass/fail template.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Recommended next task is `Task 6.39 Phase 6 Exit Regression Lock V1`, docs/static tests only. Task 6.39 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, real-data migration, or Phase 7 work.

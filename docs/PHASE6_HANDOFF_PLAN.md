@@ -541,3 +541,13 @@ Task 6.37 locks accepted production capabilities, blocked capabilities, source-o
 Task 6.37 keeps production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.38 Phase 6 Final Manual Acceptance V1, docs/static tests only. Task 6.38 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, or real-data migration.
+
+## Task 6.38 Phase 6 Final Manual Acceptance Alignment
+
+Task 6.38 Phase 6 Final Manual Acceptance V1 adds `docs/PHASE6_FINAL_MANUAL_ACCEPTANCE.md` as final manual acceptance documentation.
+
+Task 6.38 documents the production readiness scenario matrix, local/dev fallback, source-of-truth checks, auth/account if implemented, sync if implemented, backup/export/delete/recovery, deployment if implemented, rollback, and pass/fail template.
+
+Task 6.38 keeps production runtime, auth runtime, sync runtime, deployment runtime, monitoring runtime, package changes, route additions, source-of-truth switching, real personal training data migration, and Phase 7 work unimplemented.
+
+The next recommended task is Task 6.39 Phase 6 Exit Regression Lock V1, docs/static tests only. Task 6.39 must not add production runtime, auth runtime, sync runtime, deployment runtime, package changes, routes, source-of-truth switching, real-data migration, or Phase 7 work.
