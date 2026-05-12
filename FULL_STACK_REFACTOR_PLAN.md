@@ -2567,6 +2567,32 @@ Next recommended task: Task 6.17 Production Storage Backup / Restore Acceptance 
 
 Task 6.17 must be docs/static tests only. It must not perform real data automation, destructive restore, database writes, route additions, package changes, or source-of-truth switching.
 
+### Task 6.17: Production Storage Backup / Restore Acceptance V1
+
+Status: Completed in this branch as production storage backup/restore acceptance documentation and static boundary tests.
+
+Task 6.17 adds `docs/PRODUCTION_STORAGE_BACKUP_RESTORE_ACCEPTANCE.md`, `tests/productionStorageBackupRestoreAcceptance.test.ts`, `tests/productionStorageBackupRestoreBoundary.test.ts`, and `tests/productionStorageBackupRestoreDocsParity.test.ts`.
+
+Task 6.17 documents backup-first, restore verification, rollback drill, no real data automation, and no destructive restore without implementation.
+
+This task adds no backup runtime, no restore runtime, no destructive restore, no database writes, no migration apply, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.18 Cloud Sync Model Plan V1.
+
+Task 6.18 must be docs/static tests only. It must not implement sync runtime, network writes, cloud writes, background sync, routes, dependencies, or source-of-truth switching.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

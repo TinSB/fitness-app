@@ -71,3 +71,9 @@ Task 6.17 must be docs/static tests only. It must not perform real data automati
 Task 6.16 is complete after this task.
 
 Do not start migration apply or database writes yet. Next task should be Task 6.17 Production Storage Backup / Restore Acceptance V1.
+
+## Task 6.17 Follow-up
+
+Task 6.17 Production Storage Backup / Restore Acceptance V1 records backup-first, restore verification, rollback drill, no real data automation, and no destructive restore as docs/static tests only.
+
+It must keep backup runtime, restore runtime, destructive restore, database writes, migration apply, production source-of-truth migration, package changes, route additions, and real personal training data migration unimplemented.
