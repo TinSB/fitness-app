@@ -1060,3 +1060,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
 - [ ] Confirm next recommended task is `Task 5.37 Phase 5 Final Source-of-truth Audit V1`.
+
+## Task 5.37 Phase 5 Final Source-of-truth Audit
+
+- [ ] Confirm `docs/PHASE5_FINAL_SOURCE_OF_TRUTH_AUDIT.md` exists.
+- [ ] Confirm runtime source modes remain `localStorage`, `api-readonly`, and `api-primary-dev`.
+- [ ] Confirm `localStorage` remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm migration dry-run/apply/rollback remains backup-first, non-destructive, reversible, and no HTTP migration/reset/recovery route is present.
+- [ ] Confirm dedicated test browser profile, dedicated dev DB, and no real personal training data remain required for final manual acceptance.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm DataHealth repair, backup/import/export over HTTP, reset/recovery over HTTP, eighth routes, production backend, auth, sync, cloud, deployment, package changes, and normalized tables remain blocked.
+- [ ] Confirm next recommended task is `Task 5.38 Phase 5 Final Manual Acceptance V1`.
