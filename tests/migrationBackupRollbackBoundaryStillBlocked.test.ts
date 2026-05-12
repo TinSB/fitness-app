@@ -9,11 +9,11 @@ const stripComments = (source: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 describe('migration backup and rollback boundary remains blocked', () => {
-  it('does not add migration implementation files beyond the Task 5.24 adapter and Task 5.25 selector', () => {
+  it('allows only the Task 5.32 dry-run helper and no apply/rollback implementation', () => {
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceSelector.ts'))).toBe(true);
     expect(existsSync(resolve(repoRoot(), 'src/storage/runtimeSourceConfig.ts'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'src/storage/localStorageToSqliteMigrationDryRun.ts'))).toBe(true);
     for (const path of [
-      'src/storage/localStorageToSqliteMigrationDryRun.ts',
       'src/storage/localStorageToSqliteMigrationApply.ts',
       'src/storage/migrationRollback.ts',
       'src/storage/migrationBackup.ts',
