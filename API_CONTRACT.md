@@ -3227,3 +3227,25 @@ Accepted browser mutation routes remain exactly:
 Task 6.17 documents backup-first, restore verification, rollback drill, no real data automation, and no destructive restore without implementation.
 
 Recommended next task is `Task 6.18 Cloud Sync Model Plan V1`, docs/static tests only. Task 6.18 must not implement sync runtime, network writes, cloud writes, background sync, routes, dependencies, or source-of-truth switching.
+
+## Task 6.18: Cloud Sync Model Plan V1
+
+Task 6.18 adds `docs/CLOUD_SYNC_MODEL_PLAN.md` as a planning-level cloud sync model plan.
+
+This task adds no runtime behavior, no sync runtime, no network writes, no cloud writes, no remote queue, no background sync worker, no conflict merge runtime, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Task 6.18 documents sync model, device identity, conflict policy, idempotency, offline/retry boundaries, and no sync runtime without implementation.
+
+Recommended next task is `Task 6.19 Sync Metadata & Conflict Detector Prototype V1`. Task 6.19 may add pure local sync metadata/conflict detector functions if safe. It must not add network calls, cloud writes, background sync, auth runtime, routes, dependencies, or source-of-truth switching.

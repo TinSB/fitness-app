@@ -1344,3 +1344,15 @@ Task 4.74 adds the Phase 5 handoff plan at `docs/PHASE5_HANDOFF_PLAN.md`. It is 
 - [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
 - [ ] Confirm no real personal training data is used and no destructive migration is performed.
 - [ ] Confirm next recommended task is `Task 6.18 Cloud Sync Model Plan V1`, docs/static tests only.
+
+## Task 6.18 Cloud Sync Model Plan
+
+- [ ] Confirm `docs/CLOUD_SYNC_MODEL_PLAN.md` exists.
+- [ ] Confirm Task 6.18 is docs/static tests only and has no sync runtime implication.
+- [ ] Confirm sync model, device identity, conflict policy, and idempotency are documented.
+- [ ] Confirm no sync runtime, network writes, cloud writes, remote queue, background sync worker, conflict merge runtime, package/script/lockfile change, source-of-truth switch, or browser route is added.
+- [ ] Confirm localStorage remains default runtime source, fallback, migration source, and emergency backup.
+- [ ] Confirm `api-primary-dev` remains explicit dev/local only and not production-ready.
+- [ ] Confirm accepted browser mutation routes remain exactly `POST /data-health/issues/:issueId/dismiss`, `POST /history/:id/data-flag`, `POST /history/:id/edit`, `POST /sessions/start`, `POST /sessions/active/patches`, `POST /sessions/active/complete`, and `POST /sessions/active/discard`.
+- [ ] Confirm no real personal training data is used and no destructive migration is performed.
+- [ ] Confirm next recommended task is `Task 6.19 Sync Metadata & Conflict Detector Prototype V1`, pure local metadata/conflict detector only if safe.

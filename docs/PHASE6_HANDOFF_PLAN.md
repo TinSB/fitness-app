@@ -341,3 +341,13 @@ Task 6.17 documents backup-first, restore verification, rollback drill, no real 
 Task 6.17 keeps backup runtime, restore runtime, destructive restore, database writes, migration apply, production source-of-truth migration, package changes, route additions, and real personal training data migration unimplemented.
 
 The next recommended task is Task 6.18 Cloud Sync Model Plan V1, docs/static tests only. Task 6.18 must not implement sync runtime, network writes, cloud writes, background sync, routes, dependencies, or source-of-truth switching.
+
+## Task 6.18 Cloud Sync Model Alignment
+
+Task 6.18 Cloud Sync Model Plan V1 adds `docs/CLOUD_SYNC_MODEL_PLAN.md` as a planning-level sync model document.
+
+Task 6.18 documents sync model, device identity, conflict policy, idempotency, offline/retry boundaries, and no sync runtime without implementation.
+
+Task 6.18 keeps sync runtime, network writes, cloud writes, remote queue, background sync worker, conflict merge runtime, package changes, route additions, source-of-truth switching, and real personal training data migration unimplemented.
+
+The next recommended task is Task 6.19 Sync Metadata & Conflict Detector Prototype V1. Task 6.19 may add pure local sync metadata/conflict detector functions if safe and must not add network calls, cloud writes, background sync, auth runtime, routes, dependencies, or source-of-truth switching.
