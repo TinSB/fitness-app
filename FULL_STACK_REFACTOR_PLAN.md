@@ -2645,6 +2645,32 @@ Next recommended task: Task 6.20 Sync Conflict Acceptance V1.
 
 Task 6.20 must be docs/static tests only. It must not add remote writes, sync runtime, automatic merge, network calls, cloud provider configuration, auth runtime, routes, dependencies, or source-of-truth switching.
 
+### Task 6.20: Sync Conflict Acceptance V1
+
+Status: Completed in this branch as sync conflict acceptance documentation and static boundary tests.
+
+Task 6.20 adds `docs/SYNC_CONFLICT_ACCEPTANCE.md`, `tests/syncConflictAcceptance.test.ts`, `tests/syncConflictAcceptanceBoundary.test.ts`, and `tests/syncConflictAcceptanceDocsParity.test.ts`.
+
+Task 6.20 accepts detector conflict cases, keeps `canAutoApply` false, blocks automatic merge, blocks remote writes, and requires future user-visible conflict policy before sync runtime.
+
+This task adds no sync runtime, no remote writes, no cloud writes, no network calls, no remote queue, no background sync worker, no automatic merge runtime, no auth runtime, no production source-of-truth migration, no package changes, and no browser mutation route.
+
+Accepted browser mutation routes remain exactly:
+
+- `POST /data-health/issues/:issueId/dismiss`
+- `POST /history/:id/data-flag`
+- `POST /history/:id/edit`
+- `POST /sessions/start`
+- `POST /sessions/active/patches`
+- `POST /sessions/active/complete`
+- `POST /sessions/active/discard`
+
+`localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
+
+Next recommended task: Task 6.21 Production Environment Config Boundary V1.
+
+Task 6.21 must be docs/static tests only. It must not enable production runtime by default, deploy production, add secret values, add routes, add dependencies, or switch source of truth.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
