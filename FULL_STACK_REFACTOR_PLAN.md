@@ -3251,6 +3251,16 @@ This task rejects dev API production promotion and keeps production backend/runt
 
 Next recommended task: Task 7.7 Production Runtime Skeleton Authorization V1. Task 7.7 is not started by Task 7.6.
 
+### Task 7.7: Production Runtime Skeleton Authorization V1
+
+Status: Production runtime skeleton authorization documentation and static tests.
+
+Task 7.7 adds `docs/PRODUCTION_RUNTIME_SKELETON_AUTHORIZATION.md` and `tests/productionRuntimeSkeletonAuthorization.test.ts`.
+
+This task authorizes only future skeleton rules, not a skeleton implementation. It keeps live backend, auth, sync, deployment, monitoring, source-of-truth switch, routes, normalized tables, destructive migration, and package changes blocked.
+
+Next recommended task: Task 7.8 Frontend Runtime Selector Production Guard V1. Task 7.8 is not started by Task 7.7.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

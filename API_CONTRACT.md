@@ -3783,3 +3783,11 @@ Task 7.6 adds `docs/PRODUCTION_BACKEND_ARCHITECTURE_DECISION.md`.
 This task rejects promoting `devApiRunner`, `api-primary-dev`, or local `node:sqlite` snapshot repository into production. It recommends a separate future production backend direction without implementing backend, auth, sync, deployment, monitoring, database, route, package, or source-of-truth changes.
 
 Recommended next task is `Task 7.7 Production Runtime Skeleton Authorization V1`. Task 7.7 is not started by Task 7.6.
+
+## Task 7.7: Production Runtime Skeleton Authorization V1
+
+Task 7.7 adds `docs/PRODUCTION_RUNTIME_SKELETON_AUTHORIZATION.md`.
+
+This task defines allowed and disallowed scope for a possible future disabled-by-default skeleton. It does not implement a skeleton, backend, auth, sync, deployment, monitoring, source-of-truth switch, routes, normalized tables, or package changes.
+
+Recommended next task is `Task 7.8 Frontend Runtime Selector Production Guard V1`. Task 7.8 is not started by Task 7.7.
