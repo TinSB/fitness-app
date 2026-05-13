@@ -3937,3 +3937,11 @@ This task opens Phase 9 and records Phase 8 completion evidence: Task 8.14, PR #
 Task 9.1 authorizes only guarded backend-primary candidate categories for later Phase 9 tasks. Backend-primary candidate mode remains explicit opt-in, reversible, disabled by default, and not an automatic source-of-truth switch.
 
 Task 9.1 is docs/static tests only. It does not implement backend-primary behavior, cutover, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, SaaS/multi-user runtime, route expansion, package changes, normalized tables, destructive migration, or real personal training data artifacts.
+
+## Task 9.2: Backend-Primary Runtime Host Boundary V1
+
+Task 9.2 adds `apps/api/src/node/backendPrimaryRuntimeHost.ts`.
+
+The backend-primary runtime host is Node-only candidate infrastructure. It is disabled by default, reports `sourceOfTruth: false`, does not auto-listen, does not start a server, and is not exported from browser-facing API indexes.
+
+Task 9.2 does not implement live backend runtime, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, route expansion, package changes, normalized tables, destructive migration, or real personal data artifacts.
