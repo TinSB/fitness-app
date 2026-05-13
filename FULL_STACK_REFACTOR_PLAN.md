@@ -3281,6 +3281,14 @@ This task records required readiness areas before future production runtime or s
 
 Next recommended task: Task 7.10 Phase 7 Completion Archive V1. Task 7.10 is not started by Task 7.9.
 
+### Task 7.10: Phase 7 Completion Archive V1
+
+Status: Phase 7 completion archive documentation and static tests.
+
+Task 7.10 adds `docs/PHASE7_COMPLETION_ARCHIVE.md` and `tests/phase7CompletionArchive.test.ts`.
+
+This task archives Phase 7 completion, records completed Task 7.1-7.9 evidence, records validation evidence, preserves localStorage/api-primary-dev boundaries, confirms accepted routes remain exactly seven, and recommends Task 8.1 only. Phase 8 is not started automatically.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
