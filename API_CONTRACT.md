@@ -3831,3 +3831,11 @@ Task 8.2 adds `apps/api/src/node/productionRuntimeSkeleton.ts` and `docs/PRODUCT
 This task creates an inert Node-only production runtime skeleton boundary with stable disabled/scaffold-only capabilities. It is not exported from the browser-facing API index, does not auto-listen, does not read or write user data, and does not change App runtime behavior.
 
 Task 8.2 does not add a live backend, auth, sync, deployment, monitoring, persistence, source-of-truth switching, routes, package changes, lockfile changes, normalized tables, destructive migration, or real personal training data.
+
+## Task 8.3: Production Runtime Config Guard V1
+
+Task 8.3 adds `apps/api/src/node/productionRuntimeConfig.ts` and `docs/PRODUCTION_RUNTIME_CONFIG_GUARD.md`.
+
+This task adds a fail-closed Node-only config guard for future production runtime skeleton work. It rejects `api-primary-dev`, dev/local runtime kinds, localhost/dev API backend URLs, missing required production config, and secret values.
+
+Task 8.3 does not activate production runtime, add frontend runtime switching, add routes, implement backend/auth/sync/deployment/monitoring, switch source-of-truth, change packages, modify lockfiles, add normalized tables, or use real personal training data.

@@ -3305,6 +3305,14 @@ Task 8.2 adds `apps/api/src/node/productionRuntimeSkeleton.ts`, `docs/PRODUCTION
 
 This task creates disabled/scaffold-only production runtime capability objects without browser-facing export, server listener, real data access, production persistence, source-of-truth switching, auth, sync, deployment, monitoring, routes, package changes, or normalized tables.
 
+### Task 8.3: Production Runtime Config Guard V1
+
+Status: Node-only fail-closed production runtime config guard.
+
+Task 8.3 adds `apps/api/src/node/productionRuntimeConfig.ts`, `docs/PRODUCTION_RUNTIME_CONFIG_GUARD.md`, and `tests/productionRuntimeConfigGuard.test.ts`.
+
+This task rejects dev/local runtime promotion, `api-primary-dev` production use, localhost/dev API backend URLs, missing required config, and secret values. It does not activate production runtime, add routes, add frontend runtime switching, switch source-of-truth, add package changes, or implement backend/auth/sync/deployment/monitoring.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
