@@ -3433,6 +3433,14 @@ This task creates diagnostic dry-run readiness logic for AppData-to-backend cand
 
 Task 9.4 does not perform cutover, write backend data as source-of-truth, overwrite localStorage, add routes, add auth/user accounts/cloud sync/deployment/monitoring, add package changes, add normalized tables, add destructive migration, or include real personal data artifacts.
 
+### Task 9.5: Backend-Primary Read Candidate V1
+
+Task 9.5 adds `src/productionCutover/backendPrimaryReadCandidate.ts`, `docs/BACKEND_PRIMARY_READ_CANDIDATE.md`, and `tests/backendPrimaryReadCandidate.test.ts`.
+
+This task creates explicit opt-in backend-primary read candidate logic for approved read surfaces. It falls back safely, reports mismatches diagnostically, and keeps localStorage as source-of-truth.
+
+Task 9.5 does not overwrite localStorage, write backend data, repair mismatches, call mutation routes, switch source-of-truth, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

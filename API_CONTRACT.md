@@ -3961,3 +3961,11 @@ Task 9.4 adds `src/productionCutover/cutoverMigrationDryRun.ts`.
 The cutover migration dry run validates AppData-like input, applies existing sanitize/migration readiness checks when needed, checks backend repository capability and backup readiness, and reports warnings plus blocking errors. Results always report `sourceOfTruthChanged: false` and `localStorageMutated: false`.
 
 Task 9.4 does not perform cutover, write backend data as source-of-truth, overwrite localStorage, add routes, add auth/user accounts/cloud sync/deployment/monitoring, add package changes, add normalized tables, add destructive migration, or include real personal data artifacts.
+
+## Task 9.5: Backend-Primary Read Candidate V1
+
+Task 9.5 adds `src/productionCutover/backendPrimaryReadCandidate.ts`.
+
+The backend-primary read candidate is disabled by default, requires explicit opt-in and an adapter, supports only approved read surfaces, falls back to localStorage-derived values when unavailable, and reports mismatches as diagnostics only. Every result keeps `sourceOfTruth: localStorage`, `localStorageMutated: false`, and `mutationCalled: false`.
+
+Task 9.5 does not overwrite localStorage, write backend data, repair mismatches, call mutation routes, switch source-of-truth, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
