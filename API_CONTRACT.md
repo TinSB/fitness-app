@@ -3993,3 +3993,11 @@ Task 9.8 adds `src/productionCutover/cutoverFallbackRollback.ts`.
 The cutover fallback/rollback evaluator preserves localStorage backup in every outcome, falls back when backend is unavailable or invalid, keeps localStorage-primary when migration dry-run is unsafe, supports rollback for failed backend writes, supports manual disable, and supports emergency-localStorage restore.
 
 Task 9.8 does not add reset/recovery HTTP routes, backup/import/export HTTP routes, localStorage backup deletion, backend-primary default mode, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
+
+## Task 9.9: Cutover Confirmation UX & Safety Copy V1
+
+Task 9.9 adds `src/productionCutover/CutoverConfirmationPanel.tsx`.
+
+The cutover confirmation panel is standalone, hidden unless explicitly rendered, and shows backend-primary candidate safety copy, current data source state labels, last backend read/write/fallback status, localStorage emergency backup preservation, and the statement that confirmation does not perform cutover without the separate runtime switch guard.
+
+Task 9.9 does not integrate with primary training UI, enable backend-primary automatically, perform cutover from UI, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, remove localStorage fallback, add normalized tables, add destructive migration, or include real personal data artifacts.

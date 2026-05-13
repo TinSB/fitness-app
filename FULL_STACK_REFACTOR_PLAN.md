@@ -3465,6 +3465,14 @@ This task creates fallback, rollback, and emergency restore safety logic for bac
 
 Task 9.8 does not add reset/recovery HTTP routes, backup/import/export HTTP routes, localStorage backup deletion, backend-primary default mode, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
 
+### Task 9.9: Cutover Confirmation UX & Safety Copy V1
+
+Task 9.9 adds `src/productionCutover/CutoverConfirmationPanel.tsx`, `docs/CUTOVER_CONFIRMATION_UX_SAFETY_COPY.md`, and `tests/cutoverConfirmationUxSafetyCopy.test.ts`.
+
+This task creates a standalone, hidden-by-default safety copy component for backend-primary candidate mode. It displays source state labels, last backend read/write/fallback status, and localStorage emergency backup preservation language.
+
+Task 9.9 does not integrate with primary training UI, enable backend-primary automatically, perform cutover from UI, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, remove localStorage fallback, add normalized tables, add destructive migration, or include real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
