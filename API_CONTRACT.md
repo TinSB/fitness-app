@@ -3887,3 +3887,11 @@ Task 8.9 adds `docs/PRODUCTION_MUTATION_CONTRACT_GUARD.md`.
 This task locks the production mutation contract before write shadow mode. The accepted browser mutation route allowlist remains exactly seven, blocked repair/backup/import/export/reset/recovery routes remain blocked, and production write path remains not source-of-truth.
 
 Task 8.9 is docs/static tests only. It does not add mutation endpoints, route handlers, backend source-of-truth writes, browser clients, runtime integration, package changes, lockfile changes, or real personal training data.
+
+## Task 8.10: Production Write Shadow Mode V1
+
+Task 8.10 adds `src/productionApi/productionWriteShadowMode.ts` and `docs/PRODUCTION_WRITE_SHADOW_MODE.md`.
+
+This task adds disabled-by-default write shadow mode with stable statuses `disabled`, `unsupported`, `accepted_shadow`, `rejected`, and `failed`. Shadow mode uses only the existing seven accepted mutation route names as candidates and reports `sourceOfTruth: false` and `localStorageMutated: false`.
+
+Task 8.10 does not write backend data, overwrite localStorage, overwrite AppData, switch source-of-truth, add routes, call repair/import/export/reset, implement auth/sync/deployment/monitoring, add package changes, or use real personal training data.
