@@ -3953,3 +3953,11 @@ Task 9.3 adds `apps/api/src/node/backendAppDataRepositoryCandidate.ts`.
 The backend AppData repository candidate is a Node-only, document-style AppData snapshot boundary with an in-memory synthetic implementation. It is disabled by default, validates AppData before candidate writes, requires backup-before-write semantics, clones reads/writes to prevent in-place mutation, and reports `sourceOfTruth: false`.
 
 Task 9.3 does not add a real database, ORM, normalized tables, destructive migration, node:sqlite import, sqliteRepository production promotion, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, package changes, or real personal data artifacts.
+
+## Task 9.4: Cutover Data Migration Dry Run V1
+
+Task 9.4 adds `src/productionCutover/cutoverMigrationDryRun.ts`.
+
+The cutover migration dry run validates AppData-like input, applies existing sanitize/migration readiness checks when needed, checks backend repository capability and backup readiness, and reports warnings plus blocking errors. Results always report `sourceOfTruthChanged: false` and `localStorageMutated: false`.
+
+Task 9.4 does not perform cutover, write backend data as source-of-truth, overwrite localStorage, add routes, add auth/user accounts/cloud sync/deployment/monitoring, add package changes, add normalized tables, add destructive migration, or include real personal data artifacts.
