@@ -3425,6 +3425,14 @@ This task creates a Node-only document-style AppData repository candidate with a
 
 Task 9.3 does not add a real database, ORM, normalized tables, destructive migration, node:sqlite import, sqliteRepository production promotion, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, package changes, or real personal data artifacts.
 
+### Task 9.4: Cutover Data Migration Dry Run V1
+
+Task 9.4 adds `src/productionCutover/cutoverMigrationDryRun.ts`, `docs/CUTOVER_DATA_MIGRATION_DRY_RUN.md`, and `tests/cutoverMigrationDryRun.test.ts`.
+
+This task creates diagnostic dry-run readiness logic for AppData-to-backend candidate cutover. It reports warnings, blocking errors, backup readiness, schema compatibility, and summary fields while keeping `sourceOfTruthChanged: false` and `localStorageMutated: false`.
+
+Task 9.4 does not perform cutover, write backend data as source-of-truth, overwrite localStorage, add routes, add auth/user accounts/cloud sync/deployment/monitoring, add package changes, add normalized tables, add destructive migration, or include real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
