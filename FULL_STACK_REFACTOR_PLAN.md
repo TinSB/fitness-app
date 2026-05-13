@@ -3289,6 +3289,14 @@ Task 7.10 adds `docs/PHASE7_COMPLETION_ARCHIVE.md` and `tests/phase7CompletionAr
 
 This task archives Phase 7 completion, records completed Task 7.1-7.9 evidence, records validation evidence, preserves localStorage/api-primary-dev boundaries, confirms accepted routes remain exactly seven, and recommends Task 8.1 only. Phase 8 is not started automatically.
 
+### Task 8.1: Production Runtime Implementation Entry Gate V1
+
+Status: Phase 8 implementation entry gate documentation and static tests.
+
+Task 8.1 adds `docs/PHASE8_PRODUCTION_RUNTIME_IMPLEMENTATION_ENTRY_GATE.md`, `tests/phase8ProductionRuntimeImplementationEntryGate.test.ts`, and `tests/phase8ProductionRuntimeBoundaryStillBlocked.test.ts`.
+
+This task opens Phase 8 for narrow explicit implementation categories only. It does not add runtime code, production backend/auth/sync/deployment/monitoring, source-of-truth switching, routes, package changes, lockfile changes, normalized tables, destructive migration, or real personal training data.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
