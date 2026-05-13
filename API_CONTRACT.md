@@ -4017,3 +4017,11 @@ Task 9.11 adds backend-primary regression lock docs and tests.
 The regression lock asserts localStorage default/fallback/migration/emergency roles, explicit opt-in backend-primary candidate behavior, runtime switch guard existence, fallback/rollback/emergency restore availability, seven-route mutation inventory, blocked repair/reset/import/export routes, browser/Node isolation, no auth/user accounts/cloud sync/deployment/monitoring/SaaS runtime, no normalized tables, no destructive migration, no package drift, and api-primary-dev dev/local-only status.
 
 Task 9.11 is static/regression tests and docs only. It does not add runtime features, routes, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
+
+## Task 9.12: Phase 9 Completion Archive V1
+
+Task 9.12 adds `docs/PHASE9_COMPLETION_ARCHIVE.md`.
+
+This task archives Phase 9 completion, records completed Task 9.1-9.11 PR/merge evidence, records validation evidence, confirms Phase 9 established a backend-primary candidate cutover path, confirms localStorage/api-primary-dev boundaries, confirms explicit opt-in backend-primary candidate behavior, confirms fallback/rollback/emergency restore availability, confirms the seven-route mutation allowlist, and recommends `Task 10.1 Production Auth / Cloud Sync / Deployment Entry Gate V1` only.
+
+Task 9.12 is docs/static tests only. It does not start Phase 10, implement auth/user accounts/cloud sync/deployment/monitoring/SaaS runtime, add routes, add package changes, add normalized tables, add destructive migration, or include real personal data artifacts.

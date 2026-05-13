@@ -3489,6 +3489,14 @@ This task regression-locks Phase 9 backend-primary candidate boundaries: localSt
 
 Task 9.11 is static/regression tests and docs only. It does not add runtime features, routes, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
 
+### Task 9.12: Phase 9 Completion Archive V1
+
+Task 9.12 adds `docs/PHASE9_COMPLETION_ARCHIVE.md`, `tests/phase9CompletionArchive.test.ts`, and `tests/phase9CompletionBoundaryStillBlocked.test.ts`.
+
+This task archives Phase 9 completion and recommends Task 10.1 only. It records Task 9.1-9.11 PR/merge evidence, validation evidence, backend-primary candidate cutover path status, localStorage/api-primary-dev boundaries, fallback/rollback/emergency restore availability, route lock, and blocked production capabilities.
+
+Task 9.12 is docs/static tests only. It does not start Phase 10, implement auth/user accounts/cloud sync/deployment/monitoring/SaaS runtime, add routes, add package changes, add normalized tables, add destructive migration, or include real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
