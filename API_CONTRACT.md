@@ -3863,3 +3863,11 @@ Task 8.6 adds `apps/api/src/node/productionReadContract.ts` and `docs/PRODUCTION
 This task implements Node-only route-like read handling for `GET /app-data/summary`, `GET /sessions/summary`, `GET /history`, `GET /history/:id`, and `GET /data-health/summary` through the production persistence adapter boundary. Responses report `sourceOfTruth: false`.
 
 Task 8.6 does not add write routes, browser mutation routes, App runtime integration, localStorage backend persistence, real database access, auth, sync, deployment, monitoring, source-of-truth switching, package changes, or real personal training data.
+
+## Task 8.7: Frontend Production API Client Skeleton V1
+
+Task 8.7 adds `src/productionApi/productionApiClient.ts`, `src/productionApi/productionApiConfig.ts`, and `docs/FRONTEND_PRODUCTION_API_CLIENT_SKELETON.md`.
+
+This task adds a browser-safe, disabled-by-default production API client skeleton with explicit opt-in config and safe read/capability calls only.
+
+Task 8.7 does not integrate with `App.tsx`, auto-call a backend, expose mutation methods, write to backend, replace localStorage, switch source-of-truth, import Node-only modules, add auth/sync behavior, add routes, or change packages/lockfiles.

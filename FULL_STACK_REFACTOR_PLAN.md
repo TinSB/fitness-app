@@ -3337,6 +3337,14 @@ Task 8.6 adds `apps/api/src/node/productionReadContract.ts`, `docs/PRODUCTION_RE
 
 This task handles approved GET read candidates through the production persistence adapter with synthetic tests only. It does not add write routes, mutation routes, App runtime integration, real database access, source-of-truth switching, package changes, auth, sync, deployment, monitoring, or real personal data.
 
+### Task 8.7: Frontend Production API Client Skeleton V1
+
+Status: Disabled-by-default browser-safe production API client skeleton.
+
+Task 8.7 adds `src/productionApi/productionApiClient.ts`, `src/productionApi/productionApiConfig.ts`, `docs/FRONTEND_PRODUCTION_API_CLIENT_SKELETON.md`, and `tests/productionApiClientSkeleton.test.ts`.
+
+This task supports explicit opt-in read/capability calls only. It does not integrate with App runtime, expose mutation methods, write to backend, replace localStorage, switch source-of-truth, import Node-only modules, add routes, add package changes, or add auth/sync behavior.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
