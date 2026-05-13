@@ -3221,6 +3221,16 @@ This task freezes the accepted seven browser mutation routes, documents read rou
 
 Next recommended task: Task 7.4 Production Source-of-Truth Migration Preconditions V1. Task 7.4 is not started by Task 7.3.
 
+### Task 7.4: Production Source-of-Truth Migration Preconditions V1
+
+Status: Production source-of-truth migration preconditions documentation and static tests.
+
+Task 7.4 adds `docs/PRODUCTION_SOURCE_OF_TRUTH_MIGRATION_PRECONDITIONS.md` and `tests/productionSourceOfTruthMigrationPreconditions.test.ts`.
+
+This task defines backend, auth, ownership, backup/export, rollback, dry-run, localStorage emergency backup, confirmation, diagnostics, manual acceptance, privacy, and route-freeze preconditions. It does not authorize a source-of-truth switch.
+
+Next recommended task: Task 7.5 Production Auth & User Data Boundary Plan V1. Task 7.5 is not started by Task 7.4.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
