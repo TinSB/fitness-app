@@ -3377,6 +3377,14 @@ Task 8.11 adds `docs/PRODUCTION_BACKEND_DEPLOYMENT_BOUNDARY.md` and `tests/produ
 
 This task documents frontend/backend deployment separation, Vercel preview boundaries, required check policy, and blocked backend deployment scope. It does not deploy anything, add config, add scripts/dependencies, add monitoring, or switch source-of-truth.
 
+### Task 8.12: Production Runtime Manual Acceptance V1
+
+Status: Production runtime manual acceptance runbook.
+
+Task 8.12 adds `docs/PRODUCTION_RUNTIME_MANUAL_ACCEPTANCE.md` and `tests/productionRuntimeManualAcceptance.test.ts`.
+
+This task documents manual acceptance for health/capability handling, config guard, read contract, disabled frontend client, dual-read comparison, write shadow mode, source-of-truth safety, browser/Node isolation, route lock, deployment boundary, and failure/fallback behavior. It adds no runtime implementation.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
