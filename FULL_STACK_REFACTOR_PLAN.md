@@ -3201,6 +3201,16 @@ This task records Task 6.40 / PR #152 / merge commit `790c49d`, preserves `local
 
 Next recommended task: Task 7.2 Production Runtime Contract Scaffold Authorization V1. Task 7.2 is not started by Task 7.1.
 
+### Task 7.2: Production Runtime Contract Scaffold Authorization V1
+
+Status: Production contract scaffold authorization documentation and static tests.
+
+Task 7.2 adds `docs/PRODUCTION_RUNTIME_CONTRACT_SCAFFOLD_AUTHORIZATION.md` and `tests/productionRuntimeContractScaffoldAuthorization.test.ts`.
+
+This task defines candidate contract areas and blocked runtime surfaces without implementing backend runtime, auth, sync, deployment, monitoring, route additions, package changes, or source-of-truth switching.
+
+Next recommended task: Task 7.3 Production Route Surface Freeze V1. Task 7.3 is not started by Task 7.2.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
