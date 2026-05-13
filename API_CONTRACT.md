@@ -3969,3 +3969,11 @@ Task 9.5 adds `src/productionCutover/backendPrimaryReadCandidate.ts`.
 The backend-primary read candidate is disabled by default, requires explicit opt-in and an adapter, supports only approved read surfaces, falls back to localStorage-derived values when unavailable, and reports mismatches as diagnostics only. Every result keeps `sourceOfTruth: localStorage`, `localStorageMutated: false`, and `mutationCalled: false`.
 
 Task 9.5 does not overwrite localStorage, write backend data, repair mismatches, call mutation routes, switch source-of-truth, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
+
+## Task 9.6: Backend-Primary Mutation Candidate V1
+
+Task 9.6 adds `src/productionCutover/backendPrimaryMutationCandidate.ts`.
+
+The backend-primary mutation candidate is disabled by default, requires explicit opt-in, accepts only the existing seven approved mutation route ids, validates next AppData before candidate repository writes, requires backup-before-write behavior, rejects duplicate operation ids, and never reports fake success. Results keep `sourceOfTruth: localStorage` and `localStorageMutated: false`.
+
+Task 9.6 does not add mutation routes, add an eighth browser mutation route, add repair/reset/import/export HTTP routes, overwrite localStorage, make backend-primary default, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
