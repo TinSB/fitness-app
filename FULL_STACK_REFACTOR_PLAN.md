@@ -3369,6 +3369,14 @@ Task 8.10 adds `src/productionApi/productionWriteShadowMode.ts`, `docs/PRODUCTIO
 
 This task supports shadow validation results for the existing seven accepted mutation route candidates only. It does not add routes, write backend data, mutate localStorage/AppData, switch source-of-truth, call repair/import/export/reset, add package changes, or implement auth/sync/deployment/monitoring.
 
+### Task 8.11: Production Backend Deployment Boundary V1
+
+Status: Production backend deployment boundary documentation and static tests.
+
+Task 8.11 adds `docs/PRODUCTION_BACKEND_DEPLOYMENT_BOUNDARY.md` and `tests/productionBackendDeploymentBoundary.test.ts`.
+
+This task documents frontend/backend deployment separation, Vercel preview boundaries, required check policy, and blocked backend deployment scope. It does not deploy anything, add config, add scripts/dependencies, add monitoring, or switch source-of-truth.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

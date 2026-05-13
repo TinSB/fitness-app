@@ -3895,3 +3895,11 @@ Task 8.10 adds `src/productionApi/productionWriteShadowMode.ts` and `docs/PRODUC
 This task adds disabled-by-default write shadow mode with stable statuses `disabled`, `unsupported`, `accepted_shadow`, `rejected`, and `failed`. Shadow mode uses only the existing seven accepted mutation route names as candidates and reports `sourceOfTruth: false` and `localStorageMutated: false`.
 
 Task 8.10 does not write backend data, overwrite localStorage, overwrite AppData, switch source-of-truth, add routes, call repair/import/export/reset, implement auth/sync/deployment/monitoring, add package changes, or use real personal training data.
+
+## Task 8.11: Production Backend Deployment Boundary V1
+
+Task 8.11 adds `docs/PRODUCTION_BACKEND_DEPLOYMENT_BOUNDARY.md`.
+
+This task documents that Vercel frontend deployment does not equal backend production readiness, `api-primary-dev` and devApiRunner must not be deployed as production backend, and future backend deployment needs a separate service/security/environment model.
+
+Task 8.11 is docs/static tests only. It does not add deployment config, Vercel functions, CI scripts, package scripts, dependencies, lockfile changes, monitoring runtime, production source-of-truth switching, or backend deployment.
