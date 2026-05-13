@@ -3441,6 +3441,14 @@ This task creates explicit opt-in backend-primary read candidate logic for appro
 
 Task 9.5 does not overwrite localStorage, write backend data, repair mismatches, call mutation routes, switch source-of-truth, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
 
+### Task 9.6: Backend-Primary Mutation Candidate V1
+
+Task 9.6 adds `src/productionCutover/backendPrimaryMutationCandidate.ts`, `docs/BACKEND_PRIMARY_MUTATION_CANDIDATE.md`, and `tests/backendPrimaryMutationCandidate.test.ts`.
+
+This task creates explicit opt-in backend-primary mutation candidate behavior for only the existing seven approved route ids. It validates next AppData, requires backup-before-write repository semantics, rejects duplicates, avoids fake success, and keeps localStorage unchanged.
+
+Task 9.6 does not add mutation routes, add an eighth browser mutation route, add repair/reset/import/export HTTP routes, overwrite localStorage, make backend-primary default, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
