@@ -3329,6 +3329,14 @@ Task 8.5 adds `apps/api/src/node/productionPersistence.ts`, `docs/PRODUCTION_PER
 
 This task defines read-oriented persistence interfaces and a fake adapter for synthetic tests only. It does not add a real database, ORM, normalized schema, migrations, node:sqlite import, sqliteRepository production promotion, backend source-of-truth writes, package dependencies, or real personal data.
 
+### Task 8.6: Production Read Contract Implementation V1
+
+Status: Minimal Node-only production read contract route-like handling.
+
+Task 8.6 adds `apps/api/src/node/productionReadContract.ts`, `docs/PRODUCTION_READ_CONTRACT_IMPLEMENTATION.md`, and `tests/productionReadContractImplementation.test.ts`.
+
+This task handles approved GET read candidates through the production persistence adapter with synthetic tests only. It does not add write routes, mutation routes, App runtime integration, real database access, source-of-truth switching, package changes, auth, sync, deployment, monitoring, or real personal data.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

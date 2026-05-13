@@ -3855,3 +3855,11 @@ Task 8.5 adds `apps/api/src/node/productionPersistence.ts` and `docs/PRODUCTION_
 This task defines a production persistence adapter boundary and a synthetic in-memory test adapter for read summaries and history detail. The adapter reports `sourceOfTruth: false` and is not a real production database.
 
 Task 8.5 does not import `node:sqlite`, use sqliteRepository as production persistence, add normalized tables, add migrations, write real data, change source-of-truth, add package dependencies, add routes, or use real personal training data.
+
+## Task 8.6: Production Read Contract Implementation V1
+
+Task 8.6 adds `apps/api/src/node/productionReadContract.ts` and `docs/PRODUCTION_READ_CONTRACT_IMPLEMENTATION.md`.
+
+This task implements Node-only route-like read handling for `GET /app-data/summary`, `GET /sessions/summary`, `GET /history`, `GET /history/:id`, and `GET /data-health/summary` through the production persistence adapter boundary. Responses report `sourceOfTruth: false`.
+
+Task 8.6 does not add write routes, browser mutation routes, App runtime integration, localStorage backend persistence, real database access, auth, sync, deployment, monitoring, source-of-truth switching, package changes, or real personal training data.
