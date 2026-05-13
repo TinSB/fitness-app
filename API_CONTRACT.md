@@ -3903,3 +3903,11 @@ Task 8.11 adds `docs/PRODUCTION_BACKEND_DEPLOYMENT_BOUNDARY.md`.
 This task documents that Vercel frontend deployment does not equal backend production readiness, `api-primary-dev` and devApiRunner must not be deployed as production backend, and future backend deployment needs a separate service/security/environment model.
 
 Task 8.11 is docs/static tests only. It does not add deployment config, Vercel functions, CI scripts, package scripts, dependencies, lockfile changes, monitoring runtime, production source-of-truth switching, or backend deployment.
+
+## Task 8.12: Production Runtime Manual Acceptance V1
+
+Task 8.12 adds `docs/PRODUCTION_RUNTIME_MANUAL_ACCEPTANCE.md`.
+
+This task creates a manual acceptance runbook for Phase 8 production runtime skeleton and frontend/backend separation prototype. It covers health/capability handling, config guard, read contract, disabled frontend API client, dual-read comparison, write shadow mode, source-of-truth safety, browser/Node isolation, dist token scan, route surface lock, deployment boundary, failure/fallback behavior, and pass/fail template.
+
+Task 8.12 is docs/static tests only. It does not add runtime code, deployment, scripts, dependencies, lockfile changes, source-of-truth switching, routes, or real personal training data.
