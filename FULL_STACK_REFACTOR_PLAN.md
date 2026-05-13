@@ -3409,6 +3409,14 @@ This task opens Phase 9 from Phase 8 completion evidence and authorizes only gua
 
 Task 9.1 is docs/static tests only. It does not implement backend-primary behavior, cutover, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, SaaS/multi-user runtime, route expansion, package changes, normalized tables, destructive migration, or real personal data artifacts.
 
+### Task 9.2: Backend-Primary Runtime Host Boundary V1
+
+Task 9.2 adds `apps/api/src/node/backendPrimaryRuntimeHost.ts`, `docs/BACKEND_PRIMARY_RUNTIME_HOST_BOUNDARY.md`, and `tests/backendPrimaryRuntimeHostBoundary.test.ts`.
+
+This task creates a Node-only backend-primary runtime host boundary that is disabled by default, not source-of-truth, not browser-exported, and not a live server.
+
+Task 9.2 does not implement live backend runtime, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, route expansion, package changes, normalized tables, destructive migration, or real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
