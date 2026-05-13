@@ -3743,3 +3743,11 @@ This task authorizes docs/static tests only. It adds no production backend, auth
 `localStorage` remains default runtime source, fallback, migration source, and emergency backup. `api-primary-dev` remains explicit dev/local only and not production-ready.
 
 Recommended next task is `Task 7.2 Production Runtime Contract Scaffold Authorization V1`. Task 7.2 is not started by Task 7.1.
+
+## Task 7.2: Production Runtime Contract Scaffold Authorization V1
+
+Task 7.2 adds `docs/PRODUCTION_RUNTIME_CONTRACT_SCAFFOLD_AUTHORIZATION.md`.
+
+This task defines future production contract scaffold boundaries without implementing backend runtime, auth, sync, deployment, monitoring, route additions, package changes, or source-of-truth switching.
+
+Recommended next task is `Task 7.3 Production Route Surface Freeze V1`. Task 7.3 is not started by Task 7.2.
