@@ -3847,3 +3847,11 @@ Task 8.4 adds `apps/api/src/node/productionRuntimeRoutes.ts` and `docs/PRODUCTIO
 This task adds Node-only route-like handling for `GET /health` and `GET /capabilities`. The handlers are plain functions, not registered HTTP routes, and capability payloads report production runtime, source-of-truth, auth, sync, deployment, monitoring, read, and write status separately.
 
 Task 8.4 does not add browser mutation routes, auto-start a server, listen on ports, connect to real user data, perform writes, add deployment config, switch source-of-truth, add package changes, or implement auth/sync/monitoring.
+
+## Task 8.5: Production Persistence Strategy Adapter V1
+
+Task 8.5 adds `apps/api/src/node/productionPersistence.ts` and `docs/PRODUCTION_PERSISTENCE_STRATEGY_ADAPTER.md`.
+
+This task defines a production persistence adapter boundary and a synthetic in-memory test adapter for read summaries and history detail. The adapter reports `sourceOfTruth: false` and is not a real production database.
+
+Task 8.5 does not import `node:sqlite`, use sqliteRepository as production persistence, add normalized tables, add migrations, write real data, change source-of-truth, add package dependencies, add routes, or use real personal training data.
