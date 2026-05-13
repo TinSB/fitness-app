@@ -3799,3 +3799,11 @@ Task 7.8 adds `docs/FRONTEND_RUNTIME_SELECTOR_PRODUCTION_GUARD.md`.
 This task locks production guard rules for frontend runtime selection, environment variable safety, production build safety, Vercel preview/production boundary, dev API source-of-truth prevention, route boundaries, and dist token expectations. It changes no runtime selector behavior.
 
 Recommended next task is `Task 7.9 Production Release Readiness Checklist V1`. Task 7.9 is not started by Task 7.8.
+
+## Task 7.9: Production Release Readiness Checklist V1
+
+Task 7.9 adds `docs/PRODUCTION_RELEASE_READINESS_CHECKLIST.md`.
+
+This task creates the production release readiness checklist that must be completed before future production release or source-of-truth switch. It does not authorize implementation, source-of-truth switching, backend, auth, sync, deployment, monitoring, package changes, or routes.
+
+Recommended next task is `Task 7.10 Phase 7 Completion Archive V1`. Task 7.10 is not started by Task 7.9.
