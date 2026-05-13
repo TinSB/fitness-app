@@ -3211,6 +3211,16 @@ This task defines candidate contract areas and blocked runtime surfaces without 
 
 Next recommended task: Task 7.3 Production Route Surface Freeze V1. Task 7.3 is not started by Task 7.2.
 
+### Task 7.3: Production Route Surface Freeze V1
+
+Status: Production route surface freeze documentation and static tests.
+
+Task 7.3 adds `docs/PRODUCTION_ROUTE_SURFACE_FREEZE.md` and `tests/productionRouteSurfaceFreeze.test.ts`.
+
+This task freezes the accepted seven browser mutation routes, documents read route candidates as candidates only, and keeps blocked route surfaces blocked without adding routes or runtime behavior.
+
+Next recommended task: Task 7.4 Production Source-of-Truth Migration Preconditions V1. Task 7.4 is not started by Task 7.3.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
