@@ -3401,6 +3401,14 @@ Task 8.14 adds `docs/PHASE8_COMPLETION_ARCHIVE.md`, `tests/phase8CompletionArchi
 
 This task archives Phase 8 completion and recommends Task 9.1 only. It does not start Phase 9, perform source-of-truth cutover, implement full production backend/auth/sync/deployment/monitoring, add routes, add package changes, add normalized tables, add destructive migration, or include real personal data.
 
+### Task 9.1: Production Source-of-Truth Cutover Entry Gate V1
+
+Task 9.1 adds `docs/PHASE9_PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_ENTRY_GATE.md`, `tests/phase9ProductionSourceOfTruthCutoverEntryGate.test.ts`, and `tests/phase9CutoverBoundaryStillBlocked.test.ts`.
+
+This task opens Phase 9 from Phase 8 completion evidence and authorizes only guarded backend-primary candidate work for later Phase 9 tasks. Backend-primary candidate mode remains explicit opt-in, reversible, disabled by default, and not an automatic source-of-truth switch.
+
+Task 9.1 is docs/static tests only. It does not implement backend-primary behavior, cutover, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, SaaS/multi-user runtime, route expansion, package changes, normalized tables, destructive migration, or real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

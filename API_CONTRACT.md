@@ -3927,3 +3927,13 @@ Task 8.14 adds `docs/PHASE8_COMPLETION_ARCHIVE.md`.
 This task archives Phase 8 completion, records completed Task 8.1-8.13 PR/merge evidence, records validation evidence, confirms Phase 8 created minimal production runtime skeleton/boundary pieces only, confirms localStorage/api-primary-dev boundaries, confirms the seven-route mutation allowlist, and recommends `Task 9.1 Production Source-of-Truth Cutover Entry Gate V1` only.
 
 Task 8.14 is docs/static tests only. It does not start Phase 9, perform source-of-truth cutover, implement full production backend/auth/sync/deployment/monitoring, add routes, add package changes, add normalized tables, add destructive migration, or include real personal training data.
+
+## Task 9.1: Production Source-of-Truth Cutover Entry Gate V1
+
+Task 9.1 adds `docs/PHASE9_PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_ENTRY_GATE.md`.
+
+This task opens Phase 9 and records Phase 8 completion evidence: Task 8.14, PR #176, merge commit `445ba77e323363b2fb55bb216104981a70ca6f78`, and final validation with 945 files and 3657 tests.
+
+Task 9.1 authorizes only guarded backend-primary candidate categories for later Phase 9 tasks. Backend-primary candidate mode remains explicit opt-in, reversible, disabled by default, and not an automatic source-of-truth switch.
+
+Task 9.1 is docs/static tests only. It does not implement backend-primary behavior, cutover, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, SaaS/multi-user runtime, route expansion, package changes, normalized tables, destructive migration, or real personal training data artifacts.
