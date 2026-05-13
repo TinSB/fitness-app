@@ -3815,3 +3815,11 @@ Task 7.10 adds `docs/PHASE7_COMPLETION_ARCHIVE.md`.
 This task archives Phase 7 completion, records completed Task 7.1-7.9 PR/merge evidence, records validation evidence, confirms Phase 7 stayed within authorization/planning/guard/readiness/archive scope, and recommends `Task 8.1 Production Runtime Implementation Entry Gate V1` only.
 
 Task 7.10 does not start Phase 8 and does not implement production runtime, backend, auth, sync, deployment, monitoring, source-of-truth switching, routes, package changes, or real-data migration.
+
+## Task 8.1: Production Runtime Implementation Entry Gate V1
+
+Task 8.1 adds `docs/PHASE8_PRODUCTION_RUNTIME_IMPLEMENTATION_ENTRY_GATE.md`.
+
+This task opens Phase 8 as a narrow implementation entry gate. It authorizes only explicit Task 8.x scoped boundary work, keeps localStorage as default/fallback/migration/emergency source, keeps `api-primary-dev` dev/local only and not production-ready, and preserves the seven accepted browser mutation routes.
+
+Task 8.1 does not add runtime code, backend runtime, auth, sync, deployment, monitoring, source-of-truth switching, package changes, lockfile changes, normalized tables, destructive migrations, real personal training data, or an eighth browser mutation route.
