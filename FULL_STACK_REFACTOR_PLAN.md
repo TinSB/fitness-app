@@ -3313,6 +3313,14 @@ Task 8.3 adds `apps/api/src/node/productionRuntimeConfig.ts`, `docs/PRODUCTION_R
 
 This task rejects dev/local runtime promotion, `api-primary-dev` production use, localhost/dev API backend URLs, missing required config, and secret values. It does not activate production runtime, add routes, add frontend runtime switching, switch source-of-truth, add package changes, or implement backend/auth/sync/deployment/monitoring.
 
+### Task 8.4: Production Health & Capability Endpoint V1
+
+Status: Node-only health/capability route-like handlers.
+
+Task 8.4 adds `apps/api/src/node/productionRuntimeRoutes.ts`, `docs/PRODUCTION_HEALTH_CAPABILITY_ENDPOINT.md`, and `tests/productionHealthCapabilityEndpoint.test.ts`.
+
+This task supports plain function handling for `GET /health` and `GET /capabilities` only. It does not register HTTP routes, auto-listen, add browser mutation routes, connect to real data, perform writes, switch source-of-truth, add deployment config, add package changes, or implement auth/sync/monitoring.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
