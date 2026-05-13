@@ -3751,3 +3751,11 @@ Task 7.2 adds `docs/PRODUCTION_RUNTIME_CONTRACT_SCAFFOLD_AUTHORIZATION.md`.
 This task defines future production contract scaffold boundaries without implementing backend runtime, auth, sync, deployment, monitoring, route additions, package changes, or source-of-truth switching.
 
 Recommended next task is `Task 7.3 Production Route Surface Freeze V1`. Task 7.3 is not started by Task 7.2.
+
+## Task 7.3: Production Route Surface Freeze V1
+
+Task 7.3 adds `docs/PRODUCTION_ROUTE_SURFACE_FREEZE.md`.
+
+This task freezes the seven accepted browser mutation routes, separates read route candidates from mutation candidates, and keeps blocked routes blocked. It adds no routes, handlers, clients, backend runtime, or source-of-truth switching.
+
+Recommended next task is `Task 7.4 Production Source-of-Truth Migration Preconditions V1`. Task 7.4 is not started by Task 7.3.
