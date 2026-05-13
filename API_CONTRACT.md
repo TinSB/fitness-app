@@ -3871,3 +3871,11 @@ Task 8.7 adds `src/productionApi/productionApiClient.ts`, `src/productionApi/pro
 This task adds a browser-safe, disabled-by-default production API client skeleton with explicit opt-in config and safe read/capability calls only.
 
 Task 8.7 does not integrate with `App.tsx`, auto-call a backend, expose mutation methods, write to backend, replace localStorage, switch source-of-truth, import Node-only modules, add auth/sync behavior, add routes, or change packages/lockfiles.
+
+## Task 8.8: Production Dual-Read Comparison V1
+
+Task 8.8 adds `src/productionApi/productionDualReadComparison.ts` and `docs/PRODUCTION_DUAL_READ_COMPARISON.md`.
+
+This task adds disabled-by-default diagnostic comparison between local read values and production API read values. Results are non-blocking and report `diagnosticOnly: true`, `appCanContinue: true`, and `mutatedLocal: false`.
+
+Task 8.8 does not integrate with App runtime, overwrite localStorage or AppData, repair data, sync data, write backend data, call mutation routes, switch source-of-truth, import Node-only modules, add package changes, or use real personal training data.
