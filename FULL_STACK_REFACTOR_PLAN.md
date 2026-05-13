@@ -3393,6 +3393,14 @@ Task 8.13 adds `docs/PHASE8_RUNTIME_BOUNDARY_REGRESSION_LOCK.md`, `tests/phase8R
 
 This task locks Node/browser isolation, localStorage/api-primary-dev boundaries, disabled frontend client, diagnostic-only dual-read, non-mutating write shadow mode, seven-route mutation inventory, blocked routes, no auth/sync/deployment/monitoring runtime, no normalized tables, no destructive migration, no package drift, and no real personal data.
 
+### Task 8.14: Phase 8 Completion Archive V1
+
+Status: Phase 8 completion archive documentation and static tests.
+
+Task 8.14 adds `docs/PHASE8_COMPLETION_ARCHIVE.md`, `tests/phase8CompletionArchive.test.ts`, and `tests/phase8CompletionBoundaryStillBlocked.test.ts`.
+
+This task archives Phase 8 completion and recommends Task 9.1 only. It does not start Phase 9, perform source-of-truth cutover, implement full production backend/auth/sync/deployment/monitoring, add routes, add package changes, add normalized tables, add destructive migration, or include real personal data.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -3919,3 +3919,11 @@ Task 8.13 adds `docs/PHASE8_RUNTIME_BOUNDARY_REGRESSION_LOCK.md`.
 This task regression-locks Phase 8 runtime boundaries: Node-only production runtime isolation, browser Node-token isolation, localStorage default/fallback/migration/emergency role, api-primary-dev dev/local-only status, disabled frontend client, diagnostic dual-read, non-mutating write shadow mode, seven-route mutation inventory, blocked repair/reset/import/export routes, no auth/sync/deployment/monitoring runtime, no normalized tables, no destructive migration, no package drift, and no real personal data.
 
 Task 8.13 is static/regression tests and docs only. It does not add runtime features, routes, package changes, deployment, auth, sync, monitoring, or source-of-truth switching.
+
+## Task 8.14: Phase 8 Completion Archive V1
+
+Task 8.14 adds `docs/PHASE8_COMPLETION_ARCHIVE.md`.
+
+This task archives Phase 8 completion, records completed Task 8.1-8.13 PR/merge evidence, records validation evidence, confirms Phase 8 created minimal production runtime skeleton/boundary pieces only, confirms localStorage/api-primary-dev boundaries, confirms the seven-route mutation allowlist, and recommends `Task 9.1 Production Source-of-Truth Cutover Entry Gate V1` only.
+
+Task 8.14 is docs/static tests only. It does not start Phase 9, perform source-of-truth cutover, implement full production backend/auth/sync/deployment/monitoring, add routes, add package changes, add normalized tables, add destructive migration, or include real personal training data.
