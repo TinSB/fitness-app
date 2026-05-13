@@ -3911,3 +3911,11 @@ Task 8.12 adds `docs/PRODUCTION_RUNTIME_MANUAL_ACCEPTANCE.md`.
 This task creates a manual acceptance runbook for Phase 8 production runtime skeleton and frontend/backend separation prototype. It covers health/capability handling, config guard, read contract, disabled frontend API client, dual-read comparison, write shadow mode, source-of-truth safety, browser/Node isolation, dist token scan, route surface lock, deployment boundary, failure/fallback behavior, and pass/fail template.
 
 Task 8.12 is docs/static tests only. It does not add runtime code, deployment, scripts, dependencies, lockfile changes, source-of-truth switching, routes, or real personal training data.
+
+## Task 8.13: Phase 8 Runtime Boundary Regression Lock V1
+
+Task 8.13 adds `docs/PHASE8_RUNTIME_BOUNDARY_REGRESSION_LOCK.md`.
+
+This task regression-locks Phase 8 runtime boundaries: Node-only production runtime isolation, browser Node-token isolation, localStorage default/fallback/migration/emergency role, api-primary-dev dev/local-only status, disabled frontend client, diagnostic dual-read, non-mutating write shadow mode, seven-route mutation inventory, blocked repair/reset/import/export routes, no auth/sync/deployment/monitoring runtime, no normalized tables, no destructive migration, no package drift, and no real personal data.
+
+Task 8.13 is static/regression tests and docs only. It does not add runtime features, routes, package changes, deployment, auth, sync, monitoring, or source-of-truth switching.
