@@ -3767,3 +3767,11 @@ Task 7.4 adds `docs/PRODUCTION_SOURCE_OF_TRUTH_MIGRATION_PRECONDITIONS.md`.
 This task defines required evidence before any production source-of-truth switch. It does not implement migration, modify persistence behavior, replace localStorage, add backend/auth/sync, or authorize production source-of-truth switching.
 
 Recommended next task is `Task 7.5 Production Auth & User Data Boundary Plan V1`. Task 7.5 is not started by Task 7.4.
+
+## Task 7.5: Production Auth & User Data Boundary Plan V1
+
+Task 7.5 adds `docs/PRODUCTION_AUTH_USER_DATA_BOUNDARY_PLAN.md`.
+
+This task defines auth, user identity, data ownership, local-data association, cloud-sync dependency, source-of-truth dependency, privacy, and test-data boundaries. It does not add auth runtime, login UI, user table, backend runtime, sync runtime, package changes, or source-of-truth switching.
+
+Recommended next task is `Task 7.6 Production Backend Architecture Decision V1`. Task 7.6 is not started by Task 7.5.
