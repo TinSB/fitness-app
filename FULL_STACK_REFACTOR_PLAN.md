@@ -3457,6 +3457,14 @@ This task creates a frontend-safe source-of-truth state machine with localStorag
 
 Task 9.7 does not replace App runtime persistence, make backend-primary default, delete localStorage, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
 
+### Task 9.8: Cutover Fallback, Rollback & Emergency Restore V1
+
+Task 9.8 adds `src/productionCutover/cutoverFallbackRollback.ts`, `docs/CUTOVER_FALLBACK_ROLLBACK_EMERGENCY_RESTORE.md`, and `tests/cutoverFallbackRollbackEmergencyRestore.test.ts`.
+
+This task creates fallback, rollback, and emergency restore safety logic for backend-primary candidate mode. It preserves localStorage backup, handles unavailable/invalid backend data, rolls back failed writes, and supports manual disable.
+
+Task 9.8 does not add reset/recovery HTTP routes, backup/import/export HTTP routes, localStorage backup deletion, backend-primary default mode, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

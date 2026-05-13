@@ -3985,3 +3985,11 @@ Task 9.7 adds `src/productionCutover/sourceOfTruthRuntimeSwitchGuard.ts`.
 The source-of-truth runtime switch guard defaults to `localStorage-primary`, requires explicit opt-in for backend read or backend-primary candidate states, rejects dev/local API configuration for production candidate mode, fails closed to fallback-localStorage when backend or backup readiness is missing, and preserves emergency-localStorage.
 
 Task 9.7 does not replace App runtime persistence, make backend-primary default, delete localStorage, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
+
+## Task 9.8: Cutover Fallback, Rollback & Emergency Restore V1
+
+Task 9.8 adds `src/productionCutover/cutoverFallbackRollback.ts`.
+
+The cutover fallback/rollback evaluator preserves localStorage backup in every outcome, falls back when backend is unavailable or invalid, keeps localStorage-primary when migration dry-run is unsafe, supports rollback for failed backend writes, supports manual disable, and supports emergency-localStorage restore.
+
+Task 9.8 does not add reset/recovery HTTP routes, backup/import/export HTTP routes, localStorage backup deletion, backend-primary default mode, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
