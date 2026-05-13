@@ -3321,6 +3321,14 @@ Task 8.4 adds `apps/api/src/node/productionRuntimeRoutes.ts`, `docs/PRODUCTION_H
 
 This task supports plain function handling for `GET /health` and `GET /capabilities` only. It does not register HTTP routes, auto-listen, add browser mutation routes, connect to real data, perform writes, switch source-of-truth, add deployment config, add package changes, or implement auth/sync/monitoring.
 
+### Task 8.5: Production Persistence Strategy Adapter V1
+
+Status: Production persistence adapter boundary with synthetic in-memory test adapter.
+
+Task 8.5 adds `apps/api/src/node/productionPersistence.ts`, `docs/PRODUCTION_PERSISTENCE_STRATEGY_ADAPTER.md`, and `tests/productionPersistenceStrategyAdapter.test.ts`.
+
+This task defines read-oriented persistence interfaces and a fake adapter for synthetic tests only. It does not add a real database, ORM, normalized schema, migrations, node:sqlite import, sqliteRepository production promotion, backend source-of-truth writes, package dependencies, or real personal data.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
