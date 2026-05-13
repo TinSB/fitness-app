@@ -3297,6 +3297,14 @@ Task 8.1 adds `docs/PHASE8_PRODUCTION_RUNTIME_IMPLEMENTATION_ENTRY_GATE.md`, `te
 
 This task opens Phase 8 for narrow explicit implementation categories only. It does not add runtime code, production backend/auth/sync/deployment/monitoring, source-of-truth switching, routes, package changes, lockfile changes, normalized tables, destructive migration, or real personal training data.
 
+### Task 8.2: Production Runtime Skeleton Boundary V1
+
+Status: Inert Node-only production runtime skeleton boundary.
+
+Task 8.2 adds `apps/api/src/node/productionRuntimeSkeleton.ts`, `docs/PRODUCTION_RUNTIME_SKELETON_BOUNDARY.md`, and `tests/productionRuntimeSkeletonBoundary.test.ts`.
+
+This task creates disabled/scaffold-only production runtime capability objects without browser-facing export, server listener, real data access, production persistence, source-of-truth switching, auth, sync, deployment, monitoring, routes, package changes, or normalized tables.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

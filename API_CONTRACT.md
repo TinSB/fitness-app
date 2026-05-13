@@ -3823,3 +3823,11 @@ Task 8.1 adds `docs/PHASE8_PRODUCTION_RUNTIME_IMPLEMENTATION_ENTRY_GATE.md`.
 This task opens Phase 8 as a narrow implementation entry gate. It authorizes only explicit Task 8.x scoped boundary work, keeps localStorage as default/fallback/migration/emergency source, keeps `api-primary-dev` dev/local only and not production-ready, and preserves the seven accepted browser mutation routes.
 
 Task 8.1 does not add runtime code, backend runtime, auth, sync, deployment, monitoring, source-of-truth switching, package changes, lockfile changes, normalized tables, destructive migrations, real personal training data, or an eighth browser mutation route.
+
+## Task 8.2: Production Runtime Skeleton Boundary V1
+
+Task 8.2 adds `apps/api/src/node/productionRuntimeSkeleton.ts` and `docs/PRODUCTION_RUNTIME_SKELETON_BOUNDARY.md`.
+
+This task creates an inert Node-only production runtime skeleton boundary with stable disabled/scaffold-only capabilities. It is not exported from the browser-facing API index, does not auto-listen, does not read or write user data, and does not change App runtime behavior.
+
+Task 8.2 does not add a live backend, auth, sync, deployment, monitoring, persistence, source-of-truth switching, routes, package changes, lockfile changes, normalized tables, destructive migration, or real personal training data.
