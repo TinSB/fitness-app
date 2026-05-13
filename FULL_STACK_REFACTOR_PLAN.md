@@ -3449,6 +3449,14 @@ This task creates explicit opt-in backend-primary mutation candidate behavior fo
 
 Task 9.6 does not add mutation routes, add an eighth browser mutation route, add repair/reset/import/export HTTP routes, overwrite localStorage, make backend-primary default, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
 
+### Task 9.7: Frontend Source-of-Truth Runtime Switch Guard V1
+
+Task 9.7 adds `src/productionCutover/sourceOfTruthRuntimeSwitchGuard.ts`, `docs/FRONTEND_SOURCE_OF_TRUTH_RUNTIME_SWITCH_GUARD.md`, and `tests/sourceOfTruthRuntimeSwitchGuard.test.ts`.
+
+This task creates a frontend-safe source-of-truth state machine with localStorage-primary default, explicit opt-in backend candidate states, dev API rejection, fallback-localStorage, and emergency-localStorage.
+
+Task 9.7 does not replace App runtime persistence, make backend-primary default, delete localStorage, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

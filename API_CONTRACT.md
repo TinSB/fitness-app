@@ -3977,3 +3977,11 @@ Task 9.6 adds `src/productionCutover/backendPrimaryMutationCandidate.ts`.
 The backend-primary mutation candidate is disabled by default, requires explicit opt-in, accepts only the existing seven approved mutation route ids, validates next AppData before candidate repository writes, requires backup-before-write behavior, rejects duplicate operation ids, and never reports fake success. Results keep `sourceOfTruth: localStorage` and `localStorageMutated: false`.
 
 Task 9.6 does not add mutation routes, add an eighth browser mutation route, add repair/reset/import/export HTTP routes, overwrite localStorage, make backend-primary default, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
+
+## Task 9.7: Frontend Source-of-Truth Runtime Switch Guard V1
+
+Task 9.7 adds `src/productionCutover/sourceOfTruthRuntimeSwitchGuard.ts`.
+
+The source-of-truth runtime switch guard defaults to `localStorage-primary`, requires explicit opt-in for backend read or backend-primary candidate states, rejects dev/local API configuration for production candidate mode, fails closed to fallback-localStorage when backend or backup readiness is missing, and preserves emergency-localStorage.
+
+Task 9.7 does not replace App runtime persistence, make backend-primary default, delete localStorage, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, add normalized tables, add destructive migration, or include real personal data artifacts.
