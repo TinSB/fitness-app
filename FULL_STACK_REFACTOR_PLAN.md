@@ -3385,6 +3385,14 @@ Task 8.12 adds `docs/PRODUCTION_RUNTIME_MANUAL_ACCEPTANCE.md` and `tests/product
 
 This task documents manual acceptance for health/capability handling, config guard, read contract, disabled frontend client, dual-read comparison, write shadow mode, source-of-truth safety, browser/Node isolation, route lock, deployment boundary, and failure/fallback behavior. It adds no runtime implementation.
 
+### Task 8.13: Phase 8 Runtime Boundary Regression Lock V1
+
+Status: Phase 8 runtime boundary regression lock.
+
+Task 8.13 adds `docs/PHASE8_RUNTIME_BOUNDARY_REGRESSION_LOCK.md`, `tests/phase8RuntimeBoundaryRegressionLock.test.ts`, `tests/phase8BrowserNodeIsolationLock.test.ts`, and `tests/phase8RouteSurfaceStillLocked.test.ts`.
+
+This task locks Node/browser isolation, localStorage/api-primary-dev boundaries, disabled frontend client, diagnostic-only dual-read, non-mutating write shadow mode, seven-route mutation inventory, blocked routes, no auth/sync/deployment/monitoring runtime, no normalized tables, no destructive migration, no package drift, and no real personal data.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
