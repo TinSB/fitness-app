@@ -3231,6 +3231,16 @@ This task defines backend, auth, ownership, backup/export, rollback, dry-run, lo
 
 Next recommended task: Task 7.5 Production Auth & User Data Boundary Plan V1. Task 7.5 is not started by Task 7.4.
 
+### Task 7.5: Production Auth & User Data Boundary Plan V1
+
+Status: Production auth/user data boundary documentation and static tests.
+
+Task 7.5 adds `docs/PRODUCTION_AUTH_USER_DATA_BOUNDARY_PLAN.md` and `tests/productionAuthUserDataBoundaryPlan.test.ts`.
+
+This task documents auth, user identity, data ownership, local data association, cloud sync dependency, source-of-truth dependency, privacy, and synthetic test-data boundaries without implementing auth or account runtime.
+
+Next recommended task: Task 7.6 Production Backend Architecture Decision V1. Task 7.6 is not started by Task 7.5.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
