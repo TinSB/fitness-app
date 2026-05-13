@@ -4001,3 +4001,11 @@ Task 9.9 adds `src/productionCutover/CutoverConfirmationPanel.tsx`.
 The cutover confirmation panel is standalone, hidden unless explicitly rendered, and shows backend-primary candidate safety copy, current data source state labels, last backend read/write/fallback status, localStorage emergency backup preservation, and the statement that confirmation does not perform cutover without the separate runtime switch guard.
 
 Task 9.9 does not integrate with primary training UI, enable backend-primary automatically, perform cutover from UI, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, remove localStorage fallback, add normalized tables, add destructive migration, or include real personal data artifacts.
+
+## Task 9.10: Source-of-Truth Cutover Manual Acceptance V1
+
+Task 9.10 adds `docs/SOURCE_OF_TRUTH_CUTOVER_MANUAL_ACCEPTANCE.md`.
+
+The runbook covers localStorage-primary baseline, migration dry run, backend repository candidate, backend-primary read and mutation candidates, runtime switch guard, fallback-localStorage, emergency-localStorage, rollback, backend unavailable and invalid data handling, duplicate mutation/no-fake-success behavior, route lock, browser/Node isolation, dist token scan, and pass/fail template.
+
+Task 9.10 is docs/static tests only. It does not add runtime code, deployment, package changes, auth/user accounts/cloud sync/monitoring, normalized tables, destructive migration, route expansion, or real personal data artifacts.
