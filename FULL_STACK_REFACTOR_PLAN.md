@@ -3481,6 +3481,14 @@ This task creates the manual acceptance runbook for backend-primary candidate cu
 
 Task 9.10 is docs/static tests only. It does not add runtime code, deployment, package changes, auth/user accounts/cloud sync/monitoring, normalized tables, destructive migration, route expansion, or real personal data artifacts.
 
+### Task 9.11: Backend-Primary Regression Lock V1
+
+Task 9.11 adds `docs/BACKEND_PRIMARY_REGRESSION_LOCK.md`, `tests/backendPrimaryRegressionLock.test.ts`, `tests/phase9RouteSurfaceStillLocked.test.ts`, and `tests/phase9BrowserNodeIsolationLock.test.ts`.
+
+This task regression-locks Phase 9 backend-primary candidate boundaries: localStorage roles, explicit opt-in candidate mode, fallback/rollback/emergency restore, route inventory, blocked routes, browser/Node isolation, package drift, and no auth/sync/deployment/monitoring/SaaS runtime.
+
+Task 9.11 is static/regression tests and docs only. It does not add runtime features, routes, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

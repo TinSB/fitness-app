@@ -4009,3 +4009,11 @@ Task 9.10 adds `docs/SOURCE_OF_TRUTH_CUTOVER_MANUAL_ACCEPTANCE.md`.
 The runbook covers localStorage-primary baseline, migration dry run, backend repository candidate, backend-primary read and mutation candidates, runtime switch guard, fallback-localStorage, emergency-localStorage, rollback, backend unavailable and invalid data handling, duplicate mutation/no-fake-success behavior, route lock, browser/Node isolation, dist token scan, and pass/fail template.
 
 Task 9.10 is docs/static tests only. It does not add runtime code, deployment, package changes, auth/user accounts/cloud sync/monitoring, normalized tables, destructive migration, route expansion, or real personal data artifacts.
+
+## Task 9.11: Backend-Primary Regression Lock V1
+
+Task 9.11 adds backend-primary regression lock docs and tests.
+
+The regression lock asserts localStorage default/fallback/migration/emergency roles, explicit opt-in backend-primary candidate behavior, runtime switch guard existence, fallback/rollback/emergency restore availability, seven-route mutation inventory, blocked repair/reset/import/export routes, browser/Node isolation, no auth/user accounts/cloud sync/deployment/monitoring/SaaS runtime, no normalized tables, no destructive migration, no package drift, and api-primary-dev dev/local-only status.
+
+Task 9.11 is static/regression tests and docs only. It does not add runtime features, routes, package changes, auth/user accounts/cloud sync/deployment/monitoring, normalized tables, destructive migration, or real personal data artifacts.
