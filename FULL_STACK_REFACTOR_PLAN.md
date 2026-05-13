@@ -3241,6 +3241,16 @@ This task documents auth, user identity, data ownership, local data association,
 
 Next recommended task: Task 7.6 Production Backend Architecture Decision V1. Task 7.6 is not started by Task 7.5.
 
+### Task 7.6: Production Backend Architecture Decision V1
+
+Status: Production backend architecture decision documentation and static tests.
+
+Task 7.6 adds `docs/PRODUCTION_BACKEND_ARCHITECTURE_DECISION.md` and `tests/productionBackendArchitectureDecision.test.ts`.
+
+This task rejects dev API production promotion and keeps production backend/runtime implementation, auth, sync, deployment, monitoring, database/schema changes, routes, package changes, and source-of-truth switching blocked.
+
+Next recommended task: Task 7.7 Production Runtime Skeleton Authorization V1. Task 7.7 is not started by Task 7.6.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

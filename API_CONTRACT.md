@@ -3775,3 +3775,11 @@ Task 7.5 adds `docs/PRODUCTION_AUTH_USER_DATA_BOUNDARY_PLAN.md`.
 This task defines auth, user identity, data ownership, local-data association, cloud-sync dependency, source-of-truth dependency, privacy, and test-data boundaries. It does not add auth runtime, login UI, user table, backend runtime, sync runtime, package changes, or source-of-truth switching.
 
 Recommended next task is `Task 7.6 Production Backend Architecture Decision V1`. Task 7.6 is not started by Task 7.5.
+
+## Task 7.6: Production Backend Architecture Decision V1
+
+Task 7.6 adds `docs/PRODUCTION_BACKEND_ARCHITECTURE_DECISION.md`.
+
+This task rejects promoting `devApiRunner`, `api-primary-dev`, or local `node:sqlite` snapshot repository into production. It recommends a separate future production backend direction without implementing backend, auth, sync, deployment, monitoring, database, route, package, or source-of-truth changes.
+
+Recommended next task is `Task 7.7 Production Runtime Skeleton Authorization V1`. Task 7.7 is not started by Task 7.6.
