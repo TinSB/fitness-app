@@ -3839,3 +3839,11 @@ Task 8.3 adds `apps/api/src/node/productionRuntimeConfig.ts` and `docs/PRODUCTIO
 This task adds a fail-closed Node-only config guard for future production runtime skeleton work. It rejects `api-primary-dev`, dev/local runtime kinds, localhost/dev API backend URLs, missing required production config, and secret values.
 
 Task 8.3 does not activate production runtime, add frontend runtime switching, add routes, implement backend/auth/sync/deployment/monitoring, switch source-of-truth, change packages, modify lockfiles, add normalized tables, or use real personal training data.
+
+## Task 8.4: Production Health & Capability Endpoint V1
+
+Task 8.4 adds `apps/api/src/node/productionRuntimeRoutes.ts` and `docs/PRODUCTION_HEALTH_CAPABILITY_ENDPOINT.md`.
+
+This task adds Node-only route-like handling for `GET /health` and `GET /capabilities`. The handlers are plain functions, not registered HTTP routes, and capability payloads report production runtime, source-of-truth, auth, sync, deployment, monitoring, read, and write status separately.
+
+Task 8.4 does not add browser mutation routes, auto-start a server, listen on ports, connect to real user data, perform writes, add deployment config, switch source-of-truth, add package changes, or implement auth/sync/monitoring.
