@@ -3271,6 +3271,16 @@ This task documents env-var safety, production build safety, Vercel preview/prod
 
 Next recommended task: Task 7.9 Production Release Readiness Checklist V1. Task 7.9 is not started by Task 7.8.
 
+### Task 7.9: Production Release Readiness Checklist V1
+
+Status: Production release readiness checklist documentation and static tests.
+
+Task 7.9 adds `docs/PRODUCTION_RELEASE_READINESS_CHECKLIST.md` and `tests/productionReleaseReadinessChecklist.test.ts`.
+
+This task records required readiness areas before future production runtime or source-of-truth release. It does not authorize implementation or production source-of-truth switching.
+
+Next recommended task: Task 7.10 Phase 7 Completion Archive V1. Task 7.10 is not started by Task 7.9.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
