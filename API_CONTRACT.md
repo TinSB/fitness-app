@@ -3945,3 +3945,11 @@ Task 9.2 adds `apps/api/src/node/backendPrimaryRuntimeHost.ts`.
 The backend-primary runtime host is Node-only candidate infrastructure. It is disabled by default, reports `sourceOfTruth: false`, does not auto-listen, does not start a server, and is not exported from browser-facing API indexes.
 
 Task 9.2 does not implement live backend runtime, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, route expansion, package changes, normalized tables, destructive migration, or real personal data artifacts.
+
+## Task 9.3: Backend AppData Repository Candidate V1
+
+Task 9.3 adds `apps/api/src/node/backendAppDataRepositoryCandidate.ts`.
+
+The backend AppData repository candidate is a Node-only, document-style AppData snapshot boundary with an in-memory synthetic implementation. It is disabled by default, validates AppData before candidate writes, requires backup-before-write semantics, clones reads/writes to prevent in-place mutation, and reports `sourceOfTruth: false`.
+
+Task 9.3 does not add a real database, ORM, normalized tables, destructive migration, node:sqlite import, sqliteRepository production promotion, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, package changes, or real personal data artifacts.

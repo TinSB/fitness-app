@@ -3417,6 +3417,14 @@ This task creates a Node-only backend-primary runtime host boundary that is disa
 
 Task 9.2 does not implement live backend runtime, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, route expansion, package changes, normalized tables, destructive migration, or real personal data artifacts.
 
+### Task 9.3: Backend AppData Repository Candidate V1
+
+Task 9.3 adds `apps/api/src/node/backendAppDataRepositoryCandidate.ts`, `docs/BACKEND_APPDATA_REPOSITORY_CANDIDATE.md`, and `tests/backendAppDataRepositoryCandidate.test.ts`.
+
+This task creates a Node-only document-style AppData repository candidate with an in-memory synthetic implementation, backup-before-write semantics, stable result/error codes, AppData validation, and no in-place mutation.
+
+Task 9.3 does not add a real database, ORM, normalized tables, destructive migration, node:sqlite import, sqliteRepository production promotion, auth, user accounts, cloud sync, deployment runtime, monitoring runtime, source-of-truth switching, package changes, or real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
