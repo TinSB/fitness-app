@@ -3791,3 +3791,11 @@ Task 7.7 adds `docs/PRODUCTION_RUNTIME_SKELETON_AUTHORIZATION.md`.
 This task defines allowed and disallowed scope for a possible future disabled-by-default skeleton. It does not implement a skeleton, backend, auth, sync, deployment, monitoring, source-of-truth switch, routes, normalized tables, or package changes.
 
 Recommended next task is `Task 7.8 Frontend Runtime Selector Production Guard V1`. Task 7.8 is not started by Task 7.7.
+
+## Task 7.8: Frontend Runtime Selector Production Guard V1
+
+Task 7.8 adds `docs/FRONTEND_RUNTIME_SELECTOR_PRODUCTION_GUARD.md`.
+
+This task locks production guard rules for frontend runtime selection, environment variable safety, production build safety, Vercel preview/production boundary, dev API source-of-truth prevention, route boundaries, and dist token expectations. It changes no runtime selector behavior.
+
+Recommended next task is `Task 7.9 Production Release Readiness Checklist V1`. Task 7.9 is not started by Task 7.8.

@@ -3261,6 +3261,16 @@ This task authorizes only future skeleton rules, not a skeleton implementation. 
 
 Next recommended task: Task 7.8 Frontend Runtime Selector Production Guard V1. Task 7.8 is not started by Task 7.7.
 
+### Task 7.8: Frontend Runtime Selector Production Guard V1
+
+Status: Frontend runtime selector production guard documentation and static tests.
+
+Task 7.8 adds `docs/FRONTEND_RUNTIME_SELECTOR_PRODUCTION_GUARD.md` and `tests/frontendRuntimeSelectorProductionGuard.test.ts`.
+
+This task documents env-var safety, production build safety, Vercel preview/production boundary, dev API source-of-truth prevention, route boundaries, and dist token expectations without changing runtime behavior.
+
+Next recommended task: Task 7.9 Production Release Readiness Checklist V1. Task 7.9 is not started by Task 7.8.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
