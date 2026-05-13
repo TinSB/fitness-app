@@ -3353,6 +3353,14 @@ Task 8.8 adds `src/productionApi/productionDualReadComparison.ts`, `docs/PRODUCT
 
 This task compares local read values with production API read values only when explicitly enabled. It is non-blocking, never mutates local data, never writes backend data, never calls mutation routes, does not integrate with App runtime, and does not switch source-of-truth.
 
+### Task 8.9: Production Mutation Contract Guard V1
+
+Status: Production mutation contract docs/static guard.
+
+Task 8.9 adds `docs/PRODUCTION_MUTATION_CONTRACT_GUARD.md`, `tests/productionMutationContractGuard.test.ts`, and `tests/productionMutationRouteSurfaceLock.test.ts`.
+
+This task locks the accepted seven browser mutation routes, blocked repair/backup/import/export/reset/recovery routes, no fake mutation success, no localStorage/AppData overwrite, and no backend source-of-truth writes. It adds no runtime implementation or routes.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:

@@ -3879,3 +3879,11 @@ Task 8.8 adds `src/productionApi/productionDualReadComparison.ts` and `docs/PROD
 This task adds disabled-by-default diagnostic comparison between local read values and production API read values. Results are non-blocking and report `diagnosticOnly: true`, `appCanContinue: true`, and `mutatedLocal: false`.
 
 Task 8.8 does not integrate with App runtime, overwrite localStorage or AppData, repair data, sync data, write backend data, call mutation routes, switch source-of-truth, import Node-only modules, add package changes, or use real personal training data.
+
+## Task 8.9: Production Mutation Contract Guard V1
+
+Task 8.9 adds `docs/PRODUCTION_MUTATION_CONTRACT_GUARD.md`.
+
+This task locks the production mutation contract before write shadow mode. The accepted browser mutation route allowlist remains exactly seven, blocked repair/backup/import/export/reset/recovery routes remain blocked, and production write path remains not source-of-truth.
+
+Task 8.9 is docs/static tests only. It does not add mutation endpoints, route handlers, backend source-of-truth writes, browser clients, runtime integration, package changes, lockfile changes, or real personal training data.
