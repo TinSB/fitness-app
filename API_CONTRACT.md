@@ -3759,3 +3759,11 @@ Task 7.3 adds `docs/PRODUCTION_ROUTE_SURFACE_FREEZE.md`.
 This task freezes the seven accepted browser mutation routes, separates read route candidates from mutation candidates, and keeps blocked routes blocked. It adds no routes, handlers, clients, backend runtime, or source-of-truth switching.
 
 Recommended next task is `Task 7.4 Production Source-of-Truth Migration Preconditions V1`. Task 7.4 is not started by Task 7.3.
+
+## Task 7.4: Production Source-of-Truth Migration Preconditions V1
+
+Task 7.4 adds `docs/PRODUCTION_SOURCE_OF_TRUTH_MIGRATION_PRECONDITIONS.md`.
+
+This task defines required evidence before any production source-of-truth switch. It does not implement migration, modify persistence behavior, replace localStorage, add backend/auth/sync, or authorize production source-of-truth switching.
+
+Recommended next task is `Task 7.5 Production Auth & User Data Boundary Plan V1`. Task 7.5 is not started by Task 7.4.
