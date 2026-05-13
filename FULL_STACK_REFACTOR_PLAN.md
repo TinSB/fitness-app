@@ -3345,6 +3345,14 @@ Task 8.7 adds `src/productionApi/productionApiClient.ts`, `src/productionApi/pro
 
 This task supports explicit opt-in read/capability calls only. It does not integrate with App runtime, expose mutation methods, write to backend, replace localStorage, switch source-of-truth, import Node-only modules, add routes, add package changes, or add auth/sync behavior.
 
+### Task 8.8: Production Dual-Read Comparison V1
+
+Status: Diagnostic-only production dual-read comparison logic.
+
+Task 8.8 adds `src/productionApi/productionDualReadComparison.ts`, `docs/PRODUCTION_DUAL_READ_COMPARISON.md`, and `tests/productionDualReadComparison.test.ts`.
+
+This task compares local read values with production API read values only when explicitly enabled. It is non-blocking, never mutates local data, never writes backend data, never calls mutation routes, does not integrate with App runtime, and does not switch source-of-truth.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
