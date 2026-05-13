@@ -3473,6 +3473,14 @@ This task creates a standalone, hidden-by-default safety copy component for back
 
 Task 9.9 does not integrate with primary training UI, enable backend-primary automatically, perform cutover from UI, add routes, add package changes, add auth/user accounts/cloud sync/deployment/monitoring, remove localStorage fallback, add normalized tables, add destructive migration, or include real personal data artifacts.
 
+### Task 9.10: Source-of-Truth Cutover Manual Acceptance V1
+
+Task 9.10 adds `docs/SOURCE_OF_TRUTH_CUTOVER_MANUAL_ACCEPTANCE.md` and `tests/sourceOfTruthCutoverManualAcceptance.test.ts`.
+
+This task creates the manual acceptance runbook for backend-primary candidate cutover, covering baseline localStorage, dry run, repository/read/mutation candidates, switch guard, fallback, emergency restore, rollback, route lock, browser/Node isolation, and pass/fail evidence.
+
+Task 9.10 is docs/static tests only. It does not add runtime code, deployment, package changes, auth/user accounts/cloud sync/monitoring, normalized tables, destructive migration, route expansion, or real personal data artifacts.
+
 ## High-Risk Files
 
 Do not start the refactor by rewriting these files:
