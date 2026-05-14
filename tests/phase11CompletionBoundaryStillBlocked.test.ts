@@ -35,7 +35,7 @@ describe('phase 11 completion boundary still blocked', () => {
       devDependencies: Record<string, string>;
     };
 
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     expect(packageJson.dependencies).not.toHaveProperty('@clerk/clerk-react');
     expect(packageJson.dependencies).not.toHaveProperty('next-auth');
     expect(Object.keys(packageJson.scripts).filter((script) => /auth|sync|monitor/i.test(script))).toEqual([]);

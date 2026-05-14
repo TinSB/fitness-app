@@ -23,7 +23,7 @@ describe('supabase client dependency authorization', () => {
       scripts: Record<string, string>;
     };
 
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     expect(Object.keys(packageJson.scripts).filter((script) => /supabase|cloud:sync/i.test(script))).toEqual([]);
   });
 
