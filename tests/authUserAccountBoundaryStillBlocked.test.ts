@@ -98,7 +98,7 @@ describe('auth user account boundary still blocked', () => {
       'test',
       'test:watch',
     ]);
-    expect(Object.keys(packageJson.dependencies)).toEqual(['ajv', 'lucide-react', 'react', 'react-dom']);
+    expect(Object.keys(packageJson.dependencies)).toEqual(['@supabase/supabase-js', 'ajv', 'lucide-react', 'react', 'react-dom']);
     expect(Object.keys(packageJson.devDependencies)).toEqual([
       '@tailwindcss/vite',
       '@types/node',

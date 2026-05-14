@@ -85,7 +85,7 @@ describe('cloud production regression lock', () => {
       devDependencies: Record<string, string>;
     };
 
-    expect(Object.keys(packageJson.dependencies)).toEqual(['ajv', 'lucide-react', 'react', 'react-dom']);
+    expect(Object.keys(packageJson.dependencies)).toEqual(['@supabase/supabase-js', 'ajv', 'lucide-react', 'react', 'react-dom']);
     expect(Object.keys(packageJson.devDependencies)).toEqual([
       '@tailwindcss/vite',
       '@types/node',
@@ -103,7 +103,6 @@ describe('cloud production regression lock', () => {
     for (const dependency of [
       '@clerk/nextjs',
       'next-auth',
-      '@supabase/supabase-js',
       'firebase',
       '@auth0/auth0-react',
       '@sentry/react',

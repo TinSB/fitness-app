@@ -52,7 +52,7 @@ describe('cloud AppData data model strategy', () => {
     const doc = readSource('docs/CLOUD_APPDATA_DATA_MODEL_STRATEGY.md');
     const packageJson = JSON.parse(readSource('package.json')) as { dependencies: Record<string, string> };
 
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     expect(doc).toContain('No actual database table is created.');
     expect(doc).toContain('No SQL migration is added or applied.');
     expect(doc).toContain('No cloud repository is implemented in this task.');

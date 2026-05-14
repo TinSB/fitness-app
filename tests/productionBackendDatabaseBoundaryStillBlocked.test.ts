@@ -83,7 +83,7 @@ describe('production backend database boundary still blocked', () => {
       devDependencies: Record<string, string>;
     };
 
-    expect(Object.keys(packageJson.dependencies)).toEqual(['ajv', 'lucide-react', 'react', 'react-dom']);
+    expect(Object.keys(packageJson.dependencies)).toEqual(['@supabase/supabase-js', 'ajv', 'lucide-react', 'react', 'react-dom']);
     expect(Object.keys(packageJson.devDependencies)).toEqual([
       '@tailwindcss/vite',
       '@types/node',

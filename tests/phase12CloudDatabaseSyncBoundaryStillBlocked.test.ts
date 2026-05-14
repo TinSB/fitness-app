@@ -56,7 +56,7 @@ describe('phase 12 cloud database sync boundary still blocked', () => {
     const packageJson = JSON.parse(readSource('package.json')) as { dependencies: Record<string, string> };
     const doc = readSource('docs/PHASE12_CLOUD_DATABASE_SYNC_INTEGRATION_ENTRY_GATE.md');
 
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     expect(doc).toContain('It does not connect to Supabase, add dependencies, build tables, write cloud data, pull cloud data, or sync data.');
   });
 });

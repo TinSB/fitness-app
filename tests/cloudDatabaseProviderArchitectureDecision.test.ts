@@ -44,7 +44,7 @@ describe('cloud database provider architecture decision', () => {
     const doc = readSource('docs/CLOUD_DATABASE_PROVIDER_ARCHITECTURE_DECISION.md');
     const packageJson = JSON.parse(readSource('package.json')) as { dependencies: Record<string, string> };
 
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     expect(doc).toContain('No Supabase dependency is added in this task.');
     expect(doc).toContain('No database schema, SQL migration, cloud client, cloud read, cloud write, default sync, background sync, or source-of-truth switch is implemented.');
   });

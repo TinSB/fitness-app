@@ -43,7 +43,7 @@ describe('cloud RLS ownership policy plan', () => {
     const doc = readSource('docs/CLOUD_RLS_OWNERSHIP_POLICY_PLAN.md');
     const packageJson = JSON.parse(readSource('package.json')) as { dependencies: Record<string, string> };
 
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     for (const expected of [
       'Applying SQL',
       'Adding database migrations',

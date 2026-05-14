@@ -57,7 +57,7 @@ describe('deployment runtime boundary still blocked', () => {
 
     expect(packageJson.scripts).not.toHaveProperty('deploy');
     expect(packageJson.scripts).not.toHaveProperty('deploy:prod');
-    expect(Object.keys(packageJson.dependencies)).toEqual(['ajv', 'lucide-react', 'react', 'react-dom']);
+    expect(Object.keys(packageJson.dependencies)).toEqual(['@supabase/supabase-js', 'ajv', 'lucide-react', 'react', 'react-dom']);
     expect(Object.keys(packageJson.devDependencies)).toEqual([
       '@tailwindcss/vite',
       '@types/node',

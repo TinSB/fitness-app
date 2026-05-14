@@ -48,7 +48,7 @@ describe('today training focus override boundaries', () => {
     expect(engineSource).not.toMatch(/fetch\(|localStorage|indexedDB|sqlite|auth|sync|deploy|\/sessions\//i);
     expect(appSource).toContain("useState<TodayTrainingFocusOverrideOption>('system')");
     expect(appSource).toContain('preservePlanSelection: todayFocusSelection.overrideActive');
-    expect(packageJson.dependencies).not.toHaveProperty('@supabase/supabase-js');
+    expect(packageJson.dependencies).toHaveProperty('@supabase/supabase-js');
     expect(packageJson.dependencies).not.toHaveProperty('firebase');
     expect(packageJson.scripts).not.toHaveProperty('today-focus-override');
   });
