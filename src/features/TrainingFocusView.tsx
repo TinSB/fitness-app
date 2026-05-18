@@ -30,6 +30,7 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
 import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
+import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
@@ -1088,6 +1089,14 @@ export function TrainingFocusView({
                 <div>
                   <div className="text-xs font-semibold text-slate-500">推荐处方</div>
                   <div className="mt-2 text-lg font-bold leading-7">{plannedSummary}</div>
+                  <EquipmentAwareRecommendationWeight
+                    exerciseName={mainExercisePoolId || mainExercise.id || displayExerciseName(mainExercise)}
+                    plannedWeightKg={currentStep.plannedWeight}
+                    setPurpose={currentStep.stepType === 'warmup' ? 'warmup' : 'working'}
+                    unitSettings={unitSettings}
+                    compact
+                    showDetails
+                  />
                 </div>
                 <ActionButton
                   type="button"
