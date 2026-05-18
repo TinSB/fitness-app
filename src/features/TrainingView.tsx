@@ -31,8 +31,10 @@ import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
+import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
+import type { SetPurpose } from '../engines/equipmentAwareLoadModel';
 
 type LoggedExercise = ExercisePrescription & {
   increment?: number;
@@ -167,6 +169,13 @@ const formatRest = (seconds?: number) => {
 
 const formatDisplayWeightValue = (weightKg: unknown, unitSettings: UnitSettings) =>
   String(convertKgToDisplayWeight(weightKg, unitSettings.weightUnit));
+
+const setPurposeForType = (type: TrainingSetLog['type']): SetPurpose => {
+  if (type === 'warmup') return 'warmup';
+  if (type === 'top') return 'top_set';
+  if (type === 'backoff') return 'backoff';
+  return 'working';
+};
 
 export function TrainingView({
   session,
@@ -307,6 +316,8 @@ export function TrainingView({
     const increment = typeof exercise.increment === 'number' ? exercise.increment : unitSettings.defaultIncrementKg;
     const displayIncrement = unitSettings.weightUnit === 'lb' ? unitSettings.defaultIncrementLb : increment;
     const incrementDeltaKg = unitSettings.weightUnit === 'lb' ? parseDisplayWeightToKg(displayIncrement, 'lb') : increment;
+    const identity = getExerciseIdentityFromExercise(exercise, exercise.id);
+    const exerciseDisplayName = formatExerciseName({ id: identity.displayExerciseId, name: exercise.name });
 
     return (
       <div className="border-t border-slate-100 p-4">
@@ -355,6 +366,13 @@ export function TrainingView({
                     <div className="mt-1 text-xs text-slate-500">
                       推荐处方与实际记录分开；这里用于补记或修正本组数据。
                     </div>
+                    <EquipmentAwareRecommendationWeight
+                      exerciseName={identity.displayExerciseId || exercise.id || exerciseDisplayName}
+                      plannedWeightKg={set.weight}
+                      setPurpose={setPurposeForType(set.type)}
+                      unitSettings={unitSettings}
+                      compact
+                    />
                   </div>
                   {isIncompleteSet(set) && isNext ? (
                     <ActionButton
