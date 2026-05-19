@@ -71,7 +71,6 @@ export type FocusPainBoundaryNotice = {
 };
 
 const focusDraftSourceLabels: Partial<Record<NonNullable<ActualSetDraft['source']>, string>> = {
-  prescription: '建议',
   manual: '手动',
   copy_previous: '复制上组',
 };
@@ -937,18 +936,23 @@ export function TrainingFocusView({
           </div>
         ) : null}
       </div>
-      <button
-        type="button"
-        onClick={() => notifyResult(onApplySuggestion(mainIndex))}
-        className={classNames(
-          'shrink-0 rounded-xl border px-3 py-2 text-xs font-bold transition',
-          currentSetSummary.isSuggestionApplied
-            ? 'border-emerald-300/25 bg-emerald-300/15 text-emerald-100'
-            : 'border-emerald-300/25 bg-white/10 text-emerald-100 active:scale-[0.98]',
-        )}
-      >
-        {currentSetSummary.isSuggestionApplied ? '已套用' : '套用建议'}
-      </button>
+      {currentSetSummary.missingInput ? (
+        <button
+          type="button"
+          onClick={() => notifyResult(onApplySuggestion(mainIndex))}
+          className="shrink-0 rounded-xl border border-emerald-300/25 bg-white/10 px-3 py-2 text-xs font-bold text-emerald-100 transition active:scale-[0.98]"
+        >
+          套用建议
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowActualRecordSheet(true)}
+          className="shrink-0 rounded-xl border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-bold text-white/72 transition active:scale-[0.98]"
+        >
+          修改
+        </button>
+      )}
     </div>
   ) : null;
 
@@ -972,9 +976,8 @@ export function TrainingFocusView({
     ) : null;
 
   const renderEndSessionSheet = () => (
-    <UiOsBottomSheet isOpen={sessionEndRequested} onClose={() => setSessionEndRequested(false)} title="结束训练" confirmRequired>
+    <UiOsBottomSheet isOpen={sessionEndRequested} onClose={() => setSessionEndRequested(false)} title="结束训练" tone="danger">
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-white/70">结束训练需要再次确认。未完成的动作不会被自动补完，当前本地训练记录仍会保留。</p>
         <div className="grid grid-cols-2 gap-3">
           <UiOsActionButton type="button" variant="secondary" size="md" onClick={() => setSessionEndRequested(false)}>
             继续训练

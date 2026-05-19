@@ -9,6 +9,7 @@ export type BottomSheetProps = {
   children: ReactNode;
   confirmRequired?: boolean;
   tone?: 'default' | 'danger';
+  showConfirmCopy?: boolean;
 };
 
 const sheetStyle: CSSProperties = {
@@ -18,13 +19,13 @@ const sheetStyle: CSSProperties = {
   animation: 'slideUp 0.3s ease-out',
 };
 
-export function BottomSheet({ isOpen, onClose, title, children, confirmRequired = false, tone = 'default' }: BottomSheetProps) {
+export function BottomSheet({ isOpen, onClose, title, children, confirmRequired = false, tone = 'default', showConfirmCopy = true }: BottomSheetProps) {
   if (!isOpen) return null;
   const surface = resolveThemeSurface('bottom_sheet', 'dark', { immersiveDark: true });
 
   return (
     <div className="fixed inset-0 z-50 flex items-end">
-      <button type="button" aria-label="关闭底部面板" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <button type="button" aria-label="关闭底部面板" className="absolute inset-0 bg-black/60 backdrop-blur-sm" data-bottom-sheet-backdrop="dismiss" onClick={onClose} />
       <div
         className={classNames('relative w-full rounded-t-3xl p-6 pb-10', surface.className, surface.textClassName, tone === 'danger' ? 'border-t border-red-400/40' : '')}
         style={sheetStyle}
@@ -38,7 +39,7 @@ export function BottomSheet({ isOpen, onClose, title, children, confirmRequired 
         <div className="w-9 h-1 bg-white/20 rounded-full mx-auto mb-5" />
         <h3 className="text-xl font-semibold text-white mb-5">{title}</h3>
         <div className="overflow-y-auto">{children}</div>
-        {confirmRequired ? (
+        {confirmRequired && showConfirmCopy ? (
           <div className="mt-5 pt-4 border-t border-white/8">
             <p className={tone === 'danger' ? 'text-xs text-red-300 text-center' : 'text-xs text-amber-400 text-center'}>需要手动确认</p>
           </div>

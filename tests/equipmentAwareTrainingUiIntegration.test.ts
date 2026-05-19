@@ -155,7 +155,7 @@ describe('equipment aware training UI integration', () => {
     expect(text).toContain('本组建议');
     expect(text).toContain('空杆 45 lb');
     expect(text).toContain('重量详情');
-    expect(text).toContain('理论重量低于空杆，使用空杆热身');
+    expect(text).not.toContain('理论重量低于空杆，使用空杆热身');
     expect(JSON.stringify(session)).toBe(before);
   });
 

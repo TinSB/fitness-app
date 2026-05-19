@@ -73,8 +73,8 @@ describe('equipment-aware primary prescription and apply suggestion fix', () => 
 
     expect(primaryBlock).toContain('空杆 45 lb × 10 次');
     expect(primaryBlock).not.toContain('17lb × 10 次');
-    expect(text).toContain('理论计算：17 lb');
-    expect(text).toContain('实际可做：45 lb');
+    expect(text).not.toContain('理论计算：17 lb');
+    expect(text).not.toContain('实际可做：45 lb');
   });
 
   it('applies the feasible empty bar load instead of the theoretical 17 lb warmup', () => {
@@ -84,6 +84,8 @@ describe('equipment-aware primary prescription and apply suggestion fix', () => 
 
     expect(applied.actionResult).toMatchObject({ ok: true, changed: true, message: '已套用建议。' });
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).toBe(45);
+    expect(draft?.actualReps).toBe(10);
+    expect(draft?.actualRir).toBeUndefined();
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).not.toBe(17);
   });
 

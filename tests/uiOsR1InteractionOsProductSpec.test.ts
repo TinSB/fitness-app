@@ -40,7 +40,7 @@ describe('UI-OS R1 Interaction OS product spec', () => {
       '45 lb × 10',
       'Theoretical weight should not be primary',
       'collapsed by default',
-      'Apply suggestion fills weight only',
+      'R8.6 later explicitly authorized filling actionable weight plus planned reps',
       'bottom sheet / modal flow',
       'calendar training frequency',
       'which days were trained and not trained',

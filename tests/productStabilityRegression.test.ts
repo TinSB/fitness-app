@@ -169,9 +169,10 @@ describe('product stability regression', () => {
     const text = renderFocusText(makeFocusSession([makeExercise('bench-press', 2)]));
 
     expect(text).toContain('专注训练');
-    expect(text).toContain('复制上组');
-    expect(text).toContain('标记不适');
-    expect(text).toContain('替代动作');
+    expect(text).toContain('更多');
+    expect(text).not.toContain('复制上组');
+    expect(text).not.toContain('标记不适');
+    expect(text).not.toContain('替代动作');
     expect(text).toContain('记录本组');
     expect(text).not.toContain('Focus Mode');
     expect(text).not.toMatch(/\b(undefined|null|warmup|working|support)\b/);

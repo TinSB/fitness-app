@@ -112,9 +112,10 @@ describe('real workout regression coverage', () => {
     const supportText = renderFocus(supportSession);
 
     [squatText, benchText, supportText].forEach((text) => {
-      expect(text).toContain('复制上组');
-      expect(text).toContain('标记不适');
-      expect(text).toContain('替代动作');
+      expect(text).toContain('更多');
+      expect(text).not.toContain('复制上组');
+      expect(text).not.toContain('标记不适');
+      expect(text).not.toContain('替代动作');
     });
   });
 

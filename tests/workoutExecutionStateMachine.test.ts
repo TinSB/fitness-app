@@ -17,8 +17,7 @@ describe('workoutExecutionStateMachine', () => {
 
   it('prevents duplicate complete events from advancing a changed step', () => {
     const session = makeFocusSession([makeExercise('bench-press', 2, 0, 2)]);
-    const weightOnly = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
-    const prepared = dispatchWorkoutExecutionEvent(weightOnly, { type: 'ADJUST_REPS', exerciseIndex: 0, delta: 8 }).updatedSession;
+    const prepared = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
     const firstStep = getCurrentFocusStep(prepared);
     const first = dispatchWorkoutExecutionEvent(prepared, {
       type: 'COMPLETE_STEP',

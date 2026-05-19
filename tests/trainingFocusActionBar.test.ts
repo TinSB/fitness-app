@@ -54,13 +54,17 @@ describe('TrainingFocusView bottom action bar', () => {
   const focusActionBarSource = readFileSync(resolve(process.cwd(), 'src/uiOs/training/FocusModeActionBar.tsx'), 'utf8');
   const focusSecondaryActionsSource = readFileSync(resolve(process.cwd(), 'src/uiOs/training/FocusModeSecondaryActions.tsx'), 'utf8');
 
-  it('keeps auxiliary actions visible in Focus Mode', () => {
+  it('keeps auxiliary actions behind the More panel in Focus Mode', () => {
     const text = visibleText(renderFocusHtml(makeFocusSession([makeExercise('bench-press', 2)])));
 
-    expect(text).toContain('复制上组');
-    expect(text).toContain('标记不适');
-    expect(text).toContain('替代动作');
+    expect(text).toContain('更多');
+    expect(text).not.toContain('复制上组');
+    expect(text).not.toContain('标记不适');
+    expect(text).not.toContain('替代动作');
     expect(text).toContain('记录本组');
+    expect(focusSource).toContain("label: '复制上组'");
+    expect(focusSource).toContain("label: '标记不适'");
+    expect(focusSource).toContain("label: '替代动作'");
   });
 
   it('binds replacement action to the picker and keeps the empty-state toast', () => {
@@ -69,11 +73,13 @@ describe('TrainingFocusView bottom action bar', () => {
     expect(focusSource).toContain('当前动作暂无可替代动作');
   });
 
-  it('renders replacement as a labeled, accessible button', () => {
+  it('keeps replacement as a labeled accessible action inside More', () => {
     const html = renderFocusHtml(makeFocusSession([makeExercise('squat', 2)]));
 
-    expect(html).toContain('aria-label="替代动作"');
-    expect(html).toContain('>替代动作</span>');
+    expect(html).toContain('更多');
+    expect(html).not.toContain('aria-label="替代动作"');
+    expect(focusSource).toContain("id: 'replace-exercise'");
+    expect(focusSource).toContain("label: '替代动作'");
   });
 
   it('keeps the two-layer action order with auxiliary actions above the primary CTA', () => {

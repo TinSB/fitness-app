@@ -79,13 +79,13 @@ describe('UI-OS R7 Interaction OS regression lock', () => {
     expect(secondaryActionsSource).toContain('data-focus-secondary-actions="visual-secondary"');
   });
 
-  it('locks apply suggestion to feasible equipment-aware weight only', () => {
+  it('locks apply suggestion to feasible equipment-aware weight and planned reps', () => {
     const applied = applySuggestedFocusStepWithResult(makeBenchWarmupSession(), 0);
     const draft = getActualSetDraft(applied.session, getCurrentFocusStep(applied.session));
 
     expect(applied.actionResult).toMatchObject({ ok: true, changed: true });
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).toBe(45);
-    expect(draft?.actualReps).toBeUndefined();
+    expect(draft?.actualReps).toBe(10);
     expect(draft?.actualRir).toBeUndefined();
     expect(applied.session.exercises[0].warmupSets[0].done).not.toBe(true);
   });

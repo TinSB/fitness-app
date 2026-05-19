@@ -43,12 +43,26 @@ describe('UI-OS R8 Focus compression', () => {
           { id: 'copy', label: '复制上组', onClick: () => undefined },
           { id: 'skip', label: '跳过', onClick: () => undefined },
         ],
+        isOpen: false,
+        onOpenChange: () => undefined,
+      }),
+    );
+    const openSecondary = renderToStaticMarkup(
+      React.createElement(FocusModeSecondaryActions, {
+        actions: [
+          { id: 'copy', label: '复制上组', onClick: () => undefined },
+          { id: 'skip', label: '跳过', onClick: () => undefined },
+        ],
+        isOpen: true,
+        onOpenChange: () => undefined,
       }),
     );
 
     expect(source).toContain('data-focus-actual-form-visible="false"');
-    expect(secondary).toContain('data-focus-secondary-mode="more-collapsed"');
+    expect(secondary).toContain('data-focus-secondary-mode="more-closed"');
     expect(secondary).toContain('更多');
+    expect(openSecondary).toContain('复制上组');
+    expect(openSecondary).toContain('跳过');
   });
 
   it('keeps Focus immersive no-nav and one-primary-action locks', () => {
