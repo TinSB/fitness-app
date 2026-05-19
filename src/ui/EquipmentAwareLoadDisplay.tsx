@@ -41,9 +41,9 @@ export const EquipmentAwareLoadDisplay = ({
     displayResult.plateBreakdownLabel,
     displayResult.warningLabel,
   ].filter((item, index, items): item is string => Boolean(item) && items.indexOf(item) === index);
+  const conciseDetailLabel = displayResult.detailLabel.split('；理论计算')[0] || displayResult.detailLabel;
   const detailItems = [
-    displayResult.detailLabel,
-    displayResult.reasonLabel,
+    conciseDetailLabel,
     displayResult.plateBreakdownLabel,
     displayResult.warningLabel,
   ].filter((item, index, items): item is string => Boolean(item) && items.indexOf(item) === index);

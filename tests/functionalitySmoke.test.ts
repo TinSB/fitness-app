@@ -19,7 +19,7 @@ describe('functionality smoke wiring', () => {
 
   it('keeps focus-mode critical user actions reachable', () => {
     expect(focusSource).toContain('completeCurrentSet');
-    expect(focusSource).toContain('copyPrevious');
+    expect(focusSource).not.toContain("label: '复制上组'");
     expect(focusSource).toContain('markPain(!painMarked)');
     expect(focusSource).toContain('markPain');
     expect(focusSource).toContain('chooseReplacement');

@@ -64,8 +64,9 @@ describe('Focus pain marking display boundary', () => {
     }).updatedSession;
     const text = visibleText(renderFocus(marked));
 
-    expect(text).toContain('本组已标记不适，可再次点击取消。');
-    expect(text).toContain('仅记录本组，不会自动设为长期限制。');
+    expect(text).toContain('本组已标记不适');
+    expect(text).not.toContain('本组已标记不适，可再次点击取消。');
+    expect(text).not.toContain('仅记录本组，不会自动设为长期限制。');
     expect(text).not.toMatch(/受伤|禁忌|限制问题|长期风险|undefined|null|pain_flag|bench-press/);
   });
 
@@ -81,7 +82,7 @@ describe('Focus pain marking display boundary', () => {
     expect(current.exerciseId).toBe('incline-db-press');
     expect(getActualSetDraft(switched, current)).toBeNull();
     expect(buildFocusPainBoundaryNotice({ currentStep: current, actualDraft: getActualSetDraft(switched, current) })).toBeNull();
-    expect(visibleText(renderFocus(switched))).not.toContain('本组已标记不适，可再次点击取消。');
+    expect(visibleText(renderFocus(switched))).not.toContain('本组已标记不适');
   });
 
   it('does not show a current-group notice for another set on the same exercise', () => {

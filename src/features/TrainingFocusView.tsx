@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle, Copy, Dumbbell, ListChecks, Replace, SkipForward, Timer, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Dumbbell, ListChecks, Replace, Timer, XCircle } from 'lucide-react';
 import { classNames, formatTimer, isCompletedSet, number } from '../engines/engineUtils';
 import { dedupeFocusNotices, getFocusNavigationState, type FocusTrainingStep } from '../engines/focusModeStateEngine';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
@@ -13,8 +13,6 @@ import { buildFocusModeInteractionInput, resolveFocusModeInteractionState } from
 import {
   formatExerciseName,
   formatFatigueCost,
-  formatMovementPattern,
-  formatMuscleName,
   formatReplacementCategory,
   formatRirLabel,
   formatSetType,
@@ -67,7 +65,6 @@ export type FocusCurrentSetSummary = {
 
 export type FocusPainBoundaryNotice = {
   title: string;
-  description: string;
 };
 
 const focusDraftSourceLabels: Partial<Record<NonNullable<ActualSetDraft['source']>, string>> = {
@@ -144,8 +141,7 @@ export const buildFocusPainBoundaryNotice = ({
   if (actualDraft?.stepId !== currentStep.id) return null;
   if (actualDraft.painFlag !== true) return null;
   return {
-    title: '本组已标记不适，可再次点击取消。',
-    description: '仅记录本组，不会自动设为长期限制。',
+    title: '本组已标记不适',
   };
 };
 
@@ -236,16 +232,6 @@ const displayExerciseName = (exercise: TrainingSession['exercises'][number] | nu
 };
 
 const displayReplacementName = (option: SmartReplacementRecommendation) => formatExerciseName({ id: option.exerciseId, name: option.exerciseName });
-
-const displayMovementPattern = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
-  return formatMovementPattern(exercise?.movementPattern);
-};
-
-const displayPrimaryMuscles = (exercise: TrainingSession['exercises'][number] | null | undefined) => {
-  const muscles = exercise?.primaryMuscles?.length ? exercise.primaryMuscles : exercise?.muscle ? [exercise.muscle] : [];
-  const labels = muscles.map(formatMuscleName).filter(Boolean);
-  return labels.length ? labels.join(' / ') : '未标注主肌群';
-};
 
 const blockLabel = (blockType: FocusBlockType) => (blockType === 'main' ? '主训练' : blockType === 'correction' ? '纠偏' : '功能补丁');
 
@@ -457,7 +443,6 @@ export function TrainingFocusView({
   expandedExercise,
   onSetChange,
   onCompleteSet,
-  onCopyPrevious,
   onApplySuggestion,
   onUpdateActualDraft,
   onSwitchExercise,
@@ -668,18 +653,6 @@ export function TrainingFocusView({
     notify(`已切换到 ${displayExerciseName(exercise)}`);
   };
 
-  const copyPrevious = () => {
-    if (isSupportStep) {
-      notify('没有可复制的上一组。', 'info');
-      return;
-    }
-    if (mainIndex < 0 || mainSetIndex <= 0) {
-      notify('没有可复制的上一组。', 'info');
-      return;
-    }
-    notifyResult(onCopyPrevious(mainIndex));
-  };
-
   const markPain = (painFlag: boolean) => {
     if (isSupportStep && supportLog) {
       const nextReason = painFlag ? 'pain' : 'time';
@@ -877,11 +850,12 @@ export function TrainingFocusView({
 
   const focusSecondaryActions: FocusModeSecondaryActionItem[] = [
     {
-      id: 'copy-previous',
-      label: '复制上组',
-      icon: <Copy className="h-4 w-4" />,
-      onClick: copyPrevious,
+      id: 'replace-exercise',
+      label: '替代动作',
+      icon: <Replace className="h-4 w-4" />,
+      onClick: openReplacementPicker,
       disabled: isSupportStep,
+      tone: 'success',
     },
     {
       id: 'mark-pain',
@@ -892,39 +866,10 @@ export function TrainingFocusView({
       tone: 'danger',
     },
     {
-      id: 'replace-exercise',
-      label: '替代动作',
-      icon: <Replace className="h-4 w-4" />,
-      onClick: openReplacementPicker,
-      disabled: isSupportStep,
-      tone: 'success',
-    },
-    {
-      id: 'record-details',
-      label: '记录详情',
-      icon: <ListChecks className="h-4 w-4" />,
-      onClick: () => setShowActualRecordSheet(true),
-      disabled: isSupportStep,
-    },
-    {
       id: 'exercise-order',
       label: '动作顺序',
       icon: <ListChecks className="h-4 w-4" />,
       onClick: () => setShowExercisePicker(true),
-    },
-    {
-      id: 'skip-step',
-      label: '跳过',
-      icon: <SkipForward className="h-4 w-4" />,
-      onClick: requestSkipCurrentStep,
-      tone: 'default',
-    },
-    {
-      id: 'view-details',
-      label: '查看详情',
-      icon: <ListChecks className="h-4 w-4" />,
-      onClick: () => setShowExplanationSheet(true),
-      tone: 'default',
     },
   ];
 
@@ -934,9 +879,8 @@ export function TrainingFocusView({
         <div className="truncate text-sm font-semibold">{currentSetSummary.text}</div>
         {showMissingInputGuide && currentSetSummary.missingInput ? <div className="mt-1 text-xs font-semibold text-amber-200">缺少重量或次数</div> : null}
         {painBoundaryNotice ? (
-          <div className="mt-1 space-y-0.5 text-xs font-semibold text-rose-200">
+          <div className="mt-1 text-xs font-semibold text-rose-200">
             <div>{painBoundaryNotice.title}</div>
-            <div className="font-medium text-rose-100/80">{painBoundaryNotice.description}</div>
           </div>
         ) : null}
       </div>
@@ -1063,7 +1007,6 @@ export function TrainingFocusView({
 
   const renderReplacementPicker = () => (
     <BottomSheet open={showReplacementPicker} title="选择本次实际执行动作" onClose={closeReplacementPicker}>
-      <p className="mb-2 text-xs leading-5 text-white/45">选择本次实际执行动作，保留当前模板位置。</p>
       <ReplacementEquipmentChips selected={selectedUnavailableEquipment} onToggle={toggleUnavailableEquipment} />
       <div className="space-y-3">
         {visibleReplacementOptions.length ? (
@@ -1090,7 +1033,7 @@ export function TrainingFocusView({
 
   const renderExplanationSheet = () => (
     <BottomSheet open={showExplanationSheet} title="推荐依据" onClose={() => setShowExplanationSheet(false)}>
-      <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} defaultOpen />
+      <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} />
     </BottomSheet>
   );
 
@@ -1161,7 +1104,6 @@ export function TrainingFocusView({
   const renderSupportStep = () => {
     if (!supportLog) return null;
     const supportTitle = formatExerciseName({ id: supportLog.exerciseId, name: supportExercise?.name || supportLog.exerciseName || currentStep.exerciseName });
-    const supportModuleName = supportBlock?.name || currentStep.moduleName || blockLabel(blockType);
     return (
       <>
         <TrainingFocusHeroCard>
@@ -1170,16 +1112,8 @@ export function TrainingFocusView({
               <StatusBadge tone={blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
               <StatusBadge tone="slate">{stageLabel(currentStep.stepType)}</StatusBadge>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowExplanationSheet(true)}
-              className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
-            >
-              依据
-            </button>
           </div>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">{supportTitle}</h1>
-          <p className="mt-1 text-sm font-medium text-slate-300">{supportModuleName}</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-3xl bg-white/10 p-3">
               <div className="text-xs font-semibold text-slate-300">当前组</div>
@@ -1241,20 +1175,8 @@ export function TrainingFocusView({
                 <StatusBadge tone={currentStep.stepType === 'warmup' ? 'amber' : 'emerald'}>{stageLabel(currentStep.stepType)}</StatusBadge>
               </div>
               <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight">{displayExerciseName(mainExercise)}</h1>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-300">
-                <span>{displayMovementPattern(mainExercise)}</span>
-                <span>·</span>
-                <span>{displayPrimaryMuscles(mainExercise)}</span>
-              </div>
             </div>
             <div className="flex shrink-0 flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setShowExplanationSheet(true)}
-                className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
-              >
-                依据
-              </button>
               <button
                 type="button"
                 onClick={() => setShowExercisePicker(true)}
@@ -1304,7 +1226,6 @@ export function TrainingFocusView({
                   unitSettings={unitSettings}
                   reps={currentStep.plannedReps}
                   compact
-                  showDetails
                 />
                 {showMissingInputGuide && currentSetSummary.missingInput ? (
                   <div className="mt-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">缺少重量或次数</div>

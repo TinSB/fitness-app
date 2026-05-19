@@ -76,13 +76,14 @@ describe('UI-OS R8.3 training density, contrast, and Chinese copy', () => {
     expect(text).not.toContain('each hand');
   });
 
-  it('moves record details and exercise order into the collapsed More actions', () => {
+  it('keeps the collapsed More actions concise and removes record details from the default menu', () => {
     const html = renderFocusHtml();
     const secondaryActions = sourceOf('src/features/TrainingFocusView.tsx');
     const recommendation = html.slice(html.indexOf('data-focus-recommendation-density'), html.indexOf('data-focus-secondary-actions-panel'));
 
-    expect(secondaryActions).toContain('记录详情');
     expect(secondaryActions).toContain('动作顺序');
+    expect(secondaryActions).not.toContain("label: '记录详情'");
+    expect(secondaryActions).not.toContain("label: '查看详情'");
     expect(recommendation).not.toContain('记录详情');
     expect(recommendation).not.toContain('查看动作顺序');
   });

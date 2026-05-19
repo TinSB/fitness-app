@@ -45,15 +45,16 @@ describe('Training Focus recommendation explanation', () => {
       }),
     );
 
-    expect(html).toContain('依据');
+    expect(html).not.toContain('依据');
     expect(html).not.toContain('推荐依据');
   });
 
-  it('opens the BottomSheet from the small basis entry', () => {
-    expect(source).toContain('setShowExplanationSheet(true)');
+  it('keeps the recommendation basis sheet collapsed and without a default opener', () => {
+    expect(source).not.toContain('setShowExplanationSheet(true)');
     expect(source).toContain('BottomSheet open={showExplanationSheet}');
     expect(source).toContain('RecommendationExplanationPanel');
-    expect(source).toContain('compact maxVisibleFactors={3} defaultOpen');
+    expect(source).toContain('compact maxVisibleFactors={3}');
+    expect(source).not.toContain('compact maxVisibleFactors={3} defaultOpen');
   });
 
   it('keeps the complete-set button in Focus Mode', () => {

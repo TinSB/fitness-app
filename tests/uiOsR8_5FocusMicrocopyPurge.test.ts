@@ -63,7 +63,7 @@ describe('UI-OS R8.5 Focus microcopy purge', () => {
 
     expect(html).toContain('重量详情');
     expect(html).not.toContain('<details');
-    expect(html).toContain('依据');
+    expect(html).not.toContain('依据');
     expect(html).not.toContain('aria-label="推荐依据"');
     expect(source).toContain('showExplanationSheet');
     expect(source).toContain('<BottomSheet open={showExplanationSheet} title="推荐依据"');

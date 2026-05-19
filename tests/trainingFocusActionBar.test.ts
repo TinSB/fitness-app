@@ -62,9 +62,12 @@ describe('TrainingFocusView bottom action bar', () => {
     expect(text).not.toContain('标记不适');
     expect(text).not.toContain('替代动作');
     expect(text).toContain('记录本组');
-    expect(focusSource).toContain("label: '复制上组'");
+    expect(focusSource).not.toContain("label: '复制上组'");
     expect(focusSource).toContain("label: '标记不适'");
     expect(focusSource).toContain("label: '替代动作'");
+    expect(focusSource).toContain("label: '动作顺序'");
+    expect(focusSource).not.toContain("label: '记录详情'");
+    expect(focusSource).not.toContain("label: '查看详情'");
   });
 
   it('binds replacement action to the picker and keeps the empty-state toast', () => {

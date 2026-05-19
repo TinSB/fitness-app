@@ -64,6 +64,7 @@ export type FocusSecondaryActionKind =
   | 'copy_previous'
   | 'mark_discomfort'
   | 'replace_exercise'
+  | 'exercise_order'
   | 'skip'
   | 'continue_training'
   | 'return_previous_state'
@@ -116,11 +117,9 @@ export type FocusModeInteractionState = {
 };
 
 const baseSecondaryActions: FocusModeSecondaryAction[] = [
-  { kind: 'copy_previous', label: '复制上组' },
-  { kind: 'mark_discomfort', label: '标记不适' },
   { kind: 'replace_exercise', label: '替代动作' },
-  { kind: 'skip', label: '跳过' },
-  { kind: 'view_details', label: '查看详情' },
+  { kind: 'mark_discomfort', label: '标记不适' },
+  { kind: 'exercise_order', label: '动作顺序' },
 ];
 
 const makeState = (
@@ -230,7 +229,7 @@ export const resolveFocusModeInteractionState = (input: FocusModeInteractionInpu
 
   if (input.canRecord && (input.setState === 'warmup_set' || input.setState === 'working_set' || input.setState === 'pending_actual_input')) {
     return makeState(input, 'open_actual_record', '记录本组', {
-      secondaryActions: input.canApplySuggestion ? [{ kind: 'apply_weight', label: '套用建议' }, ...baseSecondaryActions] : baseSecondaryActions,
+      secondaryActions: baseSecondaryActions,
       shouldOpenActualRecordSheet: true,
     });
   }
