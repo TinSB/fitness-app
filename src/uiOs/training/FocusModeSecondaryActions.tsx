@@ -43,7 +43,15 @@ export function FocusModeSecondaryActions({ actions, isOpen, onOpenChange }: Foc
             data-theme-mode="dark"
             onClick={() => onOpenChange(false)}
           >
-            <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-white/20" />
+            <button
+              type="button"
+              aria-label="收起更多操作"
+              className="mx-auto mb-4 block h-3 w-16 rounded-full"
+              data-focus-more-handle="dismiss"
+              onClick={() => onOpenChange(false)}
+            >
+              <span className="mx-auto block h-1 w-9 rounded-full bg-white/20" />
+            </button>
             <div className="grid grid-cols-3 gap-2" data-focus-more-action-grid="protected" onClick={(event) => event.stopPropagation()}>
               {actions.map((action) => (
                 <ActionButton

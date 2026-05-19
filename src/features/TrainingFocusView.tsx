@@ -980,7 +980,7 @@ export function TrainingFocusView({
     ) : null;
 
   const renderEndSessionSheet = () => (
-    <UiOsBottomSheet isOpen={sessionEndRequested} onClose={() => setSessionEndRequested(false)} title="结束训练" tone="danger">
+    <UiOsBottomSheet isOpen={sessionEndRequested} onClose={() => setSessionEndRequested(false)} title="仍有未完成动作，是否结束训练？" tone="danger">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <UiOsActionButton type="button" variant="secondary" size="md" onClick={() => setSessionEndRequested(false)}>
