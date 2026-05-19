@@ -7,6 +7,7 @@ export type EquipmentLoadCardState = 'default' | 'warning' | 'blocked';
 export type EquipmentAwareLoadCardProps = {
   type?: EquipmentLoadType;
   mainDisplay: string;
+  reps?: number | string;
   subInfo?: string;
   note?: string;
   state?: EquipmentLoadCardState;
@@ -32,6 +33,7 @@ const stateGradients: Record<EquipmentLoadCardState, string> = {
 export function EquipmentAwareLoadCard({
   type = 'barbell',
   mainDisplay,
+  reps,
   subInfo,
   note,
   state = 'default',
@@ -39,6 +41,8 @@ export function EquipmentAwareLoadCard({
   compact = false,
 }: EquipmentAwareLoadCardProps) {
   const surface = resolveThemeSurface('training_hero', 'dark', { immersiveDark: true });
+  const repText = reps === undefined || reps === null ? '' : String(reps).trim();
+  const primaryDisplay = repText ? `${mainDisplay} × ${repText}` : mainDisplay;
   return (
     <section
       className={classNames('relative overflow-hidden rounded-3xl bg-gradient-to-b', compact ? 'p-4' : 'p-6', surface.className, surface.textClassName, stateGradients[state], className)}
@@ -52,8 +56,13 @@ export function EquipmentAwareLoadCard({
       </div>
 
       <div className={classNames(compact ? 'mb-2' : 'mb-4')}>
-        <span className={classNames(compact ? 'text-2xl font-bold' : 'text-5xl font-extralight', 'text-white tracking-tight')} style={{ fontFeatureSettings: '"tnum"' }}>
-          {mainDisplay}
+        <span
+          className={classNames(compact ? 'text-2xl font-bold' : 'text-5xl font-extralight', 'text-white tracking-tight')}
+          style={{ fontFeatureSettings: '"tnum"' }}
+          data-focus-primary-load-label="true"
+          data-equipment-primary-load-label="true"
+        >
+          {primaryDisplay}
         </span>
       </div>
 

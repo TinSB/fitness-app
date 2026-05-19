@@ -266,10 +266,10 @@ const replacementRankLabels: Record<SmartReplacementRecommendation['priority'], 
 };
 
 const replacementRankTone: Record<SmartReplacementRecommendation['priority'], string> = {
-  primary: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  secondary: 'border-sky-200 bg-sky-50 text-sky-800',
-  angle_variation: 'border-amber-200 bg-amber-50 text-amber-800',
-  avoid: 'border-slate-200 bg-slate-100 text-slate-600',
+  primary: 'border-emerald-300/35 bg-emerald-300/12 text-emerald-100',
+  secondary: 'border-sky-300/30 bg-sky-300/10 text-sky-100',
+  angle_variation: 'border-amber-300/30 bg-amber-300/10 text-amber-100',
+  avoid: 'border-amber-300/25 bg-amber-400/10 text-amber-100',
 };
 
 const replacementRankLabel = (rank: SmartReplacementRecommendation['priority']) => replacementRankLabels[rank] || formatReplacementCategory(rank);
@@ -597,8 +597,6 @@ export function TrainingFocusView({
               currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''
             }`
           : `${plannedWeightSummary} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''}`;
-  const primaryRecommendationLabel = actionablePrescription?.primaryPrescriptionLabel || plannedSummary;
-
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
   const actualRir = actualDraft?.actualRir;
@@ -952,11 +950,7 @@ export function TrainingFocusView({
         {currentSetSummary.isSuggestionApplied ? '已套用' : '套用建议'}
       </button>
     </div>
-  ) : (
-    <div className="text-sm font-semibold text-white/80">
-      {interactionState.primaryActionLabel}不会计入正式工作组。跳过需要再次确认。
-    </div>
-  );
+  ) : null;
 
   const renderActualRecordSheet = () =>
     !isSupportStep ? (
@@ -1046,11 +1040,11 @@ export function TrainingFocusView({
               onClick={() => switchExercise(index)}
               className={classNames(
                 'flex w-full items-center justify-between rounded-lg px-3 py-3 text-left',
-                selected ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-stone-50',
+                selected ? 'border border-emerald-300/35 bg-emerald-300/15 text-emerald-50' : 'border border-white/10 bg-white/[0.05] text-white',
               )}
             >
-              <span className="font-semibold text-slate-900">{displayExerciseName(exercise)}</span>
-              <span className="text-sm font-semibold text-slate-600">
+              <span className="font-semibold">{displayExerciseName(exercise)}</span>
+              <span className="text-sm font-semibold text-white/58">
                 {done}/{sets.length}
               </span>
             </button>
@@ -1210,9 +1204,6 @@ export function TrainingFocusView({
               </option>
             ))}
           </select>
-          <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-white/62">
-            主要操作已固定在底部动作栏，纠偏/活动任务不会计入正式工作组。
-          </div>
           <ActionButton
             type="button"
             variant="ghost"
@@ -1299,16 +1290,15 @@ export function TrainingFocusView({
             <div className="space-y-3" data-focus-recommendation-density="compact-single">
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-emerald-100">本组建议</div>
-                <div className="mt-2 text-2xl font-bold leading-8" data-focus-primary-load-label="true">{primaryRecommendationLabel}</div>
                 <EquipmentAwareRecommendationWeight
                   exerciseName={equipmentAwareExerciseName}
                   plannedWeightKg={currentStep.plannedWeight}
                   setPurpose={currentStep.stepType === 'warmup' ? 'warmup' : 'working'}
                   unitSettings={unitSettings}
+                  reps={currentStep.plannedReps}
                   compact
                   showDetails
                 />
-                <div className="mt-2 text-xs leading-5 text-white/45">实际记录通过底部动作栏填写。</div>
                 {showMissingInputGuide && currentSetSummary.missingInput ? (
                   <div className="mt-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">缺少重量或次数</div>
                 ) : null}

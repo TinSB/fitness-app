@@ -40,8 +40,9 @@ describe('UI consistency guard', () => {
     expect(focus).toContain('FocusModeActionBar');
     expect(focusActionBar).toContain('data-focus-mode-action-bar="one-dominant-primary"');
     expect(actionBar).toContain('env(safe-area-inset-bottom)');
-    expect(actionBar).toContain('bg-white');
-    expect(button).toContain('disabled:text-slate-400');
+    expect(actionBar).toContain('data-theme-surface="bottom_sheet"');
+    expect(actionBar).toContain('bg-[#0a0a0b]/96');
+    expect(button).toContain('disabled:text-white/30');
     expect(button).not.toMatch(/opacity-(30|40)|text-slate-300/);
   });
 

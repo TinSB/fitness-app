@@ -193,9 +193,9 @@ const AppAuxiliaryPanel = ({
       {activeTab === 'today' ? (
         <div className="space-y-2 text-sm">
           <StatusBadge tone="emerald">当前安排</StatusBadge>
-          <div className="font-semibold text-slate-950">{selectedTemplateName}</div>
-          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">下次建议：{suggestedTemplateName}</div>
-          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">
+          <div className="font-semibold text-white">{selectedTemplateName}</div>
+          <div className="rounded-lg bg-white/[0.05] p-3 text-white/60">下次建议：{suggestedTemplateName}</div>
+          <div className="rounded-lg bg-white/[0.05] p-3 text-white/60">
             今日状态：睡眠 {todayStatus.sleep} / 精力 {todayStatus.energy} / {todayStatus.time} 分钟
           </div>
         </div>
@@ -204,17 +204,17 @@ const AppAuxiliaryPanel = ({
       {activeTab === 'train' ? (
         <div className="space-y-2 text-sm">
           <StatusBadge tone={activeSession ? 'emerald' : 'slate'}>{activeSession ? '训练中' : '未开始'}</StatusBadge>
-          <div className="font-semibold text-slate-950">
+          <div className="font-semibold text-white">
             {activeSession ? formatTemplateName(activeSession.templateId || activeSession.templateName, '当前训练') : '暂无进行中的训练'}
           </div>
-          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">训练业务状态仍由 activeSession 和 workout state machine 管理。</div>
+          <div className="rounded-lg bg-white/[0.05] p-3 text-white/60">训练记录与当前训练会保持分开。</div>
         </div>
       ) : null}
 
       {activeTab === 'history' ? (
-        <div className="space-y-2 text-sm text-slate-600">
-          <div className="rounded-lg bg-stone-50 p-3">默认入口：训练日历。</div>
-          <div className="rounded-lg bg-stone-50 p-3">历史详情、异常提示和数据分区仍在历史页内切换。</div>
+        <div className="space-y-2 text-sm text-white/60">
+          <div className="rounded-lg bg-white/[0.05] p-3">默认入口：训练日历。</div>
+          <div className="rounded-lg bg-white/[0.05] p-3">历史详情在历史页内查看。</div>
         </div>
       ) : null}
 
