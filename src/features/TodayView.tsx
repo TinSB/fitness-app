@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, ChevronDown, ChevronRight, Clock3, Dumbbell, Play, RotateCcw } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, Play, RotateCcw } from 'lucide-react';
 import { AVAILABLE_TIME_OPTIONS, ENERGY_STATES, SLEEP_STATES } from '../models/training-model';
 import { classNames, number, todayKey } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
@@ -8,6 +8,7 @@ import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { type AutoTrainingLevel } from '../engines/trainingLevelEngine';
 import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildEnginePipeline } from '../engines/enginePipeline';
+import { buildTodayDecisionSurface } from '../engines/todayDecisionSurface';
 import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
@@ -17,8 +18,6 @@ import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareSchedu
 import type { SessionPatch } from '../engines/sessionPatchEngine';
 import {
   buildTodayTrainingFocusSelection,
-  TODAY_TRAINING_FOCUS_OVERRIDE_LABELS,
-  TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS,
   type TodayTrainingFocusOverrideOption,
   type TodayTrainingFocusSelection,
 } from '../engines/todayTrainingFocusOverrideEngine';
@@ -39,7 +38,14 @@ import { CoachActionList } from '../ui/CoachActionList';
 import { useConfirmDialog } from '../ui/useConfirmDialog';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
-import { TodayFocusOverrideCard, TodayHeroCard, UnfinishedSessionNotice } from '../uiOs/training/TrainingOsCards';
+import { ActionButton as UiOsActionButton } from '../uiOs/primitives/ActionButton';
+import { SafetyStrip } from '../uiOs/surfaces/SafetyStrip';
+import { TodayActiveSessionNotice } from '../uiOs/today/TodayActiveSessionNotice';
+import { TodayDecisionHero } from '../uiOs/today/TodayDecisionHero';
+import { TodayFocusOverridePanel } from '../uiOs/today/TodayFocusOverridePanel';
+import { TodayReadinessSummary } from '../uiOs/today/TodayReadinessSummary';
+import { TodaySevereRiskNotice } from '../uiOs/today/TodaySevereRiskNotice';
+import { UnfinishedSessionNotice } from '../uiOs/training/TrainingOsCards';
 
 interface TodayViewProps {
   data: AppData;
@@ -85,12 +91,6 @@ const readinessTone = (level?: string) => {
   if (level === 'yellow' || level === 'medium') return 'amber' as const;
   if (level === 'red' || level === 'low') return 'rose' as const;
   return 'slate' as const;
-};
-
-const statusTone = (status: 'not_started' | 'in_progress' | 'completed') => {
-  if (status === 'completed') return 'emerald' as const;
-  if (status === 'in_progress') return 'amber' as const;
-  return 'sky' as const;
 };
 
 const templateLabel = (template: Pick<TrainingTemplate, 'id' | 'name'>) => formatTemplateName(template, '未命名训练');
@@ -217,57 +217,7 @@ const TodayFocusOverrideControl = ({
 }: {
   selection: TodayTrainingFocusSelection;
   onChange?: (override: TodayTrainingFocusOverrideOption) => void;
-}) => (
-  <TodayFocusOverrideCard className="mt-5">
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <div className="text-sm font-semibold text-white">今天想练</div>
-        <div className="mt-1 text-xs leading-5 text-slate-300">选择只影响今天；可随时回到系统推荐，不修改长期计划。</div>
-      </div>
-      <StatusBadge tone={selection.overrideActive ? 'amber' : 'emerald'}>
-        {selection.overrideActive ? `已切换为 ${selection.selectedFocusLabel}` : '系统推荐'}
-      </StatusBadge>
-    </div>
-    <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="今天想练">
-      {TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS.map((option) => {
-        const selected = selection.override === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange?.(option)}
-            className={classNames(
-              'min-h-9 rounded-lg border px-3 text-sm font-medium transition',
-              selected
-                ? 'border-emerald-300 bg-emerald-300/20 text-emerald-50'
-                : 'border-white/10 bg-white/10 text-slate-200 hover:bg-white/15 hover:text-white',
-            )}
-            aria-pressed={selected}
-          >
-            {TODAY_TRAINING_FOCUS_OVERRIDE_LABELS[option]}
-          </button>
-        );
-      })}
-    </div>
-    <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-200 sm:grid-cols-2">
-      <div className="rounded-2xl bg-white/10 px-3 py-2">原计划：{selection.systemTemplateName}</div>
-      <div className="rounded-2xl bg-white/10 px-3 py-2">
-        {selection.overrideActive
-          ? `已切换为：${selection.selectedFocusLabel} · ${selection.selectedTemplateName}`
-          : `今日使用：${selection.systemTemplateName}`}
-      </div>
-    </div>
-    {selection.warnings.length ? (
-      <div className="mt-3 space-y-2">
-        {selection.warnings.map((warning) => (
-          <div key={warning.id} className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs leading-5 text-amber-50">
-            {warning.message}
-          </div>
-        ))}
-      </div>
-    ) : null}
-  </TodayFocusOverrideCard>
-);
+}) => <TodayFocusOverridePanel selection={selection} onChange={onChange} />;
 
 export function TodayView({
   data,
@@ -395,7 +345,6 @@ export function TodayView({
     [data, explanationTemplate, trainingMode, weeklyPrescription, decisionContext]
   );
   const recommendationExplanationTitle = todayTrainingState.status === 'completed' ? '为什么这样建议下次训练？' : '为什么这样推荐？';
-  const recommendationLabel = todayViewModel.recommendationLabel;
   const currentTrainingName = todayViewModel.currentTrainingName;
   const decisionText = todayViewModel.decisionText;
   const nextSuggestion = todayViewModel.nextSuggestion;
@@ -406,7 +355,11 @@ export function TodayView({
       ? '系统还在建立训练基线，今天的建议会保持保守。'
       : '今天优先完成主训练，细节记录放到训练页处理。');
   const coachActionListViewModel = React.useMemo(
-    () => buildCoachActionListViewModel(enginePipeline.visibleCoachActions, { surface: 'today', maxVisible: 2 }),
+    () =>
+      buildCoachActionListViewModel(
+        enginePipeline.visibleCoachActions.filter((action) => action.source !== 'dataHealth' && action.actionType !== 'open_data_health'),
+        { surface: 'today', maxVisible: 2 },
+      ),
     [enginePipeline.visibleCoachActions],
   );
   const dataHealthViewModel = React.useMemo(
@@ -414,6 +367,13 @@ export function TodayView({
     [enginePipeline.dataHealth],
   );
   const shouldUseDataHealthActionCopy = dataHealthViewModel && dataHealthViewModel.statusTone !== 'healthy';
+  const severeDataHealthNotice =
+    dataHealthViewModel?.statusTone === 'error'
+      ? {
+          title: dataHealthViewModel.primaryIssues[0]?.title || dataHealthViewModel.statusLabel,
+          message: dataHealthViewModel.primaryIssues[0]?.userMessage || dataHealthViewModel.summary,
+        }
+      : undefined;
   const displayCoachWarnings: string[] = shouldUseDataHealthActionCopy ? [] : [];
   const recommendationConfidence = trainingIntelligenceSummary?.recommendationConfidence?.find((item) => item.level !== 'high');
   const confidenceCopy =
@@ -482,16 +442,6 @@ export function TodayView({
     setCoachActionFeedback([summary, reasons].filter(Boolean).join(' '));
   };
 
-  const coachActionTitle = (action: CoachAutomationSummary['recommendedActions'][number]) =>
-    action.actionType === 'review_data'
-      ? dataHealthViewModel?.primaryIssues[0]?.title || action.label
-      : action.label;
-
-  const coachActionReason = (action: CoachAutomationSummary['recommendedActions'][number]) =>
-    action.actionType === 'review_data'
-      ? dataHealthViewModel?.primaryIssues[0]?.userMessage || dataHealthViewModel?.summary || action.reason
-      : action.reason;
-
   const coachActionButtonLabel = (action: CoachAutomationSummary['recommendedActions'][number]) => {
     if (action.actionType === 'review_data') return '去检查数据';
     if (action.actionType === 'open_next_workout') return '查看下次建议';
@@ -559,33 +509,100 @@ export function TodayView({
         todayViewModel.recommendationKind === 'mobility_only',
     );
   const recommendedTemplateId = todayTrainingState.status === 'not_started' ? todayViewModel.recommendedTemplateId : undefined;
+  const readinessDecisionState =
+    todayViewModel.recommendationKind === 'rest' ||
+    todayViewModel.recommendationKind === 'active_recovery' ||
+    todayViewModel.recommendationKind === 'mobility_only'
+      ? 'recovery'
+      : todayViewModel.recommendationKind === 'modified_train' || adjustedPlan.readiness.level === 'yellow' || adjustedPlan.readiness.level === 'red'
+        ? 'conservative'
+        : 'normal';
+  const fatigueDecisionState =
+    decisionContext.todayStatus.energy === '低' || decisionContext.todayStatus.sleep === '差' ? 'high' : 'normal';
+  const todayDecisionSurface = buildTodayDecisionSurface({
+    recommendedFocus: currentTrainingName,
+    selectedFocusOverride: resolvedTodayFocusSelection.overrideActive ? resolvedTodayFocusSelection.selectedFocusLabel : undefined,
+    activeSessionState:
+      todayTrainingState.status === 'in_progress'
+        ? 'active'
+        : todayTrainingState.status === 'completed'
+          ? 'completed'
+          : 'none',
+    hasUnfinishedSession: todayTrainingState.status === 'in_progress',
+    hasCompletedSession: todayTrainingState.status === 'completed',
+    readinessState: readinessDecisionState,
+    fatigueState: fatigueDecisionState,
+    recentTrainingFrequency: mesocycleWeek ? formatCyclePhase(mesocycleWeek.phase) : undefined,
+    severeDataHealthBlocker: severeDataHealthNotice,
+    backupStatus: 'local-ok',
+    sourceOfTruthClear: true,
+    canStartTraining: todayTrainingState.status !== 'completed',
+    canContinueTraining: todayTrainingState.status === 'in_progress',
+    canRecoverTraining: Boolean(recoveryNeedsNonTrainingPrimary),
+    currentDate: todayTrainingState.date,
+    noPlanAvailable: !selectedTemplate.id,
+    existingPrimaryActionLabel: todayViewModel.primaryActionLabel,
+    existingDecisionText: decisionText,
+  });
+  const handleSevereRiskAction = () => {
+    if (onReviewDataHealth) {
+      onReviewDataHealth();
+      return;
+    }
+    setCoachActionFeedback('请到设置或数据安全区域查看严重数据健康问题。');
+  };
 
   const primaryAction =
-    todayTrainingState.status === 'completed' && completedSession ? (
-      <ActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary" size="lg" fullWidth>
+    todayDecisionSurface.decisionState === 'blocked_by_severe_risk' ? (
+      <UiOsActionButton type="button" onClick={handleSevereRiskAction} variant="primary" size="lg" fullWidth>
+        {todayDecisionSurface.primaryActionLabel}
+      </UiOsActionButton>
+    ) : todayTrainingState.status === 'completed' && completedSession ? (
+      <UiOsActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary" size="lg" fullWidth>
         查看本次训练
         <ChevronRight className="h-4 w-4" />
-      </ActionButton>
+      </UiOsActionButton>
     ) : todayTrainingState.status === 'in_progress' ? (
-      <ActionButton type="button" onClick={onResume} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={onResume} variant="primary" size="lg" fullWidth>
         继续训练
         <ChevronRight className="h-4 w-4" />
-      </ActionButton>
+      </UiOsActionButton>
     ) : recoveryNeedsNonTrainingPrimary ? (
-      <ActionButton type="button" onClick={handleRecoveryPrimaryAction} variant="primary" size="lg" fullWidth>
-        {todayViewModel.primaryActionLabel}
-      </ActionButton>
+      <UiOsActionButton type="button" onClick={handleRecoveryPrimaryAction} variant="primary" size="lg" fullWidth>
+        {todayDecisionSurface.primaryActionLabel}
+      </UiOsActionButton>
     ) : recommendedTemplateId && recommendedTemplateId !== selectedTemplate.id ? (
-      <ActionButton type="button" onClick={() => (onStartRecommended ? onStartRecommended(recommendedTemplateId) : onStart())} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={() => (onStartRecommended ? onStartRecommended(recommendedTemplateId) : onStart())} variant="primary" size="lg" fullWidth>
         <Play className="h-4 w-4" />
-        {todayViewModel.primaryActionLabel}
-      </ActionButton>
+        {todayDecisionSurface.primaryActionLabel}
+      </UiOsActionButton>
     ) : (
-      <ActionButton type="button" onClick={onStart} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={onStart} variant="primary" size="lg" fullWidth>
         <Play className="h-4 w-4" />
-        {todayViewModel.primaryActionLabel}
-      </ActionButton>
+        {todayDecisionSurface.primaryActionLabel}
+      </UiOsActionButton>
     );
+  const heroSecondaryActions =
+    todayDecisionSurface.decisionState === 'blocked_by_severe_risk' ? null : todayTrainingState.status === 'completed' ? (
+      <>
+        <UiOsActionButton type="button" onClick={() => onViewCalendar?.(todayTrainingState.date)} variant="secondary" fullWidth>
+          <CalendarDays className="h-4 w-4" />
+          查看日历
+        </UiOsActionButton>
+        <UiOsActionButton type="button" onClick={handleExtraTraining} variant="ghost" fullWidth>
+          <RotateCcw className="h-4 w-4" />
+          再练一场
+        </UiOsActionButton>
+      </>
+    ) : recoveryNeedsNonTrainingPrimary || todayViewModel.requiresRecoveryOverride ? (
+      <UiOsActionButton type="button" onClick={handleRecoveryOverride} variant="secondary" fullWidth>
+        {recoveryOverrideLabel}
+      </UiOsActionButton>
+    ) : hasAlternativeSuggestion ? (
+      <UiOsActionButton type="button" onClick={onUseSuggestion} variant="secondary" fullWidth>
+        采用推荐安排
+      </UiOsActionButton>
+    ) : null;
 
   return (
     <ResponsivePageLayout>
@@ -594,72 +611,70 @@ export function TodayView({
       <DashboardLayout
         main={
           <div className="space-y-4">
-            <TodayHeroCard>
-              <div className="border-b border-white/10 bg-white/[0.06] px-4 py-3 md:px-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge tone={statusTone(todayViewModel.state)}>{todayViewModel.pageTitle}</StatusBadge>
-                  {resolvedTodayFocusSelection.overrideActive ? <StatusBadge tone="amber">手动目标</StatusBadge> : null}
-                  <span className="text-xs font-medium text-slate-300">{todayTrainingState.date}</span>
-                </div>
+            <TodayDecisionHero
+              decision={todayDecisionSurface}
+              dateLabel={todayTrainingState.date}
+              primaryAction={primaryAction}
+              secondaryActions={heroSecondaryActions}
+            />
+
+            {todayTrainingState.status === 'in_progress' ? (
+              <TodayActiveSessionNotice
+                message="当前有未完成训练，继续记录优先；不会自动完成或放弃上一场。"
+                action={
+                  <UiOsActionButton type="button" variant="secondary" size="sm" onClick={onResume} fullWidth>
+                    继续训练
+                  </UiOsActionButton>
+                }
+              />
+            ) : null}
+
+            {todayDecisionSurface.severeNotice ? (
+              <TodaySevereRiskNotice
+                title={todayDecisionSurface.severeNotice.title}
+                message={todayDecisionSurface.severeNotice.message}
+                onAction={handleSevereRiskAction}
+              />
+            ) : null}
+
+            <TodayReadinessSummary
+              decision={todayDecisionSurface}
+              readinessScore={readinessScore}
+              durationMinutes={adjustedPlan.duration}
+              note={todayNote}
+            />
+
+            {todayDecisionSurface.showFocusOverride && todayTrainingState.status === 'not_started' ? (
+              <TodayFocusOverrideControl selection={resolvedTodayFocusSelection} onChange={onFocusOverrideChange} />
+            ) : null}
+
+            <SafetyStrip includeSecondaryCopy />
+
+            {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
+              <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
+                {todayViewModel.recoverySummary}
+                {todayViewModel.recoveryReasons?.length ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5">
+                    {todayViewModel.recoveryReasons.slice(0, 2).map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
-              <div className="grid gap-5 p-4 md:grid-cols-[minmax(0,1fr)_240px] md:p-5">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-emerald-200">{recommendationLabel}</div>
-                  <h2 className="mt-2 text-3xl font-bold tracking-tight text-white md:text-4xl">{currentTrainingName}</h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{decisionText}</p>
-                  {todayTrainingState.status === 'not_started' ? (
-                    <TodayFocusOverrideControl selection={resolvedTodayFocusSelection} onChange={onFocusOverrideChange} />
-                  ) : null}
-                  {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
-                    <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
-                      {todayViewModel.recoverySummary}
-                      {todayViewModel.recoveryReasons?.length ? (
-                        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5">
-                          {todayViewModel.recoveryReasons.slice(0, 2).map((reason) => (
-                            <li key={reason}>{reason}</li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {todayTrainingState.status === 'completed' ? (
-                    <div
-                      className="mt-4 rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2 text-sm leading-6 text-sky-50"
-                      aria-label={`下次建议：${nextSuggestion.templateName}，不是今天必须继续训练`}
-                    >
-                      {nextSuggestion.description}
-                    </div>
-                  ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
-                    <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
-                      系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
-                    </div>
-                  ) : null}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {primaryAction}
-                  {todayTrainingState.status === 'completed' ? (
-                    <>
-                      <ActionButton type="button" onClick={() => onViewCalendar?.(todayTrainingState.date)} variant="secondary" fullWidth>
-                        <CalendarDays className="h-4 w-4" />
-                        查看日历
-                      </ActionButton>
-                      <ActionButton type="button" onClick={handleExtraTraining} variant="ghost" fullWidth>
-                        <RotateCcw className="h-4 w-4" />
-                        再练一场
-                      </ActionButton>
-                    </>
-                  ) : recoveryNeedsNonTrainingPrimary || todayViewModel.requiresRecoveryOverride ? (
-                    <ActionButton type="button" onClick={handleRecoveryOverride} variant="secondary" fullWidth>
-                      {recoveryOverrideLabel}
-                    </ActionButton>
-                  ) : hasAlternativeSuggestion ? (
-                    <ActionButton type="button" onClick={onUseSuggestion} variant="secondary" fullWidth>
-                      采用推荐安排
-                    </ActionButton>
-                  ) : null}
-                </div>
+            ) : null}
+
+            {todayTrainingState.status === 'completed' ? (
+              <div
+                className="rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2 text-sm leading-6 text-sky-50"
+                aria-label={`下次建议：${nextSuggestion.templateName}，不是今天必须继续训练`}
+              >
+                {nextSuggestion.description}
               </div>
-            </TodayHeroCard>
+            ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
+              <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
+                系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
+              </div>
+            ) : null}
 
             <RecommendationExplanationPanel
               trace={recommendationTrace}

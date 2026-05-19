@@ -65,6 +65,7 @@ const makeBenchWarmupSession = () =>
 
 describe('UI-OS 4 Today Train Focus redesign', () => {
   const todaySource = readFileSync('src/features/TodayView.tsx', 'utf8');
+  const todayFocusOverrideSource = readFileSync('src/uiOs/today/TodayFocusOverridePanel.tsx', 'utf8');
   const focusSource = readFileSync('src/features/TrainingFocusView.tsx', 'utf8');
   const trainingSource = readFileSync('src/features/TrainingView.tsx', 'utf8');
   const cardsSource = readFileSync('src/uiOs/training/TrainingOsCards.tsx', 'utf8');
@@ -86,10 +87,13 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
   });
 
   it('keeps Today daily recommendation, focus override, safety-local copy path, and start or continue action visible', () => {
-    expect(todaySource).toContain('<TodayHeroCard');
+    expect(todaySource).toContain('<TodayDecisionHero');
+    expect(todaySource).toContain('buildTodayDecisionSurface');
     expect(todaySource).toContain('<TodayFocusOverrideControl');
-    expect(todaySource).toContain('今天想练');
-    expect(todaySource).toContain('选择只影响今天；可随时回到系统推荐，不修改长期计划。');
+    expect(todayFocusOverrideSource).toContain('今天想练');
+    expect(todayFocusOverrideSource).toContain('选择只影响今天');
+    expect(todayFocusOverrideSource).toContain('不修改长期计划');
+    expect(todaySource).toContain('<SafetyStrip includeSecondaryCopy');
     expect(todaySource).toContain('继续训练');
     expect(todaySource).toContain('primaryAction');
   });
