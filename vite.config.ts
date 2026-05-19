@@ -1,11 +1,20 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { resolve } from 'path';
 
 const normalizeId = (id: string) => id.replaceAll('\\', '/');
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        prototype: resolve(__dirname, 'prototype.html'),
+      },
+    },
+  },
   test: {
     environment: 'node',
     globals: true,
