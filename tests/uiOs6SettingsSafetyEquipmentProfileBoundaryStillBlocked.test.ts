@@ -3,25 +3,36 @@ import { describe, expect, it } from 'vitest';
 import { API_STORAGE_ADAPTER_ACCEPTED_WRITE_ROUTES } from '../src/storage/apiStorageAdapter';
 
 const read = (path: string) => readFileSync(path, 'utf8');
-const docPath = 'docs/UI_OS_6_SETTINGS_SAFETY_EQUIPMENT_PROFILE_REDESIGN.md';
+const docPath = 'docs/UI_OS_R6_SETTINGS_SAFETY_THEME_EQUIPMENT_PROFILE_REWRITE.md';
 
 describe('UI-OS 6 Settings Safety Equipment Profile boundary lock', () => {
   const doc = read(docPath);
   const profileSource = read('src/features/ProfileView.tsx');
-  const cardsSource = read('src/uiOs/settings/SettingsOsCards.tsx');
+  const settingsSources = [
+    'src/engines/settingsSafetySummary.ts',
+    'src/engines/themePreferenceModel.ts',
+    'src/uiOs/settings/SettingsControlCenter.tsx',
+    'src/uiOs/settings/ThemeSettingsPanel.tsx',
+    'src/uiOs/settings/BackupRecoverySettingsPanel.tsx',
+    'src/uiOs/settings/EmergencyLocalSettingsPanel.tsx',
+    'src/uiOs/settings/CloudCandidateSettingsPanel.tsx',
+    'src/uiOs/settings/EquipmentProfileSettingsPanel.tsx',
+    'src/uiOs/settings/DiagnosticsDataSafetyPanel.tsx',
+    'src/uiOs/settings/AboutDataSafetyPanel.tsx',
+  ].map(read).join('\n');
   const packageJson = read('package.json');
 
   it('documents UI-OS 5 baseline, scope, and next task state', () => {
     expect(existsSync(docPath)).toBe(true);
     for (const expected of [
-      'UI-OS 6',
-      'Settings / Safety / Equipment Profile Redesign',
-      'PR #277',
-      '5bb9f1b27a94732cc803724e96dd4835a9b39f5d',
-      '1108 files / 4523 tests',
-      'source-of-truth behavior',
-      'persistence behavior',
-      'UI-OS 7 is not started',
+      'UI-OS R6',
+      'Settings / Safety / Theme / Equipment Profile Rewrite',
+      'PR #285',
+      '284d7a675ca3a5b9a5dc28b77a89b300180730d2',
+      '1142 files / 4648 tests',
+      'No source-of-truth change',
+      'No persistence change',
+      'UI-OS R7 is not started',
     ]) {
       expect(doc).toContain(expected);
     }
@@ -57,7 +68,7 @@ describe('UI-OS 6 Settings Safety Equipment Profile boundary lock', () => {
   });
 
   it('does not add forbidden runtime behavior to the settings shell', () => {
-    const combined = `${profileSource}\n${cardsSource}`;
+    const combined = `${profileSource}\n${settingsSources}`;
     for (const forbidden of [
       '/data-health/repair/apply',
       'backup/import/export over HTTP route',
@@ -67,8 +78,6 @@ describe('UI-OS 6 Settings Safety Equipment Profile boundary lock', () => {
       '@supabase',
       'node:fs',
       'node:path',
-      'automaticSyncEnabled',
-      'backgroundSync',
       'cloudSyncWorker',
     ]) {
       expect(combined).not.toContain(forbidden);

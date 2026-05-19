@@ -9,10 +9,8 @@ describe('profile data health UI', () => {
     const source = read('src/features/ProfileView.tsx');
 
     expect(source).toContain('buildDataHealthViewModel');
-    expect(source).toContain('数据健康良好');
-    expect(source).toContain('未发现会影响训练统计的问题。');
-    expect(source).toContain('查看全部问题');
-    expect(source).toContain('查看详情');
+    expect(source).toContain('buildDataHealthClaritySummary');
+    expect(source).toContain('DiagnosticsDataSafetyPanel');
     expect(source).toContain('technicalDetails');
     expect(source).toContain('onDataHealthAction');
     expect(source).toContain('issue.action.label');

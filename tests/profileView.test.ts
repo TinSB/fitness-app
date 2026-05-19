@@ -20,6 +20,7 @@ describe('ProfileView secondary entry points', () => {
   it('contains health data and local PWA guidance', () => {
     expect(source).toContain('HealthDataPanel');
     expect(source).toContain('onUpdateHealthData');
-    expect(source).toContain('Smartphone');
+    expect(source).toContain('AboutDataSafetyPanel');
+    expect(source).toContain('SettingsControlCenter');
   });
 });

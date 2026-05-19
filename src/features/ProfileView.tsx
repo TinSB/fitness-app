@@ -1,10 +1,13 @@
 import React from 'react';
-import { Activity, Database, Download, HardDrive, Ruler, ShieldCheck, Smartphone, Upload } from 'lucide-react';
+import { Download, ShieldCheck } from 'lucide-react';
 import { downloadText, makeCsv } from '../engines/analytics';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
+import { buildDataHealthClaritySummary } from '../engines/dataHealthClaritySummary';
+import { buildSettingsSafetySummary } from '../engines/settingsSafetySummary';
+import { resolveThemePreference, type ThemePreferenceMode } from '../engines/themePreferenceModel';
 import {
   analyzeImportedAppData,
   canImportDataRepairReport,
@@ -12,21 +15,23 @@ import {
   type DataRepairReport,
   type DataRepairResult,
 } from '../engines/dataRepairEngine';
-import { formatGoal } from '../i18n/formatters';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
-import type { AppData, UnitSettings } from '../models/training-model';
+import type { AppData, UnitSettings, WeightUnit } from '../models/training-model';
 import { ActionButton } from '../ui/ActionButton';
-import { Card } from '../ui/Card';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { ListItem } from '../ui/ListItem';
-import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
-import { PageSection } from '../ui/PageSection';
-import { StatusBadge } from '../ui/StatusBadge';
 import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
-import { SettingsOsGroup, SettingsOsHero, SettingsOsMiniCard } from '../uiOs/settings/SettingsOsCards';
+import { AboutDataSafetyPanel } from '../uiOs/settings/AboutDataSafetyPanel';
+import { BackupRecoverySettingsPanel } from '../uiOs/settings/BackupRecoverySettingsPanel';
+import { CloudCandidateSettingsPanel } from '../uiOs/settings/CloudCandidateSettingsPanel';
+import { DiagnosticsDataSafetyPanel } from '../uiOs/settings/DiagnosticsDataSafetyPanel';
+import { EmergencyLocalSettingsPanel } from '../uiOs/settings/EmergencyLocalSettingsPanel';
+import { EquipmentProfileSettingsPanel } from '../uiOs/settings/EquipmentProfileSettingsPanel';
+import { SettingsControlCenter } from '../uiOs/settings/SettingsControlCenter';
+import { SettingsGroupCard } from '../uiOs/settings/SettingsGroupCard';
+import { ThemeSettingsPanel } from '../uiOs/settings/ThemeSettingsPanel';
 import { HealthDataPanel } from './HealthDataPanel';
 
 interface ProfileViewProps {
@@ -102,10 +107,9 @@ export function ProfileView({
   const dataManagementRef = React.useRef<HTMLDivElement | null>(null);
   const [message, setMessage] = React.useState('');
   const [pendingRestore, setPendingRestore] = React.useState<PendingRestore | null>(null);
+  const [themeMode, setThemeMode] = React.useState<ThemePreferenceMode>('system');
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const normalSessionCount = analyticsHistory.length;
-  const testSessionCount = (data.history || []).filter((session) => session.dataFlag === 'test').length;
-  const healthBatchCount = data.healthImportBatches?.length || 0;
   const dataHealth = coachAutomationSummary?.dataHealth;
   const dismissedDataHealthIssues = data.dismissedDataHealthIssues || data.settings?.dismissedDataHealthIssues || [];
   const dataHealthViewModel = React.useMemo(
@@ -118,12 +122,83 @@ export function ProfileView({
         : null,
     [dataHealth, dismissedDataHealthIssues],
   );
-  const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
-  const visibleDataHealthIssues = dataHealthViewModel?.primaryIssues || [];
-  const hiddenDataHealthIssues = dataHealthViewModel?.secondaryIssues || [];
+  const allDataHealthIssues = React.useMemo(
+    () => [...(dataHealthViewModel?.primaryIssues || []), ...(dataHealthViewModel?.secondaryIssues || [])],
+    [dataHealthViewModel],
+  );
+  const visibleDataHealthIssues = React.useMemo(() => allDataHealthIssues.slice(0, 3), [allDataHealthIssues]);
+  const hiddenDataHealthIssueCount = Math.max(0, allDataHealthIssues.length - visibleDataHealthIssues.length);
+  const dataHealthClarity = React.useMemo(
+    () =>
+      buildDataHealthClaritySummary({
+        issues: visibleDataHealthIssues.map((issue) => ({
+          id: issue.id,
+          title: issue.title,
+          userMessage: issue.userMessage,
+          severityLabel: issue.severityLabel,
+          technicalDetails: issue.technicalDetails,
+        })),
+        sourceOfTruthClear: true,
+        backupStatus: 'unknown',
+        cloudCandidateEnabled: false,
+        ownerScopeClear: true,
+        schemaValidationClear: true,
+      }),
+    [visibleDataHealthIssues],
+  );
+  const themePreference = React.useMemo(
+    () => resolveThemePreference({ selectedThemeMode: themeMode, systemPrefersDark: false, focusModeImmersive: true }),
+    [themeMode],
+  );
+  const settingsSafetySummary = React.useMemo(
+    () =>
+      buildSettingsSafetySummary({
+        backupStatus: normalSessionCount ? 'unknown' : 'missing',
+        emergencyLocalAvailable: true,
+        cloudCandidateEnabled: false,
+        sourceOfTruthClear: true,
+        dataHealthOverallState: dataHealthClarity.overallState,
+        diagnosticsAvailable: Boolean(dataHealthViewModel),
+        equipmentProfileCoverage: 'partial',
+        acceptedMutationRouteCount: 7,
+        hasBlockedRoutes: true,
+        themeMode,
+        unitsMode: unitSettings.weightUnit,
+         personalOnlyMode: true,
+         cloudSyncEnabled: false,
+         automaticWorkerEnabled: false,
+       }),
+    [dataHealthClarity.overallState, dataHealthViewModel, normalSessionCount, themeMode, unitSettings.weightUnit],
+  );
   const coachActionListViewModel = React.useMemo(
     () => buildCoachActionListViewModel(coachActions || [], { surface: 'profile' }),
     [coachActions],
+  );
+
+  const renderDataHealthIssueActions = React.useCallback(
+    (issueId: string) => {
+      const issue = allDataHealthIssues.find((item) => item.id === issueId);
+      if (!issue || !onDataHealthAction) return null;
+
+      return (
+        <>
+          {issue.action && issue.action.type !== 'none' ? (
+            <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction(issue.action!)}>
+              {issue.action.label}
+            </ActionButton>
+          ) : null}
+          {issue.dismissAction ? (
+            <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction(issue.dismissAction!)}>
+              {issue.dismissAction.label}
+            </ActionButton>
+          ) : null}
+          {issue.action?.description ? (
+            <span className="text-xs leading-5 text-white/45">{issue.action.description}</span>
+          ) : null}
+        </>
+      );
+    },
+    [allDataHealthIssues, onDataHealthAction],
   );
 
   React.useEffect(() => {
@@ -221,336 +296,101 @@ export function ProfileView({
         description="管理个人资料、筛查、单位、健康数据、备份恢复和本地 PWA 说明。"
       />
 
-      <SettingsOsHero className="mb-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold text-emerald-200">Owner-only Safety OS</div>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight">设置、安全和器械配置集中在这里</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-              localStorage remains default/fallback/migration/emergency；云端候选是手动、可逆的配置，不会自动同步。备份恢复、紧急本地模式、诊断和器械档案都必须由你确认。
+      <SettingsControlCenter summary={settingsSafetySummary}>
+        <div ref={unitSettingsRef}>
+          <ThemeSettingsPanel
+            theme={themePreference}
+            unitSettings={unitSettings}
+            onThemeChange={setThemeMode}
+            onUnitChange={(unit: WeightUnit) => onUpdateUnitSettings({ weightUnit: unit })}
+          />
+        </div>
+
+        <div ref={dataManagementRef}>
+          <BackupRecoverySettingsPanel
+            copy={settingsSafetySummary.backupRecoveryCopy}
+            message={message}
+            onDownloadBackup={downloadBackup}
+            onDownloadCsv={downloadCsv}
+            onImportClick={() => fileInputRef.current?.click()}
+            onOpenRecordData={onOpenRecordData}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(event) => void handleImportFile(event.target.files?.[0])}
+          />
+        </div>
+
+        <EmergencyLocalSettingsPanel copy={settingsSafetySummary.emergencyLocalCopy} />
+        <EquipmentProfileSettingsPanel copy={settingsSafetySummary.equipmentProfileCopy} />
+        <CloudCandidateSettingsPanel copy={settingsSafetySummary.cloudCandidateCopy} />
+
+        <DiagnosticsDataSafetyPanel
+          dataHealthLabel="数据健康检查"
+          diagnosticsCopy={settingsSafetySummary.diagnosticsCopy}
+          dataHealthSummary={dataHealthClarity}
+          hiddenIssueCount={hiddenDataHealthIssueCount}
+          showAllIssuesLabel="查看全部问题"
+          issueDetailFallbackLabel="查看详情"
+          renderIssueActions={renderDataHealthIssueActions}
+        />
+
+        <div ref={healthDataRef}>
+          <SettingsGroupCard className="xl:col-span-2">
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-slate-500">Health Data Import</p>
+              <h3 className="mt-1 text-lg font-bold text-slate-950">健康数据导入</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。此处不会上传完整训练数据。
+              </p>
+            </div>
+            <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
+          </SettingsGroupCard>
+        </div>
+
+        <div ref={screeningRef}>
+          <SettingsGroupCard>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Profile / Screening</p>
+                <h3 className="mt-1 text-lg font-bold text-slate-950">身体 / 动作筛查</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  管理训练目标、体态问题、动作限制和疼痛触发。低频配置集中在设置页，不挤占训练流程。
+                </p>
+              </div>
+              <ActionButton variant="primary" onClick={onOpenAssessment}>
+                <ShieldCheck className="h-4 w-4" />
+                打开筛查
+              </ActionButton>
+            </div>
+          </SettingsGroupCard>
+        </div>
+
+        <SettingsGroupCard className="xl:col-span-2">
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-slate-500">Coach Automation</p>
+            <h3 className="mt-1 text-lg font-bold text-slate-950">教练动作收件箱</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              教练自动化只生成建议，不会自动覆盖计划或修改历史。采用建议、修正记录或调整计划仍由你手动确认。
             </p>
           </div>
-          <div className="grid min-w-44 gap-2 text-sm">
-            <div className="rounded-2xl bg-white/10 px-3 py-2">云端候选：需要手动确认</div>
-            <div className="rounded-2xl bg-white/10 px-3 py-2">紧急本地模式可用</div>
-            <div className="rounded-2xl bg-white/10 px-3 py-2">rollback / kill switch 可用</div>
-          </div>
-        </div>
-      </SettingsOsHero>
+          <CoachActionList
+            title="教练动作收件箱"
+            description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会自动修改数据。"
+            viewModel={coachActionListViewModel}
+            showStatusFilters
+            onAction={onCoachAction}
+            onDismiss={onDismissCoachAction}
+            onDetail={onCoachAction}
+            emptyText="暂无需要处理的教练建议。"
+          />
+        </SettingsGroupCard>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-        <section className="space-y-4">
-          <PageSection title="个人数据状态" description="这里只显示设置和数据状态，不展示今日训练建议。">
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <MetricCard label="正式训练" value={`${normalSessionCount} 次`} tone="emerald" />
-              <MetricCard label="测试训练" value={`${testSessionCount} 次`} tone={testSessionCount ? 'amber' : 'slate'} />
-              <MetricCard label="健康导入批次" value={`${healthBatchCount} 批`} />
-            </div>
-            <Card className="mt-3 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge tone="emerald">{formatGoal(data.userProfile?.primaryGoal || data.programTemplate?.primaryGoal)}</StatusBadge>
-                <StatusBadge tone="slate">{unitSettings.weightUnit}</StatusBadge>
-              </div>
-              <div className="text-sm leading-6 text-slate-600">
-                {data.userProfile?.name || 'anonymous'} · 每周 {data.userProfile?.weeklyTrainingDays || data.programTemplate?.daysPerWeek || 0} 天 · 每次约 {data.userProfile?.sessionDurationMin || 60} 分钟
-              </div>
-            </Card>
-          </PageSection>
-
-          <div ref={screeningRef}>
-            <PageSection title="筛查" description="身体资料、体态筛查和动作受限入口。">
-              <Card>
-                <ListItem
-                  title="身体 / 动作筛查"
-                  description="管理训练目标、体态问题、动作限制和疼痛触发。"
-                  meta="低频设置，不放在训练页。"
-                  action={
-                    <ActionButton variant="primary" onClick={onOpenAssessment}>
-                      <ShieldCheck className="h-4 w-4" />
-                      打开筛查
-                    </ActionButton>
-                  }
-                />
-              </Card>
-            </PageSection>
-          </div>
-
-          <div ref={unitSettingsRef}>
-            <PageSection title="Units / 单位设置" description="切换只影响界面显示和输入，历史训练内部仍按 kg 标准化保存。">
-              <Card className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {(['kg', 'lb'] as const).map((unit) => (
-                    <button
-                      key={unit}
-                      type="button"
-                      onClick={() => onUpdateUnitSettings({ weightUnit: unit })}
-                      className={[
-                        'min-h-12 rounded-lg border text-base font-semibold transition',
-                        unitSettings.weightUnit === unit ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
-                      ].join(' ')}
-                    >
-                      {unit === 'kg' ? 'kg 公斤' : 'lb 磅'}
-                    </button>
-                  ))}
-                </div>
-                <Notice title="说明">
-                  e1RM、PR 和训练量内部仍统一计算，界面会按你选择的单位显示。
-                </Notice>
-              </Card>
-            </PageSection>
-          </div>
-
-          <PageSection title="安全与器械配置" description="高风险设置集中在设置页；训练页只保留训练动作。">
-            <div className="grid gap-3 md:grid-cols-2">
-              <SettingsOsGroup>
-                <div className="text-sm font-semibold text-slate-950">Emergency Local Mode / 紧急本地模式</div>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  本地训练记录仍可继续。云端候选不会自动应用；cloud pull does not auto-apply，cloud push requires manual confirmation。
-                </p>
-              </SettingsOsGroup>
-              <SettingsOsGroup>
-                <div className="text-sm font-semibold text-slate-950">Cloud Candidate / 云端候选</div>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  云端候选 remains explicit opt-in and reversible。冲突解决保持手动，不提供 casual sync 按钮。
-                </p>
-              </SettingsOsGroup>
-              <SettingsOsGroup>
-                <div className="text-sm font-semibold text-slate-950">Equipment Profiles / 器械档案</div>
-                <div className="mt-2 grid gap-2">
-                  <SettingsOsMiniCard>Olympic bar 45 lb；总重量 + 每边杠铃片。</SettingsOsMiniCard>
-                  <SettingsOsMiniCard>Smith machine 25 lb；杆重计入总重量。</SettingsOsMiniCard>
-                  <SettingsOsMiniCard>哑铃每只手 / per-hand；默认 5 lb increment。</SettingsOsMiniCard>
-                  <SettingsOsMiniCard>selectorized machine stack / 插片；机器选项需要之后配置。</SettingsOsMiniCard>
-                  <SettingsOsMiniCard>plate-loaded base/sled warning：器械自重可能未计入。</SettingsOsMiniCard>
-                </div>
-              </SettingsOsGroup>
-              <SettingsOsGroup>
-                <div className="text-sm font-semibold text-slate-950">Diagnostics / 诊断</div>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  诊断只做脱敏摘要；不会上传完整 AppData，不会启用外部监控，也不会自行修复历史记录。
-                </p>
-              </SettingsOsGroup>
-              <SettingsOsGroup>
-                <div className="text-sm font-semibold text-slate-950">Backup / Recovery / 备份恢复</div>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  导入前先校验，确认后才替换当前浏览器数据；backup/import/export over HTTP remains blocked。
-                </p>
-              </SettingsOsGroup>
-              <SettingsOsGroup>
-                <div className="text-sm font-semibold text-slate-950">About / Data Safety / 关于与数据安全</div>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  IronPath remains personal-only；SaaS deferred。开发 API 运行时只用于本地开发，不是生产后端。
-                </p>
-              </SettingsOsGroup>
-            </div>
-          </PageSection>
-        </section>
-
-        <section className="space-y-4">
-          <div ref={healthDataRef}>
-            <PageSection title="健康数据导入" description="手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。">
-              <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
-            </PageSection>
-          </div>
-
-          {dataHealthViewModel ? (
-            <PageSection title="数据健康检查" description="自动发现历史记录、替代动作、单位和健康导入中的潜在异常。">
-              <Card className="space-y-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-950">
-                      {dataHealthViewModel.statusTone === 'healthy' ? '数据健康良好' : dataHealthViewModel.summary}
-                    </div>
-                    <div className="mt-1 text-xs leading-5 text-slate-500">
-                      {dataHealthViewModel.statusTone === 'healthy' ? '未发现会影响训练统计的问题。' : '这里只报告问题，不会自动删除、修正或覆盖任何数据。'}
-                    </div>
-                  </div>
-                  <StatusBadge tone={dataHealthTone}>{dataHealthViewModel.statusLabel}</StatusBadge>
-                </div>
-                {visibleDataHealthIssues.length ? (
-                  <div className="space-y-2">
-                    {visibleDataHealthIssues.map((issue) => (
-                      <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-slate-950">{issue.title}</span>
-                          <StatusBadge tone={issue.severityLabel === '需要处理' ? 'rose' : issue.severityLabel === '建议复查' ? 'amber' : 'slate'}>
-                            {issue.severityLabel}
-                          </StatusBadge>
-                        </div>
-                        <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                            <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction?.(issue.action!)}>
-                              {issue.action.label}
-                            </ActionButton>
-                          ) : null}
-                          {onDataHealthAction && issue.dismissAction ? (
-                            <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction?.(issue.dismissAction!)}>
-                              {issue.dismissAction.label}
-                            </ActionButton>
-                          ) : null}
-                        </div>
-                        {issue.action?.description ? (
-                          <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
-                        ) : null}
-                        {issue.technicalDetails ? (
-                          <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
-                            <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
-                            <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
-                          </details>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Notice tone="emerald">
-                    {dataHealthViewModel.statusTone === 'healthy' ? '数据健康良好。未发现会影响训练统计的问题。' : '暂无待处理数据健康问题。'}
-                  </Notice>
-                )}
-                {hiddenDataHealthIssues.length ? (
-                  <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <summary className="cursor-pointer font-semibold text-slate-700">查看全部问题</summary>
-                    <div className="mt-2 space-y-2">
-                      {hiddenDataHealthIssues.map((issue) => (
-                        <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
-                          <div className="font-semibold text-slate-950">{issue.title}</div>
-                          <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                              <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction?.(issue.action!)}>
-                                {issue.action.label}
-                              </ActionButton>
-                            ) : null}
-                            {onDataHealthAction && issue.dismissAction ? (
-                              <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction?.(issue.dismissAction!)}>
-                                {issue.dismissAction.label}
-                              </ActionButton>
-                            ) : null}
-                          </div>
-                          {issue.action?.description ? (
-                            <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
-                          ) : null}
-                          {issue.technicalDetails ? (
-                            <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
-                              <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
-                              <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
-                            </details>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                ) : null}
-              </Card>
-            </PageSection>
-          ) : null}
-
-          <PageSection title="自动化设置" description="教练自动化只生成建议，不会自动覆盖计划或修改历史。">
-            <Card className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge tone="emerald">可忽略</StatusBadge>
-                <StatusBadge tone="slate">需用户确认</StatusBadge>
-              </div>
-              <p className="text-sm leading-6 text-slate-600">
-                今日调整、下次训练和数据健康提醒会优先显示最重要内容。采用建议、修正记录或调整计划仍由你手动确认。
-              </p>
-            </Card>
-            <div className="mt-3">
-              <CoachActionList
-                title="教练动作收件箱"
-                description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会自动修改数据。"
-                viewModel={coachActionListViewModel}
-                showStatusFilters
-                onAction={onCoachAction}
-                onDismiss={onDismissCoachAction}
-                onDetail={onCoachAction}
-                emptyText="暂无需要处理的教练建议。"
-              />
-            </div>
-          </PageSection>
-
-          <div ref={dataManagementRef}>
-            <PageSection title="备份与恢复" description="这是全局应用数据备份，和记录页的单次训练数据管理分开。">
-              <Card className="space-y-3">
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <ActionButton variant="secondary" onClick={downloadBackup}>
-                    <Download className="h-4 w-4" />
-                    导出 JSON
-                  </ActionButton>
-                  <ActionButton variant="secondary" onClick={downloadCsv}>
-                    <Activity className="h-4 w-4" />
-                    导出 CSV
-                  </ActionButton>
-                  <ActionButton variant="danger" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4" />
-                    导入恢复
-                  </ActionButton>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  className="hidden"
-                  onChange={(event) => void handleImportFile(event.target.files?.[0])}
-                />
-                <Notice tone="amber" title="恢复会覆盖当前本地数据。">
-                  导入 JSON 备份前建议先导出现有备份。确认后会替换当前浏览器里的 IronPath 数据。
-                </Notice>
-                {message ? <Notice tone={message.includes('失败') ? 'rose' : 'emerald'}>{message}</Notice> : null}
-                <ActionButton variant="ghost" size="sm" onClick={onOpenRecordData}>
-                  <Database className="h-4 w-4" />
-                  管理单次训练记录
-                </ActionButton>
-              </Card>
-            </PageSection>
-          </div>
-
-          <PageSection title="PWA / 本地数据说明" description="IronPath Web/PWA 默认使用当前浏览器本地存储。">
-            <div className="grid gap-3 md:grid-cols-2">
-              <Card>
-                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-950">
-                  <Smartphone className="h-4 w-4 text-emerald-600" />
-                  添加到主屏幕
-                </div>
-                <p className="text-sm leading-6 text-slate-600">iPhone Safari 打开后，可通过分享菜单添加到主屏幕，作为本地训练工具使用。</p>
-              </Card>
-              <Card>
-                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-950">
-                  <HardDrive className="h-4 w-4 text-emerald-600" />
-                  本地数据
-                </div>
-                <p className="text-sm leading-6 text-slate-600">训练记录保存在当前浏览器。换设备或清理 Safari 数据前，请先导出 JSON 备份。</p>
-              </Card>
-            </div>
-          </PageSection>
-
-          <PageSection title="关于 IronPath" description="私人力量训练系统。">
-            <Card>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg bg-stone-50 p-3 text-sm">
-                  <Ruler className="mb-2 h-4 w-4 text-emerald-600" />
-                  <div className="font-semibold text-slate-950">单位</div>
-                  <div className="mt-1 text-slate-500">{unitSettings.weightUnit}</div>
-                </div>
-                <div className="rounded-lg bg-stone-50 p-3 text-sm">
-                  <HardDrive className="mb-2 h-4 w-4 text-emerald-600" />
-                  <div className="font-semibold text-slate-950">历史</div>
-                  <div className="mt-1 text-slate-500">{data.history?.length || 0} 次训练</div>
-                </div>
-                <div className="rounded-lg bg-stone-50 p-3 text-sm">
-                  <Smartphone className="mb-2 h-4 w-4 text-emerald-600" />
-                  <div className="font-semibold text-slate-950">版本</div>
-                  <div className="mt-1 text-slate-500">本地 PWA</div>
-                </div>
-              </div>
-              <Notice className="mt-3" title="边界">
-                IronPath 用于训练记录、计划管理和恢复参考，不替代医疗诊断或康复治疗。
-              </Notice>
-            </Card>
-          </PageSection>
-        </section>
-      </div>
-
+        <AboutDataSafetyPanel historyCount={data.history?.length || 0} unitLabel={unitSettings.weightUnit} />
+      </SettingsControlCenter>
       {pendingRestore ? (
         <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
           {pendingRestore.report.status === 'unsafe' ? (

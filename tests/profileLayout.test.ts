@@ -6,23 +6,27 @@ describe('Profile layout', () => {
 
   it('uses the responsive product page layout', () => {
     expect(source).toContain("from '../ui/layouts/ResponsivePageLayout'");
-    expect(source).toContain('xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]');
+    expect(source).toContain('SettingsControlCenter');
   });
 
   it('acts as the settings center', () => {
-    expect(source).toContain('个人数据状态');
+    expect(source).toContain('SettingsControlCenter');
     expect(source).toContain('身体 / 动作筛查');
-    expect(source).toContain('单位设置');
+    expect(source).toContain('ThemeSettingsPanel');
+    expect(source).toContain('BackupRecoverySettingsPanel');
+    expect(source).toContain('EmergencyLocalSettingsPanel');
+    expect(source).toContain('EquipmentProfileSettingsPanel');
+    expect(source).toContain('CloudCandidateSettingsPanel');
+    expect(source).toContain('DiagnosticsDataSafetyPanel');
     expect(source).toContain('HealthDataPanel');
-    expect(source).toContain('备份与恢复');
-    expect(source).toContain('PWA / 本地数据说明');
-    expect(source).toContain('关于 IronPath');
+    expect(source).toContain('AboutDataSafetyPanel');
   });
 
   it('separates global backup restore from training record data management', () => {
-    expect(source).toContain('管理单次训练记录');
-    expect(source).toContain('这是全局应用数据备份');
-    expect(source).toContain('导入恢复');
+    const backupPanelSource = readFileSync('src/uiOs/settings/BackupRecoverySettingsPanel.tsx', 'utf8');
+    expect(backupPanelSource).toContain('管理单次训练记录');
+    expect(backupPanelSource).toContain('导入恢复');
+    expect(source).toContain('BackupRecoverySettingsPanel');
     expect(source).toContain('<ConfirmDialog');
     expect(source).toContain('导入备份？');
     expect(source).toContain('confirmText={restoreConfirmText(pendingRestore.report)}');
