@@ -78,7 +78,7 @@ describe('Focus quick apply suggestion near CTA', () => {
       message: '已套用建议。',
     });
     expect(text).toContain('本组建议');
-    expect(text).toContain('当前记录：50kg × 8 次');
+    expect(text).toContain('当前记录：50 kg × 8 次');
     expect(text).toContain('修改');
     expect(text).not.toContain('已套用');
     expect(text).not.toContain('套用建议');

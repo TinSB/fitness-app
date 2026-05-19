@@ -69,8 +69,8 @@ describe('Focus current set summary', () => {
       actualRir: 2,
       source: 'manual',
     });
-    expect(summary.text).toBe('当前记录：60kg × 7 次 · 2 RIR 余力 · 手动');
-    expect(summary.text).not.toContain('20kg');
+    expect(summary.text).toBe('当前记录：60 kg × 7 次 · 2 RIR 余力 · 手动');
+    expect(summary.text).not.toContain('20 kg');
   });
 
   it('follows actualExerciseId after replacement and does not fall back to the original exercise', () => {
@@ -101,7 +101,7 @@ describe('Focus current set summary', () => {
       actualReps: 8,
       actualRir: 1,
     });
-    expect(summary.text).toBe('当前记录：62.5kg × 8 次 · 1 RIR 余力 · 手动');
+    expect(summary.text).toBe('当前记录：62.5 kg × 8 次 · 1 RIR 余力 · 手动');
   });
 
   it('localizes known draft sources and hides unknown source values', () => {
@@ -148,7 +148,7 @@ describe('Focus current set summary', () => {
 
     expect(prescription.text).not.toContain('建议');
     expect(copied.text).toContain('复制上组');
-    expect(unknown.text).toBe('当前记录：50kg × 8 次 · 2 RIR 余力');
+    expect(unknown.text).toBe('当前记录：50 kg × 8 次 · 2 RIR 余力');
     expect(unknown.text).not.toMatch(/legacy_source|prescription|manual|copy_previous|undefined|null/);
   });
 
@@ -163,9 +163,9 @@ describe('Focus current set summary', () => {
     const { draft, summary } = currentSummary(session, lbSettings);
 
     expect(draft?.actualWeightKg).toBe(52.6);
-    expect(summary.text).toBe('当前记录：116lb × 8 次 · 2 RIR 余力 · 手动');
-    expect(summary.text).not.toContain('116.0lb');
-    expect(summary.text).not.toContain('52.6kg');
+    expect(summary.text).toBe('当前记录：116 lb × 8 次 · 2 RIR 余力 · 手动');
+    expect(summary.text).not.toContain('116.0 lb');
+    expect(summary.text).not.toContain('52.6 kg');
   });
 
   it('reports applied suggestion only when the current draft matches the prescription source', () => {

@@ -79,6 +79,8 @@ const sameOptionalNumber = (left: unknown, right: unknown) => {
   return typeof left === 'number' && typeof right === 'number' && left === right;
 };
 
+const formatFocusCurrentRecordWeight = (weightKg: unknown, unitSettings: UnitSettings): string => formatWeight(weightKg, unitSettings).replace(/(kg|lb)$/u, ' $1');
+
 export const isFocusSuggestionApplied = (
   currentStep: FocusTrainingStep,
   actualDraft: ActualSetDraft | null | undefined,
@@ -113,7 +115,7 @@ export const buildFocusCurrentSetSummary = ({
   const hasWeight = hasPositiveNumber(actualDraft?.actualWeightKg);
   const hasReps = hasPositiveNumber(actualDraft?.actualReps);
   const missingInput = !hasWeight || !hasReps;
-  const weightText = hasWeight ? formatWeight(actualDraft?.actualWeightKg, unitSettings) : '待输入';
+  const weightText = hasWeight ? formatFocusCurrentRecordWeight(actualDraft?.actualWeightKg, unitSettings) : '待输入';
   const repsText = hasReps ? `${number(actualDraft?.actualReps)} 次` : '待输入';
   const rirText = typeof actualDraft?.actualRir === 'number' ? formatRirLabel(actualDraft.actualRir) : '';
   const sourceLabel = actualDraft?.source ? focusDraftSourceLabels[actualDraft.source] : undefined;
