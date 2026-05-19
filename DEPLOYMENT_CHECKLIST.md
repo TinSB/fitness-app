@@ -23,6 +23,7 @@
 ## Vercel 检查
 
 - [ ] Framework Preset = Vite
+- [ ] Install Command 使用 npm（本仓库以 package-lock.json 为准，不保留 pnpm-lock.yaml）
 - [ ] Build Command = npm run build
 - [ ] Output Directory = dist
 - [ ] 首次部署成功

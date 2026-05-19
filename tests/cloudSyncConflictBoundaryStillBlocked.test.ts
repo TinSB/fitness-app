@@ -99,7 +99,7 @@ describe('cloud sync conflict boundary still blocked', () => {
       'vitest',
     ]);
     expect(existsSync(resolve(repoRoot(), 'package-lock.json'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(false);
 
     const suspiciousFiles = collectRepoFiles(repoRoot()).filter((path) =>
       /(^|\/)(migrations?|schema)\/.*(normalized|production|user|account|auth|sync|cloud)/i.test(path)

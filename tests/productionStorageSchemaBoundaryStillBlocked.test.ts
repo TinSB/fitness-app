@@ -82,6 +82,6 @@ describe('production storage schema boundary still blocked', () => {
     );
     expect(suspiciousFiles).toEqual([]);
     expect(existsSync(resolve(repoRoot(), 'package-lock.json'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(false);
   });
 });

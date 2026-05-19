@@ -111,7 +111,7 @@ describe('auth user account boundary still blocked', () => {
       'vitest',
     ]);
     expect(existsSync(resolve(repoRoot(), 'package-lock.json'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(false);
 
     const suspiciousFiles = collectRepoFiles(repoRoot()).filter((path) =>
       /(^|\/)(migrations?|schema)\/.*(user|account|auth|oauth|token|session|normalized|production)/i.test(path)
