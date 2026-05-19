@@ -7,6 +7,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8'
 describe('UI migration guard', () => {
   const todaySource = read('src/features/TodayView.tsx');
   const focusSource = read('src/features/TrainingFocusView.tsx');
+  const trainingOsCardsSource = read('src/uiOs/training/TrainingOsCards.tsx');
   const trainingSource = read('src/features/TrainingView.tsx');
   const recordSource = read('src/features/RecordView.tsx');
   const planSource = read('src/features/PlanView.tsx');
@@ -45,7 +46,8 @@ describe('UI migration guard', () => {
   });
 
   it('TrainingFocusView still uses the workout remote layer', () => {
-    expect(focusSource).toContain('WorkoutActionBar');
+    expect(focusSource).toContain('TrainingActionBar');
+    expect(trainingOsCardsSource).toContain('WorkoutActionBar');
     expect(focusSource).toContain('BottomSheet');
     expect(focusSource).toContain('Toast');
     expect(focusSource).toContain("from '../ui/StatusBadge'");
