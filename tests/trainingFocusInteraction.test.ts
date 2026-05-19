@@ -7,7 +7,7 @@ describe('TrainingFocusView interaction surface', () => {
 
   it('keeps the core workout remote actions visible', () => {
     expect(source).toContain('completeCurrentSet');
-    expect(source).toContain('copyPrevious');
+    expect(source).not.toContain("label: '复制上组'");
     expect(source).toContain('markPain');
     expect(source).toContain('openReplacementPicker');
     expect(source).toContain('onApplySuggestion');
