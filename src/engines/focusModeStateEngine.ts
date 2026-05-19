@@ -5,7 +5,7 @@ import { createRestTimerState } from './restTimerEngine';
 import { convertKgToDisplayWeight } from './unitConversionEngine';
 import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupDecision, type WarmupPolicyDecision } from './warmupPolicyEngine';
 import type { FocusActionResult } from './workoutExecutionStateMachine';
-import { buildActionableEquipmentAwarePrescription } from './equipmentAwareActionablePrescription';
+import { resolveActionableLoadContract } from './actionableLoadContract';
 
 export type { ActualSetDraft, FocusStepType };
 
@@ -621,16 +621,16 @@ export const applySuggestedFocusStepWithResult = (session: TrainingSession, exer
   const draftStep = draftStepForCurrentIdentity(step, nextSession);
   const exercise = nextSession.exercises?.[step.exerciseIndex];
   const identity = getCurrentExerciseIdentity(step, nextSession);
-  const actionablePrescription = buildActionableEquipmentAwarePrescription({
+  const actionableContract = resolveActionableLoadContract({
     exerciseName: identity.recordExerciseId || exercise?.id || exercise?.name || step.exerciseId,
-    plannedWeightKg: step.plannedWeight,
+    rawTheoreticalLoadKg: step.plannedWeight,
     plannedReps: step.plannedReps,
     plannedRir: step.plannedRir,
     setPurpose: step.stepType === 'warmup' ? 'warmup' : 'working',
   });
   const plannedReps = number(step.plannedReps);
   const updates = {
-    ...(typeof actionablePrescription.actionableWeightKg === 'number' ? { actualWeightKg: actionablePrescription.actionableWeightKg } : {}),
+    ...(typeof actionableContract.actionableLoadKg === 'number' ? { actualWeightKg: actionableContract.actionableLoadKg } : {}),
     ...(plannedReps > 0 ? { actualReps: plannedReps } : {}),
     source: 'prescription',
   } satisfies Partial<ActualSetDraft>;
