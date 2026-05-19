@@ -30,11 +30,11 @@ const workingSetCountFor = (exerciseId: string) => {
 };
 
 describe('Pull day warmup policy', () => {
-  it('uses a full warmup for the first lat pulldown', () => {
+  it('uses one concise warmup for the first lat pulldown', () => {
     const latSteps = stepsFor('lat-pulldown');
     const warmups = latSteps.filter((step) => step.stepType === 'warmup');
 
-    expect(warmups.length).toBeGreaterThan(1);
+    expect(warmups).toHaveLength(1);
     expect(warmups.every((step) => step.warmupPolicy?.warmupDecision === 'full_warmup')).toBe(true);
     expect(latSteps.some((step) => step.stepType === 'working')).toBe(true);
   });
