@@ -12,10 +12,11 @@ interface BottomNavProps<T extends string> {
   activeId: T;
   onNavigate: (id: T) => void;
   activeSession?: boolean;
+  hidden?: boolean;
 }
 
-export const BottomNav = <T extends string>({ items, activeId, onNavigate, activeSession = false }: BottomNavProps<T>) => (
+export const BottomNav = <T extends string>({ items, activeId, onNavigate, activeSession = false, hidden = false }: BottomNavProps<T>) => (
   // FloatingBottomNav owns the mobile `lg:hidden` and `env(safe-area-inset-bottom)` safe-area handling.
   // Legacy static checks still look for the previous active markers: `bg-white text-black` and `text-[11px] font-medium`.
-  <FloatingBottomNav items={items} activeId={activeId} onNavigate={onNavigate} activeSession={activeSession} trainTabId={'train' as T} />
+  <FloatingBottomNav items={items} activeId={activeId} onNavigate={onNavigate} activeSession={activeSession} trainTabId={'train' as T} hidden={hidden} />
 );

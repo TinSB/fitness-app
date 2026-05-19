@@ -48,7 +48,7 @@ export function TrainingFocusHeroCard({ children, className = '' }: SurfaceProps
 
 export function SetPrescriptionCard({ children, className = '' }: SurfaceProps) {
   return (
-    <GlassCard as="section" padding="md" className={classNames('rounded-3xl text-white', className)} ariaLabel="推荐处方" highlight>
+    <GlassCard as="section" padding="md" surface="training_hero" className={classNames('rounded-3xl text-white', className)} ariaLabel="推荐处方" highlight>
       {children}
     </GlassCard>
   );

@@ -31,7 +31,7 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
-import { ActualSetInputCard, SetPrescriptionCard, TrainingFocusHeroCard } from '../uiOs/training/TrainingOsCards';
+import { SetPrescriptionCard, TrainingFocusHeroCard } from '../uiOs/training/TrainingOsCards';
 import { FocusActualSetRecordSheet } from '../uiOs/training/FocusActualSetRecordSheet';
 import { FocusModeActionBar } from '../uiOs/training/FocusModeActionBar';
 import type { FocusModeSecondaryActionItem } from '../uiOs/training/FocusModeSecondaryActions';
@@ -982,20 +982,20 @@ export function TrainingFocusView({
   const renderCompletedState = () => (
     <div className="min-h-svh bg-slate-950 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-white">
       <div className="mx-auto flex min-h-[80svh] max-w-2xl flex-col justify-center">
-        <Card className="border-emerald-400/20 bg-white p-5 text-center text-slate-950">
+        <Card className="border-emerald-400/20 bg-white/10 p-5 text-center text-white">
           <CheckCircle className="mx-auto h-10 w-10 text-emerald-600" />
           <h2 className="mt-4 text-2xl font-bold">本次训练已完成</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">保存后会进入训练历史、日历和记录详情。</p>
+          <p className="mt-2 text-sm leading-6 text-white/62">保存后会进入训练历史、日历和记录详情。</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-emerald-50 p-4">
-              <div className="text-xs font-semibold text-emerald-700">完成组数</div>
-              <div className="mt-1 text-2xl font-bold text-emerald-950">
+            <div className="rounded-lg bg-emerald-400/10 p-4">
+              <div className="text-xs font-semibold text-emerald-200">完成组数</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-50">
                 {focusState.completedSets}/{focusState.totalSets}
               </div>
             </div>
-            <div className="rounded-lg bg-stone-50 p-4">
-              <div className="text-xs font-semibold text-slate-500">当前总量</div>
-              <div className="mt-1 text-2xl font-bold text-slate-950">{formatTrainingVolume(focusState.totalVolume, unitSettings)}</div>
+            <div className="rounded-lg bg-white/10 p-4">
+              <div className="text-xs font-semibold text-white/45">当前总量</div>
+              <div className="mt-1 text-2xl font-bold text-white">{formatTrainingVolume(focusState.totalVolume, unitSettings)}</div>
             </div>
           </div>
           <div className="mt-5 grid gap-2 sm:grid-cols-3">
@@ -1179,7 +1179,7 @@ export function TrainingFocusView({
           </div>
         </TrainingFocusHeroCard>
 
-        <Card className="border-white/10 bg-white text-slate-950">
+        <Card className="border-white/10 bg-white/10 text-white">
           <div className="text-sm font-semibold">跳过原因</div>
           <select
             value={skipReason}
@@ -1188,7 +1188,7 @@ export function TrainingFocusView({
               setSkipReason(next);
               onUpdateSupportSkipReason(supportLog.moduleId, supportLog.exerciseId, next);
             }}
-            className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-700"
+            className="mt-2 h-12 w-full rounded-lg border border-white/10 bg-[#1c1c1e] px-3 text-base font-semibold text-white"
           >
             {supportReasonOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -1196,7 +1196,7 @@ export function TrainingFocusView({
               </option>
             ))}
           </select>
-          <div className="mt-3 rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm font-semibold text-slate-600">
+          <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-white/62">
             主要操作已固定在底部动作栏，纠偏/活动任务不会计入正式工作组。
           </div>
           <ActionButton
@@ -1279,22 +1279,29 @@ export function TrainingFocusView({
             'space-y-3 rounded-xl',
             showMissingInputGuide && currentSetSummary.missingInput && 'ring-2 ring-amber-300 ring-offset-2 ring-offset-slate-950',
           )}
+          data-focus-actual-form-visible="false"
         >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <SetPrescriptionCard>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold text-emerald-100">推荐处方</div>
-                  <div className="mt-2 text-2xl font-bold leading-8">{plannedSummary}</div>
-                  <EquipmentAwareRecommendationWeight
-                    exerciseName={equipmentAwareExerciseName}
-                    plannedWeightKg={currentStep.plannedWeight}
-                    setPurpose={currentStep.stepType === 'warmup' ? 'warmup' : 'working'}
-                    unitSettings={unitSettings}
-                    compact
-                    showDetails
-                  />
+          <SetPrescriptionCard>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-emerald-100">推荐处方</div>
+                <div className="mt-2 text-2xl font-bold leading-8">{plannedSummary}</div>
+                <EquipmentAwareRecommendationWeight
+                  exerciseName={equipmentAwareExerciseName}
+                  plannedWeightKg={currentStep.plannedWeight}
+                  setPurpose={currentStep.stepType === 'warmup' ? 'warmup' : 'working'}
+                  unitSettings={unitSettings}
+                  compact
+                  showDetails
+                />
+                <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2 text-sm leading-6 text-white/62">
+                  实际记录通过底部面板填写。当前：<span className="font-semibold text-white">{actualSummary}</span>
                 </div>
+                {showMissingInputGuide && currentSetSummary.missingInput ? (
+                  <div className="mt-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">缺少重量或次数</div>
+                ) : null}
+              </div>
+              <div className="grid shrink-0 gap-2">
                 <ActionButton
                   type="button"
                   variant="secondary"
@@ -1305,39 +1312,27 @@ export function TrainingFocusView({
                 >
                   套用建议
                 </ActionButton>
-              </div>
-            </SetPrescriptionCard>
-            <ActualSetInputCard>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold text-slate-300">实际记录</div>
-                  <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
-                </div>
                 <button
                   type="button"
                   onClick={() => setShowActualRecordSheet(true)}
-                  className="shrink-0 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
+                  className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
                 >
-                  编辑
+                  记录详情
                 </button>
               </div>
-              {showMissingInputGuide && currentSetSummary.missingInput ? (
-                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">缺少重量或次数</div>
-              ) : null}
-              <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-300">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
-            </ActualSetInputCard>
-          </div>
+            </div>
+          </SetPrescriptionCard>
         </div>
 
         {completedMainSets.length ? (
-          <Card className="border-white/10 bg-white text-slate-950">
+          <Card className="border-white/10 bg-white/10 text-white">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <ListChecks className="h-4 w-4 text-emerald-600" />
               已完成组
             </div>
             <div className="space-y-2">
               {completedMainSets.map((set, index) => (
-                <div key={set.id || `${mainExercise.id}-${index}`} className="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2 text-sm">
+                <div key={set.id || `${mainExercise.id}-${index}`} className="flex items-center justify-between rounded-lg bg-white/[0.06] px-3 py-2 text-sm">
                   <span>第 {index + 1} 组</span>
                   <span className="font-semibold">
                     {formatWeight(set.actualWeightKg ?? set.weight, unitSettings)} × {set.reps} 次{set.rir !== undefined && set.rir !== '' ? ` · ${formatRirLabel(set.rir)}` : ''}
@@ -1349,7 +1344,7 @@ export function TrainingFocusView({
         ) : null}
 
         {notices.map((notice) => (
-          <div key={notice.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          <div key={notice.id} className="flex gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-sm font-semibold text-amber-100">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             {notice.message}
           </div>
@@ -1380,7 +1375,7 @@ export function TrainingFocusView({
         </details>
 
         {currentStep.stepType === 'working' && completedMainSets.length > 0 && mainExercisePoolId ? (
-          <Card className="border-white/10 bg-white text-slate-950">
+          <Card className="border-white/10 bg-white/10 text-white">
             <div className="mb-2 text-sm font-semibold">本次重量感觉</div>
             <div className="grid grid-cols-3 gap-2">
               {loadFeedbackOptions.map((option) => {
@@ -1392,7 +1387,7 @@ export function TrainingFocusView({
                     onClick={() => onLoadFeedback(mainExercisePoolId, option.value)}
                     className={classNames(
                       'h-11 rounded-lg border text-sm font-semibold',
-                      selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600',
+                      selected ? 'border-emerald-300 bg-emerald-300/20 text-emerald-50' : 'border-white/10 bg-white/10 text-white/62',
                     )}
                   >
                     {option.label}

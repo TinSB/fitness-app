@@ -214,10 +214,14 @@ const ChoiceRow = ({
 const TodayFocusOverrideControl = ({
   selection,
   onChange,
+  expanded,
+  onToggleExpanded,
 }: {
   selection: TodayTrainingFocusSelection;
   onChange?: (override: TodayTrainingFocusOverrideOption) => void;
-}) => <TodayFocusOverridePanel selection={selection} onChange={onChange} />;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+}) => <TodayFocusOverridePanel selection={selection} onChange={onChange} compact expanded={expanded} onToggleExpanded={onToggleExpanded} />;
 
 export function TodayView({
   data,
@@ -247,6 +251,7 @@ export function TodayView({
   onRevertTemporarySessionPatches,
 }: TodayViewProps) {
   const [coachActionFeedback, setCoachActionFeedback] = React.useState('');
+  const [focusOverrideExpanded, setFocusOverrideExpanded] = React.useState(false);
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
   const enginePipeline = React.useMemo(
     () => buildEnginePipeline(data, todayKey(), { trainingMode, coachActions }),
@@ -304,7 +309,7 @@ export function TodayView({
   });
 
   const adjustedExercises = adjustedPlan.exercises as ExercisePrescription[];
-  const previewExercises = adjustedExercises.slice(0, 4);
+  const previewExercises = adjustedExercises.slice(0, 2);
   const hiddenExerciseCount = Math.max(0, adjustedExercises.length - previewExercises.length);
   const trainingLevelAssessment = decisionContext.trainingLevelAssessment;
   const supportPlan = buildSupportPlan(data, selectedTemplate);
@@ -603,6 +608,23 @@ export function TodayView({
         采用推荐安排
       </UiOsActionButton>
     ) : null;
+  const shouldShowRecoveryProminently =
+    todayDecisionSurface.decisionState !== 'train_recommended' ||
+    adjustedPlan.readiness.level === 'yellow' ||
+    adjustedPlan.readiness.level === 'red' ||
+    fatigueDecisionState === 'high';
+  const shouldShowTodaySafetyStrip = todayDecisionSurface.decisionState === 'source_unclear';
+  const keyExerciseNames = previewExercises.map((exercise) => exerciseLabel(exercise)).join(' / ');
+  const shouldShowSecondaryTodayDetails =
+    Boolean(
+      todayViewModel.recoverySummary ||
+        hasAlternativeSuggestion ||
+        confidenceCopy ||
+        shouldShowCoachActionList ||
+        shouldShowCoachAdvice ||
+        temporarySessionAdjustmentActive ||
+        trainingLevelAssessment.level === 'unknown',
+    );
 
   return (
     <ResponsivePageLayout>
@@ -637,155 +659,34 @@ export function TodayView({
               />
             ) : null}
 
-            <TodayReadinessSummary
-              decision={todayDecisionSurface}
-              readinessScore={readinessScore}
-              durationMinutes={adjustedPlan.duration}
-              note={todayNote}
-            />
+            {shouldShowRecoveryProminently ? (
+              <TodayReadinessSummary
+                decision={todayDecisionSurface}
+                readinessScore={readinessScore}
+                durationMinutes={adjustedPlan.duration}
+                note={todayNote}
+              />
+            ) : (
+              <div
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white/62"
+                data-today-recovery-density="compact"
+                aria-label="恢复疲劳摘要"
+              >
+                <span>恢复 / 疲劳：{todayDecisionSurface.readinessLabel}</span>
+                <StatusBadge tone="emerald">状态正常</StatusBadge>
+              </div>
+            )}
 
             {todayDecisionSurface.showFocusOverride && todayTrainingState.status === 'not_started' ? (
-              <TodayFocusOverrideControl selection={resolvedTodayFocusSelection} onChange={onFocusOverrideChange} />
-            ) : null}
-
-            <SafetyStrip includeSecondaryCopy />
-
-            {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
-              <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
-                {todayViewModel.recoverySummary}
-                {todayViewModel.recoveryReasons?.length ? (
-                  <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5">
-                    {todayViewModel.recoveryReasons.slice(0, 2).map((reason) => (
-                      <li key={reason}>{reason}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
-
-            {todayTrainingState.status === 'completed' ? (
-              <div
-                className="rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2 text-sm leading-6 text-sky-50"
-                aria-label={`下次建议：${nextSuggestion.templateName}，不是今天必须继续训练`}
-              >
-                {nextSuggestion.description}
-              </div>
-            ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
-              <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
-                系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
-              </div>
-            ) : null}
-
-            <RecommendationExplanationPanel
-              trace={recommendationTrace}
-              title={recommendationExplanationTitle}
-              compact
-              maxVisibleFactors={3}
-              recoveryRecommendation={recoveryRecommendation}
-            />
-
-            {confidenceCopy ? (
-              <Card className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-slate-950">推荐置信度</div>
-                  <StatusBadge tone={confidenceCopy.tone}>{confidenceCopy.label}</StatusBadge>
-                </div>
-                <p className="text-sm leading-6 text-slate-600">{confidenceCopy.text}</p>
-              </Card>
-            ) : null}
-
-            {shouldShowCoachActionList ? (
-              <CoachActionList
-                title="教练提醒"
-                description="只显示当前最重要的 1–2 条；采用临时调整前会再次确认。"
-                viewModel={coachActionListViewModel}
-                compact
-                onAction={onCoachAction}
-                onDismiss={onDismissCoachAction}
-                onDetail={onCoachAction}
-                emptyText="暂无待处理建议"
+              <TodayFocusOverrideControl
+                selection={resolvedTodayFocusSelection}
+                onChange={onFocusOverrideChange}
+                expanded={focusOverrideExpanded}
+                onToggleExpanded={() => setFocusOverrideExpanded((current) => !current)}
               />
             ) : null}
 
-            {temporarySessionAdjustmentActive ? (
-              <UnfinishedSessionNotice className="space-y-3">
-                <div>
-                  <div className="text-sm font-semibold text-white">本次临时调整已生效</div>
-                  <p className="mt-1 text-sm leading-6 text-amber-100">只影响当前这次训练，不会修改原模板或长期计划。</p>
-                </div>
-                {onRevertTemporarySessionPatches ? (
-                  <ActionButton type="button" variant="secondary" size="sm" onClick={onRevertTemporarySessionPatches}>
-                    撤销调整
-                  </ActionButton>
-                ) : null}
-              </UnfinishedSessionNotice>
-            ) : null}
-
-            {shouldShowCoachAdvice ? (
-              <Card className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-base font-semibold text-slate-950">教练提醒</div>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">默认只显示当前最重要的 1–2 条；所有建议都可忽略，采用前仍需你确认。</p>
-                  </div>
-                  <StatusBadge tone={enginePipeline.dataHealth.status === 'has_errors' ? 'rose' : 'emerald'}>可忽略</StatusBadge>
-                </div>
-                <div className="space-y-2">
-                  {coachReminders.map((reminder) => {
-                    const action = coachActionForReminder(reminder);
-                    return (
-                      <div key={reminder.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-950">{reminder.title}</span>
-                            {action?.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
-                            {!action ? <StatusBadge tone={reminderToneBadge(reminder.tone)}>{reminder.tone === 'warning' ? '提醒' : '提示'}</StatusBadge> : null}
-                          </div>
-                          {action ? (
-                            <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
-                              {coachActionButtonLabel(action)}
-                            </ActionButton>
-                          ) : null}
-                        </div>
-                        <div className="mt-1 text-xs leading-5 text-slate-600">{reminder.message}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {coachActionFeedback ? (
-                  <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-semibold leading-5 text-sky-900">
-                    {coachActionFeedback}
-                  </div>
-                ) : null}
-                {hiddenCoachReminders.length ? (
-                  <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                    <summary className="cursor-pointer font-semibold text-slate-700">查看更多提醒</summary>
-                    <div className="mt-2 space-y-2">
-                      {hiddenCoachReminders.map((reminder) => {
-                        const action = coachActionForReminder(reminder);
-                        return (
-                          <div key={reminder.id} className="rounded-lg bg-stone-50 px-3 py-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-semibold text-slate-950">{reminder.title}</span>
-                                {action?.requiresConfirmation ? <StatusBadge tone="amber">需确认</StatusBadge> : null}
-                                {!action ? <StatusBadge tone={reminderToneBadge(reminder.tone)}>{reminder.tone === 'warning' ? '提醒' : '提示'}</StatusBadge> : null}
-                              </div>
-                              {action ? (
-                                <ActionButton type="button" size="sm" variant="secondary" onClick={() => handleCoachAction(action)}>
-                                  {coachActionButtonLabel(action)}
-                                </ActionButton>
-                              ) : null}
-                            </div>
-                            <div className="mt-1 text-xs leading-5 text-slate-600">{reminder.message}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </details>
-                ) : null}
-              </Card>
-            ) : null}
+            {shouldShowTodaySafetyStrip ? <SafetyStrip includeSecondaryCopy state="source-unclear" /> : null}
 
             <Card className="space-y-3">
               <div className="flex items-start justify-between gap-3">
@@ -794,7 +695,7 @@ export function TodayView({
                     {pendingSessionPatches.length ? '训练预览 · 已应用本次调整' : '训练预览'}
                   </div>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    {pendingSessionPatches.length ? '下方是开始训练时会使用的本次安排；只影响这次训练。' : '只展示今天开始训练前需要知道的核心安排。'}
+                    {keyExerciseNames ? `核心动作：${keyExerciseNames}` : '只展示今天开始训练前需要知道的核心安排。'}
                   </p>
                 </div>
                 <StatusBadge tone="slate">{adjustedExercises.length} 个动作</StatusBadge>
@@ -846,23 +747,122 @@ export function TodayView({
               ) : null}
             </Card>
 
-            <Card tone={trainingLevelAssessment.level === 'unknown' ? 'amber' : 'sky'} className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold">{trainingLevelAssessment.level === 'unknown' ? '正在建立训练基线' : '今日提示'}</div>
-                <StatusBadge tone={trainingLevelAssessment.level === 'unknown' ? 'amber' : 'sky'}>
-                  {trainingLevelLabels[trainingLevelAssessment.level]}
-                </StatusBadge>
+            <details className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-white" data-today-secondary-details="collapsed">
+              <summary className="cursor-pointer text-sm font-semibold">为什么这样推荐？ / 更多说明</summary>
+              <div className="mt-4 space-y-3">
+                {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
+                  <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
+                    {todayViewModel.recoverySummary}
+                    {todayViewModel.recoveryReasons?.length ? (
+                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5">
+                        {todayViewModel.recoveryReasons.slice(0, 2).map((reason) => (
+                          <li key={reason}>{reason}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {todayTrainingState.status === 'completed' ? (
+                  <div
+                    className="rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2 text-sm leading-6 text-sky-50"
+                    aria-label={`下次建议：${nextSuggestion.templateName}，不是今天必须继续训练`}
+                  >
+                    {nextSuggestion.description}
+                  </div>
+                ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
+                  <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
+                    系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
+                  </div>
+                ) : null}
+
+                <RecommendationExplanationPanel
+                  trace={recommendationTrace}
+                  title={recommendationExplanationTitle}
+                  compact
+                  maxVisibleFactors={3}
+                  recoveryRecommendation={recoveryRecommendation}
+                />
+
+                {confidenceCopy ? (
+                  <Card className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-sm font-semibold text-slate-950">推荐置信度</div>
+                      <StatusBadge tone={confidenceCopy.tone}>{confidenceCopy.label}</StatusBadge>
+                    </div>
+                    <p className="text-sm leading-6 text-slate-600">{confidenceCopy.text}</p>
+                  </Card>
+                ) : null}
+
+                {shouldShowCoachActionList ? (
+                  <CoachActionList
+                    title="教练提醒"
+                    description="低频建议移到详情里；采用临时调整前会再次确认。查看更多提醒在本区域处理。"
+                    viewModel={coachActionListViewModel}
+                    compact
+                    onAction={onCoachAction}
+                    onDismiss={onDismissCoachAction}
+                    onDetail={onCoachAction}
+                    emptyText="暂无待处理建议"
+                  />
+                ) : null}
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm leading-6 text-white/70">
+                  <div className="font-semibold text-white">完整动作指导</div>
+                  <div className="mt-2 space-y-1">
+                    {adjustedExercises.map((exercise) => {
+                      const patchBadge = patchBadgeForExercise(exercise, pendingSessionPatches);
+                      const recoveryBadge = recoveryPreviewGuidance.get(exercise.id);
+                      const label = patchBadge?.label || recoveryBadge?.label || '可执行';
+                      return (
+                        <div key={`detail-${exercise.id}`} className="flex flex-wrap items-center gap-2">
+                          <span>{exerciseLabel(exercise)}</span>
+                          <StatusBadge tone={patchBadge?.tone || recoveryBadge?.tone || 'slate'}>{label}</StatusBadge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {temporarySessionAdjustmentActive ? (
+                  <UnfinishedSessionNotice className="space-y-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">本次临时调整已生效</div>
+                      <p className="mt-1 text-sm leading-6 text-amber-100">只影响当前这次训练，不会修改原模板或长期计划。</p>
+                    </div>
+                    {onRevertTemporarySessionPatches ? (
+                      <ActionButton type="button" variant="secondary" size="sm" onClick={onRevertTemporarySessionPatches}>
+                        撤销调整
+                      </ActionButton>
+                    ) : null}
+                  </UnfinishedSessionNotice>
+                ) : null}
+
+                {trainingLevelAssessment.level === 'unknown' ? (
+                  <Card tone="amber" className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold">正在建立训练基线</div>
+                      <StatusBadge tone="amber">{trainingLevelLabels[trainingLevelAssessment.level]}</StatusBadge>
+                    </div>
+                    <p className="text-sm leading-6">当前模板是起始模板，不是基于历史数据生成。完成 2-3 次训练后，系统会开始估算当前力量、有效组和训练等级。</p>
+                  </Card>
+                ) : shouldShowSecondaryTodayDetails ? (
+                  <Card tone="sky" className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold">今日提示</div>
+                      <StatusBadge tone="sky">{trainingLevelLabels[trainingLevelAssessment.level]}</StatusBadge>
+                    </div>
+                    <p className="text-sm leading-6">{buildTrainingLevelExplanation(trainingLevelAssessment)}</p>
+                  </Card>
+                ) : null}
               </div>
-              <p className="text-sm leading-6">
-                {trainingLevelAssessment.level === 'unknown'
-                  ? '当前模板是起始模板，不是基于历史数据生成。完成 2-3 次训练后，系统会开始估算当前力量、有效组和训练等级。'
-                  : buildTrainingLevelExplanation(trainingLevelAssessment)}
-              </p>
-            </Card>
+            </details>
           </div>
         }
         side={
-          <div className="space-y-4">
+          <details className="rounded-3xl border border-white/10 bg-white/[0.05] p-4 text-white" data-today-status-controls="collapsed">
+            <summary className="cursor-pointer text-sm font-semibold">状态与计划细节</summary>
+            <div className="mt-4 space-y-4">
             <PageSection title="准备度">
               <Card className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -974,7 +974,8 @@ export function TodayView({
                 </p>
               </Card>
             </PageSection>
-          </div>
+            </div>
+          </details>
         }
       />
       <ConfirmDialogHost />

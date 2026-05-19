@@ -1,4 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { classNames } from '../../engines/engineUtils';
+import { resolveThemeSurface } from '../theme/themeSurfaceModel';
 
 export type BottomSheetProps = {
   isOpen: boolean;
@@ -18,17 +20,20 @@ const sheetStyle: CSSProperties = {
 
 export function BottomSheet({ isOpen, onClose, title, children, confirmRequired = false, tone = 'default' }: BottomSheetProps) {
   if (!isOpen) return null;
+  const surface = resolveThemeSurface('bottom_sheet', 'dark', { immersiveDark: true });
 
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <button type="button" aria-label="关闭底部面板" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
-        className={tone === 'danger' ? 'relative w-full rounded-t-3xl border-t border-red-400/40 p-6 pb-10' : 'relative w-full rounded-t-3xl p-6 pb-10'}
+        className={classNames('relative w-full rounded-t-3xl p-6 pb-10', surface.className, surface.textClassName, tone === 'danger' ? 'border-t border-red-400/40' : '')}
         style={sheetStyle}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         data-bottom-sheet-tone={tone}
+        data-theme-surface="bottom_sheet"
+        data-theme-mode="dark"
       >
         <div className="w-9 h-1 bg-white/20 rounded-full mx-auto mb-5" />
         <h3 className="text-xl font-semibold text-white mb-5">{title}</h3>

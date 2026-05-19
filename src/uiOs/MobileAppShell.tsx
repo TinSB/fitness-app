@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, useState, type UIEvent, type ReactNode } from 'react';
 import { Dumbbell } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { AppTopBar } from './AppTopBar';
@@ -26,7 +26,28 @@ export const MobileAppShell = <T extends string>({
   auxiliary,
   immersive = false,
   children,
-}: MobileAppShellProps<T>) => (
+}: MobileAppShellProps<T>) => {
+  const lastScrollTopRef = useRef(0);
+  const [bottomNavHidden, setBottomNavHidden] = useState(false);
+
+  const handleShellScroll = (event: UIEvent<HTMLDivElement>) => {
+    if (immersive) return;
+    const element = event.currentTarget;
+    const currentScrollTop = element.scrollTop;
+    const delta = currentScrollTop - lastScrollTopRef.current;
+    const nearTop = currentScrollTop < 24;
+    const nearBottom = element.scrollHeight - element.clientHeight - currentScrollTop < 48;
+
+    if (nearTop || nearBottom || delta < -8) {
+      setBottomNavHidden(false);
+    } else if (delta > 12 && currentScrollTop > 80) {
+      setBottomNavHidden(true);
+    }
+
+    lastScrollTopRef.current = currentScrollTop;
+  };
+
+  return (
   <div className="h-dvh min-h-dvh w-full overflow-hidden bg-[#0a0a0b] font-sans text-slate-100">
     <div className="flex h-full w-full">
       <aside className={classNames('hidden w-[244px] shrink-0 flex-col border-r border-white/10 bg-black/35 text-white backdrop-blur-xl lg:flex', immersive && 'lg:hidden')}>
@@ -79,12 +100,17 @@ export const MobileAppShell = <T extends string>({
             <SafetyStrip includeSecondaryCopy />
           </div>
         ) : null}
-        <div className={classNames('min-h-0 flex-1 overflow-y-auto lg:pb-0', immersive ? 'pb-0' : 'pb-28')}>
+        <div
+          className={classNames('min-h-0 flex-1 overflow-y-auto lg:pb-0', immersive ? 'pb-0' : 'pb-28')}
+          onScroll={handleShellScroll}
+          data-shell-scroll-area="bottom-nav-aware"
+        >
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>
       </main>
     </div>
 
-    {!immersive ? <BottomNav items={navItems} activeId={activeTab} onNavigate={onNavigate} activeSession={activeSession} /> : null}
+    {!immersive ? <BottomNav items={navItems} activeId={activeTab} onNavigate={onNavigate} activeSession={activeSession} hidden={bottomNavHidden} /> : null}
   </div>
-);
+  );
+};

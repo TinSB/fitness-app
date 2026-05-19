@@ -919,7 +919,6 @@ export function RecordView({
         ) : (
           <div className="space-y-3">
             <ProgressInsightHero summary={progressClarity} />
-            <ReadinessPressureCard summary={progressClarity} />
             <StrengthTrendCards
               items={progressClarity.strengthTrendItems}
               onSelectItem={(exerciseId) => {
@@ -927,6 +926,7 @@ export function RecordView({
                 setActiveSection('pr');
               }}
             />
+            <ReadinessPressureCard summary={progressClarity} />
             <EffectiveSetsVolumeCard summary={progressClarity} />
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
