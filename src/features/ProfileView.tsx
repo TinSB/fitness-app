@@ -7,7 +7,7 @@ import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';
 import { buildDataHealthClaritySummary } from '../engines/dataHealthClaritySummary';
 import { buildSettingsSafetySummary } from '../engines/settingsSafetySummary';
-import { resolveThemePreference, type ThemePreferenceMode } from '../engines/themePreferenceModel';
+import { resolveThemePreference, type ThemePreferenceMode, type ThemePreferenceResult } from '../engines/themePreferenceModel';
 import {
   analyzeImportedAppData,
   canImportDataRepairReport,
@@ -44,6 +44,8 @@ interface ProfileViewProps {
   onUpdateHealthData: (data: AppData) => void;
   onOpenAssessment: () => void;
   onOpenRecordData: () => void;
+  themePreference?: ThemePreferenceResult;
+  onThemeChange?: (mode: ThemePreferenceMode) => void;
   onDataHealthAction?: (action: DataHealthActionView) => void;
   onCoachAction?: (action: CoachAction) => void;
   onDismissCoachAction?: (action: CoachAction) => void;
@@ -95,6 +97,8 @@ export function ProfileView({
   onUpdateHealthData,
   onOpenAssessment,
   onOpenRecordData,
+  themePreference: controlledThemePreference,
+  onThemeChange,
   onDataHealthAction,
   onCoachAction,
   onDismissCoachAction,
@@ -107,7 +111,7 @@ export function ProfileView({
   const dataManagementRef = React.useRef<HTMLDivElement | null>(null);
   const [message, setMessage] = React.useState('');
   const [pendingRestore, setPendingRestore] = React.useState<PendingRestore | null>(null);
-  const [themeMode, setThemeMode] = React.useState<ThemePreferenceMode>('system');
+  const [fallbackThemeMode, setFallbackThemeMode] = React.useState<ThemePreferenceMode>('system');
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const normalSessionCount = analyticsHistory.length;
   const dataHealth = coachAutomationSummary?.dataHealth;
@@ -146,10 +150,13 @@ export function ProfileView({
       }),
     [visibleDataHealthIssues],
   );
-  const themePreference = React.useMemo(
-    () => resolveThemePreference({ selectedThemeMode: themeMode, systemPrefersDark: false, focusModeImmersive: true }),
-    [themeMode],
+  const fallbackThemePreference = React.useMemo(
+    () => resolveThemePreference({ selectedThemeMode: fallbackThemeMode, systemPrefersDark: false, focusModeImmersive: true }),
+    [fallbackThemeMode],
   );
+  const themePreference = controlledThemePreference || fallbackThemePreference;
+  const themeMode = themePreference.selectedThemeMode;
+  const handleThemeChange = onThemeChange || setFallbackThemeMode;
   const settingsSafetySummary = React.useMemo(
     () =>
       buildSettingsSafetySummary({
@@ -300,7 +307,7 @@ export function ProfileView({
           <ThemeSettingsPanel
             theme={themePreference}
             unitSettings={unitSettings}
-            onThemeChange={setThemeMode}
+            onThemeChange={handleThemeChange}
             onUnitChange={(unit: WeightUnit) => onUpdateUnitSettings({ weightUnit: unit })}
           />
         </div>

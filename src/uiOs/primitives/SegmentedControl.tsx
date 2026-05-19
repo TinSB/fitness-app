@@ -27,7 +27,7 @@ export function SegmentedControl<T extends string>({
   className = '',
 }: UiOsSegmentedControlProps<T>) {
   return (
-    <div className={classNames('flex p-1 rounded-xl', className)} style={segmentedStyle} role="tablist" aria-label={ariaLabel}>
+    <div className={classNames('flex p-1 rounded-xl', className)} style={segmentedStyle} role="tablist" aria-label={ariaLabel} data-theme-surface="compact_row">
       {options.map((option) => {
         const isSelected = value === option.value;
         const isDisabled = Boolean(option.disabled);

@@ -101,6 +101,8 @@ import { Toast } from './ui/Toast';
 import { useConfirmDialog } from './ui/useConfirmDialog';
 import { MobileAppShell } from './uiOs/MobileAppShell';
 import { UI_OS_TABS, type UiOsTabId } from './uiOs/uiOsNavigation';
+import { resolveThemePreference, type ThemePreferenceMode } from './engines/themePreferenceModel';
+import { readUiThemePreference, writeUiThemePreference } from './uiOs/theme/uiThemePreferenceStorage';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
 const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
@@ -118,6 +120,11 @@ const navIcons = {
 } as const;
 
 const navItems = UI_OS_TABS.map((item) => ({ ...item, icon: navIcons[item.id] }));
+
+const getSystemPrefersDark = () =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+    : true;
 
 type ActiveTab = UiOsTabId;
 type ProgressSectionTarget = 'calendar' | 'list' | 'pr' | 'stats' | 'data';
@@ -247,6 +254,8 @@ function App() {
   const [preferFocusShell, setPreferFocusShell] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false
   );
+  const [themeMode, setThemeMode] = useState<ThemePreferenceMode>(() => readUiThemePreference());
+  const [systemPrefersDark, setSystemPrefersDark] = useState(getSystemPrefersDark);
   const [forceFullTrainingView, setForceFullTrainingView] = useState(false);
   const [progressTarget, setProgressTarget] = useState<{ section: ProgressSectionTarget; sessionId?: string; date?: string } | null>(null);
   const [profileSection, setProfileSection] = useState<ProfileSection>('home');
@@ -257,6 +266,15 @@ function App() {
   const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
   const { confirm, ConfirmDialogHost } = useConfirmDialog();
+  const themePreference = React.useMemo(
+    () => resolveThemePreference({ selectedThemeMode: themeMode, systemPrefersDark, focusModeImmersive: true }),
+    [systemPrefersDark, themeMode],
+  );
+
+  const updateUiThemeMode = React.useCallback((mode: ThemePreferenceMode) => {
+    setThemeMode(mode);
+    writeUiThemePreference(mode);
+  }, []);
 
   const showAppToast = (message: string, tone: AppToast['tone'] = 'info') => {
     setAppToast({ message, tone });
@@ -286,6 +304,25 @@ function App() {
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateSystemPreference = () => setSystemPrefersDark(media.matches);
+    updateSystemPreference();
+    media.addEventListener?.('change', updateSystemPreference);
+    return () => media.removeEventListener?.('change', updateSystemPreference);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const { resolvedTheme } = themePreference;
+    document.documentElement.dataset.uiTheme = resolvedTheme;
+    document.documentElement.classList.toggle('uios-theme-light', resolvedTheme === 'light');
+    document.documentElement.classList.toggle('uios-theme-dark', resolvedTheme === 'dark');
+    document.documentElement.style.colorScheme = resolvedTheme;
+    document.body.dataset.uiTheme = resolvedTheme;
+  }, [themePreference]);
 
   const invalidateDerivedState = React.useCallback((event: AppMutationEvent) => {
     buildDerivedStateInvalidation(event);
@@ -1768,6 +1805,7 @@ function App() {
         trainTabId="train"
         activeSession={Boolean(data.activeSession)}
         immersive={Boolean(useFocusTrainingShell)}
+        themePreference={themePreference}
         auxiliary={
           <AppAuxiliaryPanel
             activeTab={activeTab}
@@ -2018,6 +2056,8 @@ function App() {
                       onCoachAction={handleCoachAction}
                       onDismissCoachAction={dismissCoachAction}
                       onUpdateUnitSettings={updateUnitSettings}
+                      themePreference={themePreference}
+                      onThemeChange={updateUiThemeMode}
                       onRestoreData={(nextData) => {
                         setData(nextData);
                         setActiveTab('today');

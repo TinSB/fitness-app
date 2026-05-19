@@ -16,21 +16,21 @@ export function CloudCandidateSettingsPanel({ copy }: CloudCandidateSettingsPane
   const autoApplyCopy = '不会' + '自动覆盖本地数据';
   const summaryCopy = copy.includes(autoApplyCopy) ? '云端候选需要手动确认；冲突处理保持手动。' : copy;
   return (
-    <SettingsGroupCard tone="dark" className="text-white">
+    <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/55">云端候选</p>
-          <h3 className="mt-1 text-lg font-bold text-white">云端候选</h3>
-          <p className="mt-1 text-sm leading-6 text-white/55">{summaryCopy}</p>
+          <p className="text-sm font-semibold" data-theme-text="mutedText">云端候选</p>
+          <h3 className="mt-1 text-lg font-bold" data-theme-text="cardTitle">云端候选</h3>
+          <p className="mt-1 text-sm leading-6" data-theme-text="secondaryText">{summaryCopy}</p>
         </div>
         <StatusBadge state="manual-required">手动候选</StatusBadge>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {items.map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-white/35">{label}</div>
-            <div className="mt-1 text-sm font-semibold text-white/75">{value}</div>
+          <div key={label} className="rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3" data-theme-surface="compact_row">
+            <div className="text-xs font-semibold uppercase tracking-wide" data-theme-text="mutedText">{label}</div>
+            <div className="mt-1 text-sm font-semibold" data-theme-text="secondaryText">{value}</div>
           </div>
         ))}
       </div>

@@ -20,11 +20,11 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
     expect(css).toContain('background: #0a0a0b');
     expect(css).toContain('min-height: 100dvh');
     expect(css).not.toContain('background: #f5f5f4');
-    expect(shell).toContain('data-app-chrome-background="dark"');
-    expect(shell).toContain('data-shell-bottom-background="dark"');
+    expect(shell).toContain('data-app-chrome-background={resolvedTheme}');
+    expect(shell).toContain('data-shell-bottom-background={resolvedTheme}');
     expect(shell).toContain('bg-[#0a0a0b]');
-    expect(shell).toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
-    expect(shell).toContain('scroll-pb-[calc(9rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
   });
 
   it('keeps bottom nav hidden and visible states on a dark safe-area surface', () => {
@@ -37,9 +37,9 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
       ),
     );
 
-    expect(source).toContain('data-bottom-nav-surface="dark-safe-area"');
-    expect(source).toContain('#0a0a0b');
-    expect(source).not.toContain('bg-white');
+    expect(source).toContain('data-bottom-nav-safe-area="native-offset"');
+    expect(source).toContain("border-white/10 bg-[#1c1c1e]/88");
+    expect(source).toContain("data-theme-mode={themeMode}");
     expect(html).toContain('data-bottom-nav-hidden="false"');
     expect(html).toContain('data-bottom-nav-background="dark"');
   });
