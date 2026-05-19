@@ -67,7 +67,7 @@ describe('UI-OS R8.6 applied suggestion state', () => {
     const applied = applySuggestedFocusStepWithResult(makeFocusSession([makeExercise('bench-press', 1)]), 0);
     const text = renderFocusText(applied.session);
 
-    expect((text.match(/当前记录：50kg × 8 次/g) || [])).toHaveLength(1);
+    expect((text.match(/当前记录：50 kg × 8 次/g) || [])).toHaveLength(1);
     expect(text).toContain('完成一组');
     expect(text).toContain('修改');
     expect(text).not.toContain('已套用');
@@ -83,7 +83,7 @@ describe('UI-OS R8.6 applied suggestion state', () => {
     }).session;
     const text = renderFocusText(manual);
 
-    expect(text).toContain('当前记录：47.5kg × 7 次 · 手动');
+    expect(text).toContain('当前记录：47.5 kg × 7 次 · 手动');
     expect(text).not.toContain('已套用');
   });
 });
