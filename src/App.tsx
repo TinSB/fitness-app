@@ -1966,6 +1966,7 @@ function App() {
                       initialSection={historyRecordTarget?.section}
                       selectedSessionId={historyRecordTarget?.sessionId}
                       selectedDate={historyRecordTarget?.date}
+                      surfaceMode="history"
                     />
                   </Suspense>
                 )}
@@ -2002,6 +2003,7 @@ function App() {
                       initialSection={progressRecordTarget.section}
                       selectedSessionId={progressRecordTarget.sessionId}
                       selectedDate={progressRecordTarget.date}
+                      surfaceMode="progress"
                     />
                   </Suspense>
                 )}

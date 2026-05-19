@@ -1,9 +1,10 @@
 import React from 'react';
-import { CalendarDays, Medal, Trash2 } from 'lucide-react';
+import { Medal, Trash2 } from 'lucide-react';
 import { buildMonthStats, buildPrs } from '../engines/analytics';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/effectiveSetEngine';
 import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSetExplanationEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
+import { buildHistoryCalendarSummary } from '../engines/historyCalendarSummary';
 import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
@@ -72,6 +73,12 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { StatusBadge } from '../ui/StatusBadge';
 import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { GlassCard } from '../uiOs/primitives/GlassCard';
+import { HistoryDaySummaryCard, type HistoryDaySessionItem } from '../uiOs/history/HistoryDaySummaryCard';
+import { HistoryFrequencySummary } from '../uiOs/history/HistoryFrequencySummary';
+import { PrErmQuickAccessCards } from '../uiOs/history/PrErmQuickAccessCards';
+import { RecentTrainingTimeline } from '../uiOs/history/RecentTrainingTimeline';
+import { TrainingFrequencyCalendar } from '../uiOs/history/TrainingFrequencyCalendar';
 import { DataHealthIssueCard, ProgressInsightCard, RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
 
 export interface RecordViewProps {
@@ -99,6 +106,7 @@ export interface RecordViewProps {
   initialSection?: RecordSectionTarget;
   selectedSessionId?: string;
   selectedDate?: string;
+  surfaceMode?: 'history' | 'progress';
 }
 
 type RecordSectionId = 'calendar' | 'list' | 'pr' | 'stats' | 'data';
@@ -313,6 +321,7 @@ export function RecordView({
   initialSection,
   selectedSessionId,
   selectedDate,
+  surfaceMode = 'history',
 }: RecordViewProps) {
   const rawHistory = data.history || [];
   const initialCalendarMonth = getInitialCalendarMonth(rawHistory, selectedDate);
@@ -358,6 +367,20 @@ export function RecordView({
         includeExternalWorkouts: data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false,
       }),
     [rawHistory, calendarMonth, data.importedWorkoutSamples, data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar],
+  );
+  const dataHealthIssueCount = (dataHealthViewModel?.primaryIssues.length || 0) + (dataHealthViewModel?.secondaryIssues.length || 0);
+  const historyCalendarSummary = React.useMemo(
+    () =>
+      buildHistoryCalendarSummary({
+        sessions: rawHistory,
+        selectedDate: selectedDateKey,
+        today: todayKey(),
+        month: calendarMonth,
+        dataHealthIssueCount,
+        importedWorkouts: data.importedWorkoutSamples || [],
+        includeExternalWorkouts: data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar !== false,
+      }),
+    [calendarMonth, data.importedWorkoutSamples, data.settings?.healthIntegrationSettings?.showExternalWorkoutsInCalendar, dataHealthIssueCount, rawHistory, selectedDateKey],
   );
   const prs = React.useMemo(() => buildPrs(analyticsHistory), [analyticsHistory]);
   const prDates = React.useMemo(() => new Set(prs.map((item) => item.date).filter(Boolean)), [prs]);
@@ -578,152 +601,93 @@ export function RecordView({
     return `${getSessionCalendarDate(session)} · ${formatSessionDuration(session)} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`;
   };
 
-  const renderCalendarMarker = (day: (typeof calendar.days)[number]) => {
-    const hasTraining = day.totalSessions > 0;
-    const hasPr = prDates.has(day.date);
-    const hasTest = day.sessions.some((session) => session.dataFlag === 'test' || session.dataFlag === 'excluded');
-    return (
-      <div className="mt-1 flex justify-center gap-1">
-        {hasTraining ? <span aria-label="训练记录" className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> : null}
-        {hasPr ? <span aria-label="PR 记录" className="h-1.5 w-1.5 rounded-full bg-violet-500" /> : null}
-        {hasTest ? <span aria-label="测试或排除数据" className="h-1.5 w-1.5 rounded-full bg-slate-400" /> : null}
-        {day.hasPainFlags ? <span aria-label="不适记录" className="h-1.5 w-1.5 rounded-full bg-amber-500" /> : null}
-      </div>
-    );
-  };
+  const selectedHistoryDaySessions: HistoryDaySessionItem[] = (selectedCalendarDay?.sessions || []).map((session) => {
+    const sourceSession = rawHistory.find((item) => item.id === session.sessionId);
+    const summary = sourceSession ? buildSessionDetailSummary(sourceSession, unitSettings) : null;
+    return {
+      id: session.sessionId,
+      title: (
+        <span className="flex flex-wrap items-center gap-2">
+          {formatCalendarSessionTitle(session)}
+          {renderFlagBadge(session.dataFlag)}
+          {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
+        </span>
+      ),
+      description: summary
+        ? `${formatCalendarSessionTitle(session)} · ${summary.completedWorkingSets} 组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`
+        : formatCalendarSessionTitle(session),
+      meta: sourceSession ? formatSessionTime(sourceSession) : session.startTime ? formatSessionTime({ startedAt: session.startTime } as TrainingSession) : undefined,
+    };
+  });
 
   const renderCalendar = () => (
-    <PageSection
-      title="训练日历"
-      description="默认从日历回看训练。绿色是训练，紫色是 PR，灰色是测试/排除数据，橙色是不适记录。"
-      action={onStartTraining ? <ActionButton onClick={onStartTraining}>开始训练</ActionButton> : undefined}
-    >
+    <div className="space-y-4" aria-label="History calendar-first surface">
       {!rawHistory.length ? (
         <EmptyState
           title="暂无训练记录"
           description="完成一次训练后，这里会自动显示训练日历和当天详情。"
           action={onStartTraining ? <ActionButton onClick={onStartTraining}>开始训练</ActionButton> : undefined}
         />
-      ) : (
-        <div className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <MetricCard label="本周训练" value={`${currentWeekCount} 次`} tone="emerald" />
-            <MetricCard label="本月训练" value={`${monthSessionCount} 次`} />
-            <MetricCard label="近 4 周平均" value={`${recentWeekAverage.toFixed(1)} 次/周`} />
+      ) : null}
+      <HistoryFrequencySummary
+        thisWeekTrainingDays={historyCalendarSummary.thisWeekTrainingDays}
+        thisMonthTrainingDays={historyCalendarSummary.thisMonthTrainingDays}
+        recentFourWeekAverage={historyCalendarSummary.recentFourWeekAverage}
+        currentStreak={historyCalendarSummary.currentStreak}
+        dataHealthHint={historyCalendarSummary.dataHealthHint}
+      />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_380px]">
+        <TrainingFrequencyCalendar
+          month={calendar.month}
+          days={historyCalendarSummary.calendarDays}
+          canGoPreviousMonth={canGoPreviousMonth}
+          canGoNextMonth={canGoNextMonth}
+          onPreviousMonth={() => selectCalendarMonth(previousCalendarMonth)}
+          onNextMonth={() => selectCalendarMonth(nextCalendarMonth)}
+          onToday={goToTodayInCalendar}
+          onSelectDate={setSelectedDateKey}
+        />
+        <HistoryDaySummaryCard
+          summary={historyCalendarSummary.selectedDaySummary}
+          sessions={selectedHistoryDaySessions}
+          onOpenSession={openSession}
+        />
+      </div>
+      <PrErmQuickAccessCards
+        items={historyCalendarSummary.prQuickAccessItems}
+        onSelectExercise={(exerciseId) => {
+          setSelectedPrExerciseId(exerciseId);
+          setActiveSection('pr');
+        }}
+      />
+      <RecentTrainingTimeline
+        sessions={historyCalendarSummary.recentSessions}
+        getTitle={(session) => (
+          <span className="flex flex-wrap items-center gap-2">
+            {getSessionTitle(session)}
+            {renderFlagBadge(session.dataFlag)}
+            {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
+            {sessionHasPain(session) ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
+          </span>
+        )}
+        getDescription={formatSessionSummaryDescription}
+        getMeta={formatSessionTime}
+        onOpenSession={setSelectedSession}
+      />
+      <GlassCard as="section" padding="md" className="text-white" ariaLabel="数据健康提示">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-white/55">数据健康提示</p>
+            <p className="mt-1 text-sm text-white/45">
+              {historyCalendarSummary.dataHealthHint}。这里只显示平静回看信号，完整 Data Health 保留在数据分区。
+            </p>
           </div>
-
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_380px]">
-            <Card>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-700">
-                <div className="flex flex-wrap items-center gap-2">
-                  <ActionButton
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => selectCalendarMonth(previousCalendarMonth)}
-                    disabled={!canGoPreviousMonth}
-                    aria-label="上一月"
-                  >
-                    上一月
-                  </ActionButton>
-                  <span className="min-w-20 text-center text-base font-bold text-slate-950">{calendar.month}</span>
-                  <ActionButton
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => selectCalendarMonth(nextCalendarMonth)}
-                    disabled={!canGoNextMonth}
-                    aria-label="下一月"
-                  >
-                    下一月
-                  </ActionButton>
-                  <ActionButton size="sm" variant="ghost" onClick={goToTodayInCalendar} aria-label="回到今天">
-                    今天
-                  </ActionButton>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />训练</span>
-                  <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" />PR</span>
-                  <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-400" />测试</span>
-                  <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />不适</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500">
-                {['一', '二', '三', '四', '五', '六', '日'].map((label) => (
-                  <div key={label}>{label}</div>
-                ))}
-                {Array.from({ length: getMonthLeadingBlankCount(calendar.days[0]?.date) }).map((_, index) => (
-                  <div key={`blank-${index}`} aria-hidden="true" />
-                ))}
-                {calendar.days.map((day) => {
-                  const selected = selectedCalendarDay?.date === day.date;
-                  return (
-                    <button
-                      key={day.date}
-                      type="button"
-                      onClick={() => setSelectedDateKey(day.date)}
-                      className={classNames(
-                        'min-h-14 rounded-lg border px-1 py-2 text-xs font-semibold transition',
-                        selected ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-stone-50 text-slate-600 hover:bg-white',
-                      )}
-                    >
-                      <div>{Number(day.date.slice(-2))}</div>
-                      {renderCalendarMarker(day)}
-                    </button>
-                  );
-                })}
-              </div>
-            </Card>
-
-            <Card>
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-base font-semibold text-slate-950">{selectedCalendarDay?.date || '选择日期'}</div>
-                  <div className="text-xs text-slate-500">当天训练摘要</div>
-                </div>
-                <CalendarDays className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div className="space-y-2">
-                {(selectedCalendarDay?.sessions || []).map((session) => {
-                  const sourceSession = rawHistory.find((item) => item.id === session.sessionId);
-                  const summary = sourceSession ? buildSessionDetailSummary(sourceSession, unitSettings) : null;
-                  return (
-                    <ListItem
-                    key={session.sessionId}
-                    title={
-                      <span className="flex flex-wrap items-center gap-2">
-                        {formatCalendarSessionTitle(session)}
-                        {renderFlagBadge(session.dataFlag)}
-                        {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
-                      </span>
-                    }
-                    description={
-                      summary
-                        ? `${formatCalendarSessionTitle(session)} · ${summary.completedWorkingSets} 组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`
-                        : formatCalendarSessionTitle(session)
-                    }
-                    meta={sourceSession ? formatSessionTime(sourceSession) : session.startTime ? formatSessionTime({ startedAt: session.startTime } as TrainingSession) : undefined}
-                    action={<ActionButton size="sm" variant="secondary" onClick={() => openSession(session.sessionId)}>详情</ActionButton>}
-                    />
-                  );
-                })}
-                {(selectedCalendarDay?.externalWorkouts || []).map((workout) => (
-                  <ListItem
-                    key={workout.workoutId}
-                    title={`外部活动：${workout.workoutType}`}
-                    description={`${Math.round(workout.durationMin || 0)} 分钟${workout.activeEnergyKcal ? ` · ${Math.round(workout.activeEnergyKcal)} kcal` : ''}`}
-                    meta="只作为活动背景，不计入力量训练 PR / e1RM"
-                  />
-                ))}
-                {!(selectedCalendarDay?.sessions || []).length && !(selectedCalendarDay?.externalWorkouts || []).length ? (
-                  <div className="rounded-lg bg-stone-50 p-4 text-sm text-slate-500">
-                    {selectedMonthHasRecords ? '当天没有训练记录。' : '本月没有训练记录。'}
-                  </div>
-                ) : null}
-              </div>
-            </Card>
-          </div>
+          <span className="rounded-full border border-white/8 bg-white/[0.05] px-3 py-1 text-xs font-semibold text-white/50">
+            不执行修复
+          </span>
         </div>
-      )}
-    </PageSection>
+      </GlassCard>
+    </div>
   );
 
   const renderHistoryList = () => (
@@ -1598,10 +1562,16 @@ export function RecordView({
         <RecordOsOverview>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-emerald-200">个人训练记录 OS</div>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight">历史、进步和数据健康放在同一条时间线里</h2>
+              <div className="text-sm font-semibold text-emerald-200">
+                {surfaceMode === 'history' ? '训练频率 History OS' : '个人训练记录 OS'}
+              </div>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight">
+                {surfaceMode === 'history' ? '训练频率先看日历，再看 PR / e1RM' : '历史、进步和数据健康保持同一套记录来源'}
+              </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                先确认训练已经记录，再查看 PR / e1RM、有效组和数据健康提示。这里不会自行修复、删除或上传任何训练数据。
+                {surfaceMode === 'history'
+                  ? '先确认哪天练了、哪天休息，再快速进入主要动作 PR / e1RM。训练列表和数据健康只作为次级回看信号。'
+                  : '继续使用现有 PR / e1RM、有效组和数据健康计算。这里不会自行修复、删除或上传任何训练数据。'}
               </p>
             </div>
             <div className="grid min-w-40 gap-2 text-sm">

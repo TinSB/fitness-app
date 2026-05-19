@@ -17,7 +17,8 @@ describe('UI-OS 5 History Progress Data Health redesign', () => {
   });
 
   it('keeps history as a recorded workout timeline with owner-friendly empty state', () => {
-    expect(recordSource).toContain('历史、进步和数据健康放在同一条时间线里');
+    expect(recordSource).toContain('训练频率先看日历，再看 PR / e1RM');
+    expect(recordSource).toContain('RecentTrainingTimeline');
     expect(cardsSource).toContain('训练记录卡片');
     expect(recordSource).toContain('已记录 ·');
     expect(recordSource).toContain('暂无训练记录');
