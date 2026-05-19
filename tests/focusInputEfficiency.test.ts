@@ -79,15 +79,20 @@ describe('Focus input efficiency state boundaries', () => {
     expect(getActualSetDraft(applied.session, getCurrentFocusStep(applied.session))).toMatchObject({
       exerciseId: 'incline-db-press',
       actualWeightKg: 50,
-      actualReps: 8,
-      actualRir: 2,
+      actualReps: 9,
+      actualRir: 1,
       source: 'prescription',
     });
   });
 
   it('completes the current cursor step after quick apply instead of jumping back to an earlier exercise', () => {
     const onSecond = switchFocusExercise(makeSession(), 1);
-    const applied = applySuggestedFocusStepWithResult(onSecond, 1).session;
+    const appliedWeightOnly = applySuggestedFocusStepWithResult(onSecond, 1).session;
+    const applied = updateFocusActualDraftWithResult(appliedWeightOnly, 1, {
+      actualReps: 8,
+      actualRir: 2,
+      source: 'manual',
+    }).session;
     const current = getCurrentFocusStep(applied);
 
     const completed = dispatchWorkoutExecutionEvent(applied, {

@@ -22,6 +22,7 @@ import type { TrainingSession, UnitSettings } from '../src/models/training-model
 import { emptyData } from '../src/storage/persistence';
 import { getTemplate, makeAppData, makeSession } from './fixtures';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const unitSettings: UnitSettings = {
   weightUnit: 'kg',
@@ -171,7 +172,7 @@ describe('product stability regression', () => {
     expect(text).toContain('复制上组');
     expect(text).toContain('标记不适');
     expect(text).toContain('替代动作');
-    expect(text).toContain('完成一组');
+    expect(text).toContain('记录本组');
     expect(text).not.toContain('Focus Mode');
     expect(text).not.toMatch(/\b(undefined|null|warmup|working|support)\b/);
   });
@@ -184,6 +185,7 @@ describe('product stability regression', () => {
       replacementId: 'db-bench-press',
     }).updatedSession;
     session = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    session = fillPlannedRepsForCurrentStep(session, 0);
     session = dispatchWorkoutExecutionEvent(session, {
       type: 'COMPLETE_STEP',
       exerciseIndex: 0,

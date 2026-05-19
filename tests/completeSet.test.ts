@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applySuggestedFocusStep, completeFocusSet, getCurrentFocusStep } from '../src/engines/focusModeStateEngine';
+import { completeFocusSet, getCurrentFocusStep } from '../src/engines/focusModeStateEngine';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { applySuggestionAndPlannedReps } from './focusModeTestActions';
 
 describe('complete focus set', () => {
   it('完成一组会把 actual draft 写入 working set log', () => {
     let session = makeFocusSession([makeExercise('bench', 1)]);
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     const result = completeFocusSet(session, 0);
     const set = result?.session.exercises[0].sets[0];
     expect(set.done).toBe(true);
@@ -23,7 +24,7 @@ describe('complete focus set', () => {
 
   it('double submit 不重复写入同一 step', () => {
     let session = makeFocusSession([makeExercise('bench', 1)]);
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     const first = completeFocusSet(session, 0);
     const second = completeFocusSet(first?.session as typeof session, 0);
     expect(first).not.toBeNull();
@@ -32,7 +33,7 @@ describe('complete focus set', () => {
 
   it('完成最后一组进入 completed', () => {
     let session = makeFocusSession([makeExercise('bench', 1)]);
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as typeof session;
     expect(getCurrentFocusStep(session).stepType).toBe('completed');
   });

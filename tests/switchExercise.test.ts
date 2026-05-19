@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { applySuggestedFocusStep, completeFocusSet, getCurrentFocusStep, switchFocusExercise } from '../src/engines/focusModeStateEngine';
+import { completeFocusSet, getCurrentFocusStep, switchFocusExercise } from '../src/engines/focusModeStateEngine';
 import type { ExercisePrescription, TrainingSession } from '../src/models/training-model';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { applySuggestionAndPlannedReps } from './focusModeTestActions';
 
 const patterned = (exercise: ExercisePrescription, pattern: string) =>
   ({
@@ -38,9 +39,9 @@ describe('switch focus exercise', () => {
     const incline = patterned(makeExercise('incline', 1, 0, 1), 'horizontal_push');
     let session = makeFocusSession([bench, incline]);
 
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
 
     session = switchFocusExercise(session, 1);

@@ -630,8 +630,6 @@ export const applySuggestedFocusStepWithResult = (session: TrainingSession, exer
   });
   const updates = {
     ...(typeof actionablePrescription.actionableWeightKg === 'number' ? { actualWeightKg: actionablePrescription.actionableWeightKg } : {}),
-    ...(typeof step.plannedReps === 'number' ? { actualReps: step.plannedReps } : {}),
-    ...(typeof step.plannedRir === 'number' ? { actualRir: step.plannedRir } : {}),
     source: 'prescription',
   } satisfies Partial<ActualSetDraft>;
   const existing = draftForStep(nextSession, draftStep);

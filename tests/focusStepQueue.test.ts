@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { applySuggestedFocusStep, buildFocusStepQueue, completeFocusSet, getCurrentFocusStep, isFocusSessionComplete } from '../src/engines/focusModeStateEngine';
+import { buildFocusStepQueue, completeFocusSet, getCurrentFocusStep, isFocusSessionComplete } from '../src/engines/focusModeStateEngine';
 import type { TrainingSession } from '../src/models/training-model';
 import { attachSupportBlocks, makeExercise, makeFocusSession } from './focusModeFixtures';
+import { applySuggestionAndPlannedReps } from './focusModeTestActions';
 
 describe('focus step queue', () => {
   it('orders 3 warmup steps before 2 working steps for one exercise', () => {
@@ -35,22 +36,22 @@ describe('focus step queue', () => {
   it('advances warmup1 to warmup2, then warmup3, then working1', () => {
     let session = makeFocusSession([makeExercise('bench', 2, 0, 3)]);
 
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
     expect(getCurrentFocusStep(session).id).toBe('main:bench:warmup:1');
 
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
     expect(getCurrentFocusStep(session).id).toBe('main:bench:warmup:2');
 
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
     expect(getCurrentFocusStep(session).id).toBe('main:bench:working:0');
   });
 
   it('advances from last working set to next exercise', () => {
     let session = makeFocusSession([makeExercise('bench', 1), makeExercise('row', 1)]);
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
     expect(getCurrentFocusStep(session).exerciseId).toBe('row');
     expect(getCurrentFocusStep(session).stepType).toBe('working');
@@ -59,9 +60,9 @@ describe('focus step queue', () => {
 
   it('marks session complete without wrapping to first exercise', () => {
     let session = makeFocusSession([makeExercise('bench', 1), makeExercise('row', 1)]);
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     session = completeFocusSet(session, 0)?.session as TrainingSession;
-    session = applySuggestedFocusStep(session, 1);
+    session = applySuggestionAndPlannedReps(session, 1);
     session = completeFocusSet(session, 1)?.session as TrainingSession;
 
     expect(isFocusSessionComplete(session)).toBe(true);

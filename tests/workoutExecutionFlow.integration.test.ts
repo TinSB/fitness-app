@@ -76,10 +76,12 @@ describe('workout execution flow integration', () => {
     expect(getCurrentFocusStep(session).id).toBe('main:db-bench-press:warmup:0');
 
     session = applySuggestedFocusStep(session, 0);
+    session = updateFocusActualDraft(session, 0, { actualReps: getCurrentFocusStep(session).plannedReps, source: 'manual' });
     session = completeCurrentMainSet(session, 0, '2026-04-27T10:03:00-04:00', Date.parse('2026-04-27T10:03:00-04:00'));
     expect(getCurrentFocusStep(session).id).toBe('main:db-bench-press:warmup:1');
 
     session = applySuggestedFocusStep(session, 0);
+    session = updateFocusActualDraft(session, 0, { actualReps: getCurrentFocusStep(session).plannedReps, source: 'manual' });
     session = completeCurrentMainSet(session, 0, '2026-04-27T10:04:00-04:00', Date.parse('2026-04-27T10:04:00-04:00'));
     expect(getCurrentFocusStep(session).id).toBe('main:db-bench-press:working:0');
 

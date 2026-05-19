@@ -8,7 +8,6 @@ import { buildEffectiveVolumeSummary } from '../src/engines/effectiveSetEngine';
 import { completedSets, sessionCompletedSets, sessionVolume, setVolume } from '../src/engines/engineUtils';
 import {
   adjustFocusSetValue,
-  applySuggestedFocusStep,
   buildFocusStepQueue,
   completeFocusSet,
   endFocusRest,
@@ -32,6 +31,7 @@ import { buildIncompleteMainWorkGuard, completeTrainingSessionIntoHistory, final
 import { buildTodayViewModel } from '../src/presenters/todayPresenter';
 import type { AppData, ProgramAdjustmentDraft, TrainingSession, TrainingTemplate } from '../src/models/training-model';
 import { getTemplate, makeAppData, makeSession } from './fixtures';
+import { applySuggestionAndPlannedReps } from './focusModeTestActions';
 
 const TEST_DATE = '2026-05-04';
 const STARTED_AT = '2026-05-04T09:00:00-04:00';
@@ -196,7 +196,7 @@ const exerciseIndexByIdentity = (session: TrainingSession, exerciseId: string) =
 
 const completeCurrentStepAndRest = (session: TrainingSession, tick: number) => {
   const before = getCurrentFocusStep(session);
-  let next = applySuggestedFocusStep(session, before.exerciseIndex);
+  let next = applySuggestionAndPlannedReps(session, before.exerciseIndex);
   const step = getCurrentFocusStep(next);
   const completed = completeFocusSet(next, step.exerciseIndex, `${TEST_DATE}T09:${String(tick).padStart(2, '0')}:00-04:00`, tick * 1000, step.id);
   if (!completed) throw new Error(`expected completion for ${step.id}`);
@@ -445,7 +445,7 @@ describe('full product real session regression', () => {
     expect(getCurrentFocusStep(session)).toMatchObject({ exerciseId: 'incline-db-press', exerciseIndex: inclineIndex });
     session = adjustFocusSetValue(session, inclineIndex, 'reps', 1);
     expect(getCurrentFocusStep(session)).toMatchObject({ exerciseId: 'incline-db-press', exerciseIndex: inclineIndex });
-    session = applySuggestedFocusStep(session, inclineIndex);
+    session = applySuggestionAndPlannedReps(session, inclineIndex);
     expect(getCurrentFocusStep(session)).toMatchObject({ exerciseId: 'incline-db-press', exerciseIndex: inclineIndex });
 
     const guard = buildIncompleteMainWorkGuard(session);

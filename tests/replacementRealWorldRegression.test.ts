@@ -10,6 +10,7 @@ import {
   endFocusRest,
   getActualSetDraft,
   getCurrentFocusStep,
+  updateFocusActualDraft,
 } from '../src/engines/focusModeStateEngine';
 import { applyExerciseReplacement, buildReplacementOptions, validateReplacementExerciseId } from '../src/engines/replacementEngine';
 import { buildSessionDetailSummary } from '../src/engines/sessionDetailSummaryEngine';
@@ -153,7 +154,8 @@ const replaceAndCompleteFirstSet = (
 
   session = applySuggestedFocusStep(session, 0);
   expect(getCurrentFocusStep(session).exerciseId).toBe(replacementId);
-  expect(getActualSetDraft(session, getCurrentFocusStep(session))?.actualReps).toBe(10);
+  expect(getActualSetDraft(session, getCurrentFocusStep(session))?.actualReps).toBeUndefined();
+  session = updateFocusActualDraft(session, 0, { actualReps: 10, source: 'manual' });
 
   const step = getCurrentFocusStep(session);
   const completed = completeFocusSet(session, 0, nowIso, Date.parse(nowIso), step.id);

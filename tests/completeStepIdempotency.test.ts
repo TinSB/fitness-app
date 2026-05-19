@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { applySuggestedFocusStep, completeFocusSet, getCurrentFocusStep } from '../src/engines/focusModeStateEngine';
+import { completeFocusSet, getCurrentFocusStep } from '../src/engines/focusModeStateEngine';
 import type { TrainingSession } from '../src/models/training-model';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { applySuggestionAndPlannedReps } from './focusModeTestActions';
 
 describe('complete step idempotency', () => {
   it('does not complete the next step when the same expected step is submitted twice', () => {
     let session = makeFocusSession([makeExercise('bench', 2, 0, 3)]);
     const firstStep = getCurrentFocusStep(session);
 
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     const first = completeFocusSet(session, 0, '2026-04-27T10:00:00.000Z', 1000, firstStep.id);
     expect(first).not.toBeNull();
     session = first?.session as TrainingSession;

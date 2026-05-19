@@ -9,6 +9,7 @@ import type { ExerciseEquipmentTag } from '../data/exerciseLibrary';
 import { detectSetAnomalies, type SetAnomaly } from '../engines/setAnomalyEngine';
 import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from '../engines/currentExerciseSelector';
 import type { FocusActionResult } from '../engines/workoutExecutionStateMachine';
+import { buildFocusModeInteractionInput, resolveFocusModeInteractionState } from '../engines/focusModeInteractionState';
 import {
   formatExerciseName,
   formatFatigueCost,
@@ -30,7 +31,12 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
-import { ActualSetInputCard, SetPrescriptionCard, TrainingActionBar, TrainingFocusHeroCard } from '../uiOs/training/TrainingOsCards';
+import { ActualSetInputCard, SetPrescriptionCard, TrainingFocusHeroCard } from '../uiOs/training/TrainingOsCards';
+import { FocusActualSetRecordSheet } from '../uiOs/training/FocusActualSetRecordSheet';
+import { FocusModeActionBar } from '../uiOs/training/FocusModeActionBar';
+import type { FocusModeSecondaryActionItem } from '../uiOs/training/FocusModeSecondaryActions';
+import { ActionButton as UiOsActionButton } from '../uiOs/primitives/ActionButton';
+import { BottomSheet as UiOsBottomSheet } from '../uiOs/surfaces/BottomSheet';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
 import { buildActionableEquipmentAwarePrescription } from '../engines/equipmentAwareActionablePrescription';
 
@@ -38,6 +44,7 @@ type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' 
 type FocusBlockType = 'main' | 'correction' | 'functional';
 type PendingFocusConfirmation =
   | { type: 'set-anomaly'; anomaly: SetAnomaly; exerciseIndex: number; completionNotice: string }
+  | { type: 'skip-support-exercise'; moduleId: string; exerciseId: string; reason: SupportSkipReason; label: string }
   | { type: 'skip-support-block'; blockType: 'correction' | 'functional'; reason: SupportSkipReason; label: string };
 
 export type FocusFeedback = { message: string; tone: 'success' | 'info' | 'warning' | 'danger' };
@@ -84,9 +91,7 @@ export const isFocusSuggestionApplied = (
   Boolean(
     actualDraft &&
       actualDraft.source === 'prescription' &&
-      sameOptionalNumber(actualDraft.actualWeightKg, actionableWeightKg ?? currentStep.plannedWeight) &&
-      sameOptionalNumber(actualDraft.actualReps, currentStep.plannedReps) &&
-      sameOptionalNumber(actualDraft.actualRir, currentStep.plannedRir),
+      sameOptionalNumber(actualDraft.actualWeightKg, actionableWeightKg ?? currentStep.plannedWeight),
   );
 
 export const buildFocusCurrentSetSummary = ({
@@ -451,6 +456,7 @@ export function TrainingFocusView({
   unitSettings,
   restTimer,
   expandedExercise,
+  onSetChange,
   onCompleteSet,
   onCopyPrevious,
   onApplySuggestion,
@@ -482,6 +488,8 @@ export function TrainingFocusView({
   const [showExplanationSheet, setShowExplanationSheet] = React.useState(false);
   const [pendingConfirmation, setPendingConfirmation] = React.useState<PendingFocusConfirmation | null>(null);
   const [showMissingInputGuide, setShowMissingInputGuide] = React.useState(false);
+  const [showActualRecordSheet, setShowActualRecordSheet] = React.useState(false);
+  const [sessionEndRequested, setSessionEndRequested] = React.useState(false);
   const currentInputRef = React.useRef<HTMLDivElement | null>(null);
   const focusState = getFocusNavigationState(session, expandedExercise);
   const mainIndex = focusState.currentExerciseIndex;
@@ -602,24 +610,27 @@ export function TrainingFocusView({
   });
   const painBoundaryNotice = buildFocusPainBoundaryNotice({ currentStep, actualDraft });
   const actualSummary = currentSetSummary.actualText;
-  const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
-  const repAdjustments = [-5, -1, 1, 5];
   const canCompleteCurrentStep = isSupportStep || mainSetIndex >= 0;
   const painMarked = Boolean(actualDraft?.painFlag || (isSupportStep && skipReason === 'pain'));
-  const auxiliaryActionClass = (tone: 'default' | 'pain' | 'replacement' = 'default', active = false) =>
-    classNames(
-      'grid min-h-14 place-items-center rounded-lg border px-2 py-2 text-center shadow-sm transition active:scale-[0.99]',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
-      'disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none',
-      active
-        ? 'border-rose-300 bg-rose-50 text-rose-800'
-        : tone === 'replacement'
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100'
-          : 'border-slate-200 bg-white text-slate-800 hover:border-emerald-200 hover:bg-emerald-50',
-    );
+  const pendingSkipConfirmation = pendingConfirmation?.type === 'skip-support-exercise' ? pendingConfirmation : null;
+  const interactionInput = buildFocusModeInteractionInput({
+    currentStep,
+    actualDraft,
+    sessionComplete,
+    sessionEndRequested,
+    isSupportStep,
+    blockType,
+    hasSkipReason: Boolean(pendingSkipConfirmation || supportLog?.skippedReason),
+    painMarked,
+    canCompleteCurrentStep,
+    canApplySuggestion: Boolean(!isSupportStep && mainIndex >= 0),
+    hasFeasibleLoad: Boolean(actionablePrescription?.shouldUseFeasibleLoad),
+  });
+  const interactionState = resolveFocusModeInteractionState(interactionInput);
 
   const requestInputGuide = () => {
     setShowMissingInputGuide(true);
+    setShowActualRecordSheet(true);
     window.setTimeout(() => currentInputRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' }), 0);
   };
 
@@ -644,6 +655,11 @@ export function TrainingFocusView({
     const timer = window.setTimeout(() => setFeedback(null), 2500);
     return () => window.clearTimeout(timer);
   }, [feedback]);
+
+  React.useEffect(() => {
+    setShowActualRecordSheet(false);
+    setSessionEndRequested(false);
+  }, [currentStep.id]);
 
   const switchExercise = (index: number) => {
     const exercise = session.exercises[index];
@@ -767,6 +783,9 @@ export function TrainingFocusView({
     if (!pendingConfirmation) return;
     if (pendingConfirmation.type === 'set-anomaly') {
       notifyResult(onCompleteSet(pendingConfirmation.exerciseIndex));
+    } else if (pendingConfirmation.type === 'skip-support-exercise') {
+      onSkipSupportExercise(pendingConfirmation.moduleId, pendingConfirmation.exerciseId, pendingConfirmation.reason);
+      notify(`已跳过${pendingConfirmation.label}`);
     } else {
       onSkipSupportBlock(pendingConfirmation.blockType, pendingConfirmation.reason);
       notify(`已跳过${pendingConfirmation.label}`);
@@ -801,6 +820,164 @@ export function TrainingFocusView({
     if (mainIndex < 0) return undefined;
     return onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))), source: 'manual' });
   };
+
+  const updateWorkingSetNote =
+    currentStep.stepType === 'working' && mainIndex >= 0 && mainSetIndex >= 0
+      ? (value: string) => onSetChange(mainIndex, mainSetIndex, 'note', value)
+      : undefined;
+
+  const completeFromActualRecordSheet = () => {
+    const wasMissingInput = currentSetSummary.missingInput;
+    completeCurrentSet();
+    if (!wasMissingInput) setShowActualRecordSheet(false);
+  };
+
+  const requestSkipCurrentStep = () => {
+    if (isSupportStep && supportLog) {
+      const label = supportLog.blockType === 'correction' ? '纠偏动作' : '活动动作';
+      setPendingConfirmation({ type: 'skip-support-exercise', moduleId: supportLog.moduleId, exerciseId: supportLog.exerciseId, reason: skipReason, label });
+      return;
+    }
+    notify('正式训练组跳过请先选择替代动作或进入完整页处理。', 'info');
+  };
+
+  const handlePrimaryFocusAction = () => {
+    switch (interactionState.primaryActionKind) {
+      case 'open_actual_record':
+        setShowActualRecordSheet(true);
+        return;
+      case 'complete_set':
+      case 'complete_correction':
+      case 'complete_mobility':
+        completeCurrentSet();
+        return;
+      case 'confirm_skip':
+        if (pendingSkipConfirmation) {
+          confirmPendingAction();
+        } else {
+          requestSkipCurrentStep();
+        }
+        return;
+      case 'choose_discomfort_handling':
+        notify('请选择处理方式：替代动作、降低重量或结束本动作。', 'warning');
+        return;
+      case 'confirm_end_session':
+      case 'view_summary':
+        onFinish?.();
+        return;
+      case 'return_local_mode':
+        notify('当前仍在本地训练模式。', 'info');
+        return;
+      default:
+        notify(interactionState.primaryActionLabel, 'info');
+    }
+  };
+
+  const focusSecondaryActions: FocusModeSecondaryActionItem[] = [
+    {
+      id: 'copy-previous',
+      label: '复制上组',
+      icon: <Copy className="h-4 w-4" />,
+      onClick: copyPrevious,
+      disabled: isSupportStep,
+    },
+    {
+      id: 'mark-pain',
+      label: '标记不适',
+      icon: <XCircle className="h-4 w-4" />,
+      onClick: () => markPain(!painMarked),
+      active: painMarked,
+      tone: 'danger',
+    },
+    {
+      id: 'replace-exercise',
+      label: '替代动作',
+      icon: <Replace className="h-4 w-4" />,
+      onClick: openReplacementPicker,
+      disabled: isSupportStep,
+      tone: 'success',
+    },
+    {
+      id: 'skip-step',
+      label: '跳过',
+      icon: <SkipForward className="h-4 w-4" />,
+      onClick: requestSkipCurrentStep,
+      tone: 'default',
+    },
+    {
+      id: 'view-details',
+      label: '查看详情',
+      icon: <ListChecks className="h-4 w-4" />,
+      onClick: () => setShowExplanationSheet(true),
+      tone: 'default',
+    },
+  ];
+
+  const focusActionSummary = !isSupportStep ? (
+    <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold">{currentSetSummary.text}</div>
+        {showMissingInputGuide && currentSetSummary.missingInput ? <div className="mt-1 text-xs font-semibold text-amber-200">缺少重量或次数</div> : null}
+        {painBoundaryNotice ? (
+          <div className="mt-1 space-y-0.5 text-xs font-semibold text-rose-200">
+            <div>{painBoundaryNotice.title}</div>
+            <div className="font-medium text-rose-100/80">{painBoundaryNotice.description}</div>
+          </div>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={() => notifyResult(onApplySuggestion(mainIndex))}
+        className={classNames(
+          'shrink-0 rounded-xl border px-3 py-2 text-xs font-bold transition',
+          currentSetSummary.isSuggestionApplied
+            ? 'border-emerald-300/25 bg-emerald-300/15 text-emerald-100'
+            : 'border-emerald-300/25 bg-white/10 text-emerald-100 active:scale-[0.98]',
+        )}
+      >
+        {currentSetSummary.isSuggestionApplied ? '已套用' : '套用建议'}
+      </button>
+    </div>
+  ) : (
+    <div className="text-sm font-semibold text-white/80">
+      {interactionState.primaryActionLabel}不会计入正式工作组。跳过需要再次确认。
+    </div>
+  );
+
+  const renderActualRecordSheet = () =>
+    !isSupportStep ? (
+      <FocusActualSetRecordSheet
+        isOpen={showActualRecordSheet}
+        onClose={() => setShowActualRecordSheet(false)}
+        weightUnit={weightUnit}
+        weightValue={actualDisplayWeight}
+        repsValue={actualReps}
+        rirValue={actualRir}
+        noteValue={mainSet?.note}
+        missingInput={currentSetSummary.missingInput}
+        onWeightChange={(value) => updateDisplayWeight(value)}
+        onRepsChange={(value) => updateActualReps(value)}
+        onRirChange={(value) => updateActualRir(value)}
+        onNoteChange={updateWorkingSetNote}
+        onComplete={completeFromActualRecordSheet}
+      />
+    ) : null;
+
+  const renderEndSessionSheet = () => (
+    <UiOsBottomSheet isOpen={sessionEndRequested} onClose={() => setSessionEndRequested(false)} title="结束训练" confirmRequired>
+      <div className="space-y-4">
+        <p className="text-sm leading-6 text-white/70">结束训练需要再次确认。未完成的动作不会被自动补完，当前本地训练记录仍会保留。</p>
+        <div className="grid grid-cols-2 gap-3">
+          <UiOsActionButton type="button" variant="secondary" size="md" onClick={() => setSessionEndRequested(false)}>
+            继续训练
+          </UiOsActionButton>
+          <UiOsActionButton type="button" variant="danger" size="md" onClick={onFinish}>
+            确认结束训练
+          </UiOsActionButton>
+        </div>
+      </div>
+    </UiOsBottomSheet>
+  );
 
   const renderCompletedState = () => (
     <div className="min-h-svh bg-slate-950 px-4 pb-6 pt-[calc(1rem+env(safe-area-inset-top))] text-white">
@@ -905,10 +1082,11 @@ export function TrainingFocusView({
   const renderPendingConfirmation = () => {
     if (!pendingConfirmation) return null;
     const isSetAnomaly = pendingConfirmation.type === 'set-anomaly';
+    const isSupportExerciseSkip = pendingConfirmation.type === 'skip-support-exercise';
     return (
       <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-slate-950/40 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
         <ConfirmDialog
-          title={isSetAnomaly ? '确认保存这组？' : `跳过整个${pendingConfirmation.label}？`}
+          title={isSetAnomaly ? '确认保存这组？' : isSupportExerciseSkip ? `跳过${pendingConfirmation.label}？` : `跳过整个${pendingConfirmation.label}？`}
           description={
             isSetAnomaly ? (
               <div className="space-y-2">
@@ -922,6 +1100,8 @@ export function TrainingFocusView({
                   <div className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900">建议：{pendingConfirmation.anomaly.suggestedAction}</div>
                 ) : null}
               </div>
+            ) : isSupportExerciseSkip ? (
+              <div>当前支持动作会记录为跳过，你可以返回继续训练。</div>
             ) : (
               <div>未完成的支持动作会记录为跳过，你可以返回继续完成。</div>
             )
@@ -1016,18 +1196,8 @@ export function TrainingFocusView({
               </option>
             ))}
           </select>
-          <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-            <ActionButton type="button" variant="primary" size="lg" onClick={() => onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId)} fullWidth>
-              完成一组
-            </ActionButton>
-            <button
-              type="button"
-              aria-label="跳过当前支持动作"
-              onClick={() => onSkipSupportExercise(supportLog.moduleId, supportLog.exerciseId, skipReason)}
-              className="grid h-14 w-14 place-items-center rounded-lg border border-amber-200 bg-amber-50 text-amber-900"
-            >
-              <SkipForward className="h-5 w-5" />
-            </button>
+          <div className="mt-3 rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm font-semibold text-slate-600">
+            主要操作已固定在底部动作栏，纠偏/活动任务不会计入正式工作组。
           </div>
           <ActionButton
             type="button"
@@ -1138,100 +1308,25 @@ export function TrainingFocusView({
               </div>
             </SetPrescriptionCard>
             <ActualSetInputCard>
-              <div className="text-xs font-semibold text-slate-300">实际记录</div>
-              <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-slate-300">实际记录</div>
+                  <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowActualRecordSheet(true)}
+                  className="shrink-0 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
+                >
+                  编辑
+                </button>
+              </div>
               {showMissingInputGuide && currentSetSummary.missingInput ? (
                 <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">缺少重量或次数</div>
               ) : null}
               <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-300">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
             </ActualSetInputCard>
           </div>
-
-          <Card className="border-white/10 bg-white text-slate-950">
-            <div className="text-sm font-semibold">重量（{weightUnit}）</div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {weightAdjustments.map((delta) => (
-                <button
-                  key={`weight-${delta}`}
-                  type="button"
-                  aria-label={`重量${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}${weightUnit}`}
-                  onClick={() => {
-                    notifyResult(updateDisplayWeight(number(actualDisplayWeight) + delta), '已调整重量。');
-                  }}
-                  className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
-                >
-                  {delta > 0 ? `+${delta}` : delta}
-                </button>
-              ))}
-            </div>
-            <label className="mt-3 block text-xs font-semibold text-slate-500">
-              自定义重量
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step={weightUnit === 'lb' ? '1' : '0.5'}
-                value={actualDisplayWeight ?? ''}
-                onChange={(event) => updateDisplayWeight(number(event.target.value))}
-                className="mt-1 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
-                placeholder={`0${weightUnit}`}
-              />
-            </label>
-          </Card>
-
-          <Card className="border-white/10 bg-white text-slate-950">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="text-sm font-semibold">次数</div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  {repAdjustments.map((delta) => (
-                    <button
-                      key={`rep-${delta}`}
-                      type="button"
-                      aria-label={`次数${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 次`}
-                      onClick={() => {
-                        notifyResult(updateActualReps(number(actualReps) + delta), '已调整次数。');
-                      }}
-                      className="h-12 rounded-lg border border-slate-200 bg-white text-base font-semibold text-slate-700"
-                    >
-                      {delta > 0 ? `+${delta}` : delta}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="1"
-                  value={actualReps ?? ''}
-                  onChange={(event) => updateActualReps(number(event.target.value))}
-                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 px-3 text-base font-semibold text-slate-900"
-                  placeholder="0 次"
-                />
-              </div>
-              <div>
-                <div className="text-sm font-semibold">余力（RIR）</div>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  {[0, 1, 2, 3, 4, 5].map((rir) => (
-                    <button
-                      key={rir}
-                      type="button"
-                      onClick={() => {
-                        const result = updateActualRir(rir);
-                        if (result && !result.changed) notifyResult(result);
-                      }}
-                      className={classNames(
-                        'h-12 rounded-lg border text-sm font-semibold',
-                        actualRir === rir ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700',
-                      )}
-                    >
-                      {rir}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Card>
         </div>
 
         {completedMainSets.length ? (
@@ -1328,8 +1423,8 @@ export function TrainingFocusView({
                 完整页
               </button>
             ) : null}
-            <button type="button" onClick={onFinish} className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100">
-              结束
+            <button type="button" onClick={() => setSessionEndRequested(true)} className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100">
+              结束训练
             </button>
           </div>
         </header>
@@ -1342,89 +1437,23 @@ export function TrainingFocusView({
       {renderReplacementPicker()}
       {renderExplanationSheet()}
       {renderPendingConfirmation()}
+      {renderActualRecordSheet()}
+      {renderEndSessionSheet()}
 
-      <TrainingActionBar>
-        <div className="mx-auto grid w-full max-w-2xl gap-2">
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              aria-label="复制上组"
-              onClick={copyPrevious}
-              className={auxiliaryActionClass()}
-            >
-              <Copy className="h-4 w-4" />
-              <span className="text-xs font-semibold leading-tight">复制上组</span>
-            </button>
-            <button
-              type="button"
-              aria-label="标记不适"
-              onClick={() => markPain(!painMarked)}
-              className={auxiliaryActionClass('pain', painMarked)}
-            >
-              <XCircle className="h-4 w-4" />
-              <span className="text-xs font-semibold leading-tight">标记不适</span>
-            </button>
-            <button
-              type="button"
-              aria-label="替代动作"
-              onClick={openReplacementPicker}
-              className={auxiliaryActionClass('replacement')}
-            >
-              <Replace className="h-4 w-4" />
-              <span className="text-xs font-bold leading-tight">替代动作</span>
-            </button>
-          </div>
-          {!isSupportStep ? (
-            <div
-              className={classNames(
-                'rounded-xl border px-3 py-2',
-                currentSetSummary.missingInput
-                  ? 'border-amber-200 bg-amber-50 text-amber-950'
-                  : 'border-slate-200 bg-stone-50 text-slate-900',
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold">{currentSetSummary.text}</div>
-                  {showMissingInputGuide && currentSetSummary.missingInput ? (
-                    <div className="mt-1 text-xs font-semibold text-amber-800">缺少重量或次数</div>
-                  ) : null}
-                  {painBoundaryNotice ? (
-                    <div className="mt-1 space-y-0.5 text-xs font-semibold text-rose-800">
-                      <div>{painBoundaryNotice.title}</div>
-                      <div className="font-medium text-rose-700">{painBoundaryNotice.description}</div>
-                    </div>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => notifyResult(onApplySuggestion(mainIndex))}
-                  className={classNames(
-                    'shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition',
-                    currentSetSummary.isSuggestionApplied
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                      : 'border-emerald-200 bg-white text-emerald-700 active:scale-[0.98]',
-                  )}
-                >
-                  {currentSetSummary.isSuggestionApplied ? '已套用' : '套用建议'}
-                </button>
-              </div>
-            </div>
-          ) : null}
-          <ActionButton
-            type="button"
-            aria-label="完成一组"
-            onClick={completeCurrentSet}
-            disabled={!canCompleteCurrentStep}
-            variant="primary"
-            size="lg"
-            fullWidth
-            className="shadow-lg shadow-emerald-900/20"
-          >
-            完成一组
-          </ActionButton>
-        </div>
-      </TrainingActionBar>
+      <FocusModeActionBar
+        primaryLabel={interactionState.primaryActionLabel}
+        primaryActionKind={interactionState.primaryActionKind}
+        onPrimaryAction={handlePrimaryFocusAction}
+        primaryDisabled={
+          (interactionState.primaryActionKind === 'complete_set' ||
+            interactionState.primaryActionKind === 'complete_correction' ||
+            interactionState.primaryActionKind === 'complete_mobility') &&
+          !canCompleteCurrentStep
+        }
+        secondaryActions={focusSecondaryActions}
+        summary={focusActionSummary}
+        warning={interactionState.warning}
+      />
     </div>
   );
 }

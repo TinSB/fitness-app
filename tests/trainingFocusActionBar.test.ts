@@ -51,6 +51,8 @@ const visibleText = (html: string) =>
 
 describe('TrainingFocusView bottom action bar', () => {
   const focusSource = readFileSync(resolve(process.cwd(), 'src/features/TrainingFocusView.tsx'), 'utf8');
+  const focusActionBarSource = readFileSync(resolve(process.cwd(), 'src/uiOs/training/FocusModeActionBar.tsx'), 'utf8');
+  const focusSecondaryActionsSource = readFileSync(resolve(process.cwd(), 'src/uiOs/training/FocusModeSecondaryActions.tsx'), 'utf8');
 
   it('keeps auxiliary actions visible in Focus Mode', () => {
     const text = visibleText(renderFocusHtml(makeFocusSession([makeExercise('bench-press', 2)])));
@@ -58,11 +60,11 @@ describe('TrainingFocusView bottom action bar', () => {
     expect(text).toContain('复制上组');
     expect(text).toContain('标记不适');
     expect(text).toContain('替代动作');
-    expect(text).toContain('完成一组');
+    expect(text).toContain('记录本组');
   });
 
   it('binds replacement action to the picker and keeps the empty-state toast', () => {
-    expect(focusSource).toContain('onClick={openReplacementPicker}');
+    expect(focusSource).toContain('onClick: openReplacementPicker');
     expect(focusSource).toContain('setShowReplacementPicker(true)');
     expect(focusSource).toContain('当前动作暂无可替代动作');
   });
@@ -75,11 +77,10 @@ describe('TrainingFocusView bottom action bar', () => {
   });
 
   it('keeps the two-layer action order with auxiliary actions above the primary CTA', () => {
-    const replacementIndex = focusSource.indexOf('aria-label="替代动作"');
-    const completeIndex = focusSource.lastIndexOf('aria-label="完成一组"');
-
-    expect(focusSource).toContain('grid grid-cols-3 gap-2');
-    expect(replacementIndex).toBeGreaterThan(-1);
-    expect(completeIndex).toBeGreaterThan(replacementIndex);
+    expect(focusSource).toContain('FocusModeActionBar');
+    expect(focusSecondaryActionsSource).toContain('grid grid-cols-3 gap-2');
+    expect(focusSecondaryActionsSource).toContain('data-focus-secondary-actions="visual-secondary"');
+    expect(focusActionBarSource).toContain('data-focus-mode-action-bar="one-dominant-primary"');
+    expect(focusActionBarSource).toContain('data-primary-action-kind');
   });
 });

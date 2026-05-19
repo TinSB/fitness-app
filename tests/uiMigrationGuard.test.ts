@@ -46,7 +46,7 @@ describe('UI migration guard', () => {
   });
 
   it('TrainingFocusView still uses the workout remote layer', () => {
-    expect(focusSource).toContain('TrainingActionBar');
+    expect(focusSource).toContain('FocusModeActionBar');
     expect(trainingOsCardsSource).toContain('WorkoutActionBar');
     expect(focusSource).toContain('BottomSheet');
     expect(focusSource).toContain('Toast');

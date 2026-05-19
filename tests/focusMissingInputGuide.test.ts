@@ -105,7 +105,7 @@ describe('Focus missing input guide', () => {
 
     expect(text).toContain('当前记录：缺少重量或次数');
     expect(text).toContain('缺少重量或次数');
-    expect(text).toContain('完成一组');
+    expect(text).toContain('记录本组');
     expect(text).not.toMatch(/undefined|null|missing_draft|__auto_alt|__alt_/);
   });
 });

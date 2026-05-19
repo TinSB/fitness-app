@@ -45,7 +45,7 @@ describe('real world regressions from 2026-04-28', () => {
 
     expect(focusSource).toContain('替代动作');
     expect(focusSource).toContain('专注训练');
-    expect(focusSource).toContain('onClick={openReplacementPicker}');
+    expect(focusSource).toContain('onClick: openReplacementPicker');
     expect(focusSource).toContain('setShowReplacementPicker(true)');
     expect(focusSource).toContain('<BottomSheet open={showReplacementPicker}');
     expect(focusSource).not.toContain('__auto_alt');

@@ -7,6 +7,7 @@ import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionSt
 import type { TrainingSession } from '../src/models/training-model';
 import { emptyData, sanitizeData } from '../src/storage/persistence';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const dispatch = (session: TrainingSession, event: Parameters<typeof dispatchWorkoutExecutionEvent>[1]) =>
   dispatchWorkoutExecutionEvent(session, event).updatedSession;
@@ -35,6 +36,7 @@ describe('replacement persistence flow', () => {
     expect(currentExerciseId(session)).toBe('db-bench-press');
 
     session = dispatch(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 });
+    session = fillPlannedRepsForCurrentStep(session, 0);
     expect(currentExerciseId(session)).toBe('db-bench-press');
     expect(getActualSetDraft(session, getCurrentFocusStep(session))?.exerciseId).toBe('db-bench-press');
 
