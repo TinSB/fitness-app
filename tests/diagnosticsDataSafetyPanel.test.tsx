@@ -14,7 +14,7 @@ describe('DiagnosticsDataSafetyPanel', () => {
     const visible = text(
       renderToStaticMarkup(
         <DiagnosticsDataSafetyPanel
-          diagnosticsCopy="诊断摘要不会上传完整训练数据；只显示 redacted summary。"
+            diagnosticsCopy="诊断摘要不会上传完整训练数据；只显示脱敏摘要。"
           dataHealthSummary={summary}
         />,
       ),
@@ -22,10 +22,10 @@ describe('DiagnosticsDataSafetyPanel', () => {
 
     expect(visible).toContain('Diagnostics / Data Health');
     expect(visible).toContain('诊断与数据安全');
-    expect(visible).toContain('redacted');
+    expect(visible).toContain('脱敏摘要');
     expect(visible).toContain('不会上传完整训练数据');
     expect(visible).toContain('不提供自动修复');
-    expect(visible).toContain('修复应用接口仍然不可用');
+    expect(visible).toContain('不会外传诊断');
     expect(visible).not.toContain('POST /data-health/repair/apply');
     expect(visible).not.toContain('full AppData');
   });

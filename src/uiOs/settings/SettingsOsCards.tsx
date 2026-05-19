@@ -24,7 +24,7 @@ export function SettingsOsHero({ children, className = '' }: SurfaceProps) {
 
 export function SettingsOsGroup({ children, className = '' }: SurfaceProps) {
   return (
-    <SettingsGroupCard className={className}>
+    <SettingsGroupCard tone="dark" className={className}>
       {children}
     </SettingsGroupCard>
   );
@@ -32,7 +32,7 @@ export function SettingsOsGroup({ children, className = '' }: SurfaceProps) {
 
 export function SettingsOsMiniCard({ children, className = '' }: SurfaceProps) {
   return (
-    <div className={classNames('rounded-2xl border border-slate-200 bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-700', className)}>
+    <div className={classNames('rounded-2xl border border-white/8 bg-white/[0.045] px-3 py-2 text-sm leading-6 text-white/66', className)} data-theme-surface="compact_row">
       {children}
     </div>
   );

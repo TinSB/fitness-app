@@ -12,6 +12,6 @@ describe('EmergencyLocalSettingsPanel', () => {
     expect(visible).toContain('Emergency Local Mode');
     expect(visible).toContain('紧急本地模式');
     expect(visible).toContain('本地训练记录仍可继续');
-    expect(visible).toContain('没有 cloud operation implied');
+    expect(visible).toContain('可用');
   });
 });

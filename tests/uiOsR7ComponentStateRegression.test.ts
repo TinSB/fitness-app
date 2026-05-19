@@ -121,7 +121,8 @@ describe('UI-OS R7 component state regression lock', () => {
     expect(glassHtml).toContain('backdrop-blur-xl');
     expect(glassHtml).toContain('ring-emerald-500/30');
     expect(glassHtml).toContain('rgba(44, 44, 46, 0.6)');
-    expect(settingsHtml).toContain('bg-white/90');
+    expect(settingsHtml).toContain('data-theme-mode="dark"');
+    expect(settingsHtml).toContain('data-theme-surface="settings_group"');
     expect(darkSettingsHtml).toContain('backdrop-blur-xl');
   });
 

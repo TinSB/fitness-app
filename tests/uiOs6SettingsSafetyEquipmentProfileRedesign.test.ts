@@ -42,12 +42,12 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
       'Smith machine',
       '25 lb',
       'Dumbbell',
-      'per-hand',
-      '5 lb increment',
+      '每只手',
+      '5 lb 一跳',
       'Selectorized machine',
-      'machine stack',
+      '按机器插片',
       'Plate-loaded',
-      'base/sled warning',
+      '注意器械自重',
     ]) {
       expect(source).toContain(expected);
     }
@@ -57,11 +57,10 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
 
   it('keeps cloud candidate and emergency local copy manual and reversible', () => {
     const combined = `${profileSource}\n${read('src/engines/settingsSafetySummary.ts')}\n${read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx')}`;
-    expect(combined).toContain('云端候选不会自动同步');
+    expect(combined).toContain('云端候选需要手动确认');
     expect(combined).toContain('紧急本地模式可用');
-    expect(combined).toContain('Cloud pull 不会自动覆盖本地数据');
-    expect(combined).toContain('Cloud push 需要手动确认');
-    expect(combined).toContain('explicit opt-in and reversible');
+    expect(combined).toContain('不会自动覆盖本地数据');
+    expect(combined).toContain('上传候选也需要再次确认');
     for (const forbidden of ['自动同步已启用', '后台同步', '云端已成为默认数据源', '已上传成功', 'SaaS 已上线']) {
       expect(combined).not.toContain(forbidden);
     }

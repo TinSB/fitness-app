@@ -21,17 +21,17 @@ type RecommendationExplanationPanelProps = {
 };
 
 const toneClass: Record<RecommendationFactorView['effectTone'], string> = {
-  positive: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-  negative: 'border-rose-200 bg-rose-50 text-rose-900',
-  neutral: 'border-slate-200 bg-stone-50 text-slate-700',
-  warning: 'border-amber-200 bg-amber-50 text-amber-900',
+  positive: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-50',
+  negative: 'border-rose-400/25 bg-rose-400/10 text-rose-50',
+  neutral: 'border-white/10 bg-white/[0.05] text-white/68',
+  warning: 'border-amber-400/25 bg-amber-400/10 text-amber-50',
 };
 
 const badgeClass: Record<RecommendationFactorView['effectTone'], string> = {
-  positive: 'bg-emerald-100 text-emerald-800',
-  negative: 'bg-rose-100 text-rose-800',
-  neutral: 'bg-white text-slate-600',
-  warning: 'bg-amber-100 text-amber-800',
+  positive: 'bg-emerald-400/15 text-emerald-100',
+  negative: 'bg-rose-400/15 text-rose-100',
+  neutral: 'bg-white/[0.06] text-white/58',
+  warning: 'bg-amber-400/15 text-amber-100',
 };
 
 const FactorRow = ({ factor, compact = false }: { factor: RecommendationFactorView; compact?: boolean }) => (
@@ -47,7 +47,7 @@ const FactorRow = ({ factor, compact = false }: { factor: RecommendationFactorVi
 export const RecommendationWarningNotice = ({ warnings }: { warnings: RecommendationWarningView[] }) => {
   if (!warnings.length) return null;
   return (
-    <details className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+    <details className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-50" data-theme-surface="warning_surface">
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold">
         <AlertTriangle className="h-4 w-4" />
         可能需要检查
@@ -84,26 +84,27 @@ export const RecommendationExplanationPanel = ({
     <details
       open={defaultOpen}
       className={classNames(
-        'rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm',
+        'rounded-lg border border-white/10 bg-[#1c1c1e]/86 text-white/70 shadow-sm',
         compact ? 'px-3 py-2 text-sm' : 'px-4 py-3 text-sm',
       )}
+      data-theme-surface="elevated_card"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-slate-950">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-white">
         <span>{viewModel.title}</span>
-        <ChevronDown className="h-4 w-4 text-slate-400" />
+        <ChevronDown className="h-4 w-4 text-white/38" />
       </summary>
       <div className={classNames('mt-3 space-y-3', compact && 'mt-2 space-y-2')}>
-        <p className={classNames('leading-6 text-slate-600', compact && 'text-xs leading-5')}>{viewModel.summary}</p>
+        <p className={classNames('leading-6 text-white/58', compact && 'text-xs leading-5')}>{viewModel.summary}</p>
         <div className="space-y-2">
           {visibleFactors.length ? (
             visibleFactors.map((factor) => <FactorRow key={factor.id} factor={factor} compact={compact} />)
           ) : (
-            <div className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm text-slate-600">当前推荐主要来自默认模板，继续记录后会更精准。</div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white/58">当前推荐主要来自默认模板，继续记录后会更精准。</div>
           )}
         </div>
         {hiddenFactors.length ? (
-          <details className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-700">查看更多原因</summary>
+          <details className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2" data-theme-surface="compact_row">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-white/72">查看更多原因</summary>
             <div className="mt-2 space-y-2">
               {hiddenFactors.map((factor) => (
                 <FactorRow key={factor.id} factor={factor} compact />
@@ -113,7 +114,7 @@ export const RecommendationExplanationPanel = ({
         ) : null}
         <RecommendationWarningNotice warnings={viewModel.warnings} />
         {showDebugDetails ? (
-          <div className="rounded-lg bg-stone-50 px-3 py-2 text-xs leading-5 text-slate-500">
+          <div className="rounded-lg bg-white/[0.05] px-3 py-2 text-xs leading-5 text-white/45" data-theme-surface="compact_row">
             已按影响程度、保守信号、训练反馈和默认规则排序。
           </div>
         ) : null}

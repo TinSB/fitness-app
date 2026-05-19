@@ -4,6 +4,7 @@ export type ThemeSurfaceType =
   | 'app_background'
   | 'page_surface'
   | 'glass_card'
+  | 'dark_glass_card'
   | 'elevated_card'
   | 'training_hero'
   | 'health_card'
@@ -12,7 +13,8 @@ export type ThemeSurfaceType =
   | 'danger_surface'
   | 'bottom_sheet'
   | 'modal_surface'
-  | 'safety_strip';
+  | 'safety_strip'
+  | 'compact_row';
 
 export type ResolvedThemeSurfaceMode = 'light' | 'dark';
 
@@ -35,6 +37,7 @@ const darkSurfaceClasses: Record<ThemeSurfaceType, string> = {
   app_background: 'bg-[#0a0a0b]',
   page_surface: 'bg-[#111113]/90',
   glass_card: 'border border-white/10 bg-white/[0.07] shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-xl',
+  dark_glass_card: 'border border-white/10 bg-[#1c1c1e]/78 shadow-[0_22px_70px_rgba(0,0,0,0.3)] backdrop-blur-xl',
   elevated_card: 'border border-white/10 bg-[#1c1c1e]/88 shadow-[0_20px_70px_rgba(0,0,0,0.28)]',
   training_hero: 'border border-white/10 bg-gradient-to-br from-[#202124]/95 via-[#151618]/95 to-[#0d0d0f] shadow-[0_30px_90px_rgba(0,0,0,0.35)]',
   health_card: 'border border-white/10 bg-[#1c1c1e]/86 shadow-[0_18px_60px_rgba(0,0,0,0.25)]',
@@ -44,12 +47,14 @@ const darkSurfaceClasses: Record<ThemeSurfaceType, string> = {
   bottom_sheet: 'border border-white/10 bg-[#1c1c1e]/95 backdrop-blur-3xl',
   modal_surface: 'border border-white/10 bg-[#1c1c1e]/95 shadow-2xl',
   safety_strip: 'border border-white/8 bg-white/[0.045]',
+  compact_row: 'border border-white/8 bg-white/[0.045]',
 };
 
 const lightSurfaceClasses: Record<ThemeSurfaceType, string> = {
   app_background: 'bg-slate-50',
   page_surface: 'bg-white',
   glass_card: 'border border-slate-200 bg-white/92 shadow-sm backdrop-blur-xl',
+  dark_glass_card: 'border border-slate-200 bg-white/92 shadow-sm backdrop-blur-xl',
   elevated_card: 'border border-slate-200 bg-white shadow-sm',
   training_hero: 'border border-slate-200 bg-white shadow-sm',
   health_card: 'border border-slate-200 bg-white shadow-sm',
@@ -59,6 +64,7 @@ const lightSurfaceClasses: Record<ThemeSurfaceType, string> = {
   bottom_sheet: 'border border-slate-200 bg-white shadow-2xl',
   modal_surface: 'border border-slate-200 bg-white shadow-2xl',
   safety_strip: 'border border-slate-200 bg-slate-100/80',
+  compact_row: 'border border-slate-200 bg-slate-50',
 };
 
 const textClasses: Record<ResolvedThemeSurfaceMode, string> = {

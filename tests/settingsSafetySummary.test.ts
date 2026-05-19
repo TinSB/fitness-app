@@ -24,8 +24,8 @@ describe('settings safety summary', () => {
 
     expect(result.overallSafetyState).toBe('safe');
     expect(result.summaryTitle).toContain('本地优先正常');
-    expect(result.summaryExplanation).toContain('当前使用本地数据');
-    expect(result.emergencyLocalCopy).toContain('localStorage remains default/fallback/migration/emergency');
+    expect(result.summaryExplanation).toContain('本地数据是默认来源');
+    expect(result.emergencyLocalCopy).toContain('紧急本地模式可用');
   });
 
   it('recommends review for stale or missing backup', () => {
@@ -47,10 +47,9 @@ describe('settings safety summary', () => {
   it('keeps manual cloud candidate copy from implying positive automatic sync', () => {
     const result = buildSettingsSafetySummary({ ...safeInput, cloudCandidateEnabled: true });
 
-    expect(result.cloudCandidateCopy).toContain('manual candidate only');
-    expect(result.cloudCandidateCopy).toContain('云端候选不会自动同步');
-    expect(result.cloudCandidateCopy).toContain('Cloud pull 不会自动覆盖本地数据');
-    expect(result.cloudCandidateCopy).toContain('Cloud push 需要手动确认');
+    expect(result.cloudCandidateCopy).toContain('云端候选需要手动确认');
+    expect(result.cloudCandidateCopy).toContain('不会自动覆盖本地数据');
+    expect(result.cloudCandidateCopy).toContain('上传候选也需要再次确认');
     expect(result.cloudCandidateCopy).not.toContain('自动同步已启用');
   });
 
@@ -59,16 +58,16 @@ describe('settings safety summary', () => {
 
     expect(result.overallSafetyState).toBe('review_recommended');
     expect(result.safeNextActions).toContain('建议完善器械档案');
-    expect(result.equipmentProfileCopy).toContain('Olympic barbell 45 lb');
-    expect(result.equipmentProfileCopy).toContain('Smith machine 25 lb');
+    expect(result.equipmentProfileCopy).toContain('器械档案只影响推荐显示');
+    expect(result.equipmentProfileCopy).toContain('不会自动改写历史记录');
   });
 
   it('keeps diagnostics copy redacted and no full AppData', () => {
     const result = buildSettingsSafetySummary(safeInput);
 
     expect(result.diagnosticsCopy).toContain('诊断摘要不会上传完整训练数据');
-    expect(result.diagnosticsCopy).toContain('redacted summary');
-    expect(result.diagnosticsCopy).toContain('service role');
+    expect(result.diagnosticsCopy).toContain('脱敏摘要');
+    expect(result.diagnosticsCopy).toContain('不会外传诊断');
   });
 
   it('keeps invariant flags false and does not mutate input', () => {

@@ -67,8 +67,9 @@ describe('UI consistency guard', () => {
     const coachReminderPresenter = read('src/presenters/coachReminderPresenter.ts');
     const dataHealthPresenter = read('src/presenters/dataHealthPresenter.ts');
 
-    expect(today).toContain('splitCoachReminders(rawCoachReminders, 2)');
-    expect(today).toContain('查看更多提醒');
+    expect(today).toContain('data-today-coach-actions-density="collapsed-compact"');
+    expect(today).toContain('CoachActionList');
+    expect(today).not.toContain('splitCoachReminders(rawCoachReminders, 2)');
     expect(coachReminderPresenter).toContain('dedupeCoachReminders');
     expect(profile).toContain('visibleDataHealthIssues');
     expect(profile).toContain('查看全部问题');
