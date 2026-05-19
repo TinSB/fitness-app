@@ -25,7 +25,8 @@ describe('profile data health UI', () => {
     expect(source).toContain('buildDataHealthViewModel');
     expect(source).toContain('primaryIssues');
     expect(source).toContain('secondaryIssues');
-    expect(source).toContain('查看全部问题');
+    expect(source).toContain('DataHealthClarityPanel');
+    expect(source).toContain('buildDataHealthClaritySummary');
     expect(source).toContain('onDataHealthAction');
   });
 

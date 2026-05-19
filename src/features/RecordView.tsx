@@ -1,10 +1,12 @@
 import React from 'react';
 import { Medal, Trash2 } from 'lucide-react';
 import { buildMonthStats, buildPrs } from '../engines/analytics';
+import { buildDataHealthClaritySummary } from '../engines/dataHealthClaritySummary';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/effectiveSetEngine';
 import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSetExplanationEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
 import { buildHistoryCalendarSummary } from '../engines/historyCalendarSummary';
+import { buildProgressClaritySummary, type ProgressTrendDirection } from '../engines/progressClaritySummary';
 import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
@@ -74,12 +76,18 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { GlassCard } from '../uiOs/primitives/GlassCard';
+import { ActionButton as UiOsActionButton } from '../uiOs/primitives/ActionButton';
+import { DataHealthClarityPanel } from '../uiOs/dataHealth/DataHealthClarityPanel';
 import { HistoryDaySummaryCard, type HistoryDaySessionItem } from '../uiOs/history/HistoryDaySummaryCard';
 import { HistoryFrequencySummary } from '../uiOs/history/HistoryFrequencySummary';
 import { PrErmQuickAccessCards } from '../uiOs/history/PrErmQuickAccessCards';
 import { RecentTrainingTimeline } from '../uiOs/history/RecentTrainingTimeline';
 import { TrainingFrequencyCalendar } from '../uiOs/history/TrainingFrequencyCalendar';
-import { DataHealthIssueCard, ProgressInsightCard, RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
+import { EffectiveSetsVolumeCard } from '../uiOs/progress/EffectiveSetsVolumeCard';
+import { ProgressInsightHero } from '../uiOs/progress/ProgressInsightHero';
+import { ReadinessPressureCard } from '../uiOs/progress/ReadinessPressureCard';
+import { StrengthTrendCards } from '../uiOs/progress/StrengthTrendCards';
+import { RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
 
 export interface RecordViewProps {
   data: AppData;
@@ -287,6 +295,18 @@ const formatPrValue = (record: PersonalRecord, unitSettings: UnitSettings) => {
   return record.displayValue || String(record.value);
 };
 
+const isDateWithinDays = (dateKey: string | undefined, today: string, days: number) => {
+  if (!dateKey) return false;
+  const dateTime = new Date(`${dateKey}T00:00:00`).getTime();
+  const todayTime = new Date(`${today}T00:00:00`).getTime();
+  if (!Number.isFinite(dateTime) || !Number.isFinite(todayTime)) return false;
+  const deltaDays = Math.round((todayTime - dateTime) / 86400000);
+  return deltaDays >= 0 && deltaDays <= days;
+};
+
+const isRepairDataHealthAction = (action?: DataHealthActionView) =>
+  action?.type === 'repair_legacy_display_weights';
+
 export const formatRecordSetWeightForDisplay = (set: TrainingSetLog, unitSettings: UnitSettings) => {
   if (Number.isFinite(Number(set.actualWeightKg))) return formatWeight(set.actualWeightKg, unitSettings);
   if (set.displayWeight !== undefined && (set.displayUnit === 'kg' || set.displayUnit === 'lb')) {
@@ -387,6 +407,7 @@ export function RecordView({
   const monthStats = React.useMemo(() => buildMonthStats(analyticsHistory, data.bodyWeights || []), [analyticsHistory, data.bodyWeights]);
   const effectiveSummary = React.useMemo(() => buildEffectiveVolumeSummary(analyticsHistory), [analyticsHistory]);
   const painPatterns = React.useMemo(() => buildPainPatterns(analyticsHistory), [analyticsHistory]);
+  const painSessions = React.useMemo(() => analyticsHistory.filter(sessionHasPain), [analyticsHistory]);
   const monthSessionCount = calendar.days.reduce(
     (sum, day) => sum + day.sessions.filter((session) => session.dataFlag !== 'test' && session.dataFlag !== 'excluded').length,
     0,
@@ -596,6 +617,65 @@ export function RecordView({
   const selectedE1rmProfile = selectedPrExerciseId ? buildE1RMProfile(analyticsHistory, selectedPrExerciseId) : null;
   const selectedExercisePrs = selectedPrExerciseId ? prs.filter((item) => item.exerciseId === selectedPrExerciseId) : [];
   const topSet = selectedExerciseSets[0];
+  const progressStrengthTrendItems = React.useMemo(() => {
+    const today = todayKey();
+    const recentPrExerciseIds = new Set(prs.filter((item) => isDateWithinDays(item.date, today, 28)).map((item) => item.exerciseId));
+    return historyCalendarSummary.prQuickAccessItems.slice(0, 4).map((item) => {
+      const hasE1rm = item.e1rmLabel !== '暂无 e1RM';
+      const hasPr = item.prLabel !== '暂无正式记录';
+      const hasData = hasE1rm || hasPr || item.hasData;
+      const trend: ProgressTrendDirection = !hasData ? 'unknown' : recentPrExerciseIds.has(item.exerciseId) ? 'improving' : 'stable';
+      return {
+        id: item.exerciseId,
+        label: item.label,
+        currentLabel: hasE1rm ? item.e1rmLabel : item.prLabel,
+        bestLabel: hasPr ? item.prLabel : undefined,
+        trend,
+        explanation: hasData
+          ? '使用现有 PR / e1RM 结果做只读解释；不会重新计算或改写历史。'
+          : '暂无正式记录。继续训练并完成记录后再判断趋势。',
+      };
+    });
+  }, [historyCalendarSummary.prQuickAccessItems, prs]);
+  const progressClarity = React.useMemo(() => {
+    const hasRecentPr = prs.some((item) => isDateWithinDays(item.date, todayKey(), 28));
+    const hasAnyStrengthData = progressStrengthTrendItems.some((item) => item.trend !== 'unknown');
+    const strengthTrend: ProgressTrendDirection = hasRecentPr ? 'improving' : hasAnyStrengthData ? 'stable' : 'unknown';
+    const recoveryPressure = painPatterns.some((pattern) => pattern.suggestedAction === 'deload' || pattern.suggestedAction === 'seek_professional')
+      ? 'recovery'
+      : painSessions.length > 0 || effectiveSummary.effectiveSets >= 24 || effectiveSummary.completedSets >= 32
+        ? 'high'
+        : 'normal';
+    return buildProgressClaritySummary({
+      strengthTrend,
+      recoveryPressure,
+      dataCoverageStatus: analyticsHistory.length >= 4 ? 'sufficient' : analyticsHistory.length >= 2 ? 'limited' : 'insufficient',
+      effectiveSetSummary: effectiveSummary,
+      volumeSummary: {
+        thisMonthSessions: monthStats.monthSessions.length,
+        recentFourWeekAverage: recentWeekAverage,
+        completedSets: effectiveSummary.completedSets,
+        painSessionCount: painSessions.length,
+        monthVolumeLabel: formatTrainingVolume(monthStats.monthVolume, unitSettings),
+      },
+      strengthTrendItems: progressStrengthTrendItems,
+    });
+  }, [analyticsHistory.length, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
+  const dataHealthClarity = React.useMemo(
+    () =>
+      buildDataHealthClaritySummary({
+        issues: [...(dataHealthViewModel?.primaryIssues || []), ...(dataHealthViewModel?.secondaryIssues || [])],
+        dismissedIssueCount: dismissedDataHealthIssues.length,
+        sourceOfTruthClear: true,
+        backupStatus: dataHealthViewModel?.primaryIssues.some((issue) => /备份|backup/i.test(`${issue.id} ${issue.title} ${issue.userMessage}`))
+          ? 'recommended'
+          : 'ok',
+        cloudCandidateEnabled: false,
+        ownerScopeClear: true,
+        schemaValidationClear: true,
+      }),
+    [dataHealthViewModel, dismissedDataHealthIssues.length],
+  );
   const formatSessionSummaryDescription = (session: TrainingSession) => {
     const summary = buildSessionDetailSummary(session, unitSettings);
     return `${getSessionCalendarDate(session)} · ${formatSessionDuration(session)} · ${summary.completedWorkingSets}/${summary.plannedWorkingSets} 正式组 · ${summary.effectiveSets} 有效组 · ${summary.totalDisplayVolume}`;
@@ -776,12 +856,12 @@ export function RecordView({
             <MetricCard label="最佳单组" value={topSet ? `${formatRecordSetWeightForDisplay(topSet.set, unitSettings)} × ${topSet.set.reps}` : '数据不足'} />
           </div>
 
-          <ProgressInsightCard>
-            <div className="text-sm font-semibold">进步解读</div>
-            <p className="mt-1 text-sm leading-6">
+          <GlassCard as="section" padding="md" className="text-white" ariaLabel="PR e1RM clarity">
+            <div className="text-sm font-semibold text-white">进步解读</div>
+            <p className="mt-1 text-sm leading-6 text-white/60">
               PR / e1RM 只来自正常训练记录。有效组、训练量和恢复压力用于解释趋势，不会改变历史数据或重新计算规则。
             </p>
-          </ProgressInsightCard>
+          </GlassCard>
 
           <Card>
             <div className="mb-3 flex items-center gap-2">
@@ -827,7 +907,6 @@ export function RecordView({
   );
 
   const renderStats = () => {
-    const painSessions = analyticsHistory.filter(sessionHasPain);
     const muscleRows = Object.entries(effectiveSummary.byMuscle)
       .map(([muscle, row]) => ({ muscle, ...row }))
       .sort((left, right) => right.weightedEffectiveSets - left.weightedEffectiveSets)
@@ -839,19 +918,23 @@ export function RecordView({
           <EmptyState title="统计数据不足" description="完成训练后，这里会显示频率、有效组、肌群分布和不适趋势。" />
         ) : (
           <div className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="本月训练" value={`${monthStats.monthSessions.length} 次`} tone="emerald" />
-            <MetricCard label="总完成组" value={`${effectiveSummary.completedSets}`} />
-            <MetricCard label="有效组" value={`${effectiveSummary.effectiveSets}`} />
-            <MetricCard label="不适训练" value={`${painSessions.length} 次`} tone={painSessions.length ? 'amber' : 'slate'} />
-          </div>
+            <ProgressInsightHero summary={progressClarity} />
+            <ReadinessPressureCard summary={progressClarity} />
+            <StrengthTrendCards
+              items={progressClarity.strengthTrendItems}
+              onSelectItem={(exerciseId) => {
+                setSelectedPrExerciseId(exerciseId);
+                setActiveSection('pr');
+              }}
+            />
+            <EffectiveSetsVolumeCard summary={progressClarity} />
 
-            <ProgressInsightCard>
-              <div className="text-sm font-semibold">趋势说明</div>
-              <p className="mt-1 text-sm leading-6">
-                这里把频率、有效组、肌群分布和不适记录翻译成人能读懂的训练趋势；底层 PR、e1RM 和有效组计算保持不变。
-              </p>
-            </ProgressInsightCard>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <MetricCard label="本月训练" value={`${monthStats.monthSessions.length} 次`} tone="emerald" />
+              <MetricCard label="总完成组" value={`${effectiveSummary.completedSets}`} />
+              <MetricCard label="有效组" value={`${effectiveSummary.effectiveSets}`} />
+              <MetricCard label="不适训练" value={`${painSessions.length} 次`} tone={painSessions.length ? 'amber' : 'slate'} />
+            </div>
 
             <div className="grid gap-3 xl:grid-cols-2">
               <Card>
@@ -925,95 +1008,31 @@ export function RecordView({
     const testCount = rawHistory.filter((session) => session.dataFlag === 'test').length;
     const excludedCount = rawHistory.filter((session) => session.dataFlag === 'excluded').length;
     const dataRows = [...rawHistory].sort((left, right) => getSessionHistorySortKey(right).localeCompare(getSessionHistorySortKey(left)));
-    const dataHealthTone = dataHealthViewModel?.statusTone === 'error' ? 'rose' : dataHealthViewModel?.statusTone === 'warning' ? 'amber' : 'emerald';
     const visibleIssues = dataHealthViewModel?.primaryIssues || [];
     const hiddenIssues = dataHealthViewModel?.secondaryIssues || [];
+    const issueViews = [...visibleIssues, ...hiddenIssues];
+    const renderIssueActions = (issueId: string) => {
+      const issue = issueViews.find((item) => item.id === issueId);
+      if (!issue || !onDataHealthAction) return null;
+      return (
+        <div className="flex flex-wrap gap-2">
+          {issue.action && issue.action.type !== 'none' && !isRepairDataHealthAction(issue.action) ? (
+            <UiOsActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction(issue.action!)}>
+              {issue.action.label}
+            </UiOsActionButton>
+          ) : null}
+          {issue.dismissAction ? (
+            <UiOsActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction(issue.dismissAction!)}>
+              {issue.dismissAction.label}
+            </UiOsActionButton>
+          ) : null}
+        </div>
+      );
+    };
 
     return (
-      <PageSection title="训练记录数据" description="这里只管理训练记录本身：删除、标记测试、恢复正常、排除统计。单位、健康数据和全局备份在“我的”页。">
-        {dataHealthViewModel ? (
-          <Card className="mb-3 space-y-3">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-slate-950">数据健康检查</div>
-                <div className="mt-1 text-xs leading-5 text-slate-600">
-                  {dataHealthViewModel.statusTone === 'healthy' ? '未发现会影响训练统计的问题。' : dataHealthViewModel.summary}
-                </div>
-                <div className="mt-1 text-xs leading-5 text-slate-500">这里只报告问题；修正记录、删除或排除统计仍由你确认。</div>
-              </div>
-              <StatusBadge tone={dataHealthTone}>{dataHealthViewModel.statusLabel}</StatusBadge>
-            </div>
-            {visibleIssues.length ? (
-              <div className="space-y-2">
-                {visibleIssues.map((issue) => (
-                  <DataHealthIssueCard key={issue.id}>
-                    <div className="font-semibold text-slate-950">{issue.title}</div>
-                    <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                        <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction(issue.action!)}>
-                          {issue.action.label}
-                        </ActionButton>
-                      ) : null}
-                      {onDataHealthAction && issue.dismissAction ? (
-                        <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction(issue.dismissAction!)}>
-                          {issue.dismissAction.label}
-                        </ActionButton>
-                      ) : null}
-                    </div>
-                    {issue.action?.description ? (
-                      <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
-                    ) : null}
-                    {issue.technicalDetails ? (
-                      <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
-                        <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
-                        <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
-                      </details>
-                    ) : null}
-                  </DataHealthIssueCard>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
-                {dataHealthViewModel.statusTone === 'healthy' ? '数据健康良好。未发现会影响训练统计的问题。' : '暂无待处理数据健康问题。'}
-              </div>
-            )}
-            {hiddenIssues.length ? (
-              <details className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-                <summary className="cursor-pointer font-semibold text-slate-700">查看全部问题</summary>
-                <div className="mt-2 space-y-2">
-                  {hiddenIssues.map((issue) => (
-                    <div key={issue.id} className="rounded-lg bg-stone-50 px-3 py-2">
-                      <div className="font-semibold text-slate-950">{issue.title}</div>
-                      <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {onDataHealthAction && issue.action && issue.action.type !== 'none' ? (
-                          <ActionButton type="button" size="sm" variant="secondary" onClick={() => onDataHealthAction(issue.action!)}>
-                            {issue.action.label}
-                          </ActionButton>
-                        ) : null}
-                        {onDataHealthAction && issue.dismissAction ? (
-                          <ActionButton type="button" size="sm" variant="ghost" onClick={() => onDataHealthAction(issue.dismissAction!)}>
-                            {issue.dismissAction.label}
-                          </ActionButton>
-                        ) : null}
-                      </div>
-                      {issue.action?.description ? (
-                        <div className="mt-1 text-xs leading-5 text-slate-500">{issue.action.description}</div>
-                      ) : null}
-                      {issue.technicalDetails ? (
-                        <details className="mt-2 rounded-md bg-white px-2 py-1 text-xs leading-5 text-slate-500">
-                          <summary className="cursor-pointer font-semibold text-slate-600">查看详情</summary>
-                          <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
-                        </details>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-          </Card>
-        ) : null}
+      <PageSection title="训练记录数据" description="数据健康检查先给安全解释；这里仍只管理训练记录本身：删除、标记测试、恢复正常、排除统计。单位、健康数据和全局备份在“我的”页。">
+        <DataHealthClarityPanel summary={dataHealthClarity} renderIssueActions={renderIssueActions} />
         {recordCoachActionViewModel.pending.length ? (
           <div className="mb-3">
             <CoachActionList
