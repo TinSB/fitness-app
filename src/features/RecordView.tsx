@@ -1577,7 +1577,10 @@ export function RecordView({
         title="训练记录中心"
         description="默认从日历进入，回答“我以前哪天练了什么”。"
       />
-      <div className="space-y-4">
+      <div
+        className="space-y-4 [&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45"
+        data-global-surface-sweep="record"
+      >
         <RecordOsOverview>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>

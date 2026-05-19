@@ -70,7 +70,8 @@ describe('UI-OS R6 boundaries stay blocked', () => {
   it('allows negative automatic-sync safety copy while forbidding positive claims', () => {
     const combined = settingsRuntimeSources.map(read).join('\n');
 
-    expect(combined).toContain('云端候选不会自动同步');
+    expect(combined).toContain('云端候选需要手动确认');
+    expect(combined).toContain('不会自动覆盖本地数据');
     for (const forbidden of [
       '自动同步已启用',
       '后台同步',

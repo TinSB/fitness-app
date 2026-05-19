@@ -688,7 +688,10 @@ export function TrainingView({
         }
       />
 
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div
+        className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px] [&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45"
+        data-global-surface-sweep="train"
+      >
         <main className="min-w-0 space-y-4">
           <Card>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

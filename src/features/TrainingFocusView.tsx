@@ -374,9 +374,9 @@ export function ReplacementEquipmentChips({
   onToggle: (tag: ExerciseEquipmentTag) => void;
 }) {
   return (
-    <section className="mb-3 rounded-lg border border-slate-200 bg-stone-50 p-2.5">
-      <div className="text-sm font-bold text-slate-900">器械被占用？</div>
-      <div className="mt-1 text-xs leading-5 text-slate-500">只调整本次替代排序。</div>
+    <section className="mb-3 rounded-lg border border-white/10 bg-white/[0.05] p-2.5" data-theme-surface="compact_row">
+      <div className="text-sm font-bold text-white">器械被占用？</div>
+      <div className="mt-1 text-xs leading-5 text-white/45">只调整本次替代排序。</div>
       <div className="mt-2 flex flex-wrap gap-2">
         {replacementEquipmentChips.map((chip) => {
           const active = selected.includes(chip.tag);
@@ -388,7 +388,7 @@ export function ReplacementEquipmentChips({
               onClick={() => onToggle(chip.tag)}
               className={classNames(
                 'min-h-10 rounded-full border px-3 py-2 text-sm font-semibold transition',
-                active ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50',
+                active ? 'border-emerald-300 bg-emerald-400 text-slate-950' : 'border-white/10 bg-white/[0.05] text-white/62 hover:border-emerald-300/40 hover:bg-white/[0.08]',
               )}
             >
               {chip.label}
@@ -414,14 +414,14 @@ export function ReplacementOptionCard({
   const copy = buildReplacementCardCopy(option);
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-stone-50 p-3">
+    <article className="rounded-lg border border-white/10 bg-white/[0.05] p-3" data-theme-surface="compact_row">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-semibold text-slate-950">{copy.exerciseName}</span>
+        <span className="font-semibold text-white">{copy.exerciseName}</span>
         <span className={classNames('rounded-md border px-2 py-1 text-xs font-semibold', replacementRankTone[option.priority] || replacementRankTone.secondary)}>
           {copy.rankLabel}
         </span>
       </div>
-      <div className="mt-2 text-xs leading-5 text-slate-600">{copy.shortReason}</div>
+      <div className="mt-2 text-xs leading-5 text-white/58">{copy.shortReason}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"
@@ -434,15 +434,15 @@ export function ReplacementOptionCard({
           type="button"
           onClick={onToggleDetails}
           aria-expanded={expanded}
-          className="min-h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50"
+          className="min-h-10 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm font-semibold text-white/68 transition hover:border-emerald-300/40 hover:bg-white/[0.08]"
         >
           {expanded ? '收起详情' : '查看详情'}
         </button>
       </div>
       {expanded ? (
-        <div className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600">
+        <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-white/[0.05] p-3 text-xs leading-5 text-white/58" data-theme-surface="compact_row">
           <div>{copy.detailReason}</div>
-          {copy.warning ? <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-amber-900">{copy.warning}</div> : null}
+          {copy.warning ? <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-2 py-1 font-semibold text-amber-50">{copy.warning}</div> : null}
           <div>疲劳成本：{copy.fatigueLabel}</div>
           <div>{copy.statsNote}</div>
         </div>
@@ -1048,13 +1048,13 @@ export function TrainingFocusView({
 
   const renderReplacementPicker = () => (
     <BottomSheet open={showReplacementPicker} title="选择本次实际执行动作" onClose={closeReplacementPicker}>
-      <p className="mb-2 text-xs leading-5 text-slate-500">选择本次实际执行动作，保留当前模板位置。</p>
+      <p className="mb-2 text-xs leading-5 text-white/45">选择本次实际执行动作，保留当前模板位置。</p>
       <ReplacementEquipmentChips selected={selectedUnavailableEquipment} onToggle={toggleUnavailableEquipment} />
       <div className="space-y-3">
         {visibleReplacementOptions.length ? (
           replacementDisplayGroups.map((group) => (
             <section key={group.key} className="space-y-2">
-              {group.title ? <div className="text-xs font-bold text-slate-500">{group.title}</div> : null}
+              {group.title ? <div className="text-xs font-bold text-white/45">{group.title}</div> : null}
               {group.options.map((option) => (
                 <ReplacementOptionCard
                   key={option.exerciseId}
@@ -1067,7 +1067,7 @@ export function TrainingFocusView({
             </section>
           ))
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-stone-50 p-4 text-sm font-semibold text-slate-600">当前动作暂无可替代动作</div>
+          <div className="rounded-lg border border-white/10 bg-white/[0.05] p-4 text-sm font-semibold text-white/58" data-theme-surface="compact_row">当前动作暂无可替代动作</div>
         )}
       </div>
     </BottomSheet>

@@ -23,7 +23,7 @@ export function RecordOsOverview({ children, className = '' }: SurfaceProps) {
 
 export function RecordTimelineCard({ children, className = '' }: SurfaceProps) {
   return (
-    <article className={classNames('rounded-3xl border border-slate-200 bg-white p-3 shadow-sm', className)} aria-label="训练记录卡片">
+    <article className={classNames('rounded-3xl border border-white/10 bg-white/[0.05] p-3 shadow-sm', className)} aria-label="训练记录卡片" data-theme-surface="compact_row">
       {children}
     </article>
   );
@@ -31,7 +31,7 @@ export function RecordTimelineCard({ children, className = '' }: SurfaceProps) {
 
 export function ProgressInsightCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section className={classNames('rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950', className)} aria-label="进步解释">
+    <section className={classNames('rounded-3xl border border-emerald-400/25 bg-emerald-400/10 p-4 text-emerald-50', className)} aria-label="进步解释" data-theme-surface="health_card">
       {children}
     </section>
   );
@@ -39,7 +39,7 @@ export function ProgressInsightCard({ children, className = '' }: SurfaceProps) 
 
 export function DataHealthIssueCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section className={classNames('rounded-3xl border border-amber-200 bg-amber-50 p-4 text-amber-950', className)} aria-label="数据健康问题">
+    <section className={classNames('rounded-3xl border border-amber-400/25 bg-amber-400/10 p-4 text-amber-50', className)} aria-label="数据健康问题" data-theme-surface="warning_surface">
       {children}
     </section>
   );

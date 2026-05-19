@@ -29,8 +29,8 @@ describe('SettingsControlCenter', () => {
 
     expect(visible).toContain('Owner-only control center');
     expect(visible).toContain('本地优先正常');
-    expect(visible).toContain('当前使用本地数据');
-    expect(visible).toContain('云端候选不会自动同步');
+    expect(visible).toContain('本地数据是默认来源');
+    expect(visible).toContain('继续使用本地数据');
     expect(visible).toContain('child settings panel');
   });
 });

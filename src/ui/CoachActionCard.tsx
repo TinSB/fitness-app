@@ -20,21 +20,21 @@ export function CoachActionCard({ action, compact = false, onPrimary, onSecondar
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className={compact ? 'text-sm font-semibold text-slate-950' : 'text-base font-semibold text-slate-950'}>{action.title}</h3>
+            <h3 className={compact ? 'text-sm font-semibold text-white' : 'text-base font-semibold text-white'}>{action.title}</h3>
             <StatusBadge tone={action.priorityTone}>{action.priorityLabel}</StatusBadge>
             <StatusBadge tone={action.statusTone}>{action.statusLabel}</StatusBadge>
           </div>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{action.description}</p>
+          <p className="mt-1 text-sm leading-6 text-white/58">{action.description}</p>
         </div>
         <StatusBadge tone="slate">{action.sourceLabel}</StatusBadge>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-white/45">
         {action.requiresConfirmation ? <StatusBadge tone="amber">需要确认</StatusBadge> : <StatusBadge tone="emerald">只查看</StatusBadge>}
         {action.reversible ? <StatusBadge tone="sky">可撤销</StatusBadge> : null}
       </div>
       {action.disabledReason ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{action.disabledReason}</div>
+        <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-50">{action.disabledReason}</div>
       ) : null}
 
       {hasAnyAction ? (
@@ -56,7 +56,7 @@ export function CoachActionCard({ action, compact = false, onPrimary, onSecondar
           ) : null}
         </div>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-xs leading-5 text-slate-600">当前入口暂不可用。</div>
+        <div className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-xs leading-5 text-white/58" data-theme-surface="compact_row">当前入口暂不可用。</div>
       )}
     </Card>
   );

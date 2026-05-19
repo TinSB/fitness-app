@@ -5,13 +5,10 @@ import { classNames, number, todayKey } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
-import { type AutoTrainingLevel } from '../engines/trainingLevelEngine';
 import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildTodayDecisionSurface } from '../engines/todayDecisionSurface';
-import { buildTrainingLevelExplanation } from '../engines/explainability/trainingExplainability';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
-import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
@@ -23,18 +20,13 @@ import {
 } from '../engines/todayTrainingFocusOverrideEngine';
 import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
-import { splitCoachReminders, type CoachReminderView } from '../presenters/coachReminderPresenter';
 import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
 import type { AppData, ExercisePrescription, TrainingMode, TrainingTemplate, WeeklyPrescription } from '../models/training-model';
-import { ActionButton } from '../ui/ActionButton';
-import { Card } from '../ui/Card';
-import { MetricCard } from '../ui/MetricCard';
 import { PageHeader } from '../ui/PageHeader';
-import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
-import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { CoachActionList } from '../ui/CoachActionList';
+import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { useConfirmDialog } from '../ui/useConfirmDialog';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
@@ -46,7 +38,6 @@ import { TodayDecisionHero } from '../uiOs/today/TodayDecisionHero';
 import { TodayFocusOverridePanel } from '../uiOs/today/TodayFocusOverridePanel';
 import { TodayReadinessSummary } from '../uiOs/today/TodayReadinessSummary';
 import { TodaySevereRiskNotice } from '../uiOs/today/TodaySevereRiskNotice';
-import { UnfinishedSessionNotice } from '../uiOs/training/TrainingOsCards';
 
 interface TodayViewProps {
   data: AppData;
@@ -78,21 +69,6 @@ interface TodayViewProps {
 }
 
 const sorenessOptions: AppData['todayStatus']['soreness'] = ['无', '胸', '背', '腿', '肩', '手臂'];
-
-const trainingLevelLabels: Record<AutoTrainingLevel, string> = {
-  unknown: '正在建立基线',
-  beginner: '新手阶段',
-  novice_plus: '入门进阶',
-  intermediate: '中阶',
-  advanced: '高阶',
-};
-
-const readinessTone = (level?: string) => {
-  if (level === 'green' || level === 'high') return 'emerald' as const;
-  if (level === 'yellow' || level === 'medium') return 'amber' as const;
-  if (level === 'red' || level === 'low') return 'rose' as const;
-  return 'slate' as const;
-};
 
 const templateLabel = (template: Pick<TrainingTemplate, 'id' | 'name'>) => formatTemplateName(template, '未命名训练');
 
@@ -192,7 +168,7 @@ const ChoiceRow = ({
   labels?: Partial<Record<string, string>>;
   onChange: (value: string) => void;
 }) => (
-  <div className="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
+  <div className="grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-white/[0.05] p-1" data-theme-surface="compact_row">
     {options.map((option) => {
       const selected = value === option;
       return (
@@ -202,7 +178,7 @@ const ChoiceRow = ({
           onClick={() => onChange(option)}
           className={classNames(
             'min-h-10 rounded-md px-3 py-2 text-sm font-medium transition',
-            selected ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900',
+            selected ? 'bg-emerald-400 text-slate-950 shadow-sm' : 'text-white/55 hover:bg-white/[0.06] hover:text-white',
           )}
         >
           {labels?.[option] ?? option}
@@ -320,6 +296,19 @@ export function TodayView({
     () => temporaryPatchSummary(pendingSessionPatches, supportPlan),
     [pendingSessionPatches, supportPlan],
   );
+  const temporaryPatchDisplayBadges = React.useMemo(() => {
+    const badges: PreviewBadge[] = [];
+    if (pendingSessionPatches.some((patch) => patch.type === 'reduce_intensity' || patch.type === 'reduce_volume')) {
+      badges.push({ label: '降低强度', tone: 'sky' });
+    }
+    if (pendingSessionPatches.some((patch) => patch.type === 'substitute_exercise')) {
+      badges.push({ label: '建议替代', tone: 'amber' });
+    }
+    if (pendingSessionPatches.some((patch) => patch.type === 'skip_optional' || patch.type === 'reduce_support' || patch.type === 'main_only')) {
+      badges.push({ label: '本次跳过', tone: 'amber' });
+    }
+    return badges;
+  }, [pendingSessionPatches]);
   const temporarySkippedSupportItems = React.useMemo(() => {
     if (!pendingSessionPatches.some((patch) => patch.type === 'reduce_support' || patch.type === 'main_only' || patch.type === 'skip_optional')) return [];
     return supportPreviewItems(supportPlan);
@@ -362,6 +351,10 @@ export function TodayView({
     (trainingLevelAssessment.level === 'unknown'
       ? '系统还在建立训练基线，今天的建议会保持保守。'
       : '今天优先完成主训练，细节记录放到训练页处理。');
+  const dataHealthViewModel = React.useMemo(
+    () => buildDataHealthViewModel(enginePipeline.dataHealth),
+    [enginePipeline.dataHealth],
+  );
   const coachActionListViewModel = React.useMemo(
     () =>
       buildCoachActionListViewModel(
@@ -370,19 +363,7 @@ export function TodayView({
       ),
     [enginePipeline.visibleCoachActions],
   );
-  const dataHealthViewModel = React.useMemo(
-    () => buildDataHealthViewModel(enginePipeline.dataHealth),
-    [enginePipeline.dataHealth],
-  );
-  const shouldUseDataHealthActionCopy = dataHealthViewModel && dataHealthViewModel.statusTone !== 'healthy';
-  const severeDataHealthNotice =
-    dataHealthViewModel?.statusTone === 'error'
-      ? {
-          title: dataHealthViewModel.primaryIssues[0]?.title || dataHealthViewModel.statusLabel,
-          message: dataHealthViewModel.primaryIssues[0]?.userMessage || dataHealthViewModel.summary,
-        }
-      : undefined;
-  const displayCoachWarnings: string[] = shouldUseDataHealthActionCopy ? [] : [];
+  const shouldShowCoachActionList = coachActionListViewModel.pending.length > 0 || Boolean(coachActions);
   const recommendationConfidence = trainingIntelligenceSummary?.recommendationConfidence?.find((item) => item.level !== 'high');
   const confidenceCopy =
     recommendationConfidence?.level === 'low'
@@ -398,6 +379,13 @@ export function TodayView({
             text: `${recommendationConfidence.summary} 可以执行，但请继续记录余力（RIR）和动作质量。`,
           }
         : null;
+  const severeDataHealthNotice =
+    dataHealthViewModel?.statusTone === 'error'
+      ? {
+          title: dataHealthViewModel.primaryIssues[0]?.title || dataHealthViewModel.statusLabel,
+          message: dataHealthViewModel.primaryIssues[0]?.userMessage || dataHealthViewModel.summary,
+        }
+      : undefined;
   const recoveryOverrideLabel = todayViewModel.recommendationKind === 'modified_train' ? '仍按原计划训练' : '仍要训练';
   const recoveryPreviewGuidance = React.useMemo(() => {
     const guidance = new Map<string, { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' | 'sky' }>();
@@ -412,6 +400,9 @@ export function TodayView({
     });
     return guidance;
   }, [todayViewModel.recommendationKind, todayViewModel.recoveryTemplateConflict]);
+  const recoveryDetailGuidanceItems = adjustedExercises
+    .map((exercise) => ({ id: exercise.id, name: exerciseLabel(exercise), guidance: recoveryPreviewGuidance.get(exercise.id) }))
+    .filter((item): item is { id: string; name: string; guidance: { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' | 'sky' } } => Boolean(item.guidance));
 
   const handleExtraTraining = async () => {
     const confirmed = await confirm({
@@ -448,65 +439,6 @@ export function TodayView({
     const summary = todayViewModel.recoverySummary || '今天建议保守处理恢复信号。';
     const reasons = (todayViewModel.recoveryReasons || []).slice(0, 2).join(' ');
     setCoachActionFeedback([summary, reasons].filter(Boolean).join(' '));
-  };
-
-  const coachActionButtonLabel = (action: CoachAutomationSummary['recommendedActions'][number]) => {
-    if (action.actionType === 'review_data') return '去检查数据';
-    if (action.actionType === 'open_next_workout') return '查看下次建议';
-    if (action.actionType === 'apply_daily_adjustment') return '查看建议';
-    return '查看说明';
-  };
-
-  const coachReminderTone = (action: CoachAutomationSummary['recommendedActions'][number]): CoachReminderView['tone'] => {
-    if (action.actionType === 'review_data') return 'danger';
-    if (action.requiresConfirmation || action.actionType === 'apply_daily_adjustment') return 'warning';
-    return 'info';
-  };
-
-  const rawCoachReminders = React.useMemo<CoachReminderView[]>(() => {
-    const warningReminders = displayCoachWarnings.map((warning, index) => ({
-      id: `coach-warning-${index}`,
-      title: /酸痛|不适|恢复|冲突|保守/.test(warning) ? '恢复提醒' : '教练提醒',
-      message: warning,
-      tone: 'warning' as const,
-      source: 'warning',
-      priority: 70 - index,
-    }));
-
-    return warningReminders;
-  }, [displayCoachWarnings, dataHealthViewModel]);
-
-  const { visible: coachReminders, hidden: hiddenCoachReminders } = React.useMemo(
-    () => splitCoachReminders(rawCoachReminders, 2),
-    [rawCoachReminders],
-  );
-  const shouldShowCoachActionList = coachActionListViewModel.pending.length > 0 || Boolean(coachActions);
-  const shouldShowCoachAdvice = !shouldShowCoachActionList && coachReminders.length > 0;
-  const coachActionForReminder = (reminder: CoachReminderView) =>
-    ([] as CoachAutomationSummary['recommendedActions']).find((action) => reminder.source === `action:${action.id}` || reminder.id === action.id);
-  const reminderToneBadge = (tone: CoachReminderView['tone']) =>
-    tone === 'danger' ? ('rose' as const) : tone === 'warning' ? ('amber' as const) : tone === 'success' ? ('emerald' as const) : ('sky' as const);
-
-  const handleCoachAction = (action: CoachAutomationSummary['recommendedActions'][number]) => {
-    if (action.actionType === 'review_data') {
-      if (onReviewDataHealth) {
-        onReviewDataHealth();
-        return;
-      }
-      setCoachActionFeedback('请到记录页的数据区或我的页查看数据健康检查。');
-      return;
-    }
-    if (action.actionType === 'open_next_workout') {
-      const nextWorkout = enginePipeline.nextWorkout;
-      setCoachActionFeedback(nextWorkout ? `下次建议详情：${nextWorkout.templateName}。${nextWorkout.reason}` : action.reason);
-      return;
-    }
-    if (action.actionType === 'apply_daily_adjustment') {
-      const adjustment = enginePipeline.todayAdjustment;
-      setCoachActionFeedback(adjustment ? `今日自动调整：${adjustment.summary} 本轮只提供查看，不会自动覆盖计划。` : '本轮只提供查看，不会自动覆盖计划。');
-      return;
-    }
-    setCoachActionFeedback(action.reason || '这条建议只是提示，可忽略。');
   };
 
   const recoveryNeedsNonTrainingPrimary =
@@ -558,6 +490,16 @@ export function TodayView({
       return;
     }
     setCoachActionFeedback('请到设置或数据安全区域查看严重数据健康问题。');
+  };
+  const handleCoachAction = (action: CoachAction) => {
+    if (action.actionType === 'open_data_health') {
+      setCoachActionFeedback('去检查数据：请在设置 / 数据安全里查看，不会自动覆盖计划。');
+    } else if (action.actionType === 'open_next_workout') {
+      setCoachActionFeedback('查看下次建议：只展示建议，不会自动覆盖计划。');
+    } else {
+      setCoachActionFeedback('查看建议：采用或忽略都需要手动确认，不会自动覆盖计划。');
+    }
+    onCoachAction?.(action);
   };
 
   const primaryAction =
@@ -635,17 +577,6 @@ export function TodayView({
         embedded
       />
     ) : null;
-  const shouldShowSecondaryTodayDetails =
-    Boolean(
-      todayViewModel.recoverySummary ||
-        hasAlternativeSuggestion ||
-        confidenceCopy ||
-        shouldShowCoachActionList ||
-        shouldShowCoachAdvice ||
-        temporarySessionAdjustmentActive ||
-        trainingLevelAssessment.level === 'unknown',
-    );
-
   return (
     <ResponsivePageLayout>
       <PageHeader eyebrow="今日" title="今日决策" description="判断今天练不练、练什么，以及从哪里开始。" />
@@ -724,6 +655,15 @@ export function TodayView({
               {pendingSessionPatches.length ? (
                 <div className="rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2">
                   <div className="text-sm font-semibold text-sky-50">本次调整</div>
+                  {temporaryPatchDisplayBadges.length ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {temporaryPatchDisplayBadges.map((badge) => (
+                        <StatusBadge key={badge.label} tone={badge.tone}>
+                          {badge.label}
+                        </StatusBadge>
+                      ))}
+                    </div>
+                  ) : null}
                   <ul className="mt-1 space-y-1 text-xs leading-5 text-sky-100">
                     {temporaryAdjustmentSummaries.map((summary) => (
                       <li key={summary}>- {summary}</li>
@@ -801,81 +741,69 @@ export function TodayView({
                   trace={recommendationTrace}
                   title={recommendationExplanationTitle}
                   compact
-                  maxVisibleFactors={3}
+                  maxVisibleFactors={2}
                   recoveryRecommendation={recoveryRecommendation}
                 />
 
+                {recoveryDetailGuidanceItems.length ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-sm leading-6 text-white/62" data-today-recovery-guidance-density="compact" data-theme-surface="compact_row">
+                    <div className="font-semibold text-white">动作处理</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {recoveryDetailGuidanceItems.map((item) => (
+                        <span key={item.id} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/72">
+                          {item.name} · {item.guidance.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {confidenceCopy ? (
-                  <Card className="space-y-2">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-sm leading-6 text-white/62" data-today-confidence-density="compact" data-theme-surface="compact_row">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-sm font-semibold text-slate-950">推荐置信度</div>
+                      <span className="font-semibold text-white">推荐置信度</span>
                       <StatusBadge tone={confidenceCopy.tone}>{confidenceCopy.label}</StatusBadge>
                     </div>
-                    <p className="text-sm leading-6 text-slate-600">{confidenceCopy.text}</p>
-                  </Card>
+                    <p className="mt-1 text-xs leading-5 text-white/50">{confidenceCopy.text}</p>
+                  </div>
+                ) : null}
+
+                {temporarySessionAdjustmentActive ? (
+                  <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50" data-today-temporary-adjustment-density="compact" data-theme-surface="warning_surface">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold">已应用本次调整</span>
+                      {onRevertTemporarySessionPatches ? (
+                        <button type="button" onClick={onRevertTemporarySessionPatches} className="rounded-lg border border-amber-200/25 px-2 py-1 text-xs font-semibold text-amber-50">
+                          撤销
+                        </button>
+                      ) : null}
+                    </div>
+                    {temporaryAdjustmentSummaries.length ? <p className="mt-1 text-xs leading-5">{temporaryAdjustmentSummaries.slice(0, 2).join(' / ')}</p> : null}
+                    {temporarySkippedSupportItems.length ? (
+                      <p className="mt-1 text-xs leading-5">辅助内容本次减少：{temporarySkippedSupportItems.slice(0, 2).map((item) => item.name).join(' / ')}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs leading-5 text-amber-100/75">只影响本次训练，不修改原模板。</p>
+                  </div>
                 ) : null}
 
                 {shouldShowCoachActionList ? (
-                  <CoachActionList
-                    title="教练提醒"
-                    description="低频建议移到详情里；采用临时调整前会再次确认。查看更多提醒在本区域处理。"
-                    viewModel={coachActionListViewModel}
-                    compact
-                    onAction={onCoachAction}
-                    onDismiss={onDismissCoachAction}
-                    onDetail={onCoachAction}
-                    emptyText="暂无待处理建议"
-                  />
-                ) : null}
-
-                <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm leading-6 text-white/70">
-                  <div className="font-semibold text-white">完整动作指导</div>
-                  <div className="mt-2 space-y-1">
-                    {adjustedExercises.map((exercise) => {
-                      const patchBadge = patchBadgeForExercise(exercise, pendingSessionPatches);
-                      const recoveryBadge = recoveryPreviewGuidance.get(exercise.id);
-                      const label = patchBadge?.label || recoveryBadge?.label || '可执行';
-                      return (
-                        <div key={`detail-${exercise.id}`} className="flex flex-wrap items-center gap-2">
-                          <span>{exerciseLabel(exercise)}</span>
-                          <StatusBadge tone={patchBadge?.tone || recoveryBadge?.tone || 'slate'}>{label}</StatusBadge>
-                        </div>
-                      );
-                    })}
+                  <div data-today-coach-actions-density="collapsed-compact">
+                    <CoachActionList
+                      title="教练提醒"
+                      description="低频建议收进详情；采用或忽略都需要手动确认，不会自动覆盖计划。"
+                      viewModel={coachActionListViewModel}
+                      compact
+                      onAction={handleCoachAction}
+                      onDismiss={onDismissCoachAction}
+                      onDetail={handleCoachAction}
+                      emptyText="暂无待处理建议"
+                    />
                   </div>
+                ) : null}
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-sm leading-6 text-white/60" data-theme-surface="compact_row">
+                  训练页负责动作细节、实际记录和临时调整；Today 只保留今天是否训练和从哪里开始。
                 </div>
-
-                {temporarySessionAdjustmentActive ? (
-                  <UnfinishedSessionNotice className="space-y-3">
-                    <div>
-                      <div className="text-sm font-semibold text-white">本次临时调整已生效</div>
-                      <p className="mt-1 text-sm leading-6 text-amber-100">只影响当前这次训练，不会修改原模板或长期计划。</p>
-                    </div>
-                    {onRevertTemporarySessionPatches ? (
-                      <ActionButton type="button" variant="secondary" size="sm" onClick={onRevertTemporarySessionPatches}>
-                        撤销调整
-                      </ActionButton>
-                    ) : null}
-                  </UnfinishedSessionNotice>
-                ) : null}
-
-                {trainingLevelAssessment.level === 'unknown' ? (
-                  <Card tone="amber" className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold">正在建立训练基线</div>
-                      <StatusBadge tone="amber">{trainingLevelLabels[trainingLevelAssessment.level]}</StatusBadge>
-                    </div>
-                    <p className="text-sm leading-6">当前模板是起始模板，不是基于历史数据生成。完成 2-3 次训练后，系统会开始估算当前力量、有效组和训练等级。</p>
-                  </Card>
-                ) : shouldShowSecondaryTodayDetails ? (
-                  <Card tone="sky" className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold">今日提示</div>
-                      <StatusBadge tone="sky">{trainingLevelLabels[trainingLevelAssessment.level]}</StatusBadge>
-                    </div>
-                    <p className="text-sm leading-6">{buildTrainingLevelExplanation(trainingLevelAssessment)}</p>
-                  </Card>
-                ) : null}
               </div>
             </details>
           </div>
@@ -883,34 +811,33 @@ export function TodayView({
         side={
           <details className="rounded-3xl border border-white/10 bg-white/[0.05] p-4 text-white" data-today-status-controls="collapsed">
             <summary className="cursor-pointer text-sm font-semibold">状态与计划细节</summary>
-            <div className="mt-4 space-y-4">
-            <PageSection title="准备度">
-              <Card className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <MetricCard
-                    label="准备度"
-                    value={typeof readinessScore === 'number' ? `${readinessScore}` : '--'}
-                    helper="满分 100"
-                    tone={readinessTone(adjustedPlan.readiness.level)}
-                  />
-                  <MetricCard label="预计时长" value={`${adjustedPlan.duration} 分钟`} helper="按今天状态调整" tone="emerald" />
+            <div className="mt-4 space-y-4" data-theme-surface="dark_glass_card">
+              <section className="rounded-2xl border border-white/10 bg-white/[0.045] p-3" data-theme-surface="compact_row">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <div className="text-xs text-white/38">准备度</div>
+                    <div className="mt-1 text-lg font-semibold text-white">{typeof readinessScore === 'number' ? readinessScore : '--'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-white/38">预计时长</div>
+                    <div className="mt-1 text-lg font-semibold text-white">{adjustedPlan.duration} 分钟</div>
+                  </div>
                 </div>
-                <div className="rounded-lg bg-stone-50 px-3 py-2 text-sm leading-6 text-slate-600">{todayNote}</div>
-              </Card>
-            </PageSection>
+                <div className="mt-2 text-sm leading-6 text-white/55">{todayNote}</div>
+              </section>
 
-            <PageSection title="今日状态">
-              <Card className="space-y-4">
+              <section className="rounded-2xl border border-white/10 bg-white/[0.045] p-3" data-theme-surface="compact_row">
+                <div className="mb-3 text-sm font-semibold text-white">今日状态</div>
                 <div>
-                  <div className="mb-2 text-xs font-semibold text-slate-500">睡眠</div>
+                  <div className="mb-2 text-xs font-semibold text-white/38">睡眠</div>
                   <ChoiceRow value={decisionContext.todayStatus.sleep} options={SLEEP_STATES} onChange={(value) => onStatusChange('sleep', value)} />
                 </div>
-                <div>
-                  <div className="mb-2 text-xs font-semibold text-slate-500">精力</div>
+                <div className="mt-3">
+                  <div className="mb-2 text-xs font-semibold text-white/38">精力</div>
                   <ChoiceRow value={decisionContext.todayStatus.energy} options={ENERGY_STATES} onChange={(value) => onStatusChange('energy', value)} />
                 </div>
-                <div>
-                  <div className="mb-2 text-xs font-semibold text-slate-500">可用时间</div>
+                <div className="mt-3">
+                  <div className="mb-2 text-xs font-semibold text-white/38">可用时间</div>
                   <ChoiceRow
                     value={decisionContext.todayStatus.time}
                     options={AVAILABLE_TIME_OPTIONS}
@@ -918,8 +845,8 @@ export function TodayView({
                     onChange={(value) => onStatusChange('time', value)}
                   />
                 </div>
-                <div>
-                  <div className="mb-2 text-xs font-semibold text-slate-500">酸痛部位</div>
+                <div className="mt-3">
+                  <div className="mb-2 text-xs font-semibold text-white/38">酸痛部位</div>
                   <div className="flex flex-wrap gap-2">
                     {sorenessOptions.map((part) => (
                       <button
@@ -929,8 +856,8 @@ export function TodayView({
                         className={classNames(
                           'min-h-10 rounded-lg border px-3 text-sm font-medium transition',
                           decisionContext.todayStatus.soreness.includes(part)
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-stone-50',
+                            ? 'border-emerald-400 bg-emerald-400 text-slate-950'
+                            : 'border-white/10 bg-white/[0.05] text-white/55 hover:bg-white/[0.08] hover:text-white',
                         )}
                       >
                         {part}
@@ -938,48 +865,41 @@ export function TodayView({
                     ))}
                   </div>
                 </div>
-              </Card>
-            </PageSection>
+              </section>
 
-            <PageSection title="计划进度">
-              <Card className="space-y-3">
+              <section className="rounded-2xl border border-white/10 bg-white/[0.045] p-3" data-theme-surface="compact_row">
+                <div className="mb-3 text-sm font-semibold text-white">计划进度</div>
                 <div className="grid gap-2 text-sm">
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-stone-50 px-3 py-2">
-                    <span className="text-slate-500">当前模板</span>
-                    <span className="font-semibold text-slate-950">{selectedTemplateName}</span>
+                  {[
+                    ['当前模板', selectedTemplateName],
+                    ['训练模式', formatTrainingMode(trainingMode)],
+                    ['周期阶段', mesocycleWeek ? formatCyclePhase(mesocycleWeek.phase) : '未设置'],
+                    ['强度倾向', mesocycleWeek ? formatIntensityBias(mesocycleWeek.intensityBias) : '常规'],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.04] px-3 py-2">
+                      <span className="text-white/38">{label}</span>
+                      <span className="font-semibold text-white">{value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg bg-emerald-400/10 p-3 text-center">
+                    <div className="text-lg font-bold text-emerald-100">{adjustedExercises.length}</div>
+                    <div className="text-xs text-emerald-200/70">主训练</div>
                   </div>
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-stone-50 px-3 py-2">
-                    <span className="text-slate-500">训练模式</span>
-                    <span className="font-semibold text-slate-950">{formatTrainingMode(trainingMode)}</span>
+                  <div className="rounded-lg bg-sky-400/10 p-3 text-center">
+                    <div className="text-lg font-bold text-sky-100">{supportPlan.correctionModules.length}</div>
+                    <div className="text-xs text-sky-200/70">纠偏</div>
                   </div>
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-stone-50 px-3 py-2">
-                    <span className="text-slate-500">周期阶段</span>
-                    <span className="font-semibold text-slate-950">{mesocycleWeek ? formatCyclePhase(mesocycleWeek.phase) : '未设置'}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 rounded-lg bg-stone-50 px-3 py-2">
-                    <span className="text-slate-500">强度倾向</span>
-                    <span className="font-semibold text-slate-950">{mesocycleWeek ? formatIntensityBias(mesocycleWeek.intensityBias) : '常规'}</span>
+                  <div className="rounded-lg bg-amber-400/10 p-3 text-center">
+                    <div className="text-lg font-bold text-amber-100">{supportPlan.functionalAddons.length}</div>
+                    <div className="text-xs text-amber-200/70">功能</div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-lg bg-emerald-50 p-3 text-center">
-                    <div className="text-lg font-bold text-emerald-900">{adjustedExercises.length}</div>
-                    <div className="text-xs text-emerald-700">主训练</div>
-                  </div>
-                  <div className="rounded-lg bg-sky-50 p-3 text-center">
-                    <div className="text-lg font-bold text-sky-900">{supportPlan.correctionModules.length}</div>
-                    <div className="text-xs text-sky-700">纠偏</div>
-                  </div>
-                  <div className="rounded-lg bg-amber-50 p-3 text-center">
-                    <div className="text-lg font-bold text-amber-900">{supportPlan.functionalAddons.length}</div>
-                    <div className="text-xs text-amber-700">功能</div>
-                  </div>
-                </div>
-              </Card>
-            </PageSection>
+              </section>
 
-            <PageSection title="训练模式">
-              <Card className="space-y-3">
+              <section className="rounded-2xl border border-white/10 bg-white/[0.045] p-3" data-theme-surface="compact_row">
+                <div className="mb-3 text-sm font-semibold text-white">训练模式</div>
                 <ChoiceRow
                   value={trainingMode}
                   options={['hypertrophy', 'strength', 'hybrid'] as const}
@@ -990,11 +910,10 @@ export function TodayView({
                   }}
                   onChange={(value) => onModeChange(value as TrainingMode)}
                 />
-                <p className="text-sm leading-6 text-slate-500">
+                <p className="mt-3 text-sm leading-6 text-white/45">
                   同一模板下，推荐会因历史记录、准备度、训练等级和动作质量变化。
                 </p>
-              </Card>
-            </PageSection>
+              </section>
             </div>
           </details>
         }

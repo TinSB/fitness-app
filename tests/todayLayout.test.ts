@@ -11,8 +11,8 @@ describe('Today layout', () => {
   });
 
   it('keeps the core decision metrics single-purpose', () => {
-    expect((source.match(/MetricCard\s+label="准备度"/g) || []).length).toBe(1);
-    expect((source.match(/MetricCard\s+label="预计时长"/g) || []).length).toBe(1);
+    expect(source).toContain('data-today-recovery-density="compact"');
+    expect(source).not.toContain('<MetricCard');
   });
 
   it('answers the Today page decision questions without long-term panels', () => {

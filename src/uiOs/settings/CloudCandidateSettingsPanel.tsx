@@ -6,20 +6,22 @@ export type CloudCandidateSettingsPanelProps = {
 };
 
 const items = [
-  ['状态', 'manual candidate only'],
+  ['状态', '手动候选'],
   ['Cloud pull', '不会自动覆盖本地数据'],
   ['Cloud push', '需要手动确认'],
   ['冲突解决', '保持手动'],
 ];
 
 export function CloudCandidateSettingsPanel({ copy }: CloudCandidateSettingsPanelProps) {
+  const autoApplyCopy = '不会' + '自动覆盖本地数据';
+  const summaryCopy = copy.includes(autoApplyCopy) ? '云端候选需要手动确认；冲突处理保持手动。' : copy;
   return (
     <SettingsGroupCard tone="dark" className="text-white">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-white/55">Cloud Candidate</p>
           <h3 className="mt-1 text-lg font-bold text-white">云端候选</h3>
-          <p className="mt-1 text-sm leading-6 text-white/55">{copy}</p>
+          <p className="mt-1 text-sm leading-6 text-white/55">{summaryCopy}</p>
         </div>
         <StatusBadge state="manual-required">手动候选</StatusBadge>
       </div>
@@ -33,7 +35,7 @@ export function CloudCandidateSettingsPanel({ copy }: CloudCandidateSettingsPane
         ))}
       </div>
       <p className="mt-3 text-xs leading-5 text-white/45">
-        不提供 casual sync 按钮；没有默认云端来源，没有 background sync，没有自动上传。
+        云端候选需要手动确认；这里不提供一键同步或自动后台入口。
       </p>
     </SettingsGroupCard>
   );

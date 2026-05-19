@@ -19,12 +19,12 @@ describe('EquipmentProfileSettingsPanel', () => {
     expect(visible).toContain('Smith machine');
     expect(visible).toContain('25 lb');
     expect(visible).toContain('Dumbbell');
-    expect(visible).toContain('per-hand / 5 lb increment');
+    expect(visible).toContain('每只手 / 5 lb 一跳');
     expect(visible).toContain('Selectorized machine');
-    expect(visible).toContain('machine stack');
+    expect(visible).toContain('按机器插片');
     expect(visible).toContain('Plate-loaded');
-    expect(visible).toContain('base/sled warning');
-    expect(visible).toContain('draft-only');
-    expect(visible).toContain('持久保存需后续任务授权');
+    expect(visible).toContain('注意器械自重');
+    expect(visible).toContain('草稿');
+    expect(visible).toContain('查看器械档案草稿编辑器');
   });
 });

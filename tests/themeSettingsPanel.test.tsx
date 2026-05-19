@@ -33,7 +33,7 @@ describe('ThemeSettingsPanel', () => {
     expect(visible).toContain('深色');
     expect(visible).toContain('kg 公斤');
     expect(visible).toContain('lb 磅');
-    expect(visible).toContain('Focus Mode immersive dark');
-    expect(visible).toContain('不会写入 AppData');
+    expect(visible).toContain('Focus Mode 会保持沉浸深色');
+    expect(visible).toContain('不会改变训练记录');
   });
 });

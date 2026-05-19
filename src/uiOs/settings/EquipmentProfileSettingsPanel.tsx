@@ -8,12 +8,12 @@ export type EquipmentProfileSettingsPanelProps = {
 };
 
 const equipmentCards = [
-  ['Olympic barbell', '45 lb', '总重量 + 每边杠铃片。'],
-  ['Smith machine', '25 lb', '杆重计入总重量。'],
-  ['Dumbbell', 'per-hand / 5 lb increment', '每只手记录，不自动改写历史。'],
-  ['Selectorized machine', 'machine stack', '按机器选项或递增配置。'],
-  ['Plate-loaded', 'base/sled warning', '底座或雪橇重量未知时需要提示。'],
-  ['Unknown/custom', 'configure later', '需要 owner review。'],
+  ['Olympic barbell', '45 lb', '总重量 + 每边杠铃片'],
+  ['Smith machine', '25 lb', '杆重计入总重量'],
+  ['Dumbbell', '每只手 / 5 lb 一跳', '不自动改写历史记录'],
+  ['Selectorized machine', '按机器插片', '按机器选项记录'],
+  ['Plate-loaded', '注意器械自重', '底座或雪橇重量需要确认'],
+  ['Unknown/custom', '稍后配置', '需要复查'],
 ];
 
 export function EquipmentProfileSettingsPanel({ copy }: EquipmentProfileSettingsPanelProps) {
@@ -24,26 +24,26 @@ export function EquipmentProfileSettingsPanel({ copy }: EquipmentProfileSettings
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-500">Equipment Profiles</p>
-          <h3 className="mt-1 text-lg font-bold text-slate-950">器械档案</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{copy}</p>
+          <p className="text-sm font-semibold text-white/45">Equipment Profiles</p>
+          <h3 className="mt-1 text-lg font-bold text-white">器械档案</h3>
+          <p className="mt-1 text-sm leading-6 text-white/60">{copy}</p>
         </div>
-        <StatusBadge state="info" className="bg-blue-100 text-blue-700">draft-only</StatusBadge>
+        <StatusBadge state="info" className="bg-blue-100 text-blue-700">草稿</StatusBadge>
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2" data-settings-equipment-compact-rows="true">
         {equipmentCards.map(([title, value, detail]) => (
-          <div key={title} className="rounded-2xl border border-slate-200 bg-stone-50 px-4 py-3">
-            <div className="text-sm font-bold text-slate-950">{title}</div>
+          <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3" data-theme-surface="compact_row">
+            <div className="text-sm font-bold text-white">{title}</div>
             <div className="mt-1 text-sm font-semibold text-emerald-700">{value}</div>
-            <div className="mt-1 text-xs leading-5 text-slate-500">{detail}</div>
+            <div className="mt-1 text-xs leading-5 text-white/45">{detail}</div>
           </div>
         ))}
       </div>
 
-      <details className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
-        <summary className="cursor-pointer font-semibold text-slate-950">查看器械档案草稿编辑器</summary>
-        <div className="mt-3 rounded-2xl border border-slate-200 bg-stone-50 p-3">
+      <details className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-6 text-white/60" data-settings-equipment-editor="collapsed" data-theme-surface="compact_row">
+        <summary className="cursor-pointer font-semibold text-white">查看器械档案草稿编辑器</summary>
+        <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.045] p-3">
           <EquipmentProfileEditor draft={draft} validation={validation} />
         </div>
       </details>

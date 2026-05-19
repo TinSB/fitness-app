@@ -46,8 +46,8 @@ export function CoachActionList({
     <section className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className={compact ? 'text-base font-semibold text-slate-950' : 'text-lg font-semibold text-slate-950'}>{title}</h2>
-          {description ? <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p> : null}
+          <h2 className={compact ? 'text-base font-semibold text-white' : 'text-lg font-semibold text-white'}>{title}</h2>
+          {description ? <p className="mt-1 text-sm leading-6 text-white/50">{description}</p> : null}
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export function CoachActionList({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-3 text-sm leading-6 text-slate-600">{emptyText}</div>
+        <div className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-3 text-sm leading-6 text-white/58" data-theme-surface="compact_row">{emptyText}</div>
       )}
     </section>
   );

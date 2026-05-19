@@ -153,7 +153,7 @@ export const buildSettingsSafetySummary = (input: SettingsSafetySummaryInput = {
 
   const summaryExplanation =
     overallSafetyState === 'safe'
-      ? '当前使用本地数据，本地数据是默认来源，紧急本地模式可用。'
+      ? '本地数据是默认来源，紧急本地模式可用。'
       : '设置中心集中处理备份、云端候选、诊断和器械档案；训练流程不承担高风险操作。';
 
   return {
@@ -171,7 +171,7 @@ export const buildSettingsSafetySummary = (input: SettingsSafetySummaryInput = {
         id: 'app_preferences',
         title: 'App Preferences',
         state: 'safe',
-        copy: `主题 ${source.themeMode || 'system'}；单位 ${source.unitsMode || 'kg'}。主题选择为 UI-only，不修改 AppData。`,
+        copy: `主题 ${source.themeMode || 'system'}；单位 ${source.unitsMode || 'kg'}。主题只影响界面显示。`,
       },
       {
         id: 'backup_recovery',
@@ -195,31 +195,31 @@ export const buildSettingsSafetySummary = (input: SettingsSafetySummaryInput = {
         id: 'cloud_candidate',
         title: 'Cloud Candidate',
         state: cloudState,
-        copy: '云端候选不会自动同步；Cloud pull 不会自动覆盖本地数据；Cloud push 需要手动确认。',
+        copy: '云端候选需要手动确认，不会自动覆盖本地数据。',
       },
       {
         id: 'diagnostics_data_health',
         title: 'Diagnostics / Data Health',
         state: dataHealthState,
-        copy: '诊断摘要不会上传完整训练数据；只显示 redacted summary。',
+        copy: '诊断摘要不会上传完整训练数据；只显示脱敏摘要。',
       },
       {
         id: 'about_data_safety',
         title: 'About / Data Safety',
         state: highestState([routeState, personalState]),
-        copy: 'personal-only 方向保持；SaaS deferred；accepted mutation routes remain exactly seven。',
+        copy: '个人训练工具方向保持；写入边界已锁定。',
       },
     ],
     highRiskWarnings,
     safeNextActions: [...new Set(safeNextActions)],
     cloudCandidateCopy:
-      '云端候选是 manual candidate only，explicit opt-in and reversible。云端候选不会自动同步；Cloud pull 不会自动覆盖本地数据；Cloud push 需要手动确认；冲突解决保持手动。',
+      '云端候选需要手动确认，不会自动覆盖本地数据；上传候选也需要再次确认。',
     backupRecoveryCopy:
-      'Backup / Recovery 保持 safety-first：先导出、先校验、再确认；不新增 HTTP backup/import/export route，也不提供破坏性恢复按钮。',
-    emergencyLocalCopy: '紧急本地模式可用；localStorage remains default/fallback/migration/emergency；本地训练记录仍可继续。',
-    diagnosticsCopy: '诊断摘要不会上传完整训练数据；redacted summary；no full AppData；不包含 secrets、tokens、service role，也不会启用外部监控上传。',
+      '先导出备份，再进行恢复。恢复会覆盖当前浏览器里的 IronPath 数据，请先确认备份。',
+    emergencyLocalCopy: '紧急本地模式可用，本地训练记录仍可继续。',
+    diagnosticsCopy: '诊断摘要不会上传完整训练数据；只显示脱敏摘要；不会外传诊断。',
     equipmentProfileCopy:
-      'Olympic barbell 45 lb；Smith machine 25 lb；dumbbell per-hand / 5 lb increment；selectorized machine stack；plate-loaded base/sled warning。器械档案不会自动迁移历史记录。',
+      '器械档案只影响推荐显示，不会自动改写历史记录。',
     sourceOfTruthChanged: false,
     trainingAlgorithmChanged: false,
     routeSurfaceChanged: false,

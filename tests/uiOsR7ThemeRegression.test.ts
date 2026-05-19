@@ -46,8 +46,8 @@ describe('UI-OS R7 theme regression lock', () => {
     expect(html).toContain('系统');
     expect(html).toContain('浅色');
     expect(html).toContain('深色');
-    expect(html).toContain('UI-only');
-    expect(html).toContain('session-local');
+    expect(html).toContain('本次界面显示');
+    expect(html).toContain('不会改变训练记录');
     expect(html).not.toContain('account');
     expect(html).not.toContain('云端');
     expect(html).not.toContain('同步');
