@@ -72,6 +72,7 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { StatusBadge } from '../ui/StatusBadge';
 import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { DataHealthIssueCard, ProgressInsightCard, RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
 
 export interface RecordViewProps {
   data: AppData;
@@ -747,20 +748,21 @@ export function RecordView({
       ) : (
         <div className="space-y-2">
           {sortedHistory.map((session) => (
-            <ListItem
-              key={session.id}
-              title={
-                <span className="flex flex-wrap items-center gap-2">
-                  {getSessionTitle(session)}
-                  {renderFlagBadge(session.dataFlag)}
-                  {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
-                  {sessionHasPain(session) ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
-                </span>
-              }
-              description={formatSessionSummaryDescription(session)}
-              meta={formatSessionTime(session)}
-              action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>查看详情</ActionButton>}
-            />
+            <RecordTimelineCard key={session.id}>
+              <ListItem
+                title={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {getSessionTitle(session)}
+                    {renderFlagBadge(session.dataFlag)}
+                    {session.isExperimentalTemplate ? <StatusBadge tone="amber">实验模板</StatusBadge> : null}
+                    {sessionHasPain(session) ? <StatusBadge tone="amber">有不适</StatusBadge> : null}
+                  </span>
+                }
+                description={`已记录 · ${formatSessionSummaryDescription(session)}`}
+                meta={formatSessionTime(session)}
+                action={<ActionButton size="sm" variant="secondary" onClick={() => setSelectedSession(session)}>查看详情</ActionButton>}
+              />
+            </RecordTimelineCard>
           ))}
         </div>
       )}
@@ -809,6 +811,13 @@ export function RecordView({
             <MetricCard label="历史最佳 e1RM" value={selectedE1rmProfile?.best ? formatWeight(selectedE1rmProfile.best.e1rmKg, unitSettings) : '数据不足'} />
             <MetricCard label="最佳单组" value={topSet ? `${formatRecordSetWeightForDisplay(topSet.set, unitSettings)} × ${topSet.set.reps}` : '数据不足'} />
           </div>
+
+          <ProgressInsightCard>
+            <div className="text-sm font-semibold">进步解读</div>
+            <p className="mt-1 text-sm leading-6">
+              PR / e1RM 只来自正常训练记录。有效组、训练量和恢复压力用于解释趋势，不会改变历史数据或重新计算规则。
+            </p>
+          </ProgressInsightCard>
 
           <Card>
             <div className="mb-3 flex items-center gap-2">
@@ -866,12 +875,19 @@ export function RecordView({
           <EmptyState title="统计数据不足" description="完成训练后，这里会显示频率、有效组、肌群分布和不适趋势。" />
         ) : (
           <div className="space-y-3">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MetricCard label="本月训练" value={`${monthStats.monthSessions.length} 次`} tone="emerald" />
-              <MetricCard label="总完成组" value={`${effectiveSummary.completedSets}`} />
-              <MetricCard label="有效组" value={`${effectiveSummary.effectiveSets}`} />
-              <MetricCard label="不适训练" value={`${painSessions.length} 次`} tone={painSessions.length ? 'amber' : 'slate'} />
-            </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard label="本月训练" value={`${monthStats.monthSessions.length} 次`} tone="emerald" />
+            <MetricCard label="总完成组" value={`${effectiveSummary.completedSets}`} />
+            <MetricCard label="有效组" value={`${effectiveSummary.effectiveSets}`} />
+            <MetricCard label="不适训练" value={`${painSessions.length} 次`} tone={painSessions.length ? 'amber' : 'slate'} />
+          </div>
+
+            <ProgressInsightCard>
+              <div className="text-sm font-semibold">趋势说明</div>
+              <p className="mt-1 text-sm leading-6">
+                这里把频率、有效组、肌群分布和不适记录翻译成人能读懂的训练趋势；底层 PR、e1RM 和有效组计算保持不变。
+              </p>
+            </ProgressInsightCard>
 
             <div className="grid gap-3 xl:grid-cols-2">
               <Card>
@@ -966,7 +982,7 @@ export function RecordView({
             {visibleIssues.length ? (
               <div className="space-y-2">
                 {visibleIssues.map((issue) => (
-                  <div key={issue.id} className="rounded-lg border border-slate-200 bg-stone-50 px-3 py-2 text-sm">
+                  <DataHealthIssueCard key={issue.id}>
                     <div className="font-semibold text-slate-950">{issue.title}</div>
                     <div className="mt-1 text-xs leading-5 text-slate-600">{issue.userMessage}</div>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -990,7 +1006,7 @@ export function RecordView({
                         <pre className="mt-1 whitespace-pre-wrap font-sans">{issue.technicalDetails}</pre>
                       </details>
                     ) : null}
-                  </div>
+                  </DataHealthIssueCard>
                 ))}
               </div>
             ) : (
@@ -1579,6 +1595,21 @@ export function RecordView({
         description="默认从日历进入，回答“我以前哪天练了什么”。"
       />
       <div className="space-y-4">
+        <RecordOsOverview>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="text-sm font-semibold text-emerald-200">个人训练记录 OS</div>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight">历史、进步和数据健康放在同一条时间线里</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                先确认训练已经记录，再查看 PR / e1RM、有效组和数据健康提示。这里不会自行修复、删除或上传任何训练数据。
+              </p>
+            </div>
+            <div className="grid min-w-40 gap-2 text-sm">
+              <div className="rounded-2xl bg-white/10 px-3 py-2">训练记录：{rawHistory.length} 次</div>
+              <div className="rounded-2xl bg-white/10 px-3 py-2">正常统计：{analyticsHistory.length} 次</div>
+            </div>
+          </div>
+        </RecordOsOverview>
         <SegmentedControl value={activeSection} options={recordSections} onChange={setActiveSection} ariaLabel="记录中心分区" />
         {activeSection === 'calendar' ? renderCalendar() : null}
         {activeSection === 'list' ? renderHistoryList() : null}
