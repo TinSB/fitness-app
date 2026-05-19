@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { classNames } from '../../engines/engineUtils';
 
-export type UiOsActionButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type UiOsActionButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 export type UiOsActionButtonSize = 'sm' | 'md' | 'lg';
 
 export type UiOsActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -20,6 +20,7 @@ const sizeStyles: Record<UiOsActionButtonSize, string> = {
 
 const getVariantStyles = (variant: UiOsActionButtonVariant, disabled?: boolean) => {
   if (variant === 'primary') return disabled ? 'bg-emerald-500/30 text-white/40' : 'bg-emerald-500 text-white font-semibold active:bg-emerald-600 active:scale-[0.98]';
+  if (variant === 'success') return disabled ? 'bg-emerald-500/20 text-white/40' : 'bg-emerald-500/15 text-emerald-300 font-semibold active:bg-emerald-500/25 active:scale-[0.98]';
   if (variant === 'secondary') return disabled ? 'bg-white/5 text-white/30' : 'bg-white/10 text-white font-medium active:bg-white/15 active:scale-[0.98]';
   if (variant === 'danger') return disabled ? 'bg-red-500/20 text-white/40' : 'bg-red-500/15 text-red-400 font-medium active:bg-red-500/25 active:scale-[0.98]';
   return disabled ? 'text-white/30' : 'text-white/70 font-medium active:bg-white/5 active:scale-[0.98]';
@@ -34,6 +35,7 @@ export function ActionButton({
   loading = false,
   className = '',
   type = 'button',
+  onClick,
   ...buttonProps
 }: UiOsActionButtonProps) {
   const isDisabled = disabled || loading;
@@ -43,6 +45,8 @@ export function ActionButton({
       {...buttonProps}
       type={type}
       disabled={isDisabled}
+      aria-busy={loading || undefined}
+      onClick={isDisabled ? undefined : onClick}
       className={classNames(
         'transition-all duration-150 flex items-center justify-center gap-2',
         sizeStyles[size],
