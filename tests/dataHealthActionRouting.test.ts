@@ -11,23 +11,23 @@ describe('data health action routing', () => {
     const source = appSource();
 
     expect(source).toContain("action.type === 'open_record_history'");
-    expect(source).toContain("setProgressTarget({ section: 'list'");
+    expect(source).toContain("openHistoryTarget({ section: 'list'");
     expect(source).toContain("action.type === 'open_session_detail'");
-    expect(source).toContain("sessionId: session.id");
+    expect(source).toContain('sessionId: session.id');
     expect(source).toContain('暂时无法定位到这次训练，已打开历史列表。');
     expect(source).toContain('getSessionCalendarDate(session)');
     expect(source).toContain("action.type === 'open_record_data'");
-    expect(source).toContain("setProgressTarget({ section: 'data' })");
+    expect(source).toContain("openHistoryTarget({ section: 'data' })");
   });
 
-  it('routes profile and plan actions to the right top-level pages', () => {
+  it('routes settings and plan actions to the right UI-OS pages', () => {
     const source = appSource();
 
     expect(source).toContain("openProfileTarget('unit_settings')");
     expect(source).toContain("openProfileTarget('health_data')");
     expect(source).toContain("openProfileTarget('data_management')");
     expect(source).toContain("action.type === 'open_plan'");
-    expect(source).toContain("setActiveTab('plan')");
+    expect(source).toContain('openProgressPlan()');
   });
 
   it('RecordView responds to external target props', () => {

@@ -58,7 +58,7 @@ describe('UI consistency guard', () => {
     expect(toast).toContain('role="status"');
   });
 
-  it('keeps Today and My low-noise by default', () => {
+  it('keeps Today and Settings low-noise by default', () => {
     const today = read('src/features/TodayView.tsx');
     const profile = read('src/features/ProfileView.tsx');
     const coachReminderPresenter = read('src/presenters/coachReminderPresenter.ts');
@@ -72,14 +72,14 @@ describe('UI consistency guard', () => {
     expect(dataHealthPresenter).toContain('primaryIssues: issues.slice(0, 3)');
   });
 
-  it('keeps app navigation aligned to the current information architecture', () => {
-    const app = read('src/App.tsx');
+  it('keeps app navigation aligned to the UI-OS information architecture', () => {
+    const navigation = read('src/uiOs/uiOsNavigation.ts');
 
-    expect(app).toContain("label: '今日'");
-    expect(app).toContain("label: '训练'");
-    expect(app).toContain("label: '记录'");
-    expect(app).toContain("label: '计划'");
-    expect(app).toContain("label: '我的'");
-    expect(app).not.toContain("label: 'Progress'");
+    for (const label of ['今日', '训练', '历史', '进步', '设置']) {
+      expect(navigation).toContain(`label: '${label}'`);
+    }
+    expect(navigation).not.toContain("label: '记录'");
+    expect(navigation).not.toContain("label: '计划'");
+    expect(navigation).not.toContain("label: '我的'");
   });
 });

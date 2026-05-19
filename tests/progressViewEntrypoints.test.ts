@@ -2,13 +2,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-describe('Record entry points', () => {
+describe('Record and progress entry points', () => {
   const appSource = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
   const recordSource = readFileSync(resolve(process.cwd(), 'src/features/RecordView.tsx'), 'utf8');
   const progressSource = readFileSync(resolve(process.cwd(), 'src/features/ProgressView.tsx'), 'utf8');
 
-  it('uses RecordView as the product-level record page', () => {
-    expect(appSource).toContain("activeTab === 'record'");
+  it('uses RecordView for history and progress metrics pages', () => {
+    expect(appSource).toContain("activeTab === 'history'");
+    expect(appSource).toContain("activeTab === 'progress' && progressMode === 'metrics'");
     expect(appSource).toContain('<RecordView');
     expect(appSource).not.toContain('<ProgressView');
   });
