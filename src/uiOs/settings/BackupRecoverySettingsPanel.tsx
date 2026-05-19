@@ -24,7 +24,7 @@ export function BackupRecoverySettingsPanel({
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/45">Backup / Recovery</p>
+          <p className="text-sm font-semibold text-emerald-200">备份与恢复</p>
           <h3 className="mt-1 text-lg font-bold text-white">备份与恢复</h3>
           <p className="mt-1 text-sm leading-6 text-white/60">{copy}</p>
         </div>

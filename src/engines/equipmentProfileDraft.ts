@@ -87,7 +87,7 @@ export const createDefaultEquipmentProfileDraft = (kind: EquipmentKind): Equipme
     displayMode: 'total_weight',
     includeBaseWeight: false,
     roundingPreference: 'nearest',
-    notes: 'Unknown/custom profile needs owner review before live use.',
+    notes: '未知或自定义器械需要复查后再用于推荐。',
   };
 };
 

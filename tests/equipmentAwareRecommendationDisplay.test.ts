@@ -38,10 +38,10 @@ describe('equipment aware recommendation display', () => {
       setPurpose: 'working',
     });
 
-    expect(onePlate.primaryLabel).toBe('135 lb total');
+    expect(onePlate.primaryLabel).toBe('135 lb 总重量');
     expect(onePlate.secondaryLabel).toBe('每边 45 lb');
     expect(onePlate.detailLabel).toBe('杆重 45 lb 已计入');
-    expect(oneFifteen.primaryLabel).toBe('115 lb total');
+    expect(oneFifteen.primaryLabel).toBe('115 lb 总重量');
     expect(oneFifteen.secondaryLabel).toBe('每边 35 lb');
     expect(oneFifteen.plateBreakdownLabel).toBe('每边 25 + 10');
   });
@@ -58,9 +58,9 @@ describe('equipment aware recommendation display', () => {
       setPurpose: 'working',
     });
 
-    expect(empty.primaryLabel).toBe('Smith 空杆 25 lb');
+    expect(empty.primaryLabel).toBe('史密斯空杆 25 lb');
     expect(empty.reasonLabel).toBe('理论重量低于 Smith 杆重，使用空杆');
-    expect(loaded.primaryLabel).toBe('95 lb total');
+    expect(loaded.primaryLabel).toBe('95 lb 总重量');
     expect(loaded.secondaryLabel).toBe('每边 35 lb');
     expect(loaded.detailLabel).toBe('Smith 杆重 25 lb 已计入');
   });
@@ -79,8 +79,8 @@ describe('equipment aware recommendation display', () => {
       readinessBias: 'progressive',
     });
 
-    expect(conservative.primaryLabel).toBe('每只手 40 lb / 40 lb each hand');
-    expect(progressive.primaryLabel).toBe('每只手 45 lb / 45 lb each hand');
+    expect(conservative.primaryLabel).toBe('每只手 40 lb');
+    expect(progressive.primaryLabel).toBe('每只手 45 lb');
     expect(progressive.primaryLabel).not.toContain('90 lb');
     expect(progressive.secondaryLabel).toBe('按每只手显示');
     expect(progressive.detailLabel).toBe('哑铃按每只手记录，不合并双手总重量');
@@ -100,7 +100,7 @@ describe('equipment aware recommendation display', () => {
     });
 
     expect(display.equipmentKind).toBe('selectorized_machine');
-    expect(display.primaryLabel).toBe('插片 45 lb / machine stack');
+    expect(display.primaryLabel).toBe('插片 45 lb');
     expect(display.secondaryLabel).toBe('插片重量');
     expect(display.reasonLabel).toBe('已按器械重量栈/插片选项调整');
   });
@@ -125,11 +125,11 @@ describe('equipment aware recommendation display', () => {
       },
     });
 
-    expect(included.primaryLabel).toBe('190 lb total');
+    expect(included.primaryLabel).toBe('190 lb 总重量');
     expect(included.secondaryLabel).toBe('每边 45 lb');
     expect(included.detailLabel).toBe('器械自重/底座重量 100 lb 已计入');
     expect(unknownBase.primaryLabel).toBe('加重 90 lb');
-    expect(unknownBase.warningLabel).toBe('器械自重未计入 / base weight not included');
+    expect(unknownBase.warningLabel).toBe('器械自重未计入');
   });
 
   it('returns safe fallback copy for unknown custom exercises', () => {
@@ -140,7 +140,7 @@ describe('equipment aware recommendation display', () => {
     });
 
     expect(display.equipmentKind).toBe('unknown');
-    expect(display.primaryLabel).toBe('77 lb total');
+    expect(display.primaryLabel).toBe('77 lb 总重量');
     expect(display.secondaryLabel).toBe('未知/自定义器械');
     expect(display.warningLabel).toBe('未知器械档案，建议之后配置器械');
     expect(display.isFeasible).toBe(false);

@@ -21,8 +21,8 @@ describe('EquipmentProfileEditor', () => {
     expect(text).toContain('器械类型');
     expect(text).toContain('显示方式');
     expect(text).toContain('杠铃/杆重 lb');
-    expect(text).toContain('Olympic bar 默认 45 lb');
-    expect(text).toContain('Smith machine 默认 25 lb');
+    expect(text).toContain('奥林匹克杠铃默认 45 lb');
+    expect(text).toContain('史密斯机默认 25 lb');
     expect(text).toContain('默认可用杠铃片：2.5 / 5 / 10 / 25 / 45 lb');
   });
 
@@ -42,8 +42,8 @@ describe('EquipmentProfileEditor', () => {
 
     expect(dumbbell).toContain('哑铃按每只手记录');
     expect(selectorized).toContain('固定器械和绳索重量栈使用机器自己的选项或递增');
-    expect(selectorized).toContain('machine_stack_options_missing');
-    expect(plateLoaded).toContain('base_weight_unknown');
+    expect(selectorized).toContain('建议补充机器插片选项或递增重量');
+    expect(plateLoaded).toContain('器械自重尚未确认');
   });
 
   it('renders unknown custom warning and does not mutate input draft', () => {
@@ -52,7 +52,7 @@ describe('EquipmentProfileEditor', () => {
 
     const text = visibleText(renderToStaticMarkup(createElement(EquipmentProfileEditor, { draft })));
 
-    expect(text).toContain('unknown_custom_profile_needs_configuration');
+    expect(text).toContain('未知或自定义器械需要稍后配置');
     expect(JSON.stringify(draft)).toBe(before);
   });
 
@@ -78,7 +78,7 @@ describe('EquipmentProfileEditor', () => {
     const validation = validateEquipmentProfileDraft(draft);
     const text = visibleText(renderToStaticMarkup(createElement(EquipmentProfileEditor, { draft, validation })));
 
-    expect(text).toContain('base_weight_unknown');
+    expect(text).toContain('器械自重尚未确认');
     expect(text).toContain('持久保存需后续任务授权');
   });
 });

@@ -6,6 +6,7 @@ export type EquipmentAwareLoadDisplayProps = {
   compact?: boolean;
   showDetails?: boolean;
   onOpenEquipmentProfile?: () => void;
+  primaryLabel?: string;
 };
 
 const mapEquipmentKind = (kind: EquipmentAwareRecommendationDisplayResult['equipmentKind']): EquipmentLoadType => {
@@ -28,34 +29,50 @@ export const EquipmentAwareLoadDisplay = ({
   compact = false,
   showDetails = false,
   onOpenEquipmentProfile,
-}: EquipmentAwareLoadDisplayProps) => (
-  <section
-    aria-label="Equipment-aware recommendation display"
-    data-equipment-aware-load-display="presentational"
-    data-compact={compact ? 'true' : 'false'}
-  >
-    <EquipmentAwareLoadCard
-      type={mapEquipmentKind(displayResult.equipmentKind)}
-      mainDisplay={displayResult.primaryLabel}
-      subInfo={displayResult.secondaryLabel}
-      note={compact ? undefined : displayResult.plateBreakdownLabel || displayResult.warningLabel || displayResult.reasonLabel}
-      state={mapState(displayResult)}
-    />
+  primaryLabel,
+}: EquipmentAwareLoadDisplayProps) => {
+  const secondaryItems = [
+    displayResult.secondaryLabel,
+    displayResult.plateBreakdownLabel,
+    displayResult.warningLabel,
+  ].filter((item, index, items): item is string => Boolean(item) && items.indexOf(item) === index);
+  const detailItems = [
+    displayResult.detailLabel,
+    displayResult.reasonLabel,
+    displayResult.plateBreakdownLabel,
+    displayResult.warningLabel,
+  ].filter((item, index, items): item is string => Boolean(item) && items.indexOf(item) === index);
 
-    {displayResult.plateBreakdownLabel ? <p>{displayResult.plateBreakdownLabel}</p> : null}
-    {displayResult.warningLabel ? <p role="alert">{displayResult.warningLabel}</p> : null}
+  return (
+    <section
+      aria-label="器械重量建议"
+      data-equipment-aware-load-display="presentational"
+      data-compact={compact ? 'true' : 'false'}
+      data-equipment-details-collapsed="true"
+    >
+      {primaryLabel ? <div className="mb-2 text-xs font-semibold text-white/58">{primaryLabel}</div> : null}
+      <EquipmentAwareLoadCard
+        type={mapEquipmentKind(displayResult.equipmentKind)}
+        mainDisplay={displayResult.primaryLabel}
+        subInfo={secondaryItems.length ? secondaryItems.join(' · ') : undefined}
+        state={mapState(displayResult)}
+        compact={compact}
+      />
 
-    {showDetails ? (
-      <div aria-label="Equipment-aware recommendation details">
-        <p>{displayResult.detailLabel}</p>
-        <p>{displayResult.reasonLabel}</p>
-      </div>
-    ) : null}
+      <details className="mt-2 rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-sm leading-6 text-white/62" data-equipment-weight-details="collapsed" data-theme-surface="compact_row">
+        <summary className="cursor-pointer font-semibold text-white">重量详情</summary>
+        <div className="mt-2 space-y-1">
+          {detailItems.map((item) => (
+            <p key={item}>{item}</p>
+          ))}
+        </div>
+      </details>
 
-    {onOpenEquipmentProfile ? (
-      <button type="button" onClick={onOpenEquipmentProfile}>
-        配置器械档案
-      </button>
-    ) : null}
-  </section>
-);
+      {onOpenEquipmentProfile ? (
+        <button type="button" onClick={onOpenEquipmentProfile} className="mt-2 text-xs font-semibold text-emerald-200">
+          配置器械档案
+        </button>
+      ) : null}
+    </section>
+  );
+};

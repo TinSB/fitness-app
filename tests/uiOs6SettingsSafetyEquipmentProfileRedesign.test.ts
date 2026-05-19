@@ -12,7 +12,7 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
     for (const marker of ['SettingsControlCenter', 'ThemeSettingsPanel', 'BackupRecoverySettingsPanel', 'EquipmentProfileSettingsPanel']) {
       expect(profileSource).toContain(marker);
     }
-    expect(controlCenterSource).toContain('Owner-only control center');
+    expect(controlCenterSource).toContain('个人控制中心');
     expect(controlCenterSource).toContain('SafetyStrip');
     expect(profileSource).toContain('onUpdateUnitSettings');
     expect(profileSource).toContain('downloadBackup');
@@ -23,13 +23,13 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
   it('renders the required owner-only settings groups', () => {
     const combined = `${profileSource}\n${controlCenterSource}\n${read('src/uiOs/settings/ThemeSettingsPanel.tsx')}\n${read('src/uiOs/settings/BackupRecoverySettingsPanel.tsx')}\n${read('src/uiOs/settings/EmergencyLocalSettingsPanel.tsx')}\n${read('src/uiOs/settings/EquipmentProfileSettingsPanel.tsx')}\n${read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx')}\n${read('src/uiOs/settings/DiagnosticsDataSafetyPanel.tsx')}\n${read('src/uiOs/settings/AboutDataSafetyPanel.tsx')}`;
     for (const expected of [
-      'App Preferences',
-      'Backup / Recovery',
-      'Emergency Local Mode',
-      'Equipment Profiles',
-      'Cloud Candidate',
-      'Diagnostics',
-      'About / Data Safety',
+      '应用偏好',
+      '备份与恢复',
+      '紧急本地模式',
+      '器械档案',
+      '云端候选',
+      '诊断',
+      '关于与数据安全',
     ]) {
       expect(combined).toContain(expected);
     }
@@ -38,15 +38,15 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
   it('shows safe equipment profile examples without persisting new settings', () => {
     const source = `${profileSource}\n${equipmentPanelSource}`;
     for (const expected of [
-      'Olympic barbell',
-      'Smith machine',
+      '奥林匹克杠铃',
+      '史密斯机',
       '25 lb',
-      'Dumbbell',
+      '哑铃',
       '每只手',
       '5 lb 一跳',
-      'Selectorized machine',
+      '插片器械',
       '按机器插片',
-      'Plate-loaded',
+      '挂片器械',
       '注意器械自重',
     ]) {
       expect(source).toContain(expected);

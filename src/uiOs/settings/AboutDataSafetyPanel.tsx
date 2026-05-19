@@ -11,13 +11,13 @@ export function AboutDataSafetyPanel({ historyCount, unitLabel }: AboutDataSafet
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/45">About / Data Safety</p>
+          <p className="text-sm font-semibold text-white/45">关于与数据安全</p>
           <h3 className="mt-1 text-lg font-bold text-white">关于与数据安全</h3>
           <p className="mt-1 text-sm leading-6 text-white/60">
             IronPath 仍是个人训练工具。本地数据是默认来源，云端候选不会自动覆盖。
           </p>
         </div>
-        <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">personal-only</StatusBadge>
+        <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">个人使用</StatusBadge>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-3">

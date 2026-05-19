@@ -30,10 +30,10 @@ const stateLabel: Record<SettingsSafetySummaryResult['overallSafetyState'], stri
 export function SettingsControlCenter({ summary, children }: SettingsControlCenterProps) {
   return (
     <div className="space-y-4">
-      <GlassCard as="section" padding="lg" className="text-white" ariaLabel="Settings safety summary" highlight>
+      <GlassCard as="section" padding="lg" className="text-white" ariaLabel="设置安全摘要" highlight>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold text-white/55">Owner-only control center</p>
+            <p className="text-sm font-semibold text-white/55">个人控制中心</p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">{summary.summaryTitle}</h2>
             <p className="mt-2 text-sm leading-6 text-white/64">{summary.summaryExplanation}</p>
           </div>

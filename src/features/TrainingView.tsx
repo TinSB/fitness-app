@@ -326,22 +326,25 @@ export function TrainingView({
 
     return (
       <div className="border-t border-slate-100 p-4">
-        <div className="grid gap-3 md:grid-cols-3">
-          <Card className="bg-stone-50" padded>
-            <div className="text-xs font-semibold text-slate-500">本次建议</div>
-            <div className="mt-1 text-sm font-semibold text-slate-950">{exercise.suggestion || exercise.targetSummary || '按计划完成本动作'}</div>
-          </Card>
-          <Card className="bg-stone-50" padded>
-            <div className="text-xs font-semibold text-slate-500">目标范围</div>
-            <div className="mt-1 text-sm font-semibold text-slate-950">
-              {exercise.repMin}-{exercise.repMax} 次 · {formatRirLabel(exercise.targetRirText || '1–2')}
+        <details className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-6 text-white/70" data-training-exercise-details="collapsed" data-theme-surface="compact_row">
+          <summary className="cursor-pointer font-semibold text-white">动作设置</summary>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div>
+              <div className="text-xs font-semibold text-white/45">动作提示</div>
+              <div className="mt-1 font-semibold text-white">{exercise.suggestion || exercise.targetSummary || '按计划完成本动作'}</div>
             </div>
-          </Card>
-          <Card className="bg-stone-50" padded>
-            <div className="text-xs font-semibold text-slate-500">休息</div>
-            <div className="mt-1 text-sm font-semibold text-slate-950">{formatRest(exercise.rest)}</div>
-          </Card>
-        </div>
+            <div>
+              <div className="text-xs font-semibold text-white/45">目标范围</div>
+              <div className="mt-1 font-semibold text-white">
+                {exercise.repMin}-{exercise.repMax} 次 · {formatRirLabel(exercise.targetRirText || '1–2')}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-white/45">休息</div>
+              <div className="mt-1 font-semibold text-white">{formatRest(exercise.rest)}</div>
+            </div>
+          </div>
+        </details>
 
         <div className="mt-4 space-y-3">
           {sets.map((set, setIndex) => {
@@ -368,9 +371,6 @@ export function TrainingView({
                         {formatSetType(set.type)} {setIndex + 1}
                       </h3>
                     </div>
-                    <div className={classNames('mt-1 text-xs', isNext ? 'text-slate-300' : 'text-slate-500')}>
-                      推荐处方与实际记录分开；这里用于补记或修正本组数据。
-                    </div>
                     {isNext ? (
                       <SetPrescriptionCard className="mt-3">
                         <EquipmentAwareRecommendationWeight
@@ -379,6 +379,8 @@ export function TrainingView({
                           setPurpose={setPurposeForType(set.type)}
                           unitSettings={unitSettings}
                           compact
+                          showDetails
+                          label="本组建议"
                         />
                       </SetPrescriptionCard>
                     ) : (
@@ -388,6 +390,7 @@ export function TrainingView({
                         setPurpose={setPurposeForType(set.type)}
                         unitSettings={unitSettings}
                         compact
+                        label="建议重量"
                       />
                     )}
                   </div>

@@ -11,31 +11,31 @@ type SafetyConfig = {
 
 const safetyConfigs: Record<SafetyState, SafetyConfig> = {
   'local-ok': {
-    marker: 'local',
+    marker: '本地',
     text: '当前使用本地数据',
     color: 'text-emerald-400',
     bg: 'rgba(52, 199, 89, 0.08)',
   },
   'backup-suggested': {
-    marker: 'backup',
+    marker: '备份',
     text: '建议备份本地数据',
     color: 'text-amber-400',
     bg: 'rgba(255, 159, 10, 0.08)',
   },
   'cloud-paused': {
-    marker: 'manual',
+    marker: '手动',
     text: '云端候选已暂停，需手动确认',
     color: 'text-orange-400',
     bg: 'rgba(255, 149, 0, 0.08)',
   },
   'emergency-ready': {
-    marker: 'emergency',
+    marker: '本地',
     text: '紧急本地模式可用',
     color: 'text-blue-400',
     bg: 'rgba(10, 132, 255, 0.08)',
   },
   'source-unclear': {
-    marker: 'review',
+    marker: '复查',
     text: '数据来源待确认',
     color: 'text-white/40',
     bg: 'rgba(255, 255, 255, 0.04)',

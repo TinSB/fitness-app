@@ -101,8 +101,8 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
 
   it('renders Bench Press warmup primary prescription as empty bar 45 lb instead of theoretical 17 lb', () => {
     const text = renderFocusText(makeBenchWarmupSession());
-    const prescriptionIndex = text.indexOf('推荐处方');
-    const detailIndex = text.indexOf('器械可做重量');
+    const prescriptionIndex = text.indexOf('本组建议');
+    const detailIndex = text.indexOf('重量详情');
     const primaryBlock = text.slice(prescriptionIndex, detailIndex);
 
     expect(primaryBlock).toContain('空杆 45 lb × 10 次');

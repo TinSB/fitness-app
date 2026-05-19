@@ -92,20 +92,20 @@ const reasonLabel = (resolved: FeasibleLoadResult): string => {
 };
 
 const warningLabel = (resolved: FeasibleLoadResult): string | undefined => {
-  if (resolved.warnings.includes('base_machine_weight_not_included')) return '器械自重未计入 / base weight not included';
+  if (resolved.warnings.includes('base_machine_weight_not_included')) return '器械自重未计入';
   if (resolved.warnings.includes('incomplete_equipment_profile')) return '未知器械档案，建议之后配置器械';
   return undefined;
 };
 
 const primaryLabel = (resolved: FeasibleLoadResult): string => {
-  if (resolved.isEmptyBar && resolved.equipmentKind === 'smith_machine') return `Smith 空杆 ${formatLb(resolved.feasibleWeightLb)} lb`;
+  if (resolved.isEmptyBar && resolved.equipmentKind === 'smith_machine') return `史密斯空杆 ${formatLb(resolved.feasibleWeightLb)} lb`;
   if (resolved.isEmptyBar && resolved.equipmentKind === 'barbell') return `空杆 ${formatLb(resolved.feasibleWeightLb)} lb`;
-  if (resolved.equipmentKind === 'dumbbell') return `每只手 ${formatLb(resolved.perHandLoadLb ?? resolved.displayWeightLb)} lb / ${formatLb(resolved.perHandLoadLb ?? resolved.displayWeightLb)} lb each hand`;
+  if (resolved.equipmentKind === 'dumbbell') return `每只手 ${formatLb(resolved.perHandLoadLb ?? resolved.displayWeightLb)} lb`;
   if (resolved.equipmentKind === 'selectorized_machine' || resolved.equipmentKind === 'cable_stack') {
-    return `插片 ${formatLb(resolved.displayWeightLb)} lb / machine stack`;
+    return `插片 ${formatLb(resolved.displayWeightLb)} lb`;
   }
   if (resolved.equipmentKind === 'plate_loaded_machine' && !resolved.baseWeightIncluded) return `加重 ${formatLb(resolved.displayWeightLb)} lb`;
-  return `${formatLb(resolved.feasibleWeightLb)} lb total`;
+  return `${formatLb(resolved.feasibleWeightLb)} lb 总重量`;
 };
 
 const secondaryLabel = (resolved: FeasibleLoadResult): string => {

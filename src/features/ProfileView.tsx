@@ -237,7 +237,7 @@ export function ProfileView({
       setPendingRestore({ fileName: file.name, rawData: parsed, report, repairResult });
       if (report.status === 'clean') setMessage('备份文件已通过检查，可以导入。');
       else if (report.status === 'repairable') setMessage('发现可修复问题，确认后将导入修复副本。');
-      else if (report.status === 'needs_review') setMessage('部分历史记录需要人工检查，但 cleaned data 可继续导入。');
+      else if (report.status === 'needs_review') setMessage('部分历史记录需要人工检查，但清理后的数据可继续导入。');
       else setMessage('该 JSON 不是安全的 IronPath 应用备份，禁止导入。');
     } catch {
       setMessage('导入失败，请确认文件是 IronPath JSON 备份。');
@@ -267,13 +267,13 @@ export function ProfileView({
       setPendingRestore(null);
       setMessage(
         pendingRestore.report.status === 'needs_review'
-          ? '已导入 cleaned data。部分历史记录仍需人工检查。'
+          ? '已导入清理后的数据。部分历史记录仍需人工检查。'
           : pendingRestore.report.status === 'repairable'
             ? '已导入修复后的备份副本。'
             : '已导入备份。',
       );
     } catch {
-      setMessage('导入失败，当前 AppData 未被替换。');
+      setMessage('导入失败，当前数据未被替换。');
     }
   };
 
@@ -293,7 +293,7 @@ export function ProfileView({
       <PageHeader
         eyebrow="我的"
         title="设置中心"
-        description="管理个人资料、筛查、单位、健康数据、备份恢复和本地 PWA 说明。"
+        description="管理个人资料、筛查、单位、健康数据、备份恢复和本地应用说明。"
       />
 
       <SettingsControlCenter summary={settingsSafetySummary}>
@@ -344,10 +344,10 @@ export function ProfileView({
             <div ref={healthDataRef} className="xl:col-span-2">
               <SettingsGroupCard className="xl:col-span-2">
                 <div className="mb-4">
-                  <p className="text-sm font-semibold text-slate-500">Health Data Import</p>
+                  <p className="text-sm font-semibold text-slate-500">健康数据导入</p>
                   <h3 className="mt-1 text-lg font-bold text-slate-950">健康数据导入</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。此处不会上传完整训练数据。
+                    手动导入 CSV / JSON / 健康导出文件，用于恢复和活动负荷参考。此处不会上传完整训练数据。
                   </p>
                 </div>
                 <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
@@ -358,7 +358,7 @@ export function ProfileView({
               <SettingsGroupCard>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-500">Profile / Screening</p>
+                    <p className="text-sm font-semibold text-slate-500">资料与筛查</p>
                     <h3 className="mt-1 text-lg font-bold text-slate-950">身体 / 动作筛查</h3>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
                       管理训练目标、体态问题、动作限制和疼痛触发。低频配置集中在设置页，不挤占训练流程。
@@ -374,7 +374,7 @@ export function ProfileView({
 
             <SettingsGroupCard className="xl:col-span-2">
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500">Coach Automation</p>
+                <p className="text-sm font-semibold text-slate-500">教练建议</p>
                 <h3 className="mt-1 text-lg font-bold text-slate-950">教练动作收件箱</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
                   教练自动化只生成建议，不会自动覆盖计划或修改历史。采用建议、修正记录或调整计划仍由你手动确认。
@@ -408,7 +408,7 @@ export function ProfileView({
               <h2 className="text-lg font-semibold leading-7 text-slate-950">导入备份被阻止</h2>
               <div className="mt-2 space-y-3 text-sm leading-6 text-slate-600">
                 <Notice tone="rose" title={restoreStatusLabel(pendingRestore.report)}>
-                  该文件不是安全的 IronPath 应用备份，当前 AppData 未被修改。
+                  该文件不是安全的 IronPath 应用备份，当前数据未被修改。
                 </Notice>
                 <div>文件：{pendingRestore.fileName}</div>
                 {pendingRestore.report.issues.slice(0, 4).map((item) => (
@@ -432,7 +432,7 @@ export function ProfileView({
                   <p>导入会替换当前浏览器里的 IronPath 数据。导入前请先导出现有备份；原始 JSON 文件不会被覆盖。</p>
                   <Notice tone={pendingRestore.report.status === 'needs_review' ? 'amber' : pendingRestore.report.status === 'repairable' ? 'amber' : 'emerald'} title={restoreStatusLabel(pendingRestore.report)}>
                     {pendingRestore.report.status === 'needs_review'
-                      ? '部分历史记录需要人工检查，但 cleaned data 可继续导入。'
+                      ? '部分历史记录需要人工检查，但清理后的数据可继续导入。'
                       : pendingRestore.report.status === 'repairable'
                         ? '确认后会导入修复副本，不会写回原始文件。'
                         : '备份文件已通过检查，可以导入。'}

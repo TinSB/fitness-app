@@ -49,13 +49,13 @@ const visibleText = (html: string) =>
     .trim();
 
 describe('Focus quick apply suggestion near CTA', () => {
-  it('keeps the original prescription card and adds a quick apply entry near the complete CTA', () => {
+  it('keeps one compact prescription surface and one quick apply entry near the complete CTA', () => {
     const html = renderFocusHtml(makeFocusSession([{ ...makeExercise('bench-press', 2), name: '平板卧推' }]));
     const text = visibleText(html);
 
-    expect(text).toContain('推荐处方');
+    expect(text).toContain('本组建议');
     expect(text).toContain('当前记录：缺少重量或次数');
-    expect((text.match(/套用建议/g) || [])).toHaveLength(2);
+    expect((text.match(/套用建议/g) || [])).toHaveLength(1);
 
     const bottomSummaryIndex = text.lastIndexOf('当前记录：');
     const bottomApplyIndex = text.lastIndexOf('套用建议');
@@ -67,7 +67,7 @@ describe('Focus quick apply suggestion near CTA', () => {
     expect(text).not.toMatch(/undefined|null|prescription|manual|copy_previous|__auto_alt|__alt_/);
   });
 
-  it('shows the applied quick action while keeping the full prescription card visible', () => {
+  it('shows the applied quick action while keeping the compact prescription visible', () => {
     const applied = applySuggestedFocusStepWithResult(makeFocusSession([{ ...makeExercise('bench-press', 2), name: '平板卧推' }]), 0);
     const html = renderFocusHtml(applied.session);
     const text = visibleText(html);
@@ -77,10 +77,10 @@ describe('Focus quick apply suggestion near CTA', () => {
       changed: true,
       message: '已套用建议。',
     });
-    expect(text).toContain('推荐处方');
+    expect(text).toContain('本组建议');
     expect(text).toContain('当前记录：缺少重量或次数');
     expect(text).toContain('已套用');
-    expect(text).toContain('套用建议');
+    expect(text).not.toContain('套用建议');
     expect(text).not.toMatch(/undefined|null|prescription|manual|copy_previous|__auto_alt|__alt_/);
   });
 
