@@ -26,6 +26,7 @@ import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { CoachActionList } from '../ui/CoachActionList';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { SettingsOsGroup, SettingsOsHero, SettingsOsMiniCard } from '../uiOs/settings/SettingsOsCards';
 import { HealthDataPanel } from './HealthDataPanel';
 
 interface ProfileViewProps {
@@ -220,6 +221,23 @@ export function ProfileView({
         description="管理个人资料、筛查、单位、健康数据、备份恢复和本地 PWA 说明。"
       />
 
+      <SettingsOsHero className="mb-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold text-emerald-200">Owner-only Safety OS</div>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight">设置、安全和器械配置集中在这里</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+              localStorage remains default/fallback/migration/emergency；云端候选是手动、可逆的配置，不会自动同步。备份恢复、紧急本地模式、诊断和器械档案都必须由你确认。
+            </p>
+          </div>
+          <div className="grid min-w-44 gap-2 text-sm">
+            <div className="rounded-2xl bg-white/10 px-3 py-2">云端候选：需要手动确认</div>
+            <div className="rounded-2xl bg-white/10 px-3 py-2">紧急本地模式可用</div>
+            <div className="rounded-2xl bg-white/10 px-3 py-2">rollback / kill switch 可用</div>
+          </div>
+        </div>
+      </SettingsOsHero>
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
         <section className="space-y-4">
           <PageSection title="个人数据状态" description="这里只显示设置和数据状态，不展示今日训练建议。">
@@ -258,7 +276,7 @@ export function ProfileView({
           </div>
 
           <div ref={unitSettingsRef}>
-            <PageSection title="单位设置" description="切换只影响界面显示和输入，历史训练内部仍按 kg 标准化保存。">
+            <PageSection title="Units / 单位设置" description="切换只影响界面显示和输入，历史训练内部仍按 kg 标准化保存。">
               <Card className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   {(['kg', 'lb'] as const).map((unit) => (
@@ -281,6 +299,51 @@ export function ProfileView({
               </Card>
             </PageSection>
           </div>
+
+          <PageSection title="安全与器械配置" description="高风险设置集中在设置页；训练页只保留训练动作。">
+            <div className="grid gap-3 md:grid-cols-2">
+              <SettingsOsGroup>
+                <div className="text-sm font-semibold text-slate-950">Emergency Local Mode / 紧急本地模式</div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  本地训练记录仍可继续。云端候选不会自动应用；cloud pull does not auto-apply，cloud push requires manual confirmation。
+                </p>
+              </SettingsOsGroup>
+              <SettingsOsGroup>
+                <div className="text-sm font-semibold text-slate-950">Cloud Candidate / 云端候选</div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  云端候选 remains explicit opt-in and reversible。冲突解决保持手动，不提供 casual sync 按钮。
+                </p>
+              </SettingsOsGroup>
+              <SettingsOsGroup>
+                <div className="text-sm font-semibold text-slate-950">Equipment Profiles / 器械档案</div>
+                <div className="mt-2 grid gap-2">
+                  <SettingsOsMiniCard>Olympic bar 45 lb；总重量 + 每边杠铃片。</SettingsOsMiniCard>
+                  <SettingsOsMiniCard>Smith machine 25 lb；杆重计入总重量。</SettingsOsMiniCard>
+                  <SettingsOsMiniCard>哑铃每只手 / per-hand；默认 5 lb increment。</SettingsOsMiniCard>
+                  <SettingsOsMiniCard>selectorized machine stack / 插片；机器选项需要之后配置。</SettingsOsMiniCard>
+                  <SettingsOsMiniCard>plate-loaded base/sled warning：器械自重可能未计入。</SettingsOsMiniCard>
+                </div>
+              </SettingsOsGroup>
+              <SettingsOsGroup>
+                <div className="text-sm font-semibold text-slate-950">Diagnostics / 诊断</div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  诊断只做脱敏摘要；不会上传完整 AppData，不会启用外部监控，也不会自行修复历史记录。
+                </p>
+              </SettingsOsGroup>
+              <SettingsOsGroup>
+                <div className="text-sm font-semibold text-slate-950">Backup / Recovery / 备份恢复</div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  导入前先校验，确认后才替换当前浏览器数据；backup/import/export over HTTP remains blocked。
+                </p>
+              </SettingsOsGroup>
+              <SettingsOsGroup>
+                <div className="text-sm font-semibold text-slate-950">About / Data Safety / 关于与数据安全</div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  IronPath remains personal-only；SaaS deferred。开发 API 运行时只用于本地开发，不是生产后端。
+                </p>
+              </SettingsOsGroup>
+            </div>
+          </PageSection>
         </section>
 
         <section className="space-y-4">
