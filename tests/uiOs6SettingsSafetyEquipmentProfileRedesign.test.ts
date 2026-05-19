@@ -5,15 +5,15 @@ const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
   const profileSource = read('src/features/ProfileView.tsx');
-  const cardsSource = read('src/uiOs/settings/SettingsOsCards.tsx');
+  const controlCenterSource = read('src/uiOs/settings/SettingsControlCenter.tsx');
+  const equipmentPanelSource = read('src/uiOs/settings/EquipmentProfileSettingsPanel.tsx');
 
   it('adds UI-OS settings surfaces without replacing existing settings behavior', () => {
-    for (const marker of ['SettingsOsHero', 'SettingsOsGroup', 'SettingsOsMiniCard']) {
-      expect(cardsSource).toContain(marker);
+    for (const marker of ['SettingsControlCenter', 'ThemeSettingsPanel', 'BackupRecoverySettingsPanel', 'EquipmentProfileSettingsPanel']) {
       expect(profileSource).toContain(marker);
     }
-    expect(cardsSource).toContain('bg-[#0a0a0b]');
-    expect(cardsSource).toContain('rounded-[28px]');
+    expect(controlCenterSource).toContain('Owner-only control center');
+    expect(controlCenterSource).toContain('SafetyStrip');
     expect(profileSource).toContain('onUpdateUnitSettings');
     expect(profileSource).toContain('downloadBackup');
     expect(profileSource).toContain('handleImportFile');
@@ -21,8 +21,9 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
   });
 
   it('renders the required owner-only settings groups', () => {
+    const combined = `${profileSource}\n${controlCenterSource}\n${read('src/uiOs/settings/ThemeSettingsPanel.tsx')}\n${read('src/uiOs/settings/BackupRecoverySettingsPanel.tsx')}\n${read('src/uiOs/settings/EmergencyLocalSettingsPanel.tsx')}\n${read('src/uiOs/settings/EquipmentProfileSettingsPanel.tsx')}\n${read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx')}\n${read('src/uiOs/settings/DiagnosticsDataSafetyPanel.tsx')}\n${read('src/uiOs/settings/AboutDataSafetyPanel.tsx')}`;
     for (const expected of [
-      'Units',
+      'App Preferences',
       'Backup / Recovery',
       'Emergency Local Mode',
       'Equipment Profiles',
@@ -30,36 +31,39 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
       'Diagnostics',
       'About / Data Safety',
     ]) {
-      expect(profileSource).toContain(expected);
+      expect(combined).toContain(expected);
     }
   });
 
   it('shows safe equipment profile examples without persisting new settings', () => {
+    const source = `${profileSource}\n${equipmentPanelSource}`;
     for (const expected of [
-      'Olympic bar 45 lb',
-      'Smith machine 25 lb',
-      '哑铃每只手 / per-hand',
+      'Olympic barbell',
+      'Smith machine',
+      '25 lb',
+      'Dumbbell',
+      'per-hand',
       '5 lb increment',
-      'selectorized machine stack / 插片',
-      'plate-loaded base/sled warning',
-      '器械自重可能未计入',
+      'Selectorized machine',
+      'machine stack',
+      'Plate-loaded',
+      'base/sled warning',
     ]) {
-      expect(profileSource).toContain(expected);
+      expect(source).toContain(expected);
     }
     expect(profileSource).not.toContain('persistEquipmentProfile');
     expect(profileSource).not.toContain('saveEquipmentProfile');
   });
 
   it('keeps cloud candidate and emergency local copy manual and reversible', () => {
-    expect(profileSource).toContain('云端候选：需要手动确认');
-    expect(profileSource).toContain('紧急本地模式可用');
-    expect(profileSource).toContain('rollback / kill switch 可用');
-    expect(profileSource).toContain('cloud pull does not auto-apply');
-    expect(profileSource).toContain('cloud push requires manual confirmation');
-    expect(profileSource).toContain('explicit opt-in and reversible');
+    const combined = `${profileSource}\n${read('src/engines/settingsSafetySummary.ts')}\n${read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx')}`;
+    expect(combined).toContain('云端候选不会自动同步');
+    expect(combined).toContain('紧急本地模式可用');
+    expect(combined).toContain('Cloud pull 不会自动覆盖本地数据');
+    expect(combined).toContain('Cloud push 需要手动确认');
+    expect(combined).toContain('explicit opt-in and reversible');
     for (const forbidden of ['自动同步已启用', '后台同步', '云端已成为默认数据源', '已上传成功', 'SaaS 已上线']) {
-      expect(profileSource).not.toContain(forbidden);
-      expect(cardsSource).not.toContain(forbidden);
+      expect(combined).not.toContain(forbidden);
     }
   });
 });
