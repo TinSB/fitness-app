@@ -8,6 +8,7 @@ import {
 } from '../src/engines/workoutExecutionStateMachine';
 import type { TrainingSession } from '../src/models/training-model';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const successWords = /已完成|已复制|已套用|已标记|已替换/;
 
@@ -59,7 +60,10 @@ const createCompleteHarness = (initialSession: TrainingSession) => {
 
 describe('focus duplicate complete feedback', () => {
   it('returns duplicate_submit for a rapid second complete call and does not record a second set', () => {
-    const prescribed = dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const prescribed = fillPlannedRepsForCurrentStep(
+      dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession,
+      0,
+    );
     const harness = createCompleteHarness(prescribed);
 
     const first = harness.complete(1000);
@@ -88,12 +92,18 @@ describe('focus duplicate complete feedback', () => {
   });
 
   it('allows the next set to complete after the UI receives the updated activeSession', () => {
-    const prescribed = dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const prescribed = fillPlannedRepsForCurrentStep(
+      dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession,
+      0,
+    );
     const harness = createCompleteHarness(prescribed);
 
     const first = harness.complete(1000);
     harness.rerender();
-    const secondDraft = dispatchWorkoutExecutionEvent(harness.activeSession, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const secondDraft = fillPlannedRepsForCurrentStep(
+      dispatchWorkoutExecutionEvent(harness.activeSession, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession,
+      0,
+    );
     const nextHarness = createCompleteHarness(secondDraft);
     const second = nextHarness.complete(2000);
 

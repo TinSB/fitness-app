@@ -27,15 +27,18 @@ describe('UI consistency guard', () => {
   it('keeps Focus Mode controls readable, two-layered, and safe-area aware', () => {
     const focus = read('src/features/TrainingFocusView.tsx');
     const actionBar = read('src/ui/WorkoutActionBar.tsx');
+    const focusActionBar = read('src/uiOs/training/FocusModeActionBar.tsx');
+    const focusSecondaryActions = read('src/uiOs/training/FocusModeSecondaryActions.tsx');
     const button = read('src/ui/ActionButton.tsx');
 
     expect(focus).toContain('专注训练');
     expect(focus).not.toContain('Focus Mode');
-    expect(focus).toContain('grid grid-cols-3 gap-2');
+    expect(focusSecondaryActions).toContain('grid grid-cols-3 gap-2');
     expect(focus).toContain('复制上组');
     expect(focus).toContain('标记不适');
-    expect(focus).toContain('aria-label="替代动作"');
-    expect(focus).toContain('完成一组');
+    expect(focusSecondaryActions).toContain('aria-label={action.label}');
+    expect(focus).toContain('FocusModeActionBar');
+    expect(focusActionBar).toContain('data-focus-mode-action-bar="one-dominant-primary"');
     expect(actionBar).toContain('env(safe-area-inset-bottom)');
     expect(actionBar).toContain('bg-white');
     expect(button).toContain('disabled:text-slate-400');

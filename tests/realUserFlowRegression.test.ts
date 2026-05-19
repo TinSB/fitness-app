@@ -6,7 +6,6 @@ import { buildEffectiveVolumeSummary } from '../src/engines/effectiveSetEngine';
 import { completedSets, sessionCompletedSets, sessionVolume, todayKey } from '../src/engines/engineUtils';
 import {
   adjustFocusSetValue,
-  applySuggestedFocusStep,
   completeFocusSet,
   endFocusRest,
   getCurrentFocusStep,
@@ -33,6 +32,7 @@ import type { ProgramAdjustmentDraft, TrainingSession, WeeklyActionRecommendatio
 import { sanitizeData } from '../src/storage/persistence';
 import { getTemplate, makeAppData, makeSession } from './fixtures';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { applySuggestionAndPlannedReps, fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const makePushFocusSession = () =>
   makeFocusSession([
@@ -194,7 +194,7 @@ describe('real user flow regression gate', () => {
     session = adjustFocusSetValue(session, 1, 'weight', 2.5);
     expect(getCurrentFocusStep(session).exerciseId).toBe('incline-db-press');
 
-    session = applySuggestedFocusStep(session, 1);
+    session = applySuggestionAndPlannedReps(session, 1);
     const current = getCurrentFocusStep(session);
     const result = completeFocusSet(session, 1, '2026-05-01T10:00:00.000Z', 1000, current.id);
     if (!result) throw new Error('expected completed focus set');
@@ -209,6 +209,7 @@ describe('real user flow regression gate', () => {
     let session = makeFocusSession([{ ...makeExercise('bench-press', 1), name: '平板卧推' }]);
     session = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_REPLACEMENT', exerciseIndex: 0, replacementId: 'db-bench-press' }).updatedSession;
     session = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    session = fillPlannedRepsForCurrentStep(session, 0);
     session = dispatchWorkoutExecutionEvent(session, {
       type: 'COMPLETE_STEP',
       exerciseIndex: 0,
@@ -232,7 +233,7 @@ describe('real user flow regression gate', () => {
 
   it('Focus Mode -> rest timer -> end rest enters the next set without finalizing the session', () => {
     let session = makeFocusSession([{ ...makeExercise('bench-press', 2), name: '平板卧推' }]);
-    session = applySuggestedFocusStep(session, 0);
+    session = applySuggestionAndPlannedReps(session, 0);
     const completed = completeFocusSet(session, 0, '2026-05-01T10:00:00.000Z', 1000, getCurrentFocusStep(session).id);
     if (!completed) throw new Error('expected first set completion');
 

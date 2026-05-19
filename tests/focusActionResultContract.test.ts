@@ -25,7 +25,8 @@ const expectNoSuccessSemantics = (result: FocusActionResult) => {
 
 describe('FocusActionResult contract', () => {
   it('reports complete-set success only when the current set is actually completed', () => {
-    const prescribed = dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const prescribedWeightOnly = dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const prescribed = dispatchWorkoutExecutionEvent(prescribedWeightOnly, { type: 'ADJUST_REPS', exerciseIndex: 0, delta: 8 }).updatedSession;
     const current = getCurrentFocusStep(prescribed);
 
     const result = dispatchWorkoutExecutionEvent(prescribed, {
@@ -114,10 +115,10 @@ describe('FocusActionResult contract', () => {
     expect(first.actionResult.reasonCode).toBeUndefined();
     expect(draftAfterFirst).toMatchObject({
       actualWeightKg: 50,
-      actualReps: 8,
-      actualRir: 2,
       source: 'prescription',
     });
+    expect(draftAfterFirst?.actualReps).toBeUndefined();
+    expect(draftAfterFirst?.actualRir).toBeUndefined();
 
     const second = applySuggestedFocusStepWithResult(first.session, 0);
 

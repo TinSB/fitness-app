@@ -13,6 +13,7 @@ import { buildIncompleteMainWorkGuard, finalizeTrainingSession } from '../src/en
 import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionStateMachine';
 import { makeAppData } from './fixtures';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const makeAction = (overrides: Partial<CoachAction> = {}): CoachAction => ({
   id: overrides.id || 'action-review-volume',
@@ -87,7 +88,10 @@ describe('operation state link regression', () => {
       ]),
       1,
     );
-    const prepared = dispatchWorkoutExecutionEvent(switched, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 1 }).updatedSession;
+    const prepared = fillPlannedRepsForCurrentStep(
+      dispatchWorkoutExecutionEvent(switched, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 1 }).updatedSession,
+      1,
+    );
     const current = getCurrentFocusStep(prepared);
 
     const result = dispatchWorkoutExecutionEvent(prepared, {

@@ -59,7 +59,7 @@ describe('Focus quick apply suggestion near CTA', () => {
 
     const bottomSummaryIndex = text.lastIndexOf('当前记录：');
     const bottomApplyIndex = text.lastIndexOf('套用建议');
-    const ctaIndex = text.lastIndexOf('完成一组');
+    const ctaIndex = text.lastIndexOf('记录本组');
 
     expect(bottomSummaryIndex).toBeGreaterThan(-1);
     expect(bottomApplyIndex).toBeGreaterThan(bottomSummaryIndex);
@@ -78,7 +78,7 @@ describe('Focus quick apply suggestion near CTA', () => {
       message: '已套用建议。',
     });
     expect(text).toContain('推荐处方');
-    expect(text).toContain('当前记录：50kg × 8 次 · 2 RIR 余力 · 建议');
+    expect(text).toContain('当前记录：缺少重量或次数');
     expect(text).toContain('已套用');
     expect(text).toContain('套用建议');
     expect(text).not.toMatch(/undefined|null|prescription|manual|copy_previous|__auto_alt|__alt_/);

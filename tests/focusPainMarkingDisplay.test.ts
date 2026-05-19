@@ -13,6 +13,7 @@ import {
 import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionStateMachine';
 import type { TrainingSession, UnitSettings } from '../src/models/training-model';
 import { attachSupportBlocks, makeExercise, makeFocusSession } from './focusModeFixtures';
+import { fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const unitSettings: UnitSettings = {
   weightUnit: 'kg',
@@ -86,8 +87,9 @@ describe('Focus pain marking display boundary', () => {
   it('does not show a current-group notice for another set on the same exercise', () => {
     const prescribed = dispatchWorkoutExecutionEvent(makeSession(), { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
     const marked = dispatchWorkoutExecutionEvent(prescribed, { type: 'MARK_PAIN', exerciseIndex: 0, painFlag: true }).updatedSession;
-    const firstStep = getCurrentFocusStep(marked);
-    const completed = dispatchWorkoutExecutionEvent(marked, {
+    const ready = fillPlannedRepsForCurrentStep(marked, 0);
+    const firstStep = getCurrentFocusStep(ready);
+    const completed = dispatchWorkoutExecutionEvent(ready, {
       type: 'COMPLETE_STEP',
       exerciseIndex: 0,
       completedAt: '2026-05-07T10:00:00.000Z',

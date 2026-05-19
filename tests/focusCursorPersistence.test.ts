@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { applySuggestedFocusStep, completeFocusSet, getCurrentFocusStep, switchFocusExercise } from '../src/engines/focusModeStateEngine';
+import { completeFocusSet, getCurrentFocusStep, switchFocusExercise } from '../src/engines/focusModeStateEngine';
 import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionStateMachine';
 import { emptyData, sanitizeData } from '../src/storage/persistence';
 import type { ExercisePrescription, TrainingSession } from '../src/models/training-model';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
+import { applySuggestionAndPlannedReps, fillPlannedRepsForCurrentStep } from './focusModeTestActions';
 
 const makePushSession = () =>
   makeFocusSession([
@@ -15,7 +16,7 @@ const makePushSession = () =>
 describe('focus cursor persistence', () => {
   it('completes the manually selected incline step rather than the earlier bench step', () => {
     let session = switchFocusExercise(makePushSession(), 1);
-    session = applySuggestedFocusStep(session, 1);
+    session = applySuggestionAndPlannedReps(session, 1);
     const current = getCurrentFocusStep(session);
 
     const result = completeFocusSet(session, 1, '2026-05-01T10:00:00.000Z', 1000, current.id);
@@ -33,6 +34,7 @@ describe('focus cursor persistence', () => {
   it('state machine complete step uses the current focus step and expectedStepId', () => {
     let session = switchFocusExercise(makePushSession(), 1);
     session = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 1 }).updatedSession;
+    session = fillPlannedRepsForCurrentStep(session, 1);
     const current = getCurrentFocusStep(session);
 
     const result = dispatchWorkoutExecutionEvent(session, {
@@ -50,7 +52,7 @@ describe('focus cursor persistence', () => {
   });
 
   it('rejects a stale expectedStepId instead of completing the wrong exercise', () => {
-    const session = applySuggestedFocusStep(switchFocusExercise(makePushSession(), 1), 1);
+    const session = applySuggestionAndPlannedReps(switchFocusExercise(makePushSession(), 1), 1);
 
     const result = completeFocusSet(session, 1, '2026-05-01T10:00:00.000Z', 1000, 'main:bench-press:working:0');
 
@@ -60,7 +62,7 @@ describe('focus cursor persistence', () => {
   });
 
   it('rejects a stale exercise index instead of completing the first incomplete exercise', () => {
-    const session = applySuggestedFocusStep(switchFocusExercise(makePushSession(), 1), 1);
+    const session = applySuggestionAndPlannedReps(switchFocusExercise(makePushSession(), 1), 1);
     const current = getCurrentFocusStep(session);
 
     const result = completeFocusSet(session, 0, '2026-05-01T10:00:00.000Z', 1000, current.id);

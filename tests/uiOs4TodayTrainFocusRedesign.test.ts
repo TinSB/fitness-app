@@ -118,7 +118,7 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
     expect(focusSource).toContain('buildActionableEquipmentAwarePrescription');
     expect(focusSource).toContain('EquipmentAwareRecommendationWeight');
     expect(focusSource).toContain('套用建议');
-    expect(focusSource).toContain('完成一组');
+    expect(focusSource).toContain('FocusModeActionBar');
     expect(focusSource).toContain('替代动作');
     expect(focusSource).toContain('标记不适');
     expect(focusSource).toContain('onFinish');

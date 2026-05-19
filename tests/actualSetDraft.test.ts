@@ -20,15 +20,16 @@ describe('actual set draft', () => {
     expect(draft?.actualReps).toBe(1);
   });
 
-  it('套用建议后 actual 等于 planned，后续调整不改变推荐', () => {
+  it('套用建议后只填重量，后续调整不改变推荐', () => {
     let session = makeFocusSession([makeExercise('bench', 1)]);
     const planned = getCurrentFocusStep(session);
     session = applySuggestedFocusStep(session, 0);
+    expect(getActualSetDraft(session, getCurrentFocusStep(session))?.actualReps).toBeUndefined();
     session = adjustFocusSetValue(session, 0, 'reps', 1);
     const step = getCurrentFocusStep(session);
     const draft = getActualSetDraft(session, step);
     expect(draft?.actualWeightKg).toBe(planned.plannedWeight);
-    expect(draft?.actualReps).toBe(Number(planned.plannedReps) + 1);
+    expect(draft?.actualReps).toBe(1);
     expect(step.plannedReps).toBe(planned.plannedReps);
   });
 });

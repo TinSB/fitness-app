@@ -58,6 +58,7 @@ describe('Training Focus recommendation explanation', () => {
 
   it('keeps the complete-set button in Focus Mode', () => {
     expect(source).toContain('completeCurrentSet');
-    expect(source).toContain('aria-label="完成一组"');
+    expect(source).toContain('FocusModeActionBar');
+    expect(source).toContain('primaryLabel={interactionState.primaryActionLabel}');
   });
 });
