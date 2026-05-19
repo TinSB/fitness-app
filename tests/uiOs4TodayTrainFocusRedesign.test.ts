@@ -121,7 +121,7 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
   });
 
   it('keeps existing focus controls and full training flow actions reachable', () => {
-    expect(focusSource).toContain('buildActionableEquipmentAwarePrescription');
+    expect(focusSource).toContain('resolveActionableLoadContract');
     expect(focusSource).toContain('EquipmentAwareRecommendationWeight');
     expect(focusSource).toContain('套用建议');
     expect(focusSource).toContain('FocusModeActionBar');

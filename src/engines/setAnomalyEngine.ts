@@ -22,6 +22,9 @@ type DraftLike = Partial<ActualSetDraft> & {
 };
 
 type PlannedPrescriptionLike = Partial<{
+  actionableWeightKg: number;
+  validationBaselineKg: number;
+  rawTheoreticalWeightKg: number;
   plannedWeight: number;
   plannedWeightKg: number;
   targetWeightKg: number;
@@ -186,6 +189,8 @@ const latestPreviousSet = (
 
 const plannedWeightKg = (planned?: PlannedPrescriptionLike | null, displayUnit: WeightUnit = 'kg') => {
   if (!planned) return undefined;
+  if (hasInputValue(planned.actionableWeightKg)) return number(planned.actionableWeightKg);
+  if (hasInputValue(planned.validationBaselineKg)) return number(planned.validationBaselineKg);
   if (hasInputValue(planned.plannedWeightKg)) return number(planned.plannedWeightKg);
   if (hasInputValue(planned.targetWeightKg)) return number(planned.targetWeightKg);
   if (hasInputValue(planned.workingWeightKg)) return number(planned.workingWeightKg);

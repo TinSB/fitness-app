@@ -38,7 +38,7 @@ import type { FocusModeSecondaryActionItem } from '../uiOs/training/FocusModeSec
 import { ActionButton as UiOsActionButton } from '../uiOs/primitives/ActionButton';
 import { BottomSheet as UiOsBottomSheet } from '../uiOs/surfaces/BottomSheet';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
-import { buildActionableEquipmentAwarePrescription } from '../engines/equipmentAwareActionablePrescription';
+import { resolveActionableLoadContract } from '../engines/actionableLoadContract';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
@@ -569,10 +569,10 @@ export function TrainingFocusView({
   const supportTimeSec = supportExercise && 'timeSec' in supportExercise ? supportExercise.timeSec : undefined;
   const supportDistanceM = supportExercise && 'distanceM' in supportExercise ? supportExercise.distanceM : undefined;
   const equipmentAwareExerciseName = mainExercisePoolId || mainExercise?.id || displayExerciseName(mainExercise);
-  const actionablePrescription = !isSupportStep
-    ? buildActionableEquipmentAwarePrescription({
+  const actionableLoadContract = !isSupportStep
+    ? resolveActionableLoadContract({
         exerciseName: equipmentAwareExerciseName,
-        plannedWeightKg: currentStep.plannedWeight,
+        rawTheoreticalLoadKg: currentStep.plannedWeight,
         plannedReps: currentStep.plannedReps,
         plannedRir: currentStep.plannedRir,
         setPurpose: currentStep.stepType === 'warmup' ? 'warmup' : 'working',
@@ -580,6 +580,7 @@ export function TrainingFocusView({
         showTheoreticalDetail: true,
       })
     : null;
+  const actionablePrescription = actionableLoadContract?.prescription ?? null;
   const plannedWeightSummary = actionablePrescription?.shouldUseFeasibleLoad
     ? actionablePrescription.primaryDisplayWeightLabel
     : formatWeight(currentStep.plannedWeight, unitSettings);
@@ -749,6 +750,9 @@ export function TrainingFocusView({
       currentSessionId: session.id,
       unitSettings,
       plannedPrescription: {
+        actionableWeightKg: actionableLoadContract?.actionableLoadKg,
+        validationBaselineKg: actionableLoadContract?.validationBaselineKg,
+        rawTheoreticalWeightKg: actionableLoadContract?.rawTheoreticalLoadKg,
         plannedWeightKg: currentStep.plannedWeight,
         plannedReps: currentStep.plannedReps,
         repMin: mainExercise?.repMin,
