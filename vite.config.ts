@@ -7,14 +7,6 @@ const normalizeId = (id: string) => id.replaceAll('\\', '/');
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        prototype: resolve(__dirname, 'prototype.html'),
-      },
-    },
-  },
   test: {
     environment: 'node',
     globals: true,
@@ -22,6 +14,12 @@ export default defineConfig({
     maxWorkers: '50%',
   },
   build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        prototype: resolve(__dirname, 'prototype.html'),
+      },
+    },
     rolldownOptions: {
       output: {
         manualChunks(id) {

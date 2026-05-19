@@ -517,7 +517,7 @@ function TodayPage() {
       </GlassCard>
 
       {/* Last related training */}
-      <GlassCard onClick={() => {}}>
+      <GlassCard>
         <p className="text-sm text-white/45 mb-3">上次相关训练</p>
         <div className="flex items-center justify-between">
           <div>
@@ -695,7 +695,7 @@ function HistoryPage() {
           <p className="text-sm text-white/35 mb-3 font-medium">{session.date}</p>
           <div className="flex flex-col gap-2">
             {session.entries.map((entry, idx) => (
-              <GlassCard key={idx} onClick={() => {}}>
+              <GlassCard key={idx}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-white font-medium text-[17px]">{entry.name}</p>
@@ -808,6 +808,7 @@ function ProgressPage() {
 // ============================================================================
 function SettingsPage() {
   const [showBackupSheet, setShowBackupSheet] = useState(false);
+  const [showRestoreSheet, setShowRestoreSheet] = useState(false);
 
   return (
     <div className="flex flex-col gap-6 pb-36">
@@ -837,7 +838,7 @@ function SettingsPage() {
           <SettingsRow 
             label="从文件恢复" 
             showArrow 
-            onClick={() => {}}
+            onClick={() => setShowRestoreSheet(true)}
           />
           <SettingsRow 
             label="紧急本地模式" 
@@ -909,6 +910,26 @@ function SettingsPage() {
             确认导出
           </ActionButton>
           <ActionButton variant="ghost" fullWidth onClick={() => setShowBackupSheet(false)}>
+            取消
+          </ActionButton>
+        </div>
+      </BottomSheet>
+
+      {/* Restore bottom sheet */}
+      <BottomSheet
+        isOpen={showRestoreSheet}
+        onClose={() => setShowRestoreSheet(false)}
+        title="从文件恢复"
+        confirmRequired
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] text-white/55 leading-relaxed">
+            需要手动确认。原型仅展示恢复确认流程；真实导入前必须先校验文件，不会自动覆盖本地训练记录。
+          </p>
+          <ActionButton variant="primary" fullWidth onClick={() => setShowRestoreSheet(false)}>
+            我知道了
+          </ActionButton>
+          <ActionButton variant="ghost" fullWidth onClick={() => setShowRestoreSheet(false)}>
             取消
           </ActionButton>
         </div>
