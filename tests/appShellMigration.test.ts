@@ -3,20 +3,21 @@ import { describe, expect, it } from 'vitest';
 
 describe('AppShell migration', () => {
   const appSource = readFileSync('src/App.tsx', 'utf8');
-  const appShellSource = readFileSync('src/ui/AppShell.tsx', 'utf8');
-  const navBlock = appSource.slice(appSource.indexOf('const navItems'), appSource.indexOf('] as const;', appSource.indexOf('const navItems')));
+  const appShellSource = readFileSync('src/uiOs/MobileAppShell.tsx', 'utf8');
+  const navigationSource = readFileSync('src/uiOs/uiOsNavigation.ts', 'utf8');
 
-  it('renders product pages through the shared AppShell', () => {
-    expect(appSource).toContain('<AppShell');
-    expect(appSource).not.toContain('<BottomNav');
+  it('renders product pages through the UI-OS MobileAppShell', () => {
+    expect(appSource).toContain('<MobileAppShell');
+    expect(appSource).not.toContain("import { AppShell } from './ui/AppShell'");
     expect(appShellSource).toContain('<BottomNav');
   });
 
-  it('keeps only the five product-level main navigation entries', () => {
-    for (const id of ['today', 'training', 'record', 'plan', 'profile']) {
-      expect(navBlock).toContain(`id: '${id}'`);
+  it('keeps only the five UI-OS product-level main navigation entries', () => {
+    for (const id of ['today', 'train', 'history', 'progress', 'settings']) {
+      expect(navigationSource).toContain(`id: '${id}'`);
     }
-    expect(navBlock).not.toContain("id: 'assessment'");
-    expect(navBlock).not.toContain("id: 'progress'");
+    expect(navigationSource).not.toContain("id: 'assessment'");
+    expect(navigationSource).not.toContain("id: 'record'");
+    expect(navigationSource).not.toContain("id: 'profile'");
   });
 });

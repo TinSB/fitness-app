@@ -8,7 +8,7 @@ describe('functionality smoke wiring', () => {
   it('keeps session creation, completion, and history write wired in App', () => {
     expect(appSource).toContain('createSession(');
     expect(appSource).toContain('completeTrainingSessionIntoHistory');
-    expect(appSource).toContain("setActiveTab('record')");
+    expect(appSource).toContain('openHistoryTarget');
   });
 
   it('keeps workout execution actions wired through the state machine', () => {

@@ -95,12 +95,12 @@ import type { AppData, LoadFeedbackValue, PendingSessionPatch, ProgramAdjustment
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
-import { AppShell } from './ui/AppShell';
 import { Card } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
 import { Toast } from './ui/Toast';
 import { useConfirmDialog } from './ui/useConfirmDialog';
-import { ResponsivePageLayout } from './ui/layouts/ResponsivePageLayout';
+import { MobileAppShell } from './uiOs/MobileAppShell';
+import { UI_OS_TABS, type UiOsTabId } from './uiOs/uiOsNavigation';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
 const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
@@ -109,16 +109,19 @@ const RecordView = lazy(() => import('./features/RecordView').then((module) => (
 const TrainingView = lazy(() => import('./features/TrainingView').then((module) => ({ default: module.TrainingView })));
 const devApiReadOnlyConfig = resolveDevApiReadOnlyConfig(import.meta.env);
 
-const navItems = [
-  { id: 'today', label: '今日', icon: Flame },
-  { id: 'training', label: '训练', icon: Dumbbell },
-  { id: 'record', label: '记录', icon: CalendarDays },
-  { id: 'plan', label: '计划', icon: BookOpen },
-  { id: 'profile', label: '我的', icon: UserCircle },
-] as const;
+const navIcons = {
+  today: Flame,
+  train: Dumbbell,
+  history: CalendarDays,
+  progress: BookOpen,
+  settings: UserCircle,
+} as const;
 
-type ActiveTab = (typeof navItems)[number]['id'];
+const navItems = UI_OS_TABS.map((item) => ({ ...item, icon: navIcons[item.id] }));
+
+type ActiveTab = UiOsTabId;
 type ProgressSectionTarget = 'calendar' | 'list' | 'pr' | 'stats' | 'data';
+type ProgressMode = 'metrics' | 'plan';
 type ProfileSection = 'home' | 'assessment';
 type AppToast = { message: string; tone: 'success' | 'warning' | 'danger' | 'info' };
 type StatusField = 'sleep' | 'energy' | 'time';
@@ -162,13 +165,13 @@ const AppAuxiliaryPanel = ({
   const title =
     activeTab === 'today'
       ? '今日辅助'
-      : activeTab === 'training'
+      : activeTab === 'train'
         ? '训练辅助'
-        : activeTab === 'record'
-          ? '记录辅助'
-          : activeTab === 'plan'
-            ? '计划辅助'
-            : '我的辅助';
+        : activeTab === 'history'
+          ? '历史辅助'
+          : activeTab === 'progress'
+            ? '进步辅助'
+            : '设置辅助';
 
   return (
     <Card className="space-y-3">
@@ -177,12 +180,12 @@ const AppAuxiliaryPanel = ({
         <div className="mt-1 text-sm leading-6 text-slate-500">
           {activeTab === 'today'
             ? '用于放置低优先级状态，不挤占主决策区。'
-            : activeTab === 'training'
+            : activeTab === 'train'
               ? '训练页优先保留记录操作，辅助信息保持轻量。'
-              : activeTab === 'record'
-                ? '记录页默认日历，统计和 PR 留在二级分区。'
-                : activeTab === 'plan'
-                  ? '计划页只处理未来安排和模板状态。'
+              : activeTab === 'history'
+                ? '历史页默认日历和训练列表，异常提示保留在二级分区。'
+                : activeTab === 'progress'
+                  ? '进步页保留 PR、统计和计划调整入口。'
                   : '设置、筛查、单位和数据入口集中在这里。'}
         </div>
       </div>
@@ -198,7 +201,7 @@ const AppAuxiliaryPanel = ({
         </div>
       ) : null}
 
-      {activeTab === 'training' ? (
+      {activeTab === 'train' ? (
         <div className="space-y-2 text-sm">
           <StatusBadge tone={activeSession ? 'emerald' : 'slate'}>{activeSession ? '训练中' : '未开始'}</StatusBadge>
           <div className="font-semibold text-slate-950">
@@ -208,25 +211,25 @@ const AppAuxiliaryPanel = ({
         </div>
       ) : null}
 
-      {activeTab === 'record' ? (
+      {activeTab === 'history' ? (
         <div className="space-y-2 text-sm text-slate-600">
           <div className="rounded-lg bg-stone-50 p-3">默认入口：训练日历。</div>
-          <div className="rounded-lg bg-stone-50 p-3">历史详情、统计、PR、数据管理在记录页内切换。</div>
+          <div className="rounded-lg bg-stone-50 p-3">历史详情、异常提示和数据分区仍在历史页内切换。</div>
         </div>
       ) : null}
 
-      {activeTab === 'plan' ? (
+      {activeTab === 'progress' ? (
         <div className="space-y-2 text-sm">
-          <StatusBadge tone="sky">当前模板</StatusBadge>
+          <StatusBadge tone="sky">进步与计划</StatusBadge>
           <div className="font-semibold text-slate-950">{selectedTemplateName}</div>
-          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">实验模板、调整建议和回滚保留在计划页主内容。</div>
+          <div className="rounded-lg bg-stone-50 p-3 text-slate-600">PR、统计和计划调整保留在进步页主内容。</div>
         </div>
       ) : null}
 
-      {activeTab === 'profile' ? (
+      {activeTab === 'settings' ? (
         <div className="space-y-2 text-sm text-slate-600">
           <div className="rounded-lg bg-stone-50 p-3">当前位置：{profileSection === 'assessment' ? '身体 / 动作筛查' : '设置中心'}</div>
-          <div className="rounded-lg bg-stone-50 p-3">健康数据、单位、备份和筛查集中在“我的”。</div>
+          <div className="rounded-lg bg-stone-50 p-3">健康数据、单位、备份和筛查集中在设置页。</div>
         </div>
       ) : null}
     </Card>
@@ -237,6 +240,7 @@ function App() {
   const [data, setData] = useState<AppData>(() => loadData() as AppData);
   const dataRef = useRef<AppData>(data);
   const [activeTab, setActiveTab] = useState<ActiveTab>('today');
+  const [progressMode, setProgressMode] = useState<ProgressMode>('metrics');
   const [expandedExercise, setExpandedExercise] = useState(0);
   const [, setTimerTick] = useState(0);
   const [bodyWeightInput, setBodyWeightInput] = useState('');
@@ -317,7 +321,7 @@ function App() {
   }, [appToast]);
 
   useEffect(() => {
-    if (data.activeSession) setActiveTab('training');
+    if (data.activeSession) setActiveTab('train');
   }, []);
 
   useEffect(() => {
@@ -460,6 +464,30 @@ function App() {
     [pendingSessionPatchRecords, todaySelectedTemplate.id],
   );
 
+  const openHistoryTarget = React.useCallback((target?: { section: ProgressSectionTarget; sessionId?: string; date?: string }) => {
+    setProgressMode('metrics');
+    if (target) setProgressTarget(target);
+    setActiveTab('history');
+  }, []);
+
+  const openProgressMetrics = React.useCallback((target: { section: ProgressSectionTarget; sessionId?: string; date?: string } = { section: 'stats' }) => {
+    setProgressMode('metrics');
+    setProgressTarget(target);
+    setActiveTab('progress');
+  }, []);
+
+  const openProgressPlan = React.useCallback((target?: PlanTarget) => {
+    if (target) setPlanTarget(target);
+    setProgressMode('plan');
+    setActiveTab('progress');
+  }, []);
+
+  const openSettingsTarget = React.useCallback((target?: ProfileTargetSection) => {
+    setProfileSection('home');
+    setProfileTargetSection(target || null);
+    setActiveTab('settings');
+  }, []);
+
   const startSession = (templateId = activeTemplateId, options: SessionPatch[] | StartSessionOptions = {}) => {
     const startOptions: StartSessionOptions = Array.isArray(options) ? { explicitPatches: options } : options;
     const template = startOptions.templateOverride || findTemplate(data.templates, templateId);
@@ -521,7 +549,7 @@ function App() {
       if (patchResult?.warnings.length) showAppToast(patchResult.warnings[0], 'warning');
     }
     setExpandedExercise(0);
-    setActiveTab('training');
+    setActiveTab('train');
   };
 
   const finishSession = async (target: ProgressSectionTarget | 'today' = 'list') => {
@@ -550,7 +578,8 @@ function App() {
     if (finishedSession && target !== 'today') {
       setProgressTarget({ section: target, sessionId: finishedSession.id, date: getSessionCalendarDate(finishedSession) });
     }
-    setActiveTab(target === 'today' ? 'today' : 'record');
+    if (target === 'today') setActiveTab('today');
+    else openHistoryTarget();
     invalidateDerivedState('session_completed');
   };
 
@@ -953,13 +982,12 @@ function App() {
       ],
       programAdjustmentHistory: [historyItem, ...(current.programAdjustmentHistory || [])],
     }));
-    setPlanTarget({
+    openProgressPlan({
       section: 'adjustment_drafts',
       draftId: result.draft.id,
       highlight: true,
       version: Date.now(),
     });
-    setActiveTab('plan');
     invalidateDerivedState('template_applied');
     showAppToast('已应用实验模板，可随时回滚。', 'success');
   };
@@ -1039,13 +1067,12 @@ function App() {
           };
     const targetDraft = upsertResult?.targetDraft || draft;
     if (upsertResult?.outcome === 'opened_existing') {
-      setPlanTarget({
+      openProgressPlan({
         section: 'adjustment_drafts',
         draftId: targetDraft.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       showAppToast('已打开已有调整草案。', 'info');
       return;
     }
@@ -1055,13 +1082,12 @@ function App() {
       ...current,
       programAdjustmentDrafts: upsertResult.drafts,
     });
-    setPlanTarget({
+    openProgressPlan({
       section: 'adjustment_drafts',
       draftId: upsertResult.createdDraft.id,
       highlight: true,
       version: Date.now(),
     });
-    setActiveTab('plan');
     showAppToast('已重新生成调整草案，应用前请确认。', 'success');
   };
 
@@ -1181,9 +1207,7 @@ function App() {
   };
 
   const openProfileTarget = (target: ProfileTargetSection) => {
-    setProfileSection('home');
-    setProfileTargetSection(target);
-    setActiveTab('profile');
+    openSettingsTarget(target);
   };
 
   const handleDataHealthAction = async (action: DataHealthActionView) => {
@@ -1244,26 +1268,22 @@ function App() {
       if (action.targetId) {
         const session = (data.history || []).find((item) => item.id === action.targetId);
         if (session) {
-          setProgressTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) || action.targetDate });
-          setActiveTab('record');
+          openHistoryTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) || action.targetDate });
           showAppToast('已打开相关训练。', 'info');
           return;
         }
         showAppToast('暂时无法定位到这次训练，已打开历史列表。', 'warning');
       }
-      setProgressTarget({ section: 'list', date: action.targetDate });
-      setActiveTab('record');
+      openHistoryTarget({ section: 'list', date: action.targetDate });
       return;
     }
     if (action.type === 'open_record_history') {
-      setProgressTarget({ section: 'list', ...(action.targetDate ? { date: action.targetDate } : {}) });
-      setActiveTab('record');
+      openHistoryTarget({ section: 'list', ...(action.targetDate ? { date: action.targetDate } : {}) });
       showAppToast('已打开历史训练。', 'info');
       return;
     }
     if (action.type === 'open_record_data') {
-      setProgressTarget({ section: 'data' });
-      setActiveTab('record');
+      openHistoryTarget({ section: 'data' });
       showAppToast('已打开数据分区。', 'info');
       return;
     }
@@ -1278,7 +1298,7 @@ function App() {
       return;
     }
     if (action.type === 'open_plan') {
-      setActiveTab('plan');
+      openProgressPlan();
       showAppToast('已打开计划页。', 'info');
       return;
     }
@@ -1306,14 +1326,13 @@ function App() {
       plateauResults: trainingIntelligenceSummary.plateauResults,
     });
     if (!draftInput) {
-      setPlanTarget({
+      openProgressPlan({
         section: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
         muscleId: action.targetType === 'muscle' ? action.targetId : undefined,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       return {
         status: 'needs_more_data',
         message: '当前数据不足，暂时无法生成调整草案。已打开相关建议。',
@@ -1334,14 +1353,13 @@ function App() {
       sourceFingerprint,
     );
     if (existingAdjustment?.draft && existingAdjustment.state === 'draft_ready') {
-      setPlanTarget({
+      openProgressPlan({
         section: 'adjustment_drafts',
         draftId: existingAdjustment.draft.id,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       return {
         status: 'success',
         message: '已打开已有调整草案。',
@@ -1352,14 +1370,13 @@ function App() {
       };
     }
     if (existingAdjustment?.state === 'applied') {
-      setPlanTarget({
+      openProgressPlan({
         section: 'adjustment_drafts',
         draftId: existingAdjustment.draft?.id,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       return {
         status: 'success',
         message: '该建议已应用为实验模板。',
@@ -1369,14 +1386,13 @@ function App() {
       };
     }
     if (existingAdjustment?.state === 'dismissed' || existingAdjustment?.state === 'expired') {
-      setPlanTarget({
+      openProgressPlan({
         section: 'adjustment_drafts',
         draftId: existingAdjustment.draft?.id,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       return {
         status: 'success',
         message: '该建议之前已处理，可在调整历史中查看。',
@@ -1413,14 +1429,13 @@ function App() {
       }
       const targetDraft = upsertResult?.targetDraft;
       if (targetDraft) {
-        setPlanTarget({
+        openProgressPlan({
           section: 'adjustment_drafts',
           draftId: targetDraft.id,
           actionId: action.id,
           highlight: true,
           version: Date.now(),
         });
-        setActiveTab('plan');
         return {
           status: 'success',
           message: upsertResult?.outcome === 'opened_existing' ? '已打开已有调整草案。' : '已重新生成调整草案，应用前请确认。',
@@ -1456,14 +1471,13 @@ function App() {
         diffPreview: buildAdjustmentDiff(baseDraft, draftInput.sourceTemplate, data.programTemplate, data.templates),
       };
       if (!draft.changes.length) {
-        setPlanTarget({
+        openProgressPlan({
           section: action.targetType === 'muscle' ? 'volume_adaptation' : 'coach_actions',
           muscleId: action.targetType === 'muscle' ? action.targetId : undefined,
           actionId: action.id,
           highlight: true,
           version: Date.now(),
         });
-        setActiveTab('plan');
         return {
           status: 'needs_more_data',
           message: '当前建议更适合先查看原因，暂时没有可安全生成的调整草案。',
@@ -1495,14 +1509,13 @@ function App() {
             : upsertResult?.outcome === 'previously_handled'
               ? '该建议之前已处理，可在调整历史中查看。'
               : '已生成调整草案，应用前请确认。';
-      setPlanTarget({
+      openProgressPlan({
         section: 'adjustment_drafts',
         draftId: targetDraft.id,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       return {
         status: 'success',
         message: resultMessage,
@@ -1523,15 +1536,14 @@ function App() {
     if (!action) return;
     if (action.actionType === 'open_data_health') {
       if (action.targetType === 'plan') {
-        setActiveTab('plan');
+        openProgressPlan();
         showAppToast('已打开计划页查看相关问题。', 'info');
         return;
       }
       if (action.targetType === 'session' && action.targetId) {
         const session = (data.history || []).find((item) => item.id === action.targetId);
         if (session) {
-          setProgressTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) });
-          setActiveTab('record');
+          openHistoryTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) });
           showAppToast('已打开相关训练详情。', 'info');
           return;
         }
@@ -1544,15 +1556,13 @@ function App() {
       if (action.targetId) {
         const session = (data.history || []).find((item) => item.id === action.targetId);
         if (session) {
-          setProgressTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) });
-          setActiveTab('record');
+          openHistoryTarget({ section: 'list', sessionId: session.id, date: getSessionCalendarDate(session) });
           showAppToast('已打开训练详情。', 'info');
           return;
         }
         showAppToast('暂时无法定位到对应记录。', 'warning');
       }
-      setProgressTarget({ section: 'list' });
-      setActiveTab('record');
+      openHistoryTarget({ section: 'list' });
       return;
     }
     if (action.actionType === 'create_plan_adjustment_preview') {
@@ -1560,14 +1570,13 @@ function App() {
       return;
     }
     if (action.actionType === 'review_volume') {
-      setPlanTarget({
+      openProgressPlan({
         section: 'volume_adaptation',
         muscleId: action.targetType === 'muscle' ? action.targetId : undefined,
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       showCoachActionResult({
         status: 'success',
         message: action.targetId ? '已打开训练量建议。' : '已打开训练量建议，暂无具体肌群可定位。',
@@ -1578,13 +1587,12 @@ function App() {
       return;
     }
     if (action.actionType === 'review_exercise') {
-      setPlanTarget({
+      openProgressPlan({
         section: 'coach_actions',
         actionId: action.id,
         highlight: true,
         version: Date.now(),
       });
-      setActiveTab('plan');
       showCoachActionResult({
         status: 'success',
         message: '已打开动作进展建议。',
@@ -1645,7 +1653,7 @@ function App() {
           });
           invalidateDerivedState('pending_patch_created');
         }
-        setActiveTab(data.activeSession ? 'training' : 'today');
+        setActiveTab(data.activeSession ? 'train' : 'today');
         showAppToast(data.activeSession ? '已应用本次临时调整。' : '已应用本次临时调整。开始训练时生效。', 'success');
       })();
       return;
@@ -1656,7 +1664,7 @@ function App() {
       return;
     }
     if (action.actionType === 'open_replacement_sheet') {
-      setActiveTab(data.activeSession ? 'training' : 'today');
+      setActiveTab(data.activeSession ? 'train' : 'today');
       showAppToast('请在训练页打开替代动作列表。', 'info');
       return;
     }
@@ -1730,20 +1738,34 @@ function App() {
 
   const navigate = (tab: ActiveTab) => {
     setActiveTab(tab);
-    if (tab === 'profile') {
+    if (tab === 'settings') {
       setProfileSection('home');
       setProfileTargetSection(null);
     }
+    if (tab === 'progress') {
+      setProgressMode('metrics');
+      setProgressTarget((current) => (current?.section === 'pr' || current?.section === 'stats' ? current : { section: 'stats' }));
+    }
+    if (tab === 'history') {
+      setProgressMode('metrics');
+      setProgressTarget((current) =>
+        current?.section === 'calendar' || current?.section === 'list' || current?.section === 'data' ? current : { section: 'calendar' },
+      );
+    }
   };
 
-  const useFocusTrainingShell = activeTab === 'training' && data.activeSession && preferFocusShell && !forceFullTrainingView;
+  const useFocusTrainingShell = activeTab === 'train' && data.activeSession && preferFocusShell && !forceFullTrainingView;
+  const historyRecordTarget =
+    progressTarget?.section === 'calendar' || progressTarget?.section === 'list' || progressTarget?.section === 'data' ? progressTarget : undefined;
+  const progressRecordTarget = progressTarget?.section === 'pr' || progressTarget?.section === 'stats' ? progressTarget : { section: 'stats' as const };
 
   return (
     <>
-      <AppShell
+      <MobileAppShell
         navItems={navItems}
         activeTab={activeTab}
         onNavigate={navigate}
+        trainTabId="train"
         activeSession={Boolean(data.activeSession)}
         immersive={Boolean(useFocusTrainingShell)}
         auxiliary={
@@ -1784,23 +1806,20 @@ function App() {
                     }}
                     onStart={startTodayFocusSelection}
                     onStartRecommended={(templateId) => startSession(templateId)}
-                    onResume={() => setActiveTab('training')}
+                    onResume={() => setActiveTab('train')}
                     onViewSession={(sessionId, date) => {
-                      setProgressTarget({ section: 'list', sessionId, date });
-                      setActiveTab('record');
+                      openHistoryTarget({ section: 'list', sessionId, date });
                     }}
                     onViewCalendar={(date) => {
-                      setProgressTarget({ section: 'calendar', date });
-                      setActiveTab('record');
+                      openHistoryTarget({ section: 'calendar', date });
                     }}
                     onReviewDataHealth={() => {
-                      setProgressTarget({ section: 'data' });
-                      setActiveTab('record');
+                      openHistoryTarget({ section: 'data' });
                     }}
                   />
                 )}
 
-                {activeTab === 'training' && useFocusTrainingShell && data.activeSession && (
+                {activeTab === 'train' && useFocusTrainingShell && data.activeSession && (
                   <>
                     <TrainingFocusView
                       session={data.activeSession}
@@ -1834,7 +1853,7 @@ function App() {
                   </>
                 )}
 
-                {activeTab === 'training' && !useFocusTrainingShell && (
+                {activeTab === 'train' && !useFocusTrainingShell && (
                   <Suspense fallback={<LazyPageFallback />}>
                     <TrainingView
                       session={data.activeSession}
@@ -1870,7 +1889,28 @@ function App() {
                   </Suspense>
                 )}
 
-                {activeTab === 'plan' && (
+                {activeTab === 'progress' && (
+                  <div className="mx-auto w-full max-w-[1280px] px-4 pt-4 md:px-6 xl:px-8">
+                    <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-white/[0.06] p-1 text-sm font-semibold text-white/55 backdrop-blur-xl">
+                      <button
+                        type="button"
+                        onClick={() => openProgressMetrics({ section: 'stats' })}
+                        className={progressMode === 'metrics' ? 'rounded-xl bg-white px-3 py-2 text-black' : 'rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white'}
+                      >
+                        训练趋势
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openProgressPlan()}
+                        className={progressMode === 'plan' ? 'rounded-xl bg-white px-3 py-2 text-black' : 'rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white'}
+                      >
+                        计划调整
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'progress' && progressMode === 'plan' && (
                   <Suspense fallback={<LazyPageFallback />}>
                     <PlanView
                       data={data}
@@ -1894,9 +1934,10 @@ function App() {
                   </Suspense>
                 )}
 
-                {activeTab === 'record' && (
+                {activeTab === 'history' && (
                   <Suspense fallback={<LazyPageFallback />}>
                     <RecordView
+                      key="history-record"
                       data={data}
                       unitSettings={data.unitSettings}
                       coachAutomationSummary={coachAutomationSummary}
@@ -1922,14 +1963,50 @@ function App() {
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
                       onDataHealthAction={handleDataHealthAction}
                       onStartTraining={() => startSession()}
-                      initialSection={progressTarget?.section}
-                      selectedSessionId={progressTarget?.sessionId}
-                      selectedDate={progressTarget?.date}
+                      initialSection={historyRecordTarget?.section}
+                      selectedSessionId={historyRecordTarget?.sessionId}
+                      selectedDate={historyRecordTarget?.date}
                     />
                   </Suspense>
                 )}
 
-                {activeTab === 'profile' && profileSection === 'home' && (
+                {activeTab === 'progress' && progressMode === 'metrics' && (
+                  <Suspense fallback={<LazyPageFallback />}>
+                    <RecordView
+                      key="progress-record"
+                      data={data}
+                      unitSettings={data.unitSettings}
+                      coachAutomationSummary={coachAutomationSummary}
+                      trainingIntelligenceSummary={trainingIntelligenceSummary}
+                      coachActions={coachActions}
+                      onCoachAction={handleCoachAction}
+                      onDismissCoachAction={dismissCoachAction}
+                      weeklyPrescription={weeklyPrescription}
+                      bodyWeightInput={bodyWeightInput}
+                      setBodyWeightInput={setBodyWeightInput}
+                      onSaveBodyWeight={saveBodyWeight}
+                      onDeleteSession={deleteHistorySession}
+                      onMarkSessionDataFlag={updateHistorySessionFlag}
+                      onEditSession={editHistorySession}
+                      onOperationFeedback={showAppToast}
+                      onUpdateUnitSettings={updateUnitSettings}
+                      onRestoreData={(nextData) => {
+                        setData(nextData);
+                        setActiveTab('today');
+                        invalidateDerivedState('backup_restored');
+                      }}
+                      onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
+                      onRollbackProgramAdjustment={rollbackProgramAdjustment}
+                      onDataHealthAction={handleDataHealthAction}
+                      onStartTraining={() => startSession()}
+                      initialSection={progressRecordTarget.section}
+                      selectedSessionId={progressRecordTarget.sessionId}
+                      selectedDate={progressRecordTarget.date}
+                    />
+                  </Suspense>
+                )}
+
+                {activeTab === 'settings' && profileSection === 'home' && (
                   <Suspense fallback={<LazyPageFallback />}>
                     <ProfileView
                       data={data}
@@ -1952,14 +2029,13 @@ function App() {
                       onDataHealthAction={handleDataHealthAction}
                       targetSection={profileTargetSection}
                       onOpenRecordData={() => {
-                        setProgressTarget({ section: 'data' });
-                        setActiveTab('record');
+                        openHistoryTarget({ section: 'data' });
                       }}
                     />
                   </Suspense>
                 )}
 
-                {activeTab === 'profile' && profileSection === 'assessment' && (
+                {activeTab === 'settings' && profileSection === 'assessment' && (
                   <Suspense fallback={<LazyPageFallback />}>
                     <AssessmentView
                       data={data}
@@ -1968,12 +2044,12 @@ function App() {
                       onScreeningChange={updateScreeningFlag}
                       onGoProgram={() => {
                         setProfileSection('home');
-                        setActiveTab('plan');
+                        openProgressPlan();
                       }}
                     />
                   </Suspense>
                 )}
-      </AppShell>
+      </MobileAppShell>
       <ConfirmDialogHost />
       {appToast ? (
         <div className="fixed left-1/2 top-[calc(1rem+env(safe-area-inset-top))] z-[100] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2">
