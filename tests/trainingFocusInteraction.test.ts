@@ -25,6 +25,8 @@ describe('TrainingFocusView interaction surface', () => {
     expect(trainingOsCardsSource).toContain('WorkoutActionBar');
     expect(source).toContain('BottomSheet');
     expect(source).toContain('Toast');
-    expect(source).toContain('<details');
+    expect(source).toContain('showExplanationSheet');
+    expect(source).toContain('FocusModeActionBar');
+    expect(trainingOsCardsSource).toContain('WorkoutActionBar');
   });
 });

@@ -44,7 +44,7 @@ The current implementation is closer to partial visual reskin than a true intera
 - End workout requires second confirmation.
 - Recommendation display: the primary prescription should show executable weight, for example `45 lb × 10`, with `空杆` or equipment context as secondary copy. Theoretical weight should not be primary.
 - Equipment-aware details are collapsed by default. Abnormal cases may show a brief warning, but full details should not clutter the main flow.
-- Apply suggestion fills weight only. It must not auto-fill reps/RIR unless a later task explicitly authorizes it.
+- Apply suggestion fills weight only in R1. R8.6 later explicitly authorized filling actionable weight plus planned reps for the active draft while still not filling RIR.
 - Actual record input should appear after tapping `记录本组` or equivalent, preferably through a bottom sheet / modal flow instead of always showing full input on the main screen.
 - Today page purpose: decide whether to train, decide what to train, and show recovery/fatigue status.
 - Today focus override: `今天想练` is medium priority and should not dominate Today page.
@@ -172,7 +172,7 @@ Only one dominant primary action is allowed per screen. Secondary actions must n
 - `结束训练` requires second confirmation.
 - Secondary actions remain available at bottom but visually secondary: `复制上组`, `标记不适`, `替代动作`.
 - Actual record input opens through bottom sheet / modal.
-- Apply suggestion fills weight only.
+- Apply suggestion fills weight only in R1; R8.6 later supersedes this for active drafts by filling actionable weight plus planned reps, not RIR.
 - Equipment details are collapsed by default.
 - Abnormal equipment-aware cases may show small warning/summary.
 
@@ -284,7 +284,7 @@ Rules:
 - Fix skip/correction/discomfort logic.
 - Hide bottom nav in Focus Mode.
 - Add actual record bottom sheet.
-- Apply suggestion fills weight only.
+- Apply suggestion fills weight only in R1; R8.6 later supersedes this for active drafts by filling actionable weight plus planned reps, not RIR.
 - Equipment-aware prescription remains primary.
 
 ### UI-OS R3 — Today Decision Surface Rewrite V1

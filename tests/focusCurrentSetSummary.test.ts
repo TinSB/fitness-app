@@ -146,7 +146,7 @@ describe('Focus current set summary', () => {
       unitSettings: kgSettings,
     });
 
-    expect(prescription.text).toContain('建议');
+    expect(prescription.text).not.toContain('建议');
     expect(copied.text).toContain('复制上组');
     expect(unknown.text).toBe('当前记录：50kg × 8 次 · 2 RIR 余力');
     expect(unknown.text).not.toMatch(/legacy_source|prescription|manual|copy_previous|undefined|null/);

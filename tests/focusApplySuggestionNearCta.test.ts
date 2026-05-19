@@ -67,7 +67,7 @@ describe('Focus quick apply suggestion near CTA', () => {
     expect(text).not.toMatch(/undefined|null|prescription|manual|copy_previous|__auto_alt|__alt_/);
   });
 
-  it('shows the applied quick action while keeping the compact prescription visible', () => {
+  it('shows one applied record state while keeping the compact prescription visible', () => {
     const applied = applySuggestedFocusStepWithResult(makeFocusSession([{ ...makeExercise('bench-press', 2), name: '平板卧推' }]), 0);
     const html = renderFocusHtml(applied.session);
     const text = visibleText(html);
@@ -78,8 +78,9 @@ describe('Focus quick apply suggestion near CTA', () => {
       message: '已套用建议。',
     });
     expect(text).toContain('本组建议');
-    expect(text).toContain('当前记录：缺少重量或次数');
-    expect(text).toContain('已套用');
+    expect(text).toContain('当前记录：50kg × 8 次');
+    expect(text).toContain('修改');
+    expect(text).not.toContain('已套用');
     expect(text).not.toContain('套用建议');
     expect(text).not.toMatch(/undefined|null|prescription|manual|copy_previous|__auto_alt|__alt_/);
   });

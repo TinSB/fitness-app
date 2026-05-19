@@ -62,7 +62,7 @@ describe('UI-OS R8.5 Focus microcopy purge', () => {
     const source = read('src/features/TrainingFocusView.tsx');
 
     expect(html).toContain('重量详情');
-    expect(html).toMatch(/<details[^>]*data-equipment-weight-details="collapsed"(?![^>]*open)/);
+    expect(html).not.toContain('<details');
     expect(html).toContain('依据');
     expect(html).not.toContain('aria-label="推荐依据"');
     expect(source).toContain('showExplanationSheet');

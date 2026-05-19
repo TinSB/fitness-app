@@ -31,7 +31,7 @@ Bottom nav must not compete with Focus Mode. Focus Mode should reserve the botto
 - A Focus action bar driven by the resolved state.
 - Actual record bottom sheet / modal entry for weight, reps, RIR, and note entry where already supported.
 - Bottom nav hidden in Focus Mode through the existing immersive shell behavior.
-- `套用建议` weight-only behavior: it applies the feasible equipment-aware weight and does not auto-fill reps/RIR.
+- `套用建议` R2 behavior was weight-only. R8.6 supersedes this by applying feasible equipment-aware weight plus planned reps for the active draft, while still not auto-filling RIR.
 - End-workout second confirmation: the first tap requests ending, and `确认结束训练` is explicit.
 - Production UI-OS components from R0 are used for Focus action surfaces: `ActionButton`, `BottomSheet`, `StatusBadge`, `EquipmentAwareLoadCard` through `EquipmentAwareLoadDisplay`, `TrainingFocusHero`, and glass/material training cards.
 
@@ -120,9 +120,9 @@ Only one dominant primary action is allowed per Focus Mode state. `完成一组`
 - Skip state uses `确认跳过`.
 - Actual record input opens through bottom sheet / modal flow after `记录本组`.
 - The bottom sheet contains weight, reps, RIR, and optional notes where the existing working-set handler supports notes.
-- `套用建议` fills weight only.
+- `套用建议` fills weight only in R2; R8.6 later fills actionable weight plus planned reps.
 - `套用建议` uses feasible equipment-aware load when available.
-- `套用建议` does not auto-fill reps.
+- `套用建议` does not auto-fill reps in R2; R8.6 explicitly authorizes planned reps for the active draft.
 - `套用建议` does not auto-fill RIR.
 - `套用建议` does not complete the set.
 - Equipment-aware prescription remains primary.

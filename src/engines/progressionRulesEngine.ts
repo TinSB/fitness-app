@@ -1,6 +1,7 @@
 import type { ExercisePrescription, ExerciseTemplate, PerformanceSnapshot, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { findPreviousPerformance, findRecentPerformances } from './adaptiveFeedbackEngine';
 import { number, repsText, setVolume, weightText } from './engineUtils';
+import { buildPracticalWarmupPolicy } from './practicalWarmupPolicy';
 
 type ExerciseForProgression = Pick<
   ExerciseTemplate,
@@ -223,22 +224,5 @@ export const buildSetPrescription = (
 };
 
 export const buildWarmupSets = (workWeight: number, exercise: ExerciseForProgression) => {
-  const weight = number(workWeight);
-  if (!weight || weight < 25) return [];
-
-  const unit = number(exercise.progressionUnitKg) || 2.5;
-  const ladder = [
-    { ratio: 0, reps: 10, label: '空杆 / 极轻重量' },
-    { ratio: 0.4, reps: 5 },
-    { ratio: 0.6, reps: 3 },
-    { ratio: 0.8, reps: 2 },
-    { ratio: 0.9, reps: 1 },
-  ];
-
-  return ladder
-    .map((item) => ({
-      ...item,
-      weight: item.ratio ? roundLoad(weight * item.ratio, unit) : Math.min(20, Math.max(unit, roundLoad(weight * 0.2, unit))),
-    }))
-    .filter((item, index, list) => item.weight < weight && (index === 0 || item.weight > list[index - 1].weight));
+  return buildPracticalWarmupPolicy({ workWeightKg: workWeight, exercise }).warmupSets;
 };

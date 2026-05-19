@@ -79,7 +79,7 @@ describe('Focus input efficiency state boundaries', () => {
     expect(getActualSetDraft(applied.session, getCurrentFocusStep(applied.session))).toMatchObject({
       exerciseId: 'incline-db-press',
       actualWeightKg: 50,
-      actualReps: 9,
+      actualReps: 8,
       actualRir: 1,
       source: 'prescription',
     });

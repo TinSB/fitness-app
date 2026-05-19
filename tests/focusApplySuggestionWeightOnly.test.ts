@@ -16,18 +16,18 @@ const makeBenchWarmupSession = (): TrainingSession =>
     },
   ]);
 
-describe('Focus apply suggestion weight-only behavior', () => {
-  it('applies feasible equipment-aware weight only for a 17 lb bench warmup', () => {
+describe('Focus apply suggestion actionable weight and planned reps behavior', () => {
+  it('applies feasible equipment-aware weight and planned reps for a 17 lb bench warmup without filling RIR', () => {
     const applied = applySuggestedFocusStepWithResult(makeBenchWarmupSession(), 0);
     const draft = getActualSetDraft(applied.session, getCurrentFocusStep(applied.session));
 
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).toBe(45);
-    expect(draft?.actualReps).toBeUndefined();
+    expect(draft?.actualReps).toBe(10);
     expect(draft?.actualRir).toBeUndefined();
     expect(draft?.source).toBe('prescription');
   });
 
-  it('preserves existing user-entered reps and RIR while replacing weight', () => {
+  it('replaces stale reps with planned reps and preserves RIR while replacing weight', () => {
     const prepared = updateFocusActualDraftWithResult(makeFocusSession([makeExercise('bench-press', 1)]), 0, {
       actualWeightKg: 42.5,
       actualReps: 9,
@@ -40,7 +40,7 @@ describe('Focus apply suggestion weight-only behavior', () => {
 
     expect(draft).toMatchObject({
       actualWeightKg: 50,
-      actualReps: 9,
+      actualReps: 8,
       actualRir: 1,
       source: 'prescription',
     });

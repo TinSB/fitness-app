@@ -35,11 +35,12 @@ describe('actual set draft unit behavior', () => {
     expect(draft?.displayUnit).toBe('lb');
   });
 
-  it('apply suggestion copies planned weight only without mutating planned prescription', () => {
+  it('apply suggestion copies planned weight and reps without mutating planned prescription', () => {
     const session = applySuggestedFocusStep(makeFocusSession([makeExercise('bench', 1)]), 0);
     const state = getFocusNavigationState(session, 0);
     expect(state.actualDraft?.actualWeightKg).toBe(50);
-    expect(state.actualDraft?.actualReps).toBeUndefined();
+    expect(state.actualDraft?.actualReps).toBe(8);
     expect(state.currentStep.plannedWeight).toBe(50);
+    expect(state.currentStep.plannedReps).toBe(8);
   });
 });

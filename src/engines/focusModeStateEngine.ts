@@ -628,8 +628,10 @@ export const applySuggestedFocusStepWithResult = (session: TrainingSession, exer
     plannedRir: step.plannedRir,
     setPurpose: step.stepType === 'warmup' ? 'warmup' : 'working',
   });
+  const plannedReps = number(step.plannedReps);
   const updates = {
     ...(typeof actionablePrescription.actionableWeightKg === 'number' ? { actualWeightKg: actionablePrescription.actionableWeightKg } : {}),
+    ...(plannedReps > 0 ? { actualReps: plannedReps } : {}),
     source: 'prescription',
   } satisfies Partial<ActualSetDraft>;
   const existing = draftForStep(nextSession, draftStep);

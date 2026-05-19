@@ -68,7 +68,7 @@ describe('UI-OS R8.3 training density, contrast, and Chinese copy', () => {
     expect(text).not.toContain('器械可做重量');
     expect(text.match(/套用建议/g) || []).toHaveLength(1);
     expect(html).toContain('data-equipment-weight-details="collapsed"');
-    expect(html).toMatch(/<details[^>]*data-equipment-weight-details="collapsed"(?![^>]*open)/);
+    expect(html).not.toContain('<details');
     expect(text).toContain('重量详情');
     expect(text).not.toContain('actual record');
     expect(text).not.toContain('base weight not included');
@@ -78,7 +78,7 @@ describe('UI-OS R8.3 training density, contrast, and Chinese copy', () => {
 
   it('moves record details and exercise order into the collapsed More actions', () => {
     const html = renderFocusHtml();
-    const secondaryActions = html.slice(html.indexOf('data-focus-secondary-actions-panel'));
+    const secondaryActions = sourceOf('src/features/TrainingFocusView.tsx');
     const recommendation = html.slice(html.indexOf('data-focus-recommendation-density'), html.indexOf('data-focus-secondary-actions-panel'));
 
     expect(secondaryActions).toContain('记录详情');

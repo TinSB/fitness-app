@@ -23,8 +23,9 @@ describe('FocusModeActionBar', () => {
     expect(html).toContain('data-primary-action-kind="open_actual_record"');
     expect(html).toContain('记录本组');
     expect(html).toContain('data-focus-secondary-actions="visual-secondary"');
-    expect(html).toContain('复制上组');
-    expect(html).toContain('标记不适');
-    expect(html).toContain('替代动作');
+    expect(html).toContain('更多');
+    expect(html).not.toContain('复制上组');
+    expect(html).not.toContain('标记不适');
+    expect(html).not.toContain('替代动作');
   });
 });

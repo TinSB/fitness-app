@@ -107,8 +107,8 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
 
     expect(primaryBlock).toContain('空杆 45 lb × 10');
     expect(primaryBlock).not.toContain('17lb × 10 次');
-    expect(text).toContain('理论计算：17 lb');
-    expect(text).toContain('实际可做：45 lb');
+    expect(text).not.toContain('理论计算：17 lb');
+    expect(text).not.toContain('实际可做：45 lb');
   });
 
   it('keeps apply suggestion on the feasible equipment-aware load path', () => {
@@ -116,6 +116,7 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
     const draft = getActualSetDraft(applied.session, getCurrentFocusStep(applied.session));
 
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).toBe(45);
+    expect(draft?.actualReps).toBe(10);
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).not.toBe(17);
   });
 

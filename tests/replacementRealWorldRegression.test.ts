@@ -154,7 +154,7 @@ const replaceAndCompleteFirstSet = (
 
   session = applySuggestedFocusStep(session, 0);
   expect(getCurrentFocusStep(session).exerciseId).toBe(replacementId);
-  expect(getActualSetDraft(session, getCurrentFocusStep(session))?.actualReps).toBeUndefined();
+  expect(getActualSetDraft(session, getCurrentFocusStep(session))?.actualReps).toBe(getCurrentFocusStep(session).plannedReps);
   session = updateFocusActualDraft(session, 0, { actualReps: 10, source: 'manual' });
 
   const step = getCurrentFocusStep(session);

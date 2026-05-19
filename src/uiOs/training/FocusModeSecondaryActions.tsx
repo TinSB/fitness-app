@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { classNames } from '../../engines/engineUtils';
 import { ActionButton } from '../primitives/ActionButton';
 
@@ -14,29 +14,59 @@ export type FocusModeSecondaryActionItem = {
 
 export type FocusModeSecondaryActionsProps = {
   actions: FocusModeSecondaryActionItem[];
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
-export function FocusModeSecondaryActions({ actions }: FocusModeSecondaryActionsProps) {
+export function FocusModeSecondaryActions({ actions, isOpen, onOpenChange }: FocusModeSecondaryActionsProps) {
+  React.useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onOpenChange(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onOpenChange]);
+
   return (
-    <details className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2" data-focus-secondary-actions="visual-secondary" data-focus-secondary-mode="more-collapsed">
-      <summary className="cursor-pointer list-none text-center text-sm font-semibold text-white/70">更多</summary>
-      <div className="mt-3 grid grid-cols-3 gap-2" data-focus-secondary-actions-panel="visual-secondary">
-        {actions.map((action) => (
-          <ActionButton
-            key={action.id}
-            type="button"
-            variant={action.tone === 'danger' || action.active ? 'danger' : 'secondary'}
-            size="sm"
-            onClick={action.onClick}
-            disabled={action.disabled}
-            className={classNames('min-h-14 flex-col px-2 text-xs', action.tone === 'success' && !action.active ? 'text-emerald-200' : '')}
-            aria-label={action.label}
+    <div data-focus-secondary-actions="visual-secondary" data-focus-secondary-mode={isOpen ? 'more-open' : 'more-closed'}>
+      <ActionButton type="button" variant="secondary" size="sm" fullWidth onClick={() => onOpenChange(true)} aria-expanded={isOpen} aria-controls="focus-more-actions-panel">
+        更多
+      </ActionButton>
+      {isOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/55 backdrop-blur-sm" data-focus-more-backdrop="dismiss" onClick={() => onOpenChange(false)}>
+          <div
+            id="focus-more-actions-panel"
+            className="relative w-full rounded-t-3xl border border-white/10 bg-[#1c1c1e]/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-white shadow-[0_-18px_70px_rgba(0,0,0,0.35)]"
+            data-focus-secondary-actions-panel="visual-secondary"
+            data-theme-surface="bottom_sheet"
+            data-theme-mode="dark"
+            onClick={() => onOpenChange(false)}
           >
-            {action.icon}
-            <span className="font-semibold leading-tight">{action.label}</span>
-          </ActionButton>
-        ))}
-      </div>
-    </details>
+            <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-white/20" />
+            <div className="grid grid-cols-3 gap-2" data-focus-more-action-grid="protected" onClick={(event) => event.stopPropagation()}>
+              {actions.map((action) => (
+                <ActionButton
+                  key={action.id}
+                  type="button"
+                  variant={action.tone === 'danger' || action.active ? 'danger' : 'secondary'}
+                  size="sm"
+                  onClick={() => {
+                    action.onClick();
+                    onOpenChange(false);
+                  }}
+                  disabled={action.disabled}
+                  className={classNames('min-h-14 flex-col px-2 text-xs', action.tone === 'success' && !action.active ? 'text-emerald-200' : '')}
+                  aria-label={action.label}
+                >
+                  {action.icon}
+                  <span className="font-semibold leading-tight">{action.label}</span>
+                </ActionButton>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

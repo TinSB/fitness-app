@@ -107,7 +107,7 @@ export type FocusModeInteractionState = {
   shouldOpenActualRecordSheet: boolean;
   requiresSecondConfirmation: boolean;
   canApplySuggestion: boolean;
-  applySuggestionMode: 'weight_only' | 'unavailable';
+  applySuggestionMode: 'weight_and_reps' | 'unavailable';
   shouldCountAsFormalSet: boolean;
   warning?: string;
   severity: 'info' | 'warning' | 'danger';
@@ -139,7 +139,7 @@ const makeState = (
   shouldOpenActualRecordSheet: options.shouldOpenActualRecordSheet ?? primaryAction === 'open_actual_record',
   requiresSecondConfirmation: options.requiresSecondConfirmation ?? false,
   canApplySuggestion: options.canApplySuggestion ?? input.canApplySuggestion,
-  applySuggestionMode: options.applySuggestionMode ?? (input.canApplySuggestion ? 'weight_only' : 'unavailable'),
+  applySuggestionMode: options.applySuggestionMode ?? (input.canApplySuggestion ? 'weight_and_reps' : 'unavailable'),
   shouldCountAsFormalSet: options.shouldCountAsFormalSet ?? input.isFormalWorkingSet,
   warning: options.warning,
   severity: options.severity ?? 'info',
@@ -230,7 +230,7 @@ export const resolveFocusModeInteractionState = (input: FocusModeInteractionInpu
 
   if (input.canRecord && (input.setState === 'warmup_set' || input.setState === 'working_set' || input.setState === 'pending_actual_input')) {
     return makeState(input, 'open_actual_record', '记录本组', {
-      secondaryActions: input.canApplySuggestion ? [{ kind: 'apply_weight', label: '套用重量' }, ...baseSecondaryActions] : baseSecondaryActions,
+      secondaryActions: input.canApplySuggestion ? [{ kind: 'apply_weight', label: '套用建议' }, ...baseSecondaryActions] : baseSecondaryActions,
       shouldOpenActualRecordSheet: true,
     });
   }
