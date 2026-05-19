@@ -41,3 +41,5 @@ Thumbs.db
 
 # Local Codex task prompts/logs
 .codex-tasks/
+.vercel
+.env*.local

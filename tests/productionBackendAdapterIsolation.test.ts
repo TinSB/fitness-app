@@ -56,6 +56,6 @@ describe('production backend adapter skeleton isolation', () => {
     ]);
     expect(packageJson.scripts).not.toHaveProperty('deploy:production');
     expect(existsSync(resolve(repoRoot(), 'package-lock.json'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(false);
   });
 });

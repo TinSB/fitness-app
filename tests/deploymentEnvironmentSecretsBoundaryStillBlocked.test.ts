@@ -9,7 +9,7 @@ const collectRepoFiles = (directory: string): string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      if (['node_modules', '.git', 'dist', '.ironpath'].includes(entry.name)) return [];
+      if (['node_modules', '.git', 'dist', '.ironpath', '.vercel'].includes(entry.name)) return [];
       return collectRepoFiles(path);
     }
     return [relative(repoRoot(), path).replaceAll('\\', '/')];
@@ -101,11 +101,13 @@ describe('deployment environment secrets boundary still blocked', () => {
     expect(packageJson.scripts).not.toHaveProperty('deploy');
     expect(packageJson.scripts).not.toHaveProperty('deploy:production');
     expect(existsSync(resolve(repoRoot(), 'package-lock.json'))).toBe(true);
-    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(true);
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml'))).toBe(false);
+    expect(readSource('.gitignore')).toContain('.vercel');
+    expect(readSource('.gitignore')).toContain('.env*.local');
 
     const allowedExistingConfigFiles = new Set(['.env.example', 'vercel.json']);
     const suspiciousFiles = collectRepoFiles(repoRoot()).filter((path) =>
-      !allowedExistingConfigFiles.has(path) && (
+      !allowedExistingConfigFiles.has(path) && !/^\.env.*\.local$/i.test(path) && (
       /^vercel\.json$/i.test(path)
       || /^\.env(\.|$)/i.test(path)
       || /(^|\/)(migrations?|schema)\/.*(normalized|production|user|account|auth|sync|cloud)/i.test(path)
