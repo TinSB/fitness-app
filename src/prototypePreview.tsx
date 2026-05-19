@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IronPathOS2 } from './prototype/IronPathOS2';
+import IronPathOS2 from './prototype/IronPathOS2';
 import './index.css';
 
 // Preview wrapper for the UI-OS 2 prototype
