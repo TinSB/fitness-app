@@ -13,12 +13,14 @@ interface SafeAreaHeaderProps {
 export const SafeAreaHeader = ({ title, onClose, closeLabel = '关闭', className, children }: SafeAreaHeaderProps) => (
   <div
     className={classNames(
-      'flex items-center justify-between gap-3 border-b border-slate-200 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:pt-3',
+      'flex items-center justify-between gap-3 border-b border-white/10 bg-[#0a0a0b]/95 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] text-white md:pt-3',
       className
     )}
+    data-theme-surface="modal_surface"
+    data-theme-mode="dark"
   >
     <div className="min-w-0">
-      <h2 className="truncate text-lg font-semibold text-slate-950">{title}</h2>
+      <h2 className="truncate text-lg font-semibold text-white">{title}</h2>
       {children}
     </div>
     {onClose ? (

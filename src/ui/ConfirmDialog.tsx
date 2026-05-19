@@ -43,10 +43,12 @@ export const ConfirmDialog = ({
     role="dialog"
     aria-modal="true"
     aria-label={title}
-    className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10"
+    className="w-full max-w-sm rounded-xl border border-white/10 bg-[#1c1c1e] p-4 text-white shadow-xl shadow-black/40"
+    data-theme-surface="modal_surface"
+    data-theme-mode="dark"
   >
-    <h2 className="text-lg font-semibold leading-7 text-slate-950">{title}</h2>
-    <div className="mt-2 max-h-[55svh] overflow-y-auto pr-1 text-sm leading-6 text-slate-500">{description}</div>
+    <h2 className="text-lg font-semibold leading-7 text-white">{title}</h2>
+    <div className="mt-2 max-h-[55svh] overflow-y-auto pr-1 text-sm leading-6 text-white/58">{description}</div>
     <div className="mt-4 grid grid-cols-2 gap-2">
       <ActionButton variant="secondary" size="lg" aria-label={resolvedCancelText} onClick={onCancel}>
         {resolvedCancelText}

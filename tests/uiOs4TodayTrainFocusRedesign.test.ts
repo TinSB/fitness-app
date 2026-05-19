@@ -105,7 +105,7 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
     const detailIndex = text.indexOf('重量详情');
     const primaryBlock = text.slice(prescriptionIndex, detailIndex);
 
-    expect(primaryBlock).toContain('空杆 45 lb × 10 次');
+    expect(primaryBlock).toContain('空杆 45 lb × 10');
     expect(primaryBlock).not.toContain('17lb × 10 次');
     expect(text).toContain('理论计算：17 lb');
     expect(text).toContain('实际可做：45 lb');

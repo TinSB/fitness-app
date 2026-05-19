@@ -3,6 +3,7 @@ import { EquipmentAwareLoadCard, type EquipmentLoadType } from '../uiOs/training
 
 export type EquipmentAwareLoadDisplayProps = {
   displayResult: EquipmentAwareRecommendationDisplayResult;
+  reps?: number | string;
   compact?: boolean;
   showDetails?: boolean;
   onOpenEquipmentProfile?: () => void;
@@ -26,6 +27,7 @@ const mapState = (displayResult: EquipmentAwareRecommendationDisplayResult) => {
 
 export const EquipmentAwareLoadDisplay = ({
   displayResult,
+  reps,
   compact = false,
   showDetails = false,
   onOpenEquipmentProfile,
@@ -54,6 +56,7 @@ export const EquipmentAwareLoadDisplay = ({
       <EquipmentAwareLoadCard
         type={mapEquipmentKind(displayResult.equipmentKind)}
         mainDisplay={displayResult.primaryLabel}
+        reps={reps}
         subInfo={secondaryItems.length ? secondaryItems.join(' · ') : undefined}
         state={mapState(displayResult)}
         compact={compact}

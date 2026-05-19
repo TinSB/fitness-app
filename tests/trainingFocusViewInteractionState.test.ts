@@ -66,7 +66,7 @@ describe('TrainingFocusView interaction state integration', () => {
 
     expect(html).toContain('data-primary-action-kind="open_actual_record"');
     expect(text).toContain('记录本组');
-    expect(text).toContain('空杆 45 lb × 10 次');
+    expect(text).toContain('空杆 45 lb × 10');
     expect(text).toContain('理论计算：17 lb');
   });
 

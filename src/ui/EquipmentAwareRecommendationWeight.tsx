@@ -13,6 +13,7 @@ export type EquipmentAwareRecommendationWeightProps = {
   readinessBias?: ReadinessBias;
   roundingPreference?: RoundingPreference;
   equipmentProfile?: EquipmentProfile;
+  reps?: number | string;
   compact?: boolean;
   showDetails?: boolean;
   onOpenEquipmentProfile?: () => void;
@@ -27,6 +28,7 @@ export const EquipmentAwareRecommendationWeight = ({
   readinessBias,
   roundingPreference,
   equipmentProfile,
+  reps,
   compact = false,
   showDetails = false,
   onOpenEquipmentProfile,
@@ -55,6 +57,7 @@ export const EquipmentAwareRecommendationWeight = ({
     >
       <EquipmentAwareLoadDisplay
         displayResult={displayResult}
+        reps={reps}
         compact={compact}
         showDetails={showDetails}
         onOpenEquipmentProfile={onOpenEquipmentProfile}
