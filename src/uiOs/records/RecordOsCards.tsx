@@ -1,5 +1,6 @@
 import React from 'react';
 import { classNames } from '../../engines/engineUtils';
+import { GlassCard } from '../primitives/GlassCard';
 
 type SurfaceProps = {
   children: React.ReactNode;
@@ -8,15 +9,15 @@ type SurfaceProps = {
 
 export function RecordOsOverview({ children, className = '' }: SurfaceProps) {
   return (
-    <section
-      className={classNames(
-        'rounded-[28px] border border-white/10 bg-[#0a0a0b] p-5 text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]',
-        className,
-      )}
-      aria-label="历史与进步总览"
+    <GlassCard
+      as="section"
+      padding="lg"
+      className={classNames('rounded-[28px] bg-[#0a0a0b] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]', className)}
+      ariaLabel="历史与进步总览"
+      highlight
     >
       {children}
-    </section>
+    </GlassCard>
   );
 }
 

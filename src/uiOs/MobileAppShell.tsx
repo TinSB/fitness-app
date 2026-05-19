@@ -3,7 +3,7 @@ import { Dumbbell } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { AppTopBar } from './AppTopBar';
 import { BottomNav, type UiOsBottomNavItem } from './BottomNav';
-import { LocalFirstSafetyStrip } from './LocalFirstSafetyStrip';
+import { SafetyStrip } from './surfaces/SafetyStrip';
 import { PageContainer } from './PageContainer';
 
 interface MobileAppShellProps<T extends string> {
@@ -74,7 +74,11 @@ export const MobileAppShell = <T extends string>({
 
       <main className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_36%),#0a0a0b]">
         {!immersive ? <AppTopBar activeSession={activeSession} trainTabId={trainTabId} onNavigate={onNavigate} /> : null}
-        {!immersive ? <LocalFirstSafetyStrip /> : null}
+        {!immersive ? (
+          <div className="mx-auto w-full max-w-[1600px] px-4 pt-3 md:px-6 lg:px-8">
+            <SafetyStrip includeSecondaryCopy />
+          </div>
+        ) : null}
         <div className={classNames('min-h-0 flex-1 overflow-y-auto lg:pb-0', immersive ? 'pb-0' : 'pb-28')}>
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>
