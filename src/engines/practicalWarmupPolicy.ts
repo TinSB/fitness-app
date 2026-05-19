@@ -13,6 +13,7 @@ export type PracticalWarmupExercise = {
 export type PracticalWarmupPolicyInput = {
   workWeightKg: unknown;
   exercise: PracticalWarmupExercise;
+  intent?: 'normal' | 'pr_test' | 'max' | 'very_heavy';
   allowLowRepWarmups?: boolean;
 };
 
@@ -25,6 +26,8 @@ export type PracticalWarmupSet = {
 export type PracticalWarmupPolicyResult = {
   warmupSets: PracticalWarmupSet[];
   maxWarmupSets: number;
+  intent: 'normal' | 'pr_test' | 'max' | 'very_heavy';
+  allowsLowRepWarmups: boolean;
   usesEquipmentAwareFeasibleLoads: true;
   sourceOfTruthChanged: false;
   persistenceChanged: false;
@@ -42,8 +45,10 @@ const isNoWarmupExercise = (exercise: PracticalWarmupExercise): boolean => {
   return (
     normalize(exercise.warmupPreference) === 'never' ||
     label.includes('mobility') ||
+    label.includes('灵活') ||
     label.includes('correction') ||
     label.includes('corrective') ||
+    label.includes('纠偏') ||
     label.includes('activation') ||
     label.includes('breathing') ||
     label.includes('stretch')
@@ -76,18 +81,28 @@ const isHeavyBarbellCompound = (exercise: PracticalWarmupExercise, workWeightKg:
   return normalize(exercise.kind) === 'compound' && barbellPattern && (workWeightKg >= 60 || normalize(exercise.fatigueCost) === 'high');
 };
 
-const ratiosFor = (exercise: PracticalWarmupExercise, workWeightKg: number): Array<{ ratio: number; reps: number; label: string }> => {
+const explicitLowRepIntent = (input: Pick<PracticalWarmupPolicyInput, 'intent' | 'allowLowRepWarmups'>) =>
+  Boolean(input.allowLowRepWarmups || input.intent === 'pr_test' || input.intent === 'max' || input.intent === 'very_heavy');
+
+const ratiosFor = (
+  exercise: PracticalWarmupExercise,
+  workWeightKg: number,
+  allowLowRepWarmups: boolean,
+): Array<{ ratio: number; reps: number; label: string }> => {
   if (isNoWarmupExercise(exercise) || workWeightKg < 25) return [];
 
   if (isMachineOrDumbbell(exercise)) {
-    if (workWeightKg < 40) return [{ ratio: 0.55, reps: 8, label: '适应组' }];
-    return [
-      { ratio: 0.45, reps: 8, label: '适应组' },
-      { ratio: 0.65, reps: 6, label: '适应组' },
-    ];
+    return [{ ratio: workWeightKg < 40 ? 0.55 : 0.6, reps: 8, label: '适应组' }];
   }
 
   if (isHeavyBarbellCompound(exercise, workWeightKg)) {
+    if (allowLowRepWarmups) {
+      return [
+        { ratio: 0.35, reps: 8, label: '热身组' },
+        { ratio: 0.6, reps: 4, label: '热身组' },
+        { ratio: 0.82, reps: 2, label: '热身组' },
+      ];
+    }
     return [
       { ratio: 0.35, reps: 10, label: '热身组' },
       { ratio: 0.55, reps: 6, label: '热身组' },
@@ -113,12 +128,14 @@ const resolveActionableWarmupWeightKg = (exercise: PracticalWarmupExercise, theo
 
 export const buildPracticalWarmupPolicy = (input: PracticalWarmupPolicyInput): PracticalWarmupPolicyResult => {
   const workWeightKg = number(input.workWeightKg);
-  const ratios = ratiosFor(input.exercise, workWeightKg);
+  const intent = input.intent || 'normal';
+  const allowsLowRepWarmups = explicitLowRepIntent(input);
+  const ratios = ratiosFor(input.exercise, workWeightKg, allowsLowRepWarmups);
   const maxWarmupSets = Math.min(3, ratios.length);
   const warmupSets: PracticalWarmupSet[] = [];
 
   for (const item of ratios.slice(0, 3)) {
-    const reps = input.allowLowRepWarmups ? item.reps : Math.max(3, item.reps);
+    const reps = allowsLowRepWarmups ? item.reps : Math.max(3, item.reps);
     const theoreticalWeightKg = workWeightKg * item.ratio;
     const actionableWeightKg = resolveActionableWarmupWeightKg(input.exercise, theoreticalWeightKg, reps);
     if (!actionableWeightKg || actionableWeightKg >= workWeightKg) continue;
@@ -133,6 +150,8 @@ export const buildPracticalWarmupPolicy = (input: PracticalWarmupPolicyInput): P
   return {
     warmupSets: warmupSets.slice(0, maxWarmupSets),
     maxWarmupSets,
+    intent,
+    allowsLowRepWarmups,
     usesEquipmentAwareFeasibleLoads: true,
     sourceOfTruthChanged: false,
     persistenceChanged: false,
