@@ -9,7 +9,8 @@ describe('UI-OS R2 Focus shell behavior', () => {
   it('keeps normal bottom nav and hides it in immersive Focus Mode', () => {
     expect(appSource).toContain('immersive={Boolean(useFocusTrainingShell)}');
     expect(shellSource).toContain('{!immersive ? <BottomNav');
-    expect(shellSource).toContain("immersive ? 'pb-0' : 'pb-28'");
+    expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
+    expect(shellSource).toContain("pb-[calc(9rem+env(safe-area-inset-bottom))]");
     expect(appSource).toContain('<TrainingFocusView');
   });
 

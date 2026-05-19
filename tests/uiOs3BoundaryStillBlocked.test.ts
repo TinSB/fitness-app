@@ -61,6 +61,7 @@ describe('UI-OS 3 boundary still blocked', () => {
     const combined = [
       doc(),
       readSource('src/uiOs/LocalFirstSafetyStrip.tsx'),
+      readSource('src/uiOs/surfaces/SafetyStrip.tsx'),
       readSource('src/uiOs/MobileAppShell.tsx'),
     ].join('\n');
 

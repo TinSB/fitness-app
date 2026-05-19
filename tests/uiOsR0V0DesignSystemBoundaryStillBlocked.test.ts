@@ -27,7 +27,7 @@ describe('UI-OS R0 v0 extraction boundary still blocked', () => {
     expect(read('prototype.html')).toContain('/src/prototypePreview.tsx');
     expect(read('src/uiOs/MobileAppShell.tsx')).toContain('BottomNav');
     expect(read('src/uiOs/BottomNav.tsx')).toContain('FloatingBottomNav');
-    expect(read('src/uiOs/MobileAppShell.tsx')).toContain('SafetyStrip');
+    expect(read('src/uiOs/surfaces/SafetyStrip.tsx')).toContain('SafetyStrip');
   });
 
   it('keeps extracted production UI components free of storage network backend and route behavior', () => {

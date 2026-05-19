@@ -86,14 +86,15 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
     expect(cardsSource).toContain('backdrop-blur-xl');
   });
 
-  it('keeps Today daily recommendation, focus override, safety-local copy path, and start or continue action visible', () => {
+  it('keeps Today daily recommendation, compact focus override, source-unclear safety path, and start or continue action visible', () => {
     expect(todaySource).toContain('<TodayDecisionHero');
     expect(todaySource).toContain('buildTodayDecisionSurface');
     expect(todaySource).toContain('<TodayFocusOverrideControl');
     expect(todayFocusOverrideSource).toContain('今天想练');
     expect(todayFocusOverrideSource).toContain('选择只影响今天');
     expect(todayFocusOverrideSource).toContain('不修改长期计划');
-    expect(todaySource).toContain('<SafetyStrip includeSecondaryCopy');
+    expect(todaySource).toContain('<SafetyStrip state="source-unclear"');
+    expect(todaySource).not.toContain('<SafetyStrip includeSecondaryCopy');
     expect(todaySource).toContain('继续训练');
     expect(todaySource).toContain('primaryAction');
   });

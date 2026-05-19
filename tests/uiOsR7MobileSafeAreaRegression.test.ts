@@ -24,7 +24,9 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     expect(html).toContain('normal page content');
     expect(html).toContain('fixed bottom-0');
     expect(html).toContain('env(safe-area-inset-bottom)');
-    expect(html).toContain('pb-28');
+    expect(html).toContain('data-shell-safe-bottom="bottom-nav-protected"');
+    expect(html).toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('scroll-pb-[calc(9rem+env(safe-area-inset-bottom))]');
     for (const label of ['今日', '训练', '历史', '进步', '设置']) expect(text(html)).toContain(label);
   });
 
@@ -45,7 +47,7 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     expect(html).toContain('data-focus-mode-action-bar="one-dominant-primary"');
     expect(html).toContain('记录本组');
     expect(html).not.toContain('fixed bottom-0');
-    expect(html).not.toContain('pb-28');
+    expect(html).not.toContain('bottom-nav-protected');
     expect(html).toContain('pb-0');
   });
 
@@ -54,7 +56,8 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     const navSource = readFileSync('src/uiOs/navigation/FloatingBottomNav.tsx', 'utf8');
 
     expect(shellSource).toContain('{!immersive ? <BottomNav');
-    expect(shellSource).toContain("immersive ? 'pb-0' : 'pb-28'");
+    expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
+    expect(shellSource).toContain("pb-[calc(9rem+env(safe-area-inset-bottom))]");
     expect(navSource).toContain('env(safe-area-inset-bottom)');
     expect(navSource).toContain('pointer-events-none');
   });

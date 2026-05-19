@@ -3,7 +3,6 @@ import { Dumbbell } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { AppTopBar } from './AppTopBar';
 import { BottomNav, type UiOsBottomNavItem } from './BottomNav';
-import { SafetyStrip } from './surfaces/SafetyStrip';
 import { PageContainer } from './PageContainer';
 
 interface MobileAppShellProps<T extends string> {
@@ -89,21 +88,20 @@ export const MobileAppShell = <T extends string>({
         </nav>
 
         <div className="border-t border-white/10 px-5 py-4 text-xs leading-5 text-white/45">
-          当前使用本地数据。云端候选不会自动同步，本地训练记录仍可继续。
+          本地优先 · 手动候选
         </div>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_36%),#0a0a0b]">
         {!immersive ? <AppTopBar activeSession={activeSession} trainTabId={trainTabId} onNavigate={onNavigate} /> : null}
-        {!immersive ? (
-          <div className="mx-auto w-full max-w-[1600px] px-4 pt-3 md:px-6 lg:px-8">
-            <SafetyStrip includeSecondaryCopy />
-          </div>
-        ) : null}
         <div
-          className={classNames('min-h-0 flex-1 overflow-y-auto lg:pb-0', immersive ? 'pb-0' : 'pb-28')}
+          className={classNames(
+            'min-h-0 flex-1 overflow-y-auto lg:pb-0',
+            immersive ? 'pb-0' : 'pb-[calc(9rem+env(safe-area-inset-bottom))] scroll-pb-[calc(9rem+env(safe-area-inset-bottom))]',
+          )}
           onScroll={handleShellScroll}
           data-shell-scroll-area="bottom-nav-aware"
+          data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}
         >
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>
