@@ -1,0 +1,58 @@
+import { classNames } from '../../engines/engineUtils';
+
+export type EquipmentLoadType = 'barbell' | 'dumbbell' | 'machine-stack' | 'plate-loaded' | 'smith' | 'unknown';
+export type EquipmentLoadCardState = 'default' | 'warning' | 'blocked';
+
+export type EquipmentAwareLoadCardProps = {
+  type?: EquipmentLoadType;
+  mainDisplay: string;
+  subInfo?: string;
+  note?: string;
+  state?: EquipmentLoadCardState;
+  className?: string;
+};
+
+const typeLabels: Record<EquipmentLoadType, string> = {
+  barbell: '杠铃',
+  dumbbell: '哑铃',
+  'machine-stack': '器械',
+  'plate-loaded': '挂片器械',
+  smith: '史密斯架',
+  unknown: '未知器械',
+};
+
+const stateGradients: Record<EquipmentLoadCardState, string> = {
+  default: 'from-emerald-500/12 via-emerald-500/6 to-transparent',
+  warning: 'from-amber-500/12 via-amber-500/6 to-transparent',
+  blocked: 'from-red-500/12 via-red-500/6 to-transparent',
+};
+
+export function EquipmentAwareLoadCard({
+  type = 'barbell',
+  mainDisplay,
+  subInfo,
+  note,
+  state = 'default',
+  className = '',
+}: EquipmentAwareLoadCardProps) {
+  return (
+    <section
+      className={classNames('relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b', stateGradients[state], className)}
+      style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
+      aria-label="Equipment-aware load card"
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-xs text-white/35 uppercase tracking-widest font-medium">{typeLabels[type]}</span>
+      </div>
+
+      <div className="mb-4">
+        <span className="text-5xl font-extralight text-white tracking-tight" style={{ fontFeatureSettings: '"tnum"' }}>
+          {mainDisplay}
+        </span>
+      </div>
+
+      {subInfo ? <p className="text-base text-white/55 mb-2">{subInfo}</p> : null}
+      {note ? <p className="text-sm text-white/35 leading-relaxed">{note}</p> : null}
+    </section>
+  );
+}

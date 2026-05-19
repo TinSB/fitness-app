@@ -1,6 +1,8 @@
 import React from 'react';
 import { classNames } from '../../engines/engineUtils';
 import { WorkoutActionBar } from '../../ui/WorkoutActionBar';
+import { GlassCard } from '../primitives/GlassCard';
+import { TrainingFocusHero } from './TrainingFocusHero';
 
 type SurfaceProps = {
   children: React.ReactNode;
@@ -14,20 +16,17 @@ export const trainingOsInsetSurface = 'border border-white/10 bg-white/[0.09] te
 
 export function TodayHeroCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section
-      className={classNames('overflow-hidden rounded-[28px]', trainingOsGlassSurface, className)}
-      aria-label="今日训练总览"
-    >
+    <GlassCard as="section" padding="none" className={classNames('overflow-hidden rounded-[28px]', className)} ariaLabel="今日训练总览" highlight>
       {children}
-    </section>
+    </GlassCard>
   );
 }
 
 export function TodayFocusOverrideCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section className={classNames('rounded-3xl p-4', trainingOsInsetSurface, className)} aria-label="今天想练">
+    <GlassCard as="section" padding="md" className={classNames('rounded-3xl', className)} ariaLabel="今天想练">
       {children}
-    </section>
+    </GlassCard>
   );
 }
 
@@ -41,28 +40,25 @@ export function UnfinishedSessionNotice({ children, className = '' }: SurfacePro
 
 export function TrainingFocusHeroCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section className={classNames('rounded-[30px] p-5', trainingOsGlassSurface, className)} aria-label="当前训练动作">
+    <TrainingFocusHero className={className}>
       {children}
-    </section>
+    </TrainingFocusHero>
   );
 }
 
 export function SetPrescriptionCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section
-      className={classNames('rounded-3xl border border-emerald-300/25 bg-emerald-300/10 p-4 text-white backdrop-blur-xl', className)}
-      aria-label="推荐处方"
-    >
+    <GlassCard as="section" padding="md" className={classNames('rounded-3xl text-white', className)} ariaLabel="推荐处方" highlight>
       {children}
-    </section>
+    </GlassCard>
   );
 }
 
 export function ActualSetInputCard({ children, className = '' }: SurfaceProps) {
   return (
-    <section className={classNames('rounded-3xl p-4', trainingOsInsetSurface, className)} aria-label="实际记录">
+    <GlassCard as="section" padding="md" className={classNames('rounded-3xl', className)} ariaLabel="实际记录">
       {children}
-    </section>
+    </GlassCard>
   );
 }
 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { classNames } from '../../engines/engineUtils';
+import { GlassCard } from '../primitives/GlassCard';
+import { SettingsGroupCard } from './SettingsGroupCard';
 
 type SurfaceProps = {
   children: React.ReactNode;
@@ -8,23 +10,23 @@ type SurfaceProps = {
 
 export function SettingsOsHero({ children, className = '' }: SurfaceProps) {
   return (
-    <section
-      className={classNames(
-        'rounded-[28px] border border-white/10 bg-[#0a0a0b] p-5 text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]',
-        className,
-      )}
-      aria-label="设置安全总览"
+    <GlassCard
+      as="section"
+      padding="lg"
+      className={classNames('rounded-[28px] bg-[#0a0a0b] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]', className)}
+      ariaLabel="设置安全总览"
+      highlight
     >
       {children}
-    </section>
+    </GlassCard>
   );
 }
 
 export function SettingsOsGroup({ children, className = '' }: SurfaceProps) {
   return (
-    <section className={classNames('rounded-3xl border border-slate-200 bg-white p-4 shadow-sm', className)}>
+    <SettingsGroupCard className={className}>
       {children}
-    </section>
+    </SettingsGroupCard>
   );
 }
 
