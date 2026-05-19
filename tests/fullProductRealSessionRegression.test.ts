@@ -351,7 +351,7 @@ describe('full product real session regression', () => {
 
     const summary = buildSessionDetailSummary(completedSession);
     expect(summary.completedWorkingSetCount).toBe(sessionCompletedSets(completedSession));
-    expect(summary.workingVolumeKg).toBe(sessionVolume(completedSession));
+    expect(summary.workingVolumeKg).toBeCloseTo(sessionVolume(completedSession), 5);
     expect(summary.incompleteSetCount).toBe(0);
     expect(summary.warmupSetCount).toBeGreaterThan(0);
     expect(summary.warmupVolumeKg).toBeGreaterThan(900);

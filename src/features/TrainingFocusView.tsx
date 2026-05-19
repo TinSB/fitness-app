@@ -32,6 +32,7 @@ import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
+import { buildActionableEquipmentAwarePrescription } from '../engines/equipmentAwareActionablePrescription';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
 type FocusBlockType = 'main' | 'correction' | 'functional';
@@ -75,11 +76,15 @@ const sameOptionalNumber = (left: unknown, right: unknown) => {
   return typeof left === 'number' && typeof right === 'number' && left === right;
 };
 
-export const isFocusSuggestionApplied = (currentStep: FocusTrainingStep, actualDraft: ActualSetDraft | null | undefined) =>
+export const isFocusSuggestionApplied = (
+  currentStep: FocusTrainingStep,
+  actualDraft: ActualSetDraft | null | undefined,
+  actionableWeightKg?: number,
+) =>
   Boolean(
     actualDraft &&
       actualDraft.source === 'prescription' &&
-      sameOptionalNumber(actualDraft.actualWeightKg, currentStep.plannedWeight) &&
+      sameOptionalNumber(actualDraft.actualWeightKg, actionableWeightKg ?? currentStep.plannedWeight) &&
       sameOptionalNumber(actualDraft.actualReps, currentStep.plannedReps) &&
       sameOptionalNumber(actualDraft.actualRir, currentStep.plannedRir),
   );
@@ -88,10 +93,12 @@ export const buildFocusCurrentSetSummary = ({
   currentStep,
   actualDraft,
   unitSettings,
+  actionableWeightKg,
 }: {
   currentStep: FocusTrainingStep;
   actualDraft: ActualSetDraft | null | undefined;
   unitSettings: UnitSettings;
+  actionableWeightKg?: number;
 }): FocusCurrentSetSummary => {
   if (currentStep.stepType !== 'warmup' && currentStep.stepType !== 'working') {
     return {
@@ -109,7 +116,7 @@ export const buildFocusCurrentSetSummary = ({
   const repsText = hasReps ? `${number(actualDraft?.actualReps)} 次` : '待输入';
   const rirText = typeof actualDraft?.actualRir === 'number' ? formatRirLabel(actualDraft.actualRir) : '';
   const sourceLabel = actualDraft?.source ? focusDraftSourceLabels[actualDraft.source] : undefined;
-  const isSuggestionApplied = isFocusSuggestionApplied(currentStep, actualDraft);
+  const isSuggestionApplied = isFocusSuggestionApplied(currentStep, actualDraft, actionableWeightKg);
   const actualParts = [`${weightText} × ${repsText}`, rirText].filter(Boolean);
   const summaryParts = [`${weightText} × ${repsText}`, rirText, sourceLabel].filter(Boolean);
 
@@ -554,6 +561,21 @@ export function TrainingFocusView({
   const blockType: FocusBlockType = isSupportStep ? supportLog?.blockType || currentStep.blockType || 'functional' : 'main';
   const supportTimeSec = supportExercise && 'timeSec' in supportExercise ? supportExercise.timeSec : undefined;
   const supportDistanceM = supportExercise && 'distanceM' in supportExercise ? supportExercise.distanceM : undefined;
+  const equipmentAwareExerciseName = mainExercisePoolId || mainExercise?.id || displayExerciseName(mainExercise);
+  const actionablePrescription = !isSupportStep
+    ? buildActionableEquipmentAwarePrescription({
+        exerciseName: equipmentAwareExerciseName,
+        plannedWeightKg: currentStep.plannedWeight,
+        plannedReps: currentStep.plannedReps,
+        plannedRir: currentStep.plannedRir,
+        setPurpose: currentStep.stepType === 'warmup' ? 'warmup' : 'working',
+        unitSettings,
+        showTheoreticalDetail: true,
+      })
+    : null;
+  const plannedWeightSummary = actionablePrescription?.shouldUseFeasibleLoad
+    ? actionablePrescription.primaryDisplayWeightLabel
+    : formatWeight(currentStep.plannedWeight, unitSettings);
 
   const plannedSummary =
     isSupportStep && supportExercise
@@ -563,16 +585,21 @@ export function TrainingFocusView({
       : isSupportStep
         ? '按支持动作计划完成'
         : currentStep.stepType === 'working' && mainExercise
-          ? `${formatWeight(currentStep.plannedWeight, unitSettings)} × 建议 ${number(currentStep.plannedReps)} 次 · 目标范围 ${mainExercise.repMin}-${mainExercise.repMax} 次${
+          ? `${plannedWeightSummary} × 建议 ${number(currentStep.plannedReps)} 次 · 目标范围 ${mainExercise.repMin}-${mainExercise.repMax} 次${
               currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''
             }`
-          : `${formatWeight(currentStep.plannedWeight, unitSettings)} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''}`;
+          : `${plannedWeightSummary} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''}`;
 
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
   const actualRir = actualDraft?.actualRir;
   const actualDisplayWeight = actualWeight === undefined ? undefined : convertKgToDisplayWeight(actualWeight, weightUnit);
-  const currentSetSummary = buildFocusCurrentSetSummary({ currentStep, actualDraft, unitSettings });
+  const currentSetSummary = buildFocusCurrentSetSummary({
+    currentStep,
+    actualDraft,
+    unitSettings,
+    actionableWeightKg: actionablePrescription?.actionableWeightKg,
+  });
   const painBoundaryNotice = buildFocusPainBoundaryNotice({ currentStep, actualDraft });
   const actualSummary = currentSetSummary.actualText;
   const weightAdjustments = weightUnit === 'lb' ? [-20, -10, -5, 5, 10, 20] : [-10, -5, -2.5, 2.5, 5, 10];
@@ -1090,7 +1117,7 @@ export function TrainingFocusView({
                   <div className="text-xs font-semibold text-slate-500">推荐处方</div>
                   <div className="mt-2 text-lg font-bold leading-7">{plannedSummary}</div>
                   <EquipmentAwareRecommendationWeight
-                    exerciseName={mainExercisePoolId || mainExercise.id || displayExerciseName(mainExercise)}
+                    exerciseName={equipmentAwareExerciseName}
                     plannedWeightKg={currentStep.plannedWeight}
                     setPurpose={currentStep.stepType === 'warmup' ? 'warmup' : 'working'}
                     unitSettings={unitSettings}

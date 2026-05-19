@@ -5,6 +5,7 @@ import { createRestTimerState } from './restTimerEngine';
 import { convertKgToDisplayWeight } from './unitConversionEngine';
 import { decideWarmupPolicy, getWarmupMovementPattern, type WarmupDecision, type WarmupPolicyDecision } from './warmupPolicyEngine';
 import type { FocusActionResult } from './workoutExecutionStateMachine';
+import { buildActionableEquipmentAwarePrescription } from './equipmentAwareActionablePrescription';
 
 export type { ActualSetDraft, FocusStepType };
 
@@ -618,8 +619,17 @@ export const applySuggestedFocusStepWithResult = (session: TrainingSession, exer
   const step = findStepForExercise(nextSession, exerciseIndex);
   if (step.stepType === 'completed') return { session, actionResult: warningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step') };
   const draftStep = draftStepForCurrentIdentity(step, nextSession);
+  const exercise = nextSession.exercises?.[step.exerciseIndex];
+  const identity = getCurrentExerciseIdentity(step, nextSession);
+  const actionablePrescription = buildActionableEquipmentAwarePrescription({
+    exerciseName: identity.recordExerciseId || exercise?.id || exercise?.name || step.exerciseId,
+    plannedWeightKg: step.plannedWeight,
+    plannedReps: step.plannedReps,
+    plannedRir: step.plannedRir,
+    setPurpose: step.stepType === 'warmup' ? 'warmup' : 'working',
+  });
   const updates = {
-    ...(typeof step.plannedWeight === 'number' ? { actualWeightKg: step.plannedWeight } : {}),
+    ...(typeof actionablePrescription.actionableWeightKg === 'number' ? { actualWeightKg: actionablePrescription.actionableWeightKg } : {}),
     ...(typeof step.plannedReps === 'number' ? { actualReps: step.plannedReps } : {}),
     ...(typeof step.plannedRir === 'number' ? { actualRir: step.plannedRir } : {}),
     source: 'prescription',
