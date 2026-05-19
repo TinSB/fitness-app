@@ -6,10 +6,13 @@ const read = (path: string) => readFileSync(path, 'utf8');
 describe('UI-OS 5 History Progress Data Health redesign', () => {
   const recordSource = read('src/features/RecordView.tsx');
   const cardsSource = read('src/uiOs/records/RecordOsCards.tsx');
+  const dataHealthPanelSource = read('src/uiOs/dataHealth/DataHealthClarityPanel.tsx');
 
   it('adds readable record OS surfaces for history progress and data health', () => {
     for (const marker of ['RecordOsOverview', 'RecordTimelineCard', 'ProgressInsightCard', 'DataHealthIssueCard']) {
       expect(cardsSource).toContain(marker);
+    }
+    for (const marker of ['ProgressInsightHero', 'DataHealthClarityPanel']) {
       expect(recordSource).toContain(marker);
     }
     expect(cardsSource).toContain('bg-[#0a0a0b]');
@@ -26,21 +29,21 @@ describe('UI-OS 5 History Progress Data Health redesign', () => {
   });
 
   it('keeps progress labels and adds human-readable insight copy without changing calculations', () => {
-    for (const expected of ['PR / e1RM', '当前 e1RM', '历史最佳 e1RM', '有效组', '训练量', '进步解读', '趋势说明']) {
+    for (const expected of ['PR / e1RM', '当前 e1RM', '历史最佳 e1RM', '有效组', '训练量', '进步解读', 'ProgressInsightHero']) {
       expect(recordSource).toContain(expected);
     }
-    expect(recordSource).toContain('底层 PR、e1RM 和有效组计算保持不变');
+    expect(recordSource).toContain('不会改变历史数据或重新计算规则');
     expect(recordSource).toContain('buildPrs(analyticsHistory)');
     expect(recordSource).toContain('buildE1RMProfile(analyticsHistory');
     expect(recordSource).toContain('buildEffectiveVolumeSummary(analyticsHistory)');
   });
 
   it('keeps Data Health owner-facing and blocks automatic repair copy', () => {
-    expect(recordSource).toContain('DataHealthIssueCard');
-    expect(recordSource).toContain('这里只报告问题');
-    expect(recordSource).toContain('修正记录、删除或排除统计仍由你确认');
+    expect(recordSource).toContain('DataHealthClarityPanel');
+    expect(dataHealthPanelSource).toContain('不提供自动修复');
+    expect(recordSource).toContain('!isRepairDataHealthAction');
     expect(recordSource).not.toContain('/data-health/repair/apply');
-    expect(recordSource).not.toContain('自动修复');
+    expect(recordSource).not.toContain('自动修复按钮');
     expect(recordSource).not.toContain('自动删除');
   });
 });

@@ -184,7 +184,8 @@ describe('coach automation hardening', () => {
     expect(profileSource).toContain('查看全部问题');
     expect(recordSource).toContain('buildDataHealthViewModel');
     expect(recordSource).toContain('primaryIssues');
-    expect(recordSource).toContain('查看全部问题');
+    expect(recordSource).toContain('DataHealthClarityPanel');
+    expect(recordSource).toContain('issueViews');
   });
 
   it('gives every Today coach action an explicit path or view-only explanation', () => {
