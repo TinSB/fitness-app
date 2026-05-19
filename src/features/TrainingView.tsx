@@ -33,6 +33,7 @@ import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { SetPrescriptionCard } from '../uiOs/training/TrainingOsCards';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
 import type { SetPurpose } from '../engines/equipmentAwareLoadModel';
 
@@ -348,9 +349,9 @@ export function TrainingView({
               <Card
                 key={set.id}
                 className={classNames(
-                  'border-slate-200',
+                  'border-slate-200 transition',
                   completed && 'bg-emerald-50/50',
-                  isNext && 'border-emerald-300 ring-1 ring-emerald-100'
+                  isNext && 'border-emerald-300 bg-[#0a0a0b] text-white shadow-[0_18px_60px_rgba(0,0,0,0.22)] ring-1 ring-emerald-100'
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -359,20 +360,32 @@ export function TrainingView({
                       <StatusBadge tone={completed ? 'emerald' : isNext ? 'amber' : 'slate'}>
                         {completed ? '已完成' : isNext ? '当前组' : '待完成'}
                       </StatusBadge>
-                      <h3 className="text-sm font-semibold text-slate-950">
+                      <h3 className={classNames('text-sm font-semibold', isNext ? 'text-white' : 'text-slate-950')}>
                         {formatSetType(set.type)} {setIndex + 1}
                       </h3>
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className={classNames('mt-1 text-xs', isNext ? 'text-slate-300' : 'text-slate-500')}>
                       推荐处方与实际记录分开；这里用于补记或修正本组数据。
                     </div>
-                    <EquipmentAwareRecommendationWeight
-                      exerciseName={identity.displayExerciseId || exercise.id || exerciseDisplayName}
-                      plannedWeightKg={set.weight}
-                      setPurpose={setPurposeForType(set.type)}
-                      unitSettings={unitSettings}
-                      compact
-                    />
+                    {isNext ? (
+                      <SetPrescriptionCard className="mt-3">
+                        <EquipmentAwareRecommendationWeight
+                          exerciseName={identity.displayExerciseId || exercise.id || exerciseDisplayName}
+                          plannedWeightKg={set.weight}
+                          setPurpose={setPurposeForType(set.type)}
+                          unitSettings={unitSettings}
+                          compact
+                        />
+                      </SetPrescriptionCard>
+                    ) : (
+                      <EquipmentAwareRecommendationWeight
+                        exerciseName={identity.displayExerciseId || exercise.id || exerciseDisplayName}
+                        plannedWeightKg={set.weight}
+                        setPurpose={setPurposeForType(set.type)}
+                        unitSettings={unitSettings}
+                        compact
+                      />
+                    )}
                   </div>
                   {isIncompleteSet(set) && isNext ? (
                     <ActionButton

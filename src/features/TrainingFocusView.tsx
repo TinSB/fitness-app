@@ -28,9 +28,9 @@ import { Card } from '../ui/Card';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { StatusBadge } from '../ui/StatusBadge';
 import { Toast } from '../ui/Toast';
-import { WorkoutActionBar } from '../ui/WorkoutActionBar';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
+import { ActualSetInputCard, SetPrescriptionCard, TrainingActionBar, TrainingFocusHeroCard } from '../uiOs/training/TrainingOsCards';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
 import { buildActionableEquipmentAwarePrescription } from '../engines/equipmentAwareActionablePrescription';
 
@@ -969,7 +969,7 @@ export function TrainingFocusView({
     const supportModuleName = supportBlock?.name || currentStep.moduleName || blockLabel(blockType);
     return (
       <>
-        <Card className="border-white/10 bg-white text-slate-950">
+        <TrainingFocusHeroCard>
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-wrap gap-2">
               <StatusBadge tone={blockType === 'correction' ? 'amber' : 'sky'}>{blockLabel(blockType)}</StatusBadge>
@@ -978,26 +978,26 @@ export function TrainingFocusView({
             <button
               type="button"
               onClick={() => setShowExplanationSheet(true)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+              className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
             >
               依据
             </button>
           </div>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">{supportTitle}</h1>
-          <p className="mt-1 text-sm font-medium text-slate-500">{supportModuleName}</p>
+          <p className="mt-1 text-sm font-medium text-slate-300">{supportModuleName}</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-stone-50 p-3">
-              <div className="text-xs font-semibold text-slate-500">当前组</div>
+            <div className="rounded-3xl bg-white/10 p-3">
+              <div className="text-xs font-semibold text-slate-300">当前组</div>
               <div className="mt-1 text-2xl font-bold">
                 {supportLog.completedSets || 0}/{supportLog.plannedSets || currentStep.totalSetsForStepType}
               </div>
             </div>
-            <div className="rounded-lg bg-stone-50 p-3">
-              <div className="text-xs font-semibold text-slate-500">建议</div>
+            <div className="rounded-3xl bg-white/10 p-3">
+              <div className="text-xs font-semibold text-slate-300">建议</div>
               <div className="mt-1 text-sm font-semibold leading-6">{plannedSummary}</div>
             </div>
           </div>
-        </Card>
+        </TrainingFocusHeroCard>
 
         <Card className="border-white/10 bg-white text-slate-950">
           <div className="text-sm font-semibold">跳过原因</div>
@@ -1051,7 +1051,7 @@ export function TrainingFocusView({
     if (!mainExercise) return null;
     return (
       <>
-        <Card className="border-white/10 bg-white text-slate-950">
+        <TrainingFocusHeroCard>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex flex-wrap gap-2">
@@ -1059,7 +1059,7 @@ export function TrainingFocusView({
                 <StatusBadge tone={currentStep.stepType === 'warmup' ? 'amber' : 'emerald'}>{stageLabel(currentStep.stepType)}</StatusBadge>
               </div>
               <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight">{displayExerciseName(mainExercise)}</h1>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+              <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-300">
                 <span>{displayMovementPattern(mainExercise)}</span>
                 <span>·</span>
                 <span>{displayPrimaryMuscles(mainExercise)}</span>
@@ -1069,14 +1069,14 @@ export function TrainingFocusView({
               <button
                 type="button"
                 onClick={() => setShowExplanationSheet(true)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
               >
                 依据
               </button>
               <button
                 type="button"
                 onClick={() => setShowExercisePicker(true)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+                className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
               >
                 切换
               </button>
@@ -1084,22 +1084,22 @@ export function TrainingFocusView({
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-stone-50 p-3">
-              <div className="text-xs font-semibold text-slate-500">当前组</div>
+            <div className="rounded-3xl bg-white/10 p-3">
+              <div className="text-xs font-semibold text-slate-300">当前组</div>
               <div className="mt-1 text-2xl font-bold">
                 {currentStep.setIndex + 1}/{currentStep.totalSetsForStepType}
               </div>
-              <div className="mt-1 text-xs text-slate-500">{currentStep.label}</div>
+              <div className="mt-1 text-xs text-slate-300">{currentStep.label}</div>
             </div>
-            <div className="rounded-lg bg-stone-50 p-3">
-              <div className="text-xs font-semibold text-slate-500">动作进度</div>
+            <div className="rounded-3xl bg-white/10 p-3">
+              <div className="text-xs font-semibold text-slate-300">动作进度</div>
               <div className="mt-1 text-2xl font-bold">
                 {completedMainSets.length}/{mainSets.length}
               </div>
-              <div className="mt-1 text-xs text-slate-500">已完成正式组</div>
+              <div className="mt-1 text-xs text-slate-300">已完成正式组</div>
             </div>
           </div>
-        </Card>
+        </TrainingFocusHeroCard>
 
         {renderRestTimer()}
 
@@ -1111,11 +1111,11 @@ export function TrainingFocusView({
           )}
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Card className="border-white/10 bg-white text-slate-950">
+            <SetPrescriptionCard>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold text-slate-500">推荐处方</div>
-                  <div className="mt-2 text-lg font-bold leading-7">{plannedSummary}</div>
+                  <div className="text-xs font-semibold text-emerald-100">推荐处方</div>
+                  <div className="mt-2 text-2xl font-bold leading-8">{plannedSummary}</div>
                   <EquipmentAwareRecommendationWeight
                     exerciseName={equipmentAwareExerciseName}
                     plannedWeightKg={currentStep.plannedWeight}
@@ -1136,15 +1136,15 @@ export function TrainingFocusView({
                   套用建议
                 </ActionButton>
               </div>
-            </Card>
-            <Card className="border-white/10 bg-white text-slate-950">
-              <div className="text-xs font-semibold text-slate-500">实际记录</div>
+            </SetPrescriptionCard>
+            <ActualSetInputCard>
+              <div className="text-xs font-semibold text-slate-300">实际记录</div>
               <div className="mt-2 text-2xl font-bold">{actualSummary}</div>
               {showMissingInputGuide && currentSetSummary.missingInput ? (
                 <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">缺少重量或次数</div>
               ) : null}
-              <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
-            </Card>
+              <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-300">{mainExercise.lastSummary || '暂无上一条同动作记录'}</div>
+            </ActualSetInputCard>
           </div>
 
           <Card className="border-white/10 bg-white text-slate-950">
@@ -1312,7 +1312,7 @@ export function TrainingFocusView({
   };
 
   return (
-    <div className="min-h-svh bg-slate-950 px-4 pb-[calc(10.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-white md:pb-6">
+    <div className="min-h-svh bg-[#0a0a0b] px-4 pb-[calc(10.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-white md:pb-6">
       <div className="mx-auto max-w-2xl space-y-3">
         <header className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -1343,7 +1343,7 @@ export function TrainingFocusView({
       {renderExplanationSheet()}
       {renderPendingConfirmation()}
 
-      <WorkoutActionBar className="border-slate-200 bg-white text-slate-950 md:static md:bg-transparent">
+      <TrainingActionBar>
         <div className="mx-auto grid w-full max-w-2xl gap-2">
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -1424,7 +1424,7 @@ export function TrainingFocusView({
             完成一组
           </ActionButton>
         </div>
-      </WorkoutActionBar>
+      </TrainingActionBar>
     </div>
   );
 }

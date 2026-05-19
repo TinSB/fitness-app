@@ -39,6 +39,7 @@ import { CoachActionList } from '../ui/CoachActionList';
 import { useConfirmDialog } from '../ui/useConfirmDialog';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { TodayFocusOverrideCard, TodayHeroCard, UnfinishedSessionNotice } from '../uiOs/training/TrainingOsCards';
 
 interface TodayViewProps {
   data: AppData;
@@ -217,11 +218,11 @@ const TodayFocusOverrideControl = ({
   selection: TodayTrainingFocusSelection;
   onChange?: (override: TodayTrainingFocusOverrideOption) => void;
 }) => (
-  <div className="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-3">
+  <TodayFocusOverrideCard className="mt-5">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <div className="text-sm font-semibold text-slate-950">今天想练</div>
-        <div className="mt-1 text-xs leading-5 text-slate-500">选择只影响今天；可随时回到系统推荐，不修改长期计划。</div>
+        <div className="text-sm font-semibold text-white">今天想练</div>
+        <div className="mt-1 text-xs leading-5 text-slate-300">选择只影响今天；可随时回到系统推荐，不修改长期计划。</div>
       </div>
       <StatusBadge tone={selection.overrideActive ? 'amber' : 'emerald'}>
         {selection.overrideActive ? `已切换为 ${selection.selectedFocusLabel}` : '系统推荐'}
@@ -238,8 +239,8 @@ const TodayFocusOverrideControl = ({
             className={classNames(
               'min-h-9 rounded-lg border px-3 text-sm font-medium transition',
               selected
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
-                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950',
+                ? 'border-emerald-300 bg-emerald-300/20 text-emerald-50'
+                : 'border-white/10 bg-white/10 text-slate-200 hover:bg-white/15 hover:text-white',
             )}
             aria-pressed={selected}
           >
@@ -248,9 +249,9 @@ const TodayFocusOverrideControl = ({
         );
       })}
     </div>
-    <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
-      <div className="rounded-lg bg-white px-3 py-2">原计划：{selection.systemTemplateName}</div>
-      <div className="rounded-lg bg-white px-3 py-2">
+    <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-200 sm:grid-cols-2">
+      <div className="rounded-2xl bg-white/10 px-3 py-2">原计划：{selection.systemTemplateName}</div>
+      <div className="rounded-2xl bg-white/10 px-3 py-2">
         {selection.overrideActive
           ? `已切换为：${selection.selectedFocusLabel} · ${selection.selectedTemplateName}`
           : `今日使用：${selection.systemTemplateName}`}
@@ -259,13 +260,13 @@ const TodayFocusOverrideControl = ({
     {selection.warnings.length ? (
       <div className="mt-3 space-y-2">
         {selection.warnings.map((warning) => (
-          <div key={warning.id} className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+          <div key={warning.id} className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs leading-5 text-amber-50">
             {warning.message}
           </div>
         ))}
       </div>
     ) : null}
-  </div>
+  </TodayFocusOverrideCard>
 );
 
 export function TodayView({
@@ -593,24 +594,24 @@ export function TodayView({
       <DashboardLayout
         main={
           <div className="space-y-4">
-            <Card className="overflow-hidden border-emerald-100 bg-white p-0">
-              <div className="border-b border-emerald-100 bg-emerald-50/70 px-4 py-3 md:px-5">
+            <TodayHeroCard>
+              <div className="border-b border-white/10 bg-white/[0.06] px-4 py-3 md:px-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge tone={statusTone(todayViewModel.state)}>{todayViewModel.pageTitle}</StatusBadge>
                   {resolvedTodayFocusSelection.overrideActive ? <StatusBadge tone="amber">手动目标</StatusBadge> : null}
-                  <span className="text-xs font-medium text-slate-500">{todayTrainingState.date}</span>
+                  <span className="text-xs font-medium text-slate-300">{todayTrainingState.date}</span>
                 </div>
               </div>
               <div className="grid gap-5 p-4 md:grid-cols-[minmax(0,1fr)_240px] md:p-5">
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-emerald-700">{recommendationLabel}</div>
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">{currentTrainingName}</h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{decisionText}</p>
+                  <div className="text-sm font-semibold text-emerald-200">{recommendationLabel}</div>
+                  <h2 className="mt-2 text-3xl font-bold tracking-tight text-white md:text-4xl">{currentTrainingName}</h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{decisionText}</p>
                   {todayTrainingState.status === 'not_started' ? (
                     <TodayFocusOverrideControl selection={resolvedTodayFocusSelection} onChange={onFocusOverrideChange} />
                   ) : null}
                   {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
-                    <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                    <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
                       {todayViewModel.recoverySummary}
                       {todayViewModel.recoveryReasons?.length ? (
                         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5">
@@ -623,13 +624,13 @@ export function TodayView({
                   ) : null}
                   {todayTrainingState.status === 'completed' ? (
                     <div
-                      className="mt-4 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm leading-6 text-sky-900"
+                      className="mt-4 rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2 text-sm leading-6 text-sky-50"
                       aria-label={`下次建议：${nextSuggestion.templateName}，不是今天必须继续训练`}
                     >
                       {nextSuggestion.description}
                     </div>
                   ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
-                    <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                    <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
                       系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
                     </div>
                   ) : null}
@@ -658,7 +659,7 @@ export function TodayView({
                   ) : null}
                 </div>
               </div>
-            </Card>
+            </TodayHeroCard>
 
             <RecommendationExplanationPanel
               trace={recommendationTrace}
@@ -692,17 +693,17 @@ export function TodayView({
             ) : null}
 
             {temporarySessionAdjustmentActive ? (
-              <Card className="space-y-3 border-sky-100 bg-sky-50">
+              <UnfinishedSessionNotice className="space-y-3">
                 <div>
-                  <div className="text-sm font-semibold text-slate-950">本次临时调整已生效</div>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">只影响当前这次训练，不会修改原模板或长期计划。</p>
+                  <div className="text-sm font-semibold text-white">本次临时调整已生效</div>
+                  <p className="mt-1 text-sm leading-6 text-amber-100">只影响当前这次训练，不会修改原模板或长期计划。</p>
                 </div>
                 {onRevertTemporarySessionPatches ? (
                   <ActionButton type="button" variant="secondary" size="sm" onClick={onRevertTemporarySessionPatches}>
                     撤销调整
                   </ActionButton>
                 ) : null}
-              </Card>
+              </UnfinishedSessionNotice>
             ) : null}
 
             {shouldShowCoachAdvice ? (
