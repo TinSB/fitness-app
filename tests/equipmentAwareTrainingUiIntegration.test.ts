@@ -100,10 +100,10 @@ describe('equipment aware training UI integration', () => {
       }),
     );
 
-    expect(markup).toContain('器械可做重量');
-    expect(markup).toContain('115 lb total');
+    expect(markup).toContain('115 lb 总重量');
     expect(markup).toContain('每边 35 lb');
     expect(markup).toContain('每边 25 + 10');
+    expect(markup).toContain('重量详情');
     expect(onOpenEquipmentProfile).not.toHaveBeenCalled();
   });
 
@@ -131,10 +131,10 @@ describe('equipment aware training UI integration', () => {
 
     const text = renderTrainingText(session);
 
-    expect(text).toContain('器械可做重量');
-    expect(text).toContain('135 lb total');
+    expect(text).toContain('本组建议');
+    expect(text).toContain('135 lb 总重量');
     expect(text).toContain('每边 45 lb');
-    expect(text).toContain('115 lb total');
+    expect(text).toContain('115 lb 总重量');
     expect(text).toContain('每边 25 + 10');
     expect(JSON.stringify(session)).toBe(before);
   });
@@ -152,9 +152,9 @@ describe('equipment aware training UI integration', () => {
 
     const text = renderFocusText(session);
 
-    expect(text).toContain('推荐处方');
-    expect(text).toContain('器械可做重量');
+    expect(text).toContain('本组建议');
     expect(text).toContain('空杆 45 lb');
+    expect(text).toContain('重量详情');
     expect(text).toContain('理论重量低于空杆，使用空杆热身');
     expect(JSON.stringify(session)).toBe(before);
   });
@@ -183,8 +183,9 @@ describe('equipment aware training UI integration', () => {
       },
     })));
 
-    expect(dumbbell).toContain('每只手 45 lb / 45 lb each hand');
-    expect(dumbbell).not.toContain('90 lb total');
-    expect(selectorized).toContain('插片 45 lb / machine stack');
+    expect(dumbbell).toContain('每只手 45 lb');
+    expect(dumbbell).not.toContain('90 lb 总重量');
+    expect(selectorized).toContain('插片 45 lb');
+    expect(selectorized).not.toContain('machine stack');
   });
 });

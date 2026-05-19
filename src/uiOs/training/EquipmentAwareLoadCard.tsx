@@ -11,6 +11,7 @@ export type EquipmentAwareLoadCardProps = {
   note?: string;
   state?: EquipmentLoadCardState;
   className?: string;
+  compact?: boolean;
 };
 
 const typeLabels: Record<EquipmentLoadType, string> = {
@@ -35,27 +36,28 @@ export function EquipmentAwareLoadCard({
   note,
   state = 'default',
   className = '',
+  compact = false,
 }: EquipmentAwareLoadCardProps) {
   const surface = resolveThemeSurface('training_hero', 'dark', { immersiveDark: true });
   return (
     <section
-      className={classNames('relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b', surface.className, surface.textClassName, stateGradients[state], className)}
+      className={classNames('relative overflow-hidden rounded-3xl bg-gradient-to-b', compact ? 'p-4' : 'p-6', surface.className, surface.textClassName, stateGradients[state], className)}
       style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
       aria-label="Equipment-aware load card"
       data-theme-surface="training_hero"
       data-theme-mode="dark"
     >
-      <div className="flex items-center gap-2 mb-5">
+      <div className={classNames('flex items-center gap-2', compact ? 'mb-2' : 'mb-5')}>
         <span className="text-xs text-white/35 uppercase tracking-widest font-medium">{typeLabels[type]}</span>
       </div>
 
-      <div className="mb-4">
-        <span className="text-5xl font-extralight text-white tracking-tight" style={{ fontFeatureSettings: '"tnum"' }}>
+      <div className={classNames(compact ? 'mb-2' : 'mb-4')}>
+        <span className={classNames(compact ? 'text-2xl font-bold' : 'text-5xl font-extralight', 'text-white tracking-tight')} style={{ fontFeatureSettings: '"tnum"' }}>
           {mainDisplay}
         </span>
       </div>
 
-      {subInfo ? <p className="text-base text-white/55 mb-2">{subInfo}</p> : null}
+      {subInfo ? <p className={classNames(compact ? 'text-sm' : 'text-base', 'text-white/62 mb-2')}>{subInfo}</p> : null}
       {note ? <p className="text-sm text-white/35 leading-relaxed">{note}</p> : null}
     </section>
   );

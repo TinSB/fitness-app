@@ -58,8 +58,8 @@ export function HistoryFrequencySummary(props: HistoryFrequencySummaryProps) {
     >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-emerald-300">训练频率</p>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight">先看哪些天练了，哪些天没练</h2>
+          <p className="text-sm font-semibold text-emerald-200" data-theme-text="sectionTitle" data-heading-contrast="high">训练频率</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-white" data-theme-text="sectionTitle" data-heading-contrast="high">先看哪些天练了，哪些天没练</h2>
         </div>
         {dataHealthHint ? <StatusBadge state={dataHealthHint.includes('没有') ? 'safe' : 'warning'}>{dataHealthHint}</StatusBadge> : null}
       </div>

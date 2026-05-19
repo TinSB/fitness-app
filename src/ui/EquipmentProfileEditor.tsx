@@ -14,15 +14,15 @@ export type EquipmentProfileEditorProps = {
 };
 
 const equipmentKindLabels: Record<EquipmentKind, string> = {
-  barbell: '杠铃 / Barbell',
-  smith_machine: 'Smith 机 / Smith machine',
-  dumbbell: '哑铃 / Dumbbell',
-  selectorized_machine: '插片器械 / Selectorized',
-  plate_loaded_machine: '挂片器械 / Plate-loaded',
-  cable_stack: '绳索重量栈 / Cable stack',
-  bodyweight: '自重 / Bodyweight',
-  assisted_bodyweight: '辅助自重 / Assisted bodyweight',
-  unknown: '未知/自定义 / Unknown',
+  barbell: '杠铃',
+  smith_machine: '史密斯机',
+  dumbbell: '哑铃',
+  selectorized_machine: '插片器械',
+  plate_loaded_machine: '挂片器械',
+  cable_stack: '绳索重量栈',
+  bodyweight: '自重',
+  assisted_bodyweight: '辅助自重',
+  unknown: '未知/自定义',
 };
 
 const displayModeLabels: Record<LoadDisplayMode, string> = {
@@ -44,6 +44,20 @@ const roundingPreferenceLabels: Record<RoundingPreference, string> = {
 
 const listValue = (values?: readonly number[]) => (values?.length ? values.join(', ') : '');
 
+const validationCopy: Record<string, string> = {
+  bar_weight_required: '需要填写杠铃或杆重。',
+  dumbbell_increment_required: '需要填写哑铃递增重量。',
+  available_plates_required: '需要填写可用杠铃片。',
+  machine_stack_options_missing: '建议补充机器插片选项或递增重量。',
+  base_weight_unknown: '器械自重尚未确认，推荐显示会保守处理。',
+  unknown_custom_profile_needs_configuration: '未知或自定义器械需要稍后配置。',
+  machine_increment_must_be_positive: '器械递增重量必须大于 0。',
+  dumbbell_increment_must_be_positive: '哑铃递增重量必须大于 0。',
+  bar_weight_must_be_positive: '杠铃或杆重必须大于 0。',
+};
+
+const ownerValidationCopy = (code: string) => validationCopy[code] || '这项配置需要复查。';
+
 export const EquipmentProfileEditor = ({
   draft,
   validation,
@@ -57,7 +71,7 @@ export const EquipmentProfileEditor = ({
   const update = (patch: Partial<EquipmentProfileDraft>) => onDraftChange?.({ ...draft, ...patch });
 
   return (
-    <section aria-label="Equipment profile editor" data-equipment-profile-editor="presentational">
+    <section aria-label="器械档案编辑器" data-equipment-profile-editor="presentational">
       <h2>器械档案草稿</h2>
       <p>这里只编辑草稿；不会自动影响历史记录，也不会自动同步到云端。</p>
 
@@ -92,7 +106,7 @@ export const EquipmentProfileEditor = ({
           杠铃/杆重 lb
           <input type="number" value={draft.defaultBarWeightLb ?? ''} onChange={(event) => update({ defaultBarWeightLb: Number(event.target.value) })} />
         </label>
-        <p>Olympic bar 默认 45 lb；Smith machine 默认 25 lb。</p>
+        <p>奥林匹克杠铃默认 45 lb；史密斯机默认 25 lb。</p>
       </div>
 
       <div>
@@ -158,7 +172,7 @@ export const EquipmentProfileEditor = ({
       {result.warnings.length ? (
         <div role="status">
           {result.warnings.map((warning) => (
-            <p key={warning}>{warning}</p>
+            <p key={warning}>{ownerValidationCopy(warning)}</p>
           ))}
         </div>
       ) : null}
@@ -166,7 +180,7 @@ export const EquipmentProfileEditor = ({
       {result.errors.length ? (
         <div role="alert">
           {result.errors.map((error) => (
-            <p key={error}>{error}</p>
+            <p key={error}>{ownerValidationCopy(error)}</p>
           ))}
         </div>
       ) : null}

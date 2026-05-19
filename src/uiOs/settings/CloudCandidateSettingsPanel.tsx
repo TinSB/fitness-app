@@ -7,8 +7,8 @@ export type CloudCandidateSettingsPanelProps = {
 
 const items = [
   ['状态', '手动候选'],
-  ['Cloud pull', '不会自动覆盖本地数据'],
-  ['Cloud push', '需要手动确认'],
+  ['读取候选', '不会自动覆盖本地数据'],
+  ['上传候选', '需要手动确认'],
   ['冲突解决', '保持手动'],
 ];
 
@@ -19,7 +19,7 @@ export function CloudCandidateSettingsPanel({ copy }: CloudCandidateSettingsPane
     <SettingsGroupCard tone="dark" className="text-white">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/55">Cloud Candidate</p>
+          <p className="text-sm font-semibold text-white/55">云端候选</p>
           <h3 className="mt-1 text-lg font-bold text-white">云端候选</h3>
           <p className="mt-1 text-sm leading-6 text-white/55">{summaryCopy}</p>
         </div>

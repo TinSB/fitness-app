@@ -15,7 +15,7 @@ describe('EquipmentAwareLoadDisplay', () => {
 
     const markup = renderToStaticMarkup(createElement(EquipmentAwareLoadDisplay, { displayResult }));
 
-    expect(markup).toContain('135 lb total');
+    expect(markup).toContain('135 lb 总重量');
     expect(markup).toContain('每边 45 lb');
     expect(markup).toContain('data-equipment-aware-load-display="presentational"');
   });
@@ -35,7 +35,7 @@ describe('EquipmentAwareLoadDisplay', () => {
     expect(markup).toContain('已按准备度和可装载重量调整');
   });
 
-  it('hides details unless requested', () => {
+  it('collapses details by default', () => {
     const displayResult = buildEquipmentAwareRecommendationDisplay({
       exerciseName: 'Bench Press',
       theoreticalWeightLb: 17,
@@ -46,7 +46,9 @@ describe('EquipmentAwareLoadDisplay', () => {
     const markup = renderToStaticMarkup(createElement(EquipmentAwareLoadDisplay, { displayResult }));
 
     expect(markup).toContain('空杆 45 lb');
-    expect(markup).not.toContain('理论计算：17 lb');
+    expect(markup).toContain('重量详情');
+    expect(markup).toContain('理论计算：17 lb');
+    expect(markup).toMatch(/<details[^>]*data-equipment-weight-details="collapsed"(?![^>]*open)/);
   });
 
   it('renders warning copy', () => {
@@ -62,7 +64,8 @@ describe('EquipmentAwareLoadDisplay', () => {
 
     const markup = renderToStaticMarkup(createElement(EquipmentAwareLoadDisplay, { displayResult, showDetails: true }));
 
-    expect(markup).toContain('器械自重未计入 / base weight not included');
+    expect(markup).toContain('器械自重未计入');
+    expect(markup).not.toContain('base weight not included');
     expect(markup).toContain('器械自重未计入，仅显示已加重量');
   });
 

@@ -13,10 +13,10 @@ describe('CloudCandidateSettingsPanel', () => {
       ),
     );
 
-    expect(visible).toContain('Cloud Candidate');
+    expect(visible).toContain('云端候选');
     expect(visible).toContain('手动候选');
-    expect(visible).toContain('Cloud pull');
-    expect(visible).toContain('Cloud push');
+    expect(visible).toContain('读取候选');
+    expect(visible).toContain('上传候选');
     expect(visible).toContain('需要手动确认');
     expect(visible).toContain('一键同步');
     expect(visible).not.toContain('同步全部');

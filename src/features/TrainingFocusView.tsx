@@ -597,6 +597,7 @@ export function TrainingFocusView({
               currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''
             }`
           : `${plannedWeightSummary} × ${number(currentStep.plannedReps)} 次${currentStep.plannedRir ? ` · ${formatRirLabel(currentStep.plannedRir)}` : ''}`;
+  const primaryRecommendationLabel = actionablePrescription?.primaryPrescriptionLabel || plannedSummary;
 
   const actualWeight = actualDraft?.actualWeightKg;
   const actualReps = actualDraft?.actualReps;
@@ -896,6 +897,19 @@ export function TrainingFocusView({
       onClick: openReplacementPicker,
       disabled: isSupportStep,
       tone: 'success',
+    },
+    {
+      id: 'record-details',
+      label: '记录详情',
+      icon: <ListChecks className="h-4 w-4" />,
+      onClick: () => setShowActualRecordSheet(true),
+      disabled: isSupportStep,
+    },
+    {
+      id: 'exercise-order',
+      label: '动作顺序',
+      icon: <ListChecks className="h-4 w-4" />,
+      onClick: () => setShowExercisePicker(true),
     },
     {
       id: 'skip-step',
@@ -1282,10 +1296,10 @@ export function TrainingFocusView({
           data-focus-actual-form-visible="false"
         >
           <SetPrescriptionCard>
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-3" data-focus-recommendation-density="compact-single">
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-emerald-100">推荐处方</div>
-                <div className="mt-2 text-2xl font-bold leading-8">{plannedSummary}</div>
+                <div className="text-xs font-semibold text-emerald-100">本组建议</div>
+                <div className="mt-2 text-2xl font-bold leading-8" data-focus-primary-load-label="true">{primaryRecommendationLabel}</div>
                 <EquipmentAwareRecommendationWeight
                   exerciseName={equipmentAwareExerciseName}
                   plannedWeightKg={currentStep.plannedWeight}
@@ -1294,31 +1308,10 @@ export function TrainingFocusView({
                   compact
                   showDetails
                 />
-                <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2 text-sm leading-6 text-white/62">
-                  实际记录通过底部面板填写。当前：<span className="font-semibold text-white">{actualSummary}</span>
-                </div>
+                <div className="mt-2 text-xs leading-5 text-white/45">实际记录通过底部动作栏填写。</div>
                 {showMissingInputGuide && currentSetSummary.missingInput ? (
                   <div className="mt-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">缺少重量或次数</div>
                 ) : null}
-              </div>
-              <div className="grid shrink-0 gap-2">
-                <ActionButton
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    notifyResult(onApplySuggestion(mainIndex));
-                  }}
-                >
-                  套用建议
-                </ActionButton>
-                <button
-                  type="button"
-                  onClick={() => setShowActualRecordSheet(true)}
-                  className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
-                >
-                  记录详情
-                </button>
               </div>
             </div>
           </SetPrescriptionCard>
@@ -1349,30 +1342,6 @@ export function TrainingFocusView({
             {notice.message}
           </div>
         ))}
-
-        <details className="rounded-lg border border-white/10 bg-white/10 p-3 text-white">
-          <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">查看动作顺序</summary>
-          <div className="mt-3 space-y-2">
-            {session.exercises.map((exercise, index) => {
-              const sets = getSets(exercise);
-              const done = sets.filter((set) => isCompletedSet(set)).length;
-              const selected = index === mainIndex;
-              return (
-                <button
-                  key={`${exercise.id}-${index}`}
-                  type="button"
-                  onClick={() => switchExercise(index)}
-                  className={classNames('flex w-full items-center justify-between rounded-lg px-3 py-3 text-left', selected ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-white')}
-                >
-                  <span className="font-semibold">{displayExerciseName(exercise)}</span>
-                  <span className="text-sm font-semibold">
-                    {done}/{sets.length}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </details>
 
         {currentStep.stepType === 'working' && completedMainSets.length > 0 && mainExercisePoolId ? (
           <Card className="border-white/10 bg-white/10 text-white">

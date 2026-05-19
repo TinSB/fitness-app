@@ -27,7 +27,7 @@ describe('SettingsControlCenter', () => {
     );
     const visible = text(markup);
 
-    expect(visible).toContain('Owner-only control center');
+    expect(visible).toContain('个人控制中心');
     expect(visible).toContain('本地优先正常');
     expect(visible).toContain('本地数据是默认来源');
     expect(visible).toContain('继续使用本地数据');

@@ -67,8 +67,8 @@ const makeBenchWarmupSession = () =>
 describe('equipment-aware primary prescription and apply suggestion fix', () => {
   it('renders Bench Press warmup primary prescription as empty bar instead of theoretical 17 lb', () => {
     const text = renderFocusText(makeBenchWarmupSession());
-    const prescriptionIndex = text.indexOf('推荐处方');
-    const detailIndex = text.indexOf('器械可做重量');
+    const prescriptionIndex = text.indexOf('本组建议');
+    const detailIndex = text.indexOf('重量详情');
     const primaryBlock = text.slice(prescriptionIndex, detailIndex);
 
     expect(primaryBlock).toContain('空杆 45 lb × 10 次');
@@ -93,7 +93,7 @@ describe('equipment-aware primary prescription and apply suggestion fix', () => 
     const applied = applySuggestedFocusStepWithResult(session, 0);
     const draft = getActualSetDraft(applied.session, getCurrentFocusStep(applied.session));
 
-    expect(text).toContain('135 lb total × 建议 5 次');
+    expect(text).toContain('135 lb 总重量 × 5 次');
     expect(text).toContain('每边 45 lb');
     expect(convertKgToDisplayWeight(draft?.actualWeightKg, 'lb')).toBe(135);
   });
@@ -145,7 +145,7 @@ describe('equipment-aware primary prescription and apply suggestion fix', () => 
       unitSettings,
     });
 
-    expect(result.warning).toContain('base weight not included');
+    expect(result.warning).toContain('器械自重未计入');
     expect(result.detailLabels.join(' ')).toContain('器械自重未计入');
   });
 

@@ -8,12 +8,12 @@ export type EquipmentProfileSettingsPanelProps = {
 };
 
 const equipmentCards = [
-  ['Olympic barbell', '45 lb', '总重量 + 每边杠铃片'],
-  ['Smith machine', '25 lb', '杆重计入总重量'],
-  ['Dumbbell', '每只手 / 5 lb 一跳', '不自动改写历史记录'],
-  ['Selectorized machine', '按机器插片', '按机器选项记录'],
-  ['Plate-loaded', '注意器械自重', '底座或雪橇重量需要确认'],
-  ['Unknown/custom', '稍后配置', '需要复查'],
+  ['奥林匹克杠铃', '45 lb', '总重量 + 每边杠铃片'],
+  ['史密斯机', '25 lb', '杆重计入总重量'],
+  ['哑铃', '每只手 / 5 lb 一跳', '不自动改写历史记录'],
+  ['插片器械', '按机器插片', '按机器选项记录'],
+  ['挂片器械', '注意器械自重', '底座或雪橇重量需要确认'],
+  ['未知/自定义器械', '稍后配置', '需要复查'],
 ];
 
 export function EquipmentProfileSettingsPanel({ copy }: EquipmentProfileSettingsPanelProps) {
@@ -24,7 +24,7 @@ export function EquipmentProfileSettingsPanel({ copy }: EquipmentProfileSettings
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/45">Equipment Profiles</p>
+          <p className="text-sm font-semibold text-emerald-200">器械档案</p>
           <h3 className="mt-1 text-lg font-bold text-white">器械档案</h3>
           <p className="mt-1 text-sm leading-6 text-white/60">{copy}</p>
         </div>

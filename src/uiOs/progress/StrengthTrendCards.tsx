@@ -29,8 +29,8 @@ export function StrengthTrendCards({ items, onSelectItem }: StrengthTrendCardsPr
     <section aria-label="Strength trend PR e1RM cards" className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/45">力量趋势 / PR / e1RM</p>
-          <h3 className="text-lg font-bold text-white">主要动作快速判断</h3>
+          <p className="text-sm font-semibold text-white" data-theme-text="sectionTitle" data-heading-contrast="high">力量趋势 / PR / e1RM</p>
+          <h3 className="text-lg font-bold text-white" data-theme-text="sectionTitle" data-heading-contrast="high">主要动作快速判断</h3>
         </div>
         <span className="text-xs font-semibold text-white/35">只读现有计算</span>
       </div>

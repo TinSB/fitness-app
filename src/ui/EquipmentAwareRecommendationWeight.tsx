@@ -16,6 +16,7 @@ export type EquipmentAwareRecommendationWeightProps = {
   compact?: boolean;
   showDetails?: boolean;
   onOpenEquipmentProfile?: () => void;
+  label?: string;
 };
 
 export const EquipmentAwareRecommendationWeight = ({
@@ -29,6 +30,7 @@ export const EquipmentAwareRecommendationWeight = ({
   compact = false,
   showDetails = false,
   onOpenEquipmentProfile,
+  label,
 }: EquipmentAwareRecommendationWeightProps) => {
   const safeWeightKg = number(plannedWeightKg);
   if (safeWeightKg <= 0) return null;
@@ -42,21 +44,21 @@ export const EquipmentAwareRecommendationWeight = ({
     roundingPreference,
     equipmentProfile,
     showTheoreticalDetail: showDetails,
-    locale: 'bilingual',
+    locale: 'zh',
   });
 
   return (
     <div
-      className={compact ? 'mt-2 text-xs' : 'mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 text-sm'}
+      className={compact ? 'mt-2 text-xs' : 'mt-3 rounded-lg border border-white/10 bg-white/[0.05] p-3 text-sm'}
       data-equipment-aware-recommendation-weight="display-only"
       data-source-weight-unit={unitSettings.weightUnit}
     >
-      <div className="mb-1 text-xs font-semibold text-emerald-800">器械可做重量</div>
       <EquipmentAwareLoadDisplay
         displayResult={displayResult}
         compact={compact}
         showDetails={showDetails}
         onOpenEquipmentProfile={onOpenEquipmentProfile}
+        primaryLabel={label}
       />
     </div>
   );
