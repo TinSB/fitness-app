@@ -579,7 +579,7 @@ export function TodayView({
     ) : null;
   return (
     <ResponsivePageLayout>
-      <PageHeader eyebrow="今日" title="今日决策" description="判断今天练不练、练什么，以及从哪里开始。" />
+      <PageHeader eyebrow="今日" title="今日决策" />
 
       <DashboardLayout
         main={
@@ -709,7 +709,7 @@ export function TodayView({
             </GlassCard>
 
             <details className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-white" data-today-secondary-details="collapsed">
-              <summary className="cursor-pointer text-sm font-semibold">为什么这样推荐？ / 更多说明</summary>
+              <summary className="cursor-pointer text-sm font-semibold">为什么这样推荐？</summary>
               <div className="mt-4 space-y-3">
                 {todayTrainingState.status === 'not_started' && todayViewModel.recoverySummary ? (
                   <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">

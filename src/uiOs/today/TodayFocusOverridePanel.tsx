@@ -31,11 +31,9 @@ export function TodayFocusOverridePanel({ selection, onChange, className = '', c
       <div className="flex flex-wrap items-center justify-between gap-3" data-today-focus-override-density="compact">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white">切换目标</div>
-            <div className="mt-1 text-xs leading-5 text-white/45">
-              {selection.overrideActive ? `今天：${selection.selectedFocusLabel}` : '系统推荐'} · 只影响今天，不修改长期计划。
-            </div>
+            {selection.overrideActive ? <div className="mt-1 text-xs leading-5 text-white/45">今天：{selection.selectedFocusLabel}</div> : null}
             <span className="sr-only">
-              今天想练 原计划：{selection.systemTemplateName} {selection.overrideActive ? `手动目标 已切换为：${selection.selectedFocusLabel} · ${selection.selectedTemplateName}` : '系统推荐'}
+              今天想练 原计划：{selection.systemTemplateName} {selection.overrideActive ? `手动目标 已切换为：${selection.selectedFocusLabel} · ${selection.selectedTemplateName}` : ''}
               {' '}
               {TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS.map((option) => TODAY_TRAINING_FOCUS_OVERRIDE_LABELS[option]).join(' ')}
               {' '}
@@ -70,12 +68,11 @@ export function TodayFocusOverridePanel({ selection, onChange, className = '', c
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-white">切换目标</div>
-          <div className="mt-1 text-xs leading-5 text-white/45">中等优先级；选择只影响今天，不修改长期计划。</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {selection.overrideActive ? <StatusBadge state="manual-required">手动目标</StatusBadge> : null}
           <StatusBadge state={selection.overrideActive ? 'warning' : 'safe'}>
-            {selection.overrideActive ? `已切换为 ${selection.selectedFocusLabel}` : '系统推荐'}
+            {selection.overrideActive ? `已切换为 ${selection.selectedFocusLabel}` : '按计划'}
           </StatusBadge>
         </div>
       </div>
@@ -115,7 +112,7 @@ export function TodayFocusOverridePanel({ selection, onChange, className = '', c
         <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2">
           {selection.overrideActive
             ? `已切换为：${selection.selectedFocusLabel} · ${selection.selectedTemplateName}`
-            : `今日使用：${selection.systemTemplateName}`}
+            : `今日：${selection.systemTemplateName}`}
         </div>
       </div>
       {selection.warnings.length ? (

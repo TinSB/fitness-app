@@ -20,12 +20,10 @@ describe('DiagnosticsDataSafetyPanel', () => {
       ),
     );
 
-    expect(visible).toContain('Diagnostics / Data Health');
+    expect(visible).toContain('诊断');
     expect(visible).toContain('诊断与数据安全');
     expect(visible).toContain('脱敏摘要');
-    expect(visible).toContain('不会上传完整训练数据');
-    expect(visible).toContain('不提供自动修复');
-    expect(visible).toContain('不会外传诊断');
+    expect(visible).toContain('已脱敏');
     expect(visible).not.toContain('POST /data-health/repair/apply');
     expect(visible).not.toContain('full AppData');
   });

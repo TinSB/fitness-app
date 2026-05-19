@@ -209,7 +209,7 @@ export const buildTodayDecisionSurface = (input: TodayDecisionSurfaceInput): Tod
     decisionState: 'train_recommended',
     heroLabel: '今日结论',
     heroTitle: `今天建议：${focusLabel}`,
-    heroExplanation: '状态正常，按计划执行。',
+    heroExplanation: '',
     primaryActionLabel: input.existingPrimaryActionLabel === '开始训练' ? '开始今天训练' : input.existingPrimaryActionLabel || '开始今天训练',
     secondaryActionLabel: '查看动作安排',
     readinessLabel: '状态正常',

@@ -93,7 +93,7 @@ describe('UI-OS R8.1 mobile Today safe-area and density fix', () => {
     );
     const todaySource = read('src/features/TodayView.tsx');
 
-    expect(decision.heroExplanation).toBe('状态正常，按计划执行。');
+    expect(decision.heroExplanation).toBe('');
     expect(heroHtml).toContain('data-today-hero-density="mobile-compact"');
     expect(heroHtml).toContain('data-today-primary-action-slot="hero"');
     expect(heroHtml).not.toContain('数据状态：');

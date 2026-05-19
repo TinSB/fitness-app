@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, Dumbbell, FileText, Timer, XCircle } from 'lucide-react';
 import { classNames, formatTimer, isCompletedSet, isIncompleteSet, number, resolveMode, sessionVolume } from '../engines/engineUtils';
 import { getRestTimerRemainingSec } from '../engines/restTimerEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
@@ -225,11 +225,10 @@ export function TrainingView({
         <PageHeader
           eyebrow="训练"
           title="训练工作台"
-          description="用于查看、补记和结束当前训练；手机端快速记录优先使用极简模式。"
         />
         <EmptyState
           title="当前没有进行中的训练"
-          description="从今日页开始一场训练，或者直接用当前模板开始。"
+          description="从今日开始训练。"
           action={
             <div className="flex flex-col gap-2 sm:flex-row">
               <ActionButton variant="primary" onClick={onStartFromSelected}>
@@ -582,7 +581,6 @@ export function TrainingView({
     return (
       <PageSection
         title={title}
-        description="纠偏和功能补丁会单独记录；跳过时会保留原因，便于训练后复盘。"
         action={
           <div className="flex flex-wrap gap-2">
             <select
@@ -675,7 +673,6 @@ export function TrainingView({
       <PageHeader
         eyebrow="训练"
         title={templateLabel(session.templateId, session.templateName)}
-        description="完整训练页用于查看整体流程、补记每组数据、处理纠偏/功能补丁，并在训练结束时保存。"
         action={
           <div className="hidden flex-wrap gap-2 md:flex">
             <ActionButton type="button" variant="secondary" onClick={onReturnFocusMode}>
@@ -703,9 +700,6 @@ export function TrainingView({
                 <h2 className="mt-1 text-xl font-semibold text-slate-950">
                   {overallResolved}/{overallPlanned || 1} 项已处理
                 </h2>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  这里用于查看全流程、展开动作补记、修正记录，快速记录仍建议回到极简模式。
-                </p>
               </div>
               <div className="min-w-[160px]">
                 <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
@@ -737,7 +731,7 @@ export function TrainingView({
           <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} />
 
           {workoutFinished ? (
-            <PageSection title="完成总结" description="保存前先看本次训练质量；这里不会自动改计划。">
+            <PageSection title="完成总结">
               <Card className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -772,7 +766,7 @@ export function TrainingView({
             </PageSection>
           ) : null}
 
-          <PageSection title="完整动作列表" description="展开动作可补记重量、次数、RIR、动作质量、不适和备注。">
+          <PageSection title="完整动作列表">
             <div className="space-y-3">{mainExercises.map((exercise, index) => renderExerciseCard(exercise, index))}</div>
           </PageSection>
 
@@ -856,16 +850,6 @@ export function TrainingView({
                 暂无备注。展开动作后可在每组下方补记情况。
               </div>
             )}
-          </Card>
-
-          <Card tone="amber">
-            <div className="flex gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div className="text-sm leading-6">
-                <div className="font-semibold">完整页用于复盘和补记</div>
-                <div className="mt-1 opacity-80">训练中快速完成一组、替代动作或标记不适，优先回到极简模式。</div>
-              </div>
-            </div>
           </Card>
         </aside>
       </div>

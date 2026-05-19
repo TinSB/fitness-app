@@ -27,7 +27,6 @@ export function TodayReadinessSummary({ decision, readinessScore, durationMinute
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-white">恢复 / 疲劳</div>
-          <div className="mt-1 text-xs leading-5 text-white/45">用于判断今天能不能练，不改变训练算法。</div>
         </div>
         <StatusBadge state={readinessState[decision.decisionState]}>{decision.readinessLabel}</StatusBadge>
       </div>

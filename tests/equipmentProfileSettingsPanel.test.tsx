@@ -13,16 +13,16 @@ describe('EquipmentProfileSettingsPanel', () => {
       ),
     );
 
-    expect(visible).toContain('Equipment Profiles');
-    expect(visible).toContain('Olympic barbell');
+    expect(visible).toContain('器械档案');
+    expect(visible).toContain('奥林匹克杠铃');
     expect(visible).toContain('45 lb');
-    expect(visible).toContain('Smith machine');
+    expect(visible).toContain('史密斯机');
     expect(visible).toContain('25 lb');
-    expect(visible).toContain('Dumbbell');
+    expect(visible).toContain('哑铃');
     expect(visible).toContain('每只手 / 5 lb 一跳');
-    expect(visible).toContain('Selectorized machine');
+    expect(visible).toContain('插片器械');
     expect(visible).toContain('按机器插片');
-    expect(visible).toContain('Plate-loaded');
+    expect(visible).toContain('挂片器械');
     expect(visible).toContain('注意器械自重');
     expect(visible).toContain('草稿');
     expect(visible).toContain('查看器械档案草稿编辑器');

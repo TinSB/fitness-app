@@ -30,7 +30,8 @@ describe('UI-OS R8 Today compression', () => {
     expect(todaySource).toContain('TodayFocusOverrideControl');
     expect(todaySource).toContain('adjustedExercises.slice(0, 2)');
     expect(todaySource).toContain('data-today-secondary-details="collapsed"');
-    expect(todaySource).toContain('为什么这样推荐？ / 更多说明');
+    expect(todaySource).toContain('为什么这样推荐？');
+    expect(todaySource).not.toContain('为什么这样推荐？ / 更多说明');
   });
 
   it('hides focus override options by default behind compact 切换目标', () => {

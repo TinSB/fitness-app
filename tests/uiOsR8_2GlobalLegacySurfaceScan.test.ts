@@ -62,7 +62,7 @@ describe('UI-OS R8.2 global legacy surface scan', () => {
     }
 
     expect(combined).toContain('先导出备份，再进行恢复');
-    expect(combined).toContain('诊断摘要不会上传完整训练数据');
+    expect(combined).toContain('诊断摘要已脱敏');
     expect(combined).toContain('写入边界已锁定');
   });
 });

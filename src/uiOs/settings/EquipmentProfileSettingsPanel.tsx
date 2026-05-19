@@ -19,6 +19,7 @@ const equipmentCards = [
 export function EquipmentProfileSettingsPanel({ copy }: EquipmentProfileSettingsPanelProps) {
   const draft = createDefaultEquipmentProfileDraft('plate_loaded_machine');
   const validation = validateEquipmentProfileDraft({ ...draft, includeBaseWeight: true });
+  const summaryCopy = copy.includes('不会自动改写历史记录') ? '器械配置只影响推荐显示。' : copy;
 
   return (
     <SettingsGroupCard>
@@ -26,7 +27,7 @@ export function EquipmentProfileSettingsPanel({ copy }: EquipmentProfileSettings
         <div>
           <p className="text-sm font-semibold text-emerald-200">器械档案</p>
           <h3 className="mt-1 text-lg font-bold text-white">器械档案</h3>
-          <p className="mt-1 text-sm leading-6 text-white/60">{copy}</p>
+          <p className="mt-1 text-sm leading-6 text-white/60">{summaryCopy}</p>
         </div>
         <StatusBadge state="info" className="bg-blue-100 text-blue-700">草稿</StatusBadge>
       </div>

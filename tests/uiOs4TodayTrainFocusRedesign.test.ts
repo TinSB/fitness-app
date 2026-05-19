@@ -91,8 +91,8 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
     expect(todaySource).toContain('buildTodayDecisionSurface');
     expect(todaySource).toContain('<TodayFocusOverrideControl');
     expect(todayFocusOverrideSource).toContain('今天想练');
-    expect(todayFocusOverrideSource).toContain('选择只影响今天');
-    expect(todayFocusOverrideSource).toContain('不修改长期计划');
+    expect(todayFocusOverrideSource).not.toContain('选择只影响今天');
+    expect(todayFocusOverrideSource).not.toContain('不修改长期计划');
     expect(todaySource).toContain('<SafetyStrip state="source-unclear"');
     expect(todaySource).not.toContain('<SafetyStrip includeSecondaryCopy');
     expect(todaySource).toContain('继续训练');

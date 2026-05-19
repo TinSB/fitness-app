@@ -26,7 +26,7 @@ describe('TodayDecisionHero', () => {
     expect(text).toContain('今天练什么');
     expect(text).toContain('今天建议：腿 A');
     expect(text).toContain('开始今天训练');
-    expect(text).toContain('状态正常，按计划执行');
+    expect(text).not.toContain('状态正常，按计划执行');
     expect(text).not.toContain('数据状态：');
   });
 });

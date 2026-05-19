@@ -29,8 +29,10 @@ export function FloatingBottomNav<T extends string>({
       aria-label="主导航"
       aria-hidden={hidden ? 'true' : undefined}
       data-bottom-nav-hidden={hidden ? 'true' : 'false'}
+      data-bottom-nav-background="dark"
+      data-bottom-nav-surface="dark-safe-area"
       className={classNames(
-        'fixed bottom-0 left-0 right-0 pb-[calc(2rem+env(safe-area-inset-bottom))] px-4 z-40 pointer-events-none transition-all duration-300 lg:hidden',
+        'fixed bottom-0 left-0 right-0 bg-[linear-gradient(to_top,#0a0a0b_0%,rgba(10,10,11,0.96)_58%,rgba(10,10,11,0)_100%)] pb-[calc(2rem+env(safe-area-inset-bottom))] px-4 z-40 pointer-events-none transition-all duration-300 lg:hidden',
         hidden ? 'translate-y-[calc(100%+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
       )}
     >

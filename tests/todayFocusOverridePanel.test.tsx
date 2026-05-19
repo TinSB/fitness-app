@@ -24,9 +24,9 @@ describe('TodayFocusOverridePanel', () => {
     const text = visibleText(<TodayFocusOverridePanel selection={selection} onChange={() => undefined} />);
 
     expect(text).toContain('今天想练');
-    expect(text).toContain('中等优先级');
-    expect(text).toContain('选择只影响今天');
-    expect(text).toContain('不修改长期计划');
+    expect(text).not.toContain('中等优先级');
+    expect(text).not.toContain('选择只影响今天');
+    expect(text).not.toContain('不修改长期计划');
     expect(text).toContain('原计划：腿 A');
     expect(text).toContain('已切换为：胸 · 推 A');
     expect(text).toContain('恢复 / 活动度');

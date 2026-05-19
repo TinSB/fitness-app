@@ -19,7 +19,6 @@ export function EmergencyLocalSettingsPanel({ copy }: EmergencyLocalSettingsPane
             <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">可用</StatusBadge>
           </div>
           <p className="mt-2 text-sm leading-6 text-white/60">{copy}</p>
-          <p className="mt-2 text-sm leading-6 text-white/60">紧急本地模式可用，本地训练记录仍可继续。</p>
         </div>
       </div>
     </SettingsGroupCard>
