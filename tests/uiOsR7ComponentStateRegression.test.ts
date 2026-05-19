@@ -108,7 +108,7 @@ describe('UI-OS R7 component state regression lock', () => {
 
     expect((html.match(/<button/g) || []).length).toBe(5);
     expect((html.match(/data-active="true"/g) || []).length).toBe(1);
-    expect(html).toContain('fixed bottom-0');
+    expect(html).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)]');
     expect(html).toContain('env(safe-area-inset-bottom)');
     expect(html).toContain('bg-emerald-400');
   });

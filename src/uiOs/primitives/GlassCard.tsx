@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { classNames } from '../../engines/engineUtils';
 import { resolveThemeSurface, type ThemeSurfaceMode, type ThemeSurfaceType } from '../theme/themeSurfaceModel';
+import { useUiTheme } from '../theme/UiThemeProvider';
 
 export type GlassCardPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -38,10 +39,12 @@ export function GlassCard({
   as: Component = 'div',
   ariaLabel,
   surface = 'glass_card',
-  themeMode = 'dark',
+  themeMode,
   ...dataAttributes
 }: GlassCardProps) {
-  const resolvedSurface = resolveThemeSurface(surface, themeMode);
+  const uiTheme = useUiTheme();
+  const selectedThemeMode = themeMode || uiTheme.selectedThemeMode;
+  const resolvedSurface = resolveThemeSurface(surface, selectedThemeMode, { systemPrefersDark: uiTheme.resolvedTheme === 'dark' });
   return (
     <Component
       className={classNames(
@@ -53,7 +56,7 @@ export function GlassCard({
         highlight ? 'ring-1 ring-emerald-500/30' : '',
         className,
       )}
-      style={themeMode === 'dark' && surface === 'glass_card' ? glassCardStyle : undefined}
+      style={resolvedSurface.resolvedMode === 'dark' && surface === 'glass_card' ? glassCardStyle : undefined}
       onClick={onClick}
       aria-label={ariaLabel}
       {...dataAttributes}

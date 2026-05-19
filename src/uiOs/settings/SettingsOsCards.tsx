@@ -13,7 +13,7 @@ export function SettingsOsHero({ children, className = '' }: SurfaceProps) {
     <GlassCard
       as="section"
       padding="lg"
-      className={classNames('rounded-[28px] bg-[#0a0a0b] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]', className)}
+      className={classNames('rounded-[28px] shadow-[0_24px_80px_rgba(0,0,0,0.16)]', className)}
       ariaLabel="设置安全总览"
       highlight
     >
@@ -24,7 +24,7 @@ export function SettingsOsHero({ children, className = '' }: SurfaceProps) {
 
 export function SettingsOsGroup({ children, className = '' }: SurfaceProps) {
   return (
-    <SettingsGroupCard tone="dark" className={className}>
+    <SettingsGroupCard className={className}>
       {children}
     </SettingsGroupCard>
   );

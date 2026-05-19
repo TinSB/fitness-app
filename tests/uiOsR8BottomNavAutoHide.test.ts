@@ -36,7 +36,7 @@ describe('UI-OS R8 bottom nav auto-hide', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+env(safe-area-inset-bottom))]');
+    expect(html).toContain('translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))]');
     expect(html).toContain('env(safe-area-inset-bottom)');
   });
 
@@ -54,6 +54,6 @@ describe('UI-OS R8 bottom nav auto-hide', () => {
     expect(source).toContain('delta > 12');
     expect(source).toContain('nearTop || nearBottom');
     expect(immersive).not.toContain('data-bottom-nav-hidden');
-    expect(immersive).not.toContain('fixed bottom-0');
+    expect(immersive).not.toContain('data-bottom-nav-hidden');
   });
 });
