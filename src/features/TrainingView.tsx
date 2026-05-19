@@ -211,6 +211,8 @@ export function TrainingView({
 }: TrainingViewProps) {
   const [supportReasonDrafts, setSupportReasonDrafts] = React.useState<Record<string, SupportSkipReason>>({});
   const [showAbandonConfirm, setShowAbandonConfirm] = React.useState(false);
+  const recommendationTrace = React.useMemo(() => (session ? buildSessionRecommendationTrace(session) : null), [session]);
+  const sessionQuality = React.useMemo(() => (session ? buildSessionQualityResult({ session }) : null), [session]);
 
   React.useEffect(() => {
     setSupportReasonDrafts({});
@@ -243,6 +245,10 @@ export function TrainingView({
     );
   }
 
+  if (!recommendationTrace || !sessionQuality) {
+    return null;
+  }
+
   const mainExercises = session.exercises as LoggedExercise[];
   const totalSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).length, 0);
   const doneSets = mainExercises.reduce((sum, exercise) => sum + getSets(exercise).filter((set) => isCompletedSet(set)).length, 0);
@@ -253,7 +259,6 @@ export function TrainingView({
   const activeSetIndex = activeExercise ? findNextUnfinishedSetIndex(activeExercise) : -1;
   const remainingSec = getRestTimerRemainingSec(restTimer);
   const mode = resolveMode(session.trainingMode || 'hybrid');
-  const recommendationTrace = React.useMemo(() => buildSessionRecommendationTrace(session), [session]);
 
   const getSupportLog = (moduleId: string, exerciseId: string) =>
     (session.supportExerciseLogs || []).find((item) => item.moduleId === moduleId && item.exerciseId === exerciseId);
@@ -276,7 +281,6 @@ export function TrainingView({
   const allMainDone = totalSets > 0 && doneSets >= totalSets;
   const supportResolved = supportSummary.resolved >= supportSummary.planned;
   const workoutFinished = allMainDone && supportResolved;
-  const sessionQuality = React.useMemo(() => buildSessionQualityResult({ session }), [session]);
   const sessionQualityItems = [...sessionQuality.positives, ...sessionQuality.issues].slice(0, 3);
   const notes = mainExercises.flatMap((exercise) =>
     getSets(exercise)

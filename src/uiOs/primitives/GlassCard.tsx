@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { classNames } from '../../engines/engineUtils';
+import { resolveThemeSurface, type ThemeSurfaceMode, type ThemeSurfaceType } from '../theme/themeSurfaceModel';
 
 export type GlassCardPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -11,6 +12,8 @@ export type GlassCardProps = {
   highlight?: boolean;
   as?: 'div' | 'section' | 'article';
   ariaLabel?: string;
+  surface?: ThemeSurfaceType;
+  themeMode?: ThemeSurfaceMode;
 };
 
 const paddingMap: Record<GlassCardPadding, string> = {
@@ -33,19 +36,26 @@ export function GlassCard({
   highlight = false,
   as: Component = 'div',
   ariaLabel,
+  surface = 'glass_card',
+  themeMode = 'dark',
 }: GlassCardProps) {
+  const resolvedSurface = resolveThemeSurface(surface, themeMode);
   return (
     <Component
       className={classNames(
         'backdrop-blur-xl rounded-2xl',
+        resolvedSurface.className,
+        resolvedSurface.textClassName,
         paddingMap[padding],
         onClick ? 'cursor-pointer active:scale-[0.98] transition-transform duration-150' : '',
         highlight ? 'ring-1 ring-emerald-500/30' : '',
         className,
       )}
-      style={glassCardStyle}
+      style={themeMode === 'dark' && surface === 'glass_card' ? glassCardStyle : undefined}
       onClick={onClick}
       aria-label={ariaLabel}
+      data-theme-surface={surface}
+      data-theme-mode={resolvedSurface.resolvedMode}
     >
       {children}
     </Component>

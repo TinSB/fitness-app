@@ -338,58 +338,63 @@ export function ProfileView({
           renderIssueActions={renderDataHealthIssueActions}
         />
 
-        <div ref={healthDataRef}>
-          <SettingsGroupCard className="xl:col-span-2">
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-slate-500">Health Data Import</p>
-              <h3 className="mt-1 text-lg font-bold text-slate-950">健康数据导入</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。此处不会上传完整训练数据。
-              </p>
+        <details className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/[0.05] p-4 text-white" data-settings-secondary-details="collapsed">
+          <summary className="cursor-pointer text-sm font-semibold">更多设置与低频维护</summary>
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            <div ref={healthDataRef} className="xl:col-span-2">
+              <SettingsGroupCard className="xl:col-span-2">
+                <div className="mb-4">
+                  <p className="text-sm font-semibold text-slate-500">Health Data Import</p>
+                  <h3 className="mt-1 text-lg font-bold text-slate-950">健康数据导入</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    手动导入 CSV / JSON / Apple Health export.xml，用于恢复和活动负荷参考。此处不会上传完整训练数据。
+                  </p>
+                </div>
+                <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
+              </SettingsGroupCard>
             </div>
-            <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
-          </SettingsGroupCard>
-        </div>
 
-        <div ref={screeningRef}>
-          <SettingsGroupCard>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-500">Profile / Screening</p>
-                <h3 className="mt-1 text-lg font-bold text-slate-950">身体 / 动作筛查</h3>
+            <div ref={screeningRef}>
+              <SettingsGroupCard>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500">Profile / Screening</p>
+                    <h3 className="mt-1 text-lg font-bold text-slate-950">身体 / 动作筛查</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      管理训练目标、体态问题、动作限制和疼痛触发。低频配置集中在设置页，不挤占训练流程。
+                    </p>
+                  </div>
+                  <ActionButton variant="primary" onClick={onOpenAssessment}>
+                    <ShieldCheck className="h-4 w-4" />
+                    打开筛查
+                  </ActionButton>
+                </div>
+              </SettingsGroupCard>
+            </div>
+
+            <SettingsGroupCard className="xl:col-span-2">
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-slate-500">Coach Automation</p>
+                <h3 className="mt-1 text-lg font-bold text-slate-950">教练动作收件箱</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  管理训练目标、体态问题、动作限制和疼痛触发。低频配置集中在设置页，不挤占训练流程。
+                  教练自动化只生成建议，不会自动覆盖计划或修改历史。采用建议、修正记录或调整计划仍由你手动确认。
                 </p>
               </div>
-              <ActionButton variant="primary" onClick={onOpenAssessment}>
-                <ShieldCheck className="h-4 w-4" />
-                打开筛查
-              </ActionButton>
-            </div>
-          </SettingsGroupCard>
-        </div>
+              <CoachActionList
+                title="教练动作收件箱"
+                description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会自动修改数据。"
+                viewModel={coachActionListViewModel}
+                showStatusFilters
+                onAction={onCoachAction}
+                onDismiss={onDismissCoachAction}
+                onDetail={onCoachAction}
+                emptyText="暂无需要处理的教练建议。"
+              />
+            </SettingsGroupCard>
 
-        <SettingsGroupCard className="xl:col-span-2">
-          <div className="mb-4">
-            <p className="text-sm font-semibold text-slate-500">Coach Automation</p>
-            <h3 className="mt-1 text-lg font-bold text-slate-950">教练动作收件箱</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              教练自动化只生成建议，不会自动覆盖计划或修改历史。采用建议、修正记录或调整计划仍由你手动确认。
-            </p>
+            <AboutDataSafetyPanel historyCount={data.history?.length || 0} unitLabel={unitSettings.weightUnit} />
           </div>
-          <CoachActionList
-            title="教练动作收件箱"
-            description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会自动修改数据。"
-            viewModel={coachActionListViewModel}
-            showStatusFilters
-            onAction={onCoachAction}
-            onDismiss={onDismissCoachAction}
-            onDetail={onCoachAction}
-            emptyText="暂无需要处理的教练建议。"
-          />
-        </SettingsGroupCard>
-
-        <AboutDataSafetyPanel historyCount={data.history?.length || 0} unitLabel={unitSettings.weightUnit} />
+        </details>
       </SettingsControlCenter>
       {pendingRestore ? (
         <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/30 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">

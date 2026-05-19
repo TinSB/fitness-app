@@ -1,4 +1,5 @@
 import { classNames } from '../../engines/engineUtils';
+import { resolveThemeSurface } from '../theme/themeSurfaceModel';
 
 export type EquipmentLoadType = 'barbell' | 'dumbbell' | 'machine-stack' | 'plate-loaded' | 'smith' | 'unknown';
 export type EquipmentLoadCardState = 'default' | 'warning' | 'blocked';
@@ -35,11 +36,14 @@ export function EquipmentAwareLoadCard({
   state = 'default',
   className = '',
 }: EquipmentAwareLoadCardProps) {
+  const surface = resolveThemeSurface('training_hero', 'dark', { immersiveDark: true });
   return (
     <section
-      className={classNames('relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b', stateGradients[state], className)}
+      className={classNames('relative overflow-hidden rounded-3xl p-6 bg-gradient-to-b', surface.className, surface.textClassName, stateGradients[state], className)}
       style={{ border: '1px solid rgba(255, 255, 255, 0.06)' }}
       aria-label="Equipment-aware load card"
+      data-theme-surface="training_hero"
+      data-theme-mode="dark"
     >
       <div className="flex items-center gap-2 mb-5">
         <span className="text-xs text-white/35 uppercase tracking-widest font-medium">{typeLabels[type]}</span>

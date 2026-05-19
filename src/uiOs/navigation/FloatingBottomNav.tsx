@@ -13,6 +13,7 @@ export type FloatingBottomNavProps<T extends string> = {
   onNavigate: (id: T) => void;
   activeSession?: boolean;
   trainTabId?: T;
+  hidden?: boolean;
 };
 
 export function FloatingBottomNav<T extends string>({
@@ -21,9 +22,18 @@ export function FloatingBottomNav<T extends string>({
   onNavigate,
   activeSession = false,
   trainTabId,
+  hidden = false,
 }: FloatingBottomNavProps<T>) {
   return (
-    <nav aria-label="主导航" className="fixed bottom-0 left-0 right-0 pb-[calc(2rem+env(safe-area-inset-bottom))] px-4 z-40 pointer-events-none lg:hidden">
+    <nav
+      aria-label="主导航"
+      aria-hidden={hidden ? 'true' : undefined}
+      data-bottom-nav-hidden={hidden ? 'true' : 'false'}
+      className={classNames(
+        'fixed bottom-0 left-0 right-0 pb-[calc(2rem+env(safe-area-inset-bottom))] px-4 z-40 pointer-events-none transition-all duration-300 lg:hidden',
+        hidden ? 'translate-y-[calc(100%+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
+      )}
+    >
       <div
         className="mx-auto flex w-full max-w-md items-center justify-around py-3 px-2 rounded-2xl backdrop-blur-2xl pointer-events-auto"
         style={{

@@ -40,11 +40,13 @@ export function SettingsControlCenter({ summary, children }: SettingsControlCent
           <StatusBadge state={stateTone[summary.overallSafetyState]}>{stateLabel[summary.overallSafetyState]}</StatusBadge>
         </div>
 
+        {summary.overallSafetyState === 'safe' ? null : (
         <div className="mt-4">
           <SafetyStrip state={summary.overallSafetyState === 'stop' || summary.overallSafetyState === 'emergency' ? 'source-unclear' : 'local-ok'} includeSecondaryCopy />
         </div>
+        )}
 
-        <div className="mt-4 grid gap-2 md:grid-cols-3">
+        <div className="mt-4 grid gap-2 md:grid-cols-3" data-settings-summary-actions="top-level">
           {summary.safeNextActions.slice(0, 3).map((action) => (
             <div key={action} className="rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/70">
               {action}
