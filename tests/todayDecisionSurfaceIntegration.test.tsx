@@ -43,8 +43,8 @@ describe('Today decision surface integration', () => {
     expect(text).toContain('开始今天训练');
     expect(text).toContain('恢复 / 疲劳');
     expect(text).toContain('今天想练');
-    expect(text).toContain('选择只影响今天');
-    expect(text).toContain('不修改长期计划');
+    expect(text).not.toContain('选择只影响今天');
+    expect(text).not.toContain('不修改长期计划');
     expect(text).not.toContain('当前使用本地数据');
     expect(text).not.toContain('云端候选不会自动同步');
     expect(text).not.toContain('本地训练记录仍可继续');

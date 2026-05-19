@@ -20,13 +20,14 @@ export function BackupRecoverySettingsPanel({
   onImportClick,
   onOpenRecordData,
 }: BackupRecoverySettingsPanelProps) {
+  const summaryCopy = copy.includes('恢复会覆盖') ? '先导出备份，再进行恢复。' : copy;
   return (
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-emerald-200">备份与恢复</p>
           <h3 className="mt-1 text-lg font-bold text-white">备份与恢复</h3>
-          <p className="mt-1 text-sm leading-6 text-white/60">{copy}</p>
+          <p className="mt-1 text-sm leading-6 text-white/60">{summaryCopy}</p>
         </div>
         <StatusBadge state="warning" className="bg-amber-100 text-amber-700">需要确认</StatusBadge>
       </div>

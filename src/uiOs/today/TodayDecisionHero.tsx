@@ -45,7 +45,7 @@ export function TodayDecisionHero({ decision, dateLabel, primaryAction, secondar
         <div className="min-w-0">
           <div className="text-sm font-semibold text-emerald-200">今天练什么</div>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-4xl">{decision.heroTitle}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-white/62">{decision.heroExplanation}</p>
+          {decision.heroExplanation ? <p className="mt-2 max-w-xl text-sm leading-6 text-white/62">{decision.heroExplanation}</p> : null}
         </div>
         <div className="flex flex-col gap-2" data-today-primary-action-slot="hero">
           {primaryAction}

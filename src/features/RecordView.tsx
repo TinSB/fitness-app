@@ -1575,7 +1575,6 @@ export function RecordView({
       <PageHeader
         eyebrow="记录"
         title="训练记录中心"
-        description="默认从日历进入，回答“我以前哪天练了什么”。"
       />
       <div
         className="space-y-4 [&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45"
@@ -1590,11 +1589,6 @@ export function RecordView({
               <h2 className="mt-2 text-2xl font-bold tracking-tight">
                 {surfaceMode === 'history' ? '训练频率先看日历，再看 PR / e1RM' : '历史、进步和数据健康保持同一套记录来源'}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                {surfaceMode === 'history'
-                  ? '先确认哪天练了、哪天休息，再快速进入主要动作 PR / e1RM。训练列表和数据健康只作为次级回看信号。'
-                  : '继续使用现有 PR / e1RM、有效组和数据健康计算。这里不会自行修复、删除或上传任何训练数据。'}
-              </p>
             </div>
             <div className="grid min-w-40 gap-2 text-sm">
               <div className="rounded-2xl bg-white/10 px-3 py-2">训练记录：{rawHistory.length} 次</div>

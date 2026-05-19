@@ -23,16 +23,17 @@ export function DiagnosticsDataSafetyPanel({
   issueDetailFallbackLabel = '查看详情',
   renderIssueActions,
 }: DiagnosticsDataSafetyPanelProps) {
+  const summaryCopy = diagnosticsCopy.includes('不会上传完整训练数据') ? '诊断摘要已脱敏。' : diagnosticsCopy;
   return (
     <SettingsGroupCard className="xl:col-span-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white/45">Diagnostics / Data Health</p>
+          <p className="text-sm font-semibold text-white/45">诊断</p>
           <h3 className="mt-1 text-lg font-bold text-white">诊断与数据安全</h3>
           <p className="mt-1 text-sm font-semibold text-white/72">{dataHealthLabel}</p>
-          <p className="mt-1 text-sm leading-6 text-white/60">{diagnosticsCopy}</p>
+          <p className="mt-1 text-sm leading-6 text-white/60">{summaryCopy}</p>
         </div>
-        <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">redacted</StatusBadge>
+        <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">已脱敏</StatusBadge>
       </div>
       <details className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3" data-settings-diagnostics-details="collapsed" data-theme-surface="compact_row">
         <summary className="cursor-pointer text-sm font-semibold text-white">查看数据健康详情</summary>
@@ -48,9 +49,6 @@ export function DiagnosticsDataSafetyPanel({
           </span>
         ) : null}
       </div>
-      <p className="mt-3 text-xs leading-5 text-white/42">
-        诊断摘要不会上传完整训练数据；不提供自动修复，也不会外传诊断。
-      </p>
     </SettingsGroupCard>
   );
 }

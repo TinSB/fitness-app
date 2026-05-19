@@ -29,9 +29,6 @@ export function ThemeSettingsPanel({ theme, unitSettings, onThemeChange, onUnitC
         <div>
           <p className="text-sm font-semibold text-emerald-200">应用偏好</p>
           <h3 className="mt-1 text-lg font-bold text-white">主题与单位</h3>
-          <p className="mt-1 text-sm leading-6 text-white/55">
-            主题只影响本次界面显示，不会改变训练记录。Focus Mode 会保持沉浸深色。
-          </p>
         </div>
         <StatusBadge state="info">系统 / 浅色 / 深色</StatusBadge>
       </div>
@@ -40,17 +37,11 @@ export function ThemeSettingsPanel({ theme, unitSettings, onThemeChange, onUnitC
         <div>
           <div className="mb-2 text-xs font-semibold tracking-wide text-white/40">主题</div>
           <SegmentedControl options={themeOptions} value={theme.selectedThemeMode} onChange={onThemeChange} ariaLabel="主题偏好" />
-          <p className="mt-2 text-xs leading-5 text-white/45">
-            当前显示为 {theme.resolvedTheme === 'dark' ? '深色' : '浅色'}；Focus Mode 保持沉浸深色。
-          </p>
         </div>
 
         <div>
           <div className="mb-2 text-xs font-semibold tracking-wide text-white/40">单位</div>
           <SegmentedControl options={unitOptions} value={unitSettings.weightUnit} onChange={onUnitChange} ariaLabel="单位偏好" />
-          <p className="mt-2 text-xs leading-5 text-white/45">
-            单位只影响界面显示和输入，不会改写历史记录。
-          </p>
         </div>
       </div>
     </SettingsGroupCard>

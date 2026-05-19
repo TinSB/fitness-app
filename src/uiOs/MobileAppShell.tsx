@@ -47,7 +47,7 @@ export const MobileAppShell = <T extends string>({
   };
 
   return (
-  <div className="h-dvh min-h-dvh w-full overflow-hidden bg-[#0a0a0b] font-sans text-slate-100">
+  <div className="h-dvh min-h-dvh w-full overflow-hidden bg-[#0a0a0b] font-sans text-slate-100" data-app-chrome-background="dark">
     <div className="flex h-full w-full">
       <aside className={classNames('hidden w-[244px] shrink-0 flex-col border-r border-white/10 bg-black/35 text-white backdrop-blur-xl lg:flex', immersive && 'lg:hidden')}>
         <div className="border-b border-white/10 px-5 py-5">
@@ -96,12 +96,13 @@ export const MobileAppShell = <T extends string>({
         {!immersive ? <AppTopBar activeSession={activeSession} trainTabId={trainTabId} onNavigate={onNavigate} /> : null}
         <div
           className={classNames(
-            'min-h-0 flex-1 overflow-y-auto lg:pb-0',
+            'min-h-0 flex-1 overflow-y-auto bg-[#0a0a0b] lg:pb-0',
             immersive ? 'pb-0' : 'pb-[calc(9rem+env(safe-area-inset-bottom))] scroll-pb-[calc(9rem+env(safe-area-inset-bottom))]',
           )}
           onScroll={handleShellScroll}
           data-shell-scroll-area="bottom-nav-aware"
           data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}
+          data-shell-bottom-background="dark"
         >
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>

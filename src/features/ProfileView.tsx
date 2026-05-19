@@ -293,7 +293,6 @@ export function ProfileView({
       <PageHeader
         eyebrow="我的"
         title="设置中心"
-        description="管理个人资料、筛查、单位、健康数据、备份恢复和本地应用说明。"
       />
 
       <SettingsControlCenter summary={settingsSafetySummary}>

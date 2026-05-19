@@ -16,7 +16,7 @@ describe('Today layout', () => {
   });
 
   it('answers the Today page decision questions without long-term panels', () => {
-    expect(source).toContain('今天练不练、练什么，以及从哪里开始');
+    expect(source).not.toContain('今天练不练、练什么，以及从哪里开始');
     expect(source).toContain('训练预览');
     expect(source).toContain('计划进度');
     expect(source).not.toContain('WeeklyPrescriptionCard');

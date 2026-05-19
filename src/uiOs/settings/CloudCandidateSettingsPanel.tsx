@@ -34,9 +34,6 @@ export function CloudCandidateSettingsPanel({ copy }: CloudCandidateSettingsPane
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs leading-5 text-white/45">
-        云端候选需要手动确认；这里不提供一键同步或自动后台入口。
-      </p>
     </SettingsGroupCard>
   );
 }
