@@ -35,7 +35,7 @@ const renderTodayText = (data = makeAppData()) =>
   );
 
 describe('Today decision surface integration', () => {
-  it('renders the decision hero, start action, readiness summary, focus override, and local-first copy', () => {
+  it('renders the decision hero, start action, readiness summary, compact focus override, and no normal full safety strip', () => {
     const text = renderTodayText();
 
     expect(text).toContain('今日结论');
@@ -45,9 +45,9 @@ describe('Today decision surface integration', () => {
     expect(text).toContain('今天想练');
     expect(text).toContain('选择只影响今天');
     expect(text).toContain('不修改长期计划');
-    expect(text).toContain('当前使用本地数据');
-    expect(text).toContain('云端候选不会自动同步');
-    expect(text).toContain('本地训练记录仍可继续');
+    expect(text).not.toContain('当前使用本地数据');
+    expect(text).not.toContain('云端候选不会自动同步');
+    expect(text).not.toContain('本地训练记录仍可继续');
     expect(text).not.toContain('云端同步完成');
     expect(text).not.toContain('云端已成为默认');
   });

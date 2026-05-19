@@ -14,6 +14,7 @@ export type GlassCardProps = {
   ariaLabel?: string;
   surface?: ThemeSurfaceType;
   themeMode?: ThemeSurfaceMode;
+  [dataAttribute: `data-${string}`]: string | undefined;
 };
 
 const paddingMap: Record<GlassCardPadding, string> = {
@@ -38,6 +39,7 @@ export function GlassCard({
   ariaLabel,
   surface = 'glass_card',
   themeMode = 'dark',
+  ...dataAttributes
 }: GlassCardProps) {
   const resolvedSurface = resolveThemeSurface(surface, themeMode);
   return (
@@ -54,6 +56,7 @@ export function GlassCard({
       style={themeMode === 'dark' && surface === 'glass_card' ? glassCardStyle : undefined}
       onClick={onClick}
       aria-label={ariaLabel}
+      {...dataAttributes}
       data-theme-surface={surface}
       data-theme-mode={resolvedSurface.resolvedMode}
     >

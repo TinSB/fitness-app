@@ -39,6 +39,7 @@ import { useConfirmDialog } from '../ui/useConfirmDialog';
 import { DashboardLayout } from '../ui/layouts/DashboardLayout';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { ActionButton as UiOsActionButton } from '../uiOs/primitives/ActionButton';
+import { GlassCard } from '../uiOs/primitives/GlassCard';
 import { SafetyStrip } from '../uiOs/surfaces/SafetyStrip';
 import { TodayActiveSessionNotice } from '../uiOs/today/TodayActiveSessionNotice';
 import { TodayDecisionHero } from '../uiOs/today/TodayDecisionHero';
@@ -216,12 +217,14 @@ const TodayFocusOverrideControl = ({
   onChange,
   expanded,
   onToggleExpanded,
+  embedded = false,
 }: {
   selection: TodayTrainingFocusSelection;
   onChange?: (override: TodayTrainingFocusOverrideOption) => void;
   expanded: boolean;
   onToggleExpanded: () => void;
-}) => <TodayFocusOverridePanel selection={selection} onChange={onChange} compact expanded={expanded} onToggleExpanded={onToggleExpanded} />;
+  embedded?: boolean;
+}) => <TodayFocusOverridePanel selection={selection} onChange={onChange} compact expanded={expanded} embedded={embedded} onToggleExpanded={onToggleExpanded} />;
 
 export function TodayView({
   data,
@@ -559,30 +562,30 @@ export function TodayView({
 
   const primaryAction =
     todayDecisionSurface.decisionState === 'blocked_by_severe_risk' ? (
-      <UiOsActionButton type="button" onClick={handleSevereRiskAction} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={handleSevereRiskAction} variant="primary" size="lg" fullWidth data-today-primary-cta="true">
         {todayDecisionSurface.primaryActionLabel}
       </UiOsActionButton>
     ) : todayTrainingState.status === 'completed' && completedSession ? (
-      <UiOsActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={() => onViewSession?.(completedSession.id, completedSession.date)} variant="primary" size="lg" fullWidth data-today-primary-cta="true">
         查看本次训练
         <ChevronRight className="h-4 w-4" />
       </UiOsActionButton>
     ) : todayTrainingState.status === 'in_progress' ? (
-      <UiOsActionButton type="button" onClick={onResume} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={onResume} variant="primary" size="lg" fullWidth data-today-primary-cta="true">
         继续训练
         <ChevronRight className="h-4 w-4" />
       </UiOsActionButton>
     ) : recoveryNeedsNonTrainingPrimary ? (
-      <UiOsActionButton type="button" onClick={handleRecoveryPrimaryAction} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={handleRecoveryPrimaryAction} variant="primary" size="lg" fullWidth data-today-primary-cta="true">
         {todayDecisionSurface.primaryActionLabel}
       </UiOsActionButton>
     ) : recommendedTemplateId && recommendedTemplateId !== selectedTemplate.id ? (
-      <UiOsActionButton type="button" onClick={() => (onStartRecommended ? onStartRecommended(recommendedTemplateId) : onStart())} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={() => (onStartRecommended ? onStartRecommended(recommendedTemplateId) : onStart())} variant="primary" size="lg" fullWidth data-today-primary-cta="true">
         <Play className="h-4 w-4" />
         {todayDecisionSurface.primaryActionLabel}
       </UiOsActionButton>
     ) : (
-      <UiOsActionButton type="button" onClick={onStart} variant="primary" size="lg" fullWidth>
+      <UiOsActionButton type="button" onClick={onStart} variant="primary" size="lg" fullWidth data-today-primary-cta="true">
         <Play className="h-4 w-4" />
         {todayDecisionSurface.primaryActionLabel}
       </UiOsActionButton>
@@ -608,13 +611,30 @@ export function TodayView({
         采用推荐安排
       </UiOsActionButton>
     ) : null;
-  const shouldShowRecoveryProminently =
-    todayDecisionSurface.decisionState !== 'train_recommended' ||
+  const meaningfulRecoveryRisk =
+    todayTrainingState.status === 'not_started' &&
+    (todayViewModel.recommendationKind === 'rest' ||
+      todayViewModel.recommendationKind === 'active_recovery' ||
+      todayViewModel.recommendationKind === 'mobility_only' ||
+      todayViewModel.recommendationKind === 'modified_train' ||
+      todayDecisionSurface.decisionState === 'train_conservative' ||
+      todayDecisionSurface.decisionState === 'recovery_recommended' ||
     adjustedPlan.readiness.level === 'yellow' ||
     adjustedPlan.readiness.level === 'red' ||
-    fatigueDecisionState === 'high';
+      fatigueDecisionState === 'high');
+  const shouldShowRecoveryProminently = meaningfulRecoveryRisk;
   const shouldShowTodaySafetyStrip = todayDecisionSurface.decisionState === 'source_unclear';
   const keyExerciseNames = previewExercises.map((exercise) => exerciseLabel(exercise)).join(' / ');
+  const heroSupportingAction =
+    todayDecisionSurface.showFocusOverride && todayTrainingState.status === 'not_started' ? (
+      <TodayFocusOverrideControl
+        selection={resolvedTodayFocusSelection}
+        onChange={onFocusOverrideChange}
+        expanded={false}
+        onToggleExpanded={() => setFocusOverrideExpanded((current) => !current)}
+        embedded
+      />
+    ) : null;
   const shouldShowSecondaryTodayDetails =
     Boolean(
       todayViewModel.recoverySummary ||
@@ -638,7 +658,17 @@ export function TodayView({
               dateLabel={todayTrainingState.date}
               primaryAction={primaryAction}
               secondaryActions={heroSecondaryActions}
+              supportingAction={heroSupportingAction}
             />
+
+            {focusOverrideExpanded && todayDecisionSurface.showFocusOverride && todayTrainingState.status === 'not_started' ? (
+              <TodayFocusOverrideControl
+                selection={resolvedTodayFocusSelection}
+                onChange={onFocusOverrideChange}
+                expanded
+                onToggleExpanded={() => setFocusOverrideExpanded(false)}
+              />
+            ) : null}
 
             {todayTrainingState.status === 'in_progress' ? (
               <TodayActiveSessionNotice
@@ -677,39 +707,30 @@ export function TodayView({
               </div>
             )}
 
-            {todayDecisionSurface.showFocusOverride && todayTrainingState.status === 'not_started' ? (
-              <TodayFocusOverrideControl
-                selection={resolvedTodayFocusSelection}
-                onChange={onFocusOverrideChange}
-                expanded={focusOverrideExpanded}
-                onToggleExpanded={() => setFocusOverrideExpanded((current) => !current)}
-              />
-            ) : null}
+            {shouldShowTodaySafetyStrip ? <SafetyStrip state="source-unclear" /> : null}
 
-            {shouldShowTodaySafetyStrip ? <SafetyStrip includeSecondaryCopy state="source-unclear" /> : null}
-
-            <Card className="space-y-3">
+            <GlassCard as="section" surface="health_card" padding="md" className="space-y-3" ariaLabel="今日核心安排" data-today-training-preview="concise">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-base font-semibold text-slate-950">
+                  <div className="text-base font-semibold text-white">
                     {pendingSessionPatches.length ? '训练预览 · 已应用本次调整' : '训练预览'}
                   </div>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                  <p className="mt-1 text-sm leading-6 text-white/55">
                     {keyExerciseNames ? `核心动作：${keyExerciseNames}` : '只展示今天开始训练前需要知道的核心安排。'}
                   </p>
                 </div>
                 <StatusBadge tone="slate">{adjustedExercises.length} 个动作</StatusBadge>
               </div>
               {pendingSessionPatches.length ? (
-                <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2">
-                  <div className="text-sm font-semibold text-sky-950">本次调整</div>
-                  <ul className="mt-1 space-y-1 text-xs leading-5 text-sky-900">
+                <div className="rounded-2xl border border-sky-300/25 bg-sky-300/10 px-3 py-2">
+                  <div className="text-sm font-semibold text-sky-50">本次调整</div>
+                  <ul className="mt-1 space-y-1 text-xs leading-5 text-sky-100">
                     {temporaryAdjustmentSummaries.map((summary) => (
                       <li key={summary}>- {summary}</li>
                     ))}
                   </ul>
                   {temporarySkippedSupportItems.length ? (
-                    <div className="mt-2 space-y-1 border-t border-sky-100 pt-2 text-xs leading-5 text-sky-900">
+                    <div className="mt-2 space-y-1 border-t border-sky-300/20 pt-2 text-xs leading-5 text-sky-100">
                       {temporarySkippedSupportItems.slice(0, 3).map((item) => (
                         <div key={item.id}>
                           {item.name} · {item.label}
@@ -720,14 +741,14 @@ export function TodayView({
                   ) : null}
                 </div>
               ) : null}
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-white/10">
                 {previewExercises.map((exercise, index) => {
                   const patchBadge = patchBadgeForExercise(exercise, pendingSessionPatches);
                   return (
                     <div key={`${exercise.id}-${index}`} className="flex items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-slate-950">{exerciseLabel(exercise)}</div>
-                        <div className="mt-1 text-xs text-slate-500">{formatExercisePrescription(exercise)}</div>
+                        <div className="truncate text-sm font-semibold text-white">{exerciseLabel(exercise)}</div>
+                        <div className="mt-1 text-xs text-white/45">{formatExercisePrescription(exercise)}</div>
                       </div>
                       {patchBadge ? (
                         <StatusBadge tone={patchBadge.tone}>{patchBadge.label}</StatusBadge>
@@ -741,11 +762,11 @@ export function TodayView({
                 })}
               </div>
               {hiddenExerciseCount > 0 ? (
-                <div className="rounded-lg bg-stone-50 px-3 py-2 text-sm text-slate-500">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white/55">
                   还有 {hiddenExerciseCount} 个动作会在训练页显示完整记录入口。
                 </div>
               ) : null}
-            </Card>
+            </GlassCard>
 
             <details className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-white" data-today-secondary-details="collapsed">
               <summary className="cursor-pointer text-sm font-semibold">为什么这样推荐？ / 更多说明</summary>

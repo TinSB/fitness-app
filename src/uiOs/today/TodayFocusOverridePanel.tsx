@@ -15,6 +15,7 @@ export type TodayFocusOverridePanelProps = {
   className?: string;
   compact?: boolean;
   expanded?: boolean;
+  embedded?: boolean;
   onToggleExpanded?: () => void;
 };
 
@@ -24,11 +25,10 @@ const primaryOverrideOptions = TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS.filter((opt
 
 const secondaryOverrideOptions = TODAY_TRAINING_FOCUS_OVERRIDE_OPTIONS.filter((option) => !primaryOverrideOptions.includes(option));
 
-export function TodayFocusOverridePanel({ selection, onChange, className = '', compact = false, expanded = true, onToggleExpanded }: TodayFocusOverridePanelProps) {
+export function TodayFocusOverridePanel({ selection, onChange, className = '', compact = false, expanded = true, embedded = false, onToggleExpanded }: TodayFocusOverridePanelProps) {
   if (compact && !expanded) {
-    return (
-      <GlassCard as="section" padding="sm" className={classNames('rounded-3xl', className)} ariaLabel="切换目标">
-        <div className="flex flex-wrap items-center justify-between gap-3" data-today-focus-override-density="compact">
+    const compactContent = (
+      <div className="flex flex-wrap items-center justify-between gap-3" data-today-focus-override-density="compact">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white">切换目标</div>
             <div className="mt-1 text-xs leading-5 text-white/45">
@@ -48,6 +48,19 @@ export function TodayFocusOverridePanel({ selection, onChange, className = '', c
             切换目标
           </ActionButton>
         </div>
+    );
+
+    if (embedded) {
+      return (
+        <div className={classNames('rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2', className)} aria-label="切换目标">
+          {compactContent}
+        </div>
+      );
+    }
+
+    return (
+      <GlassCard as="section" padding="sm" className={classNames('rounded-3xl', className)} ariaLabel="切换目标">
+        {compactContent}
       </GlassCard>
     );
   }
