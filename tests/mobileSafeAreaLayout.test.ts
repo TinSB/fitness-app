@@ -3,12 +3,12 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('mobile safe-area layout', () => {
-  const appShellSource = readFileSync(resolve(process.cwd(), 'src/ui/AppShell.tsx'), 'utf8');
+  const topBarSource = readFileSync(resolve(process.cwd(), 'src/uiOs/AppTopBar.tsx'), 'utf8');
   const commonSource = readFileSync(resolve(process.cwd(), 'src/ui/common.tsx'), 'utf8');
-  const bottomNavSource = readFileSync(resolve(process.cwd(), 'src/ui/BottomNav.tsx'), 'utf8');
+  const bottomNavSource = readFileSync(resolve(process.cwd(), 'src/uiOs/navigation/FloatingBottomNav.tsx'), 'utf8');
 
   it('keeps top safe-area handling in the app header, not repeated in Page content', () => {
-    expect(appShellSource).toContain('pt-[env(safe-area-inset-top)]');
+    expect(topBarSource).toContain('pt-[env(safe-area-inset-top)]');
     expect(commonSource).toContain('pt-4 md:px-8 md:py-8');
     expect(commonSource).not.toContain('pt-[calc(1rem+env(safe-area-inset-top))]');
     expect(commonSource).not.toContain('pt-[calc(1.25rem+env(safe-area-inset-top))]');
@@ -16,6 +16,7 @@ describe('mobile safe-area layout', () => {
 
   it('keeps bottom safe-area for mobile action areas', () => {
     expect(commonSource).toContain('env(safe-area-inset-bottom)');
-    expect(bottomNavSource).toContain('pb-[env(safe-area-inset-bottom)]');
+    expect(bottomNavSource).toContain('env(safe-area-inset-bottom)');
+    expect(bottomNavSource).toContain('data-bottom-nav-safe-area="native-offset"');
   });
 });
