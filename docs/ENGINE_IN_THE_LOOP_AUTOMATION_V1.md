@@ -189,11 +189,12 @@ Do not start with large UI redesign.
 
 ## Implementation backlog
 
-These are future tasks, not implemented by Phase 18A:
+These are future tasks from Phase 18A. Phase 18B has now implemented the first pure engine only; UI integration remains deferred to 18C.
 
 1. 18B - Focus Next Set Recommendation Engine V1
-   - Build a local deterministic engine that recommends the next set load/reps/action after a recorded Focus set.
+   - Implemented as a local deterministic pure engine that recommends the next set load/reps/action after a recorded Focus set.
    - Target Level 1 first, with Level 2 prefill only when the recommendation is clear and reversible.
+   - Pure-engine only: no TrainingFocusView wiring, no persistence, no AppData schema change, no routes, and no session mutation.
 
 2. 18C - Focus Next Set UI Integration V1
    - Surface the next-set recommendation in Focus without adding distraction.
@@ -249,6 +250,8 @@ Out of scope:
 
 ## Handoff notes
 
-Suggested next skills for 18B: `/to-prd`, `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+Phase 18B status: implemented by a pure deterministic engine. It is not wired into runtime UI and does not save, complete, or mutate a training session.
 
-Phase 18B should start with a pure engine interface for Focus Next Set Recommendation Engine V1. It should read existing Focus/session/set state and return a deterministic recommendation object. It should not integrate UI, persist data, mutate the long-term plan, or add routes in the first engine PR.
+Suggested next skills for 18C: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+
+Phase 18C should integrate Focus Next Set Recommendation Engine V1 into Focus UI as a low-distraction suggestion/prefill path. It should keep explanations collapsed, preserve the single primary action model, and continue avoiding persistence, route, cloud, and AppData schema drift.
