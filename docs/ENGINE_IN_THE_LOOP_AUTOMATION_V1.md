@@ -224,8 +224,11 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - Do not automatically mutate the long-term plan.
 
 7. 18G - Guarded Apply / Pending Recommendation Contract V1
-   - Define the pending recommendation and guarded-apply contract for durable changes.
-   - Require explicit confirmation before any durable plan mutation.
+   - Implemented as a contract-only, pure-engine layer that normalizes Focus, post-workout, Today, weekly, coach-action, and manual recommendations into in-memory guarded recommendation candidates.
+   - 18G does not persist pending recommendations, does not apply to the plan, does not write AppData or TrainingSession, and does not create ProgramAdjustmentDraft or PendingSessionPatch records.
+   - 18G keeps Level 5 blocked. Level 4 may exist only as review metadata and cannot apply durably.
+   - Future tasks may use this contract to bridge Focus prefill, post-workout next-time display, Today readiness, weekly progression, existing session patches, and existing plan adjustment drafts.
+   - Clean copy examples: `待确认`, `查看后再决定`, `只影响本次`, `不改变计划`, `下次建议`, and `下一组建议`.
 
 ## PRD synthesis
 
@@ -268,6 +271,8 @@ Phase 18C status: implemented as Focus UI integration only. It does not persist 
 Phase 18D status: implemented as a pure post-workout next-time recommendation engine. It does not persist recommendations, does not create pending recommendation records, and does not mutate plans.
 
 Phase 18D.1 status: implemented as post-workout display integration only. It keeps `下次建议` ephemeral in React state, visible only for the matching completed session detail, and it does not persist, apply, or sync the suggestion.
+
+Phase 18G status: implemented as a pure guarded recommendation contract. It is contract-only, does not persist pending recommendations, does not apply to the plan, does not create ProgramAdjustmentDraft or PendingSessionPatch records, and keeps Level 5 blocked.
 
 Suggested next skills for the next guarded recommendation task: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
 
