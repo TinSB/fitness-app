@@ -189,7 +189,7 @@ Do not start with large UI redesign.
 
 ## Implementation backlog
 
-These are future tasks from Phase 18A. Phase 18B implemented the first pure engine, and Phase 18C wires that engine into Focus UI as ephemeral state only.
+These are future tasks from Phase 18A. Phase 18B implemented the first pure engine, Phase 18C wires that engine into Focus UI as ephemeral state only, and Phase 18D adds pure post-workout next-time recommendations.
 
 1. 18B - Focus Next Set Recommendation Engine V1
    - Implemented as a local deterministic pure engine that recommends the next set load/reps/action after a recorded Focus set.
@@ -204,8 +204,10 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - User-facing copy avoids technical/internal terms such as engine, algorithm, automation, model, AI coach, intelligent recommendation, decision system, 引擎, 算法, 自动化, 模型, AI 教练, 智能推荐, 系统判断, and 决策系统.
 
 3. 18D - Post-Workout Next-Time Recommendation V1
-   - Generate exercise-level next-time suggestions and performance notes after completion.
-   - Keep plan-change candidates pending and user-confirmed.
+   - Implemented as a pure deterministic engine that returns exercise-level `下次建议` after a completed workout.
+   - It can return concise outcomes such as `完成稳定，下次保持`, `完成稳定，下次小幅加重`, `有不适，先复查`, and `动作质量不足，先稳住`.
+   - It does not persist recommendations, does not mutate AppData, does not change TrainingSession history completion, and does not mutate the long-term plan.
+   - UI display remains deferred. Guarded apply / pending recommendation storage remains deferred to 18G.
 
 4. 18E - Today Training Readiness Decision V1
    - Let the Today decision engine classify normal/conservative/deload/technique/postpone states.
@@ -257,6 +259,8 @@ Phase 18B status: implemented by a pure deterministic engine.
 
 Phase 18C status: implemented as Focus UI integration only. It does not persist recommendations, does not change AppData schema, and does not automatically complete sets.
 
-Suggested next skills for 18D: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+Phase 18D status: implemented as a pure post-workout next-time recommendation engine. It does not persist recommendations, does not create pending recommendation records, and does not mutate plans.
 
-Phase 18D should add post-workout next-time recommendations after completion. It should keep plan-change candidates pending and avoid route, cloud, persistence, and AppData schema drift unless a later task explicitly approves a guarded contract.
+Suggested next skills for the next runtime integration task: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+
+The next task should decide where and when to display post-workout next-time recommendations. It should keep plan-change candidates pending and avoid route, cloud, persistence, and AppData schema drift unless a later task explicitly approves a guarded contract.
