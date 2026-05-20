@@ -24,7 +24,7 @@ describe('shared UI component implementations', () => {
     expect(read('src/ui/ActionButton.tsx')).toContain('min-h-11');
     expect(read('src/ui/BottomSheet.tsx')).toContain('env(safe-area-inset-bottom)');
     expect(read('src/ui/WorkoutActionBar.tsx')).toContain('env(safe-area-inset-bottom)');
-    expect(read('src/ui/BottomNav.tsx')).toContain('lg:hidden');
+    expect(read('src/uiOs/navigation/FloatingBottomNav.tsx')).toContain('lg:hidden');
   });
 
   it('supports restrained product UI states', () => {

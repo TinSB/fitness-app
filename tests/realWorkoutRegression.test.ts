@@ -148,7 +148,7 @@ describe('real workout regression coverage', () => {
     const drawerSource = readFileSync(resolve(process.cwd(), 'src/ui/Drawer.tsx'), 'utf8');
     const sheetSource = readFileSync(resolve(process.cwd(), 'src/ui/BottomSheet.tsx'), 'utf8');
     const safeHeaderSource = readFileSync(resolve(process.cwd(), 'src/ui/SafeAreaHeader.tsx'), 'utf8');
-    const appShellSource = readFileSync(resolve(process.cwd(), 'src/ui/AppShell.tsx'), 'utf8');
+    const topBarSource = readFileSync(resolve(process.cwd(), 'src/uiOs/AppTopBar.tsx'), 'utf8');
     const todaySource = readFileSync(resolve(process.cwd(), 'src/features/TodayView.tsx'), 'utf8');
     const cssSource = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 
@@ -156,7 +156,7 @@ describe('real workout regression coverage', () => {
     expect(sheetSource).toContain('SafeAreaHeader');
     expect(safeHeaderSource).toContain('env(safe-area-inset-top)');
     expect(safeHeaderSource).toContain('aria-label={closeLabel}');
-    expect(appShellSource).toContain('env(safe-area-inset-top)');
+    expect(topBarSource).toContain('env(safe-area-inset-top)');
     expect(todaySource).not.toContain('pt-[calc');
     expect(cssSource).not.toContain('body {\n    padding-top: env(safe-area-inset-top)');
   });
