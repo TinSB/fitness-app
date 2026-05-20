@@ -2,7 +2,11 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BookOpen, CalendarDays, Dumbbell, Flame, UserCircle } from 'lucide-react';
 import { INITIAL_TEMPLATES } from './data/trainingData';
 import { TodayView } from './features/TodayView';
-import { TrainingFocusView } from './features/TrainingFocusView';
+import {
+  TrainingFocusView,
+  buildFocusNextSetRecommendationDraftUpdate,
+  canApplyFocusNextSetRecommendation,
+} from './features/TrainingFocusView';
 import type { PlanTarget } from './features/PlanView';
 import type { ProfileTargetSection } from './features/ProfileView';
 import { buildWeeklyPrescription } from './engines/supportPlanEngine';
@@ -41,6 +45,7 @@ import {
   updateFocusActualDraft,
   updateFocusActualDraftWithResult,
 } from './engines/focusModeStateEngine';
+import type { FocusNextSetRecommendation } from './engines/focusNextSetRecommendationEngine';
 import { dispatchWorkoutExecutionEvent, type FocusActionResult } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
@@ -263,6 +268,7 @@ function App() {
   const [profileTargetSection, setProfileTargetSection] = useState<ProfileTargetSection | null>(null);
   const [planTarget, setPlanTarget] = useState<PlanTarget | null>(null);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
+  const [focusNextSetRecommendation, setFocusNextSetRecommendation] = useState<FocusNextSetRecommendation | null>(null);
   const [todayFocusOverride, setTodayFocusOverride] = useState<TodayTrainingFocusOverrideOption>('system');
   const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
@@ -373,7 +379,24 @@ function App() {
 
   useEffect(() => {
     setForceFullTrainingView(false);
+    setFocusNextSetRecommendation(null);
   }, [data.activeSession?.id]);
+
+  useEffect(() => {
+    if (!focusNextSetRecommendation) return;
+    if (!data.activeSession || data.activeSession.focusSessionComplete) {
+      setFocusNextSetRecommendation(null);
+      return;
+    }
+    const currentStep = getCurrentFocusStep(data.activeSession);
+    if (
+      currentStep.id !== focusNextSetRecommendation.targetSetId ||
+      currentStep.blockType !== 'main' ||
+      (currentStep.stepType !== 'warmup' && currentStep.stepType !== 'working')
+    ) {
+      setFocusNextSetRecommendation(null);
+    }
+  }, [data.activeSession, focusNextSetRecommendation]);
 
   useEffect(() => {
     if (!data.activeSession?.restTimerState?.isRunning) return undefined;
@@ -606,6 +629,7 @@ function App() {
     }
     const completed = completeTrainingSessionIntoHistory(data, finishedAt, { endedEarly: incompleteGuard.hasIncompleteMainWork });
     const finishedSession = completed.session;
+    setFocusNextSetRecommendation(null);
 
     setData((current) => {
       const currentGuard = buildIncompleteMainWorkGuard(current.activeSession);
@@ -704,6 +728,7 @@ function App() {
 
     let nextExpandedExercise: number | null = null;
     let actionResult: FocusActionResult = focusWarningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step');
+    let nextRecommendation: FocusNextSetRecommendation | null | undefined;
 
     setData((current) => {
       if (!current.activeSession) {
@@ -717,15 +742,18 @@ function App() {
         nowMs: now,
         expectedStepId: step.id,
         displayUnit: current.unitSettings.weightUnit,
+        unitSettings: current.unitSettings,
       });
       actionResult = result.actionResult;
       if (actionResult.changed) completeSetGuardRef.current = { key: guardKey, at: now };
       if (result.updatedSession === current.activeSession && result.warnings.length) return current;
       const nextStep = getCurrentFocusStep(result.updatedSession);
       nextExpandedExercise = result.nextState === 'completed' ? exerciseIndex : nextStep.exerciseIndex;
+      nextRecommendation = result.nextSetRecommendation ?? null;
       return { ...current, activeSession: result.updatedSession };
     });
 
+    if (nextRecommendation !== undefined) setFocusNextSetRecommendation(nextRecommendation);
     if (nextExpandedExercise !== null && nextExpandedExercise >= 0) {
       setExpandedExercise(nextExpandedExercise);
     }
@@ -780,6 +808,29 @@ function App() {
     return actionResult;
   };
 
+  const applyNextSetRecommendation = (recommendation: FocusNextSetRecommendation): FocusActionResult => {
+    if (!canApplyFocusNextSetRecommendation(recommendation)) return focusWarningResult('当前建议暂不能套用。', 'unsupported');
+    const updates = buildFocusNextSetRecommendationDraftUpdate(recommendation, data.unitSettings);
+    if (!data.activeSession) return focusWarningResult('当前没有进行中的训练。', 'unsupported');
+    const visibleStep = getCurrentFocusStep(data.activeSession);
+    if (visibleStep.id !== recommendation.targetSetId || visibleStep.exerciseIndex < 0) {
+      return focusWarningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step');
+    }
+    const visibleResult = updateFocusActualDraftWithResult(data.activeSession, visibleStep.exerciseIndex, updates, '已套用。');
+    setData((current) => {
+      if (!current.activeSession) {
+        return current;
+      }
+      const currentStep = getCurrentFocusStep(current.activeSession);
+      if (currentStep.id !== recommendation.targetSetId || currentStep.exerciseIndex < 0) {
+        return current;
+      }
+      const result = updateFocusActualDraftWithResult(current.activeSession, currentStep.exerciseIndex, updates, '已套用。');
+      return result.session === current.activeSession ? current : { ...current, activeSession: result.session };
+    });
+    return visibleResult.actionResult;
+  };
+
   const replaceExercise = (exerciseIndex: number, replacementId?: string): FocusActionResult => {
     let actionResult: FocusActionResult = focusWarningResult('当前没有进行中的训练。', 'unsupported');
     setData((current) => {
@@ -800,6 +851,7 @@ function App() {
       return result.updatedSession === current.activeSession ? current : { ...current, activeSession: result.updatedSession };
     });
     if (actionResult.changed) {
+      setFocusNextSetRecommendation(null);
       setExpandedExercise(exerciseIndex);
       invalidateDerivedState('replacement_applied');
     }
@@ -807,6 +859,7 @@ function App() {
   };
 
   const switchActiveExercise = (exerciseIndex: number) => {
+    setFocusNextSetRecommendation(null);
     setData((current) => {
       if (!current.activeSession) return current;
       return { ...current, activeSession: switchFocusExercise(current.activeSession, exerciseIndex) };
@@ -823,6 +876,7 @@ function App() {
         variant: 'danger',
       });
     if (!confirmed) return;
+    setFocusNextSetRecommendation(null);
     setData((current) => ({ ...current, activeSession: null }));
     setActiveTab('today');
   };
@@ -883,6 +937,7 @@ function App() {
   };
 
   const completeSupportSet = (moduleId: string, exerciseId: string) => {
+    let nextRecommendation: FocusNextSetRecommendation | null | undefined;
     setData((current) => {
       if (!current.activeSession) return current;
       const step = getCurrentFocusStep(current.activeSession);
@@ -894,9 +949,12 @@ function App() {
         nowMs: Date.now(),
         expectedStepId: step.id,
         displayUnit: current.unitSettings.weightUnit,
+        unitSettings: current.unitSettings,
       });
+      nextRecommendation = result.nextSetRecommendation ?? null;
       return { ...current, activeSession: result.updatedSession };
     });
+    if (nextRecommendation !== undefined) setFocusNextSetRecommendation(nextRecommendation);
   };
 
   const skipSupportExercise = (moduleId: string, exerciseId: string, reason: SupportSkipReason) => {
@@ -1871,6 +1929,8 @@ function App() {
                       onCopyPrevious={copyPreviousSet}
                       onAdjustSet={adjustCurrentSet}
                       onApplySuggestion={applyFocusSuggestion}
+                      nextSetRecommendation={focusNextSetRecommendation}
+                      onApplyNextSetRecommendation={applyNextSetRecommendation}
                       onUpdateActualDraft={updateFocusDraft}
                       onSwitchExercise={switchActiveExercise}
                       onReplaceExercise={replaceExercise}

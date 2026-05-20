@@ -189,7 +189,7 @@ Do not start with large UI redesign.
 
 ## Implementation backlog
 
-These are future tasks from Phase 18A. Phase 18B has now implemented the first pure engine only; UI integration remains deferred to 18C.
+These are future tasks from Phase 18A. Phase 18B implemented the first pure engine, and Phase 18C wires that engine into Focus UI as ephemeral state only.
 
 1. 18B - Focus Next Set Recommendation Engine V1
    - Implemented as a local deterministic pure engine that recommends the next set load/reps/action after a recorded Focus set.
@@ -197,8 +197,11 @@ These are future tasks from Phase 18A. Phase 18B has now implemented the first p
    - Pure-engine only: no TrainingFocusView wiring, no persistence, no AppData schema change, no routes, and no session mutation.
 
 2. 18C - Focus Next Set UI Integration V1
-   - Surface the next-set recommendation in Focus without adding distraction.
+   - Implemented as a compact Focus UI cue labeled `下一组建议`.
    - Keep details collapsed and preserve a single primary action.
+   - Recommendation display is ephemeral React UI state only; it is not persisted, not stored in AppData, not written to localStorage, and not included in backup/import/export.
+   - Safe Level 2 recommendations may prefill the active draft after the user taps `套用`, but they do not save, complete, finish, or mutate the long-term plan.
+   - User-facing copy avoids technical/internal terms such as engine, algorithm, automation, model, AI coach, intelligent recommendation, decision system, 引擎, 算法, 自动化, 模型, AI 教练, 智能推荐, 系统判断, and 决策系统.
 
 3. 18D - Post-Workout Next-Time Recommendation V1
    - Generate exercise-level next-time suggestions and performance notes after completion.
@@ -250,8 +253,10 @@ Out of scope:
 
 ## Handoff notes
 
-Phase 18B status: implemented by a pure deterministic engine. It is not wired into runtime UI and does not save, complete, or mutate a training session.
+Phase 18B status: implemented by a pure deterministic engine.
 
-Suggested next skills for 18C: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+Phase 18C status: implemented as Focus UI integration only. It does not persist recommendations, does not change AppData schema, and does not automatically complete sets.
 
-Phase 18C should integrate Focus Next Set Recommendation Engine V1 into Focus UI as a low-distraction suggestion/prefill path. It should keep explanations collapsed, preserve the single primary action model, and continue avoiding persistence, route, cloud, and AppData schema drift.
+Suggested next skills for 18D: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+
+Phase 18D should add post-workout next-time recommendations after completion. It should keep plan-change candidates pending and avoid route, cloud, persistence, and AppData schema drift unless a later task explicitly approves a guarded contract.
