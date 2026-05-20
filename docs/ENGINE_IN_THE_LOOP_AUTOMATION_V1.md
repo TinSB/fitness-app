@@ -216,8 +216,11 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - User-facing examples remain concise: `完成稳定，下次保持`, `完成稳定，下次小幅加重`, `有不适，先复查`, and `动作质量不足，先稳住`.
 
 5. 18E - Today Training Readiness Decision V1
-   - Let the Today decision engine classify normal/conservative/deload/technique/postpone states.
-   - Keep severe risks explicit and normal states compact.
+   - Implemented as a pure decision engine only.
+   - It classifies normal/conservative/deload/technique/postpone states with concise copy such as `今天按计划`, `今天保守训练`, `今天降量`, `今天先稳住动作`, and `恢复优先，今天不硬练`.
+   - It does not change Today UI yet, does not persist decisions, does not mutate AppData or TrainingSession, and does not create session patches or plan drafts.
+   - It uses the 18G guarded contract only as an in-memory safety wrapper with `只影响本次，不改变计划`.
+   - 18E.1 - Today Readiness Display Integration remains deferred.
 
 6. 18F - Weekly Progression Recommendation V1
    - Produce weekly progression summaries, bottlenecks, fatigue signals, and suggested next-week changes.
