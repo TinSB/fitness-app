@@ -34,7 +34,7 @@ const metricItems = ({
   {
     label: '近 4 周平均',
     value: `${recentFourWeekAverage.toFixed(1)} 天/周`,
-    helper: '用于观察节奏，不参与算法',
+    helper: '用于观察节奏，不改变训练安排',
     icon: Activity,
   },
   {

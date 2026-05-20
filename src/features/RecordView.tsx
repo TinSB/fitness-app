@@ -34,6 +34,7 @@ import {
 } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
+import type { PostWorkoutNextTimeRecommendation } from '../engines/postWorkoutNextTimeRecommendationEngine';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
 import {
@@ -88,6 +89,10 @@ import { ProgressInsightHero } from '../uiOs/progress/ProgressInsightHero';
 import { ReadinessPressureCard } from '../uiOs/progress/ReadinessPressureCard';
 import { StrengthTrendCards } from '../uiOs/progress/StrengthTrendCards';
 import { RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
+import {
+  PostWorkoutNextTimeRecommendationCard,
+  shouldShowPostWorkoutNextTimeRecommendation,
+} from '../uiOs/records/PostWorkoutNextTimeRecommendationCard';
 import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 export interface RecordViewProps {
@@ -115,6 +120,7 @@ export interface RecordViewProps {
   initialSection?: RecordSectionTarget;
   selectedSessionId?: string;
   selectedDate?: string;
+  postWorkoutNextTimeRecommendation?: PostWorkoutNextTimeRecommendation | null;
   surfaceMode?: 'history' | 'progress';
 }
 
@@ -345,6 +351,7 @@ export function RecordView({
   initialSection,
   selectedSessionId,
   selectedDate,
+  postWorkoutNextTimeRecommendation,
   surfaceMode = 'history',
 }: RecordViewProps) {
   const { resolvedTheme } = useUiTheme();
@@ -1184,6 +1191,13 @@ export function RecordView({
     const visibleEffectiveExcludedSets = effectiveExplanation.excludedSets.slice(0, 6);
     const editHistory = session.editHistory || [];
     const latestEdit = editHistory.at(-1);
+    const visiblePostWorkoutNextTimeRecommendation = shouldShowPostWorkoutNextTimeRecommendation(
+      session,
+      postWorkoutNextTimeRecommendation,
+      isEditing,
+    )
+      ? postWorkoutNextTimeRecommendation
+      : null;
     const qualityItems = [...sessionQuality.positives, ...sessionQuality.issues].slice(0, 3);
     const plateauResults = summary.groupedSets.exerciseGroups
       .map((group) => getExerciseRecordPoolId(group.exercise))
@@ -1362,6 +1376,13 @@ export function RecordView({
               </>
             ) : null}
           </Card>
+
+          {visiblePostWorkoutNextTimeRecommendation ? (
+            <PostWorkoutNextTimeRecommendationCard
+              recommendation={visiblePostWorkoutNextTimeRecommendation}
+              unitSettings={unitSettings}
+            />
+          ) : null}
 
           <PageSection title="训练质量">
             <Card className="space-y-3">
