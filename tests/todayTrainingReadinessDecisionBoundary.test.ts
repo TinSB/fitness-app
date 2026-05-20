@@ -7,14 +7,17 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 describe('today training readiness decision boundaries', () => {
-  it('keeps 18E out of App and TodayView runtime wiring', () => {
+  it('keeps 18E out of App persistence while allowing 18E.1 Today display wiring', () => {
     const app = read('src/App.tsx');
     const todayView = read('src/features/TodayView.tsx');
 
     expect(app).not.toContain('todayTrainingReadinessDecisionEngine');
     expect(app).not.toContain('buildTodayTrainingReadinessDecision');
-    expect(todayView).not.toContain('todayTrainingReadinessDecisionEngine');
-    expect(todayView).not.toContain('buildTodayTrainingReadinessDecision');
+    expect(todayView).toContain('todayTrainingReadinessDecisionEngine');
+    expect(todayView).toContain('buildTodayTrainingReadinessDecision');
+    expect(todayView).not.toContain('localStorage');
+    expect(todayView).not.toContain('upsertPendingSessionPatch');
+    expect(todayView).not.toContain('upsertPlanAdjustmentDraftByFingerprint');
   });
 
   it('keeps the new engine isolated from UI, storage, API, and mutation helpers', () => {
@@ -85,14 +88,14 @@ describe('today training readiness decision boundaries', () => {
     expect(existsSync(resolve(root, 'pnpm-lock.yaml'))).toBe(false);
   });
 
-  it('documents 18E without claiming auto-apply or runtime UI integration', () => {
+  it('documents 18E and 18E.1 without claiming auto-apply', () => {
     const doc = read('docs/ENGINE_IN_THE_LOOP_AUTOMATION_V1.md');
 
     expect(doc).toContain('18E - Today Training Readiness Decision V1');
     expect(doc).toContain('pure decision engine only');
-    expect(doc).toContain('does not change Today UI yet');
+    expect(doc).toContain('18E.1 - Today Readiness Display Integration V1');
+    expect(doc).toContain('derived and ephemeral display integration');
     expect(doc).toContain('does not persist decisions');
-    expect(doc).toContain('18E.1');
     expect(doc).not.toMatch(/Today decisions auto-apply|today decisions auto-apply|automatic plan mutation is enabled|Level 5 is enabled/i);
   });
 });
