@@ -72,3 +72,17 @@ Never dump all exercise metadata into the main UI.
 - Do not introduce large new dependencies without justification.
 - After changes, run available typecheck, lint, and build commands if present.
 - If unsure about existing code behavior, inspect the relevant files before editing.
+
+## Agent skills
+
+### Issue tracker
+
+IronPath tracks product and engineering work in GitHub Issues for `TinSB/fitness-app`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use existing GitHub labels where available and document missing suggested workflow labels without creating them automatically. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+IronPath uses a single-context docs layout with `docs/` for product and engineering documents and `docs/adr/` reserved for ADRs when needed. See `docs/agents/domain.md`.
