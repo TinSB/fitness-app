@@ -46,6 +46,10 @@ import {
   updateFocusActualDraftWithResult,
 } from './engines/focusModeStateEngine';
 import type { FocusNextSetRecommendation } from './engines/focusNextSetRecommendationEngine';
+import {
+  buildPostWorkoutNextTimeRecommendation,
+  type PostWorkoutNextTimeRecommendation,
+} from './engines/postWorkoutNextTimeRecommendationEngine';
 import { dispatchWorkoutExecutionEvent, type FocusActionResult } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
@@ -269,6 +273,8 @@ function App() {
   const [planTarget, setPlanTarget] = useState<PlanTarget | null>(null);
   const [appToast, setAppToast] = useState<AppToast | null>(null);
   const [focusNextSetRecommendation, setFocusNextSetRecommendation] = useState<FocusNextSetRecommendation | null>(null);
+  const [postWorkoutNextTimeRecommendation, setPostWorkoutNextTimeRecommendation] =
+    useState<PostWorkoutNextTimeRecommendation | null>(null);
   const [todayFocusOverride, setTodayFocusOverride] = useState<TodayTrainingFocusOverrideOption>('system');
   const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
@@ -381,6 +387,14 @@ function App() {
     setForceFullTrainingView(false);
     setFocusNextSetRecommendation(null);
   }, [data.activeSession?.id]);
+
+  useEffect(() => {
+    if (!postWorkoutNextTimeRecommendation) return;
+    const sourceStillExists = (data.history || []).some(
+      (session) => session.id === postWorkoutNextTimeRecommendation.sourceSessionId,
+    );
+    if (!sourceStillExists) setPostWorkoutNextTimeRecommendation(null);
+  }, [data.history, postWorkoutNextTimeRecommendation]);
 
   useEffect(() => {
     if (!focusNextSetRecommendation) return;
@@ -550,6 +564,7 @@ function App() {
   }, []);
 
   const startSession = (templateId = activeTemplateId, options: SessionPatch[] | StartSessionOptions = {}) => {
+    setPostWorkoutNextTimeRecommendation(null);
     const startOptions: StartSessionOptions = Array.isArray(options) ? { explicitPatches: options } : options;
     const template = startOptions.templateOverride || findTemplate(data.templates, templateId);
     const screeningProfile = reconcileScreeningProfile(data.screeningProfile, data.history);
@@ -614,9 +629,10 @@ function App() {
   };
 
   const finishSession = async (target: ProgressSectionTarget | 'today' = 'list') => {
-    if (!data.activeSession) return;
+    const initialData = dataRef.current;
+    if (!initialData.activeSession) return;
     const finishedAt = new Date().toISOString();
-    const incompleteGuard = buildIncompleteMainWorkGuard(data.activeSession);
+    const incompleteGuard = buildIncompleteMainWorkGuard(initialData.activeSession);
     if (incompleteGuard.hasIncompleteMainWork) {
       const confirmed = await confirm({
         title: '仍有未完成动作，是否结束训练？',
@@ -627,15 +643,24 @@ function App() {
       });
       if (!confirmed) return;
     }
-    const completed = completeTrainingSessionIntoHistory(data, finishedAt, { endedEarly: incompleteGuard.hasIncompleteMainWork });
+    const currentData = dataRef.current;
+    if (!currentData.activeSession) return;
+    const completionGuard = buildIncompleteMainWorkGuard(currentData.activeSession);
+    const completed = completeTrainingSessionIntoHistory(currentData, finishedAt, { endedEarly: completionGuard.hasIncompleteMainWork });
     const finishedSession = completed.session;
+    const nextPostWorkoutRecommendation = finishedSession
+      ? buildPostWorkoutNextTimeRecommendation({
+          session: finishedSession,
+          history: currentData.history || [],
+          unitSettings: currentData.unitSettings,
+          nowIso: finishedAt,
+        })
+      : null;
     setFocusNextSetRecommendation(null);
-
-    setData((current) => {
-      const currentGuard = buildIncompleteMainWorkGuard(current.activeSession);
-      const result = completeTrainingSessionIntoHistory(current, finishedAt, { endedEarly: currentGuard.hasIncompleteMainWork });
-      return result.data;
-    });
+    setPostWorkoutNextTimeRecommendation(
+      nextPostWorkoutRecommendation?.recommendations.length ? nextPostWorkoutRecommendation : null,
+    );
+    commitData(completed.data);
 
     if (finishedSession && target !== 'today') {
       setProgressTarget({ section: target, sessionId: finishedSession.id, date: getSessionCalendarDate(finishedSession) });
@@ -877,6 +902,7 @@ function App() {
       });
     if (!confirmed) return;
     setFocusNextSetRecommendation(null);
+    setPostWorkoutNextTimeRecommendation(null);
     setData((current) => ({ ...current, activeSession: null }));
     setActiveTab('today');
   };
@@ -1240,6 +1266,9 @@ function App() {
       return result;
     }
     if (result.changed) {
+      if (postWorkoutNextTimeRecommendation?.sourceSessionId === sessionId) {
+        setPostWorkoutNextTimeRecommendation(null);
+      }
       setData(result.data);
       invalidateDerivedState('session_deleted');
     }
@@ -1854,6 +1883,11 @@ function App() {
   const historyRecordTarget =
     progressTarget?.section === 'calendar' || progressTarget?.section === 'list' || progressTarget?.section === 'data' ? progressTarget : undefined;
   const progressRecordTarget = progressTarget?.section === 'pr' || progressTarget?.section === 'stats' ? progressTarget : { section: 'stats' as const };
+  const progressPostWorkoutNextTimeRecommendation =
+    postWorkoutNextTimeRecommendation &&
+    progressRecordTarget.sessionId === postWorkoutNextTimeRecommendation.sourceSessionId
+      ? postWorkoutNextTimeRecommendation
+      : null;
 
   return (
     <>
@@ -2054,6 +2088,7 @@ function App() {
                       onOperationFeedback={showAppToast}
                       onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
+                        setPostWorkoutNextTimeRecommendation(null);
                         setData(nextData);
                         setActiveTab('today');
                         invalidateDerivedState('backup_restored');
@@ -2065,6 +2100,7 @@ function App() {
                       initialSection={historyRecordTarget?.section}
                       selectedSessionId={historyRecordTarget?.sessionId}
                       selectedDate={historyRecordTarget?.date}
+                      postWorkoutNextTimeRecommendation={postWorkoutNextTimeRecommendation}
                       surfaceMode="history"
                     />
                   </Suspense>
@@ -2091,6 +2127,7 @@ function App() {
                       onOperationFeedback={showAppToast}
                       onUpdateUnitSettings={updateUnitSettings}
                       onRestoreData={(nextData) => {
+                        setPostWorkoutNextTimeRecommendation(null);
                         setData(nextData);
                         setActiveTab('today');
                         invalidateDerivedState('backup_restored');
@@ -2102,6 +2139,7 @@ function App() {
                       initialSection={progressRecordTarget.section}
                       selectedSessionId={progressRecordTarget.sessionId}
                       selectedDate={progressRecordTarget.date}
+                      postWorkoutNextTimeRecommendation={progressPostWorkoutNextTimeRecommendation}
                       surfaceMode="progress"
                     />
                   </Suspense>
@@ -2120,6 +2158,7 @@ function App() {
                       themePreference={themePreference}
                       onThemeChange={updateUiThemeMode}
                       onRestoreData={(nextData) => {
+                        setPostWorkoutNextTimeRecommendation(null);
                         setData(nextData);
                         setActiveTab('today');
                         invalidateDerivedState('backup_restored');

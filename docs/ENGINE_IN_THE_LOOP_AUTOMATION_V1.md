@@ -189,7 +189,7 @@ Do not start with large UI redesign.
 
 ## Implementation backlog
 
-These are future tasks from Phase 18A. Phase 18B implemented the first pure engine, Phase 18C wires that engine into Focus UI as ephemeral state only, and Phase 18D adds pure post-workout next-time recommendations.
+These are future tasks from Phase 18A. Phase 18B implemented the first pure engine, Phase 18C wires that engine into Focus UI as ephemeral state only, Phase 18D adds pure post-workout next-time recommendations, and Phase 18D.1 displays those completed-session suggestions without saving or applying them.
 
 1. 18B - Focus Next Set Recommendation Engine V1
    - Implemented as a local deterministic pure engine that recommends the next set load/reps/action after a recorded Focus set.
@@ -207,17 +207,23 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - Implemented as a pure deterministic engine that returns exercise-level `下次建议` after a completed workout.
    - It can return concise outcomes such as `完成稳定，下次保持`, `完成稳定，下次小幅加重`, `有不适，先复查`, and `动作质量不足，先稳住`.
    - It does not persist recommendations, does not mutate AppData, does not change TrainingSession history completion, and does not mutate the long-term plan.
-   - UI display remains deferred. Guarded apply / pending recommendation storage remains deferred to 18G.
+   - Guarded apply / pending recommendation storage remains deferred to 18G.
 
-4. 18E - Today Training Readiness Decision V1
+4. 18D.1 - Post-Workout Recommendation Display Integration V1
+   - Implemented as display-only history detail UI labeled `下次建议`.
+   - Recommendation display is ephemeral React UI state only: not persisted, not stored in AppData, not written to TrainingSession, not written to localStorage, and not included in backup/import/export.
+   - The display does not apply to the plan, does not create ProgramAdjustmentDraft or PendingSessionPatch records, and does not add durable action buttons.
+   - User-facing examples remain concise: `完成稳定，下次保持`, `完成稳定，下次小幅加重`, `有不适，先复查`, and `动作质量不足，先稳住`.
+
+5. 18E - Today Training Readiness Decision V1
    - Let the Today decision engine classify normal/conservative/deload/technique/postpone states.
    - Keep severe risks explicit and normal states compact.
 
-5. 18F - Weekly Progression Recommendation V1
+6. 18F - Weekly Progression Recommendation V1
    - Produce weekly progression summaries, bottlenecks, fatigue signals, and suggested next-week changes.
    - Do not automatically mutate the long-term plan.
 
-6. 18G - Guarded Apply / Pending Recommendation Contract V1
+7. 18G - Guarded Apply / Pending Recommendation Contract V1
    - Define the pending recommendation and guarded-apply contract for durable changes.
    - Require explicit confirmation before any durable plan mutation.
 
@@ -261,6 +267,8 @@ Phase 18C status: implemented as Focus UI integration only. It does not persist 
 
 Phase 18D status: implemented as a pure post-workout next-time recommendation engine. It does not persist recommendations, does not create pending recommendation records, and does not mutate plans.
 
-Suggested next skills for the next runtime integration task: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+Phase 18D.1 status: implemented as post-workout display integration only. It keeps `下次建议` ephemeral in React state, visible only for the matching completed session detail, and it does not persist, apply, or sync the suggestion.
 
-The next task should decide where and when to display post-workout next-time recommendations. It should keep plan-change candidates pending and avoid route, cloud, persistence, and AppData schema drift unless a later task explicitly approves a guarded contract.
+Suggested next skills for the next guarded recommendation task: `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+
+The next task should define guarded apply / pending recommendation behavior. It should keep plan-change candidates pending and avoid route, cloud, persistence, and AppData schema drift unless that guarded contract explicitly approves a durable path.
