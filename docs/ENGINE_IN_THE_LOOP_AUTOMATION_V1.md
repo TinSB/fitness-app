@@ -1,0 +1,254 @@
+# Phase 18A - Engine-in-the-Loop Training Automation Entry Gate V1
+
+## Product thesis
+
+IronPath is not just a logging app.
+
+IronPath should become a local deterministic training decision system. The bottom-layer training engines should participate in workout decisions before training, during Focus mode, after a completed workout, and across weekly progression, while keeping the user in control of durable changes.
+
+Phase 18A is an entry gate. It defines the product and technical contract only. It does not implement runtime automation, redesign UI, change training algorithms, change persistence, or change AppData schema.
+
+## Non-goals
+
+Phase 18A explicitly forbids:
+
+- SaaS/multi-user runtime.
+- Default cloud sync.
+- Background sync.
+- Automatic cloud pull/apply.
+- Production backend auto-start.
+- Destructive migration.
+- Automatic plan mutation without confirmation.
+- LLM/chat-style coach as the primary decision engine.
+- Package/dependency/script/lockfile drift.
+- AppData schema change in this entry task.
+- Accepted browser mutation route changes.
+- Focus state machine redesign.
+- Training algorithm behavior changes.
+
+## Automation levels
+
+- Level 0 - Display only: show an existing value or calculation without suggesting an action.
+- Level 1 - Suggest: recommend an action but do not prefill or change a draft.
+- Level 2 - Prefill: fill an editable draft for the current workout surface only.
+- Level 3 - Guarded apply: apply a user-confirmed action with explicit confirmation and reversible local context.
+- Level 4 - Auto queued recommendation: queue a recommendation for later review, but do not apply it by default.
+- Level 5 - Fully automatic plan mutation: change the long-term plan without user confirmation.
+
+Phase 18 initial work may target Level 1-3. Level 4 may be designed but must remain disabled by default. Level 5 is blocked.
+
+## Training lifecycle participation model
+
+### Before workout / Today
+
+The engine should help answer:
+
+- What should I train today?
+- Is today normal, conservative, deload, technique, or postpone?
+- Are any exercises risky today?
+- Is the current plan still appropriate?
+
+Inputs may include recent session history, e1RM trend, effective sets, readiness/fatigue signals if available, missed sessions, equipment profile, prior performance quality, and data health issues.
+
+Outputs should be structured:
+
+- recommendation kind
+- confidence
+- reason codes
+- suggested actions
+- risk flags
+- required user confirmation level
+
+### During workout / Focus
+
+After each recorded set, the engine should be able to recommend:
+
+- next set load
+- next set reps
+- whether to increase or decrease load
+- whether to hold load
+- whether to stop the exercise
+- whether to skip remaining warmup
+- whether to avoid PR attempt
+- whether to extend rest
+
+During Focus, user-facing next-set decisions must use actionableLoad, not rawTheoreticalLoad. Focus remains low-distraction: normal state should show one actionable recommendation and keep explanations behind details.
+
+### After workout
+
+After workout completion, the engine should generate:
+
+- next-time load suggestion
+- volume adjustment suggestion
+- deload warning
+- exercise-level performance note
+- plan change candidate
+
+Phase 18A does not automatically mutate the long-term plan. Any future durable plan candidate must stay pending until the user confirms it.
+
+### Weekly / mesocycle
+
+Across weekly and mesocycle review, the engine should generate:
+
+- weekly progression summary
+- exercise bottleneck list
+- fatigue / undertraining signals
+- suggested next-week changes
+
+Weekly recommendations may prepare candidates for review, but they must not become automatic durable plan mutations in Phase 18.
+
+## Decision object contract
+
+This is a proposed TypeScript-style contract in docs only. Do not implement this type in runtime in Phase 18A.
+
+```ts
+type EngineTrainingDecisionScope = 'today' | 'exercise' | 'set' | 'session' | 'week';
+type EngineTrainingDecisionLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
+interface EngineTrainingDecision {
+  id: string;
+  scope: EngineTrainingDecisionScope;
+  level: EngineTrainingDecisionLevel;
+  recommendationKind: string;
+  targetExerciseId?: string;
+  targetSetId?: string;
+  actionableLoad?: {
+    value: number;
+    unit: 'kg' | 'lb';
+    source: 'equipment-aware';
+  };
+  plannedReps?: number;
+  confidence: 'low' | 'medium' | 'high';
+  reasonCodes: string[];
+  userMessage: string;
+  riskFlags: string[];
+  requiresConfirmation: boolean;
+  blockedReasons: string[];
+  sourceEngineIds: string[];
+  createdAt: string;
+}
+```
+
+Contract rules:
+
+- `rawTheoreticalLoad` is internal/detail-only and must not be the main UI, apply, or validation baseline.
+- `actionableLoad` remains main UI/apply/validation baseline.
+- `recordedLoad` is compared against actionableLoad for user-facing validation.
+- A Level 2 prefill can fill an active workout draft but cannot save or complete a set by itself.
+- A Level 3 guarded apply requires explicit user confirmation before a durable effect.
+- Level 4 queueing may be designed, but it is off by default.
+- Level 5 is blocked.
+
+## Safety rules
+
+Phase 18 automation must preserve:
+
+- localStorage remains default/fallback/migration/emergency source.
+- accepted browser mutation routes remain exactly seven:
+  - `POST /data-health/issues/:issueId/dismiss`
+  - `POST /history/:id/data-flag`
+  - `POST /history/:id/edit`
+  - `POST /sessions/start`
+  - `POST /sessions/active/patches`
+  - `POST /sessions/active/complete`
+  - `POST /sessions/active/discard`
+- `POST /data-health/repair/apply` remains outside the accepted browser mutation route allowlist.
+- no default cloud sync.
+- no background sync.
+- no SaaS.
+- no AppData schema change.
+- no package or lockfile drift.
+- no package script drift.
+- actionableLoad remains main UI/apply/validation baseline.
+- rawTheoreticalLoad remains internal/detail-only.
+- Focus remains low-distraction.
+- user confirmation required before durable plan mutation.
+- durable long-term plan changes must be reversible or pending before confirmation.
+
+## First implementation candidate recommendation
+
+First implementation candidate: Focus Next Set Recommendation Engine V1.
+
+This is the only recommended first implementation candidate.
+
+Reasons:
+
+- It gives the highest training value immediately.
+- It uses existing set/session data.
+- It keeps automation local and reversible.
+- It can begin at Level 1 suggestion or Level 2 prefill without changing long-term plan schema.
+- It directly makes the bottom engine participate in real workouts.
+- It can use the existing actionableLoad contract, practical warmup policy, Focus state, and set anomaly rules without changing AppData.
+
+Do not start with weekly AI coach.
+Do not start with broad plan auto-rewrite.
+Do not start with cloud sync.
+Do not start with visual dashboard.
+Do not start with chat assistant.
+Do not start with large UI redesign.
+
+## Implementation backlog
+
+These are future tasks, not implemented by Phase 18A:
+
+1. 18B - Focus Next Set Recommendation Engine V1
+   - Build a local deterministic engine that recommends the next set load/reps/action after a recorded Focus set.
+   - Target Level 1 first, with Level 2 prefill only when the recommendation is clear and reversible.
+
+2. 18C - Focus Next Set UI Integration V1
+   - Surface the next-set recommendation in Focus without adding distraction.
+   - Keep details collapsed and preserve a single primary action.
+
+3. 18D - Post-Workout Next-Time Recommendation V1
+   - Generate exercise-level next-time suggestions and performance notes after completion.
+   - Keep plan-change candidates pending and user-confirmed.
+
+4. 18E - Today Training Readiness Decision V1
+   - Let the Today decision engine classify normal/conservative/deload/technique/postpone states.
+   - Keep severe risks explicit and normal states compact.
+
+5. 18F - Weekly Progression Recommendation V1
+   - Produce weekly progression summaries, bottlenecks, fatigue signals, and suggested next-week changes.
+   - Do not automatically mutate the long-term plan.
+
+6. 18G - Guarded Apply / Pending Recommendation Contract V1
+   - Define the pending recommendation and guarded-apply contract for durable changes.
+   - Require explicit confirmation before any durable plan mutation.
+
+## PRD synthesis
+
+Problem statement: IronPath already records training and contains deterministic engines, but those engines do not yet participate enough in real training decisions. The user needs the app to become an engine-assisted training decision system while preserving personal-only, local-first, training-first boundaries.
+
+Solution: Define a staged automation contract where engines can suggest, prefill, and guarded-apply workout decisions without changing source-of-truth, persistence, AppData, routes, cloud behavior, or package dependencies. Start with Focus Next Set Recommendation Engine V1 because it has immediate workout value and can stay local and reversible.
+
+User stories:
+
+1. As a lifter starting a workout, I want IronPath to tell me what to train today, so that I do not need to infer the plan from logs.
+2. As a lifter in Focus mode, I want IronPath to recommend my next set, so that the engine helps during the real workout.
+3. As a lifter after recording a set, I want the next recommendation to use feasible gym weight, so that I do not execute an impossible theoretical load.
+4. As a lifter after a workout, I want next-time suggestions, so that progression is easier to apply later.
+5. As a lifter reviewing a week, I want bottlenecks and fatigue signals, so that next-week changes are evidence-based.
+6. As the app owner, I want all durable plan mutations to require confirmation, so that automation cannot silently rewrite my plan.
+
+Testing decisions:
+
+- Phase 18A uses static tests only.
+- Later engine work should test deterministic public engine interfaces before UI integration.
+- Focus integration tests should verify behavior through rendered output and state transitions, not private helpers.
+- Boundary tests must continue to lock source-of-truth, accepted browser mutation routes, package drift, and actionableLoad baseline.
+
+Out of scope:
+
+- Runtime automation implementation.
+- GitHub Issues creation.
+- UI redesign.
+- Cloud sync.
+- Chat coach.
+- AppData schema changes.
+- Package/dependency/script/lockfile changes.
+
+## Handoff notes
+
+Suggested next skills for 18B: `/to-prd`, `/grill-with-docs`, `/zoom-out`, `/tdd`, and `/handoff`.
+
+Phase 18B should start with a pure engine interface for Focus Next Set Recommendation Engine V1. It should read existing Focus/session/set state and return a deterministic recommendation object. It should not integrate UI, persist data, mutate the long-term plan, or add routes in the first engine PR.
