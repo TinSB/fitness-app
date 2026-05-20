@@ -3,6 +3,14 @@ import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionSt
 import { getCurrentFocusStep } from '../src/engines/focusModeStateEngine';
 import { makeExercise, makeFocusSession } from './focusModeFixtures';
 
+const unitSettings = {
+  weightUnit: 'kg' as const,
+  defaultIncrementKg: 2.5,
+  defaultIncrementLb: 5,
+  customIncrementsKg: [],
+  customIncrementsLb: [],
+};
+
 describe('workoutExecutionStateMachine', () => {
   it('routes weight and rep adjustments through one event dispatcher', () => {
     const session = makeFocusSession([makeExercise('bench-press', 2, 0, 1)]);
@@ -43,6 +51,74 @@ describe('workoutExecutionStateMachine', () => {
       reasonCode: 'stale_step',
     });
     expect(getCurrentFocusStep(duplicate.updatedSession).id).toBe(getCurrentFocusStep(first.updatedSession).id);
+  });
+
+  it('emits a transient next-set recommendation after a successful complete step', () => {
+    const session = makeFocusSession([makeExercise('bench-press', 2)]);
+    const prepared = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const current = getCurrentFocusStep(prepared);
+
+    const result = dispatchWorkoutExecutionEvent(prepared, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: 0,
+      expectedStepId: current.id,
+      completedAt: '2026-05-19T12:00:00.000Z',
+      nowMs: 1000,
+      displayUnit: 'kg',
+      unitSettings,
+    });
+    const nextStep = getCurrentFocusStep(result.updatedSession);
+
+    expect(result.actionResult.reasonCode).toBe('completed');
+    expect(result.nextSetRecommendation?.recommendationKind).toBe('hold');
+    expect(result.nextSetRecommendation?.targetSetId).toBe(nextStep.id);
+    expect(result.nextSetRecommendation?.createdAt).toBe('2026-05-19T12:00:00.000Z');
+    expect(JSON.stringify(result.updatedSession)).not.toContain('nextSetRecommendation');
+  });
+
+  it('does not emit a next-set recommendation for missing draft, stale step, or duplicate submit paths', () => {
+    const session = makeFocusSession([makeExercise('bench-press', 2)]);
+    const current = getCurrentFocusStep(session);
+    const missingDraft = dispatchWorkoutExecutionEvent(session, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: 0,
+      expectedStepId: current.id,
+      completedAt: '2026-05-19T12:00:00.000Z',
+      nowMs: 1000,
+      displayUnit: 'kg',
+      unitSettings,
+    });
+    const prepared = dispatchWorkoutExecutionEvent(session, { type: 'APPLY_PRESCRIPTION', exerciseIndex: 0 }).updatedSession;
+    const stale = dispatchWorkoutExecutionEvent(prepared, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: 0,
+      expectedStepId: 'main:bench-press:working:9',
+      completedAt: '2026-05-19T12:00:00.000Z',
+      nowMs: 1000,
+      displayUnit: 'kg',
+      unitSettings,
+    });
+    const duplicateSession = {
+      ...prepared,
+      exercises: [
+        {
+          ...prepared.exercises[0],
+          sets: [{ ...prepared.exercises[0].sets[0], done: true }, ...prepared.exercises[0].sets.slice(1)],
+        },
+      ],
+    };
+    const duplicate = dispatchWorkoutExecutionEvent(duplicateSession, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: 0,
+      completedAt: '2026-05-19T12:00:00.000Z',
+      nowMs: 1000,
+      displayUnit: 'kg',
+      unitSettings,
+    });
+
+    expect(missingDraft.nextSetRecommendation).toBeUndefined();
+    expect(stale.nextSetRecommendation).toBeUndefined();
+    expect(duplicate.nextSetRecommendation).toBeUndefined();
   });
 
   it('applies replacement using a real exercise id and keeps current display on actual exercise', () => {

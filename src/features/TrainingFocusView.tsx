@@ -9,6 +9,7 @@ import type { ExerciseEquipmentTag } from '../data/exerciseLibrary';
 import { detectSetAnomalies, type SetAnomaly } from '../engines/setAnomalyEngine';
 import { getCurrentExerciseIdentity, getExerciseIdentityFromExercise } from '../engines/currentExerciseSelector';
 import type { FocusActionResult } from '../engines/workoutExecutionStateMachine';
+import type { FocusNextSetRecommendation, FocusNextSetRecommendationKind } from '../engines/focusNextSetRecommendationEngine';
 import { buildFocusModeInteractionInput, resolveFocusModeInteractionState } from '../engines/focusModeInteractionState';
 import {
   formatExerciseName,
@@ -65,6 +66,19 @@ export type FocusCurrentSetSummary = {
 
 export type FocusPainBoundaryNotice = {
   title: string;
+};
+
+export type FocusNextSetRecommendationDraftUpdate = Partial<
+  Pick<ActualSetDraft, 'actualWeightKg' | 'displayWeight' | 'displayUnit' | 'actualReps' | 'source'>
+>;
+
+export type FocusNextSetRecommendationViewModel = {
+  title: string;
+  mainText: string;
+  reasonText?: string;
+  tone: 'default' | 'warning';
+  canApply: boolean;
+  applied: boolean;
 };
 
 const focusDraftSourceLabels: Partial<Record<NonNullable<ActualSetDraft['source']>, string>> = {
@@ -147,6 +161,131 @@ export const buildFocusPainBoundaryNotice = ({
   };
 };
 
+const nextSetRecommendationLabels: Record<FocusNextSetRecommendationKind, string> = {
+  no_recommendation: '',
+  hold: '保持',
+  increase_load: '加重',
+  decrease_load: '降重',
+  reduce_reps: '减少次数',
+  stop_exercise: '先停止',
+  skip_remaining_warmup: '跳过热身',
+  extend_rest: '延长休息',
+  avoid_pr_attempt: '先不冲重量',
+};
+
+const nextSetReasonLabels: Record<string, string> = {
+  reps_above_plan: '上一组完成余量充足',
+  reps_below_plan: '上一组低于计划',
+  pain_flag: '已标记不适',
+  poor_technique: '动作质量不足',
+  near_failure: '接近力竭',
+  rir_too_high: '余量偏多',
+  matched_plan: '完成情况符合计划',
+  warmup_hold: '继续当前热身安排',
+  warmup_reps_above_plan: '热身完成度充足',
+  remaining_warmup_available: '仍有热身组可调整',
+  insufficient_actual_data: '实际记录不足',
+};
+
+export const isFocusNextSetRecommendationVisible = (
+  currentStep: FocusTrainingStep,
+  recommendation: FocusNextSetRecommendation | null | undefined,
+  sessionComplete: boolean,
+): recommendation is FocusNextSetRecommendation =>
+  Boolean(
+    recommendation &&
+      !sessionComplete &&
+      recommendation.recommendationKind !== 'no_recommendation' &&
+      recommendation.targetSetId === currentStep.id &&
+      (currentStep.stepType === 'warmup' || currentStep.stepType === 'working') &&
+      currentStep.blockType === 'main',
+  );
+
+export const canApplyFocusNextSetRecommendation = (recommendation: FocusNextSetRecommendation | null | undefined): boolean =>
+  Boolean(
+    recommendation &&
+      recommendation.level === 2 &&
+      recommendation.requiresConfirmation === false &&
+      recommendation.riskFlags.length === 0 &&
+      (hasPositiveNumber(recommendation.actionableLoadKg) || hasPositiveNumber(recommendation.plannedReps)),
+  );
+
+export const buildFocusNextSetRecommendationDraftUpdate = (
+  recommendation: FocusNextSetRecommendation,
+  unitSettings: UnitSettings,
+): FocusNextSetRecommendationDraftUpdate => {
+  const updates: FocusNextSetRecommendationDraftUpdate = { source: 'prescription' };
+  if (hasPositiveNumber(recommendation.actionableLoadKg)) {
+    updates.actualWeightKg = recommendation.actionableLoadKg;
+    updates.displayWeight = convertKgToDisplayWeight(recommendation.actionableLoadKg, unitSettings.weightUnit);
+    updates.displayUnit = unitSettings.weightUnit;
+  }
+  if (hasPositiveNumber(recommendation.plannedReps)) {
+    updates.actualReps = Math.round(number(recommendation.plannedReps));
+  }
+  return updates;
+};
+
+const formatNextSetLoadReps = (recommendation: FocusNextSetRecommendation, unitSettings: UnitSettings): string => {
+  const loadText = hasPositiveNumber(recommendation.actionableLoadKg) ? formatFocusCurrentRecordWeight(recommendation.actionableLoadKg, unitSettings) : '';
+  const repsText = hasPositiveNumber(recommendation.plannedReps) ? `${number(recommendation.plannedReps)} 次` : '';
+  return [loadText, repsText].filter(Boolean).join(' × ');
+};
+
+const buildNextSetReasonText = (recommendation: FocusNextSetRecommendation): string | undefined => {
+  const labels = recommendation.reasonCodes.map((code) => nextSetReasonLabels[code]).filter(Boolean);
+  return labels.length ? [...new Set(labels)].join(' · ') : undefined;
+};
+
+const isNextSetRecommendationApplied = (
+  recommendation: FocusNextSetRecommendation,
+  actualDraft: ActualSetDraft | null | undefined,
+): boolean => {
+  if (actualDraft?.source !== 'prescription') return false;
+  const weightMatches =
+    !hasPositiveNumber(recommendation.actionableLoadKg) || sameOptionalNumber(actualDraft.actualWeightKg, recommendation.actionableLoadKg);
+  const repsMatches = !hasPositiveNumber(recommendation.plannedReps) || number(actualDraft.actualReps) === number(recommendation.plannedReps);
+  return weightMatches && repsMatches;
+};
+
+export const buildFocusNextSetRecommendationViewModel = (
+  recommendation: FocusNextSetRecommendation,
+  unitSettings: UnitSettings,
+  actualDraft?: ActualSetDraft | null,
+): FocusNextSetRecommendationViewModel | null => {
+  if (recommendation.recommendationKind === 'no_recommendation') return null;
+  const loadReps = formatNextSetLoadReps(recommendation, unitSettings);
+  const actionLabel = nextSetRecommendationLabels[recommendation.recommendationKind];
+  const hasRisk = recommendation.requiresConfirmation || recommendation.riskFlags.length > 0;
+  const mainText =
+    recommendation.recommendationKind === 'stop_exercise'
+      ? '已标记不适，先停止'
+      : recommendation.recommendationKind === 'extend_rest'
+        ? '接近力竭，延长休息'
+        : recommendation.recommendationKind === 'avoid_pr_attempt'
+          ? '接近力竭，先不冲重量'
+          : recommendation.recommendationKind === 'decrease_load' && recommendation.reasonCodes.includes('poor_technique')
+            ? '动作质量不足，先降重'
+            : recommendation.recommendationKind === 'increase_load' && loadReps
+              ? `加重到 ${loadReps}`
+              : recommendation.recommendationKind === 'decrease_load' && loadReps
+                ? `降到 ${loadReps}`
+                : recommendation.recommendationKind === 'hold' && loadReps
+                  ? `保持 ${loadReps}`
+                  : recommendation.recommendationKind === 'reduce_reps' && hasPositiveNumber(recommendation.plannedReps)
+                    ? `减少到 ${number(recommendation.plannedReps)} 次`
+                    : actionLabel;
+
+  return {
+    title: '下一组建议',
+    mainText,
+    reasonText: buildNextSetReasonText(recommendation),
+    tone: hasRisk ? 'warning' : 'default',
+    canApply: canApplyFocusNextSetRecommendation(recommendation),
+    applied: isNextSetRecommendationApplied(recommendation, actualDraft),
+  };
+};
+
 interface TrainingFocusViewProps {
   session: TrainingSession;
   unitSettings: UnitSettings;
@@ -158,6 +297,8 @@ interface TrainingFocusViewProps {
   onCopyPrevious: (exerciseIndex: number) => FocusActionCallbackResult;
   onAdjustSet: (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => void;
   onApplySuggestion: (exerciseIndex: number) => FocusActionCallbackResult;
+  nextSetRecommendation?: FocusNextSetRecommendation | null;
+  onApplyNextSetRecommendation?: (recommendation: FocusNextSetRecommendation) => FocusActionCallbackResult;
   onUpdateActualDraft: (
     exerciseIndex: number,
     updates: {
@@ -446,6 +587,8 @@ export function TrainingFocusView({
   onSetChange,
   onCompleteSet,
   onApplySuggestion,
+  nextSetRecommendation,
+  onApplyNextSetRecommendation,
   onUpdateActualDraft,
   onSwitchExercise,
   onReplaceExercise,
@@ -613,6 +756,10 @@ export function TrainingFocusView({
     hasFeasibleLoad: Boolean(actionablePrescription?.shouldUseFeasibleLoad),
   });
   const interactionState = resolveFocusModeInteractionState(interactionInput);
+  const visibleNextSetRecommendation = isFocusNextSetRecommendationVisible(currentStep, nextSetRecommendation, sessionComplete) ? nextSetRecommendation : null;
+  const nextSetRecommendationView = visibleNextSetRecommendation
+    ? buildFocusNextSetRecommendationViewModel(visibleNextSetRecommendation, unitSettings, actualDraft)
+    : null;
 
   const requestInputGuide = () => {
     setShowMissingInputGuide(true);
@@ -796,6 +943,11 @@ export function TrainingFocusView({
   const updateActualRir = (nextRir: number) => {
     if (mainIndex < 0) return undefined;
     return onUpdateActualDraft(mainIndex, { actualRir: Math.max(0, Math.min(10, Math.round(nextRir))), source: 'manual' });
+  };
+
+  const applyNextSetRecommendation = () => {
+    if (!visibleNextSetRecommendation || !onApplyNextSetRecommendation || !nextSetRecommendationView?.canApply || nextSetRecommendationView.applied) return;
+    notifyResult(onApplyNextSetRecommendation(visibleNextSetRecommendation), '已套用。');
   };
 
   const updateWorkingSetNote =
@@ -1231,6 +1383,42 @@ export function TrainingFocusView({
                 />
                 {showMissingInputGuide && currentSetSummary.missingInput ? (
                   <div className="mt-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-100">缺少重量或次数</div>
+                ) : null}
+                {visibleNextSetRecommendation && nextSetRecommendationView ? (
+                  <div
+                    className={classNames(
+                      'mt-3 rounded-2xl border px-3 py-2',
+                      nextSetRecommendationView.tone === 'warning'
+                        ? 'border-amber-400/30 bg-amber-400/10 text-amber-50'
+                        : 'border-emerald-300/20 bg-emerald-300/10 text-emerald-50',
+                    )}
+                    data-focus-next-set-recommendation="compact"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-white/62">{nextSetRecommendationView.title}</div>
+                        <div className="mt-1 text-sm font-bold">{nextSetRecommendationView.mainText}</div>
+                      </div>
+                      {nextSetRecommendationView.applied ? (
+                        <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-emerald-50">已套用</span>
+                      ) : nextSetRecommendationView.canApply && onApplyNextSetRecommendation ? (
+                        <button
+                          type="button"
+                          onClick={applyNextSetRecommendation}
+                          className="shrink-0 rounded-full bg-emerald-300 px-3 py-1 text-xs font-bold text-slate-950 shadow-sm"
+                          data-focus-next-set-apply="safe-prefill"
+                        >
+                          套用
+                        </button>
+                      ) : null}
+                    </div>
+                    {nextSetRecommendationView.reasonText ? (
+                      <details className="mt-2 text-xs font-semibold text-white/72">
+                        <summary className="cursor-pointer list-none">查看原因</summary>
+                        <div className="mt-1">{nextSetRecommendationView.reasonText}</div>
+                      </details>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </div>

@@ -1,4 +1,4 @@
-import type { ActualSetDraft, LoadFeedbackValue, SupportSkipReason, TrainingSession, TrainingSetLog, WeightUnit } from '../models/training-model';
+import type { ActualSetDraft, LoadFeedbackValue, SupportSkipReason, TrainingSession, TrainingSetLog, UnitSettings, WeightUnit } from '../models/training-model';
 import {
   adjustFocusSetValue,
   applySuggestedFocusStep,
@@ -22,6 +22,7 @@ import { upsertLoadFeedback } from './loadFeedbackEngine';
 import { getExerciseIdentityFromExercise } from './currentExerciseSelector';
 import { formatExerciseName } from '../i18n/formatters';
 import { number } from './engineUtils';
+import { buildFocusNextSetRecommendation, type FocusNextSetRecommendation } from './focusNextSetRecommendationEngine';
 
 export type WorkoutExecutionState =
   | 'idle'
@@ -35,7 +36,15 @@ export type WorkoutExecutionState =
 
 export type WorkoutExecutionEvent =
   | { type: 'START_SESSION' }
-  | { type: 'COMPLETE_STEP'; exerciseIndex: number; completedAt?: string; nowMs?: number; expectedStepId?: string; displayUnit?: WeightUnit }
+  | {
+      type: 'COMPLETE_STEP';
+      exerciseIndex: number;
+      completedAt?: string;
+      nowMs?: number;
+      expectedStepId?: string;
+      displayUnit?: WeightUnit;
+      unitSettings?: Partial<UnitSettings>;
+    }
   | { type: 'APPLY_PRESCRIPTION'; exerciseIndex: number }
   | { type: 'ADJUST_WEIGHT'; exerciseIndex: number; delta: number }
   | { type: 'ADJUST_REPS'; exerciseIndex: number; delta: number }
@@ -76,6 +85,7 @@ export type WorkoutExecutionResult = {
   feedback?: string;
   warnings: string[];
   actionResult: FocusActionResult;
+  nextSetRecommendation?: FocusNextSetRecommendation;
 };
 
 export const focusActionResult = (result: FocusActionResult): FocusActionResult => result;
@@ -103,6 +113,7 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
   let feedback = '';
   let forcedState: WorkoutExecutionState | null = null;
   let actionResult: FocusActionResult = focusInfoResult('没有需要更新的操作。', 'unsupported');
+  let nextSetRecommendation: FocusNextSetRecommendation | undefined;
 
   switch (event.type) {
     case 'START_SESSION':
@@ -131,6 +142,19 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
         actionResult = focusInfoResult('当前组未重复记录。', 'duplicate_submit');
       } else {
         updatedSession = result.session;
+        const recommendation = buildFocusNextSetRecommendation({
+          session: result.session,
+          completedStep: result.completedStep,
+          nextStep: result.nextStep,
+          completedActualWeightKg: draft?.actualWeightKg,
+          completedActualReps: draft?.actualReps,
+          completedActualRir: draft?.actualRir,
+          painFlag: draft?.painFlag,
+          techniqueQuality: draft?.techniqueQuality,
+          unitSettings: event.unitSettings || { weightUnit: event.displayUnit || 'kg' },
+          nowIso: event.completedAt,
+        });
+        nextSetRecommendation = recommendation.recommendationKind === 'no_recommendation' ? undefined : recommendation;
         feedback = result.sessionComplete ? '训练已完成' : before.stepType === 'warmup' ? '已完成热身组' : '已完成正式组';
         actionResult = focusSuccessResult('已完成本组。', 'completed');
       }
@@ -259,6 +283,7 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
     feedback,
     warnings,
     actionResult,
+    nextSetRecommendation,
   };
 };
 
