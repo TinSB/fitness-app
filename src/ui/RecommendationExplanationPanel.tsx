@@ -8,6 +8,7 @@ import {
   type RecommendationWarningView,
 } from '../presenters/recommendationExplanationPresenter';
 import { classNames } from '../engines/engineUtils';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 type RecommendationExplanationPanelProps = {
   trace?: RecommendationTrace | null;
@@ -34,20 +35,36 @@ const badgeClass: Record<RecommendationFactorView['effectTone'], string> = {
   warning: 'bg-amber-400/15 text-amber-100',
 };
 
-const FactorRow = ({ factor, compact = false }: { factor: RecommendationFactorView; compact?: boolean }) => (
-  <div className={classNames('rounded-lg border px-3 py-2', toneClass[factor.effectTone])}>
+const lightToneClass: Record<RecommendationFactorView['effectTone'], string> = {
+  positive: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  negative: 'border-rose-200 bg-rose-50 text-rose-700',
+  neutral: 'border-slate-200 bg-slate-50 text-slate-600',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900',
+};
+
+const lightBadgeClass: Record<RecommendationFactorView['effectTone'], string> = {
+  positive: 'bg-emerald-100 text-emerald-700',
+  negative: 'bg-rose-100 text-rose-700',
+  neutral: 'bg-slate-100 text-slate-600',
+  warning: 'bg-amber-100 text-amber-800',
+};
+
+const FactorRow = ({ factor, compact = false, isDark = true }: { factor: RecommendationFactorView; compact?: boolean; isDark?: boolean }) => (
+  <div className={classNames('rounded-lg border px-3 py-2', isDark ? toneClass[factor.effectTone] : lightToneClass[factor.effectTone])}>
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm font-semibold">{factor.label}</span>
-      <span className={classNames('rounded-md px-2 py-0.5 text-[11px] font-semibold', badgeClass[factor.effectTone])}>{factor.effectLabel}</span>
+      <span className={classNames('rounded-md px-2 py-0.5 text-[11px] font-semibold', isDark ? badgeClass[factor.effectTone] : lightBadgeClass[factor.effectTone])}>{factor.effectLabel}</span>
     </div>
     <p className={classNames('mt-1 leading-5', compact ? 'text-xs' : 'text-sm')}>{factor.reason}</p>
   </div>
 );
 
 export const RecommendationWarningNotice = ({ warnings }: { warnings: RecommendationWarningView[] }) => {
+  const { resolvedTheme } = useUiTheme();
+  const isDark = resolvedTheme === 'dark';
   if (!warnings.length) return null;
   return (
-    <details className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-50" data-theme-surface="warning_surface">
+    <details className={classNames('rounded-lg border px-3 py-2 text-sm', isDark ? 'border-amber-400/25 bg-amber-400/10 text-amber-50' : 'border-amber-200 bg-amber-50 text-amber-900')} data-theme-surface="warning_surface">
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold">
         <AlertTriangle className="h-4 w-4" />
         可能需要检查
@@ -71,6 +88,8 @@ export const RecommendationExplanationPanel = ({
   defaultOpen = false,
   recoveryRecommendation,
 }: RecommendationExplanationPanelProps) => {
+  const { resolvedTheme } = useUiTheme();
+  const isDark = resolvedTheme === 'dark';
   const viewModel = React.useMemo(
     () => buildRecommendationExplanationViewModel(trace, { title, warnings, recoveryRecommendation }),
     [trace, title, warnings, recoveryRecommendation],
@@ -84,30 +103,31 @@ export const RecommendationExplanationPanel = ({
     <details
       open={defaultOpen}
       className={classNames(
-        'rounded-lg border border-white/10 bg-[#1c1c1e]/86 text-white/70 shadow-sm',
+        'rounded-lg border shadow-sm',
+        isDark ? 'border-white/10 bg-[#1c1c1e]/86 text-white/70' : 'border-slate-200 bg-white text-slate-700',
         compact ? 'px-3 py-2 text-sm' : 'px-4 py-3 text-sm',
       )}
       data-theme-surface="elevated_card"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-white">
+      <summary className={classNames('flex cursor-pointer list-none items-center justify-between gap-3 font-semibold', isDark ? 'text-white' : 'text-slate-950')}>
         <span>{viewModel.title}</span>
-        <ChevronDown className="h-4 w-4 text-white/38" />
+        <ChevronDown className={classNames('h-4 w-4', isDark ? 'text-white/38' : 'text-slate-400')} />
       </summary>
       <div className={classNames('mt-3 space-y-3', compact && 'mt-2 space-y-2')}>
-        <p className={classNames('leading-6 text-white/58', compact && 'text-xs leading-5')}>{viewModel.summary}</p>
+        <p className={classNames('leading-6', isDark ? 'text-white/58' : 'text-slate-600', compact && 'text-xs leading-5')}>{viewModel.summary}</p>
         <div className="space-y-2">
           {visibleFactors.length ? (
-            visibleFactors.map((factor) => <FactorRow key={factor.id} factor={factor} compact={compact} />)
+            visibleFactors.map((factor) => <FactorRow key={factor.id} factor={factor} compact={compact} isDark={isDark} />)
           ) : (
-            <div className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white/58">当前推荐主要来自默认模板，继续记录后会更精准。</div>
+            <div className={classNames('rounded-lg border px-3 py-2 text-sm', isDark ? 'border-white/10 bg-white/[0.05] text-white/58' : 'border-slate-200 bg-slate-50 text-slate-600')}>当前推荐主要来自默认模板，继续记录后会更精准。</div>
           )}
         </div>
         {hiddenFactors.length ? (
           <details className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2" data-theme-surface="compact_row">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-white/72">查看更多原因</summary>
+            <summary className={classNames('cursor-pointer list-none text-sm font-semibold', isDark ? 'text-white/72' : 'text-slate-700')}>查看更多原因</summary>
             <div className="mt-2 space-y-2">
               {hiddenFactors.map((factor) => (
-                <FactorRow key={factor.id} factor={factor} compact />
+                <FactorRow key={factor.id} factor={factor} compact isDark={isDark} />
               ))}
             </div>
           </details>

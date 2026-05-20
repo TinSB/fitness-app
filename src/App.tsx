@@ -103,6 +103,7 @@ import { MobileAppShell } from './uiOs/MobileAppShell';
 import { UI_OS_TABS, type UiOsTabId } from './uiOs/uiOsNavigation';
 import { resolveThemePreference, type ThemePreferenceMode } from './engines/themePreferenceModel';
 import { readUiThemePreference, writeUiThemePreference } from './uiOs/theme/uiThemePreferenceStorage';
+import { UiThemeProvider } from './uiOs/theme/UiThemeProvider';
 
 const AssessmentView = lazy(() => import('./features/AssessmentView').then((module) => ({ default: module.AssessmentView })));
 const PlanView = lazy(() => import('./features/PlanView').then((module) => ({ default: module.PlanView })));
@@ -2092,7 +2093,9 @@ function App() {
                   </Suspense>
                 )}
       </MobileAppShell>
-      <ConfirmDialogHost />
+      <UiThemeProvider value={{ selectedThemeMode: themePreference.selectedThemeMode, resolvedTheme: themePreference.resolvedTheme, focusModeImmersiveDark: true }}>
+        <ConfirmDialogHost />
+      </UiThemeProvider>
       {appToast ? (
         <div className="fixed left-1/2 top-[calc(1rem+env(safe-area-inset-top))] z-[100] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2">
           <Toast tone={appToast.tone}>{appToast.message}</Toast>

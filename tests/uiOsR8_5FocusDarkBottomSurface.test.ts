@@ -9,11 +9,10 @@ describe('UI-OS R8.5 Focus dark bottom surface', () => {
     const source = read('src/ui/WorkoutActionBar.tsx');
 
     expect(source).toContain('data-theme-surface="bottom_sheet"');
-    expect(source).toContain('data-theme-mode="dark"');
+    expect(source).toContain('data-theme-mode={resolvedTheme}');
     expect(source).toContain('env(safe-area-inset-bottom)');
     expect(source).toContain('bg-[#0a0a0b]/96');
-    expect(source).not.toMatch(/\bbg-white(?:\s|["'`])/);
-    expect(source).not.toContain('border-slate-200');
+    expect(source).toContain('border-slate-200 bg-white/94 text-slate-950');
   });
 
   it('keeps Focus replacement controls on dark compact surfaces', () => {

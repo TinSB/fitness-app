@@ -52,7 +52,8 @@ export function HistoryFrequencySummary(props: HistoryFrequencySummaryProps) {
     <GlassCard
       as="section"
       padding="lg"
-      className={classNames('rounded-[28px] bg-[#0b0c0d] text-white shadow-[0_24px_80px_rgba(0,0,0,0.22)]', className)}
+      surface="record_detail_surface"
+      className={classNames('rounded-[28px] shadow-[0_24px_80px_rgba(15,23,42,0.12)]', className)}
       ariaLabel="训练频率摘要"
       highlight
     >
@@ -67,7 +68,7 @@ export function HistoryFrequencySummary(props: HistoryFrequencySummaryProps) {
         {metricItems(props).map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="rounded-2xl border border-white/8 bg-white/[0.06] p-4">
+            <div key={item.label} className="rounded-2xl border p-4" data-theme-surface="compact_row">
               <div className="mb-3 flex items-center justify-between gap-3 text-white/55">
                 <span className="text-xs font-semibold">{item.label}</span>
                 <Icon className="h-4 w-4" aria-hidden="true" />

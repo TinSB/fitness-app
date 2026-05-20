@@ -1,7 +1,9 @@
 import React from 'react';
 import type { EquipmentAwareRecommendationDisplayResult } from '../engines/equipmentAwareRecommendationDisplay';
+import { classNames } from '../engines/engineUtils';
 import { EquipmentAwareLoadCard, type EquipmentLoadType } from '../uiOs/training/EquipmentAwareLoadCard';
 import { BottomSheet } from '../uiOs/surfaces/BottomSheet';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 export type EquipmentAwareLoadDisplayProps = {
   displayResult: EquipmentAwareRecommendationDisplayResult;
@@ -36,6 +38,8 @@ export const EquipmentAwareLoadDisplay = ({
   primaryLabel,
 }: EquipmentAwareLoadDisplayProps) => {
   const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const { resolvedTheme } = useUiTheme();
+  const isDark = resolvedTheme === 'dark';
   const secondaryItems = [
     displayResult.secondaryLabel,
     displayResult.plateBreakdownLabel,
@@ -55,7 +59,7 @@ export const EquipmentAwareLoadDisplay = ({
       data-compact={compact ? 'true' : 'false'}
       data-equipment-details-collapsed="true"
     >
-      {primaryLabel ? <div className="mb-2 text-xs font-semibold text-white/58">{primaryLabel}</div> : null}
+      {primaryLabel ? <div className={classNames('mb-2 text-xs font-semibold', isDark ? 'text-white/58' : 'text-slate-600')}>{primaryLabel}</div> : null}
       <EquipmentAwareLoadCard
         type={mapEquipmentKind(displayResult.equipmentKind)}
         mainDisplay={displayResult.primaryLabel}
@@ -67,15 +71,18 @@ export const EquipmentAwareLoadDisplay = ({
 
       <button
         type="button"
-        className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-left text-sm font-semibold leading-6 text-white"
+        className={classNames(
+          'mt-2 w-full rounded-2xl border px-3 py-2 text-left text-sm font-semibold leading-6',
+          isDark ? 'border-white/10 bg-white/[0.045] text-white' : 'border-slate-200 bg-slate-50 text-slate-700',
+        )}
         data-equipment-weight-details="collapsed"
         data-theme-surface="compact_row"
         onClick={() => setDetailsOpen(true)}
       >
         重量详情
       </button>
-      <BottomSheet isOpen={detailsOpen} onClose={() => setDetailsOpen(false)} title="重量详情">
-        <div className="space-y-2 text-sm leading-6 text-white/70" data-equipment-weight-details-sheet="collapsed-by-default">
+      <BottomSheet isOpen={detailsOpen} onClose={() => setDetailsOpen(false)} title="重量详情" themeMode={resolvedTheme}>
+        <div className={classNames('space-y-2 text-sm leading-6', isDark ? 'text-white/70' : 'text-slate-600')} data-equipment-weight-details-sheet="collapsed-by-default">
           {detailItems.map((item) => (
             <p key={item}>{item}</p>
           ))}
@@ -83,7 +90,7 @@ export const EquipmentAwareLoadDisplay = ({
       </BottomSheet>
 
       {onOpenEquipmentProfile ? (
-        <button type="button" onClick={onOpenEquipmentProfile} className="mt-2 text-xs font-semibold text-emerald-200">
+        <button type="button" onClick={onOpenEquipmentProfile} className={classNames('mt-2 text-xs font-semibold', isDark ? 'text-emerald-200' : 'text-emerald-700')}>
           配置器械档案
         </button>
       ) : null}

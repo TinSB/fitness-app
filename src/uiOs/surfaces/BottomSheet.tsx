@@ -1,6 +1,6 @@
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import { classNames } from '../../engines/engineUtils';
-import { resolveThemeSurface } from '../theme/themeSurfaceModel';
+import { resolveThemeSurface, type ThemeSurfaceMode } from '../theme/themeSurfaceModel';
 
 export type BottomSheetProps = {
   isOpen: boolean;
@@ -12,14 +12,16 @@ export type BottomSheetProps = {
   showConfirmCopy?: boolean;
   closeOnBackdrop?: boolean;
   closeOnHandle?: boolean;
+  themeMode?: ThemeSurfaceMode;
+  immersiveDark?: boolean;
 };
 
-const sheetStyle: CSSProperties = {
-  background: 'rgba(28, 28, 30, 0.95)',
+const sheetStyle = (isDark: boolean): CSSProperties => ({
+  background: isDark ? 'rgba(28, 28, 30, 0.95)' : 'rgba(255, 255, 255, 0.96)',
   backdropFilter: 'blur(40px)',
   maxHeight: '85vh',
   animation: 'slideUp 0.3s ease-out',
-};
+});
 
 export function BottomSheet({
   isOpen,
@@ -31,9 +33,12 @@ export function BottomSheet({
   showConfirmCopy = true,
   closeOnBackdrop = true,
   closeOnHandle = true,
+  themeMode = 'dark',
+  immersiveDark = false,
 }: BottomSheetProps) {
   if (!isOpen) return null;
-  const surface = resolveThemeSurface('bottom_sheet', 'dark', { immersiveDark: true });
+  const surface = resolveThemeSurface('bottom_sheet', themeMode, { immersiveDark });
+  const isDark = surface.resolvedMode === 'dark';
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') onClose();
   };
@@ -43,19 +48,19 @@ export function BottomSheet({
       <button
         type="button"
         aria-label="关闭底部面板"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className={classNames('absolute inset-0 backdrop-blur-sm', isDark ? 'bg-black/60' : 'bg-slate-950/25')}
         data-bottom-sheet-backdrop="dismiss"
         onClick={closeOnBackdrop ? onClose : undefined}
       />
       <div
         className={classNames('relative w-full rounded-t-3xl p-6 pb-10', surface.className, surface.textClassName, tone === 'danger' ? 'border-t border-red-400/40' : '')}
-        style={sheetStyle}
+        style={sheetStyle(isDark)}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         data-bottom-sheet-tone={tone}
         data-theme-surface="bottom_sheet"
-        data-theme-mode="dark"
+        data-theme-mode={surface.resolvedMode}
       >
         <button
           type="button"
@@ -64,12 +69,12 @@ export function BottomSheet({
           data-bottom-sheet-handle="dismiss"
           onClick={closeOnHandle ? onClose : undefined}
         >
-          <span className="mx-auto block h-1 w-9 rounded-full bg-white/20" />
+          <span className={classNames('mx-auto block h-1 w-9 rounded-full', isDark ? 'bg-white/20' : 'bg-slate-300')} />
         </button>
-        <h3 className="text-xl font-semibold text-white mb-5">{title}</h3>
-        <div className="overflow-y-auto">{children}</div>
+        <h3 className={classNames('mb-5 text-xl font-semibold', isDark ? 'text-white' : 'text-slate-950')}>{title}</h3>
+        <div className={classNames('overflow-y-auto', isDark ? 'text-white' : 'text-slate-950')}>{children}</div>
         {confirmRequired && showConfirmCopy ? (
-          <div className="mt-5 pt-4 border-t border-white/8">
+          <div className={classNames('mt-5 border-t pt-4', isDark ? 'border-white/8' : 'border-slate-200')}>
             <p className={tone === 'danger' ? 'text-xs text-red-300 text-center' : 'text-xs text-amber-400 text-center'}>需要手动确认</p>
           </div>
         ) : null}

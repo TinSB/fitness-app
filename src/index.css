@@ -94,7 +94,9 @@ html[data-ui-theme='dark'] #root {
 .uios-theme-light [data-theme-surface='health_card'],
 .uios-theme-light [data-theme-surface='settings_group'],
 .uios-theme-light [data-theme-surface='elevated_card'],
-.uios-theme-light [data-theme-surface='training_hero'] {
+.uios-theme-light [data-theme-surface='training_hero'],
+.uios-theme-light [data-theme-surface='record_detail_surface'],
+.uios-theme-light [data-theme-surface='training_detail_surface'] {
   background: rgba(255, 255, 255, 0.92) !important;
   border-color: var(--uios-subtle-border) !important;
   color: var(--uios-primary-text) !important;
@@ -113,6 +115,69 @@ html[data-ui-theme='dark'] #root {
   background: rgba(255, 255, 255, 0.96) !important;
   border-color: var(--uios-subtle-border) !important;
   color: var(--uios-primary-text) !important;
+}
+
+.uios-theme-light [data-theme-surface='input_surface'],
+.uios-theme-light input,
+.uios-theme-light select,
+.uios-theme-light textarea {
+  background: #ffffff !important;
+  border-color: var(--uios-subtle-border) !important;
+  color: var(--uios-primary-text) !important;
+}
+
+.uios-theme-light input::placeholder,
+.uios-theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.uios-theme-light [data-theme-surface='action_surface']:not([data-action-variant='primary']):not([data-action-variant='danger']) {
+  background: #ffffff !important;
+  border-color: var(--uios-subtle-border) !important;
+  color: var(--uios-primary-text) !important;
+}
+
+.uios-theme-light [data-theme-surface='action_surface'][data-action-variant='ghost'] {
+  background: transparent !important;
+  color: var(--uios-secondary-text) !important;
+}
+
+.uios-theme-light [data-theme-surface='action_surface'][data-action-variant='success'] {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+.uios-theme-light [data-global-surface-sweep='train'],
+.uios-theme-light [data-global-surface-sweep='record'],
+.uios-theme-light [data-training-detail-surface],
+.uios-theme-light [data-record-detail-surface] {
+  color: var(--uios-primary-text);
+}
+
+.uios-theme-light [data-global-surface-sweep='train'] [class*='bg-[#0a0a0b]'],
+.uios-theme-light [data-global-surface-sweep='train'] [class*='bg-[#1c1c1e]'],
+.uios-theme-light [data-global-surface-sweep='train'] [class*='bg-black'],
+.uios-theme-light [data-global-surface-sweep='record'] [class*='bg-[#0a0a0b]'],
+.uios-theme-light [data-global-surface-sweep='record'] [class*='bg-[#1c1c1e]'],
+.uios-theme-light [data-global-surface-sweep='record'] [class*='bg-black'],
+.uios-theme-light [data-training-detail-surface] [class*='bg-[#0a0a0b]'],
+.uios-theme-light [data-training-detail-surface] [class*='bg-[#1c1c1e]'],
+.uios-theme-light [data-training-detail-surface] [class*='bg-black'] {
+  background: #ffffff !important;
+}
+
+.uios-theme-light [data-global-surface-sweep='train'] [class*='text-white'],
+.uios-theme-light [data-global-surface-sweep='record'] [class*='text-white'],
+.uios-theme-light [data-training-detail-surface] [class*='text-white'],
+.uios-theme-light [data-record-detail-surface] [class*='text-white'] {
+  color: var(--uios-primary-text) !important;
+}
+
+.uios-theme-light [data-global-surface-sweep='train'] [class*='border-white'],
+.uios-theme-light [data-global-surface-sweep='record'] [class*='border-white'],
+.uios-theme-light [data-training-detail-surface] [class*='border-white'],
+.uios-theme-light [data-record-detail-surface] [class*='border-white'] {
+  border-color: var(--uios-subtle-border) !important;
 }
 
 .uios-theme-light [data-theme-surface] [class*='text-white'] {

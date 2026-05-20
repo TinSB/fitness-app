@@ -34,6 +34,7 @@ import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationP
 import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommendationWeight';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { SetPrescriptionCard } from '../uiOs/training/TrainingOsCards';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
 import type { SetPurpose } from '../engines/equipmentAwareLoadModel';
 
@@ -178,6 +179,9 @@ const setPurposeForType = (type: TrainingSetLog['type']): SetPurpose => {
   return 'working';
 };
 
+const trainingDarkDescendantOverrides =
+  '[&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45';
+
 export function TrainingView({
   session,
   unitSettings,
@@ -211,6 +215,8 @@ export function TrainingView({
 }: TrainingViewProps) {
   const [supportReasonDrafts, setSupportReasonDrafts] = React.useState<Record<string, SupportSkipReason>>({});
   const [showAbandonConfirm, setShowAbandonConfirm] = React.useState(false);
+  const { resolvedTheme } = useUiTheme();
+  const isDarkTheme = resolvedTheme === 'dark';
   const recommendationTrace = React.useMemo(() => (session ? buildSessionRecommendationTrace(session) : null), [session]);
   const sessionQuality = React.useMemo(() => (session ? buildSessionQualityResult({ session }) : null), [session]);
 
@@ -297,13 +303,34 @@ export function TrainingView({
     finish();
   };
 
+  const primaryTextClassName = isDarkTheme ? 'text-white' : 'text-slate-950';
+  const secondaryTextClassName = isDarkTheme ? 'text-white/60' : 'text-slate-600';
+  const mutedTextClassName = isDarkTheme ? 'text-white/45' : 'text-slate-500';
+  const borderClassName = isDarkTheme ? 'border-white/10' : 'border-slate-200';
+  const softRowClassName = classNames(
+    'rounded-lg',
+    isDarkTheme ? 'bg-white/[0.05] text-white/60' : 'bg-slate-50 text-slate-600',
+  );
+  const compactSurfaceClassName = classNames(
+    'rounded-2xl border px-4 py-3 text-sm leading-6',
+    isDarkTheme ? 'border-white/10 bg-white/[0.045] text-white/70' : 'border-slate-200 bg-slate-50 text-slate-600',
+  );
+  const inputClassName = classNames(
+    'min-h-11 w-full rounded-lg border px-3 text-base outline-none focus:border-emerald-300',
+    isDarkTheme ? 'border-white/10 bg-white/[0.06] text-white placeholder:text-white/25' : 'border-slate-200 bg-white text-slate-950 placeholder:text-slate-400',
+  );
+  const selectClassName = classNames(
+    'min-h-10 rounded-lg border px-3 text-sm outline-none focus:border-emerald-300',
+    isDarkTheme ? 'border-white/10 bg-white/[0.06] text-white/70' : 'border-slate-200 bg-white text-slate-700',
+  );
+
   const renderSetSummary = (set: TrainingSetLog, setIndex: number) => {
     const weightKg = set.actualWeightKg ?? set.weight;
     const reps = set.reps;
     return (
-      <div key={set.id} className="flex flex-wrap items-center gap-2 rounded-md bg-white/[0.05] px-3 py-2 text-xs text-white/60">
+      <div key={set.id} className={classNames('flex flex-wrap items-center gap-2 rounded-md px-3 py-2 text-xs', softRowClassName)} data-theme-surface="compact_row">
         <StatusBadge tone="emerald">{formatSetType(set.type)} {setIndex + 1}</StatusBadge>
-        <span className="font-semibold text-slate-900">
+        <span className={classNames('font-semibold', primaryTextClassName)}>
           {formatDisplayWeightValue(weightKg, unitSettings)}{unitSettings.weightUnit} × {number(reps)}
         </span>
         {set.rir !== undefined && set.rir !== '' ? <span>{formatRirLabel(set.rir)}</span> : null}
@@ -324,23 +351,23 @@ export function TrainingView({
     const exerciseDisplayName = formatExerciseName({ id: identity.displayExerciseId, name: exercise.name });
 
     return (
-      <div className="border-t border-slate-100 p-4">
-        <details className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-6 text-white/70" data-training-exercise-details="collapsed" data-theme-surface="compact_row">
-          <summary className="cursor-pointer font-semibold text-white">动作设置</summary>
+      <div className={classNames('border-t p-4', isDarkTheme ? 'border-white/10' : 'border-slate-100')}>
+        <details className={compactSurfaceClassName} data-training-exercise-details="collapsed" data-theme-surface="compact_row">
+          <summary className={classNames('cursor-pointer font-semibold', primaryTextClassName)}>动作设置</summary>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             <div>
-              <div className="text-xs font-semibold text-white/45">动作提示</div>
-              <div className="mt-1 font-semibold text-white">{exercise.suggestion || exercise.targetSummary || '按计划完成本动作'}</div>
+              <div className={classNames('text-xs font-semibold', mutedTextClassName)}>动作提示</div>
+              <div className={classNames('mt-1 font-semibold', primaryTextClassName)}>{exercise.suggestion || exercise.targetSummary || '按计划完成本动作'}</div>
             </div>
             <div>
-              <div className="text-xs font-semibold text-white/45">目标范围</div>
-              <div className="mt-1 font-semibold text-white">
+              <div className={classNames('text-xs font-semibold', mutedTextClassName)}>目标范围</div>
+              <div className={classNames('mt-1 font-semibold', primaryTextClassName)}>
                 {exercise.repMin}-{exercise.repMax} 次 · {formatRirLabel(exercise.targetRirText || '1–2')}
               </div>
             </div>
             <div>
-              <div className="text-xs font-semibold text-white/45">休息</div>
-              <div className="mt-1 font-semibold text-white">{formatRest(exercise.rest)}</div>
+              <div className={classNames('text-xs font-semibold', mutedTextClassName)}>休息</div>
+              <div className={classNames('mt-1 font-semibold', primaryTextClassName)}>{formatRest(exercise.rest)}</div>
             </div>
           </div>
         </details>
@@ -355,9 +382,13 @@ export function TrainingView({
               <Card
                 key={set.id}
                 className={classNames(
-                  'border-white/10 transition',
+                  'transition',
+                  borderClassName,
                   completed && 'bg-emerald-50/50',
-                  isNext && 'border-emerald-300 bg-[#0a0a0b] text-white shadow-[0_18px_60px_rgba(0,0,0,0.22)] ring-1 ring-emerald-100'
+                  isNext &&
+                    (isDarkTheme
+                      ? 'border-emerald-300 bg-[#0a0a0b] text-white shadow-[0_18px_60px_rgba(0,0,0,0.22)] ring-1 ring-emerald-100'
+                      : 'border-emerald-300 bg-emerald-50 text-slate-950 shadow-sm ring-1 ring-emerald-100')
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -366,7 +397,7 @@ export function TrainingView({
                       <StatusBadge tone={completed ? 'emerald' : isNext ? 'amber' : 'slate'}>
                         {completed ? '已完成' : isNext ? '当前组' : '待完成'}
                       </StatusBadge>
-                      <h3 className={classNames('text-sm font-semibold', isNext ? 'text-white' : 'text-white/82')}>
+                      <h3 className={classNames('text-sm font-semibold', isNext ? primaryTextClassName : secondaryTextClassName)}>
                         {formatSetType(set.type)} {setIndex + 1}
                       </h3>
                     </div>
@@ -417,7 +448,8 @@ export function TrainingView({
                       onChange={(event) =>
                         onSetChange(exerciseIndex, setIndex, 'weight', String(parseDisplayWeightToKg(event.target.value, unitSettings.weightUnit)))
                       }
-                      className="min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.06] px-3 text-base text-white outline-none focus:border-emerald-300"
+                      className={inputClassName}
+                      data-theme-surface="input_surface"
                     />
                   </label>
                   <label className="space-y-1">
@@ -427,7 +459,8 @@ export function TrainingView({
                       inputMode="numeric"
                       value={String(set.reps ?? '')}
                       onChange={(event) => onSetChange(exerciseIndex, setIndex, 'reps', event.target.value)}
-                      className="min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.06] px-3 text-base text-white outline-none focus:border-emerald-300"
+                      className={inputClassName}
+                      data-theme-surface="input_surface"
                     />
                   </label>
                   <label className="space-y-1">
@@ -435,7 +468,8 @@ export function TrainingView({
                     <input
                       value={String(set.rir ?? '')}
                       onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rir', event.target.value)}
-                      className="min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.06] px-3 text-base text-white outline-none focus:border-emerald-300"
+                      className={inputClassName}
+                      data-theme-surface="input_surface"
                       placeholder={exercise.targetRirText || '1-2'}
                     />
                   </label>
@@ -444,7 +478,8 @@ export function TrainingView({
                     <input
                       value={String(set.rpe ?? '')}
                       onChange={(event) => onSetChange(exerciseIndex, setIndex, 'rpe', event.target.value)}
-                      className="min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.06] px-3 text-base text-white outline-none focus:border-emerald-300"
+                      className={inputClassName}
+                      data-theme-surface="input_surface"
                       placeholder="8"
                     />
                   </label>
@@ -463,7 +498,9 @@ export function TrainingView({
                             'min-h-10 rounded-lg border px-2 text-sm font-medium transition',
                             (set.techniqueQuality || 'acceptable') === option.value
                               ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
-                              : 'border-white/10 bg-white/[0.06] text-white/62'
+                              : isDarkTheme
+                                ? 'border-white/10 bg-white/[0.06] text-white/62'
+                                : 'border-slate-200 bg-white text-slate-600'
                           )}
                         >
                           {option.label}
@@ -471,7 +508,7 @@ export function TrainingView({
                       ))}
                     </div>
                   </div>
-                  <label className="flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-sm font-medium text-white/70">
+                  <label className={classNames('flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium', isDarkTheme ? 'border-white/10 bg-white/[0.06] text-white/70' : 'border-slate-200 bg-white text-slate-700')} data-theme-surface="input_surface">
                     <input
                       type="checkbox"
                       checked={Boolean(set.painFlag)}
@@ -486,7 +523,8 @@ export function TrainingView({
                   <input
                     value={set.note || ''}
                     onChange={(event) => onSetChange(exerciseIndex, setIndex, 'note', event.target.value)}
-                    className="min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.06] px-3 text-base text-white outline-none focus:border-emerald-300"
+                    className={inputClassName}
+                    data-theme-surface="input_surface"
                     placeholder="例如：肩不舒服、节奏乱了、器械被占"
                   />
                 </label>
@@ -546,7 +584,7 @@ export function TrainingView({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               {statusIcon(status)}
-              <h2 className="truncate text-base font-semibold text-white">{formatExerciseName({ id: getExerciseIdentityFromExercise(exercise, exercise.id).displayExerciseId, name: exercise.name })}</h2>
+              <h2 className={classNames('truncate text-base font-semibold', primaryTextClassName)}>{formatExerciseName({ id: getExerciseIdentityFromExercise(exercise, exercise.id).displayExerciseId, name: exercise.name })}</h2>
               <StatusBadge tone={exerciseStatusTone[status]}>{exerciseStatusLabel[status]}</StatusBadge>
               {exercise.actualExerciseId && exercise.originalExerciseId && exercise.actualExerciseId !== exercise.originalExerciseId ? (
                 <StatusBadge tone="amber">已替代</StatusBadge>
@@ -557,7 +595,7 @@ export function TrainingView({
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-sm font-semibold text-white">
+            <div className={classNames('text-sm font-semibold', primaryTextClassName)}>
               {done}/{sets.length}
             </div>
             <div className="text-xs text-slate-400">组数</div>
@@ -588,7 +626,8 @@ export function TrainingView({
             <select
               value={reasonForBlock}
               onChange={(event) => setSupportReasonDrafts((current) => ({ ...current, [`${blockType}:block`]: event.target.value as SupportSkipReason }))}
-              className="min-h-10 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-sm text-white/70"
+              className={selectClassName}
+              data-theme-surface="input_surface"
             >
               {supportReasonOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -604,10 +643,10 @@ export function TrainingView({
       >
         <div className="space-y-3">
           {items.map((block) => (
-            <Card key={block.id} className="bg-white/[0.05]">
+            <Card key={block.id}>
               <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-semibold text-white">{block.name}</h3>
+                  <h3 className={classNames('text-base font-semibold', primaryTextClassName)}>{block.name}</h3>
                   <div className="mt-1 text-xs text-slate-500">预计 {block.durationMin} 分钟</div>
                 </div>
                 <StatusBadge tone={blockType === 'correction' ? 'emerald' : 'amber'}>{supportBlockLabel(blockType)}</StatusBadge>
@@ -641,7 +680,8 @@ export function TrainingView({
                               setSupportReasonDrafts((current) => ({ ...current, [draftKey]: nextReason }));
                               onUpdateSupportSkipReason(block.id, exercise.exerciseId, nextReason);
                             }}
-                            className="min-h-10 rounded-lg border border-white/10 bg-white/[0.06] px-2 text-sm text-white/70"
+                            className={classNames(selectClassName, 'px-2')}
+                            data-theme-surface="input_surface"
                           >
                             {supportReasonOptions.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -691,16 +731,17 @@ export function TrainingView({
       />
 
       <div
-        className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px] [&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45"
+        className={classNames('grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]', isDarkTheme ? trainingDarkDescendantOverrides : '')}
         data-global-surface-sweep="train"
-        data-training-detail-surface="dark"
+        data-training-detail-surface={resolvedTheme}
+        data-theme-surface="training_detail_surface"
       >
         <main className="min-w-0 space-y-4">
           <Card>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">本次训练进度</div>
-                <h2 className="mt-1 text-xl font-semibold text-white">
+                <h2 className={classNames('mt-1 text-xl font-semibold', primaryTextClassName)}>
                   {overallResolved}/{overallPlanned || 1} 项已处理
                 </h2>
               </div>
@@ -723,10 +764,10 @@ export function TrainingView({
             <MetricCard label="训练模式" value={formatTrainingMode(mode.id)} tone="sky" />
           </div>
 
-          <Card className="bg-white/[0.05]">
+          <Card>
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className="font-semibold text-white">训练构成</span>
-              <span className="text-white/60">主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%</span>
+              <span className={classNames('font-semibold', primaryTextClassName)}>训练构成</span>
+              <span className={secondaryTextClassName}>主训练 {composition.mainShare}% / 纠偏 {composition.correctionShare}% / 功能 {composition.functionalShare}%</span>
             </div>
             <p className="mt-1 text-xs leading-5 text-slate-500">{composition.summary}</p>
           </Card>
@@ -738,8 +779,8 @@ export function TrainingView({
               <Card className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="text-base font-semibold text-white">{sessionQuality.title}</div>
-                    <p className="mt-1 text-sm leading-6 text-white/60">{sessionQuality.summary}</p>
+                    <div className={classNames('text-base font-semibold', primaryTextClassName)}>{sessionQuality.title}</div>
+                    <p className={classNames('mt-1 text-sm leading-6', secondaryTextClassName)}>{sessionQuality.summary}</p>
                   </div>
                   <StatusBadge tone={sessionQuality.level === 'high' ? 'emerald' : sessionQuality.level === 'low' ? 'amber' : 'sky'}>
                     {sessionQuality.confidence === 'high' ? '高置信' : sessionQuality.confidence === 'medium' ? '中等置信' : '低置信'}
@@ -748,17 +789,17 @@ export function TrainingView({
                 {sessionQualityItems.length ? (
                   <div className="space-y-2">
                     {sessionQualityItems.map((item) => (
-                      <div key={item.id} className="rounded-lg bg-white/[0.05] px-3 py-2 text-sm leading-6 text-white/60">
-                        <span className="font-semibold text-white">{item.label}：</span>
+                      <div key={item.id} className={classNames('rounded-lg px-3 py-2 text-sm leading-6', softRowClassName)} data-theme-surface="compact_row">
+                        <span className={classNames('font-semibold', primaryTextClassName)}>{item.label}：</span>
                         {item.reason}
                       </div>
                     ))}
                   </div>
                 ) : null}
                 {sessionQuality.nextSuggestions.length ? (
-                  <details className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm">
-                    <summary className="cursor-pointer font-semibold text-white/72">下次建议</summary>
-                    <div className="mt-2 space-y-1 text-xs leading-5 text-white/60">
+                  <details className={classNames('rounded-lg border px-3 py-2 text-sm', isDarkTheme ? 'border-white/10 bg-white/[0.06]' : 'border-slate-200 bg-slate-50')} data-theme-surface="compact_row">
+                    <summary className={classNames('cursor-pointer font-semibold', secondaryTextClassName)}>下次建议</summary>
+                    <div className={classNames('mt-2 space-y-1 text-xs leading-5', secondaryTextClassName)}>
                       {sessionQuality.nextSuggestions.slice(0, 3).map((item) => (
                         <div key={item}>- {item}</div>
                       ))}
@@ -782,13 +823,13 @@ export function TrainingView({
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">下一步</div>
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className={classNames('text-lg font-semibold', primaryTextClassName)}>
                   {workoutFinished ? '可以结束训练' : activeExercise ? formatExerciseName(activeExercise) : '处理剩余项目'}
                 </h2>
               </div>
               <Dumbbell className="h-5 w-5 text-emerald-600" />
             </div>
-            <div className="rounded-lg bg-white/[0.05] p-3 text-sm leading-6 text-white/60">
+            <div className={classNames('p-3 text-sm leading-6', softRowClassName)} data-theme-surface="compact_row">
               {workoutFinished
                 ? '主训练和辅助项目都已处理，可以保存并结束。'
                 : activeExercise && activeSetIndex >= 0
@@ -809,11 +850,11 @@ export function TrainingView({
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-widest text-emerald-700">休息计时</div>
-                <h2 className="text-lg font-semibold text-white">休息计时器</h2>
+                <h2 className={classNames('text-lg font-semibold', primaryTextClassName)}>休息计时器</h2>
               </div>
               <Timer className="h-5 w-5 text-emerald-600" />
             </div>
-            <div className={classNames('rounded-lg p-4 text-center', restTimer?.isRunning ? 'bg-white/[0.08] text-white' : 'bg-white/[0.05] text-white/82')}>
+            <div className={classNames('rounded-lg p-4 text-center', restTimer?.isRunning ? (isDarkTheme ? 'bg-white/[0.08] text-white' : 'bg-emerald-50 text-slate-950') : softRowClassName)} data-theme-surface="compact_row">
               <div className="text-xs font-medium opacity-70">{restTimer?.label || '完成一组后自动开始'}</div>
               <div className="mt-2 text-4xl font-bold tabular-nums">{formatTimer(remainingSec)}</div>
               <div className="mt-1 text-xs opacity-70">{restTimer && remainingSec <= 0 ? '休息结束' : restTimer?.isRunning ? '计时中' : '未运行'}</div>
@@ -837,19 +878,19 @@ export function TrainingView({
           <Card>
             <div className="mb-3 flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate-500" />
-              <h2 className="text-lg font-semibold text-white">训练备注</h2>
+              <h2 className={classNames('text-lg font-semibold', primaryTextClassName)}>训练备注</h2>
             </div>
             {notes.length ? (
               <div className="space-y-2">
                 {notes.map((item) => (
-                  <div key={item.key} className="rounded-lg bg-white/[0.05] p-3 text-sm leading-6 text-white/60">
-                    <span className="font-semibold text-white">{item.exercise} 第 {item.setIndex + 1} 组：</span>
+                  <div key={item.key} className={classNames('rounded-lg p-3 text-sm leading-6', softRowClassName)} data-theme-surface="compact_row">
+                    <span className={classNames('font-semibold', primaryTextClassName)}>{item.exercise} 第 {item.setIndex + 1} 组：</span>
                     {item.note}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg bg-white/[0.05] p-3 text-sm leading-6 text-white/45">
+              <div className={classNames('rounded-lg p-3 text-sm leading-6', isDarkTheme ? 'bg-white/[0.05] text-white/45' : 'bg-slate-50 text-slate-500')} data-theme-surface="compact_row">
                 暂无备注。展开动作后可在每组下方补记情况。
               </div>
             )}

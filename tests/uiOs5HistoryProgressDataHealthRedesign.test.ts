@@ -15,7 +15,8 @@ describe('UI-OS 5 History Progress Data Health redesign', () => {
     for (const marker of ['ProgressInsightHero', 'DataHealthClarityPanel']) {
       expect(recordSource).toContain(marker);
     }
-    expect(cardsSource).toContain('bg-[#0a0a0b]');
+    expect(cardsSource).toContain('record_detail_surface');
+    expect(cardsSource).toContain('data-theme-surface="compact_row"');
     expect(cardsSource).toContain('rounded-[28px]');
   });
 

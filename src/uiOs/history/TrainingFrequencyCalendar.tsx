@@ -3,6 +3,7 @@ import { classNames } from '../../engines/engineUtils';
 import type { HistoryCalendarDay } from '../../engines/historyCalendarSummary';
 import { ActionButton } from '../primitives/ActionButton';
 import { GlassCard } from '../primitives/GlassCard';
+import { useUiTheme } from '../theme/UiThemeProvider';
 
 export type TrainingFrequencyCalendarProps = {
   month: string;
@@ -26,11 +27,11 @@ const leadingBlankCount = (firstDate?: string) => {
   return day === 0 ? 6 : day - 1;
 };
 
-const markerClass = (day: HistoryCalendarDay) => {
+const markerClass = (day: HistoryCalendarDay, isDark: boolean) => {
   if (day.isSelected) return 'border-emerald-300 bg-emerald-400 text-black shadow-[0_12px_30px_rgba(52,199,89,0.28)]';
-  if (day.hasTraining) return 'border-emerald-400/35 bg-emerald-400/15 text-emerald-100';
-  if (day.isToday) return 'border-blue-400/50 bg-blue-400/12 text-blue-100';
-  return 'border-white/8 bg-white/[0.035] text-white/42';
+  if (day.hasTraining) return isDark ? 'border-emerald-400/35 bg-emerald-400/15 text-emerald-100' : 'border-emerald-300 bg-emerald-50 text-emerald-900';
+  if (day.isToday) return isDark ? 'border-blue-400/50 bg-blue-400/12 text-blue-100' : 'border-blue-300 bg-blue-50 text-blue-900';
+  return isDark ? 'border-white/8 bg-white/[0.035] text-white/42' : 'border-slate-200 bg-white text-slate-500';
 };
 
 export function TrainingFrequencyCalendar({
@@ -44,8 +45,10 @@ export function TrainingFrequencyCalendar({
   onSelectDate,
   className = '',
 }: TrainingFrequencyCalendarProps) {
+  const { resolvedTheme } = useUiTheme();
+  const isDark = resolvedTheme === 'dark';
   return (
-    <GlassCard as="section" padding="lg" className={classNames('text-white', className)} ariaLabel="训练频率日历">
+    <GlassCard as="section" padding="lg" className={classNames(className)} ariaLabel="训练频率日历">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-white/55">训练日历</p>
@@ -81,7 +84,7 @@ export function TrainingFrequencyCalendar({
             key={day.date}
             type="button"
             onClick={() => onSelectDate?.(day.date)}
-            className={classNames('min-h-14 rounded-2xl border px-1.5 py-2 text-xs font-semibold transition active:scale-[0.98]', markerClass(day))}
+            className={classNames('min-h-14 rounded-2xl border px-1.5 py-2 text-xs font-semibold transition active:scale-[0.98]', markerClass(day, isDark))}
             aria-label={`${day.date} ${day.hasTraining ? '已训练' : '未训练'}`}
           >
             <div className="tabular-nums">{day.displayLabel}</div>

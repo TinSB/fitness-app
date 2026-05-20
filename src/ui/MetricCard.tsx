@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { classNames } from '../engines/engineUtils';
 import type { UiTone } from './Card';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
+import { resolveThemeSurface } from '../uiOs/theme/themeSurfaceModel';
 
 interface MetricCardProps {
   label: string;
@@ -18,10 +20,20 @@ const metricTones: Record<UiTone, string> = {
   sky: '!border-sky-400/25 !bg-sky-400/10',
 };
 
-export const MetricCard = ({ label, value, tone = 'slate', helper, className }: MetricCardProps) => (
-  <div className={classNames('rounded-lg border p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]', metricTones[tone], className)} data-theme-surface="compact_row">
-    <div className="text-xs font-semibold text-white/45">{label}</div>
-    <div className="mt-1 truncate text-2xl font-bold tracking-tight text-white">{value}</div>
-    {helper ? <div className="mt-1 text-xs leading-5 text-white/45">{helper}</div> : null}
-  </div>
-);
+export const MetricCard = ({ label, value, tone = 'slate', helper, className }: MetricCardProps) => {
+  const { selectedThemeMode, resolvedTheme } = useUiTheme();
+  const isDark = resolvedTheme === 'dark';
+  const surface = resolveThemeSurface('compact_row', selectedThemeMode, { systemPrefersDark: isDark });
+
+  return (
+    <div
+      className={classNames('rounded-lg border p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]', isDark ? metricTones[tone] : surface.className, className)}
+      data-theme-surface="compact_row"
+      data-theme-mode={surface.resolvedMode}
+    >
+      <div className={classNames('text-xs font-semibold', isDark ? 'text-white/45' : 'text-slate-500')}>{label}</div>
+      <div className={classNames('mt-1 truncate text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-slate-950')}>{value}</div>
+      {helper ? <div className={classNames('mt-1 text-xs leading-5', isDark ? 'text-white/45' : 'text-slate-500')}>{helper}</div> : null}
+    </div>
+  );
+};
