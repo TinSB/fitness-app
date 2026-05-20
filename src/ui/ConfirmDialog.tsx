@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 import { ActionButton } from './ActionButton';
+import { classNames } from '../engines/engineUtils';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
+import { resolveThemeSurface } from '../uiOs/theme/themeSurfaceModel';
 
 export type ConfirmDialogVariant = 'default' | 'danger' | 'warning';
 
@@ -28,6 +31,9 @@ export const ConfirmDialog = ({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) => {
+  const { selectedThemeMode, resolvedTheme } = useUiTheme();
+  const surface = resolveThemeSurface('modal_surface', selectedThemeMode, { systemPrefersDark: resolvedTheme === 'dark' });
+  const isDark = surface.resolvedMode === 'dark';
   const tone: ConfirmDialogVariant = danger ? 'danger' : variant;
   const visibleText = (value?: string) => {
     const text = String(value || '').trim();
@@ -43,12 +49,12 @@ export const ConfirmDialog = ({
     role="dialog"
     aria-modal="true"
     aria-label={title}
-    className="w-full max-w-sm rounded-xl border border-white/10 bg-[#1c1c1e] p-4 text-white shadow-xl shadow-black/40"
+    className={classNames('w-full max-w-sm rounded-xl p-4 shadow-xl', surface.className, surface.textClassName, isDark ? 'shadow-black/40' : 'shadow-slate-950/10')}
     data-theme-surface="modal_surface"
-    data-theme-mode="dark"
+    data-theme-mode={surface.resolvedMode}
   >
-    <h2 className="text-lg font-semibold leading-7 text-white">{title}</h2>
-    <div className="mt-2 max-h-[55svh] overflow-y-auto pr-1 text-sm leading-6 text-white/58">{description}</div>
+    <h2 className={classNames('text-lg font-semibold leading-7', isDark ? 'text-white' : 'text-slate-950')}>{title}</h2>
+    <div className={classNames('mt-2 max-h-[55svh] overflow-y-auto pr-1 text-sm leading-6', isDark ? 'text-white/58' : 'text-slate-600')}>{description}</div>
     <div className="mt-4 grid grid-cols-2 gap-2">
       <ActionButton variant="secondary" size="lg" aria-label={resolvedCancelText} onClick={onCancel}>
         {resolvedCancelText}

@@ -47,6 +47,8 @@ export function ActionButton({
       disabled={isDisabled}
       aria-busy={loading || undefined}
       onClick={isDisabled ? undefined : onClick}
+      data-theme-surface="action_surface"
+      data-action-variant={variant}
       className={classNames(
         'transition-all duration-150 flex items-center justify-center gap-2',
         sizeStyles[size],

@@ -82,7 +82,8 @@ describe('UI-OS 4 Today Train Focus redesign', () => {
     ]) {
       expect(cardsSource).toContain(marker);
     }
-    expect(cardsSource).toContain('bg-white/[0.07]');
+    expect(cardsSource).toContain('surface="training_hero"');
+    expect(cardsSource).toContain('trainingOsGlassSurface');
     expect(cardsSource).toContain('backdrop-blur-xl');
   });
 

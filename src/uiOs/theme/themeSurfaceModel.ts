@@ -14,7 +14,11 @@ export type ThemeSurfaceType =
   | 'bottom_sheet'
   | 'modal_surface'
   | 'safety_strip'
-  | 'compact_row';
+  | 'compact_row'
+  | 'input_surface'
+  | 'action_surface'
+  | 'record_detail_surface'
+  | 'training_detail_surface';
 
 export type ResolvedThemeSurfaceMode = 'light' | 'dark';
 
@@ -48,6 +52,10 @@ const darkSurfaceClasses: Record<ThemeSurfaceType, string> = {
   modal_surface: 'border border-white/10 bg-[#1c1c1e]/95 shadow-2xl',
   safety_strip: 'border border-white/8 bg-white/[0.045]',
   compact_row: 'border border-white/8 bg-white/[0.045]',
+  input_surface: 'border border-white/10 bg-white/[0.06] text-white placeholder:text-white/25',
+  action_surface: 'border border-white/10 bg-white/[0.08] text-white',
+  record_detail_surface: 'border border-white/10 bg-[#1c1c1e]/88 shadow-[0_20px_70px_rgba(0,0,0,0.28)]',
+  training_detail_surface: 'border border-white/10 bg-[#1c1c1e]/88 shadow-[0_20px_70px_rgba(0,0,0,0.28)]',
 };
 
 const lightSurfaceClasses: Record<ThemeSurfaceType, string> = {
@@ -65,6 +73,10 @@ const lightSurfaceClasses: Record<ThemeSurfaceType, string> = {
   modal_surface: 'border border-slate-200 bg-white shadow-2xl',
   safety_strip: 'border border-slate-200 bg-slate-100/80',
   compact_row: 'border border-slate-200 bg-slate-50',
+  input_surface: 'border border-slate-200 bg-white text-slate-950 placeholder:text-slate-400',
+  action_surface: 'border border-slate-200 bg-white text-slate-950',
+  record_detail_surface: 'border border-slate-200 bg-white shadow-sm',
+  training_detail_surface: 'border border-slate-200 bg-white shadow-sm',
 };
 
 const textClasses: Record<ResolvedThemeSurfaceMode, string> = {

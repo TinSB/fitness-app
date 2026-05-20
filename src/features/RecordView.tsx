@@ -88,6 +88,7 @@ import { ProgressInsightHero } from '../uiOs/progress/ProgressInsightHero';
 import { ReadinessPressureCard } from '../uiOs/progress/ReadinessPressureCard';
 import { StrengthTrendCards } from '../uiOs/progress/StrengthTrendCards';
 import { RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 export interface RecordViewProps {
   data: AppData;
@@ -152,6 +153,9 @@ const prFilterOptions: Array<{ id: PrSetFilter; label: string }> = [
   { id: 'no_pain', label: '排除不适' },
   { id: 'work_sets', label: '仅正式组' },
 ];
+
+const recordDarkDescendantOverrides =
+  '[&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45';
 
 const normalizeSection = (section?: RecordSectionTarget): RecordSectionId => {
   if (section === 'history') return 'list';
@@ -343,6 +347,8 @@ export function RecordView({
   selectedDate,
   surfaceMode = 'history',
 }: RecordViewProps) {
+  const { resolvedTheme } = useUiTheme();
+  const isDarkTheme = resolvedTheme === 'dark';
   const rawHistory = data.history || [];
   const initialCalendarMonth = getInitialCalendarMonth(rawHistory, selectedDate);
   const [activeSection, setActiveSection] = React.useState<RecordSectionId>(() => normalizeSection(initialSection));
@@ -1577,8 +1583,10 @@ export function RecordView({
         title="训练记录中心"
       />
       <div
-        className="space-y-4 [&_.border-slate-200]:border-white/10 [&_.bg-stone-50]:bg-white/[0.05] [&_.bg-white]:bg-white/[0.06] [&_.bg-emerald-50]:bg-emerald-400/10 [&_.bg-amber-50]:bg-amber-400/10 [&_.bg-rose-50]:bg-rose-400/10 [&_.text-slate-950]:text-white [&_.text-slate-900]:text-white [&_.text-slate-700]:text-white/72 [&_.text-slate-600]:text-white/60 [&_.text-slate-500]:text-white/45"
+        className={classNames('space-y-4', isDarkTheme ? recordDarkDescendantOverrides : '')}
         data-global-surface-sweep="record"
+        data-record-detail-surface={resolvedTheme}
+        data-theme-surface="record_detail_surface"
       >
         <RecordOsOverview>
           <div className="flex flex-wrap items-start justify-between gap-4">

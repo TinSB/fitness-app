@@ -1,9 +1,10 @@
 import type { EquipmentProfile, ReadinessBias, RoundingPreference, SetPurpose } from '../engines/equipmentAwareLoadModel';
 import { buildEquipmentAwareRecommendationDisplay } from '../engines/equipmentAwareRecommendationDisplay';
-import { number } from '../engines/engineUtils';
+import { classNames, number } from '../engines/engineUtils';
 import { convertKgToDisplayWeight } from '../engines/unitConversionEngine';
 import type { UnitSettings } from '../models/training-model';
 import { EquipmentAwareLoadDisplay } from './EquipmentAwareLoadDisplay';
+import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 export type EquipmentAwareRecommendationWeightProps = {
   exerciseName: string;
@@ -34,6 +35,8 @@ export const EquipmentAwareRecommendationWeight = ({
   onOpenEquipmentProfile,
   label,
 }: EquipmentAwareRecommendationWeightProps) => {
+  const { resolvedTheme } = useUiTheme();
+  const isDark = resolvedTheme === 'dark';
   const safeWeightKg = number(plannedWeightKg);
   if (safeWeightKg <= 0) return null;
 
@@ -51,9 +54,14 @@ export const EquipmentAwareRecommendationWeight = ({
 
   return (
     <div
-      className={compact ? 'mt-2 text-xs' : 'mt-3 rounded-lg border border-white/10 bg-white/[0.05] p-3 text-sm'}
+      className={
+        compact
+          ? 'mt-2 text-xs'
+          : classNames('mt-3 rounded-lg border p-3 text-sm', isDark ? 'border-white/10 bg-white/[0.05]' : 'border-slate-200 bg-slate-50')
+      }
       data-equipment-aware-recommendation-weight="display-only"
       data-source-weight-unit={unitSettings.weightUnit}
+      data-theme-surface="compact_row"
     >
       <EquipmentAwareLoadDisplay
         displayResult={displayResult}

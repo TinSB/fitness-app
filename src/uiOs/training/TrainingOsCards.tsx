@@ -10,9 +10,9 @@ type SurfaceProps = {
 };
 
 export const trainingOsGlassSurface =
-  'border border-white/10 bg-white/[0.07] text-white shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-xl';
+  'border shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl';
 
-export const trainingOsInsetSurface = 'border border-white/10 bg-white/[0.09] text-white backdrop-blur-xl';
+export const trainingOsInsetSurface = 'border backdrop-blur-xl';
 
 export function TodayHeroCard({ children, className = '' }: SurfaceProps) {
   return (
@@ -48,7 +48,7 @@ export function TrainingFocusHeroCard({ children, className = '' }: SurfaceProps
 
 export function SetPrescriptionCard({ children, className = '' }: SurfaceProps) {
   return (
-    <GlassCard as="section" padding="md" surface="training_hero" className={classNames('rounded-3xl text-white', className)} ariaLabel="本组建议" highlight>
+    <GlassCard as="section" padding="md" surface="training_hero" className={classNames('rounded-3xl', className)} ariaLabel="本组建议" highlight>
       {children}
     </GlassCard>
   );
@@ -64,7 +64,7 @@ export function ActualSetInputCard({ children, className = '' }: SurfaceProps) {
 
 export function TrainingActionBar({ children, className = '' }: SurfaceProps) {
   return (
-    <WorkoutActionBar className={classNames('border-white/10 bg-[#101012]/95 text-white shadow-[0_-18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl md:static', className)}>
+    <WorkoutActionBar className={classNames('backdrop-blur-xl md:static', className)}>
       {children}
     </WorkoutActionBar>
   );

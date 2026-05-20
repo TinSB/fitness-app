@@ -12,7 +12,8 @@ export function RecordOsOverview({ children, className = '' }: SurfaceProps) {
     <GlassCard
       as="section"
       padding="lg"
-      className={classNames('rounded-[28px] bg-[#0a0a0b] text-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]', className)}
+      surface="record_detail_surface"
+      className={classNames('rounded-[28px] shadow-[0_24px_80px_rgba(15,23,42,0.12)]', className)}
       ariaLabel="历史与进步总览"
       highlight
     >
@@ -23,7 +24,7 @@ export function RecordOsOverview({ children, className = '' }: SurfaceProps) {
 
 export function RecordTimelineCard({ children, className = '' }: SurfaceProps) {
   return (
-    <article className={classNames('rounded-3xl border border-white/10 bg-white/[0.05] p-3 shadow-sm', className)} aria-label="训练记录卡片" data-theme-surface="compact_row">
+    <article className={classNames('rounded-3xl border p-3 shadow-sm', className)} aria-label="训练记录卡片" data-theme-surface="compact_row">
       {children}
     </article>
   );

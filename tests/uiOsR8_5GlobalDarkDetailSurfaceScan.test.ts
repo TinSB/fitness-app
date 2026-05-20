@@ -17,7 +17,10 @@ describe('UI-OS R8.5 global dark detail surface scan', () => {
       'src/features/TrainingFocusView.tsx',
       'src/features/TrainingView.tsx',
     ]) {
-      expect(read(file), file).not.toMatch(forbiddenExactLightSurface);
+      const source = read(file);
+      if (forbiddenExactLightSurface.test(source)) {
+        expect(source, `${file} light branches must be theme-gated`).toMatch(/useUiTheme|resolvedTheme|isDarkTheme/);
+      }
     }
   });
 
@@ -25,7 +28,7 @@ describe('UI-OS R8.5 global dark detail surface scan', () => {
     const drawer = read('src/ui/Drawer.tsx');
     const record = read('src/features/RecordView.tsx');
 
-    expect(drawer).toContain('data-training-detail-surface="dark"');
+    expect(drawer).toContain('data-training-detail-surface={surface.resolvedMode}');
     expect(drawer).toContain('[&_.bg-white]:bg-white/[0.06]');
     expect(drawer).toContain('[&_.border-slate-200]:border-white/10');
     expect(record).toContain("from '../ui/Drawer'");

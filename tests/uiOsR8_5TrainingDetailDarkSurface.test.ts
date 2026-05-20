@@ -40,6 +40,6 @@ describe('UI-OS R8.5 Training Detail dark surface', () => {
     expect(recordSource).toContain('训练详情');
     expect(recordSource).toContain('修正记录');
     expect(recordSource).toContain('删除记录');
-    expect(drawerSource).toContain('data-training-detail-surface="dark"');
+    expect(drawerSource).toContain('data-training-detail-surface={surface.resolvedMode}');
   });
 });
