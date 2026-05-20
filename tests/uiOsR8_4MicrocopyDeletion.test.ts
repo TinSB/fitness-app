@@ -41,7 +41,7 @@ describe('UI-OS R8.4 microcopy deletion', () => {
     const visible = text(renderToday());
 
     expect(visible).toContain('今日决策');
-    expect(visible).toContain('今天建议');
+    expect(visible).toContain('今天保守训练');
     expect(visible).toContain('开始今天训练');
     expect(visible).not.toContain('判断今天练不练、练什么，以及从哪里开始');
     expect(visible).not.toContain('状态正常，按计划执行');

@@ -8,6 +8,7 @@ import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildTodayDecisionSurface } from '../engines/todayDecisionSurface';
+import { buildTodayTrainingReadinessDecision } from '../engines/todayTrainingReadinessDecisionEngine';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
@@ -36,6 +37,10 @@ import { SafetyStrip } from '../uiOs/surfaces/SafetyStrip';
 import { TodayActiveSessionNotice } from '../uiOs/today/TodayActiveSessionNotice';
 import { TodayDecisionHero } from '../uiOs/today/TodayDecisionHero';
 import { TodayFocusOverridePanel } from '../uiOs/today/TodayFocusOverridePanel';
+import {
+  buildTodayReadinessHeroDecision,
+  TodayReadinessDecisionSummary,
+} from '../uiOs/today/TodayReadinessDecisionSummary';
 import { TodayReadinessSummary } from '../uiOs/today/TodayReadinessSummary';
 import { TodaySevereRiskNotice } from '../uiOs/today/TodaySevereRiskNotice';
 
@@ -386,6 +391,23 @@ export function TodayView({
           message: dataHealthViewModel.primaryIssues[0]?.userMessage || dataHealthViewModel.summary,
         }
       : undefined;
+  const todayReadinessDecision = React.useMemo(
+    () =>
+      buildTodayTrainingReadinessDecision({
+        context: decisionContext,
+        todayAdjustment: enginePipeline.todayAdjustment,
+        recoveryRecommendation,
+        activeSessionState:
+          todayTrainingState.status === 'in_progress'
+            ? 'active'
+            : todayTrainingState.status === 'completed'
+              ? 'completed'
+              : 'none',
+        severeDataHealthBlocker: Boolean(severeDataHealthNotice),
+        nowIso: `${decisionContext.currentDateLocalKey}T12:00:00.000Z`,
+      }),
+    [decisionContext, enginePipeline.todayAdjustment, recoveryRecommendation, todayTrainingState.status, severeDataHealthNotice],
+  );
   const recoveryOverrideLabel = todayViewModel.recommendationKind === 'modified_train' ? '仍按原计划训练' : '仍要训练';
   const recoveryPreviewGuidance = React.useMemo(() => {
     const guidance = new Map<string, { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' | 'sky' }>();
@@ -484,6 +506,10 @@ export function TodayView({
     existingPrimaryActionLabel: todayViewModel.primaryActionLabel,
     existingDecisionText: decisionText,
   });
+  const todayReadinessHeroDecision = React.useMemo(
+    () => buildTodayReadinessHeroDecision(todayDecisionSurface, todayReadinessDecision),
+    [todayDecisionSurface, todayReadinessDecision],
+  );
   const handleSevereRiskAction = () => {
     if (onReviewDataHealth) {
       onReviewDataHealth();
@@ -567,16 +593,23 @@ export function TodayView({
   const shouldShowRecoveryProminently = meaningfulRecoveryRisk;
   const shouldShowTodaySafetyStrip = todayDecisionSurface.decisionState === 'source_unclear';
   const keyExerciseNames = previewExercises.map((exercise) => exerciseLabel(exercise)).join(' / ');
+  const heroReadinessDecisionSummary =
+    todayReadinessDecision.suggestedActions.length || todayReadinessDecision.guardedRecommendation?.actionType === 'open_review' ? (
+      <TodayReadinessDecisionSummary decision={todayReadinessDecision} />
+    ) : null;
   const heroSupportingAction =
     todayDecisionSurface.showFocusOverride && todayTrainingState.status === 'not_started' ? (
-      <TodayFocusOverrideControl
-        selection={resolvedTodayFocusSelection}
-        onChange={onFocusOverrideChange}
-        expanded={false}
-        onToggleExpanded={() => setFocusOverrideExpanded((current) => !current)}
-        embedded
-      />
-    ) : null;
+      <div className="space-y-2">
+        <TodayFocusOverrideControl
+          selection={resolvedTodayFocusSelection}
+          onChange={onFocusOverrideChange}
+          expanded={false}
+          onToggleExpanded={() => setFocusOverrideExpanded((current) => !current)}
+          embedded
+        />
+        {heroReadinessDecisionSummary}
+      </div>
+    ) : heroReadinessDecisionSummary;
   return (
     <ResponsivePageLayout>
       <PageHeader eyebrow="今日" title="今日决策" />
@@ -585,7 +618,7 @@ export function TodayView({
         main={
           <div className="space-y-4">
             <TodayDecisionHero
-              decision={todayDecisionSurface}
+              decision={todayReadinessHeroDecision}
               dateLabel={todayTrainingState.date}
               primaryAction={primaryAction}
               secondaryActions={heroSecondaryActions}
@@ -622,7 +655,7 @@ export function TodayView({
 
             {shouldShowRecoveryProminently ? (
               <TodayReadinessSummary
-                decision={todayDecisionSurface}
+                decision={todayReadinessHeroDecision}
                 readinessScore={readinessScore}
                 durationMinutes={adjustedPlan.duration}
                 note={todayNote}
@@ -633,7 +666,7 @@ export function TodayView({
                 data-today-recovery-density="compact"
                 aria-label="恢复疲劳摘要"
               >
-                <span>恢复 / 疲劳：{todayDecisionSurface.readinessLabel}</span>
+                <span>恢复 / 疲劳：{todayReadinessHeroDecision.readinessLabel}</span>
                 <StatusBadge tone="emerald">状态正常</StatusBadge>
               </div>
             )}
@@ -733,7 +766,7 @@ export function TodayView({
                   </div>
                 ) : hasAlternativeSuggestion && !todayViewModel.recoverySummary ? (
                   <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-50">
-                    系统建议可切换到 {nextSuggestion.templateName}。采用后再开始训练。
+                    可切换到 {nextSuggestion.templateName}。确认后再开始训练。
                   </div>
                 ) : null}
 
