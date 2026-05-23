@@ -227,13 +227,23 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - It improves Today display clarity with concise copy such as `今天按计划`, `今天保守训练`, `今天降量`, `今天先稳住动作`, `恢复优先，今天不硬练`, and `只影响本次，不改变计划`.
    - It does not persist decisions, does not write AppData or TrainingSession, does not create session patches or plan drafts, and does not auto-apply anything.
    - It keeps existing Today primary actions, recovery override, completed-session, data-health, and source-of-truth behavior intact.
-   - 18F weekly progression remains deferred.
+   - 18F.1 weekly progression display remains deferred.
 
 7. 18F - Weekly Progression Recommendation V1
-   - Produce weekly progression summaries, bottlenecks, fatigue signals, and suggested next-week changes.
-   - Do not automatically mutate the long-term plan.
+   - Implemented as a pure weekly recommendation engine only.
+   - It aggregates existing volume, plateau, quality, confidence, pain, and feedback signals into weekly progression summaries, bottlenecks, fatigue signals, and suggested next-week changes.
+   - It can produce concise copy such as `下周可小幅推进`, `下周维持当前节奏`, `本周先控制风险`, `继续记录后再判断`, and `只生成候选，不改变计划`.
+   - It does not change Progress or Plan UI yet, does not change Today or History runtime UI, and does not add routes.
+   - It does not persist weekly recommendations, does not write AppData or TrainingSession, and does not write localStorage.
+   - It does not create ProgramAdjustmentDraft or PendingSessionPatch records and does not apply session patches or plan adjustments.
+   - Its guarded contracts are in-memory only review wrappers; future plan candidates remain review-only and cannot apply durably in 18G.
 
-8. 18G - Guarded Apply / Pending Recommendation Contract V1
+8. 18F.1 - Weekly Progression Display Integration V1
+   - Deferred display integration for weekly progression recommendations.
+   - It should show the 18F result without changing the weekly recommendation rules.
+   - It must remain display/review only unless a later task explicitly adds a confirmed durable path.
+
+9. 18G - Guarded Apply / Pending Recommendation Contract V1
    - Implemented as a contract-only, pure-engine layer that normalizes Focus, post-workout, Today, weekly, coach-action, and manual recommendations into in-memory guarded recommendation candidates.
    - 18G does not persist pending recommendations, does not apply to the plan, does not write AppData or TrainingSession, and does not create ProgramAdjustmentDraft or PendingSessionPatch records.
    - 18G keeps Level 5 blocked. Level 4 may exist only as review metadata and cannot apply durably.
