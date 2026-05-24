@@ -110,6 +110,16 @@ The app does not upload, download, write localStorage, write cloud data, add rou
 
 Recommended next task: 19J Explicit Opt-In Single-User Sync Candidate V1.
 
+## Phase 19J Explicit Opt-In Single-User Sync Candidate
+
+Phase 19J - Explicit Opt-In Single-User Sync Candidate V1 adds `src/cloudProduction/explicitOptInSingleUserSyncCandidate.ts` and `docs/EXPLICIT_OPT_IN_SINGLE_USER_SYNC_CANDIDATE.md`.
+
+It creates a manual candidate report only after explicit opt-in, manual confirmation, account readiness, backup, 19I dry-run readiness, owner/schema verification, cloud availability, accepted shadow evidence, conflict review, rollback availability, and offline availability pass. It reports `readyForManualSyncCandidate`, `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false`.
+
+The app does not upload, download, apply cloud data, write localStorage, write cloud data, start background sync, make cloud primary, add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or start default sync. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19K Conflict / Offline / Rollback Acceptance V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
