@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createDevLocalApiLauncher,
   DevLocalApiLauncherError,
+  isDevLauncherFetchBlockedPort,
 } from '../apps/api/src/node';
 import { expectNoRawStack } from './runtimeBoundaryTestHelpers';
 import { makeTempDevDb } from './devLauncherTestHelpers';
@@ -25,10 +26,17 @@ describe('dev local API launcher localhost safety', () => {
       const started = await launcher.start();
       expect(started.host).toBe('127.0.0.1');
       expect(started.url).toBe(`http://127.0.0.1:${started.port}`);
+      expect(isDevLauncherFetchBlockedPort(started.port)).toBe(false);
     } finally {
       await launcher.close();
       temp.cleanup();
     }
+  });
+
+  it('knows the fetch blocked ports that ephemeral binding must avoid', () => {
+    expect(isDevLauncherFetchBlockedPort(6000)).toBe(true);
+    expect(isDevLauncherFetchBlockedPort(6667)).toBe(true);
+    expect(isDevLauncherFetchBlockedPort(8787)).toBe(false);
   });
 
   it('rejects LAN-exposed hosts unless network access is explicit', async () => {
