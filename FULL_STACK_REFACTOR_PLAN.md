@@ -90,6 +90,16 @@ The app does not add routes, change persistence, change AppData or TrainingSessi
 
 Recommended next task: 19H Cloud Write Shadow Mode V1.
 
+## Phase 19H Cloud Write Shadow Mode
+
+Phase 19H - Cloud Write Shadow Mode V1 adds `src/cloudProduction/cloudWriteShadowMode.ts` and `docs/CLOUD_WRITE_SHADOW_MODE.md`.
+
+It creates in-memory shadow write candidates only after explicit opt-in, manual confirmation, dry run, backup, owner, schema, conflict, duplicate, and adapter gates pass. Accepted shadow still does not mutate localStorage, does not apply cloud data, does not make cloud primary, and does not switch source of truth.
+
+The app does not add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or start default sync. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19I Local-to-Cloud Migration Dry Run V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
