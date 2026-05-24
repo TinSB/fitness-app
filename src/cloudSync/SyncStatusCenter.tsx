@@ -105,7 +105,7 @@ export function SyncStatusCenter({
           本地数据仍会保留
         </p>
         <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/50' : 'text-slate-500')}>
-          不会自动覆盖本地训练记录
+          本地训练记录不会被覆盖
         </p>
 
         {lastVerificationAt ? (

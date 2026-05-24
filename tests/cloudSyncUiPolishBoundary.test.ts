@@ -14,9 +14,12 @@ const collectFiles = (directory: string): string[] =>
   });
 
 const cloudSyncSource = () =>
+  collectFiles(resolve(repoRoot(), 'src/cloudSync')).map((file) => readFileSync(file, 'utf8')).join('\n');
+
+const cloudSyncSettingsControllerSource = () =>
   [
-    ...collectFiles(resolve(repoRoot(), 'src/cloudSync')),
     resolve(repoRoot(), 'src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx'),
+    resolve(repoRoot(), 'src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts'),
   ].map((file) => readFileSync(file, 'utf8')).join('\n');
 
 describe('Cloud Sync UI Polish V1 boundary', () => {
@@ -53,6 +56,41 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
       'TrainingSession',
     ]) {
       expect(source, `cloud sync UI source should not contain ${forbidden}`).not.toContain(forbidden);
+    }
+  });
+
+  it('keeps the Settings runtime controller free of direct Supabase storage and sync side effects', () => {
+    const source = cloudSyncSettingsControllerSource();
+
+    expect(source).toContain('buildSupabaseProjectRuntimeReadinessCheck');
+    expect(source).toContain('buildCloudSyncSettingsSectionPropsFromRuntime');
+
+    for (const forbidden of [
+      '@supabase/supabase-js',
+      'createClient(',
+      'fetch(',
+      'XMLHttpRequest',
+      'navigator.sendBeacon',
+      'localStorage.setItem',
+      'localStorage.removeItem',
+      'localStorage.clear',
+      'writeAppDataToLocalStorage',
+      'readStoredAppDataFromLocalStorage',
+      '../storage/persistence',
+      '../../storage/persistence',
+      'apps/api/src',
+      'node:http',
+      'node:sqlite',
+      'setInterval',
+      'setTimeout',
+      'serviceWorker',
+      'backgroundSync',
+      'ProgramAdjustmentDraft',
+      'PendingSessionPatch',
+      'AppData',
+      'TrainingSession',
+    ]) {
+      expect(source, `cloud sync Settings controller should not contain ${forbidden}`).not.toContain(forbidden);
     }
   });
 
@@ -108,7 +146,7 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
   });
 
   it('keeps forbidden product scope and unsafe sync copy out of touched cloud sync UI source', () => {
-    const source = cloudSyncSource();
+    const source = [cloudSyncSource(), cloudSyncSettingsControllerSource()].join('\n');
 
     for (const forbidden of [
       '引擎',
@@ -137,6 +175,7 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
       '自动上传',
       '自动应用',
       '云端已成为默认',
+      '自动覆盖',
     ]) {
       expect(source).not.toContain(forbidden);
     }
