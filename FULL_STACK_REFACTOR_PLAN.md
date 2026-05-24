@@ -20,6 +20,18 @@ packages/
   db/           SQLite schema, migrations, and repository layer
 ```
 
+## Phase 19A Cloud Auth & Sync Entry Gate
+
+Phase 19A - Cloud Auth & Sync Entry Gate V1 adds `docs/CLOUD_AUTH_SYNC_ENTRY_GATE.md` and static boundary tests only.
+
+It defines single-user multi-device sync as the future product target: one user account syncing the same owner training data across phone, computer, and tablet. It keeps public SaaS, coach/student, social, team collaboration, marketplace, billing, and shared workspace behavior out of scope.
+
+The future candidate architecture is Supabase Auth + Supabase Postgres + RLS. Phase 19A is docs/static tests only and does not add routes, schemas, runtime auth, cloud sync, env vars, package changes, or lockfile changes.
+
+localStorage remains default, fallback, migration source, and emergency rollback source. The future source-of-truth path must be read mirror -> write shadow -> explicit opt-in sync. Cloud-primary can be considered only after migration dry run, conflict detection, rollback, emergency local mode, and explicit acceptance gates pass.
+
+Phase 19A keeps no default cloud sync, no background sync, no automatic worker/timer/polling sync, no route changes, no AppData schema change, no TrainingSession schema change, no source-of-truth switch, no package or lockfile drift, no public SaaS, and no coach/student runtime.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
