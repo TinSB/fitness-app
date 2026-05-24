@@ -240,6 +240,20 @@ It creates a synthetic-data acceptance gate after 20G readiness. The flow compos
 
 Recommended next task: 20I v0 UI Polish Handoff Contract V1.
 
+## Phase 20I v0 UI Polish Handoff Contract
+
+Phase 20I - v0 UI Polish Handoff Contract V1 adds `src/cloudProduction/v0UiPolishHandoffContract.ts` and `docs/V0_UI_POLISH_HANDOFF_CONTRACT.md`.
+
+It creates a pure handoff contract after 20H acceptance. The contract records stable props, stable data-testid markers, Chinese-first copy examples, and allowed polish surfaces for a later v0 design task: login account, sync status center, first-sync flow, conflict review, offline recovery, and account settings.
+
+20I can report `readyForV0UiPolish: true` and `phase20SequenceComplete: true` only after Phase 20H readiness, passive handoff boundary evidence, stable props, stable data-testid markers, copy checks, and route/schema/persistence/package cleanliness pass.
+
+20I keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `productionLaunchPerformed: false`.
+
+20I does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, does not create a Supabase client, does not start background sync, does not make cloud data primary, and does not start v0 UI polish.
+
+Phase 20 sequence complete. Recommended next task: v0 UI Polish as a separate design task using the 20I handoff contract.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
