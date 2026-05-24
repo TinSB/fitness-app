@@ -32,6 +32,16 @@ localStorage remains default, fallback, migration source, and emergency rollback
 
 Phase 19A keeps no default cloud sync, no background sync, no automatic worker/timer/polling sync, no route changes, no AppData schema change, no TrainingSession schema change, no source-of-truth switch, no package or lockfile drift, no public SaaS, and no coach/student runtime.
 
+## Phase 19B Account Boundary & Local Inventory
+
+Phase 19B - Account Boundary & Local Inventory V1 adds `src/cloudProduction/accountBoundaryLocalInventory.ts` and `docs/ACCOUNT_BOUNDARY_LOCAL_INVENTORY.md`.
+
+It creates pure local inventory/readiness logic for local owner id, device id, account candidate id, owner user id, AppData snapshot hash, and backup/export preflight. It records whether a later local-to-cloud migration dry run may start, but it does not upload, download, read cloud data, write cloud data, or change source of truth.
+
+localStorage remains default, fallback, migration source, and emergency rollback source. Offline training remains available. Explicit opt-in sync, cloud read mirror, write shadow, runtime auth, auth UI, migrations, environment files, route changes, AppData schema changes, TrainingSession schema changes, persistence changes, package changes, and lockfile changes remain blocked in 19B.
+
+Recommended next task: 19C Supabase Data Model & RLS Contract V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

@@ -24,7 +24,7 @@ describe('cloud auth sync entry gate', () => {
       '## Candidate Future Tables',
       '## RLS Principles',
       '## Acceptance Gates',
-      '## Phase 19B-19I Sequence',
+      '## Phase 19B-19L Sequence',
       '## Explicit Blocked Capabilities',
       '## Decision',
     ]) {
@@ -112,18 +112,22 @@ describe('cloud auth sync entry gate', () => {
     }
   });
 
-  it('defines the Phase 19B through 19I sequence without starting it', () => {
+  it('defines the Phase 19B through 19L sequence and records 19B as inventory-only', () => {
     const doc = readSource(docPath);
 
     for (const expected of [
       '19B - Account Boundary & Local Inventory V1',
-      '19C - Auth Project Readiness Guard V1',
-      '19D - Cloud Schema / RLS Dry Run V1',
-      '19E - Local-To-Cloud Migration Dry Run V1',
-      '19F - Cloud Read Mirror Candidate V1',
-      '19G - Cloud Write Shadow Candidate V1',
-      '19H - Explicit Opt-In Sync Candidate V1',
-      '19I - Cloud-Primary Consideration Gate V1',
+      'pure local owner/account/device inventory',
+      '19C - Supabase Data Model & RLS Contract V1',
+      '19D - Supabase Migration Files + Local Type Contracts V1',
+      '19E - Auth Client Skeleton + Env Guard V1',
+      '19F - Auth UI Skeleton V1',
+      '19G - Cloud Read Mirror V1',
+      '19H - Cloud Write Shadow Mode V1',
+      '19I - Local-to-Cloud Migration Dry Run V1',
+      '19J - Explicit Opt-In Single-User Sync Candidate V1',
+      '19K - Conflict / Offline / Rollback Acceptance V1',
+      '19L - Production Manual Acceptance V1',
       'Do not start 19B from 19A.',
     ]) {
       expect(doc).toContain(expected);

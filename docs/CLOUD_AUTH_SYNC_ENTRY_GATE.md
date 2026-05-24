@@ -192,23 +192,29 @@ Validation remains:
 - production dist forbidden-token scan
 - package/lockfile drift check
 
-## Phase 19B-19I Sequence
+## Phase 19B-19L Sequence
 
-19B - Account Boundary & Local Inventory V1: document local owner/account/device inventory and dry-run inputs.
+19B - Account Boundary & Local Inventory V1: implemented as a pure local owner/account/device inventory and dry-run readiness contract. It reports backup/export preflight, source snapshot identity, owner match, and future gates without auth runtime, sync runtime, persistence, routes, or source-of-truth change.
 
-19C - Auth Project Readiness Guard V1: verify candidate auth project and callback readiness without live runtime expansion.
+19C - Supabase Data Model & RLS Contract V1: define candidate document-first table and RLS policy contract without applying SQL.
 
-19D - Cloud Schema / RLS Dry Run V1: validate candidate table and RLS policy shape without applying SQL.
+19D - Supabase Migration Files + Local Type Contracts V1: add migration files and local type contracts only after the RLS contract is accepted.
 
-19E - Local-To-Cloud Migration Dry Run V1: compare local AppData against candidate cloud readiness without upload or download.
+19E - Auth Client Skeleton + Env Guard V1: add guarded auth client skeleton and environment checks without making login required.
 
-19F - Cloud Read Mirror Candidate V1: read cloud candidate data for comparison only; localStorage remains source of truth.
+19F - Auth UI Skeleton V1: add passive login/account UI skeleton without enabling sync by default.
 
-19G - Cloud Write Shadow Candidate V1: shadow candidate writes only after backup, validation, and owner checks; no source-of-truth switch.
+19G - Cloud Read Mirror V1: compare cloud candidate data without mutating local data.
 
-19H - Explicit Opt-In Sync Candidate V1: sync candidate only with explicit confirmation and conflict handling.
+19H - Cloud Write Shadow Mode V1: create candidate shadow writes only after backup, validation, and owner checks.
 
-19I - Cloud-Primary Consideration Gate V1: consider cloud primary only after read mirror, write shadow, opt-in sync, rollback, and emergency local acceptance pass.
+19I - Local-to-Cloud Migration Dry Run V1: dry run local-to-cloud migration without upload, download, or source-of-truth change.
+
+19J - Explicit Opt-In Single-User Sync Candidate V1: allow sync candidate only with explicit user confirmation and conflict handling.
+
+19K - Conflict / Offline / Rollback Acceptance V1: prove conflict review, offline behavior, rollback, and emergency local mode.
+
+19L - Production Manual Acceptance V1: require manual acceptance before any cloud-primary consideration.
 
 Do not start 19B from 19A.
 
@@ -247,4 +253,6 @@ Blocked in Phase 19A:
 
 Task 19A result: Cloud Auth & Sync Entry Gate only.
 
-The approved next step is planning for 19B only after Phase 19A is merged and validated. Phase 19A itself adds no runtime behavior.
+Task 19B result: Account Boundary & Local Inventory only. It is implemented as pure local inventory and readiness logic, not runtime auth or sync.
+
+The approved next step after 19B is 19C Supabase Data Model & RLS Contract V1. Phase 19A itself adds no runtime behavior.
