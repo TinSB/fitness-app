@@ -256,6 +256,10 @@ Do not start 19B from 19A.
 
 20H may report `readyFor20I: true` after those gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `productionLaunchPerformed: false`.
 
+20I - v0 UI Polish Handoff Contract V1: implemented as a passive handoff contract after 20H acceptance. It records stable props, stable data-testid markers, Chinese-first copy examples, and allowed future polish surfaces: login account, sync status center, first-sync flow, conflict review, offline recovery, and account settings.
+
+20I may report `readyForV0UiPolish: true` and `phase20SequenceComplete: true` after those gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `productionLaunchPerformed: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -330,3 +334,5 @@ Task 20F result: Cloud Read/Write Verification Flow only. It verifies read mirro
 Task 20G result: Conflict/Offline/Rollback Runtime Flow only. It verifies conflict review, offline fallback, rollback, emergency local, and route/package/schema boundary evidence after 20F readiness, but it does not upload, download, apply cloud data, write localStorage, make cloud data primary, start default/background sync, launch production, change source of truth, or delete localStorage. The next task is 20H - Production Acceptance With Synthetic Data V1.
 
 Task 20H result: Production Acceptance With Synthetic Data only. It verifies validation and synthetic acceptance evidence after 20G readiness, but it does not upload, download, apply cloud data, write localStorage, make cloud data primary, start default/background sync, launch production, change source of truth, delete localStorage, or start v0 UI polish. The next task is 20I - v0 UI Polish Handoff Contract V1.
+
+Task 20I result: v0 UI Polish Handoff Contract only. It records stable props, stable data-testid markers, Chinese-first copy examples, and future UI polish surfaces after 20H acceptance, but it does not start v0 UI polish, upload, download, apply cloud data, write localStorage, make cloud data primary, start default/background sync, launch production, change source of truth, delete localStorage, add routes, or change schemas. Phase 20 sequence complete.
