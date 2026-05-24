@@ -200,7 +200,7 @@ Validation remains:
 
 19D - Supabase Migration Files + Local Type Contracts V1: implemented as reviewed migration files plus local type contracts. The migration is committed for review, but SQL is not applied by the app and no runtime Supabase behavior is enabled.
 
-19E - Auth Client Skeleton + Env Guard V1: add guarded auth client skeleton and environment checks without making login required.
+19E - Auth Client Skeleton + Env Guard V1: implemented as a guarded auth client skeleton and environment checks without making login required.
 
 19F - Auth UI Skeleton V1: add passive login/account UI skeleton without turning on sync by default.
 
@@ -259,4 +259,6 @@ Task 19C result: Supabase Data Model & RLS Contract only. It is implemented as p
 
 Task 19D result: Supabase Migration Files + Local Type Contracts only. It adds the reviewed migration file and local row contracts, but no app SQL execution, auth runtime, sync runtime, or source-of-truth change.
 
-The approved next step after 19D is 19E Auth Client Skeleton + Env Guard V1. Phase 19A itself adds no runtime behavior.
+Task 19E result: Auth Client Skeleton + Env Guard only. It composes existing Supabase project and auth callback guards into a passive readiness skeleton without real client creation, token storage, login requirement, runtime auth, sync runtime, or source-of-truth change.
+
+The approved next step after 19E is 19F Auth UI Skeleton V1. Phase 19A itself adds no runtime behavior.

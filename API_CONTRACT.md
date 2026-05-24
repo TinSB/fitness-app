@@ -18,6 +18,8 @@ Phase 19C - Supabase Data Model & RLS Contract V1 adds `src/cloudProduction/supa
 
 Phase 19D - Supabase Migration Files + Local Type Contracts V1 adds `supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql`, `src/cloudProduction/supabaseMigrationLocalTypeContracts.ts`, and `docs/SUPABASE_MIGRATIONS_LOCAL_TYPE_CONTRACTS.md`. It translates the 19C contract into a reviewed migration file and local row/type contracts, but the app does not apply SQL, connect to Supabase, turn on runtime auth or sync, add routes, change AppData or TrainingSession schemas, change persistence, change packages/lockfiles, or switch source of truth.
 
+Phase 19E - Auth Client Skeleton + Env Guard V1 adds `src/cloudProduction/authClientSkeletonEnvGuard.ts` and `docs/AUTH_CLIENT_SKELETON_ENV_GUARD.md`. It composes existing Supabase project and auth callback guards into a passive auth client readiness skeleton. It does not create a real client, store tokens, require login, connect to Supabase, add routes, change AppData or TrainingSession schemas, change persistence, change packages/lockfiles, or switch source of truth.
+
 Task 4.10 adds acceptance/regression audit tests over these boundaries. It does not make the API production-ready, does not switch App runtime storage, and does not connect the frontend to HTTP or SQLite.
 
 Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance procedure for the dev-only local API stack. It is documentation and consistency testing only; HTTP behavior still comes from devLauncher, httpRuntimeAdapter, and serverAdapter, and the App runtime still uses localStorage.

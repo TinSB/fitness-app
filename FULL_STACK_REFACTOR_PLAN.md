@@ -60,6 +60,16 @@ It translates the accepted 19C contract into one reviewed Supabase migration fil
 
 Recommended next task: 19E Auth Client Skeleton + Env Guard V1.
 
+## Phase 19E Auth Client Skeleton & Env Guard
+
+Phase 19E - Auth Client Skeleton + Env Guard V1 adds `src/cloudProduction/authClientSkeletonEnvGuard.ts` and `docs/AUTH_CLIENT_SKELETON_ENV_GUARD.md`.
+
+It composes the existing Supabase project guard and auth callback guard into a passive readiness skeleton for a future auth client. The skeleton is disabled by default, creates no real client, stores no token, requires no login, makes no network request, and keeps auth runtime and sync runtime deferred.
+
+The app does not connect to Supabase, add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or switch source of truth. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19F Auth UI Skeleton V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
