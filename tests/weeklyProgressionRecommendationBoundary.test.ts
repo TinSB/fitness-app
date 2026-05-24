@@ -7,21 +7,59 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 describe('weekly progression recommendation boundaries', () => {
-  it('does not wire weekly progression into App, Progress, Plan, Today, Record, or Focus UI runtime', () => {
-    const files = [
+  it('wires weekly progression only into Progress metrics and Plan passive display surfaces', () => {
+    const blockedFiles = [
       'src/App.tsx',
       'src/features/ProgressView.tsx',
-      'src/features/PlanView.tsx',
       'src/features/TodayView.tsx',
-      'src/features/RecordView.tsx',
       'src/features/TrainingFocusView.tsx',
     ];
 
-    for (const file of files) {
+    for (const file of blockedFiles) {
       const source = read(file);
       expect(source).not.toContain('weeklyProgressionRecommendationEngine');
       expect(source).not.toContain('buildWeeklyProgressionRecommendation');
       expect(source).not.toContain('WeeklyProgressionRecommendation');
+    }
+
+    const recordSource = read('src/features/RecordView.tsx');
+    const planSource = read('src/features/PlanView.tsx');
+
+    expect(recordSource).toContain('buildWeeklyProgressionRecommendation');
+    expect(recordSource).toContain("surfaceMode === 'progress'");
+    expect(recordSource).toContain('WeeklyProgressionRecommendationCard');
+    expect(planSource).toContain('buildWeeklyProgressionRecommendation');
+    expect(planSource).toContain('WeeklyProgressionRecommendationCard');
+  });
+
+  it('keeps weekly progression display free of persistence, routes, API, and durable apply paths', () => {
+    const source = read('src/uiOs/progress/WeeklyProgressionRecommendationCard.tsx');
+    const forbidden = [
+      '../storage',
+      '/storage',
+      'localStorage',
+      'devApi',
+      'apps/api',
+      'node:',
+      'fetch(',
+      'ProgramAdjustmentDraft',
+      'PendingSessionPatch',
+      'applySessionPatches',
+      'upsertPendingSessionPatch',
+      'upsertPlanAdjustmentDraftByFingerprint',
+      'applyAdjustmentDraft',
+      '应用到计划',
+      '生成计划',
+      '生成草案',
+      '应用为实验模板',
+      '保存建议',
+      '同步建议',
+      '自动调整',
+      '自动应用',
+    ];
+
+    for (const token of forbidden) {
+      expect(source).not.toContain(token);
     }
   });
 
@@ -64,19 +102,25 @@ describe('weekly progression recommendation boundaries', () => {
     expect(existsSync(resolve(root, 'pnpm-lock.yaml'))).toBe(false);
   });
 
-  it('documents 18F as pure, in-memory, and not auto-applied', () => {
+  it('documents 18F.1 as display-only, in-memory, and not auto-applied', () => {
     const doc = read('docs/ENGINE_IN_THE_LOOP_AUTOMATION_V1.md');
 
     for (const expected of [
       '18F - Weekly Progression Recommendation V1',
       'pure weekly recommendation engine only',
       'aggregates existing volume, plateau, quality, confidence, pain, and feedback signals',
-      'does not change Progress or Plan UI',
       'does not persist weekly recommendations',
       'does not create ProgramAdjustmentDraft or PendingSessionPatch records',
       'guarded contracts are in-memory only',
       '18F.1 - Weekly Progression Display Integration V1',
-      '只生成候选，不改变计划',
+      'display-only integration on Progress metrics and Plan',
+      'does not persist weekly recommendations',
+      'does not write AppData or TrainingSession',
+      'does not create ProgramAdjustmentDraft or PendingSessionPatch records',
+      'guarded recommendations stay in-memory passive previews',
+      '下周建议',
+      '查看后再决定',
+      '不改变计划',
     ]) {
       expect(doc).toContain(expected);
     }

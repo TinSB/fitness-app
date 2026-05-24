@@ -239,9 +239,14 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - Its guarded contracts are in-memory only review wrappers; future plan candidates remain review-only and cannot apply durably in 18G.
 
 8. 18F.1 - Weekly Progression Display Integration V1
-   - Deferred display integration for weekly progression recommendations.
-   - It should show the 18F result without changing the weekly recommendation rules.
-   - It must remain display/review only unless a later task explicitly adds a confirmed durable path.
+   - Implemented as display-only integration on Progress metrics and Plan.
+   - It shows the 18F result as `下周建议` without changing the weekly recommendation rules.
+   - It can show concise states such as `下周可小幅推进`, `下周维持当前节奏`, `本周先控制风险`, `继续记录后再判断`, `查看后再决定`, and `不改变计划`.
+   - It uses 18F guarded recommendations as in-memory passive previews only; guarded recommendations stay in-memory passive previews.
+   - It does not persist weekly recommendations, does not write AppData or TrainingSession, and does not write localStorage.
+   - It does not create ProgramAdjustmentDraft or PendingSessionPatch records.
+   - It does not apply session patches, apply plan adjustments, modify templates, add routes, or change source-of-truth behavior.
+   - Durable weekly apply behavior remains deferred to a later confirmed task.
 
 9. 18G - Guarded Apply / Pending Recommendation Contract V1
    - Implemented as a contract-only, pure-engine layer that normalizes Focus, post-workout, Today, weekly, coach-action, and manual recommendations into in-memory guarded recommendation candidates.

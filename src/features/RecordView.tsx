@@ -13,6 +13,7 @@ import { buildPainPatterns } from '../engines/painPatternEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
 import { buildSessionComposition } from '../engines/sessionCompositionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
+import { buildWeeklyProgressionRecommendation } from '../engines/weeklyProgressionRecommendationEngine';
 import {
   classNames,
   completedSets,
@@ -88,6 +89,7 @@ import { EffectiveSetsVolumeCard } from '../uiOs/progress/EffectiveSetsVolumeCar
 import { ProgressInsightHero } from '../uiOs/progress/ProgressInsightHero';
 import { ReadinessPressureCard } from '../uiOs/progress/ReadinessPressureCard';
 import { StrengthTrendCards } from '../uiOs/progress/StrengthTrendCards';
+import { WeeklyProgressionRecommendationCard } from '../uiOs/progress/WeeklyProgressionRecommendationCard';
 import { RecordOsOverview, RecordTimelineCard } from '../uiOs/records/RecordOsCards';
 import {
   PostWorkoutNextTimeRecommendationCard,
@@ -338,7 +340,7 @@ export function RecordView({
   data,
   unitSettings,
   coachAutomationSummary,
-  trainingIntelligenceSummary: _trainingIntelligenceSummary,
+  trainingIntelligenceSummary,
   coachActions,
   onDeleteSession,
   onMarkSessionDataFlag,
@@ -674,6 +676,16 @@ export function RecordView({
       strengthTrendItems: progressStrengthTrendItems,
     });
   }, [analyticsHistory.length, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
+  const weeklyProgressionRecommendation = React.useMemo(() => {
+    const today = todayKey();
+    return buildWeeklyProgressionRecommendation({
+      trainingIntelligenceSummary,
+      effectiveSetSummary: effectiveSummary,
+      painPatterns,
+      weekId: today,
+      nowIso: `${today}T12:00:00.000Z`,
+    });
+  }, [effectiveSummary, painPatterns, trainingIntelligenceSummary]);
   const dataHealthClarity = React.useMemo(
     () =>
       buildDataHealthClaritySummary({
@@ -927,10 +939,14 @@ export function RecordView({
 
     return (
       <PageSection title="统计" description="只统计正常训练数据。测试和排除数据不会进入频率、有效组、肌群分布和不适统计。">
-        {!analyticsHistory.length ? (
-          <EmptyState title="统计数据不足" description="完成训练后，这里会显示频率、有效组、肌群分布和不适趋势。" />
-        ) : (
-          <div className="space-y-3">
+        <div className="space-y-3">
+          {surfaceMode === 'progress' ? (
+            <WeeklyProgressionRecommendationCard recommendation={weeklyProgressionRecommendation} surface="dark" />
+          ) : null}
+          {!analyticsHistory.length ? (
+            <EmptyState title="统计数据不足" description="完成训练后，这里会显示频率、有效组、肌群分布和不适趋势。" />
+          ) : (
+            <>
             <ProgressInsightHero summary={progressClarity} />
             <StrengthTrendCards
               items={progressClarity.strengthTrendItems}
@@ -1010,8 +1026,9 @@ export function RecordView({
                 <div className="rounded-lg bg-stone-50 p-4 text-sm text-slate-500">正常训练数据中暂无不适标记。</div>
               )}
             </Card>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </PageSection>
     );
   };
