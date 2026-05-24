@@ -48,9 +48,17 @@ Phase 19C - Supabase Data Model & RLS Contract V1 adds `src/cloudProduction/supa
 
 It defines a contract-only, document-first Supabase table and RLS policy boundary for future single-user multi-device sync. Candidate tables are `cloud_appdata_snapshots`, `cloud_sync_operations`, `cloud_devices`, `cloud_conflicts`, and `cloud_export_delete_requests`.
 
-19C does not apply SQL, create tables, add migration files, connect to Supabase, add routes, enable runtime auth/sync, change AppData or TrainingSession schemas, change persistence, change packages or lockfiles, or switch source of truth. localStorage remains default, fallback, migration source, and emergency rollback source.
+19C does not apply SQL, create tables, add migration files, connect to Supabase, add routes, turn on runtime auth or sync, change AppData or TrainingSession schemas, change persistence, change packages or lockfiles, or switch source of truth. localStorage remains default, fallback, migration source, and emergency rollback source.
 
 Recommended next task: 19D Supabase Migration Files + Local Type Contracts V1.
+
+## Phase 19D Supabase Migration Files & Local Type Contracts
+
+Phase 19D - Supabase Migration Files + Local Type Contracts V1 adds `supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql`, `src/cloudProduction/supabaseMigrationLocalTypeContracts.ts`, and `docs/SUPABASE_MIGRATIONS_LOCAL_TYPE_CONTRACTS.md`.
+
+It translates the accepted 19C contract into one reviewed Supabase migration file and local TypeScript row contracts. The app does not apply SQL, connect to Supabase, start auth runtime, start sync runtime, add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or switch source of truth.
+
+Recommended next task: 19E Auth Client Skeleton + Env Guard V1.
 
 ## Core Parity & Contracts Baseline
 

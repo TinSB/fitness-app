@@ -67,9 +67,9 @@ describe('supabase data model rls contract boundary', () => {
     }
   });
 
-  it('does not add migration files env files routes or package drift', () => {
+  it('does not add unapproved migration files env files routes or package drift', () => {
+    expect(existsSync(resolve(repoRoot(), 'supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql'))).toBe(true);
     for (const path of [
-      'supabase/migrations',
       'database/migrations',
       'apps/api/src/cloudAuthSync.ts',
       'apps/api/src/authRoutes.ts',
@@ -136,6 +136,7 @@ describe('supabase data model rls contract boundary', () => {
   it('keeps docs from claiming SQL migrations runtime auth sync or cloud primary are live', () => {
     const docs = [
       read('docs/SUPABASE_DATA_MODEL_RLS_CONTRACT.md'),
+      read('docs/SUPABASE_MIGRATIONS_LOCAL_TYPE_CONTRACTS.md'),
       read('docs/CLOUD_AUTH_SYNC_ENTRY_GATE.md'),
       read('docs/ACCOUNT_BOUNDARY_LOCAL_INVENTORY.md'),
       read('API_CONTRACT.md'),
@@ -144,7 +145,7 @@ describe('supabase data model rls contract boundary', () => {
 
     for (const expected of [
       'No SQL is applied.',
-      'No migration file is created.',
+      'SQL is not applied by the app.',
       'No table is created.',
       'No Supabase connection is made.',
       'localStorage remains default, fallback, migration source, and emergency rollback source',

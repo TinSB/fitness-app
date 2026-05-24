@@ -84,9 +84,9 @@ describe('cloud auth sync boundary', () => {
     }
   });
 
-  it('does not add migrations env files routes or cloud auth sync runtime modules', () => {
+  it('does not add unapproved migrations env files routes or cloud auth sync runtime modules', () => {
+    expect(existsSync(resolve(repoRoot(), 'supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql'))).toBe(true);
     for (const path of [
-      'supabase/migrations',
       'database/migrations',
       'apps/api/src/cloudAuthSync.ts',
       'apps/api/src/authRoutes.ts',

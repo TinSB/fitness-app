@@ -89,9 +89,9 @@ describe('cloud database sync regression lock', () => {
     }
   });
 
-  it('keeps schema and migration surfaces absent', () => {
+  it('keeps unapproved schema and migration surfaces absent', () => {
+    expect(existsSync('supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql')).toBe(true);
     for (const path of [
-      'supabase/migrations',
       'database/migrations',
       'src/cloudProduction/normalizedTrainingTables.ts',
       'src/cloudProduction/sqlMigrations.ts',
