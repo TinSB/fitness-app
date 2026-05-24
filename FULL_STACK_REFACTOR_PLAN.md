@@ -204,6 +204,18 @@ It creates a pure runtime flow for backup preflight and local-to-cloud migration
 
 Recommended next task: 20F Cloud Read/Write Verification Flow V1.
 
+## Phase 20F Cloud Read/Write Verification Flow
+
+Phase 20F - Cloud Read/Write Verification Flow V1 adds `src/cloudProduction/cloudReadWriteVerificationFlow.ts` and `docs/CLOUD_READ_WRITE_VERIFICATION_FLOW.md`.
+
+It creates an explicit verification gate after 20E local backup and migration dry-run readiness. The flow composes the existing cloud read mirror and cloud write shadow contracts through injected repository and adapter evidence, duplicate operation protection, rollback availability, explicit opt-in, manual confirmation, and runtime safety checks.
+
+20F can report `readyFor20G: true` only after those gates pass. It still keeps upload, download, auto-apply, live sync activation, cloud-primary mode, default sync, background work, source-of-truth changes, and localStorage deletion off.
+
+20F does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, does not create a Supabase client, and does not start v0 UI polish.
+
+Recommended next task: 20G Conflict/Offline/Rollback Runtime Flow V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
