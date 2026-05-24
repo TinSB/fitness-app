@@ -120,6 +120,16 @@ The app does not upload, download, apply cloud data, write localStorage, write c
 
 Recommended next task: 19K Conflict / Offline / Rollback Acceptance V1.
 
+## Phase 19K Conflict / Offline / Rollback Acceptance
+
+Phase 19K - Conflict / Offline / Rollback Acceptance V1 adds `src/cloudProduction/conflictOfflineRollbackAcceptance.ts` and `docs/CONFLICT_OFFLINE_ROLLBACK_ACCEPTANCE.md`.
+
+It accepts only when the 19J candidate is ready, conflict review is complete, automatic conflict choice remains unavailable, offline training remains available, background work remains disabled, no-fake-success and cloud-unavailable behavior are safe, rollback and emergency local are available, localStorage fallback is preserved, and route/package/schema boundaries are unchanged. It reports `acceptedForManualProductionReview`, `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false`.
+
+The app does not upload, download, apply cloud data, write localStorage, write cloud data, start background sync, make cloud primary, add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or start default sync. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19L Production Manual Acceptance V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
