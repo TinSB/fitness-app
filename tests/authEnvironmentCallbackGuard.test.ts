@@ -54,6 +54,31 @@ describe('auth environment callback guard', () => {
     });
   });
 
+  it('accepts the explicit loopback callback used for local browser sign-in', () => {
+    const callbackUrl = ['http://127.0.0.1:3000', 'auth', 'callback'].join('/');
+
+    expect(resolveAuthEnvironmentCallbackGuard({
+      enabled: true,
+      providerCandidate: 'supabase-auth-candidate',
+      environment: 'production',
+      callbackUrl,
+      browserConfig: { publicMode: 'candidate' },
+    })).toEqual({
+      ok: true,
+      enabled: true,
+      providerCandidate: 'supabase-auth-candidate',
+      environment: 'production',
+      callbackUrl,
+      browserSafeConfig: {
+        enabled: false,
+        providerCandidate: 'supabase-auth-candidate',
+        callbackUrl,
+        containsSecrets: false,
+      },
+      errors: [],
+    });
+  });
+
   it('rejects missing provider config and missing callback URL', () => {
     expect(resolveAuthEnvironmentCallbackGuard({
       enabled: true,

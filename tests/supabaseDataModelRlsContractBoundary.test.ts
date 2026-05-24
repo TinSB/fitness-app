@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
+import { expectNoTrackedEnvironmentFiles, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
 const read = (path: string) => readSource(path);
 
@@ -75,13 +75,11 @@ describe('supabase data model rls contract boundary', () => {
       'apps/api/src/authRoutes.ts',
       'apps/api/src/syncRoutes.ts',
       'src/cloudAuthSync',
-      '.env',
-      '.env.local',
-      '.env.production',
       'pnpm-lock.yaml',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+    expectNoTrackedEnvironmentFiles();
 
     const packageJson = JSON.parse(read('package.json')) as {
       dependencies: Record<string, string>;

@@ -156,7 +156,7 @@ Recommended next task: 20B Supabase Project Env & Runtime Readiness Check V1.
 
 Phase 20B - Supabase Project Env & Runtime Readiness Check V1 adds `src/cloudProduction/supabaseProjectRuntimeReadinessCheck.ts` and `docs/SUPABASE_PROJECT_RUNTIME_READINESS_CHECK.md`.
 
-It composes Phase 20A authorization with the existing Supabase project and auth callback guards. The check accepts a caller-supplied env-like record, reports exact missing public browser keys, rejects service role browser risk, and rejects unsafe runtime boundary evidence.
+It composes Phase 20A authorization with the existing Supabase project and auth callback guards. The check accepts a caller-supplied env-like record, reports exact missing public browser keys, rejects service role browser risk, accepts HTTPS production callbacks or the exact local loopback callback used for browser sign-in verification, and rejects unsafe runtime boundary evidence.
 
 Required public keys are `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_IRONPATH_AUTH_CALLBACK_URL`, and `VITE_IRONPATH_CLOUD_ENVIRONMENT=production`.
 

@@ -15,7 +15,8 @@ The guard:
 - rejects missing provider config
 - rejects missing callback URL
 - rejects unsafe callback URL
-- rejects localhost as production callback
+- accepts only HTTPS production callbacks or the exact local loopback callback used for browser sign-in verification
+- rejects other localhost callbacks as production callbacks
 - rejects preview environment as production unless explicitly classified
 - rejects dev/local API URL as production auth callback target
 - ensures browser-safe config never includes secrets

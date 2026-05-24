@@ -33,7 +33,7 @@ The readiness result can report `readyFor20C: true` only when:
 - all required public keys are present
 - the Supabase project URL is HTTPS and production-classified
 - the anon key is present as a public anon candidate
-- the auth callback URL is HTTPS and production-classified
+- the auth callback URL is HTTPS and production-classified, or the exact local loopback callback used for browser sign-in verification
 - no service role key is present
 - browser config has no secret-like keys
 - auth runtime is still off
@@ -71,7 +71,7 @@ Manual setup required before 20C:
 - create or choose the Supabase project
 - configure the browser-safe project URL as `VITE_SUPABASE_URL`
 - configure the public anon key as `VITE_SUPABASE_ANON_KEY`
-- configure the HTTPS auth callback URL as `VITE_IRONPATH_AUTH_CALLBACK_URL`
+- configure the HTTPS auth callback URL as `VITE_IRONPATH_AUTH_CALLBACK_URL`, or use the exact local loopback callback for local browser verification
 - set `VITE_IRONPATH_CLOUD_ENVIRONMENT=production`
 - keep service role credentials outside browser config
 - rerun 20B validation
