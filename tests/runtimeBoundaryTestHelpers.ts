@@ -19,6 +19,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/auth/authBoundary.ts',
   'src/auth/authProviderTypes.ts',
   'src/cloudProduction/authClientSkeletonEnvGuard.ts',
+  'src/cloudProduction/cloudReadMirror.ts',
   'src/storage/apiStorageAdapter.ts',
   'src/storage/apiWriteThroughRuntime.ts',
   'src/storage/bootFromApiSnapshot.ts',

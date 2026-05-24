@@ -80,6 +80,16 @@ The app does not add routes, change persistence, change AppData or TrainingSessi
 
 Recommended next task: 19G Cloud Read Mirror V1.
 
+## Phase 19G Cloud Read Mirror
+
+Phase 19G - Cloud Read Mirror V1 adds `src/cloudProduction/cloudReadMirror.ts` and `docs/CLOUD_READ_MIRROR.md`.
+
+It compares cloud candidate metadata with local snapshot metadata through existing cloud repository and pull candidate contracts. It is read mirror only: no cloud data is applied, no localStorage write occurs, no cloud write is attempted, and no source-of-truth switch is made.
+
+The app does not add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or turn on sync runtime. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19H Cloud Write Shadow Mode V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
