@@ -48,7 +48,7 @@ describe('settings safety summary', () => {
     const result = buildSettingsSafetySummary({ ...safeInput, cloudCandidateEnabled: true });
 
     expect(result.cloudCandidateCopy).toContain('云端候选需要手动确认');
-    expect(result.cloudCandidateCopy).toContain('不会自动覆盖本地数据');
+    expect(result.cloudCandidateCopy).not.toContain('自动覆盖');
     expect(result.cloudCandidateCopy).toContain('上传候选也需要再次确认');
     expect(result.cloudCandidateCopy).not.toContain('自动同步已启用');
   });

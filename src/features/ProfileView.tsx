@@ -387,12 +387,12 @@ export function ProfileView({
                 <p className="text-sm font-semibold text-slate-500">教练建议</p>
                 <h3 className="mt-1 text-lg font-bold text-slate-950">教练动作收件箱</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  教练自动化只生成建议，不会自动覆盖计划或修改历史。采用建议、修正记录或调整计划仍由你手动确认。
+                  训练建议只生成候选，不会直接改动计划或历史。采用建议、修正记录或调整计划仍由你手动确认。
                 </p>
               </div>
               <CoachActionList
                 title="教练动作收件箱"
-                description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会自动修改数据。"
+                description="集中查看待处理、已采用、已忽略和已过期的教练建议；本轮按钮只做导航或查看，不会直接修改数据。"
                 viewModel={coachActionListViewModel}
                 showStatusFilters
                 onAction={onCoachAction}

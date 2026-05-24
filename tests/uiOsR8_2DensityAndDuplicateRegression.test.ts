@@ -47,6 +47,7 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
     expect((today.match(/<SafetyStrip/g) || []).length).toBe(1);
     expect((today.match(/<TodayDecisionHero/g) || []).length).toBe(1);
     expect((focus.match(/完成一组/g) || []).length).toBeLessThanOrEqual(1);
-    expect((settings.match(/不会自动覆盖本地数据/g) || []).length).toBeLessThanOrEqual(1);
+    expect((settings.match(/只做查看，不改变本地数据/g) || []).length).toBeLessThanOrEqual(1);
+    expect(settings).not.toContain('自动覆盖');
   });
 });

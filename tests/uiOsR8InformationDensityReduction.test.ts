@@ -36,7 +36,8 @@ describe('UI-OS R8 information density reduction', () => {
     const cloudSource = read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx');
 
     expect(cloudSource).toContain('需要手动确认');
-    expect(cloudSource).toContain('不会自动覆盖本地数据');
+    expect(cloudSource).toContain('只做查看，不改变本地数据');
+    expect(cloudSource).not.toContain('自动覆盖');
     expect(cloudSource).not.toContain('一键同步');
     expect(cloudSource).not.toContain('同步全部');
   });

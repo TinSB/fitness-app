@@ -52,7 +52,7 @@ describe('UI-OS R8.4 primary-flow copy budget', () => {
         onOpenRecordData: noop,
       })),
       renderToStaticMarkup(React.createElement(EquipmentProfileSettingsPanel, { copy: '器械档案只影响推荐显示，不会自动改写历史记录。' })),
-      renderToStaticMarkup(React.createElement(CloudCandidateSettingsPanel, { copy: '云端候选需要手动确认，不会自动覆盖本地数据；上传候选也需要再次确认。' })),
+      renderToStaticMarkup(React.createElement(CloudCandidateSettingsPanel, { copy: '云端候选需要手动确认；上传候选也需要再次确认。' })),
       renderToStaticMarkup(React.createElement(DiagnosticsDataSafetyPanel, { diagnosticsCopy: '诊断摘要不会上传完整训练数据；只显示脱敏摘要；不会外传诊断。', dataHealthSummary: summary })),
     ].join('\n');
     const visible = text(markup);
@@ -60,9 +60,11 @@ describe('UI-OS R8.4 primary-flow copy budget', () => {
     expect(visible).toContain('先导出备份，再进行恢复。');
     expect(visible).toContain('器械配置只影响推荐显示。');
     expect(visible).toContain('诊断摘要已脱敏。');
+    expect(visible).toContain('只做查看，不改变本地数据');
     expect(visible).not.toContain('主题只影响本次界面显示');
     expect(visible).not.toContain('不会改写历史记录');
     expect(visible).not.toContain('这里不提供一键同步');
+    expect(visible).not.toContain('自动覆盖');
     expect(markup).toContain('data-settings-diagnostics-details="collapsed"');
     expect(markup).toContain('data-settings-equipment-editor="collapsed"');
   });
