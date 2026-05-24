@@ -232,6 +232,10 @@ Do not start 19B from 19A.
 
 20B keeps `clientCreated: false`, `networkAttempted: false`, `authRuntimeEnabled: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
 
+20C - Auth Runtime Wiring V1: implemented as a pure auth runtime wiring boundary. It requires 20B readiness, an injected auth adapter, and explicit user action for sign-in or sign-out. It supports local synthetic adapter validation while real public Supabase configuration is missing.
+
+20C keeps `clientCreated: false`, `tokenStored: false`, `localStorageChanged: false`, `localStorageDeleted: false`, `secretsExposed: false`, `serviceRoleExposed: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -294,3 +298,5 @@ Phase 19 sequence complete. A future phase must make a separate decision before 
 Task 20A result: Live Cloud Sync Activation Authorization Gate only. It can authorize the Phase 20 runtime implementation sequence after Phase 19L evidence and explicit safety confirmations pass, but it does not activate live sync or change source of truth. The next task is 20B - Supabase Project Env & Runtime Readiness Check V1.
 
 Task 20B result: Supabase Project Env & Runtime Readiness Check only. It reports public browser config readiness and exact missing setup keys without creating a client, reading real environment files, writing data, or changing source of truth. The next task is 20C - Auth Runtime Wiring V1 only after real public project configuration is present.
+
+Task 20C result: Auth Runtime Wiring only. It wires auth state through an injected adapter, requires explicit user action for sign-in and sign-out, and blocks token storage, secret exposure, localStorage mutation, sync runtime, cloud-primary mode, default sync, background work, source-of-truth changes, and localStorage deletion. The next task is 20D - Explicit Opt-In Sync Runtime Wiring V1 only after real public project configuration and safe auth sign-in are available.
