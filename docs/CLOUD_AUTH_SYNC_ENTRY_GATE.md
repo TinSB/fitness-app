@@ -212,7 +212,7 @@ Validation remains:
 
 19J - Explicit Opt-In Single-User Sync Candidate V1: implemented as a manual candidate report only after explicit opt-in, confirmation, dry run, backup, shadow, conflict, rollback, and offline gates pass.
 
-19K - Conflict / Offline / Rollback Acceptance V1: prove conflict review, offline behavior, rollback, and emergency local mode.
+19K - Conflict / Offline / Rollback Acceptance V1: implemented as acceptance evidence for conflict review, offline behavior, rollback, emergency local, and unchanged route/package/schema boundaries.
 
 19L - Production Manual Acceptance V1: require manual acceptance before any cloud-primary consideration.
 
@@ -271,4 +271,6 @@ Task 19I result: Local-to-Cloud Migration Dry Run only. It reports `readyForShad
 
 Task 19J result: Explicit Opt-In Single-User Sync Candidate only. It reports `readyForManualSyncCandidate`, `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false` without uploading, downloading, applying cloud data, writing localStorage, writing cloud data, starting background sync, making cloud primary, or changing source of truth.
 
-The approved next step after 19J is 19K Conflict / Offline / Rollback Acceptance V1. Phase 19A itself adds no runtime behavior.
+Task 19K result: Conflict / Offline / Rollback Acceptance only. It reports `acceptedForManualProductionReview`, `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false` without uploading, downloading, applying cloud data, writing localStorage, writing cloud data, starting background sync, making cloud primary, or changing source of truth.
+
+The approved next step after 19K is 19L Production Manual Acceptance V1. Phase 19A itself adds no runtime behavior.
