@@ -248,6 +248,10 @@ Do not start 19B from 19A.
 
 20F may report `readyFor20G: true` after those gates pass, and records `cloudReadAttempted` and `cloudWriteAttempted` verification evidence, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
 
+20G - Conflict/Offline/Rollback Runtime Flow V1: implemented as a conflict, offline, rollback, and emergency local runtime evidence gate. It requires 20F verification readiness, completed conflict review, offline training availability, no-fake-success behavior, rollback availability, emergency local availability, localStorage fallback availability, unchanged route/package/schema boundaries, and safe runtime boundary evidence.
+
+20G may report `readyFor20H: true` after those gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `productionLaunchPerformed: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -318,3 +322,5 @@ Task 20D result: Explicit Opt-In Sync Runtime Wiring only. It wires the manual s
 Task 20E result: Local Backup + Dry-Run Migration Runtime Flow only. It wires backup metadata and migration dry-run evidence after 20D sync readiness, but it does not upload, download, apply cloud data, write localStorage, write cloud data, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20F - Cloud Read/Write Verification Flow V1.
 
 Task 20F result: Cloud Read/Write Verification Flow only. It verifies read mirror and write-shadow candidate evidence after 20E readiness, but it does not upload, download, apply cloud data to local data, write localStorage, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20G - Conflict/Offline/Rollback Runtime Flow V1.
+
+Task 20G result: Conflict/Offline/Rollback Runtime Flow only. It verifies conflict review, offline fallback, rollback, emergency local, and route/package/schema boundary evidence after 20F readiness, but it does not upload, download, apply cloud data, write localStorage, make cloud data primary, start default/background sync, launch production, change source of truth, or delete localStorage. The next task is 20H - Production Acceptance With Synthetic Data V1.

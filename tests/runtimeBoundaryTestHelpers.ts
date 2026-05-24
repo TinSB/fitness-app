@@ -24,6 +24,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/cloudProduction/cloudReadWriteVerificationFlow.ts',
   'src/cloudProduction/cloudReadMirror.ts',
   'src/cloudProduction/cloudWriteShadowMode.ts',
+  'src/cloudProduction/conflictOfflineRollbackRuntimeFlow.ts',
   'src/cloudProduction/localBackupDryRunMigrationRuntimeFlow.ts',
   'src/cloudProduction/supabaseProjectRuntimeReadinessCheck.ts',
   'src/storage/apiStorageAdapter.ts',

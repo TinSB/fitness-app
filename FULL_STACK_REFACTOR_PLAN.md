@@ -216,6 +216,18 @@ It creates an explicit verification gate after 20E local backup and migration dr
 
 Recommended next task: 20G Conflict/Offline/Rollback Runtime Flow V1.
 
+## Phase 20G Conflict/Offline/Rollback Runtime Flow
+
+Phase 20G - Conflict/Offline/Rollback Runtime Flow V1 adds `src/cloudProduction/conflictOfflineRollbackRuntimeFlow.ts` and `docs/CONFLICT_OFFLINE_ROLLBACK_RUNTIME_FLOW.md`.
+
+It creates a runtime evidence gate after 20F verification. The flow composes 20F read/write verification evidence with the existing conflict/offline/rollback acceptance contract, requiring conflict review, offline training availability, no-fake-success behavior, rollback availability, emergency local availability, localStorage fallback availability, route/package/schema boundary proof, and safe runtime boundary evidence.
+
+20G can report `readyFor20H: true` only after those gates pass. It still keeps upload, download, auto-apply, live sync activation, cloud-primary mode, default sync, background work, production launch, source-of-truth changes, and localStorage deletion off.
+
+20G does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, does not create a Supabase client, and does not start v0 UI polish.
+
+Recommended next task: 20H Production Acceptance With Synthetic Data V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
