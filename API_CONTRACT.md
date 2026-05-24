@@ -22,6 +22,8 @@ Phase 19E - Auth Client Skeleton + Env Guard V1 adds `src/cloudProduction/authCl
 
 Phase 19F - Auth UI Skeleton V1 adds `src/uiOs/settings/AuthUiSkeletonPanel.tsx` and `docs/AUTH_UI_SKELETON.md`. It mounts a passive Settings account surface with no buttons, forms, provider actions, auth client import, token storage, cloud reads, cloud writes, route changes, schema changes, package changes, persistence changes, or source-of-truth switch.
 
+Phase 19G - Cloud Read Mirror V1 adds `src/cloudProduction/cloudReadMirror.ts` and `docs/CLOUD_READ_MIRROR.md`. It compares cloud candidate metadata with local snapshot metadata through existing cloud repository and pull candidate contracts. It does not apply cloud data, write localStorage, write cloud data, add routes, change AppData or TrainingSession schemas, change persistence, change packages/lockfiles, or switch source of truth.
+
 Task 4.10 adds acceptance/regression audit tests over these boundaries. It does not make the API production-ready, does not switch App runtime storage, and does not connect the frontend to HTTP or SQLite.
 
 Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance procedure for the dev-only local API stack. It is documentation and consistency testing only; HTTP behavior still comes from devLauncher, httpRuntimeAdapter, and serverAdapter, and the App runtime still uses localStorage.

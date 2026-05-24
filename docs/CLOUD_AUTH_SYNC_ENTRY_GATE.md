@@ -204,7 +204,7 @@ Validation remains:
 
 19F - Auth UI Skeleton V1: implemented as a passive Settings account surface without turning on sync by default.
 
-19G - Cloud Read Mirror V1: compare cloud candidate data without mutating local data.
+19G - Cloud Read Mirror V1: implemented as a passive metadata comparison without mutating local data.
 
 19H - Cloud Write Shadow Mode V1: create candidate shadow writes only after backup, validation, and owner checks.
 
@@ -263,4 +263,6 @@ Task 19E result: Auth Client Skeleton + Env Guard only. It composes existing Sup
 
 Task 19F result: Auth UI Skeleton only. It mounts a passive Settings account surface without provider actions, token storage, auth client runtime import, sync runtime, cloud data reads, cloud data writes, or source-of-truth change.
 
-The approved next step after 19F is 19G Cloud Read Mirror V1. Phase 19A itself adds no runtime behavior.
+Task 19G result: Cloud Read Mirror only. It compares cloud candidate metadata with local snapshot metadata without applying cloud data, writing localStorage, writing cloud data, or changing source of truth.
+
+The approved next step after 19G is 19H Cloud Write Shadow Mode V1. Phase 19A itself adds no runtime behavior.
