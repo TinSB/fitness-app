@@ -26,6 +26,8 @@ Phase 19G - Cloud Read Mirror V1 adds `src/cloudProduction/cloudReadMirror.ts` a
 
 Phase 19H - Cloud Write Shadow Mode V1 adds `src/cloudProduction/cloudWriteShadowMode.ts` and `docs/CLOUD_WRITE_SHADOW_MODE.md`. It creates in-memory shadow write candidates only after explicit opt-in, manual confirmation, dry run, backup, owner, schema, conflict, duplicate, and adapter gates pass. It does not write localStorage, apply cloud data, make cloud primary, add routes, change AppData or TrainingSession schemas, change persistence, change packages/lockfiles, or switch source of truth.
 
+Phase 19I - Local-to-Cloud Migration Dry Run V1 updates `src/cloudProduction/localToCloudMigrationDryRun.ts` and `docs/LOCAL_TO_CLOUD_MIGRATION_DRY_RUN.md`. It creates a disabled-by-default dry-run readiness report with `readyForShadowCandidate`, `noUpload: true`, `noDownload: true`, `localDataChanged: false`, `cloudDataChanged: false`, and `sourceOfTruthChanged: false`. It does not upload, download, write localStorage, write cloud data, create a Supabase client, add routes, change AppData or TrainingSession schemas, change persistence, change packages/lockfiles, or switch source of truth.
+
 Task 4.10 adds acceptance/regression audit tests over these boundaries. It does not make the API production-ready, does not switch App runtime storage, and does not connect the frontend to HTTP or SQLite.
 
 Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance procedure for the dev-only local API stack. It is documentation and consistency testing only; HTTP behavior still comes from devLauncher, httpRuntimeAdapter, and serverAdapter, and the App runtime still uses localStorage.
