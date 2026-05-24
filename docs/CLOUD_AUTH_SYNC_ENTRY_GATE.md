@@ -218,6 +218,16 @@ Validation remains:
 
 Do not start 19B from 19A.
 
+## Phase 20A Runtime Sequence Authorization
+
+20A - Live Cloud Sync Activation Authorization Gate V1: implemented as a pure authorization contract for the Phase 20 runtime sequence. It requires Phase 19L manual acceptance evidence, explicit activation intent, single-user personal scope confirmation, localStorage fallback confirmation, no silent overwrite confirmation, no service role in browser confirmation, local backup requirement confirmation, dry-run requirement confirmation, and no SaaS scope confirmation.
+
+20A may authorize 20B through 20I as separate reviewed runtime tasks, starting with Supabase Project Env & Runtime Readiness Check V1.
+
+20A keeps auth runtime off, keeps sync runtime off, and keeps cloud-primary mode, default sync, background work, production launch, source-of-truth switching, routes, schema changes, persistence changes, package changes, lockfile changes, environment files, deployment behavior, and v0 UI polish off.
+
+20A keeps `authRuntimeEnabled: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `productionLaunchPerformed: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -276,3 +286,5 @@ Task 19K result: Conflict / Offline / Rollback Acceptance only. It reports `acce
 Task 19L result: Production Manual Acceptance only. It reports `manualAcceptancePassed`, `readyForFutureCloudPrimaryConsideration`, `productionLaunchPerformed: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false` without launching production, uploading, downloading, applying cloud data, writing localStorage, writing cloud data, starting background sync, making cloud primary, or changing source of truth.
 
 Phase 19 sequence complete. A future phase must make a separate decision before enabling cloud-primary behavior.
+
+Task 20A result: Live Cloud Sync Activation Authorization Gate only. It can authorize the Phase 20 runtime implementation sequence after Phase 19L evidence and explicit safety confirmations pass, but it does not activate live sync or change source of truth. The next task is 20B - Supabase Project Env & Runtime Readiness Check V1.
