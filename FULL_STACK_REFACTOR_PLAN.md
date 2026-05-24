@@ -100,6 +100,16 @@ The app does not add routes, change persistence, change AppData or TrainingSessi
 
 Recommended next task: 19I Local-to-Cloud Migration Dry Run V1.
 
+## Phase 19I Local-to-Cloud Migration Dry Run
+
+Phase 19I - Local-to-Cloud Migration Dry Run V1 updates `src/cloudProduction/localToCloudMigrationDryRun.ts` and `docs/LOCAL_TO_CLOUD_MIGRATION_DRY_RUN.md`.
+
+It creates a dry-run-only readiness report for a future explicit sync candidate. The report consumes the account boundary inventory, backup preflight, RLS preflight, cloud repository availability, read-mirror conflict state, and rollback availability. It reports `readyForShadowCandidate`, `noUpload: true`, `noDownload: true`, `localDataChanged: false`, `cloudDataChanged: false`, and `sourceOfTruthChanged: false`.
+
+The app does not upload, download, write localStorage, write cloud data, add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, create a Supabase client, or start default sync. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19J Explicit Opt-In Single-User Sync Candidate V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

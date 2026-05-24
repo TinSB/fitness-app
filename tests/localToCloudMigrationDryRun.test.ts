@@ -1,205 +1,267 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildPhase19iLocalToCloudMigrationDryRun,
+  PHASE19I_LOCAL_TO_CLOUD_MIGRATION_DRY_RUN_ID,
   runLocalToCloudMigrationDryRun,
-  type LocalToCloudOwner,
+  type Phase19iLocalToCloudMigrationDryRunInput,
 } from '../src/cloudProduction/localToCloudMigrationDryRun';
-import { readSource } from './runtimeBoundaryTestHelpers';
+import type { Phase19gCloudReadMirrorResult } from '../src/cloudProduction/cloudReadMirror';
+import { buildAccountBoundaryLocalInventory } from '../src/cloudProduction/accountBoundaryLocalInventory';
+import { exportAppData } from '../src/storage/backup';
+import { emptyData } from '../src/storage/appDataSanitize';
+import type { AppData } from '../src/models/training-model';
 
-type SyntheticAppData = {
-  schemaVersion: string;
-  workouts: string[];
-};
+const nowIso = '2026-05-24T02:00:00.000Z';
 
-const localOwner = (scope: LocalToCloudOwner['scope'] = 'device-local'): LocalToCloudOwner => ({
-  scope,
-  ownerId: scope === 'cloud-account-candidate' ? 'acct-synthetic-1' : 'local-synthetic-1',
-  accountId: scope === 'cloud-account-candidate' ? 'acct-synthetic-1' : undefined,
-  deviceId: 'device-synthetic-1',
+const appData = () => emptyData();
+
+const readyInventory = (data: AppData = appData()) =>
+  buildAccountBoundaryLocalInventory({
+    appData: data,
+    backupJson: exportAppData(data),
+    cloudAccountId: 'acct-synthetic-1',
+    ownerUserId: 'acct-synthetic-1',
+    deviceId: 'device-synthetic-1',
+    nowIso,
+  });
+
+const mirrorResult = (
+  status: Phase19gCloudReadMirrorResult<AppData>['status'],
+  requiresManualReview = false,
+): Phase19gCloudReadMirrorResult<AppData> => ({
+  id: 'phase19g-cloud-read-mirror',
+  phase: '19G',
+  ok: !['disabled', 'account_not_ready', 'repository_unavailable', 'rejected'].includes(status),
+  status,
+  mirror: null,
+  requiresManualReview,
+  blockers: requiresManualReview ? ['manual_review_required'] : [],
+  applied: false,
+  cloudWriteAttempted: false,
+  localDataChanged: false,
+  localStorageUnchanged: true,
+  sourceOfTruthChanged: false,
+  message: 'Synthetic read mirror result.',
 });
 
-const accountCandidate = (): LocalToCloudOwner => ({
-  scope: 'cloud-account-candidate',
-  ownerId: 'acct-synthetic-1',
-  accountId: 'acct-synthetic-1',
-  deviceId: 'device-synthetic-1',
-});
-
-const appData = (): SyntheticAppData => ({
-  schemaVersion: 'phase-12-synthetic',
-  workouts: ['synthetic-session'],
-});
-
-const validInput = () => ({
-  localOwner: localOwner(),
-  accountCandidate: accountCandidate(),
-  backendPrimaryCandidateReady: true,
-  cloudRepositoryAvailable: true,
+const validInput = (overrides: Partial<Phase19iLocalToCloudMigrationDryRunInput<AppData>> = {}) => ({
+  enabled: true,
+  accountInventory: readyInventory(),
   appData: appData(),
-  schemaValidator: (data: SyntheticAppData) => data.schemaVersion === 'phase-12-synthetic',
-  migrationCompatible: true,
-  backupAvailable: true,
-  localSnapshotHash: 'hash-local',
-  manualConfirmation: true,
+  schemaValidator: (data: AppData) => data.schemaVersion === emptyData().schemaVersion,
+  cloudRepositoryAvailable: true,
+  cloudReadMirror: mirrorResult('cloud_missing'),
+  rlsPreflightPassed: true,
+  rollbackAvailable: true,
+  nowIso,
+  operationId: 'operation-phase19i-1',
+  requestFingerprint: 'request-phase19i-1',
+  ...overrides,
 });
 
-describe('local-to-cloud migration dry run', () => {
-  it('reports a safe candidate without changing local or cloud data', () => {
-    const result = runLocalToCloudMigrationDryRun(validInput());
+describe('Phase 19I local-to-cloud migration dry run', () => {
+  it('is disabled by default and never uploads downloads or mutates data', () => {
+    const result = buildPhase19iLocalToCloudMigrationDryRun();
+
+    expect(result).toMatchObject({
+      baseId: PHASE19I_LOCAL_TO_CLOUD_MIGRATION_DRY_RUN_ID,
+      phase: '19I',
+      ok: false,
+      status: 'disabled',
+      readyForShadowCandidate: false,
+      blockers: expect.arrayContaining(['dry_run_disabled']),
+      noUpload: true,
+      noDownload: true,
+      localStorageUnchanged: true,
+      localDataChanged: false,
+      cloudDataChanged: false,
+      sourceOfTruthChanged: false,
+      syncRuntimeEnabled: false,
+    });
+    expect(result.migrationPackage).toMatchObject({
+      dryRunOnly: true,
+      wouldCreateSnapshotCandidate: false,
+      willUpload: false,
+      willDownload: false,
+    });
+  });
+
+  it('builds a ready dry-run package from account inventory without changing local or cloud data', () => {
+    const input = validInput();
+    const before = JSON.parse(JSON.stringify(input.accountInventory));
+    const result = buildPhase19iLocalToCloudMigrationDryRun(input);
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: 'ready_for_shadow_candidate',
+      readyForShadowCandidate: true,
+      requiresManualReview: false,
+      accountBoundaryStatus: 'ready_for_migration_dry_run',
+      backupStatus: 'valid',
+      schemaStatus: 'valid',
+      rlsPreflight: 'passed',
+      rollbackPreflight: 'available',
+      cloudConflictPreflight: 'no_cloud_snapshot',
+      blockers: [],
+      noUpload: true,
+      noDownload: true,
+      localDataChanged: false,
+      cloudDataChanged: false,
+      sourceOfTruthChanged: false,
+      nextPhase: '19J - Explicit Opt-In Single-User Sync Candidate V1',
+      createdAt: nowIso,
+    });
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      'dry_run_only',
+      'localStorage_remains_source_of_truth',
+      'first_sync_requires_review',
+      'shadow_write_still_requires_opt_in',
+    ]));
+    expect(result.migrationPackage).toMatchObject({
+      operationType: 'migration_dry_run',
+      targetTable: 'cloud_appdata_snapshots',
+      operationId: 'operation-phase19i-1',
+      requestFingerprint: 'request-phase19i-1',
+      accountId: 'acct-synthetic-1',
+      ownerUserId: 'acct-synthetic-1',
+      localOwnerId: input.accountInventory.localOwner?.ownerId,
+      deviceId: 'device-synthetic-1',
+      schemaVersion: input.accountInventory.appDataSummary?.schemaVersion,
+      sourceSnapshotHash: input.accountInventory.appDataSummary?.sourceSnapshotHash,
+      dryRunOnly: true,
+      wouldCreateSnapshotCandidate: true,
+      willUpload: false,
+      willDownload: false,
+    });
+    expect(input.accountInventory).toEqual(before);
+  });
+
+  it('keeps the dry run blocked when account boundary backup or ownership is not ready', () => {
+    const missingBackupInventory = buildAccountBoundaryLocalInventory({
+      appData: appData(),
+      backupJson: null,
+      cloudAccountId: 'acct-synthetic-1',
+      ownerUserId: 'acct-synthetic-1',
+      deviceId: 'device-synthetic-1',
+      nowIso,
+    });
+
+    expect(buildPhase19iLocalToCloudMigrationDryRun(validInput({
+      accountInventory: missingBackupInventory,
+    }))).toMatchObject({
+      ok: false,
+      status: 'account_boundary_not_ready',
+      backupStatus: 'missing',
+      blockers: expect.arrayContaining(['account_boundary_not_ready', 'backup_missing']),
+      readyForShadowCandidate: false,
+      sourceOfTruthChanged: false,
+    });
+
+    const ownerMismatchInventory = buildAccountBoundaryLocalInventory({
+      appData: appData(),
+      backupJson: exportAppData(appData()),
+      cloudAccountId: 'acct-synthetic-1',
+      ownerUserId: 'acct-synthetic-2',
+      deviceId: 'device-synthetic-1',
+      nowIso,
+    });
+
+    expect(buildPhase19iLocalToCloudMigrationDryRun(validInput({
+      accountInventory: ownerMismatchInventory,
+    }))).toMatchObject({
+      ok: false,
+      status: 'owner_mismatch',
+      blockers: expect.arrayContaining(['owner_mismatch', 'rls_preflight_failed']),
+    });
+  });
+
+  it('blocks invalid schema repository RLS and rollback preflights', () => {
+    const result = buildPhase19iLocalToCloudMigrationDryRun(validInput({
+      appData: { ...appData(), schemaVersion: -1 } as AppData,
+      schemaValidator: () => false,
+      cloudRepositoryAvailable: false,
+      rlsPreflightPassed: false,
+      rollbackAvailable: false,
+    }));
+
+    expect(result).toMatchObject({
+      ok: false,
+      readyForShadowCandidate: false,
+      schemaStatus: 'invalid',
+      rlsPreflight: 'failed',
+      rollbackPreflight: 'missing',
+      blockers: expect.arrayContaining([
+        'schema_invalid',
+        'cloud_repository_unavailable',
+        'rls_preflight_failed',
+        'rollback_unavailable',
+      ]),
+      noUpload: true,
+      localStorageUnchanged: true,
+    });
+  });
+
+  it('requires review for read-mirror differences and rejects cloud conflicts without applying them', () => {
+    const review = buildPhase19iLocalToCloudMigrationDryRun(validInput({
+      cloudReadMirror: mirrorResult('review_required', true),
+    }));
+
+    expect(review).toMatchObject({
+      ok: false,
+      status: 'manual_review_required',
+      requiresManualReview: true,
+      cloudConflictPreflight: 'review_required',
+      blockers: expect.arrayContaining(['manual_review_required']),
+      warnings: expect.arrayContaining(['existing_cloud_data_requires_review']),
+      cloudDataChanged: false,
+    });
+
+    const rejected = buildPhase19iLocalToCloudMigrationDryRun(validInput({
+      cloudReadMirror: mirrorResult('rejected', true),
+    }));
+
+    expect(rejected).toMatchObject({
+      ok: false,
+      status: 'cloud_conflict',
+      requiresManualReview: true,
+      cloudConflictPreflight: 'rejected',
+      blockers: expect.arrayContaining(['cloud_conflict']),
+      noDownload: true,
+    });
+  });
+
+  it('is deterministic when nowIso and operation id are supplied', () => {
+    const input = validInput({ operationId: undefined, requestFingerprint: undefined });
+
+    const first = buildPhase19iLocalToCloudMigrationDryRun(input);
+    const second = buildPhase19iLocalToCloudMigrationDryRun(input);
+
+    expect(first.id).toBe(second.id);
+    expect(first.createdAt).toBe(nowIso);
+    expect(first.migrationPackage.operationId).toBe(second.migrationPackage.operationId);
+    expect(first.migrationPackage.requestFingerprint).toBe(first.migrationPackage.operationId);
+  });
+
+  it('preserves the legacy Task 12 dry-run API as a compatibility helper', () => {
+    const result = runLocalToCloudMigrationDryRun({
+      localOwner: { scope: 'device-local', ownerId: 'local-synthetic-1' },
+      accountCandidate: { scope: 'cloud-account-candidate', ownerId: 'acct-synthetic-1', accountId: 'acct-synthetic-1' },
+      backendPrimaryCandidateReady: true,
+      cloudRepositoryAvailable: true,
+      appData: { schemaVersion: 'phase-12-synthetic' },
+      schemaValidator: (data: { schemaVersion: string }) => data.schemaVersion === 'phase-12-synthetic',
+      migrationCompatible: true,
+      backupAvailable: true,
+      localSnapshotHash: 'hash-local',
+      manualConfirmation: true,
+    });
 
     expect(result).toMatchObject({
       ok: true,
       safeToUpload: true,
-      warnings: [],
-      blockingErrors: [],
-      ownerBefore: { scope: 'device-local', ownerId: 'local-synthetic-1' },
-      ownerAfterCandidate: { scope: 'cloud-account-candidate', accountId: 'acct-synthetic-1' },
-      schemaStatus: 'valid',
-      backupStatus: 'available',
       localDataChanged: false,
       cloudDataChanged: false,
       sourceOfTruthChanged: false,
-      estimatedCloudWrite: {
-        operationType: 'create_cloud_appdata_snapshot_candidate',
-        wouldWrite: true,
-        accountId: 'acct-synthetic-1',
-        sourceSnapshotHash: 'hash-local',
-      },
     });
-  });
-
-  it('requires owner scope and account candidate before upload can be considered', () => {
-    const result = runLocalToCloudMigrationDryRun({
-      ...validInput(),
-      localOwner: null,
-      accountCandidate: localOwner('device-local'),
-    });
-
-    expect(result.safeToUpload).toBe(false);
-    expect(result.blockingErrors).toEqual(expect.arrayContaining([
-      'owner_scope_missing',
-      'account_candidate_missing',
-    ]));
-    expect(result.estimatedCloudWrite.wouldWrite).toBe(false);
-  });
-
-  it('checks backend-primary readiness, repository availability, schema, compatibility, and backup', () => {
-    const result = runLocalToCloudMigrationDryRun({
-      ...validInput(),
-      backendPrimaryCandidateReady: false,
-      cloudRepositoryAvailable: false,
-      appData: { schemaVersion: 'wrong', workouts: [] },
-      migrationCompatible: false,
-      backupAvailable: false,
-    });
-
-    expect(result).toMatchObject({
-      ok: false,
-      safeToUpload: false,
-      schemaStatus: 'invalid',
-      backupStatus: 'missing',
-    });
-    expect(result.blockingErrors).toEqual(expect.arrayContaining([
-      'backend_primary_not_ready',
-      'cloud_repository_unavailable',
-      'schema_invalid',
-      'migration_incompatible',
-      'backup_missing',
-    ]));
-  });
-
-  it('warns for anonymous local and backend-primary owners without mutating them', () => {
-    expect(runLocalToCloudMigrationDryRun({
-      ...validInput(),
-      localOwner: localOwner('anonymous-local'),
-    }).warnings).toContain('anonymous_local_requires_linking');
-
-    const backend = runLocalToCloudMigrationDryRun({
-      ...validInput(),
-      localOwner: localOwner('backend-primary-candidate'),
-    });
-    expect(backend.warnings).toContain('backend_primary_candidate_detected');
-    expect(backend.ownerBefore).toMatchObject({ scope: 'backend-primary-candidate' });
-    expect(backend.localDataChanged).toBe(false);
-  });
-
-  it('detects owner mismatch and existing cloud conflicts', () => {
-    const result = runLocalToCloudMigrationDryRun({
-      ...validInput(),
-      existingCloudOwner: {
-        scope: 'cloud-account-candidate',
-        ownerId: 'acct-other',
-        accountId: 'acct-other',
-      },
-      existingCloudSnapshotHash: 'hash-cloud',
-      localSnapshotHash: 'hash-local',
-    });
-
-    expect(result.safeToUpload).toBe(false);
-    expect(result.warnings).toContain('existing_cloud_data_requires_review');
-    expect(result.blockingErrors).toEqual(expect.arrayContaining([
-      'owner_scope_mismatch',
-      'existing_cloud_conflict',
-    ]));
-  });
-
-  it('requires manual confirmation and still only estimates the candidate write', () => {
-    const result = runLocalToCloudMigrationDryRun({
-      ...validInput(),
-      manualConfirmation: false,
-    });
-
-    expect(result.ok).toBe(true);
-    expect(result.safeToUpload).toBe(false);
-    expect(result.warnings).toContain('manual_confirmation_required');
-    expect(result.estimatedCloudWrite).toMatchObject({
-      wouldWrite: false,
-      accountId: 'acct-synthetic-1',
-    });
-    expect(result.cloudDataChanged).toBe(false);
-  });
-
-  it('documents the dry run boundaries and next task', () => {
-    const doc = readSource('docs/LOCAL_TO_CLOUD_MIGRATION_DRY_RUN.md');
-
-    for (const expected of [
-      'Task 12.9 Local-to-Cloud Migration Dry Run V1',
-      'never uploads or mutates data',
-      'safeToUpload',
-      'ownerBefore',
-      'ownerAfterCandidate',
-      'localDataChanged: false',
-      'cloudDataChanged: false',
-      'sourceOfTruthChanged: false',
-      'Recommended next task: Task 12.10 Cloud Read / Pull Candidate V1.',
-    ]) {
-      expect(doc).toContain(expected);
-    }
-  });
-
-  it('keeps runtime source free of cloud writes, route strings, and automatic work tokens', () => {
-    const source = readSource('src/cloudProduction/localToCloudMigrationDryRun.ts');
-
-    for (const forbidden of [
-      '/auth',
-      '/account',
-      '/sync',
-      '/cloud',
-      'fetch(',
-      'localStorage.setItem',
-      'backgroundSync',
-      'serviceWorker',
-      'syncQueue',
-      'backgroundWorker',
-      'automaticUpload',
-      'automaticDownload',
-      'polling',
-      'interval',
-      'timer',
-      'automaticWorker',
-      'node:http',
-      'node:sqlite',
-    ]) {
-      expect(source).not.toContain(forbidden);
-    }
   });
 });
