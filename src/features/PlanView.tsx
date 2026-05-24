@@ -11,6 +11,7 @@ import type { CoachAction } from '../engines/coachActionEngine';
 import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
 import { formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
+import { buildWeeklyProgressionRecommendation } from '../engines/weeklyProgressionRecommendationEngine';
 import { buildPlanViewModel, type AdjustmentDraftView, type PlanCoachInboxActionView } from '../presenters/planPresenter';
 import {
   formatAdjustmentChangeLabel,
@@ -43,6 +44,7 @@ import { PageSection } from '../ui/PageSection';
 import { StatusBadge } from '../ui/StatusBadge';
 import { RecommendationExplanationPanel } from '../ui/RecommendationExplanationPanel';
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
+import { WeeklyProgressionRecommendationCard } from '../uiOs/progress/WeeklyProgressionRecommendationCard';
 
 export type PlanTarget = {
   section: 'volume_adaptation' | 'adjustment_drafts' | 'coach_actions';
@@ -222,6 +224,16 @@ export function PlanView({
     () => buildPlanViewModel(data, { coachActions: enginePipeline.visibleCoachActions, volumeAdaptation: trainingIntelligenceSummary?.volumeAdaptation }),
     [data, enginePipeline.visibleCoachActions, trainingIntelligenceSummary?.volumeAdaptation],
   );
+  const weeklyProgressionRecommendation = React.useMemo(() => {
+    const today = todayKey();
+    return buildWeeklyProgressionRecommendation({
+      trainingIntelligenceSummary,
+      painPatterns: enginePipeline.context.painPatterns,
+      loadFeedbackSummary: enginePipeline.context.loadFeedbackSummary,
+      weekId: today,
+      nowIso: `${today}T12:00:00.000Z`,
+    });
+  }, [enginePipeline.context.loadFeedbackSummary, enginePipeline.context.painPatterns, trainingIntelligenceSummary]);
   const adjustmentDraftViews = planViewModel.adjustmentDrafts.drafts;
   const adjustmentDrafts = adjustmentDraftViews
     .map((view) => (data.programAdjustmentDrafts || []).find((draft) => draft.id === view.id))
@@ -768,6 +780,7 @@ export function PlanView({
           {renderCurrentTemplate()}
           {renderCycleTimeline()}
           {renderWeeklySchedule()}
+          <WeeklyProgressionRecommendationCard recommendation={weeklyProgressionRecommendation} surface="light" />
 
           <PageSection title="训练基线" description="等级只影响计划建议的保守程度，不会强制改模板。">
             <Card className="space-y-3">
