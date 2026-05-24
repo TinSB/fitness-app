@@ -210,7 +210,7 @@ Validation remains:
 
 19I - Local-to-Cloud Migration Dry Run V1: implemented as a dry-run-only readiness report without upload, download, local write, cloud write, or source-of-truth change.
 
-19J - Explicit Opt-In Single-User Sync Candidate V1: allow sync candidate only with explicit user confirmation and conflict handling.
+19J - Explicit Opt-In Single-User Sync Candidate V1: implemented as a manual candidate report only after explicit opt-in, confirmation, dry run, backup, shadow, conflict, rollback, and offline gates pass.
 
 19K - Conflict / Offline / Rollback Acceptance V1: prove conflict review, offline behavior, rollback, and emergency local mode.
 
@@ -269,4 +269,6 @@ Task 19H result: Cloud Write Shadow Mode only. It creates in-memory shadow write
 
 Task 19I result: Local-to-Cloud Migration Dry Run only. It reports `readyForShadowCandidate`, `noUpload: true`, `noDownload: true`, `localDataChanged: false`, `cloudDataChanged: false`, and `sourceOfTruthChanged: false` without uploading, downloading, writing localStorage, writing cloud data, or changing source of truth.
 
-The approved next step after 19I is 19J Explicit Opt-In Single-User Sync Candidate V1. Phase 19A itself adds no runtime behavior.
+Task 19J result: Explicit Opt-In Single-User Sync Candidate only. It reports `readyForManualSyncCandidate`, `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false` without uploading, downloading, applying cloud data, writing localStorage, writing cloud data, starting background sync, making cloud primary, or changing source of truth.
+
+The approved next step after 19J is 19K Conflict / Offline / Rollback Acceptance V1. Phase 19A itself adds no runtime behavior.
