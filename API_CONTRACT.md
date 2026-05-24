@@ -10,6 +10,8 @@ A read-only API skeleton exists under `apps/api/src/readMirror.ts` for parity te
 
 All product data is stored in the user's current browser through `localStorage`, with import/export handled as local JSON files. Future agents must not assume any backend endpoint or remote field exists unless this file is updated first.
 
+Phase 19A - Cloud Auth & Sync Entry Gate V1 adds `docs/CLOUD_AUTH_SYNC_ENTRY_GATE.md` and static boundary tests only. It defines single-user multi-device sync as the future product target and keeps personal-only IronPath outside public SaaS, coach/student, social, team collaboration, and marketplace scope. The future candidate architecture is Supabase Auth + Supabase Postgres + RLS, but Phase 19A is docs/static tests only and does not add routes, schemas, runtime auth, cloud sync, env vars, package changes, or lockfile changes. localStorage remains default, fallback, migration source, and emergency rollback source. Future work must proceed read mirror -> write shadow -> explicit opt-in sync, and cloud-primary can be considered only after separate acceptance gates pass.
+
 Task 4.10 adds acceptance/regression audit tests over these boundaries. It does not make the API production-ready, does not switch App runtime storage, and does not connect the frontend to HTTP or SQLite.
 
 Task 4.12 adds `docs/MANUAL_API_ACCEPTANCE_CHECKLIST.md` as a manual acceptance procedure for the dev-only local API stack. It is documentation and consistency testing only; HTTP behavior still comes from devLauncher, httpRuntimeAdapter, and serverAdapter, and the App runtime still uses localStorage.
