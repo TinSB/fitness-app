@@ -228,6 +228,18 @@ It creates a runtime evidence gate after 20F verification. The flow composes 20F
 
 Recommended next task: 20H Production Acceptance With Synthetic Data V1.
 
+## Phase 20H Production Acceptance With Synthetic Data
+
+Phase 20H - Production Acceptance With Synthetic Data V1 adds `src/cloudProduction/productionAcceptanceSyntheticData.ts` and `docs/PRODUCTION_ACCEPTANCE_SYNTHETIC_DATA.md`.
+
+It creates a synthetic-data acceptance gate after 20G readiness. The flow composes 20G runtime evidence with the existing production manual acceptance contract, requiring validation evidence, dedicated environment evidence, dedicated browser profile evidence, synthetic-data-only evidence, backup/export evidence, RLS ownership evidence, service-role browser boundary evidence, privacy export/delete documentation, offline/rollback/emergency local evidence, route lock evidence, package/lockfile cleanliness, and safe production boundary evidence.
+
+20H can report `readyFor20I: true` only after those gates pass. It still keeps upload, download, auto-apply, live sync activation, cloud-primary mode, default sync, background work, production launch, source-of-truth changes, and localStorage deletion off.
+
+20H does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, does not create a Supabase client, and does not start v0 UI polish.
+
+Recommended next task: 20I v0 UI Polish Handoff Contract V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

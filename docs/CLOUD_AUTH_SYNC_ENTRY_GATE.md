@@ -252,6 +252,10 @@ Do not start 19B from 19A.
 
 20G may report `readyFor20H: true` after those gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `productionLaunchPerformed: false`.
 
+20H - Production Acceptance With Synthetic Data V1: implemented as a synthetic-data acceptance gate. It requires 20G readiness, validation evidence, dedicated environment evidence, dedicated browser profile evidence, synthetic-data-only evidence, backup/export evidence, RLS ownership evidence, service-role browser boundary evidence, privacy export/delete documentation, offline/rollback/emergency local evidence, route lock evidence, package/lockfile cleanliness, and safe production boundary evidence.
+
+20H may report `readyFor20I: true` after those gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `productionLaunchPerformed: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -324,3 +328,5 @@ Task 20E result: Local Backup + Dry-Run Migration Runtime Flow only. It wires ba
 Task 20F result: Cloud Read/Write Verification Flow only. It verifies read mirror and write-shadow candidate evidence after 20E readiness, but it does not upload, download, apply cloud data to local data, write localStorage, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20G - Conflict/Offline/Rollback Runtime Flow V1.
 
 Task 20G result: Conflict/Offline/Rollback Runtime Flow only. It verifies conflict review, offline fallback, rollback, emergency local, and route/package/schema boundary evidence after 20F readiness, but it does not upload, download, apply cloud data, write localStorage, make cloud data primary, start default/background sync, launch production, change source of truth, or delete localStorage. The next task is 20H - Production Acceptance With Synthetic Data V1.
+
+Task 20H result: Production Acceptance With Synthetic Data only. It verifies validation and synthetic acceptance evidence after 20G readiness, but it does not upload, download, apply cloud data, write localStorage, make cloud data primary, start default/background sync, launch production, change source of truth, delete localStorage, or start v0 UI polish. The next task is 20I - v0 UI Polish Handoff Contract V1.
