@@ -248,7 +248,16 @@ These are future tasks from Phase 18A. Phase 18B implemented the first pure engi
    - It does not apply session patches, apply plan adjustments, modify templates, add routes, or change source-of-truth behavior.
    - Durable weekly apply behavior remains deferred to a later confirmed task.
 
-9. 18G - Guarded Apply / Pending Recommendation Contract V1
+9. 18F.2 - Weekly Recommendation Detail / Explanation Display V1
+   - Implemented as passive detail display inside the existing `下周建议` card.
+   - It helps explain why the weekly recommendation appears with concise sections such as `查看原因`, `依据`, `注意`, and `下一步`.
+   - It can show passive review copy such as `查看后再决定` and `只生成候选，不改变计划`.
+   - It does not persist weekly recommendations, does not write AppData or TrainingSession, and does not write localStorage.
+   - It does not create ProgramAdjustmentDraft or PendingSessionPatch records.
+   - It does not apply session patches or plan adjustments, modify templates, add routes, or change source-of-truth behavior.
+   - Durable weekly apply behavior remains deferred to a later confirmed task.
+
+10. 18G - Guarded Apply / Pending Recommendation Contract V1
    - Implemented as a contract-only, pure-engine layer that normalizes Focus, post-workout, Today, weekly, coach-action, and manual recommendations into in-memory guarded recommendation candidates.
    - 18G does not persist pending recommendations, does not apply to the plan, does not write AppData or TrainingSession, and does not create ProgramAdjustmentDraft or PendingSessionPatch records.
    - 18G keeps Level 5 blocked. Level 4 may exist only as review metadata and cannot apply durably.

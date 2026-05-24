@@ -32,7 +32,7 @@ describe('weekly progression recommendation boundaries', () => {
     expect(planSource).toContain('WeeklyProgressionRecommendationCard');
   });
 
-  it('keeps weekly progression display free of persistence, routes, API, and durable apply paths', () => {
+  it('keeps weekly progression display details free of persistence, routes, API, internals, and durable apply paths', () => {
     const source = read('src/uiOs/progress/WeeklyProgressionRecommendationCard.tsx');
     const forbidden = [
       '../storage',
@@ -48,6 +48,9 @@ describe('weekly progression recommendation boundaries', () => {
       'upsertPendingSessionPatch',
       'upsertPlanAdjustmentDraftByFingerprint',
       'applyAdjustmentDraft',
+      'sourceEngineIds',
+      'sourceFingerprint',
+      'durableEffect',
       '应用到计划',
       '生成计划',
       '生成草案',
@@ -56,6 +59,7 @@ describe('weekly progression recommendation boundaries', () => {
       '同步建议',
       '自动调整',
       '自动应用',
+      '自动生成计划',
     ];
 
     for (const token of forbidden) {
@@ -96,13 +100,13 @@ describe('weekly progression recommendation boundaries', () => {
     expect(API_STORAGE_ADAPTER_ACCEPTED_WRITE_ROUTES).not.toContain('/data-health/repair/apply');
   });
 
-  it('keeps package and lockfile surfaces unchanged by 18F', () => {
+  it('keeps package and lockfile surfaces unchanged by 18F.2', () => {
     expect(read('package.json')).not.toContain('weeklyProgression');
     expect(read('package-lock.json')).not.toContain('weeklyProgression');
     expect(existsSync(resolve(root, 'pnpm-lock.yaml'))).toBe(false);
   });
 
-  it('documents 18F.1 as display-only, in-memory, and not auto-applied', () => {
+  it('documents 18F.2 as passive explanation display only and not auto-applied', () => {
     const doc = read('docs/ENGINE_IN_THE_LOOP_AUTOMATION_V1.md');
 
     for (const expected of [
@@ -118,9 +122,19 @@ describe('weekly progression recommendation boundaries', () => {
       'does not write AppData or TrainingSession',
       'does not create ProgramAdjustmentDraft or PendingSessionPatch records',
       'guarded recommendations stay in-memory passive previews',
+      '18F.2 - Weekly Recommendation Detail / Explanation Display V1',
+      'passive detail display',
+      'explain why the weekly recommendation appears',
+      'does not persist weekly recommendations',
+      'does not create ProgramAdjustmentDraft or PendingSessionPatch records',
+      'does not apply session patches or plan adjustments',
       '下周建议',
+      '查看原因',
+      '依据',
+      '注意',
+      '下一步',
       '查看后再决定',
-      '不改变计划',
+      '只生成候选，不改变计划',
     ]) {
       expect(doc).toContain(expected);
     }
