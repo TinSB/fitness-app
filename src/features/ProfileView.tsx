@@ -30,6 +30,7 @@ import { DiagnosticsDataSafetyPanel } from '../uiOs/settings/DiagnosticsDataSafe
 import { EmergencyLocalSettingsPanel } from '../uiOs/settings/EmergencyLocalSettingsPanel';
 import { EquipmentProfileSettingsPanel } from '../uiOs/settings/EquipmentProfileSettingsPanel';
 import { AuthUiSkeletonPanel } from '../uiOs/settings/AuthUiSkeletonPanel';
+import { CloudSyncPolishSettingsPanel } from '../uiOs/settings/CloudSyncPolishSettingsPanel';
 import { SettingsControlCenter } from '../uiOs/settings/SettingsControlCenter';
 import { SettingsGroupCard } from '../uiOs/settings/SettingsGroupCard';
 import { ThemeSettingsPanel } from '../uiOs/settings/ThemeSettingsPanel';
@@ -335,6 +336,7 @@ export function ProfileView({
         <EquipmentProfileSettingsPanel copy={settingsSafetySummary.equipmentProfileCopy} />
         <CloudCandidateSettingsPanel copy={settingsSafetySummary.cloudCandidateCopy} />
         <AuthUiSkeletonPanel />
+        <CloudSyncPolishSettingsPanel />
 
         <DiagnosticsDataSafetyPanel
           dataHealthLabel="数据健康检查"

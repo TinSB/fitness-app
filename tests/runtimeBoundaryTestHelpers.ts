@@ -29,6 +29,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/cloudProduction/productionAcceptanceSyntheticData.ts',
   'src/cloudProduction/supabaseProjectRuntimeReadinessCheck.ts',
   'src/cloudProduction/v0UiPolishHandoffContract.ts',
+  'src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx',
   'src/storage/apiStorageAdapter.ts',
   'src/storage/apiWriteThroughRuntime.ts',
   'src/storage/bootFromApiSnapshot.ts',
