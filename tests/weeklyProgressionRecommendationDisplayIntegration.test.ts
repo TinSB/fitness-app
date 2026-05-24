@@ -156,6 +156,7 @@ describe('weekly progression recommendation display integration', () => {
     expect(text).toContain('减少');
     expect(text).toContain('暂缓');
     expect(text).toContain('复查动作');
+    expect(text).toContain('查看原因');
     expect(text).toContain('查看后再决定');
     expect(text).toContain('不改变计划');
   });

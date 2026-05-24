@@ -1,4 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   assertNodeSqliteAvailable,
@@ -6,7 +8,16 @@ import {
   inspectDevDbState,
 } from '../apps/api/src/node';
 import { makeAppData } from './fixtures';
-import { makeTempRunnerDb } from './devApiRunnerTestHelpers';
+
+const makeTempInspectDb = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ironpath-dev-db-inspect-'));
+  const dbFile = join(dir, 'inspect.sqlite');
+  const cleanup = () => {
+    // Inspect tests do not spawn a runner, so avoid runner-process scanning during cleanup.
+    if (existsSync(dir)) rmSync(dir, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+  };
+  return { dir, dbFile, cleanup };
+};
 
 const metadataCount = (dbFile: string) => {
   const DatabaseSync = assertNodeSqliteAvailable();
@@ -24,7 +35,7 @@ const metadataCount = (dbFile: string) => {
 
 describe('dev DB recovery inspect', () => {
   it('does not create a missing DB file', () => {
-    const temp = makeTempRunnerDb();
+    const temp = makeTempInspectDb();
     try {
       const state = inspectDevDbState({ dbFile: temp.dbFile });
 
@@ -38,7 +49,7 @@ describe('dev DB recovery inspect', () => {
   });
 
   it('reports an existing repository with no snapshots without writing snapshots', () => {
-    const temp = makeTempRunnerDb();
+    const temp = makeTempInspectDb();
     try {
       const repo = createSqliteRepository({ filename: temp.dbFile });
       repo.close();
@@ -59,7 +70,7 @@ describe('dev DB recovery inspect', () => {
   });
 
   it('reports latest snapshot metadata for a seeded repository and closes handles', () => {
-    const temp = makeTempRunnerDb();
+    const temp = makeTempInspectDb();
     try {
       const repo = createSqliteRepository({ filename: temp.dbFile });
       const seeded = makeAppData();
@@ -88,8 +99,8 @@ describe('dev DB recovery inspect', () => {
   });
 
   it('returns stable errors for corrupt snapshot JSON and schema mismatch', () => {
-    const corrupt = makeTempRunnerDb();
-    const mismatch = makeTempRunnerDb();
+    const corrupt = makeTempInspectDb();
+    const mismatch = makeTempInspectDb();
     try {
       const corruptDb = createSqliteRepository({ filename: corrupt.dbFile });
       corruptDb.database
