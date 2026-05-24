@@ -165,7 +165,7 @@ Phase 19B passes only when:
 
 19B - Account Boundary & Local Inventory V1: implemented as a pure local inventory and readiness contract.
 
-19C - Supabase Data Model & RLS Contract V1: define candidate document-first table and RLS policy contract without applying SQL.
+19C - Supabase Data Model & RLS Contract V1: implemented as a contract-only document-first table and RLS policy boundary without applying SQL.
 
 19D - Supabase Migration Files + Local Type Contracts V1: add migration files and local type contracts only after the RLS contract is accepted.
 
@@ -220,4 +220,4 @@ Blocked in Phase 19B:
 
 Task 19B result: Account Boundary & Local Inventory only.
 
-Recommended next task: 19C Supabase Data Model & RLS Contract V1.
+Recommended next task: 19D Supabase Migration Files + Local Type Contracts V1.

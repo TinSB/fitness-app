@@ -42,6 +42,16 @@ localStorage remains default, fallback, migration source, and emergency rollback
 
 Recommended next task: 19C Supabase Data Model & RLS Contract V1.
 
+## Phase 19C Supabase Data Model & RLS Contract
+
+Phase 19C - Supabase Data Model & RLS Contract V1 adds `src/cloudProduction/supabaseDataModelRlsContract.ts` and `docs/SUPABASE_DATA_MODEL_RLS_CONTRACT.md`.
+
+It defines a contract-only, document-first Supabase table and RLS policy boundary for future single-user multi-device sync. Candidate tables are `cloud_appdata_snapshots`, `cloud_sync_operations`, `cloud_devices`, `cloud_conflicts`, and `cloud_export_delete_requests`.
+
+19C does not apply SQL, create tables, add migration files, connect to Supabase, add routes, enable runtime auth/sync, change AppData or TrainingSession schemas, change persistence, change packages or lockfiles, or switch source of truth. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19D Supabase Migration Files + Local Type Contracts V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
