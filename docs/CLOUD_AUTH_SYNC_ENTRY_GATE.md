@@ -228,6 +228,10 @@ Do not start 19B from 19A.
 
 20A keeps `authRuntimeEnabled: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `productionLaunchPerformed: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
 
+20B - Supabase Project Env & Runtime Readiness Check V1: implemented as a pure readiness check for browser-safe public Supabase project configuration. It reports missing `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_IRONPATH_AUTH_CALLBACK_URL`, and `VITE_IRONPATH_CLOUD_ENVIRONMENT` keys, rejects service role browser risk, and requires Phase 20A authorization before 20C may start.
+
+20B keeps `clientCreated: false`, `networkAttempted: false`, `authRuntimeEnabled: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -288,3 +292,5 @@ Task 19L result: Production Manual Acceptance only. It reports `manualAcceptance
 Phase 19 sequence complete. A future phase must make a separate decision before enabling cloud-primary behavior.
 
 Task 20A result: Live Cloud Sync Activation Authorization Gate only. It can authorize the Phase 20 runtime implementation sequence after Phase 19L evidence and explicit safety confirmations pass, but it does not activate live sync or change source of truth. The next task is 20B - Supabase Project Env & Runtime Readiness Check V1.
+
+Task 20B result: Supabase Project Env & Runtime Readiness Check only. It reports public browser config readiness and exact missing setup keys without creating a client, reading real environment files, writing data, or changing source of truth. The next task is 20C - Auth Runtime Wiring V1 only after real public project configuration is present.
