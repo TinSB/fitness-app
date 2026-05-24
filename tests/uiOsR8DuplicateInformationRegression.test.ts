@@ -37,6 +37,7 @@ describe('UI-OS R8 duplicate information deletion', () => {
     const cloudPanelSource = read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx');
 
     expect((settingsSource.match(/云端候选不会自动同步/g) || []).length).toBeLessThanOrEqual(1);
-    expect((cloudPanelSource.match(/不会自动覆盖本地数据/g) || []).length).toBe(1);
+    expect((cloudPanelSource.match(/只做查看，不改变本地数据/g) || []).length).toBe(1);
+    expect(cloudPanelSource).not.toContain('自动覆盖');
   });
 });

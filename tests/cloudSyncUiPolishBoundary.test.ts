@@ -19,6 +19,7 @@ const cloudSyncSource = () =>
 const cloudSyncSettingsControllerSource = () =>
   [
     resolve(repoRoot(), 'src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx'),
+    resolve(repoRoot(), 'src/uiOs/settings/cloudSyncAuthActionController.ts'),
     resolve(repoRoot(), 'src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts'),
   ].map((file) => readFileSync(file, 'utf8')).join('\n');
 
@@ -63,6 +64,7 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
     const source = cloudSyncSettingsControllerSource();
 
     expect(source).toContain('buildSupabaseProjectRuntimeReadinessCheck');
+    expect(source).toContain('buildAuthRuntimeWiring');
     expect(source).toContain('buildCloudSyncSettingsSectionPropsFromRuntime');
 
     for (const forbidden of [
@@ -85,6 +87,9 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
       'setTimeout',
       'serviceWorker',
       'backgroundSync',
+      'runCloudPushCandidate',
+      'runCloudPullCandidate',
+      'writeCloudAppDataCandidate',
       'ProgramAdjustmentDraft',
       'PendingSessionPatch',
       'AppData',

@@ -205,6 +205,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     }
     expect(text).toContain('登录账号');
     expect(text).toContain('未登录');
+    expect(markup).toContain('data-testid="ironpath-auth-sign-in"');
     expect(text).toContain('本地数据仍会保留');
     expect(text).toContain('登录后再开启同步');
   });
@@ -225,6 +226,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     })));
 
     expect(withoutCallback).toContain('IronPath 账号');
+    expect(withoutCallback).toContain('退出登录');
     expect(withoutCallback).toContain('本地数据仍会保留');
     expect(withoutCallback).not.toContain('开启同步');
     expect(withCallback).toContain('开启同步');

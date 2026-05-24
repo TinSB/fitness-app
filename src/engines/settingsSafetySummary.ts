@@ -195,7 +195,7 @@ export const buildSettingsSafetySummary = (input: SettingsSafetySummaryInput = {
         id: 'cloud_candidate',
         title: '云端候选',
         state: cloudState,
-        copy: '云端候选需要手动确认，不会自动覆盖本地数据。',
+        copy: '云端候选需要手动确认，不改变本地数据。',
       },
       {
         id: 'diagnostics_data_health',
@@ -213,7 +213,7 @@ export const buildSettingsSafetySummary = (input: SettingsSafetySummaryInput = {
     highRiskWarnings,
     safeNextActions: [...new Set(safeNextActions)],
     cloudCandidateCopy:
-      '云端候选需要手动确认，不会自动覆盖本地数据；上传候选也需要再次确认。',
+      '云端候选需要手动确认；上传候选也需要再次确认。',
     backupRecoveryCopy:
       '先导出备份，再进行恢复。恢复会覆盖当前浏览器里的 IronPath 数据，请先确认备份。',
     emergencyLocalCopy: '紧急本地模式可用，本地训练记录仍可继续。',

@@ -33,6 +33,8 @@ export type CloudSyncSettingsRuntimeCallbacks = {
 export type CloudSyncSettingsRuntimeInput = CloudSyncSettingsRuntimeCallbacks & {
   readiness?: Phase20bSupabaseProjectRuntimeReadinessResult | null;
   authRuntime?: Phase20cAuthRuntimeWiringResult | null;
+  authActionPending?: boolean;
+  authErrorMessage?: string | null;
   syncRuntime?: Phase20dExplicitOptInSyncRuntimeResult | null;
   backupDryRun?: Phase20eLocalBackupDryRunResult | null;
   verificationFlow?: Phase20fCloudReadWriteVerificationResult | null;
@@ -94,6 +96,21 @@ const syncWarnings = (input: CloudSyncSettingsRuntimeInput): string[] => {
 };
 
 const authCardProps = (input: CloudSyncSettingsRuntimeInput): CloudAuthCardProps => {
+  if (input.authActionPending === true) {
+    return {
+      authStatus: 'signing_in',
+      isSigningIn: true,
+    };
+  }
+
+  if (input.authErrorMessage) {
+    return {
+      authStatus: 'error',
+      errorMessage: input.authErrorMessage,
+      onSignIn: input.onSignIn,
+    };
+  }
+
   if (input.authRuntime?.status === 'adapter_failed' || input.authRuntime?.status === 'runtime_boundary_unsafe') {
     return {
       authStatus: 'error',

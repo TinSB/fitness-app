@@ -59,7 +59,8 @@ describe('UI-OS 6 Settings Safety Equipment Profile redesign', () => {
     const combined = `${profileSource}\n${read('src/engines/settingsSafetySummary.ts')}\n${read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx')}`;
     expect(combined).toContain('云端候选需要手动确认');
     expect(combined).toContain('紧急本地模式可用');
-    expect(combined).toContain('不会自动覆盖本地数据');
+    expect(combined).toContain('只做查看，不改变本地数据');
+    expect(combined).not.toContain('自动覆盖');
     expect(combined).toContain('上传候选也需要再次确认');
     for (const forbidden of ['自动同步已启用', '后台同步', '云端已成为默认数据源', '已上传成功', 'SaaS 已上线']) {
       expect(combined).not.toContain(forbidden);

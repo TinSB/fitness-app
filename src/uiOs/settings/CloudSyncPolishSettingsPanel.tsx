@@ -9,10 +9,26 @@ import {
   buildCloudSyncSettingsSectionPropsFromRuntime,
   type CloudSyncSettingsRuntimeInput,
 } from './cloudSyncRuntimeSettingsAdapter';
+import {
+  buildCloudSyncAuthActionRuntime,
+  type CloudSyncAuthAction,
+} from './cloudSyncAuthActionController';
+import type {
+  Phase20cAuthRuntimeAdapter,
+  Phase20cAuthRuntimeWiringResult,
+} from '../../cloudProduction/authRuntimeWiring';
 
 export type CloudSyncPolishSettingsPanelProps = CloudSyncSettingsRuntimeInput & {
+  authAdapter?: Phase20cAuthRuntimeAdapter | null;
   browserEnv?: Phase20bEnvRecord | null;
   readiness?: Phase20bSupabaseProjectRuntimeReadinessResult | null;
+  nowIso?: string;
+};
+
+type LocalAuthActionState = {
+  pendingAction: CloudSyncAuthAction | null;
+  authRuntime: Phase20cAuthRuntimeWiringResult | null;
+  errorMessage: string | null;
 };
 
 const phase20aAuthorization = {
@@ -46,10 +62,17 @@ const readPublicBrowserEnv = (): Phase20bEnvRecord => ({
 });
 
 export function CloudSyncPolishSettingsPanel({
+  authAdapter,
   browserEnv,
   readiness: providedReadiness,
+  nowIso,
   ...runtimeInput
 }: CloudSyncPolishSettingsPanelProps) {
+  const [authActionState, setAuthActionState] = React.useState<LocalAuthActionState>({
+    pendingAction: null,
+    authRuntime: null,
+    errorMessage: null,
+  });
   const readiness = React.useMemo(
     () =>
       providedReadiness ??
@@ -63,9 +86,62 @@ export function CloudSyncPolishSettingsPanel({
       }),
     [browserEnv, providedReadiness],
   );
+  const runAuthAction = React.useCallback((action: CloudSyncAuthAction) => {
+    setAuthActionState((current) => ({
+      ...current,
+      pendingAction: action,
+      errorMessage: null,
+    }));
+
+    void Promise.resolve().then(() => {
+      const result = buildCloudSyncAuthActionRuntime({
+        action,
+        readiness,
+        adapter: authAdapter ?? null,
+        userInitiated: true,
+        nowIso,
+      });
+
+      setAuthActionState({
+        pendingAction: null,
+        authRuntime: result.authRuntime,
+        errorMessage: result.errorMessage,
+      });
+    });
+  }, [authAdapter, nowIso, readiness]);
+
+  const handleSignIn = React.useCallback(() => {
+    if (runtimeInput.onSignIn) {
+      runtimeInput.onSignIn();
+      return;
+    }
+    runAuthAction('sign_in');
+  }, [runAuthAction, runtimeInput]);
+
+  const handleSignOut = React.useCallback(() => {
+    if (runtimeInput.onSignOut) {
+      runtimeInput.onSignOut();
+      return;
+    }
+    runAuthAction('sign_out');
+  }, [runAuthAction, runtimeInput]);
+
+  const authRuntime = authActionState.authRuntime ?? runtimeInput.authRuntime ?? null;
+  const authActionPending = authActionState.pendingAction !== null || runtimeInput.authActionPending === true;
+  const authErrorMessage = authActionState.errorMessage ?? runtimeInput.authErrorMessage ?? null;
+
   const sectionProps = React.useMemo(
-    () => buildCloudSyncSettingsSectionPropsFromRuntime({ ...runtimeInput, readiness }),
-    [readiness, runtimeInput],
+    () =>
+      buildCloudSyncSettingsSectionPropsFromRuntime({
+        ...runtimeInput,
+        readiness,
+        authRuntime,
+        authActionPending,
+        authErrorMessage,
+        onSignIn: handleSignIn,
+        onSignOut: handleSignOut,
+      }),
+    [authActionPending, authErrorMessage, authRuntime, handleSignIn, handleSignOut, readiness, runtimeInput],
   );
 
   return <CloudSyncSettingsSection {...sectionProps} />;
