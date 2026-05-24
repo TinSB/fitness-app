@@ -192,6 +192,18 @@ It creates a pure runtime wiring boundary for the explicit opt-in sync state aft
 
 Recommended next task: 20E Local Backup + Dry-Run Migration Runtime Flow V1.
 
+## Phase 20E Local Backup + Dry-Run Migration Runtime Flow
+
+Phase 20E - Local Backup + Dry-Run Migration Runtime Flow V1 adds `src/cloudProduction/localBackupDryRunMigrationRuntimeFlow.ts` and `docs/LOCAL_BACKUP_DRY_RUN_MIGRATION_RUNTIME_FLOW.md`.
+
+It creates a pure runtime flow for backup preflight and local-to-cloud migration dry-run evidence after 20D explicit sync runtime readiness. The flow composes the existing account boundary inventory, backup metadata check, schema preflight, cloud repository availability evidence, RLS preflight, conflict/read-mirror status, and rollback availability.
+
+20E can report `readyFor20F: true` only after those gates pass. It still keeps upload, download, auto-apply, live sync activation, cloud-primary mode, default sync, background work, source-of-truth changes, and localStorage deletion off.
+
+20E does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, does not read or write cloud data, and does not start v0 UI polish.
+
+Recommended next task: 20F Cloud Read/Write Verification Flow V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
