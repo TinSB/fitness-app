@@ -244,6 +244,10 @@ Do not start 19B from 19A.
 
 20E may report `readyFor20F: true` after those gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
 
+20F - Cloud Read/Write Verification Flow V1: implemented as an explicit cloud read/write verification gate. It requires 20E readiness, explicit verification opt-in, manual confirmation, cloud read repository evidence, cloud write-shadow adapter evidence, duplicate operation protection, rollback availability, and safe runtime boundary evidence.
+
+20F may report `readyFor20G: true` after those gates pass, and records `cloudReadAttempted` and `cloudWriteAttempted` verification evidence, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -312,3 +316,5 @@ Task 20C result: Auth Runtime Wiring only. It wires auth state through an inject
 Task 20D result: Explicit Opt-In Sync Runtime Wiring only. It wires the manual sync runtime state after explicit opt-in and safety confirmations, but it does not upload, download, apply cloud data, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20E - Local Backup + Dry-Run Migration Runtime Flow V1.
 
 Task 20E result: Local Backup + Dry-Run Migration Runtime Flow only. It wires backup metadata and migration dry-run evidence after 20D sync readiness, but it does not upload, download, apply cloud data, write localStorage, write cloud data, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20F - Cloud Read/Write Verification Flow V1.
+
+Task 20F result: Cloud Read/Write Verification Flow only. It verifies read mirror and write-shadow candidate evidence after 20E readiness, but it does not upload, download, apply cloud data to local data, write localStorage, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20G - Conflict/Offline/Rollback Runtime Flow V1.
