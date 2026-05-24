@@ -34,10 +34,10 @@ describe('phase 13 release boundary still blocked', () => {
     expect(packageJson.scripts).not.toHaveProperty('cloud:sync');
   });
 
-  it('keeps public launch deployment monitoring and schema surfaces absent', () => {
+  it('keeps public launch deployment monitoring and unapproved schema surfaces absent', () => {
+    expect(existsSync('supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql')).toBe(true);
     for (const path of [
       'Dockerfile',
-      'supabase/migrations',
       'database/migrations',
       'src/cloudProduction/externalMonitoringUpload.ts',
       'src/cloudProduction/normalizedTrainingTables.ts',

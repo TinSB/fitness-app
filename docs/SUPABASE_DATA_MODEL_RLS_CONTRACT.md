@@ -192,11 +192,11 @@ Phase 19C passes only when:
 
 19C - Supabase Data Model & RLS Contract V1: implemented as a contract-only data model and RLS policy boundary.
 
-19D - Supabase Migration Files + Local Type Contracts V1: add migration files and local type contracts only after this contract is accepted.
+19D - Supabase Migration Files + Local Type Contracts V1: implemented as reviewed migration files plus local type contracts, with no SQL application.
 
 19E - Auth Client Skeleton + Env Guard V1: add guarded auth client skeleton and environment checks without making login required.
 
-19F - Auth UI Skeleton V1: add passive login/account UI skeleton without enabling sync by default.
+19F - Auth UI Skeleton V1: add passive login/account UI skeleton without turning on sync by default.
 
 19G - Cloud Read Mirror V1: compare cloud candidate data without mutating local data.
 
@@ -246,4 +246,4 @@ Blocked in Phase 19C:
 
 Task 19C result: Supabase Data Model & RLS Contract only.
 
-Recommended next task: 19D Supabase Migration Files + Local Type Contracts V1.
+Recommended next task: 19E Auth Client Skeleton + Env Guard V1.

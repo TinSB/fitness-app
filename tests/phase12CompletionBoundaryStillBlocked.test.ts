@@ -45,9 +45,9 @@ describe('phase 12 completion boundary still blocked', () => {
     expect(packageJson.scripts).not.toHaveProperty('monitoring:upload');
   });
 
-  it('keeps normalized tables migrations deployment and monitoring surfaces absent', () => {
+  it('keeps normalized tables unapproved migrations deployment and monitoring surfaces absent', () => {
+    expect(existsSync('supabase/migrations/20260524000000_phase19d_appdata_snapshot.sql')).toBe(true);
     for (const path of [
-      'supabase/migrations',
       'database/migrations',
       'src/cloudProduction/normalizedTrainingTables.ts',
       'Dockerfile',
