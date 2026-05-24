@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { LogIn, LogOut, User, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, LogIn, LogOut, User } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
@@ -38,19 +37,13 @@ export function CloudAuthCard({
   const config = statusConfig[authStatus];
 
   return (
-    <Card
-      tone={config.tone}
-      padded
-      className="space-y-4"
-      data-testid="ironpath-auth-card"
-    >
-      {/* Header */}
+    <Card tone={config.tone} padded className="space-y-4" data-testid="ironpath-auth-card">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
             className={classNames(
               'flex h-10 w-10 items-center justify-center rounded-full',
-              isDark ? 'bg-white/10' : 'bg-slate-100'
+              isDark ? 'bg-white/10' : 'bg-slate-100',
             )}
           >
             {authStatus === 'signing_in' ? (
@@ -62,19 +55,11 @@ export function CloudAuthCard({
             )}
           </div>
           <div>
-            <h3
-              className={classNames(
-                'text-base font-semibold',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
+            <h3 className={classNames('text-base font-semibold', isDark ? 'text-white' : 'text-slate-900')}>
               登录账号
             </h3>
             <p
-              className={classNames(
-                'text-sm',
-                isDark ? 'text-white/60' : 'text-slate-500'
-              )}
+              className={classNames('text-sm', isDark ? 'text-white/60' : 'text-slate-500')}
               data-testid="ironpath-auth-status"
             >
               {config.label}
@@ -83,46 +68,24 @@ export function CloudAuthCard({
         </div>
       </div>
 
-      {/* User info or error */}
-      {authStatus === 'signed_in' && currentUserEmail && (
-        <div
-          className={classNames(
-            'rounded-lg px-3 py-2',
-            isDark ? 'bg-white/[0.06]' : 'bg-slate-50'
-          )}
-        >
-          <p
-            className={classNames(
-              'truncate text-sm font-medium',
-              isDark ? 'text-white/90' : 'text-slate-700'
-            )}
-          >
+      {authStatus === 'signed_in' && currentUserEmail ? (
+        <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
+          <p className={classNames('truncate text-sm font-medium', isDark ? 'text-white/90' : 'text-slate-700')}>
             {currentUserEmail}
           </p>
         </div>
-      )}
+      ) : null}
 
-      {authStatus === 'error' && errorMessage && (
-        <div
-          className={classNames(
-            'rounded-lg px-3 py-2',
-            isDark ? 'bg-rose-400/10' : 'bg-rose-50'
-          )}
-        >
-          <p
-            className={classNames(
-              'text-sm',
-              isDark ? 'text-rose-200' : 'text-rose-700'
-            )}
-          >
+      {authStatus === 'error' && errorMessage ? (
+        <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-rose-400/10' : 'bg-rose-50')}>
+          <p className={classNames('text-sm', isDark ? 'text-rose-200' : 'text-rose-700')}>
             {errorMessage}
           </p>
         </div>
-      )}
+      ) : null}
 
-      {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        {(authStatus === 'signed_out' || authStatus === 'error') && (
+        {(authStatus === 'signed_out' || authStatus === 'error') && onSignIn ? (
           <ActionButton
             variant="primary"
             size="md"
@@ -133,32 +96,27 @@ export function CloudAuthCard({
             <LogIn className="h-4 w-4" />
             <span>登录账号</span>
           </ActionButton>
-        )}
+        ) : null}
 
-        {authStatus === 'signing_in' && (
+        {authStatus === 'signing_in' ? (
           <ActionButton variant="secondary" size="md" disabled>
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>登录中…</span>
+            <span>登录中</span>
           </ActionButton>
-        )}
+        ) : null}
 
-        {authStatus === 'signed_in' && (
-          <ActionButton
-            variant="ghost"
-            size="md"
-            onClick={onSignOut}
-            data-testid="ironpath-auth-sign-out"
-          >
+        {authStatus === 'signed_in' && onSignOut ? (
+          <ActionButton variant="ghost" size="md" onClick={onSignOut} data-testid="ironpath-auth-sign-out">
             <LogOut className="h-4 w-4" />
             <span>退出登录</span>
           </ActionButton>
-        )}
+        ) : null}
 
-        {(authStatus === 'error' || authStatus === 'signed_out') && onDismiss && (
+        {(authStatus === 'error' || authStatus === 'signed_out') && onDismiss ? (
           <ActionButton variant="ghost" size="md" onClick={onDismiss}>
             <span>稍后再说</span>
           </ActionButton>
-        )}
+        ) : null}
       </div>
     </Card>
   );

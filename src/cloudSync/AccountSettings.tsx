@@ -1,4 +1,5 @@
-import { User, LogOut, Shield, Cloud, CloudOff, HardDrive, CheckCircle2 } from 'lucide-react';
+import { Cloud, CloudOff, HardDrive, LogOut, Shield, User } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
@@ -24,7 +25,7 @@ function getAccountState(props: AccountSettingsProps): AccountSettingsState {
   return 'sync_off';
 }
 
-const stateConfig: Record<AccountSettingsState, { tone: 'slate' | 'emerald' | 'amber' | 'rose' }> = {
+const stateConfig: Record<AccountSettingsState, { tone: 'slate' | 'emerald' | 'amber' }> = {
   signed_in: { tone: 'slate' },
   sync_off: { tone: 'slate' },
   sync_opted_in: { tone: 'emerald' },
@@ -32,7 +33,7 @@ const stateConfig: Record<AccountSettingsState, { tone: 'slate' | 'emerald' | 'a
 };
 
 interface SettingRowProps {
-  icon: typeof Cloud;
+  icon: LucideIcon;
   label: string;
   value: string;
   status?: 'on' | 'off' | 'warning';
@@ -41,12 +42,7 @@ interface SettingRowProps {
 
 function SettingRow({ icon: Icon, label, value, status, isDark }: SettingRowProps) {
   return (
-    <div
-      className={classNames(
-        'flex items-center justify-between gap-3 rounded-lg px-3 py-2.5',
-        isDark ? 'bg-white/[0.04]' : 'bg-slate-50'
-      )}
-    >
+    <div className={classNames('flex items-center justify-between gap-3 rounded-lg px-3 py-2.5', isDark ? 'bg-white/[0.04]' : 'bg-slate-50')}>
       <div className="flex items-center gap-3">
         <Icon
           className={classNames(
@@ -54,15 +50,10 @@ function SettingRow({ icon: Icon, label, value, status, isDark }: SettingRowProp
             status === 'on' && (isDark ? 'text-emerald-400' : 'text-emerald-600'),
             status === 'off' && (isDark ? 'text-white/40' : 'text-slate-400'),
             status === 'warning' && (isDark ? 'text-amber-400' : 'text-amber-600'),
-            !status && (isDark ? 'text-white/50' : 'text-slate-500')
+            !status && (isDark ? 'text-white/50' : 'text-slate-500'),
           )}
         />
-        <span
-          className={classNames(
-            'text-sm',
-            isDark ? 'text-white/80' : 'text-slate-700'
-          )}
-        >
+        <span className={classNames('text-sm', isDark ? 'text-white/80' : 'text-slate-700')}>
           {label}
         </span>
       </div>
@@ -72,7 +63,7 @@ function SettingRow({ icon: Icon, label, value, status, isDark }: SettingRowProp
           status === 'on' && (isDark ? 'text-emerald-400' : 'text-emerald-600'),
           status === 'off' && (isDark ? 'text-white/50' : 'text-slate-500'),
           status === 'warning' && (isDark ? 'text-amber-400' : 'text-amber-600'),
-          !status && (isDark ? 'text-white' : 'text-slate-900')
+          !status && (isDark ? 'text-white' : 'text-slate-900'),
         )}
       >
         {value}
@@ -96,62 +87,39 @@ export function AccountSettings({
   const state = getAccountState({ accountEmail, syncOptIn, localBackupAvailable });
   const config = stateConfig[state];
 
-  // Security: never display if service role is exposed
-  if (serviceRoleExposed) {
-    return null;
-  }
+  if (serviceRoleExposed) return null;
 
   return (
-    <Card
-      tone={config.tone}
-      padded
-      className="space-y-4"
-      data-testid="ironpath-account-settings"
-    >
-      {/* Header */}
+    <Card tone={config.tone} padded className="space-y-4" data-testid="ironpath-account-settings">
       <div className="flex items-center gap-3">
         <div
           className={classNames(
             'flex h-10 w-10 items-center justify-center rounded-full',
-            isDark ? 'bg-white/10' : 'bg-slate-100'
+            isDark ? 'bg-white/10' : 'bg-slate-100',
           )}
         >
-          <User
-            className={classNames(
-              'h-5 w-5',
-              isDark ? 'text-white/70' : 'text-slate-500'
-            )}
-          />
+          <User className={classNames('h-5 w-5', isDark ? 'text-white/70' : 'text-slate-500')} />
         </div>
-        <div className="flex-1 min-w-0">
-          <h3
-            className={classNames(
-              'text-base font-semibold',
-              isDark ? 'text-white' : 'text-slate-900'
-            )}
-          >
+        <div className="min-w-0 flex-1">
+          <h3 className={classNames('text-base font-semibold', isDark ? 'text-white' : 'text-slate-900')}>
             账号设置
           </h3>
-          {accountEmail && (
+          {accountEmail ? (
             <p
-              className={classNames(
-                'truncate text-sm',
-                isDark ? 'text-white/60' : 'text-slate-500'
-              )}
+              className={classNames('truncate text-sm', isDark ? 'text-white/60' : 'text-slate-500')}
               data-testid="ironpath-account-email"
             >
               {accountEmail}
             </p>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* Settings list */}
       <div className="space-y-2">
         <SettingRow
           icon={syncOptIn ? Cloud : CloudOff}
           label="云端同步"
-          value={syncOptIn ? '已开启' : '未开启'}
+          value={syncOptIn ? '已选择开启' : '未开启'}
           status={syncOptIn ? 'on' : 'off'}
           isDark={isDark}
         />
@@ -164,78 +132,44 @@ export function AccountSettings({
         />
       </div>
 
-      {/* Info messages */}
-      <div
-        className={classNames(
-          'rounded-lg px-3 py-2',
-          isDark ? 'bg-white/[0.06]' : 'bg-slate-50'
-        )}
-      >
-        <p
-          className={classNames(
-            'text-sm leading-relaxed',
-            isDark ? 'text-white/60' : 'text-slate-600'
-          )}
-        >
+      <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
+        <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/60' : 'text-slate-600')}>
           本地数据仍会保留
         </p>
-        {!localBackupAvailable && (
-          <p
-            className={classNames(
-              'text-sm leading-relaxed',
-              isDark ? 'text-amber-300/80' : 'text-amber-700'
-            )}
-          >
+        {!localBackupAvailable ? (
+          <p className={classNames('text-sm leading-relaxed', isDark ? 'text-amber-300/80' : 'text-amber-700')}>
             开启前先备份
           </p>
-        )}
+        ) : null}
       </div>
 
-      {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        {!localBackupAvailable && onCreateBackup && (
-          <ActionButton
-            variant="primary"
-            size="md"
-            onClick={onCreateBackup}
-          >
+        {!localBackupAvailable && onCreateBackup ? (
+          <ActionButton variant="primary" size="md" onClick={onCreateBackup}>
             <Shield className="h-4 w-4" />
             <span>创建备份</span>
           </ActionButton>
-        )}
+        ) : null}
 
-        {localBackupAvailable && onToggleSync && (
-          <ActionButton
-            variant={syncOptIn ? 'secondary' : 'primary'}
-            size="md"
-            onClick={onToggleSync}
-          >
+        {localBackupAvailable && onToggleSync ? (
+          <ActionButton variant={syncOptIn ? 'secondary' : 'primary'} size="md" onClick={onToggleSync}>
             {syncOptIn ? <CloudOff className="h-4 w-4" /> : <Cloud className="h-4 w-4" />}
             <span>{syncOptIn ? '关闭同步' : '开启同步'}</span>
           </ActionButton>
-        )}
+        ) : null}
 
-        {syncOptIn && onViewSyncDetails && (
-          <ActionButton
-            variant="secondary"
-            size="md"
-            onClick={onViewSyncDetails}
-          >
+        {syncOptIn && onViewSyncDetails ? (
+          <ActionButton variant="secondary" size="md" onClick={onViewSyncDetails}>
             <span>同步详情</span>
           </ActionButton>
-        )}
+        ) : null}
 
-        {accountEmail && onSignOut && (
-          <ActionButton
-            variant="ghost"
-            size="md"
-            onClick={onSignOut}
-            data-testid="ironpath-account-sign-out"
-          >
+        {accountEmail && onSignOut ? (
+          <ActionButton variant="ghost" size="md" onClick={onSignOut} data-testid="ironpath-account-sign-out">
             <LogOut className="h-4 w-4" />
             <span>退出登录</span>
           </ActionButton>
-        )}
+        ) : null}
       </div>
     </Card>
   );

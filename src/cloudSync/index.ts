@@ -29,3 +29,4 @@ export { FirstSyncFlow, type FirstSyncFlowProps, type FirstSyncFlowStatus } from
 export { ConflictReview, type ConflictReviewProps, type ConflictItem, type ConflictResolutionState } from './ConflictReview';
 export { OfflineRecovery, type OfflineRecoveryProps, type OfflineRecoveryState } from './OfflineRecovery';
 export { AccountSettings, type AccountSettingsProps, type AccountSettingsState } from './AccountSettings';
+export { CloudSyncSettingsSection } from './CloudSyncSettingsSection';
