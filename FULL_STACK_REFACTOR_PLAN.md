@@ -152,6 +152,20 @@ localStorage remains default, fallback, migration source, and emergency rollback
 
 Recommended next task: 20B Supabase Project Env & Runtime Readiness Check V1.
 
+## Phase 20B Supabase Project Env & Runtime Readiness Check
+
+Phase 20B - Supabase Project Env & Runtime Readiness Check V1 adds `src/cloudProduction/supabaseProjectRuntimeReadinessCheck.ts` and `docs/SUPABASE_PROJECT_RUNTIME_READINESS_CHECK.md`.
+
+It composes Phase 20A authorization with the existing Supabase project and auth callback guards. The check accepts a caller-supplied env-like record, reports exact missing public browser keys, rejects service role browser risk, and rejects unsafe runtime boundary evidence.
+
+Required public keys are `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_IRONPATH_AUTH_CALLBACK_URL`, and `VITE_IRONPATH_CLOUD_ENVIRONMENT=production`.
+
+20B keeps client creation off, network attempts off, auth runtime off, sync runtime off, live sync off, cloud-primary mode off, default sync off, background work off, source-of-truth changes off, and localStorage deletion off.
+
+20B does not read real environment files, does not read `process.env`, does not add routes, does not change schemas or persistence, does not change packages or lockfiles, does not deploy anything, and does not start v0 UI polish.
+
+Recommended next task: 20C Auth Runtime Wiring V1 only after real public project configuration is present.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
