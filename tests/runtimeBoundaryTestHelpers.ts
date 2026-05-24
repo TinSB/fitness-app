@@ -18,6 +18,7 @@ export const relativePath = (path: string) => relative(repoRoot(), path).replace
 const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/auth/authBoundary.ts',
   'src/auth/authProviderTypes.ts',
+  'src/cloudProduction/authClientSkeletonEnvGuard.ts',
   'src/storage/apiStorageAdapter.ts',
   'src/storage/apiWriteThroughRuntime.ts',
   'src/storage/bootFromApiSnapshot.ts',
