@@ -166,6 +166,20 @@ Required public keys are `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_IR
 
 Recommended next task: 20C Auth Runtime Wiring V1 only after real public project configuration is present.
 
+## Phase 20C Auth Runtime Wiring
+
+Phase 20C - Auth Runtime Wiring V1 adds `src/cloudProduction/authRuntimeWiring.ts` and `docs/AUTH_RUNTIME_WIRING.md`.
+
+It creates a pure runtime wiring boundary for auth state and actions. The boundary requires Phase 20B readiness, an injected auth adapter, and explicit user action before sign-in or sign-out. A synthetic adapter validates the local contract while real public Supabase configuration is missing.
+
+20C can check a session, sign in, and sign out through the injected adapter. It blocks token storage, secret exposure, localStorage mutation, sync runtime, live sync, cloud-primary mode, default sync, background work, source-of-truth changes, and localStorage deletion.
+
+20C keeps client creation off, token storage off, localStorage mutation off, sync runtime off, live sync off, cloud-primary mode off, default sync off, background work off, and source-of-truth changes off.
+
+20C does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, and does not start v0 UI polish.
+
+Recommended next task: 20D Explicit Opt-In Sync Runtime Wiring V1 only after real public project configuration and safe auth sign-in are available.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
