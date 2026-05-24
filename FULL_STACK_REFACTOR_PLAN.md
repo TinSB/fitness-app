@@ -180,6 +180,18 @@ It creates a pure runtime wiring boundary for auth state and actions. The bounda
 
 Recommended next task: 20D Explicit Opt-In Sync Runtime Wiring V1 only after real public project configuration and safe auth sign-in are available.
 
+## Phase 20D Explicit Opt-In Sync Runtime Wiring
+
+Phase 20D - Explicit Opt-In Sync Runtime Wiring V1 adds `src/cloudProduction/explicitOptInSyncRuntimeWiring.ts` and `docs/EXPLICIT_OPT_IN_SYNC_RUNTIME_WIRING.md`.
+
+It creates a pure runtime wiring boundary for the explicit opt-in sync state after 20C auth readiness. The boundary requires an authenticated account user, explicit opt-in, manual confirmation, localStorage fallback confirmation, no silent overwrite confirmation, backup-before-sync confirmation, and safe runtime boundary evidence.
+
+20D can report `syncRuntimeEnabled: true` and `readyFor20E: true` only after the explicit gates pass. It still keeps upload, download, auto-apply, live sync activation, cloud-primary mode, default sync, background work, source-of-truth changes, and localStorage deletion off.
+
+20D does not add routes, does not change schemas or persistence, does not create environment files, does not change packages or lockfiles, does not deploy anything, and does not start v0 UI polish.
+
+Recommended next task: 20E Local Backup + Dry-Run Migration Runtime Flow V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

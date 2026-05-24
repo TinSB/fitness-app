@@ -236,6 +236,10 @@ Do not start 19B from 19A.
 
 20C keeps `clientCreated: false`, `tokenStored: false`, `localStorageChanged: false`, `localStorageDeleted: false`, `secretsExposed: false`, `serviceRoleExposed: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false`.
 
+20D - Explicit Opt-In Sync Runtime Wiring V1: implemented as a pure explicit opt-in sync runtime boundary. It requires 20C auth readiness, an authenticated account user, explicit opt-in, manual confirmation, localStorage fallback confirmation, no silent overwrite confirmation, backup-before-sync confirmation, and safe runtime boundary evidence.
+
+20D may report `syncRuntimeEnabled: true` and `readyFor20E: true` after explicit gates pass, but it keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
 ## Explicit Blocked Capabilities
 
 Blocked in Phase 19A:
@@ -300,3 +304,5 @@ Task 20A result: Live Cloud Sync Activation Authorization Gate only. It can auth
 Task 20B result: Supabase Project Env & Runtime Readiness Check only. It reports public browser config readiness and exact missing setup keys without creating a client, reading real environment files, writing data, or changing source of truth. The next task is 20C - Auth Runtime Wiring V1 only after real public project configuration is present.
 
 Task 20C result: Auth Runtime Wiring only. It wires auth state through an injected adapter, requires explicit user action for sign-in and sign-out, and blocks token storage, secret exposure, localStorage mutation, sync runtime, cloud-primary mode, default sync, background work, source-of-truth changes, and localStorage deletion. The next task is 20D - Explicit Opt-In Sync Runtime Wiring V1 only after real public project configuration and safe auth sign-in are available.
+
+Task 20D result: Explicit Opt-In Sync Runtime Wiring only. It wires the manual sync runtime state after explicit opt-in and safety confirmations, but it does not upload, download, apply cloud data, make cloud data primary, start default/background sync, change source of truth, or delete localStorage. The next task is 20E - Local Backup + Dry-Run Migration Runtime Flow V1.

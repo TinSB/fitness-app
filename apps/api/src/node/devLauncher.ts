@@ -11,6 +11,15 @@ export const DEV_LAUNCHER_DEFAULT_HOST = '127.0.0.1';
 export const DEV_LAUNCHER_DEFAULT_PORT = 8787;
 export const DEV_LAUNCHER_DEFAULT_DB_FILE = '.ironpath/dev-api.sqlite';
 export const DEV_LAUNCHER_SEED_EMPTY_LABEL = 'dev-launcher:seed-empty';
+export const DEV_LAUNCHER_FETCH_BLOCKED_PORTS = new Set([
+  1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 69, 77, 79,
+  87, 95, 101, 102, 103, 104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 137,
+  139, 143, 161, 179, 389, 427, 465, 512, 513, 514, 515, 526, 530, 531, 532,
+  540, 548, 554, 556, 563, 587, 601, 636, 989, 990, 993, 995, 1719, 1720, 1723,
+  2049, 3659, 4045, 4190, 5060, 5061, 6000, 6566, 6665, 6666, 6667, 6668, 6669,
+  6697, 10080,
+]);
+export const DEV_LAUNCHER_MAX_EPHEMERAL_PORT_ATTEMPTS = 10;
 
 export type DevLocalApiLauncherErrorCode =
   | 'dev_launcher_network_access_denied'
@@ -53,6 +62,9 @@ const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
 const normalizeHost = (host: string | undefined) => (host || DEV_LAUNCHER_DEFAULT_HOST).trim() || DEV_LAUNCHER_DEFAULT_HOST;
 
 const isLocalHost = (host: string) => LOCAL_HOSTS.has(host.toLowerCase());
+
+export const isDevLauncherFetchBlockedPort = (port: number) =>
+  DEV_LAUNCHER_FETCH_BLOCKED_PORTS.has(port);
 
 const assertSafeHost = (host: string, allowNetworkAccess: boolean | undefined) => {
   if (isLocalHost(host) || allowNetworkAccess === true) return;
@@ -153,15 +165,28 @@ export const createDevLocalApiLauncher = (options: CreateDevLocalApiLauncherOpti
         seedEmptyIfRequested(openedRepository, options.clock);
       }
 
-      const serverAdapter = createServerAdapter({ repository: openedRepository, clock: options.clock });
-      openedServer = createServer(
-        createHttpRequestListener({
-          serverAdapter,
-          maxBodyBytes: options.maxBodyBytes,
-        }),
-      );
+      let address: AddressInfo | null = null;
+      for (let attempt = 0; attempt < DEV_LAUNCHER_MAX_EPHEMERAL_PORT_ATTEMPTS; attempt += 1) {
+        const serverAdapter = createServerAdapter({ repository: openedRepository, clock: options.clock });
+        openedServer = createServer(
+          createHttpRequestListener({
+            serverAdapter,
+            maxBodyBytes: options.maxBodyBytes,
+          }),
+        );
 
-      const address = await listen(openedServer, port, host);
+        address = await listen(openedServer, port, host);
+        if (port !== 0 || !isDevLauncherFetchBlockedPort(address.port)) break;
+
+        await closeServer(openedServer);
+        openedServer = null;
+        address = null;
+      }
+
+      if (!address) {
+        throw new Error('Dev local API launcher could not bind to a fetch-safe ephemeral port.');
+      }
+
       repository = openedRepository;
       server = openedServer;
       started = {
