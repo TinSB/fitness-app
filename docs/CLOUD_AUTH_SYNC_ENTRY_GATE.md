@@ -196,7 +196,7 @@ Validation remains:
 
 19B - Account Boundary & Local Inventory V1: implemented as a pure local owner/account/device inventory and dry-run readiness contract. It reports backup/export preflight, source snapshot identity, owner match, and future gates without auth runtime, sync runtime, persistence, routes, or source-of-truth change.
 
-19C - Supabase Data Model & RLS Contract V1: define candidate document-first table and RLS policy contract without applying SQL.
+19C - Supabase Data Model & RLS Contract V1: implemented as a contract-only document-first table and RLS policy boundary. It does not apply SQL, create tables, add migration files, connect to Supabase, or enable auth/sync runtime.
 
 19D - Supabase Migration Files + Local Type Contracts V1: add migration files and local type contracts only after the RLS contract is accepted.
 
@@ -255,4 +255,6 @@ Task 19A result: Cloud Auth & Sync Entry Gate only.
 
 Task 19B result: Account Boundary & Local Inventory only. It is implemented as pure local inventory and readiness logic, not runtime auth or sync.
 
-The approved next step after 19B is 19C Supabase Data Model & RLS Contract V1. Phase 19A itself adds no runtime behavior.
+Task 19C result: Supabase Data Model & RLS Contract only. It is implemented as pure contract data and validation, not migrations or runtime Supabase behavior.
+
+The approved next step after 19C is 19D Supabase Migration Files + Local Type Contracts V1. Phase 19A itself adds no runtime behavior.
