@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
+import { expectNoTrackedEnvironmentFiles, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
 const read = (path: string) => readSource(path);
 
@@ -103,14 +103,8 @@ describe('Phase 19E auth client skeleton env guard boundary', () => {
   });
 
   it('keeps env files package scripts dependencies and lockfiles unchanged', () => {
-    for (const path of [
-      '.env',
-      '.env.local',
-      '.env.production',
-      'pnpm-lock.yaml',
-    ]) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
-    }
+    expectNoTrackedEnvironmentFiles();
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml')), 'pnpm-lock.yaml should not exist').toBe(false);
 
     const packageJson = JSON.parse(read('package.json')) as {
       dependencies: Record<string, string>;

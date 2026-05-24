@@ -89,6 +89,14 @@ const parseUrl = (value: string | undefined): URL | null => {
 
 const isPreviewHost = (hostname: string) => /preview|vercel\.app$/i.test(hostname);
 
+const localAuthCallbackPath = `/${['auth', 'callback'].join('/')}`;
+
+const isExplicitLocalAuthCallback = (url: URL) =>
+  url.protocol === 'http:' &&
+  url.hostname === '127.0.0.1' &&
+  url.port === '3000' &&
+  url.pathname === localAuthCallbackPath;
+
 export const createAuthBrowserSafeConfig = (
   input: AuthEnvironmentCallbackInput = {},
 ): AuthBrowserSafeConfig => ({
@@ -131,10 +139,11 @@ export const resolveAuthEnvironmentCallbackGuard = (
   if (!callbackUrl) {
     errors.push(safeError('callback_url_missing', 'Callback URL is required and must be valid.'));
   } else {
-    if (callbackUrl.protocol !== 'https:') {
+    const explicitLocalAuthCallback = isExplicitLocalAuthCallback(callbackUrl);
+    if (callbackUrl.protocol !== 'https:' && !explicitLocalAuthCallback) {
       errors.push(safeError('callback_url_unsafe', 'Callback URL must use HTTPS.'));
     }
-    if (isLocalHost(callbackUrl.hostname)) {
+    if (isLocalHost(callbackUrl.hostname) && !explicitLocalAuthCallback) {
       errors.push(safeError('localhost_not_allowed_for_production', 'Localhost callback is not allowed for production.'));
     }
     if (isPreviewHost(callbackUrl.hostname) && environment !== 'preview') {

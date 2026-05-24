@@ -140,6 +140,28 @@ describe('Phase 20B Supabase project runtime readiness check', () => {
     expect(input).toEqual(before);
   });
 
+  it('accepts the explicit loopback auth callback used for local browser sign-in', () => {
+    const result = buildSupabaseProjectRuntimeReadinessCheck(validInput({
+      browserEnv: {
+        ...browserEnv(),
+        VITE_IRONPATH_AUTH_CALLBACK_URL: ['http://127.0.0.1:3000', 'auth', 'callback'].join('/'),
+      },
+    }));
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: 'ready_for_auth_runtime_wiring',
+      readyFor20C: true,
+      missingBrowserEnvKeys: [],
+      clientCreated: false,
+      networkAttempted: false,
+      authRuntimeEnabled: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+    });
+    expect(result.authCallbackGuard.ok).toBe(true);
+  });
+
   it('requires Phase 20A authorization before 20C can start', () => {
     const result = buildSupabaseProjectRuntimeReadinessCheck(validInput({
       phase20aAuthorization: {

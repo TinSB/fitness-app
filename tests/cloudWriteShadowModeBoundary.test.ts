@@ -1,7 +1,7 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+﻿import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
+import { expectNoTrackedEnvironmentFiles, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
 const read = (path: string) => readSource(path);
 
@@ -98,9 +98,8 @@ describe('Phase 19H cloud write shadow mode boundary', () => {
   });
 
   it('keeps env package lockfile and schema boundaries unchanged', () => {
-    for (const path of ['.env', '.env.local', '.env.production', 'pnpm-lock.yaml']) {
-      expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
-    }
+    expectNoTrackedEnvironmentFiles();
+    expect(existsSync(resolve(repoRoot(), 'pnpm-lock.yaml')), 'pnpm-lock.yaml should not exist').toBe(false);
 
     const packageJson = JSON.parse(read('package.json')) as {
       dependencies: Record<string, string>;

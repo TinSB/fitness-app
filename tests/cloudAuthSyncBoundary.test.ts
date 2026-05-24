@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { API_STORAGE_ADAPTER_ACCEPTED_WRITE_ROUTES } from '../src/storage/apiStorageAdapter';
 import { createRuntimeSourceSelector } from '../src/storage/runtimeSourceSelector';
-import { readSource, repoRoot } from './runtimeBoundaryTestHelpers';
+import { expectNoTrackedEnvironmentFiles, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
 const read = (path: string) => readFileSync(resolve(repoRoot(), path), 'utf8');
 
@@ -92,12 +92,10 @@ describe('cloud auth sync boundary', () => {
       'apps/api/src/authRoutes.ts',
       'apps/api/src/syncRoutes.ts',
       'src/cloudAuthSync',
-      '.env',
-      '.env.local',
-      '.env.production',
     ]) {
       expect(existsSync(resolve(repoRoot(), path)), `${path} should not exist`).toBe(false);
     }
+    expectNoTrackedEnvironmentFiles();
 
     for (const file of collectFiles(resolve(repoRoot(), 'apps/api/src'))) {
       const source = readFileSync(file, 'utf8');
