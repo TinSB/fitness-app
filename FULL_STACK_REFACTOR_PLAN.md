@@ -70,6 +70,16 @@ The app does not connect to Supabase, add routes, change persistence, change App
 
 Recommended next task: 19F Auth UI Skeleton V1.
 
+## Phase 19F Auth UI Skeleton
+
+Phase 19F - Auth UI Skeleton V1 adds `src/uiOs/settings/AuthUiSkeletonPanel.tsx` and `docs/AUTH_UI_SKELETON.md`.
+
+It mounts a passive Settings account surface. The card has no buttons, forms, links, callbacks, auth client runtime import, token storage, network request, cloud read, cloud write, or sync behavior.
+
+The app does not add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or switch source of truth. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Recommended next task: 19G Cloud Read Mirror V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

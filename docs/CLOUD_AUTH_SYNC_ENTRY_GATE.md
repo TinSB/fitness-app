@@ -202,7 +202,7 @@ Validation remains:
 
 19E - Auth Client Skeleton + Env Guard V1: implemented as a guarded auth client skeleton and environment checks without making login required.
 
-19F - Auth UI Skeleton V1: add passive login/account UI skeleton without turning on sync by default.
+19F - Auth UI Skeleton V1: implemented as a passive Settings account surface without turning on sync by default.
 
 19G - Cloud Read Mirror V1: compare cloud candidate data without mutating local data.
 
@@ -261,4 +261,6 @@ Task 19D result: Supabase Migration Files + Local Type Contracts only. It adds t
 
 Task 19E result: Auth Client Skeleton + Env Guard only. It composes existing Supabase project and auth callback guards into a passive readiness skeleton without real client creation, token storage, login requirement, runtime auth, sync runtime, or source-of-truth change.
 
-The approved next step after 19E is 19F Auth UI Skeleton V1. Phase 19A itself adds no runtime behavior.
+Task 19F result: Auth UI Skeleton only. It mounts a passive Settings account surface without provider actions, token storage, auth client runtime import, sync runtime, cloud data reads, cloud data writes, or source-of-truth change.
+
+The approved next step after 19F is 19G Cloud Read Mirror V1. Phase 19A itself adds no runtime behavior.
