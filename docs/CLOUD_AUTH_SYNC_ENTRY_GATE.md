@@ -214,7 +214,7 @@ Validation remains:
 
 19K - Conflict / Offline / Rollback Acceptance V1: implemented as acceptance evidence for conflict review, offline behavior, rollback, emergency local, and unchanged route/package/schema boundaries.
 
-19L - Production Manual Acceptance V1: require manual acceptance before any cloud-primary consideration.
+19L - Production Manual Acceptance V1: implemented as manual acceptance evidence before any future cloud-primary consideration.
 
 Do not start 19B from 19A.
 
@@ -273,4 +273,6 @@ Task 19J result: Explicit Opt-In Single-User Sync Candidate only. It reports `re
 
 Task 19K result: Conflict / Offline / Rollback Acceptance only. It reports `acceptedForManualProductionReview`, `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false` without uploading, downloading, applying cloud data, writing localStorage, writing cloud data, starting background sync, making cloud primary, or changing source of truth.
 
-The approved next step after 19K is 19L Production Manual Acceptance V1. Phase 19A itself adds no runtime behavior.
+Task 19L result: Production Manual Acceptance only. It reports `manualAcceptancePassed`, `readyForFutureCloudPrimaryConsideration`, `productionLaunchPerformed: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false` without launching production, uploading, downloading, applying cloud data, writing localStorage, writing cloud data, starting background sync, making cloud primary, or changing source of truth.
+
+Phase 19 sequence complete. A future phase must make a separate decision before enabling cloud-primary behavior.
