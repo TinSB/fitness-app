@@ -130,6 +130,16 @@ The app does not upload, download, apply cloud data, write localStorage, write c
 
 Recommended next task: 19L Production Manual Acceptance V1.
 
+## Phase 19L Production Manual Acceptance
+
+Phase 19L - Production Manual Acceptance V1 adds `src/cloudProduction/phase19ProductionManualAcceptance.ts` and `docs/PHASE19_PRODUCTION_MANUAL_ACCEPTANCE.md`.
+
+It records manual acceptance evidence for Phase 19 using 19K acceptance, validation results, dedicated synthetic environment checks, RLS/service-role/privacy/export/delete evidence, offline/rollback/emergency local evidence, and route/package/schema locks. It reports `manualAcceptancePassed`, `readyForFutureCloudPrimaryConsideration`, `productionLaunchPerformed: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, and `sourceOfTruthChanged: false`.
+
+The app does not launch production, upload, download, apply cloud data, write localStorage, write cloud data, start background sync, make cloud primary, add routes, change persistence, change AppData or TrainingSession schemas, change packages or lockfiles, or start default sync. localStorage remains default, fallback, migration source, and emergency rollback source.
+
+Phase 19 sequence complete. A future phase must make a separate decision before enabling cloud-primary behavior.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
