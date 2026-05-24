@@ -140,6 +140,18 @@ The app does not launch production, upload, download, apply cloud data, write lo
 
 Phase 19 sequence complete. A future phase must make a separate decision before enabling cloud-primary behavior.
 
+## Phase 20A Live Cloud Sync Activation Authorization Gate
+
+Phase 20A - Live Cloud Sync Activation Authorization Gate V1 adds `src/cloudProduction/liveCloudSyncActivationAuthorizationGate.ts` and `docs/LIVE_CLOUD_SYNC_ACTIVATION_AUTHORIZATION_GATE.md`.
+
+It opens Phase 20 as a narrow runtime implementation sequence authorization. The gate requires Phase 19L manual acceptance evidence, explicit activation intent, single-user personal scope confirmation, localStorage fallback confirmation, no silent overwrite confirmation, no service role in browser confirmation, backup-before-sync confirmation, dry-run-before-write confirmation, and no SaaS scope confirmation.
+
+20A may authorize 20B through 20I as separate reviewed tasks, starting with Supabase Project Env & Runtime Readiness Check V1. It keeps auth runtime off, keeps sync runtime off, and keeps cloud-primary mode, default sync, background work, production launch, source-of-truth switching, routes, schema changes, persistence changes, package changes, lockfile changes, environment files, deployment behavior, and v0 UI polish off.
+
+localStorage remains default, fallback, migration source, and emergency rollback source. 20A reports `liveCloudSyncActivated: false`, `authRuntimeEnabled: false`, `syncRuntimeEnabled: false`, `productionLaunchPerformed: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+Recommended next task: 20B Supabase Project Env & Runtime Readiness Check V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
