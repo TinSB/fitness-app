@@ -108,7 +108,6 @@ const syncWarnings = (input: CloudSyncSettingsRuntimeInput): string[] => {
   if (!hasSignedInUser(input.authRuntime)) warnings.push('登录后再开启同步');
   if (!backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi)) warnings.push('开启前先备份');
   if (hasConflict(input.verificationFlow, input.conflictOfflineRollback)) warnings.push('冲突需查看后再决定');
-  warnings.push('本地数据仍会保留');
   return unique(warnings).slice(0, 3);
 };
 
@@ -311,7 +310,7 @@ export const buildCloudSyncSettingsSectionPropsFromRuntime = (
 ): CloudSyncSettingsSectionProps => ({
   eyebrow: '账号同步',
   title: '云端同步',
-  description: '根据当前账号、备份和同步准备状态显示；本地数据仍会保留，本地训练记录不会被覆盖。',
+  description: '本地数据仍会保留，本地训练记录不会被覆盖；冲突可保留本地。',
   detailSummaryLabel: '查看同步状态',
   authCard: authCardProps(input),
   syncStatus: syncStatusProps(input),

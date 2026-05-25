@@ -44,7 +44,7 @@ interface StepIndicatorProps {
   completed: boolean;
   active: boolean;
   label: string;
-  description: string;
+  description?: string;
   Icon: LucideIcon;
   isDark: boolean;
 }
@@ -83,9 +83,11 @@ function StepIndicator({ completed, active, label, description, Icon, isDark }: 
         >
           {label}
         </p>
-        <p className={classNames('text-xs', isDark ? 'text-white/50' : 'text-slate-500')}>
-          {description}
-        </p>
+        {description ? (
+          <p className={classNames('text-xs', isDark ? 'text-white/50' : 'text-slate-500')}>
+            {description}
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -128,21 +130,11 @@ export function FirstSyncFlow({
         </div>
       </div>
 
-      <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
-        <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/70' : 'text-slate-600')}>
-          开启前先备份
-        </p>
-        <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/50' : 'text-slate-500')}>
-          本地数据仍会保留
-        </p>
-      </div>
-
       <div className="space-y-3" data-testid="ironpath-backup-before-sync">
         <StepIndicator
           completed={backupReady}
           active={!backupReady}
           label="备份本地数据"
-          description="先保留一份可恢复的记录"
           Icon={Shield}
           isDark={isDark}
         />
@@ -151,7 +143,6 @@ export function FirstSyncFlow({
             completed={dryRunReady}
             active={backupReady && !dryRunReady}
             label="查看将同步的内容"
-            description="查看后再决定"
             Icon={FileCheck}
             isDark={isDark}
           />
