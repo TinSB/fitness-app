@@ -266,6 +266,46 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
     });
   });
 
+  it('keeps sign-up failure copy scoped to account creation', async () => {
+    const clientFactory: SupabaseAuthRuntimeClientFactory = () => ({
+      auth: {
+        signUp: async () => ({
+          data: { user: null, session: null },
+          error: { message: 'synthetic sign-up failure' },
+        }),
+      },
+    } as unknown as SupabaseAuthRuntimeClient);
+
+    const result = await runCloudSyncRealSupabaseAuthActionRuntime({
+      action: 'sign_up',
+      readiness: ready20b(),
+      publicConfig: {
+        supabaseUrl: 'https://ironpath-project.supabase.co',
+        anonKey: 'synthetic-public-anon-key',
+        authCallbackUrl: 'http://127.0.0.1:3000/auth/callback',
+        cloudEnvironment: 'production',
+      },
+      signInEmail: 'person@example.test',
+      password: 'strong-password',
+      userInitiated: true,
+      nowIso,
+      clientFactory,
+    });
+
+    expect(result.authRuntime).toMatchObject({
+      ok: false,
+      action: 'sign_up',
+      status: 'adapter_failed',
+      authenticated: false,
+      tokenStored: false,
+      localStorageChanged: false,
+      syncRuntimeEnabled: false,
+      cloudPrimaryEnabled: false,
+    });
+    expect(result.errorMessage).toBe('创建失败，请检查邮箱和密码后再试。');
+    expect(result.errorMessage).not.toContain('登录失败');
+  });
+
   it('runs sign-out only as an explicit auth runtime action', () => {
     const blocked = buildCloudSyncAuthActionRuntime({
       action: 'sign_out',

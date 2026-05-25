@@ -58,13 +58,18 @@ const safeRuntimeBoundary = {
 
 export const formatCloudSyncAuthActionError = (
   result: Phase20cAuthRuntimeWiringResult | null | undefined,
+  action?: CloudSyncAuthAction | 'check_session',
 ): string | null => {
   if (!result || result.ok) return null;
-  if (result.status === 'readiness_missing') return '登录配置暂不可用。';
+  const isSignUp = action === 'sign_up' || result.action === 'sign_up';
+  const actionLabel = isSignUp ? '创建账号' : '登录';
+  if (result.status === 'readiness_missing') return `${actionLabel}配置暂不可用。`;
   if (result.status === 'user_action_required') return '请先确认操作。';
-  if (result.status === 'adapter_failed') return '登录失败，请稍后再试。';
-  if (result.status === 'runtime_boundary_unsafe') return '登录已暂停，请先检查设置。';
-  return '登录暂不可用。';
+  if (result.status === 'adapter_failed') {
+    return isSignUp ? '创建失败，请检查邮箱和密码后再试。' : '登录失败，请检查邮箱或密码后再试。';
+  }
+  if (result.status === 'runtime_boundary_unsafe') return `${actionLabel}已暂停，请先检查设置。`;
+  return `${actionLabel}暂不可用。`;
 };
 
 export const buildCloudSyncAuthActionRuntime = (
@@ -82,7 +87,7 @@ export const buildCloudSyncAuthActionRuntime = (
 
   return {
     authRuntime,
-    errorMessage: formatCloudSyncAuthActionError(authRuntime),
+    errorMessage: formatCloudSyncAuthActionError(authRuntime, input.action),
     safeBoundaries: {
       tokenStored: false,
       localStorageChanged: false,
@@ -109,7 +114,7 @@ export const runCloudSyncRealSupabaseAuthActionRuntime = async (
 
   return {
     authRuntime,
-    errorMessage: formatCloudSyncAuthActionError(authRuntime),
+    errorMessage: formatCloudSyncAuthActionError(authRuntime, input.action),
     safeBoundaries: {
       tokenStored: false,
       localStorageChanged: false,
