@@ -314,7 +314,6 @@ export function ProfileView({
         {
           id: 'cloud_sync',
           title: '账号与同步',
-          subtitle: '本地数据仍会保留',
           value: '未开启',
           tone: 'sky',
           icon: <Cloud className="h-5 w-5" aria-hidden="true" />,
@@ -322,8 +321,7 @@ export function ProfileView({
         },
         {
           id: 'sync_prepare',
-          title: '同步准备',
-          subtitle: '检查本地数据，查看将同步的内容',
+          title: '检查本地数据',
           value: '检查',
           tone: 'violet',
           icon: <Database className="h-5 w-5" aria-hidden="true" />,
@@ -332,7 +330,6 @@ export function ProfileView({
         {
           id: 'emergency_local',
           title: '恢复本地模式',
-          subtitle: '云端不可用时继续本地训练',
           value: '可用',
           tone: 'amber',
           icon: <RefreshCcw className="h-5 w-5" aria-hidden="true" />,
@@ -341,7 +338,6 @@ export function ProfileView({
         {
           id: 'auth_entry',
           title: '账号入口',
-          subtitle: '登录或创建账号',
           value: '登录',
           tone: 'slate',
           icon: <UserRound className="h-5 w-5" aria-hidden="true" />,
@@ -355,8 +351,7 @@ export function ProfileView({
       items: [
         {
           id: 'backup_recovery',
-          title: '备份与恢复',
-          subtitle: '开启前先备份',
+          title: '备份',
           value: '本地',
           tone: 'emerald',
           icon: <Archive className="h-5 w-5" aria-hidden="true" />,
@@ -383,7 +378,6 @@ export function ProfileView({
         {
           id: 'diagnostics',
           title: '数据检查',
-          subtitle: '查看记录完整性',
           value: hiddenDataHealthIssueCount ? `${hiddenDataHealthIssueCount} 项` : '正常',
           tone: 'rose',
           icon: <Wrench className="h-5 w-5" aria-hidden="true" />,
@@ -401,8 +395,7 @@ export function ProfileView({
         },
         {
           id: 'health_data',
-          title: '健康数据导入',
-          subtitle: '导入 CSV / JSON',
+          title: '健康数据',
           value: '手动',
           tone: 'emerald',
           icon: <HeartPulse className="h-5 w-5" aria-hidden="true" />,
@@ -410,11 +403,7 @@ export function ProfileView({
             <div ref={healthDataRef}>
               <SettingsGroupCard>
                 <div className="mb-4">
-                  <p className="text-sm font-semibold text-slate-500">健康数据导入</p>
                   <h3 className="mt-1 text-lg font-bold text-slate-950">健康数据导入</h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
-                    手动导入 CSV / JSON / 健康导出文件，用于恢复和活动负荷参考。此处不会上传完整训练数据。
-                  </p>
                 </div>
                 <HealthDataPanel data={data} onUpdateData={onUpdateHealthData} />
               </SettingsGroupCard>
@@ -429,8 +418,7 @@ export function ProfileView({
       items: [
         {
           id: 'equipment',
-          title: '器械与重量',
-          subtitle: '单位、器械与片重',
+          title: '器械',
           value: unitSettings.weightUnit,
           tone: 'amber',
           icon: <Dumbbell className="h-5 w-5" aria-hidden="true" />,
@@ -439,7 +427,6 @@ export function ProfileView({
         {
           id: 'screening',
           title: '身体 / 动作筛查',
-          subtitle: '管理限制与触发项',
           value: '资料',
           tone: 'sky',
           icon: <ShieldCheck className="h-5 w-5" aria-hidden="true" />,
@@ -448,11 +435,7 @@ export function ProfileView({
               <SettingsGroupCard>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-500">资料与筛查</p>
                     <h3 className="mt-1 text-lg font-bold text-slate-950">身体 / 动作筛查</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      管理训练目标、体态问题、动作限制和疼痛触发。低频配置集中在设置页，不挤占训练流程。
-                    </p>
                   </div>
                   <ActionButton variant="primary" onClick={onOpenAssessment}>
                     <ShieldCheck className="h-4 w-4" />
@@ -466,22 +449,17 @@ export function ProfileView({
         {
           id: 'training_suggestions',
           title: '训练建议',
-          subtitle: '待处理建议与历史状态',
           value: coachActionListViewModel.totalCount ? `${coachActionListViewModel.totalCount} 项` : '暂无',
           tone: 'violet',
           icon: <Activity className="h-5 w-5" aria-hidden="true" />,
           content: (
             <SettingsGroupCard>
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500">训练建议</p>
-                <h3 className="mt-1 text-lg font-bold text-slate-950">训练建议收件箱</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  集中查看待处理、已采用、已忽略和已过期的训练建议；按钮只做导航或查看，不会直接修改数据。
-                </p>
+                <h3 className="mt-1 text-lg font-bold text-slate-950">训练建议</h3>
               </div>
               <CoachActionList
-                title="训练建议收件箱"
-                description="集中查看待处理、已采用、已忽略和已过期的训练建议。"
+                title="训练建议"
+                description=""
                 viewModel={coachActionListViewModel}
                 showStatusFilters
                 onAction={onCoachAction}
@@ -501,7 +479,6 @@ export function ProfileView({
         {
           id: 'appearance_units',
           title: '外观与单位',
-          subtitle: '主题和重量单位',
           value: unitSettings.weightUnit,
           tone: 'slate',
           icon: <Palette className="h-5 w-5" aria-hidden="true" />,
@@ -525,7 +502,6 @@ export function ProfileView({
         {
           id: 'data_safety',
           title: '数据安全',
-          subtitle: '本地优先和导出记录',
           value: `${data.history?.length || 0} 条`,
           tone: 'emerald',
           icon: <Info className="h-5 w-5" aria-hidden="true" />,

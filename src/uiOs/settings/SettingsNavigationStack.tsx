@@ -85,12 +85,11 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
         className={classNames('min-w-0 space-y-4', activeItem ? 'hidden lg:block' : 'block')}
         data-settings-navigation-list
       >
-        <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 text-white shadow-[0_18px_52px_rgba(0,0,0,0.16)]">
+        <section className="rounded-lg border border-white/10 bg-white/[0.055] p-3 text-white shadow-[0_18px_52px_rgba(0,0,0,0.16)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white/50">IronPath</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-normal text-white">{summary.summaryTitle}</h2>
-              <p className="mt-1 line-clamp-2 text-sm leading-6 text-white/58">{summary.summaryExplanation}</p>
+              <p className="text-xs font-semibold text-white/42">IronPath</p>
+              <h2 className="mt-0.5 text-lg font-semibold tracking-normal text-white">{summary.summaryTitle}</h2>
             </div>
             <StatusBadge state={stateTone[summary.overallSafetyState]}>{stateLabel[summary.overallSafetyState]}</StatusBadge>
           </div>
@@ -113,7 +112,7 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
                     key={item.id}
                     type="button"
                     className={classNames(
-                      'flex min-h-[68px] w-full items-center gap-3 px-3 py-3 text-left transition active:scale-[0.995]',
+                      'flex min-h-14 w-full items-center gap-3 px-3 py-2.5 text-left transition active:scale-[0.995]',
                       index > 0 && 'border-t border-white/8',
                       selected ? 'bg-white/[0.08]' : 'hover:bg-white/[0.045]',
                     )}
@@ -123,7 +122,7 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
                   >
                     <span
                       className={classNames(
-                        'grid h-10 w-10 shrink-0 place-items-center rounded-lg',
+                        'grid h-9 w-9 shrink-0 place-items-center rounded-lg',
                         toneClassName[item.tone || 'slate'],
                       )}
                     >
@@ -132,7 +131,7 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-semibold text-white">{item.title}</span>
                       {item.subtitle ? (
-                        <span className="mt-0.5 block line-clamp-2 text-sm leading-5 text-white/45">{item.subtitle}</span>
+                        <span className="mt-0.5 block truncate text-sm leading-5 text-white/45">{item.subtitle}</span>
                       ) : null}
                     </span>
                     {item.value ? <span className="max-w-[7rem] truncate text-sm font-medium text-white/38">{item.value}</span> : null}
@@ -162,12 +161,10 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
                   设置
                 </button>
               ) : null}
-              <p className="text-sm font-semibold text-white/42">设置</p>
               <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
-                <h2 className="text-2xl font-semibold tracking-normal text-white">{detailItem.title}</h2>
+                <h2 className="text-xl font-semibold tracking-normal text-white">{detailItem.title}</h2>
                 {detailItem.value ? <span className="text-sm font-semibold text-white/42">{detailItem.value}</span> : null}
               </div>
-              {detailItem.subtitle ? <p className="mt-1 text-sm leading-6 text-white/52">{detailItem.subtitle}</p> : null}
             </div>
 
             <div className="min-w-0" data-settings-detail-content={detailItem.id}>

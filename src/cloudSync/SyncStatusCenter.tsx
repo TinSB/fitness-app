@@ -101,20 +101,13 @@ export function SyncStatusCenter({
         </span>
       </div>
 
-      <div className="space-y-2">
-        <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/70' : 'text-slate-600')}>
-          本地数据仍会保留
-        </p>
-        <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/50' : 'text-slate-500')}>
-          本地训练记录不会被覆盖
-        </p>
-
-        {lastVerificationAt ? (
+      {lastVerificationAt ? (
+        <div>
           <p className={classNames('text-xs', isDark ? 'text-white/40' : 'text-slate-400')}>
             上次检查：{formatVerificationTime(lastVerificationAt)}
           </p>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {visibleWarnings.length > 0 ? (
         <div className={classNames('space-y-1 rounded-lg px-3 py-2', isDark ? 'bg-amber-400/10' : 'bg-amber-50')}>

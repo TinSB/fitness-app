@@ -43,6 +43,21 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
     expect(settings).toContain('data-settings-diagnostics-details="collapsed"');
   });
 
+  it('keeps Settings copy minimal while preserving operation rows', () => {
+    const profile = read('src/features/ProfileView.tsx');
+    const navigation = read('src/uiOs/settings/SettingsNavigationStack.tsx');
+
+    expect(profile).toContain("title: '账号与同步'");
+    expect(profile).toContain("title: '检查本地数据'");
+    expect(profile).toContain("title: '恢复本地模式'");
+    expect(profile).toContain("title: '备份'");
+    expect(profile).not.toContain('subtitle:');
+    expect(profile).not.toContain('集中查看待处理');
+    expect(profile).not.toContain('低频配置集中在设置页');
+    expect(navigation).not.toContain('summary.summaryExplanation');
+    expect(navigation).not.toContain('{detailItem.subtitle');
+  });
+
   it('does not duplicate primary ownership copy across Today Focus and Settings', () => {
     const today = read('src/features/TodayView.tsx');
     const focus = read('src/features/TrainingFocusView.tsx');

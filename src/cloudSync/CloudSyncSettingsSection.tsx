@@ -44,7 +44,7 @@ export interface CloudSyncSettingsSectionProps {
 const defaultPreviewProps = (): Required<CloudSyncSettingsSectionProps> => ({
   eyebrow: '账号同步',
   title: '云端同步',
-  description: '预览账号与同步状态；本地数据仍会保留，本地训练记录不会被覆盖。冲突需查看后再决定，可保留本地或使用云端。',
+  description: '本地数据仍会保留，本地训练记录不会被覆盖；冲突可保留本地。',
   detailSummaryLabel: '查看同步流程预览',
   authCard: { authStatus: 'signed_out' },
   syncStatus: {
@@ -103,9 +103,11 @@ export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = 
         <h3 className="mt-1 text-lg font-bold text-slate-950" data-theme-text="cardTitle">
           {props.title ?? preview.title}
         </h3>
-        <p className="mt-1 text-sm leading-6 text-slate-600" data-theme-text="secondaryText">
-          {props.description ?? preview.description}
-        </p>
+        {(props.description ?? preview.description) ? (
+          <p className="mt-1 text-sm leading-6 text-slate-600" data-theme-text="secondaryText">
+            {props.description ?? preview.description}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">

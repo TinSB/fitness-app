@@ -132,16 +132,13 @@ export function AccountSettings({
         />
       </div>
 
-      <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
-        <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/60' : 'text-slate-600')}>
-          本地数据仍会保留
-        </p>
-        {!localBackupAvailable ? (
+      {!localBackupAvailable ? (
+        <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
           <p className={classNames('text-sm leading-relaxed', isDark ? 'text-amber-300/80' : 'text-amber-700')}>
             开启前先备份
           </p>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {!localBackupAvailable && onCreateBackup ? (
