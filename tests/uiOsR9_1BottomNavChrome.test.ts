@@ -11,7 +11,7 @@ import { UI_OS_TABS } from '../src/uiOs/uiOsNavigation';
 const items = UI_OS_TABS.map((item) => ({ ...item, icon: Flame }));
 
 describe('UI-OS R9.1 bottom nav chrome', () => {
-  it('renders bottom nav with native safe-area offset instead of an oversized dead-zone spacer', () => {
+  it('renders bottom nav as a covered safe-area surface instead of a transparent dead-zone spacer', () => {
     const html = renderToStaticMarkup(
       React.createElement(FloatingBottomNav, {
         items,
@@ -21,8 +21,9 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
       }),
     );
 
-    expect(html).toContain('data-bottom-nav-safe-area="native-offset"');
-    expect(html).toContain('bottom-[calc(env(safe-area-inset-bottom)+0.5rem)]');
+    expect(html).toContain('data-bottom-nav-safe-area="covered"');
+    expect(html).toContain('fixed bottom-0 left-0 right-0');
+    expect(html).toContain('pb-[calc(0.5rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('bg-[linear-gradient(to_top,#0a0a0b');
   });
@@ -61,7 +62,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('translate-y-[calc(100%+0.5rem+env(safe-area-inset-bottom))]');
     expect(html).toContain('data-bottom-nav-background="light"');
     expect(html).not.toContain('bg-[#0a0a0b]');
   });

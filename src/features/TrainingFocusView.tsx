@@ -322,7 +322,7 @@ interface TrainingFocusViewProps {
   onToggleRestTimer?: () => void;
   onResetRestTimer?: () => void;
   onEndRest?: () => void;
-  onCompleteSupportSet: (moduleId: string, exerciseId: string) => void;
+  onCompleteSupportSet: (moduleId: string, exerciseId: string) => FocusActionCallbackResult;
   onSkipSupportExercise: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
   onSkipSupportBlock: (blockType: 'correction' | 'functional', reason: SupportSkipReason) => void;
   onUpdateSupportSkipReason: (moduleId: string, exerciseId: string, reason: SupportSkipReason) => void;
@@ -849,8 +849,10 @@ export function TrainingFocusView({
       return;
     }
     if (isSupportStep && supportLog) {
-      onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId);
-      notify(currentStep.stepType === 'correction' ? '已完成纠偏组' : '已完成功能补丁');
+      notifyResult(
+        onCompleteSupportSet(supportLog.moduleId, supportLog.exerciseId),
+        currentStep.stepType === 'correction' ? '已完成纠偏组。' : '已完成功能补丁。',
+      );
       return;
     }
     if (mainIndex < 0 || mainSetIndex < 0) return;

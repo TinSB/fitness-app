@@ -22,8 +22,9 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     );
 
     expect(html).toContain('normal page content');
-    expect(html).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)]');
+    expect(html).toContain('fixed bottom-0 left-0 right-0');
     expect(html).toContain('env(safe-area-inset-bottom)');
+    expect(html).toContain('data-bottom-nav-safe-area="covered"');
     expect(html).toContain('data-shell-safe-bottom="bottom-nav-protected"');
     expect(html).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(html).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
@@ -59,6 +60,7 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
     expect(shellSource).toContain("pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
     expect(navSource).toContain('env(safe-area-inset-bottom)');
+    expect(navSource).toContain('data-bottom-nav-safe-area="covered"');
     expect(navSource).toContain('pointer-events-none');
   });
 

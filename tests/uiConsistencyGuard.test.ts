@@ -39,7 +39,7 @@ describe('UI consistency guard', () => {
     expect(focusSecondaryActions).toContain('aria-label={action.label}');
     expect(focus).toContain('FocusModeActionBar');
     expect(focusActionBar).toContain('data-focus-mode-action-bar="one-dominant-primary"');
-    expect(actionBar).toContain('env(safe-area-inset-bottom)');
+    expect(actionBar).toContain('data-workout-action-bar-safe-area="covered"');
     expect(actionBar).toContain('data-theme-surface="bottom_sheet"');
     expect(actionBar).toContain('bg-[#0a0a0b]/96');
     expect(button).toContain('disabled:text-white/30');

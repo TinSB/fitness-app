@@ -6,8 +6,9 @@ describe('UI-OS R8.6 Focus bottom safe area', () => {
     const actionBar = readFileSync('src/ui/WorkoutActionBar.tsx', 'utf8');
     const focusBar = readFileSync('src/uiOs/training/FocusModeActionBar.tsx', 'utf8');
 
-    expect(actionBar).toContain('pb-[calc(0.25rem+env(safe-area-inset-bottom))]');
+    expect(actionBar).toContain('data-workout-action-bar-safe-area="covered"');
     expect(actionBar).toContain('bg-[#0a0a0b]/96');
+    expect(actionBar).not.toContain('pb-[calc(0.25rem+env(safe-area-inset-bottom))]');
     expect(actionBar).not.toContain('0.875rem+env(safe-area-inset-bottom)');
     expect(focusBar).toContain('data-focus-bottom-safe-area="compact"');
     expect(focusBar).toContain('data-focus-mode-action-bar="one-dominant-primary"');

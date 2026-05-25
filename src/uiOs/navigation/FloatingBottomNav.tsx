@@ -35,10 +35,11 @@ export function FloatingBottomNav<T extends string>({
       data-bottom-nav-hidden={hidden ? 'true' : 'false'}
       data-bottom-nav-background={themeMode}
       data-bottom-nav-surface={`${themeMode}-safe-area`}
-      data-bottom-nav-safe-area="native-offset"
+      data-bottom-nav-safe-area="covered"
       className={classNames(
-        'fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0 z-40 px-3 pointer-events-none transition-all duration-300 lg:hidden',
-        hidden ? 'translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
+        'fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 pointer-events-none transition-all duration-300 lg:hidden',
+        isDark ? 'bg-[#101012]/95' : 'bg-slate-50/95',
+        hidden ? 'translate-y-[calc(100%+0.5rem+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
       )}
     >
       <div

@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildFocusStepQueue, completeFocusSupportStep, getCurrentFocusStep, skipFocusSupportBlock, skipFocusSupportStep } from '../src/engines/focusModeStateEngine';
+import { dispatchWorkoutExecutionEvent } from '../src/engines/workoutExecutionStateMachine';
 import { attachSupportBlocks, makeExercise, makeFocusSession } from './focusModeFixtures';
 
 describe('support focus steps', () => {
@@ -11,6 +13,31 @@ describe('support focus steps', () => {
     const log = result?.session.supportExerciseLogs?.find((item) => item.blockType === 'correction');
     expect(log?.completedSets).toBe(1);
     expect(result?.session.currentFocusStepId).toBe('correction:corr-shoulder:wall-slide:1');
+  });
+
+  it('dispatches correction completion without requiring a weight or rep draft', () => {
+    const session = attachSupportBlocks(makeFocusSession([makeExercise('bench', 1)]));
+    const current = getCurrentFocusStep(session);
+
+    const result = dispatchWorkoutExecutionEvent(session, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: current.exerciseIndex,
+      expectedStepId: current.id,
+      completedAt: '2026-05-25T22:30:00.000Z',
+      nowMs: 1000,
+      displayUnit: 'kg',
+    });
+
+    const log = result.updatedSession.supportExerciseLogs?.find((item) => item.blockType === 'correction');
+    expect(result.actionResult).toMatchObject({
+      ok: true,
+      changed: true,
+      tone: 'success',
+      message: '已完成纠偏组。',
+      reasonCode: 'completed',
+    });
+    expect(log?.completedSets).toBe(1);
+    expect(getCurrentFocusStep(result.updatedSession).id).toBe('correction:corr-shoulder:wall-slide:1');
   });
 
   it('writes functional completion into supportExerciseLogs', () => {
@@ -43,5 +70,15 @@ describe('support focus steps', () => {
     const session = attachSupportBlocks(makeFocusSession([makeExercise('bench', 1)]));
     expect(buildFocusStepQueue(session).map((step) => step.id)).toContain('correction:corr-shoulder:wall-slide:0');
     expect(buildFocusStepQueue(session).map((step) => step.id)).toContain('functional:func-carry:farmer-carry:0');
+  });
+
+  it('keeps app support completion feedback synchronous with the committed session', () => {
+    const appSource = readFileSync('src/App.tsx', 'utf8');
+    const completeSupportSet = appSource.slice(appSource.indexOf('const completeSupportSet'), appSource.indexOf('const skipSupportExercise'));
+
+    expect(completeSupportSet).toContain('const current = dataRef.current');
+    expect(completeSupportSet).toContain('commitData({ ...current, activeSession: result.updatedSession })');
+    expect(completeSupportSet).toContain('return result.actionResult');
+    expect(completeSupportSet).not.toContain('let actionResult');
   });
 });

@@ -17,6 +17,6 @@ describe('mobile safe-area layout', () => {
   it('keeps bottom safe-area for mobile action areas', () => {
     expect(commonSource).toContain('env(safe-area-inset-bottom)');
     expect(bottomNavSource).toContain('env(safe-area-inset-bottom)');
-    expect(bottomNavSource).toContain('data-bottom-nav-safe-area="native-offset"');
+    expect(bottomNavSource).toContain('data-bottom-nav-safe-area="covered"');
   });
 });

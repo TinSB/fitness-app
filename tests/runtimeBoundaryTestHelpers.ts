@@ -84,9 +84,16 @@ export const expectNoTrackedEnvironmentFiles = () => {
 export const expectNoUnexpectedAppDiff = (diff: string) => {
   if (!diff) return;
 
-  expect(diff).toContain('completeTrainingViewSet');
-  expect(diff).toContain('completeVisibleTrainingSet');
-  expect(diff).toContain('onCompleteSet={completeVisibleTrainingSet}');
+  const isTrainingViewCompletionDiff =
+    diff.includes('completeTrainingViewSet') &&
+    diff.includes('completeVisibleTrainingSet') &&
+    diff.includes('onCompleteSet={completeVisibleTrainingSet}');
+  const isSupportCompletionDiff =
+    diff.includes('completeSupportSet') &&
+    diff.includes('dispatchWorkoutExecutionEvent') &&
+    diff.includes('FocusActionResult');
+
+  expect(isTrainingViewCompletionDiff || isSupportCompletionDiff).toBe(true);
 
   for (const forbidden of [
     'cloudPrimaryEnabled',

@@ -5,12 +5,12 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('UI-OS R8.5 Focus dark bottom surface', () => {
-  it('keeps the Focus bottom action area dark and safe-area aware', () => {
+  it('keeps the Focus bottom action area dark while covering the PWA bottom inset', () => {
     const source = read('src/ui/WorkoutActionBar.tsx');
 
     expect(source).toContain('data-theme-surface="bottom_sheet"');
     expect(source).toContain('data-theme-mode={resolvedTheme}');
-    expect(source).toContain('env(safe-area-inset-bottom)');
+    expect(source).toContain('data-workout-action-bar-safe-area="covered"');
     expect(source).toContain('bg-[#0a0a0b]/96');
     expect(source).toContain('border-slate-200 bg-white/94 text-slate-950');
   });

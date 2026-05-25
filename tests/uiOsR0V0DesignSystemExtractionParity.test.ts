@@ -90,7 +90,8 @@ describe('UI-OS R0 v0 design system extraction parity', () => {
       }),
     );
 
-    expect(navHtml).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)]');
+    expect(navHtml).toContain('fixed bottom-0 left-0 right-0');
+    expect(navHtml).toContain('data-bottom-nav-safe-area="covered"');
     expect(navHtml).toContain('rounded-2xl');
     expect(navHtml).toContain('backdrop-blur-2xl');
     expect(sheetHtml).toContain('rounded-t-3xl');

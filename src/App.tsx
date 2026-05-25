@@ -989,25 +989,28 @@ function App() {
     });
   };
 
-  const completeSupportSet = (moduleId: string, exerciseId: string) => {
-    let nextRecommendation: FocusNextSetRecommendation | null | undefined;
-    setData((current) => {
-      if (!current.activeSession) return current;
-      const step = getCurrentFocusStep(current.activeSession);
-      if (step.moduleId !== moduleId || step.exerciseId !== exerciseId) return current;
-      const result = dispatchWorkoutExecutionEvent(current.activeSession, {
-        type: 'COMPLETE_STEP',
-        exerciseIndex: step.exerciseIndex,
-        completedAt: new Date().toISOString(),
-        nowMs: Date.now(),
-        expectedStepId: step.id,
-        displayUnit: current.unitSettings.weightUnit,
-        unitSettings: current.unitSettings,
-      });
-      nextRecommendation = result.nextSetRecommendation ?? null;
-      return { ...current, activeSession: result.updatedSession };
+  const completeSupportSet = (moduleId: string, exerciseId: string): FocusActionResult => {
+    const current = dataRef.current;
+    if (!current.activeSession) return focusWarningResult('当前没有进行中的训练。', 'unsupported');
+    const step = getCurrentFocusStep(current.activeSession);
+    if (step.moduleId !== moduleId || step.exerciseId !== exerciseId) {
+      return focusWarningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step');
+    }
+
+    const result = dispatchWorkoutExecutionEvent(current.activeSession, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: step.exerciseIndex,
+      completedAt: new Date().toISOString(),
+      nowMs: Date.now(),
+      expectedStepId: step.id,
+      displayUnit: current.unitSettings.weightUnit,
+      unitSettings: current.unitSettings,
     });
-    if (nextRecommendation !== undefined) setFocusNextSetRecommendation(nextRecommendation);
+    if (result.nextSetRecommendation !== undefined) setFocusNextSetRecommendation(result.nextSetRecommendation ?? null);
+    if (result.actionResult.changed || result.updatedSession !== current.activeSession) {
+      commitData({ ...current, activeSession: result.updatedSession });
+    }
+    return result.actionResult;
   };
 
   const skipSupportExercise = (moduleId: string, exerciseId: string, reason: SupportSkipReason) => {
