@@ -60,6 +60,7 @@ import { buildMuscleVolumeDashboard } from './engines/analytics';
 import { buildEffectiveVolumeSummary } from './engines/effectiveSetEngine';
 import { buildTrainingIntelligenceSummary } from './engines/trainingIntelligenceSummaryEngine';
 import { buildIncompleteMainWorkGuard, completeTrainingSessionIntoHistory } from './engines/trainingCompletionEngine';
+import { completeTrainingViewSet } from './engines/trainingViewCompletionEngine';
 import { sanitizeUnitSettings } from './engines/unitConversionEngine';
 import { buildReplacementOptions } from './engines/replacementEngine';
 import { applyStatusRules } from './engines/progressionEngine';
@@ -783,6 +784,32 @@ function App() {
       setExpandedExercise(nextExpandedExercise);
     }
     return actionResult;
+  };
+
+  const completeVisibleTrainingSet = (exerciseIndex: number, setIndex: number) => {
+    const currentData = dataRef.current;
+    const session = currentData.activeSession;
+    if (!session) {
+      showAppToast('当前没有进行中的训练。', 'warning');
+      return;
+    }
+    const now = Date.now();
+    const result = completeTrainingViewSet(session, {
+      exerciseIndex,
+      setIndex,
+      completedAt: new Date(now).toISOString(),
+      nowMs: now,
+      displayUnit: currentData.unitSettings.weightUnit,
+    });
+    if (!result.actionResult.changed) {
+      showAppToast(result.actionResult.message, result.actionResult.tone === 'error' ? 'danger' : result.actionResult.tone);
+      return;
+    }
+
+    commitData({ ...currentData, activeSession: result.session });
+    setFocusNextSetRecommendation(null);
+    setExpandedExercise(result.nextExerciseIndex >= 0 ? result.nextExerciseIndex : exerciseIndex);
+    showAppToast(result.actionResult.message, 'success');
   };
 
   const copyPreviousSet = (exerciseIndex: number): FocusActionResult => {
@@ -1996,7 +2023,7 @@ function App() {
                       setExpandedExercise={setExpandedExercise}
                       onStartFromSelected={() => startSession()}
                       onSetChange={updateActiveSet}
-                      onCompleteSet={completeSet}
+                      onCompleteSet={completeVisibleTrainingSet}
                       onCopyPrevious={copyPreviousSet}
                       onAdjustSet={adjustCurrentSet}
                       onApplySuggestion={applyFocusSuggestion}

@@ -76,7 +76,7 @@ export const buildSettingsSafetySummary = (input: SettingsSafetySummaryInput = {
 
   const cloudBoundaryViolation = source.cloudSyncEnabled === true || source.automaticWorkerEnabled === true;
   if (cloudBoundaryViolation) {
-    highRiskWarnings.push('检测到 cloud sync 或 background sync 标记；R6 必须视为边界违规。');
+    highRiskWarnings.push('检测到云端同步或后台写入标记；必须视为边界违规。');
     safeNextActions.unshift('关闭云同步候选并回到本地模式');
   }
 

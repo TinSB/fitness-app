@@ -162,7 +162,7 @@ export const buildDataHealthDiagnosticsClarity = (
     },
     diagnostics_insufficient: {
       statusLabel: '诊断信息不够清楚',
-      explanation: '记录精简事件说明，不要上传完整 AppData、secrets 或 tokens。',
+      explanation: '记录精简事件说明，不要上传完整 AppData 或敏感凭证。',
       severity: 'caution',
       safeNextAction: 'record_redacted_incident_note',
       shouldPauseCloudCandidate: cloudPause,
@@ -192,4 +192,4 @@ export const buildDataHealthDiagnosticsClarity = (
 };
 
 export const buildDiagnosticRedactionReminder = (): string =>
-  '诊断摘要必须隐藏 secrets、tokens、service role 和完整 AppData，只保留人工恢复需要的最小信息。';
+  '诊断摘要必须隐藏敏感凭证和完整 AppData，只保留人工恢复需要的最小信息。';

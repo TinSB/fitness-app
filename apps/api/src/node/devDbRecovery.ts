@@ -136,6 +136,14 @@ const isWithinOrEqual = (path: string, parent: string) => {
   return rel === '' || (!rel.startsWith('..') && !rel.startsWith('/') && !rel.startsWith('\\'));
 };
 
+const realpathDirectory = (path: string) => {
+  const stat = lstatSync(path);
+  if (!stat.isDirectory()) {
+    throw new DevDbRecoveryError('dev_db_artifact_unsafe', 'Dev API DB allowed directory is not a directory.');
+  }
+  return realpathSync.native(path);
+};
+
 const safeTimestamp = (value: string) => value.replace(/[^A-Za-z0-9_.-]/g, '-');
 
 const stableError = (error: unknown, fallbackCode: DevDbRecoveryErrorCode): DevDbRecoveryStableError => {
@@ -155,7 +163,8 @@ const validateExistingArtifact = (artifact: DevDbArtifactRecord, allowedBase: st
     throw new DevDbRecoveryError('dev_db_artifact_unsafe', 'Dev API DB artifact is not a regular file.');
   }
   const real = realpathSync.native(artifact.path);
-  if (!isWithinOrEqual(real, allowedBase)) {
+  const realAllowedBase = realpathDirectory(allowedBase);
+  if (!isWithinOrEqual(real, realAllowedBase)) {
     throw new DevDbRecoveryError('dev_db_artifact_unsafe', 'Dev API DB artifact resolves outside the allowed directory.');
   }
 };

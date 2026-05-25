@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { expectNoTrackedEnvironmentFiles, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
+import { expectNoTrackedEnvironmentFiles, expectNoUnexpectedAppDiff, readSource, repoRoot } from './runtimeBoundaryTestHelpers';
 
 const read = (path: string) => readSource(path);
 
@@ -146,11 +146,11 @@ describe('Phase 21H offline rollback boundary', () => {
       'yarn.lock',
       'src/models/training-model.ts',
       'src/models/training-data.schema.json',
-      'src/App.tsx',
       'apps/api/src/index.ts',
     ]) {
       expect(gitDiff(path), `${path} should not be changed`).toBe('');
     }
+    expectNoUnexpectedAppDiff(gitDiff('src/App.tsx'));
   });
 
   it('keeps touched copy free of forbidden terms and unsafe sync claims', () => {

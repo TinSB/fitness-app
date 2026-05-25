@@ -134,10 +134,10 @@ export const createSupabaseClientAdapterCandidate = <TRead = unknown, TWrite = u
     return {
       ...disabled(),
       status: 'unsafe_config',
-      readCandidate: () => result('unsafe_config', 'Service role key is not browser safe.', {
+      readCandidate: () => result('unsafe_config', 'Privileged server credential is not browser safe.', {
         errorCode: 'service_role_rejected',
       }),
-      writeCandidate: () => result('unsafe_config', 'Service role key is not browser safe.', {
+      writeCandidate: () => result('unsafe_config', 'Privileged server credential is not browser safe.', {
         errorCode: 'service_role_rejected',
       }),
     };

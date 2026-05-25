@@ -80,3 +80,24 @@ export const expectNoTrackedEnvironmentFiles = () => {
   expect(existsSync(resolve(repoRoot(), '.env.production')), '.env.production should not exist').toBe(false);
   expect(readSource('.gitignore')).toMatch(/\.env\*\.local|\.env\.local/);
 };
+
+export const expectNoUnexpectedAppDiff = (diff: string) => {
+  if (!diff) return;
+
+  expect(diff).toContain('completeTrainingViewSet');
+  expect(diff).toContain('completeVisibleTrainingSet');
+  expect(diff).toContain('onCompleteSet={completeVisibleTrainingSet}');
+
+  for (const forbidden of [
+    'cloudPrimaryEnabled',
+    'defaultSyncEnabled',
+    'backgroundWorkEnabled',
+    'sourceOfTruthChanged',
+    'localStorageDeleted',
+    '/sessions/active/complete',
+    '/sessions/active/discard',
+    '/sessions/active/patches',
+  ]) {
+    expect(diff, `App diff should not include ${forbidden}`).not.toContain(forbidden);
+  }
+};

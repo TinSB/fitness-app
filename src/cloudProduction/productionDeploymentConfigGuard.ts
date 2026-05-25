@@ -198,7 +198,7 @@ export const resolveProductionDeploymentConfigGuard = (
   }
 
   if (input.serviceRoleKeyPresentInBrowserConfig === true) {
-    errors.push(safeError('service_role_not_browser_safe', 'Service role key must never enter browser-safe deployment config.'));
+    errors.push(safeError('service_role_not_browser_safe', 'Privileged server credential must never enter browser-safe deployment config.'));
   }
 
   if (input.enabled !== true) {
