@@ -23,6 +23,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/cloudProduction/authClientSkeletonEnvGuard.ts',
   'src/cloudProduction/cloudReadWriteVerificationFlow.ts',
   'src/cloudProduction/cloudReadMirror.ts',
+  'src/cloudProduction/cloudWriteShadowCandidate.ts',
   'src/cloudProduction/cloudWriteShadowMode.ts',
   'src/cloudProduction/conflictOfflineRollbackRuntimeFlow.ts',
   'src/cloudProduction/localBackupDryRunMigrationRuntimeFlow.ts',
