@@ -12,6 +12,11 @@ import {
   buildLocalBackupDryRunUi,
   type Phase21bLocalBackupDryRunUiResult,
 } from '../../cloudProduction/localBackupDryRunUi';
+import {
+  runProductionFullAcceptanceSync,
+  type Phase21iProductionFullAcceptanceGateway,
+  type Phase21iProductionFullAcceptanceResult,
+} from '../../cloudProduction/productionFullAcceptanceRuntime';
 import { exportAppData, getBackupFileName } from '../../storage/backup';
 import { validateAppDataSchema } from '../../storage/appDataValidation';
 import {
@@ -32,6 +37,7 @@ export type CloudSyncPolishSettingsPanelProps = CloudSyncSettingsRuntimeInput & 
   appData?: AppData | null;
   authAdapter?: Phase20cAuthRuntimeAdapter | null;
   browserEnv?: Phase20bEnvRecord | null;
+  productionSyncGateway?: Phase21iProductionFullAcceptanceGateway<AppData> | null;
   readiness?: Phase20bSupabaseProjectRuntimeReadinessResult | null;
   nowIso?: string;
 };
@@ -47,6 +53,12 @@ type LocalBackupDryRunUiState = {
   backupJson: string | null;
   backupExportConfirmed: boolean;
   dryRunRequested: boolean;
+};
+
+type ProductionSyncApplyState = {
+  pending: boolean;
+  result: Phase21iProductionFullAcceptanceResult<AppData> | null;
+  message: string | null;
 };
 
 const phase20aAuthorization = {
@@ -93,6 +105,7 @@ export function CloudSyncPolishSettingsPanel({
   appData,
   authAdapter,
   browserEnv,
+  productionSyncGateway,
   readiness: providedReadiness,
   nowIso,
   ...runtimeInput
@@ -108,10 +121,24 @@ export function CloudSyncPolishSettingsPanel({
     backupExportConfirmed: false,
     dryRunRequested: false,
   });
+  const [productionSyncApplyState, setProductionSyncApplyState] = React.useState<ProductionSyncApplyState>({
+    pending: false,
+    result: null,
+    message: null,
+  });
   const [authEmail, setAuthEmail] = React.useState('');
   const [authPassword, setAuthPassword] = React.useState('');
   const [authMode, setAuthMode] = React.useState<CloudAuthMode>('sign_in');
   const publicBrowserEnv = React.useMemo(() => browserEnv ?? readPublicBrowserEnv(), [browserEnv]);
+  const publicConfig = React.useMemo(
+    () => ({
+      supabaseUrl: publicBrowserEnv.VITE_SUPABASE_URL,
+      anonKey: publicBrowserEnv.VITE_SUPABASE_ANON_KEY,
+      authCallbackUrl: publicBrowserEnv.VITE_IRONPATH_AUTH_CALLBACK_URL,
+      cloudEnvironment: publicBrowserEnv.VITE_IRONPATH_CLOUD_ENVIRONMENT,
+    }),
+    [publicBrowserEnv],
+  );
   const readiness = React.useMemo(
     () =>
       providedReadiness ??
@@ -165,17 +192,16 @@ export function CloudSyncPolishSettingsPanel({
         : await runCloudSyncRealSupabaseAuthActionRuntime({
             action,
             readiness,
-            publicConfig: {
-              supabaseUrl: publicBrowserEnv.VITE_SUPABASE_URL,
-              anonKey: publicBrowserEnv.VITE_SUPABASE_ANON_KEY,
-              authCallbackUrl: publicBrowserEnv.VITE_IRONPATH_AUTH_CALLBACK_URL,
-              cloudEnvironment: publicBrowserEnv.VITE_IRONPATH_CLOUD_ENVIRONMENT,
-            },
+            publicConfig,
             signInEmail: authEmail,
             password: authPassword,
             userInitiated: true,
             nowIso,
           });
+
+      if ((action === 'sign_in' || action === 'sign_up') && result.authRuntime.authenticated) {
+        setAuthPassword('');
+      }
 
       setAuthActionState({
         pendingAction: null,
@@ -189,7 +215,7 @@ export function CloudSyncPolishSettingsPanel({
               : null,
       });
     });
-  }, [authAdapter, authEmail, authPassword, nowIso, publicBrowserEnv, readiness]);
+  }, [authAdapter, authEmail, authPassword, nowIso, publicConfig, readiness]);
 
   React.useEffect(() => {
     if (authAdapter || runtimeInput.authRuntime || authActionState.authRuntime || readiness.readyFor20C !== true) return;
@@ -199,10 +225,10 @@ export function CloudSyncPolishSettingsPanel({
       action: 'check_session',
       readiness,
       publicConfig: {
-        supabaseUrl: publicBrowserEnv.VITE_SUPABASE_URL,
-        anonKey: publicBrowserEnv.VITE_SUPABASE_ANON_KEY,
-        authCallbackUrl: publicBrowserEnv.VITE_IRONPATH_AUTH_CALLBACK_URL,
-        cloudEnvironment: publicBrowserEnv.VITE_IRONPATH_CLOUD_ENVIRONMENT,
+        supabaseUrl: publicConfig.supabaseUrl,
+        anonKey: publicConfig.anonKey,
+        authCallbackUrl: publicConfig.authCallbackUrl,
+        cloudEnvironment: publicConfig.cloudEnvironment,
       },
       userInitiated: false,
       nowIso,
@@ -218,7 +244,7 @@ export function CloudSyncPolishSettingsPanel({
     return () => {
       cancelled = true;
     };
-  }, [authActionState.authRuntime, authAdapter, nowIso, publicBrowserEnv, readiness, runtimeInput.authRuntime]);
+  }, [authActionState.authRuntime, authAdapter, nowIso, publicConfig, readiness, runtimeInput.authRuntime]);
 
   const handleSignIn = React.useCallback(() => {
     if (runtimeInput.onSignIn) {
@@ -283,6 +309,11 @@ export function CloudSyncPolishSettingsPanel({
       backupExportConfirmed: false,
       dryRunRequested: false,
     });
+    setProductionSyncApplyState({
+      pending: false,
+      result: null,
+      message: null,
+    });
   }, [authRuntime?.authenticated]);
 
   const handleCreateLocalBackup = React.useCallback(() => {
@@ -304,37 +335,123 @@ export function CloudSyncPolishSettingsPanel({
       dryRunRequested: true,
     }));
   }, []);
+
+  const handleEnableProductionSync = React.useCallback(() => {
+    if (!appData || !authRuntime || !localBackupDryRunUi || productionSyncApplyState.pending) return;
+
+    setProductionSyncApplyState({
+      pending: true,
+      result: null,
+      message: '正在开启同步',
+    });
+
+    void runProductionFullAcceptanceSync<AppData>({
+      enabled: true,
+      readiness,
+      authRuntime,
+      publicConfig,
+      appData,
+      localBackupDryRunUi,
+      gateway: productionSyncGateway ?? null,
+      schemaValidator: (candidate) => Boolean(validateAppDataSchema(candidate)),
+      nowIso,
+    }).then((result) => {
+      setProductionSyncApplyState({
+        pending: false,
+        result,
+        message: result.ok ? null : result.userMessage,
+      });
+    }).catch(() => {
+      setProductionSyncApplyState({
+        pending: false,
+        result: null,
+        message: '恢复本地模式',
+      });
+    });
+  }, [
+    appData,
+    authRuntime,
+    localBackupDryRunUi,
+    nowIso,
+    productionSyncApplyState.pending,
+    productionSyncGateway,
+    publicConfig,
+    readiness,
+  ]);
+
+  const handleUseLocalMode = React.useCallback(() => {
+    setProductionSyncApplyState((current) => ({
+      ...current,
+      pending: false,
+      message: '恢复本地模式',
+    }));
+  }, []);
+
+  const handleRetryCloud = React.useCallback(() => {
+    setProductionSyncApplyState((current) => ({
+      ...current,
+      message: null,
+    }));
+  }, []);
+
   const onCreateBackup = runtimeInput.onCreateBackup ?? (appData ? handleCreateLocalBackup : undefined);
   const onStartDryRun = runtimeInput.onStartDryRun ?? (appData ? handleStartLocalDryRun : undefined);
+  const onEnableSync = runtimeInput.onEnableSync ??
+    (appData && !productionSyncApplyState.pending ? handleEnableProductionSync : undefined);
+  const syncRuntime = productionSyncApplyState.result?.syncRuntime ?? runtimeInput.syncRuntime;
+  const productionNotice = productionSyncApplyState.pending
+    ? productionSyncApplyState.message
+    : productionSyncApplyState.result?.ok === false
+      ? productionSyncApplyState.result.userMessage
+      : productionSyncApplyState.message;
 
   const sectionProps = React.useMemo(
-    () =>
-      buildCloudSyncSettingsSectionPropsFromRuntime({
+    () => {
+      const props = buildCloudSyncSettingsSectionPropsFromRuntime({
         ...runtimeInput,
+        syncRuntime,
         readiness,
         authRuntime,
         authActionPending,
         authErrorMessage,
         syncPreflight,
         localBackupDryRunUi,
+        onEnableSync,
         onCreateBackup,
         onStartDryRun,
         onSignIn: handleSignIn,
         onSignUp: handleSignUp,
         onSignOut: handleSignOut,
-      }),
+        onUseLocal: runtimeInput.onUseLocal ?? handleUseLocalMode,
+        onRetryCloud: runtimeInput.onRetryCloud ?? handleRetryCloud,
+      });
+
+      if (!productionNotice || !props.syncStatus) return props;
+      return {
+        ...props,
+        syncStatus: {
+          ...props.syncStatus,
+          warnings: [productionNotice, ...(props.syncStatus.warnings ?? [])],
+        },
+      };
+    },
     [
       authActionPending,
       authErrorMessage,
       authRuntime,
+      handleRetryCloud,
       handleSignIn,
       handleSignOut,
       handleSignUp,
+      handleUseLocalMode,
       localBackupDryRunUi,
+      onEnableSync,
       onCreateBackup,
       onStartDryRun,
+      productionNotice,
       readiness,
       runtimeInput,
+      syncRuntime,
       syncPreflight,
     ],
   );

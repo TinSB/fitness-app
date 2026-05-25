@@ -53,6 +53,7 @@ export function SyncStatusCenter({
   const config = statusConfig[readinessStatus];
   const StatusIcon = config.Icon;
   const visibleWarnings = [...warnings, ...blockers].filter(Boolean).slice(0, 3);
+  const statusLabel = syncRuntimeEnabled ? '同步完成' : config.label;
 
   return (
     <Card tone={config.tone} padded className="space-y-4" data-testid="ironpath-sync-status-center">
@@ -82,7 +83,7 @@ export function SyncStatusCenter({
               className={classNames('text-sm', isDark ? 'text-white/60' : 'text-slate-500')}
               data-testid="ironpath-sync-status-message"
             >
-              {config.label}
+              {statusLabel}
             </p>
           </div>
         </div>

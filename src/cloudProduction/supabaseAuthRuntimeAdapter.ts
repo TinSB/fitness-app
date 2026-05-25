@@ -134,6 +134,56 @@ const hasAuthCallbackSignal = (
   );
 };
 
+const buildAuthClientOptions = (
+  config: Required<SupabaseAuthRuntimePublicConfig>,
+  currentUrl: string | null,
+): SupabaseClientOptions<'public'> => ({
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: (url, params) =>
+      isAuthCallbackUrl(config.authCallbackUrl, url.href) &&
+      Boolean(params.access_token || params.error_description || params.error || params.code),
+    flowType: 'implicit',
+    storageKey: 'ironpath-auth-memory-only',
+  },
+  global: {
+    headers: {
+      'x-ironpath-auth-runtime': hasAuthCallbackSignal(config.authCallbackUrl, currentUrl)
+        ? 'callback'
+        : 'settings',
+    },
+  },
+});
+
+let sharedSupabaseAuthRuntimeClient:
+  | {
+      key: string;
+      client: SupabaseClient;
+    }
+  | null = null;
+
+const sharedClientKey = (config: Required<SupabaseAuthRuntimePublicConfig>) =>
+  `${config.supabaseUrl}|${config.authCallbackUrl}|${config.cloudEnvironment}`;
+
+export const getSupabaseAuthRuntimeSharedClient = (
+  config: Required<SupabaseAuthRuntimePublicConfig>,
+  currentUrl: string | null,
+): SupabaseClient => {
+  const key = sharedClientKey(config);
+  if (!sharedSupabaseAuthRuntimeClient || sharedSupabaseAuthRuntimeClient.key !== key) {
+    sharedSupabaseAuthRuntimeClient = {
+      key,
+      client: createClient(config.supabaseUrl, config.anonKey, buildAuthClientOptions(config, currentUrl)),
+    };
+  }
+  return sharedSupabaseAuthRuntimeClient.client;
+};
+
+export const resetSupabaseAuthRuntimeSharedClientForTests = () => {
+  sharedSupabaseAuthRuntimeClient = null;
+};
+
 const localStorageSignature = () => {
   if (typeof globalThis.localStorage === 'undefined') return null;
   try {
@@ -165,26 +215,11 @@ const normalizePassword = (value: string | undefined | null) => {
 const createSupabaseAuthClient = (
   config: Required<SupabaseAuthRuntimePublicConfig>,
   currentUrl: string | null,
-  clientFactory: SupabaseAuthRuntimeClientFactory = createClient,
+  clientFactory?: SupabaseAuthRuntimeClientFactory,
 ) =>
-  clientFactory(config.supabaseUrl, config.anonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: (url, params) =>
-        isAuthCallbackUrl(config.authCallbackUrl, url.href) &&
-        Boolean(params.access_token || params.error_description || params.error || params.code),
-      flowType: 'implicit',
-      storageKey: 'ironpath-auth-memory-only',
-    },
-    global: {
-      headers: {
-        'x-ironpath-auth-runtime': hasAuthCallbackSignal(config.authCallbackUrl, currentUrl)
-          ? 'callback'
-          : 'settings',
-      },
-    },
-  });
+  clientFactory
+    ? clientFactory(config.supabaseUrl, config.anonKey, buildAuthClientOptions(config, currentUrl))
+    : getSupabaseAuthRuntimeSharedClient(config, currentUrl);
 
 const normalizeConfig = (
   publicConfig: SupabaseAuthRuntimePublicConfig | null | undefined,

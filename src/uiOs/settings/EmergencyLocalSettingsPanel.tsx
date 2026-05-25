@@ -18,6 +18,7 @@ export function EmergencyLocalSettingsPanel({ copy }: EmergencyLocalSettingsPane
             <h3 className="text-lg font-bold text-white">紧急本地模式</h3>
             <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">可用</StatusBadge>
           </div>
+          <p className="mt-1 text-sm font-semibold text-emerald-100">恢复本地模式</p>
           <p className="mt-2 text-sm leading-6 text-white/60">{copy}</p>
         </div>
       </div>
