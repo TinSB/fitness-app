@@ -88,7 +88,7 @@ describe('real Supabase auth runtime adapter', () => {
       authenticated: true,
       user: {
         userId: 'supabase-user-1',
-        accountId: 'person@example.test',
+        accountId: 'supabase-user-1',
         displayName: 'person@example.test',
       },
       tokenStored: false,
@@ -139,7 +139,7 @@ describe('real Supabase auth runtime adapter', () => {
       authenticated: true,
       user: {
         userId: 'supabase-user-1',
-        accountId: 'person@example.test',
+        accountId: 'supabase-user-1',
         displayName: 'person@example.test',
       },
       networkAttempted: true,
