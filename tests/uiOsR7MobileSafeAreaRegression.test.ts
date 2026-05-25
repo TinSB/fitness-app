@@ -26,7 +26,7 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     expect(html).toContain('env(safe-area-inset-bottom)');
     expect(html).toContain('data-bottom-nav-safe-area="covered"');
     expect(html).toContain('data-shell-safe-bottom="bottom-nav-protected"');
-    expect(html).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(html).not.toMatch(/(?<!scroll-)pb-\[calc\(6\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
     expect(html).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     for (const label of ['今日', '训练', '历史', '进步', '设置']) expect(text(html)).toContain(label);
   });
@@ -58,7 +58,8 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
 
     expect(shellSource).toContain('{!immersive ? <BottomNav');
     expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
-    expect(shellSource).toContain("pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(shellSource).toContain("pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(shellSource).not.toMatch(/(?<!scroll-)pb-\[calc\(6\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
     expect(navSource).toContain('env(safe-area-inset-bottom)');
     expect(navSource).toContain('data-bottom-nav-safe-area="covered"');
     expect(navSource).toContain('pointer-events-none');
