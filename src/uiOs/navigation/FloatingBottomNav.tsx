@@ -38,18 +38,16 @@ export function FloatingBottomNav<T extends string>({
       data-bottom-nav-safe-area="covered"
       data-bottom-nav-frame="transparent"
       className={classNames(
-        'fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 pointer-events-none transition-all duration-300 lg:hidden',
+        'fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.25rem+env(safe-area-inset-bottom))] pt-1 pointer-events-none transition-all duration-300 lg:hidden',
         hidden ? 'translate-y-[calc(100%+0.5rem+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
       )}
     >
       <div
         className={classNames(
-          'mx-auto flex w-full max-w-md items-center justify-around rounded-2xl border px-2 py-2.5 backdrop-blur-2xl pointer-events-auto',
-          isDark
-            ? 'border-white/12 bg-[#1c1c1e]/78 shadow-none'
-            : 'border-slate-200 bg-white/86 shadow-none',
+          'mx-auto flex w-full max-w-md items-center justify-around bg-transparent px-1 py-1 pointer-events-auto',
+          isDark ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]' : 'text-slate-700',
         )}
-        data-theme-surface="bottom_sheet"
+        data-bottom-nav-chrome="transparent-icons"
         data-theme-mode={themeMode}
       >
         {items.map((item) => {
@@ -62,10 +60,10 @@ export function FloatingBottomNav<T extends string>({
               aria-current={isActive ? 'page' : undefined}
               data-active={isActive ? 'true' : 'false'}
               className={classNames(
-                'relative flex flex-col items-center gap-1 py-2 px-5 rounded-xl transition-all duration-200',
+                'relative flex min-h-14 min-w-[3.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2 transition-all duration-200',
                 isActive
-                  ? isDark ? 'text-emerald-400' : 'text-emerald-700'
-                  : isDark ? 'text-white/35 active:text-white/50' : 'text-slate-500 active:text-slate-700',
+                  ? isDark ? 'bg-emerald-400/12 text-emerald-300 ring-1 ring-emerald-300/20' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                  : isDark ? 'text-white/45 active:bg-white/10 active:text-white/70' : 'text-slate-500 active:bg-slate-100 active:text-slate-700',
               )}
               onClick={() => onNavigate(item.id)}
             >
