@@ -9,8 +9,13 @@ export type CloudAuthStatus = 'signed_out' | 'signing_in' | 'signed_in' | 'error
 export interface CloudAuthCardProps {
   authStatus: CloudAuthStatus;
   currentUserEmail?: string | null;
+  emailInputValue?: string;
+  emailInputLabel?: string;
+  emailInputPlaceholder?: string;
+  infoMessage?: string | null;
   isSigningIn?: boolean;
   errorMessage?: string | null;
+  onEmailInputChange?: (value: string) => void;
   onSignIn?: () => void;
   onSignOut?: () => void;
   onDismiss?: () => void;
@@ -26,8 +31,13 @@ const statusConfig: Record<CloudAuthStatus, { label: string; tone: 'slate' | 'em
 export function CloudAuthCard({
   authStatus,
   currentUserEmail,
+  emailInputValue,
+  emailInputLabel,
+  emailInputPlaceholder,
+  infoMessage,
   isSigningIn,
   errorMessage,
+  onEmailInputChange,
   onSignIn,
   onSignOut,
   onDismiss,
@@ -72,6 +82,37 @@ export function CloudAuthCard({
         <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
           <p className={classNames('truncate text-sm font-medium', isDark ? 'text-white/90' : 'text-slate-700')}>
             {currentUserEmail}
+          </p>
+        </div>
+      ) : null}
+
+      {(authStatus === 'signed_out' || authStatus === 'error') && onEmailInputChange ? (
+        <label className="block space-y-1.5">
+          <span className={classNames('text-xs font-medium', isDark ? 'text-white/50' : 'text-slate-500')}>
+            {emailInputLabel ?? '邮箱'}
+          </span>
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={emailInputValue ?? ''}
+            onChange={(event) => onEmailInputChange(event.target.value)}
+            placeholder={emailInputPlaceholder ?? '用于接收登录链接'}
+            className={classNames(
+              'w-full rounded-lg border px-3 py-2 text-sm outline-none transition',
+              isDark
+                ? 'border-white/10 bg-white/[0.06] text-white placeholder:text-white/30 focus:border-emerald-300/60'
+                : 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-emerald-500',
+            )}
+            data-testid="ironpath-auth-email-input"
+          />
+        </label>
+      ) : null}
+
+      {infoMessage ? (
+        <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-emerald-400/10' : 'bg-emerald-50')}>
+          <p className={classNames('text-sm', isDark ? 'text-emerald-200' : 'text-emerald-700')}>
+            {infoMessage}
           </p>
         </div>
       ) : null}

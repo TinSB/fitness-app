@@ -9,7 +9,12 @@ import {
 import { buildSupabaseProjectRuntimeReadinessCheck } from '../src/cloudProduction/supabaseProjectRuntimeReadinessCheck';
 import {
   buildCloudSyncAuthActionRuntime,
+  runCloudSyncRealSupabaseAuthActionRuntime,
 } from '../src/uiOs/settings/cloudSyncAuthActionController';
+import type {
+  SupabaseAuthRuntimeClient,
+  SupabaseAuthRuntimeClientFactory,
+} from '../src/cloudProduction/supabaseAuthRuntimeAdapter';
 import { buildCloudSyncSettingsSectionPropsFromRuntime } from '../src/uiOs/settings/cloudSyncRuntimeSettingsAdapter';
 import { CloudSyncPolishSettingsPanel } from '../src/uiOs/settings/CloudSyncPolishSettingsPanel';
 import { UiThemeProvider } from '../src/uiOs/theme/UiThemeProvider';
@@ -93,6 +98,7 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
 
     expect(markup).toContain('data-testid="ironpath-auth-card"');
     expect(markup).toContain('data-testid="ironpath-auth-sign-in"');
+    expect(markup).toContain('data-testid="ironpath-auth-email-input"');
     expect(text).toContain('登录账号');
     expect(text).toContain('未登录');
     expect(text).toContain('同步未开启');
@@ -131,6 +137,59 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
       status: 'signed_in',
       authenticated: true,
       user: syntheticUser(),
+      tokenStored: false,
+      localStorageChanged: false,
+      localStorageDeleted: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+      cloudPrimaryEnabled: false,
+      defaultSyncEnabled: false,
+      backgroundWorkEnabled: false,
+      sourceOfTruthChanged: false,
+      serviceRoleExposed: false,
+      secretsExposed: false,
+    });
+  });
+
+  it('runs real Supabase sign-in through the Settings auth action controller without enabling sync', async () => {
+    let otpInput: unknown = null;
+    const clientFactory: SupabaseAuthRuntimeClientFactory = () => ({
+      auth: {
+        signInWithOtp: async (input: unknown) => {
+          otpInput = input;
+          return { data: { user: null, session: null }, error: null };
+        },
+      },
+    } as unknown as SupabaseAuthRuntimeClient);
+
+    const result = await runCloudSyncRealSupabaseAuthActionRuntime({
+      action: 'sign_in',
+      readiness: ready20b(),
+      publicConfig: {
+        supabaseUrl: 'https://ironpath-project.supabase.co',
+        anonKey: 'synthetic-public-anon-key',
+        authCallbackUrl: 'http://127.0.0.1:3000/auth/callback',
+        cloudEnvironment: 'production',
+      },
+      signInEmail: 'person@example.test',
+      userInitiated: true,
+      nowIso,
+      clientFactory,
+    });
+
+    expect(otpInput).toEqual({
+      email: 'person@example.test',
+      options: {
+        emailRedirectTo: 'http://127.0.0.1:3000/auth/callback',
+        shouldCreateUser: true,
+      },
+    });
+    expect(result.errorMessage).toBeNull();
+    expect(result.authRuntime).toMatchObject({
+      ok: true,
+      providerName: 'supabase-auth-runtime',
+      action: 'sign_in',
+      authenticated: false,
       tokenStored: false,
       localStorageChanged: false,
       localStorageDeleted: false,

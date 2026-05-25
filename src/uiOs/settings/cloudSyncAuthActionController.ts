@@ -5,6 +5,10 @@ import {
   type Phase20cAuthRuntimeWiringResult,
 } from '../../cloudProduction/authRuntimeWiring';
 import type { Phase20bSupabaseProjectRuntimeReadinessResult } from '../../cloudProduction/supabaseProjectRuntimeReadinessCheck';
+import {
+  runSupabaseAuthRuntimeAction,
+  type SupabaseAuthRuntimeActionInput,
+} from '../../cloudProduction/supabaseAuthRuntimeAdapter';
 
 export type CloudSyncAuthAction = Extract<Phase20cAuthAction, 'sign_in' | 'sign_out'>;
 
@@ -32,6 +36,14 @@ export type CloudSyncAuthActionControllerResult = {
     serviceRoleExposed: false;
     secretsExposed: false;
   };
+};
+
+export type CloudSyncRealSupabaseAuthActionControllerInput = Omit<
+  SupabaseAuthRuntimeActionInput,
+  'action' | 'readiness'
+> & {
+  action: CloudSyncAuthAction | 'check_session';
+  readiness?: Phase20bSupabaseProjectRuntimeReadinessResult | null;
 };
 
 const safeRuntimeBoundary = {
@@ -66,6 +78,33 @@ export const buildCloudSyncAuthActionRuntime = (
     userInitiated: input.userInitiated === true,
     runtimeBoundary: safeRuntimeBoundary,
     nowIso: input.nowIso,
+  });
+
+  return {
+    authRuntime,
+    errorMessage: formatCloudSyncAuthActionError(authRuntime),
+    safeBoundaries: {
+      tokenStored: false,
+      localStorageChanged: false,
+      localStorageDeleted: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+      cloudPrimaryEnabled: false,
+      defaultSyncEnabled: false,
+      backgroundWorkEnabled: false,
+      sourceOfTruthChanged: false,
+      serviceRoleExposed: false,
+      secretsExposed: false,
+    },
+  };
+};
+
+export const runCloudSyncRealSupabaseAuthActionRuntime = async (
+  input: CloudSyncRealSupabaseAuthActionControllerInput,
+): Promise<CloudSyncAuthActionControllerResult> => {
+  const authRuntime = await runSupabaseAuthRuntimeAction({
+    ...input,
+    readiness: input.readiness ?? null,
   });
 
   return {
