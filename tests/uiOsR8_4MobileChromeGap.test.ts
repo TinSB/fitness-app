@@ -38,8 +38,11 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
     );
 
     expect(source).toContain('data-bottom-nav-safe-area="covered"');
+    expect(source).toContain('data-bottom-nav-frame="transparent"');
     expect(source).toContain('fixed bottom-0 left-0 right-0');
     expect(source).toContain('pb-[calc(0.5rem+env(safe-area-inset-bottom))]');
+    expect(source).not.toContain("bg-[#101012]/95");
+    expect(source).not.toContain('bg-slate-50/95');
     expect(source).toContain("border-white/10 bg-[#1c1c1e]/88");
     expect(source).toContain("data-theme-mode={themeMode}");
     expect(html).toContain('data-bottom-nav-hidden="false"');

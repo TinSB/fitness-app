@@ -36,9 +36,9 @@ export function FloatingBottomNav<T extends string>({
       data-bottom-nav-background={themeMode}
       data-bottom-nav-surface={`${themeMode}-safe-area`}
       data-bottom-nav-safe-area="covered"
+      data-bottom-nav-frame="transparent"
       className={classNames(
         'fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 pointer-events-none transition-all duration-300 lg:hidden',
-        isDark ? 'bg-[#101012]/95' : 'bg-slate-50/95',
         hidden ? 'translate-y-[calc(100%+0.5rem+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
       )}
     >
