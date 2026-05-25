@@ -296,6 +296,20 @@ It creates the in-memory shadow candidate step after 21B. The candidate reads th
 
 Recommended next task: 21D Cloud Read Mirror Verification V1.
 
+## Phase 21D Cloud Read Mirror Verification
+
+Phase 21D - Cloud Read Mirror Verification V1 adds `src/cloudProduction/cloudReadMirrorVerification.ts` and `docs/CLOUD_READ_MIRROR_VERIFICATION.md`.
+
+It creates the read mirror verification step after 21C. The verification reads the accepted shadow candidate, injected cloud read repository evidence, local snapshot metadata, owner/schema checks, and explicit read-mirror verification before first-upload apply can be considered.
+
+21D can report `readyFor21E: true` only when cloud data is missing or exactly mirrored. If cloud metadata differs from the local shadow candidate, 21D requires manual review and blocks the next apply step.
+
+21D keeps `cloudReadMirrorVerified: true`, `requiresFirstUploadExplicitApply: true`, `uploadPerformed: false`, `downloadPerformed: false`, `cloudWriteAttempted: false`, `cloudDataChanged: false`, `autoApplied: false`, `syncRuntimeEnabled: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21D does not upload, download, write localStorage, write cloud data, apply cloud data, add routes, change schemas or persistence, change packages or lockfiles, start background sync, make cloud data primary, or expose first-upload apply.
+
+Recommended next task: 21E First Upload Explicit Apply V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
