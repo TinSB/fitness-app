@@ -32,6 +32,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/cloudProduction/firstUploadExplicitApply.ts',
   'src/cloudProduction/localBackupDryRunMigrationRuntimeFlow.ts',
   'src/cloudProduction/localBackupDryRunUi.ts',
+  'src/cloudProduction/offlineRollback.ts',
   'src/cloudProduction/productionAcceptanceSyntheticData.ts',
   'src/cloudProduction/supabaseProjectRuntimeReadinessCheck.ts',
   'src/cloudProduction/supabaseAuthRuntimeAdapter.ts',
