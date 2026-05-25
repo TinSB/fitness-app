@@ -31,7 +31,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     expect(html).not.toContain('bg-[linear-gradient(to_top,#0a0a0b');
   });
 
-  it('keeps scroll padding for nav positioning without rendering a bottom filler', () => {
+  it('keeps tap clearance so bottom rows are not hidden behind the nav', () => {
     const html = renderToStaticMarkup(
       React.createElement(
         MobileAppShell,
@@ -46,8 +46,8 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
       ),
     );
 
-    expect(html).toContain('data-shell-bottom-reserve="scroll-padding-only"');
-    expect(html).not.toMatch(/(?<!scroll-)pb-\[calc\(6\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
+    expect(html).toContain('data-shell-bottom-reserve="tap-clearance"');
+    expect(html).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(html).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
   });
@@ -88,9 +88,9 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     const nav = readFileSync('src/uiOs/navigation/FloatingBottomNav.tsx', 'utf8');
 
     expect(shell).toContain('data-shell-bottom-reserve');
-    expect(shell).toContain('scroll-padding-only');
+    expect(shell).toContain('tap-clearance');
     expect(shell).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
-    expect(shell).not.toMatch(/(?<!scroll-)pb-\[calc\(6\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
+    expect(shell).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(nav).not.toContain('bottom-0 left-0 right-0 bg-[linear-gradient');
     expect(nav).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
   });

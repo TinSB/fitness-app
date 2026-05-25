@@ -41,7 +41,7 @@ describe('UI-OS R9.1 real theme application', () => {
     expect(html).toContain('data-app-chrome-background="light"');
     expect(html).toContain('bg-slate-50 text-slate-950');
     expect(html).toContain('data-bottom-nav-background="light"');
-    expect(html).toContain('bg-white/92');
+    expect(html).toContain('bg-white/86');
   });
 
   it('applies dark theme visibly to shell surfaces and bottom nav', () => {
@@ -64,7 +64,7 @@ describe('UI-OS R9.1 real theme application', () => {
     expect(html).toContain('data-app-chrome-background="dark"');
     expect(html).toContain('bg-[#0a0a0b] text-slate-100');
     expect(html).toContain('data-bottom-nav-background="dark"');
-    expect(html).toContain('bg-[#1c1c1e]/88');
+    expect(html).toContain('bg-[#1c1c1e]/78');
   });
 
   it('resolves system theme from system preference', () => {

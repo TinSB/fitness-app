@@ -46,8 +46,8 @@ export function FloatingBottomNav<T extends string>({
         className={classNames(
           'mx-auto flex w-full max-w-md items-center justify-around rounded-2xl border px-2 py-2.5 backdrop-blur-2xl pointer-events-auto',
           isDark
-            ? 'border-white/10 bg-[#1c1c1e]/88 shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
-            : 'border-slate-200 bg-white/92 shadow-[0_12px_34px_rgba(15,23,42,0.12)]',
+            ? 'border-white/12 bg-[#1c1c1e]/78 shadow-none'
+            : 'border-slate-200 bg-white/86 shadow-none',
         )}
         data-theme-surface="bottom_sheet"
         data-theme-mode={themeMode}

@@ -22,8 +22,8 @@ describe('AppShell responsive layout', () => {
   it('keeps mobile safe-area handling centralized in the shell', () => {
     expect(appShellSource).toContain('AppTopBar');
     expect(appShellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
-    expect(appShellSource).toContain("pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
-    expect(appShellSource).not.toMatch(/(?<!scroll-)pb-\[calc\(6\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
+    expect(appShellSource).toContain("pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(appShellSource).toContain("data-shell-bottom-reserve={immersive ? 'none' : 'tap-clearance'}");
     expect(appShellSource).toContain('{!immersive ? <BottomNav');
   });
 
