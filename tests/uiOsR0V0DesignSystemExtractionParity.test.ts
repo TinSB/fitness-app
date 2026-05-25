@@ -92,10 +92,10 @@ describe('UI-OS R0 v0 design system extraction parity', () => {
 
     expect(navHtml).toContain('fixed bottom-0 left-0 right-0');
     expect(navHtml).toContain('data-bottom-nav-safe-area="covered"');
-    expect(navHtml).toContain('data-bottom-nav-chrome="transparent-icons"');
-    expect(navHtml).toContain('rounded-2xl');
-    expect(navHtml).toContain('bg-transparent');
-    expect(navHtml).not.toContain('backdrop-blur-2xl');
+    expect(navHtml).toContain('data-bottom-nav-chrome="safe-area-capsule"');
+    expect(navHtml).toContain('rounded-t-2xl');
+    expect(navHtml).toContain('backdrop-blur-2xl');
+    expect(navHtml).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom))]');
     expect(sheetHtml).toContain('rounded-t-3xl');
     expect(sheetHtml).toContain('bg-black/60');
     expect(sheetHtml).toContain('需要手动确认');

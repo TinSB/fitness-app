@@ -36,7 +36,7 @@ describe('UI-OS R8 bottom nav auto-hide', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+0.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('translate-y-[calc(100%+env(safe-area-inset-bottom))]');
     expect(html).toContain('env(safe-area-inset-bottom)');
   });
 

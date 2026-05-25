@@ -23,12 +23,13 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
 
     expect(html).toContain('data-bottom-nav-safe-area="covered"');
     expect(html).toContain('data-bottom-nav-frame="transparent"');
-    expect(html).toContain('data-bottom-nav-chrome="transparent-icons"');
+    expect(html).toContain('data-bottom-nav-chrome="safe-area-capsule"');
     expect(html).toContain('fixed bottom-0 left-0 right-0');
-    expect(html).toContain('pb-[calc(0.25rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('pb-0');
+    expect(html).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('bg-[#101012]/95');
-    expect(html).not.toContain('bg-[#1c1c1e]/78');
+    expect(html).toContain('bg-[#1c1c1e]/88');
     expect(html).not.toContain('bg-slate-50/95');
     expect(html).not.toContain('bg-[linear-gradient(to_top,#0a0a0b');
   });
@@ -67,7 +68,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+0.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('translate-y-[calc(100%+env(safe-area-inset-bottom))]');
     expect(html).toContain('data-bottom-nav-background="light"');
     expect(html).not.toContain('bg-[#0a0a0b]');
   });
