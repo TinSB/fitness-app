@@ -150,4 +150,12 @@ describe('Cloud Sync UI Polish V1 components', () => {
     expect(markup).toContain('ironpath-account-settings');
     expect(markup).toContain('查看同步流程预览');
   });
+
+  it('keeps the mounted Settings preview passive with no action buttons', () => {
+    const markup = render(createElement(CloudSyncSettingsSection));
+
+    expect(markup).toContain('ironpath-cloud-sync-settings-section');
+    expect(markup).toContain('查看同步流程预览');
+    expect(markup).not.toContain('<button');
+  });
 });

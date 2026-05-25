@@ -39,17 +39,18 @@ interface ConflictItemRowProps {
 }
 
 function ConflictItemRow({ item, isDark, onReviewDetail }: ConflictItemRowProps) {
-  return (
-    <button
-      type="button"
-      onClick={() => onReviewDetail?.(item.id)}
-      className={classNames(
-        'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition',
-        isDark
-          ? 'bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.10]'
-          : 'bg-slate-50 hover:bg-slate-100 active:bg-slate-100',
-      )}
-    >
+  const rowClassName = classNames(
+    'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition',
+    isDark
+      ? onReviewDetail
+        ? 'bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.10]'
+        : 'bg-white/[0.04]'
+      : onReviewDetail
+        ? 'bg-slate-50 hover:bg-slate-100 active:bg-slate-100'
+        : 'bg-slate-50',
+  );
+  const content = (
+    <>
       <div className="min-w-0 flex-1">
         <p className={classNames('truncate text-sm font-medium', isDark ? 'text-white' : 'text-slate-900')}>
           {item.field}
@@ -66,7 +67,19 @@ function ConflictItemRow({ item, isDark, onReviewDetail }: ConflictItemRowProps)
           </span>
         </div>
       </div>
-      <ChevronRight className={classNames('h-4 w-4 shrink-0', isDark ? 'text-white/30' : 'text-slate-400')} />
+      {onReviewDetail ? (
+        <ChevronRight className={classNames('h-4 w-4 shrink-0', isDark ? 'text-white/30' : 'text-slate-400')} />
+      ) : null}
+    </>
+  );
+
+  if (!onReviewDetail) {
+    return <div className={rowClassName}>{content}</div>;
+  }
+
+  return (
+    <button type="button" onClick={() => onReviewDetail(item.id)} className={rowClassName}>
+      {content}
     </button>
   );
 }

@@ -73,6 +73,7 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
 
   it('mounts the cloud sync polish surface only in Settings/Profile', () => {
     const profile = read('src/features/ProfileView.tsx');
+    const settingsSection = read('src/cloudSync/CloudSyncSettingsSection.tsx');
     const app = read('src/App.tsx');
     const today = existsSync(resolve(repoRoot(), 'src/features/TodayView.tsx'))
       ? read('src/features/TodayView.tsx')
@@ -88,6 +89,21 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
     for (const source of [app, today, record, training]) {
       expect(source).not.toContain('CloudSyncPolishSettingsPanel');
       expect(source).not.toContain('ironpath-cloud-sync-settings-section');
+    }
+
+    for (const callbackProp of [
+      'onSignIn=',
+      'onSignOut=',
+      'onEnableSync=',
+      'onToggleSync=',
+      'onStartDryRun=',
+      'onCreateBackup=',
+      'onKeepLocal=',
+      'onUseCloud=',
+      'onRetryCloud=',
+      'onRollback=',
+    ]) {
+      expect(settingsSection, `mounted preview should not pass ${callbackProp}`).not.toContain(callbackProp);
     }
   });
 
