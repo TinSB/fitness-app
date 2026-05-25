@@ -23,7 +23,7 @@
  * - ironpath-account-settings
  */
 
-export { CloudAuthCard, type CloudAuthCardProps, type CloudAuthStatus } from './CloudAuthCard';
+export { CloudAuthCard, type CloudAuthCardProps, type CloudAuthMode, type CloudAuthStatus } from './CloudAuthCard';
 export { SyncStatusCenter, type SyncStatusCenterProps, type SyncReadinessStatus } from './SyncStatusCenter';
 export { FirstSyncFlow, type FirstSyncFlowProps, type FirstSyncFlowStatus } from './FirstSyncFlow';
 export { ConflictReview, type ConflictReviewProps, type ConflictItem, type ConflictResolutionState } from './ConflictReview';

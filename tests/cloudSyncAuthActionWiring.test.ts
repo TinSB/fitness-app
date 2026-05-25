@@ -99,7 +99,12 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
     expect(markup).toContain('data-testid="ironpath-auth-card"');
     expect(markup).toContain('data-testid="ironpath-auth-sign-in"');
     expect(markup).toContain('data-testid="ironpath-auth-email-input"');
+    expect(markup).toContain('data-testid="ironpath-auth-password-input"');
+    expect(markup).toContain('data-testid="ironpath-auth-mode-sign-in"');
+    expect(markup).toContain('data-testid="ironpath-auth-mode-sign-up"');
     expect(text).toContain('登录账号');
+    expect(text).toContain('创建账号');
+    expect(text).toContain('密码');
     expect(text).toContain('未登录');
     expect(text).toContain('同步未开启');
     expect(text).not.toContain('已选择开启');
@@ -152,12 +157,15 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
   });
 
   it('runs real Supabase sign-in through the Settings auth action controller without enabling sync', async () => {
-    let otpInput: unknown = null;
+    let passwordInput: unknown = null;
     const clientFactory: SupabaseAuthRuntimeClientFactory = () => ({
       auth: {
-        signInWithOtp: async (input: unknown) => {
-          otpInput = input;
-          return { data: { user: null, session: null }, error: null };
+        signInWithOtp: async () => {
+          throw new Error('magic link sign-in should not be used');
+        },
+        signInWithPassword: async (input: unknown) => {
+          passwordInput = input;
+          return { data: { user: { id: 'supabase-user-1', email: 'person@example.test' }, session: null }, error: null };
         },
       },
     } as unknown as SupabaseAuthRuntimeClient);
@@ -172,24 +180,78 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
         cloudEnvironment: 'production',
       },
       signInEmail: 'person@example.test',
+      password: 'strong-password',
       userInitiated: true,
       nowIso,
       clientFactory,
     });
 
-    expect(otpInput).toEqual({
+    expect(passwordInput).toEqual({
       email: 'person@example.test',
-      options: {
-        emailRedirectTo: 'http://127.0.0.1:3000/auth/callback',
-        shouldCreateUser: true,
-      },
+      password: 'strong-password',
     });
     expect(result.errorMessage).toBeNull();
     expect(result.authRuntime).toMatchObject({
       ok: true,
       providerName: 'supabase-auth-runtime',
       action: 'sign_in',
-      authenticated: false,
+      status: 'signed_in',
+      authenticated: true,
+      tokenStored: false,
+      localStorageChanged: false,
+      localStorageDeleted: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+      cloudPrimaryEnabled: false,
+      defaultSyncEnabled: false,
+      backgroundWorkEnabled: false,
+      sourceOfTruthChanged: false,
+      serviceRoleExposed: false,
+      secretsExposed: false,
+    });
+  });
+
+  it('runs real Supabase sign-up through the Settings auth action controller without enabling sync', async () => {
+    let signUpInput: unknown = null;
+    const clientFactory: SupabaseAuthRuntimeClientFactory = () => ({
+      auth: {
+        signInWithOtp: async () => {
+          throw new Error('magic link sign-in should not be used');
+        },
+        signUp: async (input: unknown) => {
+          signUpInput = input;
+          return { data: { user: { id: 'supabase-user-1', email: 'person@example.test' }, session: null }, error: null };
+        },
+      },
+    } as unknown as SupabaseAuthRuntimeClient);
+
+    const result = await runCloudSyncRealSupabaseAuthActionRuntime({
+      action: 'sign_up',
+      readiness: ready20b(),
+      publicConfig: {
+        supabaseUrl: 'https://ironpath-project.supabase.co',
+        anonKey: 'synthetic-public-anon-key',
+        authCallbackUrl: 'http://127.0.0.1:3000/auth/callback',
+        cloudEnvironment: 'production',
+      },
+      signInEmail: 'person@example.test',
+      password: 'strong-password',
+      userInitiated: true,
+      nowIso,
+      clientFactory,
+    });
+
+    expect(signUpInput).toEqual({
+      email: 'person@example.test',
+      password: 'strong-password',
+    });
+    expect(result.errorMessage).toBeNull();
+    expect(result.authRuntime).toMatchObject({
+      ok: true,
+      providerName: 'supabase-auth-runtime',
+      action: 'sign_up',
+      status: 'signed_in',
+      authenticated: true,
       tokenStored: false,
       localStorageChanged: false,
       localStorageDeleted: false,
@@ -282,6 +344,16 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
         secretsExposed: false,
       }),
       signIn: () => ({
+        ok: true,
+        status: 'authenticated',
+        user: syntheticUser(),
+        message: 'unsafe',
+        networkAttempted: false,
+        tokenStored: true,
+        localStorageChanged: true,
+        secretsExposed: true,
+      }),
+      signUp: () => ({
         ok: true,
         status: 'authenticated',
         user: syntheticUser(),

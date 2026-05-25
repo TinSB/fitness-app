@@ -10,7 +10,7 @@ import {
   type SupabaseAuthRuntimeActionInput,
 } from '../../cloudProduction/supabaseAuthRuntimeAdapter';
 
-export type CloudSyncAuthAction = Extract<Phase20cAuthAction, 'sign_in' | 'sign_out'>;
+export type CloudSyncAuthAction = Extract<Phase20cAuthAction, 'sign_in' | 'sign_up' | 'sign_out'>;
 
 export type CloudSyncAuthActionControllerInput = {
   action: CloudSyncAuthAction;

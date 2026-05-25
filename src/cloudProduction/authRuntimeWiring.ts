@@ -1,6 +1,6 @@
 export const PHASE20C_AUTH_RUNTIME_WIRING_ID = 'phase20c-auth-runtime-wiring';
 
-export type Phase20cAuthAction = 'check_session' | 'sign_in' | 'sign_out';
+export type Phase20cAuthAction = 'check_session' | 'sign_in' | 'sign_up' | 'sign_out';
 
 export type Phase20cAuthRuntimeStatus =
   | 'disabled'
@@ -69,6 +69,7 @@ export type Phase20cAuthRuntimeAdapter = {
   providerName: Phase20cAuthProviderName;
   checkSession: () => Phase20cAuthAdapterResult;
   signIn: () => Phase20cAuthAdapterResult;
+  signUp: () => Phase20cAuthAdapterResult;
   signOut: () => Phase20cAuthAdapterResult;
 };
 
@@ -192,6 +193,16 @@ export const createSyntheticAuthRuntimeAdapter = (
     localStorageChanged: false,
     secretsExposed: false,
   }),
+  signUp: () => ({
+    ok: Boolean(user),
+    status: user ? 'authenticated' : 'failed',
+    user,
+    message: user ? 'Synthetic sign-up succeeded.' : 'Synthetic sign-up user is missing.',
+    networkAttempted: false,
+    tokenStored: false,
+    localStorageChanged: false,
+    secretsExposed: false,
+  }),
   signOut: () => ({
     ok: true,
     status: 'signed_out',
@@ -281,7 +292,7 @@ const statusFromBlockers = (
   if (blockers.includes('auth_adapter_missing')) return 'adapter_missing';
   if (blockers.includes('user_action_missing')) return 'user_action_required';
   if (blockers.includes('adapter_failed')) return 'adapter_failed';
-  if (action === 'sign_in' && adapterResult?.status === 'authenticated') return 'signed_in';
+  if ((action === 'sign_in' || action === 'sign_up') && adapterResult?.status === 'authenticated') return 'signed_in';
   if (action === 'sign_out' && adapterResult?.status === 'signed_out') return 'signed_out';
   return 'session_checked';
 };
@@ -292,6 +303,7 @@ const runAdapterAction = (
 ) => {
   if (!adapter) return emptyAdapterResult('Auth runtime adapter is missing.');
   if (action === 'sign_in') return adapter.signIn();
+  if (action === 'sign_up') return adapter.signUp();
   if (action === 'sign_out') return adapter.signOut();
   return adapter.checkSession();
 };
@@ -314,7 +326,7 @@ export const buildAuthRuntimeWiring = (
   addReadinessBlockers(blockers, input.readiness);
   addRuntimeBoundaryBlockers(blockers, input.runtimeBoundary);
   if (!input.adapter) addUnique(blockers, 'auth_adapter_missing');
-  if ((action === 'sign_in' || action === 'sign_out') && input.userInitiated !== true) {
+  if ((action === 'sign_in' || action === 'sign_up' || action === 'sign_out') && input.userInitiated !== true) {
     addUnique(blockers, 'user_action_missing');
   }
 

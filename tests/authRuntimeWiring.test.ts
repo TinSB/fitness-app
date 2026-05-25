@@ -185,9 +185,13 @@ describe('Phase 20C auth runtime wiring', () => {
     });
   });
 
-  it('signs in and signs out through the injected adapter only after user action', () => {
+  it('signs in signs up and signs out through the injected adapter only after user action', () => {
     const signedIn = buildAuthRuntimeWiring(validInput({
       action: 'sign_in',
+      userInitiated: true,
+    }));
+    const signedUp = buildAuthRuntimeWiring(validInput({
+      action: 'sign_up',
       userInitiated: true,
     }));
     const signedOut = buildAuthRuntimeWiring(validInput({
@@ -196,6 +200,16 @@ describe('Phase 20C auth runtime wiring', () => {
     }));
 
     expect(signedIn).toMatchObject({
+      ok: true,
+      status: 'signed_in',
+      authenticated: true,
+      user: user(),
+      tokenStored: false,
+      localStorageChanged: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+    });
+    expect(signedUp).toMatchObject({
       ok: true,
       status: 'signed_in',
       authenticated: true,
@@ -248,6 +262,16 @@ describe('Phase 20C auth runtime wiring', () => {
         secretsExposed: true,
       }),
       signIn: () => ({
+        ok: false,
+        status: 'failed',
+        user: null,
+        message: 'Unused.',
+        networkAttempted: false,
+        tokenStored: false,
+        localStorageChanged: false,
+        secretsExposed: false,
+      }),
+      signUp: () => ({
         ok: false,
         status: 'failed',
         user: null,

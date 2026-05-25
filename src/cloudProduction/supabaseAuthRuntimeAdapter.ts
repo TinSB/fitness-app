@@ -28,6 +28,7 @@ export type SupabaseAuthRuntimeActionInput = {
   readiness?: Phase20cReadinessLike | null;
   publicConfig?: SupabaseAuthRuntimePublicConfig | null;
   signInEmail?: string | null;
+  password?: string | null;
   userInitiated?: boolean;
   nowIso?: string;
   currentUrl?: string;
@@ -78,6 +79,7 @@ const fixedResultAdapter = (adapterResult: Phase20cAuthAdapterResult): Phase20cA
   providerName: 'supabase-auth-runtime',
   checkSession: () => adapterResult,
   signIn: () => adapterResult,
+  signUp: () => adapterResult,
   signOut: () => adapterResult,
 });
 
@@ -155,6 +157,11 @@ const userFromSupabase = (user: User | null | undefined): Phase20cAuthAdapterRes
   };
 };
 
+const normalizePassword = (value: string | undefined | null) => {
+  const trimmed = trimValue(value);
+  return trimmed ?? null;
+};
+
 const createSupabaseAuthClient = (
   config: Required<SupabaseAuthRuntimePublicConfig>,
   currentUrl: string | null,
@@ -202,16 +209,23 @@ export const runSupabaseAuthRuntimeAction = async (
     }));
   }
 
-  if ((input.action === 'sign_in' || input.action === 'sign_out') && input.userInitiated !== true) {
+  if ((input.action === 'sign_in' || input.action === 'sign_up' || input.action === 'sign_out') && input.userInitiated !== true) {
     return finalizeAuthRuntime(input, safeAdapterResult('unsupported', {
       message: 'Supabase auth action requires explicit user action.',
     }));
   }
 
   const email = normalizeEmail(input.signInEmail);
-  if (input.action === 'sign_in' && !email) {
+  if ((input.action === 'sign_in' || input.action === 'sign_up') && !email) {
     return finalizeAuthRuntime(input, safeAdapterResult('unsupported', {
-      message: 'Email is required before Supabase sign-in.',
+      message: 'Email is required before Supabase email/password auth.',
+    }));
+  }
+
+  const password = normalizePassword(input.password);
+  if ((input.action === 'sign_in' || input.action === 'sign_up') && !password) {
+    return finalizeAuthRuntime(input, safeAdapterResult('unsupported', {
+      message: 'Password is required before Supabase email/password auth.',
     }));
   }
 
@@ -222,12 +236,9 @@ export const runSupabaseAuthRuntimeAction = async (
 
   try {
     if (input.action === 'sign_in') {
-      const response = await client.auth.signInWithOtp({
+      const response = await client.auth.signInWithPassword({
         email: email as string,
-        options: {
-          emailRedirectTo: config.authCallbackUrl,
-          shouldCreateUser: true,
-        },
+        password: password as string,
       });
       const changed = beforeStorage !== localStorageSignature();
       if (response.error) {
@@ -237,9 +248,34 @@ export const runSupabaseAuthRuntimeAction = async (
           localStorageChanged: changed,
         }));
       }
-      return finalizeAuthRuntime(input, safeAdapterResult('unauthenticated', {
+      const user = userFromSupabase(response.data.user);
+      return finalizeAuthRuntime(input, safeAdapterResult(user ? 'authenticated' : 'unauthenticated', {
         ok: true,
-        message: 'Supabase sign-in link was sent.',
+        user,
+        message: user ? 'Supabase password sign-in completed.' : 'Supabase password sign-in returned no user.',
+        networkAttempted: true,
+        localStorageChanged: changed,
+      }));
+    }
+
+    if (input.action === 'sign_up') {
+      const response = await client.auth.signUp({
+        email: email as string,
+        password: password as string,
+      });
+      const changed = beforeStorage !== localStorageSignature();
+      if (response.error) {
+        return finalizeAuthRuntime(input, safeAdapterResult('failed', {
+          message: 'Supabase sign-up failed.',
+          networkAttempted: true,
+          localStorageChanged: changed,
+        }));
+      }
+      const user = userFromSupabase(response.data.user);
+      return finalizeAuthRuntime(input, safeAdapterResult(user ? 'authenticated' : 'unauthenticated', {
+        ok: true,
+        user,
+        message: user ? 'Supabase account was created.' : 'Supabase sign-up returned no user.',
         networkAttempted: true,
         localStorageChanged: changed,
       }));
