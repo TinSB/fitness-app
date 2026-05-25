@@ -352,6 +352,20 @@ It creates the explicit conflict review gate after 21F. The review reads parity 
 
 Recommended next task: 21H Offline Rollback V1.
 
+## Phase 21H Offline Rollback
+
+Phase 21H - Offline Rollback V1 adds `src/cloudProduction/offlineRollback.ts` and `docs/OFFLINE_ROLLBACK.md`.
+
+It creates the offline mode, rollback, and emergency local safety gate after 21G. The gate reads conflict review evidence, offline training proof, cloud-unavailable fallback proof, no-fake-success proof, localStorage fallback evidence, emergency backup evidence, rollback snapshot evidence, optional `恢复本地模式` request, explicit restore-local confirmation, and runtime boundary evidence.
+
+21H can report `readyFor21I: true` only after offline training remains available, cloud unavailable does not block training, fake cloud success is rejected, rollback is available, emergency local mode is available, and restore-local mode is explicit when requested.
+
+21H keeps `offlineTrainingAvailable: true`, `cloudUnavailableAccepted: true`, `rollbackAvailable: true`, `emergencyLocalAvailable: true`, `restoreLocalModeLabel: '恢复本地模式'`, `automaticConflictDecisionMade: false`, `decisionApplied: false`, `newUploadPerformed: false`, `cloudWriteAttempted: false`, `uploadPerformed: false`, `cloudDataChanged: false`, `downloadPerformed: false`, `autoApplied: false`, `localDataChanged: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, `localStorageDeleted: false`, and `localDataDeleted: false`.
+
+21H does not perform a new cloud write, download cloud data into local state, apply cloud data to local data, write localStorage, delete localStorage, add routes, change schemas or persistence, change packages or lockfiles, start background sync, or make cloud data primary.
+
+Recommended next task: 21I Production Full Acceptance V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
