@@ -22,14 +22,17 @@ describe('UI-OS R8 information density reduction', () => {
     expect(statsSurface.indexOf('ReadinessPressureCard')).toBeLessThan(statsSurface.indexOf('<MetricCard label="本月训练"'));
   });
 
-  it('keeps Settings grouped summaries first and low-frequency maintenance collapsed', () => {
+  it('keeps Settings grouped summaries first and low-frequency maintenance behind navigation detail', () => {
     const profileSource = read('src/features/ProfileView.tsx');
-    const renderSource = profileSource.slice(profileSource.indexOf('<SettingsControlCenter'));
+    const navigationSource = read('src/uiOs/settings/SettingsNavigationStack.tsx');
 
-    expect(renderSource.indexOf('<SettingsControlCenter')).toBeLessThan(renderSource.indexOf('ThemeSettingsPanel'));
-    expect(renderSource.indexOf('ThemeSettingsPanel')).toBeLessThan(renderSource.indexOf('BackupRecoverySettingsPanel'));
-    expect(profileSource).toContain('data-settings-secondary-details="collapsed"');
-    expect(renderSource.indexOf('data-settings-secondary-details="collapsed"')).toBeLessThan(renderSource.indexOf('HealthDataPanel'));
+    expect(profileSource).toContain('groups={settingsGroups}');
+    expect(navigationSource).toContain('data-settings-navigation-stack');
+    expect(navigationSource).toContain('data-settings-navigation-list');
+    expect(navigationSource).toContain('data-settings-navigation-detail');
+    expect(profileSource.indexOf("id: 'cloud_sync'")).toBeLessThan(profileSource.indexOf("id: 'backup_recovery'"));
+    expect(profileSource.indexOf("id: 'backup_recovery'")).toBeLessThan(profileSource.indexOf("id: 'health_data'"));
+    expect(profileSource.indexOf("id: 'health_data'")).toBeLessThan(profileSource.indexOf('<HealthDataPanel'));
   });
 
   it('keeps cloud candidate manual and avoids casual sync buttons', () => {

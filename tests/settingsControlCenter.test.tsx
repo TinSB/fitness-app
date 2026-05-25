@@ -33,4 +33,56 @@ describe('SettingsControlCenter', () => {
     expect(visible).toContain('继续使用本地数据');
     expect(visible).toContain('child settings panel');
   });
+
+  it('renders iOS-style grouped navigation when groups are supplied', () => {
+    const summary = buildSettingsSafetySummary({
+      backupStatus: 'ready',
+      emergencyLocalAvailable: true,
+      sourceOfTruthClear: true,
+      dataHealthOverallState: 'healthy',
+      equipmentProfileCoverage: 'complete',
+      acceptedMutationRouteCount: 7,
+      hasBlockedRoutes: true,
+      personalOnlyMode: true,
+      cloudSyncEnabled: false,
+      automaticWorkerEnabled: false,
+    });
+    const markup = renderToStaticMarkup(
+      <SettingsControlCenter
+        summary={summary}
+        groups={[
+          {
+            id: 'account',
+            title: '账号',
+            items: [
+              {
+                id: 'cloud_sync',
+                title: '账号与同步',
+                subtitle: '本地数据仍会保留',
+                value: '未开启',
+                icon: <span />,
+                content: <section>sync detail</section>,
+              },
+              {
+                id: 'backup_recovery',
+                title: '备份与恢复',
+                subtitle: '开启前先备份',
+                icon: <span />,
+                content: <section>backup detail</section>,
+              },
+            ],
+          },
+        ]}
+        initialSectionId="backup_recovery"
+      />,
+    );
+    const visible = text(markup);
+
+    expect(markup).toContain('data-settings-navigation-stack');
+    expect(markup).toContain('data-settings-row="cloud_sync"');
+    expect(markup).toContain('data-settings-detail-content="backup_recovery"');
+    expect(visible).toContain('账号与同步');
+    expect(visible).toContain('备份与恢复');
+    expect(visible).toContain('backup detail');
+  });
 });

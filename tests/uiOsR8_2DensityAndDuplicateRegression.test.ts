@@ -31,10 +31,14 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
 
   it('keeps Settings top-level sections short and details secondary', () => {
     const profile = read('src/features/ProfileView.tsx');
+    const navigation = read('src/uiOs/settings/SettingsNavigationStack.tsx');
     const settings = read('src/uiOs/settings/EquipmentProfileSettingsPanel.tsx') + read('src/uiOs/settings/DiagnosticsDataSafetyPanel.tsx');
 
-    expect(profile).toContain('data-settings-secondary-details="collapsed"');
-    expect(profile.indexOf('data-settings-secondary-details="collapsed"')).toBeLessThan(profile.lastIndexOf('HealthDataPanel'));
+    expect(profile).toContain('groups={settingsGroups}');
+    expect(profile).toContain("id: 'health_data'");
+    expect(profile).toContain("id: 'training_suggestions'");
+    expect(navigation).toContain('data-settings-row={item.id}');
+    expect(navigation).toContain('data-settings-detail-content={detailItem.id}');
     expect(settings).toContain('data-settings-equipment-compact-rows="true"');
     expect(settings).toContain('data-settings-diagnostics-details="collapsed"');
   });

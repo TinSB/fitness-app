@@ -3,10 +3,15 @@ import type { SettingsSafetySummaryResult } from '../../engines/settingsSafetySu
 import { GlassCard } from '../primitives/GlassCard';
 import { StatusBadge, type UiOsBadgeState } from '../primitives/StatusBadge';
 import { SafetyStrip } from '../surfaces/SafetyStrip';
+import { SettingsNavigationStack, type SettingsNavigationGroup } from './SettingsNavigationStack';
+
+export type { SettingsNavigationGroup, SettingsNavigationItem } from './SettingsNavigationStack';
 
 export type SettingsControlCenterProps = {
   summary: SettingsSafetySummaryResult;
-  children: ReactNode;
+  children?: ReactNode;
+  groups?: SettingsNavigationGroup[];
+  initialSectionId?: string | null;
 };
 
 const stateTone: Record<SettingsSafetySummaryResult['overallSafetyState'], UiOsBadgeState> = {
@@ -27,7 +32,11 @@ const stateLabel: Record<SettingsSafetySummaryResult['overallSafetyState'], stri
   incomplete: '待补全',
 };
 
-export function SettingsControlCenter({ summary, children }: SettingsControlCenterProps) {
+export function SettingsControlCenter({ summary, children, groups, initialSectionId }: SettingsControlCenterProps) {
+  if (groups) {
+    return <SettingsNavigationStack summary={summary} groups={groups} initialSectionId={initialSectionId} />;
+  }
+
   return (
     <div className="space-y-4">
       <GlassCard as="section" padding="lg" className="text-white" ariaLabel="设置安全摘要" highlight>
