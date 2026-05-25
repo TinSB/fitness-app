@@ -52,7 +52,7 @@ describe('UI-OS R8 bottom nav auto-hide', () => {
 
     expect(source).toContain('handleShellScroll');
     expect(source).toContain('delta > 12');
-    expect(source).toContain('nearTop || nearBottom');
+    expect(source).toContain('nearBottom || (delta > 12 && currentScrollTop > 80)');
     expect(immersive).not.toContain('data-bottom-nav-hidden');
     expect(immersive).not.toContain('data-bottom-nav-hidden');
   });

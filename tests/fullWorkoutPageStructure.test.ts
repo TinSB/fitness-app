@@ -26,4 +26,9 @@ describe('full workout page structure', () => {
     expect(appSource).toContain('仍有未完成动作，是否结束训练？');
     expect(appSource).toContain('结束并保存');
   });
+
+  it('keeps the mobile workout action bar above the global bottom nav', () => {
+    expect(source).toContain('bottom-[calc(7.25rem+env(safe-area-inset-bottom))]');
+    expect(source).not.toContain('bottom-[calc(4.25rem+env(safe-area-inset-bottom))]');
+  });
 });

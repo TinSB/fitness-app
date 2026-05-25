@@ -898,7 +898,7 @@ export function TrainingView({
         </aside>
       </div>
 
-      <WorkoutActionBar className="bottom-[calc(4.25rem+env(safe-area-inset-bottom))] md:bottom-auto">
+      <WorkoutActionBar className="bottom-[calc(7.25rem+env(safe-area-inset-bottom))] md:bottom-auto">
         <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_1fr] gap-2 md:flex md:justify-end">
           <ActionButton variant="secondary" onClick={onReturnFocusMode} fullWidth>
             返回极简

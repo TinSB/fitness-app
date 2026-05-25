@@ -117,7 +117,7 @@ describe('UI-OS R8.1 mobile Today safe-area and density fix', () => {
 
     expect(shellHtml).toContain('data-shell-scroll-area="bottom-nav-aware"');
     expect(shellHtml).toContain('data-shell-safe-bottom="bottom-nav-protected"');
-    expect(shellHtml).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(shellHtml).toContain('pb-0');
     expect(shellHtml).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(shellHtml.indexOf('data-today-primary-cta="true"')).toBeLessThan(shellHtml.indexOf('data-bottom-nav-hidden="false"'));
   });

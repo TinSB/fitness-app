@@ -23,7 +23,7 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
     expect(shell).toContain('data-app-chrome-background={resolvedTheme}');
     expect(shell).toContain('data-shell-bottom-background={resolvedTheme}');
     expect(shell).toContain('bg-[#0a0a0b]');
-    expect(shell).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(shell).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
   });
 

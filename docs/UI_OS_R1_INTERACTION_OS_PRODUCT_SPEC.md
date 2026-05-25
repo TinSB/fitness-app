@@ -263,7 +263,8 @@ Rules:
 
 - Focus Mode hides bottom nav.
 - Normal pages show bottom nav.
-- Scroll container bottom padding >= bottom nav height + safe area + 24px.
+- Scroll container uses bottom scroll-padding only; visible filler must not create a dark footer block.
+- Bottom nav may auto-hide near page bottom so final rows stay tappable.
 - Primary buttons must not be covered by bottom nav.
 - Last card must be fully scrollable above nav.
 - Sticky action bars must coordinate with bottom nav.
