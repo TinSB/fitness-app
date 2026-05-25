@@ -324,6 +324,20 @@ It creates the first explicit upload apply gate after 21D. The apply gate reads 
 
 Recommended next task: 21F Cloud Parity Check V1.
 
+## Phase 21F Cloud Parity Check
+
+Phase 21F - Cloud Parity Check V1 adds `src/cloudProduction/cloudParityCheck.ts` and `docs/CLOUD_PARITY_CHECK.md`.
+
+It creates the cloud read-after-upload parity gate after 21E. The parity check reads the first upload receipt, current local AppData, schema preflight, explicit read-after-upload and local parity confirmations, and an injected read repository.
+
+21F can report `readyFor21G: true` only after the cloud snapshot metadata, cloud AppData hash, local AppData hash, owner, schema, operation id, snapshot id, and receipt timestamp match.
+
+21F keeps `cloudReadAfterUploadVerified: true`, `localParityVerified: true`, `uploadReceiptVerified: true`, `firstUploadPreviouslyPerformed: true`, `syncRuntimeEnabled: true`, `newUploadPerformed: false`, `cloudWriteAttempted: false`, `uploadPerformed: false`, `cloudDataChanged: false`, `downloadPerformed: false`, `autoApplied: false`, `localDataChanged: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21F does not perform a new cloud write, download cloud data into local state, apply cloud data to local data, write localStorage, add routes, change schemas or persistence, change packages or lockfiles, start background sync, or make cloud data primary. If parity differs, it reports `发现冲突` and leaves the choice to 21G.
+
+Recommended next task: 21G Conflict Review V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
