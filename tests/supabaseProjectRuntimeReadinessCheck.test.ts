@@ -162,6 +162,28 @@ describe('Phase 20B Supabase project runtime readiness check', () => {
     expect(result.authCallbackGuard.ok).toBe(true);
   });
 
+  it('accepts the production Vercel app auth callback for the cloud deployment', () => {
+    const result = buildSupabaseProjectRuntimeReadinessCheck(validInput({
+      browserEnv: {
+        ...browserEnv(),
+        VITE_IRONPATH_AUTH_CALLBACK_URL: 'https://fitness-app-wheat-phi.vercel.app/auth/callback',
+      },
+    }));
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: 'ready_for_auth_runtime_wiring',
+      readyFor20C: true,
+      missingBrowserEnvKeys: [],
+      clientCreated: false,
+      networkAttempted: false,
+      authRuntimeEnabled: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+    });
+    expect(result.authCallbackGuard.ok).toBe(true);
+  });
+
   it('requires Phase 20A authorization before 20C can start', () => {
     const result = buildSupabaseProjectRuntimeReadinessCheck(validInput({
       phase20aAuthorization: {

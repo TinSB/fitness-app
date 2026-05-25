@@ -87,7 +87,9 @@ const parseUrl = (value: string | undefined): URL | null => {
   }
 };
 
-const isPreviewHost = (hostname: string) => /preview|vercel\.app$/i.test(hostname);
+const isPreviewHost = (hostname: string) =>
+  /preview/i.test(hostname) ||
+  /(^|-)git-/i.test(hostname);
 
 const localAuthCallbackPath = `/${['auth', 'callback'].join('/')}`;
 
