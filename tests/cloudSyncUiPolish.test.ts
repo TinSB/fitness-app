@@ -165,15 +165,27 @@ describe('Cloud Sync UI Polish V1 components', () => {
   });
 
   it('renders the Settings preview surface with reachable first sync conflict and offline states', () => {
-    const markup = render(createElement(CloudSyncSettingsSection));
+    const markup = render(createElement(CloudSyncSettingsSection, {
+      syncPreflight: {
+        visible: true,
+        title: '同步预检',
+        summary: '本地数据仍会保留',
+        primaryLabel: '检查本地数据',
+        secondaryLabels: ['开启前先备份', '查看将同步的内容'],
+        statusLabel: '可以检查',
+      },
+    }));
 
     expect(markup).toContain('ironpath-cloud-sync-settings-section');
+    expect(markup).toContain('ironpath-explicit-sync-preflight');
     expect(markup).toContain('ironpath-auth-card');
     expect(markup).toContain('ironpath-sync-status-center');
     expect(markup).toContain('ironpath-first-sync-flow');
     expect(markup).toContain('ironpath-conflict-review');
     expect(markup).toContain('ironpath-offline-recovery');
     expect(markup).toContain('ironpath-account-settings');
+    expect(markup).toContain('同步预检');
+    expect(markup).toContain('检查本地数据');
     expect(markup).toContain('查看同步流程预览');
   });
 });

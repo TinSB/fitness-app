@@ -27,6 +27,14 @@ export interface CloudSyncSettingsSectionProps {
   firstSyncFlow?: FirstSyncFlowProps;
   conflictReview?: ConflictReviewProps;
   offlineRecovery?: OfflineRecoveryProps;
+  syncPreflight?: {
+    visible: boolean;
+    title: string;
+    summary: string;
+    primaryLabel: string;
+    secondaryLabels: string[];
+    statusLabel: string;
+  };
   eyebrow?: string;
   title?: string;
   description?: string;
@@ -66,6 +74,14 @@ const defaultPreviewProps = (): Required<CloudSyncSettingsSectionProps> => ({
     rollbackAvailable: false,
     emergencyLocalAvailable: true,
   },
+  syncPreflight: {
+    visible: false,
+    title: '同步预检',
+    summary: '本地数据仍会保留',
+    primaryLabel: '检查本地数据',
+    secondaryLabels: ['开启前先备份', '查看将同步的内容'],
+    statusLabel: '准备中',
+  },
 });
 
 export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = {}) {
@@ -76,6 +92,7 @@ export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = 
   const firstSyncFlow = props.firstSyncFlow ?? preview.firstSyncFlow;
   const conflictReview = props.conflictReview ?? preview.conflictReview;
   const offlineRecovery = props.offlineRecovery ?? preview.offlineRecovery;
+  const syncPreflight = props.syncPreflight ?? preview.syncPreflight;
 
   return (
     <section className="space-y-4" data-testid="ironpath-cloud-sync-settings-section">
@@ -95,6 +112,33 @@ export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = 
         <CloudAuthCard {...authCard} />
         <SyncStatusCenter {...syncStatus} />
         <AccountSettings {...accountSettings} />
+
+        {syncPreflight.visible ? (
+          <div
+            className="rounded-lg border border-white/10 bg-white/[0.04] p-4 xl:col-span-2"
+            data-testid="ironpath-explicit-sync-preflight"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h4 className="text-base font-semibold text-white/90">{syncPreflight.title}</h4>
+                <p className="mt-1 text-sm leading-6 text-white/60">{syncPreflight.summary}</p>
+              </div>
+              <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/70">
+                {syncPreflight.statusLabel}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="rounded-full bg-emerald-400/12 px-3 py-1.5 text-sm font-semibold text-emerald-200">
+                {syncPreflight.primaryLabel}
+              </span>
+              {syncPreflight.secondaryLabels.map((label) => (
+                <span key={label} className="rounded-full bg-white/8 px-3 py-1.5 text-sm font-medium text-white/65">
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <details className="rounded-lg border border-white/10 bg-white/[0.04] p-3 xl:col-span-2">
           <summary className="cursor-pointer text-sm font-semibold text-white/80">
