@@ -7,23 +7,18 @@ export type CloudCandidateSettingsPanelProps = {
 
 const items = [
   ['状态', '手动候选'],
-  ['读取候选', '只做查看，不改变本地数据'],
+  ['读取候选', '查看'],
   ['上传候选', '需要手动确认'],
   ['冲突解决', '保持手动'],
 ];
 
-export function CloudCandidateSettingsPanel({ copy }: CloudCandidateSettingsPanelProps) {
-  const blockedCopy = ['不会', '自', '动', '覆盖本地数据'].join('');
-  const summaryCopy = copy.includes(blockedCopy)
-    ? '云端候选需要手动确认；冲突处理保持手动。'
-    : copy;
+export function CloudCandidateSettingsPanel(_props: CloudCandidateSettingsPanelProps) {
   return (
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold" data-theme-text="mutedText">云端候选</p>
           <h3 className="mt-1 text-lg font-bold" data-theme-text="cardTitle">云端候选</h3>
-          <p className="mt-1 text-sm leading-6" data-theme-text="secondaryText">{summaryCopy}</p>
         </div>
         <StatusBadge state="manual-required">手动候选</StatusBadge>
       </div>

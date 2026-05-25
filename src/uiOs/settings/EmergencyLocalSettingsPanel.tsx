@@ -6,7 +6,7 @@ export type EmergencyLocalSettingsPanelProps = {
   copy: string;
 };
 
-export function EmergencyLocalSettingsPanel({ copy }: EmergencyLocalSettingsPanelProps) {
+export function EmergencyLocalSettingsPanel(_props: EmergencyLocalSettingsPanelProps) {
   return (
     <SettingsGroupCard>
       <div className="flex items-start gap-3">
@@ -19,7 +19,6 @@ export function EmergencyLocalSettingsPanel({ copy }: EmergencyLocalSettingsPane
             <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">可用</StatusBadge>
           </div>
           <p className="mt-1 text-sm font-semibold text-emerald-100">恢复本地模式</p>
-          <p className="mt-2 text-sm leading-6 text-white/60">{copy}</p>
         </div>
       </div>
     </SettingsGroupCard>

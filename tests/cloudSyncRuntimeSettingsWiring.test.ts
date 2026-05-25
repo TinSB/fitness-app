@@ -274,7 +274,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     expect(text).toContain('未登录');
     expect(markup).toContain('data-testid="ironpath-auth-sign-in"');
     expect(markup).toContain('data-testid="ironpath-auth-password-input"');
-    expect(text).toContain('本地数据仍会保留');
+    expect(text).not.toContain('本地数据仍会保留');
     expect(text).toContain('登录后再开启同步');
   });
 
@@ -295,7 +295,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
 
     expect(withoutCallback).toContain('IronPath 账号');
     expect(withoutCallback).toContain('退出登录');
-    expect(withoutCallback).toContain('本地数据仍会保留');
+    expect(withoutCallback).not.toContain('本地数据仍会保留');
     expect(withoutCallback).toContain('同步预检');
     expect(withoutCallback).toContain('检查本地数据');
     expect(withoutCallback).toContain('查看将同步的内容');
@@ -319,7 +319,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     expect(needsBackup).toContain('开启前先备份');
     expect(needsBackup).toContain('备份本地数据');
     expect(ready).toContain('已选择开启');
-    expect(ready).toContain('本地数据仍会保留');
+    expect(ready).not.toContain('本地数据仍会保留');
     expect(ready).not.toContain('云端优先');
   });
 
@@ -335,7 +335,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     expect(text).toContain('查看将同步的内容');
     expect(text).toContain('检查完成');
     expect(text).toContain('训练记录');
-    expect(text).toContain('本地数据仍会保留');
+    expect(text).not.toContain('本地数据仍会保留');
     expect(text).not.toContain('开启同步');
     expect(text).not.toContain('同步完成');
   });
@@ -402,8 +402,9 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     const text = textOnly(render(createElement(CloudSyncPolishSettingsPanel, { readiness })));
 
     expect(text).toContain('暂不可用');
-    expect(text).toContain('本地数据仍会保留');
-    expect(text).toContain('可以继续正常训练');
+    expect(text).toContain('云端暂不可用');
+    expect(text).not.toContain('本地数据仍会保留');
+    expect(text).not.toContain('可以继续正常训练');
   });
 
   it('does not render forbidden technical destructive or secret copy', () => {

@@ -298,7 +298,7 @@ const syncPreflightProps = (input: CloudSyncSettingsRuntimeInput): CloudSyncSett
   return {
     visible,
     title: '同步预检',
-    summary: preflight.userMessage,
+    summary: '',
     primaryLabel: preflight.primaryActionLabel,
     secondaryLabels: preflight.secondaryActionLabels,
     statusLabel: preflightStatusLabel(preflight),
@@ -308,9 +308,9 @@ const syncPreflightProps = (input: CloudSyncSettingsRuntimeInput): CloudSyncSett
 export const buildCloudSyncSettingsSectionPropsFromRuntime = (
   input: CloudSyncSettingsRuntimeInput = {},
 ): CloudSyncSettingsSectionProps => ({
-  eyebrow: '账号同步',
-  title: '云端同步',
-  description: '本地数据仍会保留，本地训练记录不会被覆盖；冲突可保留本地。',
+  eyebrow: '',
+  title: '',
+  description: '',
   detailSummaryLabel: '查看同步状态',
   authCard: authCardProps(input),
   syncStatus: syncStatusProps(input),

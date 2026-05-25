@@ -57,10 +57,16 @@ describe('UI-OS R8.4 primary-flow copy budget', () => {
     ].join('\n');
     const visible = text(markup);
 
-    expect(visible).toContain('先导出备份，再进行恢复。');
-    expect(visible).toContain('器械配置只影响推荐显示。');
-    expect(visible).toContain('诊断摘要已脱敏。');
-    expect(visible).toContain('只做查看，不改变本地数据');
+    expect(visible).toContain('导出 JSON');
+    expect(visible).toContain('导入恢复');
+    expect(visible).toContain('奥林匹克杠铃');
+    expect(visible).toContain('数据健康检查');
+    expect(visible).toContain('读取候选');
+    expect(visible).toContain('查看');
+    expect(visible).not.toContain('先导出备份，再进行恢复。');
+    expect(visible).not.toContain('器械配置只影响推荐显示。');
+    expect(visible).not.toContain('诊断摘要已脱敏。');
+    expect(visible).not.toContain('只做查看，不改变本地数据');
     expect(visible).not.toContain('主题只影响本次界面显示');
     expect(visible).not.toContain('不会改写历史记录');
     expect(visible).not.toContain('这里不提供一键同步');

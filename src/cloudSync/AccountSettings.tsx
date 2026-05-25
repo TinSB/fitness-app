@@ -118,7 +118,7 @@ export function AccountSettings({
       <div className="space-y-2">
         <SettingRow
           icon={syncOptIn ? Cloud : CloudOff}
-          label="云端同步"
+          label="同步"
           value={syncOptIn ? '已选择开启' : '未开启'}
           status={syncOptIn ? 'on' : 'off'}
           isDark={isDark}

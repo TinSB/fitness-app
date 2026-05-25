@@ -71,7 +71,8 @@ describe('UI-OS R6 boundaries stay blocked', () => {
     const combined = settingsRuntimeSources.map(read).join('\n');
 
     expect(combined).toContain('云端候选需要手动确认');
-    expect(combined).toContain('只做查看，不改变本地数据');
+    expect(combined).toContain('读取候选');
+    expect(combined).not.toContain('只做查看，不改变本地数据');
     expect(combined).not.toContain('自动覆盖');
     for (const forbidden of [
       '自动同步已启用',

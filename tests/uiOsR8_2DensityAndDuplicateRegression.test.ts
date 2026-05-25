@@ -46,6 +46,14 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
   it('keeps Settings copy minimal while preserving operation rows', () => {
     const profile = read('src/features/ProfileView.tsx');
     const navigation = read('src/uiOs/settings/SettingsNavigationStack.tsx');
+    const sync = read('src/cloudSync/CloudSyncSettingsSection.tsx') + read('src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts');
+    const settingsPanels =
+      read('src/uiOs/settings/BackupRecoverySettingsPanel.tsx') +
+      read('src/uiOs/settings/EmergencyLocalSettingsPanel.tsx') +
+      read('src/uiOs/settings/CloudCandidateSettingsPanel.tsx') +
+      read('src/uiOs/settings/AboutDataSafetyPanel.tsx') +
+      read('src/uiOs/settings/DiagnosticsDataSafetyPanel.tsx') +
+      read('src/uiOs/settings/EquipmentProfileSettingsPanel.tsx');
 
     expect(profile).toContain("title: '账号与同步'");
     expect(profile).toContain("title: '检查本地数据'");
@@ -56,6 +64,13 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
     expect(profile).not.toContain('低频配置集中在设置页');
     expect(navigation).not.toContain('summary.summaryExplanation');
     expect(navigation).not.toContain('{detailItem.subtitle');
+    expect(sync).not.toContain('本地数据仍会保留，本地训练记录不会被覆盖；冲突可保留本地。');
+    expect(sync).not.toContain('账号同步');
+    expect(sync).not.toContain('云端同步');
+    expect(settingsPanels).not.toContain('本地数据是默认来源');
+    expect(settingsPanels).not.toContain('云端候选需要手动确认');
+    expect(settingsPanels).not.toContain('只做查看，不改变本地数据');
+    expect(settingsPanels).not.toContain('先导出备份，再进行恢复。恢复会覆盖当前浏览器里的 IronPath 数据，请先确认备份。');
   });
 
   it('does not duplicate primary ownership copy across Today Focus and Settings', () => {
@@ -66,7 +81,7 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
     expect((today.match(/<SafetyStrip/g) || []).length).toBe(1);
     expect((today.match(/<TodayDecisionHero/g) || []).length).toBe(1);
     expect((focus.match(/完成一组/g) || []).length).toBeLessThanOrEqual(1);
-    expect((settings.match(/只做查看，不改变本地数据/g) || []).length).toBeLessThanOrEqual(1);
+    expect(settings).not.toContain('只做查看，不改变本地数据');
     expect(settings).not.toContain('自动覆盖');
   });
 });

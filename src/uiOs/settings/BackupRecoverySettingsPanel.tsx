@@ -13,21 +13,18 @@ export type BackupRecoverySettingsPanelProps = {
 };
 
 export function BackupRecoverySettingsPanel({
-  copy,
   message,
   onDownloadBackup,
   onDownloadCsv,
   onImportClick,
   onOpenRecordData,
 }: BackupRecoverySettingsPanelProps) {
-  const summaryCopy = copy.includes('恢复会覆盖') ? '先导出备份，再进行恢复。' : copy;
   return (
     <SettingsGroupCard>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-emerald-200">备份与恢复</p>
           <h3 className="mt-1 text-lg font-bold text-white">备份与恢复</h3>
-          <p className="mt-1 text-sm leading-6 text-white/60">{summaryCopy}</p>
         </div>
         <StatusBadge state="warning" className="bg-amber-100 text-amber-700">需要确认</StatusBadge>
       </div>
@@ -47,9 +44,6 @@ export function BackupRecoverySettingsPanel({
         </ActionButton>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-50" data-theme-surface="warning_surface">
-        先导出备份，再进行恢复。恢复会覆盖当前浏览器里的 IronPath 数据，请先确认备份。
-      </div>
       {message ? (
         <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm leading-6 ${message.includes('失败') ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
           {message}
