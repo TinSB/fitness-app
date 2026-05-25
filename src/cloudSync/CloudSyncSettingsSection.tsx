@@ -144,7 +144,7 @@ export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = 
           <summary className="cursor-pointer text-sm font-semibold text-white/80">
             {props.detailSummaryLabel ?? preview.detailSummaryLabel}
           </summary>
-          <div className="mt-4 grid gap-4 xl:grid-cols-3">
+          <div className="mt-4 grid gap-4">
             <FirstSyncFlow {...firstSyncFlow} />
             <ConflictReview {...conflictReview} />
             <OfflineRecovery {...offlineRecovery} />

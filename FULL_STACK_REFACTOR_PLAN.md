@@ -268,6 +268,20 @@ It creates the first production-facing preflight after email/password auth is re
 
 Recommended next task: 21B Local Backup Dry Run UI V1.
 
+## Phase 21B Local Backup Dry Run UI
+
+Phase 21B - Local Backup Dry Run UI V1 adds `src/cloudProduction/localBackupDryRunUi.ts` and `docs/LOCAL_BACKUP_DRY_RUN_UI.md`.
+
+It creates the Settings preparation step after 21A. The UI step reads the signed-in preflight, local backup evidence, local account boundary inventory, and a user-requested dry-run preview before any cloud write candidate can be considered.
+
+21B can report `readyFor21C: true` only after the user has created or confirmed a matching local backup, checked local data, and viewed the local dry-run preview for the signed-in account.
+
+21B keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21B does not upload, download, write localStorage, write cloud data, add routes, change schemas or persistence, change packages or lockfiles, start background sync, make cloud data primary, or expose first-upload apply.
+
+Recommended next task: 21C Cloud Write Shadow Candidate V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

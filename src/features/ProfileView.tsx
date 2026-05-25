@@ -336,7 +336,7 @@ export function ProfileView({
         <EquipmentProfileSettingsPanel copy={settingsSafetySummary.equipmentProfileCopy} />
         <CloudCandidateSettingsPanel copy={settingsSafetySummary.cloudCandidateCopy} />
         <AuthUiSkeletonPanel />
-        <CloudSyncPolishSettingsPanel />
+        <CloudSyncPolishSettingsPanel appData={data} />
 
         <DiagnosticsDataSafetyPanel
           dataHealthLabel="数据健康检查"

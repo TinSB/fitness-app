@@ -7,6 +7,7 @@ import { buildExplicitOptInSyncRuntimeWiring } from '../src/cloudProduction/expl
 import { buildSupabaseProjectRuntimeReadinessCheck } from '../src/cloudProduction/supabaseProjectRuntimeReadinessCheck';
 import type { Phase20eLocalBackupDryRunResult } from '../src/cloudProduction/localBackupDryRunMigrationRuntimeFlow';
 import type { Phase20fCloudReadWriteVerificationResult } from '../src/cloudProduction/cloudReadWriteVerificationFlow';
+import type { Phase21bLocalBackupDryRunUiResult } from '../src/cloudProduction/localBackupDryRunUi';
 import { CloudSyncPolishSettingsPanel } from '../src/uiOs/settings/CloudSyncPolishSettingsPanel';
 import { buildCloudSyncSettingsSectionPropsFromRuntime } from '../src/uiOs/settings/cloudSyncRuntimeSettingsAdapter';
 import { CloudSyncSettingsSection } from '../src/cloudSync';
@@ -178,6 +179,70 @@ const backupReady = (): Phase20eLocalBackupDryRunResult => ({
   createdAt: nowIso,
 } as Phase20eLocalBackupDryRunResult);
 
+const localBackupDryRunReady = (): Phase21bLocalBackupDryRunUiResult => ({
+  phase: '21B',
+  ok: true,
+  status: 'ready_for_shadow_candidate',
+  readyFor21C: true,
+  backupReady: true,
+  dryRunReady: true,
+  backupUiVisible: true,
+  dryRunPreviewVisible: true,
+  userMessage: '本地数据仍会保留',
+  primaryActionLabel: '开启前先备份',
+  secondaryActionLabels: ['检查本地数据', '查看将同步的内容'],
+  dryRunPreview: {
+    title: '查看将同步的内容',
+    statusLabel: '检查完成',
+    sourceSnapshotHash: 'local-hash',
+    schemaVersion: 1,
+    items: [
+      { label: '训练记录', value: '2' },
+      { label: '本地指纹', value: 'local-ha' },
+    ],
+  },
+  backup: {
+    status: 'valid',
+    checked: true,
+    backupSnapshotHash: 'local-hash',
+    matchesCurrentLocal: true,
+    generatedInMemory: false,
+    exportRequiredBeforeFirstSync: true,
+  },
+  blockers: [],
+  warnings: [
+    'backup_required_before_first_upload',
+    'dry_run_required_before_first_upload',
+    'localStorage_remains_fallback',
+    'no_upload_or_download',
+    'no_silent_overwrite',
+    'first_upload_confirmation_still_required',
+    'cloud_primary_not_enabled',
+  ],
+  id: 'phase21b-ui-ready',
+  baseId: 'phase21b-local-backup-dry-run-ui',
+  requiresExplicitOptIn: true,
+  requiresBackupBeforeFirstUpload: true,
+  requiresDryRunBeforeFirstUpload: true,
+  requiresManualConfirmationBeforeUpload: true,
+  accountInventory: {} as Phase21bLocalBackupDryRunUiResult['accountInventory'],
+  syncRuntimeEnabled: false,
+  liveCloudSyncActivated: false,
+  cloudPrimaryEnabled: false,
+  defaultSyncEnabled: false,
+  backgroundWorkEnabled: false,
+  uploadPerformed: false,
+  downloadPerformed: false,
+  autoApplied: false,
+  localDataChanged: false,
+  cloudDataChanged: false,
+  sourceOfTruthChanged: false,
+  localStorageDeleted: false,
+  localStorageFallbackPreserved: true,
+  nextPhase: '21C - Cloud Write Shadow Candidate V1',
+  createdAt: nowIso,
+} as Phase21bLocalBackupDryRunUiResult);
+
 const conflictVerification = (): Phase20fCloudReadWriteVerificationResult => ({
   status: 'manual_review_required',
   blockers: ['cloud_read_manual_review'],
@@ -256,6 +321,23 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     expect(ready).toContain('已选择开启');
     expect(ready).toContain('本地数据仍会保留');
     expect(ready).not.toContain('云端优先');
+  });
+
+  it('renders 21B local backup dry-run preview without exposing sync apply', () => {
+    const markup = render(createElement(CloudSyncPolishSettingsPanel, {
+      readiness: ready20b(),
+      authRuntime: signedInAuth(),
+      localBackupDryRunUi: localBackupDryRunReady(),
+    }));
+    const text = textOnly(markup);
+
+    expect(markup).toContain('data-testid="ironpath-local-backup-dry-run-preview"');
+    expect(text).toContain('查看将同步的内容');
+    expect(text).toContain('检查完成');
+    expect(text).toContain('训练记录');
+    expect(text).toContain('本地数据仍会保留');
+    expect(text).not.toContain('开启同步');
+    expect(text).not.toContain('同步完成');
   });
 
   it('shows conflict review only when safe conflict callback props are supplied', () => {
