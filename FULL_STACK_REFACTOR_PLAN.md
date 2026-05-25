@@ -310,6 +310,20 @@ It creates the read mirror verification step after 21C. The verification reads t
 
 Recommended next task: 21E First Upload Explicit Apply V1.
 
+## Phase 21E First Upload Explicit Apply
+
+Phase 21E - First Upload Explicit Apply V1 adds `src/cloudProduction/firstUploadExplicitApply.ts` and `docs/FIRST_UPLOAD_EXPLICIT_APPLY.md`.
+
+It creates the first explicit upload apply gate after 21D. The apply gate reads the accepted shadow candidate, read mirror verification, current local AppData, schema preflight, explicit first-upload confirmation, local fallback confirmation, no-silent-overwrite confirmation, backup confirmation, and an injected write repository.
+
+21E can report `readyFor21F: true` only after the user explicitly applies first upload and the write repository accepts the upload candidate.
+
+21E keeps `firstUploadExplicitlyApplied: true`, `uploadPerformed: true`, `cloudWriteAttempted: true`, `cloudDataChanged: true`, `syncRuntimeEnabled: true`, `downloadPerformed: false`, `autoApplied: false`, `localDataChanged: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21E does not download cloud data, write localStorage, apply cloud data to local data, add routes, change schemas or persistence, change packages or lockfiles, start background sync, or make cloud data primary.
+
+Recommended next task: 21F Cloud Parity Check V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.

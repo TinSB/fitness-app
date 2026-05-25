@@ -27,6 +27,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/cloudProduction/cloudWriteShadowCandidate.ts',
   'src/cloudProduction/cloudWriteShadowMode.ts',
   'src/cloudProduction/conflictOfflineRollbackRuntimeFlow.ts',
+  'src/cloudProduction/firstUploadExplicitApply.ts',
   'src/cloudProduction/localBackupDryRunMigrationRuntimeFlow.ts',
   'src/cloudProduction/localBackupDryRunUi.ts',
   'src/cloudProduction/productionAcceptanceSyntheticData.ts',

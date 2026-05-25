@@ -148,7 +148,7 @@ const localStorageSignature = () => {
 
 const userFromSupabase = (user: User | null | undefined): Phase20cAuthAdapterResult['user'] => {
   if (!user?.id) return null;
-  const accountId = user.email || user.phone || user.id;
+  const accountId = user.id;
   const metadataName = typeof user.user_metadata?.name === 'string' ? user.user_metadata.name : undefined;
   return {
     userId: user.id,
