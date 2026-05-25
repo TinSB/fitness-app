@@ -135,7 +135,7 @@ export function OfflineRecovery({
             data-testid="ironpath-use-local"
           >
             <HardDrive className="h-4 w-4" />
-            <span>保留本地</span>
+            <span>恢复本地模式</span>
           </ActionButton>
         ) : null}
 
