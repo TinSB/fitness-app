@@ -10,6 +10,8 @@ export type CloudAuthMode = 'sign_in' | 'sign_up';
 export interface CloudAuthCardProps {
   authStatus: CloudAuthStatus;
   authMode?: CloudAuthMode;
+  variant?: 'card' | 'embedded';
+  hideHeader?: boolean;
   currentUserEmail?: string | null;
   emailInputValue?: string;
   emailInputLabel?: string;
@@ -46,6 +48,8 @@ const statusLabel = (status: CloudAuthStatus, mode: CloudAuthMode) => {
 export function CloudAuthCard({
   authStatus,
   authMode = 'sign_in',
+  variant = 'card',
+  hideHeader = false,
   currentUserEmail,
   emailInputValue,
   emailInputLabel,
@@ -73,8 +77,9 @@ export function CloudAuthCard({
   const primaryAuthTestId = authMode === 'sign_up' ? 'ironpath-auth-sign-up' : 'ironpath-auth-sign-in';
   const authTitle = authMode === 'sign_up' && canEditCredentials ? '创建账号' : '登录账号';
 
-  return (
-    <Card tone={statusTone[authStatus]} padded className="space-y-4" data-testid="ironpath-auth-card">
+  const content = (
+    <>
+      {hideHeader ? null : (
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
@@ -106,6 +111,7 @@ export function CloudAuthCard({
           </div>
         </div>
       </div>
+      )}
 
       {authStatus === 'signed_in' && currentUserEmail ? (
         <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
@@ -243,6 +249,20 @@ export function CloudAuthCard({
           </ActionButton>
         ) : null}
       </div>
+    </>
+  );
+
+  if (variant === 'embedded') {
+    return (
+      <div className="space-y-3" data-testid="ironpath-auth-card">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Card tone={statusTone[authStatus]} padded className="space-y-4" data-testid="ironpath-auth-card">
+      {content}
     </Card>
   );
 }
