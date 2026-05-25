@@ -19,19 +19,21 @@ const gitDiff = (path: string): string =>
     encoding: 'utf8',
   }).trim();
 
-describe('Phase 21A explicit opt-in sync preflight boundary', () => {
-  it('documents 21A as preflight only before backup and dry-run UI', () => {
+describe('Phase 21B local backup dry-run UI boundary', () => {
+  it('documents 21B as local backup dry-run UI only before cloud write shadow', () => {
     const docs = [
-      read('docs/EXPLICIT_OPT_IN_SYNC_PREFLIGHT.md'),
+      read('docs/LOCAL_BACKUP_DRY_RUN_UI.md'),
       read('docs/CLOUD_AUTH_SYNC_ENTRY_GATE.md'),
       read('API_CONTRACT.md'),
       read('FULL_STACK_REFACTOR_PLAN.md'),
     ].join('\n');
 
     for (const expected of [
-      'Phase 21A - Explicit Opt-In Sync Preflight V1',
-      'preflight only',
-      'readyFor21B: true',
+      'Phase 21B - Local Backup Dry Run UI V1',
+      'Local Backup Dry Run UI only',
+      'readyFor21C: true',
+      'backupReady: true',
+      'dryRunReady: true',
       'uploadPerformed: false',
       'downloadPerformed: false',
       'syncRuntimeEnabled: false',
@@ -40,14 +42,14 @@ describe('Phase 21A explicit opt-in sync preflight boundary', () => {
       'backgroundWorkEnabled: false',
       'sourceOfTruthChanged: false',
       'localStorageDeleted: false',
-      '21B - Local Backup Dry Run UI V1',
+      '21C - Cloud Write Shadow Candidate V1',
     ]) {
       expect(docs).toContain(expected);
     }
   });
 
-  it('keeps the 21A preflight source free of cloud IO storage routes timers and SDK clients', () => {
-    const source = read('src/cloudProduction/explicitOptInSyncPreflight.ts');
+  it('keeps the 21B source free of cloud IO storage writes routes timers and SDK clients', () => {
+    const source = read('src/cloudProduction/localBackupDryRunUi.ts');
 
     for (const forbidden of [
       '@supabase/supabase-js',
@@ -71,6 +73,7 @@ describe('Phase 21A explicit opt-in sync preflight boundary', () => {
       'document.cookie',
       '/sync',
       '/cloud',
+      '/auth',
       'setInterval',
       'setTimeout',
       'serviceWorker',
@@ -79,8 +82,8 @@ describe('Phase 21A explicit opt-in sync preflight boundary', () => {
       'runCloudPullCandidate',
       'writeCloudAppDataCandidate',
       'writeCloudAppData',
-      'buildLocalBackupDryRunMigrationRuntimeFlow',
       'buildCloudReadWriteVerificationFlow',
+      'buildCloudWriteShadowMode',
       'ProgramAdjustmentDraft',
       'PendingSessionPatch',
       'TrainingSession',
@@ -89,7 +92,7 @@ describe('Phase 21A explicit opt-in sync preflight boundary', () => {
     }
   });
 
-  it('keeps runtime wiring limited to Settings and the presentational cloud sync section', () => {
+  it('keeps runtime wiring limited to Settings and presentational sync components', () => {
     const app = read('src/App.tsx');
     const profile = read('src/features/ProfileView.tsx');
     const record = read('src/features/RecordView.tsx');
@@ -99,16 +102,16 @@ describe('Phase 21A explicit opt-in sync preflight boundary', () => {
       : '';
     const settingsAdapter = read('src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts');
     const settingsPanel = read('src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx');
-    const cloudSection = read('src/cloudSync/CloudSyncSettingsSection.tsx');
+    const firstSyncFlow = read('src/cloudSync/FirstSyncFlow.tsx');
 
-    expect(settingsAdapter).toContain('buildExplicitOptInSyncPreflight');
-    expect(cloudSection).toContain('ironpath-explicit-sync-preflight');
-    expect(settingsPanel).toContain('buildExplicitOptInSyncPreflight');
+    expect(settingsAdapter).toContain('localBackupDryRunUi');
+    expect(settingsPanel).toContain('buildLocalBackupDryRunUi');
     expect(profile).toContain('<CloudSyncPolishSettingsPanel appData={data} />');
+    expect(firstSyncFlow).toContain('ironpath-local-backup-dry-run-preview');
 
     for (const source of [app, record, training, today]) {
-      expect(source).not.toContain('buildExplicitOptInSyncPreflight');
-      expect(source).not.toContain('ironpath-explicit-sync-preflight');
+      expect(source).not.toContain('buildLocalBackupDryRunUi');
+      expect(source).not.toContain('ironpath-local-backup-dry-run-preview');
     }
   });
 
@@ -130,16 +133,17 @@ describe('Phase 21A explicit opt-in sync preflight boundary', () => {
 
     for (const file of collectFiles(resolve(repoRoot(), 'apps/api/src'))) {
       const source = readFileSync(file, 'utf8');
-      expect(source).not.toContain('buildExplicitOptInSyncPreflight');
-      expect(source).not.toContain('PHASE21A_EXPLICIT_OPT_IN_SYNC_PREFLIGHT_ID');
-      expect(source).not.toContain('readyFor21B');
+      expect(source).not.toContain('buildLocalBackupDryRunUi');
+      expect(source).not.toContain('PHASE21B_LOCAL_BACKUP_DRY_RUN_UI_ID');
+      expect(source).not.toContain('readyFor21C');
     }
   });
 
   it('keeps touched visible copy free of forbidden terms and unsafe sync claims', () => {
     const source = [
-      read('src/cloudProduction/explicitOptInSyncPreflight.ts'),
-      read('src/cloudSync/CloudSyncSettingsSection.tsx'),
+      read('src/cloudProduction/localBackupDryRunUi.ts'),
+      read('src/cloudSync/FirstSyncFlow.tsx'),
+      read('src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx'),
       read('src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts'),
     ].join('\n');
 

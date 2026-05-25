@@ -12,17 +12,25 @@ export interface FirstSyncFlowProps {
   dryRunReady: boolean;
   explicitOptIn: boolean;
   canVerify: boolean;
+  preflightReady?: boolean;
+  dryRunSummary?: {
+    visible: boolean;
+    title: string;
+    statusLabel: string;
+    items: Array<{ label: string; value: string }>;
+    message: string;
+  };
   onStartDryRun?: () => void;
   onCreateBackup?: () => void;
   onDismiss?: () => void;
 }
 
 function getFlowStatus(props: FirstSyncFlowProps): FirstSyncFlowStatus {
-  if (!props.explicitOptIn) return 'blocked';
+  if (!props.explicitOptIn && props.preflightReady !== true) return 'blocked';
   if (!props.backupReady) return 'needs_backup';
   if (!props.dryRunReady) return 'needs_dry_run';
   if (props.canVerify) return 'ready_to_verify';
-  return 'blocked';
+  return 'ready_to_verify';
 }
 
 const statusConfig: Record<FirstSyncFlowStatus, { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' }> = {
@@ -88,13 +96,15 @@ export function FirstSyncFlow({
   dryRunReady,
   explicitOptIn,
   canVerify,
+  preflightReady,
+  dryRunSummary,
   onStartDryRun,
   onCreateBackup,
   onDismiss,
 }: FirstSyncFlowProps) {
   const { resolvedTheme } = useUiTheme();
   const isDark = resolvedTheme === 'dark';
-  const status = getFlowStatus({ backupReady, dryRunReady, explicitOptIn, canVerify });
+  const status = getFlowStatus({ backupReady, dryRunReady, explicitOptIn, canVerify, preflightReady });
   const config = statusConfig[status];
 
   return (
@@ -140,7 +150,7 @@ export function FirstSyncFlow({
           <StepIndicator
             completed={dryRunReady}
             active={backupReady && !dryRunReady}
-            label="检查同步内容"
+            label="查看将同步的内容"
             description="查看后再决定"
             Icon={FileCheck}
             isDark={isDark}
@@ -148,18 +158,49 @@ export function FirstSyncFlow({
         </div>
       </div>
 
+      {dryRunSummary?.visible ? (
+        <div
+          className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}
+          data-testid="ironpath-local-backup-dry-run-preview"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className={classNames('text-sm font-semibold', isDark ? 'text-white/85' : 'text-slate-900')}>
+                {dryRunSummary.title}
+              </p>
+              <p className={classNames('text-xs leading-5', isDark ? 'text-white/55' : 'text-slate-500')}>
+                {dryRunSummary.message}
+              </p>
+            </div>
+            <span className={classNames('text-xs font-semibold', isDark ? 'text-emerald-300' : 'text-emerald-700')}>
+              {dryRunSummary.statusLabel}
+            </span>
+          </div>
+          <dl className="mt-3 grid grid-cols-2 gap-2">
+            {dryRunSummary.items.map((item) => (
+              <div key={item.label} className={classNames('rounded-md px-2 py-1.5', isDark ? 'bg-black/10' : 'bg-white')}>
+                <dt className={classNames('text-[11px]', isDark ? 'text-white/45' : 'text-slate-500')}>{item.label}</dt>
+                <dd className={classNames('text-sm font-semibold', isDark ? 'text-white/85' : 'text-slate-900')}>
+                  {item.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {!backupReady && onCreateBackup ? (
           <ActionButton variant="primary" size="md" onClick={onCreateBackup}>
             <Shield className="h-4 w-4" />
-            <span>创建备份</span>
+            <span>开启前先备份</span>
           </ActionButton>
         ) : null}
 
         {backupReady && !dryRunReady && onStartDryRun ? (
           <ActionButton variant="primary" size="md" onClick={onStartDryRun}>
             <FileCheck className="h-4 w-4" />
-            <span>检查内容</span>
+            <span>查看将同步的内容</span>
           </ActionButton>
         ) : null}
 

@@ -19,6 +19,7 @@ import {
   buildExplicitOptInSyncPreflight,
   type Phase21aExplicitOptInSyncPreflightResult,
 } from '../../cloudProduction/explicitOptInSyncPreflight';
+import type { Phase21bLocalBackupDryRunUiResult } from '../../cloudProduction/localBackupDryRunUi';
 
 export type CloudSyncSettingsRuntimeCallbacks = {
   onSignIn?: () => void;
@@ -42,6 +43,7 @@ export type CloudSyncSettingsRuntimeInput = CloudSyncSettingsRuntimeCallbacks & 
   authErrorMessage?: string | null;
   syncRuntime?: Phase20dExplicitOptInSyncRuntimeResult | null;
   backupDryRun?: Phase20eLocalBackupDryRunResult | null;
+  localBackupDryRunUi?: Phase21bLocalBackupDryRunUiResult | null;
   verificationFlow?: Phase20fCloudReadWriteVerificationResult | null;
   conflictOfflineRollback?: Phase20gConflictOfflineRollbackResult | null;
   syncPreflight?: Phase21aExplicitOptInSyncPreflightResult | null;
@@ -63,12 +65,21 @@ const accountLabel = (authRuntime?: Phase20cAuthRuntimeWiringResult | null) => {
   return authRuntime?.user?.displayName || authRuntime?.user?.accountId || authRuntime?.user?.userId || null;
 };
 
-const backupReady = (backupDryRun?: Phase20eLocalBackupDryRunResult | null, syncRuntime?: Phase20dExplicitOptInSyncRuntimeResult | null) =>
+const backupReady = (
+  backupDryRun?: Phase20eLocalBackupDryRunResult | null,
+  syncRuntime?: Phase20dExplicitOptInSyncRuntimeResult | null,
+  localBackupDryRunUi?: Phase21bLocalBackupDryRunUiResult | null,
+) =>
+  localBackupDryRunUi?.backupReady === true ||
   backupDryRun?.backup.status === 'valid' ||
   backupDryRun?.backup.matchesCurrentLocal === true ||
   syncRuntime?.backupBeforeSyncConfirmed === true;
 
-const dryRunReady = (backupDryRun?: Phase20eLocalBackupDryRunResult | null) =>
+const dryRunReady = (
+  backupDryRun?: Phase20eLocalBackupDryRunResult | null,
+  localBackupDryRunUi?: Phase21bLocalBackupDryRunUiResult | null,
+) =>
+  localBackupDryRunUi?.dryRunReady === true ||
   backupDryRun?.readyFor20F === true || backupDryRun?.status === 'ready_for_cloud_verification';
 
 const hasConflict = (
@@ -95,7 +106,7 @@ const syncWarnings = (input: CloudSyncSettingsRuntimeInput): string[] => {
   const warnings: string[] = [];
   if (!hasReadyPublicConfig(input.readiness)) warnings.push('登录配置暂不可用');
   if (!hasSignedInUser(input.authRuntime)) warnings.push('登录后再开启同步');
-  if (!backupReady(input.backupDryRun, input.syncRuntime)) warnings.push('开启前先备份');
+  if (!backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi)) warnings.push('开启前先备份');
   if (hasConflict(input.verificationFlow, input.conflictOfflineRollback)) warnings.push('冲突需查看后再决定');
   warnings.push('本地数据仍会保留');
   return unique(warnings).slice(0, 3);
@@ -145,16 +156,20 @@ const authCardProps = (input: CloudSyncSettingsRuntimeInput): CloudAuthCardProps
 const syncStatusProps = (input: CloudSyncSettingsRuntimeInput): SyncStatusCenterProps => {
   const signedIn = hasSignedInUser(input.authRuntime);
   const syncRuntimeEnabled = input.syncRuntime?.syncRuntimeEnabled === true;
+  const localBackupReady = backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi);
+  const localDryRunReady = dryRunReady(input.backupDryRun, input.localBackupDryRunUi);
   const enableSyncAvailable =
     signedIn &&
     !syncRuntimeEnabled &&
     hasReadyPublicConfig(input.readiness) &&
+    localBackupReady &&
+    localDryRunReady &&
     Boolean(input.onEnableSync);
 
   return {
     syncRuntimeEnabled,
     readinessStatus: syncReadinessStatus(input),
-    lastVerificationAt: input.verificationFlow?.createdAt ?? input.backupDryRun?.createdAt ?? null,
+    lastVerificationAt: input.verificationFlow?.createdAt ?? input.localBackupDryRunUi?.createdAt ?? input.backupDryRun?.createdAt ?? null,
     warnings: syncWarnings(input),
     onEnableSync: enableSyncAvailable ? input.onEnableSync : undefined,
     onViewDetails: input.onViewDetails,
@@ -164,31 +179,43 @@ const syncStatusProps = (input: CloudSyncSettingsRuntimeInput): SyncStatusCenter
 const accountSettingsProps = (input: CloudSyncSettingsRuntimeInput): AccountSettingsProps => ({
   accountEmail: accountLabel(input.authRuntime),
   syncOptIn: input.syncRuntime?.syncRuntimeEnabled === true,
-  localBackupAvailable: backupReady(input.backupDryRun, input.syncRuntime),
+  localBackupAvailable: backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi),
   serviceRoleExposed: false,
   onSignOut: hasSignedInUser(input.authRuntime) ? input.onSignOut : undefined,
   onToggleSync:
     hasSignedInUser(input.authRuntime) &&
     hasReadyPublicConfig(input.readiness) &&
-    backupReady(input.backupDryRun, input.syncRuntime)
+    backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi) &&
+    dryRunReady(input.backupDryRun, input.localBackupDryRunUi)
       ? input.onEnableSync
       : undefined,
-  onCreateBackup: !backupReady(input.backupDryRun, input.syncRuntime) ? input.onCreateBackup : undefined,
+  onCreateBackup: !backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi) ? input.onCreateBackup : undefined,
   onViewSyncDetails: input.syncRuntime?.syncRuntimeEnabled === true ? input.onViewDetails : undefined,
 });
 
 const firstSyncFlowProps = (input: CloudSyncSettingsRuntimeInput): FirstSyncFlowProps => {
-  const hasBackup = backupReady(input.backupDryRun, input.syncRuntime);
-  const hasDryRun = dryRunReady(input.backupDryRun);
+  const hasBackup = backupReady(input.backupDryRun, input.syncRuntime, input.localBackupDryRunUi);
+  const hasDryRun = dryRunReady(input.backupDryRun, input.localBackupDryRunUi);
+  const preflight = preflightResult(input);
 
   return {
     backupReady: hasBackup,
     dryRunReady: hasDryRun,
+    preflightReady: preflight.readyFor21B === true,
     explicitOptIn:
       input.syncRuntime?.explicitOptInAccepted === true ||
       input.syncRuntime?.syncRuntimeEnabled === true ||
       Boolean(input.onEnableSync && hasSignedInUser(input.authRuntime)),
     canVerify: hasBackup && hasDryRun && input.verificationFlow?.readyFor20G === true,
+    dryRunSummary: input.localBackupDryRunUi
+      ? {
+          visible: input.localBackupDryRunUi.dryRunPreviewVisible,
+          title: input.localBackupDryRunUi.dryRunPreview.title,
+          statusLabel: input.localBackupDryRunUi.readyFor21C ? '检查完成' : '继续检查',
+          items: input.localBackupDryRunUi.dryRunPreview.items,
+          message: input.localBackupDryRunUi.userMessage,
+        }
+      : undefined,
     onCreateBackup: hasBackup ? undefined : input.onCreateBackup,
     onStartDryRun: hasBackup && !hasDryRun ? input.onStartDryRun : undefined,
   };

@@ -33,6 +33,7 @@ describe('Cloud Sync UI Polish V1 components', () => {
         dryRunReady: false,
         explicitOptIn: false,
         canVerify: false,
+        preflightReady: true,
       })),
       render(createElement(ConflictReview, {
         conflictCount: 1,
@@ -174,10 +175,28 @@ describe('Cloud Sync UI Polish V1 components', () => {
         secondaryLabels: ['开启前先备份', '查看将同步的内容'],
         statusLabel: '可以检查',
       },
+      firstSyncFlow: {
+        backupReady: true,
+        dryRunReady: true,
+        explicitOptIn: false,
+        preflightReady: true,
+        canVerify: false,
+        dryRunSummary: {
+          visible: true,
+          title: '查看将同步的内容',
+          statusLabel: '检查完成',
+          items: [
+            { label: '训练记录', value: '2' },
+            { label: '本地指纹', value: 'local-ha' },
+          ],
+          message: '本地数据仍会保留',
+        },
+      },
     }));
 
     expect(markup).toContain('ironpath-cloud-sync-settings-section');
     expect(markup).toContain('ironpath-explicit-sync-preflight');
+    expect(markup).toContain('ironpath-local-backup-dry-run-preview');
     expect(markup).toContain('ironpath-auth-card');
     expect(markup).toContain('ironpath-sync-status-center');
     expect(markup).toContain('ironpath-first-sync-flow');
@@ -186,6 +205,7 @@ describe('Cloud Sync UI Polish V1 components', () => {
     expect(markup).toContain('ironpath-account-settings');
     expect(markup).toContain('同步预检');
     expect(markup).toContain('检查本地数据');
+    expect(markup).toContain('检查完成');
     expect(markup).toContain('查看同步流程预览');
   });
 });

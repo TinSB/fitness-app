@@ -54,7 +54,6 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
       'backgroundSync',
       'ProgramAdjustmentDraft',
       'PendingSessionPatch',
-      'AppData',
       'TrainingSession',
     ]) {
       expect(source, `cloud sync UI source should not contain ${forbidden}`).not.toContain(forbidden);
@@ -96,7 +95,6 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
       'writeCloudAppDataCandidate',
       'ProgramAdjustmentDraft',
       'PendingSessionPatch',
-      'AppData',
       'TrainingSession',
     ]) {
       expect(source, `cloud sync Settings controller should not contain ${forbidden}`).not.toContain(forbidden);
@@ -130,7 +128,7 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
       : read('src/features/TrainingView.tsx');
 
     expect(profile).toContain("import { CloudSyncPolishSettingsPanel } from '../uiOs/settings/CloudSyncPolishSettingsPanel';");
-    expect(profile).toContain('<CloudSyncPolishSettingsPanel />');
+    expect(profile).toContain('<CloudSyncPolishSettingsPanel appData={data} />');
 
     for (const source of [app, today, record, training]) {
       expect(source).not.toContain('CloudSyncPolishSettingsPanel');

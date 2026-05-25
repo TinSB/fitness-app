@@ -1,10 +1,19 @@
 import React from 'react';
 import { CloudSyncSettingsSection, type CloudAuthMode } from '../../cloudSync';
+import { downloadText } from '../../engines/analytics';
+import type { AppData } from '../../models/training-model';
 import {
   buildSupabaseProjectRuntimeReadinessCheck,
   type Phase20bEnvRecord,
   type Phase20bSupabaseProjectRuntimeReadinessResult,
 } from '../../cloudProduction/supabaseProjectRuntimeReadinessCheck';
+import { buildExplicitOptInSyncPreflight } from '../../cloudProduction/explicitOptInSyncPreflight';
+import {
+  buildLocalBackupDryRunUi,
+  type Phase21bLocalBackupDryRunUiResult,
+} from '../../cloudProduction/localBackupDryRunUi';
+import { exportAppData, getBackupFileName } from '../../storage/backup';
+import { validateAppDataSchema } from '../../storage/appDataValidation';
 import {
   buildCloudSyncSettingsSectionPropsFromRuntime,
   type CloudSyncSettingsRuntimeInput,
@@ -20,6 +29,7 @@ import type {
 } from '../../cloudProduction/authRuntimeWiring';
 
 export type CloudSyncPolishSettingsPanelProps = CloudSyncSettingsRuntimeInput & {
+  appData?: AppData | null;
   authAdapter?: Phase20cAuthRuntimeAdapter | null;
   browserEnv?: Phase20bEnvRecord | null;
   readiness?: Phase20bSupabaseProjectRuntimeReadinessResult | null;
@@ -31,6 +41,12 @@ type LocalAuthActionState = {
   authRuntime: Phase20cAuthRuntimeWiringResult | null;
   errorMessage: string | null;
   infoMessage: string | null;
+};
+
+type LocalBackupDryRunUiState = {
+  backupJson: string | null;
+  backupExportConfirmed: boolean;
+  dryRunRequested: boolean;
 };
 
 const phase20aAuthorization = {
@@ -56,6 +72,16 @@ const runtimeBoundary = {
   localStorageDeleted: false,
 };
 
+const syncPreflightBoundary = {
+  syncRuntimeEnabled: false,
+  liveCloudSyncActivated: false,
+  cloudPrimaryEnabled: false,
+  defaultSyncEnabled: false,
+  backgroundWorkEnabled: false,
+  sourceOfTruthChanged: false,
+  localStorageDeleted: false,
+};
+
 const readPublicBrowserEnv = (): Phase20bEnvRecord => ({
   VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -64,6 +90,7 @@ const readPublicBrowserEnv = (): Phase20bEnvRecord => ({
 });
 
 export function CloudSyncPolishSettingsPanel({
+  appData,
   authAdapter,
   browserEnv,
   readiness: providedReadiness,
@@ -75,6 +102,11 @@ export function CloudSyncPolishSettingsPanel({
     authRuntime: null,
     errorMessage: null,
     infoMessage: null,
+  });
+  const [localBackupDryRunUiState, setLocalBackupDryRunUiState] = React.useState<LocalBackupDryRunUiState>({
+    backupJson: null,
+    backupExportConfirmed: false,
+    dryRunRequested: false,
   });
   const [authEmail, setAuthEmail] = React.useState('');
   const [authPassword, setAuthPassword] = React.useState('');
@@ -215,6 +247,65 @@ export function CloudSyncPolishSettingsPanel({
   const authRuntime = authActionState.authRuntime ?? runtimeInput.authRuntime ?? null;
   const authActionPending = authActionState.pendingAction !== null || runtimeInput.authActionPending === true;
   const authErrorMessage = authActionState.errorMessage ?? runtimeInput.authErrorMessage ?? null;
+  const syncPreflight = React.useMemo(
+    () =>
+      runtimeInput.syncPreflight ??
+      buildExplicitOptInSyncPreflight({
+        enabled: true,
+        readiness,
+        authRuntime,
+        runtimeBoundary: syncPreflightBoundary,
+        nowIso,
+      }),
+    [authRuntime, nowIso, readiness, runtimeInput.syncPreflight],
+  );
+  const localBackupDryRunUi = React.useMemo<Phase21bLocalBackupDryRunUiResult | null>(() => {
+    if (runtimeInput.localBackupDryRunUi) return runtimeInput.localBackupDryRunUi;
+    if (!appData) return null;
+
+    return buildLocalBackupDryRunUi({
+      enabled: true,
+      preflight: syncPreflight,
+      appData,
+      backupJson: localBackupDryRunUiState.backupJson,
+      backupExportConfirmed: localBackupDryRunUiState.backupExportConfirmed,
+      dryRunRequested: localBackupDryRunUiState.dryRunRequested,
+      schemaValidator: (candidate) => Boolean(validateAppDataSchema(candidate)),
+      runtimeBoundary: syncPreflightBoundary,
+      nowIso,
+    });
+  }, [appData, localBackupDryRunUiState, nowIso, runtimeInput.localBackupDryRunUi, syncPreflight]);
+
+  React.useEffect(() => {
+    if (authRuntime?.authenticated === true) return;
+    setLocalBackupDryRunUiState({
+      backupJson: null,
+      backupExportConfirmed: false,
+      dryRunRequested: false,
+    });
+  }, [authRuntime?.authenticated]);
+
+  const handleCreateLocalBackup = React.useCallback(() => {
+    if (!appData || syncPreflight.readyFor21B !== true) return;
+
+    const backupJson = exportAppData(appData);
+    const date = nowIso ? new Date(nowIso) : new Date();
+    downloadText(getBackupFileName(date), backupJson, 'application/json');
+    setLocalBackupDryRunUiState({
+      backupJson,
+      backupExportConfirmed: true,
+      dryRunRequested: false,
+    });
+  }, [appData, nowIso, syncPreflight.readyFor21B]);
+
+  const handleStartLocalDryRun = React.useCallback(() => {
+    setLocalBackupDryRunUiState((current) => ({
+      ...current,
+      dryRunRequested: true,
+    }));
+  }, []);
+  const onCreateBackup = runtimeInput.onCreateBackup ?? (appData ? handleCreateLocalBackup : undefined);
+  const onStartDryRun = runtimeInput.onStartDryRun ?? (appData ? handleStartLocalDryRun : undefined);
 
   const sectionProps = React.useMemo(
     () =>
@@ -224,11 +315,28 @@ export function CloudSyncPolishSettingsPanel({
         authRuntime,
         authActionPending,
         authErrorMessage,
+        syncPreflight,
+        localBackupDryRunUi,
+        onCreateBackup,
+        onStartDryRun,
         onSignIn: handleSignIn,
         onSignUp: handleSignUp,
         onSignOut: handleSignOut,
       }),
-    [authActionPending, authErrorMessage, authRuntime, handleSignIn, handleSignOut, handleSignUp, readiness, runtimeInput],
+    [
+      authActionPending,
+      authErrorMessage,
+      authRuntime,
+      handleSignIn,
+      handleSignOut,
+      handleSignUp,
+      localBackupDryRunUi,
+      onCreateBackup,
+      onStartDryRun,
+      readiness,
+      runtimeInput,
+      syncPreflight,
+    ],
   );
 
   const signedIn = sectionProps.authCard?.authStatus === 'signed_in';
