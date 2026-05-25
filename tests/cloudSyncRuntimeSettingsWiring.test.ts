@@ -204,8 +204,11 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
       expect(markup).toContain(`data-testid="${marker}"`);
     }
     expect(text).toContain('登录账号');
+    expect(text).toContain('创建账号');
+    expect(text).toContain('密码');
     expect(text).toContain('未登录');
     expect(markup).toContain('data-testid="ironpath-auth-sign-in"');
+    expect(markup).toContain('data-testid="ironpath-auth-password-input"');
     expect(text).toContain('本地数据仍会保留');
     expect(text).toContain('登录后再开启同步');
   });

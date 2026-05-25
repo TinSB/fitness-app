@@ -127,6 +127,31 @@ describe('Cloud Sync UI Polish V1 components', () => {
     }
   });
 
+  it('renders email and password account controls without magic-link copy', () => {
+    const markup = render(createElement(CloudAuthCard, {
+      authStatus: 'signed_out',
+      authMode: 'sign_in',
+      emailInputValue: '',
+      passwordInputValue: '',
+      onAuthModeChange: () => undefined,
+      onEmailInputChange: () => undefined,
+      onPasswordInputChange: () => undefined,
+      onSignIn: () => undefined,
+      onSignUp: () => undefined,
+    }));
+    const text = stripTags(markup);
+
+    expect(markup).toContain('data-testid="ironpath-auth-email-input"');
+    expect(markup).toContain('data-testid="ironpath-auth-password-input"');
+    expect(markup).toContain('data-testid="ironpath-auth-mode-sign-in"');
+    expect(markup).toContain('data-testid="ironpath-auth-mode-sign-up"');
+    expect(text).toContain('邮箱');
+    expect(text).toContain('密码');
+    expect(text).toContain('登录账号');
+    expect(text).toContain('创建账号');
+    expect(text).not.toContain('登录链接');
+  });
+
   it('does not render account settings when service-role exposure is reported', () => {
     const markup = render(createElement(AccountSettings, {
       accountEmail: 'person@example.com',

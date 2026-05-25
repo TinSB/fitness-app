@@ -105,12 +105,15 @@ describe('real Supabase auth runtime adapter', () => {
     });
   });
 
-  it('sends an email magic link without treating auth as completed or enabling sync', async () => {
-    let otpInput: unknown = null;
+  it('signs in with email and password without using magic links or enabling sync', async () => {
+    let passwordInput: unknown = null;
     const { factory } = makeClientFactory({
-      signInWithOtp: async (input: unknown) => {
-        otpInput = input;
-        return { data: { user: null, session: null }, error: null };
+      signInWithOtp: async () => {
+        throw new Error('magic link sign-in should not be used');
+      },
+      signInWithPassword: async (input: unknown) => {
+        passwordInput = input;
+        return { data: { user: supabaseUser(), session: null }, error: null };
       },
     });
 
@@ -119,30 +122,108 @@ describe('real Supabase auth runtime adapter', () => {
       readiness: readiness(),
       publicConfig: publicConfig(),
       signInEmail: 'person@example.test',
+      password: 'strong-password',
       userInitiated: true,
       nowIso,
       clientFactory: factory,
     });
 
-    expect(otpInput).toEqual({
+    expect(passwordInput).toEqual({
       email: 'person@example.test',
-      options: {
-        emailRedirectTo: 'http://127.0.0.1:3000/auth/callback',
-        shouldCreateUser: true,
-      },
+      password: 'strong-password',
     });
     expect(result).toMatchObject({
       ok: true,
       action: 'sign_in',
-      status: 'session_checked',
-      authenticated: false,
-      user: null,
+      status: 'signed_in',
+      authenticated: true,
+      user: {
+        userId: 'supabase-user-1',
+        accountId: 'person@example.test',
+        displayName: 'person@example.test',
+      },
       networkAttempted: true,
       tokenStored: false,
       localStorageChanged: false,
       syncRuntimeEnabled: false,
       sourceOfTruthChanged: false,
     });
+  });
+
+  it('creates an account with email and password without enabling sync', async () => {
+    let signUpInput: unknown = null;
+    const { factory } = makeClientFactory({
+      signInWithOtp: async () => {
+        throw new Error('magic link sign-in should not be used');
+      },
+      signUp: async (input: unknown) => {
+        signUpInput = input;
+        return { data: { user: supabaseUser(), session: null }, error: null };
+      },
+    });
+
+    const result = await runSupabaseAuthRuntimeAction({
+      action: 'sign_up',
+      readiness: readiness(),
+      publicConfig: publicConfig(),
+      signInEmail: 'person@example.test',
+      password: 'strong-password',
+      userInitiated: true,
+      nowIso,
+      clientFactory: factory,
+    });
+
+    expect(signUpInput).toEqual({
+      email: 'person@example.test',
+      password: 'strong-password',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      action: 'sign_up',
+      status: 'signed_in',
+      authenticated: true,
+      tokenStored: false,
+      localStorageChanged: false,
+      localStorageDeleted: false,
+      syncRuntimeEnabled: false,
+      liveCloudSyncActivated: false,
+      cloudPrimaryEnabled: false,
+      defaultSyncEnabled: false,
+      backgroundWorkEnabled: false,
+      sourceOfTruthChanged: false,
+    });
+  });
+
+  it('fails closed before network access when email or password is invalid', async () => {
+    const factory: SupabaseAuthRuntimeClientFactory = () => {
+      throw new Error('client should not be created');
+    };
+
+    const invalidEmail = await runSupabaseAuthRuntimeAction({
+      action: 'sign_in',
+      readiness: readiness(),
+      publicConfig: publicConfig(),
+      signInEmail: 'not-an-email',
+      password: 'strong-password',
+      userInitiated: true,
+      nowIso,
+      clientFactory: factory,
+    });
+    const missingPassword = await runSupabaseAuthRuntimeAction({
+      action: 'sign_in',
+      readiness: readiness(),
+      publicConfig: publicConfig(),
+      signInEmail: 'person@example.test',
+      password: '',
+      userInitiated: true,
+      nowIso,
+      clientFactory: factory,
+    });
+
+    expect(invalidEmail.status).toBe('adapter_failed');
+    expect(invalidEmail.networkAttempted).toBe(false);
+    expect(missingPassword.status).toBe('adapter_failed');
+    expect(missingPassword.networkAttempted).toBe(false);
   });
 
   it('signs out only the local Supabase browser session through explicit user action', async () => {
@@ -226,9 +307,9 @@ describe('real Supabase auth runtime adapter', () => {
 
     try {
       const { factory } = makeClientFactory({
-        signInWithOtp: async () => {
+        signInWithPassword: async () => {
           globalThis.localStorage.setItem('supabase-token', 'redacted');
-          return { data: { user: null, session: null }, error: null };
+          return { data: { user: supabaseUser(), session: null }, error: null };
         },
       });
 
@@ -237,6 +318,7 @@ describe('real Supabase auth runtime adapter', () => {
         readiness: readiness(),
         publicConfig: publicConfig(),
         signInEmail: 'person@example.test',
+        password: 'strong-password',
         userInitiated: true,
         nowIso,
         clientFactory: factory,
@@ -256,7 +338,7 @@ describe('real Supabase auth runtime adapter', () => {
 
   it('does not serialize public env values or token-like values in the auth runtime result', async () => {
     const { factory } = makeClientFactory({
-      signInWithOtp: async () => ({ data: { user: null, session: null }, error: null }),
+      signInWithPassword: async () => ({ data: { user: supabaseUser(), session: null }, error: null }),
     });
 
     const result = await runSupabaseAuthRuntimeAction({
@@ -264,6 +346,7 @@ describe('real Supabase auth runtime adapter', () => {
       readiness: readiness(),
       publicConfig: publicConfig(),
       signInEmail: 'person@example.test',
+      password: 'strong-password',
       userInitiated: true,
       nowIso,
       clientFactory: factory,
@@ -272,6 +355,7 @@ describe('real Supabase auth runtime adapter', () => {
 
     expect(serialized).not.toContain('https://ironpath-project.supabase.co');
     expect(serialized).not.toContain('synthetic-public-anon-key');
+    expect(serialized).not.toContain('strong-password');
     expect(serialized).not.toContain('access_token');
     expect(serialized).not.toContain('refresh_token');
     expect(serialized).not.toContain('SUPABASE_SERVICE_ROLE');

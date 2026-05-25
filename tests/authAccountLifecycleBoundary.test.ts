@@ -3,9 +3,25 @@ import { API_STORAGE_ADAPTER_ACCEPTED_WRITE_ROUTES } from '../src/storage/apiSto
 import { createRuntimeSourceSelector } from '../src/storage/runtimeSourceSelector';
 import { collectSrcRuntimeFiles, expectSourceNotToContain, readSource, relativePath } from './runtimeBoundaryTestHelpers';
 
+const authorizedEmailPasswordAuthFiles = new Set([
+  'src/cloudProduction/authRuntimeWiring.ts',
+  'src/cloudProduction/supabaseAuthRuntimeAdapter.ts',
+  'src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx',
+  'src/uiOs/settings/cloudSyncAuthActionController.ts',
+  'src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts',
+  'src/cloudSync/CloudAuthCard.tsx',
+  'src/cloudSync/index.ts',
+]);
+
+const authBlockedRuntimeFiles = () =>
+  collectSrcRuntimeFiles().filter((path) => {
+    const relative = relativePath(path).replace(/\\/g, '/');
+    return !relative.startsWith('src/auth/') && !authorizedEmailPasswordAuthFiles.has(relative);
+  });
+
 describe('auth account lifecycle boundary', () => {
   it('keeps login/signup, token/session, and auth routes absent from browser runtime', () => {
-    for (const file of collectSrcRuntimeFiles().filter((path) => !relativePath(path).startsWith('src/auth/'))) {
+    for (const file of authBlockedRuntimeFiles()) {
       expectSourceNotToContain(file, [
         '/auth',
         '/login',
@@ -21,6 +37,33 @@ describe('auth account lifecycle boundary', () => {
         '/reset/',
         '/recovery/',
       ]);
+    }
+  });
+
+  it('keeps the authorized email/password account lifecycle isolated from storage and sync', () => {
+    const source = [
+      readSource('src/cloudProduction/authRuntimeWiring.ts'),
+      readSource('src/cloudProduction/supabaseAuthRuntimeAdapter.ts'),
+      readSource('src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx'),
+      readSource('src/cloudSync/CloudAuthCard.tsx'),
+    ].join('\n');
+
+    expect(source).toContain('signInWithPassword');
+    expect(source).toContain('signUp');
+    expect(source).toContain('password');
+    expect(source).not.toContain('signInWithOtp');
+    for (const forbidden of [
+      'document.cookie',
+      'localStorage.setItem',
+      'localStorage.removeItem',
+      'localStorage.clear',
+      'syncRuntimeEnabled: true',
+      'cloudPrimaryEnabled: true',
+      'defaultSyncEnabled: true',
+      'backgroundWorkEnabled: true',
+      'sourceOfTruthChanged: true',
+    ]) {
+      expect(source).not.toContain(forbidden);
     }
   });
 

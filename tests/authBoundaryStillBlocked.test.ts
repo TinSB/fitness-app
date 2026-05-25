@@ -5,9 +5,25 @@ import { API_STORAGE_ADAPTER_ACCEPTED_WRITE_ROUTES } from '../src/storage/apiSto
 import { createRuntimeSourceSelector } from '../src/storage/runtimeSourceSelector';
 import { collectSrcRuntimeFiles, expectSourceNotToContain, readSource, relativePath, repoRoot } from './runtimeBoundaryTestHelpers';
 
+const authorizedEmailPasswordAuthFiles = new Set([
+  'src/cloudProduction/authRuntimeWiring.ts',
+  'src/cloudProduction/supabaseAuthRuntimeAdapter.ts',
+  'src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx',
+  'src/uiOs/settings/cloudSyncAuthActionController.ts',
+  'src/uiOs/settings/cloudSyncRuntimeSettingsAdapter.ts',
+  'src/cloudSync/CloudAuthCard.tsx',
+  'src/cloudSync/index.ts',
+]);
+
+const authBlockedRuntimeFiles = () =>
+  collectSrcRuntimeFiles().filter((path) => {
+    const relative = relativePath(path).replace(/\\/g, '/');
+    return !relative.startsWith('src/auth/') && !authorizedEmailPasswordAuthFiles.has(relative);
+  });
+
 describe('auth boundary still blocked', () => {
   it('keeps browser runtime free of auth/account routes and provider runtime', () => {
-    for (const file of collectSrcRuntimeFiles().filter((path) => !relativePath(path).startsWith('src/auth/'))) {
+    for (const file of authBlockedRuntimeFiles()) {
       expectSourceNotToContain(file, [
         '/auth',
         '/login',
@@ -31,6 +47,33 @@ describe('auth boundary still blocked', () => {
         'devApiRunner',
         'devDbRecovery',
       ]);
+    }
+  });
+
+  it('allows only the Settings email/password auth adapter while keeping sync and storage blocked', () => {
+    const source = [
+      readSource('src/cloudProduction/supabaseAuthRuntimeAdapter.ts'),
+      readSource('src/uiOs/settings/CloudSyncPolishSettingsPanel.tsx'),
+      readSource('src/cloudSync/CloudAuthCard.tsx'),
+    ].join('\n');
+
+    expect(source).toContain('signInWithPassword');
+    expect(source).toContain('signUp');
+    expect(source).toContain('ironpath-auth-password-input');
+    expect(source).not.toContain('signInWithOtp');
+    for (const forbidden of [
+      'SUPABASE_SERVICE_ROLE',
+      'localStorage.removeItem',
+      'localStorage.clear',
+      'upsertPlanAdjustmentDraftByFingerprint',
+      'upsertPendingSessionPatch',
+      'applySessionPatches',
+      'syncRuntimeEnabled: true',
+      'cloudPrimaryEnabled: true',
+      'defaultSyncEnabled: true',
+      'backgroundWorkEnabled: true',
+    ]) {
+      expect(source).not.toContain(forbidden);
     }
   });
 

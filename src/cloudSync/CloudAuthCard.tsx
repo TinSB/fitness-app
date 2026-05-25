@@ -1,53 +1,79 @@
-import { AlertCircle, Loader2, LogIn, LogOut, User } from 'lucide-react';
+import { AlertCircle, Loader2, LogIn, LogOut, User, UserPlus } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { ActionButton } from '../ui/ActionButton';
 import { Card } from '../ui/Card';
 import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 export type CloudAuthStatus = 'signed_out' | 'signing_in' | 'signed_in' | 'error';
+export type CloudAuthMode = 'sign_in' | 'sign_up';
 
 export interface CloudAuthCardProps {
   authStatus: CloudAuthStatus;
+  authMode?: CloudAuthMode;
   currentUserEmail?: string | null;
   emailInputValue?: string;
   emailInputLabel?: string;
   emailInputPlaceholder?: string;
+  passwordInputValue?: string;
+  passwordInputLabel?: string;
+  passwordInputPlaceholder?: string;
   infoMessage?: string | null;
   isSigningIn?: boolean;
   errorMessage?: string | null;
+  onAuthModeChange?: (mode: CloudAuthMode) => void;
   onEmailInputChange?: (value: string) => void;
+  onPasswordInputChange?: (value: string) => void;
   onSignIn?: () => void;
+  onSignUp?: () => void;
   onSignOut?: () => void;
   onDismiss?: () => void;
 }
 
-const statusConfig: Record<CloudAuthStatus, { label: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' }> = {
-  signed_out: { label: '未登录', tone: 'slate' },
-  signing_in: { label: '登录中', tone: 'amber' },
-  signed_in: { label: '已登录', tone: 'emerald' },
-  error: { label: '登录失败', tone: 'rose' },
+const statusTone: Record<CloudAuthStatus, 'slate' | 'emerald' | 'amber' | 'rose'> = {
+  signed_out: 'slate',
+  signing_in: 'amber',
+  signed_in: 'emerald',
+  error: 'rose',
+};
+
+const statusLabel = (status: CloudAuthStatus, mode: CloudAuthMode) => {
+  if (status === 'signed_out') return '未登录';
+  if (status === 'signing_in') return '登录中';
+  if (status === 'signed_in') return '已登录';
+  return mode === 'sign_up' ? '创建失败' : '登录失败';
 };
 
 export function CloudAuthCard({
   authStatus,
+  authMode = 'sign_in',
   currentUserEmail,
   emailInputValue,
   emailInputLabel,
   emailInputPlaceholder,
+  passwordInputValue,
+  passwordInputLabel,
+  passwordInputPlaceholder,
   infoMessage,
   isSigningIn,
   errorMessage,
+  onAuthModeChange,
   onEmailInputChange,
+  onPasswordInputChange,
   onSignIn,
+  onSignUp,
   onSignOut,
   onDismiss,
 }: CloudAuthCardProps) {
   const { resolvedTheme } = useUiTheme();
   const isDark = resolvedTheme === 'dark';
-  const config = statusConfig[authStatus];
+  const canEditCredentials = authStatus === 'signed_out' || authStatus === 'error';
+  const canSwitchMode = canEditCredentials && Boolean(onAuthModeChange && onSignIn && onSignUp);
+  const primaryAuthAction = authMode === 'sign_up' ? onSignUp : onSignIn;
+  const primaryAuthLabel = authMode === 'sign_up' ? '创建账号' : '登录账号';
+  const primaryAuthTestId = authMode === 'sign_up' ? 'ironpath-auth-sign-up' : 'ironpath-auth-sign-in';
 
   return (
-    <Card tone={config.tone} padded className="space-y-4" data-testid="ironpath-auth-card">
+    <Card tone={statusTone[authStatus]} padded className="space-y-4" data-testid="ironpath-auth-card">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
@@ -60,6 +86,8 @@ export function CloudAuthCard({
               <Loader2 className={classNames('h-5 w-5 animate-spin', isDark ? 'text-white/70' : 'text-slate-500')} />
             ) : authStatus === 'error' ? (
               <AlertCircle className={classNames('h-5 w-5', isDark ? 'text-rose-300' : 'text-rose-500')} />
+            ) : authMode === 'sign_up' && canEditCredentials ? (
+              <UserPlus className={classNames('h-5 w-5', isDark ? 'text-white/70' : 'text-slate-500')} />
             ) : (
               <User className={classNames('h-5 w-5', isDark ? 'text-white/70' : 'text-slate-500')} />
             )}
@@ -72,7 +100,7 @@ export function CloudAuthCard({
               className={classNames('text-sm', isDark ? 'text-white/60' : 'text-slate-500')}
               data-testid="ironpath-auth-status"
             >
-              {config.label}
+              {statusLabel(authStatus, authMode)}
             </p>
           </div>
         </div>
@@ -86,7 +114,40 @@ export function CloudAuthCard({
         </div>
       ) : null}
 
-      {(authStatus === 'signed_out' || authStatus === 'error') && onEmailInputChange ? (
+      {canSwitchMode ? (
+        <div
+          className={classNames(
+            'grid grid-cols-2 rounded-lg p-1 text-sm',
+            isDark ? 'bg-white/[0.06]' : 'bg-slate-100',
+          )}
+        >
+          {([
+            ['sign_in', '登录账号', 'ironpath-auth-mode-sign-in'],
+            ['sign_up', '创建账号', 'ironpath-auth-mode-sign-up'],
+          ] as const).map(([mode, label, testId]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onAuthModeChange?.(mode)}
+              className={classNames(
+                'rounded-md px-3 py-2 font-medium transition',
+                authMode === mode
+                  ? isDark
+                    ? 'bg-white/15 text-white'
+                    : 'bg-white text-slate-900 shadow-sm'
+                  : isDark
+                    ? 'text-white/55 hover:text-white'
+                    : 'text-slate-500 hover:text-slate-800',
+              )}
+              data-testid={testId}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {canEditCredentials && onEmailInputChange ? (
         <label className="block space-y-1.5">
           <span className={classNames('text-xs font-medium', isDark ? 'text-white/50' : 'text-slate-500')}>
             {emailInputLabel ?? '邮箱'}
@@ -97,7 +158,7 @@ export function CloudAuthCard({
             autoComplete="email"
             value={emailInputValue ?? ''}
             onChange={(event) => onEmailInputChange(event.target.value)}
-            placeholder={emailInputPlaceholder ?? '用于接收登录链接'}
+            placeholder={emailInputPlaceholder ?? '用于登录的邮箱'}
             className={classNames(
               'w-full rounded-lg border px-3 py-2 text-sm outline-none transition',
               isDark
@@ -105,6 +166,28 @@ export function CloudAuthCard({
                 : 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-emerald-500',
             )}
             data-testid="ironpath-auth-email-input"
+          />
+        </label>
+      ) : null}
+
+      {canEditCredentials && onPasswordInputChange ? (
+        <label className="block space-y-1.5">
+          <span className={classNames('text-xs font-medium', isDark ? 'text-white/50' : 'text-slate-500')}>
+            {passwordInputLabel ?? '密码'}
+          </span>
+          <input
+            type="password"
+            autoComplete={authMode === 'sign_up' ? 'new-password' : 'current-password'}
+            value={passwordInputValue ?? ''}
+            onChange={(event) => onPasswordInputChange(event.target.value)}
+            placeholder={passwordInputPlaceholder ?? '输入密码'}
+            className={classNames(
+              'w-full rounded-lg border px-3 py-2 text-sm outline-none transition',
+              isDark
+                ? 'border-white/10 bg-white/[0.06] text-white placeholder:text-white/30 focus:border-emerald-300/60'
+                : 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-emerald-500',
+            )}
+            data-testid="ironpath-auth-password-input"
           />
         </label>
       ) : null}
@@ -126,16 +209,16 @@ export function CloudAuthCard({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        {(authStatus === 'signed_out' || authStatus === 'error') && onSignIn ? (
+        {canEditCredentials && primaryAuthAction ? (
           <ActionButton
             variant="primary"
             size="md"
-            onClick={onSignIn}
+            onClick={primaryAuthAction}
             disabled={isSigningIn}
-            data-testid="ironpath-auth-sign-in"
+            data-testid={primaryAuthTestId}
           >
             <LogIn className="h-4 w-4" />
-            <span>登录账号</span>
+            <span>{primaryAuthLabel}</span>
           </ActionButton>
         ) : null}
 
@@ -153,7 +236,7 @@ export function CloudAuthCard({
           </ActionButton>
         ) : null}
 
-        {(authStatus === 'error' || authStatus === 'signed_out') && onDismiss ? (
+        {canEditCredentials && onDismiss ? (
           <ActionButton variant="ghost" size="md" onClick={onDismiss}>
             <span>稍后再说</span>
           </ActionButton>

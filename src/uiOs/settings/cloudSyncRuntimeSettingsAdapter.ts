@@ -18,6 +18,7 @@ import type { Phase20gConflictOfflineRollbackResult } from '../../cloudProductio
 
 export type CloudSyncSettingsRuntimeCallbacks = {
   onSignIn?: () => void;
+  onSignUp?: () => void;
   onSignOut?: () => void;
   onEnableSync?: () => void;
   onCreateBackup?: () => void;
@@ -108,6 +109,7 @@ const authCardProps = (input: CloudSyncSettingsRuntimeInput): CloudAuthCardProps
       authStatus: 'error',
       errorMessage: input.authErrorMessage,
       onSignIn: input.onSignIn,
+      onSignUp: input.onSignUp,
     };
   }
 
@@ -116,6 +118,7 @@ const authCardProps = (input: CloudSyncSettingsRuntimeInput): CloudAuthCardProps
       authStatus: 'error',
       errorMessage: '登录暂不可用',
       onSignIn: input.onSignIn,
+      onSignUp: input.onSignUp,
     };
   }
 
@@ -130,6 +133,7 @@ const authCardProps = (input: CloudSyncSettingsRuntimeInput): CloudAuthCardProps
   return {
     authStatus: 'signed_out',
     onSignIn: input.onSignIn,
+    onSignUp: input.onSignUp,
   };
 };
 

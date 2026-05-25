@@ -30,6 +30,7 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
     for (const forbidden of [
       '@supabase/supabase-js',
       'createClient(',
+      'signInWithOtp',
       'VITE_SUPABASE',
       'SUPABASE_SERVICE_ROLE',
       'process.env',
@@ -70,6 +71,9 @@ describe('Cloud Sync UI Polish V1 boundary', () => {
     for (const forbidden of [
       '@supabase/supabase-js',
       'createClient(',
+      'signInWithOtp',
+      'gmail',
+      'GOOGLE_GMAIL',
       'fetch(',
       'XMLHttpRequest',
       'navigator.sendBeacon',

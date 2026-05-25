@@ -1,5 +1,5 @@
 import React from 'react';
-import { CloudSyncSettingsSection } from '../../cloudSync';
+import { CloudSyncSettingsSection, type CloudAuthMode } from '../../cloudSync';
 import {
   buildSupabaseProjectRuntimeReadinessCheck,
   type Phase20bEnvRecord,
@@ -77,6 +77,8 @@ export function CloudSyncPolishSettingsPanel({
     infoMessage: null,
   });
   const [authEmail, setAuthEmail] = React.useState('');
+  const [authPassword, setAuthPassword] = React.useState('');
+  const [authMode, setAuthMode] = React.useState<CloudAuthMode>('sign_in');
   const publicBrowserEnv = React.useMemo(() => browserEnv ?? readPublicBrowserEnv(), [browserEnv]);
   const readiness = React.useMemo(
     () =>
@@ -100,11 +102,21 @@ export function CloudSyncPolishSettingsPanel({
     }));
 
     void Promise.resolve().then(async () => {
-      if (!authAdapter && action === 'sign_in' && !authEmail.trim()) {
+      if (!authAdapter && (action === 'sign_in' || action === 'sign_up') && !authEmail.trim()) {
         setAuthActionState({
           pendingAction: null,
           authRuntime: null,
           errorMessage: '请输入邮箱。',
+          infoMessage: null,
+        });
+        return;
+      }
+
+      if (!authAdapter && (action === 'sign_in' || action === 'sign_up') && !authPassword.trim()) {
+        setAuthActionState({
+          pendingAction: null,
+          authRuntime: null,
+          errorMessage: '请输入密码。',
           infoMessage: null,
         });
         return;
@@ -128,6 +140,7 @@ export function CloudSyncPolishSettingsPanel({
               cloudEnvironment: publicBrowserEnv.VITE_IRONPATH_CLOUD_ENVIRONMENT,
             },
             signInEmail: authEmail,
+            password: authPassword,
             userInitiated: true,
             nowIso,
           });
@@ -137,14 +150,14 @@ export function CloudSyncPolishSettingsPanel({
         authRuntime: result.authRuntime,
         errorMessage: result.errorMessage,
         infoMessage:
-          !result.errorMessage && action === 'sign_in' && result.authRuntime.authRuntimeEnabled
-            ? '登录链接已发送，请查收邮箱。'
+          !result.errorMessage && (action === 'sign_in' || action === 'sign_up') && result.authRuntime.authenticated
+            ? '已登录。'
             : !result.errorMessage && action === 'sign_out' && result.authRuntime.status === 'signed_out'
               ? '已退出登录。'
               : null,
       });
     });
-  }, [authAdapter, authEmail, nowIso, publicBrowserEnv, readiness]);
+  }, [authAdapter, authEmail, authPassword, nowIso, publicBrowserEnv, readiness]);
 
   React.useEffect(() => {
     if (authAdapter || runtimeInput.authRuntime || authActionState.authRuntime || readiness.readyFor20C !== true) return;
@@ -183,6 +196,14 @@ export function CloudSyncPolishSettingsPanel({
     runAuthAction('sign_in');
   }, [runAuthAction, runtimeInput]);
 
+  const handleSignUp = React.useCallback(() => {
+    if (runtimeInput.onSignUp) {
+      runtimeInput.onSignUp();
+      return;
+    }
+    runAuthAction('sign_up');
+  }, [runAuthAction, runtimeInput]);
+
   const handleSignOut = React.useCallback(() => {
     if (runtimeInput.onSignOut) {
       runtimeInput.onSignOut();
@@ -204,18 +225,23 @@ export function CloudSyncPolishSettingsPanel({
         authActionPending,
         authErrorMessage,
         onSignIn: handleSignIn,
+        onSignUp: handleSignUp,
         onSignOut: handleSignOut,
       }),
-    [authActionPending, authErrorMessage, authRuntime, handleSignIn, handleSignOut, readiness, runtimeInput],
+    [authActionPending, authErrorMessage, authRuntime, handleSignIn, handleSignOut, handleSignUp, readiness, runtimeInput],
   );
 
   const signedIn = sectionProps.authCard?.authStatus === 'signed_in';
   const authCard = sectionProps.authCard
     ? {
         ...sectionProps.authCard,
+        authMode,
+        onAuthModeChange: !authAdapter && !signedIn ? setAuthMode : undefined,
         infoMessage: authActionState.infoMessage,
         emailInputValue: !authAdapter && !signedIn ? authEmail : undefined,
         onEmailInputChange: !authAdapter && !signedIn ? setAuthEmail : undefined,
+        passwordInputValue: !authAdapter && !signedIn ? authPassword : undefined,
+        onPasswordInputChange: !authAdapter && !signedIn ? setAuthPassword : undefined,
       }
     : sectionProps.authCard;
 
