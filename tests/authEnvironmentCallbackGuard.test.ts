@@ -79,6 +79,31 @@ describe('auth environment callback guard', () => {
     });
   });
 
+  it('accepts the production Vercel app callback while still relying on production classification', () => {
+    const callbackUrl = 'https://fitness-app-wheat-phi.vercel.app/auth/callback';
+
+    expect(resolveAuthEnvironmentCallbackGuard({
+      enabled: true,
+      providerCandidate: 'supabase-auth-candidate',
+      environment: 'production',
+      callbackUrl,
+      browserConfig: { publicMode: 'candidate' },
+    })).toEqual({
+      ok: true,
+      enabled: true,
+      providerCandidate: 'supabase-auth-candidate',
+      environment: 'production',
+      callbackUrl,
+      browserSafeConfig: {
+        enabled: false,
+        providerCandidate: 'supabase-auth-candidate',
+        callbackUrl,
+        containsSecrets: false,
+      },
+      errors: [],
+    });
+  });
+
   it('rejects missing provider config and missing callback URL', () => {
     expect(resolveAuthEnvironmentCallbackGuard({
       enabled: true,
