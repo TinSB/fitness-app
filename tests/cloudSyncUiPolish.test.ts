@@ -153,6 +153,26 @@ describe('Cloud Sync UI Polish V1 components', () => {
     expect(text).not.toContain('登录链接');
   });
 
+  it('renders sign-up errors as account creation errors', () => {
+    const markup = render(createElement(CloudAuthCard, {
+      authStatus: 'error',
+      authMode: 'sign_up',
+      emailInputValue: 'person@example.com',
+      passwordInputValue: 'strong-password',
+      errorMessage: '创建失败，请检查邮箱和密码后再试。',
+      onEmailInputChange: () => undefined,
+      onPasswordInputChange: () => undefined,
+      onSignIn: () => undefined,
+      onSignUp: () => undefined,
+    }));
+    const text = stripTags(markup);
+
+    expect(text).toContain('创建账号');
+    expect(text).toContain('创建失败');
+    expect(text).toContain('创建失败，请检查邮箱和密码后再试。');
+    expect(text).not.toContain('登录失败');
+  });
+
   it('does not render account settings when service-role exposure is reported', () => {
     const markup = render(createElement(AccountSettings, {
       accountEmail: 'person@example.com',

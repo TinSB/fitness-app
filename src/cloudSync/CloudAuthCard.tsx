@@ -71,6 +71,7 @@ export function CloudAuthCard({
   const primaryAuthAction = authMode === 'sign_up' ? onSignUp : onSignIn;
   const primaryAuthLabel = authMode === 'sign_up' ? '创建账号' : '登录账号';
   const primaryAuthTestId = authMode === 'sign_up' ? 'ironpath-auth-sign-up' : 'ironpath-auth-sign-in';
+  const authTitle = authMode === 'sign_up' && canEditCredentials ? '创建账号' : '登录账号';
 
   return (
     <Card tone={statusTone[authStatus]} padded className="space-y-4" data-testid="ironpath-auth-card">
@@ -94,7 +95,7 @@ export function CloudAuthCard({
           </div>
           <div>
             <h3 className={classNames('text-base font-semibold', isDark ? 'text-white' : 'text-slate-900')}>
-              登录账号
+              {authTitle}
             </h3>
             <p
               className={classNames('text-sm', isDark ? 'text-white/60' : 'text-slate-500')}
