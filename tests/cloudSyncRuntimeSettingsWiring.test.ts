@@ -231,6 +231,9 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     expect(withoutCallback).toContain('IronPath 账号');
     expect(withoutCallback).toContain('退出登录');
     expect(withoutCallback).toContain('本地数据仍会保留');
+    expect(withoutCallback).toContain('同步预检');
+    expect(withoutCallback).toContain('检查本地数据');
+    expect(withoutCallback).toContain('查看将同步的内容');
     expect(withoutCallback).not.toContain('开启同步');
     expect(withCallback).toContain('开启同步');
   });

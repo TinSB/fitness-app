@@ -15,6 +15,10 @@ import type { Phase20dExplicitOptInSyncRuntimeResult } from '../../cloudProducti
 import type { Phase20eLocalBackupDryRunResult } from '../../cloudProduction/localBackupDryRunMigrationRuntimeFlow';
 import type { Phase20fCloudReadWriteVerificationResult } from '../../cloudProduction/cloudReadWriteVerificationFlow';
 import type { Phase20gConflictOfflineRollbackResult } from '../../cloudProduction/conflictOfflineRollbackRuntimeFlow';
+import {
+  buildExplicitOptInSyncPreflight,
+  type Phase21aExplicitOptInSyncPreflightResult,
+} from '../../cloudProduction/explicitOptInSyncPreflight';
 
 export type CloudSyncSettingsRuntimeCallbacks = {
   onSignIn?: () => void;
@@ -40,6 +44,7 @@ export type CloudSyncSettingsRuntimeInput = CloudSyncSettingsRuntimeCallbacks & 
   backupDryRun?: Phase20eLocalBackupDryRunResult | null;
   verificationFlow?: Phase20fCloudReadWriteVerificationResult | null;
   conflictOfflineRollback?: Phase20gConflictOfflineRollbackResult | null;
+  syncPreflight?: Phase21aExplicitOptInSyncPreflightResult | null;
 };
 
 const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
@@ -233,6 +238,47 @@ const offlineRecoveryProps = (input: CloudSyncSettingsRuntimeInput): OfflineReco
   };
 };
 
+const safePreflightBoundary = {
+  syncRuntimeEnabled: false,
+  liveCloudSyncActivated: false,
+  cloudPrimaryEnabled: false,
+  defaultSyncEnabled: false,
+  backgroundWorkEnabled: false,
+  sourceOfTruthChanged: false,
+  localStorageDeleted: false,
+};
+
+const preflightResult = (input: CloudSyncSettingsRuntimeInput) =>
+  input.syncPreflight ??
+  buildExplicitOptInSyncPreflight({
+    enabled: true,
+    readiness: input.readiness,
+    authRuntime: input.authRuntime,
+    runtimeBoundary: safePreflightBoundary,
+  });
+
+const preflightStatusLabel = (preflight: Phase21aExplicitOptInSyncPreflightResult) => {
+  if (preflight.status === 'ready_for_backup_dry_run') return '可以检查';
+  if (preflight.status === 'sign_in_required') return '登录后继续';
+  if (preflight.status === 'readiness_missing') return '暂不可用';
+  if (preflight.status === 'runtime_boundary_unsafe') return '先暂停';
+  return '准备中';
+};
+
+const syncPreflightProps = (input: CloudSyncSettingsRuntimeInput): CloudSyncSettingsSectionProps['syncPreflight'] => {
+  const preflight = preflightResult(input);
+  const visible = hasSignedInUser(input.authRuntime) && preflight.syncPreflightVisible;
+
+  return {
+    visible,
+    title: '同步预检',
+    summary: preflight.userMessage,
+    primaryLabel: preflight.primaryActionLabel,
+    secondaryLabels: preflight.secondaryActionLabels,
+    statusLabel: preflightStatusLabel(preflight),
+  };
+};
+
 export const buildCloudSyncSettingsSectionPropsFromRuntime = (
   input: CloudSyncSettingsRuntimeInput = {},
 ): CloudSyncSettingsSectionProps => ({
@@ -243,6 +289,7 @@ export const buildCloudSyncSettingsSectionPropsFromRuntime = (
   authCard: authCardProps(input),
   syncStatus: syncStatusProps(input),
   accountSettings: accountSettingsProps(input),
+  syncPreflight: syncPreflightProps(input),
   firstSyncFlow: firstSyncFlowProps(input),
   conflictReview: conflictReviewProps(input),
   offlineRecovery: offlineRecoveryProps(input),

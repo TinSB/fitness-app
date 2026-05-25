@@ -254,6 +254,20 @@ It creates a pure handoff contract after 20H acceptance. The contract records st
 
 Phase 20 sequence complete. Recommended next task: v0 UI Polish as a separate design task using the 20I handoff contract.
 
+## Phase 21A Explicit Opt-In Sync Preflight
+
+Phase 21A - Explicit Opt-In Sync Preflight V1 adds `src/cloudProduction/explicitOptInSyncPreflight.ts` and `docs/EXPLICIT_OPT_IN_SYNC_PREFLIGHT.md`.
+
+It creates the first production-facing preflight after email/password auth is ready. The preflight reads existing Phase 20 public readiness and auth runtime evidence, then reports whether the signed-in account can proceed to local backup and dry-run preparation.
+
+21A can report `readyFor21B: true` only after public browser config, signed-in account evidence, localStorage fallback preservation, and no cloud-primary/default/background/source-of-truth/localStorage deletion risk are present.
+
+21A keeps `uploadPerformed: false`, `downloadPerformed: false`, `autoApplied: false`, `syncRuntimeEnabled: false`, `liveCloudSyncActivated: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21A does not upload, download, write localStorage, write cloud data, add routes, change schemas or persistence, change packages or lockfiles, start background sync, or make cloud data primary.
+
+Recommended next task: 21B Local Backup Dry Run UI V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
