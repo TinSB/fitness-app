@@ -70,11 +70,10 @@ describe('Cloud Sync UI Polish V1 components', () => {
 
     for (const expected of [
       '登录账号',
-      '同步状态',
-      '开启前先备份',
+      '创建账号',
+      '未开启',
       '查看冲突',
       '云端暂不可用',
-      '账号设置',
     ]) {
       expect(text).toContain(expected);
     }
@@ -126,6 +125,8 @@ describe('Cloud Sync UI Polish V1 components', () => {
       '可以继续正常训练',
       '账号同步',
       '云端同步',
+      '同步状态',
+      '账号设置',
     ]) {
       expect(text).not.toContain(forbidden);
     }
@@ -190,6 +191,21 @@ describe('Cloud Sync UI Polish V1 components', () => {
 
   it('renders the Settings preview surface with reachable first sync conflict and offline states', () => {
     const markup = render(createElement(CloudSyncSettingsSection, {
+      authCard: {
+        authStatus: 'signed_in',
+        currentUserEmail: 'person@example.com',
+        onSignOut: () => undefined,
+      },
+      syncStatus: {
+        syncRuntimeEnabled: false,
+        readinessStatus: 'ready',
+      },
+      accountSettings: {
+        accountEmail: 'person@example.com',
+        syncOptIn: false,
+        localBackupAvailable: true,
+        onToggleSync: () => undefined,
+      },
       syncPreflight: {
         visible: true,
         title: '同步预检',
@@ -218,18 +234,18 @@ describe('Cloud Sync UI Polish V1 components', () => {
     }));
 
     expect(markup).toContain('ironpath-cloud-sync-settings-section');
+    expect(markup).toContain('ironpath-account-sync-flow');
     expect(markup).toContain('ironpath-explicit-sync-preflight');
     expect(markup).toContain('ironpath-local-backup-dry-run-preview');
-    expect(markup).toContain('ironpath-auth-card');
+    expect(markup).toContain('ironpath-cloud-sync-toggle');
     expect(markup).toContain('ironpath-sync-status-center');
     expect(markup).toContain('ironpath-first-sync-flow');
     expect(markup).toContain('ironpath-conflict-review');
     expect(markup).toContain('ironpath-offline-recovery');
     expect(markup).toContain('ironpath-account-settings');
-    expect(markup).toContain('同步预检');
     expect(markup).toContain('检查本地数据');
     expect(markup).toContain('检查完成');
-    expect(markup).toContain('查看同步流程预览');
+    expect(markup).toContain('更多');
     expect(markup).not.toContain('本地数据仍会保留');
     expect(markup).not.toContain('本地训练记录不会被覆盖');
   });

@@ -106,7 +106,7 @@ describe('Cloud Sync auth action wiring to Settings UI', () => {
     expect(text).toContain('创建账号');
     expect(text).toContain('密码');
     expect(text).toContain('未登录');
-    expect(text).toContain('同步未开启');
+    expect(text).toContain('未开启');
     expect(text).not.toContain('已选择开启');
     expect(text).not.toContain('云端优先');
   });

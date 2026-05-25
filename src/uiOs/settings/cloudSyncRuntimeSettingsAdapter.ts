@@ -311,7 +311,7 @@ export const buildCloudSyncSettingsSectionPropsFromRuntime = (
   eyebrow: '',
   title: '',
   description: '',
-  detailSummaryLabel: '查看同步状态',
+  detailSummaryLabel: '更多',
   authCard: authCardProps(input),
   syncStatus: syncStatusProps(input),
   accountSettings: accountSettingsProps(input),

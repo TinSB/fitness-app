@@ -259,12 +259,9 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     const text = textOnly(markup);
 
     for (const marker of [
+      'ironpath-account-sync-flow',
       'ironpath-auth-card',
       'ironpath-sync-status-center',
-      'ironpath-first-sync-flow',
-      'ironpath-conflict-review',
-      'ironpath-offline-recovery',
-      'ironpath-account-settings',
     ]) {
       expect(markup).toContain(`data-testid="${marker}"`);
     }
@@ -275,32 +272,37 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     expect(markup).toContain('data-testid="ironpath-auth-sign-in"');
     expect(markup).toContain('data-testid="ironpath-auth-password-input"');
     expect(text).not.toContain('本地数据仍会保留');
-    expect(text).toContain('登录后再开启同步');
+    expect(text).not.toContain('登录后再开启同步');
+    expect(markup).not.toContain('data-testid="ironpath-account-settings"');
   });
 
   it('renders signed-in sync-off state and exposes enable sync only through a provided callback', () => {
-    const withoutCallback = textOnly(render(createElement(CloudSyncPolishSettingsPanel, {
+    const withoutCallbackMarkup = render(createElement(CloudSyncPolishSettingsPanel, {
       readiness: ready20b(),
       authRuntime: signedInAuth(),
       syncRuntime: syncOff(),
       backupDryRun: backupReady(),
-    })));
-    const withCallback = textOnly(render(createElement(CloudSyncPolishSettingsPanel, {
+    }));
+    const withoutCallback = textOnly(withoutCallbackMarkup);
+    const withCallbackMarkup = render(createElement(CloudSyncPolishSettingsPanel, {
       readiness: ready20b(),
       authRuntime: signedInAuth(),
       syncRuntime: syncOff(),
       backupDryRun: backupReady(),
       onEnableSync: () => undefined,
-    })));
+    }));
+    const withCallback = textOnly(withCallbackMarkup);
 
     expect(withoutCallback).toContain('IronPath 账号');
     expect(withoutCallback).toContain('退出登录');
+    expect(withoutCallback).toContain('云同步');
     expect(withoutCallback).not.toContain('本地数据仍会保留');
-    expect(withoutCallback).toContain('同步预检');
     expect(withoutCallback).toContain('检查本地数据');
-    expect(withoutCallback).toContain('查看将同步的内容');
     expect(withoutCallback).not.toContain('开启同步');
-    expect(withCallback).toContain('开启同步');
+    expect(withoutCallbackMarkup).toContain('data-testid="ironpath-cloud-sync-toggle"');
+    expect(withCallback).not.toContain('开启同步');
+    expect(withCallbackMarkup).toContain('data-testid="ironpath-cloud-sync-toggle"');
+    expect(withCallbackMarkup).toContain('aria-pressed="false"');
   });
 
   it('shows backup-required and sync opt-in ready states without running sync automatically', () => {
@@ -317,8 +319,8 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     })));
 
     expect(needsBackup).toContain('开启前先备份');
-    expect(needsBackup).toContain('备份本地数据');
-    expect(ready).toContain('已选择开启');
+    expect(needsBackup).toContain('云同步');
+    expect(ready).toContain('已开启');
     expect(ready).not.toContain('本地数据仍会保留');
     expect(ready).not.toContain('云端优先');
   });
@@ -362,7 +364,7 @@ describe('Cloud Sync runtime wiring to Settings UI', () => {
     const hiddenText = textOnly(hiddenMarkup);
     const visibleText = textOnly(render(createElement(CloudSyncSettingsSection, visibleConflictProps)));
 
-    expect(hiddenText).toContain('无冲突');
+    expect(hiddenText).not.toContain('查看冲突');
     expect(hiddenMarkup).not.toContain('runtime-conflict-review');
     expect(visibleText).toContain('查看冲突');
     expect(visibleText).toContain('训练记录');
