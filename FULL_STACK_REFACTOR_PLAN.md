@@ -282,6 +282,20 @@ It creates the Settings preparation step after 21A. The UI step reads the signed
 
 Recommended next task: 21C Cloud Write Shadow Candidate V1.
 
+## Phase 21C Cloud Write Shadow Candidate
+
+Phase 21C - Cloud Write Shadow Candidate V1 adds `src/cloudProduction/cloudWriteShadowCandidate.ts` and `docs/CLOUD_WRITE_SHADOW_CANDIDATE.md`.
+
+It creates the in-memory shadow candidate step after 21B. The candidate reads the signed-in backup dry-run result, current local AppData, owner evidence, schema preflight, duplicate journal evidence, and explicit shadow confirmation before any first-upload apply can be considered.
+
+21C can report `readyFor21D: true` only after the shadow candidate is accepted in memory and still requires cloud read mirror verification plus First Upload Explicit Apply before any upload.
+
+21C keeps `inMemoryShadowCandidateOnly: true`, `requiresFirstUploadExplicitApply: true`, `requiresCloudReadMirrorBeforeApply: true`, `uploadPerformed: false`, `downloadPerformed: false`, `cloudWriteAttempted: false`, `cloudDataChanged: false`, `autoApplied: false`, `syncRuntimeEnabled: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21C does not upload, download, read cloud data, write localStorage, write cloud data, add routes, change schemas or persistence, change packages or lockfiles, start background sync, make cloud data primary, or expose first-upload apply.
+
+Recommended next task: 21D Cloud Read Mirror Verification V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
