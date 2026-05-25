@@ -338,6 +338,20 @@ It creates the cloud read-after-upload parity gate after 21E. The parity check r
 
 Recommended next task: 21G Conflict Review V1.
 
+## Phase 21G Conflict Review
+
+Phase 21G - Conflict Review V1 adds `src/cloudProduction/conflictReview.ts` and `docs/CONFLICT_REVIEW.md`.
+
+It creates the explicit conflict review gate after 21F. The review reads parity or conflict evidence, review visibility, a manual `保留本地` or `使用云端` choice, explicit confirmation, localStorage fallback confirmation, no-auto-apply confirmation, backup confirmation for `使用云端`, owner/schema validation, and runtime boundary evidence.
+
+21G can report `readyFor21H: true` only after the conflict is reviewed manually. If no conflict exists, it does not invent a resolution choice. If a conflict exists, it fails closed when the review is unopened, the choice is missing, confirmation is missing, backup is missing before `使用云端`, or any automatic decision is attempted.
+
+21G keeps `manualResolutionConfirmed: true`, `automaticConflictDecisionMade: false`, `decisionApplied: false`, `newUploadPerformed: false`, `cloudWriteAttempted: false`, `uploadPerformed: false`, `cloudDataChanged: false`, `downloadPerformed: false`, `autoApplied: false`, `localDataChanged: false`, `cloudPrimaryEnabled: false`, `defaultSyncEnabled: false`, `backgroundWorkEnabled: false`, `sourceOfTruthChanged: false`, and `localStorageDeleted: false`.
+
+21G does not perform a new cloud write, download cloud data into local state, apply cloud data to local data, write localStorage, add routes, change schemas or persistence, change packages or lockfiles, start background sync, or make cloud data primary.
+
+Recommended next task: 21H Offline Rollback V1.
+
 ## Core Parity & Contracts Baseline
 
 This baseline adds the first shared package entrypoints without changing runtime behavior.
