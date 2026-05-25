@@ -173,11 +173,7 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
           </>
         ) : (
           <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 text-white" data-settings-detail-empty>
-            <p className="text-sm font-semibold text-white/42">设置详情</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-normal text-white">本地数据仍会保留</h2>
-            <p className="mt-2 text-sm leading-6 text-white/58">
-              {summary.safeNextActions[0] || '开启前先备份，云端同步只在你确认后执行。'}
-            </p>
+            <h2 className="text-xl font-semibold tracking-normal text-white">设置详情</h2>
           </section>
         )}
       </section>

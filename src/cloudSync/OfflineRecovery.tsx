@@ -1,4 +1,4 @@
-import { CheckCircle2, HardDrive, RefreshCcw, Shield, WifiOff } from 'lucide-react';
+import { CheckCircle2, HardDrive, RefreshCcw, WifiOff } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { classNames } from '../engines/engineUtils';
 import { ActionButton } from '../ui/ActionButton';
@@ -27,29 +27,25 @@ function getRecoveryState(props: OfflineRecoveryProps): OfflineRecoveryState {
 
 const stateConfig: Record<
   OfflineRecoveryState,
-  { label: string; description: string; tone: 'slate' | 'emerald' | 'amber'; Icon: LucideIcon }
+  { label: string; tone: 'slate' | 'emerald' | 'amber'; Icon: LucideIcon }
 > = {
   online: {
     label: '连接正常',
-    description: '当前没有恢复事项',
     tone: 'emerald',
     Icon: CheckCircle2,
   },
   offline_available: {
     label: '离线可用',
-    description: '本地数据仍会保留',
     tone: 'slate',
     Icon: HardDrive,
   },
   cloud_unavailable: {
     label: '云端暂不可用',
-    description: '先使用本地数据继续训练',
     tone: 'amber',
     Icon: WifiOff,
   },
   rollback_available: {
     label: '可恢复',
-    description: '可回到之前的本地记录',
     tone: 'amber',
     Icon: RefreshCcw,
   },
@@ -94,28 +90,6 @@ export function OfflineRecovery({
           <h3 className={classNames('text-base font-semibold', isDark ? 'text-white' : 'text-slate-900')}>
             {config.label}
           </h3>
-          <p
-            className={classNames('text-sm', isDark ? 'text-white/60' : 'text-slate-500')}
-            data-testid="ironpath-rollback-status"
-          >
-            {config.description}
-          </p>
-        </div>
-      </div>
-
-      <div className={classNames('rounded-lg px-3 py-2', isDark ? 'bg-white/[0.06]' : 'bg-slate-50')}>
-        <div className="flex items-start gap-2">
-          <Shield className={classNames('mt-0.5 h-4 w-4 shrink-0', isDark ? 'text-white/50' : 'text-slate-400')} />
-          <div className="flex-1">
-            <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/70' : 'text-slate-600')}>
-              本地数据仍会保留
-            </p>
-            {emergencyLocalAvailable ? (
-              <p className={classNames('text-sm leading-relaxed', isDark ? 'text-white/50' : 'text-slate-500')}>
-                可以继续正常训练
-              </p>
-            ) : null}
-          </div>
         </div>
       </div>
 

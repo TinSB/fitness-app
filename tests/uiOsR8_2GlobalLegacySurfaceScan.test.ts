@@ -61,8 +61,11 @@ describe('UI-OS R8.2 global legacy surface scan', () => {
       expect(combined).not.toContain(forbidden);
     }
 
-    expect(combined).toContain('先导出备份，再进行恢复');
-    expect(combined).toContain('诊断摘要已脱敏');
+    expect(combined).toContain('导出 JSON');
+    expect(combined).toContain('导入恢复');
+    expect(combined).toContain('已脱敏');
     expect(combined).toContain('写入边界已锁定');
+    expect(combined).not.toContain('先导出备份，再进行恢复');
+    expect(combined).not.toContain('诊断摘要已脱敏');
   });
 });

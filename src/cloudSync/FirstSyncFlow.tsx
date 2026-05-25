@@ -159,9 +159,6 @@ export function FirstSyncFlow({
               <p className={classNames('text-sm font-semibold', isDark ? 'text-white/85' : 'text-slate-900')}>
                 {dryRunSummary.title}
               </p>
-              <p className={classNames('text-xs leading-5', isDark ? 'text-white/55' : 'text-slate-500')}>
-                {dryRunSummary.message}
-              </p>
             </div>
             <span className={classNames('text-xs font-semibold', isDark ? 'text-emerald-300' : 'text-emerald-700')}>
               {dryRunSummary.statusLabel}

@@ -71,11 +71,8 @@ describe('Cloud Sync UI Polish V1 components', () => {
     for (const expected of [
       '登录账号',
       '同步状态',
-      '本地数据仍会保留',
       '开启前先备份',
-      '本地训练记录不会被覆盖',
       '查看冲突',
-      '保留本地',
       '云端暂不可用',
       '账号设置',
     ]) {
@@ -123,6 +120,12 @@ describe('Cloud Sync UI Polish V1 components', () => {
       'service role',
       'token',
       'api key',
+      '本地数据仍会保留',
+      '本地训练记录不会被覆盖',
+      '冲突可保留本地',
+      '可以继续正常训练',
+      '账号同步',
+      '云端同步',
     ]) {
       expect(text).not.toContain(forbidden);
     }
@@ -190,7 +193,7 @@ describe('Cloud Sync UI Polish V1 components', () => {
       syncPreflight: {
         visible: true,
         title: '同步预检',
-        summary: '本地数据仍会保留',
+        summary: '',
         primaryLabel: '检查本地数据',
         secondaryLabels: ['开启前先备份', '查看将同步的内容'],
         statusLabel: '可以检查',
@@ -209,7 +212,7 @@ describe('Cloud Sync UI Polish V1 components', () => {
             { label: '训练记录', value: '2' },
             { label: '本地指纹', value: 'local-ha' },
           ],
-          message: '本地数据仍会保留',
+          message: '',
         },
       },
     }));
@@ -227,5 +230,7 @@ describe('Cloud Sync UI Polish V1 components', () => {
     expect(markup).toContain('检查本地数据');
     expect(markup).toContain('检查完成');
     expect(markup).toContain('查看同步流程预览');
+    expect(markup).not.toContain('本地数据仍会保留');
+    expect(markup).not.toContain('本地训练记录不会被覆盖');
   });
 });

@@ -42,9 +42,9 @@ export interface CloudSyncSettingsSectionProps {
 }
 
 const defaultPreviewProps = (): Required<CloudSyncSettingsSectionProps> => ({
-  eyebrow: '账号同步',
-  title: '云端同步',
-  description: '本地数据仍会保留，本地训练记录不会被覆盖；冲突可保留本地。',
+  eyebrow: '',
+  title: '',
+  description: '',
   detailSummaryLabel: '查看同步流程预览',
   authCard: { authStatus: 'signed_out' },
   syncStatus: {
@@ -77,7 +77,7 @@ const defaultPreviewProps = (): Required<CloudSyncSettingsSectionProps> => ({
   syncPreflight: {
     visible: false,
     title: '同步预检',
-    summary: '本地数据仍会保留',
+    summary: '',
     primaryLabel: '检查本地数据',
     secondaryLabels: ['开启前先备份', '查看将同步的内容'],
     statusLabel: '准备中',
@@ -96,20 +96,6 @@ export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = 
 
   return (
     <section className="space-y-4" data-testid="ironpath-cloud-sync-settings-section">
-      <div>
-        <p className="text-sm font-semibold text-slate-500" data-theme-text="mutedText">
-          {props.eyebrow ?? preview.eyebrow}
-        </p>
-        <h3 className="mt-1 text-lg font-bold text-slate-950" data-theme-text="cardTitle">
-          {props.title ?? preview.title}
-        </h3>
-        {(props.description ?? preview.description) ? (
-          <p className="mt-1 text-sm leading-6 text-slate-600" data-theme-text="secondaryText">
-            {props.description ?? preview.description}
-          </p>
-        ) : null}
-      </div>
-
       <div className="grid gap-4 xl:grid-cols-2">
         <CloudAuthCard {...authCard} />
         <SyncStatusCenter {...syncStatus} />
@@ -123,7 +109,9 @@ export function CloudSyncSettingsSection(props: CloudSyncSettingsSectionProps = 
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h4 className="text-base font-semibold text-white/90">{syncPreflight.title}</h4>
-                <p className="mt-1 text-sm leading-6 text-white/60">{syncPreflight.summary}</p>
+                {syncPreflight.summary ? (
+                  <p className="mt-1 text-sm leading-6 text-white/60">{syncPreflight.summary}</p>
+                ) : null}
               </div>
               <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/70">
                 {syncPreflight.statusLabel}

@@ -15,7 +15,6 @@ export type DiagnosticsDataSafetyPanelProps = {
 };
 
 export function DiagnosticsDataSafetyPanel({
-  diagnosticsCopy,
   dataHealthSummary,
   dataHealthLabel = '数据健康检查',
   hiddenIssueCount = 0,
@@ -23,7 +22,6 @@ export function DiagnosticsDataSafetyPanel({
   issueDetailFallbackLabel = '查看详情',
   renderIssueActions,
 }: DiagnosticsDataSafetyPanelProps) {
-  const summaryCopy = diagnosticsCopy.includes('不会上传完整训练数据') ? '诊断摘要已脱敏。' : diagnosticsCopy;
   return (
     <SettingsGroupCard className="xl:col-span-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -31,7 +29,6 @@ export function DiagnosticsDataSafetyPanel({
           <p className="text-sm font-semibold text-white/45">诊断</p>
           <h3 className="mt-1 text-lg font-bold text-white">诊断与数据安全</h3>
           <p className="mt-1 text-sm font-semibold text-white/72">{dataHealthLabel}</p>
-          <p className="mt-1 text-sm leading-6 text-white/60">{summaryCopy}</p>
         </div>
         <StatusBadge state="safe" className="bg-emerald-100 text-emerald-700">已脱敏</StatusBadge>
       </div>
