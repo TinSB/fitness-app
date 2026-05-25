@@ -177,7 +177,7 @@ const ACTION_COPY: Record<BackupRecoveryAction, BackupRecoveryCopy> = {
   record_incident_note: {
     label: '记录事件说明',
     summary: '记录日期、状态、操作和下一步。',
-    safety: '不要记录 secrets、tokens 或完整 AppData。',
+    safety: '不要记录敏感凭证或完整 AppData。',
     severity: 'info',
   },
   escalate_to_task16d: {

@@ -63,9 +63,7 @@ describe('data health diagnostics clarity helper', () => {
   it('requires redaction and avoids full data or secret wording', () => {
     const reminder = buildDiagnosticRedactionReminder();
 
-    expect(reminder).toContain('secrets');
-    expect(reminder).toContain('tokens');
-    expect(reminder).toContain('service role');
+    expect(reminder).toContain('敏感凭证');
     expect(reminder).toContain('完整 AppData');
   });
 

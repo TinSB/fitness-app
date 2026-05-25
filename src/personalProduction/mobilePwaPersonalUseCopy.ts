@@ -76,7 +76,7 @@ const COPY: Record<MobilePwaPersonalUseState, MobilePwaPersonalUseCopy> = {
   tap_target_readability: {
     label: '点击区域和可读性',
     summary: '训练中常用按钮应足够清楚，文字不能遮挡操作。',
-    safety: '这是 UI 指导，不改变训练算法或数据来源。',
+    safety: '这是 UI 指导，不改变训练规则或数据来源。',
     severity: 'info',
   },
   small_screen_history_review: {
@@ -88,7 +88,7 @@ const COPY: Record<MobilePwaPersonalUseState, MobilePwaPersonalUseCopy> = {
   small_screen_diagnostics: {
     label: '小屏幕诊断查看',
     summary: '诊断提示应简短、可读，并提醒 redaction。',
-    safety: '不上传完整 AppData、secrets 或 tokens。',
+    safety: '不上传完整 AppData 或敏感凭证。',
     severity: 'caution',
   },
   mobile_source_of_truth_unclear: {

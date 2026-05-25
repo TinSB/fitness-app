@@ -65,7 +65,7 @@ const explainCombination = (primaryGoal: PrimaryGoal, trainingMode: TrainingMode
   if (trainingMode === 'hybrid') {
     return '综合训练模式会在主动作和辅助动作之间保持折中，不等同于纯力量或纯肌肥大。';
   }
-  return '当前目标和训练模式可以并存，但计划说明需要避免把同义目标拆成不同算法分支。';
+  return '当前目标和训练模式可以并存，但计划说明需要避免把同义目标拆成不同规则分支。';
 };
 
 export const auditGoalModeConsistency = (appData: Partial<AppData>): GoalModeAuditResult => {

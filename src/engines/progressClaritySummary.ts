@@ -130,7 +130,7 @@ const stateCopy = (
     return {
       insightState: 'recovery_recommended',
       heroTitle: '恢复优先，训练保持保守',
-      heroExplanation: '当前记录显示恢复压力需要优先处理。Progress 只给出解释，不会改变计划或训练算法。',
+      heroExplanation: '当前记录显示恢复压力需要优先处理。Progress 只给出解释，不会改变计划或训练规则。',
       primaryRecommendation: '优先恢复',
       readinessLabel: '建议恢复',
       recoveryPressureLabel: '压力偏高',

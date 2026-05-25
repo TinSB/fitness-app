@@ -328,7 +328,7 @@ export function ProgressView({
       .catch(() => {
         if (!cancelled) {
           setAdjustmentDiff(null);
-          setAdjustmentEngineError('计划调整引擎加载失败，暂时不能生成差异预览。');
+          setAdjustmentEngineError('计划调整模块加载失败，暂时不能生成差异预览。');
         }
       })
       .finally(() => {
@@ -353,7 +353,7 @@ export function ProgressView({
         }
       })
       .catch(() => {
-        if (!cancelled) setAdjustmentEngineError('实验模板效果复盘引擎加载失败，历史仍可查看。');
+        if (!cancelled) setAdjustmentEngineError('实验模板效果复盘模块加载失败，历史仍可查看。');
       });
     return () => {
       cancelled = true;
@@ -419,7 +419,7 @@ export function ProgressView({
         }),
       );
     } catch {
-      setAdjustmentEngineError('计划调整引擎加载失败，暂时不能生成调整预览。');
+      setAdjustmentEngineError('计划调整模块加载失败，暂时不能生成调整预览。');
     } finally {
       setAdjustmentDiffLoading(false);
     }

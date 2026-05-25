@@ -111,7 +111,7 @@ export const resolveSupabaseEnvironmentProjectGuard = (
   }
 
   if (input.serviceRoleKeyPresent === true) {
-    errors.push(error('service_role_not_browser_safe', 'Service role key must never be exposed to browser-safe config.'));
+    errors.push(error('service_role_not_browser_safe', 'Privileged server credential must never be exposed to browser-safe config.'));
   }
 
   if (input.enabled !== true) {

@@ -57,7 +57,7 @@ interface TrainingViewProps {
     field: 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality',
     value: string | boolean
   ) => void;
-  onCompleteSet: (exerciseIndex: number, advanceExercise?: boolean) => void;
+  onCompleteSet: (exerciseIndex: number, setIndex: number) => void;
   onCopyPrevious: (exerciseIndex: number) => void;
   onAdjustSet: (exerciseIndex: number, field: 'weight' | 'reps', delta: number) => void;
   onApplySuggestion: (exerciseIndex: number) => void;
@@ -430,7 +430,7 @@ export function TrainingView({
                     <ActionButton
                       size="sm"
                       variant="primary"
-                      onClick={() => onCompleteSet(exerciseIndex)}
+                      onClick={() => onCompleteSet(exerciseIndex, setIndex)}
                       disabled={!number(set.weight) || !number(set.reps)}
                     >
                       完成这组

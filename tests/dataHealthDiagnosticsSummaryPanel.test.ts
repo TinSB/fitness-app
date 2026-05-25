@@ -15,7 +15,7 @@ describe('DataHealthDiagnosticsSummaryPanel', () => {
     expect(markup).toContain('需要检查数据归属');
     expect(markup).toContain('安全下一步：inspect_owner_scope');
     expect(markup).toContain('修复操作允许：否');
-    expect(markup).toContain('隐藏 secrets、tokens、service role 和完整 AppData');
+    expect(markup).toContain('隐藏敏感凭证和完整 AppData');
     expect(markup).toContain('pause_cloud_candidate');
   });
 
