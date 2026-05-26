@@ -1,5 +1,6 @@
 import type { AppData } from '../models/training-model';
 import { validateAppDataSchema } from '../storage/appDataValidation';
+import { exportAppData } from '../storage/backup';
 
 export type Phase19AccountOwnerScope = 'anonymous-local' | 'device-local' | 'cloud-account-candidate';
 
@@ -133,7 +134,30 @@ const hashText = (text: string): string => {
   return `phase19b-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 };
 
-export const buildAppDataSnapshotHash = (appData: unknown): string => hashText(stableStringify(appData));
+// Normalize through the same export pipeline used to write backups and
+// cloud snapshots so the local hash matches independent of whether the
+// caller already ran sanitizeData. Without this normalization the local
+// in-memory AppData (mutated by reducers since the last load) hashed
+// differently from its sanitized JSON, which caused:
+//   - localBackupDryRunUi.backupReady to stay false (backup hash vs.
+//     local hash never matched -> "查看将同步的内容" never surfaced and
+//     the cloud-sync toggle stayed grey)
+//   - cloudParityCheck to report local-vs-cloud disagreement on the very
+//     first upload (-> "发现冲突" pill stuck on the panel even though
+//     the user had never actually conflicted).
+// The normalization is a defensive no-op when the input is already
+// canonical (sanitizeData is idempotent on its own output).
+const canonicalForHash = (appData: unknown): unknown => {
+  if (appData == null) return appData;
+  try {
+    return JSON.parse(exportAppData(appData as AppData));
+  } catch {
+    return appData;
+  }
+};
+
+export const buildAppDataSnapshotHash = (appData: unknown): string =>
+  hashText(stableStringify(canonicalForHash(appData)));
 
 const cleanText = (value: string | undefined): string | null => {
   const trimmed = value?.trim();
