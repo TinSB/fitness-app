@@ -33,7 +33,7 @@ export function DataHealthClarityPanel({ summary, renderIssueActions }: DataHeal
     <GlassCard as="section" padding="lg" className="mb-3 text-white" ariaLabel="Data Health clarity panel" highlight>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold text-white/55">Data Health clarity</p>
+          <p className="text-sm font-semibold text-white/55">数据健康复查</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">{summary.summaryTitle}</h2>
           <p className="mt-2 text-sm leading-6 text-white/64">{summary.summaryExplanation}</p>
         </div>
