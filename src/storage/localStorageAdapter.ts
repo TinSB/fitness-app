@@ -130,3 +130,135 @@ export const writeAppDataToLocalStorage = (
     return { ok: false, error };
   }
 };
+
+// ── Cloud sync onboarding flow persistence ──────────────────────────────
+//
+// Backup / dry-run confirmation state used to live in a single React
+// useState inside CloudSyncPolishSettingsPanel, which meant closing the
+// PWA reset the user back to "create backup -> view contents" every time
+// even though they had completed those steps minutes earlier. Persisting
+// the flow state across mounts is a UI concern, but the actual storage
+// access has to stay inside this adapter to keep the
+// "localStorageAdapter is the only place that touches localStorage"
+// boundary clean (enforced by tests/localStorageAdapter.test.ts and
+// tests/runtimeBoundaryPersistenceCompatibility.test.ts).
+//
+// We also stash the AppData snapshot hash that was current at save time.
+// On load, the caller passes the live hash; if it has drifted (user
+// trained / edited data since pressing "创建备份"), we treat the persisted
+// state as stale and force a re-backup so we never silently ship an
+// outdated backup.
+
+export interface CloudSyncFlowPersistedState {
+  backupExportConfirmed: boolean;
+  dryRunRequested: boolean;
+  backupJson: string | null;
+}
+
+interface CloudSyncFlowEnvelope extends CloudSyncFlowPersistedState {
+  schemaVersion: 1;
+  appDataSnapshotHash: string | null;
+  savedAt: string;
+}
+
+export const CLOUD_SYNC_FLOW_STORAGE_KEY = 'ironpath_cloud_sync_flow_state_v1';
+const CLOUD_SYNC_FLOW_SCHEMA_VERSION = 1;
+
+const EMPTY_CLOUD_SYNC_FLOW_STATE: CloudSyncFlowPersistedState = {
+  backupExportConfirmed: false,
+  dryRunRequested: false,
+  backupJson: null,
+};
+
+const parseCloudSyncFlowEnvelope = (raw: string | null): CloudSyncFlowEnvelope | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<CloudSyncFlowEnvelope> | null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.schemaVersion !== CLOUD_SYNC_FLOW_SCHEMA_VERSION) return null;
+    return {
+      schemaVersion: CLOUD_SYNC_FLOW_SCHEMA_VERSION,
+      backupExportConfirmed: parsed.backupExportConfirmed === true,
+      dryRunRequested: parsed.dryRunRequested === true,
+      backupJson: typeof parsed.backupJson === 'string' ? parsed.backupJson : null,
+      appDataSnapshotHash:
+        typeof parsed.appDataSnapshotHash === 'string' ? parsed.appDataSnapshotHash : null,
+      savedAt: typeof parsed.savedAt === 'string' ? parsed.savedAt : '',
+    };
+  } catch {
+    return null;
+  }
+};
+
+type CloudSyncFlowStorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+const getDefaultCloudSyncFlowStorage = (): CloudSyncFlowStorageLike | null => {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage;
+};
+
+export const loadCloudSyncFlowState = (
+  options: { expectedAppDataSnapshotHash?: string | null; storage?: CloudSyncFlowStorageLike | null } = {},
+): CloudSyncFlowPersistedState => {
+  const storage = options.storage !== undefined ? options.storage : getDefaultCloudSyncFlowStorage();
+  if (!storage) return EMPTY_CLOUD_SYNC_FLOW_STATE;
+  let raw: string | null = null;
+  try {
+    raw = storage.getItem(CLOUD_SYNC_FLOW_STORAGE_KEY);
+  } catch {
+    return EMPTY_CLOUD_SYNC_FLOW_STATE;
+  }
+  const parsed = parseCloudSyncFlowEnvelope(raw);
+  if (!parsed) return EMPTY_CLOUD_SYNC_FLOW_STATE;
+  if (
+    options.expectedAppDataSnapshotHash !== undefined &&
+    options.expectedAppDataSnapshotHash !== null &&
+    parsed.appDataSnapshotHash !== options.expectedAppDataSnapshotHash
+  ) {
+    return EMPTY_CLOUD_SYNC_FLOW_STATE;
+  }
+  return {
+    backupExportConfirmed: parsed.backupExportConfirmed,
+    dryRunRequested: parsed.dryRunRequested,
+    backupJson: parsed.backupJson,
+  };
+};
+
+export const saveCloudSyncFlowState = (
+  state: CloudSyncFlowPersistedState,
+  options: { appDataSnapshotHash?: string | null; nowIso?: string; storage?: CloudSyncFlowStorageLike | null } = {},
+): void => {
+  const storage = options.storage !== undefined ? options.storage : getDefaultCloudSyncFlowStorage();
+  if (!storage) return;
+  const envelope: CloudSyncFlowEnvelope = {
+    schemaVersion: CLOUD_SYNC_FLOW_SCHEMA_VERSION,
+    backupExportConfirmed: Boolean(state.backupExportConfirmed),
+    dryRunRequested: Boolean(state.dryRunRequested),
+    backupJson: state.backupJson ?? null,
+    appDataSnapshotHash: options.appDataSnapshotHash ?? null,
+    savedAt: options.nowIso ?? new Date().toISOString(),
+  };
+  try {
+    storage.setItem(CLOUD_SYNC_FLOW_STORAGE_KEY, JSON.stringify(envelope));
+  } catch {
+    // QuotaExceeded / privacy mode — fall closed, the in-memory state stays
+    // authoritative for the current session.
+  }
+};
+
+export const clearCloudSyncFlowState = (
+  options: { storage?: CloudSyncFlowStorageLike | null } = {},
+): void => {
+  const storage = options.storage !== undefined ? options.storage : getDefaultCloudSyncFlowStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(CLOUD_SYNC_FLOW_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+};
+
+export const isEmptyCloudSyncFlowState = (state: CloudSyncFlowPersistedState): boolean =>
+  state.backupExportConfirmed === false &&
+  state.dryRunRequested === false &&
+  state.backupJson === null;

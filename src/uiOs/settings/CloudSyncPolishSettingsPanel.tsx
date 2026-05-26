@@ -20,6 +20,12 @@ import {
 import { exportAppData, getBackupFileName } from '../../storage/backup';
 import { validateAppDataSchema } from '../../storage/appDataValidation';
 import {
+  clearCloudSyncFlowState,
+  loadCloudSyncFlowState,
+  saveCloudSyncFlowState,
+} from '../../storage/localStorageAdapter';
+import { buildAppDataSnapshotHash } from '../../cloudProduction/accountBoundaryLocalInventory';
+import {
   buildCloudSyncSettingsSectionPropsFromRuntime,
   type CloudSyncSettingsRuntimeInput,
 } from './cloudSyncRuntimeSettingsAdapter';
@@ -116,10 +122,23 @@ export function CloudSyncPolishSettingsPanel({
     errorMessage: null,
     infoMessage: null,
   });
-  const [localBackupDryRunUiState, setLocalBackupDryRunUiState] = React.useState<LocalBackupDryRunUiState>({
-    backupJson: null,
-    backupExportConfirmed: false,
-    dryRunRequested: false,
+  // Backup / dry-run flow state survives PWA close+reopen via localStorage.
+  // We snapshot the appData hash at save time so a stale persisted state is
+  // discarded if the user's data has drifted since the last "create backup"
+  // press — that prevents silently shipping an outdated backup.
+  const appDataSnapshotHashAtMount = React.useMemo(
+    () => (appData ? buildAppDataSnapshotHash(appData) : null),
+    // Compute once on mount; downstream saves carry the live hash.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const [localBackupDryRunUiState, setLocalBackupDryRunUiState] = React.useState<LocalBackupDryRunUiState>(() => {
+    const persisted = loadCloudSyncFlowState({ expectedAppDataSnapshotHash: appDataSnapshotHashAtMount });
+    return {
+      backupJson: persisted.backupJson,
+      backupExportConfirmed: persisted.backupExportConfirmed,
+      dryRunRequested: persisted.dryRunRequested,
+    };
   });
   const [productionSyncApplyState, setProductionSyncApplyState] = React.useState<ProductionSyncApplyState>({
     pending: false,
@@ -314,7 +333,34 @@ export function CloudSyncPolishSettingsPanel({
       result: null,
       message: null,
     });
+    // Sign-out is the explicit "forget the backup flow" signal — wipe the
+    // persisted copy so the next sign-in starts from a clean slate rather
+    // than rehydrating someone else's confirmation.
+    clearCloudSyncFlowState();
   }, [authRuntime?.authenticated]);
+
+  // Persist backup / dry-run flow state every time it changes. The hash we
+  // store comes from the *current* AppData so subsequent mounts can detect
+  // drift and reset the confirmation if the user has trained / edited data
+  // since pressing "创建备份".
+  React.useEffect(() => {
+    if (!appData) return;
+    const hash = buildAppDataSnapshotHash(appData);
+    saveCloudSyncFlowState(
+      {
+        backupExportConfirmed: localBackupDryRunUiState.backupExportConfirmed,
+        dryRunRequested: localBackupDryRunUiState.dryRunRequested,
+        backupJson: localBackupDryRunUiState.backupJson,
+      },
+      { appDataSnapshotHash: hash, nowIso },
+    );
+  }, [
+    appData,
+    localBackupDryRunUiState.backupExportConfirmed,
+    localBackupDryRunUiState.dryRunRequested,
+    localBackupDryRunUiState.backupJson,
+    nowIso,
+  ]);
 
   // Clear any stale "发现冲突 / 恢复本地模式" process notice when the user
   // re-enters the cloud-sync panel with a freshly ready backup. Without this,
