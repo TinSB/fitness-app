@@ -2,6 +2,11 @@ import type { HTMLAttributes } from 'react';
 import { classNames } from '../engines/engineUtils';
 import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
+// Audit Bug #5 (2026-05-26): WorkoutActionBar 本体不在 className 里直接挂底部
+// safe-area padding 工具类。测试 uiOsR8_6FocusBottomSafeArea 会断言此规则不在源码中。
+// 这是用户主动迭代以修复 iPhone PWA 底部黑边的设计选择。需要 safe-area padding 的
+// 子页面(如 focus 模式)由 FocusModeActionBar 单独通过 className 传入合适表达式。
+// 详见 docs/AUDIT_2026_05_26_RESOLUTION.md
 export const WorkoutActionBar = ({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) => {
   const { resolvedTheme } = useUiTheme();
   const isDark = resolvedTheme === 'dark';

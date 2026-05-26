@@ -898,6 +898,10 @@ export function TrainingView({
         </aside>
       </div>
 
+      {/* Audit Bug #13 (2026-05-26): bottom-[calc(7.25rem+env(safe-area-inset-bottom))]
+         是为了让 ActionBar 浮在 FloatingBottomNav (高 ~5.75rem) 之上, 7.25rem 留出 ~1.5rem 间距。
+         测试 fullWorkoutPageStructure:31 明确断言此字面量, 不可改。
+         详见 docs/AUDIT_2026_05_26_RESOLUTION.md */}
       <WorkoutActionBar className="bottom-[calc(7.25rem+env(safe-area-inset-bottom))] md:bottom-auto">
         <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_1fr] gap-2 md:flex md:justify-end">
           <ActionButton variant="secondary" onClick={onReturnFocusMode} fullWidth>
