@@ -62,6 +62,18 @@ const NO_HISTORY: LapseBanner = {
     resetCalibrationBias: false,
     reasons: [],
     advice: '',
+    personalGapDays: 2.33,
+    personalizedThresholds: { fresh: 4, normal: 10, lapsed: 21, long_lapsed: 45 },
+    smoothDecay: 1,
+    strengthRetention: 1,
+    aerobicRetention: 1,
+    suggestedStartingLoadFactor: 0.85,
+    perMuscleRetention: [],
+    rotationHint: 'unchanged',
+    plannedDeload: false,
+    preBreakOutcomeProfile: 'no_data',
+    confidence: 'low',
+    reasonsByCategory: { strength: [], aerobic: [], calibration: [], rotation: [], mesocycle: [] },
   },
 };
 
