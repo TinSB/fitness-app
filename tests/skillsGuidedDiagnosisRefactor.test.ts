@@ -86,6 +86,6 @@ describe('Skills-Guided Diagnosis & Surgical Refactor V1', () => {
     expect(existsSync(resolve(root, 'src/ui/BottomNav.tsx'))).toBe(false);
     expect(read('src/App.tsx')).toContain("import { MobileAppShell } from './uiOs/MobileAppShell'");
     expect(read('src/uiOs/MobileAppShell.tsx')).toContain('<BottomNav');
-    expect(read('src/uiOs/navigation/FloatingBottomNav.tsx')).toContain('env(safe-area-inset-bottom)');
+    expect(read('src/uiOs/navigation/FloatingBottomNav.tsx')).toContain('data-bottom-nav-safe-area="viewport-edge"');
   });
 });

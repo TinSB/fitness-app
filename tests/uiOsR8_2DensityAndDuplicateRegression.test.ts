@@ -39,6 +39,8 @@ describe('UI-OS R8.2 density and duplicate ownership regression', () => {
     expect(profile).toContain("id: 'training_suggestions'");
     expect(navigation).toContain('data-settings-row={item.id}');
     expect(navigation).toContain('data-settings-detail-content={detailItem.id}');
+    expect(navigation).toContain('scrollIntoView');
+    expect(navigation).toContain('requestAnimationFrame');
     expect(settings).toContain('data-settings-equipment-compact-rows="true"');
     expect(settings).toContain('data-settings-diagnostics-details="collapsed"');
   });

@@ -371,6 +371,11 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [appToast]);
 
+  // Bug #15 标注：此 effect 故意只在 mount 时执行一次。
+  // 应用启动时若 localStorage 已存在 activeSession，自动切到 train tab；
+  // 后续 activeSession 的变化（如云同步推送、其他设备恢复）不再强制切 tab，
+  // 避免打断用户当前正在浏览的页面。如需响应后续变化，应通过显式 navigate 触发。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (data.activeSession) setActiveTab('train');
   }, []);
@@ -632,6 +637,10 @@ function App() {
   const finishSession = async (target: ProgressSectionTarget | 'today' = 'list') => {
     const initialData = dataRef.current;
     if (!initialData.activeSession) return;
+    // Bug #10 修复：await confirm 期间 dataRef.current 可能被云同步 / 自动恢复 / 其他用户操作
+    // 替换为不同 session（甚至清空）。原代码在 await 后直接复用 dataRef，可能基于
+    // 不一致快照写入历史。这里记录原始 session 身份，确认后做一次同源校验。
+    const initialSessionId = initialData.activeSession.id;
     const finishedAt = new Date().toISOString();
     const incompleteGuard = buildIncompleteMainWorkGuard(initialData.activeSession);
     if (incompleteGuard.hasIncompleteMainWork) {
@@ -646,6 +655,11 @@ function App() {
     }
     const currentData = dataRef.current;
     if (!currentData.activeSession) return;
+    if (currentData.activeSession.id !== initialSessionId) {
+      // 确认期间 session 已被替换，避免把旧确认应用到新 session 上
+      showAppToast('训练状态已变化，请重新确认结束操作。', 'warning');
+      return;
+    }
     const completionGuard = buildIncompleteMainWorkGuard(currentData.activeSession);
     const completed = completeTrainingSessionIntoHistory(currentData, finishedAt, { endedEarly: completionGuard.hasIncompleteMainWork });
     const finishedSession = completed.session;
@@ -989,25 +1003,28 @@ function App() {
     });
   };
 
-  const completeSupportSet = (moduleId: string, exerciseId: string) => {
-    let nextRecommendation: FocusNextSetRecommendation | null | undefined;
-    setData((current) => {
-      if (!current.activeSession) return current;
-      const step = getCurrentFocusStep(current.activeSession);
-      if (step.moduleId !== moduleId || step.exerciseId !== exerciseId) return current;
-      const result = dispatchWorkoutExecutionEvent(current.activeSession, {
-        type: 'COMPLETE_STEP',
-        exerciseIndex: step.exerciseIndex,
-        completedAt: new Date().toISOString(),
-        nowMs: Date.now(),
-        expectedStepId: step.id,
-        displayUnit: current.unitSettings.weightUnit,
-        unitSettings: current.unitSettings,
-      });
-      nextRecommendation = result.nextSetRecommendation ?? null;
-      return { ...current, activeSession: result.updatedSession };
+  const completeSupportSet = (moduleId: string, exerciseId: string): FocusActionResult => {
+    const current = dataRef.current;
+    if (!current.activeSession) return focusWarningResult('当前没有进行中的训练。', 'unsupported');
+    const step = getCurrentFocusStep(current.activeSession);
+    if (step.moduleId !== moduleId || step.exerciseId !== exerciseId) {
+      return focusWarningResult('当前训练位置已更新，请重新确认后保存。', 'stale_step');
+    }
+
+    const result = dispatchWorkoutExecutionEvent(current.activeSession, {
+      type: 'COMPLETE_STEP',
+      exerciseIndex: step.exerciseIndex,
+      completedAt: new Date().toISOString(),
+      nowMs: Date.now(),
+      expectedStepId: step.id,
+      displayUnit: current.unitSettings.weightUnit,
+      unitSettings: current.unitSettings,
     });
-    if (nextRecommendation !== undefined) setFocusNextSetRecommendation(nextRecommendation);
+    if (result.nextSetRecommendation !== undefined) setFocusNextSetRecommendation(result.nextSetRecommendation ?? null);
+    if (result.actionResult.changed || result.updatedSession !== current.activeSession) {
+      commitData({ ...current, activeSession: result.updatedSession });
+    }
+    return result.actionResult;
   };
 
   const skipSupportExercise = (moduleId: string, exerciseId: string, reason: SupportSkipReason) => {

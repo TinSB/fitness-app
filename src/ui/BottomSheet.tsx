@@ -1,4 +1,4 @@
-import type { ReactNode, KeyboardEvent } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { SafeAreaHeader } from './SafeAreaHeader';
 import { classNames } from '../engines/engineUtils';
 import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
@@ -26,12 +26,19 @@ export const BottomSheet = ({
   const { selectedThemeMode, resolvedTheme } = useUiTheme();
   const surface = resolveThemeSurface('bottom_sheet', selectedThemeMode, { systemPrefersDark: resolvedTheme === 'dark' });
   const isDark = surface.resolvedMode === 'dark';
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') onClose();
-  };
+  // Bug #16 修复：原先 onKeyDown 绑在不可聚焦的外层 <div> 上，焦点不在 sheet 内可聚焦元素时
+  // Escape 无法触发关闭。改为全局监听，仅 sheet 打开时挂载、关闭时清理。
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') return undefined;
+    const handler = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/65 backdrop-blur-[2px] md:items-center md:justify-center" onKeyDown={onKeyDown}>
+    <div className="fixed inset-0 z-50 flex items-end bg-black/65 backdrop-blur-[2px] md:items-center md:justify-center">
       <button
         type="button"
         aria-label="关闭底部面板"

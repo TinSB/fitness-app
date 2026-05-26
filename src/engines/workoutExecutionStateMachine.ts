@@ -129,7 +129,8 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
         break;
       }
       const draft = getActualSetDraft(session, before);
-      if (before.stepType !== 'completed' && (number(draft?.actualWeightKg) <= 0 || number(draft?.actualReps) <= 0)) {
+      const isSupportStep = before.stepType === 'correction' || before.stepType === 'functional' || before.stepType === 'support';
+      if (!isSupportStep && before.stepType !== 'completed' && (number(draft?.actualWeightKg) <= 0 || number(draft?.actualReps) <= 0)) {
         warnings.push('请先填写重量和次数。');
         feedback = '请先填写重量和次数。';
         actionResult = focusWarningResult('请先填写重量和次数。', 'missing_draft');
@@ -155,8 +156,16 @@ export const dispatchWorkoutExecutionEvent = (session: TrainingSession, event: W
           nowIso: event.completedAt,
         });
         nextSetRecommendation = recommendation.recommendationKind === 'no_recommendation' ? undefined : recommendation;
-        feedback = result.sessionComplete ? '训练已完成' : before.stepType === 'warmup' ? '已完成热身组' : '已完成正式组';
-        actionResult = focusSuccessResult('已完成本组。', 'completed');
+        feedback = result.sessionComplete
+          ? '训练已完成'
+          : before.stepType === 'warmup'
+            ? '已完成热身组'
+            : isSupportStep
+              ? before.stepType === 'correction'
+                ? '已完成纠偏组'
+                : '已完成功能补丁'
+              : '已完成正式组';
+        actionResult = focusSuccessResult(isSupportStep ? `${feedback}。` : '已完成本组。', 'completed');
       }
       break;
     }

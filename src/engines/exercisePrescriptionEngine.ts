@@ -1,6 +1,7 @@
 import { DEFAULT_SCREENING_PROFILE, DEFAULT_TECHNIQUE_STANDARD, PRESCRIPTION_SOURCES } from '../data/trainingData';
 import { TRAINING_STANDARDS } from '../content/evidenceRules';
 import type {
+  AdaptiveCalibrationState,
   DeloadDecision,
   ExercisePrescription,
   ExerciseTemplate,
@@ -15,6 +16,8 @@ import type {
   WeeklyPrescription,
 } from '../models/training-model';
 import { applyAdaptiveExerciseRules, buildAdaptiveConservativeDecision, buildAdaptiveDeloadDecision } from './adaptiveFeedbackEngine';
+import { getDayState, getLoadBias, getRepBand } from './adaptiveRecommendationEngine';
+import { buildTrainingLapseSignal, decayCalibrationStateForLapse } from './trainingLapseEngine';
 import { buildAdherenceReport } from './analytics';
 import { actionableSorenessAreas, clamp, clone, enrichExercise, getPrimaryMuscles, number, resolveMode, safeNumber } from './engineUtils';
 import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
@@ -302,7 +305,12 @@ export const applyStatusRules = (
   history: TrainingSession[] = [],
   screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
   mesocyclePlan?: MesocyclePlan | null,
-  context: { healthSummary?: HealthSummary; useHealthDataForReadiness?: boolean } = {}
+  context: {
+    healthSummary?: HealthSummary;
+    useHealthDataForReadiness?: boolean;
+    adaptiveCalibration?: AdaptiveCalibrationState;
+    nowIso?: string;
+  } = {}
 ) => {
   const recommendationHistory = filterAnalyticsHistory(history);
   const adherenceReport = buildAdherenceReport(recommendationHistory);
@@ -312,14 +320,17 @@ export const applyStatusRules = (
     useHealthDataForReadiness: context.useHealthDataForReadiness,
   });
   const readiness = mapReadinessToSignal(readinessResult, recentPoorSleepDays(status, recommendationHistory));
-  const deloadDecision = buildAdaptiveDeloadDecision({
-    history: recommendationHistory,
-    todayStatus: status,
-    screeningProfile: screening,
-    templates: [template],
-    selectedTemplateId: template.id,
-    trainingMode: trainingMode as TrainingMode,
-  });
+  const deloadDecision = buildAdaptiveDeloadDecision(
+    {
+      history: recommendationHistory,
+      todayStatus: status,
+      screeningProfile: screening,
+      templates: [template],
+      selectedTemplateId: template.id,
+      trainingMode: trainingMode as TrainingMode,
+    },
+    { nowIso: context.nowIso },
+  );
   const mesocycleWeek = getCurrentMesocycleWeek(mesocyclePlan);
   const painPatterns = buildPainPatterns(recommendationHistory);
 
@@ -489,6 +500,36 @@ export const applyStatusRules = (
         conservativeTopSet: next.kind !== 'isolation' || next.conservativeTopSet,
         warning: [next.warning, `${next.muscle} 今天酸痛，默认减少一组并放慢推进。`].filter(Boolean).join(' / '),
       };
+    }
+
+    if (context.adaptiveCalibration) {
+      const lapse = buildTrainingLapseSignal(recommendationHistory, context.nowIso);
+      const lapsedCalibration = decayCalibrationStateForLapse(context.adaptiveCalibration, lapse) || context.adaptiveCalibration;
+      const exerciseKey = next.canonicalExerciseId || next.baseId || next.id;
+      const repBand = getRepBand(number(next.repMin), number(next.repMax));
+      const dayState = getDayState(readiness, status);
+      const biasResult = getLoadBias(lapsedCalibration, exerciseKey, repBand, dayState);
+      if (biasResult.applied) {
+        const currentTop = number(next.adaptiveTopSetFactor) || 1;
+        const currentBackoff = number(next.adaptiveBackoffFactor) || 0.92;
+        const adjustedTop = currentTop * biasResult.bias;
+        const adjustedBackoff = currentBackoff * biasResult.bias;
+        const direction = biasResult.bias > 1 ? '上调' : biasResult.bias < 1 ? '下调' : '维持';
+        const pct = Math.abs(Math.round((biasResult.bias - 1) * 100));
+        const reason =
+          biasResult.frozen
+            ? '动作有近期不适或动作质量记录，自动加重已冻结。'
+            : biasResult.bias === 1
+              ? ''
+              : `根据近期实际表现与推荐的误差，本动作在该次数区间和当前状态下自动${direction} ${pct}% 重量。`;
+        next = {
+          ...next,
+          adaptiveTopSetFactor: adjustedTop,
+          adaptiveBackoffFactor: adjustedBackoff,
+          adaptiveReasons: [...(next.adaptiveReasons || []), ...(reason ? [reason] : [])],
+          adjustment: reason ? [next.adjustment, reason].filter(Boolean).join(' / ') : next.adjustment,
+        };
+      }
     }
 
     return next;

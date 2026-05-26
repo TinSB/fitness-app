@@ -23,7 +23,7 @@ describe('shared UI component implementations', () => {
   it('keeps mobile-first touch and safe-area behavior in interactive primitives', () => {
     expect(read('src/ui/ActionButton.tsx')).toContain('min-h-11');
     expect(read('src/ui/BottomSheet.tsx')).toContain('env(safe-area-inset-bottom)');
-    expect(read('src/ui/WorkoutActionBar.tsx')).toContain('env(safe-area-inset-bottom)');
+    expect(read('src/ui/WorkoutActionBar.tsx')).toContain('data-workout-action-bar-safe-area="covered"');
     expect(read('src/uiOs/navigation/FloatingBottomNav.tsx')).toContain('lg:hidden');
   });
 

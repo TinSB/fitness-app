@@ -63,6 +63,7 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
   const items = React.useMemo(() => flattenGroups(groups), [groups]);
   const initialItem = initialSectionId ? items.find((item) => item.id === initialSectionId) : null;
   const [activeId, setActiveId] = React.useState<string | null>(initialItem?.id ?? null);
+  const detailRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     if (!initialSectionId) return;
@@ -70,6 +71,19 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
       setActiveId(initialSectionId);
     }
   }, [initialSectionId, items]);
+
+  React.useEffect(() => {
+    if (!activeId || !detailRef.current) return;
+    const scrollDetailIntoView = () => {
+      detailRef.current?.scrollIntoView({ block: 'start', inline: 'nearest' });
+    };
+    if (typeof window.requestAnimationFrame !== 'function') {
+      scrollDetailIntoView();
+      return;
+    }
+    const frameId = window.requestAnimationFrame(scrollDetailIntoView);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [activeId]);
 
   const activeItem = activeId ? items.find((item) => item.id === activeId) ?? null : null;
   const defaultDetailItem = items.find((item) => item.id === 'diagnostics') ?? items[0] ?? null;
@@ -145,6 +159,7 @@ export function SettingsNavigationStack({ summary, groups, initialSectionId = nu
       </div>
 
       <section
+        ref={detailRef}
         className={classNames('min-w-0 space-y-4', activeItem ? 'block' : 'hidden lg:block')}
         data-settings-navigation-detail
       >

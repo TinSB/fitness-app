@@ -447,17 +447,22 @@ const requestJson = async ({
     }
 
     return { ok: true, status: response.status, body: parsed };
-  } catch {
+  } catch (caughtError) {
+    // Bug #11 修复：原先 catch 不接收 error，所有 fetch / JSON 解析 / 网络错误信息丢失，
+    // 上层只能看到 'api_storage_unavailable'。这里捕获 error 并把原始 message
+    // 附加到返回，便于排障与重试策略分级。
     const abortedByParent = !didTimeout && (signal?.aborted || controller.signal.aborted);
+    const baseMessage = didTimeout
+      ? 'API storage adapter request timed out.'
+      : abortedByParent
+        ? 'API storage adapter request was canceled before completion.'
+        : 'API storage adapter request is unavailable.';
+    const originalMessage = caughtError instanceof Error && caughtError.message ? caughtError.message : undefined;
     return {
       ok: false,
       error: {
         code: didTimeout ? 'api_storage_timeout' : abortedByParent ? 'api_storage_aborted' : 'api_storage_unavailable',
-        message: didTimeout
-          ? 'API storage adapter request timed out.'
-          : abortedByParent
-            ? 'API storage adapter request was canceled before completion.'
-            : 'API storage adapter request is unavailable.',
+        message: originalMessage ? `${baseMessage} (${originalMessage})` : baseMessage,
       },
     };
   } finally {

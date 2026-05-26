@@ -36,8 +36,8 @@ describe('UI-OS R8 bottom nav auto-hide', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))]');
-    expect(html).toContain('env(safe-area-inset-bottom)');
+    expect(html).toContain('translate-y-[calc(100%+1rem)]');
+    expect(html).toContain('data-bottom-nav-safe-area="viewport-edge"');
   });
 
   it('implements scroll-direction rules in MobileAppShell and preserves immersive no-nav behavior', () => {
@@ -52,7 +52,7 @@ describe('UI-OS R8 bottom nav auto-hide', () => {
 
     expect(source).toContain('handleShellScroll');
     expect(source).toContain('delta > 12');
-    expect(source).toContain('nearTop || nearBottom');
+    expect(source).toContain('nearBottom || (delta > 12 && currentScrollTop > 80)');
     expect(immersive).not.toContain('data-bottom-nav-hidden');
     expect(immersive).not.toContain('data-bottom-nav-hidden');
   });

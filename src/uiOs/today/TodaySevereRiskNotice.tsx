@@ -21,7 +21,7 @@ export function TodaySevereRiskNotice({ title, message, actionLabel = '查看严
             <StatusBadge state="danger">严重</StatusBadge>
           </div>
           <p className="mt-1 text-sm leading-6 text-red-50/80">{message}</p>
-          <p className="mt-1 text-xs leading-5 text-red-50/55">只显示严重阻断项；完整 Data Health 留在设置或二级页面。</p>
+          <p className="mt-1 text-xs leading-5 text-red-50/55">只显示严重阻断项；完整数据健康说明留在设置或二级页面。</p>
         </div>
         {onAction ? (
           <ActionButton type="button" variant="danger" size="sm" onClick={onAction}>

@@ -545,6 +545,83 @@ export interface LoadFeedback {
   note?: string;
 }
 
+export type AdaptiveRepBand = 'low' | 'moderate' | 'high';
+export type AdaptiveDayState = 'green' | 'yellow' | 'red';
+export type AdaptiveOutcome =
+  | 'too_light'
+  | 'on_target'
+  | 'too_heavy'
+  | 'failed'
+  | 'pain'
+  | 'technique_breakdown';
+export type RecommendationAcceptance =
+  | 'accepted'
+  | 'overridden_up'
+  | 'overridden_down'
+  | 'skipped'
+  | 'unknown';
+
+export interface AdaptiveObservation {
+  date: string;
+  sessionId: string;
+  exerciseId: string;
+  recommendedKg: number;
+  actualKg: number;
+  plannedReps: number;
+  actualReps: number;
+  actualRir?: number;
+  techniqueQuality?: TechniqueQuality;
+  painFlag?: boolean;
+  outcome: AdaptiveOutcome;
+  loadDeltaRatio: number;
+  bias: number;
+}
+
+export interface AdaptiveCalibrationEntry {
+  exerciseId: string;
+  repBand: AdaptiveRepBand;
+  dayState: AdaptiveDayState;
+  loadBias: number;
+  observationCount: number;
+  recentSamples: AdaptiveObservation[];
+  frozenUntil?: string;
+  lastUpdated: string;
+  reasonHints: string[];
+}
+
+export interface RecommendationRecord {
+  id: string;
+  sessionId: string;
+  date: string;
+  exerciseId: string;
+  baseId?: string;
+  setIndex: number;
+  setType?: TrainingSetType | string;
+  repBand: AdaptiveRepBand;
+  dayState: AdaptiveDayState;
+  trainingMode: TrainingMode | string;
+  recommendedKg: number;
+  recommendedReps: number;
+  recommendedRir?: [number, number];
+  appliedBias: number;
+  actualKg?: number;
+  actualReps?: number;
+  actualRir?: number;
+  techniqueQuality?: TechniqueQuality;
+  painFlag?: boolean;
+  acceptance?: RecommendationAcceptance;
+  outcome?: AdaptiveOutcome;
+  outcomeReason?: string;
+  reconciledAt?: string;
+}
+
+export interface AdaptiveCalibrationState {
+  version: 1;
+  entries: AdaptiveCalibrationEntry[];
+  recommendationLog: RecommendationRecord[];
+  lastUpdated: string;
+}
+
 export interface SupportPlan {
   primaryGoal: PrimaryGoal;
   mainline: {
@@ -752,6 +829,7 @@ export interface TrainingSession {
   earlyEndSummary?: string;
   editedAt?: string;
   editHistory?: SessionEditHistoryItem[];
+  recommendationSnapshots?: RecommendationRecord[];
 }
 
 export interface WeeklyMuscleBudget {
@@ -1304,5 +1382,6 @@ export interface AppData {
   dismissedCoachActions?: DismissedCoachAction[];
   dismissedDataHealthIssues?: DismissedDataHealthIssue[];
   pendingSessionPatches?: PendingSessionPatch[];
+  adaptiveCalibration?: AdaptiveCalibrationState;
   settings: AppSettings;
 }

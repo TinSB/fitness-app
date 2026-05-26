@@ -53,7 +53,9 @@ describe('sessionBuilder', () => {
           moduleDose: { upper_crossed: 'boost' },
           lastUpdated: '2026-04-24',
         },
-      }
+      },
+      undefined,
+      '2026-04-25',
     );
 
     expect(session.deloadDecision?.level).not.toBe('none');

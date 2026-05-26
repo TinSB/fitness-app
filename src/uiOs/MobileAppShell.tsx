@@ -44,9 +44,13 @@ export const MobileAppShell = <T extends string>({
     const nearTop = currentScrollTop < 24;
     const nearBottom = element.scrollHeight - element.clientHeight - currentScrollTop < 48;
 
-    if (nearTop || nearBottom || delta < -8) {
+    // 当前 branch 有意把 nearBottom 放到隐藏分支：滚到底部时让浮动胶囊导航主动隐藏，
+    // 露出底部内容与 safe area（配合"修复 iPhone PWA 底部黑边"系列改动）。
+    // 测试 uiOsR8BottomNavAutoHide.test.ts:55 锁定了这一字面量结构，请勿恢复为
+    // "nearTop || nearBottom" 显示分支，否则会重现底部胶囊遮挡问题。
+    if (nearTop || delta < -8) {
       setBottomNavHidden(false);
-    } else if (delta > 12 && currentScrollTop > 80) {
+    } else if (nearBottom || (delta > 12 && currentScrollTop > 80)) {
       setBottomNavHidden(true);
     }
 
@@ -116,13 +120,17 @@ export const MobileAppShell = <T extends string>({
           className={classNames(
             'min-h-0 flex-1 overflow-y-auto lg:pb-0',
             isDark ? 'bg-[#0a0a0b]' : 'bg-slate-50',
-            immersive ? 'pb-0' : 'pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
+            // pb-0 让滚动内容直接延伸到 viewport 物理底, 不留空白让人误以为是"黑边"。
+            // 配合 100lvh 让 body 真正撑到屏幕底,最后一屏内容可以一直滚到 Home
+            // Indicator 区域 (iOS 用半透明横线覆盖, 内容仍可见)。
+            // scroll-pb 保留为 scroll-snap 锚定 hint, 不影响实际可滚区域。
+            immersive ? 'pb-0' : 'pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
           )}
           onScroll={handleShellScroll}
           data-shell-scroll-area="bottom-nav-aware"
           data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}
           data-shell-bottom-background={resolvedTheme}
-          data-shell-bottom-reserve={immersive ? 'none' : 'nav-clearance-only'}
+          data-shell-bottom-reserve={immersive ? 'none' : 'content-clearance'}
         >
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>

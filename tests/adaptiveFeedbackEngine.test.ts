@@ -91,7 +91,7 @@ describe('adaptiveFeedbackEngine', () => {
       },
     });
 
-    const decision = buildAdaptiveDeloadDecision(data);
+    const decision = buildAdaptiveDeloadDecision(data, { nowIso: '2026-04-25T08:00:00.000Z' });
     expect(decision.level).toBe('red');
     expect(decision.strategy).toBe('recovery_template');
     expect(decision.autoSwitchTemplateId).toBe('quick-30');

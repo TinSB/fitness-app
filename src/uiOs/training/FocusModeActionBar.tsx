@@ -28,7 +28,7 @@ export function FocusModeActionBar({
   const [moreOpen, setMoreOpen] = React.useState(false);
 
   return (
-    <WorkoutActionBar className="border-white/10 bg-[#101012]/95 text-white shadow-[0_-14px_44px_rgba(0,0,0,0.28)] backdrop-blur-xl md:static" data-focus-bottom-safe-area="compact">
+    <WorkoutActionBar className="border-white/10 bg-[#101012]/95 text-white shadow-[0_-14px_44px_rgba(0,0,0,0.28)] backdrop-blur-xl pb-[max(0.625rem,env(safe-area-inset-bottom))] md:static md:pb-0" data-focus-bottom-safe-area="compact">
       <div className="mx-auto grid w-full max-w-2xl gap-2" data-focus-mode-action-bar="one-dominant-primary">
         <FocusModeSecondaryActions actions={secondaryActions} isOpen={moreOpen} onOpenChange={setMoreOpen} />
         {summary ? (

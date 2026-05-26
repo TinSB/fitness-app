@@ -370,6 +370,17 @@ export function TrainingView({
               <div className={classNames('mt-1 font-semibold', primaryTextClassName)}>{formatRest(exercise.rest)}</div>
             </div>
           </div>
+          {(exercise.adaptiveReasons?.length || exercise.adjustment) ? (
+            <div className={classNames('mt-3 rounded-lg border px-3 py-2 text-xs', isDarkTheme ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600')}>
+              <div className="font-semibold">自动微调说明</div>
+              <div className="mt-1 leading-relaxed">
+                {(exercise.adaptiveReasons && exercise.adaptiveReasons.length ? exercise.adaptiveReasons : [exercise.adjustment])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join(' · ')}
+              </div>
+            </div>
+          ) : null}
         </details>
 
         <div className="mt-4 space-y-3">
@@ -898,7 +909,11 @@ export function TrainingView({
         </aside>
       </div>
 
-      <WorkoutActionBar className="bottom-[calc(4.25rem+env(safe-area-inset-bottom))] md:bottom-auto">
+      {/* Audit Bug #13 (2026-05-26): bottom-[calc(7.25rem+env(safe-area-inset-bottom))]
+         是为了让 ActionBar 浮在 FloatingBottomNav (高 ~5.75rem) 之上, 7.25rem 留出 ~1.5rem 间距。
+         测试 fullWorkoutPageStructure:31 明确断言此字面量, 不可改。
+         详见 docs/AUDIT_2026_05_26_RESOLUTION.md */}
+      <WorkoutActionBar className="bottom-[calc(7.25rem+env(safe-area-inset-bottom))] md:bottom-auto">
         <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_1fr] gap-2 md:flex md:justify-end">
           <ActionButton variant="secondary" onClick={onReturnFocusMode} fullWidth>
             返回极简

@@ -18,6 +18,11 @@ export type FloatingBottomNavProps<T extends string> = {
   themeMode?: ResolvedTheme;
 };
 
+// Audit Bug #6 (2026-05-26): 底部导航栏 `bottom-2` 是 commit 3f87611
+// "Pin capsule nav to viewport edge" 的设计意图。多个测试(uiOsR7/R8/R0/
+// mobileNavigationPolish 等 7 处)断言 'fixed bottom-2 left-0 right-0' 和
+// data-bottom-nav-safe-area="viewport-edge"。本组件全程不动。
+// 详见 docs/AUDIT_2026_05_26_RESOLUTION.md
 export function FloatingBottomNav<T extends string>({
   items,
   activeId,
@@ -35,10 +40,10 @@ export function FloatingBottomNav<T extends string>({
       data-bottom-nav-hidden={hidden ? 'true' : 'false'}
       data-bottom-nav-background={themeMode}
       data-bottom-nav-surface={`${themeMode}-safe-area`}
-      data-bottom-nav-safe-area="native-offset"
+      data-bottom-nav-safe-area="viewport-edge"
       className={classNames(
-        'fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0 z-40 px-3 pointer-events-none transition-all duration-300 lg:hidden',
-        hidden ? 'translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
+        'fixed bottom-2 left-0 right-0 z-40 px-3 pointer-events-none transition-all duration-300 lg:hidden',
+        hidden ? 'translate-y-[calc(100%+1rem)] opacity-0' : 'translate-y-0 opacity-100',
       )}
     >
       <div

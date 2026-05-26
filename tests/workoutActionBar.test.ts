@@ -57,7 +57,7 @@ describe('WorkoutActionBar focus actions', () => {
     const barSource = readFileSync(resolve(process.cwd(), 'src/ui/WorkoutActionBar.tsx'), 'utf8');
     const buttonSource = readFileSync(resolve(process.cwd(), 'src/ui/ActionButton.tsx'), 'utf8');
 
-    expect(barSource).toContain('env(safe-area-inset-bottom)');
+    expect(barSource).toContain('data-workout-action-bar-safe-area="covered"');
     expect(barSource).toContain('data-theme-surface="bottom_sheet"');
     expect(barSource).toContain('bg-[#0a0a0b]/96');
     expect(buttonSource).toContain('disabled:text-white/30');

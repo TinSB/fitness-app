@@ -7,7 +7,10 @@
     <meta name="description" content="IronPath 是本地优先的私人训练系统，面向肌肥大主线、体态纠偏和功能补丁。" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="IronPath" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- 改为 'black' (而非 'black-translucent') 让 PWA 不延伸到 safe area。
+         iOS 自动用 manifest background_color (#0a0a0b) 填充状态栏与 Home Indicator
+         区域,跟应用 dark 主题完全一致,根本消除"底部黑边"问题。 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>IronPath</title>

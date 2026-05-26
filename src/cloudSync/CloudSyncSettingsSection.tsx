@@ -168,8 +168,18 @@ function ToggleSwitch({
       onClick={onClick}
       className={classNames(
         'relative h-7 w-12 shrink-0 rounded-full border transition',
-        checked ? 'border-emerald-300/50 bg-emerald-400/45' : 'border-white/10 bg-white/10',
-        disabled && 'cursor-not-allowed opacity-55',
+        // Visual contract:
+        //   - checked (sync on): emerald solid
+        //   - !checked && !disabled (ready to enable): emerald-tinted so the
+        //     user knows the toggle is now actionable; this fixes the
+        //     "everything is green-checked but the toggle still looks dead"
+        //     state reported on iOS.
+        //   - disabled: muted white + opacity-55 + not-allowed cursor.
+        disabled
+          ? 'cursor-not-allowed border-white/10 bg-white/10 opacity-55'
+          : checked
+            ? 'border-emerald-300/60 bg-emerald-400/55'
+            : 'border-emerald-300/50 bg-emerald-500/20 hover:bg-emerald-500/30',
       )}
       data-testid="ironpath-cloud-sync-toggle"
     >

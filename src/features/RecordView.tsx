@@ -784,7 +784,7 @@ export function RecordView({
           <div>
             <p className="text-sm font-semibold text-white/55">数据健康提示</p>
             <p className="mt-1 text-sm text-white/45">
-              {historyCalendarSummary.dataHealthHint}。这里只显示平静回看信号，完整 Data Health 保留在数据分区。
+              {historyCalendarSummary.dataHealthHint}。这里只显示平静回看信号，完整数据健康说明保留在数据分区。
             </p>
           </div>
           <span className="rounded-full border border-white/8 bg-white/[0.05] px-3 py-1 text-xs font-semibold text-white/50">
@@ -1630,7 +1630,7 @@ export function RecordView({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="text-sm font-semibold text-emerald-200">
-                {surfaceMode === 'history' ? '训练频率 History OS' : '个人训练记录 OS'}
+                {surfaceMode === 'history' ? '训练频率记录' : '个人训练记录'}
               </div>
               <h2 className="mt-2 text-2xl font-bold tracking-tight">
                 {surfaceMode === 'history' ? '训练频率先看日历，再看 PR / e1RM' : '历史、进步和数据健康保持同一套记录来源'}

@@ -86,7 +86,7 @@ const safeNextActionCopy: Record<DataHealthSafeNextAction, string> = {
   use_emergency_local: '使用紧急本地模式',
   inspect_owner_scope: '检查账号 / owner scope',
   inspect_schema_validation: '检查数据结构',
-  open_settings_data_health: '到设置里查看 Data Health',
+  open_settings_data_health: '到设置里查看数据健康',
   no_action_needed: '无需处理',
 };
 
@@ -238,7 +238,7 @@ export const buildDataHealthClaritySummary = (input: DataHealthClaritySummaryInp
       ? '没有发现明显异常。本地训练记录可以继续。'
       : shouldPauseCloudCandidate
         ? `发现 ${issueCards.length} 条需要检查的问题。先暂停云端候选，训练记录保持本地优先。`
-        : `发现 ${issueCards.length} 条建议检查的问题。本地训练记录可以继续，完整复查放在 Data Health。`;
+        : `发现 ${issueCards.length} 条建议检查的问题。本地训练记录可以继续，完整复查放在数据健康页。`;
 
   return {
     overallState,

@@ -10,7 +10,8 @@ describe('UI-OS R2 Focus shell behavior', () => {
     expect(appSource).toContain('immersive={Boolean(useFocusTrainingShell)}');
     expect(shellSource).toContain('{!immersive ? <BottomNav');
     expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
-    expect(shellSource).toContain("pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(shellSource).toContain("pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(shellSource).toContain("data-shell-bottom-reserve={immersive ? 'none' : 'content-clearance'}");
     expect(appSource).toContain('<TrainingFocusView');
   });
 

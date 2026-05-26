@@ -10,6 +10,12 @@ body,
   min-height: 100%;
   height: 100%;
   min-height: 100dvh;
+  /* iPhone PWA standalone + viewport-fit=cover + black-translucent 状态栏下,
+     100dvh 不含 safe area, body 撑不到屏幕真实底部, Home Indicator 区域露出
+     系统默认黑色(用户反馈的"底部黑边"根因)。100lvh 是 large viewport, 含
+     safe area, 让 body 覆盖到屏幕真实底部。iOS 15.4+ 支持, 不支持的浏览器
+     降级到 100dvh, 桌面/Android 行为不变。 */
+  min-height: 100lvh;
   background: #0a0a0b;
   color-scheme: dark;
   overscroll-behavior: none;
@@ -23,11 +29,13 @@ body {
   margin: 0;
   background: #0a0a0b;
   min-height: 100dvh;
+  min-height: 100lvh;
   overscroll-behavior-y: none;
 }
 
 #root {
   min-height: 100dvh;
+  min-height: 100lvh;
   background: #0a0a0b;
 }
 
@@ -44,6 +52,35 @@ html[data-ui-theme='dark'] #root {
   background: #0a0a0b;
   color-scheme: dark;
 }
+
+/* ===== iPhone PWA 底部黑边兜底（与具体组件解耦） =====
+ * 背景：standalone PWA + viewport-fit=cover + black-translucent 状态栏下，
+ *   100dvh 在某些 iOS 版本不含 safe-area-inset-bottom，body 背景未覆盖到
+ *   Home Indicator 下方的 safe area 区域，导致那块透出系统默认色（深色环境呈现为"黑边"）。
+ *   过去多次试图通过调底部导航 padding/位置修复（commits 60311b6→3f87611），
+ *   但容易顾此失彼。这里用一个独立的 fixed filler 元素显式覆盖 safe-area 区域：
+ *   - 配对 DOM 由 main.tsx 在 React 挂载前注入（避免 body::after 在 Tailwind v4
+ *     build 时被伪元素清理流程整段吞掉，见 commit message）
+ *   - z-index:0 不影响任何 z-index>0 的浮动 UI（胶囊导航是 z-40 仍在其上）
+ *   - pointer-events:none 完全不干扰交互
+ *   - 无 safe area 的环境（Android/桌面）env() 解析为 0px，无副作用
+ *   - 底色跟随 html[data-ui-theme] 自动切换 dark/light
+ * ============================================================ */
+[data-safe-area-filler='bottom'] {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: #0a0a0b;
+  z-index: 0;
+  pointer-events: none;
+}
+
+html[data-ui-theme='light'] [data-safe-area-filler='bottom'] {
+  background: #f8fafc;
+}
+
 
 .uios-theme-light {
   --uios-app-background: #f8fafc;

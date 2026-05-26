@@ -11,7 +11,7 @@ import { UI_OS_TABS } from '../src/uiOs/uiOsNavigation';
 const items = UI_OS_TABS.map((item) => ({ ...item, icon: Flame }));
 
 describe('UI-OS R9.1 bottom nav chrome', () => {
-  it('renders bottom nav with native safe-area offset instead of an oversized dead-zone spacer', () => {
+  it('renders bottom nav as a covered safe-area surface instead of a transparent dead-zone spacer', () => {
     const html = renderToStaticMarkup(
       React.createElement(FloatingBottomNav, {
         items,
@@ -21,13 +21,19 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
       }),
     );
 
-    expect(html).toContain('data-bottom-nav-safe-area="native-offset"');
-    expect(html).toContain('bottom-[calc(env(safe-area-inset-bottom)+0.5rem)]');
+    expect(html).toContain('data-bottom-nav-safe-area="viewport-edge"');
+    expect(html).not.toContain('data-bottom-nav-frame="transparent"');
+    expect(html).toContain('data-theme-surface="bottom_sheet"');
+    expect(html).toContain('fixed bottom-2 left-0 right-0');
+    expect(html).toContain('py-2.5');
     expect(html).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
+    expect(html).not.toContain('bg-[#101012]/95');
+    expect(html).toContain('bg-[#1c1c1e]/88');
+    expect(html).not.toContain('bg-slate-50/95');
     expect(html).not.toContain('bg-[linear-gradient(to_top,#0a0a0b');
   });
 
-  it('keeps scroll padding for nav clearance without rendering a fixed footer filler', () => {
+  it('keeps scroll padding for nav positioning without rendering a bottom filler', () => {
     const html = renderToStaticMarkup(
       React.createElement(
         MobileAppShell,
@@ -42,8 +48,8 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
       ),
     );
 
-    expect(html).toContain('data-shell-bottom-reserve="nav-clearance-only"');
-    expect(html).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('data-shell-bottom-reserve="content-clearance"');
+    expect(html).toContain('pb-0');
     expect(html).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
   });
@@ -61,7 +67,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('translate-y-[calc(100%+1rem)]');
     expect(html).toContain('data-bottom-nav-background="light"');
     expect(html).not.toContain('bg-[#0a0a0b]');
   });
@@ -84,7 +90,9 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     const nav = readFileSync('src/uiOs/navigation/FloatingBottomNav.tsx', 'utf8');
 
     expect(shell).toContain('data-shell-bottom-reserve');
+    expect(shell).toContain('content-clearance');
     expect(shell).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(nav).not.toContain('bottom-0 left-0 right-0 bg-[linear-gradient');
     expect(nav).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
   });
