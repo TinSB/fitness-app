@@ -120,11 +120,11 @@ export const MobileAppShell = <T extends string>({
           className={classNames(
             'min-h-0 flex-1 overflow-y-auto lg:pb-0',
             isDark ? 'bg-[#0a0a0b]' : 'bg-slate-50',
-            // 物理 pb 只保 safe-area-inset-bottom (让内容贴近 Home Indicator 上边缘),
-            // 避免胶囊隐藏后留出大块应用背景被误认为"黑边"。
-            // scroll-pb 仍按 6.5rem+safe-area 留出, 保证滚动到最后一屏时浮动胶囊
-            // 仍能完整看见而不遮挡 (scroll-snap 锚定)。
-            immersive ? 'pb-0' : 'pb-[env(safe-area-inset-bottom)] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
+            // pb-0 让滚动内容直接延伸到 viewport 物理底, 不留空白让人误以为是"黑边"。
+            // 配合 100lvh 让 body 真正撑到屏幕底,最后一屏内容可以一直滚到 Home
+            // Indicator 区域 (iOS 用半透明横线覆盖, 内容仍可见)。
+            // scroll-pb 保留为 scroll-snap 锚定 hint, 不影响实际可滚区域。
+            immersive ? 'pb-0' : 'pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
           )}
           onScroll={handleShellScroll}
           data-shell-scroll-area="bottom-nav-aware"

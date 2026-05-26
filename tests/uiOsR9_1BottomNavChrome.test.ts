@@ -92,7 +92,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     expect(shell).toContain('data-shell-bottom-reserve');
     expect(shell).toContain('content-clearance');
     expect(shell).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
-    expect(shell).toContain('pb-[env(safe-area-inset-bottom)] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(nav).not.toContain('bottom-0 left-0 right-0 bg-[linear-gradient');
     expect(nav).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
   });

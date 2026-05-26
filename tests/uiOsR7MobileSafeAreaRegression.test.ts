@@ -58,7 +58,7 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
 
     expect(shellSource).toContain('{!immersive ? <BottomNav');
     expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
-    expect(shellSource).toContain("pb-[env(safe-area-inset-bottom)] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(shellSource).toContain("pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
     expect(shellSource).toContain("data-shell-bottom-reserve={immersive ? 'none' : 'content-clearance'}");
     expect(navSource).toContain('data-bottom-nav-safe-area="viewport-edge"');
     expect(navSource).toContain('pointer-events-none');
