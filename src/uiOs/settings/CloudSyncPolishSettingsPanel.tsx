@@ -452,10 +452,23 @@ export function CloudSyncPolishSettingsPanel({
   const handleEnableProductionSync = React.useCallback(() => {
     if (!appData || !authRuntime || !localBackupDryRunUi || productionSyncApplyState.pending) return;
 
+    // Two-step opt-in override for the "发现冲突" case:
+    //
+    //   Click 1: run the safe path. If cloud has a different snapshot,
+    //            surface "发现冲突，再次点开启同步以用本地覆盖" so the
+    //            user can read it and decide.
+    //   Click 2: caller saw the message and clicked again deliberately —
+    //            re-run with overrideExistingCloudSnapshot=true so the
+    //            cloud snapshot is overwritten with the current local
+    //            AppData. This is the only escape from a stale cloud
+    //            row without a native confirm dialog.
+    const alreadySawConflict =
+      productionSyncApplyState.result?.status === 'conflict_review_required';
+
     setProductionSyncApplyState({
       pending: true,
       result: null,
-      message: '正在开启同步',
+      message: alreadySawConflict ? '正在用本地数据覆盖云端' : '正在开启同步',
     });
 
     void runProductionFullAcceptanceSync<AppData>({
@@ -468,11 +481,16 @@ export function CloudSyncPolishSettingsPanel({
       gateway: productionSyncGateway ?? null,
       schemaValidator: (candidate) => Boolean(validateAppDataSchema(candidate)),
       nowIso,
+      overrideExistingCloudSnapshot: alreadySawConflict,
     }).then((result) => {
+      let message: string | null = result.ok ? null : result.userMessage;
+      if (!result.ok && result.status === 'conflict_review_required' && !alreadySawConflict) {
+        message = '发现冲突，再次点开启同步以用本地覆盖云端';
+      }
       setProductionSyncApplyState({
         pending: false,
         result,
-        message: result.ok ? null : result.userMessage,
+        message,
       });
     }).catch(() => {
       setProductionSyncApplyState({
@@ -487,6 +505,7 @@ export function CloudSyncPolishSettingsPanel({
     localBackupDryRunUi,
     nowIso,
     productionSyncApplyState.pending,
+    productionSyncApplyState.result?.status,
     productionSyncGateway,
     publicConfig,
     readiness,

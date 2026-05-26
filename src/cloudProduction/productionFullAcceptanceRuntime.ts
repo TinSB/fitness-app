@@ -82,6 +82,16 @@ export type Phase21iProductionFullAcceptanceInput<TAppData = AppData> = {
   nowIso?: string;
   currentUrl?: string | null;
   uuidFactory?: () => string;
+  /**
+   * Explicit opt-in escape hatch for when the user has been shown the
+   * "发现冲突" review and has actively chosen to overwrite the existing
+   * cloud snapshot with their current local AppData. The default safe
+   * path (false) keeps the manual review semantics intact. The runtime
+   * only honors this flag in the read-mirror review path, never in the
+   * post-upload parity check or in any of the safety blockers tied to
+   * owner / schema / runtime boundary.
+   */
+  overrideExistingCloudSnapshot?: boolean;
 };
 
 export type Phase21iProductionFullAcceptanceResult<TAppData = AppData> = {
@@ -505,7 +515,22 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
     nowIso: createdAt,
   });
 
-  if (readMirrorVerification.manualReviewRequired) {
+  // Manual review escape hatch:
+  //   - default path (overrideExistingCloudSnapshot=false): the existing
+  //     conflict review semantic is preserved.
+  //   - explicit opt-in: caller (the UI) is allowed to bypass the read
+  //     mirror review *only* for the soft "manual_review_required" blocker
+  //     (i.e. hash/freshness mismatch with no harder safety issue). Hard
+  //     blockers (owner_mismatch, schema_mismatch, cloud_data_invalid)
+  //     stay enforced.
+  const isOnlySoftReviewBlocker = readMirrorVerification.blockers.length > 0 &&
+    readMirrorVerification.blockers.every((blocker) => blocker === 'cloud_read_manual_review');
+  const skipManualReview =
+    input.overrideExistingCloudSnapshot === true &&
+    readMirrorVerification.manualReviewRequired === true &&
+    isOnlySoftReviewBlocker;
+
+  if (readMirrorVerification.manualReviewRequired && !skipManualReview) {
     return failure({
       status: 'conflict_review_required',
       userMessage: '发现冲突',
@@ -516,7 +541,7 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
     });
   }
 
-  if (readMirrorVerification.readyFor21E !== true || readMirrorVerification.ok !== true) {
+  if (!skipManualReview && (readMirrorVerification.readyFor21E !== true || readMirrorVerification.ok !== true)) {
     return failure({
       status: 'cloud_read_blocked',
       userMessage: '恢复本地模式',
