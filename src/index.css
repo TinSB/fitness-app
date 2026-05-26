@@ -50,13 +50,15 @@ html[data-ui-theme='dark'] #root {
  *   100dvh 在某些 iOS 版本不含 safe-area-inset-bottom，body 背景未覆盖到
  *   Home Indicator 下方的 safe area 区域，导致那块透出系统默认色（深色环境呈现为"黑边"）。
  *   过去多次试图通过调底部导航 padding/位置修复（commits 60311b6→3f87611），
- *   但容易顾此失彼。这里用一层独立的 fixed filler 显式覆盖 safe-area 区域，
- *   z-index:0 不影响任何 z-index>0 的浮动 UI（胶囊导航是 z-40 仍在其上），
- *   pointer-events:none 完全不干扰交互，无 safe area 的环境（Android/桌面）
- *   高度自动为 0px，无副作用。底色跟随当前主题数据属性。
+ *   但容易顾此失彼。这里用一个独立的 fixed filler 元素显式覆盖 safe-area 区域：
+ *   - 配对 DOM 由 main.tsx 在 React 挂载前注入（避免 body::after 在 Tailwind v4
+ *     build 时被伪元素清理流程整段吞掉，见 commit message）
+ *   - z-index:0 不影响任何 z-index>0 的浮动 UI（胶囊导航是 z-40 仍在其上）
+ *   - pointer-events:none 完全不干扰交互
+ *   - 无 safe area 的环境（Android/桌面）env() 解析为 0px，无副作用
+ *   - 底色跟随 html[data-ui-theme] 自动切换 dark/light
  * ============================================================ */
-body::after {
-  content: '';
+[data-safe-area-filler='bottom'] {
   position: fixed;
   left: 0;
   right: 0;
@@ -67,7 +69,7 @@ body::after {
   pointer-events: none;
 }
 
-html[data-ui-theme='light'] body::after {
+html[data-ui-theme='light'] [data-safe-area-filler='bottom'] {
   background: #f8fafc;
 }
 
