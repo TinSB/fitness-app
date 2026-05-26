@@ -484,19 +484,57 @@ export function CloudSyncPolishSettingsPanel({
       overrideExistingCloudSnapshot: alreadySawConflict,
     }).then((result) => {
       let message: string | null = result.ok ? null : result.userMessage;
-      if (!result.ok && result.status === 'conflict_review_required' && !alreadySawConflict) {
-        message = '发现冲突，再次点开启同步以用本地覆盖云端';
+      if (!result.ok) {
+        // Replace the generic "恢复本地模式" with a diagnostic that tells
+        // the user what actually failed. Without this, every backend-side
+        // problem (table missing, RLS denied write, network error during
+        // upload, post-upload parity mismatch) ends up surfacing the same
+        // four characters, which is the same usability problem the user
+        // already reported about "发现冲突" — opaque pill, no recourse.
+        if (result.status === 'conflict_review_required') {
+          message = alreadySawConflict
+            ? '云端校验仍提示冲突，可能云端有他人写入。请先确认账号和设备一致再重试。'
+            : '发现冲突，再次点开启同步以用本地覆盖云端';
+        } else if (result.status === 'cloud_read_blocked') {
+          const blockers = result.readMirrorVerification?.blockers ?? [];
+          if (blockers.includes('read_repository_unavailable')) {
+            message = '云端服务不可达，请检查网络后重试。';
+          } else if (blockers.includes('schema_invalid')) {
+            message = '云端返回的数据结构与本应用不兼容。';
+          } else {
+            message = '云端读取被拒绝，可能账号未授权或云端尚未初始化。';
+          }
+        } else if (result.status === 'upload_blocked' || result.status === 'upload_failed') {
+          const blockers = result.firstUploadApply?.blockers ?? [];
+          if (blockers.includes('write_repository_unavailable')) {
+            message = '云端写入服务不可达，请检查网络后重试。';
+          } else if (blockers.includes('cloud_upload_rejected')) {
+            message = '云端拒绝写入，可能数据库表未初始化或账号无权限。请联系管理员或在 Supabase 中确认 cloud_appdata_snapshots 表已建立。';
+          } else if (blockers.length > 0) {
+            message = `云端写入失败：${blockers[0]}`;
+          } else {
+            message = '云端写入失败，已保留本地数据；可稍后重试。';
+          }
+        } else if (result.status === 'parity_failed') {
+          message = '上传完成但云端校验失败，已保留本地数据。如多次出现请联系管理员。';
+        } else if (result.status === 'preflight_not_ready' || result.status === 'backup_dry_run_not_ready') {
+          message = '同步前置条件不满足，请重新备份并确认数据。';
+        } else if (result.status === 'shadow_candidate_blocked') {
+          message = '同步初始化被拒绝，请确认账号和设备信息完整。';
+        } else {
+          message = `${result.userMessage}（${result.status}）`;
+        }
       }
       setProductionSyncApplyState({
         pending: false,
         result,
         message,
       });
-    }).catch(() => {
+    }).catch((error: unknown) => {
       setProductionSyncApplyState({
         pending: false,
         result: null,
-        message: '恢复本地模式',
+        message: `云同步出错：${error instanceof Error ? error.message : '未知错误'}`,
       });
     });
   }, [
