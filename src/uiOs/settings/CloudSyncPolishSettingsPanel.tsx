@@ -506,7 +506,15 @@ export function CloudSyncPolishSettingsPanel({
           }
         } else if (result.status === 'upload_blocked' || result.status === 'upload_failed') {
           const blockers = result.firstUploadApply?.blockers ?? [];
-          if (blockers.includes('write_repository_unavailable')) {
+          // Prefer the actual Supabase response message when available — it
+          // tells the user (and us) the real failure reason instead of a
+          // generic "可能是…" guess. Example values:
+          //   "42P01:relation \"public.cloud_appdata_snapshots\" does not exist"
+          //   "42501:new row violates row-level security policy"
+          //   "23505:duplicate key value violates unique constraint"
+          if (result.cloudFailureDetail) {
+            message = `云端写入失败：${result.cloudFailureDetail}`;
+          } else if (blockers.includes('write_repository_unavailable')) {
             message = '云端写入服务不可达，请检查网络后重试。';
           } else if (blockers.includes('cloud_upload_rejected')) {
             message = '云端拒绝写入，可能数据库表未初始化或账号无权限。请联系管理员或在 Supabase 中确认 cloud_appdata_snapshots 表已建立。';
@@ -516,7 +524,9 @@ export function CloudSyncPolishSettingsPanel({
             message = '云端写入失败，已保留本地数据；可稍后重试。';
           }
         } else if (result.status === 'parity_failed') {
-          message = '上传完成但云端校验失败，已保留本地数据。如多次出现请联系管理员。';
+          message = result.cloudFailureDetail
+            ? `上传后云端校验失败：${result.cloudFailureDetail}`
+            : '上传完成但云端校验失败，已保留本地数据。如多次出现请联系管理员。';
         } else if (result.status === 'preflight_not_ready' || result.status === 'backup_dry_run_not_ready') {
           message = '同步前置条件不满足，请重新备份并确认数据。';
         } else if (result.status === 'shadow_candidate_blocked') {
