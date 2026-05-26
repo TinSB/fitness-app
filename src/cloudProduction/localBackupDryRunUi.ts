@@ -163,6 +163,23 @@ const backupJsonForUi = <TAppData>(
   };
 };
 
+// Inventory backup hash is computed from JSON.parse(exportAppData(input.appData)),
+// which runs sanitizeData() before stringifying. If the engine compared that
+// against the raw in-memory appData hash, sanitize-only differences (missing
+// optional fields, default fills, schema version bumps) caused a permanent
+// mismatch — backupReady stayed false forever, "查看将同步的内容" never
+// surfaced, and the toggle stayed grey. Normalize the in-memory appData
+// through the same export pipeline before handing it to the inventory so
+// both hashes are computed on the same canonical shape.
+const normalizeAppDataForInventory = <TAppData>(appData: TAppData | null | undefined): TAppData | null => {
+  if (appData == null) return null;
+  try {
+    return JSON.parse(exportAppData(appData as unknown as AppData)) as TAppData;
+  } catch {
+    return appData;
+  }
+};
+
 const addPreflightBlockers = (
   blockers: Phase21bLocalBackupDryRunUiBlocker[],
   preflight: Phase21aExplicitOptInSyncPreflightResult | null | undefined,
@@ -279,9 +296,10 @@ export const buildLocalBackupDryRunUi = <TAppData = AppData>(
   addRuntimeBoundaryBlockers(blockers, input.runtimeBoundary);
 
   const backup = backupJsonForUi(input);
+  const inventoryAppData = normalizeAppDataForInventory(input.appData);
   const inventory = input.preflight?.user
     ? buildAccountBoundaryLocalInventory({
-        appData: input.appData,
+        appData: inventoryAppData,
         backupJson: backup.backupJson,
         cloudAccountId: input.preflight.user.accountId,
         ownerUserId: input.preflight.user.userId,
@@ -327,7 +345,7 @@ export const buildLocalBackupDryRunUi = <TAppData = AppData>(
       exportRequiredBeforeFirstSync: true,
     },
     accountInventory: inventory,
-    dryRunPreview: buildDryRunPreview(input.appData, inventory),
+    dryRunPreview: buildDryRunPreview(inventoryAppData ?? input.appData, inventory),
     requiresExplicitOptIn: true,
     requiresBackupBeforeFirstUpload: true,
     requiresDryRunBeforeFirstUpload: true,
