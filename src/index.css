@@ -81,6 +81,16 @@ html[data-ui-theme='light'] [data-safe-area-filler='bottom'] {
   background: #f8fafc;
 }
 
+/* PWA standalone 模式下兜底加高：iOS Safari 在 PWA standalone + viewport-fit=cover
+   下,即使加了 min-height: 100lvh, body 实际覆盖区域仍可能比屏幕真实可视区域短
+   ~16-30px(WebKit 内部 viewport 计算异常)。把 filler 加高确保兜底覆盖到屏幕物理底。
+   仅在 standalone 模式生效,桌面 Safari/Chrome 不受影响。 */
+@media (display-mode: standalone) {
+  [data-safe-area-filler='bottom'] {
+    height: calc(env(safe-area-inset-bottom, 0px) + 40px);
+  }
+}
+
 .uios-theme-light {
   --uios-app-background: #f8fafc;
   --uios-page-surface: #ffffff;
