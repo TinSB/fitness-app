@@ -52,8 +52,11 @@ export const detectSyncConflict = ({
   previouslyAppliedOperationIds = [],
 }: SyncConflictDetectorInput): SyncConflictDetectorResult => {
   const reasons: string[] = [];
-  const duplicateOperation = local.operationId !== undefined
-    && previouslyAppliedOperationIds.includes(local.operationId);
+  // Bug #9 修复：原先仅检查 operationId !== undefined，空字符串 "" 或纯空白会被
+  // 当作"有 ID"，但 includes("") 永远 false，幂等判定失效，重复操作可能被重复应用。
+  const normalizedOperationId = local.operationId?.trim() ?? '';
+  const duplicateOperation = normalizedOperationId.length > 0
+    && previouslyAppliedOperationIds.includes(normalizedOperationId);
 
   if (!hasRequiredIdentity(local) || !hasRequiredIdentity(remote)) {
     reasons.push('metadata identity and revisions are required');

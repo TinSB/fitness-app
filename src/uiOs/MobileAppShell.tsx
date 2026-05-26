@@ -44,6 +44,10 @@ export const MobileAppShell = <T extends string>({
     const nearTop = currentScrollTop < 24;
     const nearBottom = element.scrollHeight - element.clientHeight - currentScrollTop < 48;
 
+    // 当前 branch 有意把 nearBottom 放到隐藏分支：滚到底部时让浮动胶囊导航主动隐藏，
+    // 露出底部内容与 safe area（配合"修复 iPhone PWA 底部黑边"系列改动）。
+    // 测试 uiOsR8BottomNavAutoHide.test.ts:55 锁定了这一字面量结构，请勿恢复为
+    // "nearTop || nearBottom" 显示分支，否则会重现底部胶囊遮挡问题。
     if (nearTop || delta < -8) {
       setBottomNavHidden(false);
     } else if (nearBottom || (delta > 12 && currentScrollTop > 80)) {

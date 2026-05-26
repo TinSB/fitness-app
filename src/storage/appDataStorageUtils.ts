@@ -119,10 +119,22 @@ export const normalizeExerciseIdentity = (raw: Record<string, unknown>, rawId: s
     ? [pickString(raw.warning), '动作身份需要检查，已保留原始记录但不会用于 PR、e1RM 或有效组。'].filter(Boolean).join(' / ')
     : pickString(raw.warning);
 
+  // Bug #3 修复：canonicalExerciseId 的 fallback 链原先会回退到 rawId（可能是 __auto_alt_xxx 合成 ID）
+  // 或未知的 baseId，导致合成/无效 ID 污染 PR / e1RM / effectiveSet 统计。
+  // 这里仅允许已通过有效性校验的 ID 作为 fallback，identityInvalid 时不再硬塞回退值。
+  const safeCanonicalFallback =
+    (actualExerciseId && isKnownExerciseId(actualExerciseId) ? actualExerciseId : undefined) ||
+    (originalExerciseId && isKnownExerciseId(originalExerciseId) ? originalExerciseId : undefined) ||
+    (baseId && isKnownExerciseId(baseId) ? baseId : undefined);
+  const explicitCanonical = pickString(raw.canonicalExerciseId);
+  const safeCanonical = explicitCanonical && isKnownExerciseId(explicitCanonical)
+    ? explicitCanonical
+    : safeCanonicalFallback;
+
   return {
     id: rawId,
     baseId,
-    canonicalExerciseId: pickString(raw.canonicalExerciseId, actualExerciseId || originalExerciseId || baseId || rawId),
+    canonicalExerciseId: safeCanonical,
     originalExerciseId,
     actualExerciseId,
     legacyActualExerciseId: legacyActualExerciseId || undefined,

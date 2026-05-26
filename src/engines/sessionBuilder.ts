@@ -219,6 +219,23 @@ export const createSession = (
         ? `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，但动作质量或不适记录限制了高级推荐。`
         : `当前自动等级为${formatAutoTrainingLevel(trainingLevelAssessment.level)}，系统会按真实记录逐步开放更完整的训练处方。`;
 
+  // Bug #7 修复：原先同一个 find 表达式被调用 3 次拼接 currentFocusStepId，
+  // 不仅性能浪费，且任一次返回 undefined 都会导致字符串损坏（correction:undefined:undefined:0）。
+  // 抽出单次求值结果，确保拼接基于同一对象。
+  const firstCorrectionLog = supportExerciseLogs.find(
+    (log) => log.blockType === 'correction' && log.plannedSets > 0,
+  );
+  const initialFocusStepId = firstCorrectionLog
+    ? `correction:${firstCorrectionLog.moduleId}:${firstCorrectionLog.exerciseId}:0`
+    : exercises[0]?.warmupSets?.length
+      ? `main:${exercises[0].id}:warmup:0`
+      : `main:${exercises[0]?.id}:working:0`;
+  const initialFocusStepType: 'correction' | 'warmup' | 'working' = firstCorrectionLog
+    ? 'correction'
+    : exercises[0]?.warmupSets?.length
+      ? 'warmup'
+      : 'working';
+
   const session: TrainingSession = {
     id: `session-${Date.now()}`,
     date: todayKey(),
@@ -242,16 +259,8 @@ export const createSession = (
     exercises,
     currentExerciseId: exercises[0]?.id,
     currentSetIndex: 0,
-    currentFocusStepId: supportExerciseLogs.find((log) => log.blockType === 'correction' && log.plannedSets > 0)
-      ? `correction:${supportExerciseLogs.find((log) => log.blockType === 'correction' && log.plannedSets > 0)?.moduleId}:${supportExerciseLogs.find((log) => log.blockType === 'correction' && log.plannedSets > 0)?.exerciseId}:0`
-      : exercises[0]?.warmupSets?.length
-        ? `main:${exercises[0].id}:warmup:0`
-        : `main:${exercises[0]?.id}:working:0`,
-    currentFocusStepType: supportExerciseLogs.some((log) => log.blockType === 'correction' && log.plannedSets > 0)
-      ? 'correction'
-      : exercises[0]?.warmupSets?.length
-        ? 'warmup'
-        : 'working',
+    currentFocusStepId: initialFocusStepId,
+    currentFocusStepType: initialFocusStepType,
     focusSessionComplete: false,
     focusActualSetDrafts: [],
     focusCompletedStepIds: [],

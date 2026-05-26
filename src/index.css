@@ -45,6 +45,32 @@ html[data-ui-theme='dark'] #root {
   color-scheme: dark;
 }
 
+/* ===== iPhone PWA 底部黑边兜底（与具体组件解耦） =====
+ * 背景：standalone PWA + viewport-fit=cover + black-translucent 状态栏下，
+ *   100dvh 在某些 iOS 版本不含 safe-area-inset-bottom，body 背景未覆盖到
+ *   Home Indicator 下方的 safe area 区域，导致那块透出系统默认色（深色环境呈现为"黑边"）。
+ *   过去多次试图通过调底部导航 padding/位置修复（commits 60311b6→3f87611），
+ *   但容易顾此失彼。这里用一层独立的 fixed filler 显式覆盖 safe-area 区域，
+ *   z-index:0 不影响任何 z-index>0 的浮动 UI（胶囊导航是 z-40 仍在其上），
+ *   pointer-events:none 完全不干扰交互，无 safe area 的环境（Android/桌面）
+ *   高度自动为 0px，无副作用。底色跟随当前主题数据属性。
+ * ============================================================ */
+body::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: #0a0a0b;
+  z-index: 0;
+  pointer-events: none;
+}
+
+html[data-ui-theme='light'] body::after {
+  background: #f8fafc;
+}
+
 .uios-theme-light {
   --uios-app-background: #f8fafc;
   --uios-page-surface: #ffffff;

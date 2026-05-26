@@ -619,6 +619,11 @@ const sanitizeTemplates = (templates: unknown) => {
   return hydrateTemplates(normalized as never);
 };
 
+// Bug #12 修复：sanitizeBodyWeights 原先未校验 date 格式，
+// "yesterday" / "2024-13-45" 等非法值能通过 truthy 检查并参与 localeCompare 排序，
+// 导致体重曲线按字典序错乱，进而污染热量/进度建议。
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}(T|$)/;
+
 const sanitizeBodyWeights = (entries: unknown) =>
   pickArray(entries)
     .map((entry) => {
@@ -628,7 +633,7 @@ const sanitizeBodyWeights = (entries: unknown) =>
         value: Math.max(0, number(raw.value)),
       };
     })
-    .filter((entry) => entry.date && entry.value)
+    .filter((entry) => entry.date && entry.value && ISO_DATE_PATTERN.test(entry.date))
     .sort((a, b) => b.date.localeCompare(a.date));
 
 const HEALTH_RAW_BLOCKED_KEYS = new Set(['xmlText', 'fileText', 'rawXml', 'xml', 'document', 'content']);

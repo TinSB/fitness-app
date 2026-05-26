@@ -525,7 +525,10 @@ const summarizeSupportState = (programTemplate: ProgramTemplate, dayTemplateId?:
 };
 
 const stepStrategy = <T extends readonly string[]>(sequence: T, current: string, direction: -1 | 1) => {
-  const index = Math.max(0, sequence.indexOf(current as T[number]));
+  const index = sequence.indexOf(current as T[number]);
+  // Bug #2 修复：当 current 不在 sequence 中时（indexOf 返回 -1），不应静默映射为首项。
+  // 保持原值以避免基于错误基线生成轮换建议；若上游传入未知模板名，调用方需自行校验。
+  if (index === -1) return current as T[number];
   const nextIndex = Math.max(0, Math.min(sequence.length - 1, index + direction));
   return sequence[nextIndex];
 };

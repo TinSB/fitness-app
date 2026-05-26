@@ -79,23 +79,26 @@ export const writeAppDataToLocalStorage = (
 ): LocalStorageWriteResult => {
   if (!storage) return { ok: true };
 
+  // Bug #8 修复：原先 13 个 setItem 顺序写入，且 version 第一个写。中途失败会留下
+  // "新 version + 旧 templates" 这种不一致组合。这里先把所有 payload 序列化到内存，
+  // 任何 JSON.stringify 异常都在写入前抛出，避免污染 storage；然后按 "数据先、version 最后"
+  // 的顺序写入，让 version 充当 commit marker —— 中途失败时旧 version 仍指向上一致状态。
+  let payload: Record<string, string>;
   try {
-    storage.setItem(STORAGE_KEYS.version, String(STORAGE_VERSION));
-    storage.setItem(STORAGE_KEYS.templates, JSON.stringify(sanitized.templates || []));
-    storage.setItem(STORAGE_KEYS.history, JSON.stringify(sanitized.history || []));
-    storage.setItem(STORAGE_KEYS.activeSession, JSON.stringify(sanitized.activeSession || null));
-    storage.setItem(STORAGE_KEYS.todayStatus, JSON.stringify(sanitized.todayStatus || DEFAULT_STATUS));
-    storage.setItem(STORAGE_KEYS.bodyWeights, JSON.stringify(sanitized.bodyWeights || []));
-    storage.setItem(STORAGE_KEYS.userProfile, JSON.stringify(sanitized.userProfile || DEFAULT_USER_PROFILE));
-    storage.setItem(STORAGE_KEYS.screeningProfile, JSON.stringify(sanitized.screeningProfile || DEFAULT_SCREENING_PROFILE));
-    storage.setItem(STORAGE_KEYS.programTemplate, JSON.stringify(sanitized.programTemplate || DEFAULT_PROGRAM_TEMPLATE));
-    storage.setItem(STORAGE_KEYS.mesocyclePlan, JSON.stringify(sanitized.mesocyclePlan || DEFAULT_MESOCYCLE_PLAN));
-    storage.setItem(STORAGE_KEYS.healthMetricSamples, JSON.stringify(sanitized.healthMetricSamples || []));
-    storage.setItem(STORAGE_KEYS.importedWorkoutSamples, JSON.stringify(sanitized.importedWorkoutSamples || []));
-    storage.setItem(STORAGE_KEYS.healthImportBatches, JSON.stringify(sanitized.healthImportBatches || []));
-    storage.setItem(
-      STORAGE_KEYS.settings,
-      JSON.stringify({
+    payload = {
+      [STORAGE_KEYS.templates]: JSON.stringify(sanitized.templates || []),
+      [STORAGE_KEYS.history]: JSON.stringify(sanitized.history || []),
+      [STORAGE_KEYS.activeSession]: JSON.stringify(sanitized.activeSession || null),
+      [STORAGE_KEYS.todayStatus]: JSON.stringify(sanitized.todayStatus || DEFAULT_STATUS),
+      [STORAGE_KEYS.bodyWeights]: JSON.stringify(sanitized.bodyWeights || []),
+      [STORAGE_KEYS.userProfile]: JSON.stringify(sanitized.userProfile || DEFAULT_USER_PROFILE),
+      [STORAGE_KEYS.screeningProfile]: JSON.stringify(sanitized.screeningProfile || DEFAULT_SCREENING_PROFILE),
+      [STORAGE_KEYS.programTemplate]: JSON.stringify(sanitized.programTemplate || DEFAULT_PROGRAM_TEMPLATE),
+      [STORAGE_KEYS.mesocyclePlan]: JSON.stringify(sanitized.mesocyclePlan || DEFAULT_MESOCYCLE_PLAN),
+      [STORAGE_KEYS.healthMetricSamples]: JSON.stringify(sanitized.healthMetricSamples || []),
+      [STORAGE_KEYS.importedWorkoutSamples]: JSON.stringify(sanitized.importedWorkoutSamples || []),
+      [STORAGE_KEYS.healthImportBatches]: JSON.stringify(sanitized.healthImportBatches || []),
+      [STORAGE_KEYS.settings]: JSON.stringify({
         ...(sanitized.settings || {}),
         schemaVersion: STORAGE_VERSION,
         selectedTemplateId: sanitized.selectedTemplateId,
@@ -110,7 +113,18 @@ export const writeAppDataToLocalStorage = (
         pendingSessionPatches: sanitized.pendingSessionPatches || [],
         dataRepairLogs: sanitized.settings.dataRepairLogs || [],
       }),
-    );
+    };
+  } catch (error) {
+    return { ok: false, error };
+  }
+
+  try {
+    for (const [key, value] of Object.entries(payload)) {
+      storage.setItem(key, value);
+    }
+    // version 最后写：写到这里表明 12 个数据 key 都成功落盘。若中途 QuotaExceeded，
+    // version 保持旧值（指向旧数据快照），下次读取时不会把混合状态当成新数据。
+    storage.setItem(STORAGE_KEYS.version, String(STORAGE_VERSION));
     return { ok: true };
   } catch (error) {
     return { ok: false, error };
