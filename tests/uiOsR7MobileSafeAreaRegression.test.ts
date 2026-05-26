@@ -22,11 +22,11 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
     );
 
     expect(html).toContain('normal page content');
-    expect(html).toContain('fixed bottom-0 left-0 right-0');
+    expect(html).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0');
     expect(html).toContain('env(safe-area-inset-bottom)');
-    expect(html).toContain('data-bottom-nav-safe-area="covered"');
+    expect(html).toContain('data-bottom-nav-safe-area="native-offset"');
     expect(html).toContain('data-shell-safe-bottom="bottom-nav-protected"');
-    expect(html).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('pb-0');
     expect(html).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     for (const label of ['今日', '训练', '历史', '进步', '设置']) expect(text(html)).toContain(label);
   });
@@ -58,10 +58,10 @@ describe('UI-OS R7 mobile safe area regression lock', () => {
 
     expect(shellSource).toContain('{!immersive ? <BottomNav');
     expect(shellSource).toContain("data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}");
-    expect(shellSource).toContain("pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
-    expect(shellSource).toContain("data-shell-bottom-reserve={immersive ? 'none' : 'content-clearance'}");
+    expect(shellSource).toContain("pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]");
+    expect(shellSource).toContain("data-shell-bottom-reserve={immersive ? 'none' : 'scroll-padding-only'}");
     expect(navSource).toContain('env(safe-area-inset-bottom)');
-    expect(navSource).toContain('data-bottom-nav-safe-area="covered"');
+    expect(navSource).toContain('data-bottom-nav-safe-area="native-offset"');
     expect(navSource).toContain('pointer-events-none');
   });
 

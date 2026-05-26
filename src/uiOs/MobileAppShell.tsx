@@ -116,13 +116,13 @@ export const MobileAppShell = <T extends string>({
           className={classNames(
             'min-h-0 flex-1 overflow-y-auto lg:pb-0',
             isDark ? 'bg-[#0a0a0b]' : 'bg-slate-50',
-            immersive ? 'pb-0' : 'pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
+            immersive ? 'pb-0' : 'pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
           )}
           onScroll={handleShellScroll}
           data-shell-scroll-area="bottom-nav-aware"
           data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}
           data-shell-bottom-background={resolvedTheme}
-          data-shell-bottom-reserve={immersive ? 'none' : 'content-clearance'}
+          data-shell-bottom-reserve={immersive ? 'none' : 'scroll-padding-only'}
         >
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>

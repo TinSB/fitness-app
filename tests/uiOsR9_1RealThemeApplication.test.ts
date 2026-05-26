@@ -41,8 +41,8 @@ describe('UI-OS R9.1 real theme application', () => {
     expect(html).toContain('data-app-chrome-background="light"');
     expect(html).toContain('bg-slate-50 text-slate-950');
     expect(html).toContain('data-bottom-nav-background="light"');
-    expect(html).toContain('data-bottom-nav-chrome="safe-area-capsule"');
-    expect(html).toContain('bg-white/90');
+    expect(html).toContain('data-theme-surface="bottom_sheet"');
+    expect(html).toContain('bg-white/92');
     expect(html).not.toContain('data-bottom-nav-chrome="transparent-icons"');
   });
 
@@ -66,7 +66,7 @@ describe('UI-OS R9.1 real theme application', () => {
     expect(html).toContain('data-app-chrome-background="dark"');
     expect(html).toContain('bg-[#0a0a0b] text-slate-100');
     expect(html).toContain('data-bottom-nav-background="dark"');
-    expect(html).toContain('data-bottom-nav-chrome="safe-area-capsule"');
+    expect(html).toContain('data-theme-surface="bottom_sheet"');
     expect(html).toContain('bg-[#1c1c1e]/88');
     expect(html).not.toContain('data-bottom-nav-chrome="transparent-icons"');
   });

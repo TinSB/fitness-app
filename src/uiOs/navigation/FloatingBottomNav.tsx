@@ -35,21 +35,20 @@ export function FloatingBottomNav<T extends string>({
       data-bottom-nav-hidden={hidden ? 'true' : 'false'}
       data-bottom-nav-background={themeMode}
       data-bottom-nav-surface={`${themeMode}-safe-area`}
-      data-bottom-nav-safe-area="covered"
-      data-bottom-nav-frame="transparent"
+      data-bottom-nav-safe-area="native-offset"
       className={classNames(
-        'fixed bottom-0 left-0 right-0 z-40 px-3 pb-0 pt-2 pointer-events-none transition-all duration-300 lg:hidden',
-        hidden ? 'translate-y-[calc(100%+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
+        'fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0 z-40 px-3 pointer-events-none transition-all duration-300 lg:hidden',
+        hidden ? 'translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))] opacity-0' : 'translate-y-0 opacity-100',
       )}
     >
       <div
         className={classNames(
-          'mx-auto flex w-full max-w-md items-center justify-around rounded-t-2xl border px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-2xl pointer-events-auto',
+          'mx-auto flex w-full max-w-md items-center justify-around rounded-2xl border px-2 py-2.5 backdrop-blur-2xl pointer-events-auto',
           isDark
-            ? 'border-white/12 bg-[#1c1c1e]/88 shadow-none'
-            : 'border-slate-200 bg-white/90 shadow-none',
+            ? 'border-white/10 bg-[#1c1c1e]/88 shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
+            : 'border-slate-200 bg-white/92 shadow-[0_12px_34px_rgba(15,23,42,0.12)]',
         )}
-        data-bottom-nav-chrome="safe-area-capsule"
+        data-theme-surface="bottom_sheet"
         data-theme-mode={themeMode}
       >
         {items.map((item) => {
@@ -62,10 +61,10 @@ export function FloatingBottomNav<T extends string>({
               aria-current={isActive ? 'page' : undefined}
               data-active={isActive ? 'true' : 'false'}
               className={classNames(
-                'relative flex min-h-14 min-w-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 transition-all duration-200',
+                'relative flex flex-col items-center gap-1 py-2 px-5 rounded-xl transition-all duration-200',
                 isActive
                   ? isDark ? 'text-emerald-400' : 'text-emerald-700'
-                  : isDark ? 'text-white/45 active:bg-white/10 active:text-white/70' : 'text-slate-500 active:bg-slate-100 active:text-slate-700',
+                  : isDark ? 'text-white/35 active:text-white/50' : 'text-slate-500 active:text-slate-700',
               )}
               onClick={() => onNavigate(item.id)}
             >

@@ -23,7 +23,7 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
     expect(shell).toContain('data-app-chrome-background={resolvedTheme}');
     expect(shell).toContain('data-shell-bottom-background={resolvedTheme}');
     expect(shell).toContain('bg-[#0a0a0b]');
-    expect(shell).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(shell).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
   });
 
@@ -37,15 +37,14 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
       ),
     );
 
-    expect(source).toContain('data-bottom-nav-safe-area="covered"');
-    expect(source).toContain('data-bottom-nav-frame="transparent"');
-    expect(source).toContain('fixed bottom-0 left-0 right-0');
-    expect(source).toContain('pb-0');
-    expect(source).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom))]');
+    expect(source).toContain('data-bottom-nav-safe-area="native-offset"');
+    expect(source).not.toContain('data-bottom-nav-frame="transparent"');
+    expect(source).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0');
+    expect(source).toContain('py-2.5');
     expect(source).not.toContain("bg-[#101012]/95");
     expect(source).not.toContain('bg-slate-50/95');
-    expect(source).toContain('data-bottom-nav-chrome="safe-area-capsule"');
-    expect(source).toContain("border-white/12 bg-[#1c1c1e]/88 shadow-none");
+    expect(source).toContain('data-theme-surface="bottom_sheet"');
+    expect(source).toContain("border-white/10 bg-[#1c1c1e]/88 shadow-[0_4px_30px_rgba(0,0,0,0.3)]");
     expect(source).toContain("data-theme-mode={themeMode}");
     expect(html).toContain('data-bottom-nav-hidden="false"');
     expect(html).toContain('data-bottom-nav-background="dark"');
