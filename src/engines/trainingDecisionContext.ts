@@ -1,5 +1,6 @@
 import { DEFAULT_PROGRAM_TEMPLATE, DEFAULT_SCREENING_PROFILE, DEFAULT_STATUS, DEFAULT_USER_PROFILE } from '../data/trainingData';
 import type {
+  AdaptiveCalibrationState,
   AppData,
   HealthMetricSample,
   ImportedWorkoutSample,
@@ -53,6 +54,7 @@ export type TrainingDecisionContext = {
   trainingLevelAssessment: TrainingLevelAssessment;
   trainingLevel: AutoTrainingLevel;
   currentDateLocalKey: string;
+  adaptiveCalibration?: AdaptiveCalibrationState;
 };
 
 type TrainingDecisionContextOverrides = Partial<
@@ -220,10 +222,12 @@ export const buildTrainingDecisionContext = (
     trainingLevelAssessment,
     trainingLevel,
     currentDateLocalKey,
+    adaptiveCalibration: overrides.adaptiveCalibration ?? data.adaptiveCalibration,
   };
 };
 
 export const toStatusRulesDecisionContext = (context: TrainingDecisionContext) => ({
   healthSummary: context.useHealthDataForReadiness === false ? undefined : context.healthSummary,
   useHealthDataForReadiness: context.useHealthDataForReadiness,
+  adaptiveCalibration: context.adaptiveCalibration,
 });

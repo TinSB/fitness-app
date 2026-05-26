@@ -13,6 +13,12 @@ import type {
 } from '../models/training-model';
 import { actionableSorenessAreas, clone, findTemplate, getPrimaryMuscles, todayKey } from './engineUtils';
 import { buildAdaptiveDeloadDecision, reconcileScreeningProfile } from './adaptiveFeedbackEngine';
+import {
+  buildRecommendationSnapshotsForSession,
+  getDayState,
+  getLoadBias,
+  getRepBand,
+} from './adaptiveRecommendationEngine';
 import { buildSessionExplanations, buildTodayExplanations } from './explainability/trainingExplainability';
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
@@ -270,9 +276,31 @@ export const createSession = (
     explanations: [baselineExplanation, ...explanations],
   };
 
-  return {
+  const dayState = getDayState(adjustedPlan.readiness);
+  const calibrationState = context.adaptiveCalibration;
+  const biasForExercise = (exerciseId: string, repMin: number, repMax: number) => {
+    if (!calibrationState) return 1;
+    const result = getLoadBias(calibrationState, exerciseId, getRepBand(Number(repMin), Number(repMax)), dayState);
+    return result.applied ? result.bias : 1;
+  };
+  const biasByExerciseKey = new Map<string, number>();
+  exercises.forEach((exercise) => {
+    const key = exercise.canonicalExerciseId || exercise.baseId || exercise.id;
+    biasByExerciseKey.set(key, biasForExercise(key, exercise.repMin, exercise.repMax));
+  });
+  const recommendationSnapshots = buildRecommendationSnapshotsForSession(session, {
+    dayState,
+    appliedBias: (exerciseId) => biasByExerciseKey.get(exerciseId) ?? 1,
+  });
+
+  const sessionWithSnapshots: TrainingSession = {
     ...session,
-    explanations: [baselineExplanation, ...buildSessionExplanations(session)],
+    recommendationSnapshots,
+  };
+
+  return {
+    ...sessionWithSnapshots,
+    explanations: [baselineExplanation, ...buildSessionExplanations(sessionWithSnapshots)],
   };
 };
 

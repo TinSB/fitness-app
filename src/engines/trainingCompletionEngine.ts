@@ -1,6 +1,7 @@
 import type { AppData, ExercisePrescription, TrainingSession, TrainingSetLog } from '../models/training-model';
 import { isCompletedSet, isIncompleteSet, isLegacyCompletedSet, number } from './engineUtils';
 import { reconcileScreeningProfile } from './adaptiveFeedbackEngine';
+import { applyCompletedSessionToCalibration } from './adaptiveRecommendationEngine';
 import { getExerciseIdentityFromExercise } from './currentExerciseSelector';
 import { buildFocusStepQueue } from './focusModeStateEngine';
 import { toLocalDateKey } from './trainingCalendarEngine';
@@ -217,8 +218,12 @@ export const completeTrainingSessionIntoHistory = (
   const finishedBase = finalizeTrainingSession(data.activeSession, finishedAt, options);
   const provisionalHistory = [finishedBase, ...(data.history || [])].slice(0, 500);
   const nextScreening = reconcileScreeningProfile(data.screeningProfile, provisionalHistory);
+  const calibrationOutcome = applyCompletedSessionToCalibration(data.adaptiveCalibration, finishedBase, finishedAt);
   const finished: TrainingSession = {
     ...finishedBase,
+    recommendationSnapshots: calibrationOutcome.reconciledRecords.length
+      ? calibrationOutcome.reconciledRecords
+      : finishedBase.recommendationSnapshots,
     feedbackSummary: {
       painExercises: Object.entries(nextScreening.adaptiveState?.painByExercise || {})
         .filter(([, count]) => count >= 2)
@@ -235,6 +240,7 @@ export const completeTrainingSessionIntoHistory = (
       activeSession: null,
       history: [finished, ...(data.history || [])].slice(0, 500),
       screeningProfile: nextScreening,
+      adaptiveCalibration: calibrationOutcome.state,
     },
   };
 };
