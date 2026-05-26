@@ -27,9 +27,44 @@ createRoot(rootElement).render(
 );
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
+  // iOS Safari only polls service workers every 24h by default, so a user
+  // can sit on a months-old IronPath build for days after a deploy. The
+  // standalone PWA never visibly reloads, so the freshest fix can be live
+  // on Vercel and still invisible on the phone. To work around this:
+  //
+  //   1. On registration, request an immediate update check and keep a
+  //      handle to the registration so we can recheck later.
+  //   2. Whenever the tab becomes visible again (foreground / back from
+  //      app switcher), poke registration.update() so the SW fetches the
+  //      latest sw.js + chunks.
+  //   3. Once the new SW takes control (controllerchange), do a one-shot
+  //      reload so the page swaps to the new entry chunk immediately
+  //      rather than waiting for the next cold launch.
+  const setupServiceWorker = async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      // Kick an immediate update check; harmless on first install.
+      registration.update().catch(() => {});
+
+      const recheck = () => {
+        if (document.visibilityState !== 'visible') return;
+        registration.update().catch(() => {});
+      };
+      document.addEventListener('visibilitychange', recheck);
+      window.addEventListener('focus', recheck);
+
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      });
+    } catch (error) {
       console.warn('IronPath service worker registration failed:', error);
-    });
+    }
+  };
+
+  window.addEventListener('load', () => {
+    void setupServiceWorker();
   });
 }
