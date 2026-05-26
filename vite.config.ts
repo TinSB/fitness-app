@@ -70,6 +70,47 @@ export default defineConfig({
             return 'engines-analytics';
           }
 
+          if (normalized.includes('/node_modules/@supabase/')) {
+            return 'vendor-supabase';
+          }
+
+          if (
+            normalized.includes('/src/cloudProduction/') ||
+            normalized.includes('/src/productionApi/') ||
+            normalized.includes('/src/productionCutover/') ||
+            normalized.includes('/src/personalProduction/')
+          ) {
+            return 'cloud-production';
+          }
+
+          if (
+            normalized.includes('/src/cloudSync/') ||
+            normalized.includes('/src/sync/') ||
+            normalized.includes('/src/auth/')
+          ) {
+            return 'cloud-sync';
+          }
+
+          if (normalized.includes('/src/storage/appDataSanitize') || normalized.includes('/src/storage/appDataValidation')) {
+            return 'storage-sanitize';
+          }
+
+          if (
+            normalized.includes('/src/engines/appleHealth') ||
+            normalized.includes('/src/engines/healthImportEngine') ||
+            normalized.includes('/src/engines/healthSummaryEngine')
+          ) {
+            return 'engines-health';
+          }
+
+          if (
+            normalized.includes('/src/engines/dataHealthEngine') ||
+            normalized.includes('/src/engines/dataHealthRepairEngine') ||
+            normalized.includes('/src/engines/dataRepairEngine')
+          ) {
+            return 'engines-data-health';
+          }
+
           return undefined;
         },
       },
