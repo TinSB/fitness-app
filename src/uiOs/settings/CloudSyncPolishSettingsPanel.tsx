@@ -321,8 +321,20 @@ export function CloudSyncPolishSettingsPanel({
     });
   }, [appData, localBackupDryRunUiState, nowIso, runtimeInput.localBackupDryRunUi, syncPreflight]);
 
+  // We only want to wipe the persisted backup-flow state on an actual
+  // sign-out transition. The previous code ran on every mount that saw
+  // authRuntime?.authenticated !== true, which included the (very common)
+  // "user hasn't signed in yet on this device load" case. That made the
+  // persistence a no-op: a fresh PWA open with no live auth state would
+  // immediately wipe whatever was on disk, so the user's previously
+  // completed "创建备份 + 查看将同步的内容" steps appeared lost.
+  const wasAuthenticatedRef = React.useRef<boolean>(authRuntime?.authenticated === true);
   React.useEffect(() => {
-    if (authRuntime?.authenticated === true) return;
+    const isAuthenticated = authRuntime?.authenticated === true;
+    const justSignedOut = wasAuthenticatedRef.current && !isAuthenticated;
+    wasAuthenticatedRef.current = isAuthenticated;
+
+    if (isAuthenticated) return;
     setLocalBackupDryRunUiState({
       backupJson: null,
       backupExportConfirmed: false,
@@ -333,10 +345,13 @@ export function CloudSyncPolishSettingsPanel({
       result: null,
       message: null,
     });
-    // Sign-out is the explicit "forget the backup flow" signal — wipe the
-    // persisted copy so the next sign-in starts from a clean slate rather
-    // than rehydrating someone else's confirmation.
-    clearCloudSyncFlowState();
+    // Only the real sign-out transition counts as "forget the backup flow".
+    // A first mount with no live auth must NOT clear the persisted copy,
+    // otherwise the lazy initializer above would have nothing to rehydrate
+    // by the time the user re-authenticates in this session.
+    if (justSignedOut) {
+      clearCloudSyncFlowState();
+    }
   }, [authRuntime?.authenticated]);
 
   // Persist backup / dry-run flow state every time it changes. The hash we
