@@ -409,25 +409,25 @@ export function CloudSyncPolishSettingsPanel({
     nowIso,
   ]);
 
-  // Clear any stale "发现冲突 / 恢复本地模式" process notice when the user
-  // re-enters the cloud-sync panel with a freshly ready backup. Without this,
-  // a single failed enable-sync attempt would leave the warning pill on the
-  // screen forever and the toggle would *look* dead even after the user re-
-  // backed up and the underlying hash-parity bug had been fixed.
+  // Clear any stale "发现冲突 / 恢复本地模式" process notice ONCE on first
+  // mount. Anything emitted later in this mount is the user's live attempt
+  // and must remain on screen — the previous implementation listened to
+  // localBackupDryRunUi.backupReady and silently swallowed every fresh
+  // failure (e.g. cloud read failed because the Supabase tables are not
+  // applied yet), leaving the toggle looking dead with no error reason at
+  // all. Use a ref so the cleanup runs exactly once per panel lifecycle.
+  const didClearStaleNoticeRef = React.useRef(false);
   React.useEffect(() => {
+    if (didClearStaleNoticeRef.current) return;
+    didClearStaleNoticeRef.current = true;
     if (productionSyncApplyState.pending) return;
     if (productionSyncApplyState.message == null) return;
-    if (localBackupDryRunUi?.backupReady !== true) return;
     if (productionSyncApplyState.result?.ok === true) return;
-    setProductionSyncApplyState((current) =>
-      current.pending ? current : { pending: false, result: null, message: null },
-    );
-  }, [
-    localBackupDryRunUi?.backupReady,
-    productionSyncApplyState.message,
-    productionSyncApplyState.pending,
-    productionSyncApplyState.result?.ok,
-  ]);
+    setProductionSyncApplyState({ pending: false, result: null, message: null });
+    // We intentionally depend on nothing else — this is a once-per-mount
+    // cleanup driven by the ref guard above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreateLocalBackup = React.useCallback(() => {
     if (!appData || syncPreflight.readyFor21B !== true) return;
