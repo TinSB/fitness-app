@@ -109,6 +109,15 @@ export type Phase21iProductionFullAcceptanceResult<TAppData = AppData> = {
   cloudWriteAttempted: boolean;
   firstUploadSucceeded: boolean;
   cloudReadMirrorMatchesLocal: boolean;
+  /**
+   * Real, human-readable explanation captured from whichever cloud
+   * sub-step failed (read mirror, write, or parity). The fixed
+   * userMessage union above is intentionally short for analytics, but
+   * the panel needs the actual reason so the user is not stuck behind
+   * "恢复本地模式" with no way to know what really went wrong on the
+   * Supabase side.
+   */
+  cloudFailureDetail: string | null;
   localStorageFallbackPreserved: true;
   cloudPrimaryEnabled: false;
   defaultSyncEnabled: false;
@@ -352,12 +361,26 @@ export const createSupabaseAppDataProductionGateway = <TAppData = AppData>(
         }
 
         if (response.error || !response.data) {
-          return result('failed', 'Cloud AppData write failed safely.', {
+          // Carry the real Supabase response detail through so the panel can
+          // surface it instead of the catch-all "恢复本地模式" — this is the
+          // signal users need to know the difference between "RLS rejected
+          // the insert", "table is missing", "schema_version not an integer"
+          // and a transient network failure. Without it the only debugging
+          // option is the Safari Web Inspector, which is not available on a
+          // standalone PWA on iOS.
+          const detail = response.error
+            ? `${response.error.code ?? 'error'}:${response.error.message ?? ''}${
+                response.error.details ? ` (${response.error.details})` : ''
+              }`.trim()
+            : 'empty response';
+          // eslint-disable-next-line no-console
+          console.error('IronPath cloud write failed:', response.error ?? '(no error object)');
+          return result('failed', `Cloud AppData write failed: ${detail}`, {
             errorCode: 'cloud_write_failed',
           });
         }
         if ((response.data as SupabaseAppDataSnapshotRow<TAppData>).validation_status !== 'valid') {
-          return result('failed', 'Cloud AppData write response was not valid.', {
+          return result('failed', `Cloud AppData write response was not valid (validation_status=${(response.data as SupabaseAppDataSnapshotRow<TAppData>).validation_status})`, {
             errorCode: 'cloud_write_failed',
           });
         }
@@ -401,6 +424,7 @@ const failure = <TAppData>(
     readMirrorVerification?: Phase21dCloudReadMirrorVerificationResult<TAppData> | null;
     firstUploadApply?: Phase21eFirstUploadExplicitApplyResult | null;
     cloudParityCheck?: Phase21fCloudParityCheckResult<TAppData> | null;
+    cloudFailureDetail?: string | null;
   },
 ): Phase21iProductionFullAcceptanceResult<TAppData> => ({
   phase: '21I',
@@ -417,6 +441,7 @@ const failure = <TAppData>(
   cloudWriteAttempted: Boolean(input.firstUploadApply?.cloudWriteAttempted),
   firstUploadSucceeded: false,
   cloudReadMirrorMatchesLocal: false,
+  cloudFailureDetail: input.cloudFailureDetail ?? null,
   localStorageFallbackPreserved: true,
   cloudPrimaryEnabled: false,
   defaultSyncEnabled: false,
@@ -612,6 +637,10 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
       shadowCandidate,
       readMirrorVerification,
       firstUploadApply,
+      // Surface the actual Supabase response message (set by the gateway
+      // when it captured response.error) so the user can see WHY the
+      // cloud write failed instead of a opaque "恢复本地模式" pill.
+      cloudFailureDetail: writeResult.ok ? null : writeResult.message ?? null,
       createdAt,
     });
   }
@@ -643,6 +672,7 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
       readMirrorVerification,
       firstUploadApply,
       cloudParityCheck,
+      cloudFailureDetail: postUploadRead.ok ? null : postUploadRead.message ?? null,
       createdAt,
     });
   }
@@ -676,6 +706,7 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
     cloudReadMirrorMatchesLocal:
       cloudParityCheck.localParityVerified &&
       cloudParityCheck.parity.localSnapshotHash === buildAppDataSnapshotHash(input.appData),
+    cloudFailureDetail: null,
     localStorageFallbackPreserved: true,
     cloudPrimaryEnabled: false,
     defaultSyncEnabled: false,
