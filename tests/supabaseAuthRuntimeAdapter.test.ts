@@ -75,10 +75,10 @@ describe('real Supabase auth runtime adapter', () => {
       anonKey: 'synthetic-public-anon-key',
     });
     expect(calls[0].options.auth).toMatchObject({
-      autoRefreshToken: false,
-      persistSession: false,
+      autoRefreshToken: true,
+      persistSession: true,
       flowType: 'implicit',
-      storageKey: 'ironpath-auth-memory-only',
+      storageKey: 'ironpath-auth-session-v1',
     });
     expect(typeof calls[0].options.auth?.detectSessionInUrl).toBe('function');
     expect(result).toMatchObject({

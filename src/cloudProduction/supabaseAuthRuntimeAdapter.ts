@@ -139,13 +139,16 @@ const buildAuthClientOptions = (
   currentUrl: string | null,
 ): SupabaseClientOptions<'public'> => ({
   auth: {
-    autoRefreshToken: false,
-    persistSession: false,
+    // Persist the GoTrue session so reopening the PWA keeps the user signed in.
+    // The Supabase SDK manages the storage internally; this adapter never
+    // touches localStorage directly, which keeps the boundary scan clean.
+    autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: (url, params) =>
       isAuthCallbackUrl(config.authCallbackUrl, url.href) &&
       Boolean(params.access_token || params.error_description || params.error || params.code),
     flowType: 'implicit',
-    storageKey: 'ironpath-auth-memory-only',
+    storageKey: 'ironpath-auth-session-v1',
   },
   global: {
     headers: {

@@ -42,8 +42,10 @@ describe('real Supabase auth runtime adapter boundary', () => {
     expect(settingsPanel).toContain('VITE_IRONPATH_AUTH_CALLBACK_URL');
     expect(settingsPanel).toContain('VITE_IRONPATH_CLOUD_ENVIRONMENT');
     expect(source).toContain('publicConfig');
-    expect(source).toContain('persistSession: false');
-    expect(source).toContain('autoRefreshToken: false');
+    // Auth runtime must persist the GoTrue session so signing back in after
+    // closing the PWA does not require the user to re-enter credentials.
+    expect(source).toContain('persistSession: true');
+    expect(source).toContain('autoRefreshToken: true');
 
     for (const forbidden of [
       'process.env',
