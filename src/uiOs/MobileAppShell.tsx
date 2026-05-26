@@ -120,13 +120,16 @@ export const MobileAppShell = <T extends string>({
           className={classNames(
             'min-h-0 flex-1 overflow-y-auto lg:pb-0',
             isDark ? 'bg-[#0a0a0b]' : 'bg-slate-50',
-            immersive ? 'pb-0' : 'pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
+            // pb 是物理底部留白(避免内容贴底被胶囊导航遮挡),scroll-pb 让 scroll-snap 落点也避开。
+            // 之前 commit 0a64c07 把 pb 改回了 pb-0,导致今日页底部"为什么这样推荐?"等卡片
+            // 被胶囊导航覆盖。这里恢复 ce1eee7 的 content-clearance 方案。
+            immersive ? 'pb-0' : 'pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]',
           )}
           onScroll={handleShellScroll}
           data-shell-scroll-area="bottom-nav-aware"
           data-shell-safe-bottom={immersive ? 'immersive' : 'bottom-nav-protected'}
           data-shell-bottom-background={resolvedTheme}
-          data-shell-bottom-reserve={immersive ? 'none' : 'scroll-padding-only'}
+          data-shell-bottom-reserve={immersive ? 'none' : 'content-clearance'}
         >
           <PageContainer auxiliary={auxiliary} immersive={immersive}>{children}</PageContainer>
         </div>

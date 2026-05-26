@@ -48,7 +48,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
       ),
     );
 
-    expect(html).toContain('data-shell-bottom-reserve="scroll-padding-only"');
+    expect(html).toContain('data-shell-bottom-reserve="content-clearance"');
     expect(html).toContain('pb-0');
     expect(html).toContain('scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
@@ -90,9 +90,9 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     const nav = readFileSync('src/uiOs/navigation/FloatingBottomNav.tsx', 'utf8');
 
     expect(shell).toContain('data-shell-bottom-reserve');
-    expect(shell).toContain('scroll-padding-only');
+    expect(shell).toContain('content-clearance');
     expect(shell).not.toContain('pb-[calc(9rem+env(safe-area-inset-bottom))]');
-    expect(shell).toContain('pb-0 scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
+    expect(shell).toContain('pb-[calc(6.5rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6.5rem+env(safe-area-inset-bottom))]');
     expect(nav).not.toContain('bottom-0 left-0 right-0 bg-[linear-gradient');
     expect(nav).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
   });
