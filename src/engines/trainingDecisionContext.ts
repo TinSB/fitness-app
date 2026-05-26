@@ -230,4 +230,5 @@ export const toStatusRulesDecisionContext = (context: TrainingDecisionContext) =
   healthSummary: context.useHealthDataForReadiness === false ? undefined : context.healthSummary,
   useHealthDataForReadiness: context.useHealthDataForReadiness,
   adaptiveCalibration: context.adaptiveCalibration,
+  nowIso: `${context.currentDateLocalKey}T12:00:00.000Z`,
 });

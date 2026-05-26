@@ -370,6 +370,17 @@ export function TrainingView({
               <div className={classNames('mt-1 font-semibold', primaryTextClassName)}>{formatRest(exercise.rest)}</div>
             </div>
           </div>
+          {(exercise.adaptiveReasons?.length || exercise.adjustment) ? (
+            <div className={classNames('mt-3 rounded-lg border px-3 py-2 text-xs', isDarkTheme ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-600')}>
+              <div className="font-semibold">自动微调说明</div>
+              <div className="mt-1 leading-relaxed">
+                {(exercise.adaptiveReasons && exercise.adaptiveReasons.length ? exercise.adaptiveReasons : [exercise.adjustment])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join(' · ')}
+              </div>
+            </div>
+          ) : null}
         </details>
 
         <div className="mt-4 space-y-3">

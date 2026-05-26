@@ -30,7 +30,7 @@ describe('Today next suggestion order', () => {
       currentLocalDate: '2026-04-28',
       plannedTemplateId: data.selectedTemplateId,
     });
-    const nextTemplateId = pickSuggestedTemplate(data);
+    const nextTemplateId = pickSuggestedTemplate(data, '2026-04-28');
 
     const viewModel = buildTodayViewModel({
       todayState,

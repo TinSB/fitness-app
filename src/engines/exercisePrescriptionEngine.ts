@@ -17,6 +17,7 @@ import type {
 } from '../models/training-model';
 import { applyAdaptiveExerciseRules, buildAdaptiveConservativeDecision, buildAdaptiveDeloadDecision } from './adaptiveFeedbackEngine';
 import { getDayState, getLoadBias, getRepBand } from './adaptiveRecommendationEngine';
+import { buildTrainingLapseSignal, decayCalibrationStateForLapse } from './trainingLapseEngine';
 import { buildAdherenceReport } from './analytics';
 import { actionableSorenessAreas, clamp, clone, enrichExercise, getPrimaryMuscles, number, resolveMode, safeNumber } from './engineUtils';
 import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
@@ -308,6 +309,7 @@ export const applyStatusRules = (
     healthSummary?: HealthSummary;
     useHealthDataForReadiness?: boolean;
     adaptiveCalibration?: AdaptiveCalibrationState;
+    nowIso?: string;
   } = {}
 ) => {
   const recommendationHistory = filterAnalyticsHistory(history);
@@ -318,14 +320,17 @@ export const applyStatusRules = (
     useHealthDataForReadiness: context.useHealthDataForReadiness,
   });
   const readiness = mapReadinessToSignal(readinessResult, recentPoorSleepDays(status, recommendationHistory));
-  const deloadDecision = buildAdaptiveDeloadDecision({
-    history: recommendationHistory,
-    todayStatus: status,
-    screeningProfile: screening,
-    templates: [template],
-    selectedTemplateId: template.id,
-    trainingMode: trainingMode as TrainingMode,
-  });
+  const deloadDecision = buildAdaptiveDeloadDecision(
+    {
+      history: recommendationHistory,
+      todayStatus: status,
+      screeningProfile: screening,
+      templates: [template],
+      selectedTemplateId: template.id,
+      trainingMode: trainingMode as TrainingMode,
+    },
+    { nowIso: context.nowIso },
+  );
   const mesocycleWeek = getCurrentMesocycleWeek(mesocyclePlan);
   const painPatterns = buildPainPatterns(recommendationHistory);
 
@@ -498,10 +503,12 @@ export const applyStatusRules = (
     }
 
     if (context.adaptiveCalibration) {
+      const lapse = buildTrainingLapseSignal(recommendationHistory, context.nowIso);
+      const lapsedCalibration = decayCalibrationStateForLapse(context.adaptiveCalibration, lapse) || context.adaptiveCalibration;
       const exerciseKey = next.canonicalExerciseId || next.baseId || next.id;
       const repBand = getRepBand(number(next.repMin), number(next.repMax));
-      const dayState = getDayState(readiness);
-      const biasResult = getLoadBias(context.adaptiveCalibration, exerciseKey, repBand, dayState);
+      const dayState = getDayState(readiness, status);
+      const biasResult = getLoadBias(lapsedCalibration, exerciseKey, repBand, dayState);
       if (biasResult.applied) {
         const currentTop = number(next.adaptiveTopSetFactor) || 1;
         const currentBackoff = number(next.adaptiveBackoffFactor) || 0.92;

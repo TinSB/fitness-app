@@ -9,6 +9,7 @@ import type {
   ReadinessSignal,
   RecommendationAcceptance,
   RecommendationRecord,
+  TodayStatus,
   TrainingSession,
   TrainingSetLog,
 } from '../models/training-model';
@@ -61,11 +62,30 @@ export const getRepBand = (repMin: number, repMax: number): AdaptiveRepBand => {
   return 'high';
 };
 
-export const getDayState = (input?: ReadinessSignal | { level?: string } | null): AdaptiveDayState => {
+const dayStateFromSleepEnergy = (status?: TodayStatus | null): AdaptiveDayState => {
+  if (!status) return 'green';
+  const poorSleep = status.sleep === '差';
+  const lowEnergy = status.energy === '低';
+  const goodSleep = status.sleep === '好';
+  const highEnergy = status.energy === '高';
+  if (poorSleep && lowEnergy) return 'red';
+  if (poorSleep || lowEnergy) return 'yellow';
+  if (goodSleep && highEnergy) return 'green';
+  return 'green';
+};
+
+export const getDayState = (
+  input?: ReadinessSignal | { level?: string } | null,
+  status?: TodayStatus | null,
+): AdaptiveDayState => {
   const level = input?.level;
   if (level === 'red') return 'red';
   if (level === 'yellow') return 'yellow';
-  return 'green';
+  if (level === 'green') {
+    const fallback = dayStateFromSleepEnergy(status);
+    return fallback === 'red' ? 'yellow' : fallback;
+  }
+  return dayStateFromSleepEnergy(status);
 };
 
 export const makeEntryKey = (exerciseId: string, repBand: AdaptiveRepBand, dayState: AdaptiveDayState) =>

@@ -20,10 +20,18 @@ import {
   SLEEP_STATES,
   SPLIT_TYPES,
   TRAINING_LEVELS,
+  type AdaptiveCalibrationEntry,
+  type AdaptiveCalibrationState,
+  type AdaptiveDayState,
+  type AdaptiveObservation,
+  type AdaptiveOutcome,
+  type AdaptiveRepBand,
   type AppData,
   type DataRepairLogEntry,
   type DismissedCoachAction,
   type DismissedDataHealthIssue,
+  type RecommendationAcceptance,
+  type RecommendationRecord,
   type HealthImportBatch,
   type HealthIntegrationSettings,
   type HealthMetricSample,
@@ -95,6 +103,120 @@ export const sanitizeHealthIntegrationSettings = (settings: unknown): HealthInte
       typeof raw.showExternalWorkoutsInCalendar === 'boolean'
         ? raw.showExternalWorkoutsInCalendar
         : DEFAULT_HEALTH_INTEGRATION_SETTINGS.showExternalWorkoutsInCalendar,
+  };
+};
+
+const ADAPTIVE_REP_BANDS: AdaptiveRepBand[] = ['low', 'moderate', 'high'];
+const ADAPTIVE_DAY_STATES: AdaptiveDayState[] = ['green', 'yellow', 'red'];
+const ADAPTIVE_OUTCOMES: AdaptiveOutcome[] = [
+  'too_light',
+  'on_target',
+  'too_heavy',
+  'failed',
+  'pain',
+  'technique_breakdown',
+];
+const RECOMMENDATION_ACCEPTANCES: RecommendationAcceptance[] = [
+  'accepted',
+  'overridden_up',
+  'overridden_down',
+  'skipped',
+  'unknown',
+];
+
+const clampBias = (value: unknown) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 1;
+  return Math.min(1.15, Math.max(0.85, num));
+};
+
+const sanitizeAdaptiveObservation = (input: unknown): AdaptiveObservation | null => {
+  if (!isPlainObject(input)) return null;
+  const exerciseId = pickString(input.exerciseId);
+  if (!exerciseId) return null;
+  const outcome = pickEnum(input.outcome, ADAPTIVE_OUTCOMES, 'on_target');
+  return {
+    date: pickString(input.date),
+    sessionId: pickString(input.sessionId),
+    exerciseId,
+    recommendedKg: finiteNumber(input.recommendedKg) ?? 0,
+    actualKg: finiteNumber(input.actualKg) ?? 0,
+    plannedReps: finiteNumber(input.plannedReps) ?? 0,
+    actualReps: finiteNumber(input.actualReps) ?? 0,
+    actualRir: finiteNumber(input.actualRir) ?? undefined,
+    techniqueQuality: typeof input.techniqueQuality === 'string' ? (input.techniqueQuality as AdaptiveObservation['techniqueQuality']) : undefined,
+    painFlag: Boolean(input.painFlag),
+    outcome,
+    loadDeltaRatio: finiteNumber(input.loadDeltaRatio) ?? 0,
+    bias: finiteNumber(input.bias) ?? 1,
+  };
+};
+
+const sanitizeAdaptiveCalibrationEntry = (input: unknown): AdaptiveCalibrationEntry | null => {
+  if (!isPlainObject(input)) return null;
+  const exerciseId = pickString(input.exerciseId);
+  if (!exerciseId) return null;
+  const repBand = pickEnum(input.repBand, ADAPTIVE_REP_BANDS, 'moderate');
+  const dayState = pickEnum(input.dayState, ADAPTIVE_DAY_STATES, 'green');
+  const samples = pickArray(input.recentSamples).map(sanitizeAdaptiveObservation).filter(Boolean) as AdaptiveObservation[];
+  return {
+    exerciseId,
+    repBand,
+    dayState,
+    loadBias: clampBias(input.loadBias),
+    observationCount: Math.max(0, Math.round(finiteNumber(input.observationCount) ?? samples.length)),
+    recentSamples: samples.slice(0, 6),
+    frozenUntil: typeof input.frozenUntil === 'string' ? input.frozenUntil : undefined,
+    lastUpdated: pickString(input.lastUpdated),
+    reasonHints: pickStringArray(input.reasonHints).slice(0, 3),
+  };
+};
+
+const sanitizeRecommendationRecord = (input: unknown): RecommendationRecord | null => {
+  if (!isPlainObject(input)) return null;
+  const id = pickString(input.id);
+  const exerciseId = pickString(input.exerciseId);
+  if (!id || !exerciseId) return null;
+  const recommendedRir = Array.isArray(input.recommendedRir) && input.recommendedRir.length === 2
+    ? ([finiteNumber(input.recommendedRir[0]) ?? 1, finiteNumber(input.recommendedRir[1]) ?? 3] as [number, number])
+    : undefined;
+  return {
+    id,
+    sessionId: pickString(input.sessionId),
+    date: pickString(input.date),
+    exerciseId,
+    baseId: pickString(input.baseId) || undefined,
+    setIndex: Math.max(0, Math.round(finiteNumber(input.setIndex) ?? 0)),
+    setType: typeof input.setType === 'string' ? input.setType : undefined,
+    repBand: pickEnum(input.repBand, ADAPTIVE_REP_BANDS, 'moderate'),
+    dayState: pickEnum(input.dayState, ADAPTIVE_DAY_STATES, 'green'),
+    trainingMode: pickString(input.trainingMode) || 'hybrid',
+    recommendedKg: finiteNumber(input.recommendedKg) ?? 0,
+    recommendedReps: finiteNumber(input.recommendedReps) ?? 0,
+    recommendedRir,
+    appliedBias: clampBias(input.appliedBias),
+    actualKg: finiteNumber(input.actualKg) ?? undefined,
+    actualReps: finiteNumber(input.actualReps) ?? undefined,
+    actualRir: finiteNumber(input.actualRir) ?? undefined,
+    techniqueQuality: typeof input.techniqueQuality === 'string' ? (input.techniqueQuality as RecommendationRecord['techniqueQuality']) : undefined,
+    painFlag: Boolean(input.painFlag),
+    acceptance: pickEnum(input.acceptance, RECOMMENDATION_ACCEPTANCES, undefined as unknown as RecommendationAcceptance),
+    outcome: pickEnum(input.outcome, ADAPTIVE_OUTCOMES, undefined as unknown as AdaptiveOutcome),
+    outcomeReason: pickString(input.outcomeReason) || undefined,
+    reconciledAt: pickString(input.reconciledAt) || undefined,
+  };
+};
+
+export const sanitizeAdaptiveCalibrationState = (input: unknown): AdaptiveCalibrationState | undefined => {
+  if (!isPlainObject(input)) return undefined;
+  const entries = pickArray(input.entries).map(sanitizeAdaptiveCalibrationEntry).filter(Boolean) as AdaptiveCalibrationEntry[];
+  const log = pickArray(input.recommendationLog).map(sanitizeRecommendationRecord).filter(Boolean) as RecommendationRecord[];
+  if (!entries.length && !log.length) return undefined;
+  return {
+    version: 1,
+    entries,
+    recommendationLog: log.slice(0, 240),
+    lastUpdated: pickString(input.lastUpdated),
   };
 };
 
@@ -878,6 +1000,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     migrated.pendingSessionPatches ?? pickRecord(migrated.settings).pendingSessionPatches,
   );
   const dataRepairLogs = sanitizeDataRepairLogs(pickRecord(migrated.settings).dataRepairLogs);
+  const adaptiveCalibration = sanitizeAdaptiveCalibrationState(migrated.adaptiveCalibration ?? pickRecord(migrated.settings).adaptiveCalibration);
   const sanitized: AppData = {
     schemaVersion: STORAGE_VERSION,
     templates,
@@ -901,6 +1024,7 @@ export const sanitizeData = (saved: unknown): AppData => {
     dismissedCoachActions,
     dismissedDataHealthIssues,
     pendingSessionPatches,
+    adaptiveCalibration,
     settings: {
       ...pickRecord(migrated.settings),
       schemaVersion: STORAGE_VERSION,

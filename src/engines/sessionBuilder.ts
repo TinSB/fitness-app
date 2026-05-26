@@ -19,6 +19,7 @@ import {
   getLoadBias,
   getRepBand,
 } from './adaptiveRecommendationEngine';
+import { buildTrainingLapseSignal } from './trainingLapseEngine';
 import { buildSessionExplanations, buildTodayExplanations } from './explainability/trainingExplainability';
 import { applyStatusRules, buildSetPrescription, buildWarmupSets, makeSuggestion, shouldUseTopBackoff } from './progressionEngine';
 import { buildSupportPlan, buildWeeklyPrescription, getMuscleRemaining } from './supportPlanEngine';
@@ -91,6 +92,12 @@ const buildSessionExerciseSetLogs = (
     done: false,
   }));
 
+  const calibrationHint = (exercise.adaptiveReasons || []).find((reason) => reason && reason.includes('自动'));
+  const suggestionText = [suggestion.note, setPrescription.summary, calibrationHint]
+    .filter((part): part is string => Boolean(part && part.trim()))
+    .join(' · ')
+    .trim();
+
   return {
     ...exercise,
     id: resolvedId,
@@ -100,7 +107,7 @@ const buildSessionExerciseSetLogs = (
     autoReplaced: false,
     targetSummary: suggestion.targetSummary,
     lastSummary: suggestion.lastSummary,
-    suggestion: `${suggestion.note} ${setPrescription.summary}`.trim(),
+    suggestion: suggestionText,
     setPrescription,
     warmupSets: buildWarmupSets(setPrescription.topWeight, exercise),
     alternatives: exercise.alternatives || [],
@@ -117,19 +124,20 @@ export const createSession = (
   supportPlan: ReturnType<typeof buildSupportPlan> | null = null,
   screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
   mesocyclePlan?: AppData['mesocyclePlan'],
-  decisionContext: Partial<TrainingDecisionContext> = {}
+  decisionContextOrDate: Partial<TrainingDecisionContext> | string = {},
 ) => {
-  const context = buildTrainingDecisionContext(
-    {
-      history,
-      todayStatus: status,
-      trainingMode,
-      screeningProfile: screening,
-      mesocyclePlan,
-      programTemplate: DEFAULT_PROGRAM_TEMPLATE,
-    },
-    decisionContext
-  );
+  const decisionData = {
+    history,
+    todayStatus: status,
+    trainingMode,
+    screeningProfile: screening,
+    mesocyclePlan,
+    programTemplate: DEFAULT_PROGRAM_TEMPLATE,
+  };
+  const context =
+    typeof decisionContextOrDate === 'string'
+      ? buildTrainingDecisionContext(decisionData, decisionContextOrDate)
+      : buildTrainingDecisionContext(decisionData, decisionContextOrDate);
   const resolvedStatus = context.todayStatus;
   const resolvedHistory = context.history;
   const resolvedTrainingMode = context.trainingMode;
@@ -276,7 +284,7 @@ export const createSession = (
     explanations: [baselineExplanation, ...explanations],
   };
 
-  const dayState = getDayState(adjustedPlan.readiness);
+  const dayState = getDayState(adjustedPlan.readiness, resolvedStatus);
   const calibrationState = context.adaptiveCalibration;
   const biasForExercise = (exerciseId: string, repMin: number, repMax: number) => {
     if (!calibrationState) return 1;
@@ -346,17 +354,35 @@ export const scoreSuggestedTemplates = (data: Partial<AppData>, decisionContext:
   });
 };
 
-export const pickSuggestedTemplate = (data: Partial<AppData>, decisionContext: Partial<TrainingDecisionContext> = {}) => {
-  const context = buildTrainingDecisionContext(data, decisionContext);
+export const pickSuggestedTemplate = (
+  data: Partial<AppData>,
+  decisionContextOrDate: Partial<TrainingDecisionContext> | string = {},
+) => {
+  const context =
+    typeof decisionContextOrDate === 'string'
+      ? buildTrainingDecisionContext(data, decisionContextOrDate)
+      : buildTrainingDecisionContext(data, decisionContextOrDate);
   const status = context.todayStatus || DEFAULT_STATUS;
   if (Number(status.time) <= 30) return 'quick-30';
 
-  const screening = reconcileScreeningProfile(context.screeningProfile, context.history || []);
-  const deloadDecision = buildAdaptiveDeloadDecision({ ...data, history: context.history, todayStatus: status, trainingMode: context.trainingMode, screeningProfile: screening });
+  const lapseNowIso = `${context.currentDateLocalKey}T12:00:00.000Z`;
+  const screening = reconcileScreeningProfile(context.screeningProfile, context.history || [], { nowIso: lapseNowIso });
+  const deloadDecision = buildAdaptiveDeloadDecision(
+    { ...data, history: context.history, todayStatus: status, trainingMode: context.trainingMode, screeningProfile: screening },
+    { nowIso: lapseNowIso },
+  );
   if (deloadDecision.autoSwitchTemplateId) return deloadDecision.autoSwitchTemplateId;
 
-  const scores = scoreSuggestedTemplates(data, context);
   const templates = data.templates || [];
+  const lapse = buildTrainingLapseSignal(context.allHistory || context.history || [], lapseNowIso);
+  if (lapse.resetRotation) {
+    const fallback = ['push-a', 'upper-a', 'upper'];
+    for (const id of fallback) {
+      if (findTemplate(templates, id)) return id;
+    }
+  }
+
+  const scores = scoreSuggestedTemplates(data, context);
   const latestCompleted = getLatestCompletedSession(context.history || []);
   const nextAfterCompleted = getNextTemplateAfterLastCompletedSession(context.history || [], templates, context.programTemplate || data.programTemplate);
   if (nextAfterCompleted) return nextAfterCompleted;

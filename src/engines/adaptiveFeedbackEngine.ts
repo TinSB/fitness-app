@@ -12,6 +12,7 @@ import type {
 } from '../models/training-model';
 import { actionableSorenessAreas, completedSets, enrichExercise, number, setVolume } from './engineUtils';
 import { inferCorrectionPriority, ISSUE_LABELS } from './screeningEngine';
+import { buildTrainingLapseSignal, decayAdaptiveStateForLapse } from './trainingLapseEngine';
 
 type ExerciseLike = ExerciseTemplate | ExercisePrescription;
 type AdaptiveStateSnapshot = NonNullable<ScreeningProfile['adaptiveState']>;
@@ -224,18 +225,28 @@ export const buildAdaptiveState = (history: TrainingSession[], screening: Screen
   };
 };
 
-export const reconcileScreeningProfile = (screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE, history: TrainingSession[] = []) => {
-  const adaptiveState = buildAdaptiveState(history, screening);
-  const repeatedPainRestrictions = Object.entries(adaptiveState.painByExercise)
+export const reconcileScreeningProfile = (
+  screening: ScreeningProfile = DEFAULT_SCREENING_PROFILE,
+  history: TrainingSession[] = [],
+  options: { nowIso?: string } = {},
+) => {
+  const lapse = buildTrainingLapseSignal(history, options.nowIso);
+  const baseAdaptiveState = buildAdaptiveState(history, screening);
+  const adaptiveState = decayAdaptiveStateForLapse(baseAdaptiveState, lapse);
+  const repeatedPainRestrictions = Object.entries(adaptiveState.painByExercise || {})
     .filter(([, count]) => count >= 2)
     .map(([exerciseId]) => exerciseId);
+  const existingRestrictions = screening.restrictedExercises || [];
+  const restrictedExercises = lapse.resetFatigue
+    ? Array.from(new Set(repeatedPainRestrictions))
+    : Array.from(new Set([...existingRestrictions, ...repeatedPainRestrictions]));
 
   const next: ScreeningProfile = {
     ...DEFAULT_SCREENING_PROFILE,
     ...screening,
     postureFlags: { ...DEFAULT_SCREENING_PROFILE.postureFlags, ...(screening.postureFlags || {}) },
     movementFlags: { ...DEFAULT_SCREENING_PROFILE.movementFlags, ...(screening.movementFlags || {}) },
-    restrictedExercises: [...new Set([...(screening.restrictedExercises || []), ...repeatedPainRestrictions])],
+    restrictedExercises,
     adaptiveState,
   };
 
@@ -462,9 +473,22 @@ export const buildAdaptiveDeloadDecision = (
   data: Pick<Partial<AppData>, 'history' | 'screeningProfile' | 'todayStatus' | 'templates'> & {
     selectedTemplateId?: string;
     trainingMode?: AppData['trainingMode'];
-  }
+  },
+  options: { nowIso?: string } = {},
 ): DeloadDecision => {
   const history = data.history || [];
+  const lapse = buildTrainingLapseSignal(history, options.nowIso);
+  if (lapse.resetFatigue) {
+    return {
+      level: 'none',
+      triggered: false,
+      reasons: lapse.reasons.length ? lapse.reasons : ['距离上次训练已久，疲劳已重置。'],
+      title: '暂时不需要减量',
+      strategy: 'none',
+      volumeMultiplier: 1,
+      options: ['维持原计划'],
+    };
+  }
   const recentSessions = history.slice(0, 4);
   const adaptive: AdaptiveStateSnapshot = data.screeningProfile?.adaptiveState || DEFAULT_SCREENING_PROFILE.adaptiveState!;
   const currentStatus = data.todayStatus || DEFAULT_STATUS;
