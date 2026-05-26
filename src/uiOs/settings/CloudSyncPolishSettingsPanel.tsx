@@ -376,8 +376,22 @@ export function CloudSyncPolishSettingsPanel({
   // store comes from the *current* AppData so subsequent mounts can detect
   // drift and reset the confirmation if the user has trained / edited data
   // since pressing "创建备份".
+  //
+  // IMPORTANT: only persist when the in-memory state actually represents
+  // user-confirmed progress. Otherwise the unauthenticated-mount branch
+  // (which resets React state to empty on every PWA open before the auth
+  // session check resolves) would overwrite a perfectly good persisted
+  // envelope with empties, breaking the very persistence this effect is
+  // trying to maintain. The dedicated sign-out transition is responsible
+  // for clearing the envelope when the user explicitly leaves the
+  // account.
   React.useEffect(() => {
     if (!appData) return;
+    const hasUserProgress =
+      localBackupDryRunUiState.backupExportConfirmed ||
+      localBackupDryRunUiState.dryRunRequested ||
+      Boolean(localBackupDryRunUiState.backupJson);
+    if (!hasUserProgress) return;
     const hash = buildAppDataSnapshotHash(appData);
     saveCloudSyncFlowState(
       {
