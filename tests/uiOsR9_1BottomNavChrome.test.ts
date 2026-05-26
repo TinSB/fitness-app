@@ -21,10 +21,10 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
       }),
     );
 
-    expect(html).toContain('data-bottom-nav-safe-area="native-offset"');
+    expect(html).toContain('data-bottom-nav-safe-area="viewport-edge"');
     expect(html).not.toContain('data-bottom-nav-frame="transparent"');
     expect(html).toContain('data-theme-surface="bottom_sheet"');
-    expect(html).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0');
+    expect(html).toContain('fixed bottom-2 left-0 right-0');
     expect(html).toContain('py-2.5');
     expect(html).not.toContain('pb-[calc(2rem+env(safe-area-inset-bottom))]');
     expect(html).not.toContain('bg-[#101012]/95');
@@ -67,7 +67,7 @@ describe('UI-OS R9.1 bottom nav chrome', () => {
     );
 
     expect(html).toContain('data-bottom-nav-hidden="true"');
-    expect(html).toContain('translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('translate-y-[calc(100%+1rem)]');
     expect(html).toContain('data-bottom-nav-background="light"');
     expect(html).not.toContain('bg-[#0a0a0b]');
   });

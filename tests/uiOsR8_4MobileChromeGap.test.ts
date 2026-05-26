@@ -37,9 +37,9 @@ describe('UI-OS R8.4 mobile chrome gap', () => {
       ),
     );
 
-    expect(source).toContain('data-bottom-nav-safe-area="native-offset"');
+    expect(source).toContain('data-bottom-nav-safe-area="viewport-edge"');
     expect(source).not.toContain('data-bottom-nav-frame="transparent"');
-    expect(source).toContain('fixed bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] left-0 right-0');
+    expect(source).toContain('fixed bottom-2 left-0 right-0');
     expect(source).toContain('py-2.5');
     expect(source).not.toContain("bg-[#101012]/95");
     expect(source).not.toContain('bg-slate-50/95');
