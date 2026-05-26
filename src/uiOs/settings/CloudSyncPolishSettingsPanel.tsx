@@ -21,6 +21,7 @@ import { exportAppData, getBackupFileName } from '../../storage/backup';
 import { validateAppDataSchema } from '../../storage/appDataValidation';
 import {
   clearCloudSyncFlowState,
+  isEmptyCloudSyncFlowState,
   loadCloudSyncFlowState,
   saveCloudSyncFlowState,
 } from '../../storage/localStorageAdapter';
@@ -321,20 +322,35 @@ export function CloudSyncPolishSettingsPanel({
     });
   }, [appData, localBackupDryRunUiState, nowIso, runtimeInput.localBackupDryRunUi, syncPreflight]);
 
-  // We only want to wipe the persisted backup-flow state on an actual
-  // sign-out transition. The previous code ran on every mount that saw
-  // authRuntime?.authenticated !== true, which included the (very common)
-  // "user hasn't signed in yet on this device load" case. That made the
-  // persistence a no-op: a fresh PWA open with no live auth state would
-  // immediately wipe whatever was on disk, so the user's previously
-  // completed "创建备份 + 查看将同步的内容" steps appeared lost.
+  // Track signed-in transitions explicitly so we can:
+  //   - rehydrate React state from localStorage when the user signs in
+  //     (mount-time lazy initializer alone is not enough because the
+  //     check_session effect resolves AFTER mount, and the
+  //     unauthenticated-mount branch below has already reset state)
+  //   - clear localStorage only on real sign-out, never on a "PWA just
+  //     opened with no auth state yet" mount.
   const wasAuthenticatedRef = React.useRef<boolean>(authRuntime?.authenticated === true);
   React.useEffect(() => {
     const isAuthenticated = authRuntime?.authenticated === true;
+    const justSignedIn = !wasAuthenticatedRef.current && isAuthenticated;
     const justSignedOut = wasAuthenticatedRef.current && !isAuthenticated;
     wasAuthenticatedRef.current = isAuthenticated;
 
-    if (isAuthenticated) return;
+    if (isAuthenticated) {
+      if (justSignedIn && appData) {
+        const hash = buildAppDataSnapshotHash(appData);
+        const persisted = loadCloudSyncFlowState({ expectedAppDataSnapshotHash: hash });
+        if (!isEmptyCloudSyncFlowState(persisted)) {
+          setLocalBackupDryRunUiState({
+            backupJson: persisted.backupJson,
+            backupExportConfirmed: persisted.backupExportConfirmed,
+            dryRunRequested: persisted.dryRunRequested,
+          });
+        }
+      }
+      return;
+    }
+
     setLocalBackupDryRunUiState({
       backupJson: null,
       backupExportConfirmed: false,
@@ -352,6 +368,8 @@ export function CloudSyncPolishSettingsPanel({
     if (justSignedOut) {
       clearCloudSyncFlowState();
     }
+    // appData is read inside the signed-in branch only; safe to omit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authRuntime?.authenticated]);
 
   // Persist backup / dry-run flow state every time it changes. The hash we
