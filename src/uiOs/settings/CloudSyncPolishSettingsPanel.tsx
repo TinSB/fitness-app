@@ -316,6 +316,26 @@ export function CloudSyncPolishSettingsPanel({
     });
   }, [authRuntime?.authenticated]);
 
+  // Clear any stale "发现冲突 / 恢复本地模式" process notice when the user
+  // re-enters the cloud-sync panel with a freshly ready backup. Without this,
+  // a single failed enable-sync attempt would leave the warning pill on the
+  // screen forever and the toggle would *look* dead even after the user re-
+  // backed up and the underlying hash-parity bug had been fixed.
+  React.useEffect(() => {
+    if (productionSyncApplyState.pending) return;
+    if (productionSyncApplyState.message == null) return;
+    if (localBackupDryRunUi?.backupReady !== true) return;
+    if (productionSyncApplyState.result?.ok === true) return;
+    setProductionSyncApplyState((current) =>
+      current.pending ? current : { pending: false, result: null, message: null },
+    );
+  }, [
+    localBackupDryRunUi?.backupReady,
+    productionSyncApplyState.message,
+    productionSyncApplyState.pending,
+    productionSyncApplyState.result?.ok,
+  ]);
+
   const handleCreateLocalBackup = React.useCallback(() => {
     if (!appData || syncPreflight.readyFor21B !== true) return;
 
