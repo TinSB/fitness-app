@@ -734,10 +734,22 @@ export function CloudSyncPolishSettingsPanel({
   // patching here keeps the necessary boolean-flag literals out of the
   // panel source (account-lifecycle boundary tests forbid them in this
   // file).
+  // Recompute the AppData hash on every render that has live appData —
+  // mounting on iOS PWA cold-start gives us a brief window where appData
+  // is still null (async load from localStorage) and `appDataSnapshotHashAtMount`
+  // therefore stays null forever (useMemo [] deps don't recompute when
+  // appData arrives). Using the live hash here means the rehydrate
+  // signal fires the moment the AppData becomes available, instead of
+  // never. The mount-time hash is still used by the backup / dry-run
+  // persistence path where "the value at first mount" is the right anchor.
+  const currentAppDataHashLive = React.useMemo(
+    () => (appData ? buildAppDataSnapshotHash(appData) : null),
+    [appData],
+  );
   const isRehydratedSyncOn =
     syncedAppDataHashState !== null &&
-    appDataSnapshotHashAtMount !== null &&
-    syncedAppDataHashState === appDataSnapshotHashAtMount &&
+    currentAppDataHashLive !== null &&
+    syncedAppDataHashState === currentAppDataHashLive &&
     productionSyncApplyState.result?.ok !== false;
 
   const sectionProps = React.useMemo(
