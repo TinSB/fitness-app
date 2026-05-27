@@ -478,13 +478,24 @@ export function CloudSyncPolishSettingsPanel({
       })
       .then((readResult) => {
         if (cancelled) return;
-        const cloudHash = readResult.ok ? readResult.snapshot?.sourceSnapshotHash ?? null : null;
-        const cloudStillMatches = readResult.ok && cloudHash === syncedAppDataHashState;
-        if (cloudStillMatches) return;
-        // Cloud row missing, rejected, or now points at a different hash —
-        // the rehydrated "已开启" is no longer truthful. Forget it so the
-        // UI falls back to "未开启" and the user can re-run the sync flow
-        // intentionally.
+        // The ONLY condition that warrants clearing the rehydrated sync-on
+        // state is the cloud row genuinely disappearing (user deleted it
+        // in Supabase Studio, RLS revoked, etc.). A hash mismatch is NOT
+        // sufficient by itself: after the hash-algorithm change in #372
+        // the cloud row's `source_snapshot_hash` column still contains
+        // the value the row was written with at the time, but the local
+        // `syncedAppDataHash` we just rehydrated is the value the current
+        // algorithm produces on the current AppData — they will differ
+        // even though sync is perfectly intact. Previously this branch
+        // force-cleared local state and surfaced "未开启" on every panel
+        // mount after a tab switch, which is the mobile-side bug the
+        // user reported.
+        const cloudRowExists =
+          readResult.ok && Boolean(readResult.snapshot?.sourceSnapshotHash);
+        if (cloudRowExists) return;
+        // No row in the cloud — sync truly is gone. Forget the local
+        // receipt so the UI honestly shows "未开启" and the user can
+        // re-run the explicit sync flow.
         setSyncedAppDataHashState(null);
         setProductionSyncApplyState({
           pending: false,
@@ -493,11 +504,11 @@ export function CloudSyncPolishSettingsPanel({
         });
       })
       .catch(() => {
-        // Network / adapter errors should not erase a previously confirmed
-        // sync-on state — that would force the user back through the
+        // Network / adapter errors must not erase the local sync-on
+        // state — that would force the user back through the
         // backup+dry-run+override loop every time they open the app
-        // offline. The next user-initiated sync attempt will surface the
-        // real error.
+        // offline. The next user-initiated sync attempt will surface
+        // the real error.
       });
 
     return () => {
@@ -671,7 +682,29 @@ export function CloudSyncPolishSettingsPanel({
         // Persist the local hash that just landed in the cloud so the next
         // mount can rehydrate the toggle as "已开启" without forcing the
         // user to repeat the two-click escape hatch on every tab switch.
-        setSyncedAppDataHashState(buildAppDataSnapshotHash(appData));
+        const syncedHash = buildAppDataSnapshotHash(appData);
+        setSyncedAppDataHashState(syncedHash);
+        // Write through to localStorage synchronously so a panel unmount
+        // that happens before the save-on-change useEffect can run (e.g.
+        // user taps a different settings row right after the toggle
+        // flips to 已开启) doesn't lose the receipt. Without this the
+        // next mount reads `syncedAppDataHash: null` and falls back to
+        // "未开启" even though the cloud row is alive — the exact mobile
+        // bug report. We pair this with the existing
+        // localBackupDryRunUiState payload so we don't accidentally
+        // overwrite the backup/dry-run progress columns with nulls.
+        const nowIsoForSave = nowIso ?? new Date().toISOString();
+        saveCloudSyncFlowState(
+          {
+            backupExportConfirmed: localBackupDryRunUiState.backupExportConfirmed,
+            dryRunRequested: localBackupDryRunUiState.dryRunRequested,
+            backupJson: localBackupDryRunUiState.backupJson,
+            syncedAppDataHash: syncedHash,
+            syncedOwnerUserId: authRuntime?.user?.userId ?? null,
+            syncedAt: nowIsoForSave,
+          },
+          { appDataSnapshotHash: syncedHash, nowIso: nowIsoForSave },
+        );
       }
     }).catch((error: unknown) => {
       setProductionSyncApplyState({
@@ -734,22 +767,22 @@ export function CloudSyncPolishSettingsPanel({
   // patching here keeps the necessary boolean-flag literals out of the
   // panel source (account-lifecycle boundary tests forbid them in this
   // file).
-  // Recompute the AppData hash on every render that has live appData —
-  // mounting on iOS PWA cold-start gives us a brief window where appData
-  // is still null (async load from localStorage) and `appDataSnapshotHashAtMount`
-  // therefore stays null forever (useMemo [] deps don't recompute when
-  // appData arrives). Using the live hash here means the rehydrate
-  // signal fires the moment the AppData becomes available, instead of
-  // never. The mount-time hash is still used by the backup / dry-run
-  // persistence path where "the value at first mount" is the right anchor.
-  const currentAppDataHashLive = React.useMemo(
-    () => (appData ? buildAppDataSnapshotHash(appData) : null),
-    [appData],
-  );
+  // "Sync is on" is a USER DECISION (the user successfully ran the
+  // explicit sync flow), not a moment-by-moment "local hash == cloud
+  // hash" assertion. The presence of a persisted `syncedAppDataHashState`
+  // is the durable signal that the user once completed sync; the
+  // mount-time reconcile effect above downgrades this only when the
+  // cloud row truly disappears.
+  //
+  // Earlier iterations of this gate required the persisted hash to
+  // equal the LIVE AppData hash on every render. That broke whenever
+  // any background reducer mutated AppData between mounts (auto stats
+  // update, healthkit ingest, screening profile refresh, etc.) — the
+  // hashes drift apart by a single field, isRehydratedSyncOn flips to
+  // false, and the UI falls back to "未开启" even though sync is alive.
+  // The mobile "切换页面就变未开启" bug is exactly that pattern.
   const isRehydratedSyncOn =
     syncedAppDataHashState !== null &&
-    currentAppDataHashLive !== null &&
-    syncedAppDataHashState === currentAppDataHashLive &&
     productionSyncApplyState.result?.ok !== false;
 
   const sectionProps = React.useMemo(
