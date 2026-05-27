@@ -2,6 +2,9 @@ import type { ExercisePrescription, ExerciseTemplate, PerformanceSnapshot, Train
 import { findPreviousPerformance, findRecentPerformances } from './adaptiveFeedbackEngine';
 import { number, repsText, setVolume, weightText } from './engineUtils';
 import { buildPracticalWarmupPolicy } from './practicalWarmupPolicy';
+import { buildSetWeightFineTune } from './setWeightFineTuneEngine';
+import { buildExerciseTypeBucket } from './exerciseTypeBucketEngine';
+import { buildRirCalibration } from './rirCalibrationEngine';
 
 type ExerciseForProgression = Pick<
   ExerciseTemplate,
@@ -72,6 +75,46 @@ const rirAllowsProgress = (performance: PerformanceSnapshot | null, exercise: Ex
 const roundToUnit = (value: number, unit: number) => Math.max(unit, Math.round(value / unit) * unit);
 const roundLoad = (value: number, unit = 2.5) => Math.max(unit, Math.round(value / unit) * unit);
 
+// Precision recommendation helper: when the user has enough recent history
+// on this exercise, fineTuneEngine projects the next-set weight from the
+// 8-week e1RM trend (linear regression, capped at +4 %/wk). We blend that
+// projection into the existing decision tree as follows:
+//   * If fineTune has insufficient data → ignore, keep the legacy path.
+//   * If the legacy path wants to back off (technique poor / volume drop /
+//     RIR too low), respect that — never override a safety brake.
+//   * Otherwise replace the legacy "+1 kg / +5 %" step with the fineTune
+//     suggestion, clamped to ±10 % of the most recent working weight so a
+//     one-off testing day cannot inflate it.
+const applyFineTuneIfDataRich = (
+  baselineWeight: number,
+  lastWorkingWeight: number,
+  fineTuneSuggested: number,
+  fineTuneFallbackReason: string | undefined,
+  shouldBackoff: boolean,
+): number => {
+  if (shouldBackoff) return baselineWeight;
+  if (fineTuneFallbackReason === 'insufficient_history' || fineTuneFallbackReason === 'rep_range_invalid') {
+    return baselineWeight;
+  }
+  if (!Number.isFinite(fineTuneSuggested) || fineTuneSuggested <= 0) return baselineWeight;
+  const minAllowed = lastWorkingWeight * 0.9;
+  const maxAllowed = lastWorkingWeight * 1.1;
+  const clampedFine = Math.max(minAllowed, Math.min(maxAllowed, fineTuneSuggested));
+  // Round to the same 2.5 kg plate grid fineTune already uses so downstream
+  // formatting is consistent with the rest of the panel.
+  const roundedFine = Math.round(clampedFine / 2.5) * 2.5;
+  // When the legacy path already wants to add weight (`baselineWeight >
+  // lastWorkingWeight`) but fineTune's linear trend is flat (suggested ==
+  // lastWorkingWeight), respect the legacy signal — the user finished
+  // every set at the top of the range, that IS "ready to add" even if
+  // the e1RM regression hasn't moved yet. Otherwise take fineTune's
+  // medical-grade projection.
+  if (baselineWeight > lastWorkingWeight && roundedFine <= lastWorkingWeight) {
+    return baselineWeight;
+  }
+  return roundedFine;
+};
+
 const progressionIncrement = (exercise: ExerciseForProgression, currentWeight: number) => {
   const unit = number(exercise.progressionUnitKg) || 1;
   const percent = (exercise.progressionPercent?.[0] || 5) / 100;
@@ -134,11 +177,56 @@ export const makeSuggestion = (templateExercise: ExerciseForProgression, history
     hitTop && previousHitTop && !tooHard && !templateExercise.progressLocked && !templateExercise.conservativeTopSet && !techniqueBlocksProgress;
   const shouldBackoff = tooHard || dropped || techniqueSuggestsBackoff;
 
-  let nextWeight = shouldBackoff
+  const baselineWeight = shouldBackoff
     ? Math.max(number(templateExercise.progressionUnitKg) || 1, lastWeight - increment)
     : shouldAdd
       ? lastWeight + increment
       : lastWeight;
+
+  // Apply Feature #1 fine-tune: when the past 8 weeks of work on this
+  // movement give us a stable trend, replace the +1 kg / +5 % default
+  // step with a 2.5 kg-rounded projection from the linear e1RM slope.
+  // Falls back to the legacy baseline when data is sparse or the user is
+  // on a hard-backoff path (technique poor / volume dropped).
+  // fineTune projects weight for a specific target rep count. If we ask
+  // it for repMin (the heavy end), it returns the weight that would land
+  // the user at the bottom of their range — which is wildly more weight
+  // than they're currently using if they've been hitting repMax. Mirror
+  // the user's actual working reps instead: take the median rep count
+  // across their most recent working sets so the projection stays in the
+  // same ballpark as their lived experience.
+  const recentReps = last.sets.map((set) => number(set.reps)).filter((r) => r > 0);
+  const medianReps = recentReps.length
+    ? recentReps.slice().sort((a, b) => a - b)[Math.floor(recentReps.length / 2)]
+    : Math.round((number(templateExercise.repMin) + number(templateExercise.repMax)) / 2);
+  const fineTune = buildSetWeightFineTune({
+    history,
+    exerciseId: historyId,
+    baseExerciseId: templateExercise.baseId,
+    targetReps: medianReps,
+    repMin: number(templateExercise.repMin),
+    repMax: number(templateExercise.repMax),
+  });
+  // Any signal that the legacy decision tree wanted to hold the weight or
+  // back off must veto the fineTune projection — fineTune is only the
+  // active recommender on the "we'd be progressing anyway" path. Without
+  // this gate, poor-technique sessions / progressLocked templates /
+  // conservativeBias templates would still drift upward whenever the
+  // fineTune projection moved.
+  const safetyBrake =
+    shouldBackoff ||
+    techniqueBlocksProgress ||
+    Boolean(templateExercise.progressLocked) ||
+    conservativeBias ||
+    !shouldAdd;
+  let nextWeight = applyFineTuneIfDataRich(
+    baselineWeight,
+    lastWeight,
+    fineTune.suggestedWeightKg,
+    fineTune.basis.fallbackReason,
+    safetyBrake,
+  );
+
   let nextReps = shouldAdd || shouldBackoff ? templateExercise.repMin : templateExercise.repMax;
   const avgRir = averageRir(last.sets);
 
