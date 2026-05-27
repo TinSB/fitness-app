@@ -22,6 +22,7 @@ import { buildAdherenceReport } from './analytics';
 import { actionableSorenessAreas, clamp, clone, enrichExercise, getPrimaryMuscles, number, resolveMode, safeNumber } from './engineUtils';
 import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
 import { getCurrentMesocycleWeek } from './mesocycleEngine';
+import { buildSetWeightFineTune } from './setWeightFineTuneEngine';
 import { buildPainPatterns, getExercisePainPattern } from './painPatternEngine';
 import { buildTodayReadiness } from './readinessEngine';
 import { filterAnalyticsHistory } from './sessionHistoryEngine';
@@ -534,6 +535,83 @@ export const applyStatusRules = (
 
     return next;
   });
+
+  // Feature: precision fineTune trust override.
+  //
+  // The brake stack above (mesocycle base-week conservatism, "first-week"
+  // readiness defaults, generic feedback-adjustment, etc.) is the right
+  // floor for a user with NO history. But once the same user has 8+
+  // weeks of stable working-set evidence on a movement and a flat-or-up
+  // weekly e1RM slope, those soft brakes are over-conservative — they
+  // pin the recommended weight at startWeight × 0.96 even when the
+  // user has been comfortably training 20% above that. The "及时跟随
+  // 用户" requirement (see docs/PRECISION_RECOMMENDATION_PLAN.md) needs
+  // the recommender to honour that lived evidence.
+  //
+  // This override lifts the soft brakes ONLY when:
+  //   (a) the per-exercise fineTune engine has enough samples and a
+  //       non-negative weekly e1RM slope (i.e. the user is genuinely
+  //       progressing or holding),
+  //   (b) no SAFETY signal is in play (deload week, recovery readiness,
+  //       pain pattern, warningSource on the prescription),
+  //   (c) we are not currently in a hard-conservative mesocycle phase
+  //       (deload week / hard recovery readiness adjust).
+  //
+  // We deliberately keep the brake when a safety signal is real — pain,
+  // explicit deload, two-day poor-sleep streak, etc. — because those
+  // reflect the user's body, not the recommender's caution.
+  const safetyOverride =
+    deloadDecision.triggered ||
+    deloadDecision.level === 'red' ||
+    readinessResult.trainingAdjustment === 'recovery' ||
+    readiness.poorSleepDays >= 2 ||
+    (hasPoorSleep(status) && hasLowEnergy(status));
+  if (!safetyOverride) {
+    exercises = exercises.map((exercise) => {
+      // Decide whether the existing warning is a HARD safety signal (pain
+      // pattern, data-health issue, repeated injury flag — those reflect
+      // the user's body and stay) or a SOFT default like
+      // 'screeningRestriction', which the default screening profile
+      // stamps on every push/pull/leg exercise until the user fills in
+      // their assessment. Treating screeningRestriction as a hard brake
+      // would mean the trust override never fires for new accounts even
+      // when the user has months of clean training data on the same
+      // movement — the exact "及时跟随" failure mode we are fixing.
+      const hardSafetyWarningSources = new Set(['painPattern', 'painHistory', 'dataHealth']);
+      const hasHardSafetyWarning =
+        Boolean(exercise.warningSource) && hardSafetyWarningSources.has(exercise.warningSource as string);
+      if (hasHardSafetyWarning) return exercise;
+      const exerciseKey = exercise.baseId || exercise.id;
+      const fineTune = buildSetWeightFineTune({
+        history: recommendationHistory,
+        exerciseId: exerciseKey,
+        baseExerciseId: exercise.baseId,
+        targetReps: number(exercise.repMin) || 6,
+        repMin: number(exercise.repMin) || 6,
+        repMax: number(exercise.repMax) || 8,
+      });
+      const userMature =
+        !fineTune.basis.fallbackReason &&
+        fineTune.basis.samplesUsed >= 8 &&
+        fineTune.basis.weeklySlopeKg >= 0;
+      if (!userMature) return exercise;
+      // Release the soft brake. We do NOT touch `sets` (those came from
+      // mesocycle volume scaling which is a separate concern), only the
+      // load brakes. The downstream buildSetPrescription will then emit
+      // a fineTune-respecting weight, and the recommender note inside
+      // progressionRulesEngine will reflect the actual progression.
+      const reason = `连续 ${fineTune.basis.samplesUsed} 组稳定推进，今天解除保守锁定，按实际进度走。`;
+      return {
+        ...exercise,
+        progressLocked: false,
+        conservativeTopSet: false,
+        adaptiveTopSetFactor: Math.max(number(exercise.adaptiveTopSetFactor) || 1, 1),
+        adaptiveBackoffFactor: Math.max(number(exercise.adaptiveBackoffFactor) || 0.92, 0.92),
+        adjustment: [exercise.adjustment, reason].filter(Boolean).join(' / '),
+        adaptiveReasons: [...(exercise.adaptiveReasons || []), reason],
+      };
+    });
+  }
 
   return {
     ...template,
