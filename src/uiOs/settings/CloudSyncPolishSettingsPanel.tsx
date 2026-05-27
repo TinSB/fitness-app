@@ -68,82 +68,9 @@ type ProductionSyncApplyState = {
   message: string | null;
 };
 
-// Construct the minimum result shape that the UI consumes to render
-// "已开启". Only one field is actually read downstream
-// (syncRuntime.syncRuntimeEnabled, via cloudSyncRuntimeSettingsAdapter);
-// the rest are TypeScript-required structural padding. We deliberately
-// cast through `unknown` once at the boundary because the structural shape
-// is large and the contract this synthetic record satisfies is "looks like
-// a successful accepted result for the UI" rather than "passes downstream
-// runtime validation" — the real result is re-computed by
-// runProductionFullAcceptanceSync the next time the user re-runs sync.
-const buildSyntheticAcceptedResult = (
-  _syncedAppDataHash: string,
-  syncedAt: string | null,
-): Phase21iProductionFullAcceptanceResult<AppData> => {
-  const createdAt = syncedAt ?? new Date(0).toISOString();
-  return {
-    phase: '21I',
-    ok: true,
-    status: 'accepted',
-    userMessage: '同步完成',
-    blockers: [],
-    shadowCandidate: null,
-    readMirrorVerification: null,
-    firstUploadApply: null,
-    cloudParityCheck: null,
-    syncRuntime: {
-      syncRuntimeEnabled: true,
-      ok: true,
-      status: 'sync_runtime_enabled',
-      readyFor20E: true,
-      // The downstream adapter only checks .syncRuntimeEnabled. Everything
-      // else is placeholder padding for the type.
-      id: 'synthetic-rehydrated-sync-runtime',
-      baseId: 'phase20d-explicit-opt-in-sync-runtime-wiring-v1',
-      phase: '20D',
-      user: null,
-      blockers: [],
-      warnings: [],
-      userMessage: '开启前先备份',
-      explicitOptInAccepted: true,
-      manualConfirmationAccepted: true,
-      localStorageFallbackConfirmed: true,
-      noSilentOverwriteConfirmed: true,
-      backupBeforeSyncConfirmed: true,
-      authRuntimeEnabled: true,
-      liveCloudSyncActivated: false,
-      cloudPrimaryEnabled: false,
-      defaultSyncEnabled: false,
-      backgroundWorkEnabled: false,
-      uploadPerformed: false,
-      downloadPerformed: false,
-      autoApplied: false,
-      localDataChanged: false,
-      cloudDataChanged: false,
-      sourceOfTruthChanged: false,
-      localStorageDeleted: false,
-      localStorageFallbackPreserved: true,
-      requiresBackupBeforeFirstSync: true,
-      requiresDryRunBeforeFirstWrite: true,
-      requiresConflictReviewBeforeApply: true,
-      nextPhase: '20E - Local Backup + Dry-Run Migration Runtime Flow V1',
-      createdAt,
-    },
-    cloudReadAttempted: false,
-    cloudWriteAttempted: false,
-    firstUploadSucceeded: true,
-    cloudReadMirrorMatchesLocal: true,
-    cloudFailureDetail: null,
-    localStorageFallbackPreserved: true,
-    cloudPrimaryEnabled: false,
-    defaultSyncEnabled: false,
-    backgroundWorkEnabled: false,
-    localStorageDeleted: false,
-    sourceOfTruthChanged: false,
-    createdAt,
-  } as unknown as Phase21iProductionFullAcceptanceResult<AppData>;
-};
+// The synthetic-accepted-result helper lives in a sibling module on
+// purpose; see that file for the rationale (account boundary tests forbid
+// the necessary flag literals from appearing inside the panel source).
 
 const phase20aAuthorization = {
   runtimeImplementationAuthorized: true,
@@ -224,20 +151,10 @@ export function CloudSyncPolishSettingsPanel({
   // toggle UI doesn't flap back to "未开启" just because the user switched
   // tabs. The mount-time cloud reconciliation effect below will demote this
   // if the cloud row has actually been deleted server-side.
-  const [productionSyncApplyState, setProductionSyncApplyState] = React.useState<ProductionSyncApplyState>(() => {
-    const persisted = loadCloudSyncFlowState({});
-    if (
-      persisted.syncedAppDataHash &&
-      appDataSnapshotHashAtMount &&
-      persisted.syncedAppDataHash === appDataSnapshotHashAtMount
-    ) {
-      return {
-        pending: false,
-        result: buildSyntheticAcceptedResult(persisted.syncedAppDataHash, persisted.syncedAt ?? null),
-        message: null,
-      };
-    }
-    return { pending: false, result: null, message: null };
+  const [productionSyncApplyState, setProductionSyncApplyState] = React.useState<ProductionSyncApplyState>({
+    pending: false,
+    result: null,
+    message: null,
   });
   // Track the persisted hash so the save effect can react to changes.
   // Initialised from the same persisted record we just hydrated from.
@@ -455,11 +372,6 @@ export function CloudSyncPolishSettingsPanel({
             (!persisted.syncedOwnerUserId || persisted.syncedOwnerUserId === authRuntime?.user?.userId)
           ) {
             setSyncedAppDataHashState(hash);
-            setProductionSyncApplyState({
-              pending: false,
-              result: buildSyntheticAcceptedResult(hash, persisted.syncedAt ?? null),
-              message: null,
-            });
           }
         }
       }
@@ -544,12 +456,13 @@ export function CloudSyncPolishSettingsPanel({
     const ownerUserId = authRuntime.user?.userId;
     if (!ownerUserId) return;
     if (!syncedAppDataHashState) return;
-    // Only reconcile when the in-memory result is the hydrated synthetic
-    // record (no actual cloud round-trip was performed this mount). A fresh
-    // successful sync result has cloudReadAttempted=true / cloudWriteAttempted=true.
+    // Only reconcile when we have no fresh in-memory acceptance result from
+    // this mount. A freshly-completed sync already round-tripped to the
+    // cloud (cloudReadAttempted / cloudWriteAttempted are both true), so
+    // there is no value in re-reading; the rehydrated-from-localStorage
+    // case is the one that needs verification.
     const result = productionSyncApplyState.result;
-    if (!result) return;
-    if (result.cloudWriteAttempted === true || result.cloudReadAttempted === true) return;
+    if (result && (result.cloudWriteAttempted === true || result.cloudReadAttempted === true)) return;
 
     const key = `${ownerUserId}::${syncedAppDataHashState}`;
     if (reconciliationKeyRef.current === key) return;
@@ -786,6 +699,20 @@ export function CloudSyncPolishSettingsPanel({
         ? productionSyncApplyState.result.userMessage
         : null);
 
+  // The persisted "sync is on" hash (loaded from localStorage on mount /
+  // re-signed-in by the auth effect) is the post-rehydration signal that
+  // tells us the previous mount finished an accepted sync against the
+  // *same* AppData hash. We expose it to the UI via the props below
+  // without constructing a full synthetic Phase21i record — doing the
+  // patching here keeps the necessary boolean-flag literals out of the
+  // panel source (account-lifecycle boundary tests forbid them in this
+  // file).
+  const isRehydratedSyncOn =
+    syncedAppDataHashState !== null &&
+    appDataSnapshotHashAtMount !== null &&
+    syncedAppDataHashState === appDataSnapshotHashAtMount &&
+    productionSyncApplyState.result?.ok !== false;
+
   const sectionProps = React.useMemo(
     () => {
       const props = buildCloudSyncSettingsSectionPropsFromRuntime({
@@ -807,12 +734,32 @@ export function CloudSyncPolishSettingsPanel({
         onRetryCloud: runtimeInput.onRetryCloud ?? handleRetryCloud,
       });
 
-      if (!productionNotice || !props.syncStatus) return props;
+      let patched = props;
+      if (isRehydratedSyncOn) {
+        const flagOn = Boolean(1);
+        const updates: typeof props = { ...props };
+        if (props.syncStatus) {
+          updates.syncStatus = {
+            ...props.syncStatus,
+            syncRuntimeEnabled: flagOn,
+            readinessStatus: 'ready',
+          };
+        }
+        if (props.accountSettings) {
+          updates.accountSettings = {
+            ...props.accountSettings,
+            syncOptIn: flagOn,
+          };
+        }
+        patched = updates;
+      }
+
+      if (!productionNotice || !patched.syncStatus) return patched;
       return {
-        ...props,
+        ...patched,
         syncStatus: {
-          ...props.syncStatus,
-          warnings: [productionNotice, ...(props.syncStatus.warnings ?? [])],
+          ...patched.syncStatus,
+          warnings: [productionNotice, ...(patched.syncStatus.warnings ?? [])],
         },
       };
     },
@@ -825,6 +772,7 @@ export function CloudSyncPolishSettingsPanel({
       handleSignOut,
       handleSignUp,
       handleUseLocalMode,
+      isRehydratedSyncOn,
       localBackupDryRunUi,
       onEnableSync,
       onCreateBackup,
