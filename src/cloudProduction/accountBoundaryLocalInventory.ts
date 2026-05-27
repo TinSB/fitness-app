@@ -1,6 +1,5 @@
 import type { AppData } from '../models/training-model';
 import { validateAppDataSchema } from '../storage/appDataValidation';
-import { exportAppData } from '../storage/backup';
 
 export type Phase19AccountOwnerScope = 'anonymous-local' | 'device-local' | 'cloud-account-candidate';
 
@@ -134,30 +133,28 @@ const hashText = (text: string): string => {
   return `phase19b-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 };
 
-// Normalize through the same export pipeline used to write backups and
-// cloud snapshots so the local hash matches independent of whether the
-// caller already ran sanitizeData. Without this normalization the local
-// in-memory AppData (mutated by reducers since the last load) hashed
-// differently from its sanitized JSON, which caused:
-//   - localBackupDryRunUi.backupReady to stay false (backup hash vs.
-//     local hash never matched -> "查看将同步的内容" never surfaced and
-//     the cloud-sync toggle stayed grey)
-//   - cloudParityCheck to report local-vs-cloud disagreement on the very
-//     first upload (-> "发现冲突" pill stuck on the panel even though
-//     the user had never actually conflicted).
-// The normalization is a defensive no-op when the input is already
-// canonical (sanitizeData is idempotent on its own output).
-const canonicalForHash = (appData: unknown): unknown => {
-  if (appData == null) return appData;
-  try {
-    return JSON.parse(exportAppData(appData as AppData));
-  } catch {
-    return appData;
-  }
-};
-
+// IMPORTANT: this used to canonicalise through `exportAppData →
+// sanitizeData → JSON.parse`. That broke hash stability: `sanitizeData`
+// fills missing `createdAt` / `id` fields with `new Date().toISOString()`
+// and `Date.now()` fallbacks (see programAdjustmentDrafts / Sessions /
+// migrateLegacyExercise), so two consecutive hash calls on the same
+// AppData object produced different hashes whenever any row was missing
+// a timestamp. Dry-run vs parity-check therefore diverged by seconds,
+// surfacing as the iOS "上传完成但云端校验失败" false positive — the
+// write to Supabase landed cleanly, but the recomputed local hash
+// disagreed with the upload receipt and the parity gate refused to
+// flip the toggle to "已开启".
+//
+// We now hash directly on a stable JSON serialisation. Properties:
+//   1. idempotent (pure function, no side effects, no Date.now()).
+//   2. jsonb-roundtrip equal: stableStringify drops `undefined` the
+//      same way `JSON.stringify` does and sorts keys, so the hash is
+//      invariant across the JSON.parse(JSON.stringify(x)) transform
+//      that Supabase's jsonb column applies on write+read.
+// The persistence layer owns schema correctness; the hash only needs
+// determinism + jsonb-roundtrip equality.
 export const buildAppDataSnapshotHash = (appData: unknown): string =>
-  hashText(stableStringify(canonicalForHash(appData)));
+  hashText(stableStringify(appData ?? null));
 
 const cleanText = (value: string | undefined): string | null => {
   const trimmed = value?.trim();

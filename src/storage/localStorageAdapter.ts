@@ -296,3 +296,53 @@ export const isEmptyCloudSyncFlowState = (state: CloudSyncFlowPersistedState): b
   state.dryRunRequested === false &&
   state.backupJson === null &&
   state.syncedAppDataHash === null;
+
+// Diagnostic dump for parity_failed events. Lives here (not in the panel)
+// because the panel is forbidden from touching localStorage directly by
+// the Settings runtime boundary. The payload is small (a single JSON
+// blob of the failed parity summary + blockers + timestamp) so we don't
+// bother with quota tracking; if writing fails we drop silently — it is
+// a best-effort diagnostic surface and is never on the retry path.
+const LAST_PARITY_FAILURE_KEY = 'ironpath_last_parity_failure_v1';
+
+export type LastParityFailurePayload = {
+  ts: string;
+  status: string;
+  blockers: string[];
+  parity: unknown;
+  cloudFailureDetail: string | null;
+};
+
+export const writeLastParityFailureDiagnostic = (
+  payload: LastParityFailurePayload,
+  storage: CloudSyncFlowStorageLike | null = getDefaultCloudSyncFlowStorage(),
+): void => {
+  if (!storage) return;
+  try {
+    storage.setItem(LAST_PARITY_FAILURE_KEY, JSON.stringify(payload));
+  } catch {
+    /* QuotaExceeded / privacy mode — diagnostic is best-effort only. */
+  }
+};
+
+export const readLastParityFailureDiagnostic = (
+  storage: CloudSyncFlowStorageLike | null = getDefaultCloudSyncFlowStorage(),
+): LastParityFailurePayload | null => {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(LAST_PARITY_FAILURE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<LastParityFailurePayload> | null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    return {
+      ts: typeof parsed.ts === 'string' ? parsed.ts : '',
+      status: typeof parsed.status === 'string' ? parsed.status : '',
+      blockers: Array.isArray(parsed.blockers) ? parsed.blockers.filter((b) => typeof b === 'string') : [],
+      parity: parsed.parity ?? null,
+      cloudFailureDetail:
+        typeof parsed.cloudFailureDetail === 'string' ? parsed.cloudFailureDetail : null,
+    };
+  } catch {
+    return null;
+  }
+};
