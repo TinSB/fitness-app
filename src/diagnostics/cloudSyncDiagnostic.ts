@@ -38,6 +38,46 @@ export type CloudSyncDiagnosticUiState =
   | 'not-enabled'
   | 'recovery';
 
+// Whitelist of safe Phase21i status strings. Anything not in this set is
+// dropped to null on its way into the diagnostic — the snapshot must never
+// echo a free-form server response that could carry PII or tokens.
+export type CloudSyncDiagnosticLastSyncStatus =
+  | 'disabled'
+  | 'preflight_not_ready'
+  | 'backup_dry_run_not_ready'
+  | 'shadow_candidate_blocked'
+  | 'cloud_read_blocked'
+  | 'conflict_review_required'
+  | 'upload_blocked'
+  | 'upload_failed'
+  | 'parity_failed'
+  | 'accepted';
+
+const CLOUD_SYNC_DIAGNOSTIC_LAST_SYNC_STATUS_VALUES: ReadonlySet<CloudSyncDiagnosticLastSyncStatus> =
+  new Set<CloudSyncDiagnosticLastSyncStatus>([
+    'disabled',
+    'preflight_not_ready',
+    'backup_dry_run_not_ready',
+    'shadow_candidate_blocked',
+    'cloud_read_blocked',
+    'conflict_review_required',
+    'upload_blocked',
+    'upload_failed',
+    'parity_failed',
+    'accepted',
+  ]);
+
+const sanitizeLastSyncStatus = (
+  value: unknown,
+): CloudSyncDiagnosticLastSyncStatus | null => {
+  if (typeof value !== 'string') return null;
+  return CLOUD_SYNC_DIAGNOSTIC_LAST_SYNC_STATUS_VALUES.has(
+    value as CloudSyncDiagnosticLastSyncStatus,
+  )
+    ? (value as CloudSyncDiagnosticLastSyncStatus)
+    : null;
+};
+
 export interface CloudSyncDiagnosticInputs {
   // Auth (booleans only — never propagate the userId itself).
   signedIn: boolean;
@@ -52,6 +92,17 @@ export interface CloudSyncDiagnosticInputs {
   // mount. Optional — null when no attempt has been made yet.
   cloudReadAttempted: boolean;
   cloudReadOk: boolean | null;
+  // The Phase21i status string returned by the most recent sync attempt.
+  // Only the whitelisted union values above survive into the snapshot —
+  // arbitrary strings (or PII-shaped values) are dropped to null. This is
+  // the field the V3 iPhone readback uses to distinguish conflict from
+  // parity_failed / upload_blocked / etc., which the V2 diagnostic could
+  // not tell apart (cloudReadOk=否 conflates them all).
+  lastSyncStatus?: CloudSyncDiagnosticLastSyncStatus | null;
+  // True iff the user has already seen the "云端有冲突" notice in this
+  // session, i.e. the panel exposed the dedicated override button. Lets
+  // the next iPhone readback prove whether V3's banner actually surfaced.
+  overrideButtonShown?: boolean;
 }
 
 export interface CloudSyncDiagnosticSnapshot {
@@ -78,6 +129,12 @@ export interface CloudSyncDiagnosticSnapshot {
   // ── cloud reachability ──
   cloudReadAttempted: boolean;
   cloudReadOk: boolean | null;
+  // The Phase21i status string from the most recent attempt — sanitized
+  // to a whitelist so the snapshot never echoes a free-form server value.
+  lastSyncStatus: CloudSyncDiagnosticLastSyncStatus | null;
+  // True iff the panel surfaced the V3 "用本地覆盖云端" override prompt
+  // for this attempt. Mirrors the user-visible affordance.
+  overrideButtonShown: boolean;
   // ── reason annotation ──
   rejectReason: CloudSyncDiagnosticRejectReason;
 }
@@ -214,6 +271,8 @@ export const buildCloudSyncDiagnosticSnapshot = (
     uiRowLabel,
     cloudReadAttempted: inputs.cloudReadAttempted,
     cloudReadOk: inputs.cloudReadOk,
+    lastSyncStatus: sanitizeLastSyncStatus(inputs.lastSyncStatus ?? null),
+    overrideButtonShown: inputs.overrideButtonShown === true,
     rejectReason,
   };
 };
@@ -239,6 +298,8 @@ export const formatCloudSyncDiagnosticSnapshot = (
     ['row', snapshot.uiRowLabel],
     ['cloudRead?', snapshot.cloudReadAttempted],
     ['cloudReadOk', snapshot.cloudReadOk === null ? '(n/a)' : snapshot.cloudReadOk],
+    ['lastStatus', snapshot.lastSyncStatus ?? '(none)'],
+    ['overrideShown', snapshot.overrideButtonShown],
     ['reject', snapshot.rejectReason ?? '(none)'],
   ];
   return pairs.map(([k, v]) => `${k}=${String(v)}`).join(' ');

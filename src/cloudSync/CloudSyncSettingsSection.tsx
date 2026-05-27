@@ -216,6 +216,7 @@ function SignedInSyncFlow({
   const visibleWarnings = [...(syncStatus.warnings ?? []), ...(syncStatus.blockers ?? [])]
     .filter((item) => item !== '登录后再开启同步')
     .slice(0, 2);
+  const cloudOverridePrompt = syncStatus.cloudOverridePrompt ?? null;
 
   return (
     <div className="space-y-3" data-testid="ironpath-account-settings">
@@ -243,6 +244,58 @@ function SignedInSyncFlow({
           onClick={canToggle ? accountSettings.onToggleSync : undefined}
         />
       </div>
+
+      {cloudOverridePrompt ? (
+        <div
+          className={classNames(
+            'rounded-lg border px-3 py-3 space-y-2',
+            isDark
+              ? 'border-amber-300/30 bg-amber-400/[0.08]'
+              : 'border-amber-300 bg-amber-50',
+          )}
+          data-testid="ironpath-sync-cloud-override-prompt"
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle
+              className={classNames('mt-0.5 h-4 w-4 shrink-0', isDark ? 'text-amber-200' : 'text-amber-600')}
+              aria-hidden="true"
+            />
+            <div className="min-w-0 space-y-1">
+              <p
+                className={classNames('text-sm font-semibold', isDark ? 'text-amber-100' : 'text-amber-800')}
+                data-testid="ironpath-sync-cloud-override-prompt-title"
+              >
+                {cloudOverridePrompt.title}
+              </p>
+              <p
+                className={classNames('text-xs leading-relaxed', isDark ? 'text-amber-100/80' : 'text-amber-700')}
+                data-testid="ironpath-sync-cloud-override-prompt-body"
+              >
+                {cloudOverridePrompt.body}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <ActionButton
+              variant="primary"
+              size="sm"
+              onClick={cloudOverridePrompt.onAction}
+              disabled={cloudOverridePrompt.isPending === true}
+              data-testid="ironpath-sync-cloud-override-prompt-action"
+            >
+              <span>{cloudOverridePrompt.isPending ? '正在覆盖云端…' : cloudOverridePrompt.actionLabel}</span>
+            </ActionButton>
+            {cloudOverridePrompt.cancelLabel ? (
+              <span
+                className={classNames('text-[11px]', isDark ? 'text-amber-100/65' : 'text-amber-700/80')}
+                data-testid="ironpath-sync-cloud-override-prompt-hint"
+              >
+                {cloudOverridePrompt.cancelLabel}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {visibleWarnings.length ? (
         <div className="flex flex-wrap gap-1.5" data-testid="ironpath-sync-inline-warnings">

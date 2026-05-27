@@ -622,9 +622,15 @@ export function CloudSyncPolishSettingsPanel({
         // four characters, which is the same usability problem the user
         // already reported about "发现冲突" — opaque pill, no recourse.
         if (result.status === 'conflict_review_required') {
+          // V3: the first-click conflict no longer pushes its instruction
+          // into warnings — the dedicated "用本地覆盖云端" banner the
+          // section renders (driven by cloudOverridePrompt below) is the
+          // canonical affordance now. We keep the second-click failure
+          // message so the user knows their override attempt was
+          // rejected by Supabase rather than silently flapping.
           message = alreadySawConflict
             ? '云端校验仍提示冲突，可能云端有他人写入。请先确认账号和设备一致再重试。'
-            : '发现冲突，再次点开启同步以用本地覆盖云端';
+            : null;
         } else if (result.status === 'cloud_read_blocked') {
           const blockers = result.readMirrorVerification?.blockers ?? [];
           if (blockers.includes('read_repository_unavailable')) {
@@ -833,6 +839,34 @@ export function CloudSyncPolishSettingsPanel({
     syncedAppDataHashState,
   ]);
 
+  // The V3 override prompt only surfaces for the soft conflict
+  // (cloud_read_manual_review). Any hard blocker (owner_mismatch,
+  // schema_invalid, etc.) keeps the runtime stuck on conflict_review_required
+  // but the override path will not help, so the panel routes the user
+  // through the warnings notice instead of offering a button that can't
+  // succeed. The visibility flag is computed once here and consumed by
+  // both the user-facing banner and the diagnostic snapshot so the
+  // iPhone readback and what's on screen cannot diverge.
+  const cloudOverridePromptVisible =
+    productionSyncApplyState.result?.status === 'conflict_review_required' &&
+    !productionSyncApplyState.pending &&
+    (productionSyncApplyState.result?.readMirrorVerification?.blockers ?? []).every(
+      (blocker) => blocker === 'cloud_read_manual_review',
+    );
+  const overridePromptOnAction = React.useMemo(() => handleEnableProductionSync, [handleEnableProductionSync]);
+  const cloudOverridePrompt = React.useMemo(() => {
+    if (!cloudOverridePromptVisible) return null;
+    return {
+      title: '云端有不同的同步数据',
+      body:
+        '云端发现一份与本地不同的备份。如果它来自你的另一台设备，请先在那台设备同步；否则可以用下方按钮把本地数据写入云端覆盖它。',
+      actionLabel: '用本地覆盖云端',
+      cancelLabel: '不想覆盖可以放着不动，下次再决定',
+      onAction: overridePromptOnAction,
+      isPending: productionSyncApplyState.pending,
+    };
+  }, [cloudOverridePromptVisible, overridePromptOnAction, productionSyncApplyState.pending]);
+
   const sectionProps = React.useMemo(
     () => {
       const props = buildCloudSyncSettingsSectionPropsFromRuntime({
@@ -852,6 +886,7 @@ export function CloudSyncPolishSettingsPanel({
         onSignOut: handleSignOut,
         onUseLocal: runtimeInput.onUseLocal ?? handleUseLocalMode,
         onRetryCloud: runtimeInput.onRetryCloud ?? handleRetryCloud,
+        cloudOverridePrompt,
       });
 
       let patched = props;
@@ -887,6 +922,7 @@ export function CloudSyncPolishSettingsPanel({
       authActionPending,
       authErrorMessage,
       authRuntime,
+      cloudOverridePrompt,
       handleRetryCloud,
       handleSignIn,
       handleSignOut,
@@ -940,12 +976,16 @@ export function CloudSyncPolishSettingsPanel({
         productionSyncApplyState.result?.cloudReadAttempted === true
           ? productionSyncApplyState.result?.ok === true
           : null,
+      lastSyncStatus: productionSyncApplyState.result?.status ?? null,
+      overrideButtonShown: cloudOverridePromptVisible,
     }),
     [
       authReady,
       authRuntime?.user?.userId,
+      cloudOverridePromptVisible,
       productionSyncApplyState.result?.cloudReadAttempted,
       productionSyncApplyState.result?.ok,
+      productionSyncApplyState.result?.status,
       signedIn,
     ],
   );

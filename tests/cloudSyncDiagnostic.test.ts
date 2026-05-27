@@ -72,6 +72,48 @@ describe('cloudSyncDiagnostic snapshot builder', () => {
     expect(snapshot.uiRowLabel).toBe('未开启');
     expect(snapshot.rejectReason).toBe('no-receipt');
     expect(snapshot.receiptPresent).toBe(false);
+    expect(snapshot.lastSyncStatus).toBeNull();
+    expect(snapshot.overrideButtonShown).toBe(false);
+  });
+
+  it('exposes the Phase21i conflict_review_required status verbatim so the iPhone readback can distinguish conflict from parity_failed', () => {
+    clearCloudSyncFlowState();
+    const snapshot = buildCloudSyncDiagnosticSnapshot({
+      signedIn: true,
+      authReady: true,
+      authenticatedUserIdPresent: true,
+      currentUserIdShortHash: '6b8b4e13',
+      lastSyncAttemptOk: false,
+      cloudReadAttempted: true,
+      cloudReadOk: false,
+      lastSyncStatus: 'conflict_review_required',
+      overrideButtonShown: true,
+    });
+    expect(snapshot.lastSyncStatus).toBe('conflict_review_required');
+    expect(snapshot.overrideButtonShown).toBe(true);
+    const line = formatCloudSyncDiagnosticSnapshot(snapshot);
+    expect(line).toContain('lastStatus=conflict_review_required');
+    expect(line).toContain('overrideShown=true');
+  });
+
+  it('drops a free-form lastSyncStatus value to null so the snapshot never echoes server-side strings', () => {
+    clearCloudSyncFlowState();
+    const snapshot = buildCloudSyncDiagnosticSnapshot({
+      signedIn: true,
+      authReady: true,
+      authenticatedUserIdPresent: true,
+      currentUserIdShortHash: '11111111',
+      lastSyncAttemptOk: false,
+      cloudReadAttempted: true,
+      cloudReadOk: false,
+      // Cast through unknown — we are intentionally feeding the diagnostic a
+      // value outside the Phase21i union to lock the sanitizer.
+      lastSyncStatus: 'TOKEN-SHAPED-LEAK' as unknown as 'accepted',
+    });
+    expect(snapshot.lastSyncStatus).toBeNull();
+    const line = formatCloudSyncDiagnosticSnapshot(snapshot);
+    expect(line).toContain('lastStatus=(none)');
+    expect(line).not.toContain('TOKEN-SHAPED-LEAK');
   });
 
   it('classifies as "checking" when auth is loading even with no receipt — never falsely shows 未开启', () => {

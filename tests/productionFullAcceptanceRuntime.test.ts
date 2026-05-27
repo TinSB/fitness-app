@@ -256,6 +256,118 @@ describe('Phase 21I production full acceptance runtime', () => {
     expect(memory.stats()).toMatchObject({ readCount: 1, writeCount: 0 });
   });
 
+  it('honors overrideExistingCloudSnapshot=true to overwrite a stale cloud row, lands status=accepted, and produces a fresh receipt hash that the panel can persist', async () => {
+    // Scenario: a real iPhone PWA has just been opened and the user (Supabase
+    // userId fingerprint 6b8b4e13 in V2's readback) is staring at the
+    // "云端有不同数据" banner V3 introduces. The cloud row was written
+    // either by an earlier hash-algorithm version (#372 changed the
+    // serializer) or by a prior test session, so source_snapshot_hash on
+    // the row does not match the live local hash. The first click already
+    // surfaced conflict_review_required; this test locks the second-click
+    // behavior so V3's separated override button can rely on receipt
+    // persistence in the .then handler of CloudSyncPolishSettingsPanel.
+    const appData = emptyData();
+    const staleCloudData = emptyData();
+    staleCloudData.bodyWeights = [{ date: '2026-05-25', value: 82 }];
+    const staleCloudSnapshot: CloudAppDataSnapshotCandidate<AppData> = {
+      snapshotId: 'stale-cloud-snapshot',
+      accountId: 'account-1',
+      ownerUserId: 'account-1',
+      owner: {
+        scope: 'cloud-account-candidate',
+        ownerId: 'account-1',
+        accountId: 'account-1',
+      },
+      appData: staleCloudData,
+      schemaVersion: String(staleCloudData.schemaVersion),
+      sourceSnapshotHash: buildAppDataSnapshotHash(staleCloudData),
+      operationId: 'stale-cloud-operation',
+      validationStatus: 'valid',
+      createdAt: '2026-05-25T20:00:00.000Z',
+    };
+    const memory = makeMemoryGateway(staleCloudSnapshot);
+
+    const result = await runProductionFullAcceptanceSync({
+      enabled: true,
+      readiness: readiness(),
+      authRuntime: authRuntime(),
+      appData,
+      localBackupDryRunUi: readyLocalDryRun(appData),
+      gateway: memory.gateway,
+      schemaValidator: (candidate) => Boolean(validateAppDataSchema(candidate)),
+      nowIso,
+      overrideExistingCloudSnapshot: true,
+    });
+
+    expect(result).toMatchObject({
+      phase: '21I',
+      ok: true,
+      status: 'accepted',
+      userMessage: '同步完成',
+      firstUploadSucceeded: true,
+      cloudReadAttempted: true,
+      cloudWriteAttempted: true,
+      cloudPrimaryEnabled: false,
+      defaultSyncEnabled: false,
+      backgroundWorkEnabled: false,
+      localStorageDeleted: false,
+      sourceOfTruthChanged: false,
+    });
+    // The panel only writes the receipt when ok=true && status='accepted'
+    // (CloudSyncPolishSettingsPanel.tsx line ~699). The override path must
+    // therefore arrive at this exact tuple; the run also has to produce
+    // a fresh snapshot hash so the rehydrate-on-next-mount path keys off
+    // the post-override local AppData.
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe('accepted');
+    const stats = memory.stats();
+    expect(stats.writeCount).toBe(1);
+    expect(stats.snapshot?.sourceSnapshotHash).toBe(buildAppDataSnapshotHash(appData));
+    expect(stats.snapshot?.sourceSnapshotHash).not.toBe(staleCloudSnapshot.sourceSnapshotHash);
+  });
+
+  it('still refuses to override a hard read-mirror blocker even when overrideExistingCloudSnapshot=true', async () => {
+    // Hard blockers (owner_mismatch, schema_mismatch, cloud_data_invalid)
+    // must never be bypassable from the panel — only the soft
+    // cloud_read_manual_review blocker is. Surface a cloud row whose
+    // ownerUserId does not match the signed-in user; the runtime should
+    // hold the conflict and refuse to write.
+    const appData = emptyData();
+    const hostileCloudData = emptyData();
+    const hostileCloudSnapshot: CloudAppDataSnapshotCandidate<AppData> = {
+      snapshotId: 'hostile-cloud-snapshot',
+      accountId: 'someone-else',
+      ownerUserId: 'someone-else',
+      owner: {
+        scope: 'cloud-account-candidate',
+        ownerId: 'someone-else',
+        accountId: 'someone-else',
+      },
+      appData: hostileCloudData,
+      schemaVersion: String(hostileCloudData.schemaVersion),
+      sourceSnapshotHash: buildAppDataSnapshotHash(hostileCloudData),
+      operationId: 'hostile-cloud-operation',
+      validationStatus: 'valid',
+      createdAt: '2026-05-25T20:00:00.000Z',
+    };
+    const memory = makeMemoryGateway(hostileCloudSnapshot);
+
+    const result = await runProductionFullAcceptanceSync({
+      enabled: true,
+      readiness: readiness(),
+      authRuntime: authRuntime(),
+      appData,
+      localBackupDryRunUi: readyLocalDryRun(appData),
+      gateway: memory.gateway,
+      schemaValidator: (candidate) => Boolean(validateAppDataSchema(candidate)),
+      nowIso,
+      overrideExistingCloudSnapshot: true,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(memory.stats().writeCount).toBe(0);
+  });
+
   it('falls back to local mode when the explicit cloud write fails', async () => {
     const appData = emptyData();
     let writeCount = 0;

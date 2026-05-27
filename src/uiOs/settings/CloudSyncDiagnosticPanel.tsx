@@ -175,6 +175,25 @@ export function CloudSyncDiagnosticPanel({ inputs }: CloudSyncDiagnosticPanelPro
             { label: '云端读检', kind: 'boolean', value: snapshot.cloudReadAttempted, tone: 'info' } satisfies PaneRow,
             { label: '云端读检 OK', kind: 'boolean', value: snapshot.cloudReadOk, tone: toneForCloudReadOk(snapshot) } satisfies PaneRow,
             {
+              label: '上次状态',
+              kind: 'string',
+              value: snapshot.lastSyncStatus,
+              tone:
+                snapshot.lastSyncStatus === 'accepted'
+                  ? 'ok'
+                  : snapshot.lastSyncStatus === 'conflict_review_required'
+                    ? 'warn'
+                    : snapshot.lastSyncStatus
+                      ? 'bad'
+                      : 'info',
+            } satisfies PaneRow,
+            {
+              label: '覆盖按钮',
+              kind: 'boolean',
+              value: snapshot.overrideButtonShown,
+              tone: snapshot.overrideButtonShown ? 'warn' : 'info',
+            } satisfies PaneRow,
+            {
               label: '拒绝原因',
               kind: 'string',
               value: snapshot.rejectReason,
