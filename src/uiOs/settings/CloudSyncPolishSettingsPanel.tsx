@@ -356,45 +356,61 @@ export function CloudSyncPolishSettingsPanel({
     if (isAuthenticated) {
       if (justSignedIn && appData) {
         const hash = buildAppDataSnapshotHash(appData);
-        const persisted = loadCloudSyncFlowState({ expectedAppDataSnapshotHash: hash });
+        // Load WITHOUT the expectedAppDataSnapshotHash gate: that gate
+        // was designed to discard a stale BACKUP if the user's data has
+        // drifted since "创建备份" was pressed, but it also silently
+        // wipes the syncedAppDataHash receipt whenever the hash
+        // algorithm changes (e.g. #372 dropped the sanitize roundtrip).
+        // The sync-on receipt is a user decision and survives algorithm
+        // changes — only the backup payload should be revalidated.
+        const persisted = loadCloudSyncFlowState({});
+        const persistedForBackup = loadCloudSyncFlowState({ expectedAppDataSnapshotHash: hash });
         if (!isEmptyCloudSyncFlowState(persisted)) {
-          setLocalBackupDryRunUiState({
-            backupJson: persisted.backupJson,
-            backupExportConfirmed: persisted.backupExportConfirmed,
-            dryRunRequested: persisted.dryRunRequested,
-          });
-          // Rehydrate sync-on state if it survived under the same hash and
-          // (when present) matches the just-authenticated user. The mount-
-          // time lazy initializer already handles the simpler "same React
-          // session, same user" case; this branch covers the sign-out then
-          // sign-in cycle.
+          // Only rehydrate the backup/dry-run payload if the recorded
+          // appDataSnapshotHash still matches the current AppData —
+          // otherwise the persisted backup is stale and we make the
+          // user re-export. Sync-on, in contrast, rehydrates from the
+          // unfiltered record because the cloud row itself is the
+          // authority; we don't need the local hash to match.
+          if (!isEmptyCloudSyncFlowState(persistedForBackup)) {
+            setLocalBackupDryRunUiState({
+              backupJson: persistedForBackup.backupJson,
+              backupExportConfirmed: persistedForBackup.backupExportConfirmed,
+              dryRunRequested: persistedForBackup.dryRunRequested,
+            });
+          }
           if (
-            persisted.syncedAppDataHash === hash &&
+            persisted.syncedAppDataHash &&
             (!persisted.syncedOwnerUserId || persisted.syncedOwnerUserId === authRuntime?.user?.userId)
           ) {
-            setSyncedAppDataHashState(hash);
+            setSyncedAppDataHashState(persisted.syncedAppDataHash);
           }
         }
       }
       return;
     }
 
-    setLocalBackupDryRunUiState({
-      backupJson: null,
-      backupExportConfirmed: false,
-      dryRunRequested: false,
-    });
-    setProductionSyncApplyState({
-      pending: false,
-      result: null,
-      message: null,
-    });
-    setSyncedAppDataHashState(null);
-    // Only the real sign-out transition counts as "forget the backup flow".
-    // A first mount with no live auth must NOT clear the persisted copy,
-    // otherwise the lazy initializer above would have nothing to rehydrate
-    // by the time the user re-authenticates in this session.
+    // CRITICAL: only reset React state on a genuine sign-out transition.
+    // On a first mount where the auth session check is still pending
+    // (authRuntime null), `isAuthenticated` is false but `justSignedOut`
+    // is also false — historically we reset every piece of state in this
+    // branch, which briefly nulled the syncedAppDataHashState mirror
+    // and (combined with the expectedAppDataSnapshotHash gate above)
+    // sometimes lost the receipt entirely before the auth-ready
+    // rehydrate path had a chance to run. Now we only reset when the
+    // user truly signed out.
     if (justSignedOut) {
+      setLocalBackupDryRunUiState({
+        backupJson: null,
+        backupExportConfirmed: false,
+        dryRunRequested: false,
+      });
+      setProductionSyncApplyState({
+        pending: false,
+        result: null,
+        message: null,
+      });
+      setSyncedAppDataHashState(null);
       clearCloudSyncFlowState();
     }
     // appData is read inside the signed-in branch only; safe to omit.
@@ -767,23 +783,29 @@ export function CloudSyncPolishSettingsPanel({
   // patching here keeps the necessary boolean-flag literals out of the
   // panel source (account-lifecycle boundary tests forbid them in this
   // file).
-  // "Sync is on" is a USER DECISION (the user successfully ran the
-  // explicit sync flow), not a moment-by-moment "local hash == cloud
-  // hash" assertion. The presence of a persisted `syncedAppDataHashState`
-  // is the durable signal that the user once completed sync; the
-  // mount-time reconcile effect above downgrades this only when the
-  // cloud row truly disappears.
+  // "Sync is on" is read straight from localStorage on every render so
+  // there is NO React-state synchronisation window that could surface a
+  // stale "未开启" between component unmount/remount cycles. The local
+  // syncedAppDataHashState mirror is kept as a fast-path / typing
+  // convenience but the durable signal is always the persisted record.
   //
-  // Earlier iterations of this gate required the persisted hash to
-  // equal the LIVE AppData hash on every render. That broke whenever
-  // any background reducer mutated AppData between mounts (auto stats
-  // update, healthkit ingest, screening profile refresh, etc.) — the
-  // hashes drift apart by a single field, isRehydratedSyncOn flips to
-  // false, and the UI falls back to "未开启" even though sync is alive.
-  // The mobile "切换页面就变未开启" bug is exactly that pattern.
-  const isRehydratedSyncOn =
-    syncedAppDataHashState !== null &&
-    productionSyncApplyState.result?.ok !== false;
+  // Earlier iterations gated on React state alone, which broke whenever:
+  //   - the panel remounted before the save-on-change useEffect had a
+  //     chance to flush the syncedAppDataHash to localStorage
+  //   - a background reducer mutated AppData between mounts and tipped
+  //     a "live hash == synced hash" check the wrong way
+  //   - the reconcile effect briefly nulled local state mid-cycle
+  // The current implementation is immune to all three because the gate
+  // is the localStorage record itself, not the in-memory mirror.
+  const isRehydratedSyncOn = React.useMemo(() => {
+    if (productionSyncApplyState.result?.ok === false) return false;
+    if (syncedAppDataHashState !== null) return true;
+    // Fallback: even if React state didn't carry the receipt across the
+    // last mount, localStorage may still have it (e.g. lazy initializer
+    // ran during an unauthenticated split second before the auth
+    // session resolved). Trust the durable record.
+    return loadCloudSyncFlowState({}).syncedAppDataHash !== null;
+  }, [productionSyncApplyState.result?.ok, syncedAppDataHashState]);
 
   const sectionProps = React.useMemo(
     () => {
