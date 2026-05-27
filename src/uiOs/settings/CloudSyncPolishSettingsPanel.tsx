@@ -579,11 +579,19 @@ export function CloudSyncPolishSettingsPanel({
   const onEnableSync = runtimeInput.onEnableSync ??
     (appData && !productionSyncApplyState.pending ? handleEnableProductionSync : undefined);
   const syncRuntime = productionSyncApplyState.result?.syncRuntime ?? runtimeInput.syncRuntime;
+  // Prefer the detailed diagnostic message we computed in the .then handler
+  // (it embeds result.cloudFailureDetail / blockers and explains what really
+  // failed on the Supabase side). The runtime's userMessage is intentionally
+  // restricted to a 4-string union for analytics and is too generic to help
+  // the user resolve the actual problem. Falling back to userMessage was the
+  // reason the panel kept showing "恢复本地模式" / "发现冲突" even after we
+  // wired up cloudFailureDetail end-to-end.
   const productionNotice = productionSyncApplyState.pending
     ? productionSyncApplyState.message
-    : productionSyncApplyState.result?.ok === false
-      ? productionSyncApplyState.result.userMessage
-      : productionSyncApplyState.message;
+    : productionSyncApplyState.message ??
+      (productionSyncApplyState.result?.ok === false
+        ? productionSyncApplyState.result.userMessage
+        : null);
 
   const sectionProps = React.useMemo(
     () => {

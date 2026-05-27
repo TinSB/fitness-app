@@ -577,10 +577,34 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
     });
   }
 
+  // When the caller explicitly chose to override the existing cloud snapshot
+  // (two-click escape hatch), the readMirrorVerification result still reports
+  // `manualReviewRequired: true` / `ok: false` / `readyFor21E: false` because
+  // its blocker list keeps the diff. If we pass that object straight into
+  // buildFirstUploadExplicitApply below, the upload gate adds
+  // 'phase21d_not_ready', 'read_mirror_not_verified', and
+  // 'manual_review_required' and the upload path short-circuits — the user
+  // sees their second click change the pill to "恢复本地模式" with no POST
+  // request ever sent. Synthesize a verified mirror result here so the rest
+  // of the pipeline (gate, write, parity) can run; gateway.writeSnapshot
+  // remains the only place that can actually push bytes to Supabase.
+  const effectiveReadMirrorVerification = skipManualReview
+    ? {
+        ...readMirrorVerification,
+        ok: true,
+        status: 'mirror_verified' as const,
+        readyFor21E: true,
+        blockers: [] as typeof readMirrorVerification.blockers,
+        manualReviewRequired: false,
+        cloudReadMirrorVerified: true,
+        cloudMissingAcceptedForFirstUpload: true,
+      }
+    : readMirrorVerification;
+
   const uploadGate = buildFirstUploadExplicitApply<TAppData>({
     enabled: true,
     shadowCandidate,
-    readMirrorVerification,
+    readMirrorVerification: effectiveReadMirrorVerification,
     appData: input.appData,
     schemaValidator,
     writeRepository: null,
@@ -598,7 +622,7 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
       userMessage: '恢复本地模式',
       blockers: uploadGate.blockers,
       shadowCandidate,
-      readMirrorVerification,
+      readMirrorVerification: effectiveReadMirrorVerification,
       firstUploadApply: uploadGate,
       createdAt,
     });
@@ -615,7 +639,7 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
   const firstUploadApply = buildFirstUploadExplicitApply<TAppData>({
     enabled: true,
     shadowCandidate,
-    readMirrorVerification,
+    readMirrorVerification: effectiveReadMirrorVerification,
     appData: input.appData,
     schemaValidator,
     writeRepository: {
@@ -635,7 +659,7 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
       userMessage: '恢复本地模式',
       blockers: firstUploadApply.blockers,
       shadowCandidate,
-      readMirrorVerification,
+      readMirrorVerification: effectiveReadMirrorVerification,
       firstUploadApply,
       // Surface the actual Supabase response message (set by the gateway
       // when it captured response.error) so the user can see WHY the
@@ -665,11 +689,19 @@ export const runProductionFullAcceptanceSync = async <TAppData = AppData>(
 
   if (cloudParityCheck.readyFor21G !== true || cloudParityCheck.ok !== true) {
     return failure({
-      status: cloudParityCheck.conflictReviewRequired ? 'conflict_review_required' : 'parity_failed',
-      userMessage: cloudParityCheck.conflictReviewRequired ? '发现冲突' : '恢复本地模式',
+      // After an explicit override-upload, "still in conflict" really means
+      // the post-upload mirror read disagrees with what we just wrote
+      // (gateway returned a different row, RLS hid the new row, or the
+      // local hash recomputation differs from what we sent). It is no
+      // longer a "you should re-click to overwrite" situation — that
+      // already happened on this click. Demote conflict to parity_failed
+      // in the override path so the UI doesn't ask the user to override
+      // again indefinitely.
+      status: cloudParityCheck.conflictReviewRequired && !skipManualReview ? 'conflict_review_required' : 'parity_failed',
+      userMessage: cloudParityCheck.conflictReviewRequired && !skipManualReview ? '发现冲突' : '恢复本地模式',
       blockers: cloudParityCheck.blockers,
       shadowCandidate,
-      readMirrorVerification,
+      readMirrorVerification: effectiveReadMirrorVerification,
       firstUploadApply,
       cloudParityCheck,
       cloudFailureDetail: postUploadRead.ok ? null : postUploadRead.message ?? null,
