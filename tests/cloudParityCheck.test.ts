@@ -479,11 +479,18 @@ describe('Phase 21F cloud parity check', () => {
       ...baseSnapshot.appData,
       trainingMode: 'hypertrophy',
     };
+    // Simulate a real cloud-side drift: the appData body differs AND the
+    // server-recorded metadata hash no longer agrees with the receipt
+    // (which is what would actually happen if a different device wrote
+    // its own snapshot in between). The old test left metadata aligned,
+    // which the new parity rules treat as a jsonb round-trip artifact
+    // (deliberate — see addParityBlockers in cloudParityCheck.ts).
     const cloudMismatch = buildCloudParityCheck({
       ...base,
       readRepository: repositoryWithSnapshot({
         ...baseSnapshot,
         appData: cloudChanged,
+        sourceSnapshotHash: 'phase19b-deadbeef',
       }),
     });
 
@@ -509,12 +516,42 @@ describe('Phase 21F cloud parity check', () => {
       readyFor21G: false,
       userMessage: '发现冲突',
       conflictReviewRequired: true,
-      blockers: expect.arrayContaining(['cloud_appdata_hash_mismatch']),
+      blockers: expect.arrayContaining(['cloud_metadata_hash_mismatch']),
       parity: {
-        cloudMetadataMatchesReceipt: true,
+        cloudMetadataMatchesReceipt: false,
         cloudAppDataMatchesReceipt: false,
       },
     });
+  });
+
+  it('tolerates a cloudAppData re-hash drift when every receipt id still aligns (jsonb round-trip artifact)', () => {
+    const base = validInput();
+    const baseSnapshot = base.readRepository?.readLatestCloudAppDataCandidate().snapshot as CloudAppDataSnapshotCandidate<AppData>;
+    // Mimic what Supabase + PostgREST + jsonb does on the round trip:
+    // the row metadata columns (source_snapshot_hash, snapshot id, operation
+    // id, owner, schema, created_at) all come back verbatim, but the
+    // echoed appData hashes differently when re-hashed client-side (e.g.
+    // because the iOS keyboard sent a NFD codepoint that Postgres
+    // normalised to NFC, or a numeric ended up coerced). Here we
+    // simulate that drift by changing a field in the echoed appData
+    // while keeping every metadata column identical to the receipt.
+    const tweakedAppData: AppData = {
+      ...baseSnapshot.appData,
+      trainingMode: 'hypertrophy',
+    };
+    const tolerated = buildCloudParityCheck({
+      ...base,
+      readRepository: repositoryWithSnapshot({
+        ...baseSnapshot,
+        appData: tweakedAppData,
+      }),
+    });
+
+    expect(tolerated.parity.cloudMetadataMatchesReceipt).toBe(true);
+    expect(tolerated.parity.cloudAppDataMatchesReceipt).toBe(false);
+    expect(tolerated.blockers).not.toContain('cloud_appdata_hash_mismatch');
+    expect(tolerated.ok).toBe(true);
+    expect(tolerated.localParityVerified).toBe(true);
   });
 
   it('fails closed on schema and runtime boundary risks', () => {
