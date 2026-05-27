@@ -24,6 +24,7 @@ import {
   isEmptyCloudSyncFlowState,
   loadCloudSyncFlowState,
   saveCloudSyncFlowState,
+  writeLastParityFailureDiagnostic,
 } from '../../storage/localStorageAdapter';
 import { buildAppDataSnapshotHash } from '../../cloudProduction/accountBoundaryLocalInventory';
 import {
@@ -624,9 +625,35 @@ export function CloudSyncPolishSettingsPanel({
             message = '云端写入失败，已保留本地数据；可稍后重试。';
           }
         } else if (result.status === 'parity_failed') {
-          message = result.cloudFailureDetail
-            ? `上传后云端校验失败：${result.cloudFailureDetail}`
-            : '上传完成但云端校验失败，已保留本地数据。如多次出现请联系管理员。';
+          // The cloud row IS written (status='parity_failed' only fires
+          // after a successful write + read-back). The failure is a
+          // hash-mismatch between what we just uploaded and what we read
+          // back, which historically had three sources:
+          //   1. jsonb round-trip drift (NFC/NFD, dropped undefined,
+          //      number precision) — already tolerated by addParityBlockers
+          //      when all receipt-id columns align.
+          //   2. local appData mutated between dry-run and parity check.
+          //   3. Another device wrote in between — receipt ids drift.
+          // Surface the actual blocker list so the user (and we) can tell
+          // which case fired instead of staring at the opaque '校验失败'
+          // pill. Also dump the full parity summary to localStorage so a
+          // mobile user can copy it out of dev tools later.
+          const blockers = result.cloudParityCheck?.blockers ?? [];
+          const parity = result.cloudParityCheck?.parity;
+          writeLastParityFailureDiagnostic({
+            ts: nowIso ?? new Date().toISOString(),
+            status: result.status,
+            blockers,
+            parity,
+            cloudFailureDetail: result.cloudFailureDetail ?? null,
+          });
+          if (result.cloudFailureDetail) {
+            message = `上传后云端校验失败：${result.cloudFailureDetail}`;
+          } else if (blockers.length > 0) {
+            message = `上传后云端校验失败：${blockers.join('、')}`;
+          } else {
+            message = '上传完成但云端校验失败，已保留本地数据。如多次出现请联系管理员。';
+          }
         } else if (result.status === 'preflight_not_ready' || result.status === 'backup_dry_run_not_ready') {
           message = '同步前置条件不满足，请重新备份并确认数据。';
         } else if (result.status === 'shadow_candidate_blocked') {
