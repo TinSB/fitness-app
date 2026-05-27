@@ -2,7 +2,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { dismissDataHealthIssueToday, type DataHealthReport } from '../src/engines/dataHealthEngine';
-import type { CoachAutomationSummary } from '../src/engines/coachAutomationEngine';
+import type { CoachAutomationSummary } from '../src/engines/enginePipeline';
 import { todayKey } from '../src/engines/engineUtils';
 import { buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
 import { DEFAULT_UNIT_SETTINGS } from '../src/engines/unitConversionEngine';

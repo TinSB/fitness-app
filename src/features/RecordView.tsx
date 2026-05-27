@@ -33,7 +33,7 @@ import {
   getSessionCalendarDate,
   resolveCalendarSelectedDate,
 } from '../engines/trainingCalendarEngine';
-import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import type { CoachAutomationSummary } from '../engines/enginePipeline';
 import type { CoachAction } from '../engines/coachActionEngine';
 import type { PostWorkoutNextTimeRecommendation } from '../engines/postWorkoutNextTimeRecommendationEngine';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';

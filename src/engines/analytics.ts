@@ -14,7 +14,6 @@ import { buildE1RMProfile, getExerciseRecordPoolId } from './e1rmEngine';
 import { formatExerciseName } from '../i18n/formatters';
 import { completedSets, formatDate, monthKey, number, sessionCompletedSets, sessionVolume, setVolume } from './engineUtils';
 import { hasInvalidExerciseIdentity } from './replacementEngine';
-export { buildDeloadSignal } from './deloadSignalEngine';
 
 type ExerciseTrendPoint = {
   date: string;

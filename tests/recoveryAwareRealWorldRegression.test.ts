@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { CoachAutomationSummary } from '../src/engines/coachAutomationEngine';
+import type { CoachAutomationSummary } from '../src/engines/enginePipeline';
 import {
   buildRecoveryAwareRecommendation,
   buildTemplateRecoveryConflict,
@@ -191,15 +191,6 @@ describe('recovery-aware real-world regression', () => {
     });
     const coachAutomationSummary: CoachAutomationSummary = {
       keyWarnings: ['今天标记背部酸痛，建议降低相关动作压力。'],
-      recommendedActions: [
-        {
-          id: 'daily-adjustment-back-soreness',
-          label: '今日自动调整',
-          actionType: 'apply_daily_adjustment',
-          reason: '今天标记背部酸痛，建议降低相关动作压力。',
-          requiresConfirmation: true,
-        },
-      ],
     };
     const text = renderToday({ templateId: 'legs-a', recoveryRecommendation: recommendation, coachAutomationSummary });
 

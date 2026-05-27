@@ -67,7 +67,6 @@ import { applyStatusRules } from './engines/progressionEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './engines/trainingDecisionContext';
 import { buildEnginePipeline } from './engines/enginePipeline';
 import { buildDerivedStateInvalidation, type AppMutationEvent } from './engines/derivedStateInvalidationEngine';
-import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import {
   buildCoachActionAdjustmentDraftInput,
   buildCoachActions,
@@ -432,7 +431,7 @@ function App() {
     [data, pipelineRevision],
   );
   const decisionContext = baseEnginePipeline.context;
-  const coachAutomationSummary = React.useMemo(() => buildCoachAutomationSummary(data), [data]);
+  const coachAutomationSummary = baseEnginePipeline.coachAutomationSummary;
   const trainingIntelligenceSummary = React.useMemo(() => {
     const analyticsHistory = decisionContext.normalHistory;
     const latestSession = [...analyticsHistory].sort((left, right) =>

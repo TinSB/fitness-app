@@ -311,6 +311,22 @@ export const applyStatusRules = (
     useHealthDataForReadiness?: boolean;
     adaptiveCalibration?: AdaptiveCalibrationState;
     nowIso?: string;
+    /**
+     * When supplied by trainingDecisionEngine, this overrides the volume multiplier
+     * derived from mesocycleWeek. The supplied value is already arbitrated (no further
+     * Math.max(0.6, ...) clamp). See AR-2 in TRAINING_RECOMMENDATION_SOURCE_OF_TRUTH_REWRITE_PLAN_V1.md.
+     */
+    externalVolumeMultiplier?: number;
+    /**
+     * Productive-dose floor per ExerciseKind. When supplied, sets are clamped to at
+     * least this floor (replacing the hardcoded Math.max(1, ...)). See AR-3.
+     */
+    externalExerciseRoleFloors?: Partial<Record<'compound' | 'machine' | 'isolation', number>>;
+    /**
+     * When true, skip applyDeloadStrategy() so the per-exercise deload trim is NOT applied
+     * on top of an already-final externalVolumeMultiplier. See AR-2 (no double penalty).
+     */
+    suppressInternalDeloadStrategy?: boolean;
   } = {}
 ) => {
   const recommendationHistory = filterAnalyticsHistory(history);
@@ -344,7 +360,26 @@ export const applyStatusRules = (
     prescribeExercise(enrichExercise(exercise), trainingMode, weeklyPrescription)
   );
   const timeLimit = Number(status.time);
-  const volumeMultiplier = mesocycleWeek.phase === 'deload' ? Math.min(mesocycleWeek.volumeMultiplier, 0.8) : mesocycleWeek.volumeMultiplier;
+  // External multiplier (from trainingDecisionEngine, AR-2 clamped) overrides the legacy
+  // per-engine computation that previously stacked with applyDeloadStrategy.
+  const volumeMultiplier =
+    context.externalVolumeMultiplier !== undefined
+      ? context.externalVolumeMultiplier
+      : mesocycleWeek.phase === 'deload'
+        ? Math.min(mesocycleWeek.volumeMultiplier, 0.8)
+        : mesocycleWeek.volumeMultiplier;
+  const setFloorForKind = (kind: string | undefined): number => {
+    const floors = context.externalExerciseRoleFloors;
+    if (!floors) return 1;
+    if (kind === 'compound' && floors.compound !== undefined) return floors.compound;
+    if (kind === 'machine' && floors.machine !== undefined) return floors.machine;
+    if (kind === 'isolation' && floors.isolation !== undefined) return floors.isolation;
+    return 1;
+  };
+  // When the external multiplier is supplied, do NOT apply the 0.6 floor — the caller
+  // has already enforced its own floor (per role) so the multiplier is final.
+  const effectiveSetMultiplier =
+    context.externalVolumeMultiplier !== undefined ? volumeMultiplier : Math.max(0.6, volumeMultiplier);
 
   const reentryCopy =
     effectivePhase.activePhase === 'reentry'
@@ -355,7 +390,10 @@ export const applyStatusRules = (
 
   exercises = exercises.map((exercise) => ({
     ...exercise,
-    sets: Math.max(1, Math.ceil(number(exercise.sets) * Math.max(0.6, volumeMultiplier))),
+    sets: Math.max(
+      setFloorForKind(exercise.kind),
+      Math.ceil(number(exercise.sets) * effectiveSetMultiplier),
+    ),
     mesocyclePhase: mesocycleWeek.phase,
     mesocycleIntensityBias: mesocycleWeek.intensityBias,
     adjustment:
@@ -451,7 +489,11 @@ export const applyStatusRules = (
       };
     }
 
-    next = applyDeloadStrategy(next, deloadDecision);
+    if (!context.suppressInternalDeloadStrategy) {
+      // AR-2: trainingDecisionEngine has already arbitrated the deload trim into
+      // externalVolumeMultiplier (clamped, never multiplied) — do not apply it again.
+      next = applyDeloadStrategy(next, deloadDecision);
+    }
 
     const painPattern = getExercisePainPattern(painPatterns, next.baseId || next.id);
     if (painPattern?.suggestedAction === 'substitute') {
@@ -625,6 +667,24 @@ export const applyStatusRules = (
         adaptiveReasons: [...(exercise.adaptiveReasons || []), reason],
       };
     });
+  }
+
+  // AR-3: re-enforce the productive-dose floor as a FINAL pass when externalExerciseRoleFloors
+  // was supplied. Downstream stacks (applyAdaptiveExerciseRules conservativeLevel cut,
+  // pain-pattern -1, statusHitsMuscle -1) can reduce sets below the floor; the floor is the
+  // contract the caller relies on for reentry productivity.
+  if (context.externalExerciseRoleFloors) {
+    const floors = context.externalExerciseRoleFloors;
+    const floorOf = (kind: string | undefined): number => {
+      if (kind === 'compound' && floors.compound !== undefined) return floors.compound;
+      if (kind === 'machine' && floors.machine !== undefined) return floors.machine;
+      if (kind === 'isolation' && floors.isolation !== undefined) return floors.isolation;
+      return 1;
+    };
+    exercises = exercises.map((exercise) => ({
+      ...exercise,
+      sets: Math.max(floorOf(exercise.kind), number(exercise.sets)),
+    }));
   }
 
   return {

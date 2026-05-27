@@ -94,8 +94,19 @@ export const expectNoUnexpectedAppDiff = (diff: string) => {
     diff.includes('completeSupportSet') &&
     diff.includes('dispatchWorkoutExecutionEvent') &&
     diff.includes('FocusActionResult');
+  // Training Recommendation Hard Rewrite V2 — App.tsx no longer builds
+  // CoachAutomationSummary directly; it now reads it from enginePipeline.
+  // See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §2.1 and the
+  // matching pipeline change in src/engines/enginePipeline.ts. The removal
+  // of `buildCoachAutomationSummary` from App.tsx is an intentional SoT
+  // consolidation, not a runtime-behavior diff.
+  const isCoachAutomationPipelineRewireDiff =
+    diff.includes('coachAutomationEngine') ||
+    (diff.includes('coachAutomationSummary') && diff.includes('enginePipeline'));
 
-  expect(isTrainingViewCompletionDiff || isSupportCompletionDiff).toBe(true);
+  expect(
+    isTrainingViewCompletionDiff || isSupportCompletionDiff || isCoachAutomationPipelineRewireDiff,
+  ).toBe(true);
 
   for (const forbidden of [
     'cloudPrimaryEnabled',
