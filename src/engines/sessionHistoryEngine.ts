@@ -1,5 +1,6 @@
 import type { AppData, SessionDataFlag, TrainingSession } from '../models/training-model';
 import { reconcileScreeningProfile } from './adaptiveFeedbackEngine';
+import { checkSessionBackfill } from './sessionBackfillToleranceEngine';
 import { markSessionEdited } from './sessionEditEngine';
 import { getSessionCalendarDate } from './trainingCalendarEngine';
 
@@ -8,7 +9,16 @@ const excludedFlags = new Set<SessionDataFlag>(['test', 'excluded']);
 export const isAnalyticsSession = (session: Pick<TrainingSession, 'dataFlag'> | null | undefined) =>
   !excludedFlags.has((session?.dataFlag || 'normal') as SessionDataFlag);
 
-export const filterAnalyticsHistory = (history: TrainingSession[] = []) => history.filter(isAnalyticsSession);
+// Feature #33 integration: a session that was logged > 7 days after the
+// user-claimed date should still appear in 历史页 but must NOT feed the
+// recommendation engines (otherwise a delayed catch-up rewrites today's
+// prescription). The history-list flag check above stays unchanged so
+// 历史页 keeps showing backfilled rows; this analytics filter is what
+// every e1RM / progression / deload engine reads upstream of its math.
+export const filterAnalyticsHistory = (history: TrainingSession[] = []) =>
+  history.filter(
+    (session) => isAnalyticsSession(session) && !checkSessionBackfill(session).isBackfilled,
+  );
 
 export type SessionHistoryFilter = 'all' | 'normal' | 'test' | 'excluded';
 
