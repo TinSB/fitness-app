@@ -277,6 +277,12 @@ export const saveCloudSyncFlowState = (
     // QuotaExceeded / privacy mode — fall closed, the in-memory state stays
     // authoritative for the current session.
   }
+  // Notify in-process listeners (e.g. the settings list row that shows
+  // "已开启" / "未开启" next to "账号与同步"). This MUST run even if the
+  // setItem above threw — a quota error doesn't mean the in-memory state
+  // diverged; subscribers re-read via the same loader and will simply pick
+  // up whatever is currently persisted.
+  notifyCloudSyncFlowStateChange();
 };
 
 export const clearCloudSyncFlowState = (
@@ -289,6 +295,7 @@ export const clearCloudSyncFlowState = (
   } catch {
     // ignore
   }
+  notifyCloudSyncFlowStateChange();
 };
 
 export const isEmptyCloudSyncFlowState = (state: CloudSyncFlowPersistedState): boolean =>
@@ -296,6 +303,71 @@ export const isEmptyCloudSyncFlowState = (state: CloudSyncFlowPersistedState): b
   state.dryRunRequested === false &&
   state.backupJson === null &&
   state.syncedAppDataHash === null;
+
+// Lightweight helper that returns just the boolean the settings list needs.
+// Returning a plain string|null primitive (not a fresh object) is critical:
+// the row label hook below uses `useSyncExternalStore`, which compares
+// snapshots with Object.is — handing back a new object reference on every
+// render would force the row to re-render on every parent render even
+// though the persisted state did not change.
+export const readPersistedCloudSyncEnabledReceipt = (
+  options: { storage?: CloudSyncFlowStorageLike | null } = {},
+): string | null => loadCloudSyncFlowState(options).syncedAppDataHash;
+
+// ── Cloud sync flow state in-process change subscription ─────────────────
+//
+// The settings list row "账号与同步" sits OUTSIDE CloudSyncPolishSettingsPanel
+// (in src/features/ProfileView.tsx, fed by SettingsNavigationStack). Before
+// this subscription existed the row's value was a hardcoded literal "未开启"
+// that never reflected reality: after the user signed in, backed up, and
+// flipped the toggle to 已开启 inside the panel, leaving the panel and
+// coming back showed "未开启" next to "账号与同步" — the user-reported V1
+// regression. The panel itself rehydrates from this same envelope on every
+// mount (see useState lazy initializers in CloudSyncPolishSettingsPanel),
+// so the failure was specifically in the settings *list* surface.
+//
+// We notify subscribers from `saveCloudSyncFlowState` and
+// `clearCloudSyncFlowState`. The `storage` event handler covers cross-tab
+// writes (e.g. PWA in two windows). For same-document writes the storage
+// event does NOT fire — that's why the in-process Set is necessary.
+
+type CloudSyncFlowStateChangeListener = () => void;
+const cloudSyncFlowStateChangeListeners = new Set<CloudSyncFlowStateChangeListener>();
+
+const notifyCloudSyncFlowStateChange = (): void => {
+  if (cloudSyncFlowStateChangeListeners.size === 0) return;
+  // Snapshot first: a listener could mutate the set via unsubscribe.
+  for (const listener of [...cloudSyncFlowStateChangeListeners]) {
+    try {
+      listener();
+    } catch {
+      // A subscriber throwing must never break the writer. Each subscriber
+      // is responsible for its own error handling.
+    }
+  }
+};
+
+export const subscribeToCloudSyncFlowStateChanges = (
+  listener: CloudSyncFlowStateChangeListener,
+): (() => void) => {
+  cloudSyncFlowStateChangeListeners.add(listener);
+  let storageHandler: ((event: StorageEvent) => void) | null = null;
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    storageHandler = (event: StorageEvent) => {
+      // event.key === null fires on `localStorage.clear()` from another tab.
+      if (event.key === CLOUD_SYNC_FLOW_STORAGE_KEY || event.key === null) {
+        try { listener(); } catch { /* see notifyCloudSyncFlowStateChange */ }
+      }
+    };
+    window.addEventListener('storage', storageHandler);
+  }
+  return () => {
+    cloudSyncFlowStateChangeListeners.delete(listener);
+    if (storageHandler && typeof window !== 'undefined') {
+      window.removeEventListener('storage', storageHandler);
+    }
+  };
+};
 
 // Diagnostic dump for parity_failed events. Lives here (not in the panel)
 // because the panel is forbidden from touching localStorage directly by

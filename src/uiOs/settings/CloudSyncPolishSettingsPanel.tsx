@@ -799,13 +799,37 @@ export function CloudSyncPolishSettingsPanel({
   // is the localStorage record itself, not the in-memory mirror.
   const isRehydratedSyncOn = React.useMemo(() => {
     if (productionSyncApplyState.result?.ok === false) return false;
-    if (syncedAppDataHashState !== null) return true;
-    // Fallback: even if React state didn't carry the receipt across the
-    // last mount, localStorage may still have it (e.g. lazy initializer
-    // ran during an unauthenticated split second before the auth
-    // session resolved). Trust the durable record.
-    return loadCloudSyncFlowState({}).syncedAppDataHash !== null;
-  }, [productionSyncApplyState.result?.ok, syncedAppDataHashState]);
+    // Read the durable record first so the per-account safety check below
+    // has access to syncedOwnerUserId regardless of whether the React state
+    // mirror has caught up to localStorage yet.
+    const persisted = loadCloudSyncFlowState({});
+    const effectiveHash = syncedAppDataHashState ?? persisted.syncedAppDataHash;
+    if (effectiveHash === null) return false;
+    // Per-account safety: if a different user is currently signed in than
+    // the one who recorded the receipt, refuse to surface "已开启" — that
+    // would leak the previous user's sync state. We accept the receipt
+    // when:
+    //   - there is no signed-in user yet (PWA cold start, auth still
+    //     resolving). The signed-in branch in the auth effect will discard
+    //     the receipt later if it actually belongs to someone else.
+    //   - the receipt has no recorded owner (legacy envelopes pre-V2
+    //     schema). The auth effect's "justSignedIn" rehydrate writes the
+    //     owner back on the next sync.
+    //   - the owner matches the current user.
+    const currentUserId = authRuntime?.user?.userId ?? null;
+    if (
+      currentUserId &&
+      persisted.syncedOwnerUserId &&
+      persisted.syncedOwnerUserId !== currentUserId
+    ) {
+      return false;
+    }
+    return true;
+  }, [
+    authRuntime?.user?.userId,
+    productionSyncApplyState.result?.ok,
+    syncedAppDataHashState,
+  ]);
 
   const sectionProps = React.useMemo(
     () => {
