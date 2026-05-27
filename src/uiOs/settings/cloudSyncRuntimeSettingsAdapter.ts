@@ -7,6 +7,7 @@ import type {
   FirstSyncFlowProps,
   OfflineRecoveryProps,
   SyncReadinessStatus,
+  SyncStatusCenterCloudOverridePrompt,
   SyncStatusCenterProps,
 } from '../../cloudSync';
 import type { Phase20bSupabaseProjectRuntimeReadinessResult } from '../../cloudProduction/supabaseProjectRuntimeReadinessCheck';
@@ -47,6 +48,12 @@ export type CloudSyncSettingsRuntimeInput = CloudSyncSettingsRuntimeCallbacks & 
   verificationFlow?: Phase20fCloudReadWriteVerificationResult | null;
   conflictOfflineRollback?: Phase20gConflictOfflineRollbackResult | null;
   syncPreflight?: Phase21aExplicitOptInSyncPreflightResult | null;
+  // Pre-built V3 prompt for the "用本地覆盖云端" affordance. Plumbed
+  // through verbatim so the panel can compute it from the Phase21i
+  // result (CloudSyncPolishSettingsPanel.handleEnableProductionSync's
+  // .then handler) and the section component does not have to know about
+  // overrideExistingCloudSnapshot semantics. Null = no prompt.
+  cloudOverridePrompt?: SyncStatusCenterCloudOverridePrompt | null;
 };
 
 const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
@@ -172,6 +179,7 @@ const syncStatusProps = (input: CloudSyncSettingsRuntimeInput): SyncStatusCenter
     warnings: syncWarnings(input),
     onEnableSync: enableSyncAvailable ? input.onEnableSync : undefined,
     onViewDetails: input.onViewDetails,
+    cloudOverridePrompt: input.cloudOverridePrompt ?? null,
   };
 };
 

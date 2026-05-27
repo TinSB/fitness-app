@@ -24,7 +24,12 @@
  */
 
 export { CloudAuthCard, type CloudAuthCardProps, type CloudAuthMode, type CloudAuthStatus } from './CloudAuthCard';
-export { SyncStatusCenter, type SyncStatusCenterProps, type SyncReadinessStatus } from './SyncStatusCenter';
+export {
+  SyncStatusCenter,
+  type SyncStatusCenterProps,
+  type SyncReadinessStatus,
+  type SyncStatusCenterCloudOverridePrompt,
+} from './SyncStatusCenter';
 export { FirstSyncFlow, type FirstSyncFlowProps, type FirstSyncFlowStatus } from './FirstSyncFlow';
 export { ConflictReview, type ConflictReviewProps, type ConflictItem, type ConflictResolutionState } from './ConflictReview';
 export { OfflineRecovery, type OfflineRecoveryProps, type OfflineRecoveryState } from './OfflineRecovery';

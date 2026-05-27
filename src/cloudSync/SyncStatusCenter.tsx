@@ -7,6 +7,21 @@ import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 export type SyncReadinessStatus = 'not_enabled' | 'ready' | 'needs_review' | 'unavailable';
 
+// Surfaces the explicit "用本地覆盖云端" affordance V3 introduces for the
+// conflict_review_required state. The previous design re-used the same
+// toggle for the second click, but users perceived the second tap as the
+// toggle reverting itself rather than an opt-in to overwrite the cloud
+// row. By rendering a separate banner + button next to the toggle, the
+// override stays explicitly distinct from "开启同步".
+export interface SyncStatusCenterCloudOverridePrompt {
+  title: string;
+  body: string;
+  actionLabel: string;
+  cancelLabel?: string;
+  onAction: () => void;
+  isPending?: boolean;
+}
+
 export interface SyncStatusCenterProps {
   syncRuntimeEnabled: boolean;
   readinessStatus: SyncReadinessStatus;
@@ -15,6 +30,7 @@ export interface SyncStatusCenterProps {
   warnings?: string[];
   onEnableSync?: () => void;
   onViewDetails?: () => void;
+  cloudOverridePrompt?: SyncStatusCenterCloudOverridePrompt | null;
 }
 
 const statusConfig: Record<
