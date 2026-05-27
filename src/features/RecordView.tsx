@@ -7,6 +7,7 @@ import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSet
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
 import { buildHistoryCalendarSummary } from '../engines/historyCalendarSummary';
 import { buildProgressClaritySummary, type ProgressTrendDirection } from '../engines/progressClaritySummary';
+import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
@@ -652,6 +653,15 @@ export function RecordView({
       };
     });
   }, [historyCalendarSummary.prQuickAccessItems, prs]);
+  const effectivePhaseForDecision = React.useMemo(
+    () =>
+      getEffectiveTrainingPhase({
+        mesocyclePlan: data.mesocyclePlan ?? undefined,
+        history: analyticsHistory,
+        referenceDate: todayKey(),
+      }),
+    [analyticsHistory, data.mesocyclePlan],
+  );
   const progressClarity = React.useMemo(() => {
     const hasRecentPr = prs.some((item) => isDateWithinDays(item.date, todayKey(), 28));
     const hasAnyStrengthData = progressStrengthTrendItems.some((item) => item.trend !== 'unknown');
@@ -661,6 +671,15 @@ export function RecordView({
       : painSessions.length > 0 || effectiveSummary.effectiveSets >= 24 || effectiveSummary.completedSets >= 32
         ? 'high'
         : 'normal';
+    // TrainingDecision SoT: suppress the legacy contradictory triplet (see plan AR-5)
+    // under reentry/restart/controlled-reload by supplying a sessionIntent hint.
+    const sessionIntent: 'reentry-productive' | 'controlled-reload' | undefined =
+      effectivePhaseForDecision.activePhase === 'reentry' ||
+      effectivePhaseForDecision.activePhase === 'restart'
+        ? 'reentry-productive'
+        : strengthTrend === 'improving' && recoveryPressure === 'high'
+          ? 'controlled-reload'
+          : undefined;
     return buildProgressClaritySummary({
       strengthTrend,
       recoveryPressure,
@@ -674,18 +693,28 @@ export function RecordView({
         monthVolumeLabel: formatTrainingVolume(monthStats.monthVolume, unitSettings),
       },
       strengthTrendItems: progressStrengthTrendItems,
+      trainingDecisionContext: sessionIntent
+        ? { sessionIntent, activePhase: effectivePhaseForDecision.activePhase }
+        : undefined,
     });
-  }, [analyticsHistory.length, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
+  }, [analyticsHistory.length, effectivePhaseForDecision.activePhase, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
   const weeklyProgressionRecommendation = React.useMemo(() => {
     const today = todayKey();
+    const isReentryActive =
+      effectivePhaseForDecision.activePhase === 'reentry' ||
+      effectivePhaseForDecision.activePhase === 'restart';
     return buildWeeklyProgressionRecommendation({
       trainingIntelligenceSummary,
       effectiveSetSummary: effectiveSummary,
       painPatterns,
       weekId: today,
       nowIso: `${today}T12:00:00.000Z`,
+      trainingDecisionContext: {
+        activePhase: effectivePhaseForDecision.activePhase,
+        weeklyDirectionBlocked: isReentryActive,
+      },
     });
-  }, [effectiveSummary, painPatterns, trainingIntelligenceSummary]);
+  }, [effectivePhaseForDecision.activePhase, effectiveSummary, painPatterns, trainingIntelligenceSummary]);
   const dataHealthClarity = React.useMemo(
     () =>
       buildDataHealthClaritySummary({

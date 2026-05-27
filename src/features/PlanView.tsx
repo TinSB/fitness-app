@@ -230,14 +230,27 @@ export function PlanView({
   );
   const weeklyProgressionRecommendation = React.useMemo(() => {
     const today = todayKey();
+    const isReentryActive =
+      effectivePhase.activePhase === 'reentry' || effectivePhase.activePhase === 'restart';
     return buildWeeklyProgressionRecommendation({
       trainingIntelligenceSummary,
       painPatterns: enginePipeline.context.painPatterns,
       loadFeedbackSummary: enginePipeline.context.loadFeedbackSummary,
       weekId: today,
       nowIso: `${today}T12:00:00.000Z`,
+      // TrainingDecision SoT: suppress double-penalty weekly summary under reentry.
+      // See docs/TRAINING_RECOMMENDATION_SOURCE_OF_TRUTH_REWRITE_PLAN_V1.md §9 AR-4.
+      trainingDecisionContext: {
+        activePhase: effectivePhase.activePhase,
+        weeklyDirectionBlocked: isReentryActive,
+      },
     });
-  }, [enginePipeline.context.loadFeedbackSummary, enginePipeline.context.painPatterns, trainingIntelligenceSummary]);
+  }, [
+    effectivePhase.activePhase,
+    enginePipeline.context.loadFeedbackSummary,
+    enginePipeline.context.painPatterns,
+    trainingIntelligenceSummary,
+  ]);
   const adjustmentDraftViews = planViewModel.adjustmentDrafts.drafts;
   const adjustmentDrafts = adjustmentDraftViews
     .map((view) => (data.programAdjustmentDrafts || []).find((draft) => draft.id === view.id))

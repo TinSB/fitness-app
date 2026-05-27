@@ -39,6 +39,21 @@ export type ProgressClaritySummaryInput = {
   >;
   volumeSummary?: ProgressVolumeSummary;
   strengthTrendItems?: ProgressStrengthTrendItem[];
+  /**
+   * Optional awareness of TrainingDecision SoT — when supplied, the clarity narrative
+   * is consolidated with the SoT instead of independently emitting the legacy triplet
+   * "力量有进步 / 恢复压力偏高 / 下次建议保持重量". See AR-5 in
+   * docs/TRAINING_RECOMMENDATION_SOURCE_OF_TRUTH_REWRITE_PLAN_V1.md.
+   */
+  trainingDecisionContext?: {
+    sessionIntent?:
+      | 'normal-session'
+      | 'reentry-productive'
+      | 'controlled-reload'
+      | 'deload-week'
+      | 'severe-rest';
+    activePhase?: 'base' | 'build' | 'overload' | 'deload' | 'reentry' | 'restart';
+  };
 };
 
 export type ProgressClaritySummaryResult = {
@@ -186,7 +201,44 @@ export const buildProgressClaritySummary = (input: ProgressClaritySummaryInput =
   const trend = inferTrend(input);
   const pressure = inferRecoveryPressure(input);
   const dataSufficient = hasEnoughData(input);
-  const copy = stateCopy(trend, pressure, dataSufficient);
+  let copy = stateCopy(trend, pressure, dataSufficient);
+
+  // AR-5: when TrainingDecision is in reentry-productive / controlled-reload / deload-week,
+  // suppress the legacy triplet (force-strength-up vs. recovery-high vs. hold-weight) and
+  // emit a single coherent narrative aligned with the SoT.
+  const intent = input.trainingDecisionContext?.sessionIntent;
+  const phase = input.trainingDecisionContext?.activePhase;
+  if (intent === 'reentry-productive' || phase === 'reentry' || phase === 'restart') {
+    copy = {
+      ...copy,
+      insightState: 'recovery_recommended',
+      heroTitle: '回归周，先稳住质量',
+      heroExplanation: '已检测到长时间间断或刚结束减量，本周以"回归"为主，下周再考虑推进。',
+      primaryRecommendation: '维持当前节奏',
+      readinessLabel: '回归周',
+      caution: undefined,
+    };
+  } else if (intent === 'controlled-reload') {
+    copy = {
+      ...copy,
+      insightState: 'fatigue_risk',
+      heroTitle: '力量在进步，先收一档恢复',
+      heroExplanation: '主要动作仍在推进，但恢复压力升高。维持负荷，本周以恢复优先，下次再加。',
+      primaryRecommendation: '保持重量',
+      readinessLabel: '建议保守',
+      caution: undefined,
+    };
+  } else if (intent === 'deload-week') {
+    copy = {
+      ...copy,
+      insightState: 'recovery_recommended',
+      heroTitle: '减量周，把恢复做满',
+      heroExplanation: '处于计划的减量周，主动收量是计划内安排，不代表训练质量下降。',
+      primaryRecommendation: '减量优先',
+      readinessLabel: '减量周',
+      caution: undefined,
+    };
+  }
 
   return {
     ...copy,

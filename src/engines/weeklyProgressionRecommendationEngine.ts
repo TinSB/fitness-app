@@ -54,6 +54,17 @@ export type WeeklyProgressionInput = {
   loadFeedbackSummary?: LoadFeedbackSummary[] | Record<string, LoadFeedbackSummary> | null;
   weekId?: string;
   nowIso?: string;
+  /**
+   * Optional awareness of TrainingDecision's chosen direction. When the system has
+   * already entered a reentry / controlled-reload state (single-source-of-truth from
+   * trainingDecisionEngine), the weekly summary must NOT additionally emit
+   * "本周先控制风险" on top of the existing conservative direction. See
+   * docs/TRAINING_RECOMMENDATION_SOURCE_OF_TRUTH_REWRITE_PLAN_V1.md AR-4.
+   */
+  trainingDecisionContext?: {
+    activePhase?: 'base' | 'build' | 'overload' | 'deload' | 'reentry' | 'restart';
+    weeklyDirectionBlocked?: boolean;
+  };
 };
 
 export type WeeklyProgressionItem = {
@@ -810,7 +821,18 @@ export const buildWeeklyProgressionRecommendation = (input: WeeklyProgressionInp
     ...item,
     guardedRecommendation: normalizeWeeklyProgressionItemToGuardedRecommendation(item),
   }));
-  const summary = weeklySummary(items);
+  // AR-4: when TrainingDecision has already entered reentry/restart and weekly direction
+  // is blocked (no severe signal), suppress the "本周先控制风险" double-penalty summary.
+  const reentryActive =
+    input.trainingDecisionContext?.activePhase === 'reentry' ||
+    input.trainingDecisionContext?.activePhase === 'restart';
+  const noSeverePainOrPlateau = !items.some(
+    (item) => item.riskLevel === 'high' || item.recommendationKind === 'pain_review',
+  );
+  const summary =
+    reentryActive && input.trainingDecisionContext?.weeklyDirectionBlocked && noSeverePainOrPlateau
+      ? '已在回归周，先维持当前节奏。'
+      : weeklySummary(items);
   const blockedReasons = unique(items.flatMap((item) => item.blockedReasons));
   const hasGlobalLowConfidenceSignal = hasLowConfidence(recommendationConfidence);
   const sourceEngineIds = unique([SOURCE_ENGINE_ID, ...items.flatMap((item) => item.sourceIds)]);
