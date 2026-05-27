@@ -153,21 +153,38 @@ export interface CloudSyncFlowPersistedState {
   backupExportConfirmed: boolean;
   dryRunRequested: boolean;
   backupJson: string | null;
+  // When the user successfully completes the first full-acceptance upload
+  // (status === 'accepted'), we stash the AppData hash that landed in the
+  // cloud. On next mount, if this hash still matches the live local hash,
+  // we treat sync as "already on" without forcing the user to re-toggle —
+  // this is the only persistence path for the otherwise-in-memory
+  // productionSyncApplyState. mount-time reconciliation against the cloud
+  // can still demote this to off if the cloud row has been deleted.
+  syncedAppDataHash: string | null;
+  syncedOwnerUserId: string | null;
+  syncedAt: string | null;
 }
 
 interface CloudSyncFlowEnvelope extends CloudSyncFlowPersistedState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   appDataSnapshotHash: string | null;
   savedAt: string;
 }
 
 export const CLOUD_SYNC_FLOW_STORAGE_KEY = 'ironpath_cloud_sync_flow_state_v1';
-const CLOUD_SYNC_FLOW_SCHEMA_VERSION = 1;
+const CLOUD_SYNC_FLOW_SCHEMA_VERSION = 2;
+// v1 envelopes (without sync-on tracking fields) are still accepted —
+// users who confirmed a backup before this upgrade should not have to
+// re-confirm it after deploy. Their syncedAppDataHash just starts as null.
+const CLOUD_SYNC_FLOW_LEGACY_SCHEMA_VERSION = 1;
 
 const EMPTY_CLOUD_SYNC_FLOW_STATE: CloudSyncFlowPersistedState = {
   backupExportConfirmed: false,
   dryRunRequested: false,
   backupJson: null,
+  syncedAppDataHash: null,
+  syncedOwnerUserId: null,
+  syncedAt: null,
 };
 
 const parseCloudSyncFlowEnvelope = (raw: string | null): CloudSyncFlowEnvelope | null => {
@@ -175,12 +192,22 @@ const parseCloudSyncFlowEnvelope = (raw: string | null): CloudSyncFlowEnvelope |
   try {
     const parsed = JSON.parse(raw) as Partial<CloudSyncFlowEnvelope> | null;
     if (!parsed || typeof parsed !== 'object') return null;
-    if (parsed.schemaVersion !== CLOUD_SYNC_FLOW_SCHEMA_VERSION) return null;
+    if (
+      parsed.schemaVersion !== CLOUD_SYNC_FLOW_SCHEMA_VERSION &&
+      parsed.schemaVersion !== CLOUD_SYNC_FLOW_LEGACY_SCHEMA_VERSION
+    ) {
+      return null;
+    }
     return {
       schemaVersion: CLOUD_SYNC_FLOW_SCHEMA_VERSION,
       backupExportConfirmed: parsed.backupExportConfirmed === true,
       dryRunRequested: parsed.dryRunRequested === true,
       backupJson: typeof parsed.backupJson === 'string' ? parsed.backupJson : null,
+      syncedAppDataHash:
+        typeof parsed.syncedAppDataHash === 'string' ? parsed.syncedAppDataHash : null,
+      syncedOwnerUserId:
+        typeof parsed.syncedOwnerUserId === 'string' ? parsed.syncedOwnerUserId : null,
+      syncedAt: typeof parsed.syncedAt === 'string' ? parsed.syncedAt : null,
       appDataSnapshotHash:
         typeof parsed.appDataSnapshotHash === 'string' ? parsed.appDataSnapshotHash : null,
       savedAt: typeof parsed.savedAt === 'string' ? parsed.savedAt : '',
@@ -221,6 +248,9 @@ export const loadCloudSyncFlowState = (
     backupExportConfirmed: parsed.backupExportConfirmed,
     dryRunRequested: parsed.dryRunRequested,
     backupJson: parsed.backupJson,
+    syncedAppDataHash: parsed.syncedAppDataHash,
+    syncedOwnerUserId: parsed.syncedOwnerUserId,
+    syncedAt: parsed.syncedAt,
   };
 };
 
@@ -235,6 +265,9 @@ export const saveCloudSyncFlowState = (
     backupExportConfirmed: Boolean(state.backupExportConfirmed),
     dryRunRequested: Boolean(state.dryRunRequested),
     backupJson: state.backupJson ?? null,
+    syncedAppDataHash: state.syncedAppDataHash ?? null,
+    syncedOwnerUserId: state.syncedOwnerUserId ?? null,
+    syncedAt: state.syncedAt ?? null,
     appDataSnapshotHash: options.appDataSnapshotHash ?? null,
     savedAt: options.nowIso ?? new Date().toISOString(),
   };
@@ -261,4 +294,5 @@ export const clearCloudSyncFlowState = (
 export const isEmptyCloudSyncFlowState = (state: CloudSyncFlowPersistedState): boolean =>
   state.backupExportConfirmed === false &&
   state.dryRunRequested === false &&
-  state.backupJson === null;
+  state.backupJson === null &&
+  state.syncedAppDataHash === null;
