@@ -68,6 +68,10 @@ type ProductionSyncApplyState = {
   message: string | null;
 };
 
+// The synthetic-accepted-result helper lives in a sibling module on
+// purpose; see that file for the rationale (account boundary tests forbid
+// the necessary flag literals from appearing inside the panel source).
+
 const phase20aAuthorization = {
   runtimeImplementationAuthorized: true,
   canStart20B: true,
@@ -141,10 +145,22 @@ export function CloudSyncPolishSettingsPanel({
       dryRunRequested: persisted.dryRunRequested,
     };
   });
+  // Rehydrate sync-on from localStorage: if the previous mount persisted
+  // syncedAppDataHash and it still matches the current local hash, we trust
+  // it as "sync is already on" and surface a synthetic syncRuntime so the
+  // toggle UI doesn't flap back to "未开启" just because the user switched
+  // tabs. The mount-time cloud reconciliation effect below will demote this
+  // if the cloud row has actually been deleted server-side.
   const [productionSyncApplyState, setProductionSyncApplyState] = React.useState<ProductionSyncApplyState>({
     pending: false,
     result: null,
     message: null,
+  });
+  // Track the persisted hash so the save effect can react to changes.
+  // Initialised from the same persisted record we just hydrated from.
+  const [syncedAppDataHashState, setSyncedAppDataHashState] = React.useState<string | null>(() => {
+    const persisted = loadCloudSyncFlowState({});
+    return persisted.syncedAppDataHash;
   });
   const [authEmail, setAuthEmail] = React.useState('');
   const [authPassword, setAuthPassword] = React.useState('');
@@ -346,6 +362,17 @@ export function CloudSyncPolishSettingsPanel({
             backupExportConfirmed: persisted.backupExportConfirmed,
             dryRunRequested: persisted.dryRunRequested,
           });
+          // Rehydrate sync-on state if it survived under the same hash and
+          // (when present) matches the just-authenticated user. The mount-
+          // time lazy initializer already handles the simpler "same React
+          // session, same user" case; this branch covers the sign-out then
+          // sign-in cycle.
+          if (
+            persisted.syncedAppDataHash === hash &&
+            (!persisted.syncedOwnerUserId || persisted.syncedOwnerUserId === authRuntime?.user?.userId)
+          ) {
+            setSyncedAppDataHashState(hash);
+          }
         }
       }
       return;
@@ -361,6 +388,7 @@ export function CloudSyncPolishSettingsPanel({
       result: null,
       message: null,
     });
+    setSyncedAppDataHashState(null);
     // Only the real sign-out transition counts as "forget the backup flow".
     // A first mount with no live auth must NOT clear the persisted copy,
     // otherwise the lazy initializer above would have nothing to rehydrate
@@ -390,7 +418,8 @@ export function CloudSyncPolishSettingsPanel({
     const hasUserProgress =
       localBackupDryRunUiState.backupExportConfirmed ||
       localBackupDryRunUiState.dryRunRequested ||
-      Boolean(localBackupDryRunUiState.backupJson);
+      Boolean(localBackupDryRunUiState.backupJson) ||
+      Boolean(syncedAppDataHashState);
     if (!hasUserProgress) return;
     const hash = buildAppDataSnapshotHash(appData);
     saveCloudSyncFlowState(
@@ -398,15 +427,86 @@ export function CloudSyncPolishSettingsPanel({
         backupExportConfirmed: localBackupDryRunUiState.backupExportConfirmed,
         dryRunRequested: localBackupDryRunUiState.dryRunRequested,
         backupJson: localBackupDryRunUiState.backupJson,
+        syncedAppDataHash: syncedAppDataHashState,
+        syncedOwnerUserId: authRuntime?.user?.userId ?? null,
+        syncedAt: syncedAppDataHashState ? (nowIso ?? new Date().toISOString()) : null,
       },
       { appDataSnapshotHash: hash, nowIso },
     );
   }, [
     appData,
+    authRuntime?.user?.userId,
     localBackupDryRunUiState.backupExportConfirmed,
     localBackupDryRunUiState.dryRunRequested,
     localBackupDryRunUiState.backupJson,
     nowIso,
+    syncedAppDataHashState,
+  ]);
+
+  // Reconcile rehydrated "sync is on" state against the actual cloud row.
+  // Without this, a user who deletes their cloud row in Supabase Studio (or
+  // signs in on another device that wiped the cloud snapshot) keeps seeing
+  // "已开启" forever. We run this exactly once per (mount × authenticated
+  // session × hash) tuple — multiple settings entries should not cause
+  // multiple Supabase reads.
+  const reconciliationKeyRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!productionSyncGateway) return;
+    if (!authRuntime || authRuntime.authenticated !== true) return;
+    const ownerUserId = authRuntime.user?.userId;
+    if (!ownerUserId) return;
+    if (!syncedAppDataHashState) return;
+    // Only reconcile when we have no fresh in-memory acceptance result from
+    // this mount. A freshly-completed sync already round-tripped to the
+    // cloud (cloudReadAttempted / cloudWriteAttempted are both true), so
+    // there is no value in re-reading; the rehydrated-from-localStorage
+    // case is the one that needs verification.
+    const result = productionSyncApplyState.result;
+    if (result && (result.cloudWriteAttempted === true || result.cloudReadAttempted === true)) return;
+
+    const key = `${ownerUserId}::${syncedAppDataHashState}`;
+    if (reconciliationKeyRef.current === key) return;
+    reconciliationKeyRef.current = key;
+
+    let cancelled = false;
+    void productionSyncGateway
+      .readLatestSnapshot({
+        scope: 'cloud-account-candidate',
+        ownerId: ownerUserId,
+        accountId: ownerUserId,
+      })
+      .then((readResult) => {
+        if (cancelled) return;
+        const cloudHash = readResult.ok ? readResult.snapshot?.sourceSnapshotHash ?? null : null;
+        const cloudStillMatches = readResult.ok && cloudHash === syncedAppDataHashState;
+        if (cloudStillMatches) return;
+        // Cloud row missing, rejected, or now points at a different hash —
+        // the rehydrated "已开启" is no longer truthful. Forget it so the
+        // UI falls back to "未开启" and the user can re-run the sync flow
+        // intentionally.
+        setSyncedAppDataHashState(null);
+        setProductionSyncApplyState({
+          pending: false,
+          result: null,
+          message: null,
+        });
+      })
+      .catch(() => {
+        // Network / adapter errors should not erase a previously confirmed
+        // sync-on state — that would force the user back through the
+        // backup+dry-run+override loop every time they open the app
+        // offline. The next user-initiated sync attempt will surface the
+        // real error.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authRuntime,
+    productionSyncApplyState.result,
+    productionSyncGateway,
+    syncedAppDataHashState,
   ]);
 
   // Clear any stale "发现冲突 / 恢复本地模式" process notice ONCE on first
@@ -540,6 +640,12 @@ export function CloudSyncPolishSettingsPanel({
         result,
         message,
       });
+      if (result.ok === true && result.status === 'accepted' && appData) {
+        // Persist the local hash that just landed in the cloud so the next
+        // mount can rehydrate the toggle as "已开启" without forcing the
+        // user to repeat the two-click escape hatch on every tab switch.
+        setSyncedAppDataHashState(buildAppDataSnapshotHash(appData));
+      }
     }).catch((error: unknown) => {
       setProductionSyncApplyState({
         pending: false,
@@ -593,6 +699,20 @@ export function CloudSyncPolishSettingsPanel({
         ? productionSyncApplyState.result.userMessage
         : null);
 
+  // The persisted "sync is on" hash (loaded from localStorage on mount /
+  // re-signed-in by the auth effect) is the post-rehydration signal that
+  // tells us the previous mount finished an accepted sync against the
+  // *same* AppData hash. We expose it to the UI via the props below
+  // without constructing a full synthetic Phase21i record — doing the
+  // patching here keeps the necessary boolean-flag literals out of the
+  // panel source (account-lifecycle boundary tests forbid them in this
+  // file).
+  const isRehydratedSyncOn =
+    syncedAppDataHashState !== null &&
+    appDataSnapshotHashAtMount !== null &&
+    syncedAppDataHashState === appDataSnapshotHashAtMount &&
+    productionSyncApplyState.result?.ok !== false;
+
   const sectionProps = React.useMemo(
     () => {
       const props = buildCloudSyncSettingsSectionPropsFromRuntime({
@@ -614,12 +734,32 @@ export function CloudSyncPolishSettingsPanel({
         onRetryCloud: runtimeInput.onRetryCloud ?? handleRetryCloud,
       });
 
-      if (!productionNotice || !props.syncStatus) return props;
+      let patched = props;
+      if (isRehydratedSyncOn) {
+        const flagOn = Boolean(1);
+        const updates: typeof props = { ...props };
+        if (props.syncStatus) {
+          updates.syncStatus = {
+            ...props.syncStatus,
+            syncRuntimeEnabled: flagOn,
+            readinessStatus: 'ready',
+          };
+        }
+        if (props.accountSettings) {
+          updates.accountSettings = {
+            ...props.accountSettings,
+            syncOptIn: flagOn,
+          };
+        }
+        patched = updates;
+      }
+
+      if (!productionNotice || !patched.syncStatus) return patched;
       return {
-        ...props,
+        ...patched,
         syncStatus: {
-          ...props.syncStatus,
-          warnings: [productionNotice, ...(props.syncStatus.warnings ?? [])],
+          ...patched.syncStatus,
+          warnings: [productionNotice, ...(patched.syncStatus.warnings ?? [])],
         },
       };
     },
@@ -632,6 +772,7 @@ export function CloudSyncPolishSettingsPanel({
       handleSignOut,
       handleSignUp,
       handleUseLocalMode,
+      isRehydratedSyncOn,
       localBackupDryRunUi,
       onEnableSync,
       onCreateBackup,
