@@ -1,9 +1,9 @@
-import type { ProgressClaritySummaryResult } from '../../engines/progressClaritySummary';
+import type { ProgressUserFacing } from '../../engines/trainingDecisionTypes';
 import { GlassCard } from '../primitives/GlassCard';
 import { StatusBadge } from '../primitives/StatusBadge';
 
 type ReadinessPressureCardProps = {
-  summary: ProgressClaritySummaryResult;
+  summary: ProgressUserFacing;
 };
 
 export function ReadinessPressureCard({ summary }: ReadinessPressureCardProps) {

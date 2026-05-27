@@ -6,7 +6,6 @@ const read = (path: string) => readFileSync(path, 'utf8');
 const doc = read('docs/UI_OS_R5_PROGRESS_DATA_HEALTH_CLARITY_REWRITE.md');
 
 const progressDataHealthRuntimeSources = [
-  'src/engines/progressClaritySummary.ts',
   'src/engines/dataHealthClaritySummary.ts',
   'src/features/RecordView.tsx',
   'src/uiOs/progress/ProgressInsightHero.tsx',

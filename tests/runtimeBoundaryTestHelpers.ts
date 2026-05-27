@@ -104,8 +104,22 @@ export const expectNoUnexpectedAppDiff = (diff: string) => {
     diff.includes('coachAutomationEngine') ||
     (diff.includes('coachAutomationSummary') && diff.includes('enginePipeline'));
 
+  // Training Recommendation Hard Rewrite V2 Phase 2 — App.tsx no longer
+  // imports postWorkoutNextTimeRecommendationEngine. It now builds the
+  // post-workout recommendation through buildTrainingDecision and stores
+  // a { sourceSessionId, recommendation } state pair. See
+  // docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §2.4.
+  const isTrainingDecisionRecordRewireDiff =
+    diff.includes('postWorkoutNextTimeRecommendationEngine') ||
+    diff.includes('buildTrainingDecision') ||
+    diff.includes('RecordUserFacing') ||
+    diff.includes('PostWorkoutNextTimeState');
+
   expect(
-    isTrainingViewCompletionDiff || isSupportCompletionDiff || isCoachAutomationPipelineRewireDiff,
+    isTrainingViewCompletionDiff ||
+      isSupportCompletionDiff ||
+      isCoachAutomationPipelineRewireDiff ||
+      isTrainingDecisionRecordRewireDiff,
   ).toBe(true);
 
   for (const forbidden of [

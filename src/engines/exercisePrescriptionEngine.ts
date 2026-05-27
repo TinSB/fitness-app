@@ -368,8 +368,17 @@ export const applyStatusRules = (
       : mesocycleWeek.phase === 'deload'
         ? Math.min(mesocycleWeek.volumeMultiplier, 0.8)
         : mesocycleWeek.volumeMultiplier;
+  // Productive-dose floor (AR-3): when activePhase is reentry or restart, ALWAYS enforce
+  // the floor — even if the caller did not explicitly supply externalExerciseRoleFloors.
+  // This guarantees every consumer of applyStatusRules (TodayView preview, training page
+  // prescriptions, etc.) shows the same productive prescription as TrainingDecision.
+  const phaseImpliesFloor =
+    effectivePhase.activePhase === 'reentry' || effectivePhase.activePhase === 'restart';
+  const defaultFloors: Partial<Record<'compound' | 'machine' | 'isolation', number>> = phaseImpliesFloor
+    ? { compound: 2, machine: 2, isolation: 1 }
+    : {};
   const setFloorForKind = (kind: string | undefined): number => {
-    const floors = context.externalExerciseRoleFloors;
+    const floors = context.externalExerciseRoleFloors ?? defaultFloors;
     if (!floors) return 1;
     if (kind === 'compound' && floors.compound !== undefined) return floors.compound;
     if (kind === 'machine' && floors.machine !== undefined) return floors.machine;
@@ -669,12 +678,16 @@ export const applyStatusRules = (
     });
   }
 
-  // AR-3: re-enforce the productive-dose floor as a FINAL pass when externalExerciseRoleFloors
-  // was supplied. Downstream stacks (applyAdaptiveExerciseRules conservativeLevel cut,
-  // pain-pattern -1, statusHitsMuscle -1) can reduce sets below the floor; the floor is the
-  // contract the caller relies on for reentry productivity.
-  if (context.externalExerciseRoleFloors) {
-    const floors = context.externalExerciseRoleFloors;
+  // AR-3: re-enforce the productive-dose floor as a FINAL pass. Use either the explicitly
+  // supplied externalExerciseRoleFloors (when TrainingDecision called us with arbitrated
+  // floors) OR the phase-implied defaults (when any caller invokes us during reentry/restart
+  // — guarantees TodayView preview and any other call site shows the same productive
+  // prescription as TrainingDecision). Downstream stacks (applyAdaptiveExerciseRules
+  // conservativeLevel cut, pain-pattern -1, statusHitsMuscle -1) can reduce sets below the
+  // floor; the floor is the contract every consumer relies on for reentry productivity.
+  const finalFloors = context.externalExerciseRoleFloors ?? defaultFloors;
+  if (finalFloors.compound !== undefined || finalFloors.machine !== undefined || finalFloors.isolation !== undefined) {
+    const floors = finalFloors;
     const floorOf = (kind: string | undefined): number => {
       if (kind === 'compound' && floors.compound !== undefined) return floors.compound;
       if (kind === 'machine' && floors.machine !== undefined) return floors.machine;

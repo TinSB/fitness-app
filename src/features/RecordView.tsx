@@ -6,14 +6,14 @@ import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/ef
 import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSetExplanationEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
 import { buildHistoryCalendarSummary } from '../engines/historyCalendarSummary';
-import { buildProgressClaritySummary, type ProgressTrendDirection } from '../engines/progressClaritySummary';
+import type { ProgressTrendDirection } from '../engines/trainingDecisionTypes';
+import { buildTrainingDecision } from '../engines/trainingDecisionEngine';
 import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
 import { buildSessionQualityResult } from '../engines/sessionQualityEngine';
 import { buildSessionComposition } from '../engines/sessionCompositionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
-import { buildWeeklyProgressionRecommendation } from '../engines/weeklyProgressionRecommendationEngine';
 import {
   classNames,
   completedSets,
@@ -35,7 +35,7 @@ import {
 } from '../engines/trainingCalendarEngine';
 import type { CoachAutomationSummary } from '../engines/enginePipeline';
 import type { CoachAction } from '../engines/coachActionEngine';
-import type { PostWorkoutNextTimeRecommendation } from '../engines/postWorkoutNextTimeRecommendationEngine';
+import type { RecordUserFacing } from '../engines/trainingDecisionTypes';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel, type DataHealthActionView } from '../presenters/dataHealthPresenter';
 import {
@@ -122,7 +122,7 @@ export interface RecordViewProps {
   initialSection?: RecordSectionTarget;
   selectedSessionId?: string;
   selectedDate?: string;
-  postWorkoutNextTimeRecommendation?: PostWorkoutNextTimeRecommendation | null;
+  postWorkoutNextTimeRecommendation?: RecordUserFacing | null;
   surfaceMode?: 'history' | 'progress';
 }
 
@@ -661,31 +661,55 @@ export function RecordView({
       : painSessions.length > 0 || effectiveSummary.effectiveSets >= 24 || effectiveSummary.completedSets >= 32
         ? 'high'
         : 'normal';
-    return buildProgressClaritySummary({
-      strengthTrend,
-      recoveryPressure,
-      dataCoverageStatus: analyticsHistory.length >= 4 ? 'sufficient' : analyticsHistory.length >= 2 ? 'limited' : 'insufficient',
-      effectiveSetSummary: effectiveSummary,
-      volumeSummary: {
-        thisMonthSessions: monthStats.monthSessions.length,
-        recentFourWeekAverage: recentWeekAverage,
-        completedSets: effectiveSummary.completedSets,
-        painSessionCount: painSessions.length,
-        monthVolumeLabel: formatTrainingVolume(monthStats.monthVolume, unitSettings),
+    return buildTrainingDecision(
+      {
+        template: data.templates[0] || ({ id: 'fallback', exercises: [] } as never),
+        todayStatus: data.todayStatus,
+        history: data.history,
+        mesocyclePlan: data.mesocyclePlan,
+        screening: data.screeningProfile,
+        trainingMode: data.trainingMode,
       },
-      strengthTrendItems: progressStrengthTrendItems,
-    });
-  }, [analyticsHistory.length, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
+      {
+        progress: {
+          strengthTrend,
+          recoveryPressure,
+          dataCoverageStatus:
+            analyticsHistory.length >= 4 ? 'sufficient' : analyticsHistory.length >= 2 ? 'limited' : 'insufficient',
+          effectiveSetSummary: effectiveSummary,
+          volumeSummary: {
+            thisMonthSessions: monthStats.monthSessions.length,
+            recentFourWeekAverage: recentWeekAverage,
+            completedSets: effectiveSummary.completedSets,
+            painSessionCount: painSessions.length,
+            monthVolumeLabel: formatTrainingVolume(monthStats.monthVolume, unitSettings),
+          },
+          strengthTrendItems: progressStrengthTrendItems,
+        },
+      },
+    ).userFacing.progress!;
+  }, [analyticsHistory.length, data, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
   const weeklyProgressionRecommendation = React.useMemo(() => {
     const today = todayKey();
-    return buildWeeklyProgressionRecommendation({
-      trainingIntelligenceSummary,
-      effectiveSetSummary: effectiveSummary,
-      painPatterns,
-      weekId: today,
-      nowIso: `${today}T12:00:00.000Z`,
-    });
-  }, [effectiveSummary, painPatterns, trainingIntelligenceSummary]);
+    return buildTrainingDecision(
+      {
+        template: data.templates[0] || ({ id: 'fallback', exercises: [] } as never),
+        todayStatus: data.todayStatus,
+        history: data.history,
+        mesocyclePlan: data.mesocyclePlan,
+        screening: data.screeningProfile,
+        trainingMode: data.trainingMode,
+      },
+      {
+        plan: {
+          trainingIntelligenceSummary,
+          effectiveSetSummary: effectiveSummary,
+          painPatterns,
+          weekId: today,
+        },
+      },
+    ).userFacing.plan!;
+  }, [data, effectiveSummary, painPatterns, trainingIntelligenceSummary]);
   const dataHealthClarity = React.useMemo(
     () =>
       buildDataHealthClaritySummary({

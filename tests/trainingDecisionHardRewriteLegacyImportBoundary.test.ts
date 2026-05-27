@@ -23,9 +23,17 @@ const collect = (relPaths: string[]) =>
   relPaths.flatMap((rel) => (existsSync(path.join(ROOT, rel)) ? walk(path.join(ROOT, rel)) : []));
 
 const DELETED_LEGACY_MODULES = [
+  // Phase 1
   'coachAutomationEngine',
   'deloadSignalEngine',
   'recommendationReasonSelector',
+  // Phase 2
+  'weeklyProgressionRecommendationEngine',
+  'progressClaritySummary',
+  'postWorkoutNextTimeRecommendationEngine',
+  'todayDecisionSurface',
+  'recommendationTraceEngine',
+  'recommendationExplanationPresenter',
 ];
 
 describe('trainingDecisionHardRewriteLegacyImportBoundary', () => {

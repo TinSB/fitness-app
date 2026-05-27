@@ -1,29 +1,20 @@
 import React from 'react';
 import { classNames, number } from '../../engines/engineUtils';
 import { formatWeight } from '../../engines/unitConversionEngine';
-import type {
-  PostWorkoutExerciseRecommendation,
-  PostWorkoutNextTimeRecommendation,
-} from '../../engines/postWorkoutNextTimeRecommendationEngine';
+import type { PostWorkoutItemView, RecordUserFacing } from '../../engines/trainingDecisionTypes';
 import type { TrainingSession, UnitSettings } from '../../models/training-model';
 import { GlassCard } from '../primitives/GlassCard';
 import { useUiTheme } from '../theme/UiThemeProvider';
 
 export const shouldShowPostWorkoutNextTimeRecommendation = (
   session: Pick<TrainingSession, 'id'> | null | undefined,
-  recommendation: PostWorkoutNextTimeRecommendation | null | undefined,
+  recommendation: RecordUserFacing | null | undefined,
   isEditing: boolean,
-): recommendation is PostWorkoutNextTimeRecommendation =>
-  Boolean(
-    session &&
-      recommendation &&
-      !isEditing &&
-      recommendation.sourceSessionId === session.id &&
-      recommendation.recommendations.length > 0,
-  );
+): recommendation is RecordUserFacing =>
+  Boolean(session && recommendation && !isEditing && recommendation.perExercise.length > 0);
 
 export const formatPostWorkoutNextTimePrescription = (
-  recommendation: Pick<PostWorkoutExerciseRecommendation, 'actionableLoadKg' | 'plannedReps'>,
+  recommendation: Pick<PostWorkoutItemView, 'actionableLoadKg' | 'plannedReps'>,
   unitSettings: UnitSettings,
 ): string => {
   const loadText = number(recommendation.actionableLoadKg) > 0
@@ -40,7 +31,7 @@ export function PostWorkoutNextTimeRecommendationCard({
   recommendation,
   unitSettings,
 }: {
-  recommendation: PostWorkoutNextTimeRecommendation;
+  recommendation: RecordUserFacing;
   unitSettings: UnitSettings;
 }) {
   const { resolvedTheme } = useUiTheme();
@@ -57,10 +48,10 @@ export function PostWorkoutNextTimeRecommendationCard({
     >
       <div>
         <div className={classNames('text-sm font-semibold', isDark ? 'text-emerald-200' : 'text-emerald-700')}>下次建议</div>
-        <p className={classNames('mt-1 text-sm leading-6', isDark ? 'text-white/60' : 'text-slate-600')}>{recommendation.summary}</p>
+        <p className={classNames('mt-1 text-sm leading-6', isDark ? 'text-white/60' : 'text-slate-600')}>{recommendation.nextTimeHint}</p>
       </div>
       <div className="space-y-2">
-        {recommendation.recommendations.map((item) => {
+        {recommendation.perExercise.map((item) => {
           const prescription = formatPostWorkoutNextTimePrescription(item, unitSettings);
           return (
             <div

@@ -7,9 +7,8 @@ import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildEnginePipeline } from '../engines/enginePipeline';
-import { buildTodayDecisionSurface } from '../engines/todayDecisionSurface';
+import { buildTrainingDecision } from '../engines/trainingDecisionEngine';
 import { buildTodayTrainingReadinessDecision } from '../engines/todayTrainingReadinessDecisionEngine';
-import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
@@ -333,23 +332,22 @@ export function TodayView({
         : recoveryRecommendation?.templateId
           ? data.templates.find((template) => template.id === recoveryRecommendation.templateId) || selectedTemplate
           : selectedTemplate;
-  const recommendationTrace = React.useMemo(
+  const trainingDecision = React.useMemo(
     () =>
-      buildRecommendationTrace({
-        ...data,
-        template: explanationTemplate,
-        sessionTemplateId: explanationTemplate.id,
-        trainingMode,
-        weeklyPrescription,
-        history: decisionContext.history,
-        todayStatus: decisionContext.todayStatus,
-        screeningProfile: decisionContext.screeningProfile,
-        mesocyclePlan: decisionContext.mesocyclePlan,
-        healthMetricSamples: decisionContext.healthMetricSamples,
-        importedWorkoutSamples: decisionContext.importedWorkoutSamples,
-      }),
-    [data, explanationTemplate, trainingMode, weeklyPrescription, decisionContext]
+      buildTrainingDecision(
+        {
+          template: explanationTemplate,
+          todayStatus: decisionContext.todayStatus,
+          history: decisionContext.history,
+          mesocyclePlan: decisionContext.mesocyclePlan,
+          screening: decisionContext.screeningProfile,
+          healthSummary: decisionContext.healthSummary,
+          trainingMode,
+        },
+      ),
+    [decisionContext, explanationTemplate, trainingMode]
   );
+  const recommendationExplanation = trainingDecision.userFacing.explanation;
   const recommendationExplanationTitle = todayTrainingState.status === 'completed' ? '为什么这样建议下次训练？' : '为什么这样推荐？';
   const currentTrainingName = todayViewModel.currentTrainingName;
   const decisionText = todayViewModel.decisionText;
@@ -485,15 +483,15 @@ export function TodayView({
         : 'normal';
   const fatigueDecisionState =
     decisionContext.todayStatus.energy === '低' || decisionContext.todayStatus.sleep === '差' ? 'high' : 'normal';
-  const todayDecisionSurface = buildTodayDecisionSurface({
+  const todayDecisionInputs = {
     recommendedFocus: currentTrainingName,
     selectedFocusOverride: resolvedTodayFocusSelection.overrideActive ? resolvedTodayFocusSelection.selectedFocusLabel : undefined,
     activeSessionState:
       todayTrainingState.status === 'in_progress'
-        ? 'active'
+        ? 'active' as const
         : todayTrainingState.status === 'completed'
-          ? 'completed'
-          : 'none',
+          ? 'completed' as const
+          : 'none' as const,
     hasUnfinishedSession: todayTrainingState.status === 'in_progress',
     hasCompletedSession: todayTrainingState.status === 'completed',
     readinessState: readinessDecisionState,
@@ -508,8 +506,24 @@ export function TodayView({
     currentDate: todayTrainingState.date,
     noPlanAvailable: !selectedTemplate.id,
     existingPrimaryActionLabel: todayViewModel.primaryActionLabel,
-    existingDecisionText: decisionText,
-  });
+  };
+  const trainingDecisionForToday = React.useMemo(
+    () =>
+      buildTrainingDecision(
+        {
+          template: explanationTemplate,
+          todayStatus: decisionContext.todayStatus,
+          history: decisionContext.history,
+          mesocyclePlan: decisionContext.mesocyclePlan,
+          screening: decisionContext.screeningProfile,
+          healthSummary: decisionContext.healthSummary,
+          trainingMode,
+        },
+        { today: todayDecisionInputs },
+      ),
+    [decisionContext, explanationTemplate, trainingMode, todayDecisionInputs],
+  );
+  const todayDecisionSurface = trainingDecisionForToday.userFacing.today!;
   const todayReadinessHeroDecision = React.useMemo(
     () => buildTodayReadinessHeroDecision(todayDecisionSurface, todayReadinessDecision),
     [todayDecisionSurface, todayReadinessDecision],
@@ -598,7 +612,10 @@ export function TodayView({
   const shouldShowTodaySafetyStrip = todayDecisionSurface.decisionState === 'source_unclear';
   const keyExerciseNames = previewExercises.map((exercise) => exerciseLabel(exercise)).join(' / ');
   const heroReadinessDecisionSummary =
-    todayReadinessDecision.suggestedActions.length || todayReadinessDecision.guardedRecommendation?.actionType === 'open_review' ? (
+    todayReadinessDecision.decisionKind !== 'normal' ||
+    todayReadinessDecision.action === 'review_first' ||
+    todayReadinessDecision.action === 'no_plan_available' ||
+    todayReadinessDecision.action === 'postpone_training' ? (
       <TodayReadinessDecisionSummary decision={todayReadinessDecision} />
     ) : null;
   const heroSupportingAction =
@@ -775,11 +792,10 @@ export function TodayView({
                 ) : null}
 
                 <RecommendationExplanationPanel
-                  trace={recommendationTrace}
+                  explanation={recommendationExplanation}
                   title={recommendationExplanationTitle}
                   compact
                   maxVisibleFactors={2}
-                  recoveryRecommendation={recoveryRecommendation}
                 />
 
                 {recoveryDetailGuidanceItems.length ? (

@@ -1,12 +1,12 @@
-import type { ProgressClaritySummaryResult } from '../../engines/progressClaritySummary';
+import type { ProgressUserFacing } from '../../engines/trainingDecisionTypes';
 import { GlassCard } from '../primitives/GlassCard';
 import { StatusBadge, type UiOsBadgeState } from '../primitives/StatusBadge';
 
 type ProgressInsightHeroProps = {
-  summary: ProgressClaritySummaryResult;
+  summary: ProgressUserFacing;
 };
 
-const badgeState: Record<ProgressClaritySummaryResult['insightState'], UiOsBadgeState> = {
+const badgeState: Record<ProgressUserFacing['insightState'], UiOsBadgeState> = {
   improving: 'safe',
   stable: 'info',
   fatigue_risk: 'warning',

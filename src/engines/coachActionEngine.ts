@@ -325,12 +325,51 @@ const dataHealthActions = (report: DataHealthReport | null | undefined, createdA
     );
 };
 
+const dailyAdjustmentTypeLabel = (type: DailyTrainingAdjustment['type']) => {
+  switch (type) {
+    case 'conservative':
+      return '保守训练';
+    case 'deload_like':
+      return '接近减量';
+    case 'main_only':
+      return '只做主训练';
+    case 'reduce_support':
+      return '减少辅助';
+    case 'substitute_risky_exercises':
+      return '替代风险动作';
+    case 'rest_or_recovery':
+      return '恢复或低负荷';
+    case 'normal':
+      return '照常训练';
+  }
+};
+
+const dailyAdjustmentSummary = (type: DailyTrainingAdjustment['type']) => {
+  switch (type) {
+    case 'conservative':
+      return '今天建议保守训练，不主动加量。';
+    case 'deload_like':
+      return '今天建议明显降低训练压力。';
+    case 'main_only':
+      return '今天只完成主训练，跳过非必要内容。';
+    case 'reduce_support':
+      return '今天保留主训练，减少辅助动作。';
+    case 'substitute_risky_exercises':
+      return '今天建议替换风险动作。';
+    case 'rest_or_recovery':
+      return '今天更适合恢复或低负荷训练。';
+    case 'normal':
+      return '今天按计划训练即可。';
+  }
+};
+
 const dailyAdjustmentAction = (adjustment: DailyTrainingAdjustment | null | undefined, createdAt: string) => {
   if (!adjustment || adjustment.type === 'normal') return undefined;
   const priority: CoachActionPriority =
     adjustment.type === 'rest_or_recovery' || adjustment.type === 'substitute_risky_exercises'
       ? 'high'
       : 'medium';
+  const summary = dailyAdjustmentSummary(adjustment.type);
   return makeAction({
     id: `daily-adjustment-${adjustment.type}`,
     source: 'dailyAdjustment',
@@ -342,9 +381,9 @@ const dailyAdjustmentAction = (adjustment: DailyTrainingAdjustment | null | unde
     createdAt,
     expiresAt: tomorrowIso(createdAt),
     targetType: 'session',
-    title: `今日自动调整：${adjustment.title}`,
-    description: adjustment.summary,
-    reason: adjustment.reasons?.[0] || adjustment.summary,
+    title: `今日自动调整：${dailyAdjustmentTypeLabel(adjustment.type)}`,
+    description: summary,
+    reason: adjustment.reasons?.[0] || summary,
     confirmTitle: '采用本次临时调整？',
     confirmDescription: '只影响本次训练，不会修改原训练模板或长期计划。',
   });
