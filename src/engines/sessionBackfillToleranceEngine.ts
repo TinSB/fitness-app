@@ -22,10 +22,13 @@ const safeDate = (value: string | undefined): Date | null => {
 };
 
 const earliestActivity = (session: TrainingSession): Date | null => {
+  // Use only the actual-training timestamps (startedAt > finishedAt). A
+  // late `editedAt` (the user fixing a typo months after the workout) is
+  // NOT a backfill signal — it would block all post-workout edits from
+  // analytics. If neither training timestamp is set, we cannot prove the
+  // session is delayed, so it counts as fresh.
   const startedAt = safeDate(session.startedAt);
   if (startedAt) return startedAt;
-  const editedAt = safeDate(session.editedAt);
-  if (editedAt) return editedAt;
   return safeDate(session.finishedAt);
 };
 
