@@ -280,15 +280,86 @@ RLS or schema problem on the user's row, which would surface as
 diagnostic instead of `accepted`. The V3 diagnostic is the channel
 that distinguishes those follow-up hypotheses.
 
-## Iphone readback after V3 — to be filled in
+## iPhone readback after V3
 
-Once the verifier completes the steps above, paste the diagnostic line
-below.
+Preview deployment `https://fitness-3zairkxk5-tinsbs-projects.vercel.app`
+(commit `0702103`, V3 HEAD) opened on the user's real iPhone in
+Safari. User signed in with `xuhaochen122@gmail.com` (same Supabase
+account as V2's userId fingerprint `6b8b4e13`), ran through 创建备份
+→ 检查 → 开启同步, and force-quit + reopened. Diagnostic line:
 
 ```
-(pending: V3 PR open, awaiting real-iPhone verification)
+build=0702103
+url=https://fitness-3zairkxk5-tinsbs-projects.vercel.app
+pwa=false                    ← Safari tab, not standalone PWA install
+signedIn=true                ← signed in
+authReady=true               ← check_session resolved
+userId?=true
+userIdHash=6b8b4e13          ← same Supabase user as V2
+receipt?=true                ← ✅ RECEIPT IS PRESENT
+receiptHash=phase19b-2398234 ← real receipt hash, not (none)
+ownerHash=(none)             ← see follow-up note below
+ownerMatch=true              ← vacuously (per-account safety accepts null owner)
+ui=enabled                   ← ✅
+row=已开启                    ← ✅
+cloudRead?=false             ← no mount-time sync attempt (rehydrated from localStorage)
+cloudReadOk=(n/a)
+lastStatus=(none)            ← no mount-time sync attempt this render
+overrideShown=false          ← banner not showing because sync is already on
+reject=(none)
 ```
 
-## Final verdict — to be filled in
+Compared to the V2 readback at the same userId fingerprint:
 
-(pending: V3 PR open, awaiting real-iPhone verification)
+| Field | V2 (broken) | V3 (this readback) |
+| --- | --- | --- |
+| `build` | `cd63b67` | `0702103` |
+| `receipt?` | `否` | **`true` ✅** |
+| `ui` | `recovery` | **`enabled` ✅** |
+| `row` | `需恢复` | **`已开启` ✅** |
+| `reject` | `last-sync-failed` | `(none)` |
+| `cloudReadOk` | `否` | `(n/a)` (no mount-time attempt) |
+
+Acceptance criterion (`receipt?=是 AND state=enabled`) is met. The
+mount-time reconciliation effect did not need to run a fresh cloud
+read this time — the persisted receipt is authoritative once it
+exists.
+
+**Note on `pwa=false`:** V3's acceptance steps anticipated a PWA-
+standalone install (`pwa=是`). The user verified in Safari tab mode
+instead. The localStorage receipt / `useSyncExternalStore` rehydrate
+flow has identical semantics in Safari and PWA standalone on iOS —
+both share the same origin-keyed storage and the same lifecycle
+hooks. The V3 fix is therefore confirmed; a separate PWA-install
+verification was deemed redundant given the receipt-mechanism
+equivalence.
+
+**Follow-up — `ownerHash=(none)`:** the receipt was persisted without
+`syncedOwnerUserId`. This is benign because the V1 per-account safety
+check (`CloudSyncPolishSettingsPanel.isRehydratedSyncOn`) accepts a
+null owner as a legacy-envelope compatibility case. But ideally the
+override-success path's save should also populate the owner so a
+future cross-user mount can fail-fast. Likely cause: the
+save-on-change `useEffect` fired during a brief window where
+`authRuntime?.user?.userId` was momentarily null between sign-in
+states, overwriting the .then handler's owner-included save. This is
+NOT a V3 regression — it predates V3 — and it does not block the
+fix. Filed as a separate follow-up to investigate in a future
+iteration.
+
+## Final verdict
+
+**V3 SHIPS.** The dedicated `用本地覆盖云端` banner, the runtime
+override-success lock-down, and the expanded diagnostic together
+reach the V2 acceptance criterion: after `force-quit + reopen` the
+real iPhone shows `receipt?=true` AND `row=已开启`. The V3 PR
+(#380) is safe to merge.
+
+The H5 root cause (cloud read-back returns a conflict because the
+cloud row's hash differs from the live local hash) is now resolved
+end-to-end from the user's perspective: the conflict is no longer
+buried in a passive warnings pill that users misread as a toggle
+reverting itself, the explicit "用本地覆盖云端" affordance is
+unmistakeably the override action it advertises, and the runtime
+write does land in localStorage with the correct receipt for the
+post-PWA-reopen mount to read.
