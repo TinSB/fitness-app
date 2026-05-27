@@ -5,13 +5,12 @@ import { classNames, enrichExercise, findTemplate, getPrimaryMuscles, todayKey }
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildAdjustmentDiff } from '../engines/programAdjustmentEngine';
-import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
+import { buildTrainingDecision } from '../engines/trainingDecisionEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
-import { buildWeeklyProgressionRecommendation } from '../engines/weeklyProgressionRecommendationEngine';
 import { buildPlanViewModel, type AdjustmentDraftView, type PlanCoachInboxActionView } from '../presenters/planPresenter';
 import {
   formatAdjustmentChangeLabel,
@@ -204,17 +203,29 @@ export function PlanView({
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
   const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || selectedTemplate;
   const supportPlan = buildSupportPlan(data, selectedTemplate);
-  const recommendationTrace = React.useMemo(
+  const trainingDecision = React.useMemo(
     () =>
-      buildRecommendationTrace({
-        ...data,
-        template: selectedTemplate,
-        sessionTemplateId: selectedTemplate.id,
-        trainingMode: data.trainingMode,
-        weeklyPrescription,
-      }),
-    [data, selectedTemplate, weeklyPrescription]
+      buildTrainingDecision(
+        {
+          template: selectedTemplate,
+          todayStatus: data.todayStatus,
+          history: data.history,
+          mesocyclePlan: data.mesocyclePlan,
+          screening: data.screeningProfile,
+          trainingMode: data.trainingMode,
+        },
+        {
+          plan: {
+            trainingIntelligenceSummary,
+            painPatterns: undefined,
+            loadFeedbackSummary: undefined,
+            weekId: todayKey(),
+          },
+        },
+      ),
+    [data, selectedTemplate, trainingIntelligenceSummary]
   );
+  const recommendationExplanation = trainingDecision.userFacing.explanation;
   const enginePipeline = React.useMemo(
     () => buildEnginePipeline(data, todayKey(), { coachActions }),
     [data, coachActions],
@@ -230,14 +241,25 @@ export function PlanView({
   );
   const weeklyProgressionRecommendation = React.useMemo(() => {
     const today = todayKey();
-    return buildWeeklyProgressionRecommendation({
-      trainingIntelligenceSummary,
-      painPatterns: enginePipeline.context.painPatterns,
-      loadFeedbackSummary: enginePipeline.context.loadFeedbackSummary,
-      weekId: today,
-      nowIso: `${today}T12:00:00.000Z`,
-    });
-  }, [enginePipeline.context.loadFeedbackSummary, enginePipeline.context.painPatterns, trainingIntelligenceSummary]);
+    return buildTrainingDecision(
+      {
+        template: selectedTemplate,
+        todayStatus: data.todayStatus,
+        history: data.history,
+        mesocyclePlan: data.mesocyclePlan,
+        screening: data.screeningProfile,
+        trainingMode: data.trainingMode,
+      },
+      {
+        plan: {
+          trainingIntelligenceSummary,
+          painPatterns: enginePipeline.context.painPatterns,
+          loadFeedbackSummary: enginePipeline.context.loadFeedbackSummary,
+          weekId: today,
+        },
+      },
+    ).userFacing.plan!;
+  }, [data, selectedTemplate, enginePipeline.context.loadFeedbackSummary, enginePipeline.context.painPatterns, trainingIntelligenceSummary]);
   const adjustmentDraftViews = planViewModel.adjustmentDrafts.drafts;
   const adjustmentDrafts = adjustmentDraftViews
     .map((view) => (data.programAdjustmentDrafts || []).find((draft) => draft.id === view.id))
@@ -460,7 +482,7 @@ export function PlanView({
           </ActionButton>
         </div>
         <RecommendationExplanationPanel
-          trace={recommendationTrace}
+          explanation={recommendationExplanation}
           title="为什么这样建议？"
           maxVisibleFactors={4}
         />

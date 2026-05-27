@@ -1,4 +1,4 @@
-import type { TodayDecisionSurfaceResult } from '../../engines/todayDecisionSurface';
+import type { TodayUserFacing } from '../../engines/trainingDecisionTypes';
 import type { TodayTrainingReadinessDecision } from '../../engines/todayTrainingReadinessDecisionEngine';
 import { classNames } from '../../engines/engineUtils';
 
@@ -16,21 +16,38 @@ export const formatTodayReadinessDecisionLabel = (decision: TodayTrainingReadine
   return '建议恢复';
 };
 
+/**
+ * Adapt a TodayUserFacing surface by overlaying the readiness decision label,
+ * keeping the structured today payload intact. The decision drives the
+ * readiness label only — the rest of the payload (decisionState, heroTitle,
+ * heroExplanation, etc.) comes from the TrainingDecision SoT.
+ */
 export const buildTodayReadinessHeroDecision = (
-  surface: TodayDecisionSurfaceResult,
+  surface: TodayUserFacing,
   decision: TodayTrainingReadinessDecision,
-): TodayDecisionSurfaceResult => ({
+): TodayUserFacing => ({
   ...surface,
-  heroTitle: decision.title,
-  heroExplanation: decision.summary,
   readinessLabel: formatTodayReadinessDecisionLabel(decision),
 });
 
+const readinessSuggestedActions = (decision: TodayTrainingReadinessDecision): string[] => {
+  // Inline the legacy suggestedActions list — small, finite, derived from decisionKind.
+  if (decision.action === 'continue_active_session') return [];
+  if (decision.action === 'view_completed_session') return [];
+  if (decision.action === 'review_first') return ['查看后再决定'];
+  if (decision.action === 'no_plan_available') return ['查看后再决定'];
+  if (decision.action === 'postpone_training') return ['查看后再决定'];
+  if (decision.decisionKind === 'deload') return ['不主动加量', '保留主训练', '减少辅助'];
+  if (decision.decisionKind === 'technique') return ['不主动加量', '保留主训练'];
+  if (decision.decisionKind === 'conservative') return ['不主动加量', '保留主训练'];
+  return [];
+};
+
 export const getTodayReadinessSummaryItems = (decision: TodayTrainingReadinessDecision) =>
-  [...new Set(decision.suggestedActions.filter(Boolean))].slice(0, 3);
+  [...new Set(readinessSuggestedActions(decision).filter(Boolean))].slice(0, 3);
 
 const shouldShowPassivePreview = (decision: TodayTrainingReadinessDecision) =>
-  decision.guardedRecommendation?.actionType === 'open_review' && Boolean(decision.guardedRecommendation.preview.summary);
+  decision.decisionKind !== 'normal' && decision.action !== 'continue_active_session' && decision.action !== 'view_completed_session';
 
 export function TodayReadinessDecisionSummary({
   decision,
@@ -40,7 +57,7 @@ export function TodayReadinessDecisionSummary({
   className?: string;
 }) {
   const items = getTodayReadinessSummaryItems(decision);
-  const previewSummary = shouldShowPassivePreview(decision) ? decision.guardedRecommendation?.preview.summary : undefined;
+  const previewSummary = shouldShowPassivePreview(decision) ? '只影响本次，不改变计划' : undefined;
 
   if (!items.length && !previewSummary) return null;
 

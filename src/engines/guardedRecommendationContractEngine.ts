@@ -1,8 +1,18 @@
 import type { FocusNextSetRecommendation } from './focusNextSetRecommendationEngine';
-import type {
-  PostWorkoutExerciseRecommendation,
-  PostWorkoutNextTimeRecommendation,
-} from './postWorkoutNextTimeRecommendationEngine';
+import type { PostWorkoutItemView, RecordUserFacing } from './trainingDecisionTypes';
+
+// Backwards-compat aliases used internally so existing call-site signatures
+// continue to typecheck without forcing every importer to rename today.
+type PostWorkoutExerciseRecommendation = PostWorkoutItemView & {
+  riskLevel?: 'low' | 'medium' | 'high';
+};
+type PostWorkoutNextTimeRecommendation = {
+  sourceSessionId: string;
+  recommendations: PostWorkoutExerciseRecommendation[];
+  summary: string;
+  confidence: 'low' | 'medium' | 'high';
+  sourceEngineIds: string[];
+};
 
 export type GuardedRecommendationSource =
   | 'focus_next_set'

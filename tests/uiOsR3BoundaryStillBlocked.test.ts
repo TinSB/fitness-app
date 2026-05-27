@@ -6,7 +6,6 @@ const read = (path: string) => readFileSync(path, 'utf8');
 const doc = read('docs/UI_OS_R3_TODAY_DECISION_SURFACE_REWRITE.md');
 
 const todayRuntimeSources = [
-  'src/engines/todayDecisionSurface.ts',
   'src/features/TodayView.tsx',
   'src/uiOs/today/TodayDecisionHero.tsx',
   'src/uiOs/today/TodayFocusOverridePanel.tsx',

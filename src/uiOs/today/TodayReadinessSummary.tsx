@@ -1,17 +1,17 @@
 import { classNames } from '../../engines/engineUtils';
-import type { TodayDecisionSurfaceResult } from '../../engines/todayDecisionSurface';
+import type { TodayUserFacing } from '../../engines/trainingDecisionTypes';
 import { GlassCard } from '../primitives/GlassCard';
 import { StatusBadge, type UiOsBadgeState } from '../primitives/StatusBadge';
 
 export type TodayReadinessSummaryProps = {
-  decision: TodayDecisionSurfaceResult;
+  decision: TodayUserFacing;
   readinessScore?: number;
   durationMinutes?: number;
   note?: string;
   className?: string;
 };
 
-const readinessState: Record<TodayDecisionSurfaceResult['decisionState'], UiOsBadgeState> = {
+const readinessState: Record<TodayUserFacing['decisionState'], UiOsBadgeState> = {
   train_recommended: 'safe',
   train_conservative: 'warning',
   recovery_recommended: 'info',

@@ -1,24 +1,20 @@
 import React from 'react';
 import { AlertTriangle, ChevronDown } from 'lucide-react';
-import type { RecommendationTrace } from '../engines/recommendationTraceEngine';
-import type { RecoveryAwareRecommendation } from '../engines/recoveryAwareScheduler';
-import {
-  buildRecommendationExplanationViewModel,
-  type RecommendationFactorView,
-  type RecommendationWarningView,
-} from '../presenters/recommendationExplanationPresenter';
+import type {
+  ExplanationUserFacing,
+  RecommendationFactorView,
+  RecommendationWarningView,
+} from '../engines/trainingDecisionTypes';
 import { classNames } from '../engines/engineUtils';
 import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
 
 type RecommendationExplanationPanelProps = {
-  trace?: RecommendationTrace | null;
+  explanation?: ExplanationUserFacing | null;
   title?: string;
   compact?: boolean;
   maxVisibleFactors?: number;
   showDebugDetails?: boolean;
-  warnings?: string[];
   defaultOpen?: boolean;
-  recoveryRecommendation?: RecoveryAwareRecommendation | null;
 };
 
 const toneClass: Record<RecommendationFactorView['effectTone'], string> = {
@@ -78,26 +74,28 @@ export const RecommendationWarningNotice = ({ warnings }: { warnings: Recommenda
   );
 };
 
+const DEFAULT_FALLBACK_SUMMARY = '当前主要依据起始模板和默认处方，系统仍在积累你的训练数据。';
+
 export const RecommendationExplanationPanel = ({
-  trace,
+  explanation,
   title,
   compact = false,
   maxVisibleFactors,
   showDebugDetails = false,
-  warnings = [],
   defaultOpen = false,
-  recoveryRecommendation,
 }: RecommendationExplanationPanelProps) => {
   const { resolvedTheme } = useUiTheme();
   const isDark = resolvedTheme === 'dark';
-  const viewModel = React.useMemo(
-    () => buildRecommendationExplanationViewModel(trace, { title, warnings, recoveryRecommendation }),
-    [trace, title, warnings, recoveryRecommendation],
-  );
   const visibleLimit = maxVisibleFactors ?? (compact ? 2 : 3);
-  const primary = viewModel.primaryFactors.length ? viewModel.primaryFactors : viewModel.secondaryFactors.slice(0, 1);
+  const primary = explanation?.primaryFactors.length ? explanation.primaryFactors : (explanation?.secondaryFactors || []).slice(0, 1);
   const visibleFactors = primary.slice(0, visibleLimit);
-  const hiddenFactors = [...primary.slice(visibleLimit), ...viewModel.secondaryFactors.filter((item) => !visibleFactors.some((visible) => visible.id === item.id))];
+  const hiddenFactors = [
+    ...primary.slice(visibleLimit),
+    ...(explanation?.secondaryFactors || []).filter((item) => !visibleFactors.some((visible) => visible.id === item.id)),
+  ];
+  const panelTitle = title || explanation?.title || '为什么这样推荐？';
+  const summary = explanation?.summary || DEFAULT_FALLBACK_SUMMARY;
+  const warnings = explanation?.warnings || [];
 
   return (
     <details
@@ -110,11 +108,11 @@ export const RecommendationExplanationPanel = ({
       data-theme-surface="elevated_card"
     >
       <summary className={classNames('flex cursor-pointer list-none items-center justify-between gap-3 font-semibold', isDark ? 'text-white' : 'text-slate-950')}>
-        <span>{viewModel.title}</span>
+        <span>{panelTitle}</span>
         <ChevronDown className={classNames('h-4 w-4', isDark ? 'text-white/38' : 'text-slate-400')} />
       </summary>
       <div className={classNames('mt-3 space-y-3', compact && 'mt-2 space-y-2')}>
-        <p className={classNames('leading-6', isDark ? 'text-white/58' : 'text-slate-600', compact && 'text-xs leading-5')}>{viewModel.summary}</p>
+        <p className={classNames('leading-6', isDark ? 'text-white/58' : 'text-slate-600', compact && 'text-xs leading-5')}>{summary}</p>
         <div className="space-y-2">
           {visibleFactors.length ? (
             visibleFactors.map((factor) => <FactorRow key={factor.id} factor={factor} compact={compact} isDark={isDark} />)
@@ -132,7 +130,7 @@ export const RecommendationExplanationPanel = ({
             </div>
           </details>
         ) : null}
-        <RecommendationWarningNotice warnings={viewModel.warnings} />
+        <RecommendationWarningNotice warnings={warnings} />
         {showDebugDetails ? (
           <div className="rounded-lg bg-white/[0.05] px-3 py-2 text-xs leading-5 text-white/45" data-theme-surface="compact_row">
             已按影响程度、保守信号、训练反馈和默认规则排序。

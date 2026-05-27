@@ -95,10 +95,10 @@ const fallbackPatchType = (adjustment: DailyTrainingAdjustment): SessionPatchTyp
 export function buildSessionPatchesFromDailyAdjustment(adjustment?: DailyTrainingAdjustment | null): SessionPatch[] {
   if (!adjustment || adjustment.type === 'normal') return [];
   const changes = adjustment.suggestedChanges || [];
-  const patches = changes.map((change, index) => makePatch(mapSuggestedChangeType(change.type), change.reason, change.targetId, index));
+  const patches = changes.map((change, index) => makePatch(mapSuggestedChangeType(change.type), change.code, change.targetId, index));
   if (!patches.length) {
     const type = fallbackPatchType(adjustment);
-    if (type) patches.push(makePatch(type, adjustment.reasons?.[0] || adjustment.summary, undefined, 0));
+    if (type) patches.push(makePatch(type, adjustment.reasons?.[0] || 'daily_adjustment', undefined, 0));
   }
   const seen = new Set<string>();
   return patches.filter((patch) => {

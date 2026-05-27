@@ -1,8 +1,8 @@
-import type { ProgressClaritySummaryResult } from '../../engines/progressClaritySummary';
+import type { ProgressUserFacing } from '../../engines/trainingDecisionTypes';
 import { GlassCard } from '../primitives/GlassCard';
 
 type EffectiveSetsVolumeCardProps = {
-  summary: ProgressClaritySummaryResult;
+  summary: ProgressUserFacing;
 };
 
 export function EffectiveSetsVolumeCard({ summary }: EffectiveSetsVolumeCardProps) {

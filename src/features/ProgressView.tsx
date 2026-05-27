@@ -25,7 +25,7 @@ import { formatExplanationItem } from '../engines/explainability/shared';
 import { buildWeeklyActionRecommendations } from '../engines/weeklyCoachActionEngine';
 import { classNames, formatDate, isCompletedSet, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
 import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
-import { buildDeloadSignal } from '../engines/deloadSignalEngine';
+import { buildAdaptiveDeloadDecision } from '../engines/adaptiveFeedbackEngine';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
 import { buildTrainingLevelAssessment, formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
@@ -242,7 +242,7 @@ export function ProgressView({
   const weeklyReport = buildWeeklyReport(history, data.bodyWeights || []);
   const coreTrends = CORE_TREND_EXERCISES.map((item) => ({ ...item, trend: buildExerciseTrend(history, item.id) }));
   const coreE1rmProfiles = CORE_TREND_EXERCISES.map((item) => ({ ...item, profile: buildE1RMProfile(history, item.id) }));
-  const deloadSignal = buildDeloadSignal(data);
+  const deloadSignal = buildAdaptiveDeloadDecision(data);
   const mesocycleWeek = getEffectiveTrainingPhase({
     mesocyclePlan: data.mesocyclePlan,
     history,

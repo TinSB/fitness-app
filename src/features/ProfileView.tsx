@@ -1,7 +1,7 @@
 import React from 'react';
 import { Activity, Archive, Cloud, Database, Download, Dumbbell, HeartPulse, Info, Palette, RefreshCcw, ShieldCheck, UserRound, Wrench } from 'lucide-react';
 import { downloadText, makeCsv } from '../engines/analytics';
-import type { CoachAutomationSummary } from '../engines/coachAutomationEngine';
+import type { CoachAutomationSummary } from '../engines/enginePipeline';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { filterAnalyticsHistory } from '../engines/sessionHistoryEngine';
 import { todayKey } from '../engines/engineUtils';

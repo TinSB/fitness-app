@@ -1,12 +1,19 @@
 import type { AppData } from '../models/training-model';
 import { buildCoachActions, type CoachAction } from './coachActionEngine';
 import { filterVisibleCoachActions } from './coachActionDismissEngine';
-import { buildDataHealthReport, type DataHealthReport } from './dataHealthEngine';
+import { buildDataHealthReport, sortDataHealthIssues, type DataHealthReport } from './dataHealthEngine';
 import { buildDailyTrainingAdjustment, type DailyTrainingAdjustment } from './dailyTrainingAdjustmentEngine';
 import { buildNextWorkoutRecommendation, type NextWorkoutRecommendation } from './nextWorkoutScheduler';
 import { buildTodayTrainingState, type TodayTrainingState } from './todayStateEngine';
 import { buildTrainingDecisionContext, type TrainingDecisionContext } from './trainingDecisionContext';
 import { actionableSorenessAreas } from './engineUtils';
+
+export type CoachAutomationSummary = {
+  todayAdjustment?: DailyTrainingAdjustment;
+  nextWorkout?: NextWorkoutRecommendation;
+  dataHealth?: DataHealthReport;
+  keyWarnings: string[];
+};
 
 export type EnginePipelineResult = {
   context: TrainingDecisionContext;
@@ -16,6 +23,7 @@ export type EnginePipelineResult = {
   todayAdjustment?: DailyTrainingAdjustment;
   coachActions: CoachAction[];
   visibleCoachActions: CoachAction[];
+  coachAutomationSummary: CoachAutomationSummary;
 };
 
 export type BuildEnginePipelineOptions = {
@@ -92,6 +100,13 @@ export function buildEnginePipeline(
     context.currentDateLocalKey,
   );
 
+  const coachAutomationSummary: CoachAutomationSummary = {
+    todayAdjustment,
+    nextWorkout,
+    dataHealth,
+    keyWarnings: buildCoachAutomationKeyWarnings(dataHealth, todayAdjustment, nextWorkout),
+  };
+
   return {
     context,
     todayState,
@@ -100,5 +115,28 @@ export function buildEnginePipeline(
     todayAdjustment,
     coachActions,
     visibleCoachActions,
+    coachAutomationSummary,
   };
 }
+
+const nonEmpty = (value: unknown) => String(value || '').trim();
+const uniqueWarnings = (items: string[]) => [...new Set(items.map(nonEmpty).filter(Boolean))];
+
+const dataHealthWarnings = (report?: DataHealthReport) =>
+  sortDataHealthIssues(report?.issues || [])
+    .slice(0, 3)
+    .map((issue) => `${issue.title}：${issue.message}`);
+
+const buildCoachAutomationKeyWarnings = (
+  dataHealth: DataHealthReport,
+  todayAdjustment?: DailyTrainingAdjustment,
+  nextWorkout?: NextWorkoutRecommendation,
+): string[] => {
+  if (dataHealth.status !== 'healthy') {
+    return uniqueWarnings(dataHealthWarnings(dataHealth)).slice(0, 3);
+  }
+  return uniqueWarnings([
+    ...(todayAdjustment && todayAdjustment.type !== 'normal' ? todayAdjustment.reasons.slice(0, 2) : []),
+    ...(nextWorkout?.warnings || []).slice(0, 2),
+  ]).slice(0, 3);
+};

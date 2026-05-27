@@ -1,4 +1,4 @@
-import type { ProgressStrengthTrendItem } from '../../engines/progressClaritySummary';
+import type { ProgressStrengthTrendItem } from '../../engines/trainingDecisionTypes';
 import { classNames } from '../../engines/engineUtils';
 import { GlassCard } from '../primitives/GlassCard';
 import { StatusBadge, type UiOsBadgeState } from '../primitives/StatusBadge';

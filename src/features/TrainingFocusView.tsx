@@ -36,7 +36,7 @@ import { FocusModeActionBar } from '../uiOs/training/FocusModeActionBar';
 import type { FocusModeSecondaryActionItem } from '../uiOs/training/FocusModeSecondaryActions';
 import { ActionButton as UiOsActionButton } from '../uiOs/primitives/ActionButton';
 import { BottomSheet as UiOsBottomSheet } from '../uiOs/surfaces/BottomSheet';
-import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
+import { buildSessionExplanation } from '../presenters/sessionExplanationPresenter';
 import { resolveActionableLoadContract } from '../engines/actionableLoadContract';
 
 type EditableSetField = 'weight' | 'reps' | 'rpe' | 'rir' | 'note' | 'painFlag' | 'techniqueQuality';
@@ -656,7 +656,7 @@ export function TrainingFocusView({
   );
   const visibleReplacementOptions = React.useMemo(() => replacementOptions.filter((option) => option.priority !== 'avoid'), [replacementOptions]);
   const replacementDisplayGroups = React.useMemo(() => buildReplacementDisplayGroups(visibleReplacementOptions), [visibleReplacementOptions]);
-  const recommendationTrace = React.useMemo(() => buildSessionRecommendationTrace(session), [session]);
+  const recommendationExplanation = React.useMemo(() => buildSessionExplanation(session), [session]);
 
   const warmupPolicyNotice =
     currentStep.stepType === 'working' && currentStep.warmupPolicy && !currentStep.warmupPolicy.shouldShowWarmupSets && currentStep.warmupPolicy.policy !== 'none'
@@ -1189,7 +1189,7 @@ export function TrainingFocusView({
 
   const renderExplanationSheet = () => (
     <BottomSheet open={showExplanationSheet} title="推荐依据" onClose={() => setShowExplanationSheet(false)}>
-      <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} />
+      <RecommendationExplanationPanel explanation={recommendationExplanation} compact maxVisibleFactors={3} />
     </BottomSheet>
   );
 

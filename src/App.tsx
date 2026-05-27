@@ -46,10 +46,13 @@ import {
   updateFocusActualDraftWithResult,
 } from './engines/focusModeStateEngine';
 import type { FocusNextSetRecommendation } from './engines/focusNextSetRecommendationEngine';
-import {
-  buildPostWorkoutNextTimeRecommendation,
-  type PostWorkoutNextTimeRecommendation,
-} from './engines/postWorkoutNextTimeRecommendationEngine';
+import { buildTrainingDecision } from './engines/trainingDecisionEngine';
+import type { RecordUserFacing } from './engines/trainingDecisionTypes';
+
+type PostWorkoutNextTimeState = {
+  sourceSessionId: string;
+  recommendation: RecordUserFacing;
+};
 import { dispatchWorkoutExecutionEvent, type FocusActionResult } from './engines/workoutExecutionStateMachine';
 import { upsertLoadFeedback } from './engines/loadFeedbackEngine';
 import { deleteTrainingSession, markSessionDataFlag } from './engines/sessionHistoryEngine';
@@ -67,7 +70,6 @@ import { applyStatusRules } from './engines/progressionEngine';
 import { buildTrainingDecisionContext, toStatusRulesDecisionContext } from './engines/trainingDecisionContext';
 import { buildEnginePipeline } from './engines/enginePipeline';
 import { buildDerivedStateInvalidation, type AppMutationEvent } from './engines/derivedStateInvalidationEngine';
-import { buildCoachAutomationSummary } from './engines/coachAutomationEngine';
 import {
   buildCoachActionAdjustmentDraftInput,
   buildCoachActions,
@@ -275,7 +277,7 @@ function App() {
   const [appToast, setAppToast] = useState<AppToast | null>(null);
   const [focusNextSetRecommendation, setFocusNextSetRecommendation] = useState<FocusNextSetRecommendation | null>(null);
   const [postWorkoutNextTimeRecommendation, setPostWorkoutNextTimeRecommendation] =
-    useState<PostWorkoutNextTimeRecommendation | null>(null);
+    useState<PostWorkoutNextTimeState | null>(null);
   const [todayFocusOverride, setTodayFocusOverride] = useState<TodayTrainingFocusOverrideOption>('system');
   const [pipelineRevision, setPipelineRevision] = useState(0);
   const completeSetGuardRef = useRef<{ key: string; at: number } | null>(null);
@@ -432,7 +434,7 @@ function App() {
     [data, pipelineRevision],
   );
   const decisionContext = baseEnginePipeline.context;
-  const coachAutomationSummary = React.useMemo(() => buildCoachAutomationSummary(data), [data]);
+  const coachAutomationSummary = baseEnginePipeline.coachAutomationSummary;
   const trainingIntelligenceSummary = React.useMemo(() => {
     const analyticsHistory = decisionContext.normalHistory;
     const latestSession = [...analyticsHistory].sort((left, right) =>
@@ -663,17 +665,27 @@ function App() {
     const completionGuard = buildIncompleteMainWorkGuard(currentData.activeSession);
     const completed = completeTrainingSessionIntoHistory(currentData, finishedAt, { endedEarly: completionGuard.hasIncompleteMainWork });
     const finishedSession = completed.session;
-    const nextPostWorkoutRecommendation = finishedSession
-      ? buildPostWorkoutNextTimeRecommendation({
-          session: finishedSession,
-          history: currentData.history || [],
-          unitSettings: currentData.unitSettings,
-          nowIso: finishedAt,
-        })
+    const nextPostWorkoutRecord = finishedSession
+      ? buildTrainingDecision(
+          {
+            template:
+              currentData.templates.find((t) => t.id === finishedSession.templateId) ||
+              currentData.templates[0],
+            todayStatus: currentData.todayStatus,
+            history: currentData.history,
+            mesocyclePlan: currentData.mesocyclePlan,
+            screening: currentData.screeningProfile,
+            trainingMode: currentData.trainingMode,
+            nowIso: finishedAt,
+          },
+          { record: { session: finishedSession, unitSettings: currentData.unitSettings } },
+        ).userFacing.record!
       : null;
     setFocusNextSetRecommendation(null);
     setPostWorkoutNextTimeRecommendation(
-      nextPostWorkoutRecommendation?.recommendations.length ? nextPostWorkoutRecommendation : null,
+      nextPostWorkoutRecord?.perExercise.length && finishedSession
+        ? { sourceSessionId: finishedSession.id, recommendation: nextPostWorkoutRecord }
+        : null,
     );
     commitData(completed.data);
 
@@ -1930,7 +1942,7 @@ function App() {
   const progressPostWorkoutNextTimeRecommendation =
     postWorkoutNextTimeRecommendation &&
     progressRecordTarget.sessionId === postWorkoutNextTimeRecommendation.sourceSessionId
-      ? postWorkoutNextTimeRecommendation
+      ? postWorkoutNextTimeRecommendation.recommendation
       : null;
 
   return (
@@ -2144,7 +2156,7 @@ function App() {
                       initialSection={historyRecordTarget?.section}
                       selectedSessionId={historyRecordTarget?.sessionId}
                       selectedDate={historyRecordTarget?.date}
-                      postWorkoutNextTimeRecommendation={postWorkoutNextTimeRecommendation}
+                      postWorkoutNextTimeRecommendation={postWorkoutNextTimeRecommendation?.recommendation ?? null}
                       surfaceMode="history"
                     />
                   </Suspense>

@@ -35,7 +35,7 @@ import { EquipmentAwareRecommendationWeight } from '../ui/EquipmentAwareRecommen
 import { ResponsivePageLayout } from '../ui/layouts/ResponsivePageLayout';
 import { SetPrescriptionCard } from '../uiOs/training/TrainingOsCards';
 import { useUiTheme } from '../uiOs/theme/UiThemeProvider';
-import { buildSessionRecommendationTrace } from '../presenters/recommendationExplanationPresenter';
+import { buildSessionExplanation } from '../presenters/sessionExplanationPresenter';
 import type { SetPurpose } from '../engines/equipmentAwareLoadModel';
 
 type LoggedExercise = ExercisePrescription & {
@@ -217,7 +217,7 @@ export function TrainingView({
   const [showAbandonConfirm, setShowAbandonConfirm] = React.useState(false);
   const { resolvedTheme } = useUiTheme();
   const isDarkTheme = resolvedTheme === 'dark';
-  const recommendationTrace = React.useMemo(() => (session ? buildSessionRecommendationTrace(session) : null), [session]);
+  const recommendationExplanation = React.useMemo(() => (session ? buildSessionExplanation(session) : null), [session]);
   const sessionQuality = React.useMemo(() => (session ? buildSessionQualityResult({ session }) : null), [session]);
 
   React.useEffect(() => {
@@ -250,7 +250,7 @@ export function TrainingView({
     );
   }
 
-  if (!recommendationTrace || !sessionQuality) {
+  if (!recommendationExplanation || !sessionQuality) {
     return null;
   }
 
@@ -783,7 +783,7 @@ export function TrainingView({
             <p className="mt-1 text-xs leading-5 text-slate-500">{composition.summary}</p>
           </Card>
 
-          <RecommendationExplanationPanel trace={recommendationTrace} compact maxVisibleFactors={3} />
+          <RecommendationExplanationPanel explanation={recommendationExplanation} compact maxVisibleFactors={3} />
 
           {workoutFinished ? (
             <PageSection title="完成总结">
