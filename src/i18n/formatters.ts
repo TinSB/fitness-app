@@ -1,6 +1,7 @@
 import { formatExerciseDisplayName } from '../data/trainingData';
 import {
   DELOAD_LEVEL_LABELS,
+  EFFECTIVE_PHASE_DISPLAY_LABELS,
   INTENSITY_BIAS_LABELS,
   PHASE_LABELS,
   READINESS_ADJUSTMENT_LABELS,
@@ -237,6 +238,9 @@ export const formatRirLabel = (value: unknown) => {
 };
 
 export const formatCyclePhase = (value: unknown) => PHASE_LABELS[value as keyof typeof PHASE_LABELS] ?? fallback(value);
+
+export const formatEffectivePhase = (value: unknown) =>
+  EFFECTIVE_PHASE_DISPLAY_LABELS[value as keyof typeof EFFECTIVE_PHASE_DISPLAY_LABELS] ?? fallback(value);
 
 export const formatIntensityBias = (value: unknown) =>
   INTENSITY_BIAS_LABELS[value as keyof typeof INTENSITY_BIAS_LABELS] ?? fallback(value);

@@ -24,7 +24,7 @@ import { formatExplanationEvidence } from '../engines/explainability/evidenceExp
 import { formatExplanationItem } from '../engines/explainability/shared';
 import { buildWeeklyActionRecommendations } from '../engines/weeklyCoachActionEngine';
 import { classNames, formatDate, isCompletedSet, number, sessionCompletedSets, sessionVolume, todayKey } from '../engines/engineUtils';
-import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
+import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { buildDeloadSignal } from '../engines/deloadSignalEngine';
 import { filterAnalyticsHistory, listSessionHistory, type SessionHistoryFilter } from '../engines/sessionHistoryEngine';
 import { buildTrainingCalendar } from '../engines/trainingCalendarEngine';
@@ -243,7 +243,10 @@ export function ProgressView({
   const coreTrends = CORE_TREND_EXERCISES.map((item) => ({ ...item, trend: buildExerciseTrend(history, item.id) }));
   const coreE1rmProfiles = CORE_TREND_EXERCISES.map((item) => ({ ...item, profile: buildE1RMProfile(history, item.id) }));
   const deloadSignal = buildDeloadSignal(data);
-  const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const mesocycleWeek = getEffectiveTrainingPhase({
+    mesocyclePlan: data.mesocyclePlan,
+    history,
+  }).effectiveWeek;
   const adherenceReport = buildAdherenceReport(history);
   const adherenceAdjustment = buildAdherenceAdjustment(adherenceReport, data.programTemplate, data.screeningProfile?.adaptiveState);
   const painPatterns = buildPainPatterns(history).slice(0, 6);

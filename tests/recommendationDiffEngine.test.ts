@@ -122,11 +122,17 @@ describe('recommendationDiffEngine', () => {
   });
 
   it('limits load feedback explanations to matching exercise pools', () => {
+    // 用相对今天的近期日期，避免触发 effectiveTrainingPhase 长间隔重入派生。
+    const recentDate = (daysAgo: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      return d.toISOString().slice(0, 10);
+    };
     const heavyBenchHistory = [0, 1].map((index) =>
       upsertLoadFeedback(
         makeSession({
           id: `bench-heavy-${index}`,
-          date: `2026-04-2${index}`,
+          date: recentDate(index + 1),
           templateId: 'push-a',
           exerciseId: 'bench-press',
           setSpecs: [{ weight: 85, reps: 5, rir: 1 }],

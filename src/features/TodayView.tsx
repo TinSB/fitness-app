@@ -4,7 +4,7 @@ import { AVAILABLE_TIME_OPTIONS, ENERGY_STATES, SLEEP_STATES } from '../models/t
 import { classNames, number, todayKey } from '../engines/engineUtils';
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
-import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
+import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildTodayDecisionSurface } from '../engines/todayDecisionSurface';
@@ -19,7 +19,7 @@ import {
   type TodayTrainingFocusOverrideOption,
   type TodayTrainingFocusSelection,
 } from '../engines/todayTrainingFocusOverrideEngine';
-import { formatCyclePhase, formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
+import { formatExerciseName, formatIntensityBias, formatRirLabel, formatTemplateName, formatTrainingMode } from '../i18n/formatters';
 import { buildCoachActionListViewModel } from '../presenters/coachActionPresenter';
 import { buildDataHealthViewModel } from '../presenters/dataHealthPresenter';
 import { buildTodayViewModel } from '../presenters/todayPresenter';
@@ -318,7 +318,11 @@ export function TodayView({
     if (!pendingSessionPatches.some((patch) => patch.type === 'reduce_support' || patch.type === 'main_only' || patch.type === 'skip_optional')) return [];
     return supportPreviewItems(supportPlan);
   }, [pendingSessionPatches, supportPlan]);
-  const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const effectivePhase = getEffectiveTrainingPhase({
+    mesocyclePlan: data.mesocyclePlan,
+    history: data.history,
+  });
+  const mesocycleWeek = effectivePhase.persistedWeek;
   const readinessScore = adjustedPlan.readinessResult?.score;
   const readinessReasons = adjustedPlan.readinessResult?.reasons || adjustedPlan.readiness.reasons || [];
   const explanationTemplate =
@@ -494,7 +498,7 @@ export function TodayView({
     hasCompletedSession: todayTrainingState.status === 'completed',
     readinessState: readinessDecisionState,
     fatigueState: fatigueDecisionState,
-    recentTrainingFrequency: mesocycleWeek ? formatCyclePhase(mesocycleWeek.phase) : undefined,
+    recentTrainingFrequency: mesocycleWeek ? effectivePhase.compactLabel : undefined,
     severeDataHealthBlocker: severeDataHealthNotice,
     backupStatus: 'local-ok',
     sourceOfTruthClear: true,
@@ -906,8 +910,8 @@ export function TodayView({
                   {[
                     ['当前模板', selectedTemplateName],
                     ['训练模式', formatTrainingMode(trainingMode)],
-                    ['周期阶段', mesocycleWeek ? formatCyclePhase(mesocycleWeek.phase) : '未设置'],
-                    ['强度倾向', mesocycleWeek ? formatIntensityBias(mesocycleWeek.intensityBias) : '常规'],
+                    ['周期阶段', mesocycleWeek ? effectivePhase.compactLabel : '未设置'],
+                    ['强度倾向', mesocycleWeek ? formatIntensityBias(effectivePhase.effectiveWeek.intensityBias) : '常规'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-white/[0.04] px-3 py-2">
                       <span className="text-white/38">{label}</span>
