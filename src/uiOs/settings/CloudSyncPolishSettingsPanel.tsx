@@ -36,6 +36,8 @@ import {
   runCloudSyncRealSupabaseAuthActionRuntime,
   type CloudSyncAuthAction,
 } from './cloudSyncAuthActionController';
+import { CloudSyncDiagnosticPanel } from './CloudSyncDiagnosticPanel';
+import { fingerprintUserId } from '../../diagnostics/cloudSyncDiagnostic';
 import type {
   Phase20cAuthRuntimeAdapter,
   Phase20cAuthRuntimeWiringResult,
@@ -917,5 +919,41 @@ export function CloudSyncPolishSettingsPanel({
       }
     : sectionProps.authCard;
 
-  return <CloudSyncSettingsSection {...sectionProps} authCard={authCard} />;
+  // Diagnostic inputs (all safe — booleans + a short hash of userId). The
+  // diagnostic panel is collapsible and mounted at the bottom of the
+  // section so a real iPhone PWA user can expand it and screenshot the
+  // values during the V2 root-cause investigation. See
+  // src/diagnostics/cloudSyncDiagnostic.ts for the contract.
+  const authReady =
+    authActionState.authRuntime !== null ||
+    runtimeInput.authRuntime !== null ||
+    Boolean(authAdapter);
+  const diagnosticInputs = React.useMemo(
+    () => ({
+      signedIn,
+      authReady,
+      authenticatedUserIdPresent: Boolean(authRuntime?.user?.userId),
+      currentUserIdShortHash: fingerprintUserId(authRuntime?.user?.userId ?? null),
+      lastSyncAttemptOk: productionSyncApplyState.result?.ok ?? null,
+      cloudReadAttempted: Boolean(productionSyncApplyState.result?.cloudReadAttempted),
+      cloudReadOk:
+        productionSyncApplyState.result?.cloudReadAttempted === true
+          ? productionSyncApplyState.result?.ok === true
+          : null,
+    }),
+    [
+      authReady,
+      authRuntime?.user?.userId,
+      productionSyncApplyState.result?.cloudReadAttempted,
+      productionSyncApplyState.result?.ok,
+      signedIn,
+    ],
+  );
+
+  return (
+    <div className="space-y-3" data-testid="ironpath-cloud-sync-section-with-diagnostic">
+      <CloudSyncSettingsSection {...sectionProps} authCard={authCard} />
+      <CloudSyncDiagnosticPanel inputs={diagnosticInputs} />
+    </div>
+  );
 }

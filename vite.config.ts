@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -5,8 +6,33 @@ import { resolve } from 'path';
 
 const normalizeId = (id: string) => id.replaceAll('\\', '/');
 
+// Short build identifier for the in-app diagnostic surface. The cloud-sync
+// V2 root cause investigation needs to confirm the iPhone PWA is actually
+// running the newest build (not a service-worker-cached stale bundle). We
+// prefer Vercel's commit SHA env var when present (production deploys) and
+// fall back to `git rev-parse --short HEAD` for local dev so the diagnostic
+// always renders a real value. Everything is hex / short — no secrets.
+const resolveBuildIdentifier = (): { sha: string; iso: string } => {
+  const vercelSha = process.env.VERCEL_GIT_COMMIT_SHA;
+  if (vercelSha && vercelSha.length >= 7) {
+    return { sha: vercelSha.slice(0, 7), iso: new Date().toISOString() };
+  }
+  try {
+    const sha = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    return { sha: sha || 'dev', iso: new Date().toISOString() };
+  } catch {
+    return { sha: 'dev', iso: new Date().toISOString() };
+  }
+};
+
+const buildIdentifier = resolveBuildIdentifier();
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    __IRONPATH_BUILD_SHA__: JSON.stringify(buildIdentifier.sha),
+    __IRONPATH_BUILD_ISO__: JSON.stringify(buildIdentifier.iso),
+  },
   test: {
     environment: 'node',
     globals: true,
