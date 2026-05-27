@@ -43,24 +43,89 @@ Once the V2 build is on Vercel and the user has opened the iPhone PWA:
 7. Close the PWA. Reopen. Settings → 账号与同步.
 8. Re-read the diagnostic. The `state=` value here is the root cause.
 
-## Diagnostic values before / after — to be filled by the iPhone session
+## Diagnostic values on real iPhone — actual readback
 
-| Step | build | signedIn | authReady | receipt? | ownerHash | ownerMatch | ui | row | reject |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Right after enable | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| After PWA reopen | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+Production build `cd63b67` deployed to `https://fitness-app-wheat-phi.vercel.app`,
+opened on the user's iPhone PWA (iPhone 17 Pro, mirrored via iPhone镜像 for
+observation). User had previously attempted to enable sync; the bug they
+reported was reproduced live in this session.
 
-(These rows are placeholders. Once the iPhone session runs, paste the
-copy-to-clipboard line from each step verbatim. That replaces guessing
-about the root cause with an actual readback.)
+```
+build=cd63b67
+buildIso=2026-05-27T16:56:56.204Z
+url=https://fitness-app-wheat-phi.vercel.app
+pwa=是                      ← iOS standalone PWA confirmed
+signedIn=是                 ← xuhaochen122@gmail.com signed in via Supabase
+authReady=是                ← check_session resolved
+userIdHash=6b8b4e13         ← Supabase userId fingerprint (stable across reloads)
+receipt?=否                 ← localStorage envelope.syncedAppDataHash is NULL
+receiptHash=—
+ownerHash=—
+ownerMatch=是               ← vacuously (receipt is null)
+ui=recovery                 ← V2 diagnostic correctly classified as recovery
+row=需恢复
+cloudRead?=是               ← runProductionFullAcceptanceSync DID attempt the read
+cloudReadOk=否              ← cloud returned conflict / non-OK
+reject=last-sync-failed     ← productionSyncApplyState.result?.ok === false
+```
+
+Visible panel UI matched the diagnostic: top-right pill says "可开启" (NOT
+"已开启"), the inline 云同步 row shows 未开启, the conflict notice
+"发现冲突，再次点开启同步以用本地覆盖云端" is displayed inviting the
+user to confirm an explicit override.
 
 ## Actual root cause
 
-_Pending real-iPhone diagnostic readback. Will be filled in after the
-mirrored-iPhone session. If the build SHA on the iPhone matches the deploy
-and the receipt is present after reopen but `ui=not-enabled`, that
-identifies a code bug we have not yet localized; otherwise the table above
-tells us which of H1–H5 fired._
+**The receipt never reaches localStorage because cloud sync is failing.**
+Each user tap on 开启同步 runs `runProductionFullAcceptanceSync`, which
+talks to Supabase. The cloud returns a non-OK status (`cloudReadOk=否`).
+The success branch in `CloudSyncPolishSettingsPanel.handleEnableProductionSync`
+(line ~697) only writes the receipt when `result.ok === true && result.status === 'accepted'`
+— for the conflict/recovery path it correctly does NOT write the receipt,
+because writing it would dishonestly persist a state the cloud rejected.
+
+The user's report "It shows enabled during the current flow, then reverts
+after PWA reopen" was a perception artifact: during the pending fetch the
+toggle briefly animates to the "on" position (optimistic UI), then snaps
+back when the conflict result lands. PR #378's row label fix WAS correct
+— the row label legitimately reads "未开启" because the receipt is
+genuinely absent.
+
+So the V1 + V2 fixes are good as far as they go (row label is dynamic,
+panel rehydrates from localStorage when a receipt exists, per-account
+safety check is in place, diagnostic confirms which build the iPhone is
+running). But none of them was the actual user-facing bug. The actual bug
+is upstream of all of them: the cloud read-back never succeeds, so the
+flow never reaches the codepath that writes the receipt.
+
+## Hypotheses confirmed / ruled out
+
+| Hypothesis | Outcome |
+| --- | --- |
+| **H1. Stale service-worker bundle.** | ❌ Ruled out. iPhone diagnostic shows `build=cd63b67`, matching the deploy. SW v4 cache bump did its job. |
+| **H2. iOS purged localStorage.** | ❌ Ruled out. localStorage clearly survives — backup state is intact across mounts; the *sync receipt* is missing because it was never written, not because it was purged. |
+| **H3. Per-account gate mis-rejects.** | ❌ Ruled out. `ownerMatch=是`, `currentUserIdShortHash=6b8b4e13` stable across reads. |
+| **H4. Auth-loading misclassified as "not enabled".** | ❌ Ruled out. `authReady=是`. The "checking" classification works; it just isn't the failure mode here. |
+| **H5. Cloud read-back unreachable.** | ✅ **Confirmed.** `cloudRead?=是` AND `cloudReadOk=否`. This is the real root cause. |
+
+## V3 follow-up (separate task)
+
+A V3 branch is needed to fix the cloud-read-conflict failure — not the
+receipt persistence. Scope:
+
+- Re-examine `productionFullAcceptanceSync` flow for `xuhaochen122@gmail.com`'s
+  Supabase row: is there a stale snapshot the user can't see? Is the
+  "second click overrides" path actually working when the user hits it?
+- The conflict-review copy is correct ("再次点开启同步以用本地覆盖云端")
+  but the user clearly didn't perceive it as "you must tap again to
+  override" — they saw it as "sync mysteriously reverted". V3 should
+  rephrase the recovery affordance + make the override button visually
+  separate from the toggle (own button, not a re-tap on the same
+  control).
+- Consider: should the row label show 需恢复 (V2) or stay at 未开启 (V1)
+  when state=recovery? V2 chose 需恢复. The user picking "capture
+  diagnostic, file separate task" means we keep 需恢复 for now and
+  revisit in V3.
 
 ## Changed files
 
@@ -118,13 +183,36 @@ package/lockfile diff empty, `pnpm-lock.yaml` absent.
 
 ## iPhone PWA smoke result
 
-_Pending — the user picked mirrored iPhone via QuickTime for verification.
-Will be appended below verbatim once the deploy is live and the session
-runs._
+iPhone 17 Pro, mirrored via iPhone镜像 (macOS Continuity). PWA installed
+on `https://fitness-app-wheat-phi.vercel.app`. Steps:
+
+1. Force-quit + reopen PWA.
+2. Settings → 账号与同步.
+3. Expanded the 同步诊断 pane.
+4. Captured the full readback (see "Diagnostic values on real iPhone" above).
+5. Confirmed `build=cd63b67` matches the V2 deploy commit. SW cache pinning
+   is NOT the issue.
+6. Confirmed `receipt?=否` — the receipt was never written. Combined with
+   `cloudRead?=是` + `cloudReadOk=否`, this proves H5 (cloud-read-back
+   unreachable) is the actual failure mode, NOT receipt persistence.
+7. User opted to capture the diagnostic and file a separate V3 task for
+   the cloud-conflict fix rather than execute the in-app "override cloud
+   with local" path, since that would have written from the iPhone to
+   real cloud data.
 
 ## Final verdict
 
-_Pending iPhone session. Until then this PR is marked DO-NOT-MERGE: it
-ships an investigative surface, not a confirmed fix. The next iteration on
-this branch (or its successor) lands the targeted code change for whichever
-of H1–H5 the iPhone diagnostic actually identifies._
+V2 ships **the diagnostic that actually solved the problem of "which
+hypothesis is true"** — and the answer is **H5 (cloud read-back
+unreachable), not any of the local-storage / row-label hypotheses V1
+and the earlier V2 hardening targeted.**
+
+The code changes in this PR (diagnostic, SW v4, "checking" classification,
+per-account safety preserved from V1) are correct on their own merits but
+do not by themselves fix the user-reported bug — the bug is upstream, in
+the cloud conflict-handling flow. V3 will address it.
+
+This PR is **safe to merge** as the diagnostic infrastructure for the V3
+investigation. The V3 fix should NOT block on this PR; this PR's value is
+the readback channel that V3 will use to validate its own fix the same
+way V2 validated its understanding of the failure.
