@@ -31,6 +31,11 @@ import { EmergencyLocalSettingsPanel } from '../uiOs/settings/EmergencyLocalSett
 import { EquipmentProfileSettingsPanel } from '../uiOs/settings/EquipmentProfileSettingsPanel';
 import { AuthUiSkeletonPanel } from '../uiOs/settings/AuthUiSkeletonPanel';
 import { CloudSyncPolishSettingsPanel } from '../uiOs/settings/CloudSyncPolishSettingsPanel';
+import {
+  CLOUD_SYNC_LIST_ROW_LABEL_ENABLED,
+  CLOUD_SYNC_LIST_ROW_LABEL_NOT_ENABLED,
+  useCloudSyncListRowEnabled,
+} from '../uiOs/settings/useCloudSyncListRowState';
 import { SettingsControlCenter, type SettingsNavigationGroup } from '../uiOs/settings/SettingsControlCenter';
 import { SettingsGroupCard } from '../uiOs/settings/SettingsGroupCard';
 import { ThemeSettingsPanel } from '../uiOs/settings/ThemeSettingsPanel';
@@ -114,6 +119,13 @@ export function ProfileView({
   const [message, setMessage] = React.useState('');
   const [pendingRestore, setPendingRestore] = React.useState<PendingRestore | null>(null);
   const [fallbackThemeMode, setFallbackThemeMode] = React.useState<ThemePreferenceMode>('system');
+  // Settings list row label for "账号与同步" must reflect the persisted
+  // cloud sync receipt — see useCloudSyncListRowState for the rationale and
+  // the V1 regression that motivated it.
+  const cloudSyncListRowEnabled = useCloudSyncListRowEnabled();
+  const cloudSyncListRowLabel = cloudSyncListRowEnabled
+    ? CLOUD_SYNC_LIST_ROW_LABEL_ENABLED
+    : CLOUD_SYNC_LIST_ROW_LABEL_NOT_ENABLED;
   const analyticsHistory = filterAnalyticsHistory(data.history || []);
   const normalSessionCount = analyticsHistory.length;
   const dataHealth = coachAutomationSummary?.dataHealth;
@@ -314,7 +326,7 @@ export function ProfileView({
         {
           id: 'cloud_sync',
           title: '账号与同步',
-          value: '未开启',
+          value: cloudSyncListRowLabel,
           tone: 'sky',
           icon: <Cloud className="h-5 w-5" aria-hidden="true" />,
           content: <CloudSyncPolishSettingsPanel appData={data} />,
