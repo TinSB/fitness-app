@@ -32,6 +32,18 @@ export const PHASE_LABELS = {
   deload: '减量周',
 } as const;
 
+// 含 gap 重入派生阶段的紧凑标签。仅 UI 直接渲染使用。
+// 不超过 4 个字，自动化优先（不显示对照 / 长说明 / 手动 apply）。
+// 推荐引擎仍按 4 个 CyclePhase 工作；reentry/restart 通过派生 effectiveWeek 落地。
+export const EFFECTIVE_PHASE_DISPLAY_LABELS = {
+  base: '基础周',
+  build: '构建周',
+  overload: '过载周',
+  deload: '减量周',
+  reentry: '回归周',
+  restart: '重新开始',
+} as const;
+
 export const INTENSITY_BIAS_LABELS = {
   conservative: '保守',
   normal: '标准',

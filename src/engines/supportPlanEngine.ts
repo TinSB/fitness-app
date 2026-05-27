@@ -18,13 +18,12 @@ import type {
   WeeklyMuscleBudget,
   WeeklyPrescription,
 } from '../models/training-model';
-import { formatCyclePhase } from '../i18n/formatters';
 import { buildAdherenceAdjustment } from './adherenceAdjustmentEngine';
 import { actionableSorenessAreas, clamp, completedSets, number, resolveMode, todayKey } from './engineUtils';
 import { buildAdaptiveDeloadDecision, getAdaptiveBudgetAdjustment } from './adaptiveFeedbackEngine';
 import { buildAdherenceReport } from './analytics';
 import { evaluateEffectiveSet, getMuscleContribution } from './effectiveSetEngine';
-import { getCurrentMesocycleWeek } from './mesocycleEngine';
+import { getEffectiveTrainingPhase } from './effectiveTrainingPhaseEngine';
 import { inferCorrectionPriority, inferFunctionalPriorities } from './screeningEngine';
 
 type WeeklyStat = {
@@ -257,7 +256,8 @@ export const buildSupportPlan = (
   const recommendationData = { ...data, history };
   const adherenceReport = buildAdherenceReport(history);
   const adherenceAdjustment = buildAdherenceAdjustment(adherenceReport, program, screening.adaptiveState);
-  const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const effectivePhase = getEffectiveTrainingPhase({ mesocyclePlan: data.mesocyclePlan, history });
+  const mesocycleWeek = effectivePhase.effectiveWeek;
   const deloadDecision = buildAdaptiveDeloadDecision(recommendationData);
 
   let correctionModules = selectCorrectionModules(screening, template, program.correctionStrategy);
@@ -368,7 +368,9 @@ export const buildWeeklyPrescription = (
   const history = filterRecommendationHistory(data.history);
   const recommendationData = { ...data, history };
   const deloadDecision = buildAdaptiveDeloadDecision(recommendationData);
-  const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
+  const effectivePhase = getEffectiveTrainingPhase({ mesocyclePlan: data.mesocyclePlan, history });
+  const mesocycleWeek = effectivePhase.effectiveWeek;
+  const phaseCompactLabel = effectivePhase.compactLabel;
   const adherenceAdjustment = buildAdherenceAdjustment(
     buildAdherenceReport(history),
     data.programTemplate || DEFAULT_PROGRAM_TEMPLATE,
@@ -414,7 +416,7 @@ export const buildWeeklyPrescription = (
       targetMultiplier: Math.round(targetMultiplier * phaseMultiplier * adherenceMultiplier * deloadMultiplier * 100) / 100,
       adjustmentReasons: [
         ...reasons,
-        ...(phaseMultiplier !== 1 ? [`当前周期 ${formatCyclePhase(mesocycleWeek.phase)}，周剂量倍率 ${phaseMultiplier}`] : []),
+        ...(phaseMultiplier !== 1 ? [`当前周期 ${phaseCompactLabel}，周剂量倍率 ${phaseMultiplier}`] : []),
         ...(adherenceMultiplier !== 1 ? adherenceAdjustment.reasons : []),
       ],
       recoveryMultiplier,

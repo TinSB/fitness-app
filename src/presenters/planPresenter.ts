@@ -1,9 +1,8 @@
 import type { CoachAction } from '../engines/coachActionEngine';
-import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
+import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import type { VolumeAdaptationReport } from '../engines/volumeAdaptationEngine';
 import {
   formatAdjustmentChangeLabel,
-  formatCyclePhase,
   formatExerciseName,
   formatMuscleName,
   formatRiskLevel,
@@ -318,8 +317,12 @@ export const buildPlanViewModel = (data: AppData, options: BuildPlanViewModelOpt
   const current = data.templates.find((template) => template.id === (data.activeProgramTemplateId || data.selectedTemplateId));
   const hasExperimentalTemplate = Boolean(current?.isExperimentalTemplate);
   const templateName = current ? formatTemplateName(current, '当前模板') : '当前模板';
-  const mesocycleWeek = getCurrentMesocycleWeek(data.mesocyclePlan);
-  const phaseLabel = `第 ${mesocycleWeek.weekIndex + 1} 周 · ${formatCyclePhase(mesocycleWeek.phase)}`;
+  const effectivePhase = getEffectiveTrainingPhase({
+    mesocyclePlan: data.mesocyclePlan,
+    history: data.history,
+  });
+  const mesocycleWeek = effectivePhase.persistedWeek;
+  const phaseLabel = `第 ${mesocycleWeek.weekIndex + 1} 周 · ${effectivePhase.compactLabel}`;
   const experimentStatus = buildExperimentStatus(data, current);
   const coachInbox = buildCoachInbox(options.coachActions, options.volumeAdaptation, data.programAdjustmentDrafts || [], options.maxVisibleCoachActions ?? 2);
   const adjustmentDrafts = buildAdjustmentDrafts(data);

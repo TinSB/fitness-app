@@ -21,7 +21,7 @@ import { buildTrainingLapseSignal, decayCalibrationStateForLapse } from './train
 import { buildAdherenceReport } from './analytics';
 import { actionableSorenessAreas, clamp, clone, enrichExercise, getPrimaryMuscles, number, resolveMode, safeNumber } from './engineUtils';
 import { getLoadFeedbackAdjustment } from './loadFeedbackEngine';
-import { getCurrentMesocycleWeek } from './mesocycleEngine';
+import { getEffectiveTrainingPhase } from './effectiveTrainingPhaseEngine';
 import { buildSetWeightFineTune } from './setWeightFineTuneEngine';
 import { buildPainPatterns, getExercisePainPattern } from './painPatternEngine';
 import { buildTodayReadiness } from './readinessEngine';
@@ -332,7 +332,12 @@ export const applyStatusRules = (
     },
     { nowIso: context.nowIso },
   );
-  const mesocycleWeek = getCurrentMesocycleWeek(mesocyclePlan);
+  const effectivePhase = getEffectiveTrainingPhase({
+    mesocyclePlan,
+    history: recommendationHistory,
+    referenceDate: context.nowIso?.slice(0, 10),
+  });
+  const mesocycleWeek = effectivePhase.effectiveWeek;
   const painPatterns = buildPainPatterns(recommendationHistory);
 
   let exercises: ExercisePrescription[] = clone(template.exercises || []).map((exercise: ExerciseTemplate) =>
@@ -341,15 +346,24 @@ export const applyStatusRules = (
   const timeLimit = Number(status.time);
   const volumeMultiplier = mesocycleWeek.phase === 'deload' ? Math.min(mesocycleWeek.volumeMultiplier, 0.8) : mesocycleWeek.volumeMultiplier;
 
+  const reentryCopy =
+    effectivePhase.activePhase === 'reentry'
+      ? `回归周：训练量收到约 ${Math.round(volumeMultiplier * 100)}%。`
+      : effectivePhase.activePhase === 'restart'
+        ? `重新开始：训练量收到约 ${Math.round(volumeMultiplier * 100)}%。`
+        : '';
+
   exercises = exercises.map((exercise) => ({
     ...exercise,
     sets: Math.max(1, Math.ceil(number(exercise.sets) * Math.max(0.6, volumeMultiplier))),
     mesocyclePhase: mesocycleWeek.phase,
     mesocycleIntensityBias: mesocycleWeek.intensityBias,
     adjustment:
-      mesocycleWeek.phase === 'deload'
-        ? [exercise.adjustment, `当前处于减量周，整体训练量先收回到约 ${Math.round(volumeMultiplier * 100)}%。`].filter(Boolean).join(' / ')
-        : exercise.adjustment,
+      reentryCopy
+        ? [exercise.adjustment, reentryCopy].filter(Boolean).join(' / ')
+        : mesocycleWeek.phase === 'deload'
+          ? [exercise.adjustment, `当前处于减量周，整体训练量先收回到约 ${Math.round(volumeMultiplier * 100)}%。`].filter(Boolean).join(' / ')
+          : exercise.adjustment,
   }));
 
   if (timeLimit <= 30) {

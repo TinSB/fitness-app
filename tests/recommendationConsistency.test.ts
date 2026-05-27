@@ -55,6 +55,15 @@ describe('recommendation consistency', () => {
     expect(report.possibleBugWarnings).toHaveLength(0);
   });
 
+  // 用相对今天的近期日期，避免触发 effectiveTrainingPhase 长间隔重入派生
+  // （那是 Training Cycle Gap Re-entry State Machine 的 by-design 行为，
+  // 与本组测试想验证的"无关肌群历史不应直接改变推荐"是两件事）。
+  const recentDate = (daysAgo: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    return d.toISOString().slice(0, 10);
+  };
+
   it('does not let unrelated chest history directly change Legs A local prescription', () => {
     const baseline = context({ selectedTemplateId: 'legs-a', trainingMode: 'hybrid' });
     const chestHistory = context({
@@ -63,7 +72,7 @@ describe('recommendation consistency', () => {
       history: [
         makeSession({
           id: 'yesterday-chest',
-          date: '2026-04-27',
+          date: recentDate(1),
           templateId: 'push-a',
           exerciseId: 'bench-press',
           setSpecs: [{ weight: 80, reps: 6, rir: 2 }],
@@ -80,7 +89,7 @@ describe('recommendation consistency', () => {
       upsertLoadFeedback(
         makeSession({
           id: `bench-feedback-${index}`,
-          date: `2026-04-2${index}`,
+          date: recentDate(index + 1),
           templateId: 'push-a',
           exerciseId: 'bench-press',
           setSpecs: [{ weight: 82.5, reps: 5, rir: 1 }],

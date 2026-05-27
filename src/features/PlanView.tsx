@@ -8,7 +8,7 @@ import { buildAdjustmentDiff } from '../engines/programAdjustmentEngine';
 import { buildRecommendationTrace } from '../engines/recommendationTraceEngine';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
-import { getCurrentMesocycleWeek } from '../engines/mesocycleEngine';
+import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { formatAutoTrainingLevel } from '../engines/trainingLevelEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
 import { buildWeeklyProgressionRecommendation } from '../engines/weeklyProgressionRecommendationEngine';
@@ -196,7 +196,11 @@ export function PlanView({
   const selectedTemplate = findTemplate(data.templates, fallbackTemplateId) as TrainingTemplate;
   const program = data.programTemplate || DEFAULT_PROGRAM_TEMPLATE;
   const mesocycle = data.mesocyclePlan;
-  const mesocycleWeek = getCurrentMesocycleWeek(mesocycle);
+  const effectivePhase = getEffectiveTrainingPhase({
+    mesocyclePlan: mesocycle,
+    history: data.history,
+  });
+  const mesocycleWeek = effectivePhase.persistedWeek;
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
   const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || selectedTemplate;
   const supportPlan = buildSupportPlan(data, selectedTemplate);
@@ -349,12 +353,20 @@ export function PlanView({
       <Card className="space-y-3">
         <div className="grid gap-2 md:grid-cols-3">
           <MetricCard label="当前周" value={`第 ${mesocycleWeek.weekIndex + 1} 周`} tone="sky" />
-          <MetricCard label="阶段" value={formatCyclePhase(mesocycleWeek.phase)} />
-          <MetricCard label="容量 / 强度" value={`${Math.round(mesocycleWeek.volumeMultiplier * 100)}% / ${formatIntensityBias(mesocycleWeek.intensityBias)}`} />
+          <MetricCard label="阶段" value={effectivePhase.compactLabel} />
+          <MetricCard
+            label="容量 / 强度"
+            value={`${Math.round(effectivePhase.effectiveWeek.volumeMultiplier * 100)}% / ${formatIntensityBias(effectivePhase.effectiveWeek.intensityBias)}`}
+          />
         </div>
         <div className="grid gap-2 md:grid-cols-4">
           {(mesocycle.weeks || []).map((week) => {
             const isCurrent = week.weekIndex === mesocycleWeek.weekIndex;
+            const cellLabel = isCurrent ? effectivePhase.compactLabel : formatCyclePhase(week.phase);
+            const cellVolume = isCurrent
+              ? Math.round(effectivePhase.effectiveWeek.volumeMultiplier * 100)
+              : Math.round(week.volumeMultiplier * 100);
+            const cellBias = isCurrent ? effectivePhase.effectiveWeek.intensityBias : week.intensityBias;
             return (
               <div
                 key={week.weekIndex}
@@ -368,7 +380,7 @@ export function PlanView({
                   {isCurrent ? <StatusBadge tone="emerald">当前</StatusBadge> : null}
                 </div>
                 <div className="mt-2 text-xs leading-5 text-slate-600">
-                  {formatCyclePhase(week.phase)} · 容量 {Math.round(week.volumeMultiplier * 100)}% · {formatIntensityBias(week.intensityBias)}
+                  {cellLabel} · 容量 {cellVolume}% · {formatIntensityBias(cellBias)}
                 </div>
               </div>
             );
