@@ -653,8 +653,50 @@ public func stripLegacyAdviceFromSession(_ session: TrainingSession) -> LegacyAd
 // MARK: - Runtime flags (read-only in iOS-3A)
 
 /// Reads the `dataHealthRuntimeFlags` object out of `appData.settings`.
-/// iOS-3B will own a `writeRuntimeFlags` counterpart that returns a
-/// rebuilt AppData; iOS-3A only needs read.
 public func readRuntimeFlags(_ appData: AppData) -> OrderedJSONObject {
     appData.settings.dataHealthRuntimeFlags?.objectValue ?? OrderedJSONObject()
+}
+
+/// Symmetric counterpart to `readRuntimeFlags`. Returns a new
+/// `AppData` value whose `settings.dataHealthRuntimeFlags` is `next`.
+/// Original AppData is untouched (Swift value semantics). iOS-3B
+/// staleness repairs use this to record "we already noticed this
+/// state" stamps without mutating any other settings key. TS
+/// counterpart: `writeRuntimeFlags` in `dataHealthRuntimeGuard.ts:331`.
+public func writeRuntimeFlags(
+    _ appData: AppData,
+    _ next: OrderedJSONObject
+) -> AppData {
+    let flagsValue = JSONValue.object(next)
+    let settingsObj: OrderedJSONObject
+    if let v = appData.root["settings"], case .object(let obj) = v {
+        settingsObj = obj
+    } else {
+        settingsObj = OrderedJSONObject()
+    }
+    let newSettings = upsertKey(settingsObj, "dataHealthRuntimeFlags", to: flagsValue)
+    let newRoot = upsertKey(appData.root, "settings", to: .object(newSettings))
+    return AppData(schemaVersion: appData.schemaVersion, root: newRoot)
+}
+
+/// In-place replace-or-append on an `OrderedJSONObject`. Preserves
+/// entry order when the key already exists; appends at the end when
+/// missing. Shared by iOS-3B mutators (RepairEngine, orchestrator,
+/// repairs) — kept module-internal because it's a pure structural
+/// helper, not part of the public Data Health API.
+internal func upsertKey(
+    _ obj: OrderedJSONObject,
+    _ key: String,
+    to value: JSONValue
+) -> OrderedJSONObject {
+    var found = false
+    let updated = obj.entries.map { entry -> OrderedJSONObject.Entry in
+        if entry.key == key {
+            found = true
+            return OrderedJSONObject.Entry(key: key, value: value)
+        }
+        return entry
+    }
+    if found { return OrderedJSONObject(entries: updated) }
+    return OrderedJSONObject(entries: updated + [OrderedJSONObject.Entry(key: key, value: value)])
 }

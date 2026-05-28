@@ -61,10 +61,17 @@ const BUSINESS_LOGIC: readonly ForbiddenSymbol[] = [
     pattern: /\b(struct|class|enum)\s+CleanAppDataView\b/,
     exemptPrefixes: ['ios/packages/IronPathDataHealth/'],
   },
-  // AutoRepairOrchestrator — owned by iOS-3B. iOS-3A explicitly does NOT
-  // land this; the deferred-recipe boundary is documented in
-  // IOS_3A_DATA_HEALTH_RUNTIME_FOUNDATION_V1.md §5.
-  { name: 'AutoRepairOrchestrator_type', owner: 'iOS-3B', pattern: /\b(struct|class|actor)\s+AutoRepairOrchestrator\b/ },
+  // AutoRepairOrchestrator — sanctioned by iOS-3B inside
+  // IronPathDataHealth ONLY. The orchestrator + 5 safe repair recipes
+  // land in iOS-3B; iOS-3C will add the remaining 4 recipes + the
+  // ingress pipeline that wraps the orchestrator. Declarations
+  // outside the Data Health package still fail the lock.
+  {
+    name: 'AutoRepairOrchestrator_type',
+    owner: 'iOS-3B (IronPathDataHealth)',
+    pattern: /\b(struct|class|actor)\s+AutoRepairOrchestrator\b/,
+    exemptPrefixes: ['ios/packages/IronPathDataHealth/'],
+  },
   // AppDataRepairLedger — owned by iOS-3B. iOS-3A ships the typed
   // ledger ENTRY (`DataHealthRepairLedgerEntry`) plus pure
   // append/idempotency helpers, but not the orchestrator/manager
