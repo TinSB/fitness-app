@@ -1,0 +1,76 @@
+{
+  "parityMeta": {
+    "id": "focus-mode/golden-path-session-v1",
+    "schemaVersion": 8,
+    "describes": "Focus Mode golden path — small synthetic TrainingSession that drives buildFocusStepQueue (warmup + working steps) and resolveFocusModeInteractionState. Locks the deterministic step-id scheme stepId(exerciseId, kind, setIndex). The Swift port must produce the same focusStepQueue, primary-action shape, and terminal state.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Hand-authored. No correction or functional block in V1 so the goldens stay small. iOS-5 may extend with extra fixtures (correction/support, mid-set, completed exercise) once the Swift Focus Mode lands."
+  },
+  "session": {
+    "id": "synthetic-focus-session-001",
+    "date": "2026-05-27",
+    "templateId": "push-a",
+    "templateName": "推 A",
+    "trainingMode": "hybrid",
+    "completed": false,
+    "startedAt": "2026-05-27T10:00:00.000Z",
+    "exercises": [
+      {
+        "id": "bench-press",
+        "name": "平板卧推",
+        "muscle": "胸",
+        "kind": "compound",
+        "sets": [
+          { "id": "synthetic-bench-press-set-0", "weight": 60, "reps": 7, "rir": 2, "setIndex": 0, "type": "working" },
+          { "id": "synthetic-bench-press-set-1", "weight": 60, "reps": 7, "rir": 2, "setIndex": 1, "type": "working" },
+          { "id": "synthetic-bench-press-set-2", "weight": 60, "reps": 7, "rir": 2, "setIndex": 2, "type": "working" }
+        ],
+        "warmupSets": [
+          { "id": "synthetic-bench-press-warmup-0", "weight": 20, "reps": 10, "setIndex": 0, "type": "warmup" },
+          { "id": "synthetic-bench-press-warmup-1", "weight": 40, "reps": 6, "setIndex": 1, "type": "warmup" }
+        ],
+        "repMin": 6,
+        "repMax": 8,
+        "rest": 180,
+        "startWeight": 60,
+        "movementPattern": "水平推",
+        "primaryMuscles": ["胸"],
+        "secondaryMuscles": ["肩", "手臂"],
+        "muscleContribution": {
+          "胸": 1,
+          "手臂": 0.5,
+          "肩": 0.4
+        }
+      },
+      {
+        "id": "incline-db-press",
+        "name": "上斜哑铃推举",
+        "muscle": "胸",
+        "kind": "compound",
+        "sets": [
+          { "id": "synthetic-incline-db-press-set-0", "weight": 22.5, "reps": 10, "rir": 2, "setIndex": 0, "type": "working" },
+          { "id": "synthetic-incline-db-press-set-1", "weight": 22.5, "reps": 10, "rir": 2, "setIndex": 1, "type": "working" },
+          { "id": "synthetic-incline-db-press-set-2", "weight": 22.5, "reps": 10, "rir": 2, "setIndex": 2, "type": "working" }
+        ],
+        "warmupSets": [],
+        "repMin": 8,
+        "repMax": 12,
+        "rest": 120,
+        "startWeight": 22.5,
+        "movementPattern": "水平推",
+        "primaryMuscles": ["胸"],
+        "secondaryMuscles": ["肩", "手臂"]
+      }
+    ],
+    "restTimerState": null,
+    "focusSessionComplete": false,
+    "focusCompletedStepIds": [],
+    "focusCompletedWarmupPatterns": [],
+    "focusSkippedStepIds": [],
+    "focusWarmupSetLogs": []
+  }
+}

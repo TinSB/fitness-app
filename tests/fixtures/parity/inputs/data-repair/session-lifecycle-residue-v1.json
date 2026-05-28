@@ -1,0 +1,74 @@
+{
+  "parityMeta": {
+    "id": "data-repair/session-lifecycle-residue-v1",
+    "schemaVersion": 8,
+    "describes": "Data Health repair parity — sessionLifecycleResidueV1 trigger. AppData carries one completed session with active-state residue (restTimerState.isRunning=true, currentExerciseId, currentSetIndex, currentFocusStepId, focusActualSetDrafts). Drives runAutoRepairOrchestrator dry-run + apply + idempotency second run.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Hand-authored minimal AppData. The session is completed=true but still carries every residue flag the V1 detector looks at, so it triggers sessionLifecycleResidueV1 detected/severity=warning. Identifiers are synthetic strings (no real userId)."
+  },
+  "payload": {
+    "schemaVersion": 8,
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "templates": [],
+    "bodyWeights": [],
+    "activeSession": null,
+    "settings": {},
+    "history": [
+      {
+        "id": "synthetic-session-residue-001",
+        "date": "2026-05-26",
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "trainingMode": "hybrid",
+        "completed": true,
+        "startedAt": "2026-05-26T08:00:00.000Z",
+        "finishedAt": "2026-05-26T09:15:00.000Z",
+        "durationMin": 75,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "name": "平板卧推",
+            "muscle": "胸",
+            "kind": "compound",
+            "sets": 3,
+            "repMin": 6,
+            "repMax": 8,
+            "rest": 180,
+            "startWeight": 60,
+            "movementPattern": "水平推",
+            "primaryMuscles": ["胸"],
+            "secondaryMuscles": ["肩", "手臂"]
+          }
+        ],
+        "restTimerState": {
+          "isRunning": true,
+          "startedAt": "2026-05-26T09:14:30.000Z",
+          "remainingSec": 30
+        },
+        "currentExerciseId": "bench-press",
+        "currentSetIndex": 2,
+        "currentFocusStepId": "bench-press:working:2",
+        "currentFocusStepType": "working",
+        "focusSessionComplete": false,
+        "focusActualSetDrafts": [
+          {
+            "setIndex": 2,
+            "weight": 70,
+            "reps": 6,
+            "rir": 1
+          }
+        ],
+        "focusCompletedStepIds": [
+          "bench-press:working:0",
+          "bench-press:working:1"
+        ],
+        "focusCompletedWarmupPatterns": []
+      }
+    ]
+  }
+}

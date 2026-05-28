@@ -1,0 +1,63 @@
+{
+  "applied": {
+    "appDataHashAfter": "appdata_dia2bd_1",
+    "appDataHashBefore": "appdata_dia2bd_1",
+    "appliedCount": 1,
+    "changed": true,
+    "results": [
+      {
+        "repairId": "sessionLifecycleResidueV1",
+        "status": "applied"
+      }
+    ]
+  },
+  "detected": [
+    {
+      "affectedIds": [
+        "synthetic-session-residue-001"
+      ],
+      "occurrences": 1,
+      "repairId": "sessionLifecycleResidueV1",
+      "severity": "warning",
+      "userMessage": "已完成会话仍带有训练状态残留：1 个"
+    }
+  ],
+  "dryRun": {
+    "detectedRepairIds": [
+      "sessionLifecycleResidueV1"
+    ],
+    "summary": "1 repair(s) would apply"
+  },
+  "idempotencySecondRun": {
+    "changed": false,
+    "detectedCount": 0
+  },
+  "ledger": {
+    "lastEntryRepairId": "sessionLifecycleResidueV1",
+    "length": 1
+  },
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "data-repair/session-lifecycle-residue-v1"
+  },
+  "postRepair": {
+    "currentExerciseCleared": true,
+    "historyLength": 1,
+    "restTimerCleared": true
+  },
+  "receipt": {
+    "action": "清理已完成会话的休息计时与聚焦草稿残留",
+    "affectedIds": [
+      "synthetic-session-residue-001"
+    ],
+    "afterSummary": "已完成会话恢复为完成态；历史 set 记录保留",
+    "beforeSummary": "1 个已完成会话存在状态残留",
+    "category": "session_lifecycle",
+    "id": "sessionLifecycleResidueV1-2026-05-27T10:00:00.000Z",
+    "repairId": "sessionLifecycleResidueV1"
+  },
+  "sourceFixtureId": "data-repair/session-lifecycle-residue-v1"
+}

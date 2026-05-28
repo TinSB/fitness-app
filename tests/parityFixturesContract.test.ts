@@ -1,0 +1,257 @@
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+import { STORAGE_VERSION } from '../src/data/appConfig';
+
+// ---------------------------------------------------------------------------
+// iOS-0 Contract Fixture Export V1 — parity-fixtures contract lock.
+//
+// This file enforces:
+//   - the canonical directory layout under tests/fixtures/parity/
+//   - the parityMeta envelope on every input fixture
+//   - the parityGolden envelope on every golden output
+//   - the 5 required fixture ids exist on both sides
+//   - the per-category required fields (decisionVersion=v2, arbitrationTrace,
+//     receipt+ledger, snapshotHash prefix, deterministic step ids)
+//   - the source commit policy (40-char hex on parityMeta.tsCommit)
+//
+// It does NOT re-run the generator (the consistency tests do that). It only
+// reads the on-disk fixtures so the suite stays fast (< 100 ms).
+// ---------------------------------------------------------------------------
+
+const repoRoot = resolve(process.cwd());
+
+const PARITY_ROOT = resolve(repoRoot, 'tests/fixtures/parity');
+const INPUTS_ROOT = resolve(PARITY_ROOT, 'inputs');
+const GOLDEN_ROOT = resolve(PARITY_ROOT, 'golden');
+
+const FIXTURE_IDS = [
+  'app-data/snapshot-hash-stable-v1',
+  'training-decision/normal-session-v1',
+  'data-repair/session-lifecycle-residue-v1',
+  'real-export/redacted-2026-05-27',
+  'focus-mode/golden-path-session-v1',
+] as const;
+
+type FixtureId = (typeof FIXTURE_IDS)[number];
+
+const readInput = (id: FixtureId): Record<string, unknown> =>
+  JSON.parse(readFileSync(resolve(INPUTS_ROOT, `${id}.json`), 'utf8'));
+
+const readGolden = (id: FixtureId): Record<string, unknown> =>
+  JSON.parse(readFileSync(resolve(GOLDEN_ROOT, `${id}.json`), 'utf8'));
+
+describe('parityFixtures — canonical directory layout', () => {
+  it('parityFixtures top-level layout is present', () => {
+    expect(existsSync(PARITY_ROOT)).toBe(true);
+    expect(existsSync(INPUTS_ROOT)).toBe(true);
+    expect(existsSync(GOLDEN_ROOT)).toBe(true);
+    expect(existsSync(resolve(PARITY_ROOT, 'README.md'))).toBe(true);
+  });
+
+  it('parityFixtures canonical path is tests/fixtures/parity (Entry Gate H1)', () => {
+    // Resolution of cross-review H1 — the alternate path proposed under
+    // tests/fixtures/ios-contract/ must not exist.
+    expect(existsSync(resolve(repoRoot, 'tests/fixtures/ios-contract'))).toBe(false);
+  });
+
+  it('parityFixtures every category dir exists under inputs and golden', () => {
+    for (const id of FIXTURE_IDS) {
+      const [category] = id.split('/');
+      expect(statSync(resolve(INPUTS_ROOT, category)).isDirectory()).toBe(true);
+      expect(statSync(resolve(GOLDEN_ROOT, category)).isDirectory()).toBe(true);
+    }
+  });
+
+  it('parityFixtures README documents the canonical path and stop conditions', () => {
+    const readme = readFileSync(resolve(PARITY_ROOT, 'README.md'), 'utf8');
+    expect(readme).toContain('tests/fixtures/parity/');
+    expect(readme).toContain('parityMeta');
+    expect(readme).toContain('parityGolden');
+    expect(readme).toContain('generate-parity-goldens.mjs');
+    expect(readme).toContain('--check');
+    expect(readme).toContain('Do not edit golden files manually');
+    expect(readme).toContain('Do not place raw private exports here');
+  });
+});
+
+describe('parityFixtures — input fixture envelopes', () => {
+  for (const id of FIXTURE_IDS) {
+    it(`parityFixtures input ${id} exists and parses`, () => {
+      const path = resolve(INPUTS_ROOT, `${id}.json`);
+      expect(existsSync(path)).toBe(true);
+      expect(() => readInput(id)).not.toThrow();
+    });
+
+    it(`parityFixtures input ${id} carries a parityMeta envelope`, () => {
+      const input = readInput(id);
+      expect(input).toHaveProperty('parityMeta');
+      const meta = input.parityMeta as Record<string, unknown>;
+      expect(meta.id).toBe(id);
+      expect(meta.schemaVersion).toBe(STORAGE_VERSION);
+      expect(typeof meta.describes).toBe('string');
+      expect(['synthetic', 'redacted', 'redacted-pointer']).toContain(meta.privacy);
+      expect(meta.generatedFrom).toBe('scripts/generate-parity-goldens.mjs');
+      expect(typeof meta.tsCommit).toBe('string');
+      expect((meta.tsCommit as string).length).toBeGreaterThanOrEqual(7);
+      expect(['none', 'deterministic-clock']).toContain(meta.generatedAtPolicy);
+      if (meta.generatedAtPolicy === 'deterministic-clock') {
+        expect(typeof meta.deterministicClockIso).toBe('string');
+        // ISO 8601 sanity: YYYY-MM-DDTHH:MM:SS.sssZ
+        expect(meta.deterministicClockIso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      }
+    });
+  }
+});
+
+describe('parityFixtures — golden output envelopes', () => {
+  for (const id of FIXTURE_IDS) {
+    it(`parityFixtures golden ${id} exists and parses`, () => {
+      const path = resolve(GOLDEN_ROOT, `${id}.json`);
+      expect(existsSync(path)).toBe(true);
+      expect(() => readGolden(id)).not.toThrow();
+    });
+
+    it(`parityFixtures golden ${id} carries a parityGolden envelope`, () => {
+      const golden = readGolden(id);
+      expect(golden).toHaveProperty('parityGolden');
+      const meta = golden.parityGolden as Record<string, unknown>;
+      expect(meta.sourceFixtureId).toBe(id);
+      expect(typeof meta.generatedFromCommit).toBe('string');
+      expect((meta.generatedFromCommit as string).length).toBeGreaterThanOrEqual(7);
+      expect(meta.generatorVersion).toBe('v1');
+    });
+  }
+});
+
+describe('parityFixtures — category-specific golden contracts', () => {
+  it('parityFixtures snapshot-hash golden carries a phase19b- prefix hash', () => {
+    const g = readGolden('app-data/snapshot-hash-stable-v1');
+    expect(typeof g.snapshotHash).toBe('string');
+    expect(g.snapshotHash as string).toMatch(/^phase19b-[0-9a-f]{8}$/);
+    expect(g.snapshotHashPrefix).toBe('phase19b-');
+    expect(g.schemaVersion).toBe(STORAGE_VERSION);
+    // The shape summary is small and stable.
+    const summary = g.stableStringifyHashInputSummary as Record<string, unknown>;
+    expect(summary).toBeDefined();
+    expect(Array.isArray(summary.topLevelKeys)).toBe(true);
+    expect((summary.topLevelKeys as string[]).slice()).toEqual(
+      [...(summary.topLevelKeys as string[])].sort(),
+    );
+  });
+
+  it('parityFixtures training-decision golden carries decisionVersion=v2 and a non-empty arbitrationTrace', () => {
+    const g = readGolden('training-decision/normal-session-v1');
+    expect(g.decisionVersion).toBe('v2');
+    const hidden = g.hiddenDebugSignals as Record<string, unknown>;
+    expect(hidden).toBeDefined();
+    const trace = hidden.arbitrationTrace as string[];
+    expect(Array.isArray(trace)).toBe(true);
+    expect(trace.length).toBeGreaterThan(0);
+    // Each entry follows the AR-<n>-<slug> convention.
+    for (const entry of trace) {
+      expect(entry).toMatch(/^AR-\d+-/);
+    }
+    // userFacing structure is locked.
+    const userFacing = g.userFacing as Record<string, unknown>;
+    expect(userFacing).toBeDefined();
+    expect(userFacing).toHaveProperty('explanation');
+  });
+
+  it('parityFixtures data-repair golden carries detected, applied, receipt, ledger, idempotencySecondRun', () => {
+    const g = readGolden('data-repair/session-lifecycle-residue-v1');
+    const detected = g.detected as Array<Record<string, unknown>>;
+    expect(Array.isArray(detected)).toBe(true);
+    expect(detected.length).toBeGreaterThan(0);
+    expect(detected.some((d) => d.repairId === 'sessionLifecycleResidueV1')).toBe(true);
+    const applied = g.applied as Record<string, unknown>;
+    expect(applied.changed).toBe(true);
+    expect(applied.appliedCount).toBeGreaterThan(0);
+    const receipt = g.receipt as Record<string, unknown>;
+    expect(receipt).not.toBeNull();
+    expect(receipt.repairId).toBe('sessionLifecycleResidueV1');
+    expect(typeof receipt.id).toBe('string');
+    expect(typeof receipt.category).toBe('string');
+    const ledger = g.ledger as Record<string, unknown>;
+    expect(ledger.length).toBeGreaterThanOrEqual(1);
+    const second = g.idempotencySecondRun as Record<string, unknown>;
+    expect(second.changed).toBe(false);
+    expect(second.detectedCount).toBe(0);
+  });
+
+  it('parityFixtures real-export golden carries a data-health scan and a phase19b- snapshot hash', () => {
+    const g = readGolden('real-export/redacted-2026-05-27');
+    expect(g.fixtureLoaded).toBe(true);
+    expect(g.privacyGuardPassed).toBe(true);
+    expect(g.expectedSchemaVersion).toBe(STORAGE_VERSION);
+    expect(g.actualSchemaVersion).toBe(STORAGE_VERSION);
+    expect(g.snapshotHash as string).toMatch(/^phase19b-[0-9a-f]{8}$/);
+    const scan = g.dataHealthScan as Array<Record<string, unknown>>;
+    expect(Array.isArray(scan)).toBe(true);
+    expect(scan.length).toBeGreaterThanOrEqual(9);
+    // The 9 V1 repair ids must all appear in the scan.
+    const ids = scan.map((s) => s.repairId);
+    for (const required of [
+      'sessionLifecycleResidueV1',
+      'impossibleDurationV1',
+      'staleTodayStatusV1',
+      'staleHealthReadinessGuardV1',
+      'screeningIssueScoreRuntimeGuardV1',
+      'screeningIssueScoreRepairV1',
+      'legacyFinalAdviceIsolationGuardV1',
+      'setIndexRenumberV1',
+      'replacementEquivalenceAuditV1',
+    ]) {
+      expect(ids).toContain(required);
+    }
+  });
+
+  it('parityFixtures focus-mode golden carries a deterministic, non-trivial step queue', () => {
+    const g = readGolden('focus-mode/golden-path-session-v1');
+    expect(g.focusStepQueueLength).toBeGreaterThan(1);
+    const ids = g.stepIds as string[];
+    expect(Array.isArray(ids)).toBe(true);
+    expect(ids.length).toBe(g.focusStepQueueLength);
+    // Every step id follows main:<exerciseId>:<stepType>:<setIndex>
+    for (const id of ids) {
+      expect(id).toMatch(/^main:[a-z0-9-]+:(warmup|working|correction|functional):\d+$/);
+    }
+    const terminal = g.terminalState as Record<string, unknown>;
+    expect(terminal.lastStepId).toBe(ids[ids.length - 1]);
+  });
+});
+
+describe('parityFixtures — input fixtures must not include non-deterministic content', () => {
+  for (const id of FIXTURE_IDS) {
+    it(`parityFixtures input ${id} contains no Date.now / Math.random literals`, () => {
+      const text = readFileSync(resolve(INPUTS_ROOT, `${id}.json`), 'utf8');
+      expect(text).not.toMatch(/Date\.now\s*\(/);
+      expect(text).not.toMatch(/Math\.random\s*\(/);
+    });
+  }
+});
+
+describe('parityFixtures — fixture inventory has not silently grown beyond the V1 contract', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the 5 V1 ids per category', () => {
+    const observed: string[] = [];
+    const walk = (root: string, prefix = '') => {
+      for (const entry of readdirSync(root, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          walk(resolve(root, entry.name), prefix ? `${prefix}/${entry.name}` : entry.name);
+        } else if (entry.name.endsWith('.json')) {
+          observed.push(`${prefix}/${entry.name.replace(/\.json$/, '')}`);
+        }
+      }
+    };
+    const inputs: string[] = [];
+    const goldens: string[] = [];
+    walk(INPUTS_ROOT);
+    observed.forEach((id) => inputs.push(id));
+    observed.length = 0;
+    walk(GOLDEN_ROOT);
+    observed.forEach((id) => goldens.push(id));
+    expect(inputs.sort()).toEqual([...FIXTURE_IDS].sort());
+    expect(goldens.sort()).toEqual([...FIXTURE_IDS].sort());
+  });
+});
