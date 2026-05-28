@@ -12,8 +12,11 @@
 >   `IronPathTrainingDecision` package + Codable golden decode types, no engine).
 >   See [`IOS_4B1_TRAININGDECISION_SWIFT_TYPE_SKELETON_V1.md`](./IOS_4B1_TRAININGDECISION_SWIFT_TYPE_SKELETON_V1.md).
 > - **iOS-4B2** — TrainingDecision core rule skeleton (engine entry +
->   effective-phase/sessionIntent), adding the `IronPathDataHealth` dep.
-> - **iOS-4B3+** — the remaining engine algorithm (clamp/floors/surfaces/…),
+>   effective-phase/sessionIntent), adding the `IronPathDataHealth` dep. ✅ implemented.
+>   See [`IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md`](./IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md).
+> - **iOS-4B3** — Readiness + e1RM slice (unlocks controlled-reload sessionIntent +
+>   riskLevel). Then iOS-4B4 (deload/clamp/modes), iOS-4B5 (exercise prescription),
+>   iOS-4B6 (userFacing + full arbitrationTrace + full-object parity) —
 >   matched against the iOS-4B0 goldens via the iOS-4B1 types.
 >
 > The original "all-at-once" file/test lists below remain the cumulative target;

@@ -50,16 +50,28 @@ const BUSINESS_LOGIC: readonly ForbiddenSymbol[] = [
   },
   // TrainingDecision golden TYPE skeleton — sanctioned by iOS-4B1 inside
   // IronPathTrainingDecision ONLY. The `struct TrainingDecision` decode type
-  // lands there; declarations elsewhere still fail the lock. The decision
-  // ENGINE function (buildTrainingDecision) stays globally forbidden until
-  // iOS-4B2 — no exemption.
+  // lands there; declarations elsewhere still fail the lock.
   {
     name: 'TrainingDecision_type',
     owner: 'iOS-4B1 (IronPathTrainingDecision)',
     pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/,
     exemptPrefixes: ['ios/packages/IronPathTrainingDecision/'],
   },
-  { name: 'buildTrainingDecision_func', owner: 'iOS-4B2', pattern: /\bfunc\s+buildTrainingDecision\b/ },
+  // TrainingDecision ENGINE function — iOS-4B2 lands the first engine slice
+  // (buildTrainingDecisionFromCleanInput + the effectivePhase/sessionIntent core
+  // rules) inside IronPathTrainingDecision. The public entry name carries the
+  // `FromCleanInput` suffix and does not match this bare-name pattern; the
+  // exemption sanctions any bare engine helper INSIDE the package while keeping
+  // `func buildTrainingDecision` globally forbidden everywhere else (so no app /
+  // cloud surface can call a raw, un-branded engine entry). The deferred engines
+  // (prescription/readiness/deload/userFacing) are kept out by
+  // iosTrainingDecisionSwiftEngineStaticGuards.
+  {
+    name: 'buildTrainingDecision_func',
+    owner: 'iOS-4B2 (IronPathTrainingDecision)',
+    pattern: /\bfunc\s+buildTrainingDecision\b/,
+    exemptPrefixes: ['ios/packages/IronPathTrainingDecision/'],
+  },
   // CleanAppDataView — sanctioned by iOS-3A inside IronPathDataHealth ONLY.
   // The struct landed in iOS-3A as the read-only projection foundation;
   // iOS-3B and iOS-4 consume it. Declarations outside the Data Health
