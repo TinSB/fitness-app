@@ -40,6 +40,11 @@ import { getAppDataRepairRegistry } from '../src/dataHealth/appDataRepairRegistr
 import { buildFocusStepQueue } from '../src/engines/focusModeStateEngine';
 import { resolveFocusModeInteractionState } from '../src/engines/focusModeInteractionState';
 import type { AppData, TrainingSession, TrainingTemplate } from '../src/models/training-model';
+// iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
+// the expanded TrainingDecision parity fixtures stay small + deterministic +
+// engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
+// bundles cleanly under `vite build --ssr`.
+import { makeAppData, makeSession, makeStatus, getTemplate } from '../tests/fixtures';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -62,6 +67,17 @@ const FIXTURE_IDS = [
   'data-repair/session-lifecycle-residue-v1',
   'real-export/redacted-2026-05-27',
   'focus-mode/golden-path-session-v1',
+  // iOS-4B0 TrainingDecision parity fixture expansion — synthetic inputs that
+  // each lock a distinct engine path before the Swift TrainingDecision port.
+  'training-decision/severe-rest-v1',
+  'training-decision/controlled-reload-v1',
+  'training-decision/deload-week-v1',
+  'training-decision/stale-today-status-v1',
+  'training-decision/stale-health-data-v1',
+  'training-decision/restart-28d-gap-v1',
+  'training-decision/productive-floor-v1',
+  'training-decision/no-legacy-advice-v1',
+  'training-decision/clean-input-contract-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -451,13 +467,249 @@ const generateFocusMode = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// iOS-4B0 — synthetic TrainingDecision fixtures (expanded path coverage)
+//
+// These fixtures carry a compact declarative `synthetic` spec instead of a
+// redacted-pointer AppData. The spec is materialised into an engine-valid
+// AppData via the test fixture helpers (makeAppData/makeSession/makeStatus),
+// keeping the committed input tiny while still driving the REAL Clean Input
+// Contract pipeline. All dates are computed relative to the deterministic
+// clock so two runs are byte-identical.
+//
+// generateTrainingDecisionExpanded() is a SEPARATE generator from
+// generateTrainingDecision() so the existing normal-session-v1 golden stays
+// byte-identical (it keeps its narrower projection). The expanded golden adds
+// structured engine fields (sessionIntent, activePhase, modes, riskLevel,
+// finalVolumeMultiplier, exerciseRoleFloors, per-exercise set counts, clean
+// input evidence) so the Swift port has real baselines to match.
+// ---------------------------------------------------------------------------
+
+const dateOnlyDaysBefore = (nowIso: string, days: number): string => {
+  const base = new Date(nowIso).getTime();
+  return new Date(base - days * 86_400_000).toISOString().slice(0, 10);
+};
+
+const isoDaysBefore = (nowIso: string, days: number): string => {
+  const base = new Date(nowIso).getTime();
+  return new Date(base - days * 86_400_000).toISOString();
+};
+
+type SyntheticSessionSpec = {
+  id: string;
+  daysAgo: number;
+  templateId?: string;
+  exerciseId?: string;
+  sets?: Array<{ weight: number; reps: number; rir?: number; painFlag?: boolean; painArea?: string; painSeverity?: number; techniqueQuality?: 'good' | 'acceptable' | 'poor' }>;
+  legacyAdvice?: boolean;
+  dirty?: 'lifecycle' | 'duration';
+};
+
+type SyntheticSpec = {
+  selectedTemplateId?: string;
+  trainingMode?: string;
+  sessions?: SyntheticSessionSpec[];
+  todayStatus?: { daysAgo?: number; sleep?: string; energy?: string; soreness?: string[]; time?: string };
+  healthMetricSamples?: Array<{ daysAgo: number; type?: string; value?: number; unit?: string }>;
+  mesocyclePlan?: Record<string, unknown> | null;
+  screeningProfile?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+};
+
+const buildSyntheticAppData = (spec: SyntheticSpec, nowIso: string): AppData => {
+  const selectedTemplateId = spec.selectedTemplateId ?? 'push-a';
+  const history: TrainingSession[] = (spec.sessions ?? []).map((s) => {
+    const templateId = s.templateId ?? selectedTemplateId;
+    const exerciseId = s.exerciseId ?? getTemplate(templateId).exercises[0].id;
+    const session = makeSession({
+      id: s.id,
+      date: dateOnlyDaysBefore(nowIso, s.daysAgo),
+      templateId,
+      exerciseId,
+      setSpecs: s.sets ?? [{ weight: 60, reps: 6 }, { weight: 60, reps: 6 }],
+    }) as TrainingSession & Record<string, unknown>;
+    if (s.legacyAdvice) {
+      // Legacy "final advice" residue that stripLegacyAdviceFromSession must
+      // remove before the decision sees it. Seeded on the exercise + session.
+      session.exercises = session.exercises.map((ex) => ({
+        ...ex,
+        suggestion: '历史建议：下次加重（legacy，不应进入 live 决策）',
+        warning: '历史警告：注意肩部（legacy）',
+        adjustment: '历史调整：减少一组（legacy）',
+      })) as TrainingSession['exercises'];
+      session.explanations = [
+        { id: 'legacy-explain-1', summary: '历史最终建议（legacy final advice）', source: 'legacy' },
+      ];
+    }
+    if (s.dirty === 'lifecycle') {
+      // Active-session lifecycle residue on a completed history session.
+      session.restTimerState = { isRunning: true, startedAt: isoDaysBefore(nowIso, s.daysAgo), remainingSeconds: 90 };
+      session.currentExerciseId = exerciseId;
+    }
+    if (s.dirty === 'duration') {
+      // Impossible duration (> DATA_HEALTH_IMPOSSIBLE_DURATION_MIN=240).
+      session.durationMin = 9999;
+    }
+    return session as TrainingSession;
+  });
+
+  const todayStatus = spec.todayStatus
+    ? ({
+        ...makeStatus({
+          ...(spec.todayStatus.sleep ? { sleep: spec.todayStatus.sleep as never } : {}),
+          ...(spec.todayStatus.energy ? { energy: spec.todayStatus.energy as never } : {}),
+          ...(spec.todayStatus.soreness ? { soreness: spec.todayStatus.soreness as never } : {}),
+          ...(spec.todayStatus.time ? { time: spec.todayStatus.time } : {}),
+        }),
+        date: dateOnlyDaysBefore(nowIso, spec.todayStatus.daysAgo ?? 0),
+      } as never)
+    : undefined;
+
+  const healthMetricSamples = spec.healthMetricSamples
+    ? spec.healthMetricSamples.map((h, i) => ({
+        id: `synthetic-health-${i + 1}`,
+        type: h.type ?? 'restingHeartRate',
+        value: h.value ?? 58,
+        unit: h.unit ?? 'count/min',
+        startDate: isoDaysBefore(nowIso, h.daysAgo),
+        endDate: isoDaysBefore(nowIso, h.daysAgo),
+        source: 'synthetic',
+      }))
+    : undefined;
+
+  const overrides: Partial<AppData> = {
+    history,
+    selectedTemplateId,
+    trainingMode: (spec.trainingMode ?? 'hybrid') as never,
+  };
+  if (todayStatus) (overrides as Record<string, unknown>).todayStatus = todayStatus;
+  if (healthMetricSamples) (overrides as Record<string, unknown>).healthMetricSamples = healthMetricSamples;
+  if (spec.mesocyclePlan !== undefined) (overrides as Record<string, unknown>).mesocyclePlan = spec.mesocyclePlan;
+  if (spec.screeningProfile) (overrides as Record<string, unknown>).screeningProfile = spec.screeningProfile;
+  if (spec.settings) (overrides as Record<string, unknown>).settings = spec.settings;
+
+  return makeAppData(overrides);
+};
+
+const generateTrainingDecisionExpanded = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: expanded training-decision requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const md = input.decisionMetadata ?? {};
+  const appData = buildSyntheticAppData((input.synthetic ?? {}) as SyntheticSpec, nowIso);
+  const templateId = md.templateId ?? (input.synthetic?.selectedTemplateId ?? 'push-a');
+  const template = (appData.templates || []).find((t: TrainingTemplate) => t.id === templateId);
+  if (!template) {
+    throw new Error(`parityGoldensEntry: template ${templateId} not found in synthetic AppData`);
+  }
+  const clock = { now: () => new Date(nowIso) };
+  const cleanView = buildCleanAppDataView(appData, clock);
+  const cleanInput = createCleanTrainingDecisionInput(cleanView, {
+    template,
+    nowIso,
+    trainingMode: md.trainingMode ?? input.synthetic?.trainingMode,
+    acutePainReported: md.acutePainReported,
+    injuryFlag: md.injuryFlag,
+    illnessFlag: md.illnessFlag,
+    explicitDeloadAssigned: md.explicitDeloadAssigned,
+    useHealthDataForReadiness: md.useHealthDataForReadiness,
+  }) as Record<string, unknown>;
+  const decision = buildTrainingDecisionFromCleanInput(cleanInput as never) as any;
+  const hidden = decision.hiddenDebugSignals ?? {};
+  const effectivePhase = hidden.effectivePhase ?? {};
+  const workingSetTargets: any[] = Array.isArray(decision.workingSetTargets) ? decision.workingSetTargets : [];
+  const diag = cleanView.guardDiagnostics;
+
+  return {
+    sourceFixtureId: meta.id,
+    decisionVersion: decision.decisionVersion,
+    // Top-level engine decision fields (structured — not UI text).
+    sessionIntent: decision.sessionIntent,
+    activePhase: decision.activePhase,
+    volumeMode: decision.volumeMode,
+    intensityMode: decision.intensityMode,
+    progressionMode: decision.progressionMode,
+    riskLevel: decision.riskLevel,
+    trainingMode: decision.trainingMode,
+    weeklyAdjustment: decision.weeklyAdjustment ?? null,
+    finalVolumeMultiplier: hidden.finalVolumeMultiplier ?? null,
+    exerciseRoleFloors: hidden.exerciseRoleFloors ?? null,
+    weeklyBlockReasons: hidden.weeklyBlockReasons ?? [],
+    progressClarityTripletSuppressed: hidden.progressClarityTripletSuppressed ?? null,
+    effectivePhase: {
+      activePhase: effectivePhase.activePhase ?? null,
+      gapDays: effectivePhase.gapDays ?? null,
+      mode: effectivePhase.mode ?? null,
+      severity: effectivePhase.severity ?? null,
+      overridden: effectivePhase.overridden ?? null,
+      hasHistory: effectivePhase.hasHistory ?? null,
+    },
+    // Per-exercise set-count summary — catches all-1-set regressions.
+    perExercise: workingSetTargets.map((w) => ({
+      exerciseId: w.exerciseId,
+      role: w.role,
+      targetSets: w.targetSets,
+    })),
+    allTargetSets: workingSetTargets.map((w) => w.targetSets),
+    minTargetSets: workingSetTargets.length ? Math.min(...workingSetTargets.map((w) => Number(w.targetSets) || 0)) : null,
+    userFacing: decision.userFacing,
+    hiddenDebugSignals: {
+      arbitrationTrace: hidden.arbitrationTrace ?? [],
+    },
+    // Clean Input Contract evidence — proves the dirty raw AppData was passed
+    // through buildCleanAppDataView before the decision saw it.
+    cleanInput: {
+      cleanViewBuilt: cleanView !== null && cleanView !== undefined,
+      useHealthDataForReadiness:
+        (cleanInput as Record<string, unknown>).useHealthDataForReadiness ?? null,
+      diagnostics: {
+        lifecycleResidueSessionIds: diag.lifecycleResidueSessionIds,
+        legacyAdviceSessionIds: diag.legacyAdviceSessionIds,
+        invalidDurationSessionIds: diag.invalidDurationSessionIds,
+        cappedIssueScoreKeys: diag.cappedIssueScoreKeys,
+        staleTodayStatus: diag.staleTodayStatus,
+        staleHealthData: diag.staleHealthData,
+        filteredPerformanceDropIds: diag.filteredPerformanceDropIds,
+      },
+    },
+    inputEvidence: {
+      historyLength: appData.history?.length ?? 0,
+      healthMetricSampleCount: (appData.healthMetricSamples || []).length,
+      rawHealthSamplesPreserved: (appData.healthMetricSamples || []).length === (cleanView.appData.healthMetricSamples || []).length,
+    },
+  };
+};
+
+const TRAINING_DECISION_EXPANDED_IDS = new Set<FixtureId>([
+  'training-decision/severe-rest-v1',
+  'training-decision/controlled-reload-v1',
+  'training-decision/deload-week-v1',
+  'training-decision/stale-today-status-v1',
+  'training-decision/stale-health-data-v1',
+  'training-decision/restart-28d-gap-v1',
+  'training-decision/productive-floor-v1',
+  'training-decision/no-legacy-advice-v1',
+  'training-decision/clean-input-contract-v1',
+]);
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
   'data-repair/session-lifecycle-residue-v1': generateDataRepair,
   'real-export/redacted-2026-05-27': generateRealExport,
   'focus-mode/golden-path-session-v1': generateFocusMode,
+  'training-decision/severe-rest-v1': generateTrainingDecisionExpanded,
+  'training-decision/controlled-reload-v1': generateTrainingDecisionExpanded,
+  'training-decision/deload-week-v1': generateTrainingDecisionExpanded,
+  'training-decision/stale-today-status-v1': generateTrainingDecisionExpanded,
+  'training-decision/stale-health-data-v1': generateTrainingDecisionExpanded,
+  'training-decision/restart-28d-gap-v1': generateTrainingDecisionExpanded,
+  'training-decision/productive-floor-v1': generateTrainingDecisionExpanded,
+  'training-decision/no-legacy-advice-v1': generateTrainingDecisionExpanded,
+  'training-decision/clean-input-contract-v1': generateTrainingDecisionExpanded,
 };
+void TRAINING_DECISION_EXPANDED_IDS;
 
 // ---------------------------------------------------------------------------
 // Driver

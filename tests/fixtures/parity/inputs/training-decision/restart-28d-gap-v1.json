@@ -1,0 +1,26 @@
+{
+  "parityMeta": {
+    "id": "training-decision/restart-28d-gap-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 restart parity — a training gap of 30 days (>= 28) drives effectivePhase.activePhase='restart' with a restart-specific volume floor. sessionIntent='reentry-productive' but the restart phase + multiplier distinguish it from a 14-27d reentry. No legacy-advice contamination.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. Last completed session is 30 days before the clock so getEffectiveTrainingPhase returns the 28+d restart branch."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "rst-s1", "daysAgo": 44, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "rst-s2", "daysAgo": 30, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

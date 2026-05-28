@@ -1,0 +1,29 @@
+{
+  "parityMeta": {
+    "id": "training-decision/controlled-reload-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 controlled-reload parity — rising e1rm trend across recent sessions AND low readiness (recoveryHigh) with no severe flag, no gap, no deload selects sessionIntent='controlled-reload' (AR-5-controlled-reload). Proves conservative-but-productive output: not all exercises collapse to 1 set, no 'strength improving but cut everything' contradiction.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. Five completed push-a sessions with strictly increasing top weights (rising e1rm trend), most recent 2 days ago (no gap -> phase persisted). todayStatus sleep='差' + energy='低' drives readiness score to ~44 (<50 => level 'low' => recoveryHigh)."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "cr-s1", "daysAgo": 14, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "cr-s2", "daysAgo": 11, "sets": [{ "weight": 62.5, "reps": 6 }, { "weight": 62.5, "reps": 6 }] },
+      { "id": "cr-s3", "daysAgo": 8, "sets": [{ "weight": 65, "reps": 6 }, { "weight": 65, "reps": 6 }] },
+      { "id": "cr-s4", "daysAgo": 5, "sets": [{ "weight": 67.5, "reps": 6 }, { "weight": 67.5, "reps": 6 }] },
+      { "id": "cr-s5", "daysAgo": 2, "sets": [{ "weight": 70, "reps": 6 }, { "weight": 70, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0, "sleep": "差", "energy": "低" }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

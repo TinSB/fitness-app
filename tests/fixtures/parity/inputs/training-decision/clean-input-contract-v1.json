@@ -1,0 +1,26 @@
+{
+  "parityMeta": {
+    "id": "training-decision/clean-input-contract-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 clean-input-contract parity — dirty raw AppData (session lifecycle residue + an impossible >240-minute duration) must pass through buildCleanAppDataView/createCleanTrainingDecisionInput before the engine sees it. The golden proves the clean-input path ran (cleanViewBuilt=true) and the dirt was detected (lifecycleResidueSessionIds + invalidDurationSessionIds non-empty) so dirty raw fields never leak into live advice.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. One session carries active-session lifecycle residue (running rest timer + currentExerciseId on a completed session); another carries an impossible 9999-minute duration. Both are repairable and must be cleaned by the view, not the engine."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "cic-s1", "daysAgo": 5, "dirty": "lifecycle", "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "cic-s2", "daysAgo": 2, "dirty": "duration", "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

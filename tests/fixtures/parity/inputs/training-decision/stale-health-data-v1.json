@@ -1,0 +1,30 @@
+{
+  "parityMeta": {
+    "id": "training-decision/stale-health-data-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 stale-health parity — health metric samples older than DATA_HEALTH_HEALTH_DATA_STALE_DAYS (14) trip the health-data guard (cleanInput.diagnostics.staleHealthData=true), which resolves useHealthDataForReadiness=false so readiness does not draw a strong conclusion from stale health data. Raw samples are preserved (rawHealthSamplesPreserved=true), only downgraded.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. healthIntegrationSettings.useHealthDataForReadiness=true (opt-in), but the single health sample is 30 days old (> 14-day window). decisionMetadata does NOT pass useHealthDataForReadiness, so it resolves from the staleForReadiness guard to false."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "shd-s1", "daysAgo": 5, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "shd-s2", "daysAgo": 2, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 },
+    "healthMetricSamples": [
+      { "daysAgo": 30, "type": "restingHeartRate", "value": 58, "unit": "count/min" }
+    ],
+    "settings": { "healthIntegrationSettings": { "useHealthDataForReadiness": true } }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

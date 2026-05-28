@@ -1,0 +1,26 @@
+{
+  "parityMeta": {
+    "id": "training-decision/stale-today-status-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 stale-todayStatus parity — todayStatus.date older than DATA_HEALTH_TODAY_STATUS_STALE_DAYS (3) is detected by the runtime guard (cleanInput.diagnostics.staleTodayStatus=true). Neutral status values mean no false recovery/fatigue signal leaks. Locks the stale-status detection contract.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. todayStatus.date is 6 days before the clock (> 3-day stale window) with neutral sleep/energy so the only signal is the staleness flag. Recent sessions keep the phase persisted (no gap)."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "sts-s1", "daysAgo": 5, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "sts-s2", "daysAgo": 2, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 6 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

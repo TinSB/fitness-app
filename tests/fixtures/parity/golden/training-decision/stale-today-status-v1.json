@@ -1,0 +1,257 @@
+{
+  "activePhase": "base",
+  "allTargetSets": [
+    2,
+    2,
+    1,
+    1,
+    3,
+    2
+  ],
+  "cleanInput": {
+    "cleanViewBuilt": true,
+    "diagnostics": {
+      "cappedIssueScoreKeys": [],
+      "filteredPerformanceDropIds": [],
+      "invalidDurationSessionIds": [],
+      "legacyAdviceSessionIds": [],
+      "lifecycleResidueSessionIds": [],
+      "staleHealthData": false,
+      "staleTodayStatus": true
+    },
+    "useHealthDataForReadiness": null
+  },
+  "decisionVersion": "v2",
+  "effectivePhase": {
+    "activePhase": "base",
+    "gapDays": 2,
+    "hasHistory": true,
+    "mode": "continue",
+    "overridden": false,
+    "severity": "none"
+  },
+  "exerciseRoleFloors": {
+    "accessory": 1,
+    "isolation": 1,
+    "main-compound": 1,
+    "secondary-compound": 1
+  },
+  "finalVolumeMultiplier": 0.9,
+  "hiddenDebugSignals": {
+    "arbitrationTrace": []
+  },
+  "inputEvidence": {
+    "healthMetricSampleCount": 0,
+    "historyLength": 2,
+    "rawHealthSamplesPreserved": true
+  },
+  "intensityMode": "cap",
+  "minTargetSets": 1,
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "training-decision/stale-today-status-v1"
+  },
+  "perExercise": [
+    {
+      "exerciseId": "bench-press",
+      "role": "secondary-compound",
+      "targetSets": 2
+    },
+    {
+      "exerciseId": "incline-db-press",
+      "role": "secondary-compound",
+      "targetSets": 2
+    },
+    {
+      "exerciseId": "machine-chest-press",
+      "role": "accessory",
+      "targetSets": 1
+    },
+    {
+      "exerciseId": "cable-fly",
+      "role": "isolation",
+      "targetSets": 1
+    },
+    {
+      "exerciseId": "lateral-raise",
+      "role": "isolation",
+      "targetSets": 3
+    },
+    {
+      "exerciseId": "triceps-pushdown",
+      "role": "isolation",
+      "targetSets": 2
+    }
+  ],
+  "progressClarityTripletSuppressed": false,
+  "progressionMode": "hold",
+  "riskLevel": "none",
+  "sessionIntent": "normal-session",
+  "sourceFixtureId": "training-decision/stale-today-status-v1",
+  "trainingMode": "hybrid",
+  "userFacing": {
+    "explanation": {
+      "headline": "推荐说明",
+      "oneLineAdvice": "阶段：基础周；方向：按计划训练。",
+      "primaryFactors": [
+        {
+          "effect": "maintain",
+          "effectLabel": "维持建议",
+          "effectTone": "neutral",
+          "id": "training-phase",
+          "label": "训练阶段",
+          "priority": 500,
+          "reason": "基础周 · 按计划训练。",
+          "source": "defaultPolicy"
+        }
+      ],
+      "secondaryFactors": [],
+      "summary": "基础周，按计划推进，记录数据即可。",
+      "surfaceId": "explanation",
+      "title": "为什么这样推荐？",
+      "warnings": []
+    },
+    "focus": {
+      "explanationFactors": [
+        {
+          "effect": "maintain",
+          "effectLabel": "维持建议",
+          "effectTone": "neutral",
+          "id": "training-phase",
+          "label": "训练阶段",
+          "priority": 500,
+          "reason": "基础周 · 按计划训练。",
+          "source": "defaultPolicy"
+        }
+      ],
+      "explanationSummary": "基础周，按计划推进，记录数据即可。",
+      "explanationTitle": "为什么这样推荐？",
+      "headline": "按计划训练",
+      "micro": {
+        "phaseLabel": "基础周"
+      },
+      "oneLineAdvice": "按计划推进，记录数据即可。",
+      "surfaceId": "focus"
+    },
+    "plan": {
+      "headline": "继续记录后再判断",
+      "micro": {
+        "phaseLabel": "基础周"
+      },
+      "oneLineAdvice": "按计划推进，记录数据即可。",
+      "summary": "继续记录后再判断。",
+      "surfaceId": "plan",
+      "title": "继续记录后再判断",
+      "weeklyDirection": "下周维持当前节奏",
+      "weeklyItems": [
+        {
+          "actionLabel": "继续记录",
+          "actionType": "keep_observing",
+          "blockedReasons": [
+            "insufficient_data"
+          ],
+          "confidence": "low",
+          "confidenceLabel": "置信度偏低",
+          "id": "weekly-progression:2026-05-27:week:本周训练:insufficient_data:keep_observing",
+          "nextStep": "继续记录后再判断。",
+          "previewSummary": "不改变计划",
+          "reason": "继续记录后再判断。",
+          "reasonCodes": [
+            "insufficient_data"
+          ],
+          "recommendationKind": "insufficient_data",
+          "risk": "风险较低，仍需观察反馈。",
+          "riskFlags": [],
+          "riskLevel": "low",
+          "riskLevelLabel": "风险较低",
+          "suggestedActions": [
+            "继续记录后再判断"
+          ],
+          "summary": "继续记录训练后再判断。",
+          "targetLabel": "本周训练",
+          "targetType": "week",
+          "title": "继续记录",
+          "userMessage": "继续记录后再判断。"
+        }
+      ]
+    },
+    "progress": {
+      "caution": "不要用少量记录推断长期趋势。",
+      "dataCoverageHint": "数据不足时只显示保守解释，不做趋势过度判断。",
+      "effectiveSetExplanation": "有效组数据不足。完成几次正式训练后，这里会解释训练刺激和恢复压力。",
+      "headline": "数据不足，先继续记录",
+      "heroExplanation": "目前还不能可靠判断力量趋势或恢复压力。完成几次正常训练后，Progress 会给出更明确的解释。",
+      "heroTitle": "数据不足，先继续记录",
+      "insightState": "data_insufficient",
+      "micro": {
+        "phaseLabel": "基础周"
+      },
+      "oneLineAdvice": "按计划推进，记录数据即可。",
+      "primaryRecommendation": "继续观察",
+      "readinessLabel": "数据不足",
+      "recoveryPressureLabel": "压力未知",
+      "strengthTrendItems": [],
+      "surfaceId": "progress",
+      "volumeExplanation": "本月训练次数不足，近 4 周频率数据不足。训练量解释只用于阅读状态，不会自动调整处方。"
+    },
+    "record": {
+      "headline": "暂无足够记录。",
+      "nextTimeHint": "暂无足够记录。",
+      "oneLineAdvice": "按计划推进，记录数据即可。",
+      "perExercise": [],
+      "surfaceId": "record"
+    },
+    "today": {
+      "decisionState": "no_plan_available",
+      "decisionStateLabel": "缺少训练安排",
+      "focusLabel": "暂无训练安排",
+      "headline": "暂无可执行训练安排",
+      "heroExplanation": "先检查训练计划，再开始训练。",
+      "heroLabel": "今日结论",
+      "heroTitle": "暂无可执行训练安排",
+      "micro": {
+        "phaseLabel": "基础周"
+      },
+      "oneLineAdvice": "按计划推进，记录数据即可。",
+      "primaryActionLabel": "查看计划",
+      "readinessLabel": "缺少训练安排",
+      "safetyLabel": "当前使用本地数据",
+      "showDataHealthSummary": false,
+      "showFocusOverride": false,
+      "surfaceId": "today"
+    },
+    "training": {
+      "explanationFactors": [
+        {
+          "effect": "maintain",
+          "effectLabel": "维持建议",
+          "effectTone": "neutral",
+          "id": "training-phase",
+          "label": "训练阶段",
+          "priority": 500,
+          "reason": "基础周 · 按计划训练。",
+          "source": "defaultPolicy"
+        }
+      ],
+      "explanationSummary": "基础周，按计划推进，记录数据即可。",
+      "explanationTitle": "为什么这样推荐？",
+      "headline": "按计划训练",
+      "micro": {
+        "phaseLabel": "基础周"
+      },
+      "oneLineAdvice": "按计划推进，记录数据即可。",
+      "surfaceId": "training"
+    }
+  },
+  "volumeMode": "trim",
+  "weeklyAdjustment": {
+    "appliesFromIsoDate": "2026-05-27",
+    "blockedBy": null,
+    "direction": "hold",
+    "magnitudePct": 0
+  },
+  "weeklyBlockReasons": []
+}
