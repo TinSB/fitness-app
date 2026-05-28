@@ -22,6 +22,8 @@ const PACKAGES = [
   'IronPathBackup',
   'IronPathL10n',
   'IronPathUIKit',
+  // iOS-4B1: TrainingDecision golden type skeleton package (9th package).
+  'IronPathTrainingDecision',
 ] as const;
 
 const readPackageSwift = (pkg: string): string =>
@@ -41,6 +43,9 @@ const readPackageSwift = (pkg: string): string =>
 const SANCTIONED_LOCAL_PATH_DEPS: Record<string, readonly string[]> = {
   IronPathDataHealth: ['../IronPathDomain'],
   IronPathPersistence: ['../IronPathDomain'],
+  // iOS-4B1: the TrainingDecision type skeleton consumes JSONValue from
+  // IronPathDomain only. The engine's IronPathDataHealth dep arrives in 4B2.
+  IronPathTrainingDecision: ['../IronPathDomain'],
 };
 
 describe('iosBootstrapPackageGraph — every package is local-only', () => {

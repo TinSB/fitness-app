@@ -48,9 +48,18 @@ const BUSINESS_LOGIC: readonly ForbiddenSymbol[] = [
     pattern: /\b(struct|final\s+class|class)\s+AppData\b/,
     exemptPrefixes: ['ios/packages/IronPathDomain/'],
   },
-  // TrainingDecision engine — owned by iOS-4.
-  { name: 'TrainingDecision_type', owner: 'iOS-4', pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/ },
-  { name: 'buildTrainingDecision_func', owner: 'iOS-4', pattern: /\bfunc\s+buildTrainingDecision\b/ },
+  // TrainingDecision golden TYPE skeleton — sanctioned by iOS-4B1 inside
+  // IronPathTrainingDecision ONLY. The `struct TrainingDecision` decode type
+  // lands there; declarations elsewhere still fail the lock. The decision
+  // ENGINE function (buildTrainingDecision) stays globally forbidden until
+  // iOS-4B2 — no exemption.
+  {
+    name: 'TrainingDecision_type',
+    owner: 'iOS-4B1 (IronPathTrainingDecision)',
+    pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/,
+    exemptPrefixes: ['ios/packages/IronPathTrainingDecision/'],
+  },
+  { name: 'buildTrainingDecision_func', owner: 'iOS-4B2', pattern: /\bfunc\s+buildTrainingDecision\b/ },
   // CleanAppDataView — sanctioned by iOS-3A inside IronPathDataHealth ONLY.
   // The struct landed in iOS-3A as the read-only projection foundation;
   // iOS-3B and iOS-4 consume it. Declarations outside the Data Health

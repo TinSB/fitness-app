@@ -5,6 +5,20 @@
 > This document is the authoritative scope for iOS-4B. The docs-parity tests in
 > `tests/iosTrainingDecisionSwiftPortPlan*.test.ts` lock its key contents.
 
+> **iOS-4B was split into incremental sub-PRs** to de-risk the largest behaviour
+> surface in the app:
+> - **iOS-4B0** — TrainingDecision parity fixture expansion (10 goldens). ✅ merged.
+> - **iOS-4B1** — TrainingDecision Swift **type skeleton** (the
+>   `IronPathTrainingDecision` package + Codable golden decode types, no engine).
+>   See [`IOS_4B1_TRAININGDECISION_SWIFT_TYPE_SKELETON_V1.md`](./IOS_4B1_TRAININGDECISION_SWIFT_TYPE_SKELETON_V1.md).
+> - **iOS-4B2** — TrainingDecision core rule skeleton (engine entry +
+>   effective-phase/sessionIntent), adding the `IronPathDataHealth` dep.
+> - **iOS-4B3+** — the remaining engine algorithm (clamp/floors/surfaces/…),
+>   matched against the iOS-4B0 goldens via the iOS-4B1 types.
+>
+> The original "all-at-once" file/test lists below remain the cumulative target;
+> each sub-PR lands a reviewable slice of it.
+
 ## Context
 
 iOS-4A (plan + CodeGraph audit) is merged. iOS-3C and all prior iOS Swift layers
