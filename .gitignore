@@ -47,3 +47,11 @@ tests/fixtures/data-health/private-*.json
 .codex-tasks/
 .vercel
 .env*.local
+
+# Xcode user data (iOS-1 onwards) — must never be committed
+**/xcuserdata/
+**/*.xcodeproj/xcuserdata/
+**/*.xcworkspace/xcuserdata/
+**/DerivedData/
+**/.swiftpm/xcode/
+**/.build/

@@ -392,13 +392,26 @@ describe('iosNativeMigrationEntryGate — docs are planning only, no Xcode proje
     );
   });
 
-  it('iosNativeMigrationEntryGate the worktree must not actually contain an .xcodeproj or ios/ source dir', () => {
-    // Reading from the repo root: the docs PR is planning only. Any future
-    // PR that lands ios/ must explicitly be iOS-1, not bundled with the
-    // entry-gate doc.
-    expect(existsSync(repoFile('ios'))).toBe(false);
+  it('iosNativeMigrationEntryGate if ios/ exists, it must have arrived via iOS-1 and must not live at the repo root', () => {
+    // Originally locked iOS-0 by forbidding any iOS scaffolding at the
+    // repo root. iOS-1 Xcode Project Bootstrap V1 now lands an ios/
+    // tree intentionally. The guard evolves: if ios/ exists, the iOS-1
+    // design doc must also exist (proving the tree arrived via the
+    // sanctioned task), and no Xcode project may live at the repo
+    // root — only inside ios/.
     expect(existsSync(repoFile('IronPath.xcodeproj'))).toBe(false);
     expect(existsSync(repoFile('IronPath.xcworkspace'))).toBe(false);
+    if (existsSync(repoFile('ios'))) {
+      expect(
+        existsSync(
+          repoFile('docs/ios-native-migration/IOS_1_XCODE_PROJECT_BOOTSTRAP_V1.md'),
+        ),
+        'ios/ exists but the iOS-1 design doc is missing — the scaffolding arrived outside the sanctioned task',
+      ).toBe(true);
+      // The xcodeproj must live under ios/, not at the repo root.
+      expect(existsSync(repoFile('ios/IronPath.xcodeproj'))).toBe(true);
+      expect(existsSync(repoFile('ios/IronPath.xcworkspace'))).toBe(true);
+    }
   });
 });
 
