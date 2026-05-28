@@ -27,6 +27,7 @@ import {
   writeLastParityFailureDiagnostic,
 } from '../../storage/localStorageAdapter';
 import { buildAppDataSnapshotHash } from '../../cloudProduction/accountBoundaryLocalInventory';
+import { ensureCloudUploadEligible } from '../../dataHealth/uploadEligibilityGuard';
 import {
   buildCloudSyncSettingsSectionPropsFromRuntime,
   type CloudSyncSettingsRuntimeInput,
@@ -594,6 +595,24 @@ export function CloudSyncPolishSettingsPanel({
     //            row without a native confirm dialog.
     const alreadySawConflict =
       productionSyncApplyState.result?.status === 'conflict_review_required';
+
+    // V3 enforcement: any cloud upload must pass through the data health
+    // eligibility guard. If the local AppData has pending safe-auto repairs
+    // or a recent backup failure, the upload is blocked here with a passive
+    // status — no fake sync success, no silent overwrite.
+    const eligibilityVerdict = ensureCloudUploadEligible({
+      appData: appData ?? null,
+      source: 'explicit-first-upload',
+      snapshotKind: 'first-upload',
+    });
+    if (!eligibilityVerdict.ok) {
+      setProductionSyncApplyState({
+        pending: false,
+        result: null,
+        message: eligibilityVerdict.safeUserMessage,
+      });
+      return;
+    }
 
     setProductionSyncApplyState({
       pending: true,
