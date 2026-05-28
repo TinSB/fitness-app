@@ -123,6 +123,7 @@ V1 enforces these hard rules and is covered by tests:
 - The repaired snapshot will be uploaded on the next normal sync window through the existing sync candidate flow because the orchestrator persists via `setData` + `saveData` and dispatches the new `data_health_auto_repaired` derived-state invalidation event.
 - `cloudParityCheck` already treats `settings.dataRepairLogs` as content-stable; the new `dataHealthRepairLedger` is in the same settings root and is therefore part of the same parity envelope.
 - **V2 follow-up shipped**: `processIncomingAppData` + `evaluateCloudUploadEligibility` route every AppData ingress (import, backup restore, cloud restore, cloud pull, read mirror, parity, post-session, account switch) through the V1 immunity layer. See [DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md](DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md).
+- **TrainingDecision input-contract lock**: the *consumer* side of the immunity layer is now locked at the type signature. UI / feature / cloud paths cannot pass raw AppData into `buildTrainingDecision` or `buildTrainingDecisionContext` — only `CleanTrainingDecisionInput` / `CleanTrainingDecisionContextSource` factories are allowed. See [TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md](TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md).
 
 ## 12. Remaining risks
 
