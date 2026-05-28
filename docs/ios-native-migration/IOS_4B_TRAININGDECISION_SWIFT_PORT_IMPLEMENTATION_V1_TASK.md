@@ -15,7 +15,9 @@
 >   effective-phase/sessionIntent), adding the `IronPathDataHealth` dep. ✅ implemented.
 >   See [`IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md`](./IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md).
 > - **iOS-4B3** — Readiness + e1RM slice (unlocks controlled-reload sessionIntent +
->   riskLevel). Then iOS-4B4 (deload/clamp/modes), iOS-4B5 (exercise prescription),
+>   riskLevel). ✅ implemented. See
+>   [`IOS_4B3_READINESS_E1RM_SLICE_V1.md`](./IOS_4B3_READINESS_E1RM_SLICE_V1.md).
+> - Then iOS-4B4 (deload/clamp/modes), iOS-4B5 (exercise prescription),
 >   iOS-4B6 (userFacing + full arbitrationTrace + full-object parity) —
 >   matched against the iOS-4B0 goldens via the iOS-4B1 types.
 >

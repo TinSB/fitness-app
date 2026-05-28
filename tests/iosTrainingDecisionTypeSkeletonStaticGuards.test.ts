@@ -107,19 +107,18 @@ describe('iosTrainingDecisionTypeSkeleton — package + structure', () => {
 });
 
 describe('iosTrainingDecisionTypeSkeleton — NO deferred engine logic', () => {
-  // iOS-4B2 evolution: the effectivePhase + sessionIntent core slice and the
-  // buildTrainingDecisionFromCleanInput entry now LIVE in this package (locked by
-  // iosTrainingDecisionSwiftEngineStaticGuards). So the former (9)
-  // effectiveTrainingPhase ban is removed here. (8) still forbids a BARE
-  // `func buildTrainingDecision` (the only sanctioned entry is the branded
-  // FromCleanInput wrapper), and (10)/(11)/(12) keep the still-deferred engines
-  // (prescription / supportPlan / readiness) out — those land in iOS-4B3+.
+  // iOS-4B2/4B3 evolution: the effectivePhase + sessionIntent core slice + entry
+  // (4B2) and the readiness + e1RM slice (4B3) now LIVE in this package (locked by
+  // iosTrainingDecisionSwiftEngineStaticGuards + iosTrainingDecisionReadinessE1RMSliceStaticGuards).
+  // So the former (9) effectiveTrainingPhase and (12) readinessEngine bans are
+  // removed here. (8) still forbids a BARE `func buildTrainingDecision` (the only
+  // sanctioned entry is the branded FromCleanInput wrapper), and (10)/(11) keep the
+  // still-deferred engines (prescription / supportPlan) out — those land in iOS-4B5/4B4.
   const src = sourceText();
   const engineFns: Array<[number, string, RegExp]> = [
     [8, 'buildTrainingDecision', /func\s+buildTrainingDecision\b/],
     [10, 'exercisePrescription', /func\s+(apply|prescribe)\w*(Prescription|StatusRules)\b/],
     [11, 'supportPlan', /func\s+build\w*Support\w*Plan\b/],
-    [12, 'readinessEngine', /func\s+build\w*Readiness\b/],
   ];
   for (const [n, label, re] of engineFns) {
     it(`iosTrainingDecisionTypeSkeleton (${n}) no ${label} implementation`, () => {

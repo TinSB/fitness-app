@@ -185,7 +185,9 @@ run typecheck`; `npm test`; `npm run build`; `node scripts/scan-production-dist-
 - The no-plan `persisted = base` result reproduces the TS golden artifact deterministically by
   pinning the default plan's startDate to `referenceDate`; a future fixture WITH a real
   mesocyclePlan + non-trivial startDate is outside the currently-verified envelope.
-- controlled-reload sessionIntent stays deferred until readiness lands (4B3).
+- controlled-reload sessionIntent stays deferred until readiness lands (4B3). ✅ RESOLVED in
+  iOS-4B3 (readiness + e1RM ported) — see
+  [`IOS_4B3_READINESS_E1RM_SLICE_V1.md`](./IOS_4B3_READINESS_E1RM_SLICE_V1.md).
 
 ## 16. Next task
 

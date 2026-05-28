@@ -1,13 +1,13 @@
-// iOS-4B2 — shared test support for the TrainingDecision core-slice tests.
+// iOS-4B2/4B3 — shared test support for the TrainingDecision core-slice tests.
 //
-// Builds synthetic engine inputs IN MEMORY: a hand-constructed AppData (history
-// at deterministic gap dates + optional mesocyclePlan) is run through the real
-// IronPathDataHealth buildCleanAppDataView, then minted into a branded
-// CleanTrainingDecisionInput via the package factory. This exercises the genuine
-// clean-input boundary (RAW AppData never reaches the engine) and is fully
-// deterministic — every date derives from the fixed parity clock string, never
-// from `Date()`. NO makeAppData/synthetic-AppData JSON is committed (no local-user
-// PII can leak), matching the iOS-4B0 privacy convention.
+// Builds synthetic engine inputs IN MEMORY: a hand-constructed AppData (history at
+// deterministic gap dates + todayStatus + optional weighted sessions / health
+// samples) is run through the real IronPathDataHealth buildCleanAppDataView, then
+// minted into a branded CleanTrainingDecisionInput via the package factory. This
+// exercises the genuine clean-input boundary (RAW AppData never reaches the engine)
+// and is fully deterministic — every date derives from the fixed parity clock
+// string, never from `Date()`. NO makeAppData/synthetic-AppData JSON is committed
+// (no local-user PII can leak), matching the iOS-4B0 privacy convention.
 
 import Foundation
 import XCTest
@@ -16,8 +16,6 @@ import IronPathDataHealth
 @testable import IronPathTrainingDecision
 
 enum CoreSliceTestKit {
-    /// The pinned parity clock (parityGolden.deterministicClockIso for every
-    /// expanded training-decision golden). referenceDate = first 10 chars.
     static let deterministicClockIso = "2026-05-27T10:00:00.000Z"
     static let referenceDateOnly = "2026-05-27"
 
@@ -29,30 +27,33 @@ enum CoreSliceTestKit {
         return c
     }()
 
-    /// `referenceDateOnly` minus `gap` days, as a `yyyy-MM-dd` string. Derived
-    /// from the fixed reference string — deterministic, no system clock.
+    /// `referenceDateOnly` minus `gap` days, as `yyyy-MM-dd`. Deterministic.
     static func dateOnly(daysBefore gap: Int) -> String {
         let parts = referenceDateOnly.split(separator: "-")
         var comps = DateComponents()
-        comps.year = Int(parts[0])
-        comps.month = Int(parts[1])
-        comps.day = Int(parts[2])
-        comps.hour = 12
+        comps.year = Int(parts[0]); comps.month = Int(parts[1]); comps.day = Int(parts[2]); comps.hour = 12
         let base = utcCalendar.date(from: comps)!
         let target = utcCalendar.date(byAdding: .day, value: -gap, to: base)!
         let fmt = DateFormatter()
-        fmt.timeZone = utc
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = utc; fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.dateFormat = "yyyy-MM-dd"
         return fmt.string(from: target)
     }
 
-    /// The fixed clock for buildCleanAppDataView (only affects stale diagnostics,
-    /// which 4B2 does not assert — kept fixed for hygiene).
+    /// Full ISO instant `gap` days before the clock (for health-sample staleness).
+    static func isoDaysBefore(_ gap: Int) -> String {
+        let parts = referenceDateOnly.split(separator: "-")
+        var comps = DateComponents()
+        comps.year = Int(parts[0]); comps.month = Int(parts[1]); comps.day = Int(parts[2]); comps.hour = 10
+        let base = utcCalendar.date(from: comps)!
+        let target = utcCalendar.date(byAdding: .day, value: -gap, to: base)!
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; fmt.timeZone = utc
+        return fmt.string(from: target)
+    }
+
     static var fixedClock: FixedRuntimeGuardClock {
         let fmt = ISO8601DateFormatter()
-        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        fmt.timeZone = utc
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; fmt.timeZone = utc
         return FixedRuntimeGuardClock(fmt.date(from: deterministicClockIso)!)
     }
 
@@ -65,7 +66,45 @@ enum CoreSliceTestKit {
         return TrainingSession(id: id, date: dateOnly(daysBefore: gap), completed: completed, _unknown: unknown)
     }
 
-    /// A standard 4-week mesocyclePlan JSONValue (base/build/overload/deload).
+    /// A completed session at `gap` days with one exercise whose top set weight is
+    /// `topWeight` — used to drive the e1RM trend.
+    static func weightedSession(id: String, gap: Int, topWeight: Double) -> TrainingSession {
+        let set = TrainingSetLog(weight: .double(topWeight), reps: .integer(6))
+        let exercise = ExercisePrescription(id: "\(id)-ex", exerciseId: "bench", name: "Bench", sets: [set])
+        return TrainingSession(id: id, date: dateOnly(daysBefore: gap), completed: true, exercises: [exercise])
+    }
+
+    /// todayStatus JSON. Defaults mirror DEFAULT_STATUS (sleep 一般 / energy 中 /
+    /// soreness ['无'] / time 60). `daysAgo` only stamps the date (staleness diag).
+    static func todayStatusJSON(
+        sleep: String = "一般",
+        energy: String = "中",
+        soreness: [String] = ["无"],
+        time: String = "60",
+        daysAgo: Int = 0
+    ) -> JSONValue {
+        .object(OrderedJSONObject(entries: [
+            .init(key: "sleep", value: .string(sleep)),
+            .init(key: "energy", value: .string(energy)),
+            .init(key: "soreness", value: .array(soreness.map { .string($0) })),
+            .init(key: "time", value: .string(time)),
+            .init(key: "date", value: .string(dateOnly(daysBefore: daysAgo))),
+        ]))
+    }
+
+    /// A single restingHeartRate health sample `daysAgo` days before the clock.
+    static func healthSampleJSON(daysAgo: Int) -> JSONValue {
+        .object(OrderedJSONObject(entries: [
+            .init(key: "id", value: .string("synthetic-health-1")),
+            .init(key: "type", value: .string("restingHeartRate")),
+            .init(key: "value", value: .number(.integer(58))),
+            .init(key: "unit", value: .string("count/min")),
+            .init(key: "startDate", value: .string(isoDaysBefore(daysAgo))),
+            .init(key: "endDate", value: .string(isoDaysBefore(daysAgo))),
+            .init(key: "source", value: .string("synthetic")),
+        ]))
+    }
+
     static func standardWeeksJSON() -> JSONValue {
         func week(_ phase: String, _ vol: Double, _ bias: String) -> JSONValue {
             .object(OrderedJSONObject(entries: [
@@ -75,31 +114,42 @@ enum CoreSliceTestKit {
             ]))
         }
         return .array([
-            week("base", 0.9, "normal"),
-            week("build", 1.0, "normal"),
-            week("overload", 1.1, "aggressive"),
-            week("deload", 0.6, "conservative"),
+            week("base", 0.9, "normal"), week("build", 1.0, "normal"),
+            week("overload", 1.1, "aggressive"), week("deload", 0.6, "conservative"),
         ])
     }
 
-    /// Build an in-memory AppData from session JSONValues (+ optional plan).
-    static func makeAppData(sessions: [TrainingSession], mesocyclePlan: JSONValue? = nil) -> AppData {
+    /// Build an in-memory AppData from sessions (+ optional todayStatus / plan / health).
+    static func makeAppData(
+        sessions: [TrainingSession],
+        todayStatus: JSONValue? = nil,
+        mesocyclePlan: JSONValue? = nil,
+        healthSamples: [JSONValue] = []
+    ) -> AppData {
         var entries: [OrderedJSONObject.Entry] = [
             .init(key: "schemaVersion", value: .number(.integer(Int64(SchemaVersion.current.rawValue)))),
             .init(key: "history", value: .array(sessions.map { $0.encoded() })),
         ]
-        if let mesocyclePlan {
-            entries.append(.init(key: "mesocyclePlan", value: mesocyclePlan))
-        }
+        if let todayStatus { entries.append(.init(key: "todayStatus", value: todayStatus)) }
+        if let mesocyclePlan { entries.append(.init(key: "mesocyclePlan", value: mesocyclePlan)) }
+        if !healthSamples.isEmpty { entries.append(.init(key: "healthMetricSamples", value: .array(healthSamples))) }
         return AppData(schemaVersion: .current, root: OrderedJSONObject(entries: entries))
     }
 
-    /// AppData → real CleanAppDataView (fixed clock).
-    static func cleanView(sessions: [TrainingSession], mesocyclePlan: JSONValue? = nil) -> CleanAppDataView {
-        buildCleanAppDataView(makeAppData(sessions: sessions, mesocyclePlan: mesocyclePlan), clock: fixedClock)
+    static func cleanView(
+        sessions: [TrainingSession],
+        todayStatus: JSONValue? = nil,
+        mesocyclePlan: JSONValue? = nil,
+        healthSamples: [JSONValue] = []
+    ) -> CleanAppDataView {
+        buildCleanAppDataView(
+            makeAppData(sessions: sessions, todayStatus: todayStatus, mesocyclePlan: mesocyclePlan, healthSamples: healthSamples),
+            clock: fixedClock
+        )
     }
 
-    /// Full path: synthetic AppData → CleanAppDataView → branded clean input.
+    /// Backwards-compatible simple builder (iOS-4B2): two analytics sessions (latest
+    /// at `gap`, an older one 7 days prior), default todayStatus, no weights.
     static func makeCleanInput(
         gap: Int,
         acutePainReported: Bool = false,
@@ -108,20 +158,44 @@ enum CoreSliceTestKit {
         explicitDeloadAssigned: Bool = false,
         mesocyclePlan: JSONValue? = nil
     ) -> CleanTrainingDecisionInput {
-        // Two analytics sessions: the latest at `gap`, an older one 7 days prior.
-        let sessions = [
-            session(id: "td-late", gap: gap),
-            session(id: "td-early", gap: gap + 7),
-        ]
-        let view = cleanView(sessions: sessions, mesocyclePlan: mesocyclePlan)
-        let metadata = CleanTrainingDecisionInputMetadata(
-            nowIso: deterministicClockIso,
-            trainingMode: "hybrid",
-            acutePainReported: acutePainReported,
-            injuryFlag: injuryFlag,
-            illnessFlag: illnessFlag,
-            explicitDeloadAssigned: explicitDeloadAssigned
+        let sessions = [session(id: "td-late", gap: gap), session(id: "td-early", gap: gap + 7)]
+        let view = cleanView(sessions: sessions, todayStatus: todayStatusJSON())
+        return createCleanTrainingDecisionInput(
+            cleanView: view,
+            metadata: CleanTrainingDecisionInputMetadata(
+                nowIso: deterministicClockIso, trainingMode: "hybrid",
+                acutePainReported: acutePainReported, injuryFlag: injuryFlag,
+                illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned
+            )
         )
-        return createCleanTrainingDecisionInput(cleanView: view, metadata: metadata)
+    }
+
+    /// iOS-4B3 rich builder: explicit sessions + todayStatus + optional stale health.
+    static func makeCleanInput(
+        sessions: [TrainingSession],
+        sleep: String = "一般",
+        energy: String = "中",
+        soreness: [String] = ["无"],
+        todayStatusDaysAgo: Int = 0,
+        acutePainReported: Bool = false,
+        injuryFlag: Bool = false,
+        illnessFlag: Bool = false,
+        explicitDeloadAssigned: Bool = false,
+        staleHealthSample: Bool = false
+    ) -> CleanTrainingDecisionInput {
+        let health: [JSONValue] = staleHealthSample ? [healthSampleJSON(daysAgo: 30)] : []
+        let view = cleanView(
+            sessions: sessions,
+            todayStatus: todayStatusJSON(sleep: sleep, energy: energy, soreness: soreness, daysAgo: todayStatusDaysAgo),
+            healthSamples: health
+        )
+        return createCleanTrainingDecisionInput(
+            cleanView: view,
+            metadata: CleanTrainingDecisionInputMetadata(
+                nowIso: deterministicClockIso, trainingMode: "hybrid",
+                acutePainReported: acutePainReported, injuryFlag: injuryFlag,
+                illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned
+            )
+        )
     }
 }

@@ -136,6 +136,13 @@ public func createCleanTrainingDecisionInput(
 ) -> CleanTrainingDecisionInput {
     let rawPlan = cleanView.raw.mesocyclePlan
     let plan: MesocyclePlan? = (rawPlan.startDate == nil && rawPlan.weeks == nil) ? nil : rawPlan
+    // Resolve useHealthDataForReadiness mirroring TS resolveUseHealthDataForReadiness
+    // (trainingDecisionCleanInput.ts:147): an explicit metadata override wins;
+    // otherwise a stale-for-readiness health signal forces false (e.g.
+    // stale-health-data-v1's 30-day-old sample > 14d threshold), else the clean
+    // view's raw setting flag is used.
+    let resolvedUseHealth = metadata.useHealthDataForReadiness
+        ?? (cleanView.healthData.staleForReadiness ? false : cleanView.healthData.useHealthDataForReadiness)
     return CleanTrainingDecisionInput(
         history: cleanView.cleanedHistory,
         mesocyclePlan: plan,
@@ -147,20 +154,30 @@ public func createCleanTrainingDecisionInput(
         trainingMode: metadata.trainingMode,
         todayStatus: cleanView.raw.todayStatus,
         screening: cleanView.cleanedScreening,
-        useHealthDataForReadiness: metadata.useHealthDataForReadiness
+        useHealthDataForReadiness: resolvedUseHealth
     )
 }
 
 // MARK: - Core slice result
 
-/// The iOS-4B2 engine output — ONLY what the core slice computes. A narrow type
-/// (not a full TrainingDecision) so no unported field is fabricated.
+/// The TrainingDecision engine output so far — ONLY what the ported slices
+/// compute. A narrow type (not a full TrainingDecision) so no unported field is
+/// fabricated. iOS-4B3 adds the readiness + e1RM + riskLevel fields.
 public struct TrainingDecisionCoreSlice: Equatable, Sendable {
     public let sessionIntent: SessionIntent
     public let activePhase: ActivePhase
     public let effectivePhase: EffectiveTrainingPhase
+    // --- iOS-4B3 readiness + e1RM ---
+    public let readinessLevel: ReadinessLevel
+    /// `readiness.level == .low` (trainingDecisionEngine.ts:1918) — the
+    /// controlled-reload driver alongside e1rmTrendUp.
+    public let recoveryHigh: Bool
+    public let e1rmTrendUp: Bool
+    public let riskLevel: RiskLevel
+    /// Resolved clean-input contract gate (false when health data is stale).
+    public let useHealthDataForReadiness: Bool?
     /// The AR codes the core slice can legitimately emit (AR-1 / AR-2 only).
-    /// The golden's FULL arbitrationTrace is deferred to iOS-4B3+ and is NOT
+    /// The golden's FULL arbitrationTrace is deferred to iOS-4B6 and is NOT
     /// compared against this.
     public let arbitrationTrace: [String]
 }
@@ -169,8 +186,8 @@ public struct TrainingDecisionCoreSlice: Equatable, Sendable {
 
 /// sessionIntentFor (trainingDecisionEngine.ts:196). Branch ORDER is contractual:
 /// severeFlag wins over phase, phase over explicitDeload, etc. Branch 4
-/// (controlled-reload) needs e1rmTrendUp && recoveryHigh, which iOS-4B2 supplies
-/// as false — so it never fires here (deferred to iOS-4B3).
+/// (controlled-reload) fires on e1rmTrendUp && recoveryHigh — both now wired by
+/// iOS-4B3's readiness + e1RM slices.
 func sessionIntentFor(
     effectivePhase: EffectiveTrainingPhase,
     severeFlag: Bool,
@@ -189,12 +206,13 @@ func sessionIntentFor(
 
 // MARK: - Public entry
 
-/// iOS-4B2 core slice entry. Mirrors buildTrainingDecisionFromCleanInput
-/// (trainingDecisionCleanInput.ts:232) but computes ONLY effectivePhase +
-/// sessionIntent and returns a narrow TrainingDecisionCoreSlice. The brand is a
-/// compile-time guarantee (CleanTrainingDecisionInput has no public init), so no
-/// runtime brand-assert is needed. `surfaces` is accepted for forward-compat and
-/// ignored in 4B2.
+/// TrainingDecision engine entry. Mirrors buildTrainingDecisionFromCleanInput
+/// (trainingDecisionCleanInput.ts:232). As of iOS-4B3 it computes effectivePhase +
+/// readiness + e1RM trend + sessionIntent + riskLevel, returning a narrow
+/// TrainingDecisionCoreSlice (prescription / deload / modes / userFacing remain
+/// iOS-4B4+). The brand is a compile-time guarantee (CleanTrainingDecisionInput has
+/// no public init), so no runtime brand-assert is needed. `surfaces` is accepted
+/// for forward-compat and ignored.
 public func buildTrainingDecisionFromCleanInput(
     _ input: CleanTrainingDecisionInput,
     surfaces: TrainingDecisionSurfaceInputs? = nil
@@ -213,15 +231,24 @@ public func buildTrainingDecisionFromCleanInput(
         || (input.injuryFlag ?? false)
         || (input.illnessFlag ?? false)
 
-    // DEFERRED to iOS-4B3 (Readiness + e1RM Slice): the controlled-reload branch
-    // of sessionIntentFor needs e1rmTrendUp = isE1rmTrendUp(history) AND
-    // recoveryHigh = (readiness.level == "low"). readinessEngine and the e1RM
-    // trend are OUT of iOS-4B2 scope, so both are hard-wired false here. This is
-    // intentional, not an omission: controlled-reload-v1 therefore computes
-    // 'normal-session' in 4B2, and its golden sessionIntent is NOT matched until
-    // iOS-4B3 wires readiness.
-    let e1rmTrendUp = false
-    let recoveryHigh = false
+    // iOS-4B3: readiness + e1RM are now ported (subjective readiness; health-summary
+    // delta + time-gap penalty deferred — see TrainingDecisionReadiness.swift).
+    // recoveryHigh = readiness.level == .low (trainingDecisionEngine.ts:1918);
+    // e1rmTrendUp = isE1rmTrendUp(history) (line 1917). Together they unlock the
+    // controlled-reload sessionIntent branch.
+    let readiness = TrainingDecisionReadiness.buildTodayReadiness(
+        todayStatus: input.todayStatus,
+        history: input.history,
+        useHealthDataForReadiness: input.useHealthDataForReadiness
+    )
+    let recoveryHigh = readiness.level == .low
+    let e1rmTrendUp = TrainingDecisionE1RMTrend.isE1rmTrendUp(history: input.history)
+    let painCount = TrainingDecisionReadiness.collectPainAreasFromHistory(input.history).count
+    let riskLevel = TrainingDecisionReadiness.riskLevelFor(
+        severeFlag: severeFlag,
+        readinessLevel: readiness.level,
+        painCount: painCount
+    )
 
     let intent = sessionIntentFor(
         effectivePhase: effectivePhase,
@@ -231,16 +258,23 @@ public func buildTrainingDecisionFromCleanInput(
         recoveryHigh: recoveryHigh
     )
 
-    // The partial AR trace this slice owns (trainingDecisionEngine.ts:1915, 1927).
-    // The full ordered trace (clamp/deload/prescription/progress codes) is 4B3+.
+    // The partial AR trace this slice owns (trainingDecisionEngine.ts:1915, 1927,
+    // 1928). The full ordered trace (clamp/deload/prescription/progress codes) is
+    // iOS-4B6.
     var arbitrationTrace: [String] = []
     if severeFlag { arbitrationTrace.append("AR-1-severe-override") }
     if intent == .reentryProductive { arbitrationTrace.append("AR-2-reentry-override") }
+    if intent == .controlledReload { arbitrationTrace.append("AR-5-controlled-reload") }
 
     return TrainingDecisionCoreSlice(
         sessionIntent: intent,
         activePhase: effectivePhase.activePhase,
         effectivePhase: effectivePhase,
+        readinessLevel: readiness.level,
+        recoveryHigh: recoveryHigh,
+        e1rmTrendUp: e1rmTrendUp,
+        riskLevel: riskLevel,
+        useHealthDataForReadiness: input.useHealthDataForReadiness,
         arbitrationTrace: arbitrationTrace
     )
 }
