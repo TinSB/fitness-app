@@ -7,6 +7,7 @@ export type AppMutationEvent =
   | 'template_rolled_back'
   | 'coach_action_dismissed'
   | 'data_health_issue_dismissed'
+  | 'data_health_auto_repaired'
   | 'pending_patch_created'
   | 'pending_patch_consumed'
   | 'pending_patch_dismissed'
@@ -148,6 +149,18 @@ export function buildDerivedStateInvalidation(event: AppMutationEvent): Invalida
         invalidateCoachActions: false,
       },
       '单位切换只影响显示层换算，内部训练重量仍按公斤保存。',
+    );
+  }
+  if (event === 'data_health_auto_repaired') {
+    return result(
+      {
+        invalidateToday: true,
+        invalidatePlan: true,
+        invalidateRecord: true,
+        invalidateAnalytics: true,
+        invalidateCoachActions: true,
+      },
+      '后台已自动修复旧版本遗留数据，所有派生状态需要重新计算。',
     );
   }
   if (event === 'backup_restored') {

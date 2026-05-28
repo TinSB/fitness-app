@@ -1,13 +1,16 @@
 import type { ReactNode } from 'react';
 import type { DataHealthClaritySummaryResult } from '../../engines/dataHealthClaritySummary';
+import type { DataHealthAutoRepairSummary } from '../../dataHealth/appDataRepairTypes';
 import { GlassCard } from '../primitives/GlassCard';
 import { StatusBadge, type UiOsBadgeState } from '../primitives/StatusBadge';
+import { DataHealthAutoRepairStatus } from './DataHealthAutoRepairStatus';
 import { DataHealthIssueClarityCard } from './DataHealthIssueClarityCard';
 import { DataHealthSafetyNotice } from './DataHealthSafetyNotice';
 
 type DataHealthClarityPanelProps = {
   summary: DataHealthClaritySummaryResult;
   renderIssueActions?: (issueId: string) => ReactNode;
+  autoRepairSummary?: DataHealthAutoRepairSummary;
 };
 
 const stateLabel: Record<DataHealthClaritySummaryResult['overallState'], string> = {
@@ -28,7 +31,7 @@ const stateTone: Record<DataHealthClaritySummaryResult['overallState'], UiOsBadg
   data_insufficient: 'disabled',
 };
 
-export function DataHealthClarityPanel({ summary, renderIssueActions }: DataHealthClarityPanelProps) {
+export function DataHealthClarityPanel({ summary, renderIssueActions, autoRepairSummary }: DataHealthClarityPanelProps) {
   return (
     <GlassCard as="section" padding="lg" className="mb-3 text-white" ariaLabel="Data Health clarity panel" highlight>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -36,6 +39,9 @@ export function DataHealthClarityPanel({ summary, renderIssueActions }: DataHeal
           <p className="text-sm font-semibold text-white/55">数据健康复查</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">{summary.summaryTitle}</h2>
           <p className="mt-2 text-sm leading-6 text-white/64">{summary.summaryExplanation}</p>
+          <div className="mt-2">
+            <DataHealthAutoRepairStatus summary={autoRepairSummary} />
+          </div>
         </div>
         <StatusBadge state={stateTone[summary.overallState]}>{stateLabel[summary.overallState]}</StatusBadge>
       </div>

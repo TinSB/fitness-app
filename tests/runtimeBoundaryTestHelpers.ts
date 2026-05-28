@@ -115,11 +115,23 @@ export const expectNoUnexpectedAppDiff = (diff: string) => {
     diff.includes('RecordUserFacing') ||
     diff.includes('PostWorkoutNextTimeState');
 
+  // Real Data Health Repair System V1 — App.tsx schedules the boot-time
+  // auto-repair orchestrator; engine pipeline derives a CleanAppDataView
+  // before feeding TrainingDecision so even dirty raw AppData cannot
+  // poison the recommendation engine. See
+  // docs/REAL_DATA_HEALTH_REPAIR_SYSTEM_V1_PLAN.md.
+  const isDataHealthRepairAutomationDiff =
+    diff.includes('runAutoRepairOrchestrator') ||
+    diff.includes('buildCleanAppDataView') ||
+    diff.includes('cleanAppDataView') ||
+    diff.includes('data_health_auto_repaired');
+
   expect(
     isTrainingViewCompletionDiff ||
       isSupportCompletionDiff ||
       isCoachAutomationPipelineRewireDiff ||
-      isTrainingDecisionRecordRewireDiff,
+      isTrainingDecisionRecordRewireDiff ||
+      isDataHealthRepairAutomationDiff,
   ).toBe(true);
 
   for (const forbidden of [

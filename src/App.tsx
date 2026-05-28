@@ -106,6 +106,7 @@ import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, PendingSessionPatch, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, TrainingTemplate, UnitSettings } from './models/training-model';
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
+import { runAutoRepairOrchestrator } from './dataHealth/autoRepairOrchestrator';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 import { Card } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
@@ -366,6 +367,29 @@ function App() {
       return writePendingSessionPatches(current, next);
     });
   }, [writePendingSessionPatches]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await runAutoRepairOrchestrator({
+          appData: dataRef.current,
+          triggeredBy: 'boot',
+        });
+        if (cancelled) return;
+        if (result.changed) {
+          setData(result.appData);
+          invalidateDerivedState('data_health_auto_repaired');
+        }
+      } catch (_error) {
+        // Runtime Guard still protects recommendation even if orchestrator fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!appToast || typeof window === 'undefined') return undefined;

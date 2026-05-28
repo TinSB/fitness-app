@@ -1,4 +1,5 @@
 import type { AppData } from '../models/training-model';
+import { buildCleanAppDataView, type CleanAppDataView } from '../dataHealth/cleanAppDataView';
 import { buildCoachActions, type CoachAction } from './coachActionEngine';
 import { filterVisibleCoachActions } from './coachActionDismissEngine';
 import { buildDataHealthReport, sortDataHealthIssues, type DataHealthReport } from './dataHealthEngine';
@@ -24,6 +25,7 @@ export type EnginePipelineResult = {
   coachActions: CoachAction[];
   visibleCoachActions: CoachAction[];
   coachAutomationSummary: CoachAutomationSummary;
+  cleanAppDataView: CleanAppDataView;
 };
 
 export type BuildEnginePipelineOptions = {
@@ -39,7 +41,8 @@ export function buildEnginePipeline(
   currentDate: string,
   options: BuildEnginePipelineOptions = {},
 ): EnginePipelineResult {
-  const context = buildTrainingDecisionContext(appData, options.currentDate || currentDate, {
+  const cleanAppDataView = buildCleanAppDataView(appData);
+  const context = buildTrainingDecisionContext(cleanAppDataView.appData, options.currentDate || currentDate, {
     trainingMode: options.trainingMode || appData.trainingMode,
   });
   const todayState = buildTodayTrainingState({
@@ -116,6 +119,7 @@ export function buildEnginePipeline(
     coachActions,
     visibleCoachActions,
     coachAutomationSummary,
+    cleanAppDataView,
   };
 }
 
