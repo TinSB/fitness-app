@@ -8,7 +8,11 @@ import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSet
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
 import { buildHistoryCalendarSummary } from '../engines/historyCalendarSummary';
 import type { ProgressTrendDirection } from '../engines/trainingDecisionTypes';
-import { buildTrainingDecision } from '../engines/trainingDecisionEngine';
+import {
+  buildTrainingDecisionFromCleanInput,
+  createCleanTrainingDecisionInput,
+} from '../engines/trainingDecisionCleanInput';
+import { buildCleanAppDataView } from '../dataHealth/cleanAppDataView';
 import { hasInvalidExerciseIdentity } from '../engines/replacementEngine';
 import { detectExercisePlateau } from '../engines/plateauDetectionEngine';
 import { buildPainPatterns } from '../engines/painPatternEngine';
@@ -653,6 +657,7 @@ export function RecordView({
       };
     });
   }, [historyCalendarSummary.prQuickAccessItems, prs]);
+  const cleanAppDataView = React.useMemo(() => buildCleanAppDataView(data), [data]);
   const progressClarity = React.useMemo(() => {
     const hasRecentPr = prs.some((item) => isDateWithinDays(item.date, todayKey(), 28));
     const hasAnyStrengthData = progressStrengthTrendItems.some((item) => item.trend !== 'unknown');
@@ -662,15 +667,11 @@ export function RecordView({
       : painSessions.length > 0 || effectiveSummary.effectiveSets >= 24 || effectiveSummary.completedSets >= 32
         ? 'high'
         : 'normal';
-    return buildTrainingDecision(
-      {
+    return buildTrainingDecisionFromCleanInput(
+      createCleanTrainingDecisionInput(cleanAppDataView, {
         template: data.templates[0] || ({ id: 'fallback', exercises: [] } as never),
-        todayStatus: data.todayStatus,
-        history: data.history,
-        mesocyclePlan: data.mesocyclePlan,
-        screening: data.screeningProfile,
         trainingMode: data.trainingMode,
-      },
+      }),
       {
         progress: {
           strengthTrend,
@@ -689,18 +690,14 @@ export function RecordView({
         },
       },
     ).userFacing.progress!;
-  }, [analyticsHistory.length, data, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
+  }, [analyticsHistory.length, cleanAppDataView, data.templates, data.trainingMode, effectiveSummary, monthStats.monthSessions.length, monthStats.monthVolume, painPatterns, painSessions.length, progressStrengthTrendItems, prs, recentWeekAverage, unitSettings]);
   const weeklyProgressionRecommendation = React.useMemo(() => {
     const today = todayKey();
-    return buildTrainingDecision(
-      {
+    return buildTrainingDecisionFromCleanInput(
+      createCleanTrainingDecisionInput(cleanAppDataView, {
         template: data.templates[0] || ({ id: 'fallback', exercises: [] } as never),
-        todayStatus: data.todayStatus,
-        history: data.history,
-        mesocyclePlan: data.mesocyclePlan,
-        screening: data.screeningProfile,
         trainingMode: data.trainingMode,
-      },
+      }),
       {
         plan: {
           trainingIntelligenceSummary,
@@ -710,7 +707,7 @@ export function RecordView({
         },
       },
     ).userFacing.plan!;
-  }, [data, effectiveSummary, painPatterns, trainingIntelligenceSummary]);
+  }, [cleanAppDataView, data.templates, data.trainingMode, effectiveSummary, painPatterns, trainingIntelligenceSummary]);
   const dataHealthClarity = React.useMemo(
     () =>
       buildDataHealthClaritySummary({

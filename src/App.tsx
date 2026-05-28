@@ -46,7 +46,10 @@ import {
   updateFocusActualDraftWithResult,
 } from './engines/focusModeStateEngine';
 import type { FocusNextSetRecommendation } from './engines/focusNextSetRecommendationEngine';
-import { buildTrainingDecision } from './engines/trainingDecisionEngine';
+import {
+  buildTrainingDecisionFromCleanInput,
+  createCleanTrainingDecisionInput,
+} from './engines/trainingDecisionCleanInput';
 import type { RecordUserFacing } from './engines/trainingDecisionTypes';
 
 type PostWorkoutNextTimeState = {
@@ -708,18 +711,14 @@ function App() {
     const completed = completeTrainingSessionIntoHistory(currentData, finishedAt, { endedEarly: completionGuard.hasIncompleteMainWork });
     const finishedSession = completed.session;
     const nextPostWorkoutRecord = finishedSession
-      ? buildTrainingDecision(
-          {
+      ? buildTrainingDecisionFromCleanInput(
+          createCleanTrainingDecisionInput(buildCleanAppDataView(currentData), {
             template:
               currentData.templates.find((t) => t.id === finishedSession.templateId) ||
               currentData.templates[0],
-            todayStatus: currentData.todayStatus,
-            history: currentData.history,
-            mesocyclePlan: currentData.mesocyclePlan,
-            screening: currentData.screeningProfile,
             trainingMode: currentData.trainingMode,
             nowIso: finishedAt,
-          },
+          }),
           { record: { session: finishedSession, unitSettings: currentData.unitSettings } },
         ).userFacing.record!
       : null;

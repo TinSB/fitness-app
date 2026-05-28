@@ -5,7 +5,10 @@ import { classNames, enrichExercise, findTemplate, getPrimaryMuscles, todayKey }
 import { applyStatusRules } from '../engines/progressionEngine';
 import { buildEnginePipeline } from '../engines/enginePipeline';
 import { buildAdjustmentDiff } from '../engines/programAdjustmentEngine';
-import { buildTrainingDecision } from '../engines/trainingDecisionEngine';
+import {
+  buildTrainingDecisionFromCleanInput,
+  createCleanTrainingDecisionInput,
+} from '../engines/trainingDecisionCleanInput';
 import { buildSupportPlan } from '../engines/supportPlanEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
@@ -203,17 +206,18 @@ export function PlanView({
   const activeTemplateId = data.activeProgramTemplateId || data.selectedTemplateId;
   const currentTemplate = data.templates.find((item) => item.id === activeTemplateId) || selectedTemplate;
   const supportPlan = buildSupportPlan(data, selectedTemplate);
+  const enginePipeline = React.useMemo(
+    () => buildEnginePipeline(data, todayKey(), { coachActions }),
+    [data, coachActions],
+  );
+  const cleanAppDataView = enginePipeline.cleanAppDataView;
   const trainingDecision = React.useMemo(
     () =>
-      buildTrainingDecision(
-        {
+      buildTrainingDecisionFromCleanInput(
+        createCleanTrainingDecisionInput(cleanAppDataView, {
           template: selectedTemplate,
-          todayStatus: data.todayStatus,
-          history: data.history,
-          mesocyclePlan: data.mesocyclePlan,
-          screening: data.screeningProfile,
           trainingMode: data.trainingMode,
-        },
+        }),
         {
           plan: {
             trainingIntelligenceSummary,
@@ -223,13 +227,9 @@ export function PlanView({
           },
         },
       ),
-    [data, selectedTemplate, trainingIntelligenceSummary]
+    [cleanAppDataView, selectedTemplate, data.trainingMode, trainingIntelligenceSummary]
   );
   const recommendationExplanation = trainingDecision.userFacing.explanation;
-  const enginePipeline = React.useMemo(
-    () => buildEnginePipeline(data, todayKey(), { coachActions }),
-    [data, coachActions],
-  );
   const trainingLevelAssessment = enginePipeline.context.trainingLevelAssessment;
   const adjustmentHistory = data.programAdjustmentHistory || [];
   const activeHistoryItem = adjustmentHistory.find((item) => !item.rolledBackAt && item.experimentalProgramTemplateId === currentTemplate.id);
@@ -241,15 +241,11 @@ export function PlanView({
   );
   const weeklyProgressionRecommendation = React.useMemo(() => {
     const today = todayKey();
-    return buildTrainingDecision(
-      {
+    return buildTrainingDecisionFromCleanInput(
+      createCleanTrainingDecisionInput(cleanAppDataView, {
         template: selectedTemplate,
-        todayStatus: data.todayStatus,
-        history: data.history,
-        mesocyclePlan: data.mesocyclePlan,
-        screening: data.screeningProfile,
         trainingMode: data.trainingMode,
-      },
+      }),
       {
         plan: {
           trainingIntelligenceSummary,
@@ -259,7 +255,7 @@ export function PlanView({
         },
       },
     ).userFacing.plan!;
-  }, [data, selectedTemplate, enginePipeline.context.loadFeedbackSummary, enginePipeline.context.painPatterns, trainingIntelligenceSummary]);
+  }, [cleanAppDataView, selectedTemplate, data.trainingMode, enginePipeline.context.loadFeedbackSummary, enginePipeline.context.painPatterns, trainingIntelligenceSummary]);
   const adjustmentDraftViews = planViewModel.adjustmentDrafts.drafts;
   const adjustmentDrafts = adjustmentDraftViews
     .map((view) => (data.programAdjustmentDrafts || []).find((draft) => draft.id === view.id))

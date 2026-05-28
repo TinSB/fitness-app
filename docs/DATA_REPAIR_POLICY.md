@@ -129,11 +129,20 @@ The V1 test suite contains static guards:
 - `realDataHealthRepairLegacyFieldGuard.test.ts` proves `buildTrainingDecision` does NOT read `exercise.suggestion`, `exercise.adjustment`, `exercise.warning`, `exercise.prescription.weeklyAdjustment`, `session.explanations`, or `deloadDecision.title/options`.
 - `realDataHealthRepairTodayStatusFreshness.test.ts` proves the readiness pipeline degrades or skips stale `todayStatus` past the configured threshold.
 - `realDataHealthRepairHealthDataFreshness.test.ts` proves the readiness pipeline degrades or skips stale health data past the configured threshold.
+- `trainingDecisionCleanInputContractStaticGuards.test.ts` (delivered in [TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md](TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md)) locks the *input* side: UI / feature / cloud paths cannot import `buildTrainingDecision` or `buildTrainingDecisionContext` directly. They must go through the `CleanTrainingDecisionInput` factory.
+
+TrainingDecision input contract:
+
+- TrainingDecision must never consume raw AppData. The only legal entry points for production code are `buildEnginePipeline(...)` (which internally builds `CleanAppDataView`) or `buildTrainingDecisionFromCleanInput(createCleanTrainingDecisionInput(cleanView, metadata))`.
+- Every new TrainingDecision caller MUST use `CleanTrainingDecisionInput` or `CleanTrainingDecisionContextSource` from `src/engines/trainingDecisionCleanInput.ts`. PR review must reject any new caller that imports `buildTrainingDecision` or `buildTrainingDecisionContext` from the raw engine modules.
+- Any future "new recommendation engine" must declare whether it is *signal-only* (consumes cleaned signals only; never emits the final user-facing recommendation) or *final decision* (the next iteration of TrainingDecision). Final-decision engines must accept only branded clean input.
+- Legacy advice fields (`exercise.suggestion`, `exercise.adjustment`, `exercise.warning`, `prescription.weeklyAdjustment`, `session.explanations`, `session.deloadDecision`) are **snapshot-only** — they may be read by UI presenters to render historical sessions, but **never as a live recommendation signal** by any engine.
 
 Future enforcement (V2 target):
 
 - A meta-test that fails CI if a new `RepairDefinition` is added without a matching test file under `tests/data-health/`.
 - A lint rule that flags any new write path into `screeningProfile.adaptiveState.issueScores` without a paired decay/cap commit.
+- Lock `sessionBuilder.scoreSuggestedTemplates` and `sessionBuilder.pickSuggestedTemplate` signatures to require `CleanTrainingDecisionInput` / `CleanTrainingDecisionContextSource`.
 
 ## Reviewer checklist
 

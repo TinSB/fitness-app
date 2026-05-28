@@ -189,6 +189,8 @@ V2 preserves every V1 hard rule and adds:
 - `sessionBuilder.ts` retains internal `buildTrainingDecisionContext` calls. Their inputs come from app-state paths already cleansed (App.tsx → workingData → CleanAppDataView wrapper). No leak in current call graph; static guard tests verify the engine pipeline contract.
 - Per-account ledger isolation relies on AppData being already account-scoped at the storage adapter layer. Any future shared-store ledger would require re-verification.
 
+**Follow-up shipped:** TrainingDecision Clean Input Contract Lock V1 closes the *consumer* side of the immunity layer at the type signature. Feature surfaces (`PlanView`, `RecordView`, `App.tsx` finishSession) that previously extracted raw `data.*` to feed `buildTrainingDecision` now use the branded `CleanTrainingDecisionInput` factory. See [TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md](TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md).
+
 ## 14. Final verdict
 
 Every AppData ingress path in the current code base now flows through (or is gated by) `processIncomingAppData`. Future ingress paths must call the same API or fail the static-guard tests. The V1 immunity layer is now strongly linked to every entry point the user can take to introduce or replace AppData.

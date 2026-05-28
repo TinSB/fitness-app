@@ -7,7 +7,10 @@ import { buildSupportPlan } from '../engines/supportPlanEngine';
 import { getEffectiveTrainingPhase } from '../engines/effectiveTrainingPhaseEngine';
 import { toStatusRulesDecisionContext } from '../engines/trainingDecisionContext';
 import { buildEnginePipeline } from '../engines/enginePipeline';
-import { buildTrainingDecision } from '../engines/trainingDecisionEngine';
+import {
+  buildTrainingDecisionFromCleanInput,
+  createCleanTrainingDecisionInput,
+} from '../engines/trainingDecisionCleanInput';
 import { buildTodayTrainingReadinessDecision } from '../engines/todayTrainingReadinessDecisionEngine';
 import type { CoachAction } from '../engines/coachActionEngine';
 import type { TrainingIntelligenceSummary } from '../engines/trainingIntelligenceSummaryEngine';
@@ -334,18 +337,14 @@ export function TodayView({
           : selectedTemplate;
   const trainingDecision = React.useMemo(
     () =>
-      buildTrainingDecision(
-        {
+      buildTrainingDecisionFromCleanInput(
+        createCleanTrainingDecisionInput(enginePipeline.cleanAppDataView, {
           template: explanationTemplate,
-          todayStatus: decisionContext.todayStatus,
-          history: decisionContext.history,
-          mesocyclePlan: decisionContext.mesocyclePlan,
-          screening: decisionContext.screeningProfile,
-          healthSummary: decisionContext.healthSummary,
           trainingMode,
-        },
+          healthSummary: decisionContext.healthSummary,
+        }),
       ),
-    [decisionContext, explanationTemplate, trainingMode]
+    [enginePipeline.cleanAppDataView, decisionContext.healthSummary, explanationTemplate, trainingMode]
   );
   const recommendationExplanation = trainingDecision.userFacing.explanation;
   const recommendationExplanationTitle = todayTrainingState.status === 'completed' ? '为什么这样建议下次训练？' : '为什么这样推荐？';
@@ -509,19 +508,15 @@ export function TodayView({
   };
   const trainingDecisionForToday = React.useMemo(
     () =>
-      buildTrainingDecision(
-        {
+      buildTrainingDecisionFromCleanInput(
+        createCleanTrainingDecisionInput(enginePipeline.cleanAppDataView, {
           template: explanationTemplate,
-          todayStatus: decisionContext.todayStatus,
-          history: decisionContext.history,
-          mesocyclePlan: decisionContext.mesocyclePlan,
-          screening: decisionContext.screeningProfile,
-          healthSummary: decisionContext.healthSummary,
           trainingMode,
-        },
+          healthSummary: decisionContext.healthSummary,
+        }),
         { today: todayDecisionInputs },
       ),
-    [decisionContext, explanationTemplate, trainingMode, todayDecisionInputs],
+    [enginePipeline.cleanAppDataView, decisionContext.healthSummary, explanationTemplate, trainingMode, todayDecisionInputs],
   );
   const todayDecisionSurface = trainingDecisionForToday.userFacing.today!;
   const todayReadinessHeroDecision = React.useMemo(
