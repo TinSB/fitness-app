@@ -15,6 +15,9 @@ export type CloudSubsequentUploadReason =
   | 'missing_repair_receipt'
   | 'invalid_appdata'
   | 'cloud_conflict'
+  | 'remote_changed'
+  | 'remote_unavailable'
+  | 'missing_expected_previous_snapshot'
   | 'cloud_unavailable'
   | 'upload_failed'
   | 'unknown';
@@ -48,6 +51,22 @@ export interface CloudSubsequentUploadGateway {
   }) => Promise<{
     ok: boolean;
     snapshotId?: string | null;
+    sourceSnapshotHash?: string | null;
+    createdAt?: string | null;
+    error?: string | null;
+  }>;
+  // V5 Cloud Optimistic Concurrency: optional fresh-read capability. When
+  // provided, runCloudSubsequentUpload calls this immediately before
+  // writeSnapshot and rejects with `remote_changed` / `remote_unavailable`
+  // when the freshly-read cloud latest disagrees with the locally-known
+  // expected previous snapshot hash. Optional so legacy callers that pass
+  // a write-only gateway continue to compile; legacy callers fall back to
+  // the V4 caller-supplied `lastCloudSnapshot` early-rejection check.
+  readLatestSnapshot?: (input: {
+    accountId: string | null;
+    ownerUserId: string | null;
+  }) => Promise<{
+    ok: boolean;
     sourceSnapshotHash?: string | null;
     createdAt?: string | null;
     error?: string | null;
@@ -114,6 +133,16 @@ const PASSIVE_CLOUD_CONFLICT: CloudSubsequentUploadResult['passiveStatus'] = {
   tone: 'audit-pending',
 };
 
+const PASSIVE_REMOTE_CHANGED: CloudSubsequentUploadResult['passiveStatus'] = {
+  line: '云端有更新，请稍后同步',
+  tone: 'audit-pending',
+};
+
+const PASSIVE_REMOTE_UNAVAILABLE: CloudSubsequentUploadResult['passiveStatus'] = {
+  line: '同步暂时不可用，已保留本地数据',
+  tone: 'backup-failed',
+};
+
 const PASSIVE_CLOUD_UNAVAILABLE: CloudSubsequentUploadResult['passiveStatus'] = {
   line: '同步暂时不可用，已保留本地数据',
   tone: 'backup-failed',
@@ -138,6 +167,9 @@ const SAFE_MSG_PARTIAL = '同步暂缓：发现需要先整理的数据';
 const SAFE_MSG_MISSING_RECEIPT = '同步暂缓：缺少修复回执';
 const SAFE_MSG_INVALID = '同步暂缓：数据无法识别';
 const SAFE_MSG_CLOUD_CONFLICT = '同步发现云端有新内容，请稍后再确认';
+const SAFE_MSG_REMOTE_CHANGED = '云端有更新，请稍后同步';
+const SAFE_MSG_REMOTE_UNAVAILABLE = '云端暂时不可用，请稍后再试';
+const SAFE_MSG_MISSING_EXPECTED_PREVIOUS = '尚未记录本地同步基线，请先完成首次同步';
 const SAFE_MSG_CLOUD_UNAVAILABLE = '云端暂时不可用，请稍后再试';
 const SAFE_MSG_UPLOAD_FAILED = '同步失败，本地数据已保留';
 const SAFE_MSG_UNKNOWN = '同步暂缓：未知原因';
@@ -276,6 +308,80 @@ export const runCloudSubsequentUpload = async (
     });
   }
 
+  // V5 Cloud Optimistic Concurrency preflight. When the gateway provides a
+  // fresh-read capability, re-read cloud latest BEFORE any short-circuit
+  // (unchanged / cloud_conflict / eligibility / write). This is required so
+  // "local hash matches synced hash but cloud moved on" surfaces as
+  // `remote_changed`, not as the misleading `unchanged`. The check is gated
+  // on `gateway.readLatestSnapshot` being a function so legacy V4 callers
+  // (gateway: null, or gateway with only writeSnapshot) keep their previous
+  // semantics. A non-atomic window remains between this read and the actual
+  // insert; future V6 server-side compare-and-insert RPC is the only way to
+  // close it.
+  if (input.gateway && typeof input.gateway.readLatestSnapshot === 'function') {
+    // Defense-in-depth: previousHash should never be null here because the
+    // `not_enabled` short-circuit above already returns when it is. Re-check
+    // and surface as a distinct reason so contract violations are loud.
+    if (!previousHash) {
+      return blocked({
+        reason: 'missing_expected_previous_snapshot',
+        snapshotHash: localHash,
+        previousSnapshotHash: null,
+        passiveStatus: PASSIVE_NOT_ENABLED,
+        safeUserMessage: SAFE_MSG_MISSING_EXPECTED_PREVIOUS,
+      });
+    }
+    let freshLatest: Awaited<
+      ReturnType<NonNullable<CloudSubsequentUploadGateway['readLatestSnapshot']>>
+    >;
+    try {
+      freshLatest = await input.gateway.readLatestSnapshot({
+        accountId: input.accountId ?? null,
+        ownerUserId:
+          input.ownerUserId ?? input.localSyncState?.syncedOwnerUserId ?? null,
+      });
+    } catch (error) {
+      return blocked({
+        reason: 'remote_unavailable',
+        snapshotHash: localHash,
+        previousSnapshotHash: previousHash,
+        passiveStatus: PASSIVE_REMOTE_UNAVAILABLE,
+        safeUserMessage: SAFE_MSG_REMOTE_UNAVAILABLE,
+        hiddenDebugDetails: {
+          readLatestException: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
+    if (!freshLatest.ok) {
+      return blocked({
+        reason: 'remote_unavailable',
+        snapshotHash: localHash,
+        previousSnapshotHash: previousHash,
+        passiveStatus: PASSIVE_REMOTE_UNAVAILABLE,
+        safeUserMessage: SAFE_MSG_REMOTE_UNAVAILABLE,
+        hiddenDebugDetails: { readLatestError: freshLatest.error ?? null },
+      });
+    }
+    const observed =
+      typeof freshLatest.sourceSnapshotHash === 'string'
+        ? freshLatest.sourceSnapshotHash
+        : null;
+    if (observed !== previousHash) {
+      return blocked({
+        reason: 'remote_changed',
+        snapshotHash: localHash,
+        previousSnapshotHash: previousHash,
+        passiveStatus: PASSIVE_REMOTE_CHANGED,
+        safeUserMessage: SAFE_MSG_REMOTE_CHANGED,
+        hiddenDebugDetails: {
+          expectedPreviousHash: previousHash,
+          observedCloudLatestHash: observed,
+          observedCloudLatestCreatedAt: freshLatest.createdAt ?? null,
+        },
+      });
+    }
+  }
+
   if (localHash === previousHash) {
     return {
       ok: true,
@@ -408,6 +514,9 @@ export const CLOUD_SUBSEQUENT_UPLOAD_REASON_VALUES: readonly CloudSubsequentUplo
   'missing_repair_receipt',
   'invalid_appdata',
   'cloud_conflict',
+  'remote_changed',
+  'remote_unavailable',
+  'missing_expected_previous_snapshot',
   'cloud_unavailable',
   'upload_failed',
   'unknown',

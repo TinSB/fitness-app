@@ -155,3 +155,15 @@ When reviewing a data-semantic PR, confirm:
 - [ ] No coupling of cloud upload to repair flow.
 - [ ] The receipt category, action, and affectedIds are accurate and Chinese-localized.
 - [ ] The data health UI surface (`DataHealthClarityPanel`) shows the new issue if appropriate.
+
+## Cloud upload immunity chain
+
+Repair is one layer in a stack of orthogonal guarantees that protect AppData on its way to the cloud. The full chain, in execution order inside `runCloudSubsequentUpload`:
+
+1. **V1 Real Data Health Repair** — local mutations always run through the repair orchestrator before being persisted; receipts record what changed and why.
+2. **V2 Data Health Cloud Restore Linkage** — the cloud→local ingress pipeline applies repairs on restore so an old cloud snapshot can never poison a fresh device.
+3. **V5 Cloud Optimistic Concurrency** — `runCloudSubsequentUpload` re-reads cloud `latest` and refuses to upload when the remote hash no longer matches the local synced (expected-previous) hash, eliminating the multi-device "stale base append" race within the client. See [`CLOUD_OPTIMISTIC_CONCURRENCY_V5.md`](CLOUD_OPTIMISTIC_CONCURRENCY_V5.md).
+4. **V3 Cloud Upload Eligibility Enforcement** — `ensureCloudUploadEligible` blocks the write when the AppData has pending safe-auto repairs, a recent backup failure, partial-repair state, missing repair receipts, or an invalid AppData shape. See [`CLOUD_UPLOAD_ELIGIBILITY_ENFORCEMENT_V3.md`](CLOUD_UPLOAD_ELIGIBILITY_ENFORCEMENT_V3.md).
+5. **V4 Cloud Subsequent Upload Flow** — `runCloudSubsequentUpload` itself: hashes, owner-mismatch guard, V4 caller-supplied `lastCloudSnapshot` legacy short-circuit, then write through an injected gateway. See [`CLOUD_SUBSEQUENT_UPLOAD_FLOW_V4.md`](CLOUD_SUBSEQUENT_UPLOAD_FLOW_V4.md).
+
+Each layer is non-destructive: nothing in the chain deletes a cloud row, nothing clears `localStorage`, nothing overwrites an unknown remote latest. Append-only `cloud_appdata_snapshots` is **not** conflict-safe on its own — V5 is the client-side ceiling and a future V6 server-side compare-and-insert RPC would close the remaining residual race.

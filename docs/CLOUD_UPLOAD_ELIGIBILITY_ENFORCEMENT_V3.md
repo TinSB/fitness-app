@@ -210,3 +210,7 @@ Scenarios:
 ## 13. Final verdict
 
 Every production upload path now passes through `ensureCloudUploadEligible`. New upload paths cannot ship without the guard — the static test fails CI. Blocked uploads surface a compact passive status. No fake success, no silent overwrite, no localStorage clear. V1 Runtime Guard + V2 ingress pipeline + V3 upload gate together give a complete data immunity chain from "AppData enters runtime" to "AppData leaves to cloud".
+
+## 14. V5 successor — Cloud Optimistic Concurrency
+
+V3 guarantees that *unsafe local data* never reaches the cloud. It does **not** guarantee that two devices won't race against each other when both pass the eligibility guard simultaneously. **[`CLOUD_OPTIMISTIC_CONCURRENCY_V5`](CLOUD_OPTIMISTIC_CONCURRENCY_V5.md)** addresses that orthogonal concern by re-reading cloud `latest` immediately before the V4 unchanged short-circuit and refusing to upload when the remote latest hash no longer matches the local synced (expected-previous) hash. V3 runs **after** the V5 fresh-read check inside `runCloudSubsequentUpload`, so V3's guarantee (no dirty data uploaded) and V5's guarantee (no stale-base upload) compose cleanly. Append-only `cloud_appdata_snapshots` is **not** conflict-safe by itself; V5 is the client-side ceiling, V6 would add server-side compare-and-insert.
