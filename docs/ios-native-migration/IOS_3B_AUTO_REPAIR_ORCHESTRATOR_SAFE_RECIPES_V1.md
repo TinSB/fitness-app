@@ -1,6 +1,8 @@
 # iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1
 
-**Status:** in review (PR).
+**Status:** merged (PR #399, commit `098f75c`).
+**Successor:** iOS-3C Remaining Repair Recipes + Ingress Pipeline V1
+— see `IOS_3C_REMAINING_REPAIR_RECIPES_INGRESS_PIPELINE_V1.md`.
 **Owner:** iOS-3B (Data Health Auto-Repair, safe layer).
 **Date:** 2026-05-28.
 **Branch:** `claude/ios-3b-auto-repair-orchestrator-safe-recipes-v1`.

@@ -47,7 +47,9 @@ public struct RepairRegistry: @unchecked Sendable {
     }
 }
 
-/// iOS-3B canonical registry — 5 safe recipes.
+/// iOS-3B canonical registry — 5 safe recipes. Preserved as-is so
+/// the iOS-3B test surface stays valid. Most iOS-3C+ code should use
+/// `fullRepairRegistry()` (9 recipes) via the ingress pipeline.
 public func safeRepairRegistry() -> RepairRegistry {
     do {
         return try RepairRegistry(definitions: [
@@ -62,5 +64,26 @@ public func safeRepairRegistry() -> RepairRegistry {
         // definitions. fatalError surfaces it immediately during the
         // first run rather than letting a silent shadow win.
         fatalError("[IronPathDataHealth] safeRepairRegistry init failed: \(error)")
+    }
+}
+
+/// iOS-3C canonical registry — all 9 V1 recipes (5 from iOS-3B +
+/// 4 from iOS-3C). Order matches `appDataRepairRegistry.ts:V1_REPAIRS`.
+/// `AppDataIngressPipeline` defaults to this registry.
+public func fullRepairRegistry() -> RepairRegistry {
+    do {
+        return try RepairRegistry(definitions: [
+            SessionLifecycleResidueRepair(),
+            ImpossibleDurationRepair(),
+            StaleTodayStatusRepair(),
+            StaleHealthReadinessRepair(),
+            ScreeningIssueScoreRuntimeGuardRepair(),
+            ScreeningIssueScoreRepair(),
+            LegacyFinalAdviceIsolationRepair(),
+            SetIndexRenumberRepair(),
+            ReplacementEquivalenceAuditRepair(),
+        ])
+    } catch {
+        fatalError("[IronPathDataHealth] fullRepairRegistry init failed: \(error)")
     }
 }
