@@ -108,24 +108,37 @@ describe('iosDataHealthRuntimeFoundation — iOS-3B surface is deferred (not in 
 
   // iOS-3B landed AutoRepairOrchestrator inside IronPathDataHealth.
   // iOS-3C landed processIncomingAppData inside IronPathDataHealth.
-  // The remaining deferred symbols (TrainingDecision /
-  // AppDataRepairLedger orchestrator-style) are still globally
-  // forbidden and stay enforced here.
-  const deferred: ReadonlyArray<{ readonly name: string; readonly pattern: RegExp }> = [
-    { name: 'TrainingDecision_type', pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/ },
+  // iOS-4B1 landed the `struct TrainingDecision` golden TYPE SKELETON inside
+  // the new IronPathTrainingDecision package — sanctioned there via
+  // `exemptPrefix`. The TrainingDecision *type* is allowed only in that
+  // package; everywhere else (incl. IronPathDataHealth) it stays forbidden,
+  // and the engine FUNCTIONS (buildTrainingDecision etc.) remain globally
+  // forbidden, enforced by iosTrainingDecisionTypeSkeletonStaticGuards.
+  const deferred: ReadonlyArray<{
+    readonly name: string;
+    readonly pattern: RegExp;
+    readonly exemptPrefix?: string;
+  }> = [
+    {
+      name: 'TrainingDecision_type',
+      pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/,
+      exemptPrefix: 'ios/packages/IronPathTrainingDecision/',
+    },
     { name: 'AppDataRepairLedger_orchestrator_type', pattern: /\b(struct|class)\s+AppDataRepairLedger\b/ },
   ];
 
-  for (const { name, pattern } of deferred) {
+  for (const { name, pattern, exemptPrefix } of deferred) {
     it(`iosDataHealthRuntimeFoundation ${name} is NOT declared yet`, () => {
       const hits: string[] = [];
       for (const file of swiftFiles) {
+        const rel = file.replace(`${repoRoot}/`, '');
+        if (exemptPrefix && rel.startsWith(exemptPrefix)) continue;
         const text = readFileSync(file, 'utf8');
         if (pattern.test(text)) {
-          hits.push(file.replace(`${repoRoot}/`, ''));
+          hits.push(rel);
         }
       }
-      expect(hits, `iOS-3C-deferred symbol ${name} found unexpectedly: ${hits.join(', ')}`).toEqual([]);
+      expect(hits, `deferred symbol ${name} found unexpectedly: ${hits.join(', ')}`).toEqual([]);
     });
   }
 });

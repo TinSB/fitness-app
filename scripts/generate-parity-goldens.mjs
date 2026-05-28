@@ -18,9 +18,12 @@
  *      It imports from src/ (engines, dataHealth, models) and must run
  *      under Node.
  *   2. This .mjs wrapper bundles parityGoldensEntry.ts via
- *      `vite build --ssr` into .ironpath/parity-goldens-runner/ (the
- *      same precedent as `package.json:scripts.api:dev:build` for the
- *      dev API runner).
+ *      `vite build --ssr` into a per-invocation
+ *      .ironpath/parity-goldens-runner-<pid>/ dir (the same precedent as
+ *      `package.json:scripts.api:dev:build` for the dev API runner). The
+ *      per-pid suffix stops concurrent Vitest spawns from wiping each
+ *      other's in-flight bundle via `--emptyOutDir`; the dir is removed
+ *      on exit.
  *   3. It then spawns node on the bundled artefact and forwards all
  *      CLI flags + process exit code.
  *
@@ -35,16 +38,40 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 const ENTRY_TS = resolve(REPO_ROOT, 'scripts/parityGoldensEntry.ts');
-const BUNDLE_DIR = resolve(REPO_ROOT, '.ironpath/parity-goldens-runner');
+// Per-invocation bundle dir. Several Vitest files spawn this generator
+// concurrently (vite.config.ts test.maxWorkers: '50%'); with a FIXED outDir,
+// one process's `--emptyOutDir` wipes another's in-flight bundle, producing
+// intermittent --check/--list failures. The `-<pid>` suffix gives each
+// invocation its own dir so they can't collide. It MUST stay exactly two
+// levels under the repo root (.ironpath/<dir>/parityGoldensEntry.js): the
+// bundled entry derives REPO_ROOT via `import.meta.url` + '..','..' (see
+// scripts/parityGoldensEntry.ts), so the depth — not the name — is the
+// contract. The dir is an internal build artefact under gitignored .ironpath/
+// and is NOT part of the determinism contract: stdout summary and golden
+// content are unchanged.
+const BUNDLE_SUBDIR = `.ironpath/parity-goldens-runner-${process.pid}`;
+const BUNDLE_DIR = resolve(REPO_ROOT, BUNDLE_SUBDIR);
 const BUNDLE_OUT = resolve(BUNDLE_DIR, 'parityGoldensEntry.js');
 const VITE_BIN = resolve(REPO_ROOT, 'node_modules/vite/bin/vite.js');
+
+// Remove this invocation's private bundle dir on every exit path so repeated
+// runs don't accumulate dirs under .ironpath/. Best-effort: a cleanup failure
+// must never change the forwarded exit code, and force:true no-ops if the dir
+// was never created (e.g. an early exit before the build).
+process.on('exit', () => {
+  try {
+    rmSync(BUNDLE_DIR, { recursive: true, force: true });
+  } catch {
+    // ignore — .ironpath/ is gitignored; a leftover dir is harmless.
+  }
+});
 
 if (!existsSync(ENTRY_TS)) {
   process.stderr.write(
@@ -81,7 +108,7 @@ const buildResult = spawnSync(
     '--ssr',
     'scripts/parityGoldensEntry.ts',
     '--outDir',
-    '.ironpath/parity-goldens-runner',
+    BUNDLE_SUBDIR,
     '--emptyOutDir',
     '--logLevel',
     'error',

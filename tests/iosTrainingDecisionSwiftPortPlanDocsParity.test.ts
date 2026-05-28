@@ -189,15 +189,26 @@ describe('iosTrainingDecisionSwiftPortPlan — task doc iOS-4B obligations', () 
   });
 });
 
-describe('iosTrainingDecisionSwiftPortPlan — iOS-4A surface discipline (planning-only)', () => {
-  // iOS-4A must NOT create the Swift package; that is iOS-4B's job. This guards
-  // against an accidental early package landing inside the planning PR.
-  it('iosTrainingDecisionSwiftPortPlan IronPathTrainingDecision package is NOT created in iOS-4A', () => {
-    const pkgPath = 'ios/packages/IronPathTrainingDecision';
-    expect(
-      existsSync(repoFile(pkgPath)),
-      'iOS-4A must not create the IronPathTrainingDecision package — that is iOS-4B',
-    ).toBe(false);
+describe('iosTrainingDecisionSwiftPortPlan — TrainingDecision package surface discipline', () => {
+  // The iOS-4A planning PR did not create the package. iOS-4B1 lands the
+  // TYPE SKELETON package only — never an engine. This guard is forward-safe:
+  // when the package is absent (iOS-4A state) it passes vacuously; once present
+  // (iOS-4B1+) it asserts the package carries NO decision-engine implementation
+  // (the full skeleton lock lives in
+  // tests/iosTrainingDecisionTypeSkeletonStaticGuards.test.ts).
+  it('iosTrainingDecisionSwiftPortPlan IronPathTrainingDecision package, if present, has no engine', () => {
+    const sourcesDir = repoFile('ios/packages/IronPathTrainingDecision/Sources/IronPathTrainingDecision');
+    if (!existsSync(sourcesDir)) return; // iOS-4A planning state — package not yet created.
+    const { readdirSync } = require('node:fs') as typeof import('node:fs');
+    const swift = readdirSync(sourcesDir).filter((f: string) => f.endsWith('.swift'));
+    const combined = swift
+      .map((f: string) => readFileSync(resolve(sourcesDir, f), 'utf8'))
+      .join('\n');
+    // No engine entry point / phase / prescription / readiness compute.
+    expect(combined).not.toMatch(/func\s+buildTrainingDecision\b/);
+    expect(combined).not.toMatch(/func\s+getEffectiveTrainingPhase\b/);
+    expect(combined).not.toMatch(/func\s+applyStatusRules\b/);
+    expect(combined).not.toMatch(/func\s+buildTodayReadiness\b/);
   });
 
   // The task doc must record the deferred real-export decision so the rationale

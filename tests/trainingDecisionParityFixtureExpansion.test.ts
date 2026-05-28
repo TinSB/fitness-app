@@ -248,14 +248,21 @@ describe('trainingDecisionParityFixtureExpansion — invariants', () => {
     expect(normal.sessionIntent).toBeUndefined();
   });
 
-  // (18) no Swift TrainingDecision package exists (iOS-4B0 is fixtures-only).
-  it('trainingDecisionParityFixtureExpansion (18) no IronPathTrainingDecision package', () => {
-    expect(existsSync(resolve(repoRoot, 'ios/packages/IronPathTrainingDecision'))).toBe(false);
-    // And the existing iOS package set is unchanged (8 packages).
-    const packages = readdirSync(resolve(repoRoot, 'ios/packages')).filter((d) =>
-      existsSync(resolve(repoRoot, 'ios/packages', d, 'Package.swift')),
-    );
-    expect(packages).not.toContain('IronPathTrainingDecision');
+  // (18) no Swift TrainingDecision ENGINE exists. iOS-4B0 shipped no Swift at
+  // all; iOS-4B1 adds the IronPathTrainingDecision TYPE SKELETON package (no
+  // engine). This assertion is forward-safe: it never requires the engine and,
+  // when the package is present, confirms it carries no buildTrainingDecision
+  // implementation (the full skeleton lock lives in
+  // tests/iosTrainingDecisionTypeSkeletonStaticGuards.test.ts).
+  it('trainingDecisionParityFixtureExpansion (18) no TrainingDecision engine in any package', () => {
+    const sourcesDir = resolve(repoRoot, 'ios/packages/IronPathTrainingDecision/Sources/IronPathTrainingDecision');
+    if (existsSync(sourcesDir)) {
+      const combined = readdirSync(sourcesDir)
+        .filter((f) => f.endsWith('.swift'))
+        .map((f) => readFileSync(resolve(sourcesDir, f), 'utf8'))
+        .join('\n');
+      expect(combined).not.toMatch(/func\s+buildTrainingDecision\b/);
+    }
   });
 
   // (19) no package/lockfile change (guard against accidental dependency churn).
