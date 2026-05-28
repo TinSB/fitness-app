@@ -51,11 +51,25 @@ const BUSINESS_LOGIC: readonly ForbiddenSymbol[] = [
   // TrainingDecision engine — owned by iOS-4.
   { name: 'TrainingDecision_type', owner: 'iOS-4', pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/ },
   { name: 'buildTrainingDecision_func', owner: 'iOS-4', pattern: /\bfunc\s+buildTrainingDecision\b/ },
-  // CleanAppDataView — owned by iOS-3.
-  { name: 'CleanAppDataView_type', owner: 'iOS-3', pattern: /\b(struct|class|enum)\s+CleanAppDataView\b/ },
-  // Data Health repair — owned by iOS-3.
-  { name: 'AutoRepairOrchestrator_type', owner: 'iOS-3', pattern: /\b(struct|class|actor)\s+AutoRepairOrchestrator\b/ },
-  { name: 'AppDataRepairLedger_type', owner: 'iOS-3', pattern: /\b(struct|class)\s+AppDataRepairLedger\b/ },
+  // CleanAppDataView — sanctioned by iOS-3A inside IronPathDataHealth ONLY.
+  // The struct landed in iOS-3A as the read-only projection foundation;
+  // iOS-3B and iOS-4 consume it. Declarations outside the Data Health
+  // package still fail the lock.
+  {
+    name: 'CleanAppDataView_type',
+    owner: 'iOS-3A (IronPathDataHealth)',
+    pattern: /\b(struct|class|enum)\s+CleanAppDataView\b/,
+    exemptPrefixes: ['ios/packages/IronPathDataHealth/'],
+  },
+  // AutoRepairOrchestrator — owned by iOS-3B. iOS-3A explicitly does NOT
+  // land this; the deferred-recipe boundary is documented in
+  // IOS_3A_DATA_HEALTH_RUNTIME_FOUNDATION_V1.md §5.
+  { name: 'AutoRepairOrchestrator_type', owner: 'iOS-3B', pattern: /\b(struct|class|actor)\s+AutoRepairOrchestrator\b/ },
+  // AppDataRepairLedger — owned by iOS-3B. iOS-3A ships the typed
+  // ledger ENTRY (`DataHealthRepairLedgerEntry`) plus pure
+  // append/idempotency helpers, but not the orchestrator/manager
+  // surface this guard targets.
+  { name: 'AppDataRepairLedger_type', owner: 'iOS-3B', pattern: /\b(struct|class)\s+AppDataRepairLedger\b/ },
   // Cloud sync — owned by iOS-7.
   { name: 'CloudSnapshot_type', owner: 'iOS-7', pattern: /\b(struct|class)\s+CloudSnapshot\b/ },
   { name: 'writeSnapshot_func', owner: 'iOS-7', pattern: /\bfunc\s+writeSnapshot\b/ },
