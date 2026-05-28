@@ -71,25 +71,34 @@ describe('iosAutoRepairOrchestrator — 5 safe repair IDs present', () => {
   }
 });
 
-describe('iosAutoRepairOrchestrator — deferred recipes are NOT implemented', () => {
-  const deferredIds = [
+// iOS-3C landed the 4 previously-deferred recipes inside
+// IronPathDataHealth. The iOS-3C surface coverage lives in
+// `tests/iosRemainingRepairRecipesIngressPipelineStaticGuards.test.ts`;
+// here we just sanction them inside the Data Health package so the
+// iOS-3B safe-recipes guard's deferred-id check doesn't fail.
+describe('iosAutoRepairOrchestrator — iOS-3C recipes are sanctioned inside IronPathDataHealth', () => {
+  const ios3cIds = [
     'screeningIssueScoreRepairV1',
     'screeningIssueScoreRuntimeGuardV1',
     'setIndexRenumberV1',
     'replacementEquivalenceAuditV1',
   ];
   const swiftFiles = collectSwift(resolve(repoRoot, 'ios'));
-  for (const id of deferredIds) {
-    it(`iosAutoRepairOrchestrator ${id} does NOT appear in any Swift source`, () => {
-      const hits: string[] = [];
+  const sanctionedPrefix = 'ios/packages/IronPathDataHealth/Sources/IronPathDataHealth/repairs/';
+  for (const id of ios3cIds) {
+    it(`iosAutoRepairOrchestrator ${id} declaration lives only under the sanctioned repairs/ directory`, () => {
+      const declaringFiles: string[] = [];
       for (const file of swiftFiles) {
         const text = readFileSync(file, 'utf8');
-        // Look for `repairId: String = "<id>"` — recipe declaration.
         if (new RegExp(`repairId\\s*:\\s*String\\s*=\\s*"${id}"`).test(text)) {
-          hits.push(file.replace(`${repoRoot}/`, ''));
+          declaringFiles.push(file.replace(`${repoRoot}/`, ''));
         }
       }
-      expect(hits, `${id} unexpectedly declared in: ${hits.join(', ')}`).toEqual([]);
+      expect(declaringFiles.length).toBeGreaterThan(0);
+      for (const f of declaringFiles) {
+        expect(f.startsWith(sanctionedPrefix),
+          `${id} declared OUTSIDE sanctioned repairs/ directory: ${f}`).toBe(true);
+      }
     });
   }
 });
@@ -98,7 +107,11 @@ describe('iosAutoRepairOrchestrator — ingress pipeline + forbidden imports sta
   const swiftFiles = collectSwift(resolve(repoRoot, 'ios/packages/IronPathDataHealth/Sources'));
 
   const forbidden: ReadonlyArray<{ readonly name: string; readonly pattern: RegExp }> = [
-    { name: 'processIncomingAppData_func', pattern: /\bfunc\s+processIncomingAppData\b/ },
+    // iOS-3C landed `processIncomingAppData` inside
+    // IronPathDataHealth/AppDataIngressPipeline.swift, so this rule
+    // is removed from the per-file deferred-symbol sweep here. The
+    // ingress pipeline's surface is asserted by
+    // `tests/iosRemainingRepairRecipesIngressPipelineStaticGuards.test.ts`.
     { name: 'Supabase_import', pattern: /\bimport\s+Supabase\b/ },
     { name: 'SupabaseClient_type', pattern: /\b(struct|class|enum)\s+SupabaseClient\b/ },
     { name: 'HealthKit_import', pattern: /\bimport\s+HealthKit\b/ },

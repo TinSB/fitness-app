@@ -106,13 +106,12 @@ describe('iosDataHealthRuntimeFoundation — iOS-3B surface is deferred (not in 
 
   const swiftFiles = collectSwift(iosRoot);
 
-  // iOS-3B landed AutoRepairOrchestrator inside IronPathDataHealth, so
-  // it is removed from this guard's deferred list. The remaining
-  // deferred symbols (processIncomingAppData / TrainingDecision /
+  // iOS-3B landed AutoRepairOrchestrator inside IronPathDataHealth.
+  // iOS-3C landed processIncomingAppData inside IronPathDataHealth.
+  // The remaining deferred symbols (TrainingDecision /
   // AppDataRepairLedger orchestrator-style) are still globally
   // forbidden and stay enforced here.
   const deferred: ReadonlyArray<{ readonly name: string; readonly pattern: RegExp }> = [
-    { name: 'processIncomingAppData_func', pattern: /\bfunc\s+processIncomingAppData\b/ },
     { name: 'TrainingDecision_type', pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/ },
     { name: 'AppDataRepairLedger_orchestrator_type', pattern: /\b(struct|class)\s+AppDataRepairLedger\b/ },
   ];
