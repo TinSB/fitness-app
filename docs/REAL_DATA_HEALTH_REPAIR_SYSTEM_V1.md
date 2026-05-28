@@ -122,7 +122,7 @@ V1 enforces these hard rules and is covered by tests:
 - V1 orchestrator hooks at boot only. Existing sync upload paths remain unchanged.
 - The repaired snapshot will be uploaded on the next normal sync window through the existing sync candidate flow because the orchestrator persists via `setData` + `saveData` and dispatches the new `data_health_auto_repaired` derived-state invalidation event.
 - `cloudParityCheck` already treats `settings.dataRepairLogs` as content-stable; the new `dataHealthRepairLedger` is in the same settings root and is therefore part of the same parity envelope.
-- Future PR (V2) will add explicit `cloudPullCandidate` / `readMirrorVerification` triggers so cloud-restored AppData runs through the orchestrator before becoming live. V1 boot trigger already covers the "restore by import then reload" path.
+- **V2 follow-up shipped**: `processIncomingAppData` + `evaluateCloudUploadEligibility` route every AppData ingress (import, backup restore, cloud restore, cloud pull, read mirror, parity, post-session, account switch) through the V1 immunity layer. See [DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md](DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md).
 
 ## 12. Remaining risks
 

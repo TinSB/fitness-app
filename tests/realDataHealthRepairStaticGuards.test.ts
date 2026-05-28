@@ -55,8 +55,14 @@ describe('realDataHealthRepairStaticGuards — static + behavioral guards', () =
 
   it('realDataHealthRepairAppBootScheduleOrchestrator', () => {
     const appSource = readSource('src/App.tsx');
-    expect(appSource.includes('runAutoRepairOrchestrator')).toBe(true);
-    expect(appSource.includes("triggeredBy: 'boot'")).toBe(true);
+    // V2 Cloud Restore Linkage routes boot through the ingress pipeline, which
+    // internally dispatches the orchestrator via the same triggeredBy='boot'
+    // contract. Either path satisfies the V1 invariant.
+    const usesOrchestratorDirect =
+      appSource.includes('runAutoRepairOrchestrator') && appSource.includes("triggeredBy: 'boot'");
+    const usesIngressPipeline =
+      appSource.includes('processIncomingAppData') && /processIncomingAppData\(\s*\{\s*source:\s*'boot'/.test(appSource);
+    expect(usesOrchestratorDirect || usesIngressPipeline).toBe(true);
   });
 
   it('realDataHealthRepairAutoRepairOrchestratorNeverImportsModalOrPrompt', () => {
