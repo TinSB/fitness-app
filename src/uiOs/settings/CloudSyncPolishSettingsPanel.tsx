@@ -28,6 +28,7 @@ import {
 } from '../../storage/localStorageAdapter';
 import { buildAppDataSnapshotHash } from '../../cloudProduction/accountBoundaryLocalInventory';
 import { ensureCloudUploadEligible } from '../../dataHealth/uploadEligibilityGuard';
+import { runCloudSubsequentUpload } from '../../cloudProduction/cloudSubsequentUploadFlow';
 import {
   buildCloudSyncSettingsSectionPropsFromRuntime,
   type CloudSyncSettingsRuntimeInput,
@@ -612,6 +613,62 @@ export function CloudSyncPolishSettingsPanel({
         message: eligibilityVerdict.safeUserMessage,
       });
       return;
+    }
+
+    // V4 subsequent-upload short-circuit: if the device already has a
+    // first-upload receipt, route through the subsequent-upload flow first.
+    // It computes the local snapshot hash, skips duplicate uploads when
+    // unchanged, and surfaces conflict/cloud-unavailable as a compact
+    // passive status without invoking the full orchestrator. When the
+    // subsequent flow returns `not_enabled` or `unknown` we fall through
+    // to the existing first-upload path so the V3 contract is preserved.
+    if (!alreadySawConflict && syncedAppDataHashState && appData) {
+      void (async () => {
+        const ownerUserId = authRuntime?.user?.userId ?? null;
+        const accountId = authRuntime?.user?.accountId ?? null;
+        const subsequent = await runCloudSubsequentUpload({
+          appData,
+          ownerUserId,
+          accountId,
+          localSyncState: {
+            syncedAppDataHash: syncedAppDataHashState,
+            syncedOwnerUserId: ownerUserId,
+          },
+          gateway: null,
+        });
+        if (subsequent.reason === 'unchanged') {
+          setProductionSyncApplyState({
+            pending: false,
+            result: null,
+            message: subsequent.safeUserMessage,
+          });
+          return;
+        }
+        if (!subsequent.ok) {
+          // Translate failure to passive status. Conflict/cloud-unavailable
+          // and other non-mutation blockers stay here without invoking the
+          // first-upload orchestrator.
+          if (
+            subsequent.reason === 'cloud_conflict' ||
+            subsequent.reason === 'cloud_unavailable' ||
+            subsequent.reason === 'pending_safe_repairs' ||
+            subsequent.reason === 'backup_failed' ||
+            subsequent.reason === 'partially_repaired' ||
+            subsequent.reason === 'missing_repair_receipt' ||
+            subsequent.reason === 'invalid_appdata'
+          ) {
+            setProductionSyncApplyState({
+              pending: false,
+              result: null,
+              message: subsequent.safeUserMessage,
+            });
+            return;
+          }
+          // For `not_enabled`, `upload_failed`, `unknown`, fall through to
+          // the legacy first-upload path below so the existing orchestrator
+          // can perform its full Phase 21C/D/E/F validation.
+        }
+      })();
     }
 
     setProductionSyncApplyState({

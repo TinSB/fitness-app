@@ -90,6 +90,28 @@ Static enforcement (`tests/cloudUploadEligibilityEnforcementStatic.test.ts`):
 
 See [CLOUD_UPLOAD_ELIGIBILITY_ENFORCEMENT_V3.md](CLOUD_UPLOAD_ELIGIBILITY_ENFORCEMENT_V3.md) for the failure semantics matrix and the per-source / per-snapshot-kind guard behavior.
 
+## Subsequent upload flow (V4)
+
+Any cloud upload that happens AFTER the first explicit upload — completed sessions, edited history, restored data, repairs, manual "立即同步" actions, future opt-in periodic upload — MUST go through `src/cloudProduction/cloudSubsequentUploadFlow.ts:runCloudSubsequentUpload`. Contract:
+
+1. The flow calls `ensureCloudUploadEligible(..., snapshotKind: 'subsequent-upload')` internally; callers MUST NOT duplicate eligibility logic.
+2. The flow computes `buildAppDataSnapshotHash(appData)` and compares to `loadCloudSyncFlowState().syncedAppDataHash`. If equal it returns `{ ok: true, skipped: true, reason: 'unchanged' }` and DOES NOT call the gateway.
+3. If `lastCloudSnapshot.sourceSnapshotHash` is supplied and differs from the device's expected previous hash, the flow returns `{ ok: false, reason: 'cloud_conflict' }` and DOES NOT call the gateway. Conflict resolution stays on the existing override path.
+4. The flow returns one of the 12 reason values (`uploaded`, `unchanged`, `not_enabled`, `pending_safe_repairs`, `backup_failed`, `partially_repaired`, `missing_repair_receipt`, `invalid_appdata`, `cloud_conflict`, `cloud_unavailable`, `upload_failed`, `unknown`). The caller branches only on `result.ok` plus `result.reason === 'unchanged'`.
+5. The flow NEVER calls Supabase directly. It dispatches via an injected `gateway: CloudSubsequentUploadGateway` so test doubles and the existing production candidate share one interface.
+6. Upload success is only ever reported when the gateway returns `ok: true`; blocked uploads surface a compact passive status (`无需同步` / `本地有更新，等待同步` / `同步发现云端有新内容，请稍后再试` / `同步失败，本地数据已保留`) and DO NOT set any "synced" flag.
+
+Static enforcement (`tests/cloudSubsequentUploadFlowStatic.test.ts`):
+
+- The V4 module imports `ensureCloudUploadEligible` and dispatches with `snapshotKind: 'subsequent-upload'`.
+- The V4 module does not import `@supabase/supabase-js`, `createClient`, modal/confirm/prompt primitives, or `localStorage.clear`.
+- UI callers that import `runCloudSubsequentUpload` do NOT call Supabase `.insert` or `writeCloudAppDataCandidate` directly.
+- UI files do not import any Supabase write helper for cloud snapshot uploads.
+- The V3 guard import invariant is preserved by V4 (no caller of `runProductionFullAcceptanceSync` / `buildFirstUploadExplicitApply` / `runCloudPushCandidate` outside `cloudProduction/sync/devApi` may skip the V3 guard import).
+- Background / default / cloud-primary sync stays disabled.
+
+See [CLOUD_SUBSEQUENT_UPLOAD_FLOW_V4.md](CLOUD_SUBSEQUENT_UPLOAD_FLOW_V4.md) for the dirty-state design, conflict handling, and the V4→V5 risk register.
+
 ## Anti-patterns
 
 - **Silent mutation in `sanitizeData`**: `sanitizeData` in `src/storage/appDataSanitize.ts` must remain a shape-coercer, not a semantic repairer. If you need to repair, write a registry entry — do not extend `sanitize`.

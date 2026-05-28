@@ -30,6 +30,7 @@ const runtimeFilesWithDedicatedBoundaryCoverage = new Set([
   'src/cloudProduction/conflictOfflineRollbackRuntimeFlow.ts',
   'src/cloudProduction/conflictReview.ts',
   'src/cloudProduction/firstUploadExplicitApply.ts',
+  'src/cloudProduction/cloudSubsequentUploadFlow.ts',
   'src/cloudProduction/localBackupDryRunMigrationRuntimeFlow.ts',
   'src/cloudProduction/localBackupDryRunUi.ts',
   'src/cloudProduction/offlineRollback.ts',
