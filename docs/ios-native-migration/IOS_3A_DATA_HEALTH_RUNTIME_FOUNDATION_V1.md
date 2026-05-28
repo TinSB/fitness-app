@@ -1,9 +1,11 @@
 # iOS-3A Data Health Runtime Foundation V1
 
-**Status:** in review (PR).
+**Status:** merged (PR #398, commit `c2e9ad0`).
 **Owner:** iOS-3A (Data Health Runtime Foundation).
 **Date:** 2026-05-28.
-**Branch:** `claude/ios-3a-data-health-runtime-foundation-v1`.
+**Branch:** `claude/ios-3a-data-health-runtime-foundation-v1` (deleted post-merge).
+**Successor:** iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1
+— see `IOS_3B_AUTO_REPAIR_ORCHESTRATOR_SAFE_RECIPES_V1.md`.
 
 ## 1. Scope
 

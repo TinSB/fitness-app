@@ -106,15 +106,19 @@ describe('iosDataHealthRuntimeFoundation — iOS-3B surface is deferred (not in 
 
   const swiftFiles = collectSwift(iosRoot);
 
+  // iOS-3B landed AutoRepairOrchestrator inside IronPathDataHealth, so
+  // it is removed from this guard's deferred list. The remaining
+  // deferred symbols (processIncomingAppData / TrainingDecision /
+  // AppDataRepairLedger orchestrator-style) are still globally
+  // forbidden and stay enforced here.
   const deferred: ReadonlyArray<{ readonly name: string; readonly pattern: RegExp }> = [
-    { name: 'AutoRepairOrchestrator', pattern: /\b(struct|class|actor|enum)\s+AutoRepairOrchestrator\b/ },
     { name: 'processIncomingAppData_func', pattern: /\bfunc\s+processIncomingAppData\b/ },
     { name: 'TrainingDecision_type', pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/ },
     { name: 'AppDataRepairLedger_orchestrator_type', pattern: /\b(struct|class)\s+AppDataRepairLedger\b/ },
   ];
 
   for (const { name, pattern } of deferred) {
-    it(`iosDataHealthRuntimeFoundation ${name} is NOT declared in iOS-3A`, () => {
+    it(`iosDataHealthRuntimeFoundation ${name} is NOT declared yet`, () => {
       const hits: string[] = [];
       for (const file of swiftFiles) {
         const text = readFileSync(file, 'utf8');
@@ -122,7 +126,7 @@ describe('iosDataHealthRuntimeFoundation — iOS-3B surface is deferred (not in 
           hits.push(file.replace(`${repoRoot}/`, ''));
         }
       }
-      expect(hits, `iOS-3B-deferred symbol ${name} found in iOS-3A files: ${hits.join(', ')}`).toEqual([]);
+      expect(hits, `iOS-3C-deferred symbol ${name} found unexpectedly: ${hits.join(', ')}`).toEqual([]);
     });
   }
 });
