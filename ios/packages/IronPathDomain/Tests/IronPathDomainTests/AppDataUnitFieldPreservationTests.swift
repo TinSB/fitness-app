@@ -32,7 +32,10 @@ final class AppDataUnitFieldPreservationTests: XCTestCase {
         let value = try JSONValue(decoding: Data(json.utf8))
         let us = try UnitSettings(decoding: value)
         XCTAssertNil(us.weightUnit)
-        let canonical = try JSONValue.object(us._unknown).canonicalJSONString()
+        // iOS-2C: known fields now flow through typed properties, not
+        // `_unknown`. Use `UnitSettings.encoded()` to round-trip the
+        // typed + unknown merge.
+        let canonical = try us.encoded().canonicalJSONString()
         XCTAssertEqual(canonical, #"{"weightUnit":"st"}"#)
     }
 
@@ -87,7 +90,10 @@ final class AppDataUnitFieldPreservationTests: XCTestCase {
         let value = try JSONValue(decoding: Data(json.utf8))
         let us = try UnitSettings(decoding: value)
         XCTAssertEqual(us.weightUnit, .kg)
-        let reCanonical = try JSONValue.object(us._unknown).canonicalJSONString()
+        // iOS-2C: `displayUnit` is now also typed. `encoded()` round-trips
+        // both typed fields back into a single canonical JSON object.
+        let reCanonical = try us.encoded().canonicalJSONString()
         XCTAssertEqual(reCanonical, #"{"displayUnit":"lb","weightUnit":"kg"}"#)
+        XCTAssertEqual(us.displayUnit, .lb)
     }
 }

@@ -93,3 +93,90 @@ public struct AppData: Equatable, Hashable, Sendable {
         }
     }
 }
+
+// MARK: - iOS-2C — Typed accessors over `root`
+//
+// These are lazy READ-only views into the full-tree `root` carrier.
+// They do NOT mutate `root`; they do NOT affect `canonicalJSONData()`.
+// The AppData round-trip hash parity is unaffected.
+//
+// Failures: any per-element parse error returns `nil` for that entry
+// rather than throwing — iOS-3 / iOS-4 callers can compare expected
+// vs returned counts to detect malformed entries. The strict-decode
+// variant `historyStrict()` is available for tests that want decode
+// errors surfaced as exceptions.
+
+extension AppData {
+    /// Typed history sessions. Malformed entries are silently skipped;
+    /// use `historyStrict()` to surface decode errors.
+    public var history: [TrainingSession] {
+        guard let arr = root["history"]?.arrayValue else { return [] }
+        return arr.compactMap { try? TrainingSession(decoding: $0) }
+    }
+
+    public func historyStrict() throws -> [TrainingSession] {
+        guard let arr = root["history"]?.arrayValue else { return [] }
+        return try arr.map { try TrainingSession(decoding: $0) }
+    }
+
+    /// Active session if present and non-null.
+    public var activeSession: TrainingSession? {
+        guard let v = root["activeSession"], !v.isNull else { return nil }
+        return try? TrainingSession(decoding: v)
+    }
+
+    /// AppSettings parsed from `root["settings"]`. Returns an empty
+    /// `AppSettings()` when the slot is missing.
+    public var settings: AppSettings {
+        guard let v = root["settings"] else { return AppSettings() }
+        return (try? AppSettings(decoding: v)) ?? AppSettings()
+    }
+
+    /// HealthMetricSample array. Empty when slot is missing.
+    public var healthMetricSamples: [HealthMetricSample] {
+        guard let arr = root["healthMetricSamples"]?.arrayValue else { return [] }
+        return arr.compactMap { try? HealthMetricSample(decoding: $0) }
+    }
+
+    /// AdaptiveCalibrationState if present.
+    public var adaptiveCalibration: AdaptiveCalibrationState? {
+        guard let v = root["adaptiveCalibration"], !v.isNull else { return nil }
+        return try? AdaptiveCalibrationState(decoding: v)
+    }
+
+    /// UnitSettings — empty if missing.
+    public var unitSettings: UnitSettings {
+        guard let v = root["unitSettings"] else { return UnitSettings() }
+        return (try? UnitSettings(decoding: v)) ?? UnitSettings()
+    }
+
+    /// TodayStatus — empty if missing.
+    public var todayStatus: TodayStatus {
+        guard let v = root["todayStatus"] else { return TodayStatus() }
+        return (try? TodayStatus(decoding: v)) ?? TodayStatus()
+    }
+
+    /// ScreeningProfile — empty if missing.
+    public var screeningProfile: ScreeningProfile {
+        guard let v = root["screeningProfile"] else { return ScreeningProfile() }
+        return (try? ScreeningProfile(decoding: v)) ?? ScreeningProfile()
+    }
+
+    /// MesocyclePlan — empty if missing.
+    public var mesocyclePlan: MesocyclePlan {
+        guard let v = root["mesocyclePlan"] else { return MesocyclePlan() }
+        return (try? MesocyclePlan(decoding: v)) ?? MesocyclePlan()
+    }
+
+    /// ProgramTemplate — empty if missing.
+    public var programTemplate: ProgramTemplate {
+        guard let v = root["programTemplate"] else { return ProgramTemplate() }
+        return (try? ProgramTemplate(decoding: v)) ?? ProgramTemplate()
+    }
+
+    /// UserProfile — empty if missing.
+    public var userProfile: UserProfile {
+        guard let v = root["userProfile"] else { return UserProfile() }
+        return (try? UserProfile(decoding: v)) ?? UserProfile()
+    }
+}

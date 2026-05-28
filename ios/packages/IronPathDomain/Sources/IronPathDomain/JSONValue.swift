@@ -36,8 +36,47 @@ public enum JSONValueError: Error, Sendable, Equatable {
 }
 
 public enum NumberRepr: Equatable, Hashable, Sendable {
+    /// Integer-valued numbers, matches TS `JSON.stringify(42)` → `"42"`.
     case integer(Int64)
+    /// Non-integer numbers parsed from JSON. V1 default — matches the
+    /// IEEE-754 Double-text round-trip semantics of TS `JSON.stringify`,
+    /// avoiding `Decimal`'s expansion of `72.6` → `72.59999999999999`.
+    case double(Double)
+    /// Hand-built high-precision numbers (e.g. tests asserting that
+    /// a literal `Decimal(string: "3.14")` round-trips as `"3.14"`).
+    /// Not produced by JSON parsing in V1; reserved for V2 escalation.
     case decimal(Decimal)
+
+    /// Returns the underlying value as `Int` when representable.
+    public var intValue: Int? {
+        switch self {
+        case .integer(let i):
+            return Int(exactly: i)
+        case .double(let d):
+            if d.isFinite, d.truncatingRemainder(dividingBy: 1) == 0,
+               d >= Double(Int.min), d <= Double(Int.max) {
+                return Int(d)
+            }
+            return nil
+        case .decimal(let d):
+            var rounded = Decimal()
+            var copy = d
+            NSDecimalRound(&rounded, &copy, 0, .down)
+            if rounded == d {
+                return NSDecimalNumber(decimal: rounded).intValue
+            }
+            return nil
+        }
+    }
+
+    /// Returns the underlying value as `Double`.
+    public var doubleValue: Double {
+        switch self {
+        case .integer(let i): return Double(i)
+        case .double(let d): return d
+        case .decimal(let d): return NSDecimalNumber(decimal: d).doubleValue
+        }
+    }
 }
 
 public enum JSONValue: Equatable, Hashable, Sendable {
@@ -74,10 +113,30 @@ public struct OrderedJSONObject: Equatable, Hashable, Sendable {
     public var isEmpty: Bool { entries.isEmpty }
 
     /// Returns a new `OrderedJSONObject` whose entries are sorted
-    /// lexicographically by key. Used by the canonical emit path.
+    /// using the canonical-emit key order (case-insensitive primary,
+    /// code-point tie-break). Mirrors TypeScript's `localeCompare`
+    /// default-locale behaviour at
+    /// `src/cloudProduction/accountBoundaryLocalInventory.ts:116`.
     public func canonicalized() -> OrderedJSONObject {
-        OrderedJSONObject(entries: entries.sorted { $0.key < $1.key })
+        OrderedJSONObject(entries: entries.sorted {
+            canonicalKeyOrder($0.key, $1.key)
+        })
     }
+}
+
+/// Canonical-emit key comparator. TS-side `stableStringify` uses
+/// `String.prototype.localeCompare()` which in Node default-locale
+/// performs a case-insensitive primary comparison with code-point
+/// tie-break. Swift's `String.<` is strict Unicode-code-point order,
+/// so e.g. it sorts `"prIndependent"` before `"prescription"` (capital
+/// `I` at U+0049 precedes lowercase `e` at U+0065). To reproduce the
+/// TS order, we lowercase both keys for the primary pass and break
+/// ties with raw `<`.
+public func canonicalKeyOrder(_ a: String, _ b: String) -> Bool {
+    let al = a.lowercased()
+    let bl = b.lowercased()
+    if al != bl { return al < bl }
+    return a < b
 }
 
 // MARK: - Foundation interop
@@ -137,7 +196,10 @@ extension JSONValue {
                 self = .number(.integer(Int64(d)))
                 return
             }
-            self = .number(.decimal(n.decimalValue))
+            // JSON-parsed floats land in `.double` so canonical emit
+            // matches TS `JSON.stringify` (`72.6` → `"72.6"`, not the
+            // Decimal binary expansion `72.59999999999999`).
+            self = .number(.double(d))
             return
         }
         if let s = raw as? String {
@@ -197,6 +259,8 @@ extension JSONValue {
             out.append(b ? "true" : "false")
         case .number(.integer(let i)):
             out.append(String(i))
+        case .number(.double(let d)):
+            out.append(canonicalDoubleString(d))
         case .number(.decimal(let d)):
             out.append(canonicalDecimalString(d))
         case .string(let s):
@@ -254,11 +318,25 @@ private func canonicalEscapedString(_ s: String) -> String {
     return out
 }
 
-/// Emits a `Decimal` in the shortest textual form that round-trips
-/// through TypeScript's `JSON.stringify`. Trailing zeroes after the
-/// decimal point are dropped (`1.500` → `1.5`); an integral decimal
-/// emits without a decimal point (`42.0` → `42`). Negative zero is
-/// emitted as `0`.
+/// Emits a `Double` in the shortest textual form that round-trips
+/// through TypeScript's `JSON.stringify`. Swift's `String(Double)`
+/// uses the IEEE-754 short-round-trip algorithm, matching Node /
+/// V8's `Number.prototype.toString` output exactly.
+private func canonicalDoubleString(_ d: Double) -> String {
+    if d.isZero { return "0" }
+    if d.isFinite, d.truncatingRemainder(dividingBy: 1) == 0,
+       d >= Double(Int64.min), d <= Double(Int64.max) {
+        // Defensive: integer-valued doubles collapse to integer text,
+        // matching TS's collapse `42.0 → "42"`.
+        return String(Int64(d))
+    }
+    return String(d)
+}
+
+/// Emits a `Decimal` in its hand-precision form. Reserved for V2
+/// escalation when JSON-parsed Doubles aren't precise enough.
+/// Used by the open-bag tests when manually building
+/// `NumberRepr.decimal(Decimal(string: …))`.
 private func canonicalDecimalString(_ d: Decimal) -> String {
     if d.isZero {
         return "0"
@@ -267,11 +345,8 @@ private func canonicalDecimalString(_ d: Decimal) -> String {
     var rounded = Decimal()
     NSDecimalRound(&rounded, &copy, 0, .down)
     if rounded == d {
-        // Integral value — emit without decimal point.
         return "\(rounded)"
     }
-    // Non-integral — Foundation's default `Decimal.description`
-    // already returns the shortest canonical form (e.g. `0.5`).
     return "\(d)"
 }
 
@@ -296,5 +371,133 @@ public struct GenericCodingKey: CodingKey, Equatable, Sendable {
     public init(_ stringValue: String) {
         self.stringValue = stringValue
         self.intValue = nil
+    }
+}
+
+// MARK: - iOS-2C — Typed-field convenience accessors
+//
+// Every iOS-2C model that promotes documented fields out of `_unknown`
+// uses these accessors to keep its `init(decoding:)` readable. The
+// pattern is: `let id = obj["id"]?.stringValue` rather than a manual
+// switch on each JSONValue case.
+//
+// Accessors are intentionally narrow:
+//   * They DO NOT cross types (e.g. `stringValue` does not coerce
+//     `.bool(true)` → `"true"`); the underlying JSON shape must match
+//     the documented schema. Cross-type mismatches return `nil`.
+//   * They DO NOT mutate `_unknown` — the typed model's decode path
+//     manages the documented-key set separately.
+
+extension JSONValue {
+    /// Returns the underlying `String` if the case is `.string`; nil otherwise.
+    public var stringValue: String? {
+        if case .string(let s) = self { return s }
+        return nil
+    }
+
+    /// Returns the underlying `Bool` if the case is `.bool`; nil otherwise.
+    public var boolValue: Bool? {
+        if case .bool(let b) = self { return b }
+        return nil
+    }
+
+    /// Returns the underlying `Int` for integer-valued numeric cases.
+    public var intValue: Int? {
+        switch self {
+        case .number(.integer(let i)):
+            return Int(exactly: i)
+        case .number(.double(let d)):
+            if d.isFinite, d.truncatingRemainder(dividingBy: 1) == 0,
+               d >= Double(Int.min), d <= Double(Int.max) {
+                return Int(d)
+            }
+            return nil
+        case .number(.decimal(let d)):
+            var rounded = Decimal()
+            var copy = d
+            NSDecimalRound(&rounded, &copy, 0, .down)
+            if rounded == d {
+                return NSDecimalNumber(decimal: rounded).intValue
+            }
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    /// Returns the underlying `Double` if the case is numeric; nil otherwise.
+    public var doubleValue: Double? {
+        switch self {
+        case .number(.integer(let i)):
+            return Double(i)
+        case .number(.double(let d)):
+            return d
+        case .number(.decimal(let d)):
+            return NSDecimalNumber(decimal: d).doubleValue
+        default:
+            return nil
+        }
+    }
+
+    /// Returns the underlying `Decimal` if the case is numeric; nil otherwise.
+    public var decimalValue: Decimal? {
+        switch self {
+        case .number(.integer(let i)):
+            return Decimal(i)
+        case .number(.double(let d)):
+            return Decimal(d)
+        case .number(.decimal(let d)):
+            return d
+        default:
+            return nil
+        }
+    }
+
+    /// Returns the underlying `NumberRepr` if the case is numeric; nil otherwise.
+    public var numberValue: NumberRepr? {
+        if case .number(let n) = self { return n }
+        return nil
+    }
+
+    /// Returns the underlying `OrderedJSONObject` if the case is `.object`; nil otherwise.
+    public var objectValue: OrderedJSONObject? {
+        if case .object(let o) = self { return o }
+        return nil
+    }
+
+    /// Returns the underlying `[JSONValue]` if the case is `.array`; nil otherwise.
+    public var arrayValue: [JSONValue]? {
+        if case .array(let a) = self { return a }
+        return nil
+    }
+
+    /// True if this value is `.null`.
+    public var isNull: Bool {
+        if case .null = self { return true }
+        return false
+    }
+
+    /// Encode helper for emitting a typed Int as a JSON integer.
+    public static func intLiteral(_ i: Int) -> JSONValue {
+        .number(.integer(Int64(i)))
+    }
+}
+
+// MARK: - OrderedJSONObject convenience
+
+extension OrderedJSONObject {
+    /// Returns a new `OrderedJSONObject` whose entries are the
+    /// receiver's entries with documented keys removed. Used by typed
+    /// models to build their `_unknown` carrier without mutating the
+    /// original.
+    public func withoutKeys(_ excluded: Set<String>) -> OrderedJSONObject {
+        OrderedJSONObject(entries: entries.filter { !excluded.contains($0.key) })
+    }
+
+    /// Returns a new `OrderedJSONObject` formed by appending the given
+    /// entries to the receiver. Used by typed `encoded()` helpers
+    /// when re-merging typed fields with the `_unknown` carrier.
+    public func appending(_ added: [Entry]) -> OrderedJSONObject {
+        OrderedJSONObject(entries: entries + added)
     }
 }
