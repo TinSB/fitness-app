@@ -18,7 +18,6 @@
  * docs/ios-native-migration/IOS_0_CONTRACT_FIXTURE_EXPORT_V1.md.
  */
 
-import { execSync } from 'node:child_process';
 import {
   readFileSync,
   writeFileSync,
@@ -466,20 +465,17 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
 
 type GeneratorMode = 'write' | 'check' | 'list';
 
-const sourceCommitShort = (): string => {
-  try {
-    return execSync('git rev-parse HEAD', { cwd: REPO_ROOT })
-      .toString()
-      .trim();
-  } catch {
-    return 'unknown';
-  }
-};
+// The "source commit" stamped into every golden is read from the
+// fixture's own parityMeta.tsCommit — NOT from `git rev-parse HEAD` at
+// runtime. Runtime git would make the goldens differ between the local
+// developer's checkout and CI (where HEAD is the PR commit), which is
+// exactly the kind of non-determinism this whole iOS-0 task exists to
+// eliminate. Bumping the source commit is an explicit fixture edit,
+// not a side effect of `node scripts/generate-parity-goldens.mjs`.
 
 const runFixture = async (
   id: FixtureId,
   mode: GeneratorMode,
-  sourceCommit: string,
 ): Promise<{ id: FixtureId; changed: boolean }> => {
   const inputPath = resolve(INPUT_ROOT, `${id}.json`);
   const goldenPath = resolve(GOLDEN_ROOT, `${id}.json`);
@@ -492,7 +488,7 @@ const runFixture = async (
   const goldenObject = {
     parityGolden: {
       sourceFixtureId: id,
-      generatedFromCommit: sourceCommit,
+      generatedFromCommit: meta.tsCommit,
       generatedAtPolicy: meta.generatedAtPolicy,
       deterministicClockIso: meta.deterministicClockIso ?? null,
       generatorVersion: GENERATOR_VERSION,
@@ -521,10 +517,9 @@ const main = async (argv: string[]): Promise<number> => {
     }
     return 0;
   }
-  const sourceCommit = sourceCommitShort();
   const summary: Array<{ id: FixtureId; changed: boolean }> = [];
   for (const id of FIXTURE_IDS) {
-    summary.push(await runFixture(id, mode, sourceCommit));
+    summary.push(await runFixture(id, mode));
   }
   const changedCount = summary.filter((s) => s.changed).length;
   // eslint-disable-next-line no-console
