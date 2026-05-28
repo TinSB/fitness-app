@@ -45,48 +45,88 @@ describe('iosContractFixture — no Xcode artefacts in this PR (Stop Condition #
     expect(existsSync(resolve(repoRoot, 'IronPath.xcworkspace'))).toBe(false);
   });
 
-  it('iosContractFixture no tracked .xcodeproj / .xcworkspace / .pbxproj path', () => {
+  it('iosContractFixture no tracked .xcodeproj / .xcworkspace / .pbxproj path outside ios/ (Stop Condition #6 evolved by iOS-1)', () => {
+    // iOS-0 forbade ANY Xcode artefact in the tree. iOS-1 Xcode Project
+    // Bootstrap V1 now sanctions one under ios/. The guard evolves: still
+    // forbidden at the repo root, still forbidden in any directory OTHER
+    // than ios/, AND the iOS-1 design doc must accompany the artefact
+    // (so the workspace can only arrive via the sanctioned task).
     const offenders = tracked().filter(
       (f) =>
-        f.endsWith('.xcodeproj') ||
-        f.endsWith('.xcworkspace') ||
-        f.endsWith('.pbxproj') ||
-        f.includes('/IronPath.xcodeproj/') ||
-        f.includes('/IronPath.xcworkspace/'),
+        !f.startsWith('ios/') &&
+        (f.endsWith('.xcodeproj') ||
+          f.endsWith('.xcworkspace') ||
+          f.endsWith('.pbxproj') ||
+          f.includes('/IronPath.xcodeproj/') ||
+          f.includes('/IronPath.xcworkspace/')),
     );
     expect(offenders).toEqual([]);
+    const iosArtefacts = tracked().filter(
+      (f) =>
+        f.startsWith('ios/') &&
+        (f.endsWith('.pbxproj') || f.includes('/IronPath.xcodeproj/') || f.includes('/IronPath.xcworkspace/')),
+    );
+    if (iosArtefacts.length > 0) {
+      expect(
+        existsSync(
+          resolve(repoRoot, 'docs/ios-native-migration/IOS_1_XCODE_PROJECT_BOOTSTRAP_V1.md'),
+        ),
+        'ios/IronPath.xcodeproj exists but the iOS-1 design doc is missing — the scaffolding arrived outside the sanctioned task',
+      ).toBe(true);
+    }
   });
 });
 
-describe('iosContractFixture — no Swift sources / SwiftPM artefacts in this PR', () => {
-  it('iosContractFixture no tracked .swift files', () => {
-    const offenders = tracked().filter((f) => f.endsWith('.swift'));
+describe('iosContractFixture — Swift sources only under ios/ (iOS-1 sanctioned tree)', () => {
+  it('iosContractFixture no .swift file lives outside ios/', () => {
+    // iOS-0 forbade every .swift file in the tree. After iOS-1 lands,
+    // .swift files under ios/ are sanctioned; anywhere else is still
+    // forbidden.
+    const offenders = tracked().filter((f) => f.endsWith('.swift') && !f.startsWith('ios/'));
     expect(offenders).toEqual([]);
   });
 
-  it('iosContractFixture no Package.swift at repo root or anywhere tracked', () => {
+  it('iosContractFixture no Package.swift at repo root; Package.swift only under ios/packages/', () => {
     expect(existsSync(resolve(repoRoot, 'Package.swift'))).toBe(false);
-    expect(tracked().filter((f) => f.endsWith('Package.swift'))).toEqual([]);
+    const offenders = tracked().filter(
+      (f) => f.endsWith('Package.swift') && !f.startsWith('ios/packages/'),
+    );
+    expect(offenders).toEqual([]);
   });
 
-  it('iosContractFixture no Package.resolved / .swiftpm directory tracked', () => {
+  it('iosContractFixture no tracked Package.resolved / .swiftpm directory', () => {
+    // Package.resolved and .swiftpm/ are user-local caches; they must
+    // never be committed regardless of where they appear.
     const offenders = tracked().filter(
       (f) => f.endsWith('Package.resolved') || f.startsWith('.swiftpm/') || f.includes('/.swiftpm/'),
     );
     expect(offenders).toEqual([]);
   });
 
-  it('iosContractFixture staged diff introduces no .swift / Package.swift / .xcodeproj path', () => {
+  it('iosContractFixture if Swift sources exist, the iOS-1 design doc must exist', () => {
+    const swift = tracked().filter((f) => f.endsWith('.swift'));
+    if (swift.length > 0) {
+      expect(
+        existsSync(
+          resolve(repoRoot, 'docs/ios-native-migration/IOS_1_XCODE_PROJECT_BOOTSTRAP_V1.md'),
+        ),
+        '.swift sources exist but the iOS-1 design doc is missing — Swift arrived outside the sanctioned task',
+      ).toBe(true);
+    }
+  });
+
+  it('iosContractFixture staged diff introduces no .swift / Package.swift / .xcodeproj path outside ios/', () => {
     const offenders = staged().filter(
       (f) =>
-        f.endsWith('.swift') ||
-        f.endsWith('Package.swift') ||
-        f.endsWith('Package.resolved') ||
-        f.endsWith('.xcodeproj') ||
-        f.endsWith('.xcworkspace') ||
-        f.endsWith('.pbxproj') ||
-        f.startsWith('.swiftpm/') ||
-        f.includes('/.swiftpm/'),
+        !f.startsWith('ios/') &&
+        (f.endsWith('.swift') ||
+          f.endsWith('Package.swift') ||
+          f.endsWith('Package.resolved') ||
+          f.endsWith('.xcodeproj') ||
+          f.endsWith('.xcworkspace') ||
+          f.endsWith('.pbxproj') ||
+          f.startsWith('.swiftpm/') ||
+          f.includes('/.swiftpm/')),
     );
     expect(offenders).toEqual([]);
   });
