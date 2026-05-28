@@ -1,0 +1,212 @@
+{
+  "focusStepQueue": [
+    {
+      "blockType": "main",
+      "exerciseId": "bench-press",
+      "exerciseIndex": 0,
+      "id": "main:bench-press:warmup:0",
+      "label": "热身组 1 / 2",
+      "plannedReps": 10,
+      "plannedRestSec": 60,
+      "plannedWeight": 20,
+      "setIndex": 0,
+      "source": "warmup",
+      "stepType": "warmup",
+      "totalSetsForStepType": 2,
+      "warmupPolicy": {
+        "exerciseId": "bench-press",
+        "movementPattern": "horizontal_push",
+        "policy": "required",
+        "reason": "本次训练第一个主动作安排完整热身。",
+        "shouldShowWarmupSets": true,
+        "warmupDecision": "full_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "bench-press",
+      "exerciseIndex": 0,
+      "id": "main:bench-press:warmup:1",
+      "label": "热身组 2 / 2",
+      "plannedReps": 6,
+      "plannedRestSec": 60,
+      "plannedWeight": 40,
+      "setIndex": 1,
+      "source": "warmup",
+      "stepType": "warmup",
+      "totalSetsForStepType": 2,
+      "warmupPolicy": {
+        "exerciseId": "bench-press",
+        "movementPattern": "horizontal_push",
+        "policy": "required",
+        "reason": "本次训练第一个主动作安排完整热身。",
+        "shouldShowWarmupSets": true,
+        "warmupDecision": "full_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "bench-press",
+      "exerciseIndex": 0,
+      "id": "main:bench-press:working:0",
+      "label": "正式组 1 / 3",
+      "plannedReps": 7,
+      "plannedRestSec": 180,
+      "plannedRir": 2,
+      "plannedWeight": 60,
+      "setIndex": 0,
+      "source": "working-set",
+      "stepType": "working",
+      "totalSetsForStepType": 3,
+      "warmupPolicy": {
+        "exerciseId": "bench-press",
+        "movementPattern": "horizontal_push",
+        "policy": "required",
+        "reason": "本次训练第一个主动作安排完整热身。",
+        "shouldShowWarmupSets": true,
+        "warmupDecision": "full_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "bench-press",
+      "exerciseIndex": 0,
+      "id": "main:bench-press:working:1",
+      "label": "正式组 2 / 3",
+      "plannedReps": 7,
+      "plannedRestSec": 180,
+      "plannedRir": 2,
+      "plannedWeight": 60,
+      "setIndex": 1,
+      "source": "working-set",
+      "stepType": "working",
+      "totalSetsForStepType": 3,
+      "warmupPolicy": {
+        "exerciseId": "bench-press",
+        "movementPattern": "horizontal_push",
+        "policy": "required",
+        "reason": "本次训练第一个主动作安排完整热身。",
+        "shouldShowWarmupSets": true,
+        "warmupDecision": "full_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "bench-press",
+      "exerciseIndex": 0,
+      "id": "main:bench-press:working:2",
+      "label": "正式组 3 / 3",
+      "plannedReps": 7,
+      "plannedRestSec": 180,
+      "plannedRir": 2,
+      "plannedWeight": 60,
+      "setIndex": 2,
+      "source": "working-set",
+      "stepType": "working",
+      "totalSetsForStepType": 3,
+      "warmupPolicy": {
+        "exerciseId": "bench-press",
+        "movementPattern": "horizontal_push",
+        "policy": "required",
+        "reason": "本次训练第一个主动作安排完整热身。",
+        "shouldShowWarmupSets": true,
+        "warmupDecision": "full_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "incline-db-press",
+      "exerciseIndex": 1,
+      "id": "main:incline-db-press:working:0",
+      "label": "正式组 1 / 3",
+      "plannedReps": 10,
+      "plannedRestSec": 120,
+      "plannedRir": 2,
+      "plannedWeight": 22.5,
+      "setIndex": 0,
+      "source": "working-set",
+      "stepType": "working",
+      "totalSetsForStepType": 3,
+      "warmupPolicy": {
+        "exerciseId": "incline-db-press",
+        "movementPattern": "horizontal_push",
+        "policy": "none",
+        "reason": "当前动作没有预设热身组。",
+        "shouldShowWarmupSets": false,
+        "warmupDecision": "no_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "incline-db-press",
+      "exerciseIndex": 1,
+      "id": "main:incline-db-press:working:1",
+      "label": "正式组 2 / 3",
+      "plannedReps": 10,
+      "plannedRestSec": 120,
+      "plannedRir": 2,
+      "plannedWeight": 22.5,
+      "setIndex": 1,
+      "source": "working-set",
+      "stepType": "working",
+      "totalSetsForStepType": 3,
+      "warmupPolicy": {
+        "exerciseId": "incline-db-press",
+        "movementPattern": "horizontal_push",
+        "policy": "none",
+        "reason": "当前动作没有预设热身组。",
+        "shouldShowWarmupSets": false,
+        "warmupDecision": "no_warmup"
+      }
+    },
+    {
+      "blockType": "main",
+      "exerciseId": "incline-db-press",
+      "exerciseIndex": 1,
+      "id": "main:incline-db-press:working:2",
+      "label": "正式组 3 / 3",
+      "plannedReps": 10,
+      "plannedRestSec": 120,
+      "plannedRir": 2,
+      "plannedWeight": 22.5,
+      "setIndex": 2,
+      "source": "working-set",
+      "stepType": "working",
+      "totalSetsForStepType": 3,
+      "warmupPolicy": {
+        "exerciseId": "incline-db-press",
+        "movementPattern": "horizontal_push",
+        "policy": "none",
+        "reason": "当前动作没有预设热身组。",
+        "shouldShowWarmupSets": false,
+        "warmupDecision": "no_warmup"
+      }
+    }
+  ],
+  "focusStepQueueLength": 8,
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "focus-mode/golden-path-session-v1"
+  },
+  "primaryActions": {
+    "forActiveStep": "return_local_mode"
+  },
+  "sourceFixtureId": "focus-mode/golden-path-session-v1",
+  "stepIds": [
+    "main:bench-press:warmup:0",
+    "main:bench-press:warmup:1",
+    "main:bench-press:working:0",
+    "main:bench-press:working:1",
+    "main:bench-press:working:2",
+    "main:incline-db-press:working:0",
+    "main:incline-db-press:working:1",
+    "main:incline-db-press:working:2"
+  ],
+  "terminalState": {
+    "lastStepId": "main:incline-db-press:working:2",
+    "lastStepType": "working"
+  }
+}

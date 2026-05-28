@@ -1,0 +1,73 @@
+{
+  "actualSchemaVersion": 8,
+  "cleanAppDataViewBuilt": true,
+  "cleanedHistoryLength": 10,
+  "dataHealthScan": [
+    {
+      "detected": true,
+      "occurrences": 10,
+      "repairId": "sessionLifecycleResidueV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 1,
+      "repairId": "impossibleDurationV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 1,
+      "repairId": "staleTodayStatusV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 1,
+      "repairId": "staleHealthReadinessGuardV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 4,
+      "repairId": "screeningIssueScoreRuntimeGuardV1",
+      "severity": "error"
+    },
+    {
+      "detected": true,
+      "occurrences": 4,
+      "repairId": "screeningIssueScoreRepairV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 10,
+      "repairId": "legacyFinalAdviceIsolationGuardV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 51,
+      "repairId": "setIndexRenumberV1",
+      "severity": "warning"
+    },
+    {
+      "detected": true,
+      "occurrences": 5,
+      "repairId": "replacementEquivalenceAuditV1",
+      "severity": "warning"
+    }
+  ],
+  "expectedSchemaVersion": 8,
+  "fixtureLoaded": true,
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "real-export/redacted-2026-05-27"
+  },
+  "privacyGuardPassed": true,
+  "snapshotHash": "phase19b-55f97dc7",
+  "sourceFixtureId": "real-export/redacted-2026-05-27"
+}
