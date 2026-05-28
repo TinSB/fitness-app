@@ -32,6 +32,17 @@ const FIXTURE_IDS = [
   'data-repair/session-lifecycle-residue-v1',
   'real-export/redacted-2026-05-27',
   'focus-mode/golden-path-session-v1',
+  // iOS-4B0 TrainingDecision parity fixture expansion — 9 synthetic fixtures,
+  // each driving a distinct engine path through the Clean Input Contract.
+  'training-decision/severe-rest-v1',
+  'training-decision/controlled-reload-v1',
+  'training-decision/deload-week-v1',
+  'training-decision/stale-today-status-v1',
+  'training-decision/stale-health-data-v1',
+  'training-decision/restart-28d-gap-v1',
+  'training-decision/productive-floor-v1',
+  'training-decision/no-legacy-advice-v1',
+  'training-decision/clean-input-contract-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -232,8 +243,8 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
   }
 });
 
-describe('parityFixtures — fixture inventory has not silently grown beyond the V1 contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the 5 V1 ids per category', () => {
+describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

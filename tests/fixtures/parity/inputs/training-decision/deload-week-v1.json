@@ -1,0 +1,27 @@
+{
+  "parityMeta": {
+    "id": "training-decision/deload-week-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 deload-week parity — explicitDeloadAssigned (a deliberate plan-phase signal, not a stale-gap artifact) selects sessionIntent='deload-week' with volumeMode='trim' and weeklyDirection='decrease'. Output differs from reentry/restart (which require a training gap).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData with recent sessions (no gap -> phase persisted, NOT reentry/restart). decisionMetadata.explicitDeloadAssigned=true is the deliberate deload-week signal threaded into the Clean Input Contract."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "dl-s1", "daysAgo": 5, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "dl-s2", "daysAgo": 2, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid",
+    "explicitDeloadAssigned": true
+  }
+}

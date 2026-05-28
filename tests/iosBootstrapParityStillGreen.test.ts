@@ -25,7 +25,8 @@ describe('iosBootstrapParityStillGreen', () => {
       },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+5\s+fixture/);
+    // 5 iOS-0 fixtures + 9 iOS-4B0 TrainingDecision parity fixtures = 14.
+    expect(result.stdout).toMatch(/checked\s+14\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 180_000);
 });

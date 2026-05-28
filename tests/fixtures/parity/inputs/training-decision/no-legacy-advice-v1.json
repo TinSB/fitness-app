@@ -1,0 +1,26 @@
+{
+  "parityMeta": {
+    "id": "training-decision/no-legacy-advice-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 legacy-advice-isolation parity — history sessions carry legacy final-advice residue (exercise.suggestion/warning/adjustment + session.explanations). buildCleanAppDataView strips them (cleanInput.diagnostics.legacyAdviceSessionIds non-empty) so the live decision comes only from the v2 engine, never from stale stored advice.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. Two recent sessions seeded with legacyAdvice=true (the synthetic builder injects suggestion/warning/adjustment on each exercise + a session.explanations entry). The golden proves stripLegacyAdviceFromSession removed them before the decision."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "nla-s1", "daysAgo": 5, "legacyAdvice": true, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "nla-s2", "daysAgo": 2, "legacyAdvice": true, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

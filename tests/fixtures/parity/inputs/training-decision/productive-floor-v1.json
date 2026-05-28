@@ -1,0 +1,26 @@
+{
+  "parityMeta": {
+    "id": "training-decision/productive-floor-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 productive-floor parity — a 20-day gap drives reentry, which applies ROLE_FLOORS_REENTRY so main/secondary compounds keep a productive minimum of 2 sets and finalVolumeMultiplier stays at the reentry floor (0.65) without double-trimming to near-zero. Locks the historical all-1-set regression as fixed (minTargetSets >= 1, compounds >= 2).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "97074a0a662b53c49011ce7e65e84f0670e3bfc7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. Last session 20 days before the clock (14-27d reentry window). The reentry role floors are the no-all-1-set guarantee the Swift port must preserve."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "pf-s1", "daysAgo": 34, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "pf-s2", "daysAgo": 20, "sets": [{ "weight": 62.5, "reps": 6 }, { "weight": 62.5, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}
