@@ -196,28 +196,47 @@ describe('iosAppDataSwiftModelsPlan — implementation task spec must include th
   });
 });
 
-describe('iosAppDataSwiftModelsPlan — this PR is planning-only, no Swift models land', () => {
-  it('iosAppDataSwiftModelsPlan no AppData / TrainingSession / TrainingSetLog .swift file exists under ios/', () => {
-    // The plan PR adds NO new Swift sources to the IronPathDomain
-    // package. Only the iOS-1 placeholder is present.
-    for (const f of [
+describe('iosAppDataSwiftModelsPlan — if Swift models land, they must arrive via the sanctioned iOS-2B task', () => {
+  it('iosAppDataSwiftModelsPlan if AppData / TrainingSession / TrainingSetLog / JSONValue .swift files exist, the iOS-2B implementation doc must accompany them', () => {
+    // Originally locked iOS-2A by forbidding any of these Swift
+    // sources. iOS-2B AppData Swift Models V1 lands them
+    // intentionally. The guard evolves: if any of these files
+    // exists, the iOS-2B implementation doc must also exist
+    // (proving the Swift sources arrived via the sanctioned task).
+    const requiredSwiftFiles = [
       'ios/packages/IronPathDomain/Sources/IronPathDomain/AppData.swift',
       'ios/packages/IronPathDomain/Sources/IronPathDomain/TrainingSession.swift',
       'ios/packages/IronPathDomain/Sources/IronPathDomain/TrainingSetLog.swift',
       'ios/packages/IronPathDomain/Sources/IronPathDomain/JSONValue.swift',
-    ]) {
-      expect(existsSync(repoFile(f)), `${f} should not exist in iOS-2A`).toBe(false);
+    ];
+    const anyExists = requiredSwiftFiles.some((f) => existsSync(repoFile(f)));
+    if (anyExists) {
+      expect(
+        existsSync(
+          repoFile('docs/ios-native-migration/IOS_2B_APPDATA_SWIFT_MODELS_V1.md'),
+        ),
+        'Swift AppData models exist but the iOS-2B implementation doc is missing — Swift arrived outside the sanctioned task',
+      ).toBe(true);
+      // If one exists, all four expected ones must exist (no partial
+      // landing).
+      for (const f of requiredSwiftFiles) {
+        expect(existsSync(repoFile(f)), `${f} must exist alongside iOS-2B`).toBe(true);
+      }
     }
   });
 
-  it('iosAppDataSwiftModelsPlan no Fixtures/ resource bundle is created under IronPathDomain tests', () => {
-    expect(
-      existsSync(
-        repoFile(
-          'ios/packages/IronPathDomain/Tests/IronPathDomainTests/Fixtures',
+  it('iosAppDataSwiftModelsPlan if Fixtures/ resource bundle exists, the iOS-2B implementation doc must accompany it', () => {
+    const fixturesDir = repoFile(
+      'ios/packages/IronPathDomain/Tests/IronPathDomainTests/Fixtures',
+    );
+    if (existsSync(fixturesDir)) {
+      expect(
+        existsSync(
+          repoFile('docs/ios-native-migration/IOS_2B_APPDATA_SWIFT_MODELS_V1.md'),
         ),
-      ),
-    ).toBe(false);
+        'Swift test Fixtures/ bundle exists but the iOS-2B implementation doc is missing — Fixtures arrived outside the sanctioned task',
+      ).toBe(true);
+    }
   });
 
   it('iosAppDataSwiftModelsPlan iOS-1 placeholder source survives unchanged', () => {
