@@ -207,11 +207,11 @@ describe('iosTrainingDecisionSwiftPortPlan — TrainingDecision package surface 
       .map((f: string) => readFileSync(resolve(sourcesDir, f), 'utf8'))
       .join('\n');
     // No BARE engine entry (only the branded FromCleanInput wrapper is allowed)
-    // and none of the DEFERRED engines (prescription / readiness / support plan).
-    // getEffectiveTrainingPhase is intentionally NOT forbidden — it is the 4B2 slice.
+    // and none of the STILL-DEFERRED engines (prescription / support plan).
+    // getEffectiveTrainingPhase (4B2) + buildTodayReadiness (4B3) are intentionally
+    // NOT forbidden — they are the ported slices.
     expect(combined).not.toMatch(/func\s+buildTrainingDecision\b/);
     expect(combined).not.toMatch(/func\s+applyStatusRules\b/);
-    expect(combined).not.toMatch(/func\s+buildTodayReadiness\b/);
     expect(combined).not.toMatch(/func\s+build\w*Support\w*Plan\b/);
   });
 

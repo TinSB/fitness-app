@@ -54,17 +54,19 @@ final class TrainingDecisionCleanInputBrandTests: XCTestCase {
         XCTAssertEqual(buildTrainingDecisionFromCleanInput(input).sessionIntent, .deloadWeek)
     }
 
-    func test_deferred_fields_are_carried_but_ignored_by_4B2() {
-        // trainingMode + useHealthDataForReadiness are carried for forward-compat
-        // but NOT read by the 4B2 slice — varying them must not change the output.
-        let view = CoreSliceTestKit.cleanView(sessions: [CoreSliceTestKit.session(id: "d1", gap: 2)])
+    func test_deferred_fields_are_carried_but_ignored() {
+        // trainingMode is carried for forward-compat but NOT read by the slice —
+        // varying it must not change the output. (useHealthDataForReadiness is no
+        // longer purely deferred: iOS-4B3 resolves it onto the slice, so it is
+        // covered by the readiness/controlled-reload tests instead.)
+        let view = CoreSliceTestKit.cleanView(sessions: [CoreSliceTestKit.session(id: "d1", gap: 2)], todayStatus: CoreSliceTestKit.todayStatusJSON())
         let a = createCleanTrainingDecisionInput(
             cleanView: view,
-            metadata: CleanTrainingDecisionInputMetadata(nowIso: CoreSliceTestKit.deterministicClockIso, trainingMode: "strength", useHealthDataForReadiness: true)
+            metadata: CleanTrainingDecisionInputMetadata(nowIso: CoreSliceTestKit.deterministicClockIso, trainingMode: "strength")
         )
         let b = createCleanTrainingDecisionInput(
             cleanView: view,
-            metadata: CleanTrainingDecisionInputMetadata(nowIso: CoreSliceTestKit.deterministicClockIso, trainingMode: "hypertrophy", useHealthDataForReadiness: false)
+            metadata: CleanTrainingDecisionInputMetadata(nowIso: CoreSliceTestKit.deterministicClockIso, trainingMode: "hypertrophy")
         )
         XCTAssertEqual(buildTrainingDecisionFromCleanInput(a), buildTrainingDecisionFromCleanInput(b))
     }

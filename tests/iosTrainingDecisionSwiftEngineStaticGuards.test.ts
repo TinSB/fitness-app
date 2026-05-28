@@ -178,48 +178,55 @@ describe('iosTrainingDecisionSwiftEngine — no deferred engine + no raw AppData
     expect(s).not.toMatch(/\bappData\.history\b/);
   });
 
-  // (16)-(29) deferred engine symbols are absent.
+  // (16)-(29) STILL-deferred engine symbols are absent. iOS-4B3 NOTE: readiness +
+  // e1RM are now legitimately ported (buildTodayReadiness / mapTodayStatusToReadinessInput
+  // / collectPainAreasFromHistory / isE1rmTrendUp / riskLevelFor) — they moved out of
+  // this forbidden list and are positively asserted by
+  // iosTrainingDecisionReadinessE1RMSliceStaticGuards. buildHealthSummary (the health-
+  // summary DELTA) stays deferred. prescription / deload / clamp / modes / lapse /
+  // userFacing remain forbidden until iOS-4B4+.
   const forbiddenSymbols: Array<[number, string, RegExp]> = [
     [16, 'applyStatusRules', /\bapplyStatusRules\b/],
-    [17, 'buildTodayReadiness', /\bbuildTodayReadiness\b/],
-    [18, 'collectPainAreasFromHistory', /\bcollectPainAreasFromHistory\b/],
-    [19, 'mapTodayStatusToReadinessInput', /\bmapTodayStatusToReadinessInput\b/],
-    [20, 'buildAdaptiveDeloadDecision', /\bbuildAdaptiveDeloadDecision\b/],
-    [21, 'clampMultiplier', /\bclampMultiplier\b/],
-    [22, 'riskLevelFor', /\briskLevelFor\b/],
-    [23, 'volumeModeFor', /\bvolumeModeFor\b/],
-    [24, 'intensityModeFor', /\bintensityModeFor\b/],
-    [25, 'progressionModeFor', /\bprogressionModeFor\b/],
-    [26, 'isE1rmTrendUp', /\bisE1rmTrendUp\b/],
-    [27, 'roleOf', /\bfunc\s+roleOf\b/],
-    [28, 'buildTrainingLapseSignal', /\bbuildTrainingLapseSignal\b/],
-    [29, 'buildXxxUserFacing', /\bbuild(Today|Plan|Training|Focus|Progress|Record|Explanation)UserFacing\b/],
+    [17, 'buildAdaptiveDeloadDecision', /\bbuildAdaptiveDeloadDecision\b/],
+    [18, 'clampMultiplier', /\bclampMultiplier\b/],
+    [19, 'volumeModeFor', /\bvolumeModeFor\b/],
+    [20, 'intensityModeFor', /\bintensityModeFor\b/],
+    [21, 'progressionModeFor', /\bprogressionModeFor\b/],
+    [22, 'roleOf', /\bfunc\s+roleOf\b/],
+    [23, 'buildTrainingLapseSignal', /\bbuildTrainingLapseSignal\b/],
+    [24, 'buildHealthSummary', /\bbuildHealthSummary\b/],
+    [25, 'buildXxxUserFacing', /\bbuild(Today|Plan|Training|Focus|Progress|Record|Explanation)UserFacing\b/],
   ];
   for (const [n, label, re] of forbiddenSymbols) {
     it(`iosTrainingDecisionSwiftEngine (${n}) no ${label}`, () => {
-      expect(src(), `${label} (deferred engine) must not appear in the 4B2 slice`).not.toMatch(re);
+      expect(src(), `${label} (deferred engine) must not appear in the core slice`).not.toMatch(re);
     });
   }
 });
 
-describe('iosTrainingDecisionSwiftEngine — readiness deferral + scope honesty', () => {
-  // Readiness deferral is an EXPLICIT, visible constant — not an accidental omission.
-  it('iosTrainingDecisionSwiftEngine readiness inputs are hard-wired false (deferred)', () => {
+describe('iosTrainingDecisionSwiftEngine — readiness wired + scope honesty', () => {
+  // iOS-4B3: readiness + e1RM are now WIRED (no longer hard-wired false). The
+  // engine computes recoveryHigh from readiness.level and e1rmTrendUp from the port.
+  it('iosTrainingDecisionSwiftEngine readiness + e1RM are wired (not hard-coded false)', () => {
     const s = srcText();
-    expect(s).toMatch(/let\s+e1rmTrendUp\s*=\s*false/);
-    expect(s).toMatch(/let\s+recoveryHigh\s*=\s*false/);
+    expect(s).toMatch(/recoveryHigh\s*=\s*readiness\.level\s*==\s*\.low/);
+    expect(s).toMatch(/e1rmTrendUp\s*=\s*TrainingDecisionE1RMTrend\.isE1rmTrendUp/);
+    // The 4B2 hard-wired-false constants are gone.
+    expect(s).not.toMatch(/let\s+e1rmTrendUp\s*=\s*false/);
+    expect(s).not.toMatch(/let\s+recoveryHigh\s*=\s*false/);
   });
 
-  // (30) controlled-reload deferral is documented in the tests AND the design doc.
-  it('iosTrainingDecisionSwiftEngine (30) controlled-reload deferral documented', () => {
+  // (30) controlled-reload is RESOLVED in iOS-4B3 (no longer deferred): the parity
+  // test asserts it matches the golden, and the 4B3 design doc records the unlock.
+  it('iosTrainingDecisionSwiftEngine (30) controlled-reload resolved in iOS-4B3', () => {
     const tests = testText();
-    expect(tests).toMatch(/controlled-reload/);
-    expect(tests.toLowerCase()).toMatch(/defer/);
-    const doc = repoFile('docs/ios-native-migration/IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md');
-    expect(existsSync(doc), 'iOS-4B2 design doc must exist').toBe(true);
+    expect(tests).toMatch(/controlled-reload|controlledReload/);
+    // The parity test no longer carries a deferred/normal-session exception for it.
+    expect(tests).not.toMatch(/controlled-reload computes normal-session/);
+    const doc = repoFile('docs/ios-native-migration/IOS_4B3_READINESS_E1RM_SLICE_V1.md');
+    expect(existsSync(doc), 'iOS-4B3 design doc must exist').toBe(true);
     const docText = readFileSync(doc, 'utf8');
     expect(docText).toMatch(/controlled-reload/);
-    expect(docText.toLowerCase()).toMatch(/defer/);
   });
 
   // (31) 4B2 makes NO full-object TrainingDecision parity claim: the entry returns
