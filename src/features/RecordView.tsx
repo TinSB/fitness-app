@@ -2,6 +2,7 @@ import React from 'react';
 import { Medal, Trash2 } from 'lucide-react';
 import { buildMonthStats, buildPrs } from '../engines/analytics';
 import { buildDataHealthClaritySummary } from '../engines/dataHealthClaritySummary';
+import { readAutoRepairSummary } from '../dataHealth/autoRepairOrchestrator';
 import { buildEffectiveVolumeSummary, evaluateEffectiveSet } from '../engines/effectiveSetEngine';
 import { EFFECTIVE_SET_EXPLANATION_REASON_LABELS } from '../engines/effectiveSetExplanationEngine';
 import { buildE1RMProfile, getExerciseRecordPoolId } from '../engines/e1rmEngine';
@@ -1086,7 +1087,11 @@ export function RecordView({
 
     return (
       <PageSection title="训练记录数据" description="数据健康检查先给安全解释；这里仍只管理训练记录本身：删除、标记测试、恢复正常、排除统计。单位、健康数据和全局备份在“我的”页。">
-        <DataHealthClarityPanel summary={dataHealthClarity} renderIssueActions={renderIssueActions} />
+        <DataHealthClarityPanel
+          summary={dataHealthClarity}
+          renderIssueActions={renderIssueActions}
+          autoRepairSummary={readAutoRepairSummary(data)}
+        />
         {recordCoachActionViewModel.pending.length ? (
           <div className="mb-3">
             <CoachActionList

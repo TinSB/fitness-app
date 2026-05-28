@@ -39,6 +39,10 @@ Thumbs.db
 *.sqlite-wal
 *.sqlite-shm
 
+# raw real-user exports (never commit to public repo — only redacted fixtures)
+tests/fixtures/data-health/*-raw.json
+tests/fixtures/data-health/private-*.json
+
 # Local Codex task prompts/logs
 .codex-tasks/
 .vercel
