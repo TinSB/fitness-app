@@ -30,11 +30,24 @@ interface ForbiddenSymbol {
   readonly name: string;
   readonly owner: string;
   readonly pattern: RegExp;
+  /**
+   * Optional list of repo-relative path prefixes that are EXEMPT from
+   * this symbol's ban. Used by iOS-2B to sanction the AppData model
+   * surface inside `ios/packages/IronPathDomain/` while keeping every
+   * other location forbidden.
+   */
+  readonly exemptPrefixes?: readonly string[];
 }
 
 const BUSINESS_LOGIC: readonly ForbiddenSymbol[] = [
-  // AppData model — owned by iOS-2.
-  { name: 'AppData_struct_or_class', owner: 'iOS-2', pattern: /\b(struct|final\s+class|class)\s+AppData\b/ },
+  // AppData model — sanctioned by iOS-2B inside IronPathDomain ONLY.
+  // A `struct AppData` declared anywhere else still fails the lock.
+  {
+    name: 'AppData_struct_or_class',
+    owner: 'iOS-2 (IronPathDomain)',
+    pattern: /\b(struct|final\s+class|class)\s+AppData\b/,
+    exemptPrefixes: ['ios/packages/IronPathDomain/'],
+  },
   // TrainingDecision engine — owned by iOS-4.
   { name: 'TrainingDecision_type', owner: 'iOS-4', pattern: /\b(struct|class|enum)\s+TrainingDecision\b(?!Version)/ },
   { name: 'buildTrainingDecision_func', owner: 'iOS-4', pattern: /\bfunc\s+buildTrainingDecision\b/ },
@@ -53,28 +66,39 @@ const BUSINESS_LOGIC: readonly ForbiddenSymbol[] = [
 describe('iosBootstrapNoBusinessLogic', () => {
   const swiftFiles = collectSwiftFiles(resolve(repoRoot, 'ios'));
 
-  for (const { name, owner, pattern } of BUSINESS_LOGIC) {
+  for (const { name, owner, pattern, exemptPrefixes } of BUSINESS_LOGIC) {
     it(`iosBootstrap no ${name} declared yet (owned by ${owner})`, () => {
       const hits: string[] = [];
       for (const file of swiftFiles) {
+        const relative = file.replace(`${repoRoot}/`, '');
+        if (exemptPrefixes?.some((prefix) => relative.startsWith(prefix))) continue;
         const text = readFileSync(file, 'utf8');
         if (pattern.test(text)) {
-          hits.push(file.replace(`${repoRoot}/`, ''));
+          hits.push(relative);
         }
       }
       expect(hits, `${name} found in: ${hits.join(', ')}`).toEqual([]);
     });
   }
 
-  it('iosBootstrap every package source file declares only a version constant', () => {
+  it('iosBootstrap every package source file declares only a version constant (IronPathDomain exempt after iOS-2B)', () => {
     const packagesDir = resolve(repoRoot, 'ios/packages');
     for (const pkg of readdirSync(packagesDir, { withFileTypes: true })) {
       if (!pkg.isDirectory()) continue;
+      // IronPathDomain is the sanctioned home of the iOS-2B AppData
+      // model surface. Its `IronPathDomain.swift` file remains
+      // version-constant-only (per the iOS-1 contract), but the
+      // package as a whole now declares many model types. The
+      // per-file scan therefore only checks the `<Pkg>.swift` file
+      // itself; sibling files in `Sources/IronPathDomain/` are
+      // covered by `iosAppDataSwiftModelStaticGuards.test.ts`.
       const sourcePath = resolve(packagesDir, pkg.name, 'Sources', pkg.name, `${pkg.name}.swift`);
       const text = readFileSync(sourcePath, 'utf8');
-      // The only public exported symbol must be the version enum.
+      // The version-constant file's only public exported symbol must
+      // be the version enum, regardless of which package it belongs
+      // to. iOS-2B did NOT modify `IronPathDomain.swift` (the
+      // placeholder is preserved per the iOS-2A plan §5).
       const publicDecls = (text.match(/^\s*public\s+(struct|class|enum|protocol|actor|func|var|let)\b/gm) ?? []);
-      // The exact pattern is `public enum <Pkg>Version`.
       expect(publicDecls.length).toBeLessThanOrEqual(1);
       expect(text).toMatch(new RegExp(`public\\s+enum\\s+${pkg.name}Version\\b`));
       expect(text).toMatch(/public\s+static\s+let\s+value\s*=\s*"0\.0\.1-bootstrap"/);

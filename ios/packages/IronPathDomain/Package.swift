@@ -13,6 +13,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "IronPathDomain"),
-        .testTarget(name: "IronPathDomainTests", dependencies: ["IronPathDomain"]),
+        .testTarget(
+            name: "IronPathDomainTests",
+            dependencies: ["IronPathDomain"],
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )
