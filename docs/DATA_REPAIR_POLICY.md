@@ -57,6 +57,19 @@ If the only honest repair is a new schema field (e.g., promoting `completionQual
 - The original PR is held until the schema change lands.
 - Document this in [REAL_DATA_HEALTH_REPAIR_SYSTEM_V1_PLAN.md §19](REAL_DATA_HEALTH_REPAIR_SYSTEM_V1_PLAN.md#19-open-questions-for-follow-up) so the question is tracked.
 
+## Ingress linkage (V2)
+
+Any feature that introduces or replaces AppData at runtime — file import, backup restore, cloud restore, cloud pull, read mirror, cloud parity, account switch, post-session save, Apple Health import — MUST flow through the central ingress pipeline `src/dataHealth/appDataIngressPipeline.ts:processIncomingAppData`. New ingress paths must:
+
+1. Pick an `AppDataIngressSource` enum value (or add a new one and update the per-source defaults table).
+2. Call `processIncomingAppData({ source, appData, ... })` before adopting the snapshot into local state.
+3. Persist using `result.repairedAppData ?? originalAppData` (gated by `result.shouldPersist`).
+4. Consult `result.shouldBlockCloudUpload` and `result.uploadEligibility` before any cloud write.
+5. Pass the static checks in `tests/dataHealthCloudRestoreLinkageStaticGuards.test.ts`.
+6. No raw cloud / restored AppData may feed `buildTrainingDecisionContext` directly. The engine pipeline already wraps via `buildCleanAppDataView`; any non-pipeline call site must explicitly clean the input.
+
+See [DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md](DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md) for the per-source defaults table and the upload eligibility predicate.
+
 ## Anti-patterns
 
 - **Silent mutation in `sanitizeData`**: `sanitizeData` in `src/storage/appDataSanitize.ts` must remain a shape-coercer, not a semantic repairer. If you need to repair, write a registry entry — do not extend `sanitize`.

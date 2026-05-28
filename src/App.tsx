@@ -106,7 +106,8 @@ import { formatTemplateName } from './i18n/formatters';
 import type { AppData, LoadFeedbackValue, PendingSessionPatch, ProgramAdjustmentDraft, RestTimerState, SessionDataFlag, SupportSkipReason, TrainingMode, TrainingSession, TrainingSetLog, TodayStatus, TrainingTemplate, UnitSettings } from './models/training-model';
 import type { DataHealthActionView } from './presenters/dataHealthPresenter';
 import { loadData, saveData } from './storage/persistence';
-import { runAutoRepairOrchestrator } from './dataHealth/autoRepairOrchestrator';
+import { processIncomingAppData, type AppDataIngressSource } from './dataHealth/appDataIngressPipeline';
+import { buildCleanAppDataView } from './dataHealth/cleanAppDataView';
 import { AddToHomeScreenHint } from './ui/AddToHomeScreenHint';
 import { Card } from './ui/Card';
 import { StatusBadge } from './ui/StatusBadge';
@@ -372,17 +373,17 @@ function App() {
     let cancelled = false;
     void (async () => {
       try {
-        const result = await runAutoRepairOrchestrator({
+        const result = await processIncomingAppData({
+          source: 'boot',
           appData: dataRef.current,
-          triggeredBy: 'boot',
         });
         if (cancelled) return;
-        if (result.changed) {
-          setData(result.appData);
+        if (result.shouldPersist && result.repairedAppData) {
+          setData(result.repairedAppData);
           invalidateDerivedState('data_health_auto_repaired');
         }
       } catch (_error) {
-        // Runtime Guard still protects recommendation even if orchestrator fails.
+        // Runtime Guard still protects recommendation even if pipeline fails.
       }
     })();
     return () => {
@@ -390,6 +391,21 @@ function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const runIngressPipeline = React.useCallback(
+    async (source: AppDataIngressSource, nextData: AppData): Promise<AppData> => {
+      try {
+        const result = await processIncomingAppData({ source, appData: nextData });
+        if (result.shouldPersist && result.repairedAppData) {
+          return result.repairedAppData;
+        }
+      } catch (_error) {
+        // Runtime Guard protects recommendation even if pipeline fails.
+      }
+      return nextData;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!appToast || typeof window === 'undefined') return undefined;
@@ -609,7 +625,9 @@ function App() {
       selectedTemplateId: template.id,
       activeProgramTemplateId: currentActiveTemplateId,
     };
-    const sessionDecisionContext = buildTrainingDecisionContext(workingData, todayKey(), {
+    // dataHealth:linkage — feed CleanAppDataView, not raw workingData, into TrainingDecisionContext.
+    const cleanWorkingData = buildCleanAppDataView(workingData).appData;
+    const sessionDecisionContext = buildTrainingDecisionContext(cleanWorkingData, todayKey(), {
       screeningProfile,
       selectedTemplateId: template.id,
       activeProgramTemplateId: currentActiveTemplateId,
@@ -719,6 +737,14 @@ function App() {
     if (target === 'today') setActiveTab('today');
     else openHistoryTarget();
     invalidateDerivedState('session_completed');
+
+    void (async () => {
+      const repaired = await runIngressPipeline('post-session-complete', completed.data);
+      if (repaired !== completed.data) {
+        commitData(repaired);
+        invalidateDerivedState('data_health_auto_repaired');
+      }
+    })();
   };
 
   const updateStatus = (field: StatusField, value: string) => {
@@ -2172,6 +2198,13 @@ function App() {
                         setData(nextData);
                         setActiveTab('today');
                         invalidateDerivedState('backup_restored');
+                        void (async () => {
+                          const repaired = await runIngressPipeline('backup-restore', nextData);
+                          if (repaired !== nextData) {
+                            setData(repaired);
+                            invalidateDerivedState('data_health_auto_repaired');
+                          }
+                        })();
                       }}
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
@@ -2211,6 +2244,13 @@ function App() {
                         setData(nextData);
                         setActiveTab('today');
                         invalidateDerivedState('backup_restored');
+                        void (async () => {
+                          const repaired = await runIngressPipeline('backup-restore', nextData);
+                          if (repaired !== nextData) {
+                            setData(repaired);
+                            invalidateDerivedState('data_health_auto_repaired');
+                          }
+                        })();
                       }}
                       onApplyProgramAdjustmentDraft={applyProgramAdjustmentDraft}
                       onRollbackProgramAdjustment={rollbackProgramAdjustment}
@@ -2242,10 +2282,24 @@ function App() {
                         setData(nextData);
                         setActiveTab('today');
                         invalidateDerivedState('backup_restored');
+                        void (async () => {
+                          const repaired = await runIngressPipeline('backup-restore', nextData);
+                          if (repaired !== nextData) {
+                            setData(repaired);
+                            invalidateDerivedState('data_health_auto_repaired');
+                          }
+                        })();
                       }}
                       onUpdateHealthData={(nextData) => {
                         setData(nextData);
                         invalidateDerivedState('health_data_imported');
+                        void (async () => {
+                          const repaired = await runIngressPipeline('import-restore', nextData);
+                          if (repaired !== nextData) {
+                            setData(repaired);
+                            invalidateDerivedState('data_health_auto_repaired');
+                          }
+                        })();
                       }}
                       onOpenAssessment={() => setProfileSection('assessment')}
                       onDataHealthAction={handleDataHealthAction}
