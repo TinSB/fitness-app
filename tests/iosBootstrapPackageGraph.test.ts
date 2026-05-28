@@ -27,20 +27,39 @@ const PACKAGES = [
 const readPackageSwift = (pkg: string): string =>
   readFileSync(resolve(repoRoot, `ios/packages/${pkg}/Package.swift`), 'utf8');
 
+/**
+ * Per-package whitelist of sanctioned LOCAL-path package dependencies.
+ * iOS-3A: IronPathDataHealth and IronPathPersistence need to consume
+ * the IronPathDomain typed models, so they declare a single
+ * `.package(path: "../IronPathDomain")` entry. Local-path deps stay
+ * 100% offline — Stop Condition #7 is about REMOTE third-party
+ * SwiftPM, not sibling packages in the same repo.
+ *
+ * Any non-listed package still gets the original zero-`.package(`
+ * lock.
+ */
+const SANCTIONED_LOCAL_PATH_DEPS: Record<string, readonly string[]> = {
+  IronPathDataHealth: ['../IronPathDomain'],
+  IronPathPersistence: ['../IronPathDomain'],
+};
+
 describe('iosBootstrapPackageGraph — every package is local-only', () => {
   for (const pkg of PACKAGES) {
     it(`iosBootstrap ${pkg}: Package.swift declares no remote (or any) package-level dependency`, () => {
       const text = readPackageSwift(pkg);
-      // Any `.package(...)` call inside a Package.swift is a package-level
-      // dependency declaration — whether `.package(url: ...)` (remote),
-      // `.package(path: ...)` (local), or `.package(name: ..., url: ...)`
-      // (remote with alias). iOS-1 has none.
-      //
-      // Note: `.testTarget(..., dependencies: ["IronPath…"])` and
-      // `.target(..., dependencies: ["IronPath…"])` are TARGET-level
-      // dependencies and reference siblings inside the same package; they
-      // are legitimate and must NOT be flagged.
-      expect(text).not.toMatch(/\.package\s*\(/);
+      // Strip any sanctioned local-path deps before scanning.
+      let stripped = text;
+      for (const localPath of SANCTIONED_LOCAL_PATH_DEPS[pkg] ?? []) {
+        const escapedPath = localPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const localPathRe = new RegExp(
+          `\\.package\\(\\s*path:\\s*"${escapedPath}"\\s*\\)`,
+          'g',
+        );
+        stripped = stripped.replace(localPathRe, '/* sanctioned-local-dep */');
+      }
+      // Any remaining `.package(...)` call is a forbidden remote /
+      // unsanctioned local dep.
+      expect(stripped).not.toMatch(/\.package\s*\(/);
     });
 
     it(`iosBootstrap ${pkg}: Package.swift declares iOS 17 platform`, () => {
