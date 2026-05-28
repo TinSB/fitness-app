@@ -70,6 +70,26 @@ Any feature that introduces or replaces AppData at runtime — file import, back
 
 See [DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md](DATA_HEALTH_CLOUD_RESTORE_LINKAGE_V2.md) for the per-source defaults table and the upload eligibility predicate.
 
+## Cloud upload eligibility enforcement (V3)
+
+Any feature that uploads AppData to cloud — explicit first upload, future `cloudPushCandidate`, production-acceptance orchestrator, manual upload, future background sync — MUST call the central guard `src/dataHealth/uploadEligibilityGuard.ts:ensureCloudUploadEligible`. The guard's contract:
+
+1. Always calls `evaluateCloudUploadEligibility` internally. Callers MUST NOT duplicate eligibility logic.
+2. Returns `{ ok, reason, eligibility?, repairSummary?, receiptSummary?, passiveStatus, safeUserMessage, hiddenDebugDetails? }`.
+3. Callers branch ONLY on `guard.ok`. When `guard.ok === false`, the upload MUST NOT happen — no `gateway.writeSnapshot`, no Supabase `.insert`/`.upsert`, no fake success flags.
+4. Failed eligibility MUST surface as a compact passive status (`数据正在自动整理，稍后同步` / `数据已整理完成，可同步` / `同步暂缓，等待数据整理完成`). No modal, no popup, no raw debug dump.
+5. Audit-only findings DO NOT block upload by default. Callers can opt-in with `allowAuditOnly: false` when stricter behavior is required.
+6. New `snapshotKind: 'subsequent-upload'` (V4+) requires a matching repair receipt (`ledgerHashMatches === true`); V3 defaults to `'first-upload'` where the receipt requirement is OFF.
+
+Static enforcement (`tests/cloudUploadEligibilityEnforcementStatic.test.ts`):
+
+- Any non-test file in `src/` outside `cloudProduction/`, `sync/`, `devApi/` that imports `runProductionFullAcceptanceSync`, `buildFirstUploadExplicitApply`, or `runCloudPushCandidate` MUST also import `ensureCloudUploadEligible`.
+- Only `src/dataHealth/uploadEligibility.ts` may export `evaluateCloudUploadEligibility`. No file may declare a parallel evaluator.
+- The guard module MUST NOT import cloud-side write helpers, Supabase clients, or modal/popup primitives.
+- Background/default/cloud-primary sync flags remain off (`cloudPrimaryEnabled: false` / `defaultSyncEnabled: false` / `backgroundWorkEnabled: false` invariants).
+
+See [CLOUD_UPLOAD_ELIGIBILITY_ENFORCEMENT_V3.md](CLOUD_UPLOAD_ELIGIBILITY_ENFORCEMENT_V3.md) for the failure semantics matrix and the per-source / per-snapshot-kind guard behavior.
+
 ## Anti-patterns
 
 - **Silent mutation in `sanitizeData`**: `sanitizeData` in `src/storage/appDataSanitize.ts` must remain a shape-coercer, not a semantic repairer. If you need to repair, write a registry entry — do not extend `sanitize`.
