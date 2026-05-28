@@ -334,11 +334,64 @@ asserts:
   to rewrite.
 * **Backup-first.** The orchestrator calls
   `backupAdapter.snapshot(...)` before any apply. On backup failure,
-  the AppData is NOT mutated and a `backup_failed` ledger entry is
-  written.
+  iOS-3B's stance differs from TS — see §12.1.
 * **Audit-only repairs do not mutate.** `legacyFinalAdviceIsolationGuardV1`
   ships as a runtime_guard layer — its `apply` returns
   `status == .skipped` and `repairedData == appData`.
+
+### 12.1 iOS-3B safety divergences from TS source
+
+Two iOS-3B repairs intentionally diverge from the TS reference for
+data-safety reasons. Both divergences are tested.
+
+**(a) `sessionLifecycleResidueV1.apply` does NOT clear
+`focusActualSetDrafts`.**
+
+* TS (and the iOS-3A `applySessionLifecycleGuard` used in-memory by
+  `CleanAppDataView`) sets `focusActualSetDrafts = []` on every
+  completed session that has drafts.
+* iOS-3B's persistent repair instead **preserves** the array
+  verbatim and only rewrites the 4 active-pointer residue fields:
+  `restTimerState.isRunning`, `currentExerciseId`,
+  `currentFocusStepId`, `currentSetIndex`.
+* Rationale: the drafts are user-entered Focus Mode data. We can't
+  prove on the AppData side that every draft has already been
+  committed to `exercises[].sets`. Persisting a clear here would
+  risk losing unsynced user input.
+* Visibility: drafts are still surfaced in `detect()`'s
+  `userMessage` and in `dryRun()`'s `beforeAfterSample`, so users
+  see the residue. But `detect.detected` is `true` only when at
+  least one cleanable active-pointer field is present — drafts
+  alone don't trigger the orchestrator, which keeps the
+  idempotency-by-`affectedIds` contract stable across runs.
+* In-memory protection is preserved: `CleanAppDataView` still
+  blanks drafts before passing the session to downstream
+  TrainingDecision / Focus Mode signals. The drafts live on
+  disk and only on disk.
+* Tested by `testSessionLifecycleApplyPreservesFocusActualSetDrafts`,
+  `testSessionLifecycleApplyPreservesFocusWarmupSetLogsAndExerciseSetsHistory`,
+  `testSessionLifecycleApplyOnDraftsOnlySessionIsAppDataNoOp`.
+
+**(b) `runAutoRepairOrchestrator` on `backup_failed` does NOT
+persist anything to AppData.**
+
+* TS appends `backup_failed` rows to
+  `settings.dataHealthRepairLedger` and writes a fresh summary blob
+  to `settings.dataHealthAutoRepairSummary` so the next run can see
+  "we tried last time and the backup adapter rejected us".
+* iOS-3B returns `result.appData == input.appData` byte-for-byte.
+  The diagnostic ledger entries and the summary still live in the
+  `result` struct (`.summary`, `.warnings`, `.results == []`) so a
+  caller can react, but nothing touches AppData.
+* Rationale: persisting half-state on backup failure can pollute
+  later idempotency-key matches and make recovery harder. When we
+  can't guarantee a rollback, the safest stance is to leave the
+  on-disk state strictly untouched.
+* Tested by `testBackupFailedFlowDoesNotMutateAppData`,
+  `testBackupFailedDoesNotAppendLedgerEntries`,
+  `testBackupFailedDoesNotWriteAutoRepairSummary`,
+  `testBackupFailedReturnsDiagnosticSummaryInResultStructOnly`,
+  `testBackupFailedReceiptIsNotAppendedToDataRepairLogs`.
 
 ## 13. Non-goals
 

@@ -119,6 +119,8 @@ final class AutoRepairOrchestratorRealExportTests: XCTestCase {
         XCTAssertFalse(secondResult.changed, "changed must be false on the idempotent second run")
     }
 
+    /// iOS-3B safety: backup_failed must return a byte-equal AppData.
+    /// No summary write, no ledger append, no receipt persistence.
     func testBackupFailedFlowDoesNotMutateAppData() throws {
         let appData = try loadRealExport()
         let canonicalBefore = try appData.canonicalJSONData()
@@ -131,15 +133,82 @@ final class AutoRepairOrchestratorRealExportTests: XCTestCase {
         ))
         XCTAssertFalse(result.changed)
         XCTAssertTrue(result.warnings.contains(where: { $0.contains("backup_failed") }))
-        // Strip the summary that the orchestrator writes — that
-        // mutation is sanctioned (no AppData repair occurred, only a
-        // summary-row append happened). The original payload outside
-        // settings must be untouched. We assert by canonical-equality
-        // after stripping the summary key.
-        let resultRoot = result.appData.root
-        let strippedRoot = stripAutoRepairSummary(resultRoot)
-        let canonicalAfter = try JSONValue.object(strippedRoot).canonicalJSONData()
-        XCTAssertEqual(canonicalAfter, canonicalBefore, "backup_failed must not mutate AppData beyond the summary write")
+        // Direct canonical equality — no strip helper needed.
+        let canonicalAfter = try result.appData.canonicalJSONData()
+        XCTAssertEqual(canonicalAfter, canonicalBefore,
+            "backup_failed must leave AppData byte-equal — no summary write, no ledger append")
+    }
+
+    func testBackupFailedDoesNotAppendLedgerEntries() throws {
+        let appData = try loadRealExport()
+        let ledgerBefore = readLedger(appData)
+        let result = try runAutoRepairOrchestrator(AutoRepairOrchestratorInput(
+            appData: appData,
+            triggeredBy: .boot,
+            registry: makeSafeRegistryWithClock(anchorClock),
+            backupAdapter: ThrowingAutoRepairBackupAdapter(),
+            clock: anchorClock
+        ))
+        let ledgerAfter = readLedger(result.appData)
+        XCTAssertEqual(ledgerAfter.count, ledgerBefore.count,
+            "backup_failed must NOT append any ledger entry; runtime guard ledger is preserved as-is")
+        // Every retained entry is bit-equal — i.e. the ledger isn't
+        // re-sorted, re-keyed, or rewritten.
+        for i in 0..<ledgerBefore.count {
+            XCTAssertEqual(ledgerAfter[i], ledgerBefore[i])
+        }
+    }
+
+    func testBackupFailedDoesNotWriteAutoRepairSummary() throws {
+        let appData = try loadRealExport()
+        let summaryBefore = appData.settings.dataHealthAutoRepairSummary
+        let result = try runAutoRepairOrchestrator(AutoRepairOrchestratorInput(
+            appData: appData,
+            triggeredBy: .boot,
+            registry: makeSafeRegistryWithClock(anchorClock),
+            backupAdapter: ThrowingAutoRepairBackupAdapter(),
+            clock: anchorClock
+        ))
+        let summaryAfter = result.appData.settings.dataHealthAutoRepairSummary
+        XCTAssertEqual(summaryAfter, summaryBefore,
+            "backup_failed must NOT write a summary blob into AppData; the summary lives only in the result struct")
+    }
+
+    func testBackupFailedReturnsDiagnosticSummaryInResultStructOnly() throws {
+        let appData = try loadRealExport()
+        let result = try runAutoRepairOrchestrator(AutoRepairOrchestratorInput(
+            appData: appData,
+            triggeredBy: .boot,
+            registry: makeSafeRegistryWithClock(anchorClock),
+            backupAdapter: ThrowingAutoRepairBackupAdapter(),
+            clock: anchorClock
+        ))
+        // Result struct surfaces the diagnostic:
+        XCTAssertTrue(result.warnings.contains(where: {
+            $0.contains("backup_failed: AppData byte-equal to input")
+        }))
+        // No applied repairs.
+        XCTAssertTrue(result.results.isEmpty)
+        XCTAssertFalse(result.changed)
+        // Summary is rebuilt with the failure count visible.
+        XCTAssertNotNil(result.summary.lastRunAt)
+        XCTAssertGreaterThanOrEqual(result.summary.lastFailureCount, 0,
+            "diagnostic summary still computes the failure count even though it's not persisted")
+    }
+
+    func testBackupFailedReceiptIsNotAppendedToDataRepairLogs() throws {
+        let appData = try loadRealExport()
+        let logsBefore = readDataRepairLogs(appData)
+        let result = try runAutoRepairOrchestrator(AutoRepairOrchestratorInput(
+            appData: appData,
+            triggeredBy: .boot,
+            registry: makeSafeRegistryWithClock(anchorClock),
+            backupAdapter: ThrowingAutoRepairBackupAdapter(),
+            clock: anchorClock
+        ))
+        let logsAfter = readDataRepairLogs(result.appData)
+        XCTAssertEqual(logsAfter.count, logsBefore.count,
+            "backup_failed must NOT append any dataRepairLogs receipt")
     }
 
     // MARK: - Helpers
@@ -158,10 +227,11 @@ final class AutoRepairOrchestratorRealExportTests: XCTestCase {
         }
     }
 
-    /// Returns a copy of `root` with `settings.dataHealthAutoRepairSummary`
-    /// removed plus any ledger entries (we strip the summary because the
-    /// orchestrator writes it even on backup_failed, and ledger entries
-    /// because the backup_failed path also appends rows there).
+    /// (Unused after iOS-3B safety review removed the
+    /// backup_failed-writes-to-AppData behaviour.) Left in place for
+    /// the iOS-3C orchestrator audit when broader strip-and-compare
+    /// flows return — it's a one-line caller delete to revive.
+    @available(*, deprecated, message: "Unused after iOS-3B backup_failed safety fix")
     private func stripAutoRepairSummary(_ root: OrderedJSONObject) -> OrderedJSONObject {
         guard case .object(let settings) = (root["settings"] ?? .null) else {
             return root

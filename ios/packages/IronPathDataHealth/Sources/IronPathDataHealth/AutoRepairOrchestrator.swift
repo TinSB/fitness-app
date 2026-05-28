@@ -155,8 +155,22 @@ public func runAutoRepairOrchestrator(
         )
     }
 
-    // 4. Backup-first. On failure → write backup_failed ledger rows
-    //    and return WITHOUT mutating AppData.
+    // 4. Backup-first. On failure → return UNCHANGED AppData.
+    //
+    // iOS-3B safety divergence from TS source: on backup failure we
+    // do NOT persist anything to AppData — no ledger entries, no
+    // summary write, no receipt. The TS implementation appends
+    // `backup_failed` ledger rows and a summary blob to
+    // `settings.dataHealthRepairLedger` / `.dataHealthAutoRepairSummary`
+    // so the next run can see "we tried last time"; the user's safety
+    // brief instead requires backup_failed to leave AppData strictly
+    // unchanged, with the diagnostic surfaced only via the result
+    // struct's `summary` + `warnings` + (the empty) `results` fields.
+    //
+    // Rationale: persisting a half-repaired state on a backup failure
+    // can pollute idempotency-key matching in later runs and make
+    // recovery harder. Leaving AppData byte-equal is the safest stance
+    // when we couldn't guarantee a rollback.
     let backup: AutoRepairBackupRecord
     do {
         backup = try backupAdapter.snapshot(AutoRepairBackupRequest(
@@ -168,8 +182,10 @@ public func runAutoRepairOrchestrator(
     } catch {
         let stampedAt = isoNow(clock)
         let backupFailedKey = "backup-failed-\(appDataHashBefore)"
-        var working = input.appData
-        var newLedgerEntries: [DataHealthRepairLedgerEntry] = []
+        // Build diagnostic-only ledger entries. These are NOT
+        // appended to AppData; they live only in the LedgerSummary
+        // computation feed below.
+        var diagnosticLedgerEntries: [DataHealthRepairLedgerEntry] = []
         for candidate in repairsToApply {
             let entry = buildLedgerEntry(BuildLedgerEntryParams(
                 repairId: candidate.definition.repairId,
@@ -182,10 +198,9 @@ public func runAutoRepairOrchestrator(
                 appDataHashBefore: appDataHashBefore,
                 warnings: ["backup adapter rejected; runtime guard remains active"]
             ))
-            newLedgerEntries.append(entry)
-            working = appendLedgerEntry(working, entry)
+            diagnosticLedgerEntries.append(entry)
         }
-        let combinedLedger = readLedger(input.appData) + newLedgerEntries
+        let combinedLedger = readLedger(input.appData) + diagnosticLedgerEntries
         let summary = buildSummary(
             ledger: combinedLedger,
             auditCount: auditFindings.count,
@@ -194,7 +209,7 @@ public func runAutoRepairOrchestrator(
             now: clock.now()
         )
         return AutoRepairOrchestratorResult(
-            appData: writeSummary(working, summary: summary),
+            appData: input.appData,  // CRITICAL: AppData UNCHANGED.
             changed: false,
             results: [],
             auditFindings: auditFindings,
@@ -202,7 +217,10 @@ public func runAutoRepairOrchestrator(
             appDataHashBefore: appDataHashBefore,
             appDataHashAfter: appDataHashBefore,
             summary: summary,
-            warnings: ["backup_failed: no mutation performed; Runtime Guard still protects recommendation"]
+            warnings: [
+                "backup_failed: no mutation performed; Runtime Guard still protects recommendation",
+                "backup_failed: AppData byte-equal to input; ledger/summary diagnostics live only in the result struct",
+            ]
         )
     }
 

@@ -12,7 +12,7 @@ import Foundation
 final class SafeRepairRecipeTests: XCTestCase {
     // MARK: - sessionLifecycleResidueV1
 
-    func testSessionLifecycleDetectAndApply() throws {
+    func testSessionLifecycleDetectAndApplyClearsActivePointersOnly() throws {
         let restTimer = JSONValue.object(OrderedJSONObject(entries: [
             .init(key: "isRunning", value: .bool(true)),
             .init(key: "remainingMs", value: .number(.integer(5000))),
@@ -46,14 +46,143 @@ final class SafeRepairRecipeTests: XCTestCase {
         let applied = try repair.apply(appData, options: nil)
         XCTAssertEqual(applied.status, .applied)
         XCTAssertEqual(applied.repairedData.schemaVersion.rawValue, 8)
-        // Cleaned session: pointers reset.
+        // Cleaned session: active pointers reset.
         let cleanedHistory = applied.repairedData.history
         XCTAssertEqual(cleanedHistory.first?.currentExerciseId, "")
         XCTAssertEqual(cleanedHistory.first?.currentFocusStepId, "completed")
         XCTAssertEqual(cleanedHistory.first?.currentSetIndex?.intValue, -1)
+        // iOS-3B safety: drafts are PRESERVED, not cleared.
+        XCTAssertEqual(cleanedHistory.first?.focusActualSetDrafts?.count, 1)
 
-        // Idempotency: second detect on repaired data returns false.
-        XCTAssertFalse(repair.detect(applied.repairedData).detected)
+        // Post-state detect: drafts alone do NOT trigger detected=true.
+        // iOS-3B safety + idempotency: detected only when actually
+        // cleanable active-pointer residue is present, so the
+        // orchestrator won't loop on the same affectedIds set.
+        XCTAssertFalse(repair.detect(applied.repairedData).detected,
+            "drafts-only post-state must NOT keep detected=true (iOS-3B idempotency contract)")
+    }
+
+    // MARK: - iOS-3B safety: focusActualSetDrafts + warmup logs preserved
+
+    func testSessionLifecycleApplyPreservesFocusActualSetDrafts() throws {
+        // A completed session with rest-timer running AND drafts.
+        let restTimer = JSONValue.object(OrderedJSONObject(entries: [
+            .init(key: "isRunning", value: .bool(true)),
+        ]))
+        let drafts = [
+            ActualSetDraft(),
+            ActualSetDraft(),
+            ActualSetDraft(),
+        ]
+        let session = TrainingSession(
+            id: "s-keep-drafts",
+            completed: true,
+            restTimerState: restTimer,
+            currentExerciseId: "ex-a",
+            focusActualSetDrafts: drafts
+        )
+        let appData = try makeAppDataWithHistory([session])
+        let repair = SessionLifecycleResidueRepair()
+        let applied = try repair.apply(appData, options: nil)
+        XCTAssertEqual(applied.status, .applied)
+        let cleaned = applied.repairedData.history.first
+        XCTAssertNotNil(cleaned)
+        // Drafts kept verbatim — same count as input.
+        XCTAssertEqual(cleaned?.focusActualSetDrafts?.count, drafts.count)
+        // Active residue cleared.
+        XCTAssertEqual(cleaned?.currentExerciseId, "")
+        if case .object(let obj) = (cleaned?.restTimerState ?? .null) {
+            XCTAssertEqual(obj["isRunning"]?.boolValue, false)
+        } else {
+            XCTFail("restTimerState should still be a JSON object after repair")
+        }
+    }
+
+    func testSessionLifecycleApplyPreservesFocusWarmupSetLogsAndExerciseSetsHistory() throws {
+        // Non-integer doubles to survive JSON round-trip without
+        // collapsing to .integer — that way we can detect mutation
+        // by an apply that fails to preserve the typed value.
+        let warmupLog = TrainingSetLog(
+            id: "w1",
+            weight: .double(42.5),
+            reps: .integer(8),
+            done: true
+        )
+        let workingSet = TrainingSetLog(
+            id: "set1",
+            weight: .double(62.5),
+            reps: .integer(5),
+            done: true
+        )
+        let exercise = ExercisePrescription(
+            id: "ex-bench",
+            sets: [workingSet]
+        )
+        let session = TrainingSession(
+            id: "s-history",
+            completed: true,
+            currentExerciseId: "ex-bench",  // active residue → triggers apply
+            focusActualSetDrafts: [ActualSetDraft()],
+            focusWarmupSetLogs: [warmupLog],
+            exercises: [exercise]
+        )
+        let appData = try makeAppDataWithHistory([session])
+        let repair = SessionLifecycleResidueRepair()
+        let applied = try repair.apply(appData, options: nil)
+        XCTAssertEqual(applied.status, .applied)
+        let cleaned = applied.repairedData.history.first
+        XCTAssertNotNil(cleaned)
+        // Warmup logs preserved byte-for-byte (non-integer double
+        // survives JSON round-trip as .double).
+        XCTAssertEqual(cleaned?.focusWarmupSetLogs?.count, 1)
+        XCTAssertEqual(cleaned?.focusWarmupSetLogs?.first?.id, "w1")
+        XCTAssertEqual(cleaned?.focusWarmupSetLogs?.first?.weight?.doubleValue, 42.5)
+        XCTAssertEqual(cleaned?.focusWarmupSetLogs?.first?.reps?.intValue, 8)
+        XCTAssertEqual(cleaned?.focusWarmupSetLogs?.first?.done, true)
+        // Working-set history preserved.
+        XCTAssertEqual(cleaned?.exercises?.first?.sets?.count, 1)
+        XCTAssertEqual(cleaned?.exercises?.first?.sets?.first?.id, "set1")
+        XCTAssertEqual(cleaned?.exercises?.first?.sets?.first?.weight?.doubleValue, 62.5)
+        XCTAssertEqual(cleaned?.exercises?.first?.sets?.first?.done, true)
+        // Drafts preserved.
+        XCTAssertEqual(cleaned?.focusActualSetDrafts?.count, 1)
+    }
+
+    func testSessionLifecycleApplyOnDraftsOnlySessionIsAppDataNoOp() throws {
+        // Completed session whose ONLY residue is non-empty drafts.
+        let session = TrainingSession(
+            id: "s-drafts-only",
+            completed: true,
+            currentExerciseId: "",         // already clean
+            currentFocusStepId: "completed",
+            currentSetIndex: .integer(-1),
+            focusActualSetDrafts: [ActualSetDraft(), ActualSetDraft()]
+        )
+        let appData = try makeAppDataWithHistory([session])
+        let repair = SessionLifecycleResidueRepair()
+        let detect = repair.detect(appData)
+        // iOS-3B safety + idempotency: drafts alone do NOT trigger
+        // detected=true. The user message still surfaces the drafts
+        // for visibility.
+        XCTAssertFalse(detect.detected,
+            "drafts-only finding must not trigger detected=true (iOS-3B idempotency contract)")
+        XCTAssertTrue(detect.userMessage.localizedCaseInsensitiveContains("drafts"),
+            "drafts-only finding must still appear in userMessage as audit info")
+
+        let applied = try repair.apply(appData, options: nil)
+        XCTAssertEqual(applied.status, .applied)
+        // AppData canonical bytes unchanged — the apply call sees no
+        // active-pointer residue to clean, so it touches nothing.
+        let before = try appData.canonicalJSONData()
+        let after = try applied.repairedData.canonicalJSONData()
+        XCTAssertEqual(before, after,
+            "drafts-only session must not be mutated by apply")
+        // Receipt acknowledges drafts-only as a non-cleanable finding.
+        if case .object(let receiptObj) = applied.receipt {
+            XCTAssertTrue(receiptObj["beforeSummary"]?.stringValue?.contains("drafts") ?? false)
+        } else {
+            XCTFail("receipt must be a JSON object")
+        }
     }
 
     // MARK: - impossibleDurationV1
