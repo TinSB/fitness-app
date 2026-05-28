@@ -193,10 +193,12 @@ describe('iosTrainingDecisionSwiftPortPlan — TrainingDecision package surface 
   // The iOS-4A planning PR did not create the package. iOS-4B1 lands the
   // TYPE SKELETON package only — never an engine. This guard is forward-safe:
   // when the package is absent (iOS-4A state) it passes vacuously; once present
-  // (iOS-4B1+) it asserts the package carries NO decision-engine implementation
-  // (the full skeleton lock lives in
-  // tests/iosTrainingDecisionTypeSkeletonStaticGuards.test.ts).
-  it('iosTrainingDecisionSwiftPortPlan IronPathTrainingDecision package, if present, has no engine', () => {
+  // (iOS-4B1+) it asserts the package carries NO DEFERRED decision-engine
+  // implementation. iOS-4B2 evolution: the effectivePhase + sessionIntent core
+  // slice (getEffectiveTrainingPhase + buildTrainingDecisionFromCleanInput) now
+  // lives here legitimately, so only the still-deferred engines are forbidden.
+  // The detailed lock lives in tests/iosTrainingDecisionSwiftEngineStaticGuards.test.ts.
+  it('iosTrainingDecisionSwiftPortPlan IronPathTrainingDecision package, if present, has no deferred engine', () => {
     const sourcesDir = repoFile('ios/packages/IronPathTrainingDecision/Sources/IronPathTrainingDecision');
     if (!existsSync(sourcesDir)) return; // iOS-4A planning state — package not yet created.
     const { readdirSync } = require('node:fs') as typeof import('node:fs');
@@ -204,11 +206,13 @@ describe('iosTrainingDecisionSwiftPortPlan — TrainingDecision package surface 
     const combined = swift
       .map((f: string) => readFileSync(resolve(sourcesDir, f), 'utf8'))
       .join('\n');
-    // No engine entry point / phase / prescription / readiness compute.
+    // No BARE engine entry (only the branded FromCleanInput wrapper is allowed)
+    // and none of the DEFERRED engines (prescription / readiness / support plan).
+    // getEffectiveTrainingPhase is intentionally NOT forbidden — it is the 4B2 slice.
     expect(combined).not.toMatch(/func\s+buildTrainingDecision\b/);
-    expect(combined).not.toMatch(/func\s+getEffectiveTrainingPhase\b/);
     expect(combined).not.toMatch(/func\s+applyStatusRules\b/);
     expect(combined).not.toMatch(/func\s+buildTodayReadiness\b/);
+    expect(combined).not.toMatch(/func\s+build\w*Support\w*Plan\b/);
   });
 
   // The task doc must record the deferred real-export decision so the rationale

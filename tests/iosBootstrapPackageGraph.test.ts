@@ -43,9 +43,11 @@ const readPackageSwift = (pkg: string): string =>
 const SANCTIONED_LOCAL_PATH_DEPS: Record<string, readonly string[]> = {
   IronPathDataHealth: ['../IronPathDomain'],
   IronPathPersistence: ['../IronPathDomain'],
-  // iOS-4B1: the TrainingDecision type skeleton consumes JSONValue from
-  // IronPathDomain only. The engine's IronPathDataHealth dep arrives in 4B2.
-  IronPathTrainingDecision: ['../IronPathDomain'],
+  // iOS-4B2: the TrainingDecision engine slice consumes CleanAppDataView from
+  // IronPathDataHealth (createCleanTrainingDecisionInput factory) plus JSONValue
+  // from IronPathDomain. Acyclic: IronPathTrainingDecision -> IronPathDataHealth
+  // -> IronPathDomain. DataHealth never depends on TrainingDecision.
+  IronPathTrainingDecision: ['../IronPathDomain', '../IronPathDataHealth'],
 };
 
 describe('iosBootstrapPackageGraph — every package is local-only', () => {

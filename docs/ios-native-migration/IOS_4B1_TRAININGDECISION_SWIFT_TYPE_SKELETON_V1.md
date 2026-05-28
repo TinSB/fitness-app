@@ -178,8 +178,9 @@ yet link IronPathTrainingDecision — wiring is iOS-5+.)
 
 ## 15. Next task
 
-**iOS-4B2 TrainingDecision Core Rule Skeleton V1** — add the
+**iOS-4B2 TrainingDecision Core Rule Skeleton V1** ✅ implemented — added the
 `IronPathDataHealth` dependency + the engine entry signature
 (`buildTrainingDecisionFromCleanInput`) and the first core rules
 (effective-phase + sessionIntent), validated against these 10 goldens via the
 type skeleton this PR landed. The full algorithm port follows in iOS-4B3+.
+See [`IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md`](./IOS_4B2_TRAININGDECISION_CORE_RULE_SKELETON_V1.md).

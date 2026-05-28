@@ -106,11 +106,17 @@ describe('iosTrainingDecisionTypeSkeleton — package + structure', () => {
   });
 });
 
-describe('iosTrainingDecisionTypeSkeleton — NO engine logic', () => {
+describe('iosTrainingDecisionTypeSkeleton — NO deferred engine logic', () => {
+  // iOS-4B2 evolution: the effectivePhase + sessionIntent core slice and the
+  // buildTrainingDecisionFromCleanInput entry now LIVE in this package (locked by
+  // iosTrainingDecisionSwiftEngineStaticGuards). So the former (9)
+  // effectiveTrainingPhase ban is removed here. (8) still forbids a BARE
+  // `func buildTrainingDecision` (the only sanctioned entry is the branded
+  // FromCleanInput wrapper), and (10)/(11)/(12) keep the still-deferred engines
+  // (prescription / supportPlan / readiness) out — those land in iOS-4B3+.
   const src = sourceText();
   const engineFns: Array<[number, string, RegExp]> = [
     [8, 'buildTrainingDecision', /func\s+buildTrainingDecision\b/],
-    [9, 'effectiveTrainingPhase', /func\s+(get|build)?[eE]ffectiveTrainingPhase\b/],
     [10, 'exercisePrescription', /func\s+(apply|prescribe)\w*(Prescription|StatusRules)\b/],
     [11, 'supportPlan', /func\s+build\w*Support\w*Plan\b/],
     [12, 'readinessEngine', /func\s+build\w*Readiness\b/],
@@ -156,13 +162,17 @@ describe('iosTrainingDecisionTypeSkeleton — forbidden imports + macros', () =>
     }
   });
 
-  // (19) No AppData mutation helpers (the skeleton never touches AppData).
+  // (19) No AppData mutation helpers. iOS-4B2 evolution: `import IronPathDataHealth`
+  // is now ALLOWED (the engine consumes CleanAppDataView via the clean-input
+  // factory) — the ban moved to iosTrainingDecisionSwiftEngineStaticguards, which
+  // forbids the engine from CONSTRUCTING a clean view (buildCleanAppDataView) or
+  // reading raw AppData fields. The AppData-mutation greps stay: 4B2 reads the
+  // cleaned projection and never writes AppData.
   it('iosTrainingDecisionTypeSkeleton (19) no AppData mutation helpers', () => {
     const src = sourceText();
     expect(src).not.toMatch(/\.history\.append\b/);
     expect(src).not.toMatch(/\bvar\s+appData\b/);
     expect(src).not.toMatch(/\bappData\.\w+\s*=/);
-    expect(src).not.toMatch(/\bimport\s+IronPathDataHealth\b/); // not needed for the skeleton
   });
 });
 
