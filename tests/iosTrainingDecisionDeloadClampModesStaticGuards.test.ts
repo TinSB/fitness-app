@@ -103,10 +103,9 @@ describe('iosTrainingDecisionDeloadClampModes — surface present', () => {
 
 describe('iosTrainingDecisionDeloadClampModes — still-deferred engines forbidden', () => {
   const src = () => tdSource();
+  // exercise prescription / roleOf / role floors are PORTED in iOS-4B5 — see
+  // iosTrainingDecisionExercisePrescriptionStaticGuards. They no longer appear here.
   const forbidden: Array<[number, string, RegExp]> = [
-    [8, 'exercise prescription (apply/prescribe)', /\bfunc\s+(apply|prescribe)\w*(Prescription|StatusRules)\b/],
-    [9, 'applyStatusRules', /\bapplyStatusRules\b/],
-    [10, 'roleOf', /\bfunc\s+roleOf\b/],
     [11, 'supportPlan', /\bbuild\w*Support\w*Plan\b/],
     [12, 'userFacing builders', /\bbuild(Today|Plan|Training|Focus|Progress|Record|Explanation)UserFacing\b/],
     [13, 'full arbitrationTrace builder', /\bbuild\w*ArbitrationTrace\b/],

@@ -9,8 +9,8 @@ import { describe, expect, it } from 'vitest';
 // core-slice surface exists (entry + clean-input factory + the two engine files),
 // the brand is a compile-time lock (fileprivate init, not Codable), and the
 // IronPathDataHealth dependency arrow is acyclic; and it NEGATIVELY forbids the
-// STILL-deferred engine symbols (exercise prescription / roleOf / support plan /
-// buildHealthSummary aggregation / lapse signal / userFacing) so porting the rest of
+// STILL-deferred engine symbols (support plan / buildHealthSummary aggregation /
+// lapse signal / userFacing) so porting the rest of
 // the engine fails CI rather than review. effectivePhase + sessionIntent (4B2),
 // readiness + e1RM (4B3) and deload + clamp + modes (4B4) are ported and asserted by
 // their own guards. This is the file the iOS-4B task doc forward-references.
@@ -185,13 +185,14 @@ describe('iosTrainingDecisionSwiftEngine — no deferred engine + no raw AppData
   //    clampMultiplier / volumeModeFor / intensityModeFor / progressionModeFor moved
   //    OUT of this forbidden list and are positively asserted by
   //    iosTrainingDecisionDeloadClampModesStaticGuards.
-  // Still forbidden until iOS-4B5/4B6: exercise prescription (applyStatusRules / roleOf),
-  // support plan, the buildHealthSummary AGGREGATION (the readiness health DELTA is
-  // ported; the sample->summary builder is not), buildTrainingLapseSignal (the deload's
-  // lapse-reset is deferred), and the userFacing builders.
+  //  * iOS-4B5 ported the exercise prescription / volume-floor slice — roleOf +
+  //    role floors + the prescribeExercise/applyStatusRules set pipeline moved OUT and
+  //    are positively asserted by iosTrainingDecisionExercisePrescriptionStaticGuards.
+  // Still forbidden until iOS-4B6+: support plan, the buildHealthSummary AGGREGATION
+  // (the readiness health DELTA is ported; the sample->summary builder is not),
+  // buildTrainingLapseSignal (the deload's lapse-reset is deferred), and the userFacing
+  // builders.
   const forbiddenSymbols: Array<[number, string, RegExp]> = [
-    [16, 'applyStatusRules', /\bapplyStatusRules\b/],
-    [22, 'roleOf', /\bfunc\s+roleOf\b/],
     [23, 'buildTrainingLapseSignal', /\bbuildTrainingLapseSignal\b/],
     [24, 'buildHealthSummary', /\bbuildHealthSummary\b/],
     [25, 'buildXxxUserFacing', /\bbuild(Today|Plan|Training|Focus|Progress|Record|Explanation)UserFacing\b/],

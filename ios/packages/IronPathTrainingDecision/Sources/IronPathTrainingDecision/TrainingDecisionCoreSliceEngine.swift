@@ -12,16 +12,17 @@
 //     iOS-4B3). It returns a NARROW TrainingDecisionCoreSlice — NOT a full
 //     TrainingDecision — so nothing it does not compute is fabricated.
 //
-// iOS-4B4 adds the deload + clamp + modes slice: finalVolumeMultiplier (clampMultiplier
-// over an adaptive DeloadDecision) + volumeMode / intensityMode / progressionMode, plus
-// the readiness time-gap penalty + health-summary delta the modes need. The clean input
-// now carries `templateDurationMin` (= template.duration) for the time-gap penalty.
+// iOS-4B4 added the deload + clamp + modes slice (finalVolumeMultiplier + modes).
+// iOS-4B5 adds the exercise prescription / volume-floor slice: roleOf + role floors +
+// the prescribeExercise/applyStatusRules set pipeline + the adaptive conservativeLevel
+// cut -> perExercise / allTargetSets / minTargetSets / exerciseRoleFloors. The clean
+// input now carries the full template exercises (the engine enriches them via the
+// bounded knowledge map). See TrainingDecisionExercisePrescription.swift.
 //
-// OUT OF SCOPE (iOS-4B5+): exercise prescription, role floors, target sets, the support
-// plan object, the full weeklyAdjustment object, userFacing text, and the full ordered
-// arbitrationTrace. This file MUST NOT reference applyStatusRules / roleOf / the
-// prescription/supportPlan engines / the buildXxxUserFacing presenters / the full
-// arbitrationTrace builder / buildHealthSummary / buildTrainingLapseSignal.
+// OUT OF SCOPE (iOS-4B6+ / deferred): the support plan object, the full weeklyAdjustment
+// object, userFacing text, and the full ordered arbitrationTrace. This file MUST NOT
+// reference the supportPlan engine / the buildXxxUserFacing presenters / the full
+// arbitrationTrace builder / buildHealthSummary aggregation / buildTrainingLapseSignal.
 
 import Foundation
 import IronPathDomain
@@ -54,6 +55,9 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
     /// `template.duration` — the planned session minutes, for the readiness time-gap
     /// penalty (readinessEngine.ts:68). nil -> no penalty.
     public var templateDurationMin: Double?
+    /// `template.exercises` — the raw template exercises the iOS-4B5 prescription
+    /// slice consumes (the engine enriches them). Empty -> no perExercise output.
+    public var templateExercises: [TrainingDecisionTemplateExercise]
 
     public init(
         nowIso: String? = nil,
@@ -63,7 +67,8 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
         illnessFlag: Bool? = nil,
         explicitDeloadAssigned: Bool? = nil,
         useHealthDataForReadiness: Bool? = nil,
-        templateDurationMin: Double? = nil
+        templateDurationMin: Double? = nil,
+        templateExercises: [TrainingDecisionTemplateExercise] = []
     ) {
         self.nowIso = nowIso
         self.trainingMode = trainingMode
@@ -73,6 +78,7 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
         self.explicitDeloadAssigned = explicitDeloadAssigned
         self.useHealthDataForReadiness = useHealthDataForReadiness
         self.templateDurationMin = templateDurationMin
+        self.templateExercises = templateExercises
     }
 }
 
@@ -102,6 +108,8 @@ public struct CleanTrainingDecisionInput: Sendable {
     public let useHealthDataForReadiness: Bool?
     /// `template.duration` for the readiness time-gap penalty (iOS-4B4).
     public let templateDurationMin: Double?
+    /// `template.exercises` for the iOS-4B5 prescription slice.
+    public let templateExercises: [TrainingDecisionTemplateExercise]
 
     // --- Carried for forward-compat / signature stability; NOT read yet ---
     public let trainingMode: String?
@@ -119,7 +127,8 @@ public struct CleanTrainingDecisionInput: Sendable {
         todayStatus: TodayStatus,
         screening: ScreeningProfile,
         useHealthDataForReadiness: Bool?,
-        templateDurationMin: Double?
+        templateDurationMin: Double?,
+        templateExercises: [TrainingDecisionTemplateExercise]
     ) {
         self.history = history
         self.mesocyclePlan = mesocyclePlan
@@ -133,6 +142,7 @@ public struct CleanTrainingDecisionInput: Sendable {
         self.screening = screening
         self.useHealthDataForReadiness = useHealthDataForReadiness
         self.templateDurationMin = templateDurationMin
+        self.templateExercises = templateExercises
     }
 }
 
@@ -169,7 +179,8 @@ public func createCleanTrainingDecisionInput(
         todayStatus: cleanView.raw.todayStatus,
         screening: cleanView.cleanedScreening,
         useHealthDataForReadiness: resolvedUseHealth,
-        templateDurationMin: metadata.templateDurationMin
+        templateDurationMin: metadata.templateDurationMin,
+        templateExercises: metadata.templateExercises
     )
 }
 
@@ -199,6 +210,15 @@ public struct TrainingDecisionCoreSlice: Equatable, Sendable {
     public let volumeMode: VolumeMode
     public let intensityMode: IntensityMode
     public let progressionMode: ProgressionMode
+    // --- iOS-4B5 exercise prescription + volume floor ---
+    /// workingSetTargets (trainingDecisionEngine.ts:1968) — the golden `perExercise`
+    /// projection (exerciseId / role / targetSets). Empty when no template is supplied.
+    public let perExercise: [WorkingSetTarget]
+    /// allTargetSets / minTargetSets (parityGoldensEntry.ts:654-655).
+    public let allTargetSets: [Int]
+    public let minTargetSets: Int?
+    /// exerciseRoleFloors (trainingDecisionEngine.ts:1937) — the 4-key role floor map.
+    public let exerciseRoleFloors: [ExerciseRole: Int]
     /// The AR codes the core slice can legitimately emit (AR-1 / AR-2 / AR-5 only).
     /// The golden's FULL ordered arbitrationTrace is deferred to iOS-4B6 and is NOT
     /// compared against this. (clampMultiplier's clampReasons are computed but not
@@ -302,6 +322,23 @@ public func buildTrainingDecisionFromCleanInput(
     let intensityMode = TrainingDecisionModes.intensityModeFor(intent: intent, trainingAdjustment: readiness.trainingAdjustment)
     let progressionMode = TrainingDecisionModes.progressionModeFor(intent: intent, e1rmTrendUp: e1rmTrendUp)
 
+    // iOS-4B5 exercise prescription: roleOf + role floors + the applyStatusRules set
+    // pipeline + the adaptive conservativeLevel cut -> workingSetTargets. Consumes the
+    // already-computed readiness (trainingAdjustment + level) + deload.level +
+    // finalVolumeMultiplier + intent. correctionPriority from the cleaned screening.
+    let prescription = TrainingDecisionExercisePrescription.buildWorkingSetTargets(
+        templateExercises: input.templateExercises,
+        todayStatus: input.todayStatus,
+        readiness: readiness,
+        deloadLevel: deload.level,
+        finalVolumeMultiplier: finalVolumeMultiplier,
+        intent: intent,
+        correctionPriority: input.screening.correctionPriority ?? []
+    )
+    let perExercise = prescription.targets
+    let allTargetSets = perExercise.map { $0.targetSets }
+    let minTargetSets = allTargetSets.min()
+
     // The partial AR trace this slice owns (trainingDecisionEngine.ts:1915, 1927,
     // 1928). clampMultiplier's clampReasons are NOT folded in yet — the full ordered
     // trace (clamp/prescription/weekly/progress codes) is iOS-4B6.
@@ -324,6 +361,10 @@ public func buildTrainingDecisionFromCleanInput(
         volumeMode: volumeMode,
         intensityMode: intensityMode,
         progressionMode: progressionMode,
+        perExercise: perExercise,
+        allTargetSets: allTargetSets,
+        minTargetSets: minTargetSets,
+        exerciseRoleFloors: prescription.exerciseRoleFloors,
         arbitrationTrace: arbitrationTrace
     )
 }

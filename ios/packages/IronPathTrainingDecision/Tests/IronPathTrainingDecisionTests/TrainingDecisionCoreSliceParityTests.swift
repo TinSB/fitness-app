@@ -171,6 +171,78 @@ final class TrainingDecisionCoreSliceParityTests: XCTestCase {
         XCTAssertEqual(slice(for: "severe-rest-v1").progressionMode, .pullBack)
     }
 
+    // MARK: - 3d. perExercise / allTargetSets / exerciseRoleFloors parity (NEW in iOS-4B5)
+
+    func test_perExercise_matches_goldens_on_all_9_expanded_fixtures() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenPer = try XCTUnwrap(golden.perExercise, "\(id): expanded golden must carry perExercise")
+            let computed = slice(for: id).perExercise
+            XCTAssertEqual(computed.count, goldenPer.count, "\(id) perExercise count")
+            for (c, g) in zip(computed, goldenPer) {
+                XCTAssertEqual(c.exerciseId, g.exerciseId, "\(id) perExercise.exerciseId")
+                XCTAssertEqual(c.role.rawValue, g.role, "\(id) perExercise.role for \(g.exerciseId)")
+                XCTAssertEqual(c.targetSets, g.targetSets, "\(id) perExercise.targetSets for \(g.exerciseId)")
+            }
+        }
+    }
+
+    func test_allTargetSets_and_minTargetSets_match_goldens() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenAll = try XCTUnwrap(golden.allTargetSets, "\(id): expanded golden must carry allTargetSets")
+            let computed = slice(for: id)
+            XCTAssertEqual(computed.allTargetSets, goldenAll, "\(id) allTargetSets")
+            if let goldenMin = golden.minTargetSets {
+                XCTAssertEqual(computed.minTargetSets, goldenMin, "\(id) minTargetSets")
+            }
+        }
+    }
+
+    func test_exerciseRoleFloors_match_goldens() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            guard let goldenFloors = golden.exerciseRoleFloors else { continue }
+            let computed = slice(for: id).exerciseRoleFloors
+            // Compare via rawValue keys against the golden's String-keyed map.
+            var computedByString: [String: Int] = [:]
+            for (role, v) in computed { computedByString[role.rawValue] = v }
+            XCTAssertEqual(computedByString, goldenFloors, "\(id) exerciseRoleFloors")
+        }
+    }
+
+    // MARK: - 3e. productive-floor / severe behavior + no-all-1-set protection
+
+    func test_productiveFloor_major_compounds_at_least_2() {
+        // productive-floor-v1 (reentry) + restart-28d-gap-v1 (restart) must keep the
+        // compound movements at >= 2 (REENTRY role floor), NOT crushed to 1.
+        for id in ["productive-floor-v1", "restart-28d-gap-v1"] {
+            let per = slice(for: id).perExercise
+            let compounds = per.filter { $0.role == .mainCompound || $0.role == .secondaryCompound }
+            XCTAssertFalse(compounds.isEmpty, "\(id) must have compound movements")
+            for c in compounds {
+                XCTAssertGreaterThanOrEqual(c.targetSets, 2, "\(id) compound \(c.exerciseId) must be >= 2 (productive floor)")
+            }
+        }
+        // The reentry floor map itself.
+        XCTAssertEqual(slice(for: "productive-floor-v1").exerciseRoleFloors[.secondaryCompound], 2)
+    }
+
+    func test_severeRest_may_be_all_one_set() {
+        // severe-rest is the ONE case where all-1-set is legitimate (real severe signal).
+        let per = slice(for: "severe-rest-v1").perExercise
+        XCTAssertEqual(per.map { $0.targetSets }, [1, 1, 1, 1, 1, 1])
+        // Base / no-legacy normal sessions are NOT all-1 (no regression).
+        XCTAssertEqual(slice(for: "no-legacy-advice-v1").allTargetSets, [2, 2, 1, 1, 3, 2])
+    }
+
+    func test_noLegacyAdvice_prescription_uncontaminated() {
+        // Legacy advice text on history exercises must not change the prescription —
+        // no-legacy-advice-v1 matches the plain base prescription exactly.
+        XCTAssertEqual(slice(for: "no-legacy-advice-v1").allTargetSets,
+                       slice(for: "clean-input-contract-v1").allTargetSets)
+    }
+
     // MARK: - 4. Anti-stub: discriminators force distinct branches
 
     func test_antiStub_phase_discriminators_differ_from_base() throws {
