@@ -191,26 +191,51 @@ describe('iOS-5 parity goldens are unchanged', () => {
 // ---- 24. No package.json / lockfile drift in this PR ----
 
 describe('iOS-5 package.json / lockfile unchanged by this PR', () => {
-  // We use the merge-base with origin/main as the reference. iOS-5 must not
-  // touch package.json or any lockfile. The diff check runs against the
-  // working tree, so it also fails if a stray dependency was added but not
-  // committed yet.
+  // iOS-5 must not touch package.json or any lockfile. The check resolves a
+  // base ref the same way GitHub Actions PR CI does:
+  //   1. if `origin/main` is already a valid ref locally, use it (dev box);
+  //   2. otherwise fetch `main` from origin shallowly and diff FETCH_HEAD
+  //      (CI's actions/checkout default is a shallow clone of the PR head
+  //      only — `origin/main` does not exist until we fetch it).
+  // The diff runs against the working tree, so a stray dependency added but
+  // not yet committed also fails.
+  const resolveBaseRef = (): string => {
+    const haveOriginMain = spawnSync(
+      'git',
+      ['rev-parse', '--verify', '-q', 'origin/main'],
+      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
+    );
+    if (haveOriginMain.status === 0) return 'origin/main';
+    const fetched = spawnSync(
+      'git',
+      ['fetch', '--no-tags', '--depth=1', 'origin', 'main'],
+      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
+    );
+    if (fetched.status !== 0) {
+      throw new Error(
+        `cannot resolve base ref: \`origin/main\` is not a valid ref and \`git fetch origin main\` failed: ${fetched.stderr}`,
+      );
+    }
+    return 'FETCH_HEAD';
+  };
+
   const diffAgainstBase = (paths: string[]): string => {
+    const base = resolveBaseRef();
     const result = spawnSync(
       'git',
-      ['diff', '--name-only', 'origin/main', '--', ...paths],
+      ['diff', '--name-only', base, '--', ...paths],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     if (result.status !== 0) {
-      throw new Error(`git diff failed: ${result.stderr}`);
+      throw new Error(`git diff against ${base} failed: ${result.stderr}`);
     }
     return result.stdout.trim();
   };
 
-  it('iOS-5 package.json is byte-identical to origin/main', () => {
+  it('iOS-5 package.json is byte-identical to main', () => {
     expect(diffAgainstBase(['package.json'])).toBe('');
   });
-  it('iOS-5 package-lock.json is byte-identical to origin/main', () => {
+  it('iOS-5 package-lock.json is byte-identical to main', () => {
     expect(diffAgainstBase(['package-lock.json'])).toBe('');
   });
   it('iOS-5 no yarn.lock / pnpm-lock.yaml is introduced', () => {
