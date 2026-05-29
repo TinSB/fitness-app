@@ -7,7 +7,11 @@ import { describe, expect, it } from 'vitest';
 //
 // Parses ios/IronPath.xcodeproj/project.pbxproj for the load-bearing
 // build settings: iOS 17.0 deployment target, iPhone-only device family,
-// Swift 5.9, no remote SwiftPM reference, eight local package refs.
+// Swift 5.9, no remote SwiftPM reference, nine local package refs.
+//
+// iOS-5 Native Focus Mode Shell V1 evolved the linked-packages count from
+// 8 → 9 by adding IronPathTrainingDecision to the IronPath app target so
+// FocusModeShellView can consume buildTrainingDecisionFromCleanInput.
 // ---------------------------------------------------------------------------
 
 const repoRoot = resolve(process.cwd());
@@ -24,6 +28,7 @@ const PACKAGES = [
   'IronPathBackup',
   'IronPathL10n',
   'IronPathUIKit',
+  'IronPathTrainingDecision',
 ] as const;
 
 describe('iosBootstrapTargetSettings', () => {
@@ -55,7 +60,7 @@ describe('iosBootstrapTargetSettings', () => {
     expect(text).toMatch(/PRODUCT_BUNDLE_IDENTIFIER = com\.ironpath\.app\.ios/);
   });
 
-  it('iosBootstrap project carries 8 XCLocalSwiftPackageReference entries (one per package)', () => {
+  it('iosBootstrap project carries 9 XCLocalSwiftPackageReference entries (one per package)', () => {
     const text = pbxproj();
     const refs = text.match(/isa = XCLocalSwiftPackageReference/g) ?? [];
     expect(refs.length).toBe(PACKAGES.length);
@@ -64,7 +69,7 @@ describe('iosBootstrapTargetSettings', () => {
     }
   });
 
-  it('iosBootstrap project links 8 XCSwiftPackageProductDependency entries', () => {
+  it('iosBootstrap project links 9 XCSwiftPackageProductDependency entries', () => {
     const text = pbxproj();
     const deps = text.match(/isa = XCSwiftPackageProductDependency/g) ?? [];
     expect(deps.length).toBe(PACKAGES.length);
