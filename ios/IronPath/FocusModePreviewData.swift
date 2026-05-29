@@ -1,4 +1,4 @@
-// FocusModePreviewData — iOS-5 Native Focus Mode Shell V1.
+// FocusModePreviewData — iOS-6 Focus Mode Sample Selector V1.
 //
 // Deterministic, in-memory sample input that feeds the real
 // IronPathTrainingDecision engine entry. No Date(), no IO, no AppData mutation,
@@ -9,13 +9,54 @@
 //   AppData (synthesized) -> buildCleanAppDataView -> createCleanTrainingDecisionInput
 //   -> buildTrainingDecisionFromCleanInput -> TrainingDecisionCoreSlice
 //
-// The push-a template + default todayStatus + no mesocycle plan deterministically
-// resolve to: activePhase=base, sessionIntent=normal-session, normal volume floors.
+// iOS-6 adds a scenario dimension. Three scenarios drive the same engine
+// pipeline with different deterministic inputs:
+//   .normal           — recent history (2d / 9d), no acute pain -> base/normal-session.
+//   .productiveFloor  — long gap (34d / 20d), no acute pain -> reentry phase,
+//                       reentryProductive intent. Compound role floors stay at 2,
+//                       so compounds do NOT all collapse to 1 set.
+//   .severeRest       — recent history (5d / 2d) + acutePainReported=true ->
+//                       severeRest intent. Conservative path; compounds may show 1 set.
 
 import Foundation
 import IronPathDomain
 import IronPathDataHealth
 import IronPathTrainingDecision
+
+enum FocusModeSampleScenario: String, CaseIterable, Identifiable {
+    case normal
+    case productiveFloor
+    case severeRest
+
+    var id: String { rawValue }
+
+    var displayLabel: String {
+        switch self {
+        case .normal: return "普通训练 / Normal"
+        case .productiveFloor: return "回归保底 / Productive Floor"
+        case .severeRest: return "严重恢复 / Severe Rest"
+        }
+    }
+
+    var shortLabel: String {
+        switch self {
+        case .normal: return "普通"
+        case .productiveFloor: return "回归保底"
+        case .severeRest: return "严重恢复"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .normal:
+            return "普通训练样例"
+        case .productiveFloor:
+            return "回归/恢复训练下，复合动作仍保留最低有效组数"
+        case .severeRest:
+            return "严重恢复压力下，1 组保守路径是允许的"
+        }
+    }
+}
 
 enum FocusModePreviewData {
 
@@ -71,10 +112,21 @@ enum FocusModePreviewData {
         TrainingSession(id: id, date: dateOnly(daysBefore: gap), completed: true)
     }
 
-    private static func sampleAppData() -> AppData {
+    /// Returns the (later, earlier) day-gaps that drive the scenario.
+    /// Larger gap => later session more days ago.
+    private static func sessionGaps(for scenario: FocusModeSampleScenario) -> (late: Int, early: Int) {
+        switch scenario {
+        case .normal:          return (late: 2, early: 9)
+        case .productiveFloor: return (late: 20, early: 34)
+        case .severeRest:      return (late: 2, early: 5)
+        }
+    }
+
+    private static func sampleAppData(for scenario: FocusModeSampleScenario) -> AppData {
+        let gaps = sessionGaps(for: scenario)
         let history: [JSONValue] = [
-            sampleSession(id: "td-late", daysBefore: 2).encoded(),
-            sampleSession(id: "td-early", daysBefore: 9).encoded(),
+            sampleSession(id: "td-late", daysBefore: gaps.late).encoded(),
+            sampleSession(id: "td-early", daysBefore: gaps.early).encoded(),
         ]
         let entries: [OrderedJSONObject.Entry] = [
             .init(key: "schemaVersion", value: .number(.integer(Int64(SchemaVersion.current.rawValue)))),
@@ -92,13 +144,15 @@ enum FocusModePreviewData {
         return FixedRuntimeGuardClock(date)
     }
 
-    static func sampleCoreSlice() -> TrainingDecisionCoreSlice {
-        let cleanView = buildCleanAppDataView(sampleAppData(), clock: fixedClock())
+    static func sampleCoreSlice(for scenario: FocusModeSampleScenario) -> TrainingDecisionCoreSlice {
+        let cleanView = buildCleanAppDataView(sampleAppData(for: scenario), clock: fixedClock())
+        let acutePain: Bool? = (scenario == .severeRest) ? true : nil
         let input = createCleanTrainingDecisionInput(
             cleanView: cleanView,
             metadata: CleanTrainingDecisionInputMetadata(
                 nowIso: referenceClockIso,
                 trainingMode: "hybrid",
+                acutePainReported: acutePain,
                 templateDurationMin: 60,
                 templateExercises: pushATemplateExercises()
             )
