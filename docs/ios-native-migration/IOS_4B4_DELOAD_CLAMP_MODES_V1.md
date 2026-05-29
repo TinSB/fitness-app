@@ -175,6 +175,9 @@ absent. `xcodebuild` generic + iPhone 17 Pro BUILD SUCCEEDED.
 
 **iOS-4B5 Exercise Prescription + Volume Floor V1** — port `applyStatusRules` /
 `roleOf` / role floors / target sets / `perExercise` / `allTargetSets`, consuming the
-`finalVolumeMultiplier` + the kind floors this slice produces, plus the full template
-(beyond `duration`) and `buildHealthSummary`. Then iOS-4B6 userFacing + full
-arbitrationTrace + full-object parity.
+`finalVolumeMultiplier` + the kind floors this slice produces. ✅ implemented — see
+[`IOS_4B5_EXERCISE_PRESCRIPTION_VOLUME_FLOOR_V1.md`](./IOS_4B5_EXERCISE_PRESCRIPTION_VOLUME_FLOOR_V1.md).
+**Roadmap change:** the next task after 4B5 is **iOS-5 Native Focus Mode Shell +
+TrainingDecision Integration V1** (Xcode-led); iOS-4B6 (userFacing + full
+arbitrationTrace + full-object parity) is DEFERRED / parallel and no longer blocks the
+native UI handover.

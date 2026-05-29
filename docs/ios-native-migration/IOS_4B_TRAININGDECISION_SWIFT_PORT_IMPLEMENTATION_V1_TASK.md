@@ -21,9 +21,12 @@
 >   volume/intensity/progression modes + the readiness time-gap/health/round math).
 >   ✅ implemented. See
 >   [`IOS_4B4_DELOAD_CLAMP_MODES_V1.md`](./IOS_4B4_DELOAD_CLAMP_MODES_V1.md).
-> - Then iOS-4B5 (exercise prescription + volume floor),
->   iOS-4B6 (userFacing + full arbitrationTrace + full-object parity) —
->   matched against the iOS-4B0 goldens via the iOS-4B1 types.
+> - **iOS-4B5** — Exercise prescription + volume floor (perExercise / allTargetSets /
+>   role floors). ✅ implemented. See
+>   [`IOS_4B5_EXERCISE_PRESCRIPTION_VOLUME_FLOOR_V1.md`](./IOS_4B5_EXERCISE_PRESCRIPTION_VOLUME_FLOOR_V1.md).
+> - **Roadmap change:** next is **iOS-5 Native Focus Mode Shell + TrainingDecision
+>   Integration V1** (Xcode-led SwiftUI). iOS-4B6 (userFacing + full arbitrationTrace +
+>   full-object parity) is DEFERRED / parallel — no longer a hard pre-req for native UI.
 >
 > The original "all-at-once" file/test lists below remain the cumulative target;
 > each sub-PR lands a reviewable slice of it.

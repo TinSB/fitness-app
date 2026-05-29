@@ -161,6 +161,23 @@ enum CoreSliceTestKit {
         )
     }
 
+    /// The push-a seed template exercises (defaultTemplates.ts:17-22, RAW fields). The
+    /// Chinese names are LOAD-BEARING: roleOf's English regex must NOT match them (both
+    /// compounds -> secondary-compound). The engine enriches orderPriority /
+    /// contraindications / linkedIssues via the bounded knowledge map. These constants
+    /// must mirror defaultTemplates.ts + exerciseLibrary.ts exactly (no committed
+    /// template fixture exists — this is the independent Swift source of truth).
+    static func pushATemplateExercises() -> [TrainingDecisionTemplateExercise] {
+        [
+            TrainingDecisionTemplateExercise(id: "bench-press", name: "平板卧推", muscle: "胸", kind: "compound", sets: 3, repMin: 6, repMax: 8),
+            TrainingDecisionTemplateExercise(id: "incline-db-press", name: "上斜哑铃卧推", muscle: "胸", kind: "compound", sets: 3, repMin: 8, repMax: 10),
+            TrainingDecisionTemplateExercise(id: "machine-chest-press", name: "器械推胸", muscle: "胸", kind: "machine", sets: 2, repMin: 8, repMax: 12),
+            TrainingDecisionTemplateExercise(id: "cable-fly", name: "绳索夹胸", muscle: "胸", kind: "isolation", sets: 2, repMin: 12, repMax: 15),
+            TrainingDecisionTemplateExercise(id: "lateral-raise", name: "哑铃侧平举", muscle: "肩", kind: "isolation", sets: 4, repMin: 12, repMax: 20),
+            TrainingDecisionTemplateExercise(id: "triceps-pushdown", name: "绳索下压", muscle: "手臂", kind: "isolation", sets: 3, repMin: 10, repMax: 15),
+        ]
+    }
+
     /// Backwards-compatible simple builder (iOS-4B2): two analytics sessions (latest
     /// at `gap`, an older one 7 days prior), default todayStatus, no weights.
     static func makeCleanInput(
@@ -170,6 +187,7 @@ enum CoreSliceTestKit {
         illnessFlag: Bool = false,
         explicitDeloadAssigned: Bool = false,
         templateDurationMin: Double? = 70,
+        templateExercises: [TrainingDecisionTemplateExercise]? = nil,
         mesocyclePlan: JSONValue? = nil
     ) -> CleanTrainingDecisionInput {
         let sessions = [session(id: "td-late", gap: gap), session(id: "td-early", gap: gap + 7)]
@@ -180,7 +198,8 @@ enum CoreSliceTestKit {
                 nowIso: deterministicClockIso, trainingMode: "hybrid",
                 acutePainReported: acutePainReported, injuryFlag: injuryFlag,
                 illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned,
-                templateDurationMin: templateDurationMin
+                templateDurationMin: templateDurationMin,
+                templateExercises: templateExercises ?? pushATemplateExercises()
             )
         )
     }
@@ -198,7 +217,8 @@ enum CoreSliceTestKit {
         illnessFlag: Bool = false,
         explicitDeloadAssigned: Bool = false,
         staleHealthSample: Bool = false,
-        templateDurationMin: Double? = 70
+        templateDurationMin: Double? = 70,
+        templateExercises: [TrainingDecisionTemplateExercise]? = nil
     ) -> CleanTrainingDecisionInput {
         let health: [JSONValue] = staleHealthSample ? [healthSampleJSON(daysAgo: 30)] : []
         let view = cleanView(
@@ -212,7 +232,8 @@ enum CoreSliceTestKit {
                 nowIso: deterministicClockIso, trainingMode: "hybrid",
                 acutePainReported: acutePainReported, injuryFlag: injuryFlag,
                 illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned,
-                templateDurationMin: templateDurationMin
+                templateDurationMin: templateDurationMin,
+                templateExercises: templateExercises ?? pushATemplateExercises()
             )
         )
     }
