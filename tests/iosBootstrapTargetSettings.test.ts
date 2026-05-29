@@ -29,6 +29,9 @@ const PACKAGES = [
   'IronPathL10n',
   'IronPathUIKit',
   'IronPathTrainingDecision',
+  // iOS-12: pure local-snapshot logic extracted into a real Swift package so it
+  // can carry XCTest unit tests; the app target links it like the others.
+  'IronPathLocalSnapshot',
 ] as const;
 
 describe('iosBootstrapTargetSettings', () => {
@@ -60,7 +63,7 @@ describe('iosBootstrapTargetSettings', () => {
     expect(text).toMatch(/PRODUCT_BUNDLE_IDENTIFIER = com\.ironpath\.app\.ios/);
   });
 
-  it('iosBootstrap project carries 9 XCLocalSwiftPackageReference entries (one per package)', () => {
+  it('iosBootstrap project carries one XCLocalSwiftPackageReference entry per local package', () => {
     const text = pbxproj();
     const refs = text.match(/isa = XCLocalSwiftPackageReference/g) ?? [];
     expect(refs.length).toBe(PACKAGES.length);
@@ -69,7 +72,7 @@ describe('iosBootstrapTargetSettings', () => {
     }
   });
 
-  it('iosBootstrap project links 9 XCSwiftPackageProductDependency entries', () => {
+  it('iosBootstrap project links one XCSwiftPackageProductDependency entry per local package', () => {
     const text = pbxproj();
     const deps = text.match(/isa = XCSwiftPackageProductDependency/g) ?? [];
     expect(deps.length).toBe(PACKAGES.length);

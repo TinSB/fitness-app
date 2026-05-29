@@ -44,7 +44,16 @@ const RESTORE_FILES = PERSISTENCE_FILES;
 
 const stripSwiftComments = (s: string): string =>
   s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
-const appPath = (name: string): string => repoFile(`${APP_DIR}/${name}`);
+// iOS-12: pure snapshot/store files were extracted to the IronPathLocalSnapshot
+// Swift package (real unit tests). Resolve them from the package source dir;
+// presentation files stay under the app target.
+const PKG_DIR = 'ios/packages/IronPathLocalSnapshot/Sources/IronPathLocalSnapshot';
+const MOVED_TO_PACKAGE = new Set([
+  'LocalCompletedSessionSnapshot.swift', 'LocalSessionSnapshotStore.swift',
+  'LocalSnapshotValidation.swift', 'LocalSnapshotStats.swift', 'LocalSnapshotMigration.swift',
+]);
+const appPath = (name: string): string =>
+  repoFile(`${MOVED_TO_PACKAGE.has(name) ? PKG_DIR : APP_DIR}/${name}`);
 const appExists = (name: string): boolean => existsSync(appPath(name));
 const appCode = (name: string): string => stripSwiftComments(readFileSync(appPath(name), 'utf8'));
 const joinCode = (names: string[]): string => names.filter(appExists).map(appCode).join('\n');

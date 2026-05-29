@@ -11,16 +11,32 @@
 
 import Foundation
 
-struct LocalSnapshotStats: Equatable {
-    let totalSessions: Int
-    let totalCompletedSets: Int
-    let totalTargetSets: Int
+public struct LocalSnapshotStats: Equatable {
+    public let totalSessions: Int
+    public let totalCompletedSets: Int
+    public let totalTargetSets: Int
     /// completed / target, clamped to [0, 1]; 0 when there is no target volume.
-    let completionRatio: Double
-    let mostRecentScenarioLabel: String?
-    let lastSavedIso: String?
+    public let completionRatio: Double
+    public let mostRecentScenarioLabel: String?
+    public let lastSavedIso: String?
 
-    static let empty = LocalSnapshotStats(
+    public init(
+        totalSessions: Int,
+        totalCompletedSets: Int,
+        totalTargetSets: Int,
+        completionRatio: Double,
+        mostRecentScenarioLabel: String?,
+        lastSavedIso: String?
+    ) {
+        self.totalSessions = totalSessions
+        self.totalCompletedSets = totalCompletedSets
+        self.totalTargetSets = totalTargetSets
+        self.completionRatio = completionRatio
+        self.mostRecentScenarioLabel = mostRecentScenarioLabel
+        self.lastSavedIso = lastSavedIso
+    }
+
+    public static let empty = LocalSnapshotStats(
         totalSessions: 0,
         totalCompletedSets: 0,
         totalTargetSets: 0,
@@ -31,7 +47,7 @@ struct LocalSnapshotStats: Equatable {
 
     /// Derive stats from valid snapshots. Expects newest-first ordering (as the
     /// store returns); the "most recent" fields read the first element.
-    static func derive(from snapshots: [LocalCompletedSessionSnapshot]) -> LocalSnapshotStats {
+    public static func derive(from snapshots: [LocalCompletedSessionSnapshot]) -> LocalSnapshotStats {
         guard !snapshots.isEmpty else { return .empty }
         let totalCompleted = snapshots.reduce(0) { $0 + $1.totalCompletedSets }
         let totalTarget = snapshots.reduce(0) { $0 + $1.totalTargetSets }
@@ -53,7 +69,7 @@ struct LocalSnapshotStats: Equatable {
     }
 
     /// Whole-percent completion for compact display (e.g. "80%").
-    var completionPercentText: String {
+    public var completionPercentText: String {
         "\(Int((completionRatio * 100).rounded()))%"
     }
 }
