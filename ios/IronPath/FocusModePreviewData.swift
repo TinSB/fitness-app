@@ -27,6 +27,7 @@ enum FocusModeSampleScenario: String, CaseIterable, Identifiable {
     case normal
     case productiveFloor
     case severeRest
+    case deloadWeek
 
     var id: String { rawValue }
 
@@ -35,6 +36,7 @@ enum FocusModeSampleScenario: String, CaseIterable, Identifiable {
         case .normal: return "普通训练 / Normal"
         case .productiveFloor: return "回归保底 / Productive Floor"
         case .severeRest: return "严重恢复 / Severe Rest"
+        case .deloadWeek: return "减载周 / Deload Week"
         }
     }
 
@@ -43,6 +45,7 @@ enum FocusModeSampleScenario: String, CaseIterable, Identifiable {
         case .normal: return "普通"
         case .productiveFloor: return "回归保底"
         case .severeRest: return "严重恢复"
+        case .deloadWeek: return "减载周"
         }
     }
 
@@ -54,6 +57,8 @@ enum FocusModeSampleScenario: String, CaseIterable, Identifiable {
             return "回归/恢复训练下，复合动作仍保留最低有效组数"
         case .severeRest:
             return "严重恢复压力下，1 组保守路径是允许的"
+        case .deloadWeek:
+            return "显式减载周：explicitDeloadAssigned=true 触发 deload-week 意图"
         }
     }
 }
@@ -119,6 +124,7 @@ enum FocusModePreviewData {
         case .normal:          return (late: 2, early: 9)
         case .productiveFloor: return (late: 20, early: 34)
         case .severeRest:      return (late: 2, early: 5)
+        case .deloadWeek:      return (late: 2, early: 9)
         }
     }
 
@@ -147,12 +153,17 @@ enum FocusModePreviewData {
     static func sampleCoreSlice(for scenario: FocusModeSampleScenario) -> TrainingDecisionCoreSlice {
         let cleanView = buildCleanAppDataView(sampleAppData(for: scenario), clock: fixedClock())
         let acutePain: Bool? = (scenario == .severeRest) ? true : nil
+        // .deloadWeek is a pure input-shape change (no engine change): the
+        // metadata flag flows through sessionIntentFor to produce
+        // sessionIntent == .deloadWeek.
+        let explicitDeload: Bool? = (scenario == .deloadWeek) ? true : nil
         let input = createCleanTrainingDecisionInput(
             cleanView: cleanView,
             metadata: CleanTrainingDecisionInputMetadata(
                 nowIso: referenceClockIso,
                 trainingMode: "hybrid",
                 acutePainReported: acutePain,
+                explicitDeloadAssigned: explicitDeload,
                 templateDurationMin: 60,
                 templateExercises: pushATemplateExercises()
             )

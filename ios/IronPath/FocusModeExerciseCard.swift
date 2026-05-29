@@ -1,7 +1,8 @@
-// FocusModeExerciseCard — iOS-5 Native Focus Mode Shell V1.
+// FocusModeExerciseCard — iOS-7 Native Focus MVP Bundle V1.
 //
-// One row per exercise: Chinese name + role + target sets + role floor.
-// Pure presentation. No state, no AppData mutation.
+// One row per exercise: Chinese name + role + completed/target sets +
+// role floor. Pure presentation — `completedSets` is supplied by the
+// caller (FocusModeMvpState in the shell). No AppData mutation.
 
 import SwiftUI
 import IronPathTrainingDecision
@@ -18,6 +19,11 @@ struct FocusModeExerciseRow: Identifiable, Equatable {
 
 struct FocusModeExerciseCard: View {
     let row: FocusModeExerciseRow
+    var completedSets: Int = 0
+
+    private var clampedCompleted: Int {
+        max(0, min(row.targetSets, completedSets))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -25,7 +31,7 @@ struct FocusModeExerciseCard: View {
                 Text(row.name)
                     .font(.headline)
                 Spacer()
-                Text("\(row.targetSets) 组")
+                Text("\(clampedCompleted) / \(row.targetSets) 组")
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(.primary)
             }
@@ -76,14 +82,17 @@ struct FocusModeExerciseCard: View {
 }
 
 #Preview {
-    FocusModeExerciseCard(row: FocusModeExerciseRow(
-        id: "bench-press",
-        name: "平板卧推",
-        muscle: "胸",
-        kind: "compound",
-        role: .secondaryCompound,
-        targetSets: 3,
-        roleFloor: 1
-    ))
+    FocusModeExerciseCard(
+        row: FocusModeExerciseRow(
+            id: "bench-press",
+            name: "平板卧推",
+            muscle: "胸",
+            kind: "compound",
+            role: .secondaryCompound,
+            targetSets: 3,
+            roleFloor: 1
+        ),
+        completedSets: 1
+    )
     .padding()
 }

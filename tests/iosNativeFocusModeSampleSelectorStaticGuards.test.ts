@@ -70,9 +70,19 @@ describe('iOS-6 FocusModeShellView hosts a segmented sample selector', () => {
     expect(shell()).toMatch(/\.pickerStyle\s*\(\s*\.segmented\s*\)/);
   });
   it('iOS-6 shell binds the Picker to a FocusModeSampleScenario state', () => {
-    // @State property + Picker selection: $<state>
-    expect(shell()).toMatch(/@State[^\n]*\bFocusModeSampleScenario\b/);
-    expect(shell()).toMatch(/Picker\([^)]*\)\s*\{[\s\S]*?ForEach\s*\(\s*FocusModeSampleScenario\.allCases\s*\)/);
+    // The Picker must iterate the scenario enum. iOS-6 held the scenario as a
+    // local `@State ... FocusModeSampleScenario`; iOS-7 moved it onto a
+    // @StateObject FocusModeMvpState (`selectedScenario: FocusModeSampleScenario`)
+    // and binds the Picker via a Binding (scenarioBinding / state.setScenario).
+    // Accept EITHER mechanism — the load-bearing property is "a segmented Picker
+    // driven by FocusModeSampleScenario", not which property wrapper holds it.
+    const s = shell();
+    const localState = /@State[^\n]*\bFocusModeSampleScenario\b/.test(s);
+    const objectState =
+      /@StateObject[\s\S]*FocusModeMvpState/.test(s) &&
+      (/\bselectedScenario\b/.test(s) || /\bsetScenario\b/.test(s) || /\bscenarioBinding\b/.test(s));
+    expect(localState || objectState, 'shell must hold scenario as @State or via FocusModeMvpState').toBe(true);
+    expect(s).toMatch(/ForEach\s*\(\s*FocusModeSampleScenario\.allCases\s*\)/);
   });
 });
 
