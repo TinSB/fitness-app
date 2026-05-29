@@ -40,9 +40,13 @@ struct LocalCompletedExerciseSnapshot: Codable, Equatable, Identifiable {
 /// is deterministic (`focus-<seq>-<scenarioId>`); `source` marks the origin so
 /// the file is never confused with a real cloud/export payload.
 struct LocalCompletedSessionSnapshot: Codable, Equatable, Identifiable {
-    /// Bumped whenever the on-disk shape changes; lets a future loader reject
-    /// or migrate older files instead of crashing.
-    static let currentSchemaVersion = 1
+    /// Bumped whenever the on-disk shape changes; lets a loader migrate older
+    /// files forward instead of crashing.
+    ///   v1 (iOS-9/10): no `resumeExerciseIndex`.
+    ///   v2 (iOS-11):   adds optional `resumeExerciseIndex` (the resume cursor)
+    ///                  so a saved session can be restored into an in-RAM draft
+    ///                  and continued from where the user left off.
+    static let currentSchemaVersion = 2
 
     let schemaVersion: Int
     let snapshotId: String
@@ -58,6 +62,10 @@ struct LocalCompletedSessionSnapshot: Codable, Equatable, Identifiable {
     let exercises: [LocalCompletedExerciseSnapshot]
     /// Origin marker — always the local Focus MVP. Never raw export data.
     let source: String
+    /// v2: the exercise index to resume on when this session is restored into a
+    /// local draft. Optional so v1 files (which lack it) still decode — they
+    /// migrate to a safe default. Pure presentation/draft hint; never AppData.
+    let resumeExerciseIndex: Int?
 
     var id: String { snapshotId }
 
@@ -75,6 +83,7 @@ struct LocalCompletedSessionSnapshot: Codable, Equatable, Identifiable {
         totalCompletedSets: Int,
         totalTargetSets: Int,
         exercises: [LocalCompletedExerciseSnapshot],
+        resumeExerciseIndex: Int? = nil,
         schemaVersion: Int = LocalCompletedSessionSnapshot.currentSchemaVersion,
         source: String = LocalCompletedSessionSnapshot.localSourceTag
     ) {
@@ -90,6 +99,29 @@ struct LocalCompletedSessionSnapshot: Codable, Equatable, Identifiable {
         self.totalCompletedSets = totalCompletedSets
         self.totalTargetSets = totalTargetSets
         self.exercises = exercises
+        self.resumeExerciseIndex = resumeExerciseIndex
         self.source = source
+    }
+
+    /// A copy with a bumped schema version + filled defaults — used by the
+    /// migration layer. Pure value transform; never touches disk.
+    func upgraded(to version: Int) -> LocalCompletedSessionSnapshot {
+        LocalCompletedSessionSnapshot(
+            snapshotId: snapshotId,
+            createdAtIso: createdAtIso,
+            scenarioId: scenarioId,
+            scenarioLabel: scenarioLabel,
+            sessionIntent: sessionIntent,
+            activePhase: activePhase,
+            deloadLevel: deloadLevel,
+            deloadStrategy: deloadStrategy,
+            totalCompletedSets: totalCompletedSets,
+            totalTargetSets: totalTargetSets,
+            exercises: exercises,
+            // v1 had no resume cursor — default to the start of the session.
+            resumeExerciseIndex: resumeExerciseIndex ?? 0,
+            schemaVersion: version,
+            source: source
+        )
     }
 }

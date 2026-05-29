@@ -67,9 +67,16 @@ enum LocalSnapshotStoreError: Error, LocalizedError, Equatable {
 struct LocalSnapshotScanResult: Equatable {
     let valid: [LocalCompletedSessionSnapshot]
     let invalidNames: [String]
+    /// iOS-11: # of valid files whose ON-DISK schema version was below current
+    /// and were migrated forward in memory.
+    let migratedCount: Int
+    /// iOS-11: counts keyed by the ON-DISK schema version (valid files only).
+    let versionCounts: [Int: Int]
     var invalidCount: Int { invalidNames.count }
 
-    static let empty = LocalSnapshotScanResult(valid: [], invalidNames: [])
+    static let empty = LocalSnapshotScanResult(
+        valid: [], invalidNames: [], migratedCount: 0, versionCounts: [:]
+    )
 }
 
 /// A small, local-only storage status snapshot for the diagnostics surface.
@@ -78,12 +85,16 @@ struct LocalSnapshotStorageDiagnostics: Equatable {
     let validCount: Int
     let invalidCount: Int
     let quarantinedCount: Int
+    let migratedCount: Int
+    let schemaV1Count: Int
+    let schemaV2Count: Int
     let hasLatestPointer: Bool
     let hasBackup: Bool
     let hasExport: Bool
 
     static let empty = LocalSnapshotStorageDiagnostics(
         historyFileCount: 0, validCount: 0, invalidCount: 0, quarantinedCount: 0,
+        migratedCount: 0, schemaV1Count: 0, schemaV2Count: 0,
         hasLatestPointer: false, hasBackup: false, hasExport: false
     )
 }
@@ -297,19 +308,30 @@ struct LocalSessionSnapshotStore {
         }
         var valid: [LocalCompletedSessionSnapshot] = []
         var invalidNames: [String] = []
+        var migratedCount = 0
+        var versionCounts: [Int: Int] = [:]
         for name in names {
             let url = dir.appendingPathComponent(name, isDirectory: false)
-            guard let snapshot = try? decode(at: url) else {
+            guard let result = try? decodeMigrated(at: url) else {
                 invalidNames.append(name)   // corrupt / undecodable JSON
                 continue
             }
-            if LocalSnapshotValidator.isValid(snapshot) {
-                valid.append(snapshot)
+            // The migrated snapshot is validated against the current schema; an
+            // unsupported future-version file fails validation here and is skipped.
+            if LocalSnapshotValidator.isValid(result.snapshot) {
+                valid.append(result.snapshot)
+                versionCounts[result.originalSchemaVersion, default: 0] += 1
+                if result.didMigrate { migratedCount += 1 }
             } else {
                 invalidNames.append(name)   // decoded but failed validation
             }
         }
-        return LocalSnapshotScanResult(valid: valid, invalidNames: invalidNames)
+        return LocalSnapshotScanResult(
+            valid: valid,
+            invalidNames: invalidNames,
+            migratedCount: migratedCount,
+            versionCounts: versionCounts
+        )
     }
 
     /// Quarantine corrupt/invalid history files by renaming them IN PLACE inside
@@ -401,6 +423,9 @@ struct LocalSessionSnapshotStore {
             validCount: scan.valid.count,
             invalidCount: scan.invalidCount,
             quarantinedCount: quarantined,
+            migratedCount: scan.migratedCount,
+            schemaV1Count: scan.versionCounts[1] ?? 0,
+            schemaV2Count: scan.versionCounts[2] ?? 0,
             hasLatestPointer: exists(Self.latestFilename),
             hasBackup: exists(Self.latestBackupFilename),
             hasExport: exists(Self.exportFilename)
@@ -421,18 +446,29 @@ struct LocalSessionSnapshotStore {
         return contents.map { $0.lastPathComponent }
     }
 
-    private func decode(at url: URL) throws -> LocalCompletedSessionSnapshot {
+    /// Decode a file and migrate it forward to the current schema. Returns the
+    /// full migration result (migrated snapshot + on-disk version + didMigrate).
+    private func decodeMigrated(at url: URL) throws -> LocalSnapshotMigrationResult {
         let data: Data
         do {
             data = try Data(contentsOf: url)
         } catch {
             throw LocalSnapshotStoreError.readFailed("\(error)")
         }
+        let raw: LocalCompletedSessionSnapshot
         do {
-            return try Self.makeDecoder().decode(LocalCompletedSessionSnapshot.self, from: data)
+            raw = try Self.makeDecoder().decode(LocalCompletedSessionSnapshot.self, from: data)
         } catch {
             throw LocalSnapshotStoreError.decodeFailed("\(error)")
         }
+        return LocalSnapshotMigration.migrate(raw)
+    }
+
+    /// Decode a file and return the MIGRATED (current-schema) snapshot. All read
+    /// sites get one uniform shape; an unsupported future-version file is
+    /// returned as-is and will fail validation downstream.
+    private func decode(at url: URL) throws -> LocalCompletedSessionSnapshot {
+        try decodeMigrated(at: url).snapshot
     }
 
     /// History filenames only (exclude the latest pointer + its backup).

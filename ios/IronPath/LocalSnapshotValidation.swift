@@ -35,6 +35,8 @@ enum LocalSnapshotValidationIssue: Equatable {
     case completedExceedsTarget
     case totalsMismatch
     case emptyExercises
+    /// v2: `resumeExerciseIndex` is present but out of `[0, exercises.count)`.
+    case invalidResumeIndex
 }
 
 /// Typed validation result. `.isValid` is true only when there are zero issues.
@@ -47,10 +49,11 @@ struct LocalSnapshotValidationResult: Equatable {
 
 enum LocalSnapshotValidator {
 
-    /// The schema versions this build can safely restore. iOS-10 accepts only
-    /// v1; a future bump adds versions here (and a migration path) rather than
-    /// silently restoring an unknown shape.
-    static let acceptedSchemaVersions: Set<Int> = [1]
+    /// The schema versions this build can safely restore. iOS-11 accepts v1 +
+    /// v2 (v1 files migrate forward via LocalSnapshotMigration). A future bump
+    /// adds versions here (and a migration step) rather than silently restoring
+    /// an unknown shape.
+    static let acceptedSchemaVersions: Set<Int> = [1, 2]
 
     /// Validate a decoded snapshot. Returns every issue found (does not stop at
     /// the first) so the UI/diagnostics can explain why a file was skipped.
@@ -88,7 +91,7 @@ enum LocalSnapshotValidator {
             issues.append(.completedExceedsTarget)
         }
 
-        // A v1 completed session must carry exercises.
+        // A completed session must carry exercises.
         if snapshot.exercises.isEmpty {
             issues.append(.emptyExercises)
         } else {
@@ -97,6 +100,11 @@ enum LocalSnapshotValidator {
             let sumTarget = snapshot.exercises.reduce(0) { $0 + $1.targetSets }
             if sumCompleted != snapshot.totalCompletedSets || sumTarget != snapshot.totalTargetSets {
                 issues.append(.totalsMismatch)
+            }
+            // v2: if a resume cursor is present it must point at a real exercise.
+            if let resume = snapshot.resumeExerciseIndex,
+               resume < 0 || resume >= snapshot.exercises.count {
+                issues.append(.invalidResumeIndex)
             }
         }
 

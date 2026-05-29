@@ -32,6 +32,9 @@ struct FocusSavedSessionHistoryView: View {
             if let errorMessage = state.saveErrorMessage {
                 errorBanner(errorMessage)
             }
+            if case .failed(let message) = state.restoreStatus {
+                errorBanner("恢复失败：\(message)")
+            }
             if state.hasInvalidSkipped {
                 invalidWarning
             }
@@ -53,7 +56,12 @@ struct FocusSavedSessionHistoryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
         .sheet(item: $selected) { snapshot in
-            FocusSavedSessionDetailView(snapshot: snapshot)
+            FocusSavedSessionDetailView(snapshot: snapshot) {
+                // Restore-to-local-draft + continue. Dismiss the sheet first,
+                // then restore (which flips the shell to the in-session draft).
+                selected = nil
+                state.restoreDraft(from: snapshot)
+            }
         }
     }
 
@@ -296,6 +304,10 @@ struct FocusSavedSessionHistoryView: View {
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
             Text("备份 \(d.hasBackup ? "有" : "无") · 本机副本 \(d.hasExport ? "有" : "无")")
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+            // iOS-11: schema version breakdown + migration count.
+            Text("schema v1 \(d.schemaV1Count) · v2 \(d.schemaV2Count) · 已迁移 \(d.migratedCount)")
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
         }

@@ -11,11 +11,15 @@ import SwiftUI
 
 struct FocusSavedSessionDetailView: View {
     let snapshot: LocalCompletedSessionSnapshot
+    /// iOS-11: restore this saved session into an in-RAM training draft and
+    /// continue it. Optional so previews can omit it.
+    var onContinue: (() -> Void)? = nil
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headerCard
+                if onContinue != nil { continueCard }
                 contextCard
                 exerciseListCard
                 footerNote
@@ -24,6 +28,24 @@ struct FocusSavedSessionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private var continueCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                onContinue?()
+            } label: {
+                Text("继续这次训练（本机草稿）")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            Text("在本机把这次训练恢复为草稿并继续 · 不写入云端 · 不改动其它数据")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
     }
 
     private var headerCard: some View {

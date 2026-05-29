@@ -61,8 +61,10 @@ describe('iOS-10 schema-versioned validation', () => {
     expect(appExists(VALIDATION_FILE)).toBe(true);
     expect(v()).toMatch(/acceptedSchemaVersions\.contains\s*\(\s*snapshot\.schemaVersion\s*\)/);
   });
-  it('2. accepted schema version list exists ([1])', () => {
-    expect(v()).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*\]/);
+  it('2. accepted schema version list exists (iOS-11: [1, 2])', () => {
+    // iOS-11 added schema v2 (resumeExerciseIndex) + a v1->v2 migration, so the
+    // accepted set widened from [1] to [1, 2]; v1 stays accepted + migratable.
+    expect(v()).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*\]/);
   });
   it('3. unsupported schema version handling exists', () => {
     expect(v()).toMatch(/case\s+unsupportedSchemaVersion\s*\(\s*Int\s*\)/);
