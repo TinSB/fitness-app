@@ -12,12 +12,16 @@
 //     iOS-4B3). It returns a NARROW TrainingDecisionCoreSlice — NOT a full
 //     TrainingDecision — so nothing it does not compute is fabricated.
 //
-// OUT OF SCOPE (iOS-4B3+): exercise prescription, readiness, adaptive deload,
-// finalVolumeMultiplier, riskLevel, volume/intensity/progression modes, the full
-// weeklyAdjustment object, userFacing text, and the full arbitrationTrace. This
-// file MUST NOT reference applyStatusRules / buildTodayReadiness /
-// buildAdaptiveDeloadDecision / isE1rmTrendUp / clampMultiplier / the mode-or
-// helpers / the buildXxxUserFacing presenters.
+// iOS-4B4 adds the deload + clamp + modes slice: finalVolumeMultiplier (clampMultiplier
+// over an adaptive DeloadDecision) + volumeMode / intensityMode / progressionMode, plus
+// the readiness time-gap penalty + health-summary delta the modes need. The clean input
+// now carries `templateDurationMin` (= template.duration) for the time-gap penalty.
+//
+// OUT OF SCOPE (iOS-4B5+): exercise prescription, role floors, target sets, the support
+// plan object, the full weeklyAdjustment object, userFacing text, and the full ordered
+// arbitrationTrace. This file MUST NOT reference applyStatusRules / roleOf / the
+// prescription/supportPlan engines / the buildXxxUserFacing presenters / the full
+// arbitrationTrace builder / buildHealthSummary / buildTrainingLapseSignal.
 
 import Foundation
 import IronPathDomain
@@ -35,9 +39,10 @@ public struct TrainingDecisionSurfaceInputs: Sendable {
 // MARK: - Clean Input metadata
 
 /// The non-AppData metadata the clean-input factory needs. Mirrors
-/// CleanTrainingDecisionInputMetadata (trainingDecisionCleanInput.ts:82). The
-/// iOS-4B2 core slice reads only nowIso + the three severe flags +
-/// explicitDeloadAssigned; the rest are carried for forward-compat.
+/// CleanTrainingDecisionInputMetadata (trainingDecisionCleanInput.ts:82). The TS
+/// metadata carries the full `template`; iOS-4B4 needs only `template.duration` (for
+/// the readiness time-gap penalty), so `templateDurationMin` is carried — the full
+/// template arrives with the prescription slice (iOS-4B5).
 public struct CleanTrainingDecisionInputMetadata: Sendable {
     public var nowIso: String?
     public var trainingMode: String?
@@ -46,6 +51,9 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
     public var illnessFlag: Bool?
     public var explicitDeloadAssigned: Bool?
     public var useHealthDataForReadiness: Bool?
+    /// `template.duration` — the planned session minutes, for the readiness time-gap
+    /// penalty (readinessEngine.ts:68). nil -> no penalty.
+    public var templateDurationMin: Double?
 
     public init(
         nowIso: String? = nil,
@@ -54,7 +62,8 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
         injuryFlag: Bool? = nil,
         illnessFlag: Bool? = nil,
         explicitDeloadAssigned: Bool? = nil,
-        useHealthDataForReadiness: Bool? = nil
+        useHealthDataForReadiness: Bool? = nil,
+        templateDurationMin: Double? = nil
     ) {
         self.nowIso = nowIso
         self.trainingMode = trainingMode
@@ -63,6 +72,7 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
         self.illnessFlag = illnessFlag
         self.explicitDeloadAssigned = explicitDeloadAssigned
         self.useHealthDataForReadiness = useHealthDataForReadiness
+        self.templateDurationMin = templateDurationMin
     }
 }
 
@@ -79,7 +89,7 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
 /// synthesized `init(from:)` would re-open raw construction from arbitrary JSON
 /// and defeat the lock.
 public struct CleanTrainingDecisionInput: Sendable {
-    // --- Consumed by the iOS-4B2 core slice ---
+    // --- Consumed by the core slice (4B2 phase, 4B3 readiness/e1RM, 4B4 deload/modes) ---
     public let history: [TrainingSession]
     public let mesocyclePlan: MesocyclePlan?
     public let nowIso: String?
@@ -87,12 +97,14 @@ public struct CleanTrainingDecisionInput: Sendable {
     public let injuryFlag: Bool?
     public let illnessFlag: Bool?
     public let explicitDeloadAssigned: Bool?
-
-    // --- Carried for forward-compat / signature stability; NOT read in 4B2 ---
-    public let trainingMode: String?
     public let todayStatus: TodayStatus
     public let screening: ScreeningProfile
     public let useHealthDataForReadiness: Bool?
+    /// `template.duration` for the readiness time-gap penalty (iOS-4B4).
+    public let templateDurationMin: Double?
+
+    // --- Carried for forward-compat / signature stability; NOT read yet ---
+    public let trainingMode: String?
 
     /// Brand: only `createCleanTrainingDecisionInput` (same file) can call this.
     fileprivate init(
@@ -106,7 +118,8 @@ public struct CleanTrainingDecisionInput: Sendable {
         trainingMode: String?,
         todayStatus: TodayStatus,
         screening: ScreeningProfile,
-        useHealthDataForReadiness: Bool?
+        useHealthDataForReadiness: Bool?,
+        templateDurationMin: Double?
     ) {
         self.history = history
         self.mesocyclePlan = mesocyclePlan
@@ -119,6 +132,7 @@ public struct CleanTrainingDecisionInput: Sendable {
         self.todayStatus = todayStatus
         self.screening = screening
         self.useHealthDataForReadiness = useHealthDataForReadiness
+        self.templateDurationMin = templateDurationMin
     }
 }
 
@@ -154,7 +168,8 @@ public func createCleanTrainingDecisionInput(
         trainingMode: metadata.trainingMode,
         todayStatus: cleanView.raw.todayStatus,
         screening: cleanView.cleanedScreening,
-        useHealthDataForReadiness: resolvedUseHealth
+        useHealthDataForReadiness: resolvedUseHealth,
+        templateDurationMin: metadata.templateDurationMin
     )
 }
 
@@ -176,9 +191,18 @@ public struct TrainingDecisionCoreSlice: Equatable, Sendable {
     public let riskLevel: RiskLevel
     /// Resolved clean-input contract gate (false when health data is stale).
     public let useHealthDataForReadiness: Bool?
-    /// The AR codes the core slice can legitimately emit (AR-1 / AR-2 only).
-    /// The golden's FULL arbitrationTrace is deferred to iOS-4B6 and is NOT
-    /// compared against this.
+    // --- iOS-4B4 deload + clamp + modes ---
+    /// `readiness.trainingAdjustment` — feeds intensityMode (trainingDecisionEngine.ts:1998).
+    public let trainingAdjustment: ReadinessTrainingAdjustment
+    /// clampMultiplier over the adaptive deload (trainingDecisionEngine.ts:1930).
+    public let finalVolumeMultiplier: Double
+    public let volumeMode: VolumeMode
+    public let intensityMode: IntensityMode
+    public let progressionMode: ProgressionMode
+    /// The AR codes the core slice can legitimately emit (AR-1 / AR-2 / AR-5 only).
+    /// The golden's FULL ordered arbitrationTrace is deferred to iOS-4B6 and is NOT
+    /// compared against this. (clampMultiplier's clampReasons are computed but not
+    /// folded into this partial trace yet — full assembly is iOS-4B6.)
     public let arbitrationTrace: [String]
 }
 
@@ -231,14 +255,16 @@ public func buildTrainingDecisionFromCleanInput(
         || (input.injuryFlag ?? false)
         || (input.illnessFlag ?? false)
 
-    // iOS-4B3: readiness + e1RM are now ported (subjective readiness; health-summary
-    // delta + time-gap penalty deferred — see TrainingDecisionReadiness.swift).
-    // recoveryHigh = readiness.level == .low (trainingDecisionEngine.ts:1918);
-    // e1rmTrendUp = isE1rmTrendUp(history) (line 1917). Together they unlock the
-    // controlled-reload sessionIntent branch.
+    // iOS-4B3/4B4 readiness: subjective + time-gap penalty (templateDurationMin) +
+    // health-summary delta. The engine passes healthSummary: nil — buildHealthSummary
+    // aggregation is deferred (iOS-4B5) and no golden supplies usable non-stale health
+    // data. recoveryHigh = readiness.level == .low (trainingDecisionEngine.ts:1918);
+    // e1rmTrendUp = isE1rmTrendUp(history) (line 1917).
     let readiness = TrainingDecisionReadiness.buildTodayReadiness(
         todayStatus: input.todayStatus,
         history: input.history,
+        templateDurationMin: input.templateDurationMin,
+        healthSummary: nil,
         useHealthDataForReadiness: input.useHealthDataForReadiness
     )
     let recoveryHigh = readiness.level == .low
@@ -250,6 +276,13 @@ public func buildTrainingDecisionFromCleanInput(
         painCount: painCount
     )
 
+    // Adaptive deload (subset) feeds clampMultiplier (trainingDecisionEngine.ts:1900-1934).
+    let deload = TrainingDecisionDeload.buildAdaptiveDeloadDecision(
+        history: input.history,
+        todayStatus: input.todayStatus,
+        screening: input.screening
+    )
+
     let intent = sessionIntentFor(
         effectivePhase: effectivePhase,
         severeFlag: severeFlag,
@@ -258,9 +291,20 @@ public func buildTrainingDecisionFromCleanInput(
         recoveryHigh: recoveryHigh
     )
 
+    // finalVolumeMultiplier + the three modes (trainingDecisionEngine.ts:1930-1999).
+    let clamp = TrainingDecisionModes.clampMultiplier(
+        effectivePhase: effectivePhase,
+        deload: deload,
+        severeFlag: severeFlag
+    )
+    let finalVolumeMultiplier = clamp.multiplier
+    let volumeMode = TrainingDecisionModes.volumeModeFor(intent: intent, multiplier: finalVolumeMultiplier)
+    let intensityMode = TrainingDecisionModes.intensityModeFor(intent: intent, trainingAdjustment: readiness.trainingAdjustment)
+    let progressionMode = TrainingDecisionModes.progressionModeFor(intent: intent, e1rmTrendUp: e1rmTrendUp)
+
     // The partial AR trace this slice owns (trainingDecisionEngine.ts:1915, 1927,
-    // 1928). The full ordered trace (clamp/deload/prescription/progress codes) is
-    // iOS-4B6.
+    // 1928). clampMultiplier's clampReasons are NOT folded in yet — the full ordered
+    // trace (clamp/prescription/weekly/progress codes) is iOS-4B6.
     var arbitrationTrace: [String] = []
     if severeFlag { arbitrationTrace.append("AR-1-severe-override") }
     if intent == .reentryProductive { arbitrationTrace.append("AR-2-reentry-override") }
@@ -275,6 +319,11 @@ public func buildTrainingDecisionFromCleanInput(
         e1rmTrendUp: e1rmTrendUp,
         riskLevel: riskLevel,
         useHealthDataForReadiness: input.useHealthDataForReadiness,
+        trainingAdjustment: readiness.trainingAdjustment,
+        finalVolumeMultiplier: finalVolumeMultiplier,
+        volumeMode: volumeMode,
+        intensityMode: intensityMode,
+        progressionMode: progressionMode,
         arbitrationTrace: arbitrationTrace
     )
 }

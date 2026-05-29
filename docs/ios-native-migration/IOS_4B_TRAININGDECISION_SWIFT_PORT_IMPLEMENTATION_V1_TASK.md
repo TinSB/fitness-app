@@ -17,7 +17,11 @@
 > - **iOS-4B3** — Readiness + e1RM slice (unlocks controlled-reload sessionIntent +
 >   riskLevel). ✅ implemented. See
 >   [`IOS_4B3_READINESS_E1RM_SLICE_V1.md`](./IOS_4B3_READINESS_E1RM_SLICE_V1.md).
-> - Then iOS-4B4 (deload/clamp/modes), iOS-4B5 (exercise prescription),
+> - **iOS-4B4** — Deload + clamp + modes slice (finalVolumeMultiplier +
+>   volume/intensity/progression modes + the readiness time-gap/health/round math).
+>   ✅ implemented. See
+>   [`IOS_4B4_DELOAD_CLAMP_MODES_V1.md`](./IOS_4B4_DELOAD_CLAMP_MODES_V1.md).
+> - Then iOS-4B5 (exercise prescription + volume floor),
 >   iOS-4B6 (userFacing + full arbitrationTrace + full-object parity) —
 >   matched against the iOS-4B0 goldens via the iOS-4B1 types.
 >

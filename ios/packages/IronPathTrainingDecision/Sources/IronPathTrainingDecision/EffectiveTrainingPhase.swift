@@ -31,8 +31,11 @@ public enum EffectivePhaseSeverity: String, Equatable, Sendable {
 
 /// Computed effective training phase — the 6 fields the parity goldens carry
 /// (activePhase/gapDays/mode/severity/overridden/hasHistory) plus persistedPhase
-/// for context. Downstream-only fields (effectiveWeek, volumeMultiplier,
-/// intensityBias, phaseForCompatibility) are deliberately NOT modelled in 4B2.
+/// for context. iOS-4B4 adds `effectiveWeekVolumeMultiplier` — the resolved
+/// `effectiveWeek.volumeMultiplier` (effectiveTrainingPhaseEngine.ts:209) — because
+/// clampMultiplier (trainingDecisionEngine.ts:169) reads exactly that field. The
+/// remaining downstream-only effectiveWeek fields (intensityBias /
+/// phaseForCompatibility) are still NOT modelled (no ported consumer reads them).
 public struct EffectiveTrainingPhase: Equatable, Sendable {
     public let persistedPhase: ActivePhase
     public let activePhase: ActivePhase
@@ -41,6 +44,9 @@ public struct EffectiveTrainingPhase: Equatable, Sendable {
     public let hasHistory: Bool
     public let mode: EffectivePhaseMode
     public let severity: EffectivePhaseSeverity
+    /// `effectiveWeek.volumeMultiplier` — the persisted-week multiplier, OR the
+    /// reentry/restart override (0.65 / 0.5 / 0.75), consumed by clampMultiplier.
+    public let effectiveWeekVolumeMultiplier: Double
 }
 
 enum EffectiveTrainingPhaseEngine {
@@ -91,25 +97,45 @@ enum EffectiveTrainingPhaseEngine {
         let mode: EffectivePhaseMode
         let severity: EffectivePhaseSeverity
         let overridden: Bool
+        /// `decision.weekOverride.volumeMultiplier` (effectiveTrainingPhaseEngine.ts:137).
+        /// nil when no override (effectiveWeek == persistedWeek). reentry/restart pin
+        /// a conservative multiplier (0.65 / 0.5; 0.75 for an 8–13d overload/deload gap).
+        let weekVolumeOverride: Double?
+
+        init(
+            kind: ActivePhase,
+            mode: EffectivePhaseMode,
+            severity: EffectivePhaseSeverity,
+            overridden: Bool,
+            weekVolumeOverride: Double? = nil
+        ) {
+            self.kind = kind
+            self.mode = mode
+            self.severity = severity
+            self.overridden = overridden
+            self.weekVolumeOverride = weekVolumeOverride
+        }
     }
 
     /// deriveDecision (effectiveTrainingPhaseEngine.ts:140). `gapDays == nil`
     /// means no history. Note the 8–13d non-overload/deload branch returns
     /// mode `.cont` but severity `.reentry` — an intentional divergence with no
-    /// golden coverage, locked by the gap-table unit tests.
+    /// golden coverage, locked by the gap-table unit tests. iOS-4B4: each branch
+    /// now also carries `weekVolumeOverride` (the effectiveTrainingPhaseEngine.ts
+    /// weekOverride.volumeMultiplier) so clampMultiplier can read effectiveWeek.
     static func deriveDecision(persistedPhase: ActivePhase, gapDays: Int?) -> Decision {
         guard let days = gapDays else {
             return Decision(kind: persistedPhase, mode: .cont, severity: .none, overridden: false)
         }
         if days >= 28 {
-            return Decision(kind: .restart, mode: .restart, severity: .restart, overridden: true)
+            return Decision(kind: .restart, mode: .restart, severity: .restart, overridden: true, weekVolumeOverride: 0.5)
         }
         if days >= 14 {
-            return Decision(kind: .reentry, mode: .reentry, severity: .reentry, overridden: true)
+            return Decision(kind: .reentry, mode: .reentry, severity: .reentry, overridden: true, weekVolumeOverride: 0.65)
         }
         if days >= 8 {
             if persistedPhase == .overload || persistedPhase == .deload {
-                return Decision(kind: .reentry, mode: .reentry, severity: .reentry, overridden: true)
+                return Decision(kind: .reentry, mode: .reentry, severity: .reentry, overridden: true, weekVolumeOverride: 0.75)
             }
             return Decision(kind: persistedPhase, mode: .cont, severity: .reentry, overridden: false)
         }
@@ -131,6 +157,9 @@ enum EffectiveTrainingPhaseEngine {
         let persistedPhase = persistedWeek.phase
         let gap = daysSinceLastTraining(history: history, referenceDate: referenceDate)
         let decision = deriveDecision(persistedPhase: persistedPhase, gapDays: gap)
+        // effectiveWeek = weekOverride ? {…persistedWeek, volumeMultiplier: override} :
+        // persistedWeek (effectiveTrainingPhaseEngine.ts:209-216).
+        let effectiveWeekVolumeMultiplier = decision.weekVolumeOverride ?? persistedWeek.volumeMultiplier
         return EffectiveTrainingPhase(
             persistedPhase: persistedPhase,
             activePhase: decision.kind,
@@ -138,7 +167,8 @@ enum EffectiveTrainingPhaseEngine {
             overridden: decision.overridden,
             hasHistory: gap != nil,
             mode: decision.mode,
-            severity: decision.severity
+            severity: decision.severity,
+            effectiveWeekVolumeMultiplier: effectiveWeekVolumeMultiplier
         )
     }
 }

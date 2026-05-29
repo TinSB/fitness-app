@@ -5,10 +5,13 @@ import { describe, expect, it } from 'vitest';
 // ---------------------------------------------------------------------------
 // iOS-4B3 Readiness + e1RM Slice V1 — static guards.
 //
-// Locks the iOS-4B3 surface: the SUBJECTIVE readiness slice + e1RM trend now live
-// in IronPathTrainingDecision (and ONLY there), unlocking controlled-reload +
-// riskLevel; everything past readiness (prescription / deload / clamp / modes /
-// userFacing / health-summary delta / full arbitrationTrace) stays forbidden.
+// Locks the iOS-4B3 surface: the SUBJECTIVE readiness slice + e1RM trend live in
+// IronPathTrainingDecision (and ONLY there), unlocking controlled-reload + riskLevel.
+// iOS-4B4 EVOLUTION: deload / clamp / modes are now ported (asserted by
+// iosTrainingDecisionDeloadClampModesStaticGuards), so they moved OUT of the forbidden
+// list below. Still forbidden: exercise prescription / supportPlan / the
+// buildHealthSummary AGGREGATION (the readiness health DELTA is ported) / userFacing /
+// the full arbitrationTrace builder.
 // ---------------------------------------------------------------------------
 
 const repoRoot = resolve(process.cwd());
@@ -85,13 +88,14 @@ describe('iosTrainingDecisionReadinessE1RMSlice — still-deferred engines forbi
     [6, 'exercise prescription (apply/prescribe)', /\bfunc\s+(apply|prescribe)\w*(Prescription|StatusRules)\b/],
     [7, 'applyStatusRules', /\bapplyStatusRules\b/],
     [8, 'supportPlan', /\bbuild\w*Support\w*Plan\b/],
-    [9, 'adaptive deload (build*Deload*)', /\bbuild\w*Deload\w*\b/],
-    [10, 'buildAdaptiveDeloadDecision', /\bbuildAdaptiveDeloadDecision\b/],
-    [11, 'clampMultiplier', /\bclampMultiplier\b/],
+    // deload (build*Deload*) / clampMultiplier are PORTED in iOS-4B4 — see
+    // iosTrainingDecisionDeloadClampModesStaticGuards. They no longer appear here.
     [12, 'userFacing builders', /\bbuild(Today|Plan|Training|Focus|Progress|Record|Explanation)UserFacing\b/],
     [13, 'full arbitrationTrace builder', /\bbuild\w*ArbitrationTrace\b/],
-    // health-summary DELTA stays deferred (only the subjective readiness is ported).
-    [13.5, 'buildHealthSummary', /\bbuildHealthSummary\b/],
+    // The buildHealthSummary AGGREGATION stays deferred (iOS-4B5). The readiness health
+    // DELTA (consuming a HealthSummary) IS ported in iOS-4B4 — but no `buildHealthSummary`
+    // function exists, so this symbol ban still holds.
+    [14, 'buildHealthSummary', /\bbuildHealthSummary\b/],
   ];
   for (const [n, label, re] of forbidden) {
     it(`(${n}) no ${label}`, () => {

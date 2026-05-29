@@ -5,14 +5,15 @@ import { describe, expect, it } from 'vitest';
 // ---------------------------------------------------------------------------
 // iOS-4B2 TrainingDecision Core Rule Skeleton V1 — engine static guards.
 //
-// Bounds the FIRST TrainingDecision engine slice to exactly effectivePhase +
-// sessionIntent. It POSITIVELY asserts the core-slice surface exists (entry +
-// clean-input factory + the two engine files), the brand is a compile-time lock
-// (fileprivate init, not Codable), and the IronPathDataHealth dependency arrow is
-// acyclic; and it NEGATIVELY forbids every deferred engine symbol
-// (prescription / readiness / deload / modes / riskLevel / e1RM / lapse /
-// userFacing) so porting the rest of the engine fails CI rather than review.
-// This is the file the iOS-4B task doc forward-references.
+// Bounds the TrainingDecision engine core slice. It POSITIVELY asserts the
+// core-slice surface exists (entry + clean-input factory + the two engine files),
+// the brand is a compile-time lock (fileprivate init, not Codable), and the
+// IronPathDataHealth dependency arrow is acyclic; and it NEGATIVELY forbids the
+// STILL-deferred engine symbols (exercise prescription / roleOf / support plan /
+// buildHealthSummary aggregation / lapse signal / userFacing) so porting the rest of
+// the engine fails CI rather than review. effectivePhase + sessionIntent (4B2),
+// readiness + e1RM (4B3) and deload + clamp + modes (4B4) are ported and asserted by
+// their own guards. This is the file the iOS-4B task doc forward-references.
 // ---------------------------------------------------------------------------
 
 const repoRoot = resolve(process.cwd());
@@ -178,24 +179,23 @@ describe('iosTrainingDecisionSwiftEngine — no deferred engine + no raw AppData
     expect(s).not.toMatch(/\bappData\.history\b/);
   });
 
-  // (16)-(29) STILL-deferred engine symbols are absent. iOS-4B3 NOTE: readiness +
-  // e1RM are now legitimately ported (buildTodayReadiness / mapTodayStatusToReadinessInput
-  // / collectPainAreasFromHistory / isE1rmTrendUp / riskLevelFor) — they moved out of
-  // this forbidden list and are positively asserted by
-  // iosTrainingDecisionReadinessE1RMSliceStaticGuards. buildHealthSummary (the health-
-  // summary DELTA) stays deferred. prescription / deload / clamp / modes / lapse /
-  // userFacing remain forbidden until iOS-4B4+.
+  // STILL-deferred engine symbols are absent. EVOLUTION:
+  //  * iOS-4B3 ported readiness + e1RM (asserted by the ReadinessE1RMSlice guard).
+  //  * iOS-4B4 ported the deload + clamp + modes slice — buildAdaptiveDeloadDecision /
+  //    clampMultiplier / volumeModeFor / intensityModeFor / progressionModeFor moved
+  //    OUT of this forbidden list and are positively asserted by
+  //    iosTrainingDecisionDeloadClampModesStaticGuards.
+  // Still forbidden until iOS-4B5/4B6: exercise prescription (applyStatusRules / roleOf),
+  // support plan, the buildHealthSummary AGGREGATION (the readiness health DELTA is
+  // ported; the sample->summary builder is not), buildTrainingLapseSignal (the deload's
+  // lapse-reset is deferred), and the userFacing builders.
   const forbiddenSymbols: Array<[number, string, RegExp]> = [
     [16, 'applyStatusRules', /\bapplyStatusRules\b/],
-    [17, 'buildAdaptiveDeloadDecision', /\bbuildAdaptiveDeloadDecision\b/],
-    [18, 'clampMultiplier', /\bclampMultiplier\b/],
-    [19, 'volumeModeFor', /\bvolumeModeFor\b/],
-    [20, 'intensityModeFor', /\bintensityModeFor\b/],
-    [21, 'progressionModeFor', /\bprogressionModeFor\b/],
     [22, 'roleOf', /\bfunc\s+roleOf\b/],
     [23, 'buildTrainingLapseSignal', /\bbuildTrainingLapseSignal\b/],
     [24, 'buildHealthSummary', /\bbuildHealthSummary\b/],
     [25, 'buildXxxUserFacing', /\bbuild(Today|Plan|Training|Focus|Progress|Record|Explanation)UserFacing\b/],
+    [26, 'supportPlan', /\bbuild\w*Support\w*Plan\b/],
   ];
   for (const [n, label, re] of forbiddenSymbols) {
     it(`iosTrainingDecisionSwiftEngine (${n}) no ${label}`, () => {
