@@ -210,6 +210,12 @@ public struct TrainingDecisionCoreSlice: Equatable, Sendable {
     public let volumeMode: VolumeMode
     public let intensityMode: IntensityMode
     public let progressionMode: ProgressionMode
+    /// iOS-8: the adaptive deload decision (level/strategy/triggered/volumeMultiplier/
+    /// reasons) that already feeds clampMultiplier (line ~300). Exposed verbatim so the
+    /// native Focus surface can show the real deload level/strategy instead of "—".
+    /// This is the engine's own computed value wired through 1:1 — NOT recomputed or
+    /// fabricated, and NOT golden-parity-asserted (no golden carries a deload field).
+    public let deload: DeloadDecision
     // --- iOS-4B5 exercise prescription + volume floor ---
     /// workingSetTargets (trainingDecisionEngine.ts:1968) — the golden `perExercise`
     /// projection (exerciseId / role / targetSets). Empty when no template is supplied.
@@ -361,6 +367,7 @@ public func buildTrainingDecisionFromCleanInput(
         volumeMode: volumeMode,
         intensityMode: intensityMode,
         progressionMode: progressionMode,
+        deload: deload,
         perExercise: perExercise,
         allTargetSets: allTargetSets,
         minTargetSets: minTargetSets,

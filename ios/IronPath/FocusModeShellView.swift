@@ -1,29 +1,27 @@
-// FocusModeShellView — iOS-7 Native Focus MVP Bundle V1.
+// FocusModeShellView — iOS-8 Native Local Training MVP Mega Migration V1.
 //
-// Top-level SwiftUI shell for the native Focus demo. Two modes,
-// driven by FocusModeMvpState:
+// Top-level SwiftUI shell for the native Focus demo. THREE stages, driven by
+// FocusModeMvpState.stage:
 //
-//   Plan mode (isInSession == false):
-//     1. Header
-//     2. Scenario picker (普通 / 回归保底 / 严重恢复 / 减载周)
-//     3. Scenario explanation line
-//     4. FocusModeStatusSurfaceView (准备度/风险/训练调整)
-//     5. Today exercise list (FocusModeExerciseCard per item)
-//     6. "开始训练" CTA + "重置样例" secondary action
-//     7. Footer
+//   .plan
+//     Header, scenario picker (普通/回归保底/严重恢复/减载周), explanation,
+//     FocusModeStatusSurfaceView (准备度/风险/训练调整/减载档位 — iOS-8 live deload),
+//     today exercise list, "开始训练" / "重置样例", footer.
 //
-//   In-session mode (isInSession == true):
-//     1. Back link + scenario badge
-//     2. FocusSessionProgressView (aggregate completed/target)
-//     3. Current exercise checklist (FocusSetChecklistView)
-//        — "完成本组" clamps to targetSets in memory
-//     4. 上一动作 / 下一动作 navigation
-//     5. FocusModeStatusSurfaceView (always-visible context)
-//     6. "重置样例" / "结束训练" + footer
+//   .inSession
+//     Back link + scenario badge, FocusSessionProgressView (aggregate),
+//     current-exercise FocusSetChecklistView ("完成本组" clamps in memory),
+//     上一动作/下一动作, status surface, FocusSessionCompletionView
+//     ("完成本次训练" -> in-RAM snapshot), "重置样例"/"结束训练", footer.
 //
-// 100% in-memory; never writes AppData, never persists. The slice is
-// recomputed via FocusModePreviewData on each scenario change — same
-// scenario in, same slice out (deterministic).
+//   .completed
+//     FocusSavedSessionPreviewView — the in-RAM saved-session preview
+//     (completed exercises, sets, sessionIntent, activePhase, deload, timestamp),
+//     "再来一次".
+//
+// 100% in-memory; never writes AppData, never persists to disk. The slice is
+// recomputed via FocusModePreviewData on each scenario change — same scenario
+// in, same slice out (deterministic). On-disk JSON save is a deferred follow-up.
 
 import SwiftUI
 import IronPathTrainingDecision
@@ -56,13 +54,29 @@ struct FocusModeShellView: View {
         return rows[clamped]
     }
 
+    /// Engine-derived completed lines for the in-RAM completion snapshot.
+    private var completedLines: [FocusCompletedExerciseLine] {
+        rows.map { row in
+            FocusCompletedExerciseLine(
+                id: row.id,
+                name: row.name,
+                role: roleLabel(row.role),
+                completedSets: state.completedSets(for: row.id),
+                targetSets: row.targetSets
+            )
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if state.isInSession {
-                    inSessionBody
-                } else {
+                switch state.stage {
+                case .plan:
                     planBody
+                case .inSession:
+                    inSessionBody
+                case .completed:
+                    completedBody
                 }
                 footer
             }
@@ -70,6 +84,17 @@ struct FocusModeShellView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
+    }
+
+    // MARK: - Completed preview
+
+    @ViewBuilder
+    private var completedBody: some View {
+        if let summary = state.completedSummary {
+            FocusSavedSessionPreviewView(summary: summary, onStartNew: { state.startNewSession() })
+        } else {
+            planBody
+        }
     }
 
     // MARK: - Plan mode
@@ -191,6 +216,14 @@ struct FocusModeShellView: View {
             navigationStack
 
             FocusModeStatusSurfaceView(slice: slice)
+
+            FocusSessionCompletionView(
+                totalCompleted: totalCompletedSets,
+                totalTarget: totalTargetSets,
+                onCompleteSession: {
+                    state.completeSession(slice: slice, lines: completedLines)
+                }
+            )
 
             sessionActionStack
         }

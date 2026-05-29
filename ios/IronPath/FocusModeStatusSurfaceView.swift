@@ -1,12 +1,13 @@
-// FocusModeStatusSurfaceView — iOS-7 Native Focus MVP Bundle V1.
+// FocusModeStatusSurfaceView — iOS-8 Native Local Training MVP Mega Migration V1.
 //
-// Part-2 status surface. Renders the readiness / risk / deload-context
-// fields that the TrainingDecisionCoreSlice exposes today. Each row
-// shows a Chinese label, the value (the engine enum's rawValue) and a
-// small engine field-name sub-label so the demo is auditable.
+// Part-2 status surface. Renders the readiness / risk / deload fields the
+// TrainingDecisionCoreSlice exposes. Each row shows a Chinese label, the value
+// (the engine enum's rawValue) and a small engine field-name sub-label so the
+// demo is auditable.
 //
-// deload not exposed on TrainingDecisionCoreSlice yet — the row shows
-// a static "—" and is deferred to a future engine PR.
+// iOS-8: deload is now a real field on TrainingDecisionCoreSlice
+// (slice.deload.level / .strategy), so the 减载档位 row shows the live engine
+// value instead of the iOS-7 deferred "—".
 
 import SwiftUI
 import IronPathTrainingDecision
@@ -33,8 +34,12 @@ struct FocusModeStatusSurfaceView: View {
                     value: String(format: "%.2f", slice.finalVolumeMultiplier),
                     sub: "finalVolumeMultiplier"
                 )
-                // deload not exposed on TrainingDecisionCoreSlice yet — deferred to a future engine PR.
-                row("减载档位", value: "—", sub: "deload (deferred)")
+                // iOS-8: live engine deload — level as the value, strategy in the sub-label.
+                row(
+                    "减载档位",
+                    value: slice.deload.level.rawValue,
+                    sub: "deload · \(slice.deload.strategy.rawValue)"
+                )
             }
         }
         .padding(14)

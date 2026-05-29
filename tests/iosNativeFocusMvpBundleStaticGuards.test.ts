@@ -200,9 +200,14 @@ describe('iOS-7 forbidden imports, persistence, and runtime bridges are absent',
     expect(code).not.toMatch(/\bNSManagedObject\b/);
     expect(code).not.toMatch(/@Model\b/);
   });
-  it('30. no AppData mutation / save / complete-session call', () => {
+  it('30. no AppData mutation / session save-to-store', () => {
     expect(code).not.toMatch(/\b(AppData|AppDataStore)\b[^\n]*\.(write|save|persist|update|mutate|set)\b/);
-    expect(code).not.toMatch(/\b(saveSession|completeSession|persistSession|commitSession)\b/);
+    // iOS-8 introduces an explicitly IN-MEMORY `completeSession` (builds a RAM
+    // snapshot + flips the stage, writes nothing), so the bare method name is no
+    // longer banned here. The real persistence verbs stay forbidden — and the
+    // iOS-8 mega guard + the whole-ios FileManager/UserDefaults ban lock disk
+    // egress directly.
+    expect(code).not.toMatch(/\b(saveSession|persistSession|commitSession|deleteSession)\b/);
   });
   it('31. no TypeScript / JS runtime reference', () => {
     expect(code).not.toMatch(/\bJSContext\b/);

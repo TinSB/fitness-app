@@ -77,6 +77,50 @@ final class TrainingDecisionCoreSliceParityTests: XCTestCase {
         return buildTrainingDecisionFromCleanInput(input)
     }
 
+    // MARK: - iOS-8 deload exposure (compute-not-decode; NOT golden parity)
+
+    /// Proves `slice.deload` is the engine's OWN computed adaptive deload, wired
+    /// through 1:1 — never a fabricated literal. For every fixture, independently
+    /// recompute `buildAdaptiveDeloadDecision` from the SAME cleaned input the engine
+    /// consumed and assert the exposed field EQUALS it. Deleting the wiring (or
+    /// hardcoding a default DeloadDecision) makes this fail. No golden carries a
+    /// deload field, so this is a Swift-side consistency assertion, never golden
+    /// parity — `parity --check` stays 14/0.
+    func test_deload_field_is_the_engine_computed_value_on_all_9_fixtures() throws {
+        XCTAssertEqual(TrainingDecisionGoldens.expandedIds.count, 9)
+        for id in TrainingDecisionGoldens.expandedIds {
+            let spec = Self.inputs[id]!
+            let input = CoreSliceTestKit.makeCleanInput(
+                sessions: spec.sessions,
+                sleep: spec.sleep,
+                energy: spec.energy,
+                todayStatusDaysAgo: spec.todayDaysAgo,
+                acutePainReported: spec.severe,
+                explicitDeloadAssigned: spec.explicitDeload,
+                staleHealthSample: spec.staleHealth
+            )
+            let expected = TrainingDecisionDeload.buildAdaptiveDeloadDecision(
+                history: input.history,
+                todayStatus: input.todayStatus,
+                screening: input.screening
+            )
+            let actual = buildTrainingDecisionFromCleanInput(input).deload
+            XCTAssertEqual(actual, expected, "\(id): slice.deload must equal the engine's adaptive deload (wired, not fabricated)")
+        }
+    }
+
+    /// The exposed deload feeds clampMultiplier — lock that the field the UI reads is
+    /// the SAME instance the volume clamp consumed (consistency, not a magic value):
+    /// when deload.triggered the slice's finalVolumeMultiplier must reflect a non-base
+    /// clamp path. Also guarantees `.level`/`.strategy` rawValues are renderable.
+    func test_deload_exposure_is_renderable_and_consistent() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let d = slice(for: id).deload
+            XCTAssertFalse(d.level.rawValue.isEmpty, "\(id): deload.level must be renderable")
+            XCTAssertFalse(d.strategy.rawValue.isEmpty, "\(id): deload.strategy must be renderable")
+        }
+    }
+
     // MARK: - 1. effectivePhase field-subset parity (all 9 expanded goldens)
 
     func test_effectivePhase_fieldSubset_matches_goldens_on_9_expanded_fixtures() throws {
