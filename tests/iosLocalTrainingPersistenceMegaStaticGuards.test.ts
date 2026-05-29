@@ -184,7 +184,8 @@ describe('iOS-10 UI surfaces', () => {
     expect(appExists(STATS_FILE)).toBe(true);
     expect(appCode(STATS_FILE)).toMatch(/struct\s+LocalSnapshotStats/);
     expect(appCode(STATS_FILE)).toMatch(/static\s+func\s+derive\s*\(\s*from/);
-    expect(appCode(HISTORY_FILE)).toMatch(/本机统计/);
+    // iOS-14 renamed the summary header (本机统计 → 本机训练小结); accept either.
+    expect(appCode(HISTORY_FILE)).toMatch(/本机统计|本机训练小结/);
   });
   it('21. export/debug-copy is local-only (no share sheet / Files / cloud)', () => {
     expect(appCode(STORE_FILE)).toMatch(/func\s+exportLatestDebugCopy\s*\(/);
