@@ -24,6 +24,14 @@ enum FocusSessionStage: Equatable {
     case completed
 }
 
+/// Outcome of the last local-save attempt. Drives the completed-screen banner.
+/// `.failed` carries an honest error string — there is NO fake-success state.
+enum FocusSaveStatus: Equatable {
+    case idle
+    case saved
+    case failed(String)
+}
+
 /// One completed-exercise line in the local saved preview (in-RAM only).
 struct FocusCompletedExerciseLine: Identifiable, Equatable {
     let id: String
@@ -56,6 +64,28 @@ final class FocusModeMvpState: ObservableObject {
     /// Non-nil only after `completeSession`. The local saved preview reads this.
     @Published private(set) var completedSummary: FocusCompletedSessionSummary? = nil
 
+    // MARK: - iOS-9 local persistence surface (delegated to the store)
+
+    /// The most-recently-saved on-disk snapshot, loaded on launch and refreshed
+    /// after each save. nil when nothing is saved locally yet.
+    @Published private(set) var latestSaved: LocalCompletedSessionSnapshot? = nil
+    /// Recent saved snapshots (newest first) for the local history list.
+    @Published private(set) var savedHistory: [LocalCompletedSessionSnapshot] = []
+    /// Result of the last save attempt — `.failed` shows an honest error and is
+    /// never replaced by a fabricated success.
+    @Published private(set) var saveStatus: FocusSaveStatus = .idle
+    /// Non-nil when a save/load/clear error must be shown non-blockingly.
+    @Published private(set) var saveErrorMessage: String? = nil
+
+    /// The sanctioned app-local JSON store. Injectable for previews/tests; the
+    /// app uses the default Application Support location. NOTE: this class never
+    /// touches FileManager directly — all disk IO is delegated to the store.
+    private let snapshotStore: LocalSessionSnapshotStore
+
+    init(snapshotStore: LocalSessionSnapshotStore = LocalSessionSnapshotStore()) {
+        self.snapshotStore = snapshotStore
+    }
+
     /// Back-compat read alias for the iOS-7 `isInSession` call sites.
     var isInSession: Bool { stage == .inSession }
 
@@ -79,6 +109,16 @@ final class FocusModeMvpState: ObservableObject {
         return fmt.string(from: date)
     }
 
+    /// Machine-readable ISO-8601 instant for the on-disk snapshot's
+    /// `createdAtIso`. Derived from the injectable clock (deterministic by
+    /// default), matching FocusModePreviewData.referenceClockIso's format.
+    private func iso8601(_ date: Date) -> String {
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        return fmt.string(from: date)
+    }
+
     // MARK: - Scenario
 
     func setScenario(_ next: FocusModeSampleScenario) {
@@ -88,6 +128,10 @@ final class FocusModeMvpState: ObservableObject {
         selectedExerciseIndex = 0
         stage = .plan
         completedSummary = nil
+        // The transient save banner is per-completion; clear it. The on-disk
+        // history (latestSaved / savedHistory) survives a scenario change.
+        saveStatus = .idle
+        saveErrorMessage = nil
     }
 
     // MARK: - Per-exercise progress
@@ -127,15 +171,20 @@ final class FocusModeMvpState: ObservableObject {
         stage = .plan
     }
 
-    /// Capture an in-RAM completed-session snapshot from the engine-derived values
-    /// the shell supplies (the state never recomputes the engine), then move to the
-    /// completed/preview stage. NO disk write, NO AppData mutation.
+    /// Capture the completed-session summary from the engine-derived values the
+    /// shell supplies (the state never recomputes the engine), then ATTEMPT a
+    /// local JSON save and move to the completed/preview stage.
+    ///
+    /// The in-RAM `completedSummary` is always set first, so the preview works
+    /// even if the save fails. Persistence is delegated to the snapshot store
+    /// (this class never touches FileManager). NO AppData mutation, NO cloud.
     func completeSession(
         slice: TrainingDecisionCoreSlice,
         lines: [FocusCompletedExerciseLine]
     ) {
         let totalCompleted = lines.reduce(0) { $0 + $1.completedSets }
         let totalTarget = lines.reduce(0) { $0 + $1.targetSets }
+        let now = clock()
         completedSummary = FocusCompletedSessionSummary(
             scenarioLabel: selectedScenario.shortLabel,
             sessionIntent: slice.sessionIntent.rawValue,
@@ -145,17 +194,106 @@ final class FocusModeMvpState: ObservableObject {
             lines: lines,
             totalCompletedSets: totalCompleted,
             totalTargetSets: totalTarget,
-            timestampLabel: timestampLabel(clock())
+            timestampLabel: timestampLabel(now)
         )
+
+        let snapshot = buildSnapshot(slice: slice, lines: lines, createdAt: now)
+        do {
+            try snapshotStore.save(snapshot)
+            // Only after a real, thrown-error-free save do we report success.
+            saveStatus = .saved
+            saveErrorMessage = nil
+            refreshSavedFromStore()
+        } catch {
+            // No fake success: surface the error and keep the in-RAM preview.
+            let message = error.localizedDescription
+            saveStatus = .failed(message)
+            saveErrorMessage = message
+        }
+
         stage = .completed
     }
 
-    /// From the completed preview, start over on the same scenario (clears progress
-    /// + summary). Pure in-RAM.
+    /// Map the engine-derived completion into the on-disk Codable snapshot. The
+    /// snapshotId is deterministic (scenario + a monotone index over what is
+    /// already saved), so tests/previews stay reproducible without random ids.
+    private func buildSnapshot(
+        slice: TrainingDecisionCoreSlice,
+        lines: [FocusCompletedExerciseLine],
+        createdAt: Date
+    ) -> LocalCompletedSessionSnapshot {
+        let totalCompleted = lines.reduce(0) { $0 + $1.completedSets }
+        let totalTarget = lines.reduce(0) { $0 + $1.targetSets }
+        let index = savedHistory.count + 1
+        let exercises = lines.map { line in
+            LocalCompletedExerciseSnapshot(
+                exerciseId: line.id,
+                name: line.name,
+                role: line.role,
+                progress: LocalCompletedSetProgressSnapshot(
+                    completedSets: line.completedSets,
+                    targetSets: line.targetSets
+                )
+            )
+        }
+        return LocalCompletedSessionSnapshot(
+            snapshotId: "focus-\(selectedScenario.rawValue)-\(index)",
+            createdAtIso: iso8601(createdAt),
+            scenarioId: selectedScenario.rawValue,
+            scenarioLabel: selectedScenario.shortLabel,
+            sessionIntent: slice.sessionIntent.rawValue,
+            activePhase: slice.activePhase.rawValue,
+            deloadLevel: slice.deload.level.rawValue,
+            deloadStrategy: slice.deload.strategy.rawValue,
+            totalCompletedSets: totalCompleted,
+            totalTargetSets: totalTarget,
+            exercises: exercises
+        )
+    }
+
+    // MARK: - Local persistence (load on launch / refresh / clear)
+
+    /// Load the latest saved snapshot + history on launch. Read failures are
+    /// non-fatal: the surfaces simply show "nothing saved yet" plus a soft note.
+    func loadSavedSessions() {
+        refreshSavedFromStore()
+    }
+
+    private func refreshSavedFromStore() {
+        do {
+            latestSaved = try snapshotStore.loadLatest()
+            savedHistory = try snapshotStore.listSnapshots()
+        } catch {
+            saveErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Clear ONLY this store's sanctioned local snapshot files, then refresh the
+    /// UI. A failure surfaces an honest error AND reconciles the displayed list
+    /// with whatever survived a partial clear (so the UI never over-reports
+    /// still-present saved sessions after a mid-delete failure).
+    func clearSavedSessions() {
+        do {
+            try snapshotStore.clear()
+            latestSaved = nil
+            savedHistory = []
+            saveStatus = .idle
+            saveErrorMessage = nil
+        } catch {
+            saveErrorMessage = error.localizedDescription
+            refreshSavedFromStore()
+        }
+    }
+
+    /// From the completed preview, start over on the same scenario (clears the
+    /// in-RAM progress + summary + transient save banner). The on-disk saved
+    /// history is intentionally preserved.
     func startNewSession() {
         resetProgress()
         selectedExerciseIndex = 0
         completedSummary = nil
+        saveStatus = .idle
+        saveErrorMessage = nil
         stage = .plan
     }
 

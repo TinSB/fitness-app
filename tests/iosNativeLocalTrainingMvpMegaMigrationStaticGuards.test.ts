@@ -160,9 +160,16 @@ describe('iOS-8 forbidden imports, persistence, runtime, cloud, auth are absent'
 describe('iOS-8 no on-disk persistence anywhere under ios/IronPath/', () => {
   // Whole-app-target scan, not a hardcoded list. IronPathApp.swift is included
   // (it has no disk egress); only the cloud-IMPORT ban excludes it elsewhere.
+  //
+  // iOS-9 supersedes the iOS-8 "no disk" boundary for ONE sanctioned, app-local
+  // JSON store file. Its disk egress is locked instead by
+  // iosLocalJsonPersistenceStaticGuards (Application Support only, atomic write,
+  // backup-before-overwrite, scoped clear, no cloud). Every OTHER file under
+  // ios/IronPath/ — all presentation files — stays under the iOS-8 no-disk lock.
+  const SANCTIONED_IOS9_PERSISTENCE = new Set(['LocalSessionSnapshotStore.swift']);
   const wholeAppTreeCode = (): string =>
     readdirSync(repoFile(APP_DIR))
-      .filter((f) => f.endsWith('.swift'))
+      .filter((f) => f.endsWith('.swift') && !SANCTIONED_IOS9_PERSISTENCE.has(f))
       .map((f) => stripSwiftComments(readFileSync(repoFile(`${APP_DIR}/${f}`), 'utf8')))
       .join('\n');
 
