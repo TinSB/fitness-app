@@ -242,6 +242,10 @@ struct FocusModeShellView: View {
         VStack(alignment: .leading, spacing: 16) {
             inSessionHeader
 
+            if state.isRestoredDraft {
+                restoredDraftBanner
+            }
+
             FocusSessionProgressView(
                 totalCompleted: totalCompletedSets,
                 totalTarget: totalTargetSets
@@ -263,6 +267,17 @@ struct FocusModeShellView: View {
 
             sessionActionStack
         }
+    }
+
+    /// iOS-11: shown when the in-session draft was restored from a saved local
+    /// snapshot (continue-a-saved-session). Local-only, in-RAM draft.
+    private var restoredDraftBanner: some View {
+        Text("已恢复本机草稿 · 继续训练（仅本机 · 未写入云端）")
+            .font(.footnote)
+            .foregroundStyle(.blue)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.blue.opacity(0.12)))
     }
 
     private var inSessionHeader: some View {

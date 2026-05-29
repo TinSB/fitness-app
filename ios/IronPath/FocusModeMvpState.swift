@@ -41,6 +41,14 @@ enum FocusExportStatus: Equatable {
     case failed(String)
 }
 
+/// Outcome of the last restore-to-local-draft attempt (iOS-11). `.failed`
+/// carries an honest error and NO draft is started — never a fake restore.
+enum FocusRestoreStatus: Equatable {
+    case idle
+    case restored(String)   // scenario label of the restored draft
+    case failed(String)
+}
+
 /// One completed-exercise line in the local saved preview (in-RAM only).
 struct FocusCompletedExerciseLine: Identifiable, Equatable {
     let id: String
@@ -98,6 +106,11 @@ final class FocusModeMvpState: ObservableObject {
     @Published private(set) var storageDiagnostics: LocalSnapshotStorageDiagnostics = .empty
     /// Result of the last local debug-copy export attempt.
     @Published private(set) var exportStatus: FocusExportStatus = .idle
+    /// iOS-11: # of saved files whose on-disk schema was below current and were
+    /// migrated forward in memory on the last refresh.
+    @Published private(set) var migratedSavedCount: Int = 0
+    /// iOS-11: result of the last restore-to-local-draft attempt.
+    @Published private(set) var restoreStatus: FocusRestoreStatus = .idle
 
     /// The sanctioned app-local JSON store. Injectable for previews/tests; the
     /// app uses the default Application Support location. NOTE: this class never
@@ -154,6 +167,7 @@ final class FocusModeMvpState: ObservableObject {
         // history (latestSaved / savedHistory) survives a scenario change.
         saveStatus = .idle
         saveErrorMessage = nil
+        restoreStatus = .idle
     }
 
     // MARK: - Per-exercise progress
@@ -186,6 +200,9 @@ final class FocusModeMvpState: ObservableObject {
 
     func startSession() {
         selectedExerciseIndex = 0
+        // A fresh "开始训练" is not a restored draft — clear any stale restore
+        // status so the in-session restored-draft banner never shows wrongly.
+        restoreStatus = .idle
         stage = .inSession
     }
 
@@ -204,6 +221,7 @@ final class FocusModeMvpState: ObservableObject {
         slice: TrainingDecisionCoreSlice,
         lines: [FocusCompletedExerciseLine]
     ) {
+        restoreStatus = .idle   // a fresh completion is not a restored draft
         let totalCompleted = lines.reduce(0) { $0 + $1.completedSets }
         let totalTarget = lines.reduce(0) { $0 + $1.targetSets }
         let now = clock()
@@ -258,6 +276,14 @@ final class FocusModeMvpState: ObservableObject {
                 )
             )
         }
+        // v2 resume cursor: the first not-yet-complete exercise (where a restored
+        // draft should continue); falls back to the start when all are complete.
+        let resumeIndex: Int? = {
+            if let firstIncomplete = exercises.firstIndex(where: { $0.completedSets < $0.targetSets }) {
+                return firstIncomplete
+            }
+            return exercises.isEmpty ? nil : 0
+        }()
         return LocalCompletedSessionSnapshot(
             snapshotId: "focus-\(selectedScenario.rawValue)-\(index)",
             createdAtIso: iso8601(createdAt),
@@ -269,7 +295,8 @@ final class FocusModeMvpState: ObservableObject {
             deloadStrategy: slice.deload.strategy.rawValue,
             totalCompletedSets: totalCompleted,
             totalTargetSets: totalTarget,
-            exercises: exercises
+            exercises: exercises,
+            resumeExerciseIndex: resumeIndex
         )
     }
 
@@ -287,6 +314,7 @@ final class FocusModeMvpState: ObservableObject {
             let scan = try snapshotStore.scanSnapshots()
             savedHistory = scan.valid
             invalidSkippedCount = scan.invalidCount
+            migratedSavedCount = scan.migratedCount
             stats = LocalSnapshotStats.derive(from: scan.valid)
             // Keep loading the rolling latest pointer, but VALIDATE it before
             // showing it as restored; fall back to the newest valid history. A
@@ -362,6 +390,39 @@ final class FocusModeMvpState: ObservableObject {
         }
     }
 
+    // MARK: - iOS-11 restore-to-local-draft / continue a saved session
+
+    /// Restore a saved snapshot into an IN-RAM training draft and resume it.
+    /// This is NOT an AppData restore: the engine slice is regenerated
+    /// deterministically from the scenario, and only the per-exercise completed-
+    /// set counts + the resume cursor are restored into memory. An unknown
+    /// scenario fails honestly and starts NO draft (no fake restore).
+    func restoreDraft(from snapshot: LocalCompletedSessionSnapshot) {
+        guard let scenario = FocusModeSampleScenario(rawValue: snapshot.scenarioId) else {
+            restoreStatus = .failed("无法识别的训练样例：\(snapshot.scenarioId)，无法在本机恢复")
+            return
+        }
+        selectedScenario = scenario
+        // Restore the in-RAM per-exercise progress from the snapshot.
+        var restored: [String: Int] = [:]
+        for exercise in snapshot.exercises {
+            restored[exercise.exerciseId] = max(0, exercise.completedSets)
+        }
+        completedSetsByExerciseId = restored
+        selectedExerciseIndex = max(0, snapshot.resumeExerciseIndex ?? 0)
+        completedSummary = nil
+        saveStatus = .idle
+        saveErrorMessage = nil
+        restoreStatus = .restored(snapshot.scenarioLabel)
+        stage = .inSession
+    }
+
+    /// Whether the current in-session draft was restored from a saved snapshot.
+    var isRestoredDraft: Bool {
+        if case .restored = restoreStatus { return stage == .inSession }
+        return false
+    }
+
     /// From the completed preview, start over on the same scenario (clears the
     /// in-RAM progress + summary + transient save banner). The on-disk saved
     /// history is intentionally preserved.
@@ -371,6 +432,7 @@ final class FocusModeMvpState: ObservableObject {
         completedSummary = nil
         saveStatus = .idle
         saveErrorMessage = nil
+        restoreStatus = .idle
         stage = .plan
     }
 

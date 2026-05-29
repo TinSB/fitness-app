@@ -22,6 +22,7 @@
 		C900000000000000000000B2 /* LocalSessionSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C900000000000000000000B1 /* LocalSessionSnapshotStore.swift */; };
 		C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */; };
 		CA00000000000000000000A2 /* LocalSnapshotValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* LocalSnapshotValidation.swift */; };
+		CB00000000000000000000A2 /* LocalSnapshotMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* LocalSnapshotMigration.swift */; };
 		CA00000000000000000000B2 /* LocalSnapshotStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000B1 /* LocalSnapshotStats.swift */; };
 		CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */; };
 		AA00000000000000000000E2 /* IronPathApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* IronPathApp.swift */; };
@@ -52,6 +53,7 @@
 		C900000000000000000000B1 /* LocalSessionSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSessionSnapshotStore.swift; sourceTree = "<group>"; };
 		C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionHistoryView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* LocalSnapshotValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSnapshotValidation.swift; sourceTree = "<group>"; };
+		CB00000000000000000000A1 /* LocalSnapshotMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSnapshotMigration.swift; sourceTree = "<group>"; };
 		CA00000000000000000000B1 /* LocalSnapshotStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSnapshotStats.swift; sourceTree = "<group>"; };
 		CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionDetailView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B2 /* IronPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -118,6 +120,7 @@
 				C900000000000000000000B1 /* LocalSessionSnapshotStore.swift */,
 				C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */,
 				CA00000000000000000000A1 /* LocalSnapshotValidation.swift */,
+				CB00000000000000000000A1 /* LocalSnapshotMigration.swift */,
 				CA00000000000000000000B1 /* LocalSnapshotStats.swift */,
 				CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */,
 			);
@@ -227,6 +230,7 @@
 				C900000000000000000000B2 /* LocalSessionSnapshotStore.swift in Sources */,
 				C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */,
 				CA00000000000000000000A2 /* LocalSnapshotValidation.swift in Sources */,
+				CB00000000000000000000A2 /* LocalSnapshotMigration.swift in Sources */,
 				CA00000000000000000000B2 /* LocalSnapshotStats.swift in Sources */,
 				CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */,
 				81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */,
