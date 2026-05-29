@@ -124,5 +124,7 @@ lockfile / pnpm-lock changes.
 
 **iOS-4B4 Deload + Clamp + Modes V1** — port `buildAdaptiveDeloadDecision` + `clampMultiplier` +
 `volumeModeFor`/`intensityModeFor`/`progressionModeFor` → `finalVolumeMultiplier` + the three mode
-fields. Then iOS-4B5 (exercise prescription + volume floor) and iOS-4B6 (userFacing + full
-arbitrationTrace + full-object parity).
+fields. ✅ implemented — see
+[`IOS_4B4_DELOAD_CLAMP_MODES_V1.md`](./IOS_4B4_DELOAD_CLAMP_MODES_V1.md) (it also adds the
+time-gap penalty + health delta + `Math.round` this doc deferred). Then iOS-4B5 (exercise
+prescription + volume floor) and iOS-4B6 (userFacing + full arbitrationTrace + full-object parity).

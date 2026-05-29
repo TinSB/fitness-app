@@ -10,9 +10,11 @@
 // makes controlled-reload-v1 fail (proof of compute).
 //
 // iOS-4B3 unlocks controlled-reload-v1.sessionIntent (readiness low + e1RM up) and
-// adds riskLevel parity. Still NOT asserted (iOS-4B4+): volume/intensity/progression
-// modes, finalVolumeMultiplier, perExercise, weeklyAdjustment, userFacing, full
-// arbitrationTrace.
+// adds riskLevel parity. iOS-4B4 adds finalVolumeMultiplier + volume/intensity/
+// progression mode parity (the time-gap penalty makes the default fixtures'
+// trainingAdjustment 'conservative', which is what drives intensityMode 'cap'). Still
+// NOT asserted (iOS-4B5+): perExercise / target sets, weeklyAdjustment, userFacing,
+// the full ordered arbitrationTrace.
 
 import XCTest
 import IronPathDomain
@@ -117,6 +119,56 @@ final class TrainingDecisionCoreSliceParityTests: XCTestCase {
         XCTAssertEqual(slice(for: "severe-rest-v1").riskLevel, .severe)
         XCTAssertEqual(slice(for: "controlled-reload-v1").riskLevel, .moderate)
         XCTAssertEqual(slice(for: "stale-today-status-v1").riskLevel, .none)
+    }
+
+    // MARK: - 3b. finalVolumeMultiplier parity (NEW in iOS-4B4 — clamp over deload)
+
+    func test_finalVolumeMultiplier_matches_goldens_on_all_9_expanded_fixtures() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenMultiplier = try XCTUnwrap(golden.finalVolumeMultiplier, "\(id): expanded golden must carry finalVolumeMultiplier")
+            let computed = slice(for: id)
+            XCTAssertEqual(computed.finalVolumeMultiplier, goldenMultiplier, accuracy: 1e-9, "\(id) finalVolumeMultiplier")
+        }
+        // Spot the four distinct multipliers the goldens encode (effectiveWeek vs floors).
+        XCTAssertEqual(slice(for: "clean-input-contract-v1").finalVolumeMultiplier, 0.9, accuracy: 1e-9)  // base week
+        XCTAssertEqual(slice(for: "productive-floor-v1").finalVolumeMultiplier, 0.65, accuracy: 1e-9)     // reentry effectiveWeek
+        XCTAssertEqual(slice(for: "restart-28d-gap-v1").finalVolumeMultiplier, 0.5, accuracy: 1e-9)       // restart effectiveWeek (< 0.55 floor)
+        XCTAssertEqual(slice(for: "severe-rest-v1").finalVolumeMultiplier, 0.3, accuracy: 1e-9)           // severe floor
+    }
+
+    // MARK: - 3c. volume / intensity / progression mode parity (NEW in iOS-4B4)
+
+    func test_volumeMode_matches_goldens_on_all_9_expanded_fixtures() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenMode = try XCTUnwrap(golden.volumeModeEnum, "\(id): expanded golden must carry volumeMode")
+            XCTAssertEqual(slice(for: id).volumeMode, goldenMode, "\(id) volumeMode")
+        }
+    }
+
+    func test_intensityMode_matches_goldens_on_all_9_expanded_fixtures() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenMode = try XCTUnwrap(golden.intensityModeEnum, "\(id): expanded golden must carry intensityMode")
+            XCTAssertEqual(slice(for: id).intensityMode, goldenMode, "\(id) intensityMode")
+        }
+        // The default normal-session fixtures are 'cap' ONLY because the time-gap
+        // penalty drives trainingAdjustment to conservative — the crux of iOS-4B4.
+        XCTAssertEqual(slice(for: "clean-input-contract-v1").intensityMode, .cap)
+        XCTAssertEqual(slice(for: "clean-input-contract-v1").trainingAdjustment, .conservative)
+        XCTAssertEqual(slice(for: "severe-rest-v1").intensityMode, .cut)
+    }
+
+    func test_progressionMode_matches_goldens_on_all_9_expanded_fixtures() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenMode = try XCTUnwrap(golden.progressionModeEnum, "\(id): expanded golden must carry progressionMode")
+            XCTAssertEqual(slice(for: id).progressionMode, goldenMode, "\(id) progressionMode")
+        }
+        // controlled-reload is the only 'reload'; severe-rest the only 'pull-back'.
+        XCTAssertEqual(slice(for: "controlled-reload-v1").progressionMode, .reload)
+        XCTAssertEqual(slice(for: "severe-rest-v1").progressionMode, .pullBack)
     }
 
     // MARK: - 4. Anti-stub: discriminators force distinct branches

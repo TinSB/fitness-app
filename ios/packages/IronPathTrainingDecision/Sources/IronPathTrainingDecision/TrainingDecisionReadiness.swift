@@ -1,32 +1,31 @@
-// iOS-4B3 Readiness + e1RM Slice V1 — readiness engine (subjective subset).
+// iOS-4B3/4B4 Readiness — readiness engine (subjective + time-gap + health delta).
 //
-// Swift port of the SUBJECTIVE part of src/engines/readinessEngine.ts
-// (buildReadinessResult / mapTodayStatusToReadinessInput / buildTodayReadiness /
-// collectPainAreasFromHistory). PURE — reads only todayStatus + history; no clock,
-// no AppData mutation.
+// Swift port of src/engines/readinessEngine.ts (buildReadinessResult /
+// mapTodayStatusToReadinessInput / buildTodayReadiness / collectPainAreasFromHistory).
+// PURE — reads only todayStatus + history + the caller-supplied template duration /
+// health summary; no clock, no AppData mutation.
 //
-// DEFERRED (documented, no golden exercises them in iOS-4B3):
-//   * the health-data delta — buildHealthSummary / healthSummaryEngine. No fixture
-//     supplies live (non-stale) health data: controlled-reload-v1 has none, and
-//     stale-health-data-v1's sample is stale so the clean view resolves
-//     useHealthDataForReadiness=false (the health branch is skipped anyway). The
-//     full health-summary port lands in a later slice.
-//   * the available-vs-planned time-gap penalty — needs `template.duration`, which
-//     the clean input does not carry (template arrives with prescription, iOS-4B5).
-//     This penalty DOES fire in TS for the fixtures: push-a duration=70 > default
-//     time=60 -> gap 10 -> -4. So the TS source-of-truth scores are 64 (defaults)
-//     and 40 (controlled-reload), whereas this deferred port computes 68 and 44.
-//     Both still land in the same LEVEL bucket (64/68 -> medium; 40/44 -> low) with
-//     >=14 points of headroom to the <50 cutoff, so no fixture's level flips. NOTE:
-//     the -4 DOES change `trainingAdjustment` for the 4 push-a default fixtures
-//     (TS 64 -> conservative via the `<65` rule; this port 68 -> normal), but
-//     `trainingAdjustment` feeds only `intensityMode` (iOS-4B4) — no iOS-4B3 golden
-//     field consumes it. iOS-4B4 must add this penalty (+ the health delta + the
-//     Math.round, currently a no-op since every subjective delta is an integer)
-//     before asserting intensityMode / trainingAdjustment parity.
+// iOS-4B3 ported the SUBJECTIVE subset (sleep/energy/soreness/pain). iOS-4B4 closes
+// the readiness math that `intensityMode` parity needs:
+//   * the available-vs-planned TIME-GAP penalty (readinessEngine.ts:68-72). The
+//     clean input now carries `templateDurationMin` (= template.duration). For the
+//     parity fixtures push-a duration=70 > default time=60 -> gap 10 -> -4, so the
+//     default fixtures score 64 (was 68) and controlled-reload scores 40 (was 44).
+//     The -4 flips `trainingAdjustment` for the default fixtures from normal to
+//     `conservative` (the `<65` rule), which is exactly what makes the golden's
+//     normal-session `intensityMode` == `cap` (iOS-4B4 asserts it).
+//   * the HEALTH-SUMMARY delta (readinessEngine.ts:74-100), consuming a caller-
+//     supplied `HealthSummary`. The sample->summary aggregation (`buildHealthSummary`)
+//     stays DEFERRED (iOS-4B5): NO iOS-4B4 golden exercises the delta — every fixture
+//     has 0 health samples, and stale-health-data-v1 resolves
+//     useHealthDataForReadiness=false (the delta is gated off). So the engine passes
+//     `healthSummary: nil`; the delta is exercised only by unit tests.
+//   * `Math.round` of the score (readinessEngine.ts:102) via `jsRound`. Every score
+//     delta is an integer literal so the round is a structural no-op today, but the
+//     TS source rounds, so the port rounds (and a unit test pins the half-up rule).
 //
-// iOS-4B3 asserts readiness LEVEL (drives recoveryHigh + riskLevel), not the raw
-// score, against the goldens — the deferred deltas above do not change any level.
+// Level/sessionIntent/riskLevel from iOS-4B3 are unchanged by the -4: 64 stays
+// medium, 40 stays low, with >=14 points of headroom to the <50 cutoff.
 
 import Foundation
 import IronPathDomain
@@ -54,6 +53,58 @@ public struct ReadinessResult: Equatable, Sendable {
     public let level: ReadinessLevel
     public let trainingAdjustment: ReadinessTrainingAdjustment
     public let reasons: [String]
+}
+
+/// `HealthSummary.confidence` (healthSummaryEngine.ts).
+public enum HealthSummaryConfidence: String, Equatable, Sendable {
+    case low, medium, high
+}
+
+/// The `activityLoad` block of a HealthSummary — only the fields the readiness
+/// delta reads (readinessEngine.ts:88-95).
+public struct HealthActivityLoad: Equatable, Sendable {
+    public let previous24hHighActivity: Bool
+    public let previous48hHighActivity: Bool
+    public let recent7dWorkoutMinutes: Double
+
+    public init(
+        previous24hHighActivity: Bool = false,
+        previous48hHighActivity: Bool = false,
+        recent7dWorkoutMinutes: Double = 0
+    ) {
+        self.previous24hHighActivity = previous24hHighActivity
+        self.previous48hHighActivity = previous48hHighActivity
+        self.recent7dWorkoutMinutes = recent7dWorkoutMinutes
+    }
+}
+
+/// The subset of `HealthSummary` (healthSummaryEngine.ts) the readiness DELTA
+/// consumes. The sample->summary aggregation (`buildHealthSummary`) is NOT ported in
+/// iOS-4B4 (deferred to iOS-4B5; no golden exercises it) — this is a value the caller
+/// constructs. NOT Codable (it is computed, never decoded from a golden).
+public struct HealthSummary: Equatable, Sendable {
+    public let confidence: HealthSummaryConfidence
+    public let notes: [String]
+    public let latestSleepHours: Double?
+    public let activityLoad: HealthActivityLoad?
+    public let recentHighActivityDays: Int
+    public let recentWorkoutMinutes: Double
+
+    public init(
+        confidence: HealthSummaryConfidence,
+        notes: [String] = [],
+        latestSleepHours: Double? = nil,
+        activityLoad: HealthActivityLoad? = nil,
+        recentHighActivityDays: Int = 0,
+        recentWorkoutMinutes: Double = 0
+    ) {
+        self.confidence = confidence
+        self.notes = notes
+        self.latestSleepHours = latestSleepHours
+        self.activityLoad = activityLoad
+        self.recentHighActivityDays = recentHighActivityDays
+        self.recentWorkoutMinutes = recentWorkoutMinutes
+    }
 }
 
 enum TrainingDecisionReadiness {
@@ -97,18 +148,28 @@ enum TrainingDecisionReadiness {
         }
     }
 
-    /// buildReadinessResult (readinessEngine.ts:30) — SUBJECTIVE part only.
-    /// `useHealthDataForReadiness` is accepted to document the contract gate, but
-    /// the health-summary delta is deferred (see file header), so it does not
-    /// change the score here.
+    /// JS `Math.round` semantics: round half toward +Infinity == `floor(x + 0.5)`
+    /// (readinessEngine.ts:102). For the integer-valued readiness score this is a
+    /// structural no-op, but the TS source rounds, so the port rounds.
+    static func jsRound(_ x: Double) -> Int { Int((x + 0.5).rounded(.down)) }
+
+    /// buildReadinessResult (readinessEngine.ts:30). Subjective deltas + the
+    /// iOS-4B4 time-gap penalty + health-summary delta. `availableTimeMin` /
+    /// `plannedTimeMin` / `healthSummary` default to nil so the 4B3 subjective-only
+    /// call sites keep computing the subjective score. The health delta is gated by
+    /// `useHealthDataForReadiness != false` (readinessEngine.ts:74).
     static func buildReadinessResult(
         sleep: String?,
         energy: String?,
         sorenessAreas: [String],
         painAreas: [String],
+        availableTimeMin: Double? = nil,
+        plannedTimeMin: Double? = nil,
+        healthSummary: HealthSummary? = nil,
         useHealthDataForReadiness: Bool?
     ) -> ReadinessResult {
-        var score = 82
+        // Accumulate as Double to mirror the TS `number` + the trailing Math.round.
+        var score = 82.0
         var reasons: [String] = []
 
         if sleep == "poor" {
@@ -142,16 +203,53 @@ enum TrainingDecisionReadiness {
             reasons.append("存在疼痛区域")
         }
 
-        // (time-gap penalty + health-summary delta deferred — see file header)
+        // time-gap penalty (readinessEngine.ts:68-72). `plannedTimeMin` must be
+        // truthy (> 0); a nil/NaN availableTimeMin yields no penalty (NaN < x is false).
+        if let planned = plannedTimeMin, planned > 0, let available = availableTimeMin, available < planned {
+            let gap = planned - available
+            score -= gap >= 30 ? 15 : (gap >= 15 ? 8 : 4)
+            reasons.append("可用时间低于计划时长")
+        }
 
-        score = max(0, min(100, score))
+        // health-summary delta (readinessEngine.ts:74-100). Gated off when
+        // useHealthDataForReadiness == false. buildHealthSummary aggregation is
+        // deferred (iOS-4B5); the engine passes nil, so this runs only in unit tests.
+        let effectiveHealthSummary = (useHealthDataForReadiness == false) ? nil : healthSummary
+        if let hs = effectiveHealthSummary {
+            if hs.confidence == .low {
+                reasons.append("健康数据不足，本次准备度主要依据主观状态。")
+            }
+            let healthNotes = hs.notes.joined(separator: " ")
+            if let sleepHours = hs.latestSleepHours, sleepHours < 6 {
+                score -= hs.confidence == .low ? 2 : 4
+                reasons.append("导入健康数据提示睡眠偏少，因此今天建议略保守。")
+            }
+            if healthNotes.contains("静息心率高于") || healthNotes.contains("HRV 低于") {
+                if hs.confidence != .low { score -= 3 }
+                reasons.append("导入健康数据提示恢复可能偏低，系统仅作轻度训练提醒，不作为医疗判断。")
+            }
+            if hs.activityLoad?.previous24hHighActivity == true {
+                score -= 4
+                reasons.append("过去 24 小时外部活动量较高，今天训练建议略保守。")
+            } else if hs.activityLoad?.previous48hHighActivity == true {
+                score -= 2
+                reasons.append("过去 48 小时外部活动量偏高，今天作为轻度恢复提醒。")
+            } else if let al = hs.activityLoad, al.recent7dWorkoutMinutes >= 240 {
+                reasons.append("最近 7 天外部活动量较高，但 24/48 小时负荷正常，因此只作为趋势参考。")
+            } else if hs.confidence != .low && (hs.recentHighActivityDays > 0 || hs.recentWorkoutMinutes >= 120) {
+                score -= 2
+                reasons.append("导入健康数据提示近期活动负荷偏高。")
+            }
+        }
+
+        let rounded = max(0, min(100, jsRound(score)))
         let level: ReadinessLevel
         var trainingAdjustment: ReadinessTrainingAdjustment
 
-        if score < 50 {
+        if rounded < 50 {
             level = .low
             trainingAdjustment = painAreas.isEmpty ? .conservative : .recovery
-        } else if score < 75 {
+        } else if rounded < 75 {
             level = .medium
             trainingAdjustment = .normal
         } else {
@@ -159,23 +257,33 @@ enum TrainingDecisionReadiness {
             trainingAdjustment = .normal // adherenceHigh/push path deferred (not in clean input)
         }
 
-        if score < 65 && trainingAdjustment == .normal { trainingAdjustment = .conservative }
+        if rounded < 65 && trainingAdjustment == .normal { trainingAdjustment = .conservative }
 
-        return ReadinessResult(score: score, level: level, trainingAdjustment: trainingAdjustment, reasons: reasons)
+        return ReadinessResult(score: rounded, level: level, trainingAdjustment: trainingAdjustment, reasons: reasons)
     }
 
     /// buildTodayReadiness (readinessEngine.ts:122) — maps todayStatus then scores.
+    /// `availableTimeMin` mirrors `Number(status.time)`; `plannedTimeMin` is the
+    /// caller-supplied `template.duration`. `healthSummary` defaults to nil (the
+    /// engine does not aggregate one — see file header).
     static func buildTodayReadiness(
         todayStatus: TodayStatus,
         history: [TrainingSession],
+        templateDurationMin: Double?,
+        healthSummary: HealthSummary? = nil,
         useHealthDataForReadiness: Bool?
     ) -> ReadinessResult {
         let painAreas = collectPainAreasFromHistory(history)
+        // Number(status.time): a non-numeric/absent time -> nil -> no time-gap penalty.
+        let availableTimeMin = todayStatus.time.flatMap { Double($0) }
         return buildReadinessResult(
             sleep: mappedSleep(todayStatus.sleep),
             energy: mappedEnergy(todayStatus.energy),
             sorenessAreas: actionableSorenessAreas(todayStatus.soreness),
             painAreas: painAreas,
+            availableTimeMin: availableTimeMin,
+            plannedTimeMin: templateDurationMin,
+            healthSummary: healthSummary,
             useHealthDataForReadiness: useHealthDataForReadiness
         )
     }

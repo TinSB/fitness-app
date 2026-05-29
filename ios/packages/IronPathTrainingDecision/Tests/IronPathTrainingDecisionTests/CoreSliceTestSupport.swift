@@ -74,6 +74,19 @@ enum CoreSliceTestKit {
         return TrainingSession(id: id, date: dateOnly(daysBefore: gap), completed: true, exercises: [exercise])
     }
 
+    /// A completed session at `gap` days carrying a per-session `status` (sleep /
+    /// energy) in the `_unknown` carrier — drives the deload poorRecoveryCount path
+    /// (adaptiveFeedbackEngine.ts:498). `status` is not a typed TrainingSession field.
+    static func sessionWithStatus(id: String, gap: Int, sleep: String? = nil, energy: String? = nil) -> TrainingSession {
+        var statusEntries: [OrderedJSONObject.Entry] = []
+        if let sleep { statusEntries.append(.init(key: "sleep", value: .string(sleep))) }
+        if let energy { statusEntries.append(.init(key: "energy", value: .string(energy))) }
+        let unknown = OrderedJSONObject(entries: [
+            .init(key: "status", value: .object(OrderedJSONObject(entries: statusEntries))),
+        ])
+        return TrainingSession(id: id, date: dateOnly(daysBefore: gap), completed: true, _unknown: unknown)
+    }
+
     /// todayStatus JSON. Defaults mirror DEFAULT_STATUS (sleep 一般 / energy 中 /
     /// soreness ['无'] / time 60). `daysAgo` only stamps the date (staleness diag).
     static func todayStatusJSON(
@@ -156,6 +169,7 @@ enum CoreSliceTestKit {
         injuryFlag: Bool = false,
         illnessFlag: Bool = false,
         explicitDeloadAssigned: Bool = false,
+        templateDurationMin: Double? = 70,
         mesocyclePlan: JSONValue? = nil
     ) -> CleanTrainingDecisionInput {
         let sessions = [session(id: "td-late", gap: gap), session(id: "td-early", gap: gap + 7)]
@@ -165,7 +179,8 @@ enum CoreSliceTestKit {
             metadata: CleanTrainingDecisionInputMetadata(
                 nowIso: deterministicClockIso, trainingMode: "hybrid",
                 acutePainReported: acutePainReported, injuryFlag: injuryFlag,
-                illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned
+                illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned,
+                templateDurationMin: templateDurationMin
             )
         )
     }
@@ -176,17 +191,19 @@ enum CoreSliceTestKit {
         sleep: String = "一般",
         energy: String = "中",
         soreness: [String] = ["无"],
+        time: String = "60",
         todayStatusDaysAgo: Int = 0,
         acutePainReported: Bool = false,
         injuryFlag: Bool = false,
         illnessFlag: Bool = false,
         explicitDeloadAssigned: Bool = false,
-        staleHealthSample: Bool = false
+        staleHealthSample: Bool = false,
+        templateDurationMin: Double? = 70
     ) -> CleanTrainingDecisionInput {
         let health: [JSONValue] = staleHealthSample ? [healthSampleJSON(daysAgo: 30)] : []
         let view = cleanView(
             sessions: sessions,
-            todayStatus: todayStatusJSON(sleep: sleep, energy: energy, soreness: soreness, daysAgo: todayStatusDaysAgo),
+            todayStatus: todayStatusJSON(sleep: sleep, energy: energy, soreness: soreness, time: time, daysAgo: todayStatusDaysAgo),
             healthSamples: health
         )
         return createCleanTrainingDecisionInput(
@@ -194,7 +211,8 @@ enum CoreSliceTestKit {
             metadata: CleanTrainingDecisionInputMetadata(
                 nowIso: deterministicClockIso, trainingMode: "hybrid",
                 acutePainReported: acutePainReported, injuryFlag: injuryFlag,
-                illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned
+                illnessFlag: illnessFlag, explicitDeloadAssigned: explicitDeloadAssigned,
+                templateDurationMin: templateDurationMin
             )
         )
     }
