@@ -84,6 +84,9 @@ struct FocusModeShellView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
+        // iOS-9: load the latest saved session + history from the app-local
+        // JSON store on launch.
+        .task { state.loadSavedSessions() }
     }
 
     // MARK: - Completed preview
@@ -91,9 +94,36 @@ struct FocusModeShellView: View {
     @ViewBuilder
     private var completedBody: some View {
         if let summary = state.completedSummary {
-            FocusSavedSessionPreviewView(summary: summary, onStartNew: { state.startNewSession() })
+            VStack(alignment: .leading, spacing: 12) {
+                saveStatusBanner
+                FocusSavedSessionPreviewView(summary: summary, onStartNew: { state.startNewSession() })
+            }
         } else {
             planBody
+        }
+    }
+
+    /// Honest save feedback on the completed screen. `.failed` never reads as
+    /// success — it shows the error and notes the in-RAM preview still works.
+    @ViewBuilder
+    private var saveStatusBanner: some View {
+        switch state.saveStatus {
+        case .saved:
+            Text("已保存到本机 · 可在计划页查看历史")
+                .font(.footnote)
+                .foregroundStyle(.green)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.green.opacity(0.12)))
+        case .failed(let message):
+            Text("本地保存失败：\(message) · 本次预览仍可用")
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.red.opacity(0.12)))
+        case .idle:
+            EmptyView()
         }
     }
 
@@ -110,6 +140,13 @@ struct FocusModeShellView: View {
             exerciseListSection
 
             actionStack
+
+            FocusSavedSessionHistoryView(
+                latest: state.latestSaved,
+                history: state.savedHistory,
+                errorMessage: state.saveErrorMessage,
+                onClear: { state.clearSavedSessions() }
+            )
         }
     }
 
