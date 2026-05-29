@@ -216,26 +216,35 @@ struct FocusSavedSessionHistoryView: View {
         }
     }
 
-    // MARK: - Recent list (filtered, newest-first, tap → detail)
+    // MARK: - Recent list (iOS-13: grouped Today/Earlier/Older, newest-first, tap → detail)
 
     @ViewBuilder
     private var recentList: some View {
-        let rows = Array(filteredHistory.prefix(Self.maxRows))
-        if rows.isEmpty {
+        let filtered = filteredHistory
+        if filtered.isEmpty {
             Text("没有符合筛选条件的记录")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } else {
-            VStack(spacing: 6) {
-                ForEach(rows) { snapshot in
-                    Button { selected = snapshot } label: { historyRow(snapshot) }
-                        .buttonStyle(.plain)
+            let sections = LocalSnapshotHistory.grouped(filtered, now: state.historyNow)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(sections, id: \.group.rawValue) { section in
+                    let rows = Array(section.snapshots.prefix(Self.maxRows))
+                    Text(section.group.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    VStack(spacing: 6) {
+                        ForEach(rows) { snapshot in
+                            Button { selected = snapshot } label: { historyRow(snapshot) }
+                                .buttonStyle(.plain)
+                        }
+                    }
+                    if section.snapshots.count > rows.count {
+                        Text("仅显示最近 \(rows.count) 条")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
-            }
-            if filteredHistory.count > rows.count {
-                Text("仅显示最近 \(rows.count) 条")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
             }
         }
     }
@@ -244,11 +253,12 @@ struct FocusSavedSessionHistoryView: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(snapshot.scenarioLabel).font(.footnote.weight(.medium))
-                Text(snapshot.sessionIntent).font(.caption2).foregroundStyle(.tertiary)
+                Text("\(snapshot.sessionIntent) · \(snapshot.activePhase)")
+                    .font(.caption2).foregroundStyle(.tertiary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text("\(snapshot.totalCompletedSets) / \(snapshot.totalTargetSets) 组")
+                Text("\(snapshot.totalCompletedSets) / \(snapshot.totalTargetSets) 组 · \(Self.completionPercent(snapshot))")
                     .font(.footnote.monospacedDigit())
                 Text(Self.displayTime(snapshot.createdAtIso))
                     .font(.caption2.monospacedDigit())
@@ -259,6 +269,13 @@ struct FocusSavedSessionHistoryView: View {
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
+    }
+
+    /// Whole-percent completion for one snapshot (e.g. "80%").
+    private static func completionPercent(_ s: LocalCompletedSessionSnapshot) -> String {
+        guard s.totalTargetSets > 0 else { return "0%" }
+        let pct = Int((Double(s.totalCompletedSets) / Double(s.totalTargetSets) * 100).rounded())
+        return "\(min(100, max(0, pct)))%"
     }
 
     // MARK: - Export (Iter 9) — local-only debug copy
@@ -321,9 +338,16 @@ struct FocusSavedSessionHistoryView: View {
 
     private var restoreStatusText: String {
         switch state.restoreStatus {
-        case .idle: return "无"
-        case .restored(let label): return "已恢复「\(label)」"
-        case .failed: return "上次失败"
+        case .idle:
+            return "无"
+        case .restored(let label):
+            // iOS-13: surface reconciliation drift (skipped/new exercises) honestly.
+            if let r = state.restoreReconciliation, r.hasDrift {
+                return "已恢复「\(label)」· 跳过旧动作 \(r.unmatchedSnapshotIds.count) · 新动作 \(r.missingCurrentIds.count)"
+            }
+            return "已恢复「\(label)」"
+        case .failed:
+            return "上次失败"
         }
     }
 

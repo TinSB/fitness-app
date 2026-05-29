@@ -270,14 +270,23 @@ struct FocusModeShellView: View {
     }
 
     /// iOS-11: shown when the in-session draft was restored from a saved local
-    /// snapshot (continue-a-saved-session). Local-only, in-RAM draft.
+    /// snapshot (continue-a-saved-session). iOS-13: also surfaces reconciliation
+    /// drift (saved exercises skipped / new exercises added). Local-only draft.
+    @ViewBuilder
     private var restoredDraftBanner: some View {
-        Text("已恢复本机草稿 · 继续训练（仅本机 · 未写入云端）")
-            .font(.footnote)
-            .foregroundStyle(.blue)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.blue.opacity(0.12)))
+        VStack(alignment: .leading, spacing: 3) {
+            Text("已恢复本机草稿 · 继续训练（仅本机 · 未写入云端）")
+                .font(.footnote)
+            if let r = state.restoreReconciliation, r.hasDrift {
+                Text("注意：\(r.unmatchedSnapshotIds.count) 个旧动作已跳过（已不在该样例中），\(r.missingCurrentIds.count) 个新动作从 0 组开始")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .foregroundStyle(.blue)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.blue.opacity(0.12)))
     }
 
     private var inSessionHeader: some View {

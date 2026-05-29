@@ -216,6 +216,111 @@ final class IronPathLocalSnapshotTests: XCTestCase {
         XCTAssertEqual(LocalDraftRestorePlanner.plan(from: empty), .failure(.emptyExercises))
     }
 
+    // MARK: - iOS-13 restore reconciliation
+
+    func testReconcileAllMatchedPreservesCountsAndOrder() throws {
+        let ex = [exercise("a", completed: 1, target: 3), exercise("b", completed: 2, target: 2), exercise("c", completed: 0, target: 2)]
+        let r = try LocalDraftRestorePlanner.reconcile(from: validSnapshot(exercises: ex, resume: 1),
+                                                       against: ["a", "b", "c"]).get()
+        XCTAssertEqual(r.matchedExerciseIds, ["a", "b", "c"])
+        XCTAssertTrue(r.unmatchedSnapshotIds.isEmpty)
+        XCTAssertTrue(r.missingCurrentIds.isEmpty)
+        XCTAssertFalse(r.hasDrift)
+        XCTAssertEqual(r.plan.completedSetsByExerciseId, ["a": 1, "b": 2, "c": 0])
+        XCTAssertEqual(r.plan.resumeExerciseIndex, 1)   // "b" is index 1 in current
+    }
+
+    func testReconcileReportsMissingAndRenamedIds() throws {
+        // snapshot has a,b,c; current scenario now has a,c,d (b renamed/removed, d new)
+        let ex = [exercise("a", completed: 1, target: 3), exercise("b", completed: 2, target: 2), exercise("c", completed: 1, target: 2)]
+        let r = try LocalDraftRestorePlanner.reconcile(from: validSnapshot(exercises: ex, resume: 0),
+                                                       against: ["a", "c", "d"]).get()
+        XCTAssertEqual(r.matchedExerciseIds, ["a", "c"])
+        XCTAssertEqual(r.unmatchedSnapshotIds, ["b"], "renamed/removed saved id reported, not applied")
+        XCTAssertEqual(r.missingCurrentIds, ["d"], "new current exercise reported")
+        XCTAssertTrue(r.hasDrift)
+        // counts applied ONLY to matched ids (no stale "b")
+        XCTAssertEqual(r.plan.completedSetsByExerciseId, ["a": 1, "c": 1])
+        XCTAssertNil(r.plan.completedSetsByExerciseId["b"])
+    }
+
+    func testReconcileRemapsResumeToCurrentOrder() throws {
+        // saved order [a,b]; current order [b,a]; saved resume points at "b" (idx 1)
+        let ex = [exercise("a", completed: 1, target: 3), exercise("b", completed: 0, target: 2)]
+        let r = try LocalDraftRestorePlanner.reconcile(from: validSnapshot(exercises: ex, resume: 1),
+                                                       against: ["b", "a"]).get()
+        XCTAssertEqual(r.plan.resumeExerciseIndex, 0, "resume remapped to 'b' at current index 0")
+        XCTAssertEqual(r.matchedExerciseIds, ["a", "b"])   // snapshot order
+        XCTAssertEqual(r.plan.completedSetsByExerciseId, ["a": 1, "b": 0])
+    }
+
+    func testReconcileWithNoMatchesAppliesNothing() throws {
+        let ex = [exercise("old1", completed: 2, target: 2), exercise("old2", completed: 1, target: 3)]
+        let r = try LocalDraftRestorePlanner.reconcile(from: validSnapshot(exercises: ex, resume: 1),
+                                                       against: ["new1", "new2"]).get()
+        XCTAssertTrue(r.matchedExerciseIds.isEmpty)
+        XCTAssertEqual(r.unmatchedSnapshotIds, ["old1", "old2"])
+        XCTAssertEqual(r.missingCurrentIds, ["new1", "new2"])
+        XCTAssertTrue(r.plan.completedSetsByExerciseId.isEmpty)
+        XCTAssertEqual(r.plan.resumeExerciseIndex, 0)
+    }
+
+    func testReconcileRejectsImpossibleAndEmptyLikePlan() {
+        let impossible = LocalCompletedSessionSnapshot(
+            snapshotId: "id", createdAtIso: "t", scenarioId: "normal", scenarioLabel: "普通",
+            sessionIntent: "x", activePhase: "base", deloadLevel: "none", deloadStrategy: "maintain",
+            totalCompletedSets: 9, totalTargetSets: 1, exercises: [exercise("a", completed: 9, target: 1)])
+        XCTAssertEqual(LocalDraftRestorePlanner.reconcile(from: impossible, against: ["a"]), .failure(.impossibleProgress))
+    }
+
+    // MARK: - iOS-13 local history grouping
+
+    private func snapshotAt(_ id: String, _ iso: String) -> LocalCompletedSessionSnapshot {
+        validSnapshot(id: id, createdAtIso: iso)
+    }
+
+    func testHistoryGroupingTodayEarlierOlderNewestFirst() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = ISO8601DateFormatter().date(from: "2026-05-27T12:00:00Z")!
+        let snaps = [
+            snapshotAt("today-am", "2026-05-27T08:00:00.000Z"),
+            snapshotAt("today-late", "2026-05-27T11:00:00.000Z"),
+            snapshotAt("earlier", "2026-05-24T10:00:00.000Z"),
+            snapshotAt("older", "2026-04-01T10:00:00.000Z"),
+        ]
+        let sections = LocalSnapshotHistory.grouped(snaps, now: now, calendar: cal)
+        XCTAssertEqual(sections.map(\.group), [.today, .earlier, .older])
+        // today section newest-first
+        XCTAssertEqual(sections[0].snapshots.map(\.id), ["today-late", "today-am"])
+        XCTAssertEqual(sections[1].snapshots.map(\.id), ["earlier"])
+        XCTAssertEqual(sections[2].snapshots.map(\.id), ["older"])
+    }
+
+    func testHistoryGroupingCalendarDayBoundary() {
+        // 7 calendar days ago = earlier; 8 = older; a future date = older.
+        let now = ISO8601DateFormatter().date(from: "2026-05-27T12:00:00Z")!
+        let snaps = [
+            snapshotAt("d7", "2026-05-20T23:00:00.000Z"),   // 7 calendar days ago
+            snapshotAt("d8", "2026-05-19T01:00:00.000Z"),   // 8 calendar days ago
+            snapshotAt("future", "2026-05-28T09:00:00.000Z"),
+        ]
+        let sections = LocalSnapshotHistory.grouped(snaps, now: now)
+        let earlierIds = sections.first(where: { $0.group == .earlier })?.snapshots.map(\.id) ?? []
+        let olderIds = sections.first(where: { $0.group == .older })?.snapshots.map(\.id) ?? []
+        XCTAssertEqual(earlierIds, ["d7"])
+        XCTAssertTrue(olderIds.contains("d8"))
+        XCTAssertTrue(olderIds.contains("future"), "a future-dated snapshot buckets to older, never crashes")
+    }
+
+    func testHistoryGroupingEmptyAndUnparseable() {
+        let now = ISO8601DateFormatter().date(from: "2026-05-27T12:00:00Z")!
+        XCTAssertEqual(LocalSnapshotHistory.grouped([], now: now), [])
+        // an unparseable timestamp falls into `older`, never dropped
+        let bad = LocalSnapshotHistory.grouped([snapshotAt("bad", "not-a-date")], now: now)
+        XCTAssertEqual(bad.map(\.group), [.older])
+        XCTAssertEqual(bad.first?.snapshots.first?.id, "bad")
+    }
+
     // MARK: - Store round trip (temp dir)
 
     func testStoreSaveLoadRoundTrip() throws {

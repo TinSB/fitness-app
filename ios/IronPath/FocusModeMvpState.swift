@@ -112,6 +112,10 @@ final class FocusModeMvpState: ObservableObject {
     @Published private(set) var migratedSavedCount: Int = 0
     /// iOS-11: result of the last restore-to-local-draft attempt.
     @Published private(set) var restoreStatus: FocusRestoreStatus = .idle
+    /// iOS-13: reconciliation of the last restore — which saved exercises matched
+    /// the current scenario, which were skipped (renamed/removed), which are new.
+    /// nil until a restore is attempted.
+    @Published private(set) var restoreReconciliation: LocalDraftRestoreReconciliation? = nil
 
     /// The sanctioned app-local JSON store. Injectable for previews/tests; the
     /// app uses the default Application Support location. NOTE: this class never
@@ -169,6 +173,7 @@ final class FocusModeMvpState: ObservableObject {
         saveStatus = .idle
         saveErrorMessage = nil
         restoreStatus = .idle
+        restoreReconciliation = nil
     }
 
     // MARK: - Per-exercise progress
@@ -204,6 +209,7 @@ final class FocusModeMvpState: ObservableObject {
         // A fresh "开始训练" is not a restored draft — clear any stale restore
         // status so the in-session restored-draft banner never shows wrongly.
         restoreStatus = .idle
+        restoreReconciliation = nil
         stage = .inSession
     }
 
@@ -223,6 +229,7 @@ final class FocusModeMvpState: ObservableObject {
         lines: [FocusCompletedExerciseLine]
     ) {
         restoreStatus = .idle   // a fresh completion is not a restored draft
+        restoreReconciliation = nil
         let totalCompleted = lines.reduce(0) { $0 + $1.completedSets }
         let totalTarget = lines.reduce(0) { $0 + $1.targetSets }
         let now = clock()
@@ -404,12 +411,20 @@ final class FocusModeMvpState: ObservableObject {
     func restoreDraft(from snapshot: LocalCompletedSessionSnapshot) {
         guard let scenario = FocusModeSampleScenario(rawValue: snapshot.scenarioId) else {
             restoreStatus = .failed("无法识别的训练样例：\(snapshot.scenarioId)，无法在本机恢复")
+            restoreReconciliation = nil
             return
         }
-        let plan: LocalDraftRestorePlan
-        switch LocalDraftRestorePlanner.plan(from: snapshot) {
-        case .success(let p):
-            plan = p
+        // iOS-13: reconcile the saved exercise ids against the CURRENT scenario's
+        // exercise ids (regenerated deterministically). Counts apply only to
+        // matched exercises; saved ids that no longer exist are reported, not
+        // injected; the resume cursor is remapped into the current row order.
+        let reconciliation: LocalDraftRestoreReconciliation
+        switch LocalDraftRestorePlanner.reconcile(
+            from: snapshot,
+            against: currentExerciseIds(for: scenario)
+        ) {
+        case .success(let r):
+            reconciliation = r
         case .failure(let error):
             // Honest failure: do NOT mutate the current session.
             switch error {
@@ -418,19 +433,30 @@ final class FocusModeMvpState: ObservableObject {
             case .impossibleProgress:
                 restoreStatus = .failed("该存档的完成进度不合法，已拒绝恢复")
             }
+            restoreReconciliation = nil
             return
         }
-        // Apply the validated plan to the in-RAM draft (order/counts preserved by
-        // the planner; the shell maps counts by exercise id, so a renamed/missing
-        // id from an older template is simply ignored at render — never a crash).
+        // Apply the reconciled plan to the in-RAM draft (matched-only counts;
+        // resume remapped to current order; the shell maps counts by exercise id).
+        let plan = reconciliation.plan
         selectedScenario = scenario
         completedSetsByExerciseId = plan.completedSetsByExerciseId
         selectedExerciseIndex = plan.resumeExerciseIndex
         completedSummary = nil
         saveStatus = .idle
         saveErrorMessage = nil
+        restoreReconciliation = reconciliation
         restoreStatus = .restored(snapshot.scenarioLabel)
         stage = .inSession
+    }
+
+    /// The CURRENT scenario's displayed exercise ids — regenerated
+    /// deterministically the same way the shell builds its rows (perExercise
+    /// entries that have a matching template). Pure read; no disk/AppData.
+    private func currentExerciseIds(for scenario: FocusModeSampleScenario) -> [String] {
+        let slice = FocusModePreviewData.sampleCoreSlice(for: scenario)
+        let templateIds = Set(FocusModePreviewData.sampleTemplateExercises().map(\.id))
+        return slice.perExercise.map(\.exerciseId).filter { templateIds.contains($0) }
     }
 
     /// Whether the current in-session draft was restored from a saved snapshot.
@@ -438,6 +464,16 @@ final class FocusModeMvpState: ObservableObject {
         if case .restored = restoreStatus { return stage == .inSession }
         return false
     }
+
+    /// iOS-13: the saved history grouped into Today / Earlier / Older for the
+    /// local history surface (deterministic clock by default).
+    var groupedHistory: [LocalHistorySection] {
+        LocalSnapshotHistory.grouped(savedHistory, now: clock())
+    }
+
+    /// The reference "now" the history surface groups against (deterministic
+    /// clock by default); lets the view group a filtered subset consistently.
+    var historyNow: Date { clock() }
 
     /// From the completed preview, start over on the same scenario (clears the
     /// in-RAM progress + summary + transient save banner). The on-disk saved
@@ -449,6 +485,7 @@ final class FocusModeMvpState: ObservableObject {
         saveStatus = .idle
         saveErrorMessage = nil
         restoreStatus = .idle
+        restoreReconciliation = nil
         stage = .plan
     }
 
