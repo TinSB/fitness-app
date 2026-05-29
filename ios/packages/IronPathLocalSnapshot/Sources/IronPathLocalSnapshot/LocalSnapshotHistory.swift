@@ -101,4 +101,30 @@ public enum LocalSnapshotHistory {
         if !older.isEmpty { sections.append(LocalHistorySection(group: .older, snapshots: older)) }
         return sections
     }
+
+    /// iOS-14: lightweight, local-only filter/search over saved snapshots.
+    /// `query` matches (case-insensitively) the scenario label, session intent,
+    /// or any exercise name; `scenarioId` keeps only that scenario; `completedOnly`
+    /// keeps only fully-completed sessions. Pure; preserves input order (the view
+    /// groups afterwards). No database, no search index, no network.
+    public static func filtered(
+        _ snapshots: [LocalCompletedSessionSnapshot],
+        query: String = "",
+        scenarioId: String? = nil,
+        completedOnly: Bool = false
+    ) -> [LocalCompletedSessionSnapshot] {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return snapshots.filter { snap in
+            if let scenarioId, snap.scenarioId != scenarioId { return false }
+            if completedOnly, !(snap.totalTargetSets > 0 && snap.totalCompletedSets >= snap.totalTargetSets) {
+                return false
+            }
+            if !q.isEmpty {
+                let haystack = ([snap.scenarioLabel, snap.sessionIntent] + snap.exercises.map(\.name))
+                    .joined(separator: "\n").lowercased()
+                if !haystack.contains(q) { return false }
+            }
+            return true
+        }
+    }
 }

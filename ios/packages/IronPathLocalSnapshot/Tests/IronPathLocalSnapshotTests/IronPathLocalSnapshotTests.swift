@@ -321,6 +321,48 @@ final class IronPathLocalSnapshotTests: XCTestCase {
         XCTAssertEqual(bad.first?.snapshots.first?.id, "bad")
     }
 
+    // MARK: - iOS-14 filter / search
+
+    func testFilterByScenarioAndCompletedOnly() {
+        let full = validSnapshot(id: "a", scenario: "normal",
+                                 exercises: [exercise("x", completed: 3, target: 3)])      // completed
+        let partial = validSnapshot(id: "b", scenario: "normal",
+                                    exercises: [exercise("y", completed: 1, target: 3)])   // not completed
+        let other = validSnapshot(id: "c", scenario: "deloadWeek",
+                                  exercises: [exercise("z", completed: 2, target: 2)])      // completed, other scenario
+        let all = [full, partial, other]
+        XCTAssertEqual(LocalSnapshotHistory.filtered(all, scenarioId: "normal").map(\.id), ["a", "b"])
+        XCTAssertEqual(LocalSnapshotHistory.filtered(all, completedOnly: true).map(\.id), ["a", "c"])
+        XCTAssertEqual(LocalSnapshotHistory.filtered(all, scenarioId: "normal", completedOnly: true).map(\.id), ["a"])
+    }
+
+    func testFilterByQueryMatchesScenarioIntentExerciseName() {
+        let a = validSnapshot(id: "a", label: "普通",
+                              exercises: [exercise("bench-press", completed: 1, target: 2)])
+        let b = validSnapshot(id: "b", label: "减载周",
+                              exercises: [exercise("squat", completed: 1, target: 2)])
+        let all = [a, b]
+        XCTAssertEqual(LocalSnapshotHistory.filtered(all, query: "bench").map(\.id), ["a"])  // exercise name
+        XCTAssertEqual(LocalSnapshotHistory.filtered(all, query: "减载").map(\.id), ["b"])    // scenario label
+        XCTAssertEqual(LocalSnapshotHistory.filtered(all, query: "  ").map(\.id), ["a", "b"]) // blank = all
+        XCTAssertTrue(LocalSnapshotHistory.filtered(all, query: "zzz").isEmpty)               // no match
+    }
+
+    // MARK: - iOS-14 most-common scenario stat
+
+    func testStatsMostCommonScenario() {
+        // newest-first: one 普通, two 减载周 -> most common is 减载周
+        let a = validSnapshot(id: "a", scenario: "normal", label: "普通")
+        let b = validSnapshot(id: "b", scenario: "deloadWeek", label: "减载周")
+        let c = validSnapshot(id: "c", scenario: "deloadWeek", label: "减载周")
+        XCTAssertEqual(LocalSnapshotStats.derive(from: [a, b, c]).mostCommonScenarioLabel, "减载周")
+        // tie -> resolves toward the most recent (first in newest-first order)
+        let x = validSnapshot(id: "x", scenario: "normal", label: "普通")
+        let y = validSnapshot(id: "y", scenario: "deloadWeek", label: "减载周")
+        XCTAssertEqual(LocalSnapshotStats.derive(from: [x, y]).mostCommonScenarioLabel, "普通")
+        XCTAssertNil(LocalSnapshotStats.empty.mostCommonScenarioLabel)
+    }
+
     // MARK: - Store round trip (temp dir)
 
     func testStoreSaveLoadRoundTrip() throws {

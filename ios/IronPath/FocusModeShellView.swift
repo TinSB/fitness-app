@@ -84,9 +84,14 @@ struct FocusModeShellView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        // iOS-9: load the latest saved session + history from the app-local
-        // JSON store on launch.
-        .task { state.loadSavedSessions() }
+        // iOS-9: load the latest saved session + history from the app-local JSON
+        // store on launch. iOS-14: opt the RUNNING app into the real wall-clock
+        // first, so saved timestamps + history grouping reflect real days (tests/
+        // previews keep the deterministic default).
+        .task {
+            state.useSystemClock()
+            state.loadSavedSessions()
+        }
     }
 
     // MARK: - Completed preview

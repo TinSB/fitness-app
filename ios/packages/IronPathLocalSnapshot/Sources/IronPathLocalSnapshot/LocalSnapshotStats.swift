@@ -19,6 +19,9 @@ public struct LocalSnapshotStats: Equatable {
     public let completionRatio: Double
     public let mostRecentScenarioLabel: String?
     public let lastSavedIso: String?
+    /// iOS-14: the scenario label that appears most often across saved sessions
+    /// (ties broken toward the most recent, since snapshots arrive newest-first).
+    public let mostCommonScenarioLabel: String?
 
     public init(
         totalSessions: Int,
@@ -26,7 +29,8 @@ public struct LocalSnapshotStats: Equatable {
         totalTargetSets: Int,
         completionRatio: Double,
         mostRecentScenarioLabel: String?,
-        lastSavedIso: String?
+        lastSavedIso: String?,
+        mostCommonScenarioLabel: String? = nil
     ) {
         self.totalSessions = totalSessions
         self.totalCompletedSets = totalCompletedSets
@@ -34,6 +38,7 @@ public struct LocalSnapshotStats: Equatable {
         self.completionRatio = completionRatio
         self.mostRecentScenarioLabel = mostRecentScenarioLabel
         self.lastSavedIso = lastSavedIso
+        self.mostCommonScenarioLabel = mostCommonScenarioLabel
     }
 
     public static let empty = LocalSnapshotStats(
@@ -42,7 +47,8 @@ public struct LocalSnapshotStats: Equatable {
         totalTargetSets: 0,
         completionRatio: 0,
         mostRecentScenarioLabel: nil,
-        lastSavedIso: nil
+        lastSavedIso: nil,
+        mostCommonScenarioLabel: nil
     )
 
     /// Derive stats from valid snapshots. Expects newest-first ordering (as the
@@ -58,13 +64,28 @@ public struct LocalSnapshotStats: Equatable {
             ratio = 0
         }
         let mostRecent = snapshots.first
+        // Most-common scenario label: highest count; ties resolved toward the
+        // most recent (snapshots are newest-first, so the first to reach the max
+        // count wins). Pure, deterministic.
+        var counts: [String: Int] = [:]
+        var bestLabel: String? = nil
+        var bestCount = 0
+        for snap in snapshots {
+            let c = (counts[snap.scenarioLabel] ?? 0) + 1
+            counts[snap.scenarioLabel] = c
+            if c > bestCount {
+                bestCount = c
+                bestLabel = snap.scenarioLabel
+            }
+        }
         return LocalSnapshotStats(
             totalSessions: snapshots.count,
             totalCompletedSets: totalCompleted,
             totalTargetSets: totalTarget,
             completionRatio: ratio,
             mostRecentScenarioLabel: mostRecent?.scenarioLabel,
-            lastSavedIso: mostRecent?.createdAtIso
+            lastSavedIso: mostRecent?.createdAtIso,
+            mostCommonScenarioLabel: bestLabel
         )
     }
 

@@ -24,6 +24,7 @@ struct FocusSavedSessionHistoryView: View {
     @State private var showingClearConfirm = false
     @State private var scenarioFilter: String? = nil      // nil = all scenarios
     @State private var completedOnly = false
+    @State private var searchQuery = ""                   // iOS-14 local text search
     @State private var selected: LocalCompletedSessionSnapshot? = nil
 
     var body: some View {
@@ -160,7 +161,7 @@ struct FocusSavedSessionHistoryView: View {
     private var statsSection: some View {
         let s = state.stats
         return VStack(alignment: .leading, spacing: 6) {
-            Text("本机统计")
+            Text("本机训练小结")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
@@ -168,6 +169,12 @@ struct FocusSavedSessionHistoryView: View {
                 statTile("完成组", "\(s.totalCompletedSets)")
                 statTile("目标组", "\(s.totalTargetSets)")
                 statTile("完成率", s.completionPercentText)
+            }
+            // iOS-14: most-common scenario + last session date (derived, local).
+            if let common = s.mostCommonScenarioLabel {
+                Text("最常练：\(common) · 最近一次：\(s.lastSavedIso.map(Self.displayTime) ?? "—")")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -196,6 +203,20 @@ struct FocusSavedSessionHistoryView: View {
                     .toggleStyle(.button)
                     .controlSize(.small)
             }
+            // iOS-14: lightweight local search by scenario / intent / exercise name.
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").font(.caption).foregroundStyle(.secondary)
+                TextField("搜索样例 / 动作（仅本机）", text: $searchQuery)
+                    .font(.caption)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                if !searchQuery.isEmpty {
+                    Button { searchQuery = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        .font(.caption).foregroundStyle(.tertiary).buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
             scenarioFilterMenu
         }
     }
@@ -378,14 +399,14 @@ struct FocusSavedSessionHistoryView: View {
     // MARK: - Filtering helpers
 
     private var filteredHistory: [LocalCompletedSessionSnapshot] {
-        var rows = state.savedHistory   // newest-first as the store returns
-        if let sc = scenarioFilter {
-            rows = rows.filter { $0.scenarioId == sc }
-        }
-        if completedOnly {
-            rows = rows.filter { $0.totalTargetSets > 0 && $0.totalCompletedSets >= $0.totalTargetSets }
-        }
-        return rows
+        // iOS-14: delegate to the pure, unit-tested filter (search + scenario +
+        // completed-only); the store already returns newest-first.
+        LocalSnapshotHistory.filtered(
+            state.savedHistory,
+            query: searchQuery,
+            scenarioId: scenarioFilter,
+            completedOnly: completedOnly
+        )
     }
 
     private struct ScenarioOption: Identifiable { let id: String; let label: String }

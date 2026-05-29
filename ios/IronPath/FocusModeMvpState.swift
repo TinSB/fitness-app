@@ -141,6 +141,18 @@ final class FocusModeMvpState: ObservableObject {
         return fmt.date(from: FocusModePreviewData.referenceClockIso) ?? Date(timeIntervalSince1970: 0)
     }
 
+    /// iOS-14: the real wall-clock, used ONLY when the running app opts in via
+    /// `useSystemClock()`. The default `clock` stays deterministic so tests and
+    /// SwiftUI previews remain reproducible and never flaky.
+    static let systemClock: () -> Date = { Date() }
+
+    /// Switch this state to the real wall-clock for the RUNNING app, so saved
+    /// timestamps + history grouping (Today/Earlier/Older) reflect real days.
+    /// Called once from the shell on launch; tests/previews never call it.
+    func useSystemClock() {
+        clock = FocusModeMvpState.systemClock
+    }
+
     private func timestampLabel(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
