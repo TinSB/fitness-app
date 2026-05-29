@@ -58,6 +58,6 @@ struct TrainingDecisionSummaryView: View {
 }
 
 #Preview {
-    TrainingDecisionSummaryView(slice: FocusModePreviewData.sampleCoreSlice())
+    TrainingDecisionSummaryView(slice: FocusModePreviewData.sampleCoreSlice(for: .normal))
         .padding()
 }
