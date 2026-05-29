@@ -64,35 +64,64 @@ enum LocalSnapshotStoreError: Error, LocalizedError, Equatable {
 
 /// Result of a defensive scan over the saved history: valid snapshots (newest
 /// first) plus the names of files that failed to decode or failed validation.
-struct LocalSnapshotScanResult: Equatable {
-    let valid: [LocalCompletedSessionSnapshot]
-    let invalidNames: [String]
+public struct LocalSnapshotScanResult: Equatable {
+    public let valid: [LocalCompletedSessionSnapshot]
+    public let invalidNames: [String]
     /// iOS-11: # of valid files whose ON-DISK schema version was below current
     /// and were migrated forward in memory.
-    let migratedCount: Int
+    public let migratedCount: Int
     /// iOS-11: counts keyed by the ON-DISK schema version (valid files only).
-    let versionCounts: [Int: Int]
-    var invalidCount: Int { invalidNames.count }
+    public let versionCounts: [Int: Int]
+    public var invalidCount: Int { invalidNames.count }
 
-    static let empty = LocalSnapshotScanResult(
+    public init(
+        valid: [LocalCompletedSessionSnapshot],
+        invalidNames: [String],
+        migratedCount: Int,
+        versionCounts: [Int: Int]
+    ) {
+        self.valid = valid
+        self.invalidNames = invalidNames
+        self.migratedCount = migratedCount
+        self.versionCounts = versionCounts
+    }
+
+    public static let empty = LocalSnapshotScanResult(
         valid: [], invalidNames: [], migratedCount: 0, versionCounts: [:]
     )
 }
 
 /// A small, local-only storage status snapshot for the diagnostics surface.
-struct LocalSnapshotStorageDiagnostics: Equatable {
-    let historyFileCount: Int
-    let validCount: Int
-    let invalidCount: Int
-    let quarantinedCount: Int
-    let migratedCount: Int
-    let schemaV1Count: Int
-    let schemaV2Count: Int
-    let hasLatestPointer: Bool
-    let hasBackup: Bool
-    let hasExport: Bool
+public struct LocalSnapshotStorageDiagnostics: Equatable {
+    public let historyFileCount: Int
+    public let validCount: Int
+    public let invalidCount: Int
+    public let quarantinedCount: Int
+    public let migratedCount: Int
+    public let schemaV1Count: Int
+    public let schemaV2Count: Int
+    public let hasLatestPointer: Bool
+    public let hasBackup: Bool
+    public let hasExport: Bool
 
-    static let empty = LocalSnapshotStorageDiagnostics(
+    public init(
+        historyFileCount: Int, validCount: Int, invalidCount: Int, quarantinedCount: Int,
+        migratedCount: Int, schemaV1Count: Int, schemaV2Count: Int,
+        hasLatestPointer: Bool, hasBackup: Bool, hasExport: Bool
+    ) {
+        self.historyFileCount = historyFileCount
+        self.validCount = validCount
+        self.invalidCount = invalidCount
+        self.quarantinedCount = quarantinedCount
+        self.migratedCount = migratedCount
+        self.schemaV1Count = schemaV1Count
+        self.schemaV2Count = schemaV2Count
+        self.hasLatestPointer = hasLatestPointer
+        self.hasBackup = hasBackup
+        self.hasExport = hasExport
+    }
+
+    public static let empty = LocalSnapshotStorageDiagnostics(
         historyFileCount: 0, validCount: 0, invalidCount: 0, quarantinedCount: 0,
         migratedCount: 0, schemaV1Count: 0, schemaV2Count: 0,
         hasLatestPointer: false, hasBackup: false, hasExport: false
@@ -101,7 +130,7 @@ struct LocalSnapshotStorageDiagnostics: Equatable {
 
 /// App-local JSON snapshot store. Inject a `directory` (e.g. a temp dir) for a
 /// preview/test; the app uses the default Application Support location.
-struct LocalSessionSnapshotStore {
+public struct LocalSessionSnapshotStore {
 
     // MARK: - Naming policy (all derived from this single prefix)
 
@@ -123,7 +152,7 @@ struct LocalSessionSnapshotStore {
     /// nil, the store resolves the app-local Application Support subdirectory.
     let explicitDirectory: URL?
 
-    init(directory: URL? = nil) {
+    public init(directory: URL? = nil) {
         self.explicitDirectory = directory
     }
 
@@ -175,7 +204,7 @@ struct LocalSessionSnapshotStore {
     /// first). Returns the history file URL. THROWS on any failure — a thrown
     /// error means nothing was reported as saved.
     @discardableResult
-    func save(_ snapshot: LocalCompletedSessionSnapshot) throws -> URL {
+    public func save(_ snapshot: LocalCompletedSessionSnapshot) throws -> URL {
         let dir = try resolveDirectory()
 
         let data: Data
@@ -226,7 +255,7 @@ struct LocalSessionSnapshotStore {
     /// Load the most-recently-saved snapshot, or nil if none exists yet.
     /// Prefers the rolling latest pointer; falls back to the highest-sequence
     /// history file. THROWS only on a genuine read/decode failure.
-    func loadLatest() throws -> LocalCompletedSessionSnapshot? {
+    public func loadLatest() throws -> LocalCompletedSessionSnapshot? {
         let dir = try resolveDirectory()
         let latestURL = dir.appendingPathComponent(Self.latestFilename, isDirectory: false)
         if FileManager.default.fileExists(atPath: latestURL.path) {
@@ -265,7 +294,7 @@ struct LocalSessionSnapshotStore {
     /// backup). Never deletes the directory, never recurses, never touches
     /// unrelated files. Returns the number of files removed.
     @discardableResult
-    func clear() throws -> Int {
+    public func clear() throws -> Int {
         let dir = try resolveDirectory()
         let contents: [URL]
         do {
@@ -301,7 +330,7 @@ struct LocalSessionSnapshotStore {
     /// first) plus the names of files that failed to decode OR failed schema
     /// validation. Never throws on a per-file problem (corrupt JSON is counted,
     /// not fatal); only throws if the directory itself can't be resolved.
-    func scanSnapshots() throws -> LocalSnapshotScanResult {
+    public func scanSnapshots() throws -> LocalSnapshotScanResult {
         let dir = try resolveDirectory()
         let names = try historyFilenames(in: dir).sorted { lhs, rhs in
             (sequence(of: lhs) ?? -1) > (sequence(of: rhs) ?? -1)
@@ -339,7 +368,7 @@ struct LocalSessionSnapshotStore {
     /// directory move/wipe, no iCloud — a bounded same-directory rename. Returns
     /// the number quarantined. THROWS on a rename failure (no fake success).
     @discardableResult
-    func quarantineInvalid() throws -> Int {
+    public func quarantineInvalid() throws -> Int {
         let dir = try resolveDirectory()
         let names = try historyFilenames(in: dir)
         var moved = 0
@@ -386,7 +415,7 @@ struct LocalSessionSnapshotStore {
     /// Returns the export URL, or nil if there is no latest snapshot yet.
     /// THROWS on a copy failure (no fake success).
     @discardableResult
-    func exportLatestDebugCopy() throws -> URL? {
+    public func exportLatestDebugCopy() throws -> URL? {
         let dir = try resolveDirectory()
         let latestURL = dir.appendingPathComponent(Self.latestFilename, isDirectory: false)
         guard FileManager.default.fileExists(atPath: latestURL.path) else { return nil }
@@ -411,7 +440,7 @@ struct LocalSessionSnapshotStore {
     }
 
     /// A small, local-only storage status for the diagnostics surface.
-    func storageDiagnostics() throws -> LocalSnapshotStorageDiagnostics {
+    public func storageDiagnostics() throws -> LocalSnapshotStorageDiagnostics {
         let dir = try resolveDirectory()
         let scan = try scanSnapshots()
         let quarantined = try quarantinedNames().count

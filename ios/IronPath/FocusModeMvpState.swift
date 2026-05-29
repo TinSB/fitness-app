@@ -15,6 +15,7 @@
 import Foundation
 import SwiftUI
 import IronPathTrainingDecision
+import IronPathLocalSnapshot
 
 /// The plan -> in-session -> completed flow. `isInSession` stays available as a
 /// computed alias so existing read sites keep working.
@@ -395,21 +396,36 @@ final class FocusModeMvpState: ObservableObject {
     /// Restore a saved snapshot into an IN-RAM training draft and resume it.
     /// This is NOT an AppData restore: the engine slice is regenerated
     /// deterministically from the scenario, and only the per-exercise completed-
-    /// set counts + the resume cursor are restored into memory. An unknown
-    /// scenario fails honestly and starts NO draft (no fake restore).
+    /// set counts + the resume cursor are restored into memory. Restore fidelity
+    /// (order + completed counts + clamped cursor + reject-impossible) is handled
+    /// by the pure, unit-tested LocalDraftRestorePlanner. Any failure (unknown
+    /// scenario OR impossible/empty progress) fails honestly and leaves the
+    /// current in-memory session UNTOUCHED — no fake restore.
     func restoreDraft(from snapshot: LocalCompletedSessionSnapshot) {
         guard let scenario = FocusModeSampleScenario(rawValue: snapshot.scenarioId) else {
             restoreStatus = .failed("无法识别的训练样例：\(snapshot.scenarioId)，无法在本机恢复")
             return
         }
-        selectedScenario = scenario
-        // Restore the in-RAM per-exercise progress from the snapshot.
-        var restored: [String: Int] = [:]
-        for exercise in snapshot.exercises {
-            restored[exercise.exerciseId] = max(0, exercise.completedSets)
+        let plan: LocalDraftRestorePlan
+        switch LocalDraftRestorePlanner.plan(from: snapshot) {
+        case .success(let p):
+            plan = p
+        case .failure(let error):
+            // Honest failure: do NOT mutate the current session.
+            switch error {
+            case .emptyExercises:
+                restoreStatus = .failed("该存档没有可恢复的动作")
+            case .impossibleProgress:
+                restoreStatus = .failed("该存档的完成进度不合法，已拒绝恢复")
+            }
+            return
         }
-        completedSetsByExerciseId = restored
-        selectedExerciseIndex = max(0, snapshot.resumeExerciseIndex ?? 0)
+        // Apply the validated plan to the in-RAM draft (order/counts preserved by
+        // the planner; the shell maps counts by exercise id, so a renamed/missing
+        // id from an older template is simply ignored at render — never a crash).
+        selectedScenario = scenario
+        completedSetsByExerciseId = plan.completedSetsByExerciseId
+        selectedExerciseIndex = plan.resumeExerciseIndex
         completedSummary = nil
         saveStatus = .idle
         saveErrorMessage = nil

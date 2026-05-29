@@ -8,6 +8,7 @@
 // cloud restore. Pure SwiftUI; never touches disk, network, cloud, or AppData.
 
 import SwiftUI
+import IronPathLocalSnapshot
 
 struct FocusSavedSessionDetailView: View {
     let snapshot: LocalCompletedSessionSnapshot
@@ -55,6 +56,17 @@ struct FocusSavedSessionDetailView: View {
             Text(Self.displayTime(snapshot.createdAtIso))
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(.secondary)
+            // iOS-12: schema badge + restore-eligibility (detail only opens for
+            // already-validated saved snapshots, so they are restore-eligible).
+            HStack(spacing: 6) {
+                Text("schema v\(snapshot.schemaVersion)")
+                    .font(.caption2.monospacedDigit())
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(.tertiarySystemBackground)))
+                Text("本机可恢复继续")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+            }
             Text("仅保存在本机 · 不同步云端")
                 .font(.caption)
                 .foregroundStyle(.tertiary)

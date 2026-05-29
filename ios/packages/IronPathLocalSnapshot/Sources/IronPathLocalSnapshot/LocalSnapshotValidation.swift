@@ -27,7 +27,7 @@
 import Foundation
 
 /// One concrete reason a snapshot failed validation.
-enum LocalSnapshotValidationIssue: Equatable {
+public enum LocalSnapshotValidationIssue: Equatable {
     case unsupportedSchemaVersion(Int)
     case emptySnapshotId
     case emptyCreatedAtIso
@@ -40,25 +40,27 @@ enum LocalSnapshotValidationIssue: Equatable {
 }
 
 /// Typed validation result. `.isValid` is true only when there are zero issues.
-struct LocalSnapshotValidationResult: Equatable {
-    let issues: [LocalSnapshotValidationIssue]
-    var isValid: Bool { issues.isEmpty }
+public struct LocalSnapshotValidationResult: Equatable {
+    public let issues: [LocalSnapshotValidationIssue]
+    public var isValid: Bool { issues.isEmpty }
 
-    static let valid = LocalSnapshotValidationResult(issues: [])
+    public init(issues: [LocalSnapshotValidationIssue]) { self.issues = issues }
+
+    public static let valid = LocalSnapshotValidationResult(issues: [])
 }
 
-enum LocalSnapshotValidator {
+public enum LocalSnapshotValidator {
 
     /// The schema versions this build can safely restore. iOS-11 accepts v1 +
     /// v2 (v1 files migrate forward via LocalSnapshotMigration). A future bump
     /// adds versions here (and a migration step) rather than silently restoring
     /// an unknown shape.
-    static let acceptedSchemaVersions: Set<Int> = [1, 2]
+    public static let acceptedSchemaVersions: Set<Int> = [1, 2]
 
     /// Validate a decoded snapshot. Returns every issue found (does not stop at
     /// the first) so the UI/diagnostics can explain why a file was skipped.
     /// Pure: never mutates the snapshot, never touches disk.
-    static func validate(_ snapshot: LocalCompletedSessionSnapshot) -> LocalSnapshotValidationResult {
+    public static func validate(_ snapshot: LocalCompletedSessionSnapshot) -> LocalSnapshotValidationResult {
         var issues: [LocalSnapshotValidationIssue] = []
 
         // Schema version must be explicitly supported.
@@ -112,7 +114,7 @@ enum LocalSnapshotValidator {
     }
 
     /// Convenience boolean for call sites that only need pass/fail.
-    static func isValid(_ snapshot: LocalCompletedSessionSnapshot) -> Bool {
+    public static func isValid(_ snapshot: LocalCompletedSessionSnapshot) -> Bool {
         validate(snapshot).isValid
     }
 }

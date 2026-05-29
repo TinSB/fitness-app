@@ -50,7 +50,16 @@ const RESTORE_FILES = [
 
 const stripSwiftComments = (s: string): string =>
   s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
-const appPath = (name: string): string => repoFile(`${APP_DIR}/${name}`);
+// iOS-12: pure snapshot/store files were extracted to the IronPathLocalSnapshot
+// Swift package (real unit tests). Resolve them from the package source dir;
+// presentation files stay under the app target.
+const PKG_DIR = 'ios/packages/IronPathLocalSnapshot/Sources/IronPathLocalSnapshot';
+const MOVED_TO_PACKAGE = new Set([
+  'LocalCompletedSessionSnapshot.swift', 'LocalSessionSnapshotStore.swift',
+  'LocalSnapshotValidation.swift', 'LocalSnapshotStats.swift', 'LocalSnapshotMigration.swift',
+]);
+const appPath = (name: string): string =>
+  repoFile(`${MOVED_TO_PACKAGE.has(name) ? PKG_DIR : APP_DIR}/${name}`);
 const appExists = (name: string): boolean => existsSync(appPath(name));
 const appCode = (name: string): string => stripSwiftComments(readFileSync(appPath(name), 'utf8'));
 const joinCode = (names: string[]): string => names.filter(appExists).map(appCode).join('\n');
@@ -146,8 +155,10 @@ describe('iOS-11 restore-to-local-draft', () => {
     const code = st();
     expect(code).toMatch(/func\s+restoreDraft\s*\(/);
     expect(code).toMatch(/FocusModeSampleScenario\s*\(\s*rawValue:\s*snapshot\.scenarioId\s*\)/);
-    expect(code).toMatch(/completedSetsByExerciseId\s*=\s*restored/);
-    expect(code).toMatch(/selectedExerciseIndex\s*=\s*max\(\s*0\s*,\s*snapshot\.resumeExerciseIndex/);
+    // iOS-12: restore fidelity is delegated to the pure LocalDraftRestorePlanner;
+    // the state applies the validated plan (order/counts preserved, cursor clamped).
+    expect(code).toMatch(/completedSetsByExerciseId\s*=\s*plan\.completedSetsByExerciseId/);
+    expect(code).toMatch(/selectedExerciseIndex\s*=\s*plan\.resumeExerciseIndex/);
     expect(code).toMatch(/stage\s*=\s*\.inSession/);
   });
   it('12. restore is NOT an AppData restore and never feeds TrainingDecision raw', () => {

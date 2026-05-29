@@ -13,6 +13,7 @@
 // actions come from FocusModeMvpState (which delegates disk IO to the store).
 
 import SwiftUI
+import IronPathLocalSnapshot
 
 struct FocusSavedSessionHistoryView: View {
     @ObservedObject var state: FocusModeMvpState
@@ -310,8 +311,20 @@ struct FocusSavedSessionHistoryView: View {
             Text("schema v1 \(d.schemaV1Count) · v2 \(d.schemaV2Count) · 已迁移 \(d.migratedCount)")
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
+            // iOS-12: latest restore status (honest, local).
+            Text("最近恢复：\(restoreStatusText)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var restoreStatusText: String {
+        switch state.restoreStatus {
+        case .idle: return "无"
+        case .restored(let label): return "已恢复「\(label)」"
+        case .failed: return "上次失败"
+        }
     }
 
     // MARK: - Clear

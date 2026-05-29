@@ -19,59 +19,71 @@
 import Foundation
 
 /// Per-exercise completed/target set tally inside a saved snapshot.
-struct LocalCompletedSetProgressSnapshot: Codable, Equatable {
-    let completedSets: Int
-    let targetSets: Int
+public struct LocalCompletedSetProgressSnapshot: Codable, Equatable {
+    public let completedSets: Int
+    public let targetSets: Int
+
+    public init(completedSets: Int, targetSets: Int) {
+        self.completedSets = completedSets
+        self.targetSets = targetSets
+    }
 }
 
 /// One completed exercise line inside a saved snapshot.
-struct LocalCompletedExerciseSnapshot: Codable, Equatable, Identifiable {
-    let exerciseId: String
-    let name: String
-    let role: String
-    let progress: LocalCompletedSetProgressSnapshot
+public struct LocalCompletedExerciseSnapshot: Codable, Equatable, Identifiable {
+    public let exerciseId: String
+    public let name: String
+    public let role: String
+    public let progress: LocalCompletedSetProgressSnapshot
 
-    var id: String { exerciseId }
-    var completedSets: Int { progress.completedSets }
-    var targetSets: Int { progress.targetSets }
+    public var id: String { exerciseId }
+    public var completedSets: Int { progress.completedSets }
+    public var targetSets: Int { progress.targetSets }
+
+    public init(exerciseId: String, name: String, role: String, progress: LocalCompletedSetProgressSnapshot) {
+        self.exerciseId = exerciseId
+        self.name = name
+        self.role = role
+        self.progress = progress
+    }
 }
 
 /// The full completed-session record written to app-local JSON. `snapshotId`
 /// is deterministic (`focus-<seq>-<scenarioId>`); `source` marks the origin so
 /// the file is never confused with a real cloud/export payload.
-struct LocalCompletedSessionSnapshot: Codable, Equatable, Identifiable {
+public struct LocalCompletedSessionSnapshot: Codable, Equatable, Identifiable {
     /// Bumped whenever the on-disk shape changes; lets a loader migrate older
     /// files forward instead of crashing.
     ///   v1 (iOS-9/10): no `resumeExerciseIndex`.
     ///   v2 (iOS-11):   adds optional `resumeExerciseIndex` (the resume cursor)
     ///                  so a saved session can be restored into an in-RAM draft
     ///                  and continued from where the user left off.
-    static let currentSchemaVersion = 2
+    public static let currentSchemaVersion = 2
 
-    let schemaVersion: Int
-    let snapshotId: String
-    let createdAtIso: String
-    let scenarioId: String
-    let scenarioLabel: String
-    let sessionIntent: String
-    let activePhase: String
-    let deloadLevel: String
-    let deloadStrategy: String
-    let totalCompletedSets: Int
-    let totalTargetSets: Int
-    let exercises: [LocalCompletedExerciseSnapshot]
+    public let schemaVersion: Int
+    public let snapshotId: String
+    public let createdAtIso: String
+    public let scenarioId: String
+    public let scenarioLabel: String
+    public let sessionIntent: String
+    public let activePhase: String
+    public let deloadLevel: String
+    public let deloadStrategy: String
+    public let totalCompletedSets: Int
+    public let totalTargetSets: Int
+    public let exercises: [LocalCompletedExerciseSnapshot]
     /// Origin marker — always the local Focus MVP. Never raw export data.
-    let source: String
+    public let source: String
     /// v2: the exercise index to resume on when this session is restored into a
     /// local draft. Optional so v1 files (which lack it) still decode — they
     /// migrate to a safe default. Pure presentation/draft hint; never AppData.
-    let resumeExerciseIndex: Int?
+    public let resumeExerciseIndex: Int?
 
-    var id: String { snapshotId }
+    public var id: String { snapshotId }
 
-    static let localSourceTag = "local-ios-focus-mvp"
+    public static let localSourceTag = "local-ios-focus-mvp"
 
-    init(
+    public init(
         snapshotId: String,
         createdAtIso: String,
         scenarioId: String,
