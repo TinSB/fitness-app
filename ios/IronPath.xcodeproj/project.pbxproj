@@ -3,10 +3,15 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */; };
+		81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */; };
+		81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */; };
+		81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */; };
+		81ACFD492FC935D0000989A7 /* IronPathTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */; };
 		AA00000000000000000000E2 /* IronPathApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* IronPathApp.swift */; };
 		AA00000000000000000000E4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E3 /* ContentView.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
@@ -21,6 +26,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreviewData.swift; sourceTree = "<group>"; };
+		81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeExerciseCard.swift; sourceTree = "<group>"; };
+		81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDecisionSummaryView.swift; sourceTree = "<group>"; };
+		81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeShellView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B2 /* IronPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000E1 /* IronPathApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronPathApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -34,6 +43,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000000000000000000111 /* IronPathDomain in Frameworks */,
+				81ACFD492FC935D0000989A7 /* IronPathTrainingDecision in Frameworks */,
 				AA0000000000000000000112 /* IronPathDataHealth in Frameworks */,
 				AA0000000000000000000113 /* IronPathPersistence in Frameworks */,
 				AA0000000000000000000114 /* IronPathCloudSync in Frameworks */,
@@ -47,7 +57,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		AA00000000000000000000A2 /* Main */ = {
+		AA00000000000000000000A2 = {
 			isa = PBXGroup;
 			children = (
 				AA00000000000000000000A4 /* IronPath */,
@@ -70,6 +80,10 @@
 				AA00000000000000000000E3 /* ContentView.swift */,
 				AA00000000000000000000E6 /* Assets.xcassets */,
 				AA00000000000000000000E5 /* Info.plist */,
+				81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */,
+				81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */,
+				81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */,
+				81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */,
 			);
 			path = IronPath;
 			sourceTree = "<group>";
@@ -99,6 +113,7 @@
 				AA0000000000000000000106 /* IronPathBackup */,
 				AA0000000000000000000107 /* IronPathL10n */,
 				AA0000000000000000000108 /* IronPathUIKit */,
+				81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */,
 			);
 			productName = IronPath;
 			productReference = AA00000000000000000000B2 /* IronPath.app */;
@@ -112,7 +127,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					AA00000000000000000000B1 = {
 						CreatedOnToolsVersion = 15.4;
@@ -127,7 +142,7 @@
 				en,
 				Base,
 			);
-			mainGroup = AA00000000000000000000A2 /* Main */;
+			mainGroup = AA00000000000000000000A2;
 			packageReferences = (
 				AA00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathDomain" */,
 				AA00000000000000000000F2 /* XCLocalSwiftPackageReference "packages/IronPathDataHealth" */,
@@ -137,6 +152,7 @@
 				AA00000000000000000000F6 /* XCLocalSwiftPackageReference "packages/IronPathBackup" */,
 				AA00000000000000000000F7 /* XCLocalSwiftPackageReference "packages/IronPathL10n" */,
 				AA00000000000000000000F8 /* XCLocalSwiftPackageReference "packages/IronPathUIKit" */,
+				81ACFD472FC935D0000989A7 /* XCLocalSwiftPackageReference "packages/IronPathTrainingDecision" */,
 			);
 			productRefGroup = AA00000000000000000000A3 /* Products */;
 			projectDirPath = "";
@@ -164,7 +180,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000000E2 /* IronPathApp.swift in Sources */,
+				81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */,
+				81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */,
+				81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */,
 				AA00000000000000000000E4 /* ContentView.swift in Sources */,
+				81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -229,6 +249,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -285,6 +306,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -302,6 +324,7 @@
 				INFOPLIST_FILE = IronPath/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -327,6 +350,7 @@
 				INFOPLIST_FILE = IronPath/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -364,6 +388,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		81ACFD472FC935D0000989A7 /* XCLocalSwiftPackageReference "packages/IronPathTrainingDecision" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/IronPathTrainingDecision;
+		};
 		AA00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathDomain" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathDomain;
@@ -399,6 +427,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IronPathTrainingDecision;
+		};
 		AA0000000000000000000101 /* IronPathDomain */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathDomain;
