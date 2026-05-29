@@ -1,39 +1,49 @@
 // FocusSavedSessionHistoryView — iOS-9 Local JSON Persistence + Saved Session
-// History V1.
+// History V1; HARDENED in iOS-10 Local Training Persistence Mega Bundle V1.
 //
-// A small, local-only saved-session surface shown on the plan screen. It is a
-// preview list, NOT a full history app: a local-only disclaimer, the latest
-// saved session card, a short list of recent saved snapshots, and a clear
-// action. No charts, no calendar, no cloud restore.
+// A small, local-only saved-session surface shown on the plan screen. iOS-10
+// adds: a local invalid/skipped warning (+ quarantine action), a restore-status
+// line, a derived local stats summary, newest-first sort with scenario /
+// completed filters, a local-only debug-copy export, a local storage
+// diagnostics section, and a tap-to-open detail sheet. It is still a small
+// preview surface — NOT a full history app: no charts, no calendar, no cloud
+// restore.
 //
-// All data comes from FocusModeMvpState (loaded from the sanctioned app-local
-// JSON store on launch). This view is pure SwiftUI — it never touches disk,
-// the network, the cloud, or AppData.
+// Pure SwiftUI — never touches disk, network, cloud, or AppData. All data and
+// actions come from FocusModeMvpState (which delegates disk IO to the store).
 
 import SwiftUI
 
 struct FocusSavedSessionHistoryView: View {
-    let latest: LocalCompletedSessionSnapshot?
-    let history: [LocalCompletedSessionSnapshot]
-    let errorMessage: String?
-    let onClear: () -> Void
+    @ObservedObject var state: FocusModeMvpState
 
     /// Cap the preview list so this stays a small surface, not a full archive.
-    private static let maxRows = 5
+    private static let maxRows = 8
 
     @State private var showingClearConfirm = false
+    @State private var scenarioFilter: String? = nil      // nil = all scenarios
+    @State private var completedOnly = false
+    @State private var selected: LocalCompletedSessionSnapshot? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
 
-            if let errorMessage {
+            if let errorMessage = state.saveErrorMessage {
                 errorBanner(errorMessage)
             }
+            if state.hasInvalidSkipped {
+                invalidWarning
+            }
 
-            if let latest {
+            if let latest = state.latestSaved {
+                restoreStatusLine
                 latestCard(latest)
+                statsSection
+                filterControls
                 recentList
+                exportSection
+                diagnosticsSection
                 clearButton
             } else {
                 emptyState
@@ -42,6 +52,9 @@ struct FocusSavedSessionHistoryView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+        .sheet(item: $selected) { snapshot in
+            FocusSavedSessionDetailView(snapshot: snapshot)
+        }
     }
 
     // MARK: - Header + disclaimer
@@ -66,6 +79,35 @@ struct FocusSavedSessionHistoryView: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.red.opacity(0.10)))
     }
 
+    // MARK: - Invalid / skipped warning + quarantine (Iter 3/4)
+
+    private var invalidWarning: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("检测到 \(state.invalidSkippedCount) 个无法识别的本机存档，已跳过显示")
+                .font(.caption)
+                .foregroundStyle(.orange)
+            Text("这些文件不会影响其它训练记录，仅保存在本机。")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Button {
+                state.quarantineInvalidSnapshots()
+            } label: {
+                Text("隔离无效存档（仅本机）")
+                    .font(.caption.weight(.medium))
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.10)))
+    }
+
+    private var restoreStatusLine: some View {
+        Text("已从本机恢复最近一次训练")
+            .font(.caption2)
+            .foregroundStyle(.green)
+    }
+
     private var emptyState: some View {
         Text("还没有在本机保存的训练。完成一次训练后会自动保存在本机。")
             .font(.subheadline)
@@ -75,50 +117,116 @@ struct FocusSavedSessionHistoryView: View {
     // MARK: - Latest card
 
     private func latestCard(_ snapshot: LocalCompletedSessionSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("最近一次")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(snapshot.scenarioLabel).font(.subheadline.weight(.medium))
-                    Text(snapshot.sessionIntent).font(.caption2).foregroundStyle(.tertiary)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(snapshot.totalCompletedSets) / \(snapshot.totalTargetSets) 组")
-                        .font(.subheadline.monospacedDigit())
-                    Text(Self.displayTime(snapshot.createdAtIso))
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.secondary)
+        Button {
+            selected = snapshot
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("最近一次 · 点按查看详情")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(snapshot.scenarioLabel).font(.subheadline.weight(.medium))
+                        Text(snapshot.sessionIntent).font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(snapshot.totalCompletedSets) / \(snapshot.totalTargetSets) 组")
+                            .font(.subheadline.monospacedDigit())
+                        Text(Self.displayTime(snapshot.createdAtIso))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemBackground)))
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemBackground)))
+        .buttonStyle(.plain)
     }
 
-    // MARK: - Recent list
+    // MARK: - Local stats summary (Iter 7)
+
+    private var statsSection: some View {
+        let s = state.stats
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("本机统计")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                statTile("已保存", "\(s.totalSessions)")
+                statTile("完成组", "\(s.totalCompletedSets)")
+                statTile("目标组", "\(s.totalTargetSets)")
+                statTile("完成率", s.completionPercentText)
+            }
+        }
+    }
+
+    private func statTile(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(.subheadline.monospacedDigit().weight(.semibold))
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
+    }
+
+    // MARK: - Sort / filter (Iter 6)
+
+    private var filterControls: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("近期记录（最新在前）")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Toggle("仅完成", isOn: $completedOnly)
+                    .font(.caption)
+                    .toggleStyle(.button)
+                    .controlSize(.small)
+            }
+            scenarioFilterMenu
+        }
+    }
+
+    private var scenarioFilterMenu: some View {
+        let scenarios = distinctScenarios()
+        return Menu {
+            Button("全部样例") { scenarioFilter = nil }
+            ForEach(scenarios, id: \.id) { item in
+                Button(item.label) { scenarioFilter = item.id }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                Text(scenarioFilterLabel(scenarios))
+            }
+            .font(.caption)
+        }
+    }
+
+    // MARK: - Recent list (filtered, newest-first, tap → detail)
 
     @ViewBuilder
     private var recentList: some View {
-        let rows = Array(history.prefix(Self.maxRows))
-        if rows.count > 1 {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("近期记录")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                VStack(spacing: 6) {
-                    ForEach(rows) { snapshot in
-                        historyRow(snapshot)
-                    }
+        let rows = Array(filteredHistory.prefix(Self.maxRows))
+        if rows.isEmpty {
+            Text("没有符合筛选条件的记录")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            VStack(spacing: 6) {
+                ForEach(rows) { snapshot in
+                    Button { selected = snapshot } label: { historyRow(snapshot) }
+                        .buttonStyle(.plain)
                 }
-                if history.count > rows.count {
-                    Text("仅显示最近 \(rows.count) 条")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
+            }
+            if filteredHistory.count > rows.count {
+                Text("仅显示最近 \(rows.count) 条")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
         }
     }
@@ -144,6 +252,56 @@ struct FocusSavedSessionHistoryView: View {
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
     }
 
+    // MARK: - Export (Iter 9) — local-only debug copy
+
+    private var exportSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                state.exportLatestDebugCopy()
+            } label: {
+                Text("生成本机 JSON 副本")
+                    .font(.caption.weight(.medium))
+            }
+            .buttonStyle(.bordered)
+            exportStatusText
+            Text("仅在本机生成副本 · 不分享 · 不上传云端")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    @ViewBuilder
+    private var exportStatusText: some View {
+        switch state.exportStatus {
+        case .idle:
+            EmptyView()
+        case .exported:
+            Text("已生成本机 JSON 副本").font(.caption2).foregroundStyle(.green)
+        case .nothingToExport:
+            Text("暂无可导出的快照").font(.caption2).foregroundStyle(.secondary)
+        case .failed(let message):
+            Text("生成失败：\(message)").font(.caption2).foregroundStyle(.red)
+        }
+    }
+
+    // MARK: - Storage diagnostics (Iter 11)
+
+    private var diagnosticsSection: some View {
+        let d = state.storageDiagnostics
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("本机存储状态")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text("已保存 \(d.validCount) · 跳过无效 \(d.invalidCount) · 已隔离 \(d.quarantinedCount)")
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+            Text("备份 \(d.hasBackup ? "有" : "无") · 本机副本 \(d.hasExport ? "有" : "无")")
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // MARK: - Clear
 
     private var clearButton: some View {
@@ -161,11 +319,41 @@ struct FocusSavedSessionHistoryView: View {
             isPresented: $showingClearConfirm,
             titleVisibility: .visible
         ) {
-            Button("清除（仅本机）", role: .destructive, action: onClear)
+            Button("清除（仅本机）", role: .destructive) { state.clearSavedSessions() }
             Button("取消", role: .cancel) {}
         } message: {
             Text("仅删除本机保存的训练快照，不影响云端（本应用没有云端）。")
         }
+    }
+
+    // MARK: - Filtering helpers
+
+    private var filteredHistory: [LocalCompletedSessionSnapshot] {
+        var rows = state.savedHistory   // newest-first as the store returns
+        if let sc = scenarioFilter {
+            rows = rows.filter { $0.scenarioId == sc }
+        }
+        if completedOnly {
+            rows = rows.filter { $0.totalTargetSets > 0 && $0.totalCompletedSets >= $0.totalTargetSets }
+        }
+        return rows
+    }
+
+    private struct ScenarioOption: Identifiable { let id: String; let label: String }
+
+    private func distinctScenarios() -> [ScenarioOption] {
+        var seen = Set<String>()
+        var out: [ScenarioOption] = []
+        for snap in state.savedHistory where !seen.contains(snap.scenarioId) {
+            seen.insert(snap.scenarioId)
+            out.append(ScenarioOption(id: snap.scenarioId, label: snap.scenarioLabel))
+        }
+        return out
+    }
+
+    private func scenarioFilterLabel(_ scenarios: [ScenarioOption]) -> String {
+        guard let sc = scenarioFilter else { return "全部样例" }
+        return scenarios.first(where: { $0.id == sc })?.label ?? sc
     }
 
     // MARK: - Time formatting
@@ -189,30 +377,7 @@ struct FocusSavedSessionHistoryView: View {
     }
 }
 
-#Preview("已保存") {
-    let sample = LocalCompletedSessionSnapshot(
-        snapshotId: "focus-normal-2",
-        createdAtIso: "2026-05-27T10:00:00.000Z",
-        scenarioId: "normal",
-        scenarioLabel: "普通",
-        sessionIntent: "normal-session",
-        activePhase: "base",
-        deloadLevel: "none",
-        deloadStrategy: "maintain",
-        totalCompletedSets: 8,
-        totalTargetSets: 10,
-        exercises: []
-    )
-    return FocusSavedSessionHistoryView(
-        latest: sample,
-        history: [sample, sample],
-        errorMessage: nil,
-        onClear: {}
-    )
-    .padding()
-}
-
-#Preview("空") {
-    FocusSavedSessionHistoryView(latest: nil, history: [], errorMessage: nil, onClear: {})
+#Preview {
+    FocusSavedSessionHistoryView(state: FocusModeMvpState())
         .padding()
 }

@@ -96,7 +96,11 @@ struct FocusModeShellView: View {
         if let summary = state.completedSummary {
             VStack(alignment: .leading, spacing: 12) {
                 saveStatusBanner
-                FocusSavedSessionPreviewView(summary: summary, onStartNew: { state.startNewSession() })
+                FocusSavedSessionPreviewView(
+                    summary: summary,
+                    saved: state.saveStatus == .saved,
+                    onStartNew: { state.startNewSession() }
+                )
             }
         } else {
             planBody
@@ -141,12 +145,7 @@ struct FocusModeShellView: View {
 
             actionStack
 
-            FocusSavedSessionHistoryView(
-                latest: state.latestSaved,
-                history: state.savedHistory,
-                errorMessage: state.saveErrorMessage,
-                onClear: { state.clearSavedSessions() }
-            )
+            FocusSavedSessionHistoryView(state: state)
         }
     }
 
