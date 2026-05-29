@@ -12,6 +12,10 @@
 		81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */; };
 		81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */; };
 		81ACFD492FC935D0000989A7 /* IronPathTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */; };
+		81ACFD4B2FC959E3000989A7 /* FocusModeMvpState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */; };
+		81ACFD4D2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */; };
+		81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */; };
+		81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */; };
 		AA00000000000000000000E2 /* IronPathApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* IronPathApp.swift */; };
 		AA00000000000000000000E4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E3 /* ContentView.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
@@ -30,6 +34,10 @@
 		81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeExerciseCard.swift; sourceTree = "<group>"; };
 		81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDecisionSummaryView.swift; sourceTree = "<group>"; };
 		81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeShellView.swift; sourceTree = "<group>"; };
+		81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeMvpState.swift; sourceTree = "<group>"; };
+		81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeStatusSurfaceView.swift; sourceTree = "<group>"; };
+		81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionProgressView.swift; sourceTree = "<group>"; };
+		81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSetChecklistView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B2 /* IronPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000E1 /* IronPathApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronPathApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -84,6 +92,10 @@
 				81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */,
 				81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */,
 				81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */,
+				81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */,
+				81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */,
+				81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */,
+				81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */,
 			);
 			path = IronPath;
 			sourceTree = "<group>";
@@ -179,10 +191,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				81ACFD4D2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift in Sources */,
 				AA00000000000000000000E2 /* IronPathApp.swift in Sources */,
+				81ACFD4B2FC959E3000989A7 /* FocusModeMvpState.swift in Sources */,
 				81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */,
 				81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */,
+				81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */,
 				81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */,
+				81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */,
 				AA00000000000000000000E4 /* ContentView.swift in Sources */,
 				81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */,
 			);
