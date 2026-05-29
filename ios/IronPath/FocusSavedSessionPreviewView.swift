@@ -13,14 +13,21 @@ import SwiftUI
 
 struct FocusSavedSessionPreviewView: View {
     let summary: FocusCompletedSessionSummary
+    /// iOS-10: whether the local JSON save actually succeeded. The header must
+    /// reflect reality — when the save FAILED, the dominant title must NOT claim
+    /// "已保存（本机）" (that would contradict the failure banner = fake success).
+    let saved: Bool
     let onStartNew: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("已保存（本机）")
+                Text(saved ? "已保存（本机）" : "未保存到本机")
                     .font(.largeTitle.weight(.semibold))
-                Text("本次训练已在本机内存中生成快照")
+                    .foregroundStyle(saved ? Color.primary : Color.red)
+                Text(saved
+                     ? "本次训练已保存到本机（仅本机 · 不同步云端）"
+                     : "本次训练未写入本机 · 仅本次预览可用")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -116,6 +123,7 @@ struct FocusSavedSessionPreviewView: View {
             totalTargetSets: 2,
             timestampLabel: "2026-05-27 10:00 UTC"
         ),
+        saved: true,
         onStartNew: {}
     )
     .padding()

@@ -32,6 +32,15 @@ enum FocusSaveStatus: Equatable {
     case failed(String)
 }
 
+/// Outcome of the last local debug-copy export attempt (iOS-10). `.failed`
+/// carries an honest error — never a fabricated success.
+enum FocusExportStatus: Equatable {
+    case idle
+    case exported
+    case nothingToExport
+    case failed(String)
+}
+
 /// One completed-exercise line in the local saved preview (in-RAM only).
 struct FocusCompletedExerciseLine: Identifiable, Equatable {
     let id: String
@@ -76,6 +85,19 @@ final class FocusModeMvpState: ObservableObject {
     @Published private(set) var saveStatus: FocusSaveStatus = .idle
     /// Non-nil when a save/load/clear error must be shown non-blockingly.
     @Published private(set) var saveErrorMessage: String? = nil
+
+    // MARK: - iOS-10 local hardening surface (validation / stats / diagnostics)
+
+    /// Count of saved files that failed to decode OR failed schema validation
+    /// and were therefore skipped from the valid history. Drives the local
+    /// "invalid skipped" warning.
+    @Published private(set) var invalidSkippedCount: Int = 0
+    /// Derived local stats over the valid saved snapshots.
+    @Published private(set) var stats: LocalSnapshotStats = .empty
+    /// Local-only storage status for the diagnostics surface.
+    @Published private(set) var storageDiagnostics: LocalSnapshotStorageDiagnostics = .empty
+    /// Result of the last local debug-copy export attempt.
+    @Published private(set) var exportStatus: FocusExportStatus = .idle
 
     /// The sanctioned app-local JSON store. Injectable for previews/tests; the
     /// app uses the default Application Support location. NOTE: this class never
@@ -261,9 +283,60 @@ final class FocusModeMvpState: ObservableObject {
 
     private func refreshSavedFromStore() {
         do {
-            latestSaved = try snapshotStore.loadLatest()
-            savedHistory = try snapshotStore.listSnapshots()
+            // iOS-10 defensive scan: valid snapshots + count of skipped invalid.
+            let scan = try snapshotStore.scanSnapshots()
+            savedHistory = scan.valid
+            invalidSkippedCount = scan.invalidCount
+            stats = LocalSnapshotStats.derive(from: scan.valid)
+            // Keep loading the rolling latest pointer, but VALIDATE it before
+            // showing it as restored; fall back to the newest valid history. A
+            // CORRUPT pointer must not abort the whole refresh and hide valid
+            // history — `try?` lets it fall back instead of throwing out.
+            let rawLatest = (try? snapshotStore.loadLatest()) ?? nil
+            latestSaved = validatedLatest(rawLatest, fallback: scan.valid.first)
+            storageDiagnostics = (try? snapshotStore.storageDiagnostics()) ?? .empty
         } catch {
+            saveErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Show the latest pointer only if it passes validation; otherwise restore
+    /// the newest valid history entry. An invalid latest is never shown as a
+    /// successful restore (no fake success).
+    private func validatedLatest(
+        _ raw: LocalCompletedSessionSnapshot?,
+        fallback: LocalCompletedSessionSnapshot?
+    ) -> LocalCompletedSessionSnapshot? {
+        if let raw, LocalSnapshotValidator.isValid(raw) { return raw }
+        return fallback
+    }
+
+    /// Whether the last refresh found any saved files it had to skip as invalid.
+    var hasInvalidSkipped: Bool { invalidSkippedCount > 0 }
+
+    /// Quarantine corrupt/invalid saved files (in-place rename inside the
+    /// sanctioned directory), then refresh. A failure surfaces an honest error.
+    func quarantineInvalidSnapshots() {
+        do {
+            _ = try snapshotStore.quarantineInvalid()
+            refreshSavedFromStore()
+        } catch {
+            saveErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Write a local-only debug copy of the latest snapshot JSON. Reports an
+    /// honest status — `.exported` only on a real, thrown-error-free copy.
+    func exportLatestDebugCopy() {
+        do {
+            if try snapshotStore.exportLatestDebugCopy() != nil {
+                exportStatus = .exported
+            } else {
+                exportStatus = .nothingToExport
+            }
+            storageDiagnostics = (try? snapshotStore.storageDiagnostics()) ?? storageDiagnostics
+        } catch {
+            exportStatus = .failed(error.localizedDescription)
             saveErrorMessage = error.localizedDescription
         }
     }
@@ -277,6 +350,10 @@ final class FocusModeMvpState: ObservableObject {
             try snapshotStore.clear()
             latestSaved = nil
             savedHistory = []
+            invalidSkippedCount = 0
+            stats = .empty
+            storageDiagnostics = .empty
+            exportStatus = .idle
             saveStatus = .idle
             saveErrorMessage = nil
         } catch {
