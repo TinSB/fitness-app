@@ -14,6 +14,7 @@
 
 import Foundation
 import SwiftUI
+import IronPathDomain
 import IronPathTrainingDecision
 import IronPathLocalSnapshot
 
@@ -133,6 +134,25 @@ final class FocusModeMvpState: ObservableObject {
     @Published var historyCustomFrom: Date = FocusModeMvpState.deterministicReferenceDate()
     @Published var historyCustomTo: Date = FocusModeMvpState.deterministicReferenceDate()
 
+    // MARK: - iOS-17b in-RAM per-set capture (NO persistence)
+
+    /// Per-exercise captured set drafts for the ACTIVE session, in RAM only.
+    /// Uses the existing typed `IronPathDomain.ActualSetDraft` (kg-stored). This
+    /// is the capture half of the iOS-17 set-logging epic; it is NOT persisted —
+    /// the canonical-AppData write path is the deferred iOS-17c slice. Cleared
+    /// alongside `completedSetsByExerciseId` (resetProgress / restoreDraft) so it
+    /// never outlives the counts it parallels. Vanishes on relaunch (in-RAM).
+    @Published private(set) var capturedSetDraftsByExerciseId: [String: [ActualSetDraft]] = [:]
+
+    /// Display unit for the capture weight field (storage is always kg; the
+    /// view-model converts before recording). In-RAM UI state, default `.kg`.
+    @Published var captureDisplayUnit: WeightUnit = .kg
+
+    /// Source marker stamped onto every captured draft, so a draft is always
+    /// attributable to this local native capture surface (never confused with
+    /// imported/cloud data).
+    static let captureSourceTag = "local-ios-focus-capture"
+
     /// The active custom interval, or nil when custom filtering is off. Read by
     /// the history view and passed straight into the pure, unit-tested
     /// `LocalSnapshotHistory.filtered(customRange:)`. No logic beyond on/off.
@@ -237,8 +257,49 @@ final class FocusModeMvpState: ObservableObject {
         completedSetsByExerciseId[exerciseId] = min(target, current + 1)
     }
 
+    /// iOS-17b: complete one set AND capture its per-set weight/reps/RIR into an
+    /// in-RAM `ActualSetDraft`. `weightInDisplayUnit` is in `captureDisplayUnit`
+    /// (or nil if blank) and is converted to kg before recording (storage is
+    /// always kg). The new set's 0-based `setIndex` is the prior completed count,
+    /// and `completedAt` comes from the injectable clock (deterministic default).
+    /// The count is advanced through the UNCHANGED `completeOneSet`, so restore /
+    /// reconcile / the count-based snapshot are unaffected. At target the set is
+    /// already complete, so nothing is captured (the button is disabled too — no
+    /// fake capture). Blank fields stay nil (honest "not entered"). NO persistence.
+    func captureSet(
+        for exerciseId: String,
+        target: Int,
+        weightInDisplayUnit: Double?,
+        reps: Int?,
+        rir: Int?
+    ) {
+        let current = completedSetsByExerciseId[exerciseId] ?? 0
+        guard current < target else { return }   // already complete — no fake capture
+        let weightKg = WeightConversion.toKilograms(weightInDisplayUnit, from: captureDisplayUnit)
+        let draft = ActualSetDraftFactory.capturedDraft(
+            priorCompletedCount: current,
+            weightKg: weightKg,
+            reps: reps,
+            rir: rir,
+            exerciseId: exerciseId,
+            source: FocusModeMvpState.captureSourceTag,
+            completedAtIso: iso8601(clock())
+        )
+        capturedSetDraftsByExerciseId[exerciseId, default: []].append(draft)
+        completeOneSet(for: exerciseId, target: target)
+    }
+
+    /// All captured set drafts for one exercise this session (in RAM; empty if
+    /// none captured). Read-only accessor for the UI / tests.
+    func capturedSets(for exerciseId: String) -> [ActualSetDraft] {
+        capturedSetDraftsByExerciseId[exerciseId] ?? []
+    }
+
     func resetProgress() {
         completedSetsByExerciseId = [:]
+        // iOS-17b: captured drafts parallel the counts — clear them together so a
+        // reset / scenario change never leaves stale per-set data behind.
+        capturedSetDraftsByExerciseId = [:]
     }
 
     // MARK: - Aggregate progress
@@ -491,6 +552,10 @@ final class FocusModeMvpState: ObservableObject {
         let plan = reconciliation.plan
         selectedScenario = scenario
         completedSetsByExerciseId = plan.completedSetsByExerciseId
+        // iOS-17b: a restored draft carries only per-exercise COUNTS, never
+        // per-set detail — so start capture empty (no stale drafts bleed in).
+        // restoreDraft semantics are otherwise unchanged.
+        capturedSetDraftsByExerciseId = [:]
         selectedExerciseIndex = plan.resumeExerciseIndex
         completedSummary = nil
         saveStatus = .idle

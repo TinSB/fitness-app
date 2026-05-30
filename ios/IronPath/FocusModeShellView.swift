@@ -336,8 +336,18 @@ struct FocusModeShellView: View {
                     roleLabel: roleLabel(row.role),
                     targetSets: row.targetSets,
                     completedSets: state.completedSets(for: row.id),
-                    onCompleteOneSet: {
-                        state.completeOneSet(for: row.id, target: row.targetSets)
+                    displayUnit: $state.captureDisplayUnit,
+                    onCompleteSet: { weight, reps, rir in
+                        // iOS-17b: capture the per-set entry into in-RAM
+                        // ActualSetDraft (kg-stored) AND advance the count via the
+                        // unchanged path. Blank fields → nil (honest degrade).
+                        state.captureSet(
+                            for: row.id,
+                            target: row.targetSets,
+                            weightInDisplayUnit: weight,
+                            reps: reps,
+                            rir: rir
+                        )
                     }
                 )
             }
