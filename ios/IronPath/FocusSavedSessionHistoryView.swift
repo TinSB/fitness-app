@@ -64,7 +64,8 @@ struct FocusSavedSessionHistoryView: View {
             // EXISTING in-memory draft restore (no new restore semantics).
             FocusSavedSessionDetailView(
                 snapshot: snapshot,
-                currentExerciseIds: state.currentExerciseIds(forSnapshot: snapshot)
+                currentExerciseIds: state.currentExerciseIds(forSnapshot: snapshot),
+                displayUnit: state.captureDisplayUnit
             ) {
                 // Restore-to-local-draft + continue. Dismiss the sheet first,
                 // then restore (which flips the shell to the in-session draft).

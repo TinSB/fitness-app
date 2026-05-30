@@ -4,9 +4,10 @@
 > Every human and every AI agent (Claude, Codex, or otherwise) **must read this document before making changes** and **must obey it**. If a requested task conflicts with this document, **stop and require explicit architecture approval before writing any code.**
 
 - **Status:** Authoritative / binding
-- **Version:** 1.0
+- **Version:** 1.1
 - **Last updated:** 2026-05-30
-- **Baseline commit:** `6df0149` — *iOS-17b Native Per-Set Capture + In-RAM Session V1 (#422)*
+- **Baseline commit:** `3b75722` — *iOS-17C Plan + Today Read-only Surface V1 (#424)*
+- **v1.1 amendment (iOS-17A):** activates the **first native canonical-AppData write path** (performed-set logging). Amends §2, §8, §9, §12, §27.
 - **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
 - **Supersedes (for day-to-day task scoping):** the scattered planning/strategy docs under `docs/` and the root `*.md` plans. Those remain historical context; **this document wins on any conflict about boundaries, ownership, or workflow.**
 
@@ -45,11 +46,11 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 | Native iOS | Migrating. Thin SwiftUI shell (14 files) over **10 local Swift packages**. Local-first only. |
 | iOS migration progress | Completed **through iOS-16**, plus **iOS-17b** (in-RAM per-set capture, no persistence) and the **iOS-17S five-tab navigation shell** (今日/训练/记录/计划/我的; Focus relocated under 训练 unchanged, the other four tabs placeholder). Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter + coarse **and custom from/to** date ranges, summary stats, **per-exercise recovery insight**, and **non-destructive draft recovery** are shipped. Set-logging (iOS-17) is an **approved epic, in progress** (capture slice 17b shipped, in-RAM only; canonical write path 17c not yet built). |
 | Native data model | `IronPathDomain.AppData` — pure `Codable` value type, parity-pinned to the PWA export. |
-| Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12). **No** iCloud/CloudKit/HealthKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. |
+| Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12), **both now active**: the Focus-history snapshot store and — as of iOS-17A — the canonical-AppData store (`JSONFileAppDataStore`, written via `CanonicalSessionWriter`, §8). **No** iCloud/CloudKit/HealthKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. |
 | Restore (iOS-14 UI) | **In-memory local draft re-hydration only** (`LocalDraftRestorePlanner.reconcile`). Not a full AppData restore. |
 | Full AppData restore | **Deferred**, gated behind DataHealth `buildCleanAppDataView` + the repair-apply pipeline. |
 | `iOS-4B6` (userFacing / full arbitrationTrace) | **Deferred.** |
-| Per-set logging (iOS-17 epic) | **Approved epic, in progress.** Capture (17b) is in-RAM only; the first native canonical-AppData **write path** (17c) is **not yet built** and will amend §8 in its own PR. |
+| Per-set logging (iOS-17 epic) | **Approved epic, in progress.** Capture (17b) in-RAM. **iOS-17A (this amendment) shipped 17c + 17d:** the first native canonical-AppData **write path** (performed sets → `AppData.history[].exercises[].sets`, via `CanonicalSessionWriter`, DataHealth-gated, backup-before-overwrite, no-fake-success — §8), plus the per-exercise "上次成绩" detail summary backed by a derived LocalSnapshot **v3** `setLogs` display copy (§12). **17e** engine consumption of performed sets remains deferred. |
 | Cloud / auth / HealthKit / sync (native) | **Not built.** Stub packages / gated only. (PWA has gated cloud-production scaffolding — §4.) |
 
 ---
@@ -191,6 +192,20 @@ There are **exactly 10 local Swift packages** under `ios/packages/`, wired into 
 3. **No task may change the source-of-truth boundary** (where canonical AppData lives, or who may overwrite it) without amending this document first.
 4. Canonical AppData is mutated only through the established path (`IronPathPersistence` save, gated by DataHealth where untrusted input is involved). Do not add a second, parallel write path.
 
+### 8.1 First native canonical-AppData write path (iOS-17A)
+
+Until iOS-17A the native canonical store was **read/seam-only**. iOS-17A activates the **first** native write path, and it is the **only** sanctioned one (rule 4 above): the user's freshly-performed sets are appended to canonical `AppData.history`.
+
+- **Owner:** `IronPathPersistence.CanonicalSessionWriter` — pure orchestration over the injected `AppDataStore` + a DataHealth gate closure. It does **not** import DataHealth (the gate is injected by the app layer), so the package import graph (§6.3: `Persistence → Domain`) is unchanged.
+- **Shape:** performed sets are written to `history[].exercises[].sets` (`TrainingSetLog`, kg-stored), built by the pure `IronPathDomain.NativeCompletedSessionBuilder`. They are **never** written to `focusActualSetDrafts` — that is the in-progress lifecycle buffer the DataHealth session-lifecycle guard clears on a `completed` session, so storing performed sets there would be silently lost on reload.
+- **Append-only:** the writer only **appends** a newly-created completed session (`AppData.appendingHistorySession`, open-bag preserving, no `schemaVersion` change). It never replaces or merges an external document — that is the **deferred** full-AppData restore (§14), which this path does **not** implement.
+- **DataHealth-gated (§10):** before any write, the candidate is routed through `processIncomingAppData` (read-only: `allowMutation:false`, `allowAutoRepair:false`) and accepted **only** when the appended session survives `buildCleanAppDataView` with all its performed sets intact. A rejected candidate is **not** written.
+- **Backup-before-overwrite + atomic + no fake success:** when a prior canonical file exists, `store.backup()` runs **before** `store.save()`; the save is atomic; every failure **throws** and is surfaced honestly (`FocusCanonicalSaveStatus.failed`). Nothing is reported as saved unless it was.
+- **Honest no-op:** if no per-set detail was captured, nothing canonical is written (`.skipped`) — never a fabricated empty record.
+- **Rollback story:** the timestamped `…backup-<ISO>` copy taken before each overwrite is the rollback artifact — a bad new write can be reverted by restoring that backup. A first-ever write (no prior file) seeds from `AppData.emptyCurrent()` and needs no backup. A present-but-**unreadable** document is **never** overwritten (`existingDocumentUnreadable` is thrown — unparseable user data is preserved, not destroyed).
+
+**Source-of-truth impact:** this **activates** (does not move) the canonical write boundary already named in the table above. Canonical AppData still lives in `JSONFileAppDataStore`; iOS-17A makes the app actually write to it through the single sanctioned, DataHealth-gated path. The Focus-history store and its new v3 `setLogs` (§12) remain **derived** and are never read back as the source of truth.
+
 ---
 
 ## 9. AppData Boundary
@@ -203,6 +218,8 @@ There are **exactly 10 local Swift packages** under `ios/packages/`, wired into 
 3. **Schema version is explicit and change-guarded.** Bumping `SchemaVersion` requires a deliberate migration **and** updating `AppDataSchemaVersionGuardTests`.
 4. **ISO-8601 timestamps only.** Guarded by `AppDataIsoTimestampStaticGuardTests`.
 5. **Parity with the real PWA export.** Guarded by `AppDataRealExportParityTests`. A canonical JSON form (`AppData.canonicalJSONData()`) backs the persistence hash/round-trip contract.
+
+**iOS-17A note (history append):** `AppData.appendingHistorySession` rewrites **only** the `history` key (in place), appending one completed session built from typed models. It preserves every other top-level key and all unknown/open-bag fields verbatim, leaves `schemaVersion` unchanged (an append is not a schema change), and stays a pure value transform (no IO in `IronPathDomain`). Guarded by `NativeCompletedSessionTests` (open-bag + existing-history preservation + canonical round-trip).
 
 **Forbidden:** dropping/normalizing-away unknown fields; silent schema bumps; adding IO to `IronPathDomain`; changing timestamp encoding; making `IronPathDomain` depend on another package.
 
@@ -249,7 +266,8 @@ There are **exactly 10 local Swift packages** under `ios/packages/`, wired into 
 1. **Allowed on-device storage = local JSON files via Foundation `FileManager` only.** **Forbidden** here: iCloud/CloudKit/ubiquity, HealthKit, Supabase, URLSession/network, WebKit, **UserDefaults, SQLite, CoreData, SwiftData** — enforced by `iosLocalJsonPersistenceStaticGuards`.
 2. **This store must never read or write canonical AppData** (§8). It is a presentation-layer record.
 3. `LocalSnapshotHistory.filtered/.grouped` and `LocalSnapshotStats.derive` are **pure** (no internal clock — `now` is injected). `LocalDraftRestorePlanner` and `LocalSnapshotMigration` are pure (no disk).
-4. The canonical-AppData store (`IronPathPersistence.JSONFileAppDataStore`) is the **other** sanctioned JSON store; it is the source of truth (§8) and is distinct from this history store.
+4. The canonical-AppData store (`IronPathPersistence.JSONFileAppDataStore`) is the **other** sanctioned JSON store; it is the source of truth (§8) and is distinct from this history store. As of iOS-17A it lives in its own `IronPathAppData/` subdirectory under Application Support, so the two stores never collide.
+5. **iOS-17A schema v3 — derived per-set display copy.** `LocalCompletedExerciseSnapshot.setLogs` (`[LocalCompletedSetEntrySnapshot]?`: `setIndex` + kg `weightKg?`/`reps?`/`rir?`) is a **derived display copy** of the canonical performed sets, written **alongside** the canonical AppData write (§8.1) and read only to render the "上次成绩" detail. It is **never** read back as a source of truth, and this store still **never** reads/writes canonical AppData (rule 2). The bump is a guarded migration (v1/v2 files decode with `setLogs == nil` and migrate forward, showing no per-set detail honestly): `LocalCompletedSessionSnapshot.currentSchemaVersion = 3`, `LocalSnapshotValidator.acceptedSchemaVersions = {1,2,3}`, guarded by `LocalSetLogsV3Tests` + the existing migration/validation suite.
 
 ---
 
@@ -529,7 +547,7 @@ Every future Claude/Codex task must be framed with this template. Copy it, fill 
 
 ## 27. Appendix: Current iOS Migration Milestones
 
-Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b** at baseline `6df0149`; the **iOS-17S** five-tab navigation shell layers on top (navigation only, no business surface).
+Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b**, the **iOS-17S** five-tab navigation shell, **iOS-17C** (#424, Plan+Today read-only surface) at baseline `3b75722`, and **iOS-17A** (this amendment — the first native canonical-AppData write path for performed sets).
 
 | Milestone | Summary |
 | --- | --- |
@@ -542,9 +560,11 @@ Native iOS has advanced as a sequence of validated slices. Completed **through i
 | iOS-14 (#418) | Native history + draft recovery bundle: `LocalSnapshotHistory.filtered` search/filter, `LocalSnapshotStats.mostCommonScenarioLabel`, history search field + summary card, **non-destructive in-memory draft recovery**, real-clock opt-in (`useSystemClock`, default deterministic). |
 | iOS-15 (#420) | Local history detail + per-exercise recovery insight: pure `LocalSnapshotRecovery.insight` (read-only projection over `LocalDraftRestorePlanner.reconcile` → per-exercise restorable/changed + new-exercise list + remapped resume), coarse history date-range filter (`LocalHistoryDateRange`), honest resume affordance. Restore stays an in-memory draft. |
 | **iOS-16 (#421)** | Custom history date range: additive `LocalHistoryCustomDateRange` + `LocalSnapshotHistory.filtered(customRange:)` (inclusive UTC-day interval, reversed-normalized, composes with coarse/search/scenario/completed) + thin from/to `DatePicker`s. |
-| iOS-17 epic (approved) | Per-exercise set logging. **17.0** review (Option C: AppData = source of truth via `IronPathPersistence`, optional denormalized snapshot copy). **17a** Domain typing — already satisfied by iOS-2C. **17b (#422)** in-RAM per-set capture (weight/reps/RIR) into the existing `ActualSetDraft`, kg-stored, **no persistence** → source-of-truth impact: none. **17c** first native canonical-AppData write path (amends §8 in that PR). **17d** history/detail summary. **17e** engine consumption — deferred. |
+| iOS-17 epic (approved) | Per-exercise set logging. **17.0** review (Option C: AppData = source of truth via `IronPathPersistence`, optional denormalized snapshot copy). **17a** Domain typing — already satisfied by iOS-2C. **17b (#422)** in-RAM per-set capture (weight/reps/RIR) into the existing `ActualSetDraft`, kg-stored, **no persistence** → source-of-truth impact: none. **17c + 17d shipped in iOS-17A** (below). **17e** engine consumption — deferred. |
 | **iOS-17S** | Tab shell scaffold: `ContentView` → five-tab `TabView` (今日/训练/记录/计划/我的 via an `AppTab` enum), Focus relocated under 训练 **unchanged**, four placeholder empty-state RootViews, all five `*RootView` files pre-registered into `project.pbxproj`. **The only slice authorized to edit `project.pbxproj`** — it unlocks parallel per-tab fills (each later slice edits only its own RootView). Navigation only → source-of-truth & data-safety impact: none. |
-| Next (proposed) | iOS-17c Canonical-AppData write path for performed sets (the boundary slice; amends §8/§9/§12 in the same PR; DataHealth-gated, backup-before-overwrite, no-fake-success). Parallel per-tab fills (今日/记录/计划/我的) may proceed independently on the iOS-17S RootViews. |
+| **iOS-17C (#424)** | Plan + Today read-only surface: `PlanRootView`/`TodayRootView` render a pure `TrainingDecisionSurfacePresentation` projection of the engine slice. Read-only presentation; no persistence/source-of-truth impact. |
+| **iOS-17A** (this amendment) | **Native per-set logging mega (17c + 17d).** Capture extended in `FocusSetChecklistView` (weight/reps/RIR, display-unit entry, kg-stored). **First native canonical-AppData write path:** `IronPathPersistence.CanonicalSessionWriter` appends a completed `TrainingSession` (performed sets in `history[].exercises[].sets`, built by `IronPathDomain.NativeCompletedSessionBuilder`) — DataHealth-gated, backup-before-overwrite, atomic, no-fake-success (§8.1). Detail summary "上次成绩" backed by a derived LocalSnapshot **v3** `setLogs` display copy (§12 rule 5). Amends §2/§8/§9/§12. Source-of-truth impact: **activates** (does not move) the canonical write boundary. Forbidden systems untouched; `project.pbxproj` not edited (no new app-target files). |
+| Next (proposed) | iOS-17e engine consumption of performed sets (deferred). Parallel per-tab fills (记录/我的) may proceed independently on the iOS-17S RootViews. |
 
 > Milestone facts here are descriptive context; the **rules in §1–§26 are binding.**
 

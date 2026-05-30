@@ -52,10 +52,10 @@ public struct LocalSnapshotValidationResult: Equatable {
 public enum LocalSnapshotValidator {
 
     /// The schema versions this build can safely restore. iOS-11 accepts v1 +
-    /// v2 (v1 files migrate forward via LocalSnapshotMigration). A future bump
-    /// adds versions here (and a migration step) rather than silently restoring
-    /// an unknown shape.
-    public static let acceptedSchemaVersions: Set<Int> = [1, 2]
+    /// v2; iOS-17A adds v3 (the per-set `setLogs` display copy). v1/v2 files
+    /// migrate forward via LocalSnapshotMigration. A future bump adds versions
+    /// here (and a migration step) rather than silently restoring an unknown shape.
+    public static let acceptedSchemaVersions: Set<Int> = [1, 2, 3]
 
     /// Validate a decoded snapshot. Returns every issue found (does not stop at
     /// the first) so the UI/diagnostics can explain why a file was skipped.
@@ -76,11 +76,17 @@ public enum LocalSnapshotValidator {
             issues.append(.emptyCreatedAtIso)
         }
 
-        // No negative set counts anywhere (aggregate or per-exercise).
+        // No negative set counts anywhere (aggregate or per-exercise). v3: a
+        // derived per-set entry with a negative weight/reps/index is corrupt too.
         let anyNegative =
             snapshot.totalCompletedSets < 0 ||
             snapshot.totalTargetSets < 0 ||
-            snapshot.exercises.contains { $0.completedSets < 0 || $0.targetSets < 0 }
+            snapshot.exercises.contains { exercise in
+                exercise.completedSets < 0 || exercise.targetSets < 0 ||
+                (exercise.setLogs ?? []).contains { entry in
+                    entry.setIndex < 0 || (entry.weightKg ?? 0) < 0 || (entry.reps ?? 0) < 0
+                }
+            }
         if anyNegative {
             issues.append(.negativeSetCount)
         }

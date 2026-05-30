@@ -15,6 +15,8 @@
 import Foundation
 import SwiftUI
 import IronPathDomain
+import IronPathDataHealth
+import IronPathPersistence
 import IronPathTrainingDecision
 import IronPathLocalSnapshot
 
@@ -48,6 +50,19 @@ enum FocusExportStatus: Equatable {
 enum FocusRestoreStatus: Equatable {
     case idle
     case restored(String)   // scenario label of the restored draft
+    case failed(String)
+}
+
+/// iOS-17A: outcome of writing the completed session to the CANONICAL AppData
+/// document (the source of truth, §8). Distinct from `FocusSaveStatus` (which is
+/// the LocalSnapshot history copy) so each store reports its own honest result.
+/// `.failed` carries an honest error — there is NO fake-success state. `.skipped`
+/// means nothing canonical was written because no per-set detail was captured
+/// (an honest "no performed sets to record", not a failure).
+enum FocusCanonicalSaveStatus: Equatable {
+    case idle
+    case saved
+    case skipped
     case failed(String)
 }
 
@@ -153,6 +168,14 @@ final class FocusModeMvpState: ObservableObject {
     /// imported/cloud data).
     static let captureSourceTag = "local-ios-focus-capture"
 
+    // MARK: - iOS-17A canonical-AppData write status (the source of truth, §8)
+
+    /// Result of the last attempt to append the completed session to the canonical
+    /// AppData document. `.failed` surfaces an honest error and never reads as
+    /// success; `.skipped` means no per-set detail was captured so nothing
+    /// canonical was written. Drives the completed-screen canonical banner.
+    @Published private(set) var canonicalSaveStatus: FocusCanonicalSaveStatus = .idle
+
     /// The active custom interval, or nil when custom filtering is off. Read by
     /// the history view and passed straight into the pure, unit-tested
     /// `LocalSnapshotHistory.filtered(customRange:)`. No logic beyond on/off.
@@ -180,8 +203,32 @@ final class FocusModeMvpState: ObservableObject {
     /// touches FileManager directly — all disk IO is delegated to the store.
     private let snapshotStore: LocalSessionSnapshotStore
 
-    init(snapshotStore: LocalSessionSnapshotStore = LocalSessionSnapshotStore()) {
+    /// iOS-17A: the CANONICAL AppData store (the source of truth, §8). Optional so
+    /// previews/tests can opt OUT of canonical writes entirely (nil → the FIRST
+    /// native write path is simply not exercised, and `canonicalSaveStatus` stays
+    /// `.idle`). The running app injects the Application Support store from the
+    /// shell's `.task` (mirroring `useSystemClock()`), so SwiftUI previews never
+    /// touch the real on-disk canonical document. All disk IO is delegated to the
+    /// store + the pure `CanonicalSessionWriter`; this class never touches
+    /// FileManager directly.
+    private var appDataStore: AppDataStore?
+
+    init(
+        snapshotStore: LocalSessionSnapshotStore = LocalSessionSnapshotStore(),
+        appDataStore: AppDataStore? = nil
+    ) {
         self.snapshotStore = snapshotStore
+        self.appDataStore = appDataStore
+    }
+
+    /// Opt the RUNNING app into canonical-AppData persistence, pointing at the
+    /// sanctioned Application Support store. Called once from the shell on launch
+    /// (alongside `useSystemClock()`); tests/previews leave it unset so they never
+    /// write a real canonical document. Idempotent.
+    func useApplicationSupportAppDataStore() {
+        if appDataStore == nil {
+            appDataStore = JSONFileAppDataStore.applicationSupport()
+        }
     }
 
     /// Back-compat read alias for the iOS-7 `isInSession` call sites.
@@ -241,6 +288,7 @@ final class FocusModeMvpState: ObservableObject {
         // The transient save banner is per-completion; clear it. The on-disk
         // history (latestSaved / savedHistory) survives a scenario change.
         saveStatus = .idle
+        canonicalSaveStatus = .idle
         saveErrorMessage = nil
         restoreStatus = .idle
         restoreReconciliation = nil
@@ -370,7 +418,80 @@ final class FocusModeMvpState: ObservableObject {
             saveErrorMessage = message
         }
 
+        // iOS-17A: ALSO append the performed sets to the canonical AppData document
+        // (the source of truth, §8). This is independent of the LocalSnapshot save
+        // above — each store reports its own honest status. The LocalSnapshot copy
+        // is a derived display record; the canonical write is the durable record of
+        // what was performed.
+        persistCanonicalSession(snapshotId: snapshot.snapshotId, lines: lines, finishedAt: now)
+
         stage = .completed
+    }
+
+    /// iOS-17A: append the just-completed session to the canonical AppData document
+    /// through the FIRST native canonical write path. Builds a completed
+    /// `TrainingSession` (performed sets in `exercises[].sets`, never the lifecycle
+    /// draft buffer) and persists it via `CanonicalSessionWriter`, gated by
+    /// DataHealth. Honest status: `.skipped` when no per-set detail was captured,
+    /// `.failed(_)` on any thrown error (never a fake success), `.saved` only after
+    /// a real write. The LocalSnapshot history copy is unaffected by a canonical
+    /// failure (and vice-versa).
+    private func persistCanonicalSession(
+        snapshotId: String,
+        lines: [FocusCompletedExerciseLine],
+        finishedAt: Date
+    ) {
+        guard let appDataStore else {
+            canonicalSaveStatus = .idle   // canonical persistence not opted in (previews/tests)
+            return
+        }
+        // Build the performed-exercise list from the in-RAM captures. Only
+        // exercises with ≥1 captured set carry per-set detail.
+        let performed: [NativePerformedExercise] = lines.compactMap { line in
+            let drafts = capturedSets(for: line.id)
+            guard !drafts.isEmpty else { return nil }
+            return NativePerformedExercise(exerciseId: line.id, name: line.name, drafts: drafts)
+        }
+        guard !performed.isEmpty else {
+            // Nothing was logged per-set → honestly record nothing canonical.
+            canonicalSaveStatus = .skipped
+            return
+        }
+        let session = NativeCompletedSessionBuilder.completedSession(
+            id: snapshotId,
+            dateIso: nil,
+            finishedAtIso: iso8601(finishedAt),
+            performed: performed
+        )
+        let expectedSetCount = (session.exercises ?? []).reduce(0) { $0 + ($1.sets?.count ?? 0) }
+        let writer = CanonicalSessionWriter(store: appDataStore)
+        do {
+            try writer.appendCompletedSession(session) { candidate in
+                // DataHealth gate (§10): route the candidate through the read-only
+                // clean-view ingress (no mutation, no auto-repair) and accept ONLY
+                // when our just-appended session survives the clean view with ALL
+                // its performed sets intact. If the lifecycle guard had treated our
+                // completed session as residue (e.g. sets routed into the draft
+                // buffer by mistake), the cleaned entry would lose sets and we would
+                // REFUSE to write — no silent data loss through the chokepoint.
+                guard let result = try? processIncomingAppData(
+                    appData: candidate,
+                    source: .postSessionComplete,
+                    options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+                ) else { return false }
+                guard let cleaned = result.cleanView.cleanedHistory.first(where: { $0.id == snapshotId }) else {
+                    return false
+                }
+                let cleanedSetCount = (cleaned.exercises ?? []).reduce(0) { $0 + ($1.sets?.count ?? 0) }
+                return cleanedSetCount == expectedSetCount
+            }
+            canonicalSaveStatus = .saved
+        } catch {
+            // No fake success: surface the canonical error independently of the
+            // LocalSnapshot status. The on-disk canonical document is left intact
+            // (backup-before-overwrite / atomic save guarantee no partial state).
+            canonicalSaveStatus = .failed(error.localizedDescription)
+        }
     }
 
     /// Map the engine-derived completion into the on-disk Codable snapshot. The
@@ -385,14 +506,29 @@ final class FocusModeMvpState: ObservableObject {
         let totalTarget = lines.reduce(0) { $0 + $1.targetSets }
         let index = savedHistory.count + 1
         let exercises = lines.map { line in
-            LocalCompletedExerciseSnapshot(
+            // iOS-17A (v3): attach the DERIVED per-set display copy (weight kg /
+            // reps / RIR) from the in-RAM captures. nil when nothing was captured
+            // for this exercise, so a no-detail session honestly carries no
+            // setLogs. This is a derived display record only — the canonical
+            // performed sets live in AppData.history (§8/§12).
+            let captured = capturedSets(for: line.id)
+            let setLogs: [LocalCompletedSetEntrySnapshot]? = captured.isEmpty ? nil : captured.enumerated().map { idx, draft in
+                LocalCompletedSetEntrySnapshot(
+                    setIndex: draft.setIndex?.intValue ?? idx,
+                    weightKg: draft.weight?.doubleValue,
+                    reps: draft.reps?.intValue,
+                    rir: draft.rir?.intValue
+                )
+            }
+            return LocalCompletedExerciseSnapshot(
                 exerciseId: line.id,
                 name: line.name,
                 role: line.role,
                 progress: LocalCompletedSetProgressSnapshot(
                     completedSets: line.completedSets,
                     targetSets: line.targetSets
-                )
+                ),
+                setLogs: setLogs
             )
         }
         // v2 resume cursor: the first not-yet-complete exercise (where a restored
@@ -559,6 +695,7 @@ final class FocusModeMvpState: ObservableObject {
         selectedExerciseIndex = plan.resumeExerciseIndex
         completedSummary = nil
         saveStatus = .idle
+        canonicalSaveStatus = .idle
         saveErrorMessage = nil
         restoreReconciliation = reconciliation
         restoreStatus = .restored(snapshot.scenarioLabel)
@@ -609,6 +746,7 @@ final class FocusModeMvpState: ObservableObject {
         selectedExerciseIndex = 0
         completedSummary = nil
         saveStatus = .idle
+        canonicalSaveStatus = .idle
         saveErrorMessage = nil
         restoreStatus = .idle
         restoreReconciliation = nil
