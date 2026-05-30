@@ -1,8 +1,22 @@
-// TodayRootView — iOS-17S Tab Shell Scaffold V1.
+// TodayRootView — iOS-17C Plan + Today Read-only Surface V1.
 //
-// 今日 (Today) tab mount point. Placeholder empty state only — this slice ships
-// no business surface here. A future parallel line will replace the body with
-// the real "today" surface (training plan + readiness summary + quick start).
+// 今日 (Today) tab mount point. Renders a READ-ONLY readiness summary derived
+// from the real TrainingDecision engine output, plus an honest entry into 训练.
+//
+// Data source: the app has no canonical-AppData read path yet (the first native
+// write path is the gated iOS-17c slice), so the readiness is computed from the
+// SAME deterministic clean-input pipeline the Focus tab already demonstrates —
+//   AppData → buildCleanAppDataView → createCleanTrainingDecisionInput
+//          → buildTrainingDecisionFromCleanInput → TrainingDecisionCoreSlice
+// — never from fabricated engine output. All organization/formatting lives in
+// IronPathTrainingDecision.TodayReadinessSummary (pure + unit-tested); this view
+// only renders rows. The engine is read, never changed (no golden touched).
+//
+// Training entry: the five-tab shell's selected tab is ContentView-private state,
+// and the iOS-17S parallel-line contract forbids editing the shell from a tab
+// fill, so this slice does NOT switch tabs programmatically. The CTA honestly
+// directs the user to the 训练 tab instead of faking navigation. A real
+// cross-tab jump is a follow-up that must be made in the shell-owning slice.
 //
 // === iOS-17S Tab Shell Scaffold V1 · parallel-line integration contract ===
 // Each *RootView is the SINGLE app-layer mount point for its tab in the
@@ -14,41 +28,109 @@
 // logic, no persistence, no network/cloud/auth/HealthKit/WebView here.
 
 import SwiftUI
+import IronPathDomain
+import IronPathTrainingDecision
 
 struct TodayRootView: View {
-    @State private var showRoadmap = false
+    private let summary = TodayReadinessSummary(
+        slice: FocusModePreviewData.sampleCoreSlice(for: .normal),
+        todayStatus: TodayStatus(
+            date: FocusModePreviewData.referenceDateOnly,
+            sleep: "一般",
+            energy: "中",
+            time: "60",
+            soreness: ["无"]
+        )
+    )
+
+    @State private var showTrainingEntry = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("今日")
-                    .font(.largeTitle.weight(.semibold))
-                Text("这里将汇总今天的训练安排与准备度概览。功能开发中。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                sampleNote
+                readinessCard
+                statusCard
+                startTrainingButton
             }
-
-            Button {
-                showRoadmap = true
-            } label: {
-                Text("了解即将上线的内容")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.borderedProminent)
-
-            Spacer()
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(.systemBackground).ignoresSafeArea())
-        // Honest, self-contained disclosure — no fake success, no data access.
-        .alert("今日 · 开发中", isPresented: $showRoadmap) {
+        // Honest, self-contained disclosure — no fake tab switch, no data write.
+        .alert("前往「训练」", isPresented: $showTrainingEntry) {
             Button("好", role: .cancel) {}
         } message: {
-            Text("今日页将聚合当日训练计划、准备度与快捷开始入口。当前为占位空态，不读写任何数据。")
+            Text("在底部导航栏点按「训练」即可进入专注训练。今日页为只读概览，不读写任何数据。")
         }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("今日")
+                .font(.largeTitle.weight(.semibold))
+            Text(summary.headline)
+                .font(.title3.weight(.medium))
+                .foregroundStyle(.primary)
+            Text(summary.advice)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var sampleNote: some View {
+        Text("示例准备度：基于确定性样例经训练决策引擎计算。接入真实数据后将显示你的当日概览。")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var readinessCard: some View {
+        card(title: "准备度概览", rows: summary.decisionRows)
+    }
+
+    private var statusCard: some View {
+        card(title: "今日状态", rows: summary.statusRows)
+    }
+
+    private var startTrainingButton: some View {
+        Button {
+            showTrainingEntry = true
+        } label: {
+            Text("开始今天的训练")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.borderedProminent)
+        .padding(.top, 4)
+    }
+
+    private func card(title: String, rows: [SurfaceRow]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+            VStack(spacing: 6) {
+                ForEach(rows) { row in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(row.label)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(row.value)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 
