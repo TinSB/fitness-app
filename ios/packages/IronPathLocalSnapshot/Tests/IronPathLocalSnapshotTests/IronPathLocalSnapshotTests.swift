@@ -80,8 +80,10 @@ final class IronPathLocalSnapshotTests: XCTestCase {
     }
 
     func testRejectsUnsupportedFutureSchema() {
-        let s = validSnapshot(schemaVersion: 3)
-        XCTAssertTrue(LocalSnapshotValidator.validate(s).issues.contains(.unsupportedSchemaVersion(3)))
+        // iOS-17A: v3 is now current/accepted; an UNKNOWN future version (4) is the
+        // unsupported case the validator must still reject.
+        let s = validSnapshot(schemaVersion: 4)
+        XCTAssertTrue(LocalSnapshotValidator.validate(s).issues.contains(.unsupportedSchemaVersion(4)))
     }
 
     func testRejectsEmptyIdAndTimestamp() {
@@ -150,11 +152,12 @@ final class IronPathLocalSnapshotTests: XCTestCase {
     }
 
     func testFutureVersionNotDowngraded() {
-        let v3 = validSnapshot(schemaVersion: 3)
-        let result = LocalSnapshotMigration.migrate(v3)
+        // iOS-17A: the future/unsupported version is now 4 (v3 is current).
+        let v4 = validSnapshot(schemaVersion: 4)
+        let result = LocalSnapshotMigration.migrate(v4)
         XCTAssertTrue(result.isUnsupportedFutureVersion)
         XCTAssertFalse(result.didMigrate)
-        XCTAssertEqual(result.snapshot.schemaVersion, 3, "must not be downgraded")
+        XCTAssertEqual(result.snapshot.schemaVersion, 4, "must not be downgraded")
     }
 
     func testBelowMinimumVersionNotPromoted() {
@@ -406,16 +409,16 @@ final class IronPathLocalSnapshotTests: XCTestCase {
         let dir = tempDir()
         let store = LocalSessionSnapshotStore(directory: dir)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        // A well-formed JSON history file with an unsupported FUTURE schema (3):
+        // A well-formed JSON history file with an unsupported FUTURE schema (4):
         // it decodes fine but fails validation, so it is counted invalid, not shown.
-        let v3Json = """
-        {"schemaVersion":3,"snapshotId":"focus-normal-1","createdAtIso":"2026-05-27T10:00:00.000Z",
+        let futureJson = """
+        {"schemaVersion":4,"snapshotId":"focus-normal-1","createdAtIso":"2026-05-27T10:00:00.000Z",
         "scenarioId":"normal","scenarioLabel":"普通","sessionIntent":"normal-session","activePhase":"base",
         "deloadLevel":"none","deloadStrategy":"maintain","totalCompletedSets":2,"totalTargetSets":3,
         "source":"local-ios-focus-mvp",
         "exercises":[{"exerciseId":"bench","name":"bench","role":"accessory","progress":{"completedSets":2,"targetSets":3}}]}
         """
-        try Data(v3Json.utf8).write(to: dir.appendingPathComponent("focus-session-0001-normal.json"))
+        try Data(futureJson.utf8).write(to: dir.appendingPathComponent("focus-session-0001-normal.json"))
         let scan = try store.scanSnapshots()
         XCTAssertEqual(scan.valid.count, 0)
         XCTAssertEqual(scan.invalidCount, 1, "decoded-but-unsupported future schema is rejected, not shown")

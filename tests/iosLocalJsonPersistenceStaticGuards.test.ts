@@ -252,9 +252,20 @@ describe('iOS-9 forbidden cloud / health / network / backends are absent', () =>
     expect(code).not.toMatch(/@Model\b/);
   });
   it('24. no AppData read/write/destructive mutation', () => {
-    // the iOS-9 persistence files never touch the canonical domain store
-    expect(code).not.toMatch(/\bAppData\b/);
-    expect(code).not.toMatch(/\bAppDataStore\b/);
+    // The DERIVED persistence/presentation files never touch the canonical domain
+    // store. iOS-17A: FocusModeMvpState is the AUTHORIZED initiator of the first
+    // native canonical-AppData write path (master §8.1) — it holds an AppDataStore
+    // and delegates to IronPathPersistence.CanonicalSessionWriter — so the
+    // canonical-AppData ban applies to the derived files (model/store/history/
+    // shell), NOT the view-model. The view-model's canonical access is itself
+    // guarded below: it must go through the sanctioned writer seam, never a raw
+    // second write path (§8.1 rule 4).
+    const derived = [MODEL_FILE, STORE_FILE, HISTORY_VIEW_FILE, SHELL_FILE]
+      .filter(appExists).map(appCode).join('\n');
+    expect(derived).not.toMatch(/\bAppData\b/);
+    expect(derived).not.toMatch(/\bAppDataStore\b/);
+    // The view-model reaches canonical AppData ONLY via the sanctioned package seam.
+    expect(appCode(STATE_FILE)).toMatch(/\bCanonicalSessionWriter\b/);
   });
   it('25. no TypeScript / JS runtime reference', () => {
     expect(code).not.toMatch(/\bnode_modules\b/);

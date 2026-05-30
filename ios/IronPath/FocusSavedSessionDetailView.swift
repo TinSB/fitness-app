@@ -14,6 +14,7 @@
 // disk, network, cloud, or AppData.
 
 import SwiftUI
+import IronPathDomain
 import IronPathLocalSnapshot
 
 struct FocusSavedSessionDetailView: View {
@@ -23,6 +24,10 @@ struct FocusSavedSessionDetailView: View {
     /// `LocalSnapshotRecovery.insight`. Defaults to empty for previews (which then
     /// shows an honest "nothing restorable" state).
     var currentExerciseIds: [String] = []
+    /// iOS-17A: display unit for the per-set "上次成绩" weights. Storage is always
+    /// kg (the v3 `setLogs` carry kg); this only formats the value at render time.
+    /// Defaults to `.kg` for previews.
+    var displayUnit: WeightUnit = .kg
     /// iOS-11: restore this saved session into an in-RAM training draft and
     /// continue it. Optional so previews can omit it.
     var onContinue: (() -> Void)? = nil
@@ -218,14 +223,17 @@ struct FocusSavedSessionDetailView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(snapshot.exercises) { ex in
-                        HStack(alignment: .firstTextBaseline) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(ex.name).font(.subheadline.weight(.medium))
-                                Text(ex.role).font(.caption2).foregroundStyle(.tertiary)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .firstTextBaseline) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(ex.name).font(.subheadline.weight(.medium))
+                                    Text(ex.role).font(.caption2).foregroundStyle(.tertiary)
+                                }
+                                Spacer()
+                                Text("\(ex.completedSets) / \(ex.targetSets) 组")
+                                    .font(.subheadline.monospacedDigit())
                             }
-                            Spacer()
-                            Text("\(ex.completedSets) / \(ex.targetSets) 组")
-                                .font(.subheadline.monospacedDigit())
+                            perSetSummary(for: ex)
                         }
                         .padding(.vertical, 6)
                         .padding(.horizontal, 12)
@@ -238,6 +246,58 @@ struct FocusSavedSessionDetailView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+    }
+
+    // MARK: - iOS-17A per-set "上次成绩" summary (DERIVED display copy)
+
+    /// Render the v3 per-set detail (weight / reps / RIR) for one exercise. A
+    /// legacy v1/v2 session (or a set logged with no metrics) carries no
+    /// `setLogs`, so this honestly shows "无逐组明细" rather than fabricating data.
+    /// Weight is stored in kg and converted to the caller's `displayUnit` here.
+    @ViewBuilder
+    private func perSetSummary(for exercise: LocalCompletedExerciseSnapshot) -> some View {
+        if let logs = exercise.setLogs, !logs.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(logs, id: \.setIndex) { entry in
+                    HStack(spacing: 6) {
+                        Text("第 \(entry.setIndex + 1) 组")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(Self.setLine(entry, displayUnit: displayUnit))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+            .padding(.top, 2)
+        } else {
+            Text("无逐组明细")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    /// One per-set line, e.g. "60kg · 8次 · RIR 2". Each metric is shown only when
+    /// present (honest "not entered" → omitted, never a fabricated 0); a fully
+    /// blank set degrades to "已完成".
+    static func setLine(_ entry: LocalCompletedSetEntrySnapshot, displayUnit: WeightUnit) -> String {
+        var parts: [String] = []
+        if let kg = entry.weightKg, let shown = WeightConversion.fromKilograms(kg, to: displayUnit) {
+            parts.append("\(formatWeight(shown))\(displayUnit.rawValue)")
+        }
+        if let reps = entry.reps { parts.append("\(reps)次") }
+        if let rir = entry.rir { parts.append("RIR \(rir)") }
+        return parts.isEmpty ? "已完成" : parts.joined(separator: " · ")
+    }
+
+    /// Format a display-unit weight: drop the trailing ".0" for whole values
+    /// (60, not 60.0); keep one decimal otherwise (137.5).
+    private static func formatWeight(_ value: Double) -> String {
+        if value.rounded() == value {
+            return String(Int(value.rounded()))
+        }
+        return String(format: "%.1f", value)
     }
 
     private var footerNote: some View {
@@ -296,8 +356,14 @@ struct FocusSavedSessionDetailView: View {
             exercises: [
                 LocalCompletedExerciseSnapshot(
                     exerciseId: "bench-press", name: "平板卧推", role: "secondary-compound",
-                    progress: LocalCompletedSetProgressSnapshot(completedSets: 3, targetSets: 3)
+                    progress: LocalCompletedSetProgressSnapshot(completedSets: 3, targetSets: 3),
+                    setLogs: [
+                        LocalCompletedSetEntrySnapshot(setIndex: 0, weightKg: 60, reps: 8, rir: 2),
+                        LocalCompletedSetEntrySnapshot(setIndex: 1, weightKg: 62.5, reps: 6, rir: 1),
+                        LocalCompletedSetEntrySnapshot(setIndex: 2, weightKg: 62.5, reps: 5, rir: 0),
+                    ]
                 ),
+                // A legacy / no-detail exercise: no setLogs → honest "无逐组明细".
                 LocalCompletedExerciseSnapshot(
                     exerciseId: "lateral-raise", name: "哑铃侧平举", role: "isolation",
                     progress: LocalCompletedSetProgressSnapshot(completedSets: 2, targetSets: 3)

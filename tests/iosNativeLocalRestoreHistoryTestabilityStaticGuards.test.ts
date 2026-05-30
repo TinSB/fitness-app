@@ -124,7 +124,10 @@ describe('iOS-12 restore fidelity + compatibility + honesty', () => {
   });
 
   it('8. v1/v2 compatibility + forward migration remain', () => {
-    expect(pkgSrc('LocalSnapshotValidation.swift')).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*\]/);
+    // iOS-17A widened the accepted set to [1, 2, 3] (v3 adds the per-set `setLogs`
+    // display copy); v1/v2 stay accepted and migrate forward — the compatibility +
+    // forward-migration contract this guard locks is unchanged.
+    expect(pkgSrc('LocalSnapshotValidation.swift')).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*,\s*3\s*\]/);
     expect(pkgSrc('LocalSnapshotMigration.swift')).toMatch(/func\s+migrate\s*\(/);
     expect(pkgSrc('LocalSnapshotMigration.swift')).toMatch(/original\s*<\s*minimumSupportedVersion/);
   });

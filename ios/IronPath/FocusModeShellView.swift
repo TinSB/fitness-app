@@ -87,9 +87,13 @@ struct FocusModeShellView: View {
         // iOS-9: load the latest saved session + history from the app-local JSON
         // store on launch. iOS-14: opt the RUNNING app into the real wall-clock
         // first, so saved timestamps + history grouping reflect real days (tests/
-        // previews keep the deterministic default).
+        // previews keep the deterministic default). iOS-17A: opt the RUNNING app
+        // into canonical-AppData persistence (the source of truth, §8) so completed
+        // sessions are written to the real on-disk document; previews/tests leave
+        // it unset and never touch the canonical store.
         .task {
             state.useSystemClock()
+            state.useApplicationSupportAppDataStore()
             state.loadSavedSessions()
         }
     }
@@ -101,6 +105,7 @@ struct FocusModeShellView: View {
         if let summary = state.completedSummary {
             VStack(alignment: .leading, spacing: 12) {
                 saveStatusBanner
+                canonicalSaveBanner
                 FocusSavedSessionPreviewView(
                     summary: summary,
                     saved: state.saveStatus == .saved,
@@ -126,6 +131,40 @@ struct FocusModeShellView: View {
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.green.opacity(0.12)))
         case .failed(let message):
             Text("本地保存失败：\(message) · 本次预览仍可用")
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.red.opacity(0.12)))
+        case .idle:
+            EmptyView()
+        }
+    }
+
+    /// iOS-17A: honest feedback for the CANONICAL AppData write (the source of
+    /// truth, §8), independent of the LocalSnapshot history banner above. A
+    /// canonical failure NEVER reads as success; `.skipped` honestly states that
+    /// nothing was written because no per-set detail was logged; `.idle` (previews/
+    /// tests not opted into canonical persistence) shows nothing.
+    @ViewBuilder
+    private var canonicalSaveBanner: some View {
+        switch state.canonicalSaveStatus {
+        case .saved:
+            Text("逐组成绩已写入训练记录（本机 · 源数据）")
+                .font(.footnote)
+                .foregroundStyle(.green)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.green.opacity(0.12)))
+        case .skipped:
+            Text("本次未记录逐组成绩（未填写重量/次数/RIR）")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.10)))
+        case .failed(let message):
+            Text("训练记录写入失败：\(message) · 本机历史与预览仍可用")
                 .font(.footnote)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity, alignment: .leading)

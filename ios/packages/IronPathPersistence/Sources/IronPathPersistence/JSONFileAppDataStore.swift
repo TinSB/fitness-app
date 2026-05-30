@@ -92,3 +92,27 @@ public struct JSONFileAppDataStore: AppDataStore {
         }
     }
 }
+
+extension JSONFileAppDataStore {
+    /// The sanctioned canonical-AppData store rooted in the app sandbox's
+    /// Application Support — NOT iCloud, NOT a shared container. This is the
+    /// SECOND sanctioned local JSON store (§12), alongside the IronPathLocalSnapshot
+    /// Focus-history store; it lives in its own `IronPathAppData/` subdirectory and
+    /// holds a DISTINCT file, so the two stores never collide. The directory is
+    /// created lazily on first save (this factory does not touch disk for IO). On
+    /// the near-impossible failure to resolve Application Support, it falls back to
+    /// the temporary directory so app construction never crashes; a real write
+    /// failure there still THROWS honestly at save time (no fake success).
+    public static func applicationSupport(
+        filename: String = "ironpath-appdata.json"
+    ) -> JSONFileAppDataStore {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        )) ?? FileManager.default.temporaryDirectory
+        let directory = base.appendingPathComponent("IronPathAppData", isDirectory: true)
+        return JSONFileAppDataStore(directory: directory, filename: filename)
+    }
+}

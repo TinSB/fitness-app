@@ -71,13 +71,17 @@ const docText = (): string => readFileSync(repoFile(DOC_PATH), 'utf8');
 
 describe('iOS-11 schema v2', () => {
   it('1. model schema version bumped to 2', () => {
-    expect(appCode(MODEL_FILE)).toMatch(/currentSchemaVersion\s*=\s*2/);
+    // iOS-17A bumped the snapshot schema to v3 (adds the derived per-set `setLogs`
+    // display copy) with a v1/v2 forward migration; v2 stays accepted + migratable.
+    expect(appCode(MODEL_FILE)).toMatch(/currentSchemaVersion\s*=\s*3/);
   });
   it('2. model adds optional resumeExerciseIndex (v2 resume cursor)', () => {
     expect(appCode(MODEL_FILE)).toMatch(/let\s+resumeExerciseIndex\s*:\s*Int\?/);
   });
   it('3. validator accepts schema versions [1, 2]', () => {
-    expect(appCode(VALIDATION_FILE)).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*\]/);
+    // iOS-17A: accepted set widened to [1, 2, 3] (v3 adds per-set `setLogs`); v1/v2
+    // stay accepted + migrate forward.
+    expect(appCode(VALIDATION_FILE)).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*,\s*3\s*\]/);
   });
 });
 
@@ -242,9 +246,15 @@ describe('iOS-11 forbidden cloud / health / network / backends are absent', () =
     expect(code).not.toMatch(/@Model\b/);
   });
   it('18. no destructive AppData mutation (restore files never touch AppData)', () => {
-    const restore = joinCode(RESTORE_FILES);
-    expect(restore).not.toMatch(/\bAppData\b/);
-    expect(restore).not.toMatch(/\bAppDataStore\b/);
+    // iOS-17A: FocusModeMvpState is the authorized initiator of the first native
+    // canonical-AppData write path (master §8.1), so the canonical-AppData ban
+    // applies to the DERIVED restore/presentation files only — not the view-model,
+    // whose canonical access is guarded to go through the sanctioned writer seam.
+    const derived = joinCode(RESTORE_FILES.filter((f) => f !== STATE_FILE));
+    expect(derived).not.toMatch(/\bAppData\b/);
+    expect(derived).not.toMatch(/\bAppDataStore\b/);
+    // The view-model reaches canonical AppData ONLY via the sanctioned package seam.
+    expect(appCode(STATE_FILE)).toMatch(/\bCanonicalSessionWriter\b/);
   });
   it('19. no TS/JS runtime reference', () => {
     expect(code).not.toMatch(/\bnode_modules\b/);
