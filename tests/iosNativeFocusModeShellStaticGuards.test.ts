@@ -16,7 +16,9 @@ import { describe, expect, it } from 'vitest';
 //   • The four shell files live under ios/IronPath/ (NOT ios/App/ — the
 //     prompt's path assumption is wrong; the actual SwiftUI app target
 //     directory is ios/IronPath/).
-//   • ContentView routes to FocusModeShellView.
+//   • ContentView routes to FocusModeShellView. (iOS-17S: the app root is now a
+//     five-tab TabView; the route is the chain ContentView → TrainingRootView →
+//     FocusModeShellView, with TrainingRootView hosting the shell unchanged.)
 //   • The shell displays activePhase / sessionIntent / volumeMode /
 //     intensityMode / progressionMode / finalVolumeMultiplier and the
 //     perExercise target sets.
@@ -62,12 +64,21 @@ describe('iOS-5 shell files exist under ios/IronPath/', () => {
   }
 });
 
-// ---- 5. ContentView wires to FocusModeShellView ----
+// ---- 5. App root wires Focus into the tab shell (iOS-17S) ----
+//
+// iOS-17S relocated the Focus shell under the 训练 tab: the app root is now a
+// five-tab TabView (ContentView) whose 训练 tab mounts TrainingRootView, which
+// hosts FocusModeShellView() unchanged. The original iOS-5 invariant — "the app
+// root wires to FocusModeShellView" — is preserved (and tightened) as the chain
+// ContentView → TrainingRootView → FocusModeShellView, locked below.
 
-describe('iOS-5 ContentView wires to FocusModeShellView', () => {
-  it('iOS-5 ContentView.swift references FocusModeShellView', () => {
+describe('iOS-17S app root wires Focus into the tab shell', () => {
+  it('iOS-17S TrainingRootView.swift hosts FocusModeShellView()', () => {
+    expect(stripSwiftComments(readShell('TrainingRootView.swift'))).toMatch(/\bFocusModeShellView\s*\(\s*\)/);
+  });
+  it('iOS-17S ContentView.swift mounts TrainingRootView() in the TabView shell', () => {
     const content = readShell('../IronPath/ContentView.swift');
-    expect(stripSwiftComments(content)).toMatch(/\bFocusModeShellView\s*\(\s*\)/);
+    expect(stripSwiftComments(content)).toMatch(/\bTrainingRootView\s*\(\s*\)/);
   });
 });
 

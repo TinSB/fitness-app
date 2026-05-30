@@ -32,6 +32,11 @@
 		AA0000000000000000000116 /* IronPathBackup in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000106 /* IronPathBackup */; };
 		AA0000000000000000000117 /* IronPathL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* IronPathL10n */; };
 		AA0000000000000000000118 /* IronPathUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000108 /* IronPathUIKit */; };
+		B500000000000000000000A2 /* TodayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000A1 /* TodayRootView.swift */; };
+		B500000000000000000000B2 /* TrainingRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000B1 /* TrainingRootView.swift */; };
+		B500000000000000000000C2 /* HistoryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000C1 /* HistoryRootView.swift */; };
+		B500000000000000000000D2 /* PlanRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000D1 /* PlanRootView.swift */; };
+		B500000000000000000000E2 /* ProfileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000E1 /* ProfileRootView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +57,11 @@
 		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B500000000000000000000A1 /* TodayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000B1 /* TrainingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000C1 /* HistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000D1 /* PlanRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000E1 /* ProfileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRootView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +120,11 @@
 				81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */,
 				C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */,
 				CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */,
+				B500000000000000000000A1 /* TodayRootView.swift */,
+				B500000000000000000000B1 /* TrainingRootView.swift */,
+				B500000000000000000000C1 /* HistoryRootView.swift */,
+				B500000000000000000000D1 /* PlanRootView.swift */,
+				B500000000000000000000E1 /* ProfileRootView.swift */,
 			);
 			path = IronPath;
 			sourceTree = "<group>";
@@ -221,6 +236,11 @@
 				81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */,
 				AA00000000000000000000E4 /* ContentView.swift in Sources */,
 				81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */,
+				B500000000000000000000A2 /* TodayRootView.swift in Sources */,
+				B500000000000000000000B2 /* TrainingRootView.swift in Sources */,
+				B500000000000000000000C2 /* HistoryRootView.swift in Sources */,
+				B500000000000000000000D2 /* PlanRootView.swift in Sources */,
+				B500000000000000000000E2 /* ProfileRootView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

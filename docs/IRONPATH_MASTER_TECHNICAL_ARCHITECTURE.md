@@ -6,7 +6,7 @@
 - **Status:** Authoritative / binding
 - **Version:** 1.0
 - **Last updated:** 2026-05-30
-- **Baseline commit:** `73b60ec` — *iOS-16 Custom History Date Range V1 (#421)*
+- **Baseline commit:** `6df0149` — *iOS-17b Native Per-Set Capture + In-RAM Session V1 (#422)*
 - **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
 - **Supersedes (for day-to-day task scoping):** the scattered planning/strategy docs under `docs/` and the root `*.md` plans. Those remain historical context; **this document wins on any conflict about boundaries, ownership, or workflow.**
 
@@ -39,11 +39,11 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 
 ## 2. Current Project State
 
-| Aspect | State as of baseline `73b60ec` (2026-05-30) |
+| Aspect | State as of baseline `6df0149` (2026-05-30) |
 | --- | --- |
 | PWA | Mature product surface. React 19 + Vite + TypeScript. The live runtime users rely on. |
 | Native iOS | Migrating. Thin SwiftUI shell (14 files) over **10 local Swift packages**. Local-first only. |
-| iOS migration progress | Completed **through iOS-16**. Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter + coarse **and custom from/to** date ranges, summary stats, **per-exercise recovery insight**, and **non-destructive draft recovery** are shipped. Set-logging (iOS-17) is an **approved epic, in progress** (capture slice 17b: in-RAM per-set capture, no persistence). |
+| iOS migration progress | Completed **through iOS-16**, plus **iOS-17b** (in-RAM per-set capture, no persistence) and the **iOS-17S five-tab navigation shell** (今日/训练/记录/计划/我的; Focus relocated under 训练 unchanged, the other four tabs placeholder). Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter + coarse **and custom from/to** date ranges, summary stats, **per-exercise recovery insight**, and **non-destructive draft recovery** are shipped. Set-logging (iOS-17) is an **approved epic, in progress** (capture slice 17b shipped, in-RAM only; canonical write path 17c not yet built). |
 | Native data model | `IronPathDomain.AppData` — pure `Codable` value type, parity-pinned to the PWA export. |
 | Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12). **No** iCloud/CloudKit/HealthKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. |
 | Restore (iOS-14 UI) | **In-memory local draft re-hydration only** (`LocalDraftRestorePlanner.reconcile`). Not a full AppData restore. |
@@ -99,9 +99,10 @@ IronPath is a mobile-first personal training app with two front-ends over one sh
 
 ```
 ios/
-├── IronPath/                       ← THIN SwiftUI app layer (14 .swift + assets/plist)
+├── IronPath/                       ← THIN SwiftUI app layer (19 .swift + assets/plist)
 │   ├── IronPathApp.swift           ← @main; links all 10 packages (Version probe for bootstrap parity test)
-│   ├── ContentView.swift           ← trivial root: body = FocusModeShellView()
+│   ├── ContentView.swift           ← trivial root: five-tab TabView shell (今日/训练/记录/计划/我的, AppTab enum — iOS-17S)
+│   ├── {Today,Training,History,Plan,Profile}RootView.swift  ← per-tab mount points (iOS-17S); 训练 hosts FocusModeShellView unchanged, the other four are placeholder empty states
 │   ├── FocusModeShellView.swift     ← THE 专注训练 (Focus Mode) shell: .plan/.inSession/.completed;
 │   │                                  .task does the real-clock opt-in + loadSavedSessions; restoredDraftBanner
 │   ├── FocusModeMvpState.swift       ← @MainActor view-model: in-RAM UI state; deterministic default clock;
@@ -528,7 +529,7 @@ Every future Claude/Codex task must be framed with this template. Copy it, fill 
 
 ## 27. Appendix: Current iOS Migration Milestones
 
-Native iOS has advanced as a sequence of validated slices. Completed **through iOS-16** at baseline `73b60ec`.
+Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b** at baseline `6df0149`; the **iOS-17S** five-tab navigation shell layers on top (navigation only, no business surface).
 
 | Milestone | Summary |
 | --- | --- |
@@ -540,9 +541,10 @@ Native iOS has advanced as a sequence of validated slices. Completed **through i
 | iOS-13 (#417) | Local history product surface + restore reconciliation (exercise-id matching) + grouping. |
 | iOS-14 (#418) | Native history + draft recovery bundle: `LocalSnapshotHistory.filtered` search/filter, `LocalSnapshotStats.mostCommonScenarioLabel`, history search field + summary card, **non-destructive in-memory draft recovery**, real-clock opt-in (`useSystemClock`, default deterministic). |
 | iOS-15 (#420) | Local history detail + per-exercise recovery insight: pure `LocalSnapshotRecovery.insight` (read-only projection over `LocalDraftRestorePlanner.reconcile` → per-exercise restorable/changed + new-exercise list + remapped resume), coarse history date-range filter (`LocalHistoryDateRange`), honest resume affordance. Restore stays an in-memory draft. |
-| **iOS-16 (#421)** | Custom history date range: additive `LocalHistoryCustomDateRange` + `LocalSnapshotHistory.filtered(customRange:)` (inclusive UTC-day interval, reversed-normalized, composes with coarse/search/scenario/completed) + thin from/to `DatePicker`s. **= baseline.** |
-| iOS-17 epic (approved) | Per-exercise set logging. **17.0** review (Option C: AppData = source of truth via `IronPathPersistence`, optional denormalized snapshot copy). **17a** Domain typing — already satisfied by iOS-2C. **17b** (this slice) in-RAM per-set capture (weight/reps/RIR) into the existing `ActualSetDraft`, kg-stored, **no persistence** → source-of-truth impact: none. **17c** first native canonical-AppData write path (amends §8 in that PR). **17d** history/detail summary. **17e** engine consumption — deferred. |
-| Next (proposed) | iOS-17c Canonical-AppData write path for performed sets (the boundary slice; amends §8/§9/§12 in the same PR; DataHealth-gated, backup-before-overwrite, no-fake-success). |
+| **iOS-16 (#421)** | Custom history date range: additive `LocalHistoryCustomDateRange` + `LocalSnapshotHistory.filtered(customRange:)` (inclusive UTC-day interval, reversed-normalized, composes with coarse/search/scenario/completed) + thin from/to `DatePicker`s. |
+| iOS-17 epic (approved) | Per-exercise set logging. **17.0** review (Option C: AppData = source of truth via `IronPathPersistence`, optional denormalized snapshot copy). **17a** Domain typing — already satisfied by iOS-2C. **17b (#422)** in-RAM per-set capture (weight/reps/RIR) into the existing `ActualSetDraft`, kg-stored, **no persistence** → source-of-truth impact: none. **17c** first native canonical-AppData write path (amends §8 in that PR). **17d** history/detail summary. **17e** engine consumption — deferred. |
+| **iOS-17S** | Tab shell scaffold: `ContentView` → five-tab `TabView` (今日/训练/记录/计划/我的 via an `AppTab` enum), Focus relocated under 训练 **unchanged**, four placeholder empty-state RootViews, all five `*RootView` files pre-registered into `project.pbxproj`. **The only slice authorized to edit `project.pbxproj`** — it unlocks parallel per-tab fills (each later slice edits only its own RootView). Navigation only → source-of-truth & data-safety impact: none. |
+| Next (proposed) | iOS-17c Canonical-AppData write path for performed sets (the boundary slice; amends §8/§9/§12 in the same PR; DataHealth-gated, backup-before-overwrite, no-fake-success). Parallel per-tab fills (今日/记录/计划/我的) may proceed independently on the iOS-17S RootViews. |
 
 > Milestone facts here are descriptive context; the **rules in §1–§26 are binding.**
 
