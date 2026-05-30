@@ -32,6 +32,9 @@ const PACKAGES = [
   // iOS-12: pure local-snapshot logic extracted into a real Swift package so it
   // can carry XCTest unit tests; the app target links it like the others.
   'IronPathLocalSnapshot',
+  // N-1: local rest-timer notification package; the app target links it like the
+  // others (11th XCLocalSwiftPackageReference + product dependency).
+  'IronPathNotifications',
 ] as const;
 
 describe('iosBootstrapTargetSettings', () => {

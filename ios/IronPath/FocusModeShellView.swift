@@ -28,6 +28,11 @@ import IronPathTrainingDecision
 
 struct FocusModeShellView: View {
     @StateObject private var state = FocusModeMvpState()
+    // N-1: LOCAL rest-timer reminder view-model, kept SEPARATE from the in-RAM
+    // FocusModeMvpState so the state's no-disk / no-platform-dep guards stay
+    // intact. It owns the LOCAL notification scheduler via the IronPathNotifications
+    // seam; previews/tests never opt into a live scheduler (status stays idle).
+    @StateObject private var restReminder = RestReminderModel()
 
     private var slice: TrainingDecisionCoreSlice {
         FocusModePreviewData.sampleCoreSlice(for: state.selectedScenario)
@@ -95,6 +100,10 @@ struct FocusModeShellView: View {
             state.useSystemClock()
             state.useApplicationSupportAppDataStore()
             state.loadSavedSessions()
+            // N-1: opt the running app into the real LOCAL notification scheduler
+            // (previews/tests stay unopted). Authorization itself stays user-gated
+            // by the RestReminderSection button — this only wires the live scheduler.
+            restReminder.activateLiveSchedulerIfNeeded()
         }
     }
 
@@ -109,7 +118,11 @@ struct FocusModeShellView: View {
                 FocusSavedSessionPreviewView(
                     summary: summary,
                     saved: state.saveStatus == .saved,
-                    onStartNew: { state.startNewSession() }
+                    onStartNew: {
+                        state.startNewSession()
+                        // N-1: starting over clears any pending rest reminder.
+                        Task { await restReminder.cancelRestReminder() }
+                    }
                 )
             }
         } else {
@@ -299,6 +312,8 @@ struct FocusModeShellView: View {
 
             navigationStack
 
+            RestReminderSection(model: restReminder)
+
             FocusModeStatusSurfaceView(slice: slice)
 
             FocusSessionCompletionView(
@@ -306,6 +321,8 @@ struct FocusModeShellView: View {
                 totalTarget: totalTargetSets,
                 onCompleteSession: {
                     state.completeSession(slice: slice, lines: completedLines)
+                    // N-1: finishing the session cancels any pending rest reminder.
+                    Task { await restReminder.cancelRestReminder() }
                 }
             )
 
@@ -337,6 +354,8 @@ struct FocusModeShellView: View {
         HStack(alignment: .firstTextBaseline) {
             Button {
                 state.endSession()
+                // N-1: leaving the session cancels any pending rest reminder.
+                Task { await restReminder.cancelRestReminder() }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -387,6 +406,24 @@ struct FocusModeShellView: View {
                             reps: reps,
                             rir: rir
                         )
+                        // N-1: a completed set begins the rest before the NEXT set in
+                        // this exercise → schedule a LOCAL reminder (a same-id reschedule
+                        // replaces any pending one). If the exercise just completed there
+                        // is no next set here, so cancel instead. No-op unless the user
+                        // enabled reminders.
+                        let completedAfter = state.completedSets(for: row.id)
+                        if completedAfter < row.targetSets {
+                            let nextSet = completedAfter + 1
+                            Task {
+                                await restReminder.scheduleRestReminder(
+                                    exerciseRoleRawValue: row.role.rawValue,
+                                    exerciseName: row.name,
+                                    nextSetNumber: nextSet
+                                )
+                            }
+                        } else {
+                            Task { await restReminder.cancelRestReminder() }
+                        }
                     }
                 )
             }
@@ -409,6 +446,8 @@ struct FocusModeShellView: View {
                 HStack(spacing: 8) {
                     Button {
                         state.moveToPreviousExercise()
+                        // N-1: switching exercises supersedes the prior set's rest.
+                        Task { await restReminder.cancelRestReminder() }
                     } label: {
                         Text("上一动作")
                             .frame(maxWidth: .infinity)
@@ -419,6 +458,8 @@ struct FocusModeShellView: View {
 
                     Button {
                         state.moveToNextExercise(totalCount: rows.count)
+                        // N-1: switching exercises supersedes the prior set's rest.
+                        Task { await restReminder.cancelRestReminder() }
                     } label: {
                         Text("下一动作")
                             .frame(maxWidth: .infinity)
@@ -435,6 +476,8 @@ struct FocusModeShellView: View {
         VStack(spacing: 8) {
             Button {
                 state.resetProgress()
+                // N-1: resetting progress clears any pending rest reminder.
+                Task { await restReminder.cancelRestReminder() }
             } label: {
                 Text("重置样例")
                     .font(.subheadline)
@@ -445,6 +488,8 @@ struct FocusModeShellView: View {
 
             Button {
                 state.endSession()
+                // N-1: ending training cancels any pending rest reminder.
+                Task { await restReminder.cancelRestReminder() }
             } label: {
                 Text("结束训练（回到计划）")
                     .font(.subheadline)

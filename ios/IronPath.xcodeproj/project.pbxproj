@@ -39,6 +39,9 @@
 		B500000000000000000000E2 /* ProfileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000E1 /* ProfileRootView.swift */; };
 		B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */; };
 		B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */; };
+		DD00000000000000000000D2 /* IronPathNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000D1 /* IronPathNotifications */; };
+		DD00000000000000000000A2 /* RestReminderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000A1 /* RestReminderModel.swift */; };
+		DD00000000000000000000B2 /* RestReminderSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000B1 /* RestReminderSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +70,8 @@
 		B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportModel.swift; sourceTree = "<group>"; };
 		B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportSection.swift; sourceTree = "<group>"; };
 		B500000000000000000000F5 /* IronPath.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IronPath.entitlements; sourceTree = "<group>"; };
+		DD00000000000000000000A1 /* RestReminderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderModel.swift; sourceTree = "<group>"; };
+		DD00000000000000000000B1 /* RestReminderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderSection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +89,7 @@
 				AA0000000000000000000117 /* IronPathL10n in Frameworks */,
 				AA0000000000000000000118 /* IronPathUIKit in Frameworks */,
 				CC00000000000000000000D2 /* IronPathLocalSnapshot in Frameworks */,
+				DD00000000000000000000D2 /* IronPathNotifications in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,6 +139,8 @@
 				B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */,
 				B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */,
 				B500000000000000000000F5 /* IronPath.entitlements */,
+				DD00000000000000000000A1 /* RestReminderModel.swift */,
+				DD00000000000000000000B1 /* RestReminderSection.swift */,
 			);
 			path = IronPath;
 			sourceTree = "<group>";
@@ -164,6 +172,7 @@
 				AA0000000000000000000108 /* IronPathUIKit */,
 				81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */,
 				CC00000000000000000000D1 /* IronPathLocalSnapshot */,
+				DD00000000000000000000D1 /* IronPathNotifications */,
 			);
 			productName = IronPath;
 			productReference = AA00000000000000000000B2 /* IronPath.app */;
@@ -204,6 +213,7 @@
 				AA00000000000000000000F8 /* XCLocalSwiftPackageReference "packages/IronPathUIKit" */,
 				81ACFD472FC935D0000989A7 /* XCLocalSwiftPackageReference "packages/IronPathTrainingDecision" */,
 				CC00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathLocalSnapshot" */,
+				DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotifications" */,
 			);
 			productRefGroup = AA00000000000000000000A3 /* Products */;
 			projectDirPath = "";
@@ -251,6 +261,8 @@
 				B500000000000000000000E2 /* ProfileRootView.swift in Sources */,
 				B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */,
 				B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */,
+				DD00000000000000000000A2 /* RestReminderModel.swift in Sources */,
+				DD00000000000000000000B2 /* RestReminderSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,7 +508,11 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathUIKit;
 		};
-/* End XCLocalSwiftPackageReference section */
+DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotifications" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/IronPathNotifications;
+		};
+		/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */ = {
@@ -539,7 +555,11 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathUIKit;
 		};
-/* End XCSwiftPackageProductDependency section */
+DD00000000000000000000D1 /* IronPathNotifications */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IronPathNotifications;
+		};
+		/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA00000000000000000000A1 /* Project object */;
 }
