@@ -123,6 +123,38 @@ final class FocusModeMvpState: ObservableObject {
     /// deterministic. Settable so the history control can bind to it.
     @Published var historyDateRange: LocalHistoryDateRange = .all
 
+    /// iOS-16: custom from/to date-range filter state for the history surface.
+    /// Pure in-RAM UI state (no disk, no IO). `historyCustomRange` is nil unless
+    /// the user turns custom filtering on. The default from/to are deterministic
+    /// (the reference instant, NEVER an inline `Date()`) so previews/tests never
+    /// depend on the wall clock; enabling the control seeds a sensible window
+    /// from the injectable clock.
+    @Published var historyCustomRangeEnabled: Bool = false
+    @Published var historyCustomFrom: Date = FocusModeMvpState.deterministicReferenceDate()
+    @Published var historyCustomTo: Date = FocusModeMvpState.deterministicReferenceDate()
+
+    /// The active custom interval, or nil when custom filtering is off. Read by
+    /// the history view and passed straight into the pure, unit-tested
+    /// `LocalSnapshotHistory.filtered(customRange:)`. No logic beyond on/off.
+    var historyCustomRange: LocalHistoryCustomDateRange? {
+        historyCustomRangeEnabled
+            ? LocalHistoryCustomDateRange(from: historyCustomFrom, to: historyCustomTo)
+            : nil
+    }
+
+    /// Turn custom date filtering on/off. On first enable, seed the interval to
+    /// roughly the last 30 days from the injectable clock (deterministic by
+    /// default — NEVER an inline `Date()`) so the pickers don't start at the 1970
+    /// epoch. Pure in-RAM UI wiring; no disk, no IO, no engine.
+    func setHistoryCustomRangeEnabled(_ on: Bool) {
+        if on && !historyCustomRangeEnabled {
+            let now = clock()
+            historyCustomTo = now
+            historyCustomFrom = LocalSnapshotHistory.utcCalendar.date(byAdding: .day, value: -30, to: now) ?? now
+        }
+        historyCustomRangeEnabled = on
+    }
+
     /// The sanctioned app-local JSON store. Injectable for previews/tests; the
     /// app uses the default Application Support location. NOTE: this class never
     /// touches FileManager directly — all disk IO is delegated to the store.

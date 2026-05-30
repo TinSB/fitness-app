@@ -50,6 +50,23 @@ public enum LocalHistoryDateRange: String, CaseIterable, Equatable {
     }
 }
 
+/// iOS-16: an explicit, local-only custom date interval for the history filter,
+/// complementing the coarse `LocalHistoryDateRange`. `from`/`to` are absolute
+/// instants; membership compares CALENDAR DAYS (UTC by default) INCLUSIVELY, so
+/// any snapshot whose timestamp lands on `from`'s day through `to`'s day matches.
+/// A reversed interval (`from` later than `to`) is NORMALIZED (the two bounds are
+/// swapped at compare time) so two independent day pickers can never yield an
+/// empty result by ordering alone. Absolute by design — it needs no `now`.
+public struct LocalHistoryCustomDateRange: Equatable {
+    public let from: Date
+    public let to: Date
+
+    public init(from: Date, to: Date) {
+        self.from = from
+        self.to = to
+    }
+}
+
 /// One non-empty history section (newest snapshot first).
 public struct LocalHistorySection: Equatable {
     public let group: LocalHistoryGroup
@@ -127,19 +144,24 @@ public enum LocalSnapshotHistory {
         return sections
     }
 
-    /// iOS-14/15: lightweight, local-only filter/search over saved snapshots.
+    /// iOS-14/15/16: lightweight, local-only filter/search over saved snapshots.
     /// `query` matches (case-insensitively) the scenario label, session intent,
     /// or any exercise name; `scenarioId` keeps only that scenario; `completedOnly`
     /// keeps only fully-completed sessions; `dateRange` keeps only sessions within
-    /// a coarse, calendar-day span measured against the INJECTED `now` (iOS-15).
-    /// Pure; preserves input order (the view groups afterwards). No database, no
-    /// search index, no network. Filters compose; the date range is applied last.
+    /// a coarse, calendar-day span measured against the INJECTED `now` (iOS-15);
+    /// `customRange` (iOS-16) keeps only sessions inside an explicit, inclusive
+    /// custom calendar-day interval (absolute — no `now` needed). All filters
+    /// COMPOSE (logical AND): when both `dateRange` and `customRange` are active a
+    /// snapshot must satisfy both, so the caller can disable one by passing `.all`
+    /// / `nil`. Pure; preserves input order (the view groups afterwards). No
+    /// database, no search index, no network.
     public static func filtered(
         _ snapshots: [LocalCompletedSessionSnapshot],
         query: String = "",
         scenarioId: String? = nil,
         completedOnly: Bool = false,
         dateRange: LocalHistoryDateRange = .all,
+        customRange: LocalHistoryCustomDateRange? = nil,
         now: Date? = nil,
         calendar: Calendar = LocalSnapshotHistory.utcCalendar
     ) -> [LocalCompletedSessionSnapshot] {
@@ -155,6 +177,9 @@ public enum LocalSnapshotHistory {
                 if !haystack.contains(q) { return false }
             }
             if !isWithinRange(snap.createdAtIso, range: dateRange, now: now, calendar: calendar) {
+                return false
+            }
+            if !isWithinCustomRange(snap.createdAtIso, range: customRange, calendar: calendar) {
                 return false
             }
             return true
@@ -192,5 +217,38 @@ public enum LocalSnapshotHistory {
         let startDate = calendar.startOfDay(for: date)
         guard let days = calendar.dateComponents([.day], from: startDate, to: startNow).day else { return false }
         return days >= 0 && days <= bound
+    }
+
+    /// iOS-16: whether a snapshot's ISO-8601 timestamp falls inside an explicit
+    /// custom calendar-day interval `[from, to]` (inclusive, UTC-pinned by
+    /// default). The interval is NORMALIZED so order doesn't matter. Exposed for
+    /// direct unit testing. An UNPARSEABLE timestamp is excluded (never crashes).
+    public static func isWithin(
+        _ iso: String,
+        from: Date,
+        to: Date,
+        calendar: Calendar = LocalSnapshotHistory.utcCalendar
+    ) -> Bool {
+        isWithinCustomRange(iso, range: LocalHistoryCustomDateRange(from: from, to: to), calendar: calendar)
+    }
+
+    /// Internal custom-interval membership. A nil range keeps everything (custom
+    /// filtering off). A non-nil range parses the timestamp and compares CALENDAR
+    /// DAYS inclusively after NORMALIZING the bounds (so `from > to` is treated
+    /// the same as `to > from`); an UNPARSEABLE timestamp is EXCLUDED from the
+    /// bounded custom range but never crashes (mirrors the coarse-range rule).
+    private static func isWithinCustomRange(
+        _ iso: String,
+        range: LocalHistoryCustomDateRange?,
+        calendar: Calendar
+    ) -> Bool {
+        guard let range else { return true }                     // no custom range — keep
+        guard let date = parseDate(iso) else { return false }    // unparseable — excluded from bounded range
+        let dayA = calendar.startOfDay(for: range.from)
+        let dayB = calendar.startOfDay(for: range.to)
+        let lo = min(dayA, dayB)                                  // normalize: order-independent
+        let hi = max(dayA, dayB)
+        let day = calendar.startOfDay(for: date)
+        return day >= lo && day <= hi
     }
 }
