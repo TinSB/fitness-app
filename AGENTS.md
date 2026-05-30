@@ -1,6 +1,19 @@
 # IronPath Agent Instructions
 
-You are working on IronPath, a mobile-first personal training PWA built with React, Vite, and TypeScript.
+You are working on IronPath, a mobile-first personal training PWA built with React, Vite, and TypeScript, now migrating toward native iOS SwiftUI.
+
+## ⚠️ Read First — Master Technical Architecture (binding)
+
+**Before making any change, read and obey [`docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md`](docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md).** It is the canonical, highest-level engineering contract and outranks every other doc (including this one and `ARCHITECTURE.md`) on architecture, source-of-truth boundaries, forbidden changes, validation, and the branch/PR workflow.
+
+If a requested task **conflicts** with that document, **stop and require explicit architecture approval before writing any code.** Do not silently introduce new persistence, network, cloud, auth, or platform dependencies, or any source-of-truth change. In particular (see the master doc for the full, authoritative list):
+
+- Native iOS stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
+- **Draft restore is an in-memory draft, not a full AppData restore** (full restore is gated behind DataHealth `buildCleanAppDataView`).
+- **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `IronPathLocalSnapshot` history store must never touch canonical AppData.
+- Do **not** introduce CloudKit/iCloud/Supabase/HealthKit/URLSession/WebView/auth/UserDefaults/SQLite/CoreData/SwiftData into native iOS without an approved architecture task that amends the master doc.
+- Do **not** change `package.json`/lockfiles or `project.pbxproj` without explicit justification.
+- Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
 
 ## Product Direction
 
