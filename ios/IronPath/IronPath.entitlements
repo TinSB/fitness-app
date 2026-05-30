@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- HK-1: HealthKit read-only body-weight import (master §17/§18, amended).
+	     Basic HealthKit access only — NO clinical-records (healthkit.access) and
+	     NO background delivery. Write-back to Apple Health is the deferred HK-3
+	     slice. No iCloud/CloudKit/App Groups/network entitlements. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+</dict>
+</plist>

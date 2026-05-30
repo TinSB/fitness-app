@@ -37,6 +37,8 @@
 		B500000000000000000000C2 /* HistoryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000C1 /* HistoryRootView.swift */; };
 		B500000000000000000000D2 /* PlanRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000D1 /* PlanRootView.swift */; };
 		B500000000000000000000E2 /* ProfileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000E1 /* ProfileRootView.swift */; };
+		B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */; };
+		B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -62,6 +64,9 @@
 		B500000000000000000000C1 /* HistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRootView.swift; sourceTree = "<group>"; };
 		B500000000000000000000D1 /* PlanRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanRootView.swift; sourceTree = "<group>"; };
 		B500000000000000000000E1 /* ProfileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportModel.swift; sourceTree = "<group>"; };
+		B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportSection.swift; sourceTree = "<group>"; };
+		B500000000000000000000F5 /* IronPath.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IronPath.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +130,9 @@
 				B500000000000000000000C1 /* HistoryRootView.swift */,
 				B500000000000000000000D1 /* PlanRootView.swift */,
 				B500000000000000000000E1 /* ProfileRootView.swift */,
+				B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */,
+				B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */,
+				B500000000000000000000F5 /* IronPath.entitlements */,
 			);
 			path = IronPath;
 			sourceTree = "<group>";
@@ -241,6 +249,8 @@
 				B500000000000000000000C2 /* HistoryRootView.swift in Sources */,
 				B500000000000000000000D2 /* PlanRootView.swift in Sources */,
 				B500000000000000000000E2 /* ProfileRootView.swift in Sources */,
+				B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */,
+				B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -373,6 +383,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = IronPath/IronPath.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -399,6 +410,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = IronPath/IronPath.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;

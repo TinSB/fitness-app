@@ -201,4 +201,116 @@ final class CanonicalSessionWriterTests: XCTestCase {
         XCTAssertEqual(firstSet?.reps?.intValue, 8)
         XCTAssertEqual(firstSet?.done, true)
     }
+
+    // MARK: - HK-1: body-weight HealthMetricSample append (SAME gated path)
+
+    private func makeBodyWeightSample(id: String, kg: Double = 70) -> HealthMetricSample {
+        HealthMetricSample(
+            id: id,
+            source: "apple_health_export",
+            metricType: "body_weight",
+            startDate: "2026-05-27T06:30:00.000Z",
+            value: .double(kg),
+            unit: "kg",
+            importedAt: "2026-05-27T07:00:00.000Z",
+            dataFlag: "normal"
+        )
+    }
+
+    func testHealthSampleFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1")) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.healthMetricSamples.count, 1)
+        XCTAssertEqual(store.stored?.healthMetricSamples.first?.metricType, "body_weight")
+        XCTAssertEqual(store.stored?.healthMetricSamples.first?.unit, "kg")
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testHealthSampleSecondWriteBacksUpBeforeSaving() throws {
+        let seed = AppData.emptyCurrent().appendingHealthMetricSample(makeBodyWeightSample(id: "h1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h2", kg: 71)) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.healthMetricSamples.count, 2)
+        XCTAssertEqual(store.stored?.healthMetricSamples.last?.id, "h2")
+    }
+
+    func testHealthSampleValidationRejectionWritesNothing() {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1")) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testHealthSampleGateReceivesCandidateWithSampleAppended() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenIds: [String]?
+        _ = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1")) { candidate in
+            seenIds = candidate.healthMetricSamples.compactMap { $0.id }
+            return true
+        }
+        XCTAssertEqual(seenIds, ["h1"], "the gate must see the candidate with the sample already appended")
+    }
+
+    func testHealthSampleUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1")) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+    }
+
+    func testHealthSampleReimportIsIdempotentAtDocumentLevel() throws {
+        // First import of a reading lands one sample.
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        _ = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1", kg: 70)) { _ in true }
+        XCTAssertEqual(store.stored?.healthMetricSamples.count, 1)
+        // Re-importing the SAME reading (same content id) dedups in the candidate
+        // builder, so the document still holds exactly one sample (no duplicate).
+        _ = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1", kg: 70)) { _ in true }
+        XCTAssertEqual(store.stored?.healthMetricSamples.count, 1, "same-reading re-import must not duplicate")
+    }
+
+    func testHealthSampleRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-hk1-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        _ = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h1", kg: 72.5)) { _ in true }
+        let r2 = try writer.appendHealthMetricSample(makeBodyWeightSample(id: "h2", kg: 71)) { _ in true }
+        XCTAssertNotNil(r2.backupURL)
+
+        // Reload from disk: both samples present, kg survives the round trip.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.healthMetricSamples.count, 2)
+        XCTAssertEqual(loaded.healthMetricSamples.first?.value?.doubleValue ?? -1, 72.5, accuracy: 1e-9)
+        XCTAssertEqual(loaded.healthMetricSamples.first?.unit, "kg")
+        XCTAssertEqual(loaded.healthMetricSamples.last?.id, "h2")
+    }
 }

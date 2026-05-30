@@ -51,7 +51,8 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 | Full AppData restore | **Deferred**, gated behind DataHealth `buildCleanAppDataView` + the repair-apply pipeline. |
 | `iOS-4B6` (userFacing / full arbitrationTrace) | **Deferred.** |
 | Per-set logging (iOS-17 epic) | **Approved epic, in progress.** Capture (17b) in-RAM. **iOS-17A (this amendment) shipped 17c + 17d:** the first native canonical-AppData **write path** (performed sets → `AppData.history[].exercises[].sets`, via `CanonicalSessionWriter`, DataHealth-gated, backup-before-overwrite, no-fake-success — §8), plus the per-exercise "上次成绩" detail summary backed by a derived LocalSnapshot **v3** `setLogs` display copy (§12). **17e** engine consumption of performed sets remains deferred. |
-| Cloud / auth / HealthKit / sync (native) | **Not built.** Stub packages / gated only. (PWA has gated cloud-production scaffolding — §4.) |
+| Cloud / auth / sync (native) | **Not built.** Stub packages / gated only. (PWA has gated cloud-production scaffolding — §4.) |
+| HealthKit (native) | **Read-only body weight ACTIVE (HK-1).** `IronPathHealthKit` is an approved, bounded, **read-only** Apple-Health adapter: the latest body mass is imported into `AppData.healthMetricSamples` (kg) through the DataHealth-gated §8 write path. Write-back and other metrics remain deferred (HK-2/HK-3). See §6.2/§17/§18. |
 
 ---
 
@@ -139,22 +140,22 @@ There are **exactly 10 local Swift packages** under `ios/packages/`, wired into 
 | `IronPathTrainingDecision` | Pure decision engine: readiness, e1RM trend, exercise prescription, role floors, deload, modes, mesocycle/phase, arbitration trace. Consumes **only** `CleanTrainingDecisionInput`. Mirrors `src/engines/trainingDecisionCleanInput.ts`. | `IronPathDomain`, `IronPathDataHealth` |
 | `IronPathPersistence` | Canonical-AppData persistence seam: `AppDataStore` protocol + `JSONFileAppDataStore` (atomic JSON-on-disk, backup). | `IronPathDomain` |
 | `IronPathLocalSnapshot` | Focus session **history** (separate from AppData): `LocalSessionSnapshotStore` (the sanctioned on-disk JSON store), `LocalDraftRestorePlanner`, `LocalSnapshotHistory` (`.filtered`/`.grouped`), `LocalSnapshotStats`, `LocalSnapshotMigration`, `LocalCompletedSessionSnapshot`. | *(Foundation only — deliberately NOT coupled to Domain/AppData)* |
+| `IronPathHealthKit` | **HK-1: approved, bounded, READ-ONLY Apple-Health adapter** (activated from the iOS-1 stub). `BodyMassReading` + `BodyMassSampleSource` seam, pure `HealthKitBodyMassMapper` (→ `HealthMetricSample`, kg, content-addressed id), `HealthKitBodyMassImporter`. The real `HKHealthStore` reader (`HealthKitBodyMassSource`) is the ONLY file that imports HealthKit and is compiled `#if os(iOS)` (host `swift test` excludes it). Read-only — no write-back. | `IronPathDomain` |
 | `IronPathL10n` | Localization helper. | *(standalone)* |
 
 ### 6.2 Stub packages (inert, `0.0.1` bootstrap) — **must stay inert**
 | Package | Reserved for (DEFERRED) | Today |
 | --- | --- | --- |
-| `IronPathHealthKit` | HealthKit integration | Stub. **Comments explicitly say "NOT import HealthKit."** Exposes a `Version` constant only. |
 | `IronPathCloudSync` | Cloud sync | Stub. No network/CloudKit. `Version` only. |
 | `IronPathBackup` | Backup/export | Stub. `Version` only. |
 | `IronPathUIKit` | Shared UI components | Stub. `Version` only. |
 
-> The stubs are linked solely so `IronPathLinkedPackages.versions` can drive the iOS bootstrap parity test. Adding real cloud/health/UI behavior to a stub is a **forbidden change** (§18).
+> The stubs are linked solely so `IronPathLinkedPackages.versions` can drive the iOS bootstrap parity test. Adding real cloud/sync/UI behavior to one of **these** stubs is a **forbidden change** (§18). `IronPathHealthKit` was **activated** by HK-1 (now in §6.1) — a read-only Apple-Health adapter approved in §17/§18; it retains its `Version` constant for the bootstrap probe. No other stub may be filled without its own approved, contract-amending task.
 
 ### 6.3 The package rules (enforceable)
 1. **`IronPathDomain` is the dependency leaf** (Foundation only).
 2. **`IronPathLocalSnapshot` stays decoupled from `IronPathDomain`/AppData.** It is a presentation-layer history record, not the canonical model. Do not make it import `IronPathDomain`.
-3. **The import graph is a DAG** — no cycles. Current edges: `DataHealth → Domain`; `TrainingDecision → Domain, DataHealth`; `Persistence → Domain`; `LocalSnapshot`, `L10n`, and the 4 stubs are standalone; the app target links all 10.
+3. **The import graph is a DAG** — no cycles. Current edges: `DataHealth → Domain`; `TrainingDecision → Domain, DataHealth`; `Persistence → Domain`; `HealthKit → Domain` (HK-1 — the pure mapper emits `HealthMetricSample`; `Domain` stays the leaf); `LocalSnapshot`, `L10n`, and the 3 remaining stubs are standalone; the app target links all 10.
 4. **Packages never depend on the app target.**
 5. **Stub packages stay inert** until an approved architecture task (this document amended) fills them.
 
@@ -206,6 +207,17 @@ Until iOS-17A the native canonical store was **read/seam-only**. iOS-17A activat
 
 **Source-of-truth impact:** this **activates** (does not move) the canonical write boundary already named in the table above. Canonical AppData still lives in `JSONFileAppDataStore`; iOS-17A makes the app actually write to it through the single sanctioned, DataHealth-gated path. The Focus-history store and its new v3 `setLogs` (§12) remain **derived** and are never read back as the source of truth.
 
+### 8.2 HealthKit body-weight import (HK-1)
+
+HK-1 adds a **second typed entry point on the SAME write path — not a second write path** (rule 4). Apple Health body weight is imported into canonical AppData through the §8.1 owner `IronPathPersistence.CanonicalSessionWriter`, which now exposes `appendHealthMetricSample` alongside `appendCompletedSession`; both delegate to one private gated orchestration (`performGatedAppend`: load → build candidate → DataHealth gate → backup → atomic save → honest throw).
+
+- **Landing spot:** `AppData.healthMetricSamples` — a `HealthMetricSample { metricType: "body_weight", unit: "kg", source: "apple_health_export" }` (kg, built by the pure `IronPathHealthKit.HealthKitBodyMassMapper`). This is the modeled home for Apple-Health-origin samples, mirroring the PWA (`src/engines/healthImportEngine.ts` / `appleHealthTypeMap.ts`). The import does **NOT** write `userProfile.weightKg` — that is the user's self-entered field; the "current body weight" is **derived** as the latest body-weight sample (`src/engines/healthSummaryEngine.ts` → `latestBodyWeightKg`).
+- **Append-only + idempotent:** `AppData.appendingHealthMetricSample` is open-bag preserving (only `healthMetricSamples` is rewritten; `schemaVersion` unchanged — no schema bump) and dedups by the sample's content-addressed `id`, so re-importing the same latest reading is a clean no-op.
+- **DataHealth-gated (§10), backup-before-overwrite, atomic, no fake success:** identical guarantees to §8.1. The candidate is routed read-only through `processIncomingAppData` (`allowMutation:false, allowAutoRepair:false`) and accepted only when the imported sample survives the clean view; a prior file is backed up before the atomic save; every failure throws and is surfaced honestly; a present-but-unreadable document is never overwritten.
+- **Read-only ingress, on-device:** HealthKit is read ONLY (authorization shares nothing — `toShare: []`); imported data never leaves the device. The real `HKHealthStore` reader (`HealthKitBodyMassSource`) is `#if os(iOS)`; the mapping is pure and unit-tested via the injectable `BodyMassSampleSource` seam.
+
+**Source-of-truth impact:** uses the already-activated §8.1 write boundary; introduces no new write path and does not move where canonical AppData lives.
+
 ---
 
 ## 9. AppData Boundary
@@ -237,6 +249,7 @@ Until iOS-17A the native canonical store was **read/seam-only**. iOS-17A activat
 2. `buildCleanAppDataView` is the **gate** any future **full AppData restore** must pass through (§14).
 3. Auto-repair must **back up before rewriting** and must **not fake success** (errors are surfaced honestly).
 4. Do not bypass DataHealth to feed raw AppData into the engine or a restore path.
+5. **External imports are gated here too (HK-1).** Untrusted external data (Apple Health body weight, §8.2) is routed through `processIncomingAppData` / `buildCleanAppDataView` **before** the canonical write and accepted only if it survives the clean view. HealthKit-origin samples never reach canonical AppData except through this chokepoint.
 
 ---
 
@@ -327,7 +340,8 @@ These systems are **named but not designed here.** Each is *gated*: it requires 
 | Cloud sync / CloudKit | Stub (`IronPathCloudSync`); `IronPathPersistence` comments name a CloudKit-backed store for **iOS-7** | Approved task; source-of-truth + offline-merge design |
 | Supabase / backend (production) | PWA `src/cloudProduction/*` scaffolding present, **gated**; `apps/api` is dev-only | Auth + account + hosting architecture gate |
 | Auth / accounts | PWA scaffolding gated; native none | `AUTH_USER_ACCOUNT_LIFECYCLE_ARCHITECTURE_GATE` resolved + amended here |
-| HealthKit | Stub (`IronPathHealthKit`, explicitly does not import HealthKit) | Approved task; privacy + permission design |
+| HealthKit — read-only body weight | **UNGATED (HK-1) — active.** `IronPathHealthKit` is an approved read-only Apple-Health adapter; latest body mass → `AppData.healthMetricSamples` (kg) via the §8.2 gated path. | *Met by HK-1: privacy + permission design shipped (§6.1/§8.2/§18); read-only, on-device.* |
+| HealthKit — read history (HK-2), write-back (HK-3), other metrics | Deferred (the read-only seam exists) | Approved task per slice; HK-3 write-back needs its own privacy review |
 | `iOS-4B6` userFacing / full arbitrationTrace | Deferred | Approved task |
 | Backup/export, shared UIKit | Stubs (`IronPathBackup`, `IronPathUIKit`) | Approved task |
 
@@ -340,8 +354,8 @@ These systems are **named but not designed here.** Each is *gated*: it requires 
 A change is **forbidden** (stop and escalate) if it does any of the following without an approved architecture task that amends this document:
 
 **Platform / persistence / network (native iOS especially):**
-- Introduces **CloudKit, iCloud, Supabase, HealthKit, URLSession/networking, WebView, auth, UserDefaults, SQLite, CoreData, or SwiftData** into native iOS. (On-device durability stays local JSON via Foundation.)
-- Adds real implementation to a **stub package** (`IronPathHealthKit`/`IronPathCloudSync`/`IronPathBackup`/`IronPathUIKit`).
+- Introduces **CloudKit, iCloud, Supabase, URLSession/networking, WebView, auth, UserDefaults, SQLite, CoreData, or SwiftData** into native iOS. (On-device durability stays local JSON via Foundation.) **HealthKit** is permitted ONLY as the HK-1 **read-only** body-weight adapter (§6.2/§8.2), confined to the single `#if os(iOS)` `HealthKitBodyMassSource` file and guarded by `iosBootstrapForbiddenImports`; **write-back to Apple Health, and any other HealthKit type/metric, remain forbidden** without a new approved, contract-amending slice (HK-2/HK-3).
+- Adds real implementation to a **stub package** (`IronPathCloudSync`/`IronPathBackup`/`IronPathUIKit`). (`IronPathHealthKit` was **activated** by HK-1 into a read-only adapter — §6.1; its read-only boundary is itself guarded. The other three stay inert.)
 - Couples `IronPathLocalSnapshot` to `IronPathDomain`/AppData, or makes it the source of truth.
 - Moves native iOS off **local-first**, or promotes PWA cloud-production from gated to default.
 
@@ -441,6 +455,7 @@ Static guards / regression locks are **first-class** — they encode invariants 
 
 **Guards that must stay green:**
 - **iOS local-only boundary:** `iosLocalJsonPersistenceStaticGuards` (no iCloud/CloudKit/HealthKit/Supabase/URLSession/WebKit/UserDefaults/SQLite/CoreData/SwiftData in the app/persistence stores).
+- **HealthKit read-only boundary (HK-1):** `iosBootstrapForbiddenImports` confines `import HealthKit` / `HKHealthStore` / `HKQuantityType` to the single `HealthKitBodyMassSource.swift` adapter and asserts it is read-only (empty share set, no write-back); every other ios Swift file stays HealthKit-free. `iosBootstrapPackageGraph` sanctions the `IronPathHealthKit → IronPathDomain` local-path dep.
 - **AppData data safety:** `AppDataSchemaVersionGuardTests`, `AppDataIsoTimestampStaticGuardTests`, `AppDataOpenBagPreservationTests`, `AppDataUnitFieldPreservationTests`, `AppDataTypedFieldActivationTests`, `AppDataCodableRoundTripTests`, `AppDataRealExportParityTests`.
 - **Engine contract:** `TrainingDecisionShapeStabilityTests`, golden/parity/clean-input tests; the iOS bootstrap parity test (`IronPathLinkedPackages.versions`).
 - **TypeScript:** the `tests/` vitest suite (parity, boundary, regression-lock specs).
@@ -502,7 +517,7 @@ Every future Claude/Codex task must be framed with this template. Copy it, fill 
 **Forbidden files / systems:**
 - project.pbxproj (unless absolutely necessary + justified here)
 - package.json / package-lock.json (unless a justified dependency change)
-- Any stub package (HealthKit/CloudSync/Backup/UIKit)
+- Any stub package (CloudSync/Backup/UIKit) — and any HealthKit use beyond the HK-1 read-only body-weight adapter (write-back / other metrics)
 - CloudKit/iCloud/Supabase/HealthKit/URLSession/WebView/auth/UserDefaults/SQLite/CoreData/SwiftData
 
 **Source-of-truth impact:** <MUST be "none" unless this is an approved architecture task amending §8/§14>
@@ -547,7 +562,7 @@ Every future Claude/Codex task must be framed with this template. Copy it, fill 
 
 ## 27. Appendix: Current iOS Migration Milestones
 
-Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b**, the **iOS-17S** five-tab navigation shell, **iOS-17C** (#424, Plan+Today read-only surface) at baseline `3b75722`, and **iOS-17A** (this amendment — the first native canonical-AppData write path for performed sets).
+Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b**, the **iOS-17S** five-tab navigation shell, **iOS-17C** (#424, Plan+Today read-only surface), **iOS-17A** (the first native canonical-AppData write path for performed sets), and **HK-1** (this amendment — the first native capability ungating: a read-only Apple-Health body-weight import). Baseline for HK-1: latest `origin/main` (iOS-17 History #427, `7ac433c`).
 
 | Milestone | Summary |
 | --- | --- |
@@ -564,7 +579,8 @@ Native iOS has advanced as a sequence of validated slices. Completed **through i
 | **iOS-17S** | Tab shell scaffold: `ContentView` → five-tab `TabView` (今日/训练/记录/计划/我的 via an `AppTab` enum), Focus relocated under 训练 **unchanged**, four placeholder empty-state RootViews, all five `*RootView` files pre-registered into `project.pbxproj`. **The only slice authorized to edit `project.pbxproj`** — it unlocks parallel per-tab fills (each later slice edits only its own RootView). Navigation only → source-of-truth & data-safety impact: none. |
 | **iOS-17C (#424)** | Plan + Today read-only surface: `PlanRootView`/`TodayRootView` render a pure `TrainingDecisionSurfacePresentation` projection of the engine slice. Read-only presentation; no persistence/source-of-truth impact. |
 | **iOS-17A** (this amendment) | **Native per-set logging mega (17c + 17d).** Capture extended in `FocusSetChecklistView` (weight/reps/RIR, display-unit entry, kg-stored). **First native canonical-AppData write path:** `IronPathPersistence.CanonicalSessionWriter` appends a completed `TrainingSession` (performed sets in `history[].exercises[].sets`, built by `IronPathDomain.NativeCompletedSessionBuilder`) — DataHealth-gated, backup-before-overwrite, atomic, no-fake-success (§8.1). Detail summary "上次成绩" backed by a derived LocalSnapshot **v3** `setLogs` display copy (§12 rule 5). Amends §2/§8/§9/§12. Source-of-truth impact: **activates** (does not move) the canonical write boundary. Forbidden systems untouched; `project.pbxproj` not edited (no new app-target files). |
-| Next (proposed) | iOS-17e engine consumption of performed sets (deferred). Parallel per-tab fills (记录/我的) may proceed independently on the iOS-17S RootViews. |
+| **HK-1** (this amendment) | **HealthKit read-only body-weight import — first capability ungating.** `IronPathHealthKit` activated into a read-only Apple-Health adapter: pure `BodyMassReading`/`BodyMassSampleSource` seam + `HealthKitBodyMassMapper` (→ `HealthMetricSample`, kg) + `HealthKitBodyMassImporter`, with the real `HKHealthStore` reader (`HealthKitBodyMassSource`) compiled `#if os(iOS)` only. User-gated import in the 我的 tab appends the latest body weight to `AppData.healthMetricSamples` (kg) via `CanonicalSessionWriter.appendHealthMetricSample` — the §8.2 DataHealth-gated, backup-before-overwrite, atomic, no-fake-success path (same path as §8.1; idempotent by content id). Adds `NSHealthShareUsageDescription` + a HealthKit entitlement + `CODE_SIGN_ENTITLEMENTS` (justified `project.pbxproj` edit — first capability ungating + 2 new app files). Static guards updated in sync (`iosBootstrapForbiddenImports` exempts the one adapter file + asserts read-only; `iosBootstrapPackageGraph` sanctions `HealthKit → Domain`). Amends §2/§6.1/§6.2/§6.3/§8.2/§10/§17/§18/§27. Source-of-truth impact: uses the §8.1 boundary, no new write path. Forbidden systems otherwise untouched; HealthKit write-back (HK-3) still forbidden. |
+| Next (proposed) | iOS-17e engine consumption of performed sets (deferred); HealthKit **HK-2** (read training history) / **HK-3** (write-back, separate privacy review). Parallel per-tab fills may proceed independently on the iOS-17S RootViews. |
 
 > Milestone facts here are descriptive context; the **rules in §1–§26 are binding.**
 
@@ -577,7 +593,7 @@ Native iOS has advanced as a sequence of validated slices. Completed **through i
 - **Date:** 2026-05-30
 - **Status:** Accepted
 - **Context:** IronPath is mid-migration from a mature React/Vite/TS PWA to native iOS SwiftUI. Work is increasingly AI-assisted (Claude/Codex). Without hard boundaries, the dominant risks are scope creep into cloud/auth/persistence, source-of-truth corruption, and accidental full-restore/data-loss.
-- **Decision:** Adopt this document as the canonical, top-level contract. Native iOS stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**; `IronPathDomain.AppData` is the **source of truth**, protected by **open-bag preservation, schema/timestamp guards, and parity goldens**; the **Focus-history store stays decoupled from AppData**; **draft restore stays in-memory** until the **DataHealth full-restore gate** is met; **TrainingDecision** consumes only a **`CleanTrainingDecisionInput`**; cloud/auth/HealthKit/CloudKit/backend/sync are **deferred behind gates**; all changes follow the **validation + guard + branch/PR** standards; AI agents must **read this first and stop on conflict.**
+- **Decision:** Adopt this document as the canonical, top-level contract. Native iOS stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**; `IronPathDomain.AppData` is the **source of truth**, protected by **open-bag preservation, schema/timestamp guards, and parity goldens**; the **Focus-history store stays decoupled from AppData**; **draft restore stays in-memory** until the **DataHealth full-restore gate** is met; **TrainingDecision** consumes only a **`CleanTrainingDecisionInput`**; cloud/auth/CloudKit/backend/sync are **deferred behind gates** (HealthKit read-only body weight was ungated by HK-1 per §17/§18; HealthKit write-back and other metrics stay gated); all changes follow the **validation + guard + branch/PR** standards; AI agents must **read this first and stop on conflict.**
 - **Consequences:**
   - *Positive:* predictable, safe, incremental migration; strong data-safety guarantees; AI tasks are bounded and auditable; merges are gated by real checks.
   - *Negative / accepted cost:* some desirable features (cloud sync, accounts, full restore) are intentionally slower because they require an explicit architecture task that amends this document.
