@@ -71,9 +71,10 @@ describe('iOS-10 schema-versioned validation', () => {
     expect(v()).toMatch(/acceptedSchemaVersions\.contains\s*\(\s*snapshot\.schemaVersion\s*\)/);
   });
   it('2. accepted schema version list exists (iOS-11: [1, 2])', () => {
-    // iOS-11 added schema v2 (resumeExerciseIndex) + a v1->v2 migration, so the
-    // accepted set widened from [1] to [1, 2]; v1 stays accepted + migratable.
-    expect(v()).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*\]/);
+    // iOS-11 added schema v2 (resumeExerciseIndex); iOS-17A added v3 (per-set
+    // `setLogs` display copy). The accepted set is now [1, 2, 3]; older versions
+    // stay accepted + migrate forward.
+    expect(v()).toMatch(/acceptedSchemaVersions\s*:\s*Set<Int>\s*=\s*\[\s*1\s*,\s*2\s*,\s*3\s*\]/);
   });
   it('3. unsupported schema version handling exists', () => {
     expect(v()).toMatch(/case\s+unsupportedSchemaVersion\s*\(\s*Int\s*\)/);
@@ -273,9 +274,15 @@ describe('iOS-10 forbidden cloud / health / network / backends are absent', () =
 
 describe('iOS-10 AppData / DataHealth restore boundary', () => {
   it('30. no destructive AppData mutation (the restore files never touch AppData)', () => {
-    const code = joinCode(RESTORE_FILES);
-    expect(code).not.toMatch(/\bAppData\b/);
-    expect(code).not.toMatch(/\bAppDataStore\b/);
+    // iOS-17A: FocusModeMvpState is the authorized initiator of the first native
+    // canonical-AppData write path (master §8.1), so the canonical-AppData ban
+    // applies to the DERIVED restore/presentation files only — not the view-model,
+    // whose canonical access is guarded to go through the sanctioned writer seam.
+    const derived = joinCode(RESTORE_FILES.filter((f) => f !== STATE_FILE));
+    expect(derived).not.toMatch(/\bAppData\b/);
+    expect(derived).not.toMatch(/\bAppDataStore\b/);
+    // The view-model reaches canonical AppData ONLY via the sanctioned package seam.
+    expect(appCode(STATE_FILE)).toMatch(/\bCanonicalSessionWriter\b/);
   });
   it('31. no raw AppData restore into TrainingDecision', () => {
     const code = joinCode(RESTORE_FILES);
