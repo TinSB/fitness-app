@@ -6,7 +6,7 @@
 - **Status:** Authoritative / binding
 - **Version:** 1.0
 - **Last updated:** 2026-05-30
-- **Baseline commit:** `64f37e7` — *iOS-14 Native History + Draft Recovery Product Bundle V1 (#418)*
+- **Baseline commit:** `2918afa` — *iOS-15 Local History Detail + Per-Exercise Recovery Insight V1 (#420)*
 - **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
 - **Supersedes (for day-to-day task scoping):** the scattered planning/strategy docs under `docs/` and the root `*.md` plans. Those remain historical context; **this document wins on any conflict about boundaries, ownership, or workflow.**
 
@@ -39,11 +39,11 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 
 ## 2. Current Project State
 
-| Aspect | State as of baseline `64f37e7` (2026-05-30) |
+| Aspect | State as of baseline `2918afa` (2026-05-30) |
 | --- | --- |
 | PWA | Mature product surface. React 19 + Vite + TypeScript. The live runtime users rely on. |
 | Native iOS | Migrating. Thin SwiftUI shell (14 files) over **10 local Swift packages**. Local-first only. |
-| iOS migration progress | Completed **through iOS-14**. Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter, summary stats, and **non-destructive draft recovery** are shipped. |
+| iOS migration progress | Completed **through iOS-15**. Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter + coarse date ranges, summary stats, **per-exercise recovery insight**, and **non-destructive draft recovery** are shipped. |
 | Native data model | `IronPathDomain.AppData` — pure `Codable` value type, parity-pinned to the PWA export. |
 | Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12). **No** iCloud/CloudKit/HealthKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. |
 | Restore (iOS-14 UI) | **In-memory local draft re-hydration only** (`LocalDraftRestorePlanner.reconcile`). Not a full AppData restore. |
@@ -527,7 +527,7 @@ Every future Claude/Codex task must be framed with this template. Copy it, fill 
 
 ## 27. Appendix: Current iOS Migration Milestones
 
-Native iOS has advanced as a sequence of validated slices. Completed **through iOS-14** at baseline `64f37e7`.
+Native iOS has advanced as a sequence of validated slices. Completed **through iOS-15** at baseline `2918afa`.
 
 | Milestone | Summary |
 | --- | --- |
@@ -537,8 +537,9 @@ Native iOS has advanced as a sequence of validated slices. Completed **through i
 | iOS-9 | Local JSON persistence + saved-session history (`LocalSessionSnapshotStore`). |
 | iOS-12 (#416) | Native local restore + history + testability bundle; extracted `IronPathLocalSnapshot`. |
 | iOS-13 (#417) | Local history product surface + restore reconciliation (exercise-id matching) + grouping. |
-| **iOS-14 (#418)** | Native history + draft recovery bundle: `LocalSnapshotHistory.filtered` search/filter, `LocalSnapshotStats.mostCommonScenarioLabel`, history search field + summary card, **non-destructive in-memory draft recovery**, real-clock opt-in (`useSystemClock`, default deterministic). **= baseline.** |
-| Next (proposed) | iOS-15 Local History Detail + Per-Exercise Recovery Insight (a validated vertical slice; still local-first). |
+| iOS-14 (#418) | Native history + draft recovery bundle: `LocalSnapshotHistory.filtered` search/filter, `LocalSnapshotStats.mostCommonScenarioLabel`, history search field + summary card, **non-destructive in-memory draft recovery**, real-clock opt-in (`useSystemClock`, default deterministic). |
+| **iOS-15 (#420)** | Local history detail + per-exercise recovery insight: pure `LocalSnapshotRecovery.insight` (read-only projection over `LocalDraftRestorePlanner.reconcile` → per-exercise restorable/changed + new-exercise list + remapped resume), coarse history date-range filter (`LocalHistoryDateRange`), honest resume affordance. Restore stays an in-memory draft. **= baseline.** |
+| Next (proposed) | iOS-16 Custom History Date Range (explicit from/to filter completing iOS-15's coarse ranges; a validated vertical slice; still local-first). |
 
 > Milestone facts here are descriptive context; the **rules in §1–§26 are binding.**
 

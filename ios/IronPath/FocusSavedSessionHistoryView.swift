@@ -226,12 +226,14 @@ struct FocusSavedSessionHistoryView: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
             scenarioFilterMenu
             dateRangeControl
+            customDateRangeControl
         }
     }
 
     // iOS-15: coarse, local-only date-range control (全部 / 最近 7 天 / 最近 30 天)
     // bound to the in-RAM UI state; the pure filter applies it against the same
-    // injectable clock the rest of the history surface uses.
+    // injectable clock the rest of the history surface uses. iOS-16: disabled
+    // while the custom from/to range is active (custom takes over).
     private var dateRangeControl: some View {
         Picker("时间范围", selection: $state.historyDateRange) {
             ForEach(LocalHistoryDateRange.allCases, id: \.self) { range in
@@ -240,6 +242,35 @@ struct FocusSavedSessionHistoryView: View {
         }
         .pickerStyle(.segmented)
         .controlSize(.small)
+        .disabled(state.historyCustomRangeEnabled)
+    }
+
+    // iOS-16: optional custom from/to date range (day granularity), local-only,
+    // bound to in-RAM UI state and fed to the pure LocalSnapshotHistory filter.
+    // When on, it takes over from the coarse range; two DatePickers pick the
+    // inclusive interval. No business logic, no IO here.
+    private var customDateRangeControl: some View {
+        let enabledBinding = Binding(
+            get: { state.historyCustomRangeEnabled },
+            set: { state.setHistoryCustomRangeEnabled($0) }
+        )
+        return VStack(alignment: .leading, spacing: 6) {
+            Toggle("按自定义日期筛选", isOn: enabledBinding)
+                .font(.caption)
+                .toggleStyle(.button)
+                .controlSize(.small)
+            if state.historyCustomRangeEnabled {
+                DatePicker("从", selection: $state.historyCustomFrom, displayedComponents: .date)
+                    .font(.caption)
+                    .environment(\.timeZone, TimeZone(identifier: "UTC")!)
+                DatePicker("到", selection: $state.historyCustomTo, displayedComponents: .date)
+                    .font(.caption)
+                    .environment(\.timeZone, TimeZone(identifier: "UTC")!)
+                Text("按所选日期区间（含两端）筛选 · 仅本机 · 与搜索/场景/已完成同时生效")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 
     private var scenarioFilterMenu: some View {
@@ -420,16 +451,19 @@ struct FocusSavedSessionHistoryView: View {
     // MARK: - Filtering helpers
 
     private var filteredHistory: [LocalCompletedSessionSnapshot] {
-        // iOS-14/15: delegate to the pure, unit-tested filter (search + scenario +
-        // completed-only + coarse date range); the store already returns
-        // newest-first. The date range is measured against the same injectable
-        // clock used for grouping (deterministic by default).
+        // iOS-14/15/16: delegate to the pure, unit-tested filter (search + scenario
+        // + completed-only + coarse date range + custom from/to range); the store
+        // already returns newest-first. The coarse range is measured against the
+        // same injectable clock used for grouping (deterministic by default). When
+        // the custom range is active it TAKES OVER — pass `.all` for the coarse one
+        // so they don't double-filter (the pure function would otherwise AND them).
         LocalSnapshotHistory.filtered(
             state.savedHistory,
             query: searchQuery,
             scenarioId: scenarioFilter,
             completedOnly: completedOnly,
-            dateRange: state.historyDateRange,
+            dateRange: state.historyCustomRangeEnabled ? .all : state.historyDateRange,
+            customRange: state.historyCustomRange,
             now: state.historyNow
         )
     }
