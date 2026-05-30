@@ -1,27 +1,45 @@
 // FocusSavedSessionDetailView — iOS-10 Local Training Persistence Mega Bundle V1
-// (Iteration 5: local saved-session detail).
+// (Iteration 5: local saved-session detail); iOS-15 adds PER-EXERCISE RECOVERY
+// INSIGHT + an honest "resume where you left off" affordance.
 //
 // A local-only detail sheet for one saved snapshot: the engine context
 // (sessionIntent / activePhase / deload), completed/target sets, the per-
 // exercise rows, the local source note, and a small developer line with the
-// schema version. This is NOT a full history app — no charts, no calendar, no
-// cloud restore. Pure SwiftUI; never touches disk, network, cloud, or AppData.
+// schema version. iOS-15 layers in a READ-ONLY recovery view: each saved
+// exercise is tagged 可恢复 / 已变更 (derived purely from the existing restore
+// reconciliation), a short drift note, a list of new current exercises the
+// snapshot has no progress for, and a resume affordance that reuses the EXISTING
+// in-memory draft restore (no new restore semantics). This is NOT a full history
+// app — no charts, no calendar, no cloud restore. Pure SwiftUI; never touches
+// disk, network, cloud, or AppData.
 
 import SwiftUI
 import IronPathLocalSnapshot
 
 struct FocusSavedSessionDetailView: View {
     let snapshot: LocalCompletedSessionSnapshot
+    /// iOS-15: the CURRENT scenario's exercise ids, supplied by the caller so the
+    /// sheet can project a read-only recovery insight via the pure
+    /// `LocalSnapshotRecovery.insight`. Defaults to empty for previews (which then
+    /// shows an honest "nothing restorable" state).
+    var currentExerciseIds: [String] = []
     /// iOS-11: restore this saved session into an in-RAM training draft and
     /// continue it. Optional so previews can omit it.
     var onContinue: (() -> Void)? = nil
+
+    /// Pure, read-only projection over the existing restore reconciliation. No
+    /// progress is applied here; restore still happens only via `onContinue`.
+    private var insight: LocalSnapshotRecoveryInsight {
+        LocalSnapshotRecovery.insight(from: snapshot, currentExerciseIds: currentExerciseIds)
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headerCard
-                if onContinue != nil { continueCard }
+                if onContinue != nil { resumeCard }
                 contextCard
+                recoveryInsightCard
                 exerciseListCard
                 footerNote
             }
@@ -31,21 +49,48 @@ struct FocusSavedSessionDetailView: View {
         .background(Color(.systemBackground).ignoresSafeArea())
     }
 
+    // MARK: - iOS-15 resume affordance (thin UI over the EXISTING restore)
+
     @ViewBuilder
-    private var continueCard: some View {
+    private var resumeCard: some View {
+        let insight = self.insight
         VStack(alignment: .leading, spacing: 6) {
-            Button {
-                onContinue?()
-            } label: {
-                Text("继续这次训练（本机草稿）")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+            if insight.isRestorable {
+                if let index = insight.resumeExerciseIndex, let name = insight.resumeExerciseName {
+                    Text("上次练到第 \(index + 1) / \(insight.currentExerciseCount) 个动作：\(name)")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                }
+                Button {
+                    onContinue?()
+                } label: {
+                    Text("从这里继续（本机草稿）")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.borderedProminent)
+                Text("在本机把这次训练恢复为草稿并继续 · 不写入云端 · 不改动其它数据")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            } else {
+                // Honest disabled state: nothing in this saved session still maps
+                // to the current scenario, so there is nothing to continue.
+                Text("无法继续这次训练")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Button {} label: {
+                    Text("从这里继续（本机草稿）")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(true)
+                Text("这次存档的动作已全部变更或无法恢复，本机无法继续。")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.borderedProminent)
-            Text("在本机把这次训练恢复为草稿并继续 · 不写入云端 · 不改动其它数据")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
     }
 
@@ -87,6 +132,79 @@ struct FocusSavedSessionDetailView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+    }
+
+    // MARK: - iOS-15 per-exercise recovery insight (read-only)
+
+    @ViewBuilder
+    private var recoveryInsightCard: some View {
+        let insight = self.insight
+        // Only meaningful once we know the current scenario (caller supplied ids).
+        if !currentExerciseIds.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("恢复明细（本机）")
+                    .font(.headline)
+                if insight.hasDrift {
+                    Text("这次存档与当前训练样例有差异：可恢复的动作会带回进度，已变更的不会。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("这次存档与当前训练样例一致，全部动作均可恢复进度。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                VStack(spacing: 8) {
+                    ForEach(insight.rows, id: \.exerciseId) { row in
+                        HStack(alignment: .firstTextBaseline) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(row.name).font(.subheadline.weight(.medium))
+                                Text("\(row.completedSets) / \(row.targetSets) 组")
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.tertiary)
+                            }
+                            Spacer()
+                            recoveryBadge(row.status)
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
+                    }
+                }
+                if !insight.newCurrentExerciseIds.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("新动作（本机无进度）")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(insight.newCurrentExerciseIds.joined(separator: " · "))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+        }
+    }
+
+    @ViewBuilder
+    private func recoveryBadge(_ status: LocalRecoveryStatus) -> some View {
+        switch status {
+        case .restorable:
+            Text("可恢复")
+                .font(.caption2.weight(.medium))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Capsule().fill(Color.green.opacity(0.15)))
+                .foregroundStyle(.green)
+        case .changed:
+            Text("已变更")
+                .font(.caption2.weight(.medium))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Capsule().fill(Color.orange.opacity(0.15)))
+                .foregroundStyle(.orange)
+        }
     }
 
     private var exerciseListCard: some View {
@@ -185,6 +303,10 @@ struct FocusSavedSessionDetailView: View {
                     progress: LocalCompletedSetProgressSnapshot(completedSets: 2, targetSets: 3)
                 ),
             ]
-        )
+        ),
+        // Preview the partial-drift path: bench-press still exists, lateral-raise
+        // changed, and "cable-fly" is a new current exercise.
+        currentExerciseIds: ["bench-press", "cable-fly"],
+        onContinue: {}
     )
 }

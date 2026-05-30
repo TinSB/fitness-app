@@ -25,6 +25,31 @@ public enum LocalHistoryGroup: String, Equatable {
     }
 }
 
+/// iOS-15: a coarse, local-only date range for filtering the history list.
+public enum LocalHistoryDateRange: String, CaseIterable, Equatable {
+    case all          // 全部 (no bound)
+    case last7Days    // 最近 7 天
+    case last30Days   // 最近 30 天
+
+    /// Chinese-first control label.
+    public var title: String {
+        switch self {
+        case .all: return "全部"
+        case .last7Days: return "最近 7 天"
+        case .last30Days: return "最近 30 天"
+        }
+    }
+
+    /// Inclusive calendar-day bound (days ago); nil for `.all` (unbounded).
+    var dayBound: Int? {
+        switch self {
+        case .all: return nil
+        case .last7Days: return 7
+        case .last30Days: return 30
+        }
+    }
+}
+
 /// One non-empty history section (newest snapshot first).
 public struct LocalHistorySection: Equatable {
     public let group: LocalHistoryGroup
@@ -102,16 +127,21 @@ public enum LocalSnapshotHistory {
         return sections
     }
 
-    /// iOS-14: lightweight, local-only filter/search over saved snapshots.
+    /// iOS-14/15: lightweight, local-only filter/search over saved snapshots.
     /// `query` matches (case-insensitively) the scenario label, session intent,
     /// or any exercise name; `scenarioId` keeps only that scenario; `completedOnly`
-    /// keeps only fully-completed sessions. Pure; preserves input order (the view
-    /// groups afterwards). No database, no search index, no network.
+    /// keeps only fully-completed sessions; `dateRange` keeps only sessions within
+    /// a coarse, calendar-day span measured against the INJECTED `now` (iOS-15).
+    /// Pure; preserves input order (the view groups afterwards). No database, no
+    /// search index, no network. Filters compose; the date range is applied last.
     public static func filtered(
         _ snapshots: [LocalCompletedSessionSnapshot],
         query: String = "",
         scenarioId: String? = nil,
-        completedOnly: Bool = false
+        completedOnly: Bool = false,
+        dateRange: LocalHistoryDateRange = .all,
+        now: Date? = nil,
+        calendar: Calendar = LocalSnapshotHistory.utcCalendar
     ) -> [LocalCompletedSessionSnapshot] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return snapshots.filter { snap in
@@ -124,7 +154,43 @@ public enum LocalSnapshotHistory {
                     .joined(separator: "\n").lowercased()
                 if !haystack.contains(q) { return false }
             }
+            if !isWithinRange(snap.createdAtIso, range: dateRange, now: now, calendar: calendar) {
+                return false
+            }
             return true
         }
+    }
+
+    /// iOS-15: whether a snapshot's ISO-8601 timestamp falls within a coarse date
+    /// range, measured in calendar days against an INJECTED `now` (UTC-pinned by
+    /// default, consistent with `grouped`). Exposed for direct unit testing.
+    /// `.all` keeps everything (including unparseable timestamps).
+    public static func isWithin(
+        _ iso: String,
+        range: LocalHistoryDateRange,
+        now: Date,
+        calendar: Calendar = LocalSnapshotHistory.utcCalendar
+    ) -> Bool {
+        isWithinRange(iso, range: range, now: now, calendar: calendar)
+    }
+
+    /// Internal membership test. `.all` (or a nil `now`) keeps everything so a
+    /// missing clock can never silently drop history. A bounded range parses the
+    /// timestamp; an UNPARSEABLE timestamp is EXCLUDED from a bounded range but
+    /// never crashes (and is never dropped from `.all`). A future-dated snapshot
+    /// (days < 0) is outside any "last N days" range.
+    private static func isWithinRange(
+        _ iso: String,
+        range: LocalHistoryDateRange,
+        now: Date?,
+        calendar: Calendar
+    ) -> Bool {
+        guard let bound = range.dayBound else { return true }   // .all — unbounded
+        guard let now else { return true }                       // no clock — skip date filtering
+        guard let date = parseDate(iso) else { return false }    // unparseable — excluded from bounded range
+        let startNow = calendar.startOfDay(for: now)
+        let startDate = calendar.startOfDay(for: date)
+        guard let days = calendar.dateComponents([.day], from: startDate, to: startNow).day else { return false }
+        return days >= 0 && days <= bound
     }
 }

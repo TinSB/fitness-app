@@ -117,6 +117,12 @@ final class FocusModeMvpState: ObservableObject {
     /// nil until a restore is attempted.
     @Published private(set) var restoreReconciliation: LocalDraftRestoreReconciliation? = nil
 
+    /// iOS-15: the coarse date-range filter selected on the history surface.
+    /// Pure in-RAM UI state (no disk, no IO); applied against the same injectable
+    /// clock the rest of the history surface uses, so previews/tests stay
+    /// deterministic. Settable so the history control can bind to it.
+    @Published var historyDateRange: LocalHistoryDateRange = .all
+
     /// The sanctioned app-local JSON store. Injectable for previews/tests; the
     /// app uses the default Application Support location. NOTE: this class never
     /// touches FileManager directly — all disk IO is delegated to the store.
@@ -469,6 +475,17 @@ final class FocusModeMvpState: ObservableObject {
         let slice = FocusModePreviewData.sampleCoreSlice(for: scenario)
         let templateIds = Set(FocusModePreviewData.sampleTemplateExercises().map(\.id))
         return slice.perExercise.map(\.exerciseId).filter { templateIds.contains($0) }
+    }
+
+    /// iOS-15: the CURRENT exercise ids for a SAVED snapshot's own scenario, so
+    /// the detail sheet can project a read-only recovery insight via
+    /// `LocalSnapshotRecovery.insight`. Mirrors how `restoreDraft` resolves the
+    /// scenario from `snapshot.scenarioId`; returns [] for an unknown scenario
+    /// (the insight then honestly shows nothing restorable). Pure read — no disk,
+    /// no AppData, no restore side effects.
+    func currentExerciseIds(forSnapshot snapshot: LocalCompletedSessionSnapshot) -> [String] {
+        guard let scenario = FocusModeSampleScenario(rawValue: snapshot.scenarioId) else { return [] }
+        return currentExerciseIds(for: scenario)
     }
 
     /// Whether the current in-session draft was restored from a saved snapshot.

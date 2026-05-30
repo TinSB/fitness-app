@@ -58,7 +58,14 @@ struct FocusSavedSessionHistoryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
         .sheet(item: $selected) { snapshot in
-            FocusSavedSessionDetailView(snapshot: snapshot) {
+            // iOS-15: hand the detail sheet the CURRENT scenario's exercise ids
+            // (pure read, no restore side effect) so it can project a read-only
+            // per-exercise recovery insight. The continue action still reuses the
+            // EXISTING in-memory draft restore (no new restore semantics).
+            FocusSavedSessionDetailView(
+                snapshot: snapshot,
+                currentExerciseIds: state.currentExerciseIds(forSnapshot: snapshot)
+            ) {
                 // Restore-to-local-draft + continue. Dismiss the sheet first,
                 // then restore (which flips the shell to the in-session draft).
                 selected = nil
@@ -218,7 +225,21 @@ struct FocusSavedSessionHistoryView: View {
             .padding(.horizontal, 8).padding(.vertical, 5)
             .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
             scenarioFilterMenu
+            dateRangeControl
         }
+    }
+
+    // iOS-15: coarse, local-only date-range control (全部 / 最近 7 天 / 最近 30 天)
+    // bound to the in-RAM UI state; the pure filter applies it against the same
+    // injectable clock the rest of the history surface uses.
+    private var dateRangeControl: some View {
+        Picker("时间范围", selection: $state.historyDateRange) {
+            ForEach(LocalHistoryDateRange.allCases, id: \.self) { range in
+                Text(range.title).tag(range)
+            }
+        }
+        .pickerStyle(.segmented)
+        .controlSize(.small)
     }
 
     private var scenarioFilterMenu: some View {
@@ -399,13 +420,17 @@ struct FocusSavedSessionHistoryView: View {
     // MARK: - Filtering helpers
 
     private var filteredHistory: [LocalCompletedSessionSnapshot] {
-        // iOS-14: delegate to the pure, unit-tested filter (search + scenario +
-        // completed-only); the store already returns newest-first.
+        // iOS-14/15: delegate to the pure, unit-tested filter (search + scenario +
+        // completed-only + coarse date range); the store already returns
+        // newest-first. The date range is measured against the same injectable
+        // clock used for grouping (deterministic by default).
         LocalSnapshotHistory.filtered(
             state.savedHistory,
             query: searchQuery,
             scenarioId: scenarioFilter,
-            completedOnly: completedOnly
+            completedOnly: completedOnly,
+            dateRange: state.historyDateRange,
+            now: state.historyNow
         )
     }
 
