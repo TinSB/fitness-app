@@ -52,6 +52,9 @@ struct ProfileRootView: View {
                 unitSection
                 screeningSection
                 settingsSection
+                // HK-1: user-gated, read-only Apple Health body-weight import.
+                // Owns its own view-model; the read/write happens only on tap.
+                HealthKitBodyWeightImportSection()
             }
             .navigationTitle("我的")
         }
@@ -109,8 +112,10 @@ struct ProfileRootView: View {
         } header: {
             Text("设置")
         } footer: {
-            // Honest disclosure — no fake success, no data access (master §15.4).
-            Text("本页为只读预览，展示的是示例资料；真实资料的读取与编辑将在后续版本上线，本页不读写任何数据。")
+            // Honest disclosure — no fake success (master §15.4). Scope is the
+            // profile/unit/screening/settings above; the 健康数据 section below
+            // has its own disclosure for the user-gated Apple Health import.
+            Text("以上个人资料、筛查与设置为只读示例预览，真实资料的读取与编辑将在后续版本上线。")
         }
     }
 }

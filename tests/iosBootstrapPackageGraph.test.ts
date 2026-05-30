@@ -48,6 +48,12 @@ const SANCTIONED_LOCAL_PATH_DEPS: Record<string, readonly string[]> = {
   // from IronPathDomain. Acyclic: IronPathTrainingDecision -> IronPathDataHealth
   // -> IronPathDomain. DataHealth never depends on TrainingDecision.
   IronPathTrainingDecision: ['../IronPathDomain', '../IronPathDataHealth'],
+  // HK-1: IronPathHealthKit was activated from an inert stub into an approved
+  // read-only Apple-Health adapter (master §6.2/§17/§18, amended). Its pure
+  // mapper produces canonical IronPathDomain.HealthMetricSample values, so it
+  // depends on IronPathDomain. Acyclic leaf dep: IronPathHealthKit -> IronPathDomain
+  // (same shape as Persistence/DataHealth). Still 100% offline (local path).
+  IronPathHealthKit: ['../IronPathDomain'],
 };
 
 describe('iosBootstrapPackageGraph — every package is local-only', () => {

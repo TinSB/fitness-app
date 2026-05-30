@@ -22,6 +22,8 @@
     <false/>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>NSHealthShareUsageDescription</key>
+    <string>IronPath 仅在你授权后，从 Apple 健康只读读取你的最新体重，用于在本机记录训练相关的身体数据。数据保存在本设备，不会上传，也不会写回 Apple 健康。</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>
