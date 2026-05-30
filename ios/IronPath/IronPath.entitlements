@@ -5,8 +5,16 @@
 	<!-- HK-1: HealthKit read-only body-weight import (master §17/§18, amended).
 	     Basic HealthKit access only — NO clinical-records (healthkit.access) and
 	     NO background delivery. Write-back to Apple Health is the deferred HK-3
-	     slice. No iCloud/CloudKit/App Groups/network entitlements. -->
+	     slice. No iCloud/CloudKit/network entitlements. -->
 	<key>com.apple.developer.healthkit</key>
 	<true/>
+	<!-- W-1: App Group shared with the IronPathWidget extension. The app WRITES a
+	     small derived read-only readiness snapshot here; the widget READS it. A
+	     derived presentation share only (§12) — never canonical AppData, never a
+	     source of truth, on-device only (no iCloud/CloudKit/network/remote push). -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.ironpath.app.ios</string>
+	</array>
 </dict>
 </plist>
