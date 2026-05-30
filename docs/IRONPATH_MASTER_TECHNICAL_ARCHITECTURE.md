@@ -43,7 +43,7 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 | Aspect | State as of baseline `6df0149` (2026-05-30) |
 | --- | --- |
 | PWA | Mature product surface. React 19 + Vite + TypeScript. The live runtime users rely on. |
-| Native iOS | Migrating. Thin SwiftUI shell over **11 local Swift packages**. Local-first only. |
+| Native iOS | Migrating. Thin SwiftUI shell + a WidgetKit extension over **12 local Swift packages**. Local-first only. |
 | iOS migration progress | Completed **through iOS-16**, plus **iOS-17b** (in-RAM per-set capture, no persistence) and the **iOS-17S five-tab navigation shell** (今日/训练/记录/计划/我的; Focus relocated under 训练 unchanged, the other four tabs placeholder). Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter + coarse **and custom from/to** date ranges, summary stats, **per-exercise recovery insight**, and **non-destructive draft recovery** are shipped. Set-logging (iOS-17) is an **approved epic, in progress** (capture slice 17b shipped, in-RAM only; canonical write path 17c not yet built). |
 | Native data model | `IronPathDomain.AppData` — pure `Codable` value type, parity-pinned to the PWA export. |
 | Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12), **both now active**: the Focus-history snapshot store and — as of iOS-17A — the canonical-AppData store (`JSONFileAppDataStore`, written via `CanonicalSessionWriter`, §8). **No** iCloud/CloudKit/HealthKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. |
@@ -54,6 +54,7 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 | Cloud / auth / sync (native) | **Not built.** Stub packages / gated only. (PWA has gated cloud-production scaffolding — §4.) |
 | HealthKit (native) | **Read-only body weight ACTIVE (HK-1).** `IronPathHealthKit` is an approved, bounded, **read-only** Apple-Health adapter: the latest body mass is imported into `AppData.healthMetricSamples` (kg) through the DataHealth-gated §8 write path. Write-back and other metrics remain deferred (HK-2/HK-3). See §6.2/§17/§18. |
 | Local notifications (native) | **LOCAL rest-timer reminder ACTIVE (N-1).** `IronPathNotifications` schedules an on-device `UNTimeIntervalNotificationTrigger` rest reminder after a completed set (user-authorized), confined to one `#if os(iOS)` adapter. LOCAL only — no network. **Remote / push notifications remain forbidden** (server → gated, §17). See §6.1/§16/§17/§18. |
+| Home-screen widget (native) | **READINESS WIDGET ACTIVE (W-1).** A WidgetKit widget (a separate `IronPathWidgetExtension` target) renders today's readiness from a DERIVED read-only snapshot the app writes to a shared App Group. Read-only — never writes canonical AppData, never a source of truth (§12). On-device, no network. See §5/§6.1/§12/§17/§18. |
 
 ---
 
@@ -72,7 +73,7 @@ IronPath is a mobile-first personal training app with two front-ends over one sh
               ▼                                                                         ▼
    ┌────────────────────────┐                                          ┌────────────────────────────┐
    │  PWA (mature product)  │                                          │  Native iOS (migrating)     │
-   │  React 19 + Vite + TS  │                                          │  SwiftUI shell + 11 packages│
+   │  React 19 + Vite + TS  │                                          │  SwiftUI shell + 12 packages│
    │  src/ + packages/*     │                                          │  ios/IronPath + ios/packages│
    │  Local-first; cloud    │                                          │  Local-first ONLY           │
    │  production GATED       │                                          │  No cloud/network/auth      │
@@ -116,9 +117,10 @@ ios/
 │   ├── FocusSession{Progress,Completion}View.swift, FocusSetChecklistView.swift, FocusModeExerciseCard.swift,
 │   │   FocusModeStatusSurfaceView.swift, TrainingDecisionSummaryView.swift  ← pure presentation
 │   └── Assets.xcassets, Info.plist
-├── IronPath.xcodeproj/             ← ONE app target; 11 XCLocalSwiftPackageReference -> packages/*
+├── IronPathWidget/                 ← W-1 WidgetKit extension target (Bundle + ReadinessWidget + Info.plist + entitlements)
+├── IronPath.xcodeproj/             ← app target + IronPathWidgetExtension widget target (W-1); 12 XCLocalSwiftPackageReference -> packages/*
 ├── IronPath.xcworkspace/           ← workspace wrapping project + package dirs
-└── packages/                       ← ALL business logic lives here (11 packages, §6)
+└── packages/                       ← ALL business logic lives here (12 packages, §6)
 ```
 
 **Core principle:** the app layer is a **thin renderer**. The only app-layer logic lives in `FocusModeMvpState` (a `@MainActor ObservableObject` view-model) which holds in-RAM UI state and **delegates** persistence and reconciliation to packages. Views are pure presentation + label/date formatting.
@@ -131,7 +133,7 @@ ios/
 
 ## 6. Swift Package Boundaries
 
-There are **exactly 11 local Swift packages** under `ios/packages/`, wired into the single app target via `ios/IronPath.xcodeproj`. The app links all 11, but several are inert stubs.
+There are **exactly 12 local Swift packages** under `ios/packages/`, wired into the app target (+ the W-1 `IronPathWidgetExtension` widget target) via `ios/IronPath.xcodeproj`. The app links all 12, but several are inert stubs.
 
 ### 6.1 Active packages
 | Package | Purpose | Depends on |
@@ -144,6 +146,7 @@ There are **exactly 11 local Swift packages** under `ios/packages/`, wired into 
 | `IronPathHealthKit` | **HK-1: approved, bounded, READ-ONLY Apple-Health adapter** (activated from the iOS-1 stub). `BodyMassReading` + `BodyMassSampleSource` seam, pure `HealthKitBodyMassMapper` (→ `HealthMetricSample`, kg, content-addressed id), `HealthKitBodyMassImporter`. The real `HKHealthStore` reader (`HealthKitBodyMassSource`) is the ONLY file that imports HealthKit and is compiled `#if os(iOS)` (host `swift test` excludes it). Read-only — no write-back. | `IronPathDomain` |
 | `IronPathL10n` | Localization helper. | *(standalone)* |
 | `IronPathNotifications` | **N-1: approved, bounded, LOCAL-only notification adapter** (new package). Pure `RestReminderPolicy` (exercise-role rawValue → recommended rest seconds; injected clock → fire instant) + `RestReminderScheduling` seam. The real `UNUserNotificationCenter` scheduler (`UserNotificationsRestReminderScheduler`) is the ONLY file that imports UserNotifications, compiled `#if os(iOS)`. LOCAL only (`UNTimeIntervalNotificationTrigger`) — no remote/push, no network. | *(Foundation only — standalone; maps a role rawValue String, so no `Domain` edge)* |
+| `IronPathWidgetShared` | **W-1: approved, bounded, read-only widget share** (new package). Pure `ReadinessWidgetSnapshot` (+ JSON codec) + `ReadinessWidgetPresentation` (snapshot → view state, honest placeholder) + `WidgetSnapshotStore`/`WidgetReloading` seams. The real App Group `FileManager` store (`AppGroupWidgetSnapshotStore`) + the WidgetKit reloader (`WidgetTimelineReloader`, the ONLY WidgetKit importer here) are `#if os(iOS)`. The derived snapshot is read-only for the widget and never a source of truth (§12). | *(Foundation only — standalone; the snapshot carries plain Strings, so no `Domain` edge)* |
 
 ### 6.2 Stub packages (inert, `0.0.1` bootstrap) — **must stay inert**
 | Package | Reserved for (DEFERRED) | Today |
@@ -157,7 +160,7 @@ There are **exactly 11 local Swift packages** under `ios/packages/`, wired into 
 ### 6.3 The package rules (enforceable)
 1. **`IronPathDomain` is the dependency leaf** (Foundation only).
 2. **`IronPathLocalSnapshot` stays decoupled from `IronPathDomain`/AppData.** It is a presentation-layer history record, not the canonical model. Do not make it import `IronPathDomain`.
-3. **The import graph is a DAG** — no cycles. Current edges: `DataHealth → Domain`; `TrainingDecision → Domain, DataHealth`; `Persistence → Domain`; `HealthKit → Domain` (HK-1 — the pure mapper emits `HealthMetricSample`; `Domain` stays the leaf); `LocalSnapshot`, `L10n`, `Notifications` (N-1 — Foundation-only; the policy maps an exercise-role rawValue `String` to rest seconds, so it needs no `Domain` edge), and the 3 remaining stubs are standalone; the app target links all 11.
+3. **The import graph is a DAG** — no cycles. Current edges: `DataHealth → Domain`; `TrainingDecision → Domain, DataHealth`; `Persistence → Domain`; `HealthKit → Domain` (HK-1 — the pure mapper emits `HealthMetricSample`; `Domain` stays the leaf); `LocalSnapshot`, `L10n`, `Notifications` (N-1 — Foundation-only; the policy maps an exercise-role rawValue `String` to rest seconds, so it needs no `Domain` edge), `WidgetShared` (W-1 — Foundation-only; the readiness snapshot carries plain Strings, so it needs no `Domain` edge), and the 3 remaining stubs are standalone; the app target links all 12, and the W-1 `IronPathWidgetExtension` widget target additionally links `WidgetShared`.
 4. **Packages never depend on the app target.**
 5. **Stub packages stay inert** until an approved architecture task (this document amended) fills them.
 
@@ -283,6 +286,7 @@ HK-1 adds a **second typed entry point on the SAME write path — not a second w
 3. `LocalSnapshotHistory.filtered/.grouped` and `LocalSnapshotStats.derive` are **pure** (no internal clock — `now` is injected). `LocalDraftRestorePlanner` and `LocalSnapshotMigration` are pure (no disk).
 4. The canonical-AppData store (`IronPathPersistence.JSONFileAppDataStore`) is the **other** sanctioned JSON store; it is the source of truth (§8) and is distinct from this history store. As of iOS-17A it lives in its own `IronPathAppData/` subdirectory under Application Support, so the two stores never collide.
 5. **iOS-17A schema v3 — derived per-set display copy.** `LocalCompletedExerciseSnapshot.setLogs` (`[LocalCompletedSetEntrySnapshot]?`: `setIndex` + kg `weightKg?`/`reps?`/`rir?`) is a **derived display copy** of the canonical performed sets, written **alongside** the canonical AppData write (§8.1) and read only to render the "上次成绩" detail. It is **never** read back as a source of truth, and this store still **never** reads/writes canonical AppData (rule 2). The bump is a guarded migration (v1/v2 files decode with `setLogs == nil` and migrate forward, showing no per-set detail honestly): `LocalCompletedSessionSnapshot.currentSchemaVersion = 3`, `LocalSnapshotValidator.acceptedSchemaVersions = {1,2,3}`, guarded by `LocalSetLogsV3Tests` + the existing migration/validation suite.
+6. **W-1 App Group derived read-only share.** The home-screen widget reads a small **derived** readiness snapshot the app writes to the shared App Group container (`group.com.ironpath.app.ios`, `IronPathWidgetShared.AppGroupWidgetSnapshotStore`, atomic JSON). Like the LocalSnapshot history (rule 2), this share is a **presentation record**: the app WRITES it, the widget READS it; it is **never** read back as a source of truth and **never** touches canonical AppData. On-device only — no iCloud/network/remote. Guarded by `iosReadinessWidgetStaticGuards`.
 
 ---
 
@@ -347,6 +351,7 @@ These systems are **named but not designed here.** Each is *gated*: it requires 
 | HealthKit — read history (HK-2), write-back (HK-3), other metrics | Deferred (the read-only seam exists) | Approved task per slice; HK-3 write-back needs its own privacy review |
 | Local notifications — rest-timer reminder | **UNGATED (N-1) — active, LOCAL only.** `IronPathNotifications` schedules an on-device `UNTimeIntervalNotificationTrigger` rest reminder (user-authorized), confined to one `#if os(iOS)` adapter. | *Met by N-1: local-only + permission design shipped (§6.1/§16/§18); on-device, no server.* |
 | Remote / push notifications (APNs) | Deferred — push needs a server. | Approved task; server + push infrastructure design |
+| Home-screen widget (readiness) | **UNGATED (W-1) — active, read-only.** A WidgetKit `IronPathWidgetExtension` renders a DERIVED readiness snapshot the app writes to a shared App Group; the widget never writes canonical AppData and is never a source of truth. | *Met by W-1: derived-only App Group share + read-only widget design shipped (§5/§6.1/§12/§18); on-device, no network.* |
 | `iOS-4B6` userFacing / full arbitrationTrace | Deferred | Approved task |
 | Backup/export, shared UIKit | Stubs (`IronPathBackup`, `IronPathUIKit`) | Approved task |
 
@@ -361,6 +366,7 @@ A change is **forbidden** (stop and escalate) if it does any of the following wi
 **Platform / persistence / network (native iOS especially):**
 - Introduces **CloudKit, iCloud, Supabase, URLSession/networking, WebView, auth, UserDefaults, SQLite, CoreData, or SwiftData** into native iOS. (On-device durability stays local JSON via Foundation.) **HealthKit** is permitted ONLY as the HK-1 **read-only** body-weight adapter (§6.2/§8.2), confined to the single `#if os(iOS)` `HealthKitBodyMassSource` file and guarded by `iosBootstrapForbiddenImports`; **write-back to Apple Health, and any other HealthKit type/metric, remain forbidden** without a new approved, contract-amending slice (HK-2/HK-3).
 - Introduces **remote / push notifications** (APNs, the `aps-environment` entitlement, `registerForRemoteNotifications`, a `UNNotificationServiceExtension`, or PushKit) — these need a server and stay gated (§17). **`UserNotifications` is permitted ONLY as the N-1 LOCAL rest-timer adapter** (`IronPathNotifications`, §6.1/§16), confined to the single `#if os(iOS)` `UserNotificationsRestReminderScheduler` file (a local `UNTimeIntervalNotificationTrigger`) and guarded by `iosBootstrapForbiddenImports`.
+- Lets the **home-screen widget write canonical AppData / become a source of truth**, or moves the **App Group** share off its derived/read-only role. The W-1 widget (`IronPathWidgetExtension`) is READ-ONLY: the app writes a derived readiness snapshot to the App Group (`group.com.ironpath.app.ios`, §12) and the widget only reads it (`IronPathWidgetShared`, §6.1). WidgetKit is confined to the widget target + the single `#if os(iOS)` reloader; the widget has **no network/cloud/remote push**. A native target beyond this one widget extension, or any non-local widget data source, needs a new approved, contract-amending slice.
 - Adds real implementation to a **stub package** (`IronPathCloudSync`/`IronPathBackup`/`IronPathUIKit`). (`IronPathHealthKit` was **activated** by HK-1 into a read-only adapter — §6.1; its read-only boundary is itself guarded. `IronPathNotifications` is a **new** N-1 package — §6.1 — not one of these stubs. The other three stay inert.)
 - Couples `IronPathLocalSnapshot` to `IronPathDomain`/AppData, or makes it the source of truth.
 - Moves native iOS off **local-first**, or promotes PWA cloud-production from gated to default.
@@ -437,7 +443,7 @@ git diff --check                 # no whitespace/conflict markers
 ### 21.2 Required (Swift / iOS — local; **CI does NOT build/test Swift**)
 There is **no `npm run validate:ios` script.** Validate Swift manually:
 ```bash
-# Per package (all 11 under ios/packages/*):
+# Per package (all 12 under ios/packages/*):
 cd ios/packages/<Package> && swift test
 
 # App build (both destinations):
@@ -568,7 +574,7 @@ Every future Claude/Codex task must be framed with this template. Copy it, fill 
 
 ## 27. Appendix: Current iOS Migration Milestones
 
-Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b**, the **iOS-17S** five-tab navigation shell, **iOS-17C** (#424, Plan+Today read-only surface), **iOS-17A** (the first native canonical-AppData write path for performed sets), **HK-1** (the first native capability ungating: a read-only Apple-Health body-weight import), and **N-1** (this amendment — a local-only rest-timer notification). Baseline for N-1: latest `origin/main` (HK-1 #428 + the ungating roadmap #429).
+Native iOS has advanced as a sequence of validated slices. Completed **through iOS-17b**, the **iOS-17S** five-tab navigation shell, **iOS-17C** (#424, Plan+Today read-only surface), **iOS-17A** (the first native canonical-AppData write path for performed sets), **HK-1** (the first native capability ungating: a read-only Apple-Health body-weight import), and **N-1** (a local-only rest-timer notification), and **W-1** (this amendment — a read-only home-screen readiness widget via a WidgetKit extension + App Group derived share). Baseline for W-1: latest `origin/main` (N-1 #430).
 
 | Milestone | Summary |
 | --- | --- |
@@ -587,7 +593,8 @@ Native iOS has advanced as a sequence of validated slices. Completed **through i
 | **iOS-17A** (this amendment) | **Native per-set logging mega (17c + 17d).** Capture extended in `FocusSetChecklistView` (weight/reps/RIR, display-unit entry, kg-stored). **First native canonical-AppData write path:** `IronPathPersistence.CanonicalSessionWriter` appends a completed `TrainingSession` (performed sets in `history[].exercises[].sets`, built by `IronPathDomain.NativeCompletedSessionBuilder`) — DataHealth-gated, backup-before-overwrite, atomic, no-fake-success (§8.1). Detail summary "上次成绩" backed by a derived LocalSnapshot **v3** `setLogs` display copy (§12 rule 5). Amends §2/§8/§9/§12. Source-of-truth impact: **activates** (does not move) the canonical write boundary. Forbidden systems untouched; `project.pbxproj` not edited (no new app-target files). |
 | **HK-1** (this amendment) | **HealthKit read-only body-weight import — first capability ungating.** `IronPathHealthKit` activated into a read-only Apple-Health adapter: pure `BodyMassReading`/`BodyMassSampleSource` seam + `HealthKitBodyMassMapper` (→ `HealthMetricSample`, kg) + `HealthKitBodyMassImporter`, with the real `HKHealthStore` reader (`HealthKitBodyMassSource`) compiled `#if os(iOS)` only. User-gated import in the 我的 tab appends the latest body weight to `AppData.healthMetricSamples` (kg) via `CanonicalSessionWriter.appendHealthMetricSample` — the §8.2 DataHealth-gated, backup-before-overwrite, atomic, no-fake-success path (same path as §8.1; idempotent by content id). Adds `NSHealthShareUsageDescription` + a HealthKit entitlement + `CODE_SIGN_ENTITLEMENTS` (justified `project.pbxproj` edit — first capability ungating + 2 new app files). Static guards updated in sync (`iosBootstrapForbiddenImports` exempts the one adapter file + asserts read-only; `iosBootstrapPackageGraph` sanctions `HealthKit → Domain`). Amends §2/§6.1/§6.2/§6.3/§8.2/§10/§17/§18/§27. Source-of-truth impact: uses the §8.1 boundary, no new write path. Forbidden systems otherwise untouched; HealthKit write-back (HK-3) still forbidden. |
 | **N-1** (this amendment) | **Local rest-timer notification — local-only capability ungating.** New Foundation-only standalone package `IronPathNotifications`: pure `RestReminderPolicy` (exercise-role rawValue → recommended rest seconds; injected clock → fire instant) + `RestReminderScheduling` seam + the real `UNUserNotificationCenter` scheduler (`UserNotificationsRestReminderScheduler`, the ONLY UserNotifications importer, `#if os(iOS)`, a LOCAL `UNTimeIntervalNotificationTrigger`). Thin app `RestReminderModel` (honest status, never imports UserNotifications, in-RAM) + an in-session section; the Focus shell schedules a reminder when a set completes and cancels on exercise-switch / end / complete / reset. Registers an 11th package + 2 new app files in `project.pbxproj` (justified — new capability; local notifications need NO entitlement). Static guards in sync (`iosBootstrapForbiddenImports` confines the local UserNotifications tokens to the one adapter + bans remote-push everywhere; `iosBootstrapPackageGraph`/`iosBootstrapTargetSettings` add the package; new `iosLocalRestTimerNotificationStaticGuards`). Amends §2/§5/§6.1/§6.3/§16/§17/§18/§27. **LOCAL only — no network, no remote/push (still gated §17), no AppData / source-of-truth change.** |
-| Next (proposed) | iOS-17e engine consumption of performed sets (deferred); HealthKit **HK-2** (read training history) / **HK-3** (write-back, separate privacy review); local notifications **N-2** (workout reminders, local schedule/cancel). Parallel per-tab fills may proceed independently on the iOS-17S RootViews. |
+| **W-1** (this amendment) | **Readiness home-screen widget — read-only capability ungating (first extension target).** New Foundation-only standalone package `IronPathWidgetShared`: pure `ReadinessWidgetSnapshot` (+ JSON codec) + `ReadinessWidgetPresentation` (snapshot → view state, honest placeholder) + `WidgetSnapshotStore`/`WidgetReloading` seams; the real App Group `FileManager` store (`AppGroupWidgetSnapshotStore`) + the WidgetKit reloader (`WidgetTimelineReloader`, the ONLY package WidgetKit importer) are `#if os(iOS)`. The 今日 surface publishes a DERIVED readiness snapshot to a shared App Group (`group.com.ironpath.app.ios`) via the thin `WidgetSnapshotWriterModel` (never imports WidgetKit/FileManager, never writes canonical AppData). A new `IronPathWidgetExtension` WidgetKit target (`ios/IronPathWidget/`) READS that snapshot and renders it — read-only, never a source of truth (§12). Registers the 12th package + a 2nd native target (app-extension) + App Group entitlements on both + the embed/target-dependency in `project.pbxproj` (justified — a widget needs its own extension target). Static guards in sync (`iosBootstrapTargetSettings` now expects 2 native targets + the widget's extra package link; `iosBootstrapPackageGraph` adds the package; new `iosReadinessWidgetStaticGuards`). Amends §2/§5/§6.1/§6.3/§12/§17/§18/§27. **Read-only derived share — no network, no cloud, no remote, no canonical AppData / source-of-truth change.** |
+| Next (proposed) | iOS-17e engine consumption of performed sets (deferred); HealthKit **HK-2** (read training history) / **HK-3** (write-back, separate privacy review); local notifications **N-2** (workout reminders, local schedule/cancel); widget **W-2** (more widget families / Lock Screen; real-data snapshot once a canonical read path lands). Parallel per-tab fills may proceed independently on the iOS-17S RootViews. |
 
 > Milestone facts here are descriptive context; the **rules in §1–§26 are binding.**
 

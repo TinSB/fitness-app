@@ -12,6 +12,11 @@
 // IronPathTrainingDecision.TodayReadinessSummary (pure + unit-tested); this view
 // only renders rows. The engine is read, never changed (no golden touched).
 //
+// W-1: this surface also PUBLISHES a small DERIVED read-only readiness snapshot to
+// the App Group for the home-screen widget (a derived share file via the
+// IronPathWidgetShared seam — never canonical AppData, never a source of truth,
+// §8/§12). See WidgetSnapshotWriterModel.
+//
 // Training entry: the five-tab shell's selected tab is ContentView-private state,
 // and the iOS-17S parallel-line contract forbids editing the shell from a tab
 // fill, so this slice does NOT switch tabs programmatically. The CTA honestly
@@ -45,6 +50,11 @@ struct TodayRootView: View {
 
     @State private var showTrainingEntry = false
 
+    // W-1: publishes a small DERIVED read-only readiness snapshot to the App Group
+    // for the home-screen widget. It just packs the already-computed `summary`
+    // strings — no engine call, and it NEVER writes canonical AppData.
+    @StateObject private var widgetWriter = WidgetSnapshotWriterModel()
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -62,7 +72,19 @@ struct TodayRootView: View {
         .alert("前往「训练」", isPresented: $showTrainingEntry) {
             Button("好", role: .cancel) {}
         } message: {
-            Text("在底部导航栏点按「训练」即可进入专注训练。今日页为只读概览，不读写任何数据。")
+            Text("在底部导航栏点按「训练」即可进入专注训练。今日页为只读概览，不读写训练记录。")
+        }
+        // W-1: publish a DERIVED read-only readiness snapshot for the home-screen
+        // widget (App Group). This writes a small derived share file ONLY — never
+        // canonical AppData, never a source of truth (§8/§12). Previews/tests do not
+        // opt into a live store, so this is a no-op there.
+        .task {
+            widgetWriter.activateLiveSinksIfNeeded()
+            widgetWriter.publish(
+                headline: summary.headline,
+                advice: summary.advice,
+                rows: summary.decisionRows.map { ($0.label, $0.value) }
+            )
         }
     }
 

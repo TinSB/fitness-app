@@ -27,6 +27,9 @@ const PACKAGES = [
   // N-1: local rest-timer notification package — Foundation-only, standalone
   // (no sanctioned local-path dep below ⇒ the zero-`.package(` lock applies).
   'IronPathNotifications',
+  // W-1: readiness-widget shared package — Foundation-only, standalone (the snapshot
+  // carries plain Strings, so no Domain edge; zero-`.package(` lock applies).
+  'IronPathWidgetShared',
 ] as const;
 
 const readPackageSwift = (pkg: string): string =>

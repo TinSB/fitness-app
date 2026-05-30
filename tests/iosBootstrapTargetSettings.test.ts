@@ -35,6 +35,10 @@ const PACKAGES = [
   // N-1: local rest-timer notification package; the app target links it like the
   // others (11th XCLocalSwiftPackageReference + product dependency).
   'IronPathNotifications',
+  // W-1: readiness-widget shared package (12th). Linked by BOTH the app (writes the
+  // derived snapshot) AND the widget extension target (reads it) — see the
+  // product-dependency count note below.
+  'IronPathWidgetShared',
 ] as const;
 
 describe('iosBootstrapTargetSettings', () => {
@@ -75,10 +79,13 @@ describe('iosBootstrapTargetSettings', () => {
     }
   });
 
-  it('iosBootstrap project links one XCSwiftPackageProductDependency entry per local package', () => {
+  it('iosBootstrap project links at least one XCSwiftPackageProductDependency entry per local package', () => {
     const text = pbxproj();
     const deps = text.match(/isa = XCSwiftPackageProductDependency/g) ?? [];
-    expect(deps.length).toBe(PACKAGES.length);
+    // The app target links all PACKAGES. W-1 additionally links IronPathWidgetShared
+    // into the widget extension target (a SECOND product-dependency object for that
+    // one shared package), so the total is >= PACKAGES.length — not exactly equal.
+    expect(deps.length).toBeGreaterThanOrEqual(PACKAGES.length);
     for (const pkg of PACKAGES) {
       // Each productName must appear.
       expect(text).toContain(`productName = ${pkg};`);
@@ -92,11 +99,15 @@ describe('iosBootstrapTargetSettings', () => {
     expect(text).not.toMatch(/repositoryURL\s*=/);
   });
 
-  it('iosBootstrap project has exactly one PBXNativeTarget (the IronPath app)', () => {
+  it('iosBootstrap project has the IronPath app target + the W-1 widget app-extension target', () => {
     const text = pbxproj();
     const targets = text.match(/isa = PBXNativeTarget/g) ?? [];
-    expect(targets.length).toBe(1);
-    expect(text).toContain('productType = "com.apple.product-type.application"');
+    // W-1 added the IronPathWidgetExtension widget target → exactly 2 native targets.
+    expect(targets.length).toBe(2);
+    // Exactly one application product (the app) and exactly one app-extension (the
+    // W-1 widget). No other extension/target types crept in.
+    expect((text.match(/productType = "com\.apple\.product-type\.application"/g) ?? []).length).toBe(1);
+    expect((text.match(/productType = "com\.apple\.product-type\.app-extension"/g) ?? []).length).toBe(1);
   });
 
   it('iosBootstrap project carries an asset catalog reference', () => {
