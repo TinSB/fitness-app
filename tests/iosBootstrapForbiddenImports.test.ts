@@ -21,6 +21,17 @@ const repoRoot = resolve(process.cwd());
 const HEALTHKIT_READ_ADAPTER =
   'ios/packages/IronPathHealthKit/Sources/IronPathHealthKit/HealthKitBodyMassSource.swift';
 
+// N-1 (Local Rest-Timer Notification V1): the SINGLE sanctioned LOCAL notification
+// adapter. It is the ONLY iOS Swift file allowed to import UserNotifications / use
+// UNUserNotificationCenter & the local content/request/time-interval-trigger
+// symbols (master §16/§17/§18, amended in the same PR). Every other Swift file
+// under ios/ stays UserNotifications-free. REMOTE / push tokens are banned
+// EVERYWHERE (including this file). The dedicated block at the bottom asserts this
+// file is the sole holder of the local tokens AND that it is local-only (a
+// time-interval trigger, never remote registration).
+const LOCAL_NOTIFICATION_ADAPTER =
+  'ios/packages/IronPathNotifications/Sources/IronPathNotifications/UserNotificationsRestReminderScheduler.swift';
+
 const collectSwiftFiles = (dir: string, out: string[] = []): string[] => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = resolve(dir, entry.name);
@@ -66,6 +77,24 @@ const FORBIDDEN: readonly ForbiddenPattern[] = [
   { name: 'HealthKit_import', stopCondition: 'HK-1 (read-only adapter only)', pattern: /^\s*import\s+HealthKit\s*$/m, allowInFile: HEALTHKIT_READ_ADAPTER },
   { name: 'HKHealthStore_symbol', stopCondition: 'HK-1 (read-only adapter only)', pattern: /\bHKHealthStore\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
   { name: 'HKQuantityType_symbol', stopCondition: 'HK-1 (read-only adapter only)', pattern: /\bHKQuantityType\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
+  // N-1: LOCAL notifications are APPROVED (master §16/§17/§18, amended in the N-1
+  // PR). The UserNotifications framework + the local UNUserNotificationCenter /
+  // content / request / time-interval-trigger symbols are permitted ONLY in the
+  // single local adapter file (`allowInFile`); every other ios Swift file stays
+  // UserNotifications-free.
+  { name: 'UserNotifications_import', stopCondition: 'N-1 (local adapter only)', pattern: /^\s*import\s+UserNotifications\s*$/m, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
+  { name: 'UNUserNotificationCenter_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNUserNotificationCenter\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
+  { name: 'UNMutableNotificationContent_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNMutableNotificationContent\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
+  { name: 'UNNotificationRequest_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNNotificationRequest\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
+  { name: 'UNTimeIntervalNotificationTrigger_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNTimeIntervalNotificationTrigger\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
+  // N-1: REMOTE / push notifications stay FORBIDDEN everywhere (they need a server
+  // → master §17). No file — not even the local adapter — may register for remote
+  // push, ship a notification service extension, or pull in PushKit.
+  { name: 'registerForRemoteNotifications_symbol', stopCondition: 'N-1 (remote push forbidden)', pattern: /\bregisterForRemoteNotifications\b/ },
+  { name: 'didRegisterForRemoteNotificationsWithDeviceToken_symbol', stopCondition: 'N-1 (remote push forbidden)', pattern: /\bdidRegisterForRemoteNotificationsWithDeviceToken\b/ },
+  { name: 'UNNotificationServiceExtension_symbol', stopCondition: 'N-1 (remote push forbidden)', pattern: /\bUNNotificationServiceExtension\b/ },
+  { name: 'PushKit_import', stopCondition: 'N-1 (remote push forbidden)', pattern: /^\s*import\s+PushKit\s*$/m },
+  { name: 'PKPushRegistry_symbol', stopCondition: 'N-1 (remote push forbidden)', pattern: /\bPKPushRegistry\b/ },
   // Persistence: JSON-snapshot first. SwiftData / CoreData need explicit thresholds (Agent 3).
   { name: 'SwiftData_import', stopCondition: 'Agent 3 storage choice', pattern: /^\s*import\s+SwiftData\s*$/m },
   { name: 'CoreData_import', stopCondition: 'Agent 3 storage choice', pattern: /^\s*import\s+CoreData\s*$/m },
@@ -169,5 +198,70 @@ describe('iosBootstrap HK-1 read-only HealthKit adapter boundary', () => {
   it('the adapter is compiled iOS-only (#if os(iOS)) so host swift test excludes it', () => {
     // Read raw (not comment-stripped): the directive is real code.
     expect(readFileSync(adapterAbs, 'utf8')).toMatch(/#if\s+os\(iOS\)/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// N-1 local-notification adapter boundary.
+//
+// The local UserNotifications-token exemption above is bounded by these
+// assertions: exactly ONE file holds the local tokens, it is local-only (a
+// time-interval trigger, no remote-push registration), and it is `#if os(iOS)`.
+// Separately, NO ios Swift file may register for REMOTE push (the local-only
+// boundary). Ships with the N-1 capability ungating (master §22).
+// ---------------------------------------------------------------------------
+
+describe('iosBootstrap N-1 local-notification adapter boundary', () => {
+  const swiftFiles = collectSwiftFiles(resolve(repoRoot, 'ios'));
+  const adapterAbs = resolve(repoRoot, LOCAL_NOTIFICATION_ADAPTER);
+  const localNotificationTokens: ReadonlyArray<RegExp> = [
+    /^\s*import\s+UserNotifications\s*$/m,
+    /\bUNUserNotificationCenter\b/,
+    /\bUNMutableNotificationContent\b/,
+    /\bUNNotificationRequest\b/,
+    /\bUNTimeIntervalNotificationTrigger\b/,
+  ];
+  const remotePushTokens: ReadonlyArray<RegExp> = [
+    /\bregisterForRemoteNotifications\b/,
+    /\bdidRegisterForRemoteNotificationsWithDeviceToken\b/,
+    /\bUNNotificationServiceExtension\b/,
+    /\bPKPushRegistry\b/,
+  ];
+
+  it('the sanctioned local-notification adapter file exists', () => {
+    expect(swiftFiles.includes(adapterAbs)).toBe(true);
+  });
+
+  it('the adapter is the ONLY ios Swift file that uses local UserNotifications tokens', () => {
+    for (const token of localNotificationTokens) {
+      const holders = swiftFiles
+        .filter((f) => token.test(stripComments(readFileSync(f, 'utf8'))))
+        .map((f) => f.replace(`${repoRoot}/`, ''));
+      expect(holders, `local-notification token ${token} found in: ${holders.join(', ')}`)
+        .toEqual([LOCAL_NOTIFICATION_ADAPTER]);
+    }
+  });
+
+  it('the adapter is LOCAL-ONLY (time-interval trigger, no remote-push registration)', () => {
+    const code = stripComments(readFileSync(adapterAbs, 'utf8'));
+    // A local one-shot time-interval trigger is the scheduling mechanism.
+    expect(code).toMatch(/UNTimeIntervalNotificationTrigger\s*\(/);
+    // No remote-push path anywhere in the adapter.
+    for (const token of remotePushTokens) {
+      expect(code, `remote-push token ${token} must not appear in the adapter`).not.toMatch(token);
+    }
+  });
+
+  it('the adapter is compiled iOS-only (#if os(iOS)) so host swift test excludes it', () => {
+    expect(readFileSync(adapterAbs, 'utf8')).toMatch(/#if\s+os\(iOS\)/);
+  });
+
+  it('NO ios Swift file registers for REMOTE push (local-only boundary)', () => {
+    for (const token of remotePushTokens) {
+      const holders = swiftFiles
+        .filter((f) => token.test(stripComments(readFileSync(f, 'utf8'))))
+        .map((f) => f.replace(`${repoRoot}/`, ''));
+      expect(holders, `remote-push token ${token} found in: ${holders.join(', ')}`).toEqual([]);
+    }
   });
 });

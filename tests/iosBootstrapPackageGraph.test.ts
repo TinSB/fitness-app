@@ -24,6 +24,9 @@ const PACKAGES = [
   'IronPathUIKit',
   // iOS-4B1: TrainingDecision golden type skeleton package (9th package).
   'IronPathTrainingDecision',
+  // N-1: local rest-timer notification package — Foundation-only, standalone
+  // (no sanctioned local-path dep below ⇒ the zero-`.package(` lock applies).
+  'IronPathNotifications',
 ] as const;
 
 const readPackageSwift = (pkg: string): string =>
