@@ -87,6 +87,13 @@ const FORBIDDEN: readonly ForbiddenPattern[] = [
   { name: 'UNMutableNotificationContent_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNMutableNotificationContent\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
   { name: 'UNNotificationRequest_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNNotificationRequest\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
   { name: 'UNTimeIntervalNotificationTrigger_symbol', stopCondition: 'N-1 (local adapter only)', pattern: /\bUNTimeIntervalNotificationTrigger\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
+  // N-2: LOCAL repeating training reminders are APPROVED (master §16/§17/§18,
+  // amended in the N-2 PR — within the already-ungated local-notification
+  // boundary). The repeating calendar trigger is permitted ONLY in the SAME single
+  // local adapter file (`allowInFile`) — keeping every real UNUserNotificationCenter
+  // call confined to one `#if os(iOS)` file. Locked further by
+  // tests/iosTrainingReminderNotificationStaticGuards.test.ts.
+  { name: 'UNCalendarNotificationTrigger_symbol', stopCondition: 'N-2 (local adapter only)', pattern: /\bUNCalendarNotificationTrigger\b/, allowInFile: LOCAL_NOTIFICATION_ADAPTER },
   // N-1: REMOTE / push notifications stay FORBIDDEN everywhere (they need a server
   // → master §17). No file — not even the local adapter — may register for remote
   // push, ship a notification service extension, or pull in PushKit.
