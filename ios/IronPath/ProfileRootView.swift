@@ -1,20 +1,40 @@
-// ProfileRootView — iOS-17B Profile Surface V1.
+// ProfileRootView — iOS-17B Profile Surface V1;
+// Profile real-AppData read path V1 switches it from sample to REAL data.
 //
 // 我的 (Profile) tab. Read-only rendering of the profile / unit / screening
-// / settings Domain values, with a local-only display-unit toggle. Thin
-// renderer (master §5/§15): all formatting is delegated to
-// IronPathDomain.ProfileDisplay — this view holds no business logic, reads
-// no disk, and writes no AppData. The four Domain values are injected
-// (default = a deterministic preview sample) so the surface renders without
-// touching canonical data; real on-device read + edit are later, gated
-// slices (master §8/§9/§14).
+// / settings Domain values + the latest Apple-Health body weight, with a
+// local-only display-unit toggle.
+//
+// Data source (Profile real-AppData read path V1): this surface now reads the
+// user's REAL on-device canonical AppData — the SAME store the write path uses
+// (`JSONFileAppDataStore.applicationSupport()`, §8) — replacing iOS-17B's fixed
+// sample. The thin `@MainActor ProfileRealDataModel` below opts the running app
+// into that store, loads it READ-ONLY, routes the document through DataHealth
+// `buildCleanAppDataView` (the §10 chokepoint), and delegates the whole transform
+// to the pure package resolver:
+//   AppData → buildCleanAppDataView → resolveProfileDisplayState → ProfileDisplayState
+// — raw AppData NEVER reaches the surface (it always passes through the clean view
+// first, §10). Honest states (§15.4): no canonical file yet / first launch / a
+// loaded-but-profile-less document → an empty state; a present-but-unreadable
+// document → a degrade state (the document is left untouched — this path NEVER
+// writes). All branch logic lives in `IronPathDataHealth.resolveProfileDisplayState`
+// (pure + unit-tested) and the derived "latest body weight" selection in
+// `IronPathDomain.ProfileDisplayData`; this view only renders + formats (via
+// `ProfileDisplay`). No engine touched, no golden touched.
+//
+// The latest body weight shown here is the DERIVED latest `body_weight`
+// HealthMetricSample (HK-1), distinct from the user's self-entered
+// `userProfile.weightKg`; the native engine does not port `healthSummaryEngine`,
+// so it is selected directly for display (§8.2). The HealthKit import/export +
+// rest/training reminder sections are unchanged and always available (user-gated
+// actions independent of profile data).
 //
 // === iOS-17S Tab Shell Scaffold V1 · parallel-line integration contract ===
 // This slice fills ONLY this RootView's body + the package logic it renders.
 // It does NOT edit ContentView (the shell), another tab's RootView,
 // FocusMode*, or project.pbxproj. Keep the app layer thin (master
-// §5/§15/§19.3): no business logic, no persistence, no network/cloud/auth
-// here.
+// §5/§15/§19.3): rendering + wiring only, no business logic; the only IO is the
+// sanctioned read-only canonical store load, delegated to the store.
 
 import Foundation
 import SwiftUI
@@ -24,39 +44,112 @@ import IronPathHealthKit
 import IronPathPersistence
 import IronPathDataHealth
 
+/// Thin @MainActor view-model for the 我的 surface's REAL canonical-AppData read.
+/// It owns ONLY the wiring + IO seam (master §5/§15): it opts the running app into
+/// the sanctioned canonical store and delegates the AppData → clean view → display
+/// transform to the pure `resolveProfileDisplayState`. It NEVER touches FileManager
+/// directly (the store does all disk IO), NEVER writes, and surfaces an honest state
+/// for every failure — no crash, no fabricated profile, no overwrite. Mirrors the
+/// 今日 surface's `TodayRealDataModel`.
+@MainActor
+final class ProfileRealDataModel: ObservableObject {
+    @Published private(set) var state: ProfileDisplayState
+
+    /// The sanctioned canonical store (the §8 source of truth). Optional so
+    /// previews/tests opt OUT of disk entirely; the running app injects the
+    /// Application Support store on appear. All disk IO is delegated to the store.
+    private var store: AppDataStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()`
+    /// in previews/tests).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the
+    /// canonical store, opted in on appear via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.now = now
+        self.isLive = true
+    }
+
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a
+    /// preview renders a chosen state without ever reading the real on-disk document.
+    init(previewState: ProfileDisplayState) {
+        self.state = previewState
+        self.store = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
+
+    /// True for the running app; false for pinned previews.
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the write path
+    /// uses (Application Support / `IronPathAppData`), pointing the read path at the
+    /// real source of truth. Idempotent; `#if os(iOS)` + the live guard keep
+    /// previews/tests off disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view → display state
+    /// (in `resolveProfileDisplayState`). NEVER writes, NEVER overwrites an unreadable
+    /// document, NEVER crashes — every failure becomes an honest state.
+    func reload() {
+        guard isLive else { return }
+        state = resolveProfileDisplayState(readOutcome(now: now()))
+    }
+
+    /// The ONLY IO + the DataHealth clean-view construction (the §10 chokepoint, which
+    /// the DataHealth-side resolver may not perform itself — the app layer does it
+    /// here, mirroring `TodayRealDataModel`). Reads the canonical store and, on
+    /// success, routes the document through `buildCleanAppDataView` with a guard clock
+    /// built from `now`. No write: a missing file (or no live source) → `.missing`; a
+    /// present-but-unreadable document → `.unreadable` (left untouched on disk, never
+    /// overwritten — raw AppData never reaches the surface).
+    private func readOutcome(now: Date) -> ProfileAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
+    }
+}
+
 struct ProfileRootView: View {
-    private let profile: UserProfile
-    private let unitSettings: UnitSettings
-    private let screening: ScreeningProfile
-    private let appSettings: AppSettings
+    @StateObject private var model: ProfileRealDataModel
 
-    /// Display-unit preference as local UI state ONLY — toggling it never
-    /// writes UnitSettings/AppData (storage stays kg; the UnitSettings
-    /// contract). Seeded from the injected settings' displayUnit.
-    @State private var displayUnit: WeightUnit
+    /// Display-unit preference as local UI state ONLY — toggling it never writes
+    /// UnitSettings/AppData (storage stays kg; the UnitSettings contract). Defaults to
+    /// kg and is seeded ONCE from the loaded unit settings on first appear.
+    @State private var displayUnit: WeightUnit = .kg
+    @State private var didSeedDisplayUnit = false
 
-    init(
-        profile: UserProfile = ProfileDisplayPreviewSample.userProfile,
-        unitSettings: UnitSettings = ProfileDisplayPreviewSample.unitSettings,
-        screening: ScreeningProfile = ProfileDisplayPreviewSample.screeningProfile,
-        appSettings: AppSettings = ProfileDisplayPreviewSample.appSettings
-    ) {
-        self.profile = profile
-        self.unitSettings = unitSettings
-        self.screening = screening
-        self.appSettings = appSettings
-        _displayUnit = State(
-            initialValue: unitSettings.displayUnit ?? unitSettings.weightUnit ?? .kg
-        )
+    /// The running app constructs the default live model. `@MainActor` so it can build
+    /// the main-actor-isolated model (SwiftUI always builds views on the main actor).
+    @MainActor init() {
+        _model = StateObject(wrappedValue: ProfileRealDataModel())
+    }
+
+    /// Previews/tests inject a pinned model (e.g. `ProfileRealDataModel(previewState:)`).
+    @MainActor init(model: ProfileRealDataModel) {
+        _model = StateObject(wrappedValue: model)
     }
 
     var body: some View {
         NavigationStack {
             List {
-                profileSection
-                unitSection
-                screeningSection
-                settingsSection
+                // Real profile / units / screening / settings — or an honest empty /
+                // degrade state — derived from the user's cleaned canonical AppData.
+                profileStateSections
                 // HK-1: user-gated, read-only Apple Health body-weight import.
                 // Owns its own view-model; the read/write happens only on tap.
                 HealthKitBodyWeightImportSection()
@@ -75,17 +168,65 @@ struct ProfileRootView: View {
             }
             .navigationTitle("我的")
         }
+        .task {
+            // Opt the running app into the real canonical store and read it (read-only).
+            model.activateLiveSourceIfNeeded()
+            model.reload()
+            seedDisplayUnitIfNeeded()
+        }
     }
 
-    // MARK: - Sections
+    // MARK: - State-driven profile sections
 
-    private var profileSection: some View {
-        Section("个人资料") {
+    /// The profile area, switched on the resolved read state. The HealthKit + reminder
+    /// sections above are always shown regardless of profile data.
+    @ViewBuilder
+    private var profileStateSections: some View {
+        switch model.state {
+        case .ready(let data):
+            profileSection(data)
+            unitSection
+            screeningSection(data)
+            settingsSection(data)
+        case .empty:
+            // §15.4: empty state = title + explanation + one action. Honest "no
+            // profile yet", never a page of placeholders.
+            infoSection(
+                title: "还没有个人资料",
+                message: "本机还没有可显示的个人资料与基线。完成资料填写后会显示在这里；你也可以在下方从 Apple 健康导入最新体重。",
+                actionTitle: "重试",
+                action: { reloadFromTap() }
+            )
+        case .unavailable:
+            // §15.4 + data safety: honest degrade. The document is left untouched —
+            // this read path never overwrites unreadable data — and the user can retry.
+            infoSection(
+                title: "暂时无法读取资料",
+                message: "本机资料暂时无法读取。已保留原始数据未作任何改动，可稍后重试。",
+                actionTitle: "重试",
+                action: { reloadFromTap() }
+            )
+        }
+    }
+
+    // MARK: - Sections (real data)
+
+    private func profileSection(_ data: ProfileDisplayData) -> some View {
+        let profile = data.profile
+        return Section("个人资料") {
             LabeledContent("姓名", value: ProfileDisplay.text(profile.name))
             LabeledContent("性别", value: ProfileDisplay.sex(profile.sex))
             LabeledContent("年龄", value: ProfileDisplay.integer(profile.age, suffix: " 岁"))
             LabeledContent("身高", value: ProfileDisplay.height(profile.heightCm))
             LabeledContent("体重", value: ProfileDisplay.weight(profile.weightKg, unit: displayUnit))
+            // DERIVED latest Apple-Health body weight (HK-1), shown ONLY when present
+            // (an honest absence otherwise). Distinct from the self-entered 体重 above.
+            if let latestKg = data.latestBodyWeightKg {
+                LabeledContent(
+                    "最新体重（Apple 健康）",
+                    value: ProfileDisplay.weight(.double(latestKg), unit: displayUnit)
+                )
+            }
             LabeledContent("训练水平", value: ProfileDisplay.trainingLevel(profile.trainingLevel))
             LabeledContent("主要目标", value: ProfileDisplay.text(profile.primaryGoal))
             LabeledContent("每周训练", value: ProfileDisplay.integer(profile.weeklyTrainingDays, suffix: " 天"))
@@ -113,32 +254,86 @@ struct ProfileRootView: View {
         }
     }
 
-    private var screeningSection: some View {
-        Section("筛查") {
+    private func screeningSection(_ data: ProfileDisplayData) -> some View {
+        let screening = data.screening
+        return Section("筛查") {
             LabeledContent("疼痛触发", value: ProfileDisplay.list(screening.painTriggers))
             LabeledContent("受限动作", value: ProfileDisplay.list(screening.restrictedExercises))
             LabeledContent("纠正优先", value: ProfileDisplay.list(screening.correctionPriority))
         }
     }
 
-    private var settingsSection: some View {
-        Section {
+    private func settingsSection(_ data: ProfileDisplayData) -> some View {
+        let appSettings = data.appSettings
+        return Section {
             LabeledContent("训练模式", value: ProfileDisplay.text(appSettings.trainingMode))
             LabeledContent("当前模板", value: ProfileDisplay.text(appSettings.selectedTemplateId))
             LabeledContent("准备度参考健康数据", value: ProfileDisplay.bool(appSettings.useHealthDataForReadiness))
         } header: {
             Text("设置")
         } footer: {
-            // Honest disclosure — no fake success (master §15.4). Scope is the
-            // profile/unit/screening/settings above; the 健康数据 section below
-            // has its own disclosure for the user-gated Apple Health import.
-            Text("以上个人资料、筛查与设置为只读示例预览，真实资料的读取与编辑将在后续版本上线。")
+            // Honest disclosure — no fake success (master §15.4). The data above is
+            // the user's REAL on-device profile, read-only (cleaned via DataHealth);
+            // the 健康数据 section below has its own user-gated Apple Health import.
+            Text("以上个人资料、筛查与设置来自本机真实数据（经数据校验 DataHealth），只读显示；编辑将在后续版本上线。")
         }
+    }
+
+    /// Honest empty/degrade card as one List section (title + explanation + one action).
+    private func infoSection(
+        title: String,
+        message: String,
+        actionTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title).font(.headline)
+                Text(message).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Button(actionTitle, action: action)
+        } header: {
+            Text("个人资料")
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Re-run the read-only load on an explicit retry tap (picks up data imported
+    /// since first appear), then re-seed the display unit.
+    private func reloadFromTap() {
+        model.activateLiveSourceIfNeeded()
+        model.reload()
+        seedDisplayUnitIfNeeded()
+    }
+
+    /// Seed the local display-unit toggle ONCE from the loaded unit settings, so a
+    /// later user toggle is never clobbered by a reload.
+    private func seedDisplayUnitIfNeeded() {
+        guard !didSeedDisplayUnit, case .ready(let data) = model.state else { return }
+        displayUnit = data.unitSettings.displayUnit ?? data.unitSettings.weightUnit ?? .kg
+        didSeedDisplayUnit = true
     }
 }
 
-#Preview {
-    ProfileRootView()
+#Preview("有资料") {
+    ProfileRootView(model: ProfileRealDataModel(previewState: .ready(
+        ProfileDisplayData(
+            profile: ProfileDisplayPreviewSample.userProfile,
+            unitSettings: ProfileDisplayPreviewSample.unitSettings,
+            screening: ProfileDisplayPreviewSample.screeningProfile,
+            appSettings: ProfileDisplayPreviewSample.appSettings,
+            latestBodyWeightKg: 71.8
+        )
+    )))
+}
+
+#Preview("空态") {
+    ProfileRootView(model: ProfileRealDataModel(previewState: .empty))
+}
+
+#Preview("不可读") {
+    ProfileRootView(model: ProfileRealDataModel(previewState: .unavailable))
 }
 
 // MARK: - N-2 Training Reminders (local-only weekly reminder)
