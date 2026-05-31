@@ -84,10 +84,12 @@ dependency edge.
 HealthKit hides write-denial the same way it hides read-denial: a denied write surfaces as a
 `failed`/empty honest summary, never a fabricated success.
 
-> Note: `HKWorkout(activityType:start:end:duration:totalEnergyBurned:totalDistance:metadata:)` is
-> deprecated on iOS 17+ but remains the documented "save a finished workout via
-> `HKHealthStore.save`" path the task specifies; it compiles with a deprecation warning (the build
-> does not treat warnings as errors). A migration to `HKWorkoutBuilder` is a later refinement.
+> Note: HK-3 shipped using `HKWorkout(activityType:start:end:duration:totalEnergyBurned:totalDistance:metadata:)`
+> + `HKHealthStore.save`, which is deprecated on iOS 17+ (it compiled with a deprecation warning;
+> the build does not treat warnings as errors). **That migration is now done — see
+> `IOS_HK3b_WORKOUTBUILDER_MIGRATION_V1.md`:** the export builds + saves the same `HKWorkout` via
+> `HKWorkoutBuilder` (`beginCollection` → `addMetadata` → `endCollection` → `finishWorkout`), an
+> equivalent, behavior-preserving replacement that removes the deprecation warning.
 
 ## 6. Privacy & data safety
 
@@ -122,7 +124,10 @@ confined to the single adapter file".
   HealthKit token, and (b) read authorization still shares nothing (`toShare: []`). The relaxed
   `.save(` / `HKWorkout(` negatives are **replaced by stronger positives**: export shares ONLY the
   workout type (`toShare: [workoutType]`), NEVER shares body mass, and still constructs **no**
-  `HKQuantitySample` and **no** `HKWorkoutBuilder`.
+  `HKQuantitySample`. (HK-3b refined this: the write now uses `HKWorkoutBuilder` instead of the
+  deprecated `HKWorkout` initializer, so the `no HKWorkoutBuilder` negative became a positive
+  `HKWorkoutBuilder(` assertion and `HKWorkoutBuilder`/`HKWorkoutConfiguration` joined the
+  sole-adapter token list — net protection preserved. See `IOS_HK3b_WORKOUTBUILDER_MIGRATION_V1.md`.)
 - `tests/iosHealthKitWorkoutImportStaticGuards.test.ts`: the HK-2 / HK-2b adapter tests' legacy
   "no `.save` / no `HKWorkout(`" negatives are relaxed (export now legitimately adds them to the
   same file); the `HKQuantitySample` negative is **kept** (no other type is written). Both point to
@@ -167,7 +172,8 @@ confined to the single adapter file".
 
 ## 11. Follow-ons
 
-- `HKWorkoutBuilder` migration (drop the deprecated `HKWorkout` initializer).
+- ~~`HKWorkoutBuilder` migration (drop the deprecated `HKWorkout` initializer).~~ **Done in HK-3b**
+  (`IOS_HK3b_WORKOUTBUILDER_MIGRATION_V1.md`) — equivalent, behavior-preserving; deprecation warning removed.
 - Richer exported fields (energy / distance / per-set samples) once a native canonical read path
   carries them — still export-only, still native, still device-local.
 - Other HealthKit write types / standalone metric sampling remain **forbidden** without their own

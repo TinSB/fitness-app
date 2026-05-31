@@ -261,9 +261,10 @@ describe('HK-2b workout distance + avg/max heart rate (read-only, derived)', () 
     expect(a).toMatch(/HKStatisticsQuery\b/);
     expect(a).toMatch(/discreteAverage/);
     expect(a).toMatch(/discreteMax/);
-    // HK-3 adds workout export to this same file (HKWorkout(...) + .save). The OTHER
-    // Apple-Health types stay read-only: NO HKQuantitySample construction (body mass /
-    // heart rate are never written back). The export surface is locked by
+    // HK-3 adds workout export to this same file (HK-3b: HKWorkoutBuilder + finishWorkout;
+    // was the deprecated HKWorkout initializer + .save). The OTHER Apple-Health types stay
+    // read-only: NO HKQuantitySample construction (body mass / heart rate are never
+    // written back). The export surface is locked by
     // tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
     expect(a).not.toMatch(/HKQuantitySample\s*\(/);
   });

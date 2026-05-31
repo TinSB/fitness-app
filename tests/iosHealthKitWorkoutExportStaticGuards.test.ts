@@ -22,8 +22,10 @@ import { describe, expect, it } from 'vitest';
 //     — structural no-loop-back: an imported workout can never be re-exported.
 //   • IDEMPOTENT via a session-id metadata tag (`com.ironpath.sessionID`), queried
 //     back from Apple Health — no app-side dedup storage, no AppData schema bump.
-//   • The ONLY write is an `HKWorkout` via `HKHealthStore.save`, sharing ONLY the
-//     workout type (`toShare: [workoutType]`); NO other Apple-Health type is written
+//   • The ONLY write is an `HKWorkout` built + saved via `HKWorkoutBuilder` (HK-3b —
+//     beginCollection → endCollection → finishWorkout, the non-deprecated iOS 17+ path;
+//     was the deprecated `HKWorkout` initializer + `HKHealthStore.save`), sharing ONLY
+//     the workout type (`toShare: [workoutType]`); NO other Apple-Health type is written
 //     (no `HKQuantitySample`, no body-mass share). Confined to the single `#if os(iOS)`
 //     adapter file (the sole-HealthKit-holder invariant stays — see the bootstrap guard).
 //   • USER-TRIGGERED + HONEST app layer: a thin export section/model co-located in
@@ -98,9 +100,12 @@ describe('HK-3 adapter export boundary', () => {
     expect(a).toMatch(/HealthKitWorkoutSource\s*:\s*WorkoutExportSink/);
     // shares ONLY the workout type for export (the first & only write capability).
     expect(a).toMatch(/toShare:\s*\[workoutType\]/);
-    // the write is an HKWorkout saved via HKHealthStore.save.
-    expect(a).toMatch(/HKWorkout\s*\(/);
-    expect(a).toMatch(/store\.save\s*\(/);
+    // HK-3b: the write is an HKWorkout built + saved via HKWorkoutBuilder (the
+    // non-deprecated iOS 17+ path) — beginCollection → endCollection → finishWorkout,
+    // bound to the store so finishWorkout() persists it. (Was the deprecated
+    // HKWorkout(activityType:…) initializer + store.save in HK-3; behavior unchanged.)
+    expect(a).toMatch(/HKWorkoutBuilder\s*\(/);
+    expect(a).toMatch(/\.finishWorkout\s*\(/);
     // idempotency: tag with + query by the session-id metadata key.
     expect(a).toMatch(/HealthKitWorkoutExporter\.metadataSessionIDKey/);
     expect(a).toMatch(/withMetadataKey/);
