@@ -562,7 +562,7 @@ private struct HealthKitWorkoutImportSection: View {
         } header: {
             Text("Apple 健康训练历史")
         } footer: {
-            Text("仅在你授权后，从 Apple 健康只读读取过往训练摘要（类型 / 时间 / 时长 / 能量），作为“来自 Apple 健康”的派生记录存入本机。数据不出本设备，绝不写回 Apple 健康；这些记录仅供查看，不计入训练历史，也不影响训练计划与准备度。")
+            Text("仅在你授权后，从 Apple 健康只读读取过往训练摘要（类型 / 时间 / 时长 / 能量 / 距离 / 平均·最高心率），作为“来自 Apple 健康”的派生记录存入本机。读取心率需要你额外授权；数据不出本设备，绝不写回 Apple 健康；这些记录仅供查看，不计入训练历史，也不影响训练计划与准备度。")
         }
         .task { model.loadExisting() }
     }
@@ -593,7 +593,40 @@ private struct HealthKitWorkoutImportSection: View {
         if let kcal = workout.activeEnergyKcal?.doubleValue {
             parts.append("\(Int(kcal.rounded())) 千卡")
         }
+        // HK-2b: distance + heart rate, shown ONLY when the import recorded them
+        // (a missing field is honestly absent, never a fabricated 0).
+        if let meters = workout.distanceMeters?.doubleValue {
+            parts.append(Self.distanceText(meters))
+        }
+        if let hr = Self.heartRateText(avg: workout.avgHeartRate?.doubleValue,
+                                       max: workout.maxHeartRate?.doubleValue) {
+            parts.append(hr)
+        }
         return parts.isEmpty ? "—" : parts.joined(separator: " · ")
+    }
+
+    /// Distance for display: kilometers (1 decimal) at ≥1 km, otherwise whole meters.
+    /// Pure presentation — the stored value stays SI meters.
+    private static func distanceText(_ meters: Double) -> String {
+        if meters >= 1000 {
+            return String(format: "%.1f 公里", meters / 1000)
+        }
+        return "\(Int(meters.rounded())) 米"
+    }
+
+    /// Heart rate for display: "心率 平均/最高 bpm" when both are present, otherwise
+    /// whichever was recorded; nil when neither (the row simply omits it).
+    private static func heartRateText(avg: Double?, max: Double?) -> String? {
+        switch (avg, max) {
+        case let (avg?, max?):
+            return "心率 \(Int(avg.rounded()))/\(Int(max.rounded())) bpm"
+        case let (avg?, nil):
+            return "平均心率 \(Int(avg.rounded())) bpm"
+        case let (nil, max?):
+            return "最高心率 \(Int(max.rounded())) bpm"
+        case (nil, nil):
+            return nil
+        }
     }
 
     private var isImporting: Bool {
