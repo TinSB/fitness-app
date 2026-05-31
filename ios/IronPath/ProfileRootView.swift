@@ -64,6 +64,10 @@ struct ProfileRootView: View {
                 // Imported workouts are DERIVED/display-only (never canonical
                 // training, never engine input). Owns its own view-model.
                 HealthKitWorkoutImportSection()
+                // HK-3: user-gated, idempotent EXPORT of native completed sessions to
+                // Apple Health (the first & only write-back). Native-only — never
+                // re-exports imported workouts. Owns its own view-model.
+                HealthKitWorkoutExportSection()
                 // N-2: user-gated, LOCAL-only weekly training reminder. Owns its
                 // own view-model; scheduling happens only on tap, via the package
                 // seam (no UserNotifications import / no disk here).
@@ -654,5 +658,159 @@ private struct HealthKitWorkoutImportSection: View {
         case .failed(let message):
             return "导入失败：\(message)"
         }
+    }
+}
+
+// MARK: - HK-3 Apple Health Workout EXPORT (write-back, user-triggered, idempotent)
+//
+// A user-gated card that EXPORTS IronPath's own native completed sessions
+// (`AppData.history`) to Apple Health as `HKWorkout`s — the first and only write-back
+// in the HealthKit boundary. Mirrors the HK-2 import section, co-located here to avoid
+// a new app file / `project.pbxproj` edit (the N-2 / HK-2 precedent). The view holds NO
+// business logic: the NATIVE-ONLY mapping is the pure `HealthKitWorkoutExporter`; the
+// real `HKWorkout` build + `HKHealthStore.save` is the `#if os(iOS)`
+// `HealthKitWorkoutSource` (behind the `WorkoutExportSink` seam); the model is thin
+// glue. It never imports HealthKit and never reads the DERIVED `importedWorkoutSamples`
+// bag (structural no-loop-back). Export happens ONLY on an explicit tap (never
+// automatically), is idempotent (a session already in Health is skipped, queried by a
+// metadata tag), and is device-local (no network/cloud). Honest status — duplicates /
+// failures are shown, never a fake success (master §15.4).
+
+/// Honest in-RAM status for the workout export — no fake success (master §15.4).
+private enum WorkoutExportStatus: Equatable {
+    case idle
+    case exporting
+    case exported(WorkoutExportSummary)
+    case noData
+    case unavailable
+    case failed(String)
+}
+
+@MainActor
+private final class HealthKitWorkoutExportModel: ObservableObject {
+    @Published private(set) var status: WorkoutExportStatus = .idle
+
+    /// The Apple-Health export sink. Injectable for previews/tests (nil → not opted in);
+    /// the running app opts into the real `HealthKitWorkoutSource` on first tap.
+    private var sink: WorkoutExportSink?
+    /// The sanctioned canonical AppData store (source of truth, §8). READ-ONLY here —
+    /// export reads native history and NEVER writes AppData. Injectable; nil until opted in.
+    private var appDataStore: AppDataStore?
+
+    init(sink: WorkoutExportSink? = nil, appDataStore: AppDataStore? = nil) {
+        self.sink = sink
+        self.appDataStore = appDataStore
+    }
+
+    /// Opt the RUNNING app into the real Apple-Health export sink + the canonical store.
+    /// Idempotent; called lazily from the first export tap so previews/tests stay free of
+    /// HealthKit + disk.
+    private func optInToLiveSourcesIfNeeded() {
+        #if os(iOS)
+        if sink == nil { sink = HealthKitWorkoutSource() }
+        if appDataStore == nil { appDataStore = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// User-gated export: read native completed sessions from canonical `AppData.history`,
+    /// map them (NATIVE-ONLY) to export requests, and write any not-yet-exported session to
+    /// Apple Health as an `HKWorkout`. Idempotent + device-local. Honest status.
+    func exportWorkouts() async {
+        optInToLiveSourcesIfNeeded()
+        guard let sink, let appDataStore else {
+            status = .unavailable   // previews/tests never opt in
+            return
+        }
+        status = .exporting
+        // Source = canonical native history ONLY (never the derived importedWorkoutSamples
+        // bag → structural no-loop-back).
+        let sessions = (try? appDataStore.load())?.history ?? []
+        let requests = HealthKitWorkoutExporter.exportRequests(forNativeHistory: sessions)
+        guard !requests.isEmpty else {
+            status = .noData
+            return
+        }
+        do {
+            try await sink.requestExportAuthorization()
+            let summary = try await sink.export(requests)
+            status = .exported(summary)
+        } catch {
+            // No fake success — a thrown error (e.g. authorization could not be made) is
+            // surfaced honestly; nothing partial is claimed.
+            status = .failed(error.localizedDescription)
+        }
+    }
+}
+
+private struct HealthKitWorkoutExportSection: View {
+    @StateObject private var model = HealthKitWorkoutExportModel()
+
+    var body: some View {
+        Section {
+            Button {
+                Task { await model.exportWorkouts() }
+            } label: {
+                HStack {
+                    Label("写回 Apple 健康", systemImage: "square.and.arrow.up")
+                    Spacer()
+                    if isExporting { ProgressView() }
+                }
+            }
+            .disabled(isExporting)
+
+            if let line = statusLine {
+                Text(line)
+                    .font(.footnote)
+                    .foregroundStyle(statusIsError ? .red : .secondary)
+            }
+        } header: {
+            Text("写回 Apple 健康")
+        } footer: {
+            Text("仅在你点按后，把本机已完成的训练写回 Apple 健康（作为训练记录）。只写训练、绝不写其它健康数据；重复写回会按会话标识自动跳过（幂等）；数据不出本设备、不联网。从 Apple 健康导入的训练绝不会被再次写回。")
+        }
+    }
+
+    private var isExporting: Bool {
+        if case .exporting = model.status { return true }
+        return false
+    }
+
+    private var statusIsError: Bool {
+        switch model.status {
+        case .failed:
+            return true
+        case .exported(let summary):
+            return summary.failed > 0
+        default:
+            return false
+        }
+    }
+
+    private var statusLine: String? {
+        switch model.status {
+        case .idle:
+            return "点按上方按钮，把本机已完成的训练写回 Apple 健康。"
+        case .exporting:
+            return nil
+        case .exported(let summary):
+            return Self.summaryLine(summary)
+        case .noData:
+            return "本机暂无可写回的已完成训练。"
+        case .unavailable:
+            return "当前环境不写回健康数据。"
+        case .failed(let message):
+            return "写回失败：\(message)"
+        }
+    }
+
+    /// Honest one-line summary of an export run (exported / skipped-duplicate / failed).
+    private static func summaryLine(_ summary: WorkoutExportSummary) -> String {
+        if summary.exported == 0 && summary.failed == 0 && summary.skippedDuplicate > 0 {
+            return "已全部写回过 · 跳过 \(summary.skippedDuplicate) 条重复。"
+        }
+        var parts: [String] = ["已写回 \(summary.exported) 条"]
+        if summary.skippedDuplicate > 0 { parts.append("跳过 \(summary.skippedDuplicate) 条重复") }
+        if summary.failed > 0 { parts.append("失败 \(summary.failed) 条") }
+        return parts.joined(separator: " · ") + "。"
     }
 }

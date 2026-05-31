@@ -23,7 +23,9 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSHealthShareUsageDescription</key>
-    <string>IronPath 仅在你授权后，从 Apple 健康只读读取你的最新体重，用于在本机记录训练相关的身体数据。数据保存在本设备，不会上传，也不会写回 Apple 健康。</string>
+    <string>IronPath 仅在你授权后，从 Apple 健康只读读取你的最新体重与训练记录，用于在本机记录与训练参考。数据保存在本设备，不会上传。</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>IronPath 仅在你点按“写回 Apple 健康”后，把本机已完成的训练写回 Apple 健康（作为 HKWorkout 训练记录）；仅写训练、不写其它健康数据，数据不出本设备。</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>

@@ -16,15 +16,22 @@
 // seams and is unit-tested there with injected samples. The iOS app/device build
 // is where this file compiles and runs.
 //
-// READ-ONLY (master §17/§18 as amended by HK-1/HK-2): each adapter requests READ
-// authorization (`toShare: []` — shares NOTHING) and reads samples. There is NO
-// write-back path — no `HKHealthStore.save`, no sample construction. Writing
-// IronPath data into Apple Health is the deferred HK-3 slice.
+// READ + BOUNDED EXPORT (master §6.2/§16/§17/§18 as amended by HK-1/HK-2/HK-3): the
+// READ adapters request READ authorization (`toShare: []` — share NOTHING) and read
+// samples (body mass, workouts, workout-attached distance/heart rate). HK-3 adds the
+// FIRST and ONLY write capability: `HealthKitWorkoutSource` ALSO conforms to
+// `WorkoutExportSink`, sharing ONLY the workout type (`toShare: [workoutType]`) to
+// EXPORT IronPath's own completed sessions as `HKWorkout`s via `HKHealthStore.save` —
+// user-triggered + idempotent + device-local. NO other Apple-Health type is ever
+// written (body mass / heart rate stay read-only); no network/cloud. Importing
+// Apple-Health data back out is structurally impossible — export maps only native
+// `IronPathDomain.TrainingSession`s (see the pure `HealthKitWorkoutExporter`).
 //
-// The static guard `tests/iosBootstrapForbiddenImports.test.ts` exempts THIS one
-// file path from the HealthKit-token bans (body-mass AND workout tokens) and
-// additionally asserts it stays read-only; every other Swift file under ios/ stays
-// HealthKit-free.
+// The static guards (`tests/iosBootstrapForbiddenImports.test.ts` +
+// `tests/iosHealthKitWorkoutExportStaticGuards.test.ts`) exempt THIS one file from the
+// HealthKit-token bans (body-mass AND workout tokens), pin that the ONLY writable type
+// is the workout type, and assert no other Apple-Health write; every other Swift file
+// under ios/ stays HealthKit-free.
 
 #if os(iOS)
 import Foundation
@@ -76,12 +83,15 @@ public struct HealthKitBodyMassSource: BodyMassSampleSource {
     }
 }
 
-/// HK-2: the real, device-backed `WorkoutSampleSource`. Co-located with the
-/// body-mass adapter so all HealthKit calls stay in this one file. READ-ONLY:
-/// requests read authorization for workouts (`toShare: []`) and reads recent
-/// workout summaries. NO write-back (no `HKHealthStore.save`, no `HKWorkout(...)`
-/// construction) — writing IronPath sessions into Apple Health is the deferred
-/// HK-3 slice.
+/// HK-2 (read) + HK-3 (export): the real, device-backed workout adapter. Co-located
+/// with the body-mass adapter so all HealthKit calls stay in this one file. As a
+/// `WorkoutSampleSource` it requests READ authorization (`toShare: []`) and reads
+/// recent workout summaries. As a `WorkoutExportSink` (HK-3 — see the extension
+/// below) it requests WRITE authorization for ONLY the workout type
+/// (`toShare: [workoutType]`) and exports IronPath's own completed sessions as
+/// `HKWorkout`s via `HKHealthStore.save` — the first and only write-back in the
+/// HealthKit boundary: user-triggered, idempotent (session-id metadata tag), and
+/// device-local. No other Apple-Health type is ever written.
 public struct HealthKitWorkoutSource: WorkoutSampleSource {
     private let store = HKHealthStore()
     private let workoutType = HKObjectType.workoutType()
@@ -229,6 +239,108 @@ public struct HealthKitWorkoutSource: WorkoutSampleSource {
         case .tennis: return "Tennis"
         case .soccer: return "Soccer"
         default: return "Other"
+        }
+    }
+}
+
+// MARK: - HK-3 Workout EXPORT (write-back) — the first & only Apple-Health write.
+//
+// `HealthKitWorkoutSource` ALSO conforms to the `WorkoutExportSink` seam to EXPORT
+// IronPath's own completed sessions to Apple Health as `HKWorkout`s. This is the only
+// write capability in the whole HealthKit boundary; it shares ONLY the workout type
+// (`toShare: [workoutType]`) and writes ONLY `HKWorkout`s (never body mass / heart
+// rate / any other type). Idempotent: each exported workout is tagged with the
+// IronPath session id in metadata and a pre-export query skips ids already present, so
+// idempotency state lives in Apple Health, not in app-side storage. User-triggered +
+// device-local (no network/cloud). The native-only / no-loop-back guarantee is upstream
+// and structural: the pure `HealthKitWorkoutExporter` only ever produces
+// `WorkoutExportRequest`s from native `TrainingSession`s.
+extension HealthKitWorkoutSource: WorkoutExportSink {
+    /// Request user authorization to WRITE (share) workouts to Apple Health. This is the
+    /// FIRST non-empty `toShare` in the HealthKit boundary, and it shares ONLY the
+    /// workout type — body mass / heart rate remain read-only. Read access to the
+    /// workout type is also requested so the idempotency query can see previously
+    /// exported workouts. A no-op (returns normally) when HealthKit is unavailable.
+    public func requestExportAuthorization() async throws {
+        guard HKHealthStore.isHealthDataAvailable() else { return }
+        try await store.requestAuthorization(toShare: [workoutType], read: [workoutType])
+    }
+
+    /// Export the given native session requests to Apple Health as `HKWorkout`s,
+    /// idempotently. Any request whose `sessionId` is already present in Health (matched
+    /// by the metadata tag) is skipped; each remaining workout is built and saved via
+    /// `HKHealthStore.save`. A single save failure is counted honestly and does not
+    /// abort the rest. Returns an honest `WorkoutExportSummary` (no fake success).
+    public func export(_ requests: [WorkoutExportRequest]) async throws -> WorkoutExportSummary {
+        guard HKHealthStore.isHealthDataAvailable(), !requests.isEmpty else { return .empty }
+        let alreadyExported = try await exportedSessionIDs()
+        var exported = 0
+        var skipped = 0
+        var failed = 0
+        for request in requests {
+            if alreadyExported.contains(request.sessionId) {
+                skipped += 1
+                continue
+            }
+            let workout = HKWorkout(
+                activityType: Self.exportActivityType(request.activityTypeName),
+                start: request.start,
+                end: request.end,
+                duration: request.durationSeconds,
+                totalEnergyBurned: nil,
+                totalDistance: nil,
+                metadata: [HealthKitWorkoutExporter.metadataSessionIDKey: request.sessionId]
+            )
+            do {
+                try await store.save(workout)
+                exported += 1
+            } catch {
+                // No fake success — a failed save is surfaced, never hidden.
+                failed += 1
+            }
+        }
+        return WorkoutExportSummary(exported: exported, skippedDuplicate: skipped, failed: failed)
+    }
+
+    /// The set of IronPath session ids already exported to Apple Health — the workouts
+    /// carrying our `metadataSessionIDKey`. This is the idempotency state, queried from
+    /// Health (NOT stored app-side), so a re-export of the same session is a no-op.
+    private func exportedSessionIDs() async throws -> Set<String> {
+        let predicate = HKQuery.predicateForObjects(
+            withMetadataKey: HealthKitWorkoutExporter.metadataSessionIDKey
+        )
+        let workouts: [HKWorkout] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: workoutType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
+            }
+            store.execute(query)
+        }
+        var ids: Set<String> = []
+        for workout in workouts {
+            if let id = workout.metadata?[HealthKitWorkoutExporter.metadataSessionIDKey] as? String {
+                ids.insert(id)
+            }
+        }
+        return ids
+    }
+
+    /// Map a stable activity-type identifier to a `HKWorkoutActivityType`. Native
+    /// IronPath sessions export as traditional strength training; the switch is
+    /// compile-checked against the SDK enum (a renamed/removed case fails the build).
+    private static func exportActivityType(_ name: String) -> HKWorkoutActivityType {
+        switch name {
+        case "TraditionalStrengthTraining": return .traditionalStrengthTraining
+        case "FunctionalStrengthTraining": return .functionalStrengthTraining
+        default: return .traditionalStrengthTraining
         }
     }
 }
