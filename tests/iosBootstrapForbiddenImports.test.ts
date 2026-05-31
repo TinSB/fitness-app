@@ -12,12 +12,15 @@ import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(process.cwd());
 
-// HK-1 (HealthKit Body-Weight Import V1): the SINGLE sanctioned, read-only
-// HealthKit adapter. It is the ONLY iOS Swift file allowed to import HealthKit /
-// use HKHealthStore / HKQuantityType (master §6.2/§17/§18, amended in the same
-// PR). Every other Swift file under ios/ stays HealthKit-free. The dedicated
-// block at the bottom of this file asserts this file is the sole holder of the
-// HealthKit tokens AND that it is read-only (no write-back — that is HK-3).
+// HK-1 (body-weight) + HK-2 (workout history): the SINGLE sanctioned, read-only
+// HealthKit adapter file. It is the ONLY iOS Swift file allowed to import HealthKit
+// / use HKHealthStore / HKQuantityType / HKWorkout / HKWorkoutActivityType (master
+// §6.2/§17/§18, amended in the HK-1 and HK-2 PRs). It hosts BOTH read adapters
+// (`HealthKitBodyMassSource`, `HealthKitWorkoutSource`) on purpose, so every
+// HealthKit call in the whole iOS tree stays in this one `#if os(iOS)` file. Every
+// other Swift file under ios/ stays HealthKit-free. The dedicated block at the
+// bottom asserts this file is the sole holder of the HealthKit tokens AND that it
+// is read-only (no write-back — that is the deferred HK-3 slice).
 const HEALTHKIT_READ_ADAPTER =
   'ios/packages/IronPathHealthKit/Sources/IronPathHealthKit/HealthKitBodyMassSource.swift';
 
@@ -77,6 +80,13 @@ const FORBIDDEN: readonly ForbiddenPattern[] = [
   { name: 'HealthKit_import', stopCondition: 'HK-1 (read-only adapter only)', pattern: /^\s*import\s+HealthKit\s*$/m, allowInFile: HEALTHKIT_READ_ADAPTER },
   { name: 'HKHealthStore_symbol', stopCondition: 'HK-1 (read-only adapter only)', pattern: /\bHKHealthStore\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
   { name: 'HKQuantityType_symbol', stopCondition: 'HK-1 (read-only adapter only)', pattern: /\bHKQuantityType\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
+  // HK-2: read-only WORKOUT-history import is APPROVED (master §17/§18, amended in
+  // the HK-2 PR — within the already-ungated read-only HealthKit boundary). The
+  // HKWorkout / HKWorkoutActivityType symbols are permitted ONLY in the SAME single
+  // read-only adapter file (`allowInFile`); every other ios Swift file stays
+  // workout-free. Write-back (HK-3) is still deferred.
+  { name: 'HKWorkout_symbol', stopCondition: 'HK-2 (read-only adapter only)', pattern: /\bHKWorkout\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
+  { name: 'HKWorkoutActivityType_symbol', stopCondition: 'HK-2 (read-only adapter only)', pattern: /\bHKWorkoutActivityType\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
   // N-1: LOCAL notifications are APPROVED (master §16/§17/§18, amended in the N-1
   // PR). The UserNotifications framework + the local UNUserNotificationCenter /
   // content / request / time-interval-trigger symbols are permitted ONLY in the
@@ -162,21 +172,24 @@ describe('iosBootstrapForbiddenImports', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HK-1 read-only HealthKit adapter boundary.
+// HK-1 + HK-2 read-only HealthKit adapter boundary.
 //
 // The HealthKit-token exemption above is bounded by these assertions: exactly
-// ONE file holds the tokens, and it is read-only (requests an empty share set,
-// never writes back). This is the guard that ships with the HK-1 capability
-// ungating (master §22 — every new boundary ships with a guard).
+// ONE file holds the tokens (body-mass AND workout), and it is read-only
+// (requests an empty share set, never writes back — no HKHealthStore.save, no
+// HKQuantitySample / HKWorkout construction). This is the guard that ships with
+// the HK-1 + HK-2 capability ungating (master §22 — every boundary ships a guard).
 // ---------------------------------------------------------------------------
 
-describe('iosBootstrap HK-1 read-only HealthKit adapter boundary', () => {
+describe('iosBootstrap HK-1 + HK-2 read-only HealthKit adapter boundary', () => {
   const swiftFiles = collectSwiftFiles(resolve(repoRoot, 'ios'));
   const adapterAbs = resolve(repoRoot, HEALTHKIT_READ_ADAPTER);
   const healthKitTokens: ReadonlyArray<RegExp> = [
     /^\s*import\s+HealthKit\s*$/m,
     /\bHKHealthStore\b/,
     /\bHKQuantityType\b/,
+    /\bHKWorkout\b/,
+    /\bHKWorkoutActivityType\b/,
   ];
 
   it('the sanctioned read-only adapter file exists', () => {
@@ -197,9 +210,11 @@ describe('iosBootstrap HK-1 read-only HealthKit adapter boundary', () => {
     const code = stripComments(readFileSync(adapterAbs, 'utf8'));
     // Read authorization shares NOTHING.
     expect(code).toMatch(/toShare:\s*\[\s*\]/);
-    // No write path: no HKHealthStore.save(...) and no sample construction.
+    // No write path: no HKHealthStore.save(...) and no sample/workout construction.
     expect(code).not.toMatch(/\.save\s*\(/);
     expect(code).not.toMatch(/HKQuantitySample\s*\(/);
+    expect(code).not.toMatch(/HKWorkout\s*\(/);
+    expect(code).not.toMatch(/HKWorkoutBuilder\b/);
   });
 
   it('the adapter is compiled iOS-only (#if os(iOS)) so host swift test excludes it', () => {

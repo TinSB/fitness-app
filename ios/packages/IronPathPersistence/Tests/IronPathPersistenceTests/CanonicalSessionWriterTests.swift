@@ -313,4 +313,149 @@ final class CanonicalSessionWriterTests: XCTestCase {
         XCTAssertEqual(loaded.healthMetricSamples.first?.unit, "kg")
         XCTAssertEqual(loaded.healthMetricSamples.last?.id, "h2")
     }
+
+    // MARK: - HK-2: imported-workout append (SAME gated path, derived/non-canonical)
+
+    private func makeWorkoutSample(id: String, type: String = "TraditionalStrengthTraining") -> ImportedWorkoutSample {
+        ImportedWorkoutSample(
+            id: id,
+            source: "healthkit_import",
+            workoutType: type,
+            startDate: "2026-05-27T06:30:00.000Z",
+            endDate: "2026-05-27T07:15:00.000Z",
+            durationMin: .double(45),
+            activeEnergyKcal: .double(320),
+            importedAt: "2026-05-27T08:00:00.000Z",
+            dataFlag: "normal"
+        )
+    }
+
+    func testWorkoutFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 1)
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.first?.workoutType, "TraditionalStrengthTraining")
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.first?.source, "healthkit_import")
+        // Red line: a workout import NEVER lands in canonical history.
+        XCTAssertEqual(store.stored?.history.count, 0)
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testWorkoutSecondWriteBacksUpBeforeSaving() throws {
+        let seed = AppData.emptyCurrent().appendingImportedWorkoutSample(makeWorkoutSample(id: "w1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w2", type: "Running")) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 2)
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.last?.id, "w2")
+    }
+
+    func testWorkoutValidationRejectionWritesNothing() {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testWorkoutGateReceivesCandidateWithSampleAppended() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenIds: [String]?
+        _ = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { candidate in
+            seenIds = candidate.importedWorkoutSamples.compactMap { $0.id }
+            return true
+        }
+        XCTAssertEqual(seenIds, ["w1"], "the gate must see the candidate with the workout already appended")
+    }
+
+    func testWorkoutUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+    }
+
+    func testWorkoutReimportIsIdempotentAtDocumentLevel() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        _ = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { _ in true }
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 1)
+        // Re-importing the SAME workout (same content id) dedups in the candidate
+        // builder, so the document still holds exactly one workout (no duplicate).
+        _ = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { _ in true }
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 1, "same-workout re-import must not duplicate")
+    }
+
+    func testWorkoutRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-hk2-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        _ = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w1")) { _ in true }
+        let r2 = try writer.appendImportedWorkoutSample(makeWorkoutSample(id: "w2", type: "Running")) { _ in true }
+        XCTAssertNotNil(r2.backupURL)
+
+        // Reload from disk: both workouts present, derived bag only (history empty).
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.importedWorkoutSamples.count, 2)
+        XCTAssertEqual(loaded.importedWorkoutSamples.first?.durationMin?.doubleValue ?? -1, 45, accuracy: 1e-9)
+        XCTAssertEqual(loaded.importedWorkoutSamples.last?.id, "w2")
+        XCTAssertEqual(loaded.history.count, 0, "imported workouts must never enter canonical history")
+    }
+
+    func testWorkoutBatchAppendIsOneGatedWriteAndDedups() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        // Three samples, two of which share an id (a duplicate within the batch).
+        let batch = [
+            makeWorkoutSample(id: "w1", type: "Running"),
+            makeWorkoutSample(id: "w2", type: "Cycling"),
+            makeWorkoutSample(id: "w1", type: "Running"),   // duplicate of w1
+        ]
+        let result = try writer.appendImportedWorkoutSamples(batch) { _ in true }
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertEqual(store.saveCount, 1, "the whole batch is ONE save, not one per workout")
+        XCTAssertEqual(store.backupCount, 0, "first write needs no backup")
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 2, "the in-batch duplicate dedups by id")
+        XCTAssertEqual(store.stored?.history.count, 0)
+    }
+
+    func testWorkoutBatchSecondWriteBacksUpOnce() throws {
+        let seed = AppData.emptyCurrent().appendingImportedWorkoutSample(makeWorkoutSample(id: "w0"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.appendImportedWorkoutSamples(
+            [makeWorkoutSample(id: "w1"), makeWorkoutSample(id: "w0")]   // w0 already present
+        ) { _ in true }
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "one backup for the whole batch")
+        XCTAssertEqual(store.saveCount, 1)
+        // w0 dedups against the existing doc; only w1 is new → 2 total.
+        XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 2)
+    }
 }
