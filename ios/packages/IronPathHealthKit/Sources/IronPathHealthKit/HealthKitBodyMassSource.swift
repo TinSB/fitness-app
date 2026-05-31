@@ -21,8 +21,8 @@
 // samples (body mass, workouts, workout-attached distance/heart rate). HK-3 adds the
 // FIRST and ONLY write capability: `HealthKitWorkoutSource` ALSO conforms to
 // `WorkoutExportSink`, sharing ONLY the workout type (`toShare: [workoutType]`) to
-// EXPORT IronPath's own completed sessions as `HKWorkout`s via `HKHealthStore.save` —
-// user-triggered + idempotent + device-local. NO other Apple-Health type is ever
+// EXPORT IronPath's own completed sessions as `HKWorkout`s via `HKWorkoutBuilder`
+// (HK-3b) — user-triggered + idempotent + device-local. NO other Apple-Health type is ever
 // written (body mass / heart rate stay read-only); no network/cloud. Importing
 // Apple-Health data back out is structurally impossible — export maps only native
 // `IronPathDomain.TrainingSession`s (see the pure `HealthKitWorkoutExporter`).
@@ -269,8 +269,10 @@ extension HealthKitWorkoutSource: WorkoutExportSink {
     /// Export the given native session requests to Apple Health as `HKWorkout`s,
     /// idempotently. Any request whose `sessionId` is already present in Health (matched
     /// by the metadata tag) is skipped; each remaining workout is built and saved via
-    /// `HKHealthStore.save`. A single save failure is counted honestly and does not
-    /// abort the rest. Returns an honest `WorkoutExportSummary` (no fake success).
+    /// `HKWorkoutBuilder` (HK-3b — `finishWorkout()` persists it; the non-deprecated iOS
+    /// 17+ replacement for the old `HKWorkout` initializer + `HKHealthStore.save`). A
+    /// single build/save failure is counted honestly and does not abort the rest. Returns
+    /// an honest `WorkoutExportSummary` (no fake success).
     public func export(_ requests: [WorkoutExportRequest]) async throws -> WorkoutExportSummary {
         guard HKHealthStore.isHealthDataAvailable(), !requests.isEmpty else { return .empty }
         let alreadyExported = try await exportedSessionIDs()
@@ -282,20 +284,28 @@ extension HealthKitWorkoutSource: WorkoutExportSink {
                 skipped += 1
                 continue
             }
-            let workout = HKWorkout(
-                activityType: Self.exportActivityType(request.activityTypeName),
-                start: request.start,
-                end: request.end,
-                duration: request.durationSeconds,
-                totalEnergyBurned: nil,
-                totalDistance: nil,
-                metadata: [HealthKitWorkoutExporter.metadataSessionIDKey: request.sessionId]
-            )
+            // HK-3b: build + save the workout via HKWorkoutBuilder (the non-deprecated
+            // iOS 17+ path) instead of the deprecated
+            // HKWorkout(activityType:start:end:duration:totalEnergyBurned:totalDistance:metadata:)
+            // initializer. Equivalent write — the SAME activity type, the SAME start/end
+            // window (so the builder-derived duration == request.durationSeconds == end −
+            // start), and the SAME com.ironpath.sessionID metadata. No energy/distance
+            // samples are added, so those totals stay unset — exactly the old
+            // totalEnergyBurned: nil / totalDistance: nil. The builder is bound to `store`,
+            // so finishWorkout() persists the workout to Apple Health (replacing the
+            // explicit store.save). The whole build+save runs in the do/catch, so any
+            // failed step is counted honestly as `failed` — never a fake success.
+            let configuration = HKWorkoutConfiguration()
+            configuration.activityType = Self.exportActivityType(request.activityTypeName)
+            let builder = HKWorkoutBuilder(healthStore: store, configuration: configuration, device: nil)
             do {
-                try await store.save(workout)
+                try await builder.beginCollection(at: request.start)
+                try await builder.addMetadata([HealthKitWorkoutExporter.metadataSessionIDKey: request.sessionId])
+                try await builder.endCollection(at: request.end)
+                _ = try await builder.finishWorkout()
                 exported += 1
             } catch {
-                // No fake success — a failed save is surfaced, never hidden.
+                // No fake success — a failed build/save is surfaced, never hidden.
                 failed += 1
             }
         }

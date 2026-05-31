@@ -87,6 +87,15 @@ const FORBIDDEN: readonly ForbiddenPattern[] = [
   // workout-free. Write-back (HK-3) is still deferred.
   { name: 'HKWorkout_symbol', stopCondition: 'HK-2 (read-only adapter only)', pattern: /\bHKWorkout\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
   { name: 'HKWorkoutActivityType_symbol', stopCondition: 'HK-2 (read-only adapter only)', pattern: /\bHKWorkoutActivityType\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
+  // HK-3b: the workout EXPORT write mechanism migrated from the deprecated
+  // HKWorkout(activityType:…) initializer to HKWorkoutBuilder (beginCollection →
+  // addMetadata → endCollection → finishWorkout) — the non-deprecated iOS 17+ path,
+  // behavior unchanged (same activity / window / duration / metadata, still ONLY the
+  // workout type). The HKWorkoutBuilder / HKWorkoutConfiguration symbols are permitted
+  // ONLY in the SAME single adapter file (`allowInFile`); every other ios Swift file
+  // stays workout-builder-free (a NEW confinement — net protection does not decrease).
+  { name: 'HKWorkoutBuilder_symbol', stopCondition: 'HK-3b (export adapter only)', pattern: /\bHKWorkoutBuilder\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
+  { name: 'HKWorkoutConfiguration_symbol', stopCondition: 'HK-3b (export adapter only)', pattern: /\bHKWorkoutConfiguration\b/, allowInFile: HEALTHKIT_READ_ADAPTER },
   // N-1: LOCAL notifications are APPROVED (master §16/§17/§18, amended in the N-1
   // PR). The UserNotifications framework + the local UNUserNotificationCenter /
   // content / request / time-interval-trigger symbols are permitted ONLY in the
@@ -178,8 +187,10 @@ describe('iosBootstrapForbiddenImports', () => {
 // ONE file holds the tokens (body-mass AND workout). HK-1/HK-2 read authorization
 // still shares NOTHING (`toShare: []`). HK-3 adds the FIRST and ONLY write-back: it
 // shares ONLY the workout type (`toShare: [workoutType]`) and writes ONLY HKWorkouts
-// via HKHealthStore.save — no body-mass / quantity-sample write, no HKWorkoutBuilder,
-// no other Apple-Health type. This is the guard that ships with the HK-1 + HK-2 + HK-3
+// via HKWorkoutBuilder (HK-3b — beginCollection → endCollection → finishWorkout, the
+// non-deprecated iOS 17+ path; was the deprecated HKWorkout initializer + save) — no
+// body-mass / quantity-sample write, no other Apple-Health type. This is the guard that
+// ships with the HK-1 + HK-2 + HK-3
 // capability ungating (master §22 — every boundary ships a guard). The HK-3 export
 // surface is positively locked by tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
 // ---------------------------------------------------------------------------
@@ -193,6 +204,10 @@ describe('iosBootstrap HK-1 + HK-2 read + HK-3 workout-export HealthKit adapter 
     /\bHKQuantityType\b/,
     /\bHKWorkout\b/,
     /\bHKWorkoutActivityType\b/,
+    // HK-3b: the export write mechanism (HKWorkoutBuilder + its HKWorkoutConfiguration)
+    // is confined to the SAME single adapter, like every other HealthKit token.
+    /\bHKWorkoutBuilder\b/,
+    /\bHKWorkoutConfiguration\b/,
   ];
 
   it('the sanctioned HealthKit adapter file exists', () => {
@@ -217,12 +232,16 @@ describe('iosBootstrap HK-1 + HK-2 read + HK-3 workout-export HealthKit adapter 
     expect(code).toMatch(/toShare:\s*\[workoutType\]/);
     // It NEVER shares any OTHER Apple-Health type (e.g. body mass) back.
     expect(code).not.toMatch(/toShare:[^\]]*bodyMass/);
-    // The ONLY thing written back is an HKWorkout via HKHealthStore.save: NO body-mass /
-    // quantity-sample write, and NO HKWorkoutBuilder (export uses the HKWorkout
-    // initializer + save). The positive export surface (idempotency, native-only,
-    // user-triggered) is locked by tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
+    // The ONLY thing written back is an HKWorkout: NO body-mass / quantity-sample write.
+    // HK-3b migrated the write mechanism from the deprecated HKWorkout(activityType:…)
+    // initializer (+ store.save) to HKWorkoutBuilder (beginCollection → endCollection →
+    // finishWorkout, the non-deprecated iOS 17+ path) — behavior unchanged (same
+    // activity / window / duration / metadata, still ONLY the workout type). The builder
+    // is confined to this single adapter by the sole-holder token list above. The
+    // positive export surface (idempotency, native-only, user-triggered) is locked by
+    // tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
     expect(code).not.toMatch(/HKQuantitySample\s*\(/);
-    expect(code).not.toMatch(/HKWorkoutBuilder\b/);
+    expect(code).toMatch(/HKWorkoutBuilder\s*\(/);
   });
 
   it('the adapter is compiled iOS-only (#if os(iOS)) so host swift test excludes it', () => {
