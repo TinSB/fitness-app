@@ -43,6 +43,7 @@ const WRITER =
 const ENGINE_SRC_DIR = 'ios/packages/IronPathTrainingDecision/Sources';
 const APP = 'ios/IronPath/ProfileRootView.swift';
 const DOC = 'docs/ios-native-migration/IOS_HK2_HEALTHKIT_WORKOUT_IMPORT_V1.md';
+const DOC_HK2B = 'docs/ios-native-migration/IOS_HK2b_WORKOUT_DISTANCE_HEARTRATE_V1.md';
 
 const exists = (p: string): boolean => existsSync(repoFile(p));
 const stripSwiftComments = (s: string): string =>
@@ -204,5 +205,68 @@ describe('HK-2 documentation', () => {
     expect(d).toMatch(/read-only/i);
     expect(d).toMatch(/importedWorkoutSamples/);
     expect(d).toMatch(/healthkit_import/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// HK-2b — distance + avg/max heart rate, a READ-ONLY refinement of the HK-2
+// workout-history import (still derived/display-only, never canonical, never
+// engine input). These pin the new sub-fields WITHOUT widening the boundary:
+//   • the pure seam carries the new primitives (HealthKit-free);
+//   • the pure mapper carries them into the derived ImportedWorkoutSample;
+//   • the SAME single adapter reads them read-only — distance from the workout's
+//     own statistics, heart rate over the workout window (heartRate added to the
+//     read set, still toShare: []). No new banned HealthKit symbol token: heart
+//     rate uses the already-exempted HKQuantityType (locked by
+//     tests/iosBootstrapForbiddenImports.test.ts, sole-holder list unchanged).
+// The display-only red line is still pinned by test 9 above (the engine references
+// importedWorkoutSamples NOWHERE — that covers every sub-field, distance/HR included).
+// ---------------------------------------------------------------------------
+
+describe('HK-2b workout distance + avg/max heart rate (read-only, derived)', () => {
+  it('12. the seam carries distance + avg/max heart-rate primitives, HealthKit-free', () => {
+    const m = code(SEAM);
+    expect(m).toMatch(/distanceMeters\b/);
+    expect(m).toMatch(/avgHeartRateBpm\b/);
+    expect(m).toMatch(/maxHeartRateBpm\b/);
+    expect(m).not.toMatch(/^\s*import\s+HealthKit\s*$/m);
+  });
+
+  it('13. the pure mapper carries distance + avg/max heart rate (honest nil when absent)', () => {
+    const m = code(MAPPER);
+    expect(m).toMatch(/distanceMeters:\s*reading\.distanceMeters/);
+    expect(m).toMatch(/avgHeartRate:\s*reading\.avgHeartRateBpm/);
+    expect(m).toMatch(/maxHeartRate:\s*reading\.maxHeartRateBpm/);
+    // still pure: no HealthKit, no IO
+    expect(m).not.toMatch(/^\s*import\s+HealthKit\s*$/m);
+    expect(m).not.toMatch(/\bHKWorkout\b/);
+  });
+
+  it('14. the single adapter reads distance + heart rate READ-ONLY (heartRate auth + statistics)', () => {
+    const a = code(ADAPTER);
+    // heart rate is added to the READ authorization set (a distinct quantity type),
+    // still sharing nothing back.
+    expect(a).toMatch(/heartRateType\s*=\s*HKQuantityType\(\s*\.heartRate\s*\)/);
+    expect(a).toMatch(/read:\s*\[[^\]]*heartRateType[^\]]*\]/);
+    expect(a).toMatch(/toShare:\s*\[\s*\]/);
+    // distance from the workout's own bundled statistics (activity-mapped type);
+    // heart rate from a discrete-statistics query over the workout window.
+    expect(a).toMatch(/distanceType\b/);
+    expect(a).toMatch(/HKStatisticsQuery\b/);
+    expect(a).toMatch(/discreteAverage/);
+    expect(a).toMatch(/discreteMax/);
+    // still read-only: no write-back, no sample/workout construction.
+    expect(a).not.toMatch(/\.save\s*\(/);
+    expect(a).not.toMatch(/HKWorkout\s*\(/);
+    expect(a).not.toMatch(/HKQuantitySample\s*\(/);
+  });
+
+  it('15. the HK-2b doc exists and declares read-only / heart-rate-auth / derived', () => {
+    expect(exists(DOC_HK2B)).toBe(true);
+    const d = raw(DOC_HK2B);
+    expect(d).toMatch(/read-only/i);
+    expect(d).toMatch(/heart rate/i);
+    expect(d).toMatch(/importedWorkoutSamples/);
+    expect(d).toMatch(/derived/i);
   });
 });

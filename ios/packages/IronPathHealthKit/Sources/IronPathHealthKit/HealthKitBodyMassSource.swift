@@ -1,10 +1,12 @@
 // HealthKitBodyMassSource — HK-1 HealthKit Body-Weight Import V1
-//                           + HK-2 HealthKit Workout-History Import V1.
+//                           + HK-2 HealthKit Workout-History Import V1
+//                           + HK-2b Workout distance + avg/max heart rate V1.
 //
 // THE ONLY file in the iOS tree that imports HealthKit and touches HKHealthStore
 // / HKQuantityType / HKWorkout. It hosts the real, device-backed read adapters:
 //   • `HealthKitBodyMassSource` — `BodyMassSampleSource` (HK-1, latest body mass).
-//   • `HealthKitWorkoutSource`  — `WorkoutSampleSource` (HK-2, recent workouts).
+//   • `HealthKitWorkoutSource`  — `WorkoutSampleSource` (HK-2 recent workouts;
+//     HK-2b adds distance + avg/max heart rate, still read-only, still derived).
 // Both are co-located here ON PURPOSE so that EVERY HealthKit call in the whole
 // iOS tree stays in this single `#if os(iOS)` file (the static-guard invariant).
 //
@@ -84,14 +86,18 @@ public struct HealthKitWorkoutSource: WorkoutSampleSource {
     private let store = HKHealthStore()
     private let workoutType = HKObjectType.workoutType()
     private let energyType = HKQuantityType(.activeEnergyBurned)
+    private let heartRateType = HKQuantityType(.heartRate)
 
     public init() {}
 
-    /// Request READ authorization for workouts. Shares nothing (`toShare: []`).
-    /// A no-op (returns normally) when HealthKit is unavailable on the device.
+    /// Request READ authorization for workouts AND heart rate (HK-2b). Shares nothing
+    /// (`toShare: []`). Distance needs no separate type — it is read from the workout's
+    /// own bundled statistics (it rides along with workout access, like energy); heart
+    /// rate is a distinct quantity type read over the workout's time window, so it is
+    /// added to the read set. A no-op (returns normally) when HealthKit is unavailable.
     public func requestReadAuthorization() async throws {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        try await store.requestAuthorization(toShare: [], read: [workoutType])
+        try await store.requestAuthorization(toShare: [], read: [workoutType, heartRateType])
     }
 
     /// Read the most recent workouts (newest first, at most `limit`) and lift each
@@ -115,27 +121,92 @@ public struct HealthKitWorkoutSource: WorkoutSampleSource {
             }
             store.execute(query)
         }
-        return workouts.map { reading(from: $0) }
+        var readings: [WorkoutReading] = []
+        readings.reserveCapacity(workouts.count)
+        for workout in workouts {
+            readings.append(await reading(from: workout))
+        }
+        return readings
     }
 
     /// Lift one `HKWorkout` into the plain, testable `WorkoutReading` primitives.
-    /// Active energy is read via the modern `statistics(for:)` API (kcal); when a
-    /// workout has no energy recorded the value is honestly nil. Distance is left
-    /// to a future slice (the V1 summary is type / start–end / duration / energy).
-    private func reading(from workout: HKWorkout) -> WorkoutReading {
+    /// Active energy and total distance are read from the workout's own bundled
+    /// `statistics(for:)` (kcal / meters); average + maximum heart rate (bpm) are read
+    /// READ-ONLY from the `heartRate` samples within the workout's start–end window
+    /// (HK-2b). Every supplementary field is honestly nil when the workout recorded
+    /// nothing / read access was not granted — never a fabricated value.
+    private func reading(from workout: HKWorkout) async -> WorkoutReading {
         let kcal = workout.statistics(for: energyType)?
             .sumQuantity()?
             .doubleValue(for: HKUnit.kilocalorie())
+        let meters = distanceMeters(of: workout)
+        let heart = await heartRateStatistics(in: workout)
         return WorkoutReading(
             startDate: workout.startDate,
             endDate: workout.endDate,
             durationSeconds: workout.duration,
             workoutTypeName: Self.activityName(workout.workoutActivityType),
             activeEnergyKcal: kcal,
-            distanceMeters: nil,
+            distanceMeters: meters,
+            avgHeartRateBpm: heart.average,
+            maxHeartRateBpm: heart.maximum,
             sourceName: workout.sourceRevision.source.name,
             deviceSourceName: workout.device?.name
         )
+    }
+
+    /// Total distance in meters from the workout's own bundled statistics, using the
+    /// activity-appropriate distance quantity type. Non-distance activities (e.g.
+    /// strength training, yoga) honestly return nil. Read from the already-fetched
+    /// workout — no extra query, no separate authorization (it rides along with
+    /// workout access, mirroring the energy read).
+    private func distanceMeters(of workout: HKWorkout) -> Double? {
+        guard let distanceType = Self.distanceType(for: workout.workoutActivityType) else {
+            return nil
+        }
+        return workout.statistics(for: distanceType)?
+            .sumQuantity()?
+            .doubleValue(for: HKUnit.meter())
+    }
+
+    /// Average + maximum heart rate (bpm) over the workout's start–end window, read
+    /// READ-ONLY from the `heartRate` samples via a discrete-statistics query. Returns
+    /// (nil, nil) honestly when there are no heart-rate samples, read access was not
+    /// granted, or the query fails — a supplementary, display-only field never aborts
+    /// the import (no fake success either way).
+    private func heartRateStatistics(in workout: HKWorkout) async -> (average: Double?, maximum: Double?) {
+        let bpm = HKUnit.count().unitDivided(by: .minute())
+        let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: workout.endDate)
+        let stats: HKStatistics? = try? await withCheckedThrowingContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: heartRateType,
+                quantitySamplePredicate: predicate,
+                options: [.discreteAverage, .discreteMax]
+            ) { _, statistics, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: statistics)
+            }
+            store.execute(query)
+        }
+        return (
+            stats?.averageQuantity()?.doubleValue(for: bpm),
+            stats?.maximumQuantity()?.doubleValue(for: bpm)
+        )
+    }
+
+    /// The distance quantity type that matches a workout's activity, or nil for
+    /// activities that record no distance. Compile-checked against the SDK enum, so a
+    /// renamed/removed case fails the build rather than silently producing nil.
+    private static func distanceType(for activity: HKWorkoutActivityType) -> HKQuantityType? {
+        switch activity {
+        case .running, .walking, .hiking: return HKQuantityType(.distanceWalkingRunning)
+        case .cycling: return HKQuantityType(.distanceCycling)
+        case .swimming: return HKQuantityType(.distanceSwimming)
+        default: return nil
+        }
     }
 
     /// Stable identifier for the labeled activity types (mirrors the TS keys used by

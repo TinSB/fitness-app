@@ -17,8 +17,9 @@ import Foundation
 /// One Apple-Health workout summary lifted out of HealthKit into a plain, testable
 /// value. It carries already-extracted primitives so the mapper needs no HealthKit:
 /// the source records the start/end instants, a duration, the activity-type name,
-/// and optional energy / distance / provenance. Energy is kcal, distance is meters
-/// (SI), duration is seconds — the mapper normalizes to the stored shape.
+/// and optional energy / distance / heart rate / provenance. Energy is kcal, distance
+/// is meters (SI), heart rate is bpm, duration is seconds — the mapper normalizes to
+/// the stored shape.
 public struct WorkoutReading: Equatable, Sendable {
     /// Workout start instant (HealthKit `startDate`).
     public let startDate: Date
@@ -35,6 +36,12 @@ public struct WorkoutReading: Equatable, Sendable {
     public let activeEnergyKcal: Double?
     /// Total distance in meters, when recorded.
     public let distanceMeters: Double?
+    /// Average heart rate (beats per minute) over the workout window, when recorded.
+    /// The source derives this from the `heartRate` samples within the workout's
+    /// start–end window (read-only); honest nil when there are no readings / no access.
+    public let avgHeartRateBpm: Double?
+    /// Maximum heart rate (beats per minute) over the workout window, when recorded.
+    public let maxHeartRateBpm: Double?
     /// Optional Apple-Health provenance (source app / device names), preserved
     /// verbatim into the sample when present.
     public let sourceName: String?
@@ -47,6 +54,8 @@ public struct WorkoutReading: Equatable, Sendable {
         workoutTypeName: String,
         activeEnergyKcal: Double? = nil,
         distanceMeters: Double? = nil,
+        avgHeartRateBpm: Double? = nil,
+        maxHeartRateBpm: Double? = nil,
         sourceName: String? = nil,
         deviceSourceName: String? = nil
     ) {
@@ -56,6 +65,8 @@ public struct WorkoutReading: Equatable, Sendable {
         self.workoutTypeName = workoutTypeName
         self.activeEnergyKcal = activeEnergyKcal
         self.distanceMeters = distanceMeters
+        self.avgHeartRateBpm = avgHeartRateBpm
+        self.maxHeartRateBpm = maxHeartRateBpm
         self.sourceName = sourceName
         self.deviceSourceName = deviceSourceName
     }

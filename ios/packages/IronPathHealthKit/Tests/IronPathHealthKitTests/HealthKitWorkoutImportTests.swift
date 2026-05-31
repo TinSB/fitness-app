@@ -20,13 +20,19 @@ final class HealthKitWorkoutImportTests: XCTestCase {
     private func reading(
         type: String = "TraditionalStrengthTraining",
         durationSeconds: Double = 2_700,
-        kcal: Double? = 320
+        kcal: Double? = 320,
+        distanceMeters: Double? = nil,
+        avgHeartRateBpm: Double? = nil,
+        maxHeartRateBpm: Double? = nil
     ) -> WorkoutReading {
         WorkoutReading(
             startDate: start, endDate: end,
             durationSeconds: durationSeconds,
             workoutTypeName: type,
-            activeEnergyKcal: kcal
+            activeEnergyKcal: kcal,
+            distanceMeters: distanceMeters,
+            avgHeartRateBpm: avgHeartRateBpm,
+            maxHeartRateBpm: maxHeartRateBpm
         )
     }
 
@@ -49,6 +55,48 @@ final class HealthKitWorkoutImportTests: XCTestCase {
         let sample = HealthKitWorkoutMapper.sample(from: reading(kcal: nil), importedAt: importedAt)
         XCTAssertNil(sample.activeEnergyKcal, "no energy recorded → honest nil, not a fabricated 0")
         XCTAssertNil(sample.distanceMeters)
+        XCTAssertNil(sample.avgHeartRate, "no heart-rate samples → honest nil, not a fabricated 0")
+        XCTAssertNil(sample.maxHeartRate, "no heart-rate samples → honest nil, not a fabricated 0")
+    }
+
+    // MARK: - HK-2b: distance + avg/max heart rate (derived workout sub-fields)
+
+    func testCarriesDistanceAndHeartRateWhenRecorded() {
+        let sample = HealthKitWorkoutMapper.sample(
+            from: reading(type: "Running", distanceMeters: 5234, avgHeartRateBpm: 148, maxHeartRateBpm: 172),
+            importedAt: importedAt
+        )
+        XCTAssertEqual(sample.distanceMeters?.doubleValue ?? -1, 5234, accuracy: 1e-9)
+        XCTAssertEqual(sample.avgHeartRate?.doubleValue ?? -1, 148, accuracy: 1e-9)
+        XCTAssertEqual(sample.maxHeartRate?.doubleValue ?? -1, 172, accuracy: 1e-9)
+    }
+
+    func testRoundsAndClampsDistanceAndHeartRate() {
+        let sample = HealthKitWorkoutMapper.sample(
+            from: reading(distanceMeters: 1234.567, avgHeartRateBpm: 142.46, maxHeartRateBpm: -5),
+            importedAt: importedAt
+        )
+        // Same round-to-1-decimal + clamp-≥0 rule as energy/duration (storage-stable;
+        // a stray negative bpm never persists).
+        XCTAssertEqual(sample.distanceMeters?.doubleValue ?? -1, 1234.6, accuracy: 1e-9)
+        XCTAssertEqual(sample.avgHeartRate?.doubleValue ?? -1, 142.5, accuracy: 1e-9)
+        XCTAssertEqual(sample.maxHeartRate?.doubleValue ?? -1, 0, accuracy: 1e-9)
+    }
+
+    func testDistanceAndHeartRateSurviveCanonicalRoundTrip() throws {
+        let sample = HealthKitWorkoutMapper.sample(
+            from: reading(type: "Running", distanceMeters: 5000, avgHeartRateBpm: 150, maxHeartRateBpm: 178),
+            importedAt: importedAt
+        )
+        // The new fields persist through canonical AppData bytes (open-bag, no schema bump).
+        let appData = AppData.emptyCurrent().appendingImportedWorkoutSample(sample)
+        let reDecoded = try AppData(decoding: appData.canonicalJSONData())
+        let w = try XCTUnwrap(reDecoded.importedWorkoutSamples.first)
+        XCTAssertEqual(w.distanceMeters?.doubleValue ?? -1, 5000, accuracy: 1e-9)
+        XCTAssertEqual(w.avgHeartRate?.doubleValue ?? -1, 150, accuracy: 1e-9)
+        XCTAssertEqual(w.maxHeartRate?.doubleValue ?? -1, 178, accuracy: 1e-9)
+        // Red line unchanged: a derived import never enters canonical history.
+        XCTAssertEqual(reDecoded.history.count, 0)
     }
 
     func testClampsAndRoundsDuration() {

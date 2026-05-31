@@ -36,8 +36,10 @@ public enum HealthKitWorkoutMapper {
     /// Map one workout reading into a canonical `ImportedWorkoutSample`.
     ///
     /// - `durationMin` is `durationSeconds / 60`, rounded to 1 decimal, clamped >= 0.
-    /// - `activeEnergyKcal` / `distanceMeters` are carried (kcal / meters, SI),
-    ///   rounded to 1 decimal and clamped >= 0, only when the reading recorded them.
+    /// - `activeEnergyKcal` / `distanceMeters` / `avgHeartRate` / `maxHeartRate` are
+    ///   carried (kcal / meters / bpm, SI), rounded to 1 decimal and clamped >= 0,
+    ///   only when the reading recorded them — a missing field degrades honestly to
+    ///   nil (never a fabricated 0).
     /// - `id` is content-addressed (`workout-<hash>` over
     ///   source/workoutType/start/end/durationMin) so re-importing the same workout
     ///   dedups in `AppData.appendingImportedWorkoutSample` (mirrors the TS key).
@@ -62,6 +64,8 @@ public enum HealthKitWorkoutMapper {
             endDate: endIso,
             durationMin: .double(durationMin),
             activeEnergyKcal: reading.activeEnergyKcal.map { .double(round1(max(0, $0))) },
+            avgHeartRate: reading.avgHeartRateBpm.map { .double(round1(max(0, $0))) },
+            maxHeartRate: reading.maxHeartRateBpm.map { .double(round1(max(0, $0))) },
             distanceMeters: reading.distanceMeters.map { .double(round1(max(0, $0))) },
             importedAt: isoString(importedAt),
             batchId: batchId,
