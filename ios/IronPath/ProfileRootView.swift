@@ -20,6 +20,9 @@ import Foundation
 import SwiftUI
 import IronPathDomain
 import IronPathNotifications
+import IronPathHealthKit
+import IronPathPersistence
+import IronPathDataHealth
 
 struct ProfileRootView: View {
     private let profile: UserProfile
@@ -57,6 +60,10 @@ struct ProfileRootView: View {
                 // HK-1: user-gated, read-only Apple Health body-weight import.
                 // Owns its own view-model; the read/write happens only on tap.
                 HealthKitBodyWeightImportSection()
+                // HK-2: user-gated, read-only Apple Health workout-history import.
+                // Imported workouts are DERIVED/display-only (never canonical
+                // training, never engine input). Owns its own view-model.
+                HealthKitWorkoutImportSection()
                 // N-2: user-gated, LOCAL-only weekly training reminder. Owns its
                 // own view-model; scheduling happens only on tap, via the package
                 // seam (no UserNotifications import / no disk here).
@@ -398,5 +405,221 @@ private struct TrainingReminderCard: View {
 
     private static func timeLabel(_ schedule: TrainingReminderSchedule) -> String {
         String(format: "%02d:%02d", schedule.hour, schedule.minute)
+    }
+}
+
+// MARK: - HK-2 Apple Health Workout-History Import (read-only, derived/display-only)
+//
+// A user-gated card that reads recent Apple Health WORKOUTS (type / start–end /
+// duration / energy) and stores them as DERIVED, source-tagged
+// (`source: "healthkit_import"`) records in `AppData.importedWorkoutSamples` —
+// a bag SEPARATE from canonical `history`. These rows are DISPLAY-ONLY: they are
+// never canonical native sessions and never feed the `IronPathTrainingDecision`
+// engine (readiness / e1RM). Mirrors the HK-1 section pattern and is co-located in
+// `ProfileRootView` to avoid a new app file / `project.pbxproj` edit (the N-2
+// no-new-file precedent). The view holds NO business logic — the import + gated
+// write live in the packages; the model is thin glue. It never imports HealthKit
+// (it uses the `WorkoutSampleSource` seam) and never touches FileManager directly
+// (the store does); the real `HealthKitWorkoutSource` is constructed only
+// `#if os(iOS)`.
+
+/// Honest in-RAM status for the workout-history import — no fake success
+/// (master §15.4).
+private enum WorkoutImportStatus: Equatable {
+    case idle
+    case importing
+    case imported(count: Int)
+    case noData
+    case unavailable
+    case failed(String)
+}
+
+@MainActor
+private final class HealthKitWorkoutImportModel: ObservableObject {
+    @Published private(set) var status: WorkoutImportStatus = .idle
+    /// The imported workout summaries currently shown (read back from the canonical
+    /// store after a write, or on appear). Display-only.
+    @Published private(set) var workouts: [ImportedWorkoutSample] = []
+
+    /// The Apple-Health read source. Injectable for previews/tests (nil → not opted
+    /// in). The running app opts into the real `HealthKitWorkoutSource` on first tap.
+    private var source: WorkoutSampleSource?
+    /// The sanctioned canonical AppData store (source of truth, §8). Injectable; nil
+    /// until opted in.
+    private var appDataStore: AppDataStore?
+    /// Injectable import-time clock. Only invoked on the live import path.
+    private let now: () -> Date
+
+    init(
+        source: WorkoutSampleSource? = nil,
+        appDataStore: AppDataStore? = nil,
+        now: @escaping () -> Date = { Date() }
+    ) {
+        self.source = source
+        self.appDataStore = appDataStore
+        self.now = now
+    }
+
+    private func optInToStoreIfNeeded() {
+        if appDataStore == nil { appDataStore = JSONFileAppDataStore.applicationSupport() }
+    }
+
+    /// Opt the RUNNING app into the real Apple-Health source + the canonical store.
+    /// Idempotent; called lazily from the first import tap so previews/tests stay
+    /// free of HealthKit + disk.
+    private func optInToLiveSourcesIfNeeded() {
+        #if os(iOS)
+        if source == nil { source = HealthKitWorkoutSource() }
+        optInToStoreIfNeeded()
+        #endif
+    }
+
+    /// Read-only: reflect already-imported workouts on appear. No HealthKit, no auth
+    /// prompt, no write. Previews/tests that never opt into a store stay empty.
+    func loadExisting() {
+        #if os(iOS)
+        optInToStoreIfNeeded()
+        #endif
+        guard let appDataStore, appDataStore.hasExistingFile,
+              let loaded = try? appDataStore.load() else { return }
+        workouts = loaded.importedWorkoutSamples
+    }
+
+    /// User-gated import: request read authorization, read recent workouts, and
+    /// append them to canonical `AppData.importedWorkoutSamples` (DERIVED,
+    /// display-only) through the HK-1/iOS-17A DataHealth-gated batch write path.
+    func importWorkouts() async {
+        optInToLiveSourcesIfNeeded()
+        guard let source, let appDataStore else {
+            status = .unavailable   // previews/tests never opt in
+            return
+        }
+        status = .importing
+        do {
+            let samples = try await HealthKitWorkoutImporter(source: source)
+                .importRecentWorkouts(importedAt: now())
+            guard !samples.isEmpty else {
+                // No workouts (none recorded, or read access not granted — Apple
+                // Health hides denial). Honest "nothing to import".
+                status = .noData
+                refreshDisplay(from: appDataStore)
+                return
+            }
+            let importedIds = Set(samples.compactMap { $0.id })
+            let writer = CanonicalSessionWriter(store: appDataStore)
+            try writer.appendImportedWorkoutSamples(samples) { candidate in
+                // DataHealth gate (§10): route the candidate through the read-only
+                // clean-view ingress (no mutation, no auto-repair) and accept ONLY
+                // when every imported workout survives the clean view's read intact.
+                // No fake success — a rejected candidate is never written.
+                guard let result = try? processIncomingAppData(
+                    appData: candidate,
+                    source: .importRestore,
+                    options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+                ) else { return false }
+                let present = Set(result.cleanView.raw.importedWorkoutSamples.compactMap { $0.id })
+                return importedIds.isSubset(of: present)
+            }
+            refreshDisplay(from: appDataStore)
+            status = .imported(count: samples.count)
+        } catch {
+            // No fake success: the on-disk canonical document is left intact
+            // (backup-before-overwrite / atomic save guarantee no partial state).
+            status = .failed(error.localizedDescription)
+        }
+    }
+
+    private func refreshDisplay(from store: AppDataStore) {
+        if let loaded = try? store.load() { workouts = loaded.importedWorkoutSamples }
+    }
+}
+
+private struct HealthKitWorkoutImportSection: View {
+    @StateObject private var model = HealthKitWorkoutImportModel()
+
+    var body: some View {
+        Section {
+            Button {
+                Task { await model.importWorkouts() }
+            } label: {
+                HStack {
+                    Label("从 Apple 健康导入训练历史", systemImage: "figure.run.square.stack")
+                    Spacer()
+                    if isImporting { ProgressView() }
+                }
+            }
+            .disabled(isImporting)
+
+            if let line = statusLine {
+                Text(line)
+                    .font(.footnote)
+                    .foregroundStyle(statusIsError ? .red : .secondary)
+            }
+
+            ForEach(model.workouts.indices, id: \.self) { index in
+                workoutRow(model.workouts[index])
+            }
+        } header: {
+            Text("Apple 健康训练历史")
+        } footer: {
+            Text("仅在你授权后，从 Apple 健康只读读取过往训练摘要（类型 / 时间 / 时长 / 能量），作为“来自 Apple 健康”的派生记录存入本机。数据不出本设备，绝不写回 Apple 健康；这些记录仅供查看，不计入训练历史，也不影响训练计划与准备度。")
+        }
+        .task { model.loadExisting() }
+    }
+
+    private func workoutRow(_ workout: ImportedWorkoutSample) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(HealthKitWorkoutMapper.displayLabel(forWorkoutType: workout.workoutType))
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Text("来自 Apple 健康")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Text(Self.subtitle(workout))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private static func subtitle(_ workout: ImportedWorkoutSample) -> String {
+        var parts: [String] = []
+        // ISO date portion only (e.g. "2026-05-27") — honest, parser-free.
+        if let iso = workout.startDate, iso.count >= 10 { parts.append(String(iso.prefix(10))) }
+        if let minutes = workout.durationMin?.doubleValue {
+            parts.append("\(Int(minutes.rounded())) 分钟")
+        }
+        if let kcal = workout.activeEnergyKcal?.doubleValue {
+            parts.append("\(Int(kcal.rounded())) 千卡")
+        }
+        return parts.isEmpty ? "—" : parts.joined(separator: " · ")
+    }
+
+    private var isImporting: Bool {
+        if case .importing = model.status { return true }
+        return false
+    }
+
+    private var statusIsError: Bool {
+        if case .failed = model.status { return true }
+        return false
+    }
+
+    private var statusLine: String? {
+        switch model.status {
+        case .idle:
+            return model.workouts.isEmpty ? "点按上方按钮，从 Apple 健康导入过往训练摘要。" : nil
+        case .importing:
+            return nil
+        case .imported(let count):
+            return "已从 Apple 健康读取 \(count) 条训练。"
+        case .noData:
+            return "Apple 健康中没有可导入的训练，或未授权读取。"
+        case .unavailable:
+            return "当前环境不读取健康数据。"
+        case .failed(let message):
+            return "导入失败：\(message)"
+        }
     }
 }

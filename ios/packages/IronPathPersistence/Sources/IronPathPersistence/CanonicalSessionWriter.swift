@@ -1,9 +1,10 @@
 // CanonicalSessionWriter — iOS-17A Native Per-Set Logging Mega V1 (iOS-17c);
-// HK-1 added the body-weight import entry point on the SAME path.
+// HK-1 added the body-weight import entry point on the SAME path; HK-2 added the
+// workout-history import entry point on that SAME path.
 //
 // THE single native canonical-AppData WRITE PATH (§8). It appends new local data
 // to canonical `AppData` and persists it through the sanctioned `AppDataStore`
-// (JSON-on-disk, atomic, backup). Two typed entry points share ONE gated
+// (JSON-on-disk, atomic, backup). THREE typed entry points share ONE gated
 // orchestration (`performGatedAppend`) — they are NOT separate write paths:
 //   • `appendCompletedSession` — a freshly completed `TrainingSession` (built by
 //     IronPathDomain.NativeCompletedSessionBuilder from the in-RAM per-set
@@ -11,6 +12,11 @@
 //   • `appendHealthMetricSample` — one externally-imported `HealthMetricSample`
 //     (an Apple Health body-weight reading, kg-stored) → `AppData.healthMetricSamples`
 //     (HK-1). Idempotent by content id.
+//   • `appendImportedWorkoutSample` — one externally-imported `ImportedWorkoutSample`
+//     (an Apple Health workout summary — DERIVED, display-only) →
+//     `AppData.importedWorkoutSamples` (HK-2). Idempotent by content id. This bag is
+//     SEPARATE from `history`: an imported workout is never a canonical session and
+//     never feeds the engine.
 //
 // This is NOT a full AppData restore (§14): it appends NEWLY-CREATED local data
 // the user just performed — it never replaces/merges an external/backup document.
@@ -119,6 +125,65 @@ public struct CanonicalSessionWriter {
         try performGatedAppend(
             baseIfMissing: baseIfMissing,
             buildCandidate: { $0.appendingHealthMetricSample(sample) },
+            validate: validate
+        )
+    }
+
+    /// HK-2: append one externally-imported `ImportedWorkoutSample` (an Apple Health
+    /// workout summary — DERIVED, display-only) to canonical
+    /// `AppData.importedWorkoutSamples` and persist — through the SAME sanctioned,
+    /// DataHealth-gated write path as `appendCompletedSession` / `appendHealthMetricSample`
+    /// (§8 rule 4: NOT a second/parallel write path). The candidate builder is the
+    /// pure open-bag `AppData.appendingImportedWorkoutSample` (idempotent by content
+    /// id), so a re-import of the same workout is a clean no-op that still round-trips
+    /// through load → gate → save.
+    ///
+    /// The imported workout lands in `importedWorkoutSamples`, a bag SEPARATE from
+    /// `history` — it is NEVER a canonical native `TrainingSession` and NEVER feeds
+    /// the engine. This entry point only changes WHERE a sanctioned append writes,
+    /// not the write path itself.
+    ///
+    /// - Parameters:
+    ///   - sample: the imported workout to append (built by the pure
+    ///     `IronPathHealthKit.HealthKitWorkoutMapper` from a `WorkoutReading`).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func appendImportedWorkoutSample(
+        _ sample: ImportedWorkoutSample,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedAppend(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { $0.appendingImportedWorkoutSample(sample) },
+            validate: validate
+        )
+    }
+
+    /// HK-2 batch: append MANY imported workout summaries (a history list) in ONE
+    /// gated write. Folds every sample through the same pure open-bag
+    /// `AppData.appendingImportedWorkoutSample` (so duplicates within the batch and
+    /// against the existing document both dedup by content id), then performs a
+    /// single load → gate → backup → atomic save. This is the natural entry point
+    /// for importing recent workout HISTORY: one backup + one save for the whole
+    /// import, not one per workout — still the SAME single write path (§8 rule 4),
+    /// and still the derived `importedWorkoutSamples` bag (never `history`).
+    ///
+    /// An empty `samples` is a no-op candidate (still round-trips through the gate),
+    /// so the caller can pass whatever the read returned without a special case.
+    @discardableResult
+    public func appendImportedWorkoutSamples(
+        _ samples: [ImportedWorkoutSample],
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedAppend(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { base in
+                samples.reduce(base) { $0.appendingImportedWorkoutSample($1) }
+            },
             validate: validate
         )
     }
