@@ -172,16 +172,19 @@ describe('iosBootstrapForbiddenImports', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HK-1 + HK-2 read-only HealthKit adapter boundary.
+// HK-1 + HK-2 read + HK-3 workout-export HealthKit adapter boundary.
 //
 // The HealthKit-token exemption above is bounded by these assertions: exactly
-// ONE file holds the tokens (body-mass AND workout), and it is read-only
-// (requests an empty share set, never writes back — no HKHealthStore.save, no
-// HKQuantitySample / HKWorkout construction). This is the guard that ships with
-// the HK-1 + HK-2 capability ungating (master §22 — every boundary ships a guard).
+// ONE file holds the tokens (body-mass AND workout). HK-1/HK-2 read authorization
+// still shares NOTHING (`toShare: []`). HK-3 adds the FIRST and ONLY write-back: it
+// shares ONLY the workout type (`toShare: [workoutType]`) and writes ONLY HKWorkouts
+// via HKHealthStore.save — no body-mass / quantity-sample write, no HKWorkoutBuilder,
+// no other Apple-Health type. This is the guard that ships with the HK-1 + HK-2 + HK-3
+// capability ungating (master §22 — every boundary ships a guard). The HK-3 export
+// surface is positively locked by tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
 // ---------------------------------------------------------------------------
 
-describe('iosBootstrap HK-1 + HK-2 read-only HealthKit adapter boundary', () => {
+describe('iosBootstrap HK-1 + HK-2 read + HK-3 workout-export HealthKit adapter boundary', () => {
   const swiftFiles = collectSwiftFiles(resolve(repoRoot, 'ios'));
   const adapterAbs = resolve(repoRoot, HEALTHKIT_READ_ADAPTER);
   const healthKitTokens: ReadonlyArray<RegExp> = [
@@ -192,7 +195,7 @@ describe('iosBootstrap HK-1 + HK-2 read-only HealthKit adapter boundary', () => 
     /\bHKWorkoutActivityType\b/,
   ];
 
-  it('the sanctioned read-only adapter file exists', () => {
+  it('the sanctioned HealthKit adapter file exists', () => {
     expect(swiftFiles.includes(adapterAbs)).toBe(true);
   });
 
@@ -206,14 +209,19 @@ describe('iosBootstrap HK-1 + HK-2 read-only HealthKit adapter boundary', () => 
     }
   });
 
-  it('the adapter is READ-ONLY (empty share set, no write-back to Apple Health)', () => {
+  it('the adapter shares ONLY the workout type for export — no other Apple-Health write', () => {
     const code = stripComments(readFileSync(adapterAbs, 'utf8'));
-    // Read authorization shares NOTHING.
+    // HK-1/HK-2 READ authorization still shares NOTHING (read-only).
     expect(code).toMatch(/toShare:\s*\[\s*\]/);
-    // No write path: no HKHealthStore.save(...) and no sample/workout construction.
-    expect(code).not.toMatch(/\.save\s*\(/);
+    // HK-3 export shares ONLY the workout type — the first & only write capability.
+    expect(code).toMatch(/toShare:\s*\[workoutType\]/);
+    // It NEVER shares any OTHER Apple-Health type (e.g. body mass) back.
+    expect(code).not.toMatch(/toShare:[^\]]*bodyMass/);
+    // The ONLY thing written back is an HKWorkout via HKHealthStore.save: NO body-mass /
+    // quantity-sample write, and NO HKWorkoutBuilder (export uses the HKWorkout
+    // initializer + save). The positive export surface (idempotency, native-only,
+    // user-triggered) is locked by tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
     expect(code).not.toMatch(/HKQuantitySample\s*\(/);
-    expect(code).not.toMatch(/HKWorkout\s*\(/);
     expect(code).not.toMatch(/HKWorkoutBuilder\b/);
   });
 

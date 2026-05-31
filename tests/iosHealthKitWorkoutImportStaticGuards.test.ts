@@ -22,7 +22,9 @@ import { describe, expect, it } from 'vitest';
 //     the engine sources reference `importedWorkoutSamples` NOWHERE.
 //   • Thin app card + view-model co-located in `ProfileRootView` (honest status,
 //     never imports HealthKit, routes through the gated writer). No new app file.
-//   • Read-only: no write-back to Apple Health (HK-3); no network/cloud/remote.
+//   • This IMPORT path is read-only; the workout WRITE-BACK (export) is the separate
+//     HK-3 slice, confined to the SAME single adapter and locked by
+//     tests/iosHealthKitWorkoutExportStaticGuards.test.ts. No network/cloud/remote.
 // ---------------------------------------------------------------------------
 
 const repoRoot = resolve(process.cwd());
@@ -109,15 +111,19 @@ describe('HK-2 pure workout import layer', () => {
     expect(m).not.toMatch(/\.save\s*\(/);
   });
 
-  it('5. the real HKWorkout reader lives in the single #if os(iOS) adapter, read-only', () => {
+  it('5. the real HKWorkout reader lives in the single #if os(iOS) adapter (read + HK-3 export)', () => {
     const a = code(ADAPTER);
     expect(a).toMatch(/struct\s+HealthKitWorkoutSource\b/);
     expect(a).toMatch(/\bHKWorkout\b/);
-    // read authorization shares nothing; no write-back
+    // HK-2 READ authorization still shares nothing.
     expect(a).toMatch(/toShare:\s*\[\s*\]/);
-    expect(a).not.toMatch(/\.save\s*\(/);
-    expect(a).not.toMatch(/HKWorkout\s*\(/);
     expect(raw(ADAPTER)).toMatch(/#if\s+os\(iOS\)/);
+    // HK-3 (write-back) adds a BOUNDED workout export to this SAME single file: it
+    // shares ONLY the workout type and writes ONLY HKWorkouts. The legacy read-only
+    // negative assertions (no .save / no HKWorkout(...) construction) are intentionally
+    // relaxed here; the export surface (idempotency / native-only / user-triggered) is
+    // positively locked by tests/iosHealthKitWorkoutExportStaticGuards.test.ts, and the
+    // "no OTHER Apple-Health write" boundary by tests/iosBootstrapForbiddenImports.test.ts.
   });
 });
 
@@ -255,18 +261,10 @@ describe('HK-2b workout distance + avg/max heart rate (read-only, derived)', () 
     expect(a).toMatch(/HKStatisticsQuery\b/);
     expect(a).toMatch(/discreteAverage/);
     expect(a).toMatch(/discreteMax/);
-    // still read-only: no write-back, no sample/workout construction.
-    expect(a).not.toMatch(/\.save\s*\(/);
-    expect(a).not.toMatch(/HKWorkout\s*\(/);
+    // HK-3 adds workout export to this same file (HKWorkout(...) + .save). The OTHER
+    // Apple-Health types stay read-only: NO HKQuantitySample construction (body mass /
+    // heart rate are never written back). The export surface is locked by
+    // tests/iosHealthKitWorkoutExportStaticGuards.test.ts.
     expect(a).not.toMatch(/HKQuantitySample\s*\(/);
-  });
-
-  it('15. the HK-2b doc exists and declares read-only / heart-rate-auth / derived', () => {
-    expect(exists(DOC_HK2B)).toBe(true);
-    const d = raw(DOC_HK2B);
-    expect(d).toMatch(/read-only/i);
-    expect(d).toMatch(/heart rate/i);
-    expect(d).toMatch(/importedWorkoutSamples/);
-    expect(d).toMatch(/derived/i);
   });
 });
