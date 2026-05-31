@@ -1,21 +1,29 @@
-// TodayRootView — iOS-17C Plan + Today Read-only Surface V1.
+// TodayRootView — iOS-17C Plan + Today Read-only Surface V1;
+// Today real-AppData read path V1 switches it from sample to REAL data.
 //
-// 今日 (Today) tab mount point. Renders a READ-ONLY readiness summary derived
-// from the real TrainingDecision engine output, plus an honest entry into 训练.
+// 今日 (Today) tab mount point. Renders a READ-ONLY readiness summary derived from
+// the real TrainingDecision engine output, plus an honest entry into 训练.
 //
-// Data source: the app has no canonical-AppData read path yet (the first native
-// write path is the gated iOS-17c slice), so the readiness is computed from the
-// SAME deterministic clean-input pipeline the Focus tab already demonstrates —
+// Data source (Today real-AppData read path V1): this surface now reads the user's
+// REAL on-device canonical AppData — the SAME store `CanonicalSessionWriter` writes
+// (`JSONFileAppDataStore.applicationSupport()`, §8). The thin `TodayRealDataModel`
+// below opts the running app into that store, loads it READ-ONLY, and delegates the
+// whole transform to the pure package resolver:
 //   AppData → buildCleanAppDataView → createCleanTrainingDecisionInput
-//          → buildTrainingDecisionFromCleanInput → TrainingDecisionCoreSlice
-// — never from fabricated engine output. All organization/formatting lives in
-// IronPathTrainingDecision.TodayReadinessSummary (pure + unit-tested); this view
-// only renders rows. The engine is read, never changed (no golden touched).
+//          → buildTrainingDecisionFromCleanInput → TodayReadinessSummary
+// — raw AppData NEVER reaches the engine (it always passes through the DataHealth
+// clean view first, §10/§11). Honest states (§15.4): no canonical file yet / no
+// training baseline → an empty state; a present-but-unreadable document → a degrade
+// state (the document is left untouched — this path NEVER writes). All branch logic
+// lives in IronPathTrainingDecision.resolveTodayReadinessState (pure + unit-tested);
+// this view only renders. The engine is read, never changed (no golden touched).
 //
 // W-1: this surface also PUBLISHES a small DERIVED read-only readiness snapshot to
 // the App Group for the home-screen widget (a derived share file via the
 // IronPathWidgetShared seam — never canonical AppData, never a source of truth,
-// §8/§12). See WidgetSnapshotWriterModel.
+// §8/§12) — now with the user's REAL readiness when available (W-2 anticipated this
+// once a canonical read path landed), and nothing when there is no real readiness.
+// See WidgetSnapshotWriterModel.
 //
 // Training entry: the five-tab shell's selected tab is ContentView-private state,
 // and the iOS-17S parallel-line contract forbids editing the shell from a tab
@@ -34,19 +42,94 @@
 
 import SwiftUI
 import IronPathDomain
+import IronPathDataHealth
+import IronPathPersistence
 import IronPathTrainingDecision
 
+/// Thin @MainActor view-model for the 今日 surface's REAL canonical-AppData read.
+/// It owns ONLY the wiring + IO seam (master §5/§15): it opts the running app into
+/// the sanctioned canonical store and delegates the AppData → clean view → engine →
+/// summary transform to the pure `resolveTodayReadinessState`. It NEVER touches
+/// FileManager directly (the store does all disk IO), NEVER writes, and surfaces an
+/// honest state for every failure — no crash, no fabricated readiness, no overwrite.
+@MainActor
+final class TodayRealDataModel: ObservableObject {
+    @Published private(set) var state: TodayReadinessState
+
+    /// The sanctioned canonical store (the §8 source of truth). Optional so
+    /// previews/tests opt OUT of disk entirely; the running app injects the
+    /// Application Support store on launch. All disk IO is delegated to the store.
+    private var store: AppDataStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()`
+    /// in previews/tests).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the
+    /// canonical store, which is opted in on launch via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.now = now
+        self.isLive = true
+    }
+
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a
+    /// preview renders a chosen state without ever reading the real on-disk document.
+    init(previewState: TodayReadinessState) {
+        self.state = previewState
+        self.store = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
+
+    /// True for the running app; false for pinned previews (keeps live sinks off).
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the
+    /// `CanonicalSessionWriter` writes (Application Support / `IronPathAppData`),
+    /// pointing the read path at the real source of truth. Idempotent; `#if os(iOS)`
+    /// + the live guard keep previews/tests off disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view → engine →
+    /// summary (in `resolveTodayReadinessState`). NEVER writes, NEVER overwrites an
+    /// unreadable document, NEVER crashes — every failure becomes an honest state.
+    /// A SINGLE `instant` drives both the clean view's guard clock and the engine's
+    /// reference time, so the read is internally consistent.
+    func reload() {
+        guard isLive else { return }
+        let instant = now()
+        state = resolveTodayReadinessState(readOutcome(now: instant), now: instant)
+    }
+
+    /// The ONLY IO + the DataHealth clean-view construction (the §10 chokepoint — the
+    /// TrainingDecision package may not build the clean view itself, so the app layer
+    /// does it here, mirroring `FocusModePreviewData`). Reads the canonical store and,
+    /// on success, routes the document through `buildCleanAppDataView` with a guard
+    /// clock built from `now`. No write: a missing file (or no live source) →
+    /// `.missing`; a present-but-unreadable document → `.unreadable` (left untouched on
+    /// disk, never overwritten — raw AppData never reaches the engine).
+    private func readOutcome(now: Date) -> TodayAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
+    }
+}
+
 struct TodayRootView: View {
-    private let summary = TodayReadinessSummary(
-        slice: FocusModePreviewData.sampleCoreSlice(for: .normal),
-        todayStatus: TodayStatus(
-            date: FocusModePreviewData.referenceDateOnly,
-            sleep: "一般",
-            energy: "中",
-            time: "60",
-            soreness: ["无"]
-        )
-    )
+    @StateObject private var model: TodayRealDataModel
 
     @State private var showTrainingEntry = false
 
@@ -55,14 +138,24 @@ struct TodayRootView: View {
     // strings — no engine call, and it NEVER writes canonical AppData.
     @StateObject private var widgetWriter = WidgetSnapshotWriterModel()
 
+    /// The running app constructs the default live model. `@MainActor` so it can
+    /// build the main-actor-isolated model (SwiftUI always builds views on the main
+    /// actor); a default-argument form is impossible because default args are
+    /// type-checked as nonisolated.
+    @MainActor init() {
+        _model = StateObject(wrappedValue: TodayRealDataModel())
+    }
+
+    /// Previews/tests inject a pinned model (e.g. `TodayRealDataModel(previewState:)`).
+    @MainActor init(model: TodayRealDataModel) {
+        _model = StateObject(wrappedValue: model)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
-                sampleNote
-                readinessCard
-                statusCard
-                startTrainingButton
+                content
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,17 +167,25 @@ struct TodayRootView: View {
         } message: {
             Text("在底部导航栏点按「训练」即可进入专注训练。今日页为只读概览，不读写训练记录。")
         }
-        // W-1: publish a DERIVED read-only readiness snapshot for the home-screen
-        // widget (App Group). This writes a small derived share file ONLY — never
-        // canonical AppData, never a source of truth (§8/§12). Previews/tests do not
-        // opt into a live store, so this is a no-op there.
         .task {
+            // Opt the running app into the real canonical store and read it (read-only).
+            model.activateLiveSourceIfNeeded()
+            model.reload()
+            // Previews/tests pin their state and never touch the live App Group sink.
+            guard model.isLiveLoadEnabled else { return }
+            // W-1/W-2: publish a DERIVED read-only readiness snapshot for the widget
+            // (App Group) ONLY when we have a REAL readiness (§8/§12). On empty /
+            // unavailable we publish nothing — the widget keeps its prior snapshot /
+            // placeholder, never a fabricated readiness. This writes a small derived
+            // share file ONLY — never canonical AppData, never a source of truth.
             widgetWriter.activateLiveSinksIfNeeded()
-            widgetWriter.publish(
-                headline: summary.headline,
-                advice: summary.advice,
-                rows: summary.decisionRows.map { ($0.label, $0.value) }
-            )
+            if case .ready(let summary) = model.state {
+                widgetWriter.publish(
+                    headline: summary.headline,
+                    advice: summary.advice,
+                    rows: summary.decisionRows.map { ($0.label, $0.value) }
+                )
+            }
         }
     }
 
@@ -92,28 +193,51 @@ struct TodayRootView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("今日")
                 .font(.largeTitle.weight(.semibold))
-            Text(summary.headline)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.primary)
-            Text(summary.advice)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            if case .ready(let summary) = model.state {
+                Text(summary.headline)
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text(summary.advice)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
-    private var sampleNote: some View {
-        Text("示例准备度：基于确定性样例经训练决策引擎计算。接入真实数据后将显示你的当日概览。")
+    @ViewBuilder
+    private var content: some View {
+        switch model.state {
+        case .ready(let summary):
+            realDataNote
+            card(title: "准备度概览", rows: summary.decisionRows)
+            card(title: "今日状态", rows: summary.statusRows)
+            startTrainingButton
+        case .empty:
+            // §15.4: empty state = title + explanation + one action. Honest "no data",
+            // never a fabricated readiness.
+            infoCard(
+                title: "还没有训练数据",
+                message: "完成一次训练并保存后，这里会根据你本机的真实记录显示今日准备度。",
+                actionTitle: "前往「训练」",
+                action: { showTrainingEntry = true }
+            )
+        case .unavailable:
+            // §15.4 + data safety: honest degrade. The document is left untouched —
+            // this read path never overwrites unreadable data — and the user can retry.
+            infoCard(
+                title: "暂时无法读取数据",
+                message: "本机训练数据暂时无法读取。已保留原始数据未作任何改动，可稍后重试。",
+                actionTitle: "重试",
+                action: { model.reload() }
+            )
+        }
+    }
+
+    private var realDataNote: some View {
+        Text("基于你本机的真实训练数据，经数据校验（DataHealth）后由训练决策引擎计算。")
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var readinessCard: some View {
-        card(title: "准备度概览", rows: summary.decisionRows)
-    }
-
-    private var statusCard: some View {
-        card(title: "今日状态", rows: summary.statusRows)
     }
 
     private var startTrainingButton: some View {
@@ -154,8 +278,56 @@ struct TodayRootView: View {
                 .fill(Color(.secondarySystemBackground))
         )
     }
+
+    private func infoCard(
+        title: String,
+        message: String,
+        actionTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Button(action: action) {
+                Text(actionTitle)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.top, 2)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
 }
 
-#Preview {
-    TodayRootView()
+#Preview("有数据") {
+    TodayRootView(model: TodayRealDataModel(previewState: .ready(
+        TodayReadinessSummary(
+            slice: FocusModePreviewData.sampleCoreSlice(for: .normal),
+            todayStatus: TodayStatus(
+                date: FocusModePreviewData.referenceDateOnly,
+                sleep: "一般",
+                energy: "中",
+                time: "60",
+                soreness: ["无"]
+            )
+        )
+    )))
+}
+
+#Preview("空态") {
+    TodayRootView(model: TodayRealDataModel(previewState: .empty))
+}
+
+#Preview("不可读") {
+    TodayRootView(model: TodayRealDataModel(previewState: .unavailable))
 }
