@@ -151,12 +151,12 @@ describe('HK-2 derived (non-canonical) landing point', () => {
 // ---- 8. Persistence: the SAME single gated write path (no second path) ----
 
 describe('HK-2 reuses the single DataHealth-gated write path', () => {
-  it('8. CanonicalSessionWriter adds workout entry points on performGatedAppend only', () => {
+  it('8. CanonicalSessionWriter adds workout entry points on performGatedMutation only', () => {
     const m = code(WRITER);
     expect(m).toMatch(/func\s+appendImportedWorkoutSample\b/);
     expect(m).toMatch(/func\s+appendImportedWorkoutSamples\b/);
     // every entry point delegates to the ONE private orchestration
-    expect(m).toMatch(/performGatedAppend\b/);
+    expect(m).toMatch(/performGatedMutation\b/);
     // there is exactly ONE store.save() site (the single gated path — no second
     // / parallel write path was introduced for workouts).
     const saves = m.match(/store\.save\s*\(/g) || [];

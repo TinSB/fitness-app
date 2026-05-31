@@ -44,6 +44,97 @@ import IronPathHealthKit
 import IronPathPersistence
 import IronPathDataHealth
 
+/// Honest in-RAM status of the most recent profile edit save — no fake success
+/// (master §15.4). `.idle` until the user explicitly saves.
+enum ProfileEditSaveStatus: Equatable {
+    case idle
+    case saved
+    case failed(String)
+}
+
+/// In-RAM editable form for the nine profile scalar fields (two-step 编辑→保存).
+/// Every field is a String so it binds to a `TextField`; parsed back to typed
+/// `UserProfile` values on save. `weightText` is in `unit` (the display unit captured
+/// when editing began) and is converted to kg via the single `WeightConversion`
+/// home. Pure value type — no IO; nothing is persisted until the explicit 保存.
+private struct ProfileEditForm: Equatable {
+    var name = ""
+    var sex = ""
+    var ageText = ""
+    var heightCmText = ""
+    var weightText = ""
+    var unit: WeightUnit = .kg
+    var trainingLevel = ""
+    var primaryGoal = ""
+    var weeklyDaysText = ""
+    var sessionMinText = ""
+
+    /// Seed the form from the loaded canonical profile, with 体重 shown in the
+    /// current display unit (kg/lb).
+    static func seeded(from p: UserProfile, displayUnit: WeightUnit) -> ProfileEditForm {
+        ProfileEditForm(
+            name: p.name ?? "",
+            sex: p.sex ?? "",
+            ageText: Self.intText(p.age),
+            heightCmText: Self.intText(p.heightCm),
+            weightText: Self.weightText(p.weightKg, unit: displayUnit),
+            unit: displayUnit,
+            trainingLevel: p.trainingLevel ?? "",
+            primaryGoal: p.primaryGoal ?? "",
+            weeklyDaysText: Self.intText(p.weeklyTrainingDays),
+            sessionMinText: Self.intText(p.sessionDurationMin)
+        )
+    }
+
+    /// Apply the edited scalars onto the base profile (preserving id / injuryFlags /
+    /// painNotes / the profile's own open bag). 体重 is converted from the entry unit
+    /// to kg for storage; 身高 is cm. Blank → honest nil ("not set").
+    func applied(onto base: UserProfile) -> UserProfile {
+        base.withScalarFields(
+            name: Self.trimmedOrNil(name),
+            sex: Self.trimmedOrNil(sex),
+            age: Self.intRepr(ageText),
+            heightCm: Self.intRepr(heightCmText),
+            weightKg: Self.weightKgRepr(weightText, unit: unit),
+            trainingLevel: Self.trimmedOrNil(trainingLevel),
+            primaryGoal: Self.trimmedOrNil(primaryGoal),
+            weeklyTrainingDays: Self.intRepr(weeklyDaysText),
+            sessionDurationMin: Self.intRepr(sessionMinText)
+        )
+    }
+
+    private static func trimmedOrNil(_ s: String) -> String? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
+    private static func intText(_ n: NumberRepr?) -> String {
+        guard let n else { return "" }
+        if let i = n.intValue { return String(i) }
+        return Self.decimalText(n.doubleValue)
+    }
+    private static func intRepr(_ s: String) -> NumberRepr? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, let i = Int(t) else { return nil }
+        return .integer(Int64(i))
+    }
+    private static func weightText(_ kg: NumberRepr?, unit: WeightUnit) -> String {
+        guard let kg, let shown = WeightConversion.fromKilograms(kg.doubleValue, to: unit) else { return "" }
+        return Self.decimalText(shown)
+    }
+    private static func weightKgRepr(_ s: String, unit: WeightUnit) -> NumberRepr? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, let entered = Double(t),
+              let kg = WeightConversion.toKilograms(entered, from: unit) else { return nil }
+        return .double(kg)
+    }
+    /// Compact fixed-point (1 decimal), trailing `.0` trimmed. C-locale `.`.
+    private static func decimalText(_ v: Double) -> String {
+        var s = String(format: "%.1f", v)
+        if s.hasSuffix(".0") { s.removeLast(2) }
+        return s
+    }
+}
+
 /// Thin @MainActor view-model for the 我的 surface's REAL canonical-AppData read.
 /// It owns ONLY the wiring + IO seam (master §5/§15): it opts the running app into
 /// the sanctioned canonical store and delegates the AppData → clean view → display
@@ -122,6 +213,66 @@ final class ProfileRealDataModel: ObservableObject {
         }
         return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
     }
+
+    // MARK: - EDIT-1: profile scalar edit (sanctioned, DataHealth-gated write)
+
+    /// Honest status of the most recent profile edit save (§15.4). `.idle` until the
+    /// user explicitly saves; never a fake success.
+    @Published private(set) var saveStatus: ProfileEditSaveStatus = .idle
+
+    /// Reset the save status (e.g. when (re)entering or leaving edit mode).
+    func clearSaveStatus() { saveStatus = .idle }
+
+    /// Persist a profile scalar edit through the SAME sanctioned, DataHealth-gated
+    /// write path as every other canonical write (§8): load existing → defensive
+    /// `buildCleanAppDataView` re-validation → backup-before-overwrite → atomic save
+    /// → honest fail. NEVER writes on previews/tests (no live store). Honest status,
+    /// no fake success. Returns true iff the edit committed.
+    @discardableResult
+    func saveProfileEdit(_ edited: UserProfile) -> Bool {
+        guard isLive else { saveStatus = .failed("当前环境不可保存"); return false }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+        guard let store else { saveStatus = .failed("没有可写入的本机存储"); return false }
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.updateProfile(edited) { candidate in
+                // Defensive §10 gate: re-encode → re-decode (re-runs the SchemaVersion
+                // guard) → DataHealth clean view; accept ONLY if the edited profile
+                // survives byte-identical (canonical emit is key-order-independent).
+                // No fake success — an invariant-breaking candidate is never written.
+                guard let bytes = try? candidate.canonicalJSONData(),
+                      let reDecoded = try? AppData(decoding: bytes) else { return false }
+                let cleaned = buildCleanAppDataView(reDecoded)
+                guard let a = try? cleaned.raw.userProfile.encoded().canonicalJSONData(),
+                      let b = try? edited.encoded().canonicalJSONData() else { return false }
+                return a == b
+            }
+            saveStatus = .saved
+            reload()   // refresh every section (and other tabs on next appear) from fresh truth
+            return true
+        } catch {
+            saveStatus = .failed(Self.saveErrorMessage(error))
+            return false
+        }
+    }
+
+    private static func saveErrorMessage(_ error: Error) -> String {
+        guard let e = error as? CanonicalSessionWriteError else {
+            return "保存失败:\(error.localizedDescription)"
+        }
+        switch e {
+        case .existingDocumentUnreadable:
+            return "本机资料无法读取,为防数据丢失未作任何改动"
+        case .validationRejected:
+            return "改动未通过数据校验,未保存"
+        case .backupFailed:
+            return "备份失败,原始数据已保留,未保存"
+        case .saveFailed:
+            return "写入失败,未保存"
+        }
+    }
 }
 
 struct ProfileRootView: View {
@@ -132,6 +283,12 @@ struct ProfileRootView: View {
     /// kg and is seeded ONCE from the loaded unit settings on first appear.
     @State private var displayUnit: WeightUnit = .kg
     @State private var didSeedDisplayUnit = false
+
+    /// EDIT-1 two-step edit state: the surface stays #438 read-only until the user
+    /// taps 「编辑个人资料」. `form` is the in-RAM edit buffer — nothing is persisted
+    /// until the explicit 「保存」.
+    @State private var isEditing = false
+    @State private var form = ProfileEditForm()
 
     /// The running app constructs the default live model. `@MainActor` so it can build
     /// the main-actor-isolated model (SwiftUI always builds views on the main actor).
@@ -211,7 +368,18 @@ struct ProfileRootView: View {
 
     // MARK: - Sections (real data)
 
+    /// EDIT-1: the profile section is read-only (#438) until the user taps 编辑, then
+    /// shows the in-place edit form. Two-step: nothing is written until 保存.
+    @ViewBuilder
     private func profileSection(_ data: ProfileDisplayData) -> some View {
+        if isEditing {
+            editProfileSection(data)
+        } else {
+            readOnlyProfileSection(data)
+        }
+    }
+
+    private func readOnlyProfileSection(_ data: ProfileDisplayData) -> some View {
         let profile = data.profile
         return Section("个人资料") {
             LabeledContent("姓名", value: ProfileDisplay.text(profile.name))
@@ -237,7 +405,81 @@ struct ProfileRootView: View {
                 LabeledContent("既往伤病", value: ProfileDisplay.list(profile.injuryFlags))
                 LabeledContent("疼痛备注", value: ProfileDisplay.list(profile.painNotes))
             }
+
+            // EDIT-1: honest "已保存" confirmation after a successful gated write.
+            if case .saved = model.saveStatus {
+                Label("已保存", systemImage: "checkmark.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Button("编辑个人资料") { enterEdit(data) }
         }
+    }
+
+    /// EDIT-1: in-place two-step edit of the nine profile scalar fields. 体重 is
+    /// entered in the current display unit (converted to kg on save); 身高 is cm. The
+    /// Apple-Health-derived 最新体重 is NOT editable here (a distinct, derived source).
+    private func editProfileSection(_ data: ProfileDisplayData) -> some View {
+        Section {
+            TextField("姓名", text: $form.name)
+            TextField("性别", text: $form.sex)
+            editNumberRow("年龄", unit: "岁", text: $form.ageText, decimal: false)
+            editNumberRow("身高", unit: "cm", text: $form.heightCmText, decimal: false)
+            editNumberRow("体重", unit: form.unit.rawValue, text: $form.weightText, decimal: true)
+            TextField("训练水平", text: $form.trainingLevel)
+            TextField("主要目标", text: $form.primaryGoal)
+            editNumberRow("每周训练", unit: "天", text: $form.weeklyDaysText, decimal: false)
+            editNumberRow("单次时长", unit: "分钟", text: $form.sessionMinText, decimal: false)
+
+            // No fake success (§15.4): a failed save stays in edit mode and shows why.
+            if case .failed(let message) = model.saveStatus {
+                Text(message).font(.footnote).foregroundStyle(.red)
+            }
+            HStack {
+                Button("保存") { saveEdit(data) }
+                    .buttonStyle(.borderedProminent)
+                Spacer()
+                Button("取消", role: .cancel) { cancelEdit() }
+            }
+        } header: {
+            Text("编辑个人资料")
+        } footer: {
+            Text("两步编辑:改完点“保存”才会写入本机(经数据校验)。体重按上方单位输入、统一以千克存储;此处改的是你自填的体重,与“最新体重(Apple 健康)”是不同来源。")
+        }
+    }
+
+    private func editNumberRow(
+        _ title: String, unit: String, text: Binding<String>, decimal: Bool
+    ) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            TextField(unit, text: text)
+                .multilineTextAlignment(.trailing)
+                .keyboardType(decimal ? .decimalPad : .numberPad)
+                .frame(maxWidth: 120)
+            Text(unit).foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - EDIT-1 actions (two-step 编辑 → 保存)
+
+    private func enterEdit(_ data: ProfileDisplayData) {
+        form = ProfileEditForm.seeded(from: data.profile, displayUnit: displayUnit)
+        model.clearSaveStatus()
+        isEditing = true
+    }
+
+    private func cancelEdit() {
+        isEditing = false
+        model.clearSaveStatus()
+    }
+
+    private func saveEdit(_ data: ProfileDisplayData) {
+        let edited = form.applied(onto: data.profile)
+        if model.saveProfileEdit(edited) {
+            isEditing = false   // success → fresh read-only truth (model reloaded)
+        }
+        // failure: stay in edit mode; model.saveStatus carries the honest reason
     }
 
     private var unitSection: some View {
@@ -275,7 +517,7 @@ struct ProfileRootView: View {
             // Honest disclosure — no fake success (master §15.4). The data above is
             // the user's REAL on-device profile, read-only (cleaned via DataHealth);
             // the 健康数据 section below has its own user-gated Apple Health import.
-            Text("以上个人资料、筛查与设置来自本机真实数据（经数据校验 DataHealth），只读显示；编辑将在后续版本上线。")
+            Text("以上数据来自本机真实数据（经数据校验 DataHealth）。个人资料可在上方“编辑个人资料”修改并保存到本机；筛查与设置暂为只读显示。")
         }
     }
 

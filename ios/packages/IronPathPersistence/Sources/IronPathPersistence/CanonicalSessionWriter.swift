@@ -2,10 +2,11 @@
 // HK-1 added the body-weight import entry point on the SAME path; HK-2 added the
 // workout-history import entry point on that SAME path.
 //
-// THE single native canonical-AppData WRITE PATH (§8). It appends new local data
-// to canonical `AppData` and persists it through the sanctioned `AppDataStore`
-// (JSON-on-disk, atomic, backup). THREE typed entry points share ONE gated
-// orchestration (`performGatedAppend`) — they are NOT separate write paths:
+// THE single native canonical-AppData WRITE PATH (§8). It applies new local data —
+// appends, and (EDIT-1) in-place scalar edits — to canonical `AppData` and persists
+// it through the sanctioned `AppDataStore` (JSON-on-disk, atomic, backup). Several
+// typed entry points share ONE gated orchestration (`performGatedMutation`) — they
+// are NOT separate write paths:
 //   • `appendCompletedSession` — a freshly completed `TrainingSession` (built by
 //     IronPathDomain.NativeCompletedSessionBuilder from the in-RAM per-set
 //     capture) → `AppData.history` (iOS-17A).
@@ -17,9 +18,12 @@
 //     `AppData.importedWorkoutSamples` (HK-2). Idempotent by content id. This bag is
 //     SEPARATE from `history`: an imported workout is never a canonical session and
 //     never feeds the engine.
+//   • `updateProfile` — an in-place EDIT of the user's `UserProfile` scalar fields
+//     (EDIT-1) → `AppData.userProfile`. A sanctioned MUTATION (not an append): it
+//     rewrites only the `userProfile` key, open-bag/schema/timestamp preserving.
 //
-// This is NOT a full AppData restore (§14): it appends NEWLY-CREATED local data
-// the user just performed — it never replaces/merges an external/backup document.
+// This is NOT a full AppData restore (§14): it appends/edits local data the user
+// just performed or changed — it never replaces/merges an external/backup document.
 // The repair-apply pipeline (load → snapshot → backup → apply → save) stays
 // deferred; this writer only appends + saves.
 //
@@ -94,7 +98,7 @@ public struct CanonicalSessionWriter {
         baseIfMissing: AppData = .emptyCurrent(),
         validate: (AppData) -> Bool
     ) throws -> PerformedSessionWriteResult {
-        try performGatedAppend(
+        try performGatedMutation(
             baseIfMissing: baseIfMissing,
             buildCandidate: { $0.appendingHistorySession(session) },
             validate: validate
@@ -122,7 +126,7 @@ public struct CanonicalSessionWriter {
         baseIfMissing: AppData = .emptyCurrent(),
         validate: (AppData) -> Bool
     ) throws -> PerformedSessionWriteResult {
-        try performGatedAppend(
+        try performGatedMutation(
             baseIfMissing: baseIfMissing,
             buildCandidate: { $0.appendingHealthMetricSample(sample) },
             validate: validate
@@ -155,7 +159,7 @@ public struct CanonicalSessionWriter {
         baseIfMissing: AppData = .emptyCurrent(),
         validate: (AppData) -> Bool
     ) throws -> PerformedSessionWriteResult {
-        try performGatedAppend(
+        try performGatedMutation(
             baseIfMissing: baseIfMissing,
             buildCandidate: { $0.appendingImportedWorkoutSample(sample) },
             validate: validate
@@ -179,7 +183,7 @@ public struct CanonicalSessionWriter {
         baseIfMissing: AppData = .emptyCurrent(),
         validate: (AppData) -> Bool
     ) throws -> PerformedSessionWriteResult {
-        try performGatedAppend(
+        try performGatedMutation(
             baseIfMissing: baseIfMissing,
             buildCandidate: { base in
                 samples.reduce(base) { $0.appendingImportedWorkoutSample($1) }
@@ -188,12 +192,41 @@ public struct CanonicalSessionWriter {
         )
     }
 
-    /// The single gated-append orchestration shared by every canonical write entry
-    /// point above. `buildCandidate` is the only thing that varies (which open-bag
-    /// transform produces the candidate); the load → gate → backup → atomic save →
-    /// honest-throw contract is identical for all of them, so there is exactly ONE
-    /// write path (§8.1).
-    private func performGatedAppend(
+    /// EDIT-1: edit the user's `UserProfile` scalar fields in place and persist —
+    /// through the SAME sanctioned, DataHealth-gated write path as every append
+    /// above (§8 rule 4: NOT a second/parallel write path). The candidate builder
+    /// is the pure open-bag `AppData.withUpdatedProfile` (rewrites ONLY the
+    /// `userProfile` key; schema/timestamp/open-bag preserving), so an edit is a
+    /// sanctioned MUTATION, not a restore (§13/§14). The caller supplies the
+    /// DataHealth gate (defensive `buildCleanAppDataView` re-validation before the
+    /// write commits); a rejected candidate is NEVER written (no fake success).
+    ///
+    /// - Parameters:
+    ///   - profile: the edited profile (built by the app layer from the current
+    ///     canonical profile + the user's scalar edits).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func updateProfile(
+        _ profile: UserProfile,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { $0.withUpdatedProfile(profile) },
+            validate: validate
+        )
+    }
+
+    /// The single gated-MUTATION orchestration shared by every canonical write entry
+    /// point above (append AND edit — EDIT-1). `buildCandidate` is the only thing
+    /// that varies (which open-bag transform produces the candidate); the load →
+    /// gate → backup → atomic save → honest-throw contract is identical for all of
+    /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned
+    /// mutation here, NOT a second write path.
+    private func performGatedMutation(
         baseIfMissing: AppData,
         buildCandidate: (AppData) -> AppData,
         validate: (AppData) -> Bool

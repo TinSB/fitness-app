@@ -458,4 +458,160 @@ final class CanonicalSessionWriterTests: XCTestCase {
         // w0 dedups against the existing doc; only w1 is new → 2 total.
         XCTAssertEqual(store.stored?.importedWorkoutSamples.count, 2)
     }
+
+    // MARK: - EDIT-1: profile scalar edit (SAME gated path, sanctioned MUTATION)
+
+    private func makeProfile(name: String, weightKg: Double? = nil) -> UserProfile {
+        UserProfile(name: name, weightKg: weightKg.map { .double($0) })
+    }
+
+    func testUpdateProfileFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateProfile(makeProfile(name: "老王", weightKg: 80)) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.userProfile.name, "老王")
+        XCTAssertEqual(store.stored?.userProfile.weightKg, .double(80))
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testUpdateProfileSecondWriteBacksUpBeforeSaving() throws {
+        let seed = AppData.emptyCurrent().withUpdatedProfile(makeProfile(name: "老王", weightKg: 80))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateProfile(makeProfile(name: "小李", weightKg: 58.5)) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        // The edit replaced the profile in place (still exactly one userProfile).
+        XCTAssertEqual(store.stored?.userProfile.name, "小李")
+        XCTAssertEqual(store.stored?.userProfile.weightKg, .double(58.5))
+    }
+
+    func testUpdateProfileValidationRejectionWritesNothing() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent().withUpdatedProfile(makeProfile(name: "老王")))
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProfile(makeProfile(name: "小李")) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The prior profile is untouched — a rejected edit never lands.
+        XCTAssertEqual(store.stored?.userProfile.name, "老王")
+    }
+
+    func testUpdateProfileGateReceivesCandidateWithEditApplied() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenName: String?
+        _ = try writer.updateProfile(makeProfile(name: "小李")) { candidate in
+            seenName = candidate.userProfile.name
+            return true
+        }
+        XCTAssertEqual(seenName, "小李", "the gate must see the candidate with the edit already applied")
+    }
+
+    func testUpdateProfileUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProfile(makeProfile(name: "小李")) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testUpdateProfileBackupFailureStopsBeforeSave() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent().withUpdatedProfile(makeProfile(name: "老王")))
+        store.backupError = AppDataStoreError.backupFailed("disk full")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProfile(makeProfile(name: "小李")) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.backupFailed = error else {
+                return XCTFail("expected .backupFailed, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "a failed backup must abort before any overwrite")
+    }
+
+    func testUpdateProfileSaveFailurePropagatesHonestly() {
+        let store = FakeAppDataStore()   // first write, no backup
+        store.saveError = AppDataStoreError.writeFailed("io error")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProfile(makeProfile(name: "小李")) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.saveFailed = error else {
+                return XCTFail("expected .saveFailed, got \(error)")
+            }
+        }
+    }
+
+    func testUpdateProfilePreservesOpenBagAndOtherKeysThroughGatedWrite() throws {
+        // Seed a document with a profile, history, settings, and a top-level unknown.
+        let json = """
+        {"schemaVersion":8,\
+        "userProfile":{"id":"u1","name":"老王","customProfileKey":"keepme"},\
+        "history":[{"id":"old","completed":true}],\
+        "settings":{"weightUnit":"kg"},\
+        "futureUnknownKey":{"nested":[1,2,3]}}
+        """
+        let seed = try AppData(decoding: Data(json.utf8))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        let edited = seed.userProfile.withScalarFields(
+            name: "小李", sex: nil, age: .integer(28), heightCm: nil, weightKg: .double(58.5),
+            trainingLevel: nil, primaryGoal: nil, weeklyTrainingDays: nil, sessionDurationMin: nil
+        )
+        _ = try writer.updateProfile(edited) { _ in true }
+
+        let stored = try XCTUnwrap(store.stored)
+        XCTAssertEqual(stored.userProfile.name, "小李")
+        XCTAssertEqual(stored.userProfile.id, "u1", "profile id preserved across edit")
+        // Open bag (profile-level + top-level) and other keys survive the gated write.
+        let canonical = try stored.canonicalJSONString()
+        XCTAssertTrue(canonical.contains("\"customProfileKey\":\"keepme\""), "profile open-bag lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("futureUnknownKey"), "top-level unknown lost")
+        XCTAssertEqual(stored.history.count, 1)
+        XCTAssertEqual(stored.history.first?.id, "old")
+        XCTAssertEqual(stored.schemaVersion, .current, "edit must not bump schema")
+    }
+
+    func testUpdateProfileRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-edit1-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // First write seeds the profile (no backup).
+        let r1 = try writer.updateProfile(makeProfile(name: "老王", weightKg: 80)) { _ in true }
+        XCTAssertTrue(r1.createdNewStore)
+        XCTAssertNil(r1.backupURL)
+
+        // Second write edits the profile in place, backing up first.
+        let r2 = try writer.updateProfile(makeProfile(name: "小李", weightKg: 58.5)) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "backup file must exist on disk")
+
+        // Reload from disk: the edit survives, self-entered weightKg round-trips.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.userProfile.name, "小李")
+        XCTAssertEqual(loaded.userProfile.weightKg?.doubleValue ?? -1, 58.5, accuracy: 1e-9)
+        XCTAssertEqual(loaded.healthMetricSamples.count, 0, "a profile edit never creates health samples")
+    }
 }
