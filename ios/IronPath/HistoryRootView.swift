@@ -1,60 +1,164 @@
-// HistoryRootView — 记录 (History) read-only surface V1.
+// HistoryRootView — 记录 (History) real-AppData read path V1.
 //
-// The 记录 tab now renders the REAL on-device training history instead of the
-// iOS-17S placeholder. It reads the locally-saved Focus snapshots through the
-// sanctioned IronPathLocalSnapshot store (read-only: `scanSnapshots()` only),
-// groups / filters / searches them with the package's pure, unit-tested helpers
-// (LocalSnapshotHistory + LocalSnapshotStats), and opens a per-session detail
-// by REUSING FocusSavedSessionDetailView in its read-only mode (no `onContinue`,
-// no current-scenario ids → no restore affordance, no recovery projection).
+// The 记录 tab renders the user's REAL completed training as ONE unified,
+// most-recent-first timeline, REUSING the Today (#437) / Profile (#438) canonical
+// read path: load → buildCleanAppDataView → resolve (the §10 chokepoint). Two
+// honest, source-tagged origins are merged:
+//   • 原生 — native completed sessions from canonical `AppData.history`, read as
+//     the DataHealth-CLEANED `cleanedHistory` (the §8 source of truth).
+//   • 来自 Apple 健康 — the DERIVED, display-only `importedWorkoutSamples` (HK-2);
+//     listed + tagged, NEVER treated as a native session, NEVER engine input (§8.2).
 //
-// Strictly READ-ONLY (master §5/§15, source-of-truth impact: none):
-//   • No write surface at all — no clear / export / quarantine / restore here.
-//     Those mutating affordances live on the 训练 tab's FocusSavedSessionHistory
-//     surface, driven by FocusModeMvpState; this tab never mutates state/disk.
-//   • This view never touches FileManager/disk directly; all IO is delegated to
-//     the one sanctioned store file. It writes nothing, persists nothing, and
-//     never reads/mutates AppData or the engine.
-//   • The history store stays decoupled from AppData (LocalCompletedSessionSnapshot
-//     is a small presentation record, not the canonical domain model).
+// No-loss merge (§12): a native session completed WITHOUT per-set detail is saved
+// only to the local Focus snapshot store, never to canonical `history`
+// (`FocusModeMvpState.persistCanonicalSession` → `.skipped`). To lose nothing, the
+// thin model ALSO reads that store READ-ONLY and feeds those as neutral
+// `SupplementalNativeCompletion` values; the pure timeline merges them in and
+// DEDUPES BY ID against canonical (canonical, the source of truth, wins → no
+// duplicate rows). The merge keeps the packages decoupled: `IronPathDomain` /
+// `IronPathDataHealth` never import `IronPathLocalSnapshot`; only this app-layer
+// model reads both stores.
+//
+// Strictly READ-ONLY (master §5/§15, source-of-truth impact: none): no write
+// surface, no `save`, no AppData mutation, no engine call, no golden touched. The
+// LocalSnapshot draft-recovery / restore / per-session detail (§12/§13) live on the
+// 训练 tab (FocusSavedSessionHistoryView) and are NOT touched here. A present-but-
+// unreadable canonical document maps to an honest degrade and is left untouched on
+// disk (never overwritten — raw AppData never reaches the surface).
 //
 // === iOS-17S Tab Shell Scaffold V1 · parallel-line integration contract ===
-// This slice fills ONLY this RootView's body + the package logic it renders. It
-// does NOT edit ContentView (the shell), another tab's RootView, FocusMode*, or
-// project.pbxproj. The four-default-arg init keeps ContentView's `HistoryRootView()`
-// call unchanged. Keep the app layer thin (master §5/§15/§19.3): no business
-// logic, no persistence, no network/cloud/auth here.
+// This slice fills ONLY this RootView's body + the pure package logic it renders.
+// It does NOT edit ContentView (the shell — the zero-arg `init()` keeps its
+// `HistoryRootView()` call unchanged), another tab's RootView, FocusMode*, or
+// project.pbxproj. Keep the app layer thin (master §5/§15/§19.3): rendering +
+// wiring only; the only IO is the two sanctioned read-only store loads, delegated
+// to the stores; all branch / merge logic is in the unit-tested packages.
 
+import Foundation
 import SwiftUI
+import IronPathDomain
+import IronPathDataHealth
+import IronPathPersistence
 import IronPathLocalSnapshot
+import IronPathHealthKit
 
-struct HistoryRootView: View {
-    /// Injected snapshots for previews/tests (deterministic, no disk). When nil
-    /// (the running app) the surface loads read-only from the local store.
-    private let injectedSnapshots: [LocalCompletedSessionSnapshot]?
-    /// The reference "now" used for Today/Earlier/Older grouping + the coarse
-    /// date-range filter. Defaults to the real clock for the running app; a fixed
-    /// value is injected by previews/tests so they stay deterministic.
-    private let referenceNow: Date
+/// Thin @MainActor view-model for the 记录 surface's REAL canonical-AppData read.
+/// It owns ONLY wiring + the IO seams (master §5/§15): it opts the running app into
+/// the sanctioned canonical store AND the local Focus snapshot store, loads both
+/// READ-ONLY, and delegates the AppData → clean view → unified-timeline transform to
+/// the pure `resolveHistoryDisplayState`. It NEVER touches FileManager directly (the
+/// stores do all disk IO), NEVER writes, and surfaces an honest state for every
+/// failure — no crash, no fabricated rows, no overwrite. Mirrors the 今日 / 我的
+/// surfaces' `TodayRealDataModel` / `ProfileRealDataModel`.
+@MainActor
+final class HistoryRealDataModel: ObservableObject {
+    @Published private(set) var state: HistoryDisplayState
 
-    /// Read outcome — honest loading / failed / loaded states (no fake success).
-    private enum LoadState: Equatable {
-        case loading
-        case loaded([LocalCompletedSessionSnapshot])
-        case failed(String)
+    /// The sanctioned canonical store (the §8 source of truth). Optional so
+    /// previews/tests opt OUT of disk entirely; the running app injects the
+    /// Application Support store on appear. All disk IO is delegated to the store.
+    private var store: AppDataStore?
+    /// The local Focus snapshot store — READ-ONLY here, the supplemental native
+    /// source so the unified timeline loses no snapshot-only completion. Optional;
+    /// nil for previews/tests (no disk).
+    private var snapshotStore: LocalSessionSnapshotStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()`
+    /// in previews/tests).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the
+    /// stores, opted in on appear via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.snapshotStore = nil
+        self.now = now
+        self.isLive = true
     }
 
-    @State private var loadState: LoadState
-    @State private var searchQuery = ""
-    @State private var scenarioFilter: String? = nil      // nil = all scenarios
-    @State private var completedOnly = false
-    @State private var dateRange: LocalHistoryDateRange = .all
-    @State private var selected: LocalCompletedSessionSnapshot? = nil
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a
+    /// preview renders a chosen state without ever reading the real on-disk stores.
+    init(previewState: HistoryDisplayState) {
+        self.state = previewState
+        self.store = nil
+        self.snapshotStore = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
 
-    init(snapshots: [LocalCompletedSessionSnapshot]? = nil, now: Date = Date()) {
-        self.injectedSnapshots = snapshots
-        self.referenceNow = now
-        _loadState = State(initialValue: snapshots.map(LoadState.loaded) ?? .loading)
+    /// True for the running app; false for pinned previews.
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the write path
+    /// uses (Application Support / `IronPathAppData`) AND the local Focus snapshot
+    /// store. Idempotent; `#if os(iOS)` + the live guard keep previews/tests off disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        if snapshotStore == nil { snapshotStore = LocalSessionSnapshotStore() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view + the local
+    /// snapshot store → unified display state (in `resolveHistoryDisplayState`).
+    /// NEVER writes, NEVER overwrites an unreadable document, NEVER crashes — every
+    /// failure becomes an honest state.
+    func reload() {
+        guard isLive else { return }
+        state = resolveHistoryDisplayState(
+            readOutcome(now: now()),
+            supplementalNatives: readSupplementalNatives()
+        )
+    }
+
+    /// The canonical IO + the DataHealth clean-view construction (the §10 chokepoint
+    /// the app layer performs, mirroring `TodayRealDataModel` / `ProfileRealDataModel`).
+    /// No write: a missing file (or no live source) → `.missing`; a present-but-
+    /// unreadable document → `.unreadable` (left untouched on disk, never overwritten).
+    private func readOutcome(now: Date) -> HistoryAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
+    }
+
+    /// Read the local Focus snapshot store READ-ONLY and reduce each valid snapshot
+    /// to a NEUTRAL `SupplementalNativeCompletion` (no `IronPathLocalSnapshot` type
+    /// crosses into the packages). Best-effort: a read failure (or no live store)
+    /// yields none — the canonical timeline still renders. NEVER writes, NEVER clears.
+    private func readSupplementalNatives() -> [SupplementalNativeCompletion] {
+        guard let snapshotStore, let scan = try? snapshotStore.scanSnapshots() else { return [] }
+        return scan.valid.map { snapshot in
+            SupplementalNativeCompletion(
+                id: snapshot.snapshotId,
+                occurredAtIso: snapshot.createdAtIso,
+                exerciseCount: snapshot.exercises.count,
+                performedSetCount: snapshot.totalCompletedSets
+            )
+        }
+    }
+}
+
+struct HistoryRootView: View {
+    @StateObject private var model: HistoryRealDataModel
+
+    /// The running app constructs the default live model. `@MainActor` so it can build
+    /// the main-actor-isolated model (SwiftUI always builds views on the main actor).
+    /// Zero-arg so ContentView's `HistoryRootView()` call stays unchanged (iOS-17S).
+    @MainActor init() {
+        _model = StateObject(wrappedValue: HistoryRealDataModel())
+    }
+
+    /// Previews/tests inject a pinned model (e.g. `HistoryRealDataModel(previewState:)`).
+    @MainActor init(model: HistoryRealDataModel) {
+        _model = StateObject(wrappedValue: model)
     }
 
     var body: some View {
@@ -62,266 +166,198 @@ struct HistoryRootView: View {
             content
                 .navigationTitle("记录")
         }
-        // Read-only detail: omit `onContinue` (no restore/continue write action)
-        // and `currentExerciseIds` (no per-exercise recovery projection) — the
-        // sheet then renders as a pure saved-session viewer.
-        .sheet(item: $selected) { snapshot in
-            FocusSavedSessionDetailView(snapshot: snapshot)
+        .task {
+            // Opt the running app into the real stores and read them (read-only).
+            model.activateLiveSourceIfNeeded()
+            model.reload()
         }
-        // Refresh on appear so returning to the tab reflects newly-saved sessions.
-        // Injected (preview/test) data never reads disk.
-        .onAppear(perform: loadIfNeeded)
     }
 
     // MARK: - Top-level content states
 
     @ViewBuilder
     private var content: some View {
-        switch loadState {
-        case .loading:
-            loadingState
-        case .failed(let message):
-            failureState(message)
-        case .loaded(let all):
-            if all.isEmpty {
-                emptyState
-            } else {
-                historyList(all)
-            }
+        switch model.state {
+        case .ready(let timeline):
+            timelineList(timeline)
+        case .empty:
+            emptyState
+        case .unavailable:
+            unavailableState
         }
     }
 
-    private var loadingState: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text("正在读取本机训练记录…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
+    // MARK: - Unified timeline (native + Apple-Health imports)
 
-    private func failureState(_ message: String) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("暂时无法读取记录")
-                    .font(.title2.weight(.semibold))
-                Text("读取本机训练记录时出错：\(message)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Button(action: reload) {
-                Text("重试")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.borderedProminent)
-            Spacer()
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("还没有训练记录")
-                    .font(.title2.weight(.semibold))
-                Text("在「训练」页完成一次训练后，本机会自动保存这次训练，并显示在这里。记录仅保存在本机，不联网、不同步云端。")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Button(action: reload) {
-                Text("刷新")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.borderedProminent)
-            Spacer()
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    // MARK: - Loaded history list
-
-    private func historyList(_ all: [LocalCompletedSessionSnapshot]) -> some View {
-        let filtered = filteredSnapshots(all)
-        let sections = LocalSnapshotHistory.grouped(filtered, now: referenceNow)
-        return List {
-            statsSection(all)
-            filterSection(all)
-            if sections.isEmpty {
-                Section {
-                    Text("没有符合筛选条件的记录")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+    private func timelineList(_ timeline: CompletedTrainingTimeline) -> some View {
+        List {
+            Section {
+                ForEach(Array(timeline.entries.enumerated()), id: \.offset) { _, entry in
+                    entryRow(entry)
                 }
-            } else {
-                ForEach(sections, id: \.group.rawValue) { section in
-                    Section(section.group.title) {
-                        ForEach(section.snapshots) { snapshot in
-                            Button { selected = snapshot } label: { historyRow(snapshot) }
-                                .buttonStyle(.plain)
-                        }
-                    }
-                }
+            } header: {
+                Text("完成训练 · 共 \(timeline.entries.count) 条")
             }
             disclaimerSection
         }
         .listStyle(.insetGrouped)
-        .searchable(text: $searchQuery, prompt: "搜索样例 / 动作")
-        .autocorrectionDisabled()
     }
 
-    // MARK: - Stats (derived, read-only)
-
-    private func statsSection(_ all: [LocalCompletedSessionSnapshot]) -> some View {
-        let stats = LocalSnapshotStats.derive(from: all)
-        return Section("本机训练小结") {
-            HStack(spacing: 8) {
-                statTile("已保存", "\(stats.totalSessions)")
-                statTile("完成组", "\(stats.totalCompletedSets)")
-                statTile("目标组", "\(stats.totalTargetSets)")
-                statTile("完成率", stats.completionPercentText)
-            }
-            if let common = stats.mostCommonScenarioLabel {
-                Text("最常练：\(common) · 最近一次：\(stats.lastSavedIso.map(Self.displayTime) ?? "—")")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+    @ViewBuilder
+    private func entryRow(_ entry: CompletedTrainingEntry) -> some View {
+        switch entry {
+        case .native(let native):
+            nativeRow(native)
+        case .imported(let workout):
+            importedRow(workout)
         }
     }
 
-    private func statTile(_ label: String, _ value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.subheadline.monospacedDigit().weight(.semibold))
-            Text(label).font(.caption2).foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
-    }
-
-    // MARK: - Filters (coarse date range + completed-only + scenario)
-
-    private func filterSection(_ all: [LocalCompletedSessionSnapshot]) -> some View {
-        Section("筛选") {
-            Picker("时间范围", selection: $dateRange) {
-                ForEach(LocalHistoryDateRange.allCases, id: \.self) { range in
-                    Text(range.title).tag(range)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            Toggle("仅显示已完成", isOn: $completedOnly)
-
-            let scenarios = distinctScenarios(all)
-            if !scenarios.isEmpty {
-                Picker("训练样例", selection: $scenarioFilter) {
-                    Text("全部样例").tag(String?.none)
-                    ForEach(scenarios, id: \.id) { item in
-                        Text(item.label).tag(String?.some(item.id))
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - History row
-
-    private func historyRow(_ snapshot: LocalCompletedSessionSnapshot) -> some View {
+    private func nativeRow(_ native: NativeCompletedTraining) -> some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(snapshot.scenarioLabel).font(.subheadline.weight(.medium))
-                Text("\(snapshot.sessionIntent) · \(snapshot.activePhase)")
+                Text("完成训练").font(.subheadline.weight(.medium))
+                Text("\(native.exerciseCount) 个动作 · \(native.performedSetCount) 组")
                     .font(.caption2).foregroundStyle(.tertiary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text("\(snapshot.totalCompletedSets) / \(snapshot.totalTargetSets) 组 · \(Self.completionPercent(snapshot))")
-                    .font(.footnote.monospacedDigit())
-                Text(Self.displayTime(snapshot.createdAtIso))
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                sourceTag("原生")
+                Text(Self.displayTime(native.occurredAtIso))
+                    .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
             }
         }
-        .contentShape(Rectangle())
         .padding(.vertical, 2)
+    }
+
+    private func importedRow(_ workout: ImportedWorkoutSample) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(HealthKitWorkoutMapper.displayLabel(forWorkoutType: workout.workoutType))
+                    .font(.subheadline.weight(.medium))
+                Text(Self.importedSubtitle(workout))
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                sourceTag("来自 Apple 健康")
+                Text(Self.displayTime(workout.startDate ?? workout.endDate ?? workout.importedAt))
+                    .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// Small, calm origin chip — "原生" vs "来自 Apple 健康".
+    private func sourceTag(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.secondary)
     }
 
     private var disclaimerSection: some View {
         Section {
-            // Honest disclosure — read-only, no data access beyond the local read.
-            Text("本页只读展示本机已保存的训练，点按可查看详情。不联网、不同步云端、不修改任何已保存的数据。清除 / 导出 / 继续训练等操作仍在「训练」页内。")
+            // Honest disclosure — read-only, no data access beyond the local reads.
+            Text("本页只读展示本机的完成训练：「原生」是你在本机完成的训练（来自本机训练记录），「来自 Apple 健康」是从 Apple 健康导入的训练摘要（仅供查看，不计入训练计划与准备度）。不联网、不同步云端、不修改任何已保存的数据。继续训练与逐组详情在「训练」页内。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Loading (read-only, delegated to the sanctioned store)
+    // MARK: - Honest empty / degrade states (§15.4)
 
-    private func loadIfNeeded() {
-        // Injected snapshots (preview/test) are authoritative — never read disk.
-        guard injectedSnapshots == nil else { return }
-        loadFromStore()
-    }
-
-    private func reload() {
-        guard injectedSnapshots == nil else { return }
-        loadFromStore()
-    }
-
-    private func loadFromStore() {
-        // Read-only scan: the store performs no write and clears nothing here.
-        // A read failure is surfaced honestly (never a fabricated empty success).
-        let store = LocalSessionSnapshotStore()
-        do {
-            loadState = .loaded(try store.scanSnapshots().valid)
-        } catch {
-            loadState = .failed(error.localizedDescription)
-        }
-    }
-
-    // MARK: - Pure UI helpers
-
-    private func filteredSnapshots(_ all: [LocalCompletedSessionSnapshot]) -> [LocalCompletedSessionSnapshot] {
-        // Delegate to the pure, unit-tested filter (search + scenario +
-        // completed-only + coarse date range), measured against the injected clock.
-        LocalSnapshotHistory.filtered(
-            all,
-            query: searchQuery,
-            scenarioId: scenarioFilter,
-            completedOnly: completedOnly,
-            dateRange: dateRange,
-            now: referenceNow
+    private var emptyState: some View {
+        infoState(
+            title: "还没有完成的训练记录",
+            message: "在「训练」页完成一次训练后，会显示在这里；你也可以在「我的」页从 Apple 健康导入过往训练。记录只读展示、不联网、不同步云端。",
+            actionTitle: "刷新"
         )
     }
 
-    private func distinctScenarios(_ all: [LocalCompletedSessionSnapshot]) -> [ScenarioOption] {
-        var seen = Set<String>()
-        var out: [ScenarioOption] = []
-        for snap in all where !seen.contains(snap.scenarioId) {
-            seen.insert(snap.scenarioId)
-            out.append(ScenarioOption(id: snap.scenarioId, label: snap.scenarioLabel))
+    private var unavailableState: some View {
+        infoState(
+            title: "暂时无法读取记录",
+            message: "本机记录暂时无法读取。已保留原始数据未作任何改动，可稍后重试。",
+            actionTitle: "重试"
+        )
+    }
+
+    /// Honest empty/degrade card (title + explanation + one retry action).
+    private func infoState(title: String, message: String, actionTitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.title2.weight(.semibold))
+                Text(message).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Button(action: reloadFromTap) {
+                Text(actionTitle)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            Spacer()
         }
-        return out
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private struct ScenarioOption: Identifiable { let id: String; let label: String }
-
-    /// Whole-percent completion for one snapshot (e.g. "80%").
-    private static func completionPercent(_ s: LocalCompletedSessionSnapshot) -> String {
-        guard s.totalTargetSets > 0 else { return "0%" }
-        let pct = Int((Double(s.totalCompletedSets) / Double(s.totalTargetSets) * 100).rounded())
-        return "\(min(100, max(0, pct)))%"
+    /// Re-run the read-only load on an explicit retry/refresh tap (picks up data
+    /// saved/imported since first appear).
+    private func reloadFromTap() {
+        model.activateLiveSourceIfNeeded()
+        model.reload()
     }
 
-    /// Render an ISO-8601 instant as a compact UTC `yyyy-MM-dd HH:mm` label.
-    /// Falls back to the raw string if it can't be parsed.
-    private static func displayTime(_ iso: String) -> String {
+    // MARK: - Pure formatting (presentation only)
+
+    /// Apple-Health imported-workout subtitle (duration / energy / distance / heart
+    /// rate), each part shown ONLY when the import recorded it — an absent field is
+    /// honestly omitted, never a fabricated 0. Mirrors the 我的 import row.
+    private static func importedSubtitle(_ workout: ImportedWorkoutSample) -> String {
+        var parts: [String] = []
+        if let minutes = workout.durationMin?.doubleValue {
+            parts.append("\(Int(minutes.rounded())) 分钟")
+        }
+        if let kcal = workout.activeEnergyKcal?.doubleValue {
+            parts.append("\(Int(kcal.rounded())) 千卡")
+        }
+        if let meters = workout.distanceMeters?.doubleValue {
+            parts.append(distanceText(meters))
+        }
+        if let hr = heartRateText(avg: workout.avgHeartRate?.doubleValue, max: workout.maxHeartRate?.doubleValue) {
+            parts.append(hr)
+        }
+        return parts.isEmpty ? "来自 Apple 健康的训练" : parts.joined(separator: " · ")
+    }
+
+    /// Distance for display: kilometers (1 decimal) at ≥1 km, otherwise whole meters.
+    private static func distanceText(_ meters: Double) -> String {
+        if meters >= 1000 {
+            return String(format: "%.1f 公里", meters / 1000)
+        }
+        return "\(Int(meters.rounded())) 米"
+    }
+
+    /// Heart rate for display: "心率 平均/最高 bpm" when both are present, otherwise
+    /// whichever was recorded; nil when neither (the row simply omits it).
+    private static func heartRateText(avg: Double?, max: Double?) -> String? {
+        switch (avg, max) {
+        case let (avg?, max?):
+            return "心率 \(Int(avg.rounded()))/\(Int(max.rounded())) bpm"
+        case let (avg?, nil):
+            return "平均心率 \(Int(avg.rounded())) bpm"
+        case let (nil, max?):
+            return "最高心率 \(Int(max.rounded())) bpm"
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    /// Render an ISO-8601 instant as a compact UTC `yyyy-MM-dd HH:mm` label, or "—"
+    /// when absent. Falls back to the raw string if it can't be parsed.
+    private static func displayTime(_ iso: String?) -> String {
+        guard let iso, !iso.isEmpty else { return "—" }
         let parser = ISO8601DateFormatter()
         parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let date = parser.date(from: iso) ?? {
@@ -338,83 +374,62 @@ struct HistoryRootView: View {
     }
 }
 
-// MARK: - Previews (deterministic — injected snapshots + fixed clock, no disk)
+// MARK: - Previews (deterministic — pinned state, no disk)
 
 #Preview("有记录") {
-    HistoryRootView(snapshots: HistoryRootViewPreviewData.snapshots, now: HistoryRootViewPreviewData.now)
+    HistoryRootView(model: HistoryRealDataModel(previewState: .ready(HistoryRootViewPreviewData.timeline)))
 }
 
 #Preview("空态") {
-    HistoryRootView(snapshots: [])
+    HistoryRootView(model: HistoryRealDataModel(previewState: .empty))
+}
+
+#Preview("不可读") {
+    HistoryRootView(model: HistoryRealDataModel(previewState: .unavailable))
 }
 
 /// Deterministic preview-only sample. NOT canonical AppData and never written to
 /// disk — it only feeds the SwiftUI preview so it renders without a device store.
+/// Built through the GENUINE pure builder so the preview reflects real merge/order.
 private enum HistoryRootViewPreviewData {
-    static let now: Date = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: "2026-05-27T12:00:00.000Z") ?? Date(timeIntervalSince1970: 0)
-    }()
-
-    static let snapshots: [LocalCompletedSessionSnapshot] = [
-        LocalCompletedSessionSnapshot(
-            snapshotId: "focus-normal-3",
-            createdAtIso: "2026-05-27T10:00:00.000Z",
-            scenarioId: "normal",
-            scenarioLabel: "普通",
-            sessionIntent: "normal-session",
-            activePhase: "base",
-            deloadLevel: "none",
-            deloadStrategy: "maintain",
-            totalCompletedSets: 6,
-            totalTargetSets: 6,
-            exercises: [
-                LocalCompletedExerciseSnapshot(
-                    exerciseId: "bench-press", name: "平板卧推", role: "secondary-compound",
-                    progress: LocalCompletedSetProgressSnapshot(completedSets: 3, targetSets: 3)
-                ),
-                LocalCompletedExerciseSnapshot(
-                    exerciseId: "lateral-raise", name: "哑铃侧平举", role: "isolation",
-                    progress: LocalCompletedSetProgressSnapshot(completedSets: 3, targetSets: 3)
-                ),
-            ]
-        ),
-        LocalCompletedSessionSnapshot(
-            snapshotId: "focus-deloadWeek-2",
-            createdAtIso: "2026-05-22T09:30:00.000Z",
-            scenarioId: "deloadWeek",
-            scenarioLabel: "减载周",
-            sessionIntent: "deload-session",
-            activePhase: "peak",
-            deloadLevel: "moderate",
-            deloadStrategy: "reduce-volume",
-            totalCompletedSets: 4,
-            totalTargetSets: 6,
-            exercises: [
-                LocalCompletedExerciseSnapshot(
-                    exerciseId: "squat", name: "深蹲", role: "primary-compound",
-                    progress: LocalCompletedSetProgressSnapshot(completedSets: 2, targetSets: 3)
-                ),
-            ]
-        ),
-        LocalCompletedSessionSnapshot(
-            snapshotId: "focus-normal-1",
-            createdAtIso: "2026-05-10T18:15:00.000Z",
-            scenarioId: "normal",
-            scenarioLabel: "普通",
-            sessionIntent: "normal-session",
-            activePhase: "base",
-            deloadLevel: "none",
-            deloadStrategy: "maintain",
-            totalCompletedSets: 5,
-            totalTargetSets: 6,
-            exercises: [
-                LocalCompletedExerciseSnapshot(
-                    exerciseId: "deadlift", name: "硬拉", role: "primary-compound",
-                    progress: LocalCompletedSetProgressSnapshot(completedSets: 2, targetSets: 3)
-                ),
-            ]
-        ),
-    ]
+    static let timeline = CompletedTrainingTimeline.make(
+        canonicalHistory: [
+            TrainingSession(
+                id: "focus-3-normal",
+                finishedAt: "2026-05-27T10:00:00.000Z",
+                completed: true,
+                focusSessionComplete: true,
+                exercises: [
+                    ExercisePrescription(id: "bench-press", exerciseId: "bench-press", name: "平板卧推", sets: [
+                        TrainingSetLog(setIndex: .integer(0), done: true),
+                        TrainingSetLog(setIndex: .integer(1), done: true),
+                        TrainingSetLog(setIndex: .integer(2), done: true),
+                    ]),
+                    ExercisePrescription(id: "lateral-raise", exerciseId: "lateral-raise", name: "哑铃侧平举", sets: [
+                        TrainingSetLog(setIndex: .integer(0), done: true),
+                        TrainingSetLog(setIndex: .integer(1), done: true),
+                    ]),
+                ]
+            ),
+        ],
+        supplementalNatives: [
+            // A snapshot-only completion (no per-set detail → never written canonical).
+            SupplementalNativeCompletion(
+                id: "focus-1-normal",
+                occurredAtIso: "2026-05-20T09:30:00.000Z",
+                exerciseCount: 2,
+                performedSetCount: 4
+            ),
+        ],
+        importedWorkouts: [
+            ImportedWorkoutSample(
+                source: "healthkit_import",
+                workoutType: "running",
+                startDate: "2026-05-25T07:00:00.000Z",
+                durationMin: .decimal(Decimal(32)),
+                activeEnergyKcal: .decimal(Decimal(280)),
+                distanceMeters: .decimal(Decimal(5200))
+            ),
+        ]
+    )
 }
