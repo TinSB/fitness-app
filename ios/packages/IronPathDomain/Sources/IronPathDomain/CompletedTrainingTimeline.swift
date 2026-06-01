@@ -38,6 +38,15 @@ public enum CompletedTrainingSource: String, Equatable, Sendable {
     /// display-only — never a canonical session, never engine input. Rendered
     /// "来自 Apple 健康".
     case appleHealth
+
+    /// The Chinese-first origin label the surface renders — and the 来源标签 search
+    /// target of the History text search (the 记录 search + source filter slice).
+    public var displayLabel: String {
+        switch self {
+        case .native: return "原生"
+        case .appleHealth: return "来自 Apple 健康"
+        }
+    }
 }
 
 /// A native completed session reduced to the fields the timeline row renders.
@@ -51,12 +60,23 @@ public struct NativeCompletedTraining: Equatable, Sendable {
     public let exerciseCount: Int
     /// Number of performed sets recorded.
     public let performedSetCount: Int
+    /// The performed exercise names — the 动作名 search target only (NOT used for
+    /// counts or ordering). Empty when the source carried none. Defaulted so the
+    /// only constructor (the builder below) is the sole place that populates it.
+    public let exerciseNames: [String]
 
-    public init(id: String?, occurredAtIso: String?, exerciseCount: Int, performedSetCount: Int) {
+    public init(
+        id: String?,
+        occurredAtIso: String?,
+        exerciseCount: Int,
+        performedSetCount: Int,
+        exerciseNames: [String] = []
+    ) {
         self.id = id
         self.occurredAtIso = occurredAtIso
         self.exerciseCount = exerciseCount
         self.performedSetCount = performedSetCount
+        self.exerciseNames = exerciseNames
     }
 }
 
@@ -69,12 +89,23 @@ public struct SupplementalNativeCompletion: Equatable, Sendable {
     public let occurredAtIso: String?
     public let exerciseCount: Int
     public let performedSetCount: Int
+    /// The performed exercise names from the snapshot-only completion (the 动作名
+    /// search target). Defaulted empty so existing callers/tests are unaffected;
+    /// the thin app layer supplies them from the local Focus snapshot read-only.
+    public let exerciseNames: [String]
 
-    public init(id: String?, occurredAtIso: String?, exerciseCount: Int, performedSetCount: Int) {
+    public init(
+        id: String?,
+        occurredAtIso: String?,
+        exerciseCount: Int,
+        performedSetCount: Int,
+        exerciseNames: [String] = []
+    ) {
         self.id = id
         self.occurredAtIso = occurredAtIso
         self.exerciseCount = exerciseCount
         self.performedSetCount = performedSetCount
+        self.exerciseNames = exerciseNames
     }
 }
 
@@ -105,6 +136,21 @@ public enum CompletedTrainingEntry: Equatable, Sendable {
         case .imported:
             return .appleHealth
         }
+    }
+
+    /// The case-insensitive search target for this row (记录 search + source filter):
+    /// the origin label (来源标签) PLUS the row's own text — a native session's
+    /// exercise names (动作名), or an imported workout's raw type. Newline-joined so a
+    /// query never matches across two fields; empty parts dropped. Pure, display-only.
+    public var searchableText: String {
+        var parts: [String] = [source.displayLabel]
+        switch self {
+        case .native(let native):
+            parts.append(contentsOf: native.exerciseNames)
+        case .imported(let workout):
+            if let type = workout.workoutType { parts.append(type) }
+        }
+        return parts.filter { !$0.isEmpty }.joined(separator: "\n")
     }
 }
 
@@ -142,7 +188,8 @@ public struct CompletedTrainingTimeline: Equatable, Sendable {
                 id: session.id,
                 occurredAtIso: session.finishedAt ?? session.date ?? session.startedAt,
                 exerciseCount: (session.exercises ?? []).count,
-                performedSetCount: (session.exercises ?? []).reduce(0) { $0 + ($1.sets?.count ?? 0) }
+                performedSetCount: (session.exercises ?? []).reduce(0) { $0 + ($1.sets?.count ?? 0) },
+                exerciseNames: (session.exercises ?? []).compactMap(\.name).filter { !$0.isEmpty }
             )))
         }
 
@@ -154,7 +201,8 @@ public struct CompletedTrainingTimeline: Equatable, Sendable {
                 id: supplemental.id,
                 occurredAtIso: supplemental.occurredAtIso,
                 exerciseCount: supplemental.exerciseCount,
-                performedSetCount: supplemental.performedSetCount
+                performedSetCount: supplemental.performedSetCount,
+                exerciseNames: supplemental.exerciseNames
             )))
         }
 

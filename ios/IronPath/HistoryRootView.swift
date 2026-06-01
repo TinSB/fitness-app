@@ -140,7 +140,8 @@ final class HistoryRealDataModel: ObservableObject {
                 id: snapshot.snapshotId,
                 occurredAtIso: snapshot.createdAtIso,
                 exerciseCount: snapshot.exercises.count,
-                performedSetCount: snapshot.totalCompletedSets
+                performedSetCount: snapshot.totalCompletedSets,
+                exerciseNames: snapshot.exercises.map(\.name)
             )
         }
     }
@@ -148,6 +149,11 @@ final class HistoryRealDataModel: ObservableObject {
 
 struct HistoryRootView: View {
     @StateObject private var model: HistoryRealDataModel
+
+    /// 记录 filter UI state (presentation-only; never written to disk). Each defaults
+    /// to a no-op, so the unified timeline renders unchanged until the user filters.
+    @State private var query: String = ""
+    @State private var sourceFilter: CompletedTrainingSourceFilter = .all
 
     /// The running app constructs the default live model. `@MainActor` so it can build
     /// the main-actor-isolated model (SwiftUI always builds views on the main actor).
@@ -189,18 +195,64 @@ struct HistoryRootView: View {
 
     // MARK: - Unified timeline (native + Apple-Health imports)
 
+    /// The unified timeline + the pure search / source filter (read-only). The search
+    /// field and source segment feed `CompletedTrainingTimeline.filtered`; the rows are
+    /// whatever it returns, in order. When the filter matches nothing (but records
+    /// exist) we show an HONEST "没有匹配的记录" row — distinct from the
+    /// no-records-at-all empty state — keeping the controls on screen so the user can
+    /// adjust. Nothing here writes, edits, or reorders.
     private func timelineList(_ timeline: CompletedTrainingTimeline) -> some View {
-        List {
-            Section {
-                ForEach(Array(timeline.entries.enumerated()), id: \.offset) { _, entry in
-                    entryRow(entry)
+        let filtered = timeline.filtered(
+            query: query,
+            source: sourceFilter
+        )
+        return List {
+            filterControlsSection
+            if filtered.isEmpty {
+                noMatchSection
+            } else {
+                Section {
+                    ForEach(Array(filtered.entries.enumerated()), id: \.offset) { _, entry in
+                        entryRow(entry)
+                    }
+                } header: {
+                    Text("完成训练 · 共 \(filtered.entries.count) 条")
                 }
-            } header: {
-                Text("完成训练 · 共 \(timeline.entries.count) 条")
             }
             disclaimerSection
         }
         .listStyle(.insetGrouped)
+        .searchable(text: $query, prompt: "搜索动作 / 来源")
+    }
+
+    /// Read-only filter controls: a source segment (全部 / 原生 / 来自 Apple 健康).
+    /// Presentation state only — selecting one re-runs the pure filter; nothing is
+    /// persisted.
+    private var filterControlsSection: some View {
+        Section {
+            Picker("来源", selection: $sourceFilter) {
+                ForEach(CompletedTrainingSourceFilter.allCases, id: \.self) { filter in
+                    Text(filter.title).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("筛选")
+        }
+    }
+
+    /// Honest "no matching records" state — shown when records exist but the active
+    /// search / filters exclude them all (NOT the no-data-at-all empty state). The
+    /// page stays read-only; the controls above remain visible for adjustment.
+    private var noMatchSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("没有匹配的记录").font(.subheadline.weight(.medium))
+                Text("试试调整搜索词或筛选条件。本页只读展示，不修改任何已保存的数据。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 2)
+        }
     }
 
     @ViewBuilder
