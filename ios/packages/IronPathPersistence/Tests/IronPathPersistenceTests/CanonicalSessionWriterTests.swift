@@ -1202,4 +1202,219 @@ final class CanonicalSessionWriterTests: XCTestCase {
         XCTAssertEqual(set?.rir?.intValue, 0)
         XCTAssertEqual(set?.done, true)
     }
+
+    // MARK: - SR-4: exercise replacement (换动作 / 复原, SAME gated path)
+
+    func testUpdateExerciseReplacementAppliesIdentityAndBacksUp() throws {
+        // Seed with a completed session whose only exercise is the native-logged "bench"
+        // (no identity fields yet).
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        let result = try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1, "the replacement is exactly one gated save (single write path)")
+        // The three user-override identity fields are set on the matched exercise…
+        let ex = store.stored?.history.first?.exercises?.first
+        XCTAssertEqual(ex?.actualExerciseId, "db-bench-press")
+        XCTAssertEqual(ex?.displayExerciseId, "db-bench-press")
+        XCTAssertEqual(ex?.recordExerciseId, "db-bench-press")
+        // …the engine-opened originalExerciseId is NEVER written (stays nil on a native
+        // log), the planned id/name + the performed sets survive verbatim.
+        XCTAssertNil(ex?.originalExerciseId, "apply must never open originalExerciseId")
+        XCTAssertEqual(ex?.id, "bench")
+        XCTAssertEqual(ex?.exerciseId, "bench")
+        XCTAssertEqual(ex?.name, "平板卧推")
+        XCTAssertEqual(ex?.sets?.count, 1)
+        XCTAssertEqual(ex?.sets?.first?.weight?.doubleValue ?? -1, 60, accuracy: 1e-9)
+        XCTAssertEqual(store.stored?.history.count, 1)
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testUpdateExerciseReplacementRestoreClearsIdentity() throws {
+        // Seed with an ALREADY-replaced exercise (actual/display/record == db-bench-press).
+        let seed = AppData.emptyCurrent()
+            .appendingHistorySession(makeSession(id: "s1"))
+            .withUpdatedExerciseReplacement(sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press")
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        let result = try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: nil   // RESTORE
+        ) { _ in true }
+
+        XCTAssertEqual(store.saveCount, 1, "restore is exactly one gated save")
+        XCTAssertNotNil(result.backupURL)
+        // The three identity fields are cleared → the record falls back to the original
+        // planned id/exerciseId (still locatable, never touched).
+        let ex = store.stored?.history.first?.exercises?.first
+        XCTAssertNil(ex?.actualExerciseId)
+        XCTAssertNil(ex?.displayExerciseId)
+        XCTAssertNil(ex?.recordExerciseId)
+        XCTAssertEqual(ex?.id, "bench")
+        XCTAssertEqual(ex?.exerciseId, "bench")
+        XCTAssertEqual(ex?.sets?.count, 1)
+    }
+
+    func testUpdateExerciseReplacementValidationRejectionWritesNothing() throws {
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The on-disk exercise is untouched (no identity leaked).
+        XCTAssertNil(store.stored?.history.first?.exercises?.first?.actualExerciseId)
+    }
+
+    func testUpdateExerciseReplacementGateSeesReplacedCandidate() throws {
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        var seenActual: String?
+        _ = try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { candidate in
+            seenActual = candidate.history.first?.exercises?.first?.actualExerciseId
+            return true
+        }
+        XCTAssertEqual(seenActual, "db-bench-press", "the gate must see the candidate with the replacement already applied")
+    }
+
+    func testUpdateExerciseReplacementUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testUpdateExerciseReplacementBackupFailureStopsBeforeSave() {
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        store.backupError = AppDataStoreError.backupFailed("disk full")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.backupFailed = error else {
+                return XCTFail("expected .backupFailed, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "a failed backup must abort before any overwrite")
+    }
+
+    func testUpdateExerciseReplacementSaveFailurePropagatesHonestly() {
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        store.saveError = AppDataStoreError.writeFailed("io error")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.saveFailed = error else {
+                return XCTFail("expected .saveFailed, got \(error)")
+            }
+        }
+    }
+
+    func testUpdateExerciseReplacementPreservesOriginalIdBodyAndOpenBagThroughGatedWrite() throws {
+        // Seed a richer history exercise: an engine-opened originalExerciseId, advice,
+        // sets with a set-level open bag, plus exercise/session/top-level unknowns and an
+        // engine-managed mesocycle (weeks) — the replacement must touch ONLY the three
+        // identity fields.
+        let json = """
+        {"schemaVersion":8,\
+        "history":[{"id":"s1","completed":true,"sessionNote":"keep-session",\
+        "exercises":[{"id":"bench","exerciseId":"bench","name":"平板卧推","originalExerciseId":"bench-planned",\
+        "prescription":{"target":"5x5"},"exerciseNote":"keep-ex",\
+        "sets":[{"setIndex":0,"weight":60,"reps":8,"rir":2,"done":true,"setNote":"keep-set0"}]}]}],\
+        "mesocyclePlan":{"id":"m1","weeks":[{"index":1},{"index":2}]},\
+        "futureUnknownKey":{"nested":[1,2,3]}}
+        """
+        let seed = try AppData(decoding: Data(json.utf8))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        _ = try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in true }
+
+        let stored = try XCTUnwrap(store.stored)
+        let ex = stored.history.first?.exercises?.first
+        XCTAssertEqual(ex?.actualExerciseId, "db-bench-press")
+        XCTAssertEqual(ex?.displayExerciseId, "db-bench-press")
+        XCTAssertEqual(ex?.recordExerciseId, "db-bench-press")
+        // The engine-opened originalExerciseId is carried through UNTOUCHED.
+        XCTAssertEqual(ex?.originalExerciseId, "bench-planned", "originalExerciseId must never be written by a replacement")
+        // The prescription body + sets survive; the set's metrics are unchanged.
+        XCTAssertEqual(ex?.sets?.first?.weight?.doubleValue ?? -1, 60, accuracy: 1e-9)
+        // Open bags at every level + the engine-managed mesocycle weeks survive verbatim.
+        let canonical = try stored.canonicalJSONString()
+        XCTAssertTrue(canonical.contains("\"sessionNote\":\"keep-session\""), "session open-bag lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("\"exerciseNote\":\"keep-ex\""), "exercise open-bag lost")
+        XCTAssertTrue(canonical.contains("\"setNote\":\"keep-set0\""), "set open-bag lost")
+        XCTAssertTrue(canonical.contains("\"prescription\":{\"target\":\"5x5\"}"), "engine advice lost")
+        XCTAssertTrue(canonical.contains("\"weeks\":[{\"index\":1},{\"index\":2}]"), "engine mesocycle weeks lost")
+        XCTAssertTrue(canonical.contains("futureUnknownKey"), "top-level unknown lost")
+        XCTAssertEqual(stored.schemaVersion, .current, "edit must not bump schema")
+    }
+
+    func testUpdateExerciseReplacementApplyPersistsThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-sr4-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // Seed a completed session (no backup), then APPLY a replacement (backs up the
+        // prior file, then atomically saves). One backup-producing write, mirroring the
+        // DEEP-EDIT-1 real-store round trip (the store's backup name is second-granular,
+        // so a test does at most one backup per second). Restore's disk behaviour is
+        // covered by the fake-store + Domain byte-identical tests.
+        let r1 = try writer.appendCompletedSession(makeSession(id: "s1", weightKg: 60, reps: 5)) { _ in true }
+        XCTAssertTrue(r1.createdNewStore)
+        let r2 = try writer.updateExerciseReplacement(
+            sessionId: "s1", exerciseId: "bench", replacementExerciseId: "db-bench-press"
+        ) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "backup file must exist on disk")
+
+        // Reload from disk: the replacement identity persisted; the engine-opened
+        // originalExerciseId stays nil and the performed set is unchanged.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.history.count, 1)
+        let ex = loaded.history.first?.exercises?.first
+        XCTAssertEqual(ex?.actualExerciseId, "db-bench-press")
+        XCTAssertEqual(ex?.displayExerciseId, "db-bench-press")
+        XCTAssertEqual(ex?.recordExerciseId, "db-bench-press")
+        XCTAssertNil(ex?.originalExerciseId)
+        XCTAssertEqual(ex?.id, "bench")
+        XCTAssertEqual(ex?.sets?.first?.weight?.doubleValue ?? -1, 60, accuracy: 1e-9)
+        XCTAssertEqual(ex?.sets?.first?.done, true)
+    }
 }

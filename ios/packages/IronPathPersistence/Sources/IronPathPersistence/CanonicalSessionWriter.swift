@@ -47,6 +47,17 @@
 //     user's own recorded performance); the engine recomputes e1RM / readiness FROM
 //     it, so this edit never touches an engine OUTPUT (the `mesocyclePlan` weeks blob,
 //     prescription/advice fields, computed phase/readiness/e1RM).
+//   • `updateExerciseReplacement` — an in-place EDIT of ONE history exercise's
+//     user-override identity (换动作 / 复原, SR-4) → `AppData.history[].exercises[]`. A
+//     sanctioned MUTATION: it rewrites ONLY the matched exercise's three user-override
+//     identity fields (`actualExerciseId` / `displayExerciseId` / `recordExerciseId`)
+//     inside ONLY the `history` key — APPLY sets them to the chosen replacement, RESTORE
+//     clears them — open-bag/schema/timestamp preserving at EVERY nesting level (every
+//     other exercise / set / session, and the target exercise's `sets` /
+//     `originalExerciseId` / prescription body, survive verbatim). The user's chosen
+//     actual exercise is an ENGINE INPUT; it NEVER touches an engine OUTPUT (the
+//     engine-opened `originalExerciseId`, the `mesocyclePlan` weeks blob, prescription/
+//     advice fields, computed phase/readiness/e1RM).
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -412,8 +423,59 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// SR-4: set ONE history exercise's user-override identity to a chosen replacement
+    /// ("换动作"), or clear it (复原 / RESTORE), in place inside `AppData.history` and
+    /// persist — through the SAME sanctioned, DataHealth-gated write path as every entry
+    /// above (§8 rule 4: NOT a second/parallel write path). The candidate builder is the
+    /// pure nested open-bag `AppData.withUpdatedExerciseReplacement` (rewrites ONLY the
+    /// matched exercise's three user-override identity fields — `actualExerciseId` /
+    /// `displayExerciseId` / `recordExerciseId` — inside ONLY the `history` key; every
+    /// other session / exercise / set, each level's open bag, the schemaVersion, and all
+    /// ISO timestamps are preserving), so an edit is a sanctioned MUTATION, not a restore
+    /// (§13/§14).
+    ///
+    /// A non-nil `replacementExerciseId` APPLIES the replacement (all three identity
+    /// fields → it); nil RESTORES (clears all three, so the record falls back to the
+    /// untouched original `id` / `exerciseId`). It records the user's CHOICE of actual
+    /// exercise — an engine INPUT — and NEVER touches an engine OUTPUT: the engine-opened
+    /// `originalExerciseId`, the exercise's prescription body / `sets`, the
+    /// `mesocyclePlan` weeks blob, and any computed phase/readiness/e1RM are left verbatim
+    /// and recomputed by the engine FROM the clean record, not this edit (§11). The caller
+    /// supplies the DataHealth gate (defensive read-only clean-view re-validation before
+    /// the write commits); a rejected candidate is NEVER written (no fake success).
+    ///
+    /// - Parameters:
+    ///   - sessionId: the `TrainingSession.id` of the session holding the exercise.
+    ///   - exerciseId: the exercise's original/planned `id` / `exerciseId` inside that
+    ///     session (STABLE across apply AND restore — this edit never changes it).
+    ///   - replacementExerciseId: the chosen replacement exercise id to APPLY, or nil to
+    ///     RESTORE the original.
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func updateExerciseReplacement(
+        sessionId: String,
+        exerciseId: String,
+        replacementExerciseId: String?,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: {
+                $0.withUpdatedExerciseReplacement(
+                    sessionId: sessionId,
+                    exerciseId: exerciseId,
+                    replacementExerciseId: replacementExerciseId
+                )
+            },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1). `buildCandidate` is the only
+    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1 + SR-4). `buildCandidate` is the only
     /// thing that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned
