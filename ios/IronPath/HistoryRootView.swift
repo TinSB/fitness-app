@@ -363,32 +363,27 @@ struct HistoryRootView: View {
 
     // MARK: - Pure formatting (presentation only)
 
-    /// Apple-Health imported-workout subtitle (duration / energy / distance / heart
-    /// rate), each part shown ONLY when the import recorded it — an absent field is
-    /// honestly omitted, never a fabricated 0. Mirrors the 我的 import row.
+    /// Apple-Health imported-workout subtitle (时长 / 距离(km) / 心率 / 能量), built
+    /// from the pure, unit-tested `ImportedWorkoutDisplayFields` projection (Domain).
+    /// Each part is shown ONLY when the import recorded it — an absent field is
+    /// honestly omitted, never a fabricated 0. Distance comes through as KILOMETRES
+    /// (the projection's pure m→km conversion); this surface only FORMATS (单位 / 取整).
     private static func importedSubtitle(_ workout: ImportedWorkoutSample) -> String {
+        let fields = ImportedWorkoutDisplayFields(workout)
         var parts: [String] = []
-        if let minutes = workout.durationMin?.doubleValue {
+        if let minutes = fields.durationMin {
             parts.append("\(Int(minutes.rounded())) 分钟")
         }
-        if let kcal = workout.activeEnergyKcal?.doubleValue {
-            parts.append("\(Int(kcal.rounded())) 千卡")
+        if let km = fields.distanceKm {
+            parts.append(String(format: "%.1f 公里", km))
         }
-        if let meters = workout.distanceMeters?.doubleValue {
-            parts.append(distanceText(meters))
-        }
-        if let hr = heartRateText(avg: workout.avgHeartRate?.doubleValue, max: workout.maxHeartRate?.doubleValue) {
+        if let hr = heartRateText(avg: fields.avgHeartRate, max: fields.maxHeartRate) {
             parts.append(hr)
         }
-        return parts.isEmpty ? "来自 Apple 健康的训练" : parts.joined(separator: " · ")
-    }
-
-    /// Distance for display: kilometers (1 decimal) at ≥1 km, otherwise whole meters.
-    private static func distanceText(_ meters: Double) -> String {
-        if meters >= 1000 {
-            return String(format: "%.1f 公里", meters / 1000)
+        if let kcal = fields.activeEnergyKcal {
+            parts.append("\(Int(kcal.rounded())) 千卡")
         }
-        return "\(Int(meters.rounded())) 米"
+        return parts.isEmpty ? "来自 Apple 健康的训练" : parts.joined(separator: " · ")
     }
 
     /// Heart rate for display: "心率 平均/最高 bpm" when both are present, otherwise
