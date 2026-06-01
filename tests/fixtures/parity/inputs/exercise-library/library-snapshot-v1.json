@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "exercise-library/library-snapshot-v1",
+    "schemaVersion": 8,
+    "describes": "SR-1 exercise-library data port — a full snapshot of the four frozen library tables (EXERCISE_DISPLAY_NAMES / EXERCISE_EQUIPMENT_TAGS / EXERCISE_ENGLISH_NAMES / EXERCISE_ALIASES from src/data/exerciseLibrary.ts) keyed by exercise id, plus the sorted EXERCISE_KNOWLEDGE_OVERRIDES key set. The Swift port (IronPathTrainingDecision) reconstructs this same snapshot from its mirrored tables and asserts it equals this golden item-by-item, so no entry can be dropped or altered in transcription.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "4e0152780a6a295ed0f368b96504a31cbfb0e617",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No input params — the generator transcribes the static, committed library tables directly from src/data/exerciseLibrary.ts (no engine call, no clock, generatedAtPolicy 'none'). Only the KEY SET of EXERCISE_KNOWLEDGE_OVERRIDES is captured; its override VALUES are engine knowledge ported by SR-2/SR-3, not here."
+  }
+}

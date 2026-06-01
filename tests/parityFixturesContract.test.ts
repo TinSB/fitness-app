@@ -50,6 +50,10 @@ const FIXTURE_IDS = [
   'smart-replacement/bench-press-natural-v1',
   'smart-replacement/low-readiness-fatigue-v1',
   'smart-replacement/pain-history-substitute-v1',
+  // SR-1 exercise-library data port — 1 snapshot fixture dumping the four frozen
+  // library tables + the EXERCISE_KNOWLEDGE_OVERRIDES key set for the Swift port
+  // to reconcile item-by-item. Generated; never hand-edited (§22).
+  'exercise-library/library-snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -251,7 +255,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 4 SR-0 smart-replacement)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 4 SR-0 smart-replacement + 1 SR-1 exercise-library)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

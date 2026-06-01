@@ -1,0 +1,917 @@
+{
+  "counts": {
+    "aliases": 59,
+    "displayNames": 94,
+    "distinctIds": 94,
+    "englishNames": 63,
+    "equipmentTags": 61,
+    "knowledgeOverrideIds": 63
+  },
+  "exercises": {
+    "assisted-dip": {
+      "aliases": [
+        "辅助双杠臂屈伸",
+        "辅助臂屈伸",
+        "Assisted Dip"
+      ],
+      "displayName": "辅助双杠臂屈伸",
+      "englishName": "Assisted Dip",
+      "equipmentTags": [
+        "bodyweight",
+        "machine"
+      ]
+    },
+    "assisted-pull-up": {
+      "aliases": [
+        "辅助引体向上",
+        "Assisted Pull-Up"
+      ],
+      "displayName": "辅助引体向上",
+      "englishName": "Assisted Pull-Up",
+      "equipmentTags": [
+        "bodyweight",
+        "machine"
+      ]
+    },
+    "band_pull_apart": {
+      "displayName": "弹力带拉开"
+    },
+    "barbell-row": {
+      "aliases": [
+        "杠铃划船",
+        "Barbell Row"
+      ],
+      "displayName": "杠铃划船",
+      "englishName": "Barbell Row",
+      "equipmentTags": [
+        "barbell"
+      ]
+    },
+    "belt-squat": {
+      "aliases": [
+        "腰带蹲",
+        "腰带深蹲",
+        "Belt Squat"
+      ],
+      "displayName": "腰带深蹲",
+      "englishName": "Belt Squat",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "bench-press": {
+      "aliases": [
+        "卧推",
+        "平板杠铃卧推",
+        "Barbell Bench Press"
+      ],
+      "displayName": "平板卧推",
+      "englishName": "Barbell Bench Press",
+      "equipmentTags": [
+        "barbell",
+        "bench",
+        "rack"
+      ]
+    },
+    "bottom_up_press": {
+      "displayName": "倒置壶铃推举"
+    },
+    "breathing_90_90": {
+      "displayName": "90/90 呼吸"
+    },
+    "cable-curl": {
+      "aliases": [
+        "绳索弯举",
+        "绳索二头弯举",
+        "Cable Curl"
+      ],
+      "displayName": "绳索弯举",
+      "englishName": "Cable Curl",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "cable-fly": {
+      "aliases": [
+        "绳索夹胸",
+        "绳索飞鸟",
+        "Cable Fly"
+      ],
+      "displayName": "绳索夹胸",
+      "englishName": "Cable Fly",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "cable-lateral-raise": {
+      "aliases": [
+        "绳索侧平举",
+        "Cable Lateral Raise"
+      ],
+      "displayName": "绳索侧平举",
+      "englishName": "Cable Lateral Raise",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "cable-rear-delt-fly": {
+      "aliases": [
+        "绳索后束飞鸟",
+        "Cable Rear Delt Fly"
+      ],
+      "displayName": "绳索后束飞鸟",
+      "englishName": "Cable Rear Delt Fly",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "calf-raise": {
+      "aliases": [
+        "提踵",
+        "Calf Raise"
+      ],
+      "displayName": "提踵",
+      "englishName": "Calf Raise",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "chest-supported-row": {
+      "aliases": [
+        "胸托划船",
+        "胸垫划船",
+        "Chest-Supported Row"
+      ],
+      "displayName": "胸托划船",
+      "englishName": "Chest-Supported Row",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "chin_tuck": {
+      "displayName": "收下巴"
+    },
+    "close-grip-bench": {
+      "aliases": [
+        "窄握卧推",
+        "Close-Grip Bench Press"
+      ],
+      "displayName": "窄握卧推",
+      "englishName": "Close-Grip Bench Press",
+      "equipmentTags": [
+        "barbell",
+        "bench",
+        "rack"
+      ]
+    },
+    "couch_stretch": {
+      "displayName": "沙发拉伸"
+    },
+    "db-bench-press": {
+      "aliases": [
+        "平板哑铃卧推",
+        "Dumbbell Bench Press"
+      ],
+      "displayName": "哑铃卧推",
+      "englishName": "Dumbbell Bench Press",
+      "equipmentTags": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    "db-curl": {
+      "aliases": [
+        "二头弯举",
+        "弯举",
+        "哑铃弯举",
+        "Dumbbell Curl"
+      ],
+      "displayName": "哑铃弯举",
+      "englishName": "Dumbbell Curl",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "db-fly": {
+      "aliases": [
+        "哑铃飞鸟",
+        "Dumbbell Fly"
+      ],
+      "displayName": "哑铃飞鸟",
+      "englishName": "Dumbbell Fly",
+      "equipmentTags": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    "db-rdl": {
+      "aliases": [
+        "哑铃 RDL",
+        "哑铃罗马尼亚硬拉",
+        "Dumbbell Romanian Deadlift"
+      ],
+      "displayName": "哑铃罗马尼亚硬拉",
+      "englishName": "Dumbbell Romanian Deadlift",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "dead_bug": {
+      "displayName": "死虫"
+    },
+    "dead_bug_exhale": {
+      "displayName": "呼气死虫"
+    },
+    "deadlift": {
+      "displayName": "硬拉",
+      "englishName": "Deadlift"
+    },
+    "deep_squat_hold": {
+      "displayName": "深蹲底部停留"
+    },
+    "ez-bar-curl": {
+      "aliases": [
+        "EZ 杠弯举",
+        "曲杆弯举",
+        "EZ-Bar Curl"
+      ],
+      "displayName": "EZ 杠弯举",
+      "englishName": "EZ-Bar Curl",
+      "equipmentTags": [
+        "barbell"
+      ]
+    },
+    "face_pull": {
+      "displayName": "面拉"
+    },
+    "face-pull": {
+      "aliases": [
+        "面拉",
+        "绳索面拉",
+        "Face Pull"
+      ],
+      "displayName": "面拉",
+      "englishName": "Face Pull",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "farmer_carry": {
+      "displayName": "农夫走"
+    },
+    "goblet_squat_pattern": {
+      "displayName": "杯式深蹲模式重建"
+    },
+    "goblet-squat": {
+      "aliases": [
+        "杯式深蹲",
+        "壶铃深蹲",
+        "高脚杯深蹲",
+        "Goblet Squat"
+      ],
+      "displayName": "高脚杯深蹲",
+      "englishName": "Goblet Squat",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "hack-squat": {
+      "aliases": [
+        "哈克深蹲",
+        "Hack Squat"
+      ],
+      "displayName": "哈克深蹲",
+      "englishName": "Hack Squat",
+      "equipmentTags": [
+        "machine",
+        "plate-loaded"
+      ]
+    },
+    "hammer-curl": {
+      "aliases": [
+        "锤式弯举",
+        "Hammer Curl"
+      ],
+      "displayName": "锤式弯举",
+      "englishName": "Hammer Curl",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "hip_90_90_switch": {
+      "displayName": "90/90 髋转换"
+    },
+    "hip-thrust": {
+      "displayName": "臀推",
+      "englishName": "Hip Thrust",
+      "equipmentTags": [
+        "barbell",
+        "bench"
+      ]
+    },
+    "incline-db-curl": {
+      "aliases": [
+        "上斜哑铃弯举",
+        "上斜弯举",
+        "Incline Dumbbell Curl"
+      ],
+      "displayName": "上斜哑铃弯举",
+      "englishName": "Incline Dumbbell Curl",
+      "equipmentTags": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    "incline-db-press": {
+      "aliases": [
+        "上斜哑铃推胸",
+        "Incline Dumbbell Press"
+      ],
+      "displayName": "上斜哑铃卧推",
+      "englishName": "Incline Dumbbell Press",
+      "equipmentTags": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    "knee_to_wall": {
+      "displayName": "膝触墙"
+    },
+    "landmine_press": {
+      "displayName": "地雷管推举"
+    },
+    "landmine-press": {
+      "aliases": [
+        "地雷管推举",
+        "地雷管肩推",
+        "Landmine Press"
+      ],
+      "displayName": "地雷管推举",
+      "englishName": "Landmine Press",
+      "equipmentTags": [
+        "barbell",
+        "plate-loaded"
+      ]
+    },
+    "lat-pulldown": {
+      "aliases": [
+        "下拉",
+        "高位下拉",
+        "Lat Pulldown"
+      ],
+      "displayName": "高位下拉",
+      "englishName": "Lat Pulldown",
+      "equipmentTags": [
+        "cable",
+        "machine"
+      ]
+    },
+    "lateral-raise": {
+      "aliases": [
+        "侧平举",
+        "哑铃侧平举",
+        "Dumbbell Lateral Raise"
+      ],
+      "displayName": "哑铃侧平举",
+      "englishName": "Dumbbell Lateral Raise",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "leg-curl": {
+      "aliases": [
+        "腿弯举",
+        "Leg Curl"
+      ],
+      "displayName": "腿弯举",
+      "englishName": "Leg Curl",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "leg-extension": {
+      "displayName": "腿屈伸",
+      "englishName": "Leg Extension"
+    },
+    "leg-press": {
+      "aliases": [
+        "腿举",
+        "高脚位腿举",
+        "Leg Press"
+      ],
+      "displayName": "腿举",
+      "englishName": "Leg Press",
+      "equipmentTags": [
+        "machine",
+        "plate-loaded"
+      ]
+    },
+    "leg-press-calf-raise": {
+      "aliases": [
+        "腿举提踵",
+        "腿举机提踵",
+        "Leg Press Calf Raise"
+      ],
+      "displayName": "腿举机提踵",
+      "englishName": "Leg Press Calf Raise",
+      "equipmentTags": [
+        "machine",
+        "plate-loaded"
+      ]
+    },
+    "lying-leg-curl": {
+      "aliases": [
+        "俯卧腿弯举",
+        "Lying Leg Curl"
+      ],
+      "displayName": "俯卧腿弯举",
+      "englishName": "Lying Leg Curl",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "machine-chest-press": {
+      "aliases": [
+        "胸推机",
+        "坐姿胸推机",
+        "Machine Chest Press"
+      ],
+      "displayName": "器械推胸",
+      "englishName": "Machine Chest Press",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "machine-incline-chest-press": {
+      "aliases": [
+        "上斜胸推机",
+        "上斜器械推胸",
+        "Machine Incline Chest Press"
+      ],
+      "displayName": "上斜器械推胸",
+      "englishName": "Machine Incline Chest Press",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "machine-lateral-raise": {
+      "aliases": [
+        "器械侧平举",
+        "侧平举机",
+        "Machine Lateral Raise"
+      ],
+      "displayName": "器械侧平举",
+      "englishName": "Machine Lateral Raise",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "machine-row": {
+      "aliases": [
+        "器械划船",
+        "固定器械划船",
+        "Machine Row"
+      ],
+      "displayName": "器械划船",
+      "englishName": "Machine Row",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "machine-shoulder-press": {
+      "aliases": [
+        "器械肩推",
+        "肩推机",
+        "Machine Shoulder Press"
+      ],
+      "displayName": "器械肩推",
+      "englishName": "Machine Shoulder Press",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "mini_band_walk": {
+      "displayName": "弹力带侧走"
+    },
+    "monster_walk": {
+      "displayName": "怪兽走"
+    },
+    "nordic-curl": {
+      "aliases": [
+        "北欧腿弯举",
+        "北欧弯举",
+        "Nordic Curl"
+      ],
+      "displayName": "北欧腿弯举",
+      "englishName": "Nordic Curl",
+      "equipmentTags": [
+        "bodyweight"
+      ]
+    },
+    "one-arm-db-row": {
+      "aliases": [
+        "单臂哑铃划船",
+        "单臂划船",
+        "One-Arm Dumbbell Row"
+      ],
+      "displayName": "单臂哑铃划船",
+      "englishName": "One-Arm Dumbbell Row",
+      "equipmentTags": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    "open_book": {
+      "displayName": "开书式"
+    },
+    "overhead-cable-triceps-extension": {
+      "aliases": [
+        "绳索过顶臂屈伸",
+        "过顶三头伸展",
+        "Overhead Cable Triceps Extension"
+      ],
+      "displayName": "绳索过顶臂屈伸",
+      "englishName": "Overhead Cable Triceps Extension",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "pallof_press": {
+      "displayName": "帕洛夫抗旋推"
+    },
+    "pec-deck-fly": {
+      "aliases": [
+        "蝴蝶机夹胸",
+        "夹胸机",
+        "Pec Deck Fly"
+      ],
+      "displayName": "蝴蝶机夹胸",
+      "englishName": "Pec Deck Fly",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "preacher-curl": {
+      "aliases": [
+        "牧师凳弯举",
+        "牧师弯举",
+        "Preacher Curl"
+      ],
+      "displayName": "牧师凳弯举",
+      "englishName": "Preacher Curl",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "pull-up": {
+      "aliases": [
+        "引体向上",
+        "Pull-Up"
+      ],
+      "displayName": "引体向上",
+      "englishName": "Pull-Up",
+      "equipmentTags": [
+        "bodyweight"
+      ]
+    },
+    "push-up": {
+      "displayName": "俯卧撑",
+      "englishName": "Push-Up",
+      "equipmentTags": [
+        "bodyweight"
+      ]
+    },
+    "quadruped_thoracic_rotation": {
+      "displayName": "四点跪胸椎旋转"
+    },
+    "rear-delt-raise": {
+      "aliases": [
+        "俯身后束飞鸟",
+        "Bent-Over Rear Delt Raise"
+      ],
+      "displayName": "俯身后束飞鸟",
+      "englishName": "Bent-Over Rear Delt Raise",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "reverse-pec-deck": {
+      "aliases": [
+        "反向飞鸟",
+        "反向飞鸟机",
+        "Reverse Pec Deck"
+      ],
+      "displayName": "反向飞鸟",
+      "englishName": "Reverse Pec Deck",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "romanian-deadlift": {
+      "aliases": [
+        "RDL",
+        "罗马尼亚硬拉",
+        "Romanian Deadlift"
+      ],
+      "displayName": "罗马尼亚硬拉",
+      "englishName": "Romanian Deadlift",
+      "equipmentTags": [
+        "barbell"
+      ]
+    },
+    "rope-hammer-curl": {
+      "aliases": [
+        "绳索锤式弯举",
+        "绳索锤弯",
+        "Rope Hammer Curl"
+      ],
+      "displayName": "绳索锤式弯举",
+      "englishName": "Rope Hammer Curl",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "scap_pushup": {
+      "displayName": "肩胛俯卧撑"
+    },
+    "seated-calf-raise": {
+      "aliases": [
+        "坐姿提踵",
+        "Seated Calf Raise"
+      ],
+      "displayName": "坐姿提踵",
+      "englishName": "Seated Calf Raise",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "seated-leg-curl": {
+      "aliases": [
+        "坐姿腿弯举",
+        "Seated Leg Curl"
+      ],
+      "displayName": "坐姿腿弯举",
+      "englishName": "Seated Leg Curl",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "seated-row": {
+      "aliases": [
+        "坐姿划船",
+        "坐姿划船器",
+        "Seated Row"
+      ],
+      "displayName": "坐姿划船",
+      "englishName": "Seated Row",
+      "equipmentTags": [
+        "cable",
+        "machine"
+      ]
+    },
+    "serratus_wall_slide": {
+      "displayName": "前锯肌墙滑"
+    },
+    "shoulder-press": {
+      "aliases": [
+        "肩推",
+        "哑铃肩推",
+        "Dumbbell Shoulder Press"
+      ],
+      "displayName": "哑铃肩推",
+      "englishName": "Dumbbell Shoulder Press",
+      "equipmentTags": [
+        "dumbbell"
+      ]
+    },
+    "side_lying_hip_abduction": {
+      "displayName": "侧卧髋外展"
+    },
+    "side_plank": {
+      "displayName": "侧桥"
+    },
+    "single_arm_carry": {
+      "displayName": "单臂农夫走"
+    },
+    "single_leg_glute_bridge": {
+      "displayName": "单腿臀桥"
+    },
+    "single_leg_rdl": {
+      "displayName": "单腿 RDL"
+    },
+    "single-arm-lat-pulldown": {
+      "aliases": [
+        "单臂下拉",
+        "单臂高位下拉",
+        "Single-Arm Lat Pulldown"
+      ],
+      "displayName": "单臂高位下拉",
+      "englishName": "Single-Arm Lat Pulldown",
+      "equipmentTags": [
+        "cable",
+        "machine"
+      ]
+    },
+    "skull-crusher": {
+      "aliases": [
+        "仰卧臂屈伸",
+        "碎颅者",
+        "Skull Crusher"
+      ],
+      "displayName": "仰卧臂屈伸",
+      "englishName": "Skull Crusher",
+      "equipmentTags": [
+        "barbell",
+        "bench"
+      ]
+    },
+    "smith-incline-press": {
+      "aliases": [
+        "史密斯上斜推",
+        "史密斯上斜卧推",
+        "Smith Machine Incline Press"
+      ],
+      "displayName": "史密斯上斜卧推",
+      "englishName": "Smith Machine Incline Press",
+      "equipmentTags": [
+        "smith",
+        "machine",
+        "bench"
+      ]
+    },
+    "smith-shoulder-press": {
+      "aliases": [
+        "史密斯肩推",
+        "史密斯推举",
+        "Smith Machine Shoulder Press"
+      ],
+      "displayName": "史密斯肩推",
+      "englishName": "Smith Machine Shoulder Press",
+      "equipmentTags": [
+        "smith",
+        "machine"
+      ]
+    },
+    "smith-squat": {
+      "aliases": [
+        "史密斯蹲",
+        "史密斯深蹲",
+        "Smith Machine Squat"
+      ],
+      "displayName": "史密斯深蹲",
+      "englishName": "Smith Machine Squat",
+      "equipmentTags": [
+        "smith",
+        "machine"
+      ]
+    },
+    "soleus_raise": {
+      "displayName": "屈膝提踵"
+    },
+    "split_squat_iso": {
+      "displayName": "分腿蹲等长停留"
+    },
+    "squat": {
+      "aliases": [
+        "深蹲",
+        "Back Squat"
+      ],
+      "displayName": "深蹲",
+      "englishName": "Back Squat",
+      "equipmentTags": [
+        "barbell",
+        "rack"
+      ]
+    },
+    "standing-calf-raise": {
+      "aliases": [
+        "站姿提踵",
+        "Standing Calf Raise"
+      ],
+      "displayName": "站姿提踵",
+      "englishName": "Standing Calf Raise",
+      "equipmentTags": [
+        "machine"
+      ]
+    },
+    "straight-bar-pushdown": {
+      "aliases": [
+        "直杆下压",
+        "直杆三头下压",
+        "Straight-Bar Pushdown"
+      ],
+      "displayName": "直杆下压",
+      "englishName": "Straight-Bar Pushdown",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "t-bar-row": {
+      "aliases": [
+        "T杠划船",
+        "T 杠划船",
+        "T-Bar Row"
+      ],
+      "displayName": "T 杠划船",
+      "englishName": "T-Bar Row",
+      "equipmentTags": [
+        "barbell",
+        "plate-loaded"
+      ]
+    },
+    "thoracic_extension_foam": {
+      "displayName": "泡沫轴胸椎伸展"
+    },
+    "triceps-pushdown": {
+      "aliases": [
+        "三头下压",
+        "下压",
+        "绳索下压",
+        "Triceps Pushdown"
+      ],
+      "displayName": "绳索下压",
+      "englishName": "Triceps Pushdown",
+      "equipmentTags": [
+        "cable"
+      ]
+    },
+    "waiter_carry": {
+      "displayName": "服务员行走"
+    },
+    "wall_slide": {
+      "displayName": "墙滑"
+    }
+  },
+  "knowledgeOverrideIds": [
+    "assisted-dip",
+    "assisted-pull-up",
+    "barbell-row",
+    "belt-squat",
+    "bench-press",
+    "cable-curl",
+    "cable-fly",
+    "cable-lateral-raise",
+    "cable-rear-delt-fly",
+    "calf-raise",
+    "chest-supported-row",
+    "close-grip-bench",
+    "db-bench-press",
+    "db-curl",
+    "db-fly",
+    "db-rdl",
+    "deadlift",
+    "ez-bar-curl",
+    "face-pull",
+    "goblet-squat",
+    "hack-squat",
+    "hammer-curl",
+    "hip-thrust",
+    "incline-db-curl",
+    "incline-db-press",
+    "landmine-press",
+    "lat-pulldown",
+    "lateral-raise",
+    "leg-curl",
+    "leg-extension",
+    "leg-press",
+    "leg-press-calf-raise",
+    "lying-leg-curl",
+    "machine-chest-press",
+    "machine-incline-chest-press",
+    "machine-lateral-raise",
+    "machine-row",
+    "machine-shoulder-press",
+    "nordic-curl",
+    "one-arm-db-row",
+    "overhead-cable-triceps-extension",
+    "pec-deck-fly",
+    "preacher-curl",
+    "pull-up",
+    "push-up",
+    "rear-delt-raise",
+    "reverse-pec-deck",
+    "romanian-deadlift",
+    "rope-hammer-curl",
+    "seated-calf-raise",
+    "seated-leg-curl",
+    "seated-row",
+    "shoulder-press",
+    "single-arm-lat-pulldown",
+    "skull-crusher",
+    "smith-incline-press",
+    "smith-shoulder-press",
+    "smith-squat",
+    "squat",
+    "standing-calf-raise",
+    "straight-bar-pushdown",
+    "t-bar-row",
+    "triceps-pushdown"
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "4e0152780a6a295ed0f368b96504a31cbfb0e617",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "exercise-library/library-snapshot-v1"
+  }
+}

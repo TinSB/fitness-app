@@ -48,6 +48,22 @@ import {
   type SmartReplacementPriority,
 } from '../src/engines/smartReplacementEngine';
 import type { AppData, TrainingSession, TrainingTemplate } from '../src/models/training-model';
+// SR-1 — exercise-library data port parity slice. Imports the REAL frozen
+// library tables (src/data/exerciseLibrary.ts) so the library-snapshot golden
+// is GENERATED from TS truth, never hand-authored (§22). The Swift port mirrors
+// these four tables + the pure resolve/format functions; the golden
+// mechanically reconciles every entry. Only the KEY SET of
+// EXERCISE_KNOWLEDGE_OVERRIDES is snapshotted (it is the
+// resolveExerciseReferenceToId known-id fast path) — the override VALUES
+// (engine knowledge) are NOT ported here; that is SR-2/3.
+import {
+  EXERCISE_DISPLAY_NAMES,
+  EXERCISE_ENGLISH_NAMES,
+  EXERCISE_EQUIPMENT_TAGS,
+  EXERCISE_ALIASES,
+  EXERCISE_KNOWLEDGE_OVERRIDES,
+  type ExerciseEquipmentTag,
+} from '../src/data/exerciseLibrary';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -94,6 +110,11 @@ const FIXTURE_IDS = [
   'smart-replacement/bench-press-natural-v1',
   'smart-replacement/low-readiness-fatigue-v1',
   'smart-replacement/pain-history-substitute-v1',
+  // SR-1 exercise-library data port — one snapshot golden that dumps the four
+  // frozen library tables (display/english/equipment/alias) keyed by id, plus
+  // the EXERCISE_KNOWLEDGE_OVERRIDES key set, so the Swift port reconciles every
+  // entry item-by-item. Additive; generated, never hand-edited (§22).
+  'exercise-library/library-snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -766,6 +787,65 @@ const generateSmartReplacement = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// SR-1 — exercise-library data port snapshot
+//
+// Dumps the four frozen library tables (src/data/exerciseLibrary.ts:20/117/181/247)
+// into one id-keyed snapshot so the Swift port (IronPathTrainingDecision) can
+// reconcile EVERY entry item-by-item against TS truth. The id universe is the
+// UNION of keys across the four tables; per id we emit only the fields that
+// table actually carries (an absent field is `undefined`, which canonicalStringify
+// drops). Array order (equipmentTags / aliases) is preserved verbatim — the Swift
+// tables store the same order and the parity test compares arrays element-wise.
+// `knowledgeOverrideIds` is the SORTED KEY SET of EXERCISE_KNOWLEDGE_OVERRIDES
+// (keys ONLY — the override VALUES are engine knowledge, ported in SR-2/3); it
+// exists so the Swift resolveExerciseReferenceToId mirror pins its known-id
+// fast-path term to TS. This generator COMPUTES NOTHING about replacement — it
+// only transcribes frozen data.
+// ---------------------------------------------------------------------------
+
+type ExerciseLibrarySnapshotEntry = {
+  displayName?: string;
+  englishName?: string;
+  equipmentTags?: ExerciseEquipmentTag[];
+  aliases?: string[];
+};
+
+const generateExerciseLibrarySnapshot = (_input: any, _meta: ParityMeta) => {
+  const ids = Array.from(
+    new Set<string>([
+      ...Object.keys(EXERCISE_DISPLAY_NAMES),
+      ...Object.keys(EXERCISE_ENGLISH_NAMES),
+      ...Object.keys(EXERCISE_EQUIPMENT_TAGS),
+      ...Object.keys(EXERCISE_ALIASES),
+    ]),
+  );
+  const exercises: Record<string, ExerciseLibrarySnapshotEntry> = {};
+  for (const id of ids) {
+    exercises[id] = {
+      displayName: EXERCISE_DISPLAY_NAMES[id],
+      englishName: EXERCISE_ENGLISH_NAMES[id],
+      equipmentTags: EXERCISE_EQUIPMENT_TAGS[id],
+      aliases: EXERCISE_ALIASES[id],
+    };
+  }
+  const knowledgeOverrideIds = Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  return {
+    counts: {
+      distinctIds: ids.length,
+      displayNames: Object.keys(EXERCISE_DISPLAY_NAMES).length,
+      englishNames: Object.keys(EXERCISE_ENGLISH_NAMES).length,
+      equipmentTags: Object.keys(EXERCISE_EQUIPMENT_TAGS).length,
+      aliases: Object.keys(EXERCISE_ALIASES).length,
+      knowledgeOverrideIds: knowledgeOverrideIds.length,
+    },
+    exercises,
+    knowledgeOverrideIds,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -785,6 +865,7 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'smart-replacement/bench-press-natural-v1': generateSmartReplacement,
   'smart-replacement/low-readiness-fatigue-v1': generateSmartReplacement,
   'smart-replacement/pain-history-substitute-v1': generateSmartReplacement,
+  'exercise-library/library-snapshot-v1': generateExerciseLibrarySnapshot,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
