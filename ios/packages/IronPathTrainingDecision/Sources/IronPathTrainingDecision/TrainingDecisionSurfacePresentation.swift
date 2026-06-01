@@ -1,16 +1,18 @@
 // TrainingDecisionSurfacePresentation — iOS-17C Plan + Today Read-only Surface V1.
 //
-// Pure, deterministic presentation organizers for two tab surfaces. They READ
-// already-computed value types and FORMAT them into labeled, Chinese-localized
-// rows; they never run, recompute, or change the engine — and never touch any
-// parity golden. Adding these additive presentation types is a §19.2 extension
+// Pure, deterministic presentation organizer for the 今日 tab surface. It READS
+// already-computed value types and FORMATS them into labeled, Chinese-localized
+// rows; it never runs, recomputes, or changes the engine — and never touches any
+// parity golden. Adding this additive presentation type is a §19.2 extension
 // of an active package (no engine-output / golden change, master §11/§18).
 //
 //   - TodayReadinessSummary: organizes a `TrainingDecisionCoreSlice` (the engine's
 //     own output, computed upstream) + a `TodayStatus` into a readiness summary
 //     for the 今日 surface.
-//   - PlanSurfaceSummary: organizes a `MesocyclePlan` + `ProgramTemplate` (Domain
-//     value types) into cycle / template rows for the 计划 surface.
+//
+// (The 计划 surface's `PlanSurfaceSummary` was superseded by the real-AppData
+// read path `IronPathDomain.PlanDisplay` + `IronPathDataHealth.resolvePlanDisplayState`
+// (#440) and removed as dead code.)
 //
 // No IO, no clock, no randomness, no AppData access. Inputs are value types the
 // caller already holds; output is plain strings + Bools the thin SwiftUI layer
@@ -149,99 +151,5 @@ public struct TodayReadinessSummary: Equatable, Sendable {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         return cleaned.isEmpty ? "未填写" : cleaned.joined(separator: "、")
-    }
-}
-
-// MARK: - 计划 (Plan) surface summary
-
-/// Read-only organization of a `MesocyclePlan` + `ProgramTemplate` into the 计划
-/// surface's cycle / template rows. Pure projection over Domain value types — no
-/// engine call, no week-resolution math (just a count of the planned weeks).
-public struct PlanSurfaceSummary: Equatable, Sendable {
-    /// Raw mesocycle phase string, trimmed; `nil` when absent.
-    public let phaseText: String?
-    /// Number of planned weeks parsed from the `weeks` open bag (`0` when absent).
-    public let weekCount: Int
-    /// `start – end` (or a half-open variant) when any boundary is present.
-    public let dateRangeText: String?
-    /// Mesocycle rows (阶段 / 周数 / 日期范围).
-    public let cycleRows: [SurfaceRow]
-    /// Program-template rows (目标 / 分化 / 每周天数).
-    public let programRows: [SurfaceRow]
-    /// Whether the program carries a non-empty correction / functional strategy
-    /// bag (surfaced as a collapsed presence hint, not expanded detail).
-    public let hasCorrectionStrategy: Bool
-    public let hasFunctionalStrategy: Bool
-    /// `true` when neither the mesocycle nor the program carry any displayable
-    /// field — lets the surface show an honest empty state once a real read path
-    /// (no canonical AppData read exists in the app yet) lands.
-    public let isEmpty: Bool
-
-    public init(mesocycle: MesocyclePlan, program: ProgramTemplate) {
-        let weeks = Self.weekCount(mesocycle.weeks)
-        let phase = Self.cleaned(mesocycle.phase)
-        let range = Self.dateRange(start: mesocycle.startDate, end: mesocycle.endDate)
-        self.weekCount = weeks
-        self.phaseText = phase
-        self.dateRangeText = range
-
-        var cycle: [SurfaceRow] = []
-        if let phase { cycle.append(SurfaceRow(id: "phase", label: "阶段", value: phase)) }
-        if weeks > 0 { cycle.append(SurfaceRow(id: "weeks", label: "周数", value: "\(weeks) 周")) }
-        if let range { cycle.append(SurfaceRow(id: "dateRange", label: "日期范围", value: range)) }
-        self.cycleRows = cycle
-
-        var prog: [SurfaceRow] = []
-        if let goal = Self.cleaned(program.primaryGoal) {
-            prog.append(SurfaceRow(id: "goal", label: "目标", value: goal))
-        }
-        if let split = Self.cleaned(program.splitType) {
-            prog.append(SurfaceRow(id: "split", label: "分化", value: split))
-        }
-        if let days = program.daysPerWeek?.intValue {
-            prog.append(SurfaceRow(id: "days", label: "每周天数", value: "\(days) 天"))
-        }
-        self.programRows = prog
-
-        let hasCorrection = Self.hasContent(program.correctionStrategy)
-        let hasFunctional = Self.hasContent(program.functionalStrategy)
-        self.hasCorrectionStrategy = hasCorrection
-        self.hasFunctionalStrategy = hasFunctional
-        self.isEmpty = cycle.isEmpty && prog.isEmpty && !hasCorrection && !hasFunctional
-    }
-
-    static func cleaned(_ raw: String?) -> String? {
-        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
-            return nil
-        }
-        return raw
-    }
-
-    static func weekCount(_ weeks: JSONValue?) -> Int {
-        weeks?.arrayValue?.count ?? 0
-    }
-
-    static func dateRange(start: String?, end: String?) -> String? {
-        let from = cleaned(start)
-        let to = cleaned(end)
-        switch (from, to) {
-        case let (.some(from), .some(to)): return "\(from) – \(to)"
-        case let (.some(from), .none): return "\(from) 起"
-        case let (.none, .some(to)): return "至 \(to)"
-        case (.none, .none): return nil
-        }
-    }
-
-    /// A non-null open bag with at least one element / character counts as
-    /// present; `null`, absent, or empty does not.
-    static func hasContent(_ value: JSONValue?) -> Bool {
-        guard let value, !value.isNull else { return false }
-        switch value {
-        case .object(let object): return !object.isEmpty
-        case .array(let array): return !array.isEmpty
-        case .string(let string): return !string.isEmpty
-        case .null: return false
-        case .bool, .number: return true
-        }
     }
 }
