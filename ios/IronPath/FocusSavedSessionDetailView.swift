@@ -42,6 +42,20 @@ struct FocusSavedSessionDetailView: View {
     /// previews/tests on the snapshot copy — so a corrected set shows its new value
     /// PERSISTENTLY (cold start too), not the stale snapshot, without an in-RAM override.
     var loadCanonicalSetDisplay: (() -> [String: [Int: LocalCompletedSetEntrySnapshot]])? = nil
+    /// SR-4 (a): load read-only smart-replacement recommendations for one exercise (by
+    /// id). The host injects `FocusModeMvpState.replacementRecommendations`, fed from the
+    /// §10 clean view. nil (default) hides the 换动作 affordance (previews stay read-only).
+    var onLoadRecommendations: ((_ exerciseId: String) -> [ReplacementOptionRow])? = nil
+    /// SR-4 (b)+(c): 换动作 (apply, `replacementExerciseId` non-nil) or 复原 (restore, nil)
+    /// for one exercise through the canonical gated write. The host injects
+    /// `FocusModeMvpState.swapExercise`; returns an HONEST outcome (`.saved` only after a
+    /// real gated write; `.failed` otherwise). nil (default) disables the swap action.
+    var onSwapExercise: ((_ exerciseId: String, _ replacementExerciseId: String?) -> ExerciseSwapOutcome)? = nil
+    /// SR-4 (d): load this snapshot's CANONICAL-FIRST replacement display (keyed by
+    /// exerciseId), so a 换动作 shows the ACTUAL exercise name and attributes its sets.
+    /// The host injects `FocusModeMvpState.canonicalExerciseReplacementDisplay`, read
+    /// through the §10 clean view. nil (default) keeps previews on the stored name.
+    var loadCanonicalReplacementDisplay: (() -> [String: ExerciseReplacementDisplay])? = nil
     /// iOS-11: restore this saved session into an in-RAM training draft and
     /// continue it. Optional so previews can omit it.
     var onContinue: (() -> Void)? = nil
@@ -72,6 +86,22 @@ struct FocusSavedSessionDetailView: View {
     /// is just an in-session affordance, not a value store.
     @State private var correctedKeys: Set<SetEditKey> = []
 
+    // MARK: - SR-4 换动作 (smart replacement) two-step state
+
+    /// The exercise currently in 换动作 (swap) edit mode (nil = none). Only one at a time.
+    @State private var swappingExerciseId: String? = nil
+    /// Read-only recommendations loaded for the exercise in swap mode (engine-produced,
+    /// §10 clean-fed); rendered in priority order.
+    @State private var swapRecommendations: [ReplacementOptionRow] = []
+    /// The in-RAM selected replacement id BEFORE the explicit 保存 (two-step). nil = none.
+    @State private var selectedReplacementId: String? = nil
+    /// Honest inline error for the in-flight swap (a failed gated write).
+    @State private var swapError: String? = nil
+    /// CANONICAL-FIRST replacement display keyed by exerciseId — drives the ACTUAL-exercise
+    /// name + "已换" marker. Loaded on appear and refreshed after a committed 换动作 / 复原,
+    /// so the row reflects the authoritative AppData.history identity (cold start too).
+    @State private var canonicalReplacementDisplay: [String: ExerciseReplacementDisplay] = [:]
+
     /// Pure, read-only projection over the existing restore reconciliation. No
     /// progress is applied here; restore still happens only via `onContinue`.
     private var insight: LocalSnapshotRecoveryInsight {
@@ -95,7 +125,10 @@ struct FocusSavedSessionDetailView: View {
         // DEEP-EDIT-1 display: pull the canonical-first per-set values on open so a
         // previously-corrected set renders its authoritative value (not the stale
         // snapshot). nil host (previews) → stays empty → falls back to the snapshot.
-        .onAppear { refreshCanonicalSetDisplay() }
+        .onAppear {
+            refreshCanonicalSetDisplay()
+            refreshCanonicalReplacementDisplay()
+        }
     }
 
     /// Pull the canonical-first per-set display values from the host (if wired). Called
@@ -104,6 +137,15 @@ struct FocusSavedSessionDetailView: View {
     private func refreshCanonicalSetDisplay() {
         guard let loadCanonicalSetDisplay else { return }
         canonicalSetDisplay = loadCanonicalSetDisplay()
+    }
+
+    /// SR-4 (d): pull the canonical-first replacement display from the host (if wired).
+    /// Called on appear and after a committed 换动作 / 复原, so each row shows the ACTUAL
+    /// exercise name and attributes its sets — read from the authoritative AppData.history
+    /// identity (the override is never stored in the derived LocalSnapshot copy).
+    private func refreshCanonicalReplacementDisplay() {
+        guard let loadCanonicalReplacementDisplay else { return }
+        canonicalReplacementDisplay = loadCanonicalReplacementDisplay()
     }
 
     // MARK: - iOS-15 resume affordance (thin UI over the EXISTING restore)
@@ -275,22 +317,7 @@ struct FocusSavedSessionDetailView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(snapshot.exercises) { ex in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack(alignment: .firstTextBaseline) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(ex.name).font(.subheadline.weight(.medium))
-                                    Text(ex.role).font(.caption2).foregroundStyle(.tertiary)
-                                }
-                                Spacer()
-                                Text("\(ex.completedSets) / \(ex.targetSets) 组")
-                                    .font(.subheadline.monospacedDigit())
-                            }
-                            perSetSummary(for: ex)
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
+                        exerciseRow(ex)
                     }
                 }
             }
@@ -298,6 +325,187 @@ struct FocusSavedSessionDetailView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+    }
+
+    // MARK: - SR-4 换动作 (smart replacement) — actual-exercise heading + two-step swap
+
+    /// One completed-exercise row. SR-4: when a 换动作 is recorded for this exercise (in
+    /// canonical history), the heading shows the ACTUAL (replaced-in) exercise name with a
+    /// 已换 marker + the original name, and the performed sets below read as attributed to
+    /// it. An optional 换动作 affordance opens the inline two-step swap panel.
+    @ViewBuilder
+    private func exerciseRow(_ ex: LocalCompletedExerciseSnapshot) -> some View {
+        let replacement = canonicalReplacementDisplay[ex.exerciseId]
+        let isReplaced = replacement?.isReplaced ?? false
+        let headingName = isReplaced ? (replacement?.actualName ?? ex.name) : ex.name
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(headingName).font(.subheadline.weight(.medium))
+                        if isReplaced {
+                            Text("已换")
+                                .font(.caption2.weight(.medium))
+                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .background(Capsule().fill(Color.blue.opacity(0.15)))
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    // When replaced, surface the original plan; otherwise the role.
+                    Text(isReplaced ? "原：\(ex.name)" : ex.role)
+                        .font(.caption2).foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Text("\(ex.completedSets) / \(ex.targetSets) 组")
+                    .font(.subheadline.monospacedDigit())
+                if onSwapExercise != nil && swappingExerciseId != ex.exerciseId {
+                    Button { beginSwap(exerciseId: ex.exerciseId) } label: {
+                        Text("换动作").font(.caption2.weight(.medium))
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            if swappingExerciseId == ex.exerciseId {
+                swapPanel(exerciseId: ex.exerciseId, isReplaced: isReplaced)
+            }
+            perSetSummary(for: ex)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
+    }
+
+    /// The inline two-step 换动作 panel: read-only engine recommendations the user taps to
+    /// SELECT, then an explicit 保存 commits the canonical gated write; a 恢复原动作 button
+    /// clears the override. Nothing is written until 保存 / 恢复原动作 is tapped (two-step).
+    @ViewBuilder
+    private func swapPanel(exerciseId: String, isReplaced: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("换动作（仅本机）").font(.caption.weight(.semibold))
+            if swapRecommendations.isEmpty {
+                Text("当前动作暂无可替代动作").font(.caption2).foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 6) {
+                    ForEach(swapRecommendations) { option in
+                        swapOptionRow(option)
+                    }
+                }
+            }
+            if let swapError {
+                Text("⚠️ \(swapError)").font(.caption2).foregroundStyle(.red)
+            }
+            HStack(spacing: 8) {
+                Button {
+                    saveSwap(exerciseId: exerciseId)
+                } label: {
+                    Text("保存").font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(selectedReplacementId == nil)
+                if isReplaced {
+                    Button(role: .destructive) {
+                        restoreSwap(exerciseId: exerciseId)
+                    } label: {
+                        Text("恢复原动作").font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                Button("取消", role: .cancel) { cancelSwap() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+            }
+            Text("选中替代动作后点「保存」就地写入本机训练记录：成绩归属新动作、引擎据此重算 · 不写云端 · 可恢复原动作")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemBackground)))
+    }
+
+    /// One selectable recommendation row: a radio-style toggle + name + priority/fatigue
+    /// chips + reason. Tapping toggles the in-RAM selection (no write until 保存).
+    @ViewBuilder
+    private func swapOptionRow(_ option: ReplacementOptionRow) -> some View {
+        let selected = selectedReplacementId == option.id
+        Button {
+            selectedReplacementId = selected ? nil : option.id
+            swapError = nil
+        } label: {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(option.name).font(.caption.weight(.medium)).foregroundStyle(.primary)
+                        if !option.priorityLabel.isEmpty {
+                            Text(option.priorityLabel)
+                                .font(.caption2)
+                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .background(Capsule().fill(Color.secondary.opacity(0.15)))
+                                .foregroundStyle(.secondary)
+                        }
+                        if !option.fatigueLabel.isEmpty {
+                            Text(option.fatigueLabel).font(.caption2).foregroundStyle(.tertiary)
+                        }
+                    }
+                    if !option.reason.isEmpty {
+                        Text(option.reason).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4).padding(.horizontal, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 6).fill(selected ? Color.accentColor.opacity(0.10) : Color(.tertiarySystemBackground)))
+    }
+
+    /// Enter 换动作 mode for one exercise: load the read-only recommendations from the host
+    /// and reset the in-RAM selection + error. Nothing is written here (step one).
+    private func beginSwap(exerciseId: String) {
+        swappingExerciseId = exerciseId
+        selectedReplacementId = nil
+        swapError = nil
+        swapRecommendations = onLoadRecommendations?(exerciseId) ?? []
+    }
+
+    /// Leave swap mode without writing.
+    private func cancelSwap() {
+        swappingExerciseId = nil
+        selectedReplacementId = nil
+        swapRecommendations = []
+        swapError = nil
+    }
+
+    /// Commit the selected 换动作 (step two). On `.saved` refresh the canonical display so
+    /// the row shows the ACTUAL exercise; on `.failed` keep the honest error and stay.
+    private func saveSwap(exerciseId: String) {
+        guard let onSwapExercise, let replacementId = selectedReplacementId else { return }
+        switch onSwapExercise(exerciseId, replacementId) {
+        case .saved:
+            refreshCanonicalReplacementDisplay()
+            cancelSwap()
+        case .failed(let message):
+            swapError = message
+        }
+    }
+
+    /// 恢复原动作: clear the override for one exercise — an explicit, gated canonical write
+    /// (replacementExerciseId == nil). Same honest outcome handling as a 换动作.
+    private func restoreSwap(exerciseId: String) {
+        guard let onSwapExercise else { return }
+        switch onSwapExercise(exerciseId, nil) {
+        case .saved:
+            refreshCanonicalReplacementDisplay()
+            cancelSwap()
+        case .failed(let message):
+            swapError = message
+        }
     }
 
     // MARK: - iOS-17A per-set "上次成绩" summary (DERIVED display copy)

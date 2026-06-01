@@ -54,6 +54,46 @@ enum LoggedSetEditOutcome: Equatable {
     case failed(String)
 }
 
+/// SR-4: outcome of an in-place exercise replacement (换动作) or its restore (复原).
+/// `.failed` carries an honest error string — there is NO fake-success state: a
+/// replacement is reported `.saved` only after a real, DataHealth-gated, atomic
+/// canonical write committed it. Mirrors `LoggedSetEditOutcome`.
+enum ExerciseSwapOutcome: Equatable {
+    case saved
+    case failed(String)
+}
+
+/// SR-4 display: the canonical-first replacement state for ONE history exercise, so the
+/// saved-session detail can show the ACTUAL exercise (换动作 后的动作) and attribute the
+/// performed sets to it. Resolved read-only through the §10 clean view — the override
+/// lives in canonical history (not the derived LocalSnapshot copy), so it shows
+/// persistently (cold start too).
+struct ExerciseReplacementDisplay: Equatable {
+    /// True when a user replacement is recorded: `actualExerciseId` is set AND differs
+    /// from the original planned/logged id (never inferred from `originalExerciseId`,
+    /// which this feature never writes).
+    let isReplaced: Bool
+    /// The effective actual exercise id (the override when replaced, else the original).
+    let actualExerciseId: String
+    /// The library-resolved display name of the actual exercise (falls back to the id).
+    let actualName: String
+}
+
+/// SR-4 (a) presentation row: ONE smart-replacement recommendation, flattened by the
+/// view-model from the engine's `SmartReplacementRecommendation` so the thin detail view
+/// renders it WITHOUT importing the engine package (the presentation layer stays free of
+/// engine/canonical tokens, mirroring `canonicalSetDisplay`). The engine returns rows
+/// already ordered (primary → secondary → angle variation → avoid), so the view renders
+/// them in order; `priorityLabel` carries the Chinese category for the row's chip.
+struct ReplacementOptionRow: Identifiable, Equatable {
+    let id: String          // the candidate exercise id (what a 换动作 writes as the actual)
+    let name: String        // the candidate's display name (engine-resolved)
+    let priority: String    // raw: "primary" | "secondary" | "angle_variation" | "avoid"
+    let priorityLabel: String   // 优先推荐 / 次选 / 角度变化 / 不建议
+    let fatigueLabel: String    // 低疲劳 / 中疲劳 / 高疲劳 (or "")
+    let reason: String
+}
+
 /// Outcome of the last restore-to-local-draft attempt (iOS-11). `.failed`
 /// carries an honest error and NO draft is started — never a fake restore.
 enum FocusRestoreStatus: Equatable {
@@ -673,6 +713,226 @@ final class FocusModeMvpState: ObservableObject {
             )
         }
         return byExercise
+    }
+
+    // MARK: - SR-4 smart-replacement integration (recommend → 换动作 / 复原 → display)
+
+    /// The CLEANED canonical history (§10/§11): load the on-disk canonical document and
+    /// route it through the SAME read-only DataHealth ingress the edit gate uses
+    /// (`processIncomingAppData` → its `cleanView`) — never raw AppData. Any failure
+    /// (no store / unreadable / missing) collapses to `nil` (honest empty), never a crash.
+    private func cleanedCanonicalHistory() -> [TrainingSession]? {
+        guard let store = appDataStore, store.hasExistingFile,
+              let loaded = try? store.load(),
+              let result = try? processIncomingAppData(
+                  appData: loaded,
+                  source: .localStorageLoad,
+                  options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+              )
+        else { return nil }
+        return result.cleanView.cleanedHistory
+    }
+
+    /// SR-4 (a): smart-replacement recommendations for ONE saved-session exercise,
+    /// produced by the ported `SmartReplacementEngine` and fed input DERIVED FROM the
+    /// DataHealth clean view (§10/§11) — never raw AppData, no engine change. The current
+    /// exercise is the user's ACTUAL exercise when already replaced (so alternatives are
+    /// to the swapped-in movement), else the original logged exercise; the clean history
+    /// is mapped into the engine's training-history shape so its pain-history signal
+    /// (which honors `actualExerciseId`) is considered. Read-only. An empty result (no
+    /// canonical match / no store) is honest, never a crash.
+    func replacementRecommendations(
+        forSnapshot snapshotId: String,
+        exerciseId: String
+    ) -> [ReplacementOptionRow] {
+        guard let cleanedHistory = cleanedCanonicalHistory(),
+              let session = cleanedHistory.first(where: { $0.id == snapshotId }),
+              let exercise = (session.exercises ?? []).first(where: {
+                  $0.id == exerciseId || $0.exerciseId == exerciseId
+              })
+        else { return [] }
+        // Effective current id: the recorded actual (override) wins, else the original
+        // planned/logged identity — mirroring the PWA resolution precedence.
+        guard let currentId = Self.firstNonEmpty([
+            exercise.actualExerciseId, exercise.recordExerciseId,
+            exercise.displayExerciseId, exercise.exerciseId, exercise.id
+        ]) else { return [] }
+        let params = SmartReplacementParams(
+            currentExercise: .id(currentId),
+            trainingHistory: cleanedHistory.map(Self.smartReplacementSession(from:))
+        )
+        // Flatten the engine output into the app-presentation row (keeps the engine type
+        // out of the thin detail view). The engine returns rows already ordered.
+        return SmartReplacementEngine.buildSmartReplacementRecommendations(params).map { rec in
+            ReplacementOptionRow(
+                id: rec.exerciseId,
+                name: rec.exerciseName,
+                priority: rec.priority,
+                priorityLabel: Self.replacementPriorityLabel(rec.priorityEnum),
+                fatigueLabel: Self.replacementFatigueLabel(rec.fatigueCost),
+                reason: rec.reason
+            )
+        }
+    }
+
+    /// SR-4 (b)+(c): set ONE saved-session exercise's user-override identity to a chosen
+    /// replacement (换动作), or clear it (复原, `replacementExerciseId == nil`), through the
+    /// SAME sanctioned canonical-AppData write path as the logged-set correction (§8 rule
+    /// 4: NOT a second write path), via `CanonicalSessionWriter.updateExerciseReplacement`.
+    /// The exercise is located by the identity the detail UI projects (session id ==
+    /// snapshotId + the original exercise id, which this edit never changes).
+    ///
+    /// Only the three user-override identity fields (`actualExerciseId` /
+    /// `displayExerciseId` / `recordExerciseId`) are written — never the engine-opened
+    /// `originalExerciseId`, the prescription body, the performed sets, or any engine
+    /// output (§11). Honest result: `.failed(_)` when canonical persistence is not opted
+    /// in (previews/tests) OR on any thrown write/validation error (never a fake success);
+    /// `.saved` only after a real, gated, atomic write. The injected DataHealth gate
+    /// re-validates — against the FRESHLY-LOADED on-disk history — that the override
+    /// landed exactly (apply → all three == the replacement; restore → all three cleared)
+    /// AND the exercise survives the clean view before the write commits.
+    func swapExercise(
+        sessionId: String,
+        exerciseId: String,
+        replacementExerciseId: String?
+    ) -> ExerciseSwapOutcome {
+        guard let appDataStore else {
+            // Canonical persistence not opted in (previews/tests) — honest failure.
+            return .failed("没有可写入的本机存储")
+        }
+        let writer = CanonicalSessionWriter(store: appDataStore)
+        do {
+            try writer.updateExerciseReplacement(
+                sessionId: sessionId,
+                exerciseId: exerciseId,
+                replacementExerciseId: replacementExerciseId
+            ) { candidate in
+                // Defensive DataHealth gate (§10): re-run the candidate through the SAME
+                // read-only DataHealth ingress the other edits use; accept ONLY when the
+                // matched exercise's three identity fields landed EXACTLY as intended
+                // (apply → all == the replacement; restore → all cleared) AND the exercise
+                // survives the clean view. No fake success.
+                guard let result = try? processIncomingAppData(
+                    appData: candidate,
+                    source: .postSessionComplete,
+                    options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+                ) else { return false }
+                guard let session = result.cleanView.cleanedHistory.first(where: { $0.id == sessionId }),
+                      let exercise = (session.exercises ?? []).first(where: {
+                          $0.id == exerciseId || $0.exerciseId == exerciseId
+                      })
+                else { return false }
+                return exercise.actualExerciseId == replacementExerciseId
+                    && exercise.displayExerciseId == replacementExerciseId
+                    && exercise.recordExerciseId == replacementExerciseId
+            }
+            return .saved
+        } catch {
+            return .failed(Self.replacementEditErrorMessage(error))
+        }
+    }
+
+    /// SR-4 (d): the canonical-first replacement display state per exercise for one saved
+    /// snapshot, keyed by the exerciseId the detail row renders. So a 换动作 shows the
+    /// ACTUAL exercise name and the performed sets read as attributed to it — read-only
+    /// through the §10 clean view (the override lives in canonical history, not the
+    /// LocalSnapshot copy, so it shows persistently). A snapshot-only / legacy /
+    /// unreplaced exercise yields `isReplaced == false`. Honest empty when no canonical
+    /// match.
+    func canonicalExerciseReplacementDisplay(
+        for snapshot: LocalCompletedSessionSnapshot
+    ) -> [String: ExerciseReplacementDisplay] {
+        guard let cleanedHistory = cleanedCanonicalHistory(),
+              let session = cleanedHistory.first(where: { $0.id == snapshot.snapshotId })
+        else { return [:] }
+        var byExercise: [String: ExerciseReplacementDisplay] = [:]
+        for ex in session.exercises ?? [] {
+            // Key by the SAME id the LocalSnapshot detail row uses (exerciseId → id).
+            guard let key = Self.firstNonEmpty([ex.exerciseId, ex.id]) else { continue }
+            let plannedId = Self.firstNonEmpty([ex.exerciseId, ex.id])
+            // The effective record/display id (override wins, mirroring PWA precedence).
+            let actualId = Self.firstNonEmpty([
+                ex.actualExerciseId, ex.recordExerciseId, ex.displayExerciseId,
+                ex.exerciseId, ex.id
+            ]) ?? key
+            // Replaced iff a user override (actualExerciseId) is set AND differs from the
+            // original planned/logged id — never inferred from originalExerciseId.
+            let isReplaced = (ex.actualExerciseId != nil) && (ex.actualExerciseId != plannedId)
+            let resolvedName = ExerciseLibrary.getExerciseNameEntry(actualId).zh
+            byExercise[key] = ExerciseReplacementDisplay(
+                isReplaced: isReplaced,
+                actualExerciseId: actualId,
+                actualName: resolvedName.isEmpty ? actualId : resolvedName
+            )
+        }
+        return byExercise
+    }
+
+    /// Map a CLEAN canonical `TrainingSession` into the smart-replacement engine's
+    /// training-history shape (only the fields it reads: id-identity + per-set pain).
+    /// Pure; feeds the engine a clean-derived signal (§11), never raw AppData.
+    private static func smartReplacementSession(from session: TrainingSession) -> SmartReplacementTrainingSession {
+        SmartReplacementTrainingSession(
+            date: session.date,
+            exercises: (session.exercises ?? []).map { ex in
+                SmartReplacementHistoryExercise(
+                    id: ex.id ?? ex.exerciseId,
+                    actualExerciseId: ex.actualExerciseId,
+                    sets: (ex.sets ?? []).map { set in
+                        SmartReplacementHistorySet(
+                            painFlag: set.painFlag,
+                            painArea: set.painArea,
+                            painSeverity: set.painSeverity?.doubleValue
+                        )
+                    }
+                )
+            }
+        )
+    }
+
+    /// First non-nil, non-empty string in `candidates`, else nil.
+    private static func firstNonEmpty(_ candidates: [String?]) -> String? {
+        for c in candidates { if let c, !c.isEmpty { return c } }
+        return nil
+    }
+
+    /// Chinese label for a recommendation priority (nil/unknown → empty).
+    private static func replacementPriorityLabel(_ priority: SmartReplacementPriority?) -> String {
+        switch priority {
+        case .primary: return "优先推荐"
+        case .secondary: return "次选"
+        case .angleVariation: return "角度变化"
+        case .avoid: return "不建议"
+        case nil: return ""
+        }
+    }
+
+    /// Chinese label for a recommendation fatigue cost (unknown → empty).
+    private static func replacementFatigueLabel(_ raw: String) -> String {
+        switch raw {
+        case "low": return "低疲劳"
+        case "medium": return "中疲劳"
+        case "high": return "高疲劳"
+        default: return ""
+        }
+    }
+
+    /// Map a canonical write failure to an honest, user-facing Chinese message for a
+    /// 换动作 / 复原 — never a fabricated success. Mirrors `loggedSetEditErrorMessage`.
+    private static func replacementEditErrorMessage(_ error: Error) -> String {
+        if let writeError = error as? CanonicalSessionWriteError {
+            switch writeError {
+            case .existingDocumentUnreadable:
+                return "本机训练记录无法读取，未改动（不会覆盖无法解析的数据）"
+            case .validationRejected:
+                return "换动作未通过本机数据校验，未保存"
+            case .backupFailed:
+                return "备份失败，未保存（原记录保持不变）"
+            case .saveFailed:
+                return "写入失败，未保存（原记录保持不变）"
+            }
+        }
+        return error.localizedDescription
     }
 
     /// Map the engine-derived completion into the on-disk Codable snapshot. The

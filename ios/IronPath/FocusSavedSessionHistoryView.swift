@@ -82,7 +82,24 @@ struct FocusSavedSessionHistoryView: View {
                 // DEEP-EDIT-1 display: per-set values read CANONICAL-first (the corrected
                 // AppData.history metrics when present, else the LocalSnapshot copy), so a
                 // correction shows persistently (cold start too). Read-only, §10 gated.
-                loadCanonicalSetDisplay: { state.canonicalSetDisplay(for: snapshot) }
+                loadCanonicalSetDisplay: { state.canonicalSetDisplay(for: snapshot) },
+                // SR-4 (a): read-only smart-replacement recommendations for one exercise,
+                // engine-produced and fed from the §10 clean view (never raw AppData).
+                onLoadRecommendations: { exerciseId in
+                    state.replacementRecommendations(forSnapshot: snapshot.snapshotId, exerciseId: exerciseId)
+                },
+                // SR-4 (b)+(c): 换动作 (apply) / 复原 (restore) for one exercise through the
+                // SAME canonical gated write path. Honest outcome the detail sheet reflects.
+                onSwapExercise: { exerciseId, replacementExerciseId in
+                    state.swapExercise(
+                        sessionId: snapshot.snapshotId,
+                        exerciseId: exerciseId,
+                        replacementExerciseId: replacementExerciseId
+                    )
+                },
+                // SR-4 (d): canonical-first replacement display so a 换动作 shows the ACTUAL
+                // exercise name + attributes its sets, persistently (read-only, §10 gated).
+                loadCanonicalReplacementDisplay: { state.canonicalExerciseReplacementDisplay(for: snapshot) }
             ) {
                 // Restore-to-local-draft + continue. Dismiss the sheet first,
                 // then restore (which flips the shell to the in-session draft).
