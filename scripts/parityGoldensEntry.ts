@@ -39,6 +39,14 @@ import { runAutoRepairOrchestrator } from '../src/dataHealth/autoRepairOrchestra
 import { getAppDataRepairRegistry } from '../src/dataHealth/appDataRepairRegistry';
 import { buildFocusStepQueue } from '../src/engines/focusModeStateEngine';
 import { resolveFocusModeInteractionState } from '../src/engines/focusModeInteractionState';
+// SR-0 — smart-replacement parity slice (parity pipeline only; the engine port
+// is SR-1+). Imports the REAL engine entrypoint so the goldens are generated,
+// never hand-authored (§22). buildSmartReplacementRecommendations is clockless
+// (no Date.now / Math.random), so its fixtures use generatedAtPolicy 'none'.
+import {
+  buildSmartReplacementRecommendations,
+  type SmartReplacementPriority,
+} from '../src/engines/smartReplacementEngine';
 import type { AppData, TrainingSession, TrainingTemplate } from '../src/models/training-model';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
@@ -78,6 +86,14 @@ const FIXTURE_IDS = [
   'training-decision/productive-floor-v1',
   'training-decision/no-legacy-advice-v1',
   'training-decision/clean-input-contract-v1',
+  // SR-0 smart-replacement parity scaffold — 4 synthetic fixtures whose
+  // generated goldens collectively cover all four SmartReplacementPriority
+  // values (primary / secondary / angle_variation / avoid). Engine logic is
+  // ported in SR-1+; SR-0 builds only the parity pipeline.
+  'smart-replacement/explicit-priority-spread-v1',
+  'smart-replacement/bench-press-natural-v1',
+  'smart-replacement/low-readiness-fatigue-v1',
+  'smart-replacement/pain-history-substitute-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -693,6 +709,63 @@ const TRAINING_DECISION_EXPANDED_IDS = new Set<FixtureId>([
   'training-decision/clean-input-contract-v1',
 ]);
 
+// ---------------------------------------------------------------------------
+// SR-0 — smart-replacement parity slice
+//
+// buildSmartReplacementRecommendations (src/engines/smartReplacementEngine.ts)
+// is clockless and library-driven: given SmartReplacementParams it returns a
+// SmartReplacementRecommendation[] (exerciseId, exerciseName, priority,
+// fatigueCost, reason, warnings — see smartReplacementEngine.ts:22-31). SR-0
+// only PINS that output as a golden; the engine itself is ported to Swift in
+// SR-1+. The payload wraps the array with a recommendationCount + a stable
+// priorityCounts map (all four priorities, including zeros) so the Swift decode
+// mirror can assert count integrity + 4-priority coverage without recomputing.
+// ---------------------------------------------------------------------------
+
+const SMART_REPLACEMENT_PRIORITIES: SmartReplacementPriority[] = [
+  'primary',
+  'secondary',
+  'angle_variation',
+  'avoid',
+];
+
+// Mirror of the engine's internal getExerciseId() (smartReplacementEngine.ts:90)
+// — used only to echo the resolved current-exercise id into the golden so the
+// Swift mirror can read it without re-deriving. NOT engine logic.
+const smartReplacementCurrentId = (currentExercise: unknown): string => {
+  if (!currentExercise) return '';
+  if (typeof currentExercise === 'string') return currentExercise;
+  const ex = currentExercise as Record<string, unknown>;
+  return String(
+    ex.actualExerciseId ||
+      ex.replacementExerciseId ||
+      ex.canonicalExerciseId ||
+      ex.baseId ||
+      ex.id ||
+      '',
+  );
+};
+
+const generateSmartReplacement = (input: any, meta: ParityMeta) => {
+  const params = (input.params ?? {}) as Parameters<
+    typeof buildSmartReplacementRecommendations
+  >[0];
+  const recommendations = buildSmartReplacementRecommendations(params);
+  const priorityCounts = Object.fromEntries(
+    SMART_REPLACEMENT_PRIORITIES.map((p) => [p, 0]),
+  ) as Record<SmartReplacementPriority, number>;
+  for (const rec of recommendations) {
+    priorityCounts[rec.priority] += 1;
+  }
+  return {
+    sourceFixtureId: meta.id,
+    currentExerciseId: smartReplacementCurrentId(params?.currentExercise),
+    recommendationCount: recommendations.length,
+    priorityCounts,
+    recommendations,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -708,6 +781,10 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'training-decision/productive-floor-v1': generateTrainingDecisionExpanded,
   'training-decision/no-legacy-advice-v1': generateTrainingDecisionExpanded,
   'training-decision/clean-input-contract-v1': generateTrainingDecisionExpanded,
+  'smart-replacement/explicit-priority-spread-v1': generateSmartReplacement,
+  'smart-replacement/bench-press-natural-v1': generateSmartReplacement,
+  'smart-replacement/low-readiness-fatigue-v1': generateSmartReplacement,
+  'smart-replacement/pain-history-substitute-v1': generateSmartReplacement,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

@@ -1,0 +1,110 @@
+{
+  "currentExerciseId": "bench-press",
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "smart-replacement/explicit-priority-spread-v1"
+  },
+  "priorityCounts": {
+    "angle_variation": 6,
+    "avoid": 1,
+    "primary": 2,
+    "secondary": 2
+  },
+  "recommendationCount": 11,
+  "recommendations": [
+    {
+      "exerciseId": "push-up",
+      "exerciseName": "俯卧撑",
+      "fatigueCost": "medium",
+      "priority": "primary",
+      "reason": "动作模式接近，主要训练肌群一致，适合优先替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "db-bench-press",
+      "exerciseName": "哑铃卧推",
+      "fatigueCost": "medium",
+      "priority": "primary",
+      "reason": "动作模式接近，主要训练肌群一致，适合优先替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "machine-chest-press",
+      "exerciseName": "器械推胸",
+      "fatigueCost": "medium",
+      "priority": "secondary",
+      "reason": "动作模式接近，主要训练肌群一致，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "close-grip-bench",
+      "exerciseName": "窄握卧推",
+      "fatigueCost": "medium",
+      "priority": "secondary",
+      "reason": "动作模式接近，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "assisted-dip",
+      "exerciseName": "辅助双杠臂屈伸",
+      "fatigueCost": "high",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "pec-deck-fly",
+      "exerciseName": "蝴蝶机夹胸",
+      "fatigueCost": "low",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "machine-incline-chest-press",
+      "exerciseName": "上斜器械推胸",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "incline-db-press",
+      "exerciseName": "上斜哑铃卧推",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "smith-incline-press",
+      "exerciseName": "史密斯上斜卧推",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "db-fly",
+      "exerciseName": "哑铃飞鸟",
+      "fatigueCost": "low",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "cable-fly",
+      "exerciseName": "绳索夹胸",
+      "fatigueCost": "low",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    }
+  ],
+  "sourceFixtureId": "smart-replacement/explicit-priority-spread-v1"
+}

@@ -1,0 +1,25 @@
+{
+  "parityMeta": {
+    "id": "smart-replacement/explicit-priority-spread-v1",
+    "schemaVersion": 8,
+    "describes": "SmartReplacement parity — a currentExercise whose explicit alternativePriorities force all four SmartReplacementPriority values in one golden: db-bench-press=primary, machine-chest-press=secondary, incline-db-press=angle_variation, cable-fly=avoid. The controlled 4-priority coverage anchor (robust to exercise-library drift).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Synthetic SmartReplacementParams. buildSmartReplacementRecommendations is clockless (no Date.now / Math.random), so generatedAtPolicy is 'none' — no deterministic clock is threaded. Explicit alternativeIds + alternativePriorities are spread last in mergeExercise, so they win over the bench-press knowledge override and deterministically map via mapExplicitPriority (priority/secondary/angle/avoid)."
+  },
+  "params": {
+    "currentExercise": {
+      "id": "bench-press",
+      "alternativeIds": ["db-bench-press", "machine-chest-press", "incline-db-press", "cable-fly"],
+      "alternativePriorities": {
+        "db-bench-press": "primary",
+        "machine-chest-press": "secondary",
+        "incline-db-press": "angle",
+        "cable-fly": "avoid"
+      }
+    },
+    "trainingLevel": "intermediate"
+  }
+}

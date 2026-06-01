@@ -202,7 +202,11 @@ const resolveBaseRef = (): string => {
 };
 const changedFiles = (paths: string[]): string => {
   const base = resolveBaseRef();
-  const r = spawnSync('git', ['diff', '--name-only', base, '--', ...paths], {
+  // SR-0: --diff-filter=MD ignores pure ADDITIONS (additive parity fixtures are
+  // sanctioned per master-architecture §22) and catches only modify/delete of
+  // existing tracked files — so a fixture-ADDING parity slice stays green while
+  // any drift/deletion of an existing golden is still flagged.
+  const r = spawnSync('git', ['diff', '--name-only', '--diff-filter=MD', base, '--', ...paths], {
     cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8',
   });
   if (r.status !== 0) throw new Error(`git diff against ${base} failed: ${r.stderr}`);
@@ -210,14 +214,14 @@ const changedFiles = (paths: string[]): string => {
 };
 
 describe('iOS-12 golden + npm package/lockfile unchanged', () => {
-  it('14. parity --check still 14 fixtures / 0 changed; no golden file changed', () => {
+  it('14. parity --check still 18 fixtures / 0 changed; no golden file changed', () => {
     const result = spawnSync(
       process.execPath,
       [repoFile('scripts/generate-parity-goldens.mjs'), '--check'],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+14\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+18\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
     expect(changedFiles(['tests/fixtures/parity'])).toBe('');
   }, 240_000);

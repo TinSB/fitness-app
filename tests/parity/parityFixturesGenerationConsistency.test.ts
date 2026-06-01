@@ -54,9 +54,9 @@ describe('parityFixturesGenerationConsistency', () => {
   it('parityFixturesGenerationConsistency --check passes without drift', () => {
     const result = runGenerator(['--check']);
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    // Summary line: "checked 14 fixture(s); 0 changed" (5 iOS-0 + 9 iOS-4B0
-    // TrainingDecision parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+14\s+fixture/);
+    // Summary line: "checked 18 fixture(s); 0 changed" (5 iOS-0 + 9 iOS-4B0
+    // TrainingDecision + 4 SR-0 smart-replacement parity fixtures).
+    expect(result.stdout).toMatch(/checked\s+18\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });
