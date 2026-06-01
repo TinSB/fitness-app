@@ -35,11 +35,18 @@ struct FocusSavedSessionDetailView: View {
     /// reflects the new value ONLY after `.saved`, never a fake success. nil (the
     /// default) disables the edit affordance entirely (previews show read-only).
     var onSaveSet: ((_ exerciseId: String, _ setIndex: Int, _ weightInDisplayUnit: Double?, _ reps: Int?, _ rir: Int?) -> LoggedSetEditOutcome)? = nil
+    /// DEEP-EDIT-1 display: load this snapshot's per-set DISPLAY values CANONICAL-FIRST
+    /// (the corrected AppData.history metrics when present, else the LocalSnapshot copy),
+    /// keyed `[exerciseId][setIndex]`. The host injects `FocusModeMvpState.canonicalSetDisplay(for:)`,
+    /// whose read goes through the §10 clean-view chokepoint. nil (the default) keeps
+    /// previews/tests on the snapshot copy — so a corrected set shows its new value
+    /// PERSISTENTLY (cold start too), not the stale snapshot, without an in-RAM override.
+    var loadCanonicalSetDisplay: (() -> [String: [Int: LocalCompletedSetEntrySnapshot]])? = nil
     /// iOS-11: restore this saved session into an in-RAM training draft and
     /// continue it. Optional so previews can omit it.
     var onContinue: (() -> Void)? = nil
 
-    // MARK: - DEEP-EDIT-1 per-set edit state (in-RAM display reflection only)
+    // MARK: - DEEP-EDIT-1 per-set edit + canonical display state
 
     /// Identifies one logged set within this saved session for editing.
     private struct SetEditKey: Hashable {
@@ -54,10 +61,16 @@ struct FocusSavedSessionDetailView: View {
     @State private var draftRir: String = ""
     /// Honest inline error for the in-flight edit (parse error or a failed write).
     @State private var saveError: String? = nil
-    /// Sets corrected this session — the in-RAM display reflection of a committed
-    /// canonical write (the authoritative store is AppData.history). Keyed by set;
-    /// the row renders this over the snapshot once the write returned `.saved`.
-    @State private var overrides: [SetEditKey: LocalCompletedSetEntrySnapshot] = [:]
+    /// Per-set DISPLAY values resolved CANONICAL-FIRST (keyed `[exerciseId][setIndex]`):
+    /// the corrected AppData.history metrics when a canonical set matches, else the
+    /// LocalSnapshot copy. Loaded on appear and refreshed after a committed correction,
+    /// so a corrected set shows its new value PERSISTENTLY (cold start too) — the
+    /// authoritative store is AppData.history, so no in-RAM value override is needed.
+    @State private var canonicalSetDisplay: [String: [Int: LocalCompletedSetEntrySnapshot]] = [:]
+    /// Sets the user corrected THIS session — drives the small "已修正" marker only. The
+    /// VALUE comes from `canonicalSetDisplay` (canonical is the source of truth); this
+    /// is just an in-session affordance, not a value store.
+    @State private var correctedKeys: Set<SetEditKey> = []
 
     /// Pure, read-only projection over the existing restore reconciliation. No
     /// progress is applied here; restore still happens only via `onContinue`.
@@ -79,6 +92,18 @@ struct FocusSavedSessionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
+        // DEEP-EDIT-1 display: pull the canonical-first per-set values on open so a
+        // previously-corrected set renders its authoritative value (not the stale
+        // snapshot). nil host (previews) → stays empty → falls back to the snapshot.
+        .onAppear { refreshCanonicalSetDisplay() }
+    }
+
+    /// Pull the canonical-first per-set display values from the host (if wired). Called
+    /// on appear and after a committed correction, so the rows reflect the authoritative
+    /// AppData.history values — the in-RAM display override is no longer needed.
+    private func refreshCanonicalSetDisplay() {
+        guard let loadCanonicalSetDisplay else { return }
+        canonicalSetDisplay = loadCanonicalSetDisplay()
     }
 
     // MARK: - iOS-15 resume affordance (thin UI over the EXISTING restore)
@@ -328,7 +353,10 @@ struct FocusSavedSessionDetailView: View {
     @ViewBuilder
     private func setRow(exerciseId: String, entry: LocalCompletedSetEntrySnapshot) -> some View {
         let key = SetEditKey(exerciseId: exerciseId, setIndex: entry.setIndex)
-        let shown = overrides[key] ?? entry
+        // Prefer the canonical-first resolved value (the DEEP-EDIT-1-corrected metrics
+        // from AppData.history when present) over the snapshot copy, so a correction
+        // shows persistently. Empty map (previews / no canonical match) → the snapshot.
+        let shown = canonicalSetDisplay[exerciseId]?[entry.setIndex] ?? entry
         if editingKey == key {
             setEditForm(exerciseId: exerciseId, entry: shown)
         } else {
@@ -336,7 +364,7 @@ struct FocusSavedSessionDetailView: View {
                 Text("第 \(entry.setIndex + 1) 组")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
-                if overrides[key] != nil {
+                if correctedKeys.contains(key) {
                     Text("已修正")
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 5).padding(.vertical, 1)
@@ -450,13 +478,11 @@ struct FocusSavedSessionDetailView: View {
 
         switch onSaveSet(exerciseId, setIndex, weight, reps, rir) {
         case .saved:
-            let key = SetEditKey(exerciseId: exerciseId, setIndex: setIndex)
-            overrides[key] = LocalCompletedSetEntrySnapshot(
-                setIndex: setIndex,
-                weightKg: WeightConversion.toKilograms(weight, from: displayUnit),
-                reps: reps,
-                rir: rir
-            )
+            // The authoritative store (AppData.history) now holds the correction; pull
+            // it back through the canonical read path so the row reflects it (no in-RAM
+            // value override needed), and mark the set corrected for this session.
+            correctedKeys.insert(SetEditKey(exerciseId: exerciseId, setIndex: setIndex))
+            refreshCanonicalSetDisplay()
             editingKey = nil
             saveError = nil
         case .failed(let message):

@@ -78,7 +78,11 @@ struct FocusSavedSessionHistoryView: View {
                         reps: reps,
                         rir: rir
                     )
-                }
+                },
+                // DEEP-EDIT-1 display: per-set values read CANONICAL-first (the corrected
+                // AppData.history metrics when present, else the LocalSnapshot copy), so a
+                // correction shows persistently (cold start too). Read-only, §10 gated.
+                loadCanonicalSetDisplay: { state.canonicalSetDisplay(for: snapshot) }
             ) {
                 // Restore-to-local-draft + continue. Dismiss the sheet first,
                 // then restore (which flips the shell to the in-session draft).
