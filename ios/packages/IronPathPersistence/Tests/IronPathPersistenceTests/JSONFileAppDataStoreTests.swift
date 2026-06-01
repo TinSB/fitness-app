@@ -101,6 +101,62 @@ final class JSONFileAppDataStoreTests: XCTestCase {
         }
     }
 
+    // FIX-1: rapid successive sanctioned writes (same second / same instant) must
+    // each produce a UNIQUE backup — the prior second-level stamp collided, so the
+    // second same-second `backup()` threw `.backupFailed` (a false failure that
+    // failed the whole gated write). Every call here succeeds with a DISTINCT
+    // sibling that lands on disk; on the pre-fix code the second iteration threw.
+    func testConsecutiveSameSecondBackupsAllSucceedWithDistinctNames() throws {
+        let store = JSONFileAppDataStore(directory: tempDir, filename: "primary.json")
+        try store.save(try makeAppData())
+
+        var urls: [URL] = []
+        for _ in 0..<4 {
+            urls.append(try store.backup())
+        }
+
+        // All four succeeded (no `.backupFailed`), all distinct, all on disk, all
+        // siblings of the source carrying the contract's `.backup-` prefix.
+        XCTAssertEqual(Set(urls.map(\.path)).count, urls.count, "backup names must be unique for same-second writes")
+        for backupURL in urls {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path))
+            XCTAssertEqual(backupURL.deletingLastPathComponent(), store.url.deletingLastPathComponent())
+            XCTAssertTrue(backupURL.lastPathComponent.contains("primary.json.backup-"))
+        }
+    }
+
+    // FIX-1: the uniqueness backstop must NOT mask a GENUINE backup failure. With
+    // the source present but its directory read-only, `copyItem` genuinely fails
+    // and `backup()` must still throw `.backupFailed` honestly (no fake success).
+    func testGenuineBackupFailureOnUnwritableDirectoryStillThrowsHonestly() throws {
+        let store = JSONFileAppDataStore(directory: tempDir, filename: "locked.json")
+        try store.save(try makeAppData())
+
+        let fm = FileManager.default
+        try fm.setAttributes([.posixPermissions: 0o555], ofItemAtPath: tempDir.path)
+        defer { try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tempDir.path) }
+
+        // If the runtime can still write here (e.g. running as root, which bypasses
+        // POSIX perms), the genuine-failure path can't be exercised — skip rather
+        // than assert a guarantee the environment can't honour.
+        let probe = tempDir.appendingPathComponent("write-probe-\(UUID().uuidString)")
+        if fm.createFile(atPath: probe.path, contents: Data()) {
+            try? fm.removeItem(at: probe)
+            throw XCTSkip("directory still writable (likely root); cannot exercise genuine backup failure")
+        }
+
+        XCTAssertThrowsError(try store.backup()) { error in
+            guard let storeError = error as? AppDataStoreError else {
+                XCTFail("expected AppDataStoreError, got \(error)")
+                return
+            }
+            guard case .backupFailed = storeError else {
+                XCTFail("expected .backupFailed, got \(storeError)")
+                return
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeAppData() throws -> AppData {
