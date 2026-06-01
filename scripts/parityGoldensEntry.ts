@@ -47,7 +47,7 @@ import {
   buildSmartReplacementRecommendations,
   type SmartReplacementPriority,
 } from '../src/engines/smartReplacementEngine';
-import type { AppData, TrainingSession, TrainingTemplate } from '../src/models/training-model';
+import type { AppData, ExercisePrescription, TrainingSession, TrainingTemplate } from '../src/models/training-model';
 // SR-1 — exercise-library data port parity slice. Imports the REAL frozen
 // library tables (src/data/exerciseLibrary.ts) so the library-snapshot golden
 // is GENERATED from TS truth, never hand-authored (§22). The Swift port mirrors
@@ -61,9 +61,24 @@ import {
   EXERCISE_ENGLISH_NAMES,
   EXERCISE_EQUIPMENT_TAGS,
   EXERCISE_ALIASES,
+  EXERCISE_EQUIVALENCE_CHAINS,
   EXERCISE_KNOWLEDGE_OVERRIDES,
   type ExerciseEquipmentTag,
 } from '../src/data/exerciseLibrary';
+// SR-2 — replacement-engine port parity slice. Imports the REAL engine functions
+// (buildReplacementOptions / validateReplacementExerciseId /
+// isSyntheticReplacementExerciseId) so the replacement-engine goldens are
+// GENERATED from TS truth, never hand-authored (§22). The Swift port
+// (ReplacementEngine / ReplacementEngineKnowledge) reproduces the SAME outputs and
+// transcribes the engine-used EXERCISE_EQUIVALENCE_CHAINS / EXERCISE_KNOWLEDGE_OVERRIDES
+// subset — both reconciled item-by-item. Does NOT touch the WRITE PATH
+// (applyExerciseReplacement / restoreOriginalExercise) or smartReplacement (SR-3).
+import {
+  buildReplacementOptions,
+  isSyntheticReplacementExerciseId,
+  validateReplacementExerciseId,
+  type ReplacementContext,
+} from '../src/engines/replacementEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -115,6 +130,19 @@ const FIXTURE_IDS = [
   // the EXERCISE_KNOWLEDGE_OVERRIDES key set, so the Swift port reconciles every
   // entry item-by-item. Additive; generated, never hand-edited (§22).
   'exercise-library/library-snapshot-v1',
+  // SR-2 replacement-engine port — 1 knowledge snapshot (the engine-used
+  // EXERCISE_EQUIVALENCE_CHAINS + EXERCISE_KNOWLEDGE_OVERRIDES subset, reconciled
+  // item-by-item) + 4 OUTPUT fixtures whose generated goldens pin
+  // buildReplacementOptions / validateReplacementExerciseId /
+  // isSyntheticReplacementExerciseId across the explicit-alternatives,
+  // chain-derivation, equipment-context, and validation/synthetic branches. The
+  // Swift port runs the SAME engine and must reproduce every result. Additive;
+  // generated, never hand-edited (§22).
+  'replacement-engine/knowledge-snapshot-v1',
+  'replacement-engine/bench-press-explicit-v1',
+  'replacement-engine/lat-pulldown-equipment-v1',
+  'replacement-engine/hack-squat-chain-v1',
+  'replacement-engine/validation-synthetic-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -846,6 +874,89 @@ const generateExerciseLibrarySnapshot = (_input: any, _meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// SR-2 — replacement-engine knowledge snapshot
+//
+// Dumps the engine knowledge replacementEngine.ts actually reads: the
+// EXERCISE_EQUIVALENCE_CHAINS values (id + members, keyed by exercise id) and the
+// engine-used SUBSET of every EXERCISE_KNOWLEDGE_OVERRIDES value. The Swift
+// ReplacementEngineKnowledge tables reconcile every entry item-by-item. This
+// transcribes frozen data — it COMPUTES no replacement.
+// ---------------------------------------------------------------------------
+
+// The EXERCISE_KNOWLEDGE_OVERRIDES fields the replacement engine reads
+// (replacementEngine.ts:73 equipmentTags, :185 fatigueCost, :307-318
+// equivalenceChainId / alternativeIds / alternativePriorities / regressionIds /
+// progressionIds). No override currently carries `equipmentTags`, so it never
+// appears in the snapshot — but it is listed so the field set documents the full
+// engine-used contract (and the Swift equipmentTagsFor mirror).
+const REPLACEMENT_ENGINE_KNOWLEDGE_FIELDS = [
+  'fatigueCost',
+  'equivalenceChainId',
+  'alternativeIds',
+  'alternativePriorities',
+  'regressionIds',
+  'progressionIds',
+  'equipmentTags',
+] as const;
+
+const generateReplacementEngineKnowledge = (_input: any, _meta: ParityMeta) => {
+  const equivalenceChains: Record<string, { id: string; members: string[] }> = {};
+  for (const [exerciseId, chain] of Object.entries(EXERCISE_EQUIVALENCE_CHAINS)) {
+    equivalenceChains[exerciseId] = { id: chain.id, members: chain.members };
+  }
+  const knowledge: Record<string, Record<string, unknown>> = {};
+  for (const [id, override] of Object.entries(EXERCISE_KNOWLEDGE_OVERRIDES)) {
+    const entry: Record<string, unknown> = {};
+    for (const field of REPLACEMENT_ENGINE_KNOWLEDGE_FIELDS) {
+      const value = (override as Record<string, unknown>)[field];
+      if (value !== undefined) entry[field] = value;
+    }
+    knowledge[id] = entry;
+  }
+  return {
+    counts: {
+      equivalenceChainKeys: Object.keys(equivalenceChains).length,
+      knowledgeOverrideIds: Object.keys(knowledge).length,
+    },
+    equivalenceChains,
+    knowledge,
+  };
+};
+
+// ---------------------------------------------------------------------------
+// SR-2 — replacement-engine OUTPUT parity
+//
+// Runs the REAL buildReplacementOptions over a fixture's exercise + context and
+// pins the full ReplacementOption[] (id / name / rank / rankLabel / reason /
+// fatigueCost / fatigueCostLabel / prIndependent) in engine order. Echoes the
+// engineInput verbatim so the Swift port re-runs its ported engine on the SAME
+// input and asserts equality. `validation` / `synthetic` pin
+// validateReplacementExerciseId / isSyntheticReplacementExerciseId over the
+// fixture's probe lists. Clockless (no Date.now / Math.random) → policy 'none'.
+// ---------------------------------------------------------------------------
+
+const generateReplacementEngine = (input: any, meta: ParityMeta) => {
+  const exercise = (input.exercise ?? {}) as ExercisePrescription;
+  const context = (input.context ?? {}) as ReplacementContext;
+  const unavailableEquipment = (context.unavailableEquipment ?? []) as ExerciseEquipmentTag[];
+  const options = buildReplacementOptions(exercise, context);
+  const validateProbes: string[] = Array.isArray(input.validateProbes) ? input.validateProbes : [];
+  const syntheticProbes: string[] = Array.isArray(input.syntheticProbes) ? input.syntheticProbes : [];
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: {
+      exercise,
+      context: { unavailableEquipment },
+    },
+    optionCount: options.length,
+    optionIds: options.map((o) => o.id),
+    options,
+    validation: validateProbes.map((id) => ({ id, valid: validateReplacementExerciseId(id) })),
+    synthetic: syntheticProbes.map((id) => ({ id, synthetic: isSyntheticReplacementExerciseId(id) })),
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -866,6 +977,11 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'smart-replacement/low-readiness-fatigue-v1': generateSmartReplacement,
   'smart-replacement/pain-history-substitute-v1': generateSmartReplacement,
   'exercise-library/library-snapshot-v1': generateExerciseLibrarySnapshot,
+  'replacement-engine/knowledge-snapshot-v1': generateReplacementEngineKnowledge,
+  'replacement-engine/bench-press-explicit-v1': generateReplacementEngine,
+  'replacement-engine/lat-pulldown-equipment-v1': generateReplacementEngine,
+  'replacement-engine/hack-squat-chain-v1': generateReplacementEngine,
+  'replacement-engine/validation-synthetic-v1': generateReplacementEngine,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

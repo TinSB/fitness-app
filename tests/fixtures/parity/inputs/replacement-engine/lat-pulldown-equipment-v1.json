@@ -1,0 +1,16 @@
+{
+  "parityMeta": {
+    "id": "replacement-engine/lat-pulldown-equipment-v1",
+    "schemaVersion": 8,
+    "describes": "SR-2 buildReplacementOptions over lat-pulldown WITH an unavailableEquipment context (cable). Exercises the equipment branch: the equipment_fallback rank (machine-row), the equipmentReasonNotes appended to each reason, hasHardUnavailableEquipment partitioning (cable-tagged single-arm-lat-pulldown / seated-row sink last), equipmentAdjustedRankScore, and the captured-index final tie-break of the equipment re-sort.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "buildReplacementOptions is clockless → generatedAtPolicy 'none'. unavailableEquipment uses ExerciseEquipmentTag string literals."
+  },
+  "exercise": { "id": "lat-pulldown" },
+  "context": { "unavailableEquipment": ["cable"] },
+  "validateProbes": [],
+  "syntheticProbes": []
+}

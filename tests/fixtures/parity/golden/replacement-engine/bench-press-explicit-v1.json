@@ -1,0 +1,82 @@
+{
+  "engineInput": {
+    "context": {
+      "unavailableEquipment": []
+    },
+    "exercise": {
+      "id": "bench-press"
+    }
+  },
+  "optionCount": 4,
+  "optionIds": [
+    "db-bench-press",
+    "machine-chest-press",
+    "incline-db-press",
+    "push-up"
+  ],
+  "options": [
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "db-bench-press",
+      "name": "哑铃卧推（Dumbbell Bench Press）",
+      "prIndependent": true,
+      "rank": "priority",
+      "rankLabel": "优先",
+      "reason": "同为水平推，胸部刺激接近，器械占用时适合直接替代卧推。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "machine-chest-press",
+      "name": "器械推胸（Machine Chest Press）",
+      "prIndependent": true,
+      "rank": "priority",
+      "rankLabel": "优先",
+      "reason": "同为水平推，轨迹更稳定，适合在卧推架不可用或需要降低技术压力时替代。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "incline-db-press",
+      "name": "上斜哑铃卧推（Incline Dumbbell Press）",
+      "prIndependent": true,
+      "rank": "angle",
+      "rankLabel": "角度相近",
+      "reason": "同属胸部推举，但角度偏上胸，适合作为较低优先级替代。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "push-up",
+      "name": "俯卧撑（Push-Up）",
+      "prIndependent": true,
+      "rank": "optional",
+      "rankLabel": "可选",
+      "reason": "同为水平推，适合器械受限或短时训练，但负荷精度低于卧推。"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "replacement-engine/bench-press-explicit-v1"
+  },
+  "sourceFixtureId": "replacement-engine/bench-press-explicit-v1",
+  "synthetic": [],
+  "validation": [
+    {
+      "id": "bench-press",
+      "valid": true
+    },
+    {
+      "id": "db-bench-press",
+      "valid": true
+    },
+    {
+      "id": "cable-fly",
+      "valid": true
+    }
+  ]
+}

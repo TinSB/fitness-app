@@ -1,0 +1,82 @@
+{
+  "engineInput": {
+    "context": {
+      "unavailableEquipment": [
+        "cable"
+      ]
+    },
+    "exercise": {
+      "id": "lat-pulldown"
+    }
+  },
+  "optionCount": 5,
+  "optionIds": [
+    "assisted-pull-up",
+    "pull-up",
+    "machine-row",
+    "single-arm-lat-pulldown",
+    "seated-row"
+  ],
+  "options": [
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "assisted-pull-up",
+      "name": "辅助引体向上（Assisted Pull-Up）",
+      "prIndependent": true,
+      "rank": "priority",
+      "rankLabel": "优先",
+      "reason": "同属垂直拉，动作目标接近；会按辅助引体向上独立记录 PR / e1RM。不依赖绳索；可在固定器械区完成。"
+    },
+    {
+      "fatigueCost": "high",
+      "fatigueCostLabel": "高",
+      "id": "pull-up",
+      "name": "引体向上（Pull-Up）",
+      "prIndependent": true,
+      "rank": "priority",
+      "rankLabel": "优先",
+      "reason": "同属垂直拉，强度和技能要求更高；适合状态好时替代。不依赖绳索。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "machine-row",
+      "name": "器械划船（Machine Row）",
+      "prIndependent": true,
+      "rank": "equipment_fallback",
+      "rankLabel": "器械不可用时",
+      "reason": "这是器械不可用时可选的背部补量选择，不是一线垂直拉等价替代。不依赖绳索；可在固定器械区完成。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "single-arm-lat-pulldown",
+      "name": "单臂高位下拉（Single-Arm Lat Pulldown）",
+      "prIndependent": true,
+      "rank": "angle",
+      "rankLabel": "角度相近",
+      "reason": "同属垂直拉，但改为单侧角度，适合需要更细致控制背阔发力时使用。需要绳索区，已降低排序。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "seated-row",
+      "name": "坐姿划船（Seated Row）",
+      "prIndependent": true,
+      "rank": "optional",
+      "rankLabel": "可选",
+      "reason": "这是器械不可用时可选的背部补量选择，不是一线垂直拉等价替代。需要绳索区，已降低排序。"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "replacement-engine/lat-pulldown-equipment-v1"
+  },
+  "sourceFixtureId": "replacement-engine/lat-pulldown-equipment-v1",
+  "synthetic": [],
+  "validation": []
+}
