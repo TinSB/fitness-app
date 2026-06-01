@@ -919,4 +919,196 @@ final class CanonicalSessionWriterTests: XCTestCase {
         let loaded = try store.load()
         XCTAssertEqual(loaded.screeningProfile.painTriggers, ["右肩"])
     }
+
+    // MARK: - EDIT-4: program config scalar edit (SAME gated path, sanctioned MUTATION)
+
+    func testUpdateProgramConfigFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateProgramConfig(
+            primaryGoal: "增肌", splitType: "全身", daysPerWeek: .integer(3)
+        ) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.programTemplate.primaryGoal, "增肌")
+        XCTAssertEqual(store.stored?.programTemplate.daysPerWeek?.intValue, 3)
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testUpdateProgramConfigSecondWriteBacksUpBeforeSaving() throws {
+        let seed = AppData.emptyCurrent().withUpdatedProgramConfig(
+            primaryGoal: "增肌", splitType: "全身", daysPerWeek: .integer(3)
+        )
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: "推 / 拉 / 腿", daysPerWeek: .integer(4)
+        ) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        // The edit replaced the scalars in place (still exactly one programTemplate).
+        XCTAssertEqual(store.stored?.programTemplate.primaryGoal, "力量")
+        XCTAssertEqual(store.stored?.programTemplate.splitType, "推 / 拉 / 腿")
+        XCTAssertEqual(store.stored?.programTemplate.daysPerWeek?.intValue, 4)
+    }
+
+    func testUpdateProgramConfigValidationRejectionWritesNothing() {
+        let seed = AppData.emptyCurrent().withUpdatedProgramConfig(
+            primaryGoal: "增肌", splitType: "全身", daysPerWeek: .integer(3)
+        )
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: nil, daysPerWeek: .integer(4)
+        ) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The prior program config is untouched — a rejected edit never lands.
+        XCTAssertEqual(store.stored?.programTemplate.primaryGoal, "增肌")
+    }
+
+    func testUpdateProgramConfigGateReceivesCandidateWithEditApplied() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenGoal: String?
+        var seenDays: Int?
+        _ = try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: "推 / 拉 / 腿", daysPerWeek: .integer(4)
+        ) { candidate in
+            seenGoal = candidate.programTemplate.primaryGoal
+            seenDays = candidate.programTemplate.daysPerWeek?.intValue
+            return true
+        }
+        XCTAssertEqual(seenGoal, "力量", "the gate must see the candidate with the edit already applied")
+        XCTAssertEqual(seenDays, 4)
+    }
+
+    func testUpdateProgramConfigUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: nil, daysPerWeek: .integer(4)
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testUpdateProgramConfigBackupFailureStopsBeforeSave() {
+        let seed = AppData.emptyCurrent().withUpdatedProgramConfig(
+            primaryGoal: "增肌", splitType: nil, daysPerWeek: .integer(3)
+        )
+        let store = FakeAppDataStore(stored: seed)
+        store.backupError = AppDataStoreError.backupFailed("disk full")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: nil, daysPerWeek: .integer(4)
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.backupFailed = error else {
+                return XCTFail("expected .backupFailed, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "a failed backup must abort before any overwrite")
+    }
+
+    func testUpdateProgramConfigSaveFailurePropagatesHonestly() {
+        let store = FakeAppDataStore()   // first write, no backup
+        store.saveError = AppDataStoreError.writeFailed("io error")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: nil, daysPerWeek: .integer(4)
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.saveFailed = error else {
+                return XCTFail("expected .saveFailed, got \(error)")
+            }
+        }
+    }
+
+    func testUpdateProgramConfigPreservesStrategiesOpenBagAndOtherKeysThroughGatedWrite() throws {
+        // Seed a document whose programTemplate carries engine-managed strategy blobs +
+        // an unknown program key, plus an engine-managed mesocycle (weeks), a profile,
+        // history, and a top-level unknown.
+        let json = """
+        {"schemaVersion":8,\
+        "programTemplate":{"id":"p1","userId":"u1","primaryGoal":"增肌","splitType":"全身","daysPerWeek":3,"correctionStrategy":{"hingePriority":true},"functionalStrategy":{"carry":["farmer"]},"customProgramKey":"keepme"},\
+        "mesocyclePlan":{"id":"m1","phase":"积累期","weeks":[{"index":1},{"index":2}]},\
+        "userProfile":{"id":"u1","name":"老王"},\
+        "history":[{"id":"old","completed":true}],\
+        "futureUnknownKey":{"nested":[1,2,3]}}
+        """
+        let seed = try AppData(decoding: Data(json.utf8))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        _ = try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: "推 / 拉 / 腿", daysPerWeek: .integer(4)
+        ) { _ in true }
+
+        let stored = try XCTUnwrap(store.stored)
+        // The three user scalars changed in place…
+        XCTAssertEqual(stored.programTemplate.primaryGoal, "力量")
+        XCTAssertEqual(stored.programTemplate.splitType, "推 / 拉 / 腿")
+        XCTAssertEqual(stored.programTemplate.daysPerWeek?.intValue, 4)
+        XCTAssertEqual(stored.programTemplate.id, "p1", "id preserved across edit")
+        XCTAssertEqual(stored.programTemplate.userId, "u1", "userId preserved across edit")
+        // …engine-managed strategy blobs + program open bag + the engine-managed
+        // mesocycle weeks + other keys survive verbatim.
+        let canonical = try stored.canonicalJSONString()
+        XCTAssertTrue(canonical.contains("\"correctionStrategy\":{\"hingePriority\":true}"), "engine strategy lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("\"functionalStrategy\":{\"carry\":[\"farmer\"]}"), "engine strategy lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("\"customProgramKey\":\"keepme\""), "program open-bag lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("\"weeks\":[{\"index\":1},{\"index\":2}]"), "engine mesocycle weeks lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("futureUnknownKey"), "top-level unknown lost")
+        XCTAssertEqual(stored.userProfile.name, "老王")
+        XCTAssertEqual(stored.history.count, 1)
+        XCTAssertEqual(stored.history.first?.id, "old")
+        XCTAssertEqual(stored.schemaVersion, .current, "edit must not bump schema")
+    }
+
+    func testUpdateProgramConfigRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-edit4-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // First write seeds the program config (no backup).
+        let r1 = try writer.updateProgramConfig(
+            primaryGoal: "增肌", splitType: "全身", daysPerWeek: .integer(3)
+        ) { _ in true }
+        XCTAssertTrue(r1.createdNewStore)
+        XCTAssertNil(r1.backupURL)
+
+        // Second write edits the scalars in place, backing up first.
+        let r2 = try writer.updateProgramConfig(
+            primaryGoal: "力量", splitType: "推 / 拉 / 腿", daysPerWeek: .integer(4)
+        ) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "backup file must exist on disk")
+
+        // Reload from disk: the edit survives across the round trip.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.programTemplate.primaryGoal, "力量")
+        XCTAssertEqual(loaded.programTemplate.splitType, "推 / 拉 / 腿")
+        XCTAssertEqual(loaded.programTemplate.daysPerWeek?.intValue, 4)
+    }
 }

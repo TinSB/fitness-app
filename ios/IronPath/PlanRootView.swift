@@ -29,6 +29,56 @@ import IronPathDomain
 import IronPathDataHealth
 import IronPathPersistence
 
+/// Honest in-RAM status of the most recent program-config edit save — no fake success
+/// (master §15.4). `.idle` until the user explicitly saves. Mirrors EDIT-1/EDIT-3's
+/// `ProfileEditSaveStatus` (kept separate so the Plan surface surfaces only its own
+/// confirmation).
+enum PlanEditSaveStatus: Equatable {
+    case idle
+    case saved
+    case failed(String)
+}
+
+/// In-RAM editable form for the three program-template scalar config fields (two-step
+/// 编辑→保存): 主要目标 `primaryGoal` / 分项 `splitType` / 每周天数 `daysPerWeek`. Every
+/// field is a String so it binds to a `TextField`; parsed back to typed values on save.
+/// Pure value type — no IO; nothing is persisted until the explicit 保存. Mirrors
+/// EDIT-1's `ProfileEditForm`.
+private struct ProgramConfigEditForm: Equatable {
+    var primaryGoal = ""
+    var splitType = ""
+    var daysPerWeekText = ""
+
+    /// Seed the form from the resolved (cleaned) plan display values. The actual
+    /// open-bag base for the write is the freshly-loaded on-disk `programTemplate`
+    /// (read inside `AppData.withUpdatedProgramConfig`), so only these three scalars are
+    /// ever taken from the form.
+    static func seeded(from plan: PlanDisplay) -> ProgramConfigEditForm {
+        ProgramConfigEditForm(
+            primaryGoal: plan.primaryGoal ?? "",
+            splitType: plan.splitType ?? "",
+            daysPerWeekText: plan.daysPerWeek.map(String.init) ?? ""
+        )
+    }
+
+    /// Trimmed 主要目标; blank → honest nil ("not set").
+    var parsedPrimaryGoal: String? { Self.trimmedOrNil(primaryGoal) }
+    /// Trimmed 分项; blank → honest nil.
+    var parsedSplitType: String? { Self.trimmedOrNil(splitType) }
+    /// 每周天数 as an integer `NumberRepr`; blank / non-integer → honest nil.
+    var parsedDaysPerWeek: NumberRepr? { Self.intRepr(daysPerWeekText) }
+
+    private static func trimmedOrNil(_ s: String) -> String? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
+    private static func intRepr(_ s: String) -> NumberRepr? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, let i = Int(t) else { return nil }
+        return .integer(Int64(i))
+    }
+}
+
 /// Thin @MainActor view-model for the 计划 surface's REAL canonical-AppData read.
 /// It owns ONLY the wiring + IO seam (master §5/§15): it opts the running app into the
 /// sanctioned canonical store and delegates the AppData → clean view → display transform
@@ -102,11 +152,99 @@ final class PlanRealDataModel: ObservableObject {
         }
         return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
     }
+
+    // MARK: - EDIT-4: program config scalar edit (sanctioned, DataHealth-gated write)
+
+    /// Honest in-RAM status of the most recent program-config edit save (§15.4). `.idle`
+    /// until the user explicitly saves; never a fake success.
+    @Published private(set) var programConfigSaveStatus: PlanEditSaveStatus = .idle
+
+    /// Reset the save status (e.g. when (re)entering or leaving edit mode).
+    func clearProgramConfigSaveStatus() { programConfigSaveStatus = .idle }
+
+    /// Persist a program-config scalar edit (主要目标 / 分项 / 每周天数) through the SAME
+    /// sanctioned, DataHealth-gated write path as every other canonical write (§8): load
+    /// existing → rewrite ONLY the three user scalars on the freshly-loaded on-disk
+    /// `programTemplate` (id / userId / the engine-managed correctionStrategy /
+    /// functionalStrategy blobs + unknown keys preserved) → defensive
+    /// `buildCleanAppDataView` re-validation → backup-before-overwrite → atomic save →
+    /// honest fail. The engine-managed STRUCTURED plan (mesocycle weeks / prescriptions)
+    /// is NEVER touched. NEVER writes on previews/tests (no live store). Honest status,
+    /// no fake success. Returns true iff the edit committed.
+    @discardableResult
+    func saveProgramConfigEdit(
+        primaryGoal: String?,
+        splitType: String?,
+        daysPerWeek: NumberRepr?
+    ) -> Bool {
+        guard isLive else { programConfigSaveStatus = .failed("当前环境不可保存"); return false }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+        guard let store else { programConfigSaveStatus = .failed("没有可写入的本机存储"); return false }
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.updateProgramConfig(
+                primaryGoal: primaryGoal, splitType: splitType, daysPerWeek: daysPerWeek
+            ) { candidate in
+                // Defensive §10 gate: re-encode → re-decode (re-runs the SchemaVersion
+                // guard) → DataHealth clean view; accept ONLY if the candidate's
+                // programTemplate survives byte-identical (canonical emit is key-order-
+                // independent). We compare the clean view's RAW program (NOT a cleaned
+                // form): `buildCleanAppDataView` leaves `programTemplate` untouched, so
+                // RAW is the correct reference and avoids coupling the gate to any future
+                // program cleaning (the EDIT-3 raw-comparison pattern). No fake success —
+                // an invariant-breaking candidate is never written.
+                guard let bytes = try? candidate.canonicalJSONData(),
+                      let reDecoded = try? AppData(decoding: bytes) else { return false }
+                let cleaned = buildCleanAppDataView(reDecoded)
+                let program = cleaned.raw.programTemplate
+                // The three edited scalars are exactly what we intended…
+                guard program.primaryGoal == primaryGoal,
+                      program.splitType == splitType,
+                      program.daysPerWeek == daysPerWeek else { return false }
+                // …and the whole programTemplate (engine-managed strategies + unknown
+                // keys included) survives the clean view's RAW projection byte-identically.
+                guard let a = try? program.encoded().canonicalJSONData(),
+                      let b = try? candidate.programTemplate.encoded().canonicalJSONData() else { return false }
+                return a == b
+            }
+            programConfigSaveStatus = .saved
+            reload()   // refresh the surface (and other tabs on next appear) from fresh truth
+            return true
+        } catch {
+            programConfigSaveStatus = .failed(Self.saveErrorMessage(error))
+            return false
+        }
+    }
+
+    private static func saveErrorMessage(_ error: Error) -> String {
+        guard let e = error as? CanonicalSessionWriteError else {
+            return "保存失败:\(error.localizedDescription)"
+        }
+        switch e {
+        case .existingDocumentUnreadable:
+            return "本机计划无法读取,为防数据丢失未作任何改动"
+        case .validationRejected:
+            return "改动未通过数据校验,未保存"
+        case .backupFailed:
+            return "备份失败,原始数据已保留,未保存"
+        case .saveFailed:
+            return "写入失败,未保存"
+        }
+    }
 }
 
 struct PlanRootView: View {
     @StateObject private var model: PlanRealDataModel
     @State private var showEmptyInfo = false
+
+    /// EDIT-4 two-step edit state: the 模板 Program card stays read-only (#440) until the
+    /// user taps 「编辑模板配置」. `programForm` is the in-RAM edit buffer — nothing is
+    /// persisted until the explicit 「保存」. The 周期 Mesocycle + 策略 cards stay
+    /// read-only (engine-managed structure — never edited here).
+    @State private var isEditingProgram = false
+    @State private var programForm = ProgramConfigEditForm()
 
     /// The running app constructs the default live model. `@MainActor` so it can build the
     /// main-actor-isolated model (SwiftUI always builds views on the main actor). Zero-arg
@@ -169,16 +307,131 @@ struct PlanRootView: View {
     @ViewBuilder
     private func planContent(_ plan: PlanDisplay) -> some View {
         let cycle = Self.cycleRows(plan)
-        let program = Self.programRows(plan)
+        // 周期 Mesocycle is ENGINE-managed (weeks / dates / phase) — read-only (#440).
         if !cycle.isEmpty {
             card(title: "周期 Mesocycle", rows: cycle)
         }
-        if !program.isEmpty {
-            card(title: "模板 Program", rows: program)
-        }
+        // 模板 Program — the three user scalar config fields (主要目标 / 分项 / 每周天数)
+        // are editable (EDIT-4), two-step 「编辑→保存」. Always shown in `.ready` so the
+        // edit entry point is reachable even when a scalar is unset.
+        programCard(plan)
+        // 策略 — ENGINE-managed strategy blobs — read-only presence only (#440).
         if plan.hasCorrectionStrategy || plan.hasFunctionalStrategy {
             strategyDisclosure(plan)
         }
+    }
+
+    // MARK: - EDIT-4 program card (two-step 编辑 → 保存)
+
+    /// The 模板 Program card: read-only (#440) until the user taps 「编辑模板配置」, then
+    /// the in-place edit form. Two-step: nothing is written until 保存.
+    @ViewBuilder
+    private func programCard(_ plan: PlanDisplay) -> some View {
+        if isEditingProgram {
+            editProgramCard()
+        } else {
+            readOnlyProgramCard(plan)
+        }
+    }
+
+    private func readOnlyProgramCard(_ plan: PlanDisplay) -> some View {
+        let rows = Self.programRows(plan)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("模板 Program")
+                .font(.headline)
+            if rows.isEmpty {
+                Text("还没有模板配置（主要目标 / 分项 / 每周天数）。点“编辑模板配置”填写。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 6) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(row.label).font(.subheadline).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(row.value).font(.subheadline).foregroundStyle(.primary)
+                        }
+                    }
+                }
+            }
+            // EDIT-4: honest "已保存" confirmation after a successful gated write.
+            if case .saved = model.programConfigSaveStatus {
+                Label("已保存", systemImage: "checkmark.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Button("编辑模板配置") { enterProgramEdit(plan) }
+                .buttonStyle(.bordered)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+    }
+
+    /// EDIT-4: in-place two-step edit of the three program scalar config fields. The
+    /// engine-managed structured plan (mesocycle weeks / prescriptions / strategy blobs)
+    /// is NOT editable here — the engine owns it.
+    private func editProgramCard() -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("编辑模板配置")
+                .font(.headline)
+            programEditRow("主要目标", placeholder: "如:增肌 / 力量", text: $programForm.primaryGoal)
+            programEditRow("分项", placeholder: "如:全身 / 推 / 拉 / 腿", text: $programForm.splitType)
+            programEditRow("每周天数", placeholder: "天", text: $programForm.daysPerWeekText, numeric: true)
+
+            // No fake success (§15.4): a failed save stays in edit mode and shows why.
+            if case .failed(let message) = model.programConfigSaveStatus {
+                Text(message).font(.footnote).foregroundStyle(.red)
+            }
+            HStack {
+                Button("保存") { saveProgramEdit() }
+                    .buttonStyle(.borderedProminent)
+                Spacer()
+                Button("取消", role: .cancel) { cancelProgramEdit() }
+            }
+            Text("两步编辑:改完点“保存”才会写入本机(经数据校验)。仅修改主要目标/分项/每周天数;不影响训练周期(weeks)与引擎策略。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+    }
+
+    private func programEditRow(
+        _ title: String, placeholder: String, text: Binding<String>, numeric: Bool = false
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title).font(.subheadline).foregroundStyle(.secondary)
+            Spacer()
+            TextField(placeholder, text: text)
+                .multilineTextAlignment(.trailing)
+                .keyboardType(numeric ? .numberPad : .default)
+                .frame(maxWidth: 200)
+        }
+    }
+
+    // MARK: - EDIT-4 actions (two-step 编辑 → 保存)
+
+    private func enterProgramEdit(_ plan: PlanDisplay) {
+        programForm = ProgramConfigEditForm.seeded(from: plan)
+        model.clearProgramConfigSaveStatus()
+        isEditingProgram = true
+    }
+
+    private func cancelProgramEdit() {
+        isEditingProgram = false
+        model.clearProgramConfigSaveStatus()
+    }
+
+    private func saveProgramEdit() {
+        if model.saveProgramConfigEdit(
+            primaryGoal: programForm.parsedPrimaryGoal,
+            splitType: programForm.parsedSplitType,
+            daysPerWeek: programForm.parsedDaysPerWeek
+        ) {
+            isEditingProgram = false   // success → fresh read-only truth (model reloaded)
+        }
+        // failure: stay in edit mode; model.programConfigSaveStatus carries the honest reason
     }
 
     // MARK: - Honest empty / degrade states (§15.4)

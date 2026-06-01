@@ -31,6 +31,14 @@
 //     `AppData.screeningProfile`. A sanctioned MUTATION: it rewrites ONLY the
 //     `screeningProfile` key, open-bag/schema/timestamp preserving; the engine-managed
 //     `adaptiveState` (issue scores / performance drops) is carried through untouched.
+//   • `updateProgramConfig` — an in-place EDIT of the user's `ProgramTemplate` scalar
+//     config fields (主要目标 / 分项 / 每周天数) (EDIT-4) → `AppData.programTemplate`.
+//     A sanctioned MUTATION: it reads the freshly-loaded on-disk program template and
+//     rewrites ONLY its three user scalars, open-bag/schema/timestamp preserving; the
+//     program's `id` / `userId` / the engine-managed `correctionStrategy` /
+//     `functionalStrategy` strategy blobs + any unknown key are carried through
+//     untouched, and the engine-managed STRUCTURED plan (`mesocyclePlan` weeks /
+//     prescriptions) is never touched.
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -293,9 +301,54 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// EDIT-4: edit the user's `ProgramTemplate` scalar config fields (主要目标
+    /// `primaryGoal` / 分项 `splitType` / 每周天数 `daysPerWeek`) in place and persist —
+    /// through the SAME sanctioned, DataHealth-gated write path as every entry above
+    /// (§8 rule 4: NOT a second/parallel write path). The candidate builder reads the
+    /// FRESHLY-LOADED on-disk program template and rewrites ONLY its three user scalars
+    /// via the pure open-bag `AppData.withUpdatedProgramConfig`, so the program's `id` /
+    /// `userId` / the engine-managed `correctionStrategy` / `functionalStrategy` strategy
+    /// blobs + any unknown program key survive verbatim from the on-disk truth
+    /// (open-bag/schema/timestamp preserving). An edit is a sanctioned MUTATION, not a
+    /// restore (§13/§14).
+    ///
+    /// The engine-managed STRUCTURED plan (the `mesocyclePlan` weeks array, exercise
+    /// prescriptions, adaptive state) is NEVER touched — only the three user scalars on
+    /// `programTemplate`. The caller supplies the DataHealth gate (defensive
+    /// `buildCleanAppDataView` re-validation before the write commits); a rejected
+    /// candidate is NEVER written (no fake success).
+    ///
+    /// - Parameters:
+    ///   - primaryGoal: the edited 主要目标 (or nil to clear it).
+    ///   - splitType: the edited 分项 (or nil to clear it).
+    ///   - daysPerWeek: the edited 每周天数 (or nil to clear it).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func updateProgramConfig(
+        primaryGoal: String?,
+        splitType: String?,
+        daysPerWeek: NumberRepr?,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: {
+                $0.withUpdatedProgramConfig(
+                    primaryGoal: primaryGoal,
+                    splitType: splitType,
+                    daysPerWeek: daysPerWeek
+                )
+            },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3). `buildCandidate` is the only thing
-    /// that varies (which open-bag transform produces the candidate); the load →
+    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4). `buildCandidate` is the only
+    /// thing that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned
     /// mutation here, NOT a second write path.
