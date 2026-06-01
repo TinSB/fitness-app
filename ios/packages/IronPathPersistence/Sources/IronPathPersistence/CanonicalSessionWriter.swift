@@ -26,6 +26,11 @@
 //     reads the freshly-loaded on-disk unit settings and rewrites ONLY the
 //     `unitSettings` key's display preference, open-bag/schema/timestamp preserving.
 //     Storage stays kilograms — only the DISPLAY preference is persisted.
+//   • `updateScreening` — an in-place EDIT of the user's `ScreeningProfile` self-
+//     reported lists (疼痛触发 / 受限动作 / 纠正优先) (EDIT-3) →
+//     `AppData.screeningProfile`. A sanctioned MUTATION: it rewrites ONLY the
+//     `screeningProfile` key, open-bag/schema/timestamp preserving; the engine-managed
+//     `adaptiveState` (issue scores / performance drops) is carried through untouched.
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -257,8 +262,39 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// EDIT-3: edit the user's `ScreeningProfile` self-reported lists (疼痛触发 /
+    /// 受限动作 / 纠正优先) in place and persist — through the SAME sanctioned,
+    /// DataHealth-gated write path as every entry above (§8 rule 4: NOT a second/parallel
+    /// write path). The candidate builder is the pure open-bag
+    /// `AppData.withUpdatedScreening` (rewrites ONLY the `screeningProfile` key;
+    /// schema/timestamp/open-bag preserving), so an edit is a sanctioned MUTATION, not a
+    /// restore (§13/§14). The engine-managed `adaptiveState` (issue scores / performance
+    /// drops) is carried through untouched — the user edits only the three self-reported
+    /// lists. The caller supplies the DataHealth gate (defensive `buildCleanAppDataView`
+    /// re-validation before the write commits); a rejected candidate is NEVER written
+    /// (no fake success).
+    ///
+    /// - Parameters:
+    ///   - screening: the edited screening profile (built by the app layer from the
+    ///     current canonical screening + the user's list edits).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func updateScreening(
+        _ screening: ScreeningProfile,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { $0.withUpdatedScreening(screening) },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1/EDIT-2). `buildCandidate` is the only thing
+    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3). `buildCandidate` is the only thing
     /// that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned

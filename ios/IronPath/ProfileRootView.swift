@@ -135,6 +135,51 @@ private struct ProfileEditForm: Equatable {
     }
 }
 
+/// In-RAM editable form for the three screening list fields (two-step 编辑→保存).
+/// Each list is edited as multi-line text — ONE entry per line — so an entry that
+/// itself contains a comma/parenthesis (e.g. "膝前侧（深蹲过深）") is never split.
+/// Pure value type — no IO; nothing is persisted until the explicit 保存.
+private struct ScreeningEditForm: Equatable {
+    var painText = ""
+    var restrictedText = ""
+    var correctionText = ""
+
+    /// Seed the form from the loaded canonical screening — one entry per line.
+    static func seeded(from s: ScreeningProfile) -> ScreeningEditForm {
+        ScreeningEditForm(
+            painText: Self.joinedLines(s.painTriggers),
+            restrictedText: Self.joinedLines(s.restrictedExercises),
+            correctionText: Self.joinedLines(s.correctionPriority)
+        )
+    }
+
+    /// Apply the edited lists onto the base screening (preserving userId + the
+    /// engine-managed postureFlags / movementFlags / adaptiveState + the screening's
+    /// own open bag). Blank → honest nil ("not set"); each entry is trimmed.
+    func applied(onto base: ScreeningProfile) -> ScreeningProfile {
+        base.withEditedLists(
+            painTriggers: Self.parsedLines(painText),
+            restrictedExercises: Self.parsedLines(restrictedText),
+            correctionPriority: Self.parsedLines(correctionText)
+        )
+    }
+
+    /// Join a list ONE entry per line for editing (lossless — no in-entry separator).
+    private static func joinedLines(_ values: [String]?) -> String {
+        (values ?? []).joined(separator: "\n")
+    }
+
+    /// Parse editor text into a clean list: split on newlines, trim each, drop blanks.
+    /// Empty → nil (honest "not set"), matching the encoder's omit-nil.
+    private static func parsedLines(_ text: String) -> [String]? {
+        let items = text
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return items.isEmpty ? nil : items
+    }
+}
+
 /// Thin @MainActor view-model for the 我的 surface's REAL canonical-AppData read.
 /// It owns ONLY the wiring + IO seam (master §5/§15): it opts the running app into
 /// the sanctioned canonical store and delegates the AppData → clean view → display
@@ -313,6 +358,56 @@ final class ProfileRealDataModel: ObservableObject {
         }
     }
 
+    // MARK: - EDIT-3: screening list edit (sanctioned, DataHealth-gated write)
+
+    /// Honest in-RAM status of the most recent screening edit save (§15.4) — SEPARATE
+    /// from `saveStatus` / `unitSaveStatus` so each section surfaces only its own
+    /// confirmation. `.idle` until the user explicitly saves; never a fake success.
+    @Published private(set) var screeningSaveStatus: ProfileEditSaveStatus = .idle
+
+    /// Reset the screening save status (e.g. when (re)entering or leaving edit mode).
+    func clearScreeningSaveStatus() { screeningSaveStatus = .idle }
+
+    /// Persist a screening list edit through the SAME sanctioned, DataHealth-gated
+    /// write path as every other canonical write (§8): load existing → defensive
+    /// `buildCleanAppDataView` re-validation → backup-before-overwrite → atomic save
+    /// → honest fail. NEVER writes on previews/tests (no live store). Honest status,
+    /// no fake success. Returns true iff the edit committed.
+    @discardableResult
+    func saveScreeningEdit(_ edited: ScreeningProfile) -> Bool {
+        guard isLive else { screeningSaveStatus = .failed("当前环境不可保存"); return false }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+        guard let store else { screeningSaveStatus = .failed("没有可写入的本机存储"); return false }
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.updateScreening(edited) { candidate in
+                // Defensive §10 gate: re-encode → re-decode (re-runs the SchemaVersion
+                // guard) → DataHealth clean view; accept ONLY if the edited screening's
+                // RAW value survives byte-identical (canonical emit is key-order-
+                // independent). We compare the clean view's RAW screening (NOT the
+                // cleaned one): DataHealth's buildCleanScreening LEGITIMATELY rewrites
+                // the engine-managed adaptiveState (issue-score cap / performance-drop
+                // filter), so requiring the cleaned form to match would wrongly reject a
+                // valid edit. No fake success — an invariant-breaking candidate is never
+                // written.
+                guard let bytes = try? candidate.canonicalJSONData(),
+                      let reDecoded = try? AppData(decoding: bytes) else { return false }
+                let cleaned = buildCleanAppDataView(reDecoded)
+                guard let a = try? cleaned.raw.screeningProfile.encoded().canonicalJSONData(),
+                      let b = try? edited.encoded().canonicalJSONData() else { return false }
+                return a == b
+            }
+            screeningSaveStatus = .saved
+            reload()   // refresh every section (and other tabs on next appear) from fresh truth
+            return true
+        } catch {
+            screeningSaveStatus = .failed(Self.saveErrorMessage(error))
+            return false
+        }
+    }
+
     private static func saveErrorMessage(_ error: Error) -> String {
         guard let e = error as? CanonicalSessionWriteError else {
             return "保存失败:\(error.localizedDescription)"
@@ -345,6 +440,11 @@ struct ProfileRootView: View {
     /// until the explicit 「保存」.
     @State private var isEditing = false
     @State private var form = ProfileEditForm()
+
+    /// EDIT-3 two-step screening edit state — independent of the profile edit so the
+    /// two sections never share a mode. Nothing is persisted until the explicit 保存.
+    @State private var isEditingScreening = false
+    @State private var screeningForm = ScreeningEditForm()
 
     /// The running app constructs the default live model. `@MainActor` so it can build
     /// the main-actor-isolated model (SwiftUI always builds views on the main actor).
@@ -566,13 +666,87 @@ struct ProfileRootView: View {
         }
     }
 
+    /// EDIT-3: the screening section is read-only until the user taps 编辑, then shows
+    /// the in-place edit form. Two-step: nothing is written until 保存.
+    @ViewBuilder
     private func screeningSection(_ data: ProfileDisplayData) -> some View {
+        if isEditingScreening {
+            editScreeningSection(data)
+        } else {
+            readOnlyScreeningSection(data)
+        }
+    }
+
+    private func readOnlyScreeningSection(_ data: ProfileDisplayData) -> some View {
         let screening = data.screening
         return Section("筛查") {
             LabeledContent("疼痛触发", value: ProfileDisplay.list(screening.painTriggers))
             LabeledContent("受限动作", value: ProfileDisplay.list(screening.restrictedExercises))
             LabeledContent("纠正优先", value: ProfileDisplay.list(screening.correctionPriority))
+
+            // EDIT-3: honest "已保存" confirmation after a successful gated write.
+            if case .saved = model.screeningSaveStatus {
+                Label("已保存", systemImage: "checkmark.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Button("编辑筛查档案") { enterScreeningEdit(data) }
         }
+    }
+
+    /// EDIT-3: in-place two-step edit of the three self-reported screening lists (疼痛
+    /// 触发 / 受限动作 / 纠正优先), one entry per line. The engine-managed adaptive
+    /// state (issue scores / performance drops) is NOT editable here — DataHealth owns it.
+    private func editScreeningSection(_ data: ProfileDisplayData) -> some View {
+        Section {
+            screeningEditField("疼痛触发", text: $screeningForm.painText)
+            screeningEditField("受限动作", text: $screeningForm.restrictedText)
+            screeningEditField("纠正优先", text: $screeningForm.correctionText)
+
+            // No fake success (§15.4): a failed save stays in edit mode and shows why.
+            if case .failed(let message) = model.screeningSaveStatus {
+                Text(message).font(.footnote).foregroundStyle(.red)
+            }
+            HStack {
+                Button("保存") { saveScreeningEdit(data) }
+                    .buttonStyle(.borderedProminent)
+                Spacer()
+                Button("取消", role: .cancel) { cancelScreeningEdit() }
+            }
+        } header: {
+            Text("编辑筛查档案")
+        } footer: {
+            Text("每行填一项,改完点“保存”才会写入本机(经数据校验)。仅修改疼痛触发/受限动作/纠正优先;不影响引擎自适应状态(issue scores 等)。")
+        }
+    }
+
+    private func screeningEditField(_ title: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.subheadline).foregroundStyle(.secondary)
+            TextField("每行一项", text: text, axis: .vertical)
+                .lineLimit(1...6)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    // MARK: - EDIT-3 actions (two-step 编辑 → 保存)
+
+    private func enterScreeningEdit(_ data: ProfileDisplayData) {
+        screeningForm = ScreeningEditForm.seeded(from: data.screening)
+        model.clearScreeningSaveStatus()
+        isEditingScreening = true
+    }
+
+    private func cancelScreeningEdit() {
+        isEditingScreening = false
+        model.clearScreeningSaveStatus()
+    }
+
+    private func saveScreeningEdit(_ data: ProfileDisplayData) {
+        let edited = screeningForm.applied(onto: data.screening)
+        if model.saveScreeningEdit(edited) {
+            isEditingScreening = false   // success → fresh read-only truth (model reloaded)
+        }
+        // failure: stay in edit mode; model.screeningSaveStatus carries the honest reason
     }
 
     private func settingsSection(_ data: ProfileDisplayData) -> some View {
@@ -587,7 +761,7 @@ struct ProfileRootView: View {
             // Honest disclosure — no fake success (master §15.4). The data above is
             // the user's REAL on-device profile, read-only (cleaned via DataHealth);
             // the 健康数据 section below has its own user-gated Apple Health import.
-            Text("以上数据来自本机真实数据（经数据校验 DataHealth）。个人资料可在上方“编辑个人资料”修改并保存到本机；筛查与设置暂为只读显示。")
+            Text("以上数据来自本机真实数据（经数据校验 DataHealth）。个人资料、筛查可在上方编辑并保存到本机；设置暂为只读显示。")
         }
     }
 
