@@ -548,15 +548,19 @@ final class FocusModeMvpState: ObservableObject {
                 reps: reps,
                 rir: rir
             ) { candidate in
-                // Defensive DataHealth gate (§10): re-encode → re-decode (re-runs the
-                // SchemaVersion guard) → read-only clean view; accept ONLY when the
-                // corrected set SURVIVES the clean view (DataHealth would not strip it)
-                // AND its three metrics landed exactly as intended (representation-
-                // agnostic compare). No fake success — an invariant-breaking candidate
-                // is never written.
-                guard let bytes = try? candidate.canonicalJSONData(),
-                      let reDecoded = try? AppData(decoding: bytes) else { return false }
-                let view = buildCleanAppDataView(reDecoded)
+                // Defensive DataHealth gate (§10): re-run the candidate through the SAME
+                // sanctioned, read-only DataHealth ingress the session-append write uses
+                // (`processIncomingAppData` → its `cleanView`), so the edit path adds NO
+                // second AppData-cleaning entry point. Accept ONLY when the corrected set
+                // SURVIVES the clean view (DataHealth would not strip it) AND its three
+                // metrics landed exactly as intended (representation-agnostic compare).
+                // No fake success — an invariant-breaking candidate is never written.
+                guard let result = try? processIncomingAppData(
+                    appData: candidate,
+                    source: .postSessionComplete,
+                    options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+                ) else { return false }
+                let view = result.cleanView
                 guard let session = view.cleanedHistory.first(where: { $0.id == sessionId }),
                       let exercise = (session.exercises ?? []).first(where: {
                           $0.id == exerciseId || $0.exerciseId == exerciseId
