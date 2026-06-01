@@ -45,6 +45,15 @@ enum FocusExportStatus: Equatable {
     case failed(String)
 }
 
+/// DEEP-EDIT-1: outcome of an in-place logged-set correction (重量 / 次数 / RIR).
+/// `.failed` carries an honest error string — there is NO fake-success state: a
+/// correction is reported `.saved` only after a real, DataHealth-gated, atomic
+/// canonical write committed it.
+enum LoggedSetEditOutcome: Equatable {
+    case saved
+    case failed(String)
+}
+
 /// Outcome of the last restore-to-local-draft attempt (iOS-11). `.failed`
 /// carries an honest error and NO draft is started — never a fake restore.
 enum FocusRestoreStatus: Equatable {
@@ -492,6 +501,101 @@ final class FocusModeMvpState: ObservableObject {
             // (backup-before-overwrite / atomic save guarantee no partial state).
             canonicalSaveStatus = .failed(error.localizedDescription)
         }
+    }
+
+    // MARK: - DEEP-EDIT-1 logged-set correction (canonical edit, same gated path)
+
+    /// Correct ONE logged set's 重量(weight)/ 次数(reps)/ RIR in a saved session and
+    /// persist it through the SAME sanctioned canonical-AppData write path as the
+    /// session append (§8 rule 4: NOT a second write path), via
+    /// `CanonicalSessionWriter.updateHistorySet`. The set is located by the identity
+    /// the saved-session detail UI projects: the session id (== snapshotId), the
+    /// exercise id, and the stored setIndex.
+    ///
+    /// `weightInDisplayUnit` is in `captureDisplayUnit` (or nil if the field is blank)
+    /// and is converted to kg before the write — storage is ALWAYS kilograms.
+    /// A logged set is an ENGINE INPUT; the engine recomputes e1RM / readiness FROM it
+    /// on its next run, so this edit never touches an engine output.
+    ///
+    /// Honest result: `.failed(_)` when canonical persistence is not opted in
+    /// (previews/tests) OR on any thrown write/validation error (never a fake success);
+    /// `.saved` only after a real, gated, atomic write. The injected DataHealth gate
+    /// re-validates — against the FRESHLY-LOADED on-disk history — that the correction
+    /// survives the clean view AND landed exactly as intended before the write commits;
+    /// a rejected candidate is never written. The on-disk document is left intact on
+    /// failure (backup-before-overwrite / atomic save).
+    func updateLoggedSet(
+        sessionId: String,
+        exerciseId: String,
+        setIndex: Int,
+        weightInDisplayUnit: Double?,
+        reps: Int?,
+        rir: Int?
+    ) -> LoggedSetEditOutcome {
+        guard let appDataStore else {
+            // Canonical persistence not opted in (previews/tests) — honest failure,
+            // never a fake success.
+            return .failed("没有可写入的本机存储")
+        }
+        let weightKg = WeightConversion.toKilograms(weightInDisplayUnit, from: captureDisplayUnit)
+        let writer = CanonicalSessionWriter(store: appDataStore)
+        do {
+            try writer.updateHistorySet(
+                sessionId: sessionId,
+                exerciseId: exerciseId,
+                setIndex: setIndex,
+                weightKg: weightKg,
+                reps: reps,
+                rir: rir
+            ) { candidate in
+                // Defensive DataHealth gate (§10): re-run the candidate through the SAME
+                // sanctioned, read-only DataHealth ingress the session-append write uses
+                // (`processIncomingAppData` → its `cleanView`), so the edit path adds NO
+                // second AppData-cleaning entry point. Accept ONLY when the corrected set
+                // SURVIVES the clean view (DataHealth would not strip it) AND its three
+                // metrics landed exactly as intended (representation-agnostic compare).
+                // No fake success — an invariant-breaking candidate is never written.
+                guard let result = try? processIncomingAppData(
+                    appData: candidate,
+                    source: .postSessionComplete,
+                    options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+                ) else { return false }
+                let view = result.cleanView
+                guard let session = view.cleanedHistory.first(where: { $0.id == sessionId }),
+                      let exercise = (session.exercises ?? []).first(where: {
+                          $0.id == exerciseId || $0.exerciseId == exerciseId
+                      }),
+                      let set = (exercise.sets ?? []).first(where: { $0.setIndex?.intValue == setIndex })
+                else { return false }
+                guard set.reps?.intValue == reps, set.rir?.intValue == rir else { return false }
+                switch (set.weight?.doubleValue, weightKg) {
+                case (nil, nil): return true
+                case let (lhs?, rhs?): return abs(lhs - rhs) < 1e-9
+                default: return false
+                }
+            }
+            return .saved
+        } catch {
+            return .failed(Self.loggedSetEditErrorMessage(error))
+        }
+    }
+
+    /// Map a canonical write failure to an honest, user-facing Chinese message. Unknown
+    /// errors fall back to their `localizedDescription` — never a fabricated success.
+    private static func loggedSetEditErrorMessage(_ error: Error) -> String {
+        if let writeError = error as? CanonicalSessionWriteError {
+            switch writeError {
+            case .existingDocumentUnreadable:
+                return "本机训练记录无法读取，未改动（不会覆盖无法解析的数据）"
+            case .validationRejected:
+                return "修正未通过本机数据校验，未保存"
+            case .backupFailed:
+                return "备份失败，未保存（原记录保持不变）"
+            case .saveFailed:
+                return "写入失败，未保存（原记录保持不变）"
+            }
+        }
+        return error.localizedDescription
     }
 
     /// Map the engine-derived completion into the on-disk Codable snapshot. The

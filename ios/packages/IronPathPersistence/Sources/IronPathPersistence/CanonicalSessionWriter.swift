@@ -39,6 +39,14 @@
 //     `functionalStrategy` strategy blobs + any unknown key are carried through
 //     untouched, and the engine-managed STRUCTURED plan (`mesocyclePlan` weeks /
 //     prescriptions) is never touched.
+//   • `updateHistorySet` — an in-place EDIT of ONE logged set's 重量 / 次数 / RIR
+//     (DEEP-EDIT-1) → `AppData.history[].exercises[].sets[]`. A sanctioned MUTATION:
+//     it rewrites ONLY the matched set's three metrics inside ONLY the `history` key,
+//     open-bag/schema/timestamp preserving at EVERY nesting level (every other set /
+//     exercise / session survives verbatim). A logged set is an ENGINE INPUT (the
+//     user's own recorded performance); the engine recomputes e1RM / readiness FROM
+//     it, so this edit never touches an engine OUTPUT (the `mesocyclePlan` weeks blob,
+//     prescription/advice fields, computed phase/readiness/e1RM).
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -346,8 +354,66 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// DEEP-EDIT-1: correct ONE logged set's 重量(weightKg)/ 次数(reps)/ RIR in place
+    /// inside `AppData.history` and persist — through the SAME sanctioned,
+    /// DataHealth-gated write path as every entry above (§8 rule 4: NOT a second/parallel
+    /// write path). The candidate builder is the pure nested open-bag
+    /// `AppData.withUpdatedHistorySet` (rewrites ONLY the matched set's three metrics
+    /// inside ONLY the `history` key; every other set / exercise / session, each level's
+    /// open bag, the schemaVersion, and all ISO timestamps are preserving), so an edit
+    /// is a sanctioned MUTATION, not a restore (§13/§14).
+    ///
+    /// A logged set is an ENGINE INPUT (the user's own recorded performance); the engine
+    /// recomputes e1RM / readiness FROM it — correcting it and letting the engine
+    /// recompute is the EXPECTED behaviour (DEEP-EDIT review §1/§4), exactly like the
+    /// scalar edits above. It NEVER touches an engine OUTPUT (the `mesocyclePlan` weeks
+    /// blob, the exercises' prescription/advice fields, any computed phase/readiness/e1RM)
+    /// — those are left verbatim and recomputed by the engine, not this edit. The caller
+    /// supplies the DataHealth gate (defensive `buildCleanAppDataView` re-validation
+    /// before the write commits); a rejected candidate is NEVER written (no fake success).
+    ///
+    /// STORAGE STAYS KILOGRAMS (Contract Freeze §8): `weightKg` is already the kg storage
+    /// value (the app layer converts from the user's display unit first).
+    ///
+    /// - Parameters:
+    ///   - sessionId: the `TrainingSession.id` of the session holding the set.
+    ///   - exerciseId: the exercise's `id` / `exerciseId` inside that session.
+    ///   - setIndex: the target set's stored `setIndex` (what the detail UI projects).
+    ///   - weightKg: the corrected kg weight (or nil to clear it).
+    ///   - reps: the corrected reps (or nil to clear it).
+    ///   - rir: the corrected RIR (or nil to clear it).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func updateHistorySet(
+        sessionId: String,
+        exerciseId: String,
+        setIndex: Int,
+        weightKg: Double?,
+        reps: Int?,
+        rir: Int?,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: {
+                $0.withUpdatedHistorySet(
+                    sessionId: sessionId,
+                    exerciseId: exerciseId,
+                    setIndex: setIndex,
+                    weightKg: weightKg,
+                    reps: reps,
+                    rir: rir
+                )
+            },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4). `buildCandidate` is the only
+    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1). `buildCandidate` is the only
     /// thing that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned

@@ -28,9 +28,36 @@ struct FocusSavedSessionDetailView: View {
     /// kg (the v3 `setLogs` carry kg); this only formats the value at render time.
     /// Defaults to `.kg` for previews.
     var displayUnit: WeightUnit = .kg
+    /// DEEP-EDIT-1: correct ONE logged set's 重量 / 次数 / RIR through the canonical
+    /// gated write. The host injects `FocusModeMvpState.updateLoggedSet`; weight is
+    /// entered in `displayUnit` and stored as kg by the host. Returns an HONEST
+    /// outcome (`.saved` only after a real gated write; `.failed` otherwise) — the row
+    /// reflects the new value ONLY after `.saved`, never a fake success. nil (the
+    /// default) disables the edit affordance entirely (previews show read-only).
+    var onSaveSet: ((_ exerciseId: String, _ setIndex: Int, _ weightInDisplayUnit: Double?, _ reps: Int?, _ rir: Int?) -> LoggedSetEditOutcome)? = nil
     /// iOS-11: restore this saved session into an in-RAM training draft and
     /// continue it. Optional so previews can omit it.
     var onContinue: (() -> Void)? = nil
+
+    // MARK: - DEEP-EDIT-1 per-set edit state (in-RAM display reflection only)
+
+    /// Identifies one logged set within this saved session for editing.
+    private struct SetEditKey: Hashable {
+        let exerciseId: String
+        let setIndex: Int
+    }
+    /// The set currently in two-step edit mode (nil = none).
+    @State private var editingKey: SetEditKey? = nil
+    /// In-flight edit-form drafts (display-unit weight / reps / RIR text).
+    @State private var draftWeight: String = ""
+    @State private var draftReps: String = ""
+    @State private var draftRir: String = ""
+    /// Honest inline error for the in-flight edit (parse error or a failed write).
+    @State private var saveError: String? = nil
+    /// Sets corrected this session — the in-RAM display reflection of a committed
+    /// canonical write (the authoritative store is AppData.history). Keyed by set;
+    /// the row renders this over the snapshot once the write returned `.saved`.
+    @State private var overrides: [SetEditKey: LocalCompletedSetEntrySnapshot] = [:]
 
     /// Pure, read-only projection over the existing restore reconciliation. No
     /// progress is applied here; restore still happens only via `onContinue`.
@@ -259,15 +286,7 @@ struct FocusSavedSessionDetailView: View {
         if let logs = exercise.setLogs, !logs.isEmpty {
             VStack(alignment: .leading, spacing: 3) {
                 ForEach(logs, id: \.setIndex) { entry in
-                    HStack(spacing: 6) {
-                        Text("第 \(entry.setIndex + 1) 组")
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(Self.setLine(entry, displayUnit: displayUnit))
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(.primary)
-                    }
+                    setRow(exerciseId: exercise.exerciseId, entry: entry)
                 }
             }
             .padding(.top, 2)
@@ -298,6 +317,168 @@ struct FocusSavedSessionDetailView: View {
             return String(Int(value.rounded()))
         }
         return String(format: "%.1f", value)
+    }
+
+    // MARK: - DEEP-EDIT-1 per-set two-step edit → save (canonical gated write)
+
+    /// One per-set row: a read-only value line with an "编辑" affordance, or — when
+    /// this set is being edited — the inline two-step edit form. The displayed value
+    /// prefers an in-RAM override (set only after a committed canonical write) over
+    /// the snapshot, so a just-corrected set shows its new value honestly.
+    @ViewBuilder
+    private func setRow(exerciseId: String, entry: LocalCompletedSetEntrySnapshot) -> some View {
+        let key = SetEditKey(exerciseId: exerciseId, setIndex: entry.setIndex)
+        let shown = overrides[key] ?? entry
+        if editingKey == key {
+            setEditForm(exerciseId: exerciseId, entry: shown)
+        } else {
+            HStack(spacing: 6) {
+                Text("第 \(entry.setIndex + 1) 组")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                if overrides[key] != nil {
+                    Text("已修正")
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(Capsule().fill(Color.green.opacity(0.15)))
+                        .foregroundStyle(.green)
+                }
+                Spacer()
+                Text(Self.setLine(shown, displayUnit: displayUnit))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.primary)
+                if onSaveSet != nil {
+                    Button {
+                        beginEditing(key: key, entry: shown)
+                    } label: {
+                        Text("编辑").font(.caption2.weight(.medium))
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+        }
+    }
+
+    /// The inline two-step edit form for one set: three display-unit fields (重量 /
+    /// 次数 / RIR) + honest error + 保存/取消. Weight is entered in `displayUnit`; the
+    /// host converts to kg. A blank field clears that metric (honest "not entered").
+    @ViewBuilder
+    private func setEditForm(exerciseId: String, entry: LocalCompletedSetEntrySnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("修正第 \(entry.setIndex + 1) 组（仅本机）")
+                .font(.caption.weight(.semibold))
+            HStack(alignment: .top, spacing: 8) {
+                editField("重量(\(displayUnit.rawValue))", text: $draftWeight, numeric: true, decimal: true)
+                editField("次数", text: $draftReps, numeric: true, decimal: false)
+                editField("RIR", text: $draftRir, numeric: true, decimal: false)
+            }
+            if let saveError {
+                Text("⚠️ \(saveError)")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+            }
+            HStack(spacing: 8) {
+                Button {
+                    saveCurrentEdit(exerciseId: exerciseId, setIndex: entry.setIndex)
+                } label: {
+                    Text("保存").font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                Button("取消", role: .cancel) {
+                    editingKey = nil
+                    saveError = nil
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            Text("修正会就地写入本机训练记录（引擎据此重算）· 不写云端 · 留空表示未填")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.tertiarySystemBackground)))
+    }
+
+    @ViewBuilder
+    private func editField(_ label: String, text: Binding<String>, numeric: Bool, decimal: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+            TextField("", text: text)
+                .textFieldStyle(.roundedBorder)
+                .font(.caption2.monospacedDigit())
+                .keyboardType(numeric ? (decimal ? .decimalPad : .numberPad) : .default)
+        }
+    }
+
+    /// Enter edit mode for one set: prefill the fields from the currently shown value
+    /// (weight converted kg → display unit), clear any stale error.
+    private func beginEditing(key: SetEditKey, entry: LocalCompletedSetEntrySnapshot) {
+        editingKey = key
+        saveError = nil
+        if let shownWeight = WeightConversion.fromKilograms(entry.weightKg, to: displayUnit) {
+            draftWeight = Self.formatWeight(shownWeight)
+        } else {
+            draftWeight = ""
+        }
+        draftReps = entry.reps.map(String.init) ?? ""
+        draftRir = entry.rir.map(String.init) ?? ""
+    }
+
+    /// Parse the drafts (blank = cleared; a non-empty unparseable/negative field is an
+    /// honest error that blocks the save) and invoke the host's gated write. On
+    /// `.saved` the row reflects the new value via an in-RAM override; on `.failed`
+    /// the honest message stays and edit mode is kept — never a fake success.
+    private func saveCurrentEdit(exerciseId: String, setIndex: Int) {
+        guard let onSaveSet else { return }
+        let weight: Double?
+        switch Self.parseOptionalNonNegativeDouble(draftWeight) {
+        case .some(let v): weight = v
+        case .none: saveError = "请输入有效的重量"; return
+        }
+        let reps: Int?
+        switch Self.parseOptionalNonNegativeInt(draftReps) {
+        case .some(let v): reps = v
+        case .none: saveError = "请输入有效的次数"; return
+        }
+        let rir: Int?
+        switch Self.parseOptionalNonNegativeInt(draftRir) {
+        case .some(let v): rir = v
+        case .none: saveError = "请输入有效的 RIR"; return
+        }
+
+        switch onSaveSet(exerciseId, setIndex, weight, reps, rir) {
+        case .saved:
+            let key = SetEditKey(exerciseId: exerciseId, setIndex: setIndex)
+            overrides[key] = LocalCompletedSetEntrySnapshot(
+                setIndex: setIndex,
+                weightKg: WeightConversion.toKilograms(weight, from: displayUnit),
+                reps: reps,
+                rir: rir
+            )
+            editingKey = nil
+            saveError = nil
+        case .failed(let message):
+            saveError = message
+        }
+    }
+
+    /// Parse an optional non-negative Double field. Outer optional: `.some` = a valid
+    /// parse (its inner value nil = the field was blank → cleared); `.none` = an
+    /// invalid/negative entry the caller must reject.
+    private static func parseOptionalNonNegativeDouble(_ raw: String) -> Double??  {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return .some(nil) }
+        guard let value = Double(trimmed), value.isFinite, value >= 0 else { return .none }
+        return .some(value)
+    }
+
+    private static func parseOptionalNonNegativeInt(_ raw: String) -> Int?? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return .some(nil) }
+        guard let value = Int(trimmed), value >= 0 else { return .none }
+        return .some(value)
     }
 
     private var footerNote: some View {
