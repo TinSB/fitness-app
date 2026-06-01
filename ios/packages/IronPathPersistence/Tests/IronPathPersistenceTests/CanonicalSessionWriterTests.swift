@@ -764,4 +764,159 @@ final class CanonicalSessionWriterTests: XCTestCase {
         let loaded = try store.load()
         XCTAssertEqual(loaded.unitSettings.displayUnit, .lb)
     }
+
+    // MARK: - EDIT-3: screening list edit (SAME gated path, sanctioned MUTATION)
+
+    private func makeScreening(painTriggers: [String]) -> ScreeningProfile {
+        ScreeningProfile(painTriggers: painTriggers)
+    }
+
+    func testUpdateScreeningFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateScreening(makeScreening(painTriggers: ["膝前侧"])) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.screeningProfile.painTriggers, ["膝前侧"])
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testUpdateScreeningSecondWriteBacksUpBeforeSaving() throws {
+        let seed = AppData.emptyCurrent().withUpdatedScreening(makeScreening(painTriggers: ["膝前侧"]))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        // The edit replaced the screening lists in place (still exactly one screeningProfile).
+        XCTAssertEqual(store.stored?.screeningProfile.painTriggers, ["右肩"])
+    }
+
+    func testUpdateScreeningValidationRejectionWritesNothing() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent().withUpdatedScreening(makeScreening(painTriggers: ["膝前侧"])))
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The prior screening is untouched — a rejected edit never lands.
+        XCTAssertEqual(store.stored?.screeningProfile.painTriggers, ["膝前侧"])
+    }
+
+    func testUpdateScreeningGateReceivesCandidateWithEditApplied() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenTriggers: [String]?
+        _ = try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { candidate in
+            seenTriggers = candidate.screeningProfile.painTriggers
+            return true
+        }
+        XCTAssertEqual(seenTriggers, ["右肩"], "the gate must see the candidate with the edit already applied")
+    }
+
+    func testUpdateScreeningUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testUpdateScreeningBackupFailureStopsBeforeSave() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent().withUpdatedScreening(makeScreening(painTriggers: ["膝前侧"])))
+        store.backupError = AppDataStoreError.backupFailed("disk full")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.backupFailed = error else {
+                return XCTFail("expected .backupFailed, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "a failed backup must abort before any overwrite")
+    }
+
+    func testUpdateScreeningSaveFailurePropagatesHonestly() {
+        let store = FakeAppDataStore()   // first write, no backup
+        store.saveError = AppDataStoreError.writeFailed("io error")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.saveFailed = error else {
+                return XCTFail("expected .saveFailed, got \(error)")
+            }
+        }
+    }
+
+    func testUpdateScreeningPreservesAdaptiveStateOpenBagAndOtherKeysThroughGatedWrite() throws {
+        // Seed a document whose screeningProfile carries an engine-managed adaptiveState
+        // + an unknown screening key, plus a profile, history, and a top-level unknown.
+        let json = """
+        {"schemaVersion":8,\
+        "screeningProfile":{"userId":"u1","painTriggers":["膝前侧"],"adaptiveState":{"issueScores":{"knee":3}},"customScreeningKey":"keepme"},\
+        "userProfile":{"id":"u1","name":"老王"},\
+        "history":[{"id":"old","completed":true}],\
+        "futureUnknownKey":{"nested":[1,2,3]}}
+        """
+        let seed = try AppData(decoding: Data(json.utf8))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        let edited = seed.screeningProfile.withEditedLists(
+            painTriggers: ["膝前侧", "右肩"], restrictedExercises: ["杠铃过顶推举"], correctionPriority: nil
+        )
+        _ = try writer.updateScreening(edited) { _ in true }
+
+        let stored = try XCTUnwrap(store.stored)
+        XCTAssertEqual(stored.screeningProfile.painTriggers, ["膝前侧", "右肩"])
+        XCTAssertEqual(stored.screeningProfile.restrictedExercises, ["杠铃过顶推举"])
+        XCTAssertEqual(stored.screeningProfile.userId, "u1", "userId preserved across edit")
+        // Engine-managed adaptiveState + screening open bag + other keys survive.
+        let canonical = try stored.canonicalJSONString()
+        XCTAssertTrue(canonical.contains("\"issueScores\":{\"knee\":3}"), "engine adaptiveState lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("\"customScreeningKey\":\"keepme\""), "screening open-bag lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("futureUnknownKey"), "top-level unknown lost")
+        XCTAssertEqual(stored.userProfile.name, "老王")
+        XCTAssertEqual(stored.history.count, 1)
+        XCTAssertEqual(stored.history.first?.id, "old")
+        XCTAssertEqual(stored.schemaVersion, .current, "edit must not bump schema")
+    }
+
+    func testUpdateScreeningRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-edit3-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // First write seeds the screening lists (no backup).
+        let r1 = try writer.updateScreening(makeScreening(painTriggers: ["膝前侧"])) { _ in true }
+        XCTAssertTrue(r1.createdNewStore)
+        XCTAssertNil(r1.backupURL)
+
+        // Second write edits the lists in place, backing up first.
+        let r2 = try writer.updateScreening(makeScreening(painTriggers: ["右肩"])) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "backup file must exist on disk")
+
+        // Reload from disk: the edit survives across the round trip.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.screeningProfile.painTriggers, ["右肩"])
+    }
 }
