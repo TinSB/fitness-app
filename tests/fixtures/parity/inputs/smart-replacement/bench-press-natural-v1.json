@@ -1,0 +1,16 @@
+{
+  "parityMeta": {
+    "id": "smart-replacement/bench-press-natural-v1",
+    "schemaVersion": 8,
+    "describes": "SmartReplacement parity — the canonical real-data path: a bare currentExercise id ('bench-press') with no extra context. Candidates are seeded entirely from the committed exercise library (the bench-press knowledge override's own alternativeIds + alternativePriorities, the horizontal-press equivalence chain, and shared-muscle/movement-pattern similars), so the golden pins the engine's natural output against frozen library data.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Synthetic SmartReplacementParams. No readiness / pain / feedback / equipment context — purely the bench-press knowledge override + equivalence chain + similar-exercise scan. Clockless engine, generatedAtPolicy 'none'."
+  },
+  "params": {
+    "currentExercise": "bench-press",
+    "trainingLevel": "intermediate"
+  }
+}

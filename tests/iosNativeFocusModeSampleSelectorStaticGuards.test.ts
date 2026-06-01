@@ -222,14 +222,14 @@ describe('iOS-6 shell forbidden imports and runtime bridges remain absent', () =
 // ---- 22. No golden fixture drift ----
 
 describe('iOS-6 parity goldens are unchanged', () => {
-  it('iOS-6 parity --check still reports 14 fixtures / 0 changed', () => {
+  it('iOS-6 parity --check still reports 18 fixtures / 0 changed', () => {
     const result = spawnSync(
       process.execPath,
       [repoFile('scripts/generate-parity-goldens.mjs'), '--check'],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+14\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+18\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 240_000);
 });

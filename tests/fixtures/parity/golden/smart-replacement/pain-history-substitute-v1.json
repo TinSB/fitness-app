@@ -1,0 +1,129 @@
+{
+  "currentExerciseId": "lat-pulldown",
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "smart-replacement/pain-history-substitute-v1"
+  },
+  "priorityCounts": {
+    "angle_variation": 5,
+    "avoid": 3,
+    "primary": 1,
+    "secondary": 3
+  },
+  "recommendationCount": 12,
+  "recommendations": [
+    {
+      "exerciseId": "assisted-pull-up",
+      "exerciseName": "辅助引体向上",
+      "fatigueCost": "medium",
+      "priority": "primary",
+      "reason": "动作模式接近，主要训练肌群一致，近期反馈偏重，优先选择更可控的替代，适合优先替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "machine-row",
+      "exerciseName": "器械划船",
+      "fatigueCost": "medium",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，近期反馈偏重，优先选择更可控的替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "pull-up",
+      "exerciseName": "引体向上",
+      "fatigueCost": "high",
+      "priority": "secondary",
+      "reason": "动作模式接近，主要训练肌群一致，可作为本次可选替代。",
+      "warnings": [
+        "近期反馈偏重，这个动作仍可能偏吃力。",
+        "近期不适记录命中相关动作，建议降低优先级。"
+      ]
+    },
+    {
+      "exerciseId": "seated-row",
+      "exerciseName": "坐姿划船",
+      "fatigueCost": "medium",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，近期反馈偏重，优先选择更可控的替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "single-arm-lat-pulldown",
+      "exerciseName": "单臂高位下拉",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "one-arm-db-row",
+      "exerciseName": "单臂哑铃划船",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "barbell-row",
+      "exerciseName": "杠铃划船",
+      "fatigueCost": "high",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": [
+        "近期反馈偏重，这个动作仍可能偏吃力。"
+      ]
+    },
+    {
+      "exerciseId": "chest-supported-row",
+      "exerciseName": "胸托划船",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "t-bar-row",
+      "exerciseName": "T 杠划船",
+      "fatigueCost": "high",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": [
+        "近期反馈偏重，这个动作仍可能偏吃力。"
+      ]
+    },
+    {
+      "exerciseId": "cable-fly",
+      "exerciseName": "绳索夹胸",
+      "fatigueCost": "low",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    },
+    {
+      "exerciseId": "triceps-pushdown",
+      "exerciseName": "绳索下压",
+      "fatigueCost": "low",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    },
+    {
+      "exerciseId": "shoulder-press",
+      "exerciseName": "哑铃肩推",
+      "fatigueCost": "medium",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    }
+  ],
+  "sourceFixtureId": "smart-replacement/pain-history-substitute-v1"
+}

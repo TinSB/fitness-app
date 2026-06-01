@@ -1,0 +1,36 @@
+{
+  "parityMeta": {
+    "id": "smart-replacement/pain-history-substitute-v1",
+    "schemaVersion": 8,
+    "describes": "SmartReplacement parity — the pain-history path: a completed training session carrying a painFlag set on pull-up (collectHistoryPainPatterns derives a substitute-action PainPattern) plus a too_heavy loadFeedback on the current lat-pulldown. The pull-up candidate is penalised + warned, and the too_heavy feedback reshapes scoring. Pins the history-derived pain + load-feedback branches.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Synthetic SmartReplacementParams over the vertical-pull equivalence chain. trainingHistory carries one normal-flagged completed session: a painFlag set on pull-up (severity 4 → severe substitute pattern) and a too_heavy loadFeedback on lat-pulldown. Dates are static strings consumed verbatim (no Date.now), so the golden is byte-stable; generatedAtPolicy 'none'."
+  },
+  "params": {
+    "currentExercise": "lat-pulldown",
+    "trainingLevel": "intermediate",
+    "trainingHistory": [
+      {
+        "id": "sr-hist-1",
+        "date": "2026-05-20",
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "pull-up",
+            "actualExerciseId": "pull-up",
+            "muscle": "背",
+            "sets": [
+              { "painFlag": true, "painArea": "肘", "painSeverity": 4 }
+            ]
+          }
+        ],
+        "loadFeedback": [
+          { "exerciseId": "lat-pulldown", "feedback": "too_heavy" }
+        ]
+      }
+    ]
+  }
+}

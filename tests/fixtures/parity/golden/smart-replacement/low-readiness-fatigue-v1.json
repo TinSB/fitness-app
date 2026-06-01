@@ -1,0 +1,178 @@
+{
+  "currentExerciseId": "squat",
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "smart-replacement/low-readiness-fatigue-v1"
+  },
+  "priorityCounts": {
+    "angle_variation": 5,
+    "avoid": 3,
+    "primary": 3,
+    "secondary": 7
+  },
+  "recommendationCount": 18,
+  "recommendations": [
+    {
+      "exerciseId": "hack-squat",
+      "exerciseName": "哈克深蹲",
+      "fatigueCost": "medium",
+      "priority": "primary",
+      "reason": "动作模式接近，主要训练肌群一致，适合优先替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "belt-squat",
+      "exerciseName": "腰带深蹲",
+      "fatigueCost": "medium",
+      "priority": "primary",
+      "reason": "动作模式接近，主要训练肌群一致，适合优先替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "smith-squat",
+      "exerciseName": "史密斯深蹲",
+      "fatigueCost": "high",
+      "priority": "primary",
+      "reason": "动作模式接近，主要训练肌群一致，适合优先替代。",
+      "warnings": [
+        "当前准备度偏低，高疲劳动作建议谨慎。"
+      ]
+    },
+    {
+      "exerciseId": "lying-leg-curl",
+      "exerciseName": "俯卧腿弯举",
+      "fatigueCost": "low",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，今天更适合低疲劳替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "leg-press-calf-raise",
+      "exerciseName": "腿举机提踵",
+      "fatigueCost": "low",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，今天更适合低疲劳替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "leg-extension",
+      "exerciseName": "腿屈伸",
+      "fatigueCost": "low",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，今天更适合低疲劳替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "standing-calf-raise",
+      "exerciseName": "站姿提踵",
+      "fatigueCost": "low",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，今天更适合低疲劳替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "seated-leg-curl",
+      "exerciseName": "坐姿腿弯举",
+      "fatigueCost": "low",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，今天更适合低疲劳替代，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "goblet-squat",
+      "exerciseName": "高脚杯深蹲",
+      "fatigueCost": "medium",
+      "priority": "secondary",
+      "reason": "动作模式接近，主要训练肌群一致，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "leg-press",
+      "exerciseName": "腿举",
+      "fatigueCost": "medium",
+      "priority": "secondary",
+      "reason": "主要训练肌群一致，可作为本次可选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "hip-thrust",
+      "exerciseName": "臀推",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "db-rdl",
+      "exerciseName": "哑铃罗马尼亚硬拉",
+      "fatigueCost": "medium",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": []
+    },
+    {
+      "exerciseId": "nordic-curl",
+      "exerciseName": "北欧腿弯举",
+      "fatigueCost": "high",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": [
+        "当前准备度偏低，高疲劳动作建议谨慎。"
+      ]
+    },
+    {
+      "exerciseId": "romanian-deadlift",
+      "exerciseName": "罗马尼亚硬拉",
+      "fatigueCost": "high",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": [
+        "当前准备度偏低，高疲劳动作建议谨慎。"
+      ]
+    },
+    {
+      "exerciseId": "deadlift",
+      "exerciseName": "硬拉",
+      "fatigueCost": "high",
+      "priority": "angle_variation",
+      "reason": "训练角度或刺激重点略有变化，适合作为角度变化而不是首选替代。",
+      "warnings": [
+        "当前准备度偏低，高疲劳动作建议谨慎。"
+      ]
+    },
+    {
+      "exerciseId": "calf-raise",
+      "exerciseName": "提踵",
+      "fatigueCost": "low",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    },
+    {
+      "exerciseId": "leg-curl",
+      "exerciseName": "腿弯举",
+      "fatigueCost": "low",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    },
+    {
+      "exerciseId": "seated-calf-raise",
+      "exerciseName": "坐姿提踵",
+      "fatigueCost": "low",
+      "priority": "avoid",
+      "reason": "不建议作为本次主要替代：动作模式或训练重点差异较大，可能偏离原计划刺激。",
+      "warnings": [
+        "这个动作与当前目标差异较大，本次不建议作为主要替代。"
+      ]
+    }
+  ],
+  "sourceFixtureId": "smart-replacement/low-readiness-fatigue-v1"
+}

@@ -1,0 +1,21 @@
+{
+  "parityMeta": {
+    "id": "smart-replacement/low-readiness-fatigue-v1",
+    "schemaVersion": 8,
+    "describes": "SmartReplacement parity — the readiness-aware path: a low ReadinessResult (level=low, score=52, trainingAdjustment=conservative) trips hasHighFatigueSignal, so low-fatigue squat alternatives are boosted (+reason) while high-fatigue ones are penalised (+warning), and the final sort applies the fatigueRank tiebreak. Pins the readiness/fatigue branch of applyContextScoring.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "d88762e9231e4cb3b4018f24ca9bf7998f4c5d39",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Synthetic SmartReplacementParams over the squat-pattern equivalence chain. The ReadinessResult only needs level/score/trainingAdjustment for hasHighFatigueSignal. Clockless engine, generatedAtPolicy 'none'."
+  },
+  "params": {
+    "currentExercise": "squat",
+    "readinessResult": {
+      "level": "low",
+      "score": 52,
+      "trainingAdjustment": "conservative"
+    },
+    "trainingLevel": "intermediate"
+  }
+}

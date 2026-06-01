@@ -43,6 +43,13 @@ const FIXTURE_IDS = [
   'training-decision/productive-floor-v1',
   'training-decision/no-legacy-advice-v1',
   'training-decision/clean-input-contract-v1',
+  // SR-0 smart-replacement parity scaffold — 4 synthetic fixtures whose
+  // generated goldens collectively cover all four SmartReplacementPriority
+  // values. Parity pipeline only; the engine port is SR-1+.
+  'smart-replacement/explicit-priority-spread-v1',
+  'smart-replacement/bench-press-natural-v1',
+  'smart-replacement/low-readiness-fatigue-v1',
+  'smart-replacement/pain-history-substitute-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -244,7 +251,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 4 SR-0 smart-replacement)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {
