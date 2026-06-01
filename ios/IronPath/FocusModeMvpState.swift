@@ -598,6 +598,83 @@ final class FocusModeMvpState: ObservableObject {
         return error.localizedDescription
     }
 
+    // MARK: - DEEP-EDIT-1 display: per-set values read CANONICAL-first (corrected, persistent)
+
+    /// The per-set DISPLAY values for one saved snapshot, CANONICAL-FIRST: a set that
+    /// reached canonical `history` shows its authoritative (DEEP-EDIT-1-corrected)
+    /// 重量/次数/RIR, so a correction persists across a cold start; a set with no
+    /// canonical counterpart (a snapshot-only / legacy session, inherently uneditable)
+    /// honestly falls back to the LocalSnapshot display copy. Keyed `[exerciseId][setIndex]`
+    /// with the LocalSnapshot display type the detail row already renders — so the
+    /// presentation files stay free of any canonical-store token (the read is funnelled
+    /// here, the view-model).
+    ///
+    /// The match is the pure, unit-tested `resolveSavedSessionSetDisplay` (DataHealth);
+    /// the snapshot is translated into NEUTRAL fallbacks here, so the snapshot store
+    /// never reads canonical data and the two stay decoupled (§12). The canonical read
+    /// goes through the SAME sanctioned, read-only DataHealth ingress the edit gate uses
+    /// (clean view, §10) — no second cleaning entry point, no write. A nil store /
+    /// unreadable / missing document collapses canonical to empty, and the resolver then
+    /// returns the snapshot fallbacks unchanged (honest, never a crash). 100% read-only.
+    func canonicalSetDisplay(
+        for snapshot: LocalCompletedSessionSnapshot
+    ) -> [String: [Int: LocalCompletedSetEntrySnapshot]] {
+        // Translate the LocalSnapshot display copy into neutral fallbacks (app-layer
+        // translation — the snapshot never reads canonical; the resolver never imports
+        // IronPathLocalSnapshot).
+        let fallbacks: [SavedSessionSetFallback] = snapshot.exercises.flatMap { exercise in
+            (exercise.setLogs ?? []).map { log in
+                SavedSessionSetFallback(
+                    exerciseId: exercise.exerciseId,
+                    setIndex: log.setIndex,
+                    weightKg: log.weightKg,
+                    reps: log.reps,
+                    rir: log.rir
+                )
+            }
+        }
+        guard !fallbacks.isEmpty else { return [:] }
+
+        // Canonical cleaned history through the SAME read-only DataHealth ingress the
+        // edit gate uses (routes through the clean view, §10) — read-only options
+        // override the source defaults, so nothing is mutated/repaired/written. Any
+        // failure (no store / unreadable / missing file) → empty canonical → the
+        // resolver returns the snapshot fallbacks.
+        let canonicalHistory: [TrainingSession]
+        if let store = appDataStore, store.hasExistingFile,
+           let loaded = try? store.load(),
+           let result = try? processIncomingAppData(
+               appData: loaded,
+               source: .localStorageLoad,
+               options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+           ) {
+            canonicalHistory = result.cleanView.cleanedHistory
+        } else {
+            canonicalHistory = []
+        }
+
+        // Pure projection: canonical-corrected per matched set, else the snapshot copy.
+        let resolved = resolveSavedSessionSetDisplay(
+            snapshotId: snapshot.snapshotId,
+            canonicalHistory: canonicalHistory,
+            snapshotFallbacks: fallbacks
+        )
+
+        // Shape for the thin detail view: [exerciseId: [setIndex: entry]] using the
+        // LocalSnapshot display type it already renders (no DataHealth type leaks into
+        // the presentation layer).
+        var byExercise: [String: [Int: LocalCompletedSetEntrySnapshot]] = [:]
+        for (key, value) in resolved {
+            byExercise[key.exerciseId, default: [:]][key.setIndex] = LocalCompletedSetEntrySnapshot(
+                setIndex: key.setIndex,
+                weightKg: value.weightKg,
+                reps: value.reps,
+                rir: value.rir
+            )
+        }
+        return byExercise
+    }
+
     /// Map the engine-derived completion into the on-disk Codable snapshot. The
     /// snapshotId is deterministic (scenario + a monotone index over what is
     /// already saved), so tests/previews stay reproducible without random ids.
