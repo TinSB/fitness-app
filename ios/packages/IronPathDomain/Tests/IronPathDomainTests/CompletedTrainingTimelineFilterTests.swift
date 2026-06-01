@@ -1,12 +1,11 @@
 // CompletedTrainingTimelineFilterTests — 记录 (History) search + source filter V1.
 //
-// Pure filter coverage (no IO, no ambient clock): text search (native exercise name
-// / imported workout type / source label, case-insensitive), the source segment
-// (全部 / 原生 / 来自 Apple 健康), the coarse date range (INJECTED now; a nil /
-// unparseable timestamp is excluded from a BOUNDED range but never dropped from
-// 全部), filter COMPOSITION, the honest empty result, and ORDER PRESERVATION. All
-// inputs are built through the GENUINE `CompletedTrainingTimeline.make` so the tests
-// exercise the real merge/order + the exercise-name enrichment.
+// Pure filter coverage (no IO, no ambient clock, no Date): text search (native
+// exercise name / imported workout type / source label, case-insensitive), the source
+// segment (全部 / 原生 / 来自 Apple 健康), filter COMPOSITION, the honest empty
+// result, and ORDER PRESERVATION. All inputs are built through the GENUINE
+// `CompletedTrainingTimeline.make` so the tests exercise the real merge/order + the
+// exercise-name enrichment.
 
 import XCTest
 @testable import IronPathDomain
@@ -45,13 +44,6 @@ final class CompletedTrainingTimelineFilterTests: XCTestCase {
     private func importedWorkout(_ id: String, start: String?, type: String = "running") -> ImportedWorkoutSample {
         ImportedWorkoutSample(id: id, source: "healthkit_import", workoutType: type, startDate: start)
     }
-
-    /// A fixed reference instant for the date-range tests — never an ambient clock.
-    private let now: Date = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: "2026-05-30T12:00:00.000Z")!
-    }()
 
     private func nativeIds(_ timeline: CompletedTrainingTimeline) -> [String] {
         timeline.entries.compactMap { entry -> String? in
@@ -156,63 +148,9 @@ final class CompletedTrainingTimelineFilterTests: XCTestCase {
         XCTAssertEqual(t.filtered(source: .all).entries.count, 2)
     }
 
-    // MARK: - coarse date range (injected now)
-
-    func test_dateRange_last7Days_excludesOlder() {
-        let t = timeline(canonical: [
-            session(id: "recent", finishedAt: "2026-05-28T10:00:00.000Z", exercises: ["a"]),   // 2 days ago
-            session(id: "old", finishedAt: "2026-05-01T10:00:00.000Z", exercises: ["b"]),       // 29 days ago
-        ])
-        XCTAssertEqual(nativeIds(t.filtered(dateRange: .last7Days, now: now)), ["recent"])
-    }
-
-    func test_dateRange_last30Days_includesMidRange() {
-        let t = timeline(canonical: [
-            session(id: "recent", finishedAt: "2026-05-28T10:00:00.000Z", exercises: ["a"]),    // 2 days ago
-            session(id: "mid", finishedAt: "2026-05-10T10:00:00.000Z", exercises: ["b"]),        // 20 days ago
-        ])
-        XCTAssertEqual(t.filtered(dateRange: .last30Days, now: now).entries.count, 2)
-    }
-
-    func test_dateRange_all_keepsEverythingIncludingNilTimestamp() {
-        let t = timeline(canonical: [
-            session(id: "dated", finishedAt: "2026-05-28T10:00:00.000Z", exercises: ["a"]),
-            session(id: "undated", finishedAt: nil, exercises: ["b"]),
-        ])
-        XCTAssertEqual(t.filtered(dateRange: .all, now: now).entries.count, 2)
-    }
-
-    func test_dateRange_bounded_excludesNilTimestamp_butNeverDropsCrashes() {
-        let t = timeline(canonical: [
-            session(id: "dated", finishedAt: "2026-05-28T10:00:00.000Z", exercises: ["a"]),
-            session(id: "undated", finishedAt: nil, exercises: ["b"]),
-        ])
-        // A bounded range excludes the nil-timestamp row (not a crash, not kept).
-        XCTAssertEqual(nativeIds(t.filtered(dateRange: .last7Days, now: now)), ["dated"])
-    }
-
-    func test_isWithin_unparseableAndNil_excludedFromBounded_keptInAll() {
-        XCTAssertFalse(CompletedTrainingTimeline.isWithin("not-a-date", range: .last7Days, now: now))
-        XCTAssertTrue(CompletedTrainingTimeline.isWithin("not-a-date", range: .all, now: now))
-        XCTAssertTrue(CompletedTrainingTimeline.isWithin(nil, range: .all, now: now))
-        XCTAssertFalse(CompletedTrainingTimeline.isWithin(nil, range: .last30Days, now: now))
-    }
-
-    func test_isWithin_nilNow_skipsDateFiltering() {
-        // No clock → never drops a row by date (a missing clock can't silently filter).
-        XCTAssertTrue(CompletedTrainingTimeline.isWithin("2026-01-01T00:00:00.000Z", range: .last7Days, now: nil))
-    }
-
-    func test_dateRange_futureRow_excludedFromLastN() {
-        let t = timeline(canonical: [
-            session(id: "future", finishedAt: "2026-06-15T10:00:00.000Z", exercises: ["a"]),    // after now
-        ])
-        XCTAssertTrue(t.filtered(dateRange: .last7Days, now: now).entries.isEmpty)
-    }
-
     // MARK: - composition (logical AND)
 
-    func test_composition_searchAndSourceAndDate() {
+    func test_composition_searchAndSource() {
         let t = timeline(
             canonical: [
                 session(id: "bench-recent", finishedAt: "2026-05-29T10:00:00.000Z", exercises: ["Bench"]),
@@ -221,9 +159,10 @@ final class CompletedTrainingTimelineFilterTests: XCTestCase {
             ],
             imported: [importedWorkout("run-recent", start: "2026-05-29T09:00:00.000Z")]
         )
-        // native AND "bench" AND last-7-days → only bench-recent survives all three.
-        let out = t.filtered(query: "bench", source: .native, dateRange: .last7Days, now: now)
-        XCTAssertEqual(nativeIds(out), ["bench-recent"])
+        // native AND "bench" → both bench rows survive (squat + the imported run are
+        // filtered out), keeping the most-recent-first order.
+        let out = t.filtered(query: "bench", source: .native)
+        XCTAssertEqual(nativeIds(out), ["bench-recent", "bench-old"])
     }
 
     func test_composition_emptyWhenFiltersConflict() {
