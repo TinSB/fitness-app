@@ -1111,4 +1111,95 @@ final class CanonicalSessionWriterTests: XCTestCase {
         XCTAssertEqual(loaded.programTemplate.splitType, "推 / 拉 / 腿")
         XCTAssertEqual(loaded.programTemplate.daysPerWeek?.intValue, 4)
     }
+
+    // MARK: - DEEP-EDIT-1: logged-set correction (SAME gated path)
+
+    func testUpdateHistorySetCorrectsTargetSetAndBacksUp() throws {
+        // Seed with a completed session whose only set is 60kg × 5 @ RIR 2.
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        let result = try writer.updateHistorySet(
+            sessionId: "s1", exerciseId: "bench", setIndex: 0,
+            weightKg: 65, reps: 7, rir: 1
+        ) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        // The one set's three metrics are corrected in place.
+        let set = store.stored?.history.first?.exercises?.first?.sets?.first
+        XCTAssertEqual(set?.weight?.doubleValue ?? -1, 65, accuracy: 1e-9)
+        XCTAssertEqual(set?.reps?.intValue, 7)
+        XCTAssertEqual(set?.rir?.intValue, 1)
+        // Identity + completion survive the edit; still exactly one session/set.
+        XCTAssertEqual(store.stored?.history.count, 1)
+        XCTAssertEqual(set?.setIndex?.intValue, 0)
+        XCTAssertEqual(set?.done, true)
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testUpdateHistorySetValidationRejectionWritesNothing() throws {
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateHistorySet(
+            sessionId: "s1", exerciseId: "bench", setIndex: 0,
+            weightKg: 65, reps: 7, rir: 1
+        ) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The on-disk set is untouched (still 60kg × 5).
+        XCTAssertEqual(store.stored?.history.first?.exercises?.first?.sets?.first?.weight?.doubleValue ?? -1, 60, accuracy: 1e-9)
+    }
+
+    func testUpdateHistorySetGateSeesCorrectedCandidate() throws {
+        let seed = AppData.emptyCurrent().appendingHistorySession(makeSession(id: "s1"))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        var seenWeight: Double?
+        _ = try writer.updateHistorySet(
+            sessionId: "s1", exerciseId: "bench", setIndex: 0,
+            weightKg: 65, reps: 7, rir: 1
+        ) { candidate in
+            seenWeight = candidate.history.first?.exercises?.first?.sets?.first?.weight?.doubleValue
+            return true
+        }
+        XCTAssertEqual(seenWeight ?? -1, 65, accuracy: 1e-9, "the gate must see the candidate with the set already corrected")
+    }
+
+    func testUpdateHistorySetRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-deepedit1-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // Seed a completed session (60kg × 5), then correct it to 67.5kg × 6 @ RIR 0.
+        _ = try writer.appendCompletedSession(makeSession(id: "s1", weightKg: 60, reps: 5)) { _ in true }
+        let r2 = try writer.updateHistorySet(
+            sessionId: "s1", exerciseId: "bench", setIndex: 0,
+            weightKg: 67.5, reps: 6, rir: 0
+        ) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "backup file must exist on disk")
+
+        // Reload from disk: the correction survives the round trip; fractional kg
+        // stays a double.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.history.count, 1)
+        let set = loaded.history.first?.exercises?.first?.sets?.first
+        XCTAssertEqual(set?.weight?.doubleValue ?? -1, 67.5, accuracy: 1e-9)
+        XCTAssertEqual(set?.reps?.intValue, 6)
+        XCTAssertEqual(set?.rir?.intValue, 0)
+        XCTAssertEqual(set?.done, true)
+    }
 }

@@ -65,7 +65,20 @@ struct FocusSavedSessionHistoryView: View {
             FocusSavedSessionDetailView(
                 snapshot: snapshot,
                 currentExerciseIds: state.currentExerciseIds(forSnapshot: snapshot),
-                displayUnit: state.captureDisplayUnit
+                displayUnit: state.captureDisplayUnit,
+                onSaveSet: { exerciseId, setIndex, weightInDisplayUnit, reps, rir in
+                    // DEEP-EDIT-1: correct this logged set in the canonical session
+                    // (id == snapshotId) through the SAME gated write path. Returns an
+                    // honest outcome the detail sheet reflects (saved / failed).
+                    state.updateLoggedSet(
+                        sessionId: snapshot.snapshotId,
+                        exerciseId: exerciseId,
+                        setIndex: setIndex,
+                        weightInDisplayUnit: weightInDisplayUnit,
+                        reps: reps,
+                        rir: rir
+                    )
+                }
             ) {
                 // Restore-to-local-draft + continue. Dismiss the sheet first,
                 // then restore (which flips the shell to the in-session draft).
