@@ -1,0 +1,89 @@
+{
+  "engineInput": {
+    "context": {
+      "unavailableEquipment": []
+    },
+    "exercise": {
+      "id": "hack-squat"
+    }
+  },
+  "optionCount": 5,
+  "optionIds": [
+    "leg-press",
+    "goblet-squat",
+    "squat",
+    "smith-squat",
+    "belt-squat"
+  ],
+  "options": [
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "leg-press",
+      "name": "腿举（Leg Press）",
+      "prIndependent": true,
+      "rank": "priority",
+      "rankLabel": "优先",
+      "reason": "同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "goblet-squat",
+      "name": "高脚杯深蹲（Goblet Squat）",
+      "prIndependent": true,
+      "rank": "priority",
+      "rankLabel": "优先",
+      "reason": "同一动作链内的替代动作，会保留本次模板位置，并按实际动作独立统计 PR / e1RM。"
+    },
+    {
+      "fatigueCost": "high",
+      "fatigueCostLabel": "高",
+      "id": "squat",
+      "name": "深蹲（Back Squat）",
+      "prIndependent": true,
+      "rank": "optional",
+      "rankLabel": "可选",
+      "reason": "这是可选替代，适合特殊器械或疲劳限制场景，不代表完全等价。"
+    },
+    {
+      "fatigueCost": "high",
+      "fatigueCostLabel": "高",
+      "id": "smith-squat",
+      "name": "史密斯深蹲（Smith Machine Squat）",
+      "prIndependent": true,
+      "rank": "optional",
+      "rankLabel": "可选",
+      "reason": "这是可选替代，适合特殊器械或疲劳限制场景，不代表完全等价。"
+    },
+    {
+      "fatigueCost": "medium",
+      "fatigueCostLabel": "中等",
+      "id": "belt-squat",
+      "name": "腰带深蹲（Belt Squat）",
+      "prIndependent": true,
+      "rank": "optional",
+      "rankLabel": "可选",
+      "reason": "这是可选替代，适合特殊器械或疲劳限制场景，不代表完全等价。"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "replacement-engine/hack-squat-chain-v1"
+  },
+  "sourceFixtureId": "replacement-engine/hack-squat-chain-v1",
+  "synthetic": [],
+  "validation": [
+    {
+      "id": "hack-squat",
+      "valid": true
+    },
+    {
+      "id": "squat",
+      "valid": true
+    }
+  ]
+}

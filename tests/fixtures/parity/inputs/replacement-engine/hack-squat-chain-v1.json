@@ -1,0 +1,16 @@
+{
+  "parityMeta": {
+    "id": "replacement-engine/hack-squat-chain-v1",
+    "schemaVersion": 8,
+    "describes": "SR-2 buildReplacementOptions over hack-squat — the CHAIN-DERIVATION path (the override carries no alternativeIds, so candidates = regressionIds + squat-pattern chain members minus self + progressionIds). Exercises Array.from(new Set(...)) de-dup across the three lists, the default rank-by-index (first two → priority, rest → optional), and the generic reasonForReplacement fallbacks. No equipment context.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "buildReplacementOptions is clockless → generatedAtPolicy 'none'."
+  },
+  "exercise": { "id": "hack-squat" },
+  "context": {},
+  "validateProbes": ["hack-squat", "squat"],
+  "syntheticProbes": []
+}

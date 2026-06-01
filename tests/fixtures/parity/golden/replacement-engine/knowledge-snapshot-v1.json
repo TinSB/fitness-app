@@ -1,0 +1,1241 @@
+{
+  "counts": {
+    "equivalenceChainKeys": 60,
+    "knowledgeOverrideIds": 63
+  },
+  "equivalenceChains": {
+    "assisted-pull-up": {
+      "id": "vertical-pull",
+      "members": [
+        "lat-pulldown",
+        "pull-up",
+        "assisted-pull-up",
+        "single-arm-lat-pulldown"
+      ]
+    },
+    "barbell-row": {
+      "id": "horizontal-pull",
+      "members": [
+        "seated-row",
+        "machine-row",
+        "chest-supported-row",
+        "barbell-row",
+        "t-bar-row",
+        "one-arm-db-row"
+      ]
+    },
+    "belt-squat": {
+      "id": "squat-pattern",
+      "members": [
+        "squat",
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "bench-press": {
+      "id": "horizontal-press",
+      "members": [
+        "bench-press",
+        "machine-chest-press",
+        "db-bench-press",
+        "push-up"
+      ]
+    },
+    "cable-curl": {
+      "id": "biceps-curl",
+      "members": [
+        "db-curl",
+        "ez-bar-curl",
+        "preacher-curl",
+        "cable-curl",
+        "incline-db-curl"
+      ]
+    },
+    "cable-fly": {
+      "id": "fly",
+      "members": [
+        "cable-fly",
+        "pec-deck-fly",
+        "db-fly"
+      ]
+    },
+    "cable-lateral-raise": {
+      "id": "lateral-raise",
+      "members": [
+        "lateral-raise",
+        "cable-lateral-raise",
+        "machine-lateral-raise"
+      ]
+    },
+    "cable-rear-delt-fly": {
+      "id": "rear-delt",
+      "members": [
+        "face-pull",
+        "reverse-pec-deck",
+        "cable-rear-delt-fly",
+        "rear-delt-raise"
+      ]
+    },
+    "calf-raise": {
+      "id": "calf-raise",
+      "members": [
+        "calf-raise",
+        "seated-calf-raise",
+        "standing-calf-raise",
+        "leg-press-calf-raise"
+      ]
+    },
+    "chest-supported-row": {
+      "id": "horizontal-pull",
+      "members": [
+        "seated-row",
+        "machine-row",
+        "chest-supported-row",
+        "barbell-row",
+        "t-bar-row",
+        "one-arm-db-row"
+      ]
+    },
+    "db-bench-press": {
+      "id": "horizontal-press",
+      "members": [
+        "bench-press",
+        "machine-chest-press",
+        "db-bench-press",
+        "push-up"
+      ]
+    },
+    "db-curl": {
+      "id": "biceps-curl",
+      "members": [
+        "db-curl",
+        "ez-bar-curl",
+        "preacher-curl",
+        "cable-curl",
+        "incline-db-curl"
+      ]
+    },
+    "db-fly": {
+      "id": "fly",
+      "members": [
+        "cable-fly",
+        "pec-deck-fly",
+        "db-fly"
+      ]
+    },
+    "db-rdl": {
+      "id": "hinge-pattern",
+      "members": [
+        "romanian-deadlift",
+        "db-rdl",
+        "hip-thrust"
+      ]
+    },
+    "deadlift": {
+      "id": "deadlift-pattern",
+      "members": [
+        "deadlift"
+      ]
+    },
+    "ez-bar-curl": {
+      "id": "biceps-curl",
+      "members": [
+        "db-curl",
+        "ez-bar-curl",
+        "preacher-curl",
+        "cable-curl",
+        "incline-db-curl"
+      ]
+    },
+    "face-pull": {
+      "id": "rear-delt",
+      "members": [
+        "face-pull",
+        "reverse-pec-deck",
+        "cable-rear-delt-fly",
+        "rear-delt-raise"
+      ]
+    },
+    "goblet-squat": {
+      "id": "squat-pattern",
+      "members": [
+        "squat",
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "hack-squat": {
+      "id": "squat-pattern",
+      "members": [
+        "squat",
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "hammer-curl": {
+      "id": "hammer-curl",
+      "members": [
+        "hammer-curl",
+        "rope-hammer-curl"
+      ]
+    },
+    "hip-thrust": {
+      "id": "hinge-pattern",
+      "members": [
+        "romanian-deadlift",
+        "db-rdl",
+        "hip-thrust"
+      ]
+    },
+    "incline-db-curl": {
+      "id": "biceps-curl",
+      "members": [
+        "db-curl",
+        "ez-bar-curl",
+        "preacher-curl",
+        "cable-curl",
+        "incline-db-curl"
+      ]
+    },
+    "incline-db-press": {
+      "id": "incline-press",
+      "members": [
+        "incline-db-press",
+        "smith-incline-press",
+        "machine-incline-chest-press"
+      ]
+    },
+    "landmine-press": {
+      "id": "vertical-press",
+      "members": [
+        "shoulder-press",
+        "machine-shoulder-press",
+        "smith-shoulder-press",
+        "landmine-press"
+      ]
+    },
+    "lat-pulldown": {
+      "id": "vertical-pull",
+      "members": [
+        "lat-pulldown",
+        "pull-up",
+        "assisted-pull-up",
+        "single-arm-lat-pulldown"
+      ]
+    },
+    "lateral-raise": {
+      "id": "lateral-raise",
+      "members": [
+        "lateral-raise",
+        "cable-lateral-raise",
+        "machine-lateral-raise"
+      ]
+    },
+    "leg-curl": {
+      "id": "leg-curl",
+      "members": [
+        "leg-curl",
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "nordic-curl"
+      ]
+    },
+    "leg-press": {
+      "id": "squat-pattern",
+      "members": [
+        "squat",
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "leg-press-calf-raise": {
+      "id": "calf-raise",
+      "members": [
+        "calf-raise",
+        "seated-calf-raise",
+        "standing-calf-raise",
+        "leg-press-calf-raise"
+      ]
+    },
+    "lying-leg-curl": {
+      "id": "leg-curl",
+      "members": [
+        "leg-curl",
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "nordic-curl"
+      ]
+    },
+    "machine-chest-press": {
+      "id": "horizontal-press",
+      "members": [
+        "bench-press",
+        "machine-chest-press",
+        "db-bench-press",
+        "push-up"
+      ]
+    },
+    "machine-incline-chest-press": {
+      "id": "incline-press",
+      "members": [
+        "incline-db-press",
+        "smith-incline-press",
+        "machine-incline-chest-press"
+      ]
+    },
+    "machine-lateral-raise": {
+      "id": "lateral-raise",
+      "members": [
+        "lateral-raise",
+        "cable-lateral-raise",
+        "machine-lateral-raise"
+      ]
+    },
+    "machine-row": {
+      "id": "horizontal-pull",
+      "members": [
+        "seated-row",
+        "machine-row",
+        "chest-supported-row",
+        "barbell-row",
+        "t-bar-row",
+        "one-arm-db-row"
+      ]
+    },
+    "machine-shoulder-press": {
+      "id": "vertical-press",
+      "members": [
+        "shoulder-press",
+        "machine-shoulder-press",
+        "smith-shoulder-press",
+        "landmine-press"
+      ]
+    },
+    "nordic-curl": {
+      "id": "leg-curl",
+      "members": [
+        "leg-curl",
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "nordic-curl"
+      ]
+    },
+    "one-arm-db-row": {
+      "id": "horizontal-pull",
+      "members": [
+        "seated-row",
+        "machine-row",
+        "chest-supported-row",
+        "barbell-row",
+        "t-bar-row",
+        "one-arm-db-row"
+      ]
+    },
+    "overhead-cable-triceps-extension": {
+      "id": "triceps-extension",
+      "members": [
+        "triceps-pushdown",
+        "straight-bar-pushdown",
+        "overhead-cable-triceps-extension",
+        "skull-crusher"
+      ]
+    },
+    "pec-deck-fly": {
+      "id": "fly",
+      "members": [
+        "cable-fly",
+        "pec-deck-fly",
+        "db-fly"
+      ]
+    },
+    "preacher-curl": {
+      "id": "biceps-curl",
+      "members": [
+        "db-curl",
+        "ez-bar-curl",
+        "preacher-curl",
+        "cable-curl",
+        "incline-db-curl"
+      ]
+    },
+    "pull-up": {
+      "id": "vertical-pull",
+      "members": [
+        "lat-pulldown",
+        "pull-up",
+        "assisted-pull-up",
+        "single-arm-lat-pulldown"
+      ]
+    },
+    "push-up": {
+      "id": "horizontal-press",
+      "members": [
+        "bench-press",
+        "machine-chest-press",
+        "db-bench-press",
+        "push-up"
+      ]
+    },
+    "rear-delt-raise": {
+      "id": "rear-delt",
+      "members": [
+        "face-pull",
+        "reverse-pec-deck",
+        "cable-rear-delt-fly",
+        "rear-delt-raise"
+      ]
+    },
+    "reverse-pec-deck": {
+      "id": "rear-delt",
+      "members": [
+        "face-pull",
+        "reverse-pec-deck",
+        "cable-rear-delt-fly",
+        "rear-delt-raise"
+      ]
+    },
+    "romanian-deadlift": {
+      "id": "hinge-pattern",
+      "members": [
+        "romanian-deadlift",
+        "db-rdl",
+        "hip-thrust"
+      ]
+    },
+    "rope-hammer-curl": {
+      "id": "hammer-curl",
+      "members": [
+        "hammer-curl",
+        "rope-hammer-curl"
+      ]
+    },
+    "seated-calf-raise": {
+      "id": "calf-raise",
+      "members": [
+        "calf-raise",
+        "seated-calf-raise",
+        "standing-calf-raise",
+        "leg-press-calf-raise"
+      ]
+    },
+    "seated-leg-curl": {
+      "id": "leg-curl",
+      "members": [
+        "leg-curl",
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "nordic-curl"
+      ]
+    },
+    "seated-row": {
+      "id": "horizontal-pull",
+      "members": [
+        "seated-row",
+        "machine-row",
+        "chest-supported-row",
+        "barbell-row",
+        "t-bar-row",
+        "one-arm-db-row"
+      ]
+    },
+    "shoulder-press": {
+      "id": "vertical-press",
+      "members": [
+        "shoulder-press",
+        "machine-shoulder-press",
+        "smith-shoulder-press",
+        "landmine-press"
+      ]
+    },
+    "single-arm-lat-pulldown": {
+      "id": "vertical-pull",
+      "members": [
+        "lat-pulldown",
+        "pull-up",
+        "assisted-pull-up",
+        "single-arm-lat-pulldown"
+      ]
+    },
+    "skull-crusher": {
+      "id": "triceps-extension",
+      "members": [
+        "triceps-pushdown",
+        "straight-bar-pushdown",
+        "overhead-cable-triceps-extension",
+        "skull-crusher"
+      ]
+    },
+    "smith-incline-press": {
+      "id": "incline-press",
+      "members": [
+        "incline-db-press",
+        "smith-incline-press",
+        "machine-incline-chest-press"
+      ]
+    },
+    "smith-shoulder-press": {
+      "id": "vertical-press",
+      "members": [
+        "shoulder-press",
+        "machine-shoulder-press",
+        "smith-shoulder-press",
+        "landmine-press"
+      ]
+    },
+    "smith-squat": {
+      "id": "squat-pattern",
+      "members": [
+        "squat",
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "squat": {
+      "id": "squat-pattern",
+      "members": [
+        "squat",
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "standing-calf-raise": {
+      "id": "calf-raise",
+      "members": [
+        "calf-raise",
+        "seated-calf-raise",
+        "standing-calf-raise",
+        "leg-press-calf-raise"
+      ]
+    },
+    "straight-bar-pushdown": {
+      "id": "triceps-extension",
+      "members": [
+        "triceps-pushdown",
+        "straight-bar-pushdown",
+        "overhead-cable-triceps-extension",
+        "skull-crusher"
+      ]
+    },
+    "t-bar-row": {
+      "id": "horizontal-pull",
+      "members": [
+        "seated-row",
+        "machine-row",
+        "chest-supported-row",
+        "barbell-row",
+        "t-bar-row",
+        "one-arm-db-row"
+      ]
+    },
+    "triceps-pushdown": {
+      "id": "triceps-extension",
+      "members": [
+        "triceps-pushdown",
+        "straight-bar-pushdown",
+        "overhead-cable-triceps-extension",
+        "skull-crusher"
+      ]
+    }
+  },
+  "knowledge": {
+    "assisted-dip": {
+      "equivalenceChainId": "horizontal-press",
+      "fatigueCost": "high"
+    },
+    "assisted-pull-up": {
+      "equivalenceChainId": "vertical-pull",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "pull-up"
+      ]
+    },
+    "barbell-row": {
+      "alternativeIds": [
+        "chest-supported-row",
+        "t-bar-row",
+        "one-arm-db-row",
+        "seated-row",
+        "machine-row"
+      ],
+      "alternativePriorities": {
+        "chest-supported-row": "priority",
+        "machine-row": "optional",
+        "one-arm-db-row": "acceptable",
+        "seated-row": "acceptable",
+        "t-bar-row": "priority"
+      },
+      "equivalenceChainId": "horizontal-pull",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "seated-row",
+        "one-arm-db-row"
+      ]
+    },
+    "belt-squat": {
+      "equivalenceChainId": "squat-pattern",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "hack-squat",
+        "squat"
+      ],
+      "regressionIds": [
+        "leg-press",
+        "goblet-squat"
+      ]
+    },
+    "bench-press": {
+      "alternativeIds": [
+        "db-bench-press",
+        "machine-chest-press",
+        "push-up",
+        "incline-db-press",
+        "cable-fly",
+        "triceps-pushdown",
+        "shoulder-press",
+        "machine-shoulder-press"
+      ],
+      "alternativePriorities": {
+        "cable-fly": "not_recommended",
+        "db-bench-press": "priority",
+        "incline-db-press": "angle",
+        "machine-chest-press": "priority",
+        "machine-shoulder-press": "not_recommended",
+        "push-up": "optional",
+        "shoulder-press": "not_recommended",
+        "triceps-pushdown": "not_recommended"
+      },
+      "equivalenceChainId": "horizontal-press",
+      "fatigueCost": "high",
+      "progressionIds": [
+        "close-grip-bench"
+      ],
+      "regressionIds": [
+        "machine-chest-press",
+        "db-bench-press"
+      ]
+    },
+    "cable-curl": {
+      "equivalenceChainId": "biceps-curl",
+      "fatigueCost": "low"
+    },
+    "cable-fly": {
+      "alternativeIds": [
+        "pec-deck-fly",
+        "db-fly",
+        "machine-chest-press",
+        "assisted-dip"
+      ],
+      "alternativePriorities": {
+        "assisted-dip": "compound_fallback",
+        "db-fly": "acceptable",
+        "machine-chest-press": "equipment_fallback",
+        "pec-deck-fly": "priority"
+      },
+      "equivalenceChainId": "fly",
+      "fatigueCost": "low"
+    },
+    "cable-lateral-raise": {
+      "equivalenceChainId": "lateral-raise",
+      "fatigueCost": "low"
+    },
+    "cable-rear-delt-fly": {
+      "equivalenceChainId": "rear-delt",
+      "fatigueCost": "low"
+    },
+    "calf-raise": {
+      "alternativeIds": [
+        "seated-calf-raise",
+        "standing-calf-raise",
+        "leg-press-calf-raise"
+      ],
+      "alternativePriorities": {
+        "leg-press-calf-raise": "acceptable",
+        "seated-calf-raise": "priority",
+        "standing-calf-raise": "priority"
+      },
+      "equivalenceChainId": "calf-raise",
+      "fatigueCost": "low"
+    },
+    "chest-supported-row": {
+      "equivalenceChainId": "horizontal-pull",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "barbell-row",
+        "t-bar-row"
+      ],
+      "regressionIds": [
+        "machine-row",
+        "seated-row"
+      ]
+    },
+    "close-grip-bench": {
+      "equivalenceChainId": "horizontal-press",
+      "fatigueCost": "medium"
+    },
+    "db-bench-press": {
+      "alternativeIds": [
+        "machine-chest-press",
+        "bench-press",
+        "push-up",
+        "incline-db-press"
+      ],
+      "alternativePriorities": {
+        "bench-press": "optional",
+        "incline-db-press": "angle",
+        "machine-chest-press": "priority",
+        "push-up": "optional"
+      },
+      "equivalenceChainId": "horizontal-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "bench-press"
+      ],
+      "regressionIds": [
+        "machine-chest-press"
+      ]
+    },
+    "db-curl": {
+      "alternativeIds": [
+        "ez-bar-curl",
+        "preacher-curl",
+        "cable-curl",
+        "incline-db-curl",
+        "hammer-curl"
+      ],
+      "alternativePriorities": {
+        "cable-curl": "priority",
+        "ez-bar-curl": "priority",
+        "hammer-curl": "optional",
+        "incline-db-curl": "acceptable",
+        "preacher-curl": "priority"
+      },
+      "equivalenceChainId": "biceps-curl",
+      "fatigueCost": "low"
+    },
+    "db-fly": {
+      "equivalenceChainId": "fly",
+      "fatigueCost": "low",
+      "progressionIds": [
+        "cable-fly"
+      ]
+    },
+    "db-rdl": {
+      "equivalenceChainId": "hinge-pattern",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "romanian-deadlift"
+      ]
+    },
+    "deadlift": {
+      "equivalenceChainId": "hinge-pattern",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "romanian-deadlift",
+        "db-rdl"
+      ]
+    },
+    "ez-bar-curl": {
+      "equivalenceChainId": "biceps-curl",
+      "fatigueCost": "medium"
+    },
+    "face-pull": {
+      "alternativeIds": [
+        "reverse-pec-deck",
+        "cable-rear-delt-fly",
+        "rear-delt-raise",
+        "lateral-raise"
+      ],
+      "alternativePriorities": {
+        "cable-rear-delt-fly": "priority",
+        "lateral-raise": "optional",
+        "rear-delt-raise": "priority",
+        "reverse-pec-deck": "priority"
+      },
+      "equivalenceChainId": "rear-delt",
+      "fatigueCost": "low"
+    },
+    "goblet-squat": {
+      "equivalenceChainId": "squat-pattern",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "hack-squat",
+        "squat"
+      ]
+    },
+    "hack-squat": {
+      "equivalenceChainId": "squat-pattern",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "squat"
+      ],
+      "regressionIds": [
+        "leg-press",
+        "goblet-squat"
+      ]
+    },
+    "hammer-curl": {
+      "alternativeIds": [
+        "rope-hammer-curl",
+        "db-curl",
+        "ez-bar-curl"
+      ],
+      "alternativePriorities": {
+        "db-curl": "acceptable",
+        "ez-bar-curl": "optional",
+        "rope-hammer-curl": "priority"
+      },
+      "equivalenceChainId": "hammer-curl",
+      "fatigueCost": "low"
+    },
+    "hip-thrust": {
+      "equivalenceChainId": "hinge-pattern",
+      "fatigueCost": "medium",
+      "regressionIds": [
+        "db-rdl"
+      ]
+    },
+    "incline-db-curl": {
+      "equivalenceChainId": "biceps-curl",
+      "fatigueCost": "medium"
+    },
+    "incline-db-press": {
+      "alternativeIds": [
+        "smith-incline-press",
+        "machine-incline-chest-press",
+        "machine-chest-press",
+        "db-bench-press"
+      ],
+      "alternativePriorities": {
+        "db-bench-press": "angle",
+        "machine-chest-press": "acceptable",
+        "machine-incline-chest-press": "priority",
+        "smith-incline-press": "priority"
+      },
+      "equivalenceChainId": "incline-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "bench-press"
+      ]
+    },
+    "landmine-press": {
+      "equivalenceChainId": "vertical-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "shoulder-press"
+      ]
+    },
+    "lat-pulldown": {
+      "alternativeIds": [
+        "assisted-pull-up",
+        "pull-up",
+        "single-arm-lat-pulldown",
+        "machine-row",
+        "seated-row",
+        "triceps-pushdown",
+        "cable-fly",
+        "shoulder-press"
+      ],
+      "alternativePriorities": {
+        "assisted-pull-up": "priority",
+        "cable-fly": "not_recommended",
+        "machine-row": "equipment_fallback",
+        "pull-up": "priority",
+        "seated-row": "optional",
+        "shoulder-press": "not_recommended",
+        "single-arm-lat-pulldown": "angle",
+        "triceps-pushdown": "not_recommended"
+      },
+      "equivalenceChainId": "vertical-pull",
+      "fatigueCost": "medium"
+    },
+    "lateral-raise": {
+      "alternativeIds": [
+        "cable-lateral-raise",
+        "machine-lateral-raise",
+        "rear-delt-raise",
+        "shoulder-press"
+      ],
+      "alternativePriorities": {
+        "cable-lateral-raise": "priority",
+        "machine-lateral-raise": "priority",
+        "rear-delt-raise": "not_recommended",
+        "shoulder-press": "not_recommended"
+      },
+      "equivalenceChainId": "lateral-raise",
+      "fatigueCost": "low"
+    },
+    "leg-curl": {
+      "alternativeIds": [
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "nordic-curl",
+        "romanian-deadlift"
+      ],
+      "alternativePriorities": {
+        "lying-leg-curl": "priority",
+        "nordic-curl": "acceptable",
+        "romanian-deadlift": "optional",
+        "seated-leg-curl": "priority"
+      },
+      "equivalenceChainId": "leg-curl",
+      "fatigueCost": "low"
+    },
+    "leg-extension": {
+      "fatigueCost": "low"
+    },
+    "leg-press": {
+      "equivalenceChainId": "squat-pattern",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "hack-squat",
+        "squat"
+      ]
+    },
+    "leg-press-calf-raise": {
+      "equivalenceChainId": "calf-raise",
+      "fatigueCost": "low"
+    },
+    "lying-leg-curl": {
+      "equivalenceChainId": "leg-curl",
+      "fatigueCost": "low",
+      "progressionIds": [
+        "nordic-curl"
+      ]
+    },
+    "machine-chest-press": {
+      "alternativeIds": [
+        "db-bench-press",
+        "bench-press",
+        "push-up"
+      ],
+      "alternativePriorities": {
+        "bench-press": "optional",
+        "db-bench-press": "priority",
+        "push-up": "optional"
+      },
+      "equivalenceChainId": "horizontal-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "db-bench-press",
+        "bench-press"
+      ]
+    },
+    "machine-incline-chest-press": {
+      "equivalenceChainId": "incline-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "smith-incline-press",
+        "incline-db-press"
+      ]
+    },
+    "machine-lateral-raise": {
+      "equivalenceChainId": "lateral-raise",
+      "fatigueCost": "low"
+    },
+    "machine-row": {
+      "equivalenceChainId": "horizontal-pull",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "chest-supported-row",
+        "barbell-row"
+      ],
+      "regressionIds": [
+        "seated-row"
+      ]
+    },
+    "machine-shoulder-press": {
+      "equivalenceChainId": "vertical-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "shoulder-press"
+      ]
+    },
+    "nordic-curl": {
+      "equivalenceChainId": "leg-curl",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "leg-curl"
+      ]
+    },
+    "one-arm-db-row": {
+      "equivalenceChainId": "horizontal-pull",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "seated-row",
+        "barbell-row"
+      ]
+    },
+    "overhead-cable-triceps-extension": {
+      "equivalenceChainId": "triceps-extension",
+      "fatigueCost": "medium"
+    },
+    "pec-deck-fly": {
+      "equivalenceChainId": "fly",
+      "fatigueCost": "low",
+      "progressionIds": [
+        "cable-fly"
+      ]
+    },
+    "preacher-curl": {
+      "equivalenceChainId": "biceps-curl",
+      "fatigueCost": "low"
+    },
+    "pull-up": {
+      "equivalenceChainId": "vertical-pull",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "lat-pulldown",
+        "assisted-pull-up"
+      ]
+    },
+    "push-up": {
+      "equivalenceChainId": "horizontal-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "db-bench-press",
+        "bench-press"
+      ]
+    },
+    "rear-delt-raise": {
+      "equivalenceChainId": "rear-delt",
+      "fatigueCost": "low"
+    },
+    "reverse-pec-deck": {
+      "equivalenceChainId": "rear-delt",
+      "fatigueCost": "low"
+    },
+    "romanian-deadlift": {
+      "alternativeIds": [
+        "db-rdl",
+        "hip-thrust",
+        "leg-curl",
+        "seated-leg-curl",
+        "lying-leg-curl",
+        "calf-raise",
+        "leg-extension"
+      ],
+      "alternativePriorities": {
+        "calf-raise": "not_recommended",
+        "db-rdl": "priority",
+        "hip-thrust": "acceptable",
+        "leg-curl": "optional",
+        "leg-extension": "not_recommended",
+        "lying-leg-curl": "optional",
+        "seated-leg-curl": "optional"
+      },
+      "equivalenceChainId": "hinge-pattern",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "db-rdl"
+      ]
+    },
+    "rope-hammer-curl": {
+      "equivalenceChainId": "hammer-curl",
+      "fatigueCost": "low"
+    },
+    "seated-calf-raise": {
+      "equivalenceChainId": "calf-raise",
+      "fatigueCost": "low"
+    },
+    "seated-leg-curl": {
+      "equivalenceChainId": "leg-curl",
+      "fatigueCost": "low",
+      "progressionIds": [
+        "nordic-curl"
+      ]
+    },
+    "seated-row": {
+      "alternativeIds": [
+        "chest-supported-row",
+        "machine-row",
+        "one-arm-db-row",
+        "barbell-row",
+        "lat-pulldown"
+      ],
+      "alternativePriorities": {
+        "barbell-row": "optional",
+        "chest-supported-row": "priority",
+        "lat-pulldown": "not_recommended",
+        "machine-row": "priority",
+        "one-arm-db-row": "acceptable"
+      },
+      "equivalenceChainId": "horizontal-pull",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "barbell-row"
+      ],
+      "regressionIds": [
+        "one-arm-db-row"
+      ]
+    },
+    "shoulder-press": {
+      "alternativeIds": [
+        "machine-shoulder-press",
+        "smith-shoulder-press",
+        "landmine-press",
+        "db-bench-press",
+        "lateral-raise",
+        "triceps-pushdown",
+        "cable-fly"
+      ],
+      "alternativePriorities": {
+        "cable-fly": "not_recommended",
+        "db-bench-press": "optional",
+        "landmine-press": "acceptable",
+        "lateral-raise": "not_recommended",
+        "machine-shoulder-press": "priority",
+        "smith-shoulder-press": "priority",
+        "triceps-pushdown": "not_recommended"
+      },
+      "equivalenceChainId": "vertical-press",
+      "fatigueCost": "medium",
+      "regressionIds": [
+        "machine-shoulder-press"
+      ]
+    },
+    "single-arm-lat-pulldown": {
+      "equivalenceChainId": "vertical-pull",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "assisted-pull-up",
+        "pull-up"
+      ],
+      "regressionIds": [
+        "lat-pulldown"
+      ]
+    },
+    "skull-crusher": {
+      "equivalenceChainId": "triceps-extension",
+      "fatigueCost": "medium"
+    },
+    "smith-incline-press": {
+      "equivalenceChainId": "incline-press",
+      "fatigueCost": "medium",
+      "progressionIds": [
+        "incline-db-press"
+      ],
+      "regressionIds": [
+        "machine-incline-chest-press"
+      ]
+    },
+    "smith-shoulder-press": {
+      "equivalenceChainId": "vertical-press",
+      "fatigueCost": "high",
+      "progressionIds": [
+        "shoulder-press"
+      ],
+      "regressionIds": [
+        "machine-shoulder-press"
+      ]
+    },
+    "smith-squat": {
+      "equivalenceChainId": "squat-pattern",
+      "fatigueCost": "high",
+      "progressionIds": [
+        "squat"
+      ],
+      "regressionIds": [
+        "leg-press",
+        "belt-squat",
+        "goblet-squat"
+      ]
+    },
+    "squat": {
+      "alternativeIds": [
+        "hack-squat",
+        "smith-squat",
+        "leg-press",
+        "belt-squat",
+        "goblet-squat",
+        "leg-curl",
+        "calf-raise",
+        "seated-calf-raise"
+      ],
+      "alternativePriorities": {
+        "belt-squat": "acceptable",
+        "calf-raise": "not_recommended",
+        "goblet-squat": "optional",
+        "hack-squat": "priority",
+        "leg-curl": "not_recommended",
+        "leg-press": "acceptable",
+        "seated-calf-raise": "not_recommended",
+        "smith-squat": "priority"
+      },
+      "equivalenceChainId": "squat-pattern",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "hack-squat",
+        "goblet-squat",
+        "leg-press"
+      ]
+    },
+    "standing-calf-raise": {
+      "equivalenceChainId": "calf-raise",
+      "fatigueCost": "low"
+    },
+    "straight-bar-pushdown": {
+      "equivalenceChainId": "triceps-extension",
+      "fatigueCost": "low"
+    },
+    "t-bar-row": {
+      "equivalenceChainId": "horizontal-pull",
+      "fatigueCost": "high",
+      "regressionIds": [
+        "chest-supported-row",
+        "seated-row",
+        "machine-row"
+      ]
+    },
+    "triceps-pushdown": {
+      "alternativeIds": [
+        "straight-bar-pushdown",
+        "overhead-cable-triceps-extension",
+        "skull-crusher",
+        "close-grip-bench",
+        "assisted-dip",
+        "bench-press",
+        "shoulder-press",
+        "cable-fly"
+      ],
+      "alternativePriorities": {
+        "assisted-dip": "compound_fallback",
+        "bench-press": "not_recommended",
+        "cable-fly": "not_recommended",
+        "close-grip-bench": "compound_fallback",
+        "overhead-cable-triceps-extension": "acceptable",
+        "shoulder-press": "not_recommended",
+        "skull-crusher": "optional",
+        "straight-bar-pushdown": "priority"
+      },
+      "equivalenceChainId": "triceps-extension",
+      "fatigueCost": "low"
+    }
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "replacement-engine/knowledge-snapshot-v1"
+  }
+}

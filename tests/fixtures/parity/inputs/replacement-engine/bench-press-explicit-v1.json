@@ -1,0 +1,16 @@
+{
+  "parityMeta": {
+    "id": "replacement-engine/bench-press-explicit-v1",
+    "schemaVersion": 8,
+    "describes": "SR-2 buildReplacementOptions over bench-press — the override's explicit alternativeIds + alternativePriorities path. Exercises the forbiddenBenchReplacementIds filter (triceps-pushdown / shoulder-press / machine-shoulder-press / cable-fly removed), not_recommended pruning, the priority/optional/angle ranks, the bench-press reason branch, and the fatigue-cost labels. No equipment context.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "buildReplacementOptions is clockless (no Date.now / Math.random) → generatedAtPolicy 'none'. engineInput is echoed into the golden so the Swift port re-runs its ported engine on the exact same input."
+  },
+  "exercise": { "id": "bench-press" },
+  "context": {},
+  "validateProbes": ["bench-press", "db-bench-press", "cable-fly"],
+  "syntheticProbes": []
+}

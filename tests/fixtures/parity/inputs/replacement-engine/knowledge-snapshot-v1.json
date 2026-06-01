@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "replacement-engine/knowledge-snapshot-v1",
+    "schemaVersion": 8,
+    "describes": "SR-2 replacement-engine knowledge snapshot — dumps the engine-used EXERCISE_EQUIVALENCE_CHAINS (id + members, keyed by exercise id) and the engine-used subset of every EXERCISE_KNOWLEDGE_OVERRIDES value (fatigueCost / equivalenceChainId / alternativeIds / alternativePriorities / regressionIds / progressionIds). The Swift ReplacementEngineKnowledge tables reconcile every entry item-by-item.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No engine input — generateReplacementEngineKnowledge transcribes the frozen src/data/exerciseLibrary.ts tables. Generated; never hand-edited (parity contract §22)."
+  }
+}

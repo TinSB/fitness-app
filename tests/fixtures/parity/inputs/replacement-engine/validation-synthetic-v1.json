@@ -1,0 +1,38 @@
+{
+  "parityMeta": {
+    "id": "replacement-engine/validation-synthetic-v1",
+    "schemaVersion": 8,
+    "describes": "SR-2 validateReplacementExerciseId + isSyntheticReplacementExerciseId probe coverage. validateProbes cover valid display ids, an override id, unknown ids, empty / whitespace, and synthetic ids (which validation rejects). syntheticProbes cover the /__(?:auto_)?alt(?:_|$)/ regex boundaries: __alt_ / trailing __alt / __auto_alt_ / trailing __auto_alt match; bare 'alt', non-boundary __altx, and plain ids do not. Also runs buildReplacementOptions over lat-pulldown (no equipment) for a baseline option list.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "8a99c21909eebbe9dbc9954449f89a58f1f3d418",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Both functions are clockless and pure → generatedAtPolicy 'none'."
+  },
+  "exercise": { "id": "lat-pulldown" },
+  "context": {},
+  "validateProbes": [
+    "bench-press",
+    "squat",
+    "leg-extension",
+    "deadlift",
+    "totally-unknown",
+    "",
+    "   ",
+    "  squat  ",
+    "foo__alt_1",
+    "bar__auto_alt_2",
+    "bench-press__alt_3"
+  ],
+  "syntheticProbes": [
+    "x__alt_1",
+    "x__alt",
+    "x__auto_alt_1",
+    "x__auto_alt",
+    "bench-press",
+    "",
+    "altitude",
+    "foo__altx",
+    "a__alt_b"
+  ]
+}

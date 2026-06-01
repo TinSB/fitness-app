@@ -54,6 +54,15 @@ const FIXTURE_IDS = [
   // library tables + the EXERCISE_KNOWLEDGE_OVERRIDES key set for the Swift port
   // to reconcile item-by-item. Generated; never hand-edited (§22).
   'exercise-library/library-snapshot-v1',
+  // SR-2 replacement-engine port — 1 knowledge snapshot (the engine-used
+  // equivalence-chain + override subset, reconciled item-by-item) + 4 OUTPUT
+  // fixtures pinning buildReplacementOptions / validateReplacementExerciseId /
+  // isSyntheticReplacementExerciseId. Generated; never hand-edited (§22).
+  'replacement-engine/knowledge-snapshot-v1',
+  'replacement-engine/bench-press-explicit-v1',
+  'replacement-engine/lat-pulldown-equipment-v1',
+  'replacement-engine/hack-squat-chain-v1',
+  'replacement-engine/validation-synthetic-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -255,7 +264,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 4 SR-0 smart-replacement + 1 SR-1 exercise-library)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {
