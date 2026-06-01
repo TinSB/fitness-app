@@ -76,14 +76,32 @@ public struct JSONFileAppDataStore: AppDataStore {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw AppDataStoreError.backupFailed("no source file at \(url.path)")
         }
+        // Millisecond-precision ISO-8601 stamp (`:` → `-` for a filesystem-safe,
+        // lexically-sortable name). Fractional seconds keep the common case of
+        // rapid successive sanctioned writes landing on DISTINCT names; the
+        // existence probe below is the hard backstop for the residual collision
+        // the clock's finite resolution can still produce (two writes resolving
+        // to the same instant). Together they remove the same-second false
+        // `.backupFailed` SR-4 surfaced — without weakening backup-before-overwrite,
+        // atomicity, or honest failure.
         let stampFormatter = ISO8601DateFormatter()
-        stampFormatter.formatOptions = [.withInternetDateTime]
+        stampFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let stamp = stampFormatter
             .string(from: Date())
             .replacingOccurrences(of: ":", with: "-")
-        let backupURL = url
-            .deletingLastPathComponent()
-            .appendingPathComponent("\(url.lastPathComponent).backup-\(stamp)", isDirectory: false)
+        let directory = url.deletingLastPathComponent()
+        let base = "\(url.lastPathComponent).backup-\(stamp)"
+        // Probe for the first free sibling, appending a monotonic `-N` suffix when
+        // a same-instant backup already exists, so the destination is ALWAYS unique.
+        // This is a uniqueness backstop only: a GENUINE copy failure (unwritable
+        // directory, etc.) still surfaces honestly as `.backupFailed` below — the
+        // probe never invents a free name that copyItem then fails to write.
+        var backupURL = directory.appendingPathComponent(base, isDirectory: false)
+        var disambiguator = 2
+        while FileManager.default.fileExists(atPath: backupURL.path) {
+            backupURL = directory.appendingPathComponent("\(base)-\(disambiguator)", isDirectory: false)
+            disambiguator += 1
+        }
         do {
             try FileManager.default.copyItem(at: url, to: backupURL)
             return backupURL
