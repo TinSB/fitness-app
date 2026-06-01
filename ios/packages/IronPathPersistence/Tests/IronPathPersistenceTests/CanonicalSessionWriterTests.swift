@@ -614,4 +614,154 @@ final class CanonicalSessionWriterTests: XCTestCase {
         XCTAssertEqual(loaded.userProfile.weightKg?.doubleValue ?? -1, 58.5, accuracy: 1e-9)
         XCTAssertEqual(loaded.healthMetricSamples.count, 0, "a profile edit never creates health samples")
     }
+
+    // MARK: - EDIT-2: display-unit preference edit (SAME gated path, sanctioned MUTATION)
+
+    func testUpdateUnitSettingsFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateUnitSettings(displayUnit: .lb) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1)
+        XCTAssertEqual(store.stored?.unitSettings.displayUnit, .lb)
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testUpdateUnitSettingsSecondWriteBacksUpBeforeSaving() throws {
+        let seed = AppData.emptyCurrent().withUpdatedUnitSettings(UnitSettings(weightUnit: .kg, displayUnit: .kg))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.updateUnitSettings(displayUnit: .lb) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1)
+        // The edit replaced the display preference in place…
+        XCTAssertEqual(store.stored?.unitSettings.displayUnit, .lb)
+        // …and weightUnit (the non-edited typed field) survived.
+        XCTAssertEqual(store.stored?.unitSettings.weightUnit, .kg)
+    }
+
+    func testUpdateUnitSettingsValidationRejectionWritesNothing() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent().withUpdatedUnitSettings(UnitSettings(displayUnit: .kg)))
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateUnitSettings(displayUnit: .lb) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The prior preference is untouched — a rejected edit never lands.
+        XCTAssertEqual(store.stored?.unitSettings.displayUnit, .kg)
+    }
+
+    func testUpdateUnitSettingsGateReceivesCandidateWithEditApplied() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenUnit: WeightUnit?
+        _ = try writer.updateUnitSettings(displayUnit: .lb) { candidate in
+            seenUnit = candidate.unitSettings.displayUnit
+            return true
+        }
+        XCTAssertEqual(seenUnit, .lb, "the gate must see the candidate with the display unit already applied")
+    }
+
+    func testUpdateUnitSettingsUnreadableExistingDocumentIsNeverOverwritten() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateUnitSettings(displayUnit: .lb) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testUpdateUnitSettingsBackupFailureStopsBeforeSave() {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent().withUpdatedUnitSettings(UnitSettings(displayUnit: .kg)))
+        store.backupError = AppDataStoreError.backupFailed("disk full")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateUnitSettings(displayUnit: .lb) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.backupFailed = error else {
+                return XCTFail("expected .backupFailed, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "a failed backup must abort before any overwrite")
+    }
+
+    func testUpdateUnitSettingsSaveFailurePropagatesHonestly() {
+        let store = FakeAppDataStore()   // first write, no backup
+        store.saveError = AppDataStoreError.writeFailed("io error")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.updateUnitSettings(displayUnit: .lb) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.saveFailed = error else {
+                return XCTFail("expected .saveFailed, got \(error)")
+            }
+        }
+    }
+
+    func testUpdateUnitSettingsPreservesWeightUnitOpenBagAndOtherKeysThroughGatedWrite() throws {
+        // Seed a document whose unitSettings carry weightUnit + an unknown unit key,
+        // plus a profile, history, and a top-level unknown.
+        let json = """
+        {"schemaVersion":8,\
+        "unitSettings":{"displayUnit":"kg","weightUnit":"kg","lengthUnit":"cm"},\
+        "userProfile":{"id":"u1","name":"老王","weightKg":80},\
+        "history":[{"id":"old","completed":true}],\
+        "futureUnknownKey":{"nested":[1,2,3]}}
+        """
+        let seed = try AppData(decoding: Data(json.utf8))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        _ = try writer.updateUnitSettings(displayUnit: .lb) { _ in true }
+
+        let stored = try XCTUnwrap(store.stored)
+        XCTAssertEqual(stored.unitSettings.displayUnit, .lb)
+        // weightUnit + the unit-level open bag survive — proves the candidate builder
+        // reads the on-disk unit settings (not a passed-in stripped value).
+        XCTAssertEqual(stored.unitSettings.weightUnit, .kg, "weightUnit preserved across the unit edit")
+        let canonical = try stored.canonicalJSONString()
+        XCTAssertTrue(canonical.contains("\"lengthUnit\":\"cm\""), "unit open-bag lost: \(canonical)")
+        XCTAssertTrue(canonical.contains("futureUnknownKey"), "top-level unknown lost")
+        // Stored weight (kg) numerically unchanged — a display edit never coerces.
+        XCTAssertEqual(stored.userProfile.weightKg?.doubleValue ?? -1, 80, accuracy: 1e-9)
+        XCTAssertEqual(stored.history.count, 1)
+        XCTAssertEqual(stored.history.first?.id, "old")
+        XCTAssertEqual(stored.schemaVersion, .current, "edit must not bump schema")
+    }
+
+    func testUpdateUnitSettingsRoundTripThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-edit2-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // First write seeds the display preference (no backup).
+        let r1 = try writer.updateUnitSettings(displayUnit: .kg) { _ in true }
+        XCTAssertTrue(r1.createdNewStore)
+        XCTAssertNil(r1.backupURL)
+
+        // Second write flips the preference in place, backing up first.
+        let r2 = try writer.updateUnitSettings(displayUnit: .lb) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "backup file must exist on disk")
+
+        // Reload from disk: the display preference persists across the round trip.
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.unitSettings.displayUnit, .lb)
+    }
 }

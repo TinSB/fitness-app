@@ -21,6 +21,11 @@
 //   • `updateProfile` — an in-place EDIT of the user's `UserProfile` scalar fields
 //     (EDIT-1) → `AppData.userProfile`. A sanctioned MUTATION (not an append): it
 //     rewrites only the `userProfile` key, open-bag/schema/timestamp preserving.
+//   • `updateUnitSettings` — an in-place EDIT of the user's display-unit preference
+//     (kg/lb) (EDIT-2) → `AppData.unitSettings.displayUnit`. A sanctioned MUTATION: it
+//     reads the freshly-loaded on-disk unit settings and rewrites ONLY the
+//     `unitSettings` key's display preference, open-bag/schema/timestamp preserving.
+//     Storage stays kilograms — only the DISPLAY preference is persisted.
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -220,8 +225,40 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// EDIT-2: edit the user's display-unit preference (kg/lb) in place and persist —
+    /// through the SAME sanctioned, DataHealth-gated write path as every entry above
+    /// (§8 rule 4: NOT a second/parallel write path). The candidate builder reads the
+    /// FRESHLY-LOADED on-disk unit settings and rewrites ONLY their `displayUnit` via
+    /// the pure open-bag `AppData.withUpdatedUnitSettings(_:.withDisplayUnit(_:))`, so
+    /// the typed `weightUnit` and every unknown unit key survive verbatim from the
+    /// on-disk truth (open-bag/schema/timestamp preserving). An edit is a sanctioned
+    /// MUTATION, not a restore (§13/§14). The caller supplies the DataHealth gate
+    /// (defensive `buildCleanAppDataView` re-validation before the write commits); a
+    /// rejected candidate is NEVER written (no fake success).
+    ///
+    /// STORAGE STAYS KILOGRAMS (Contract Freeze §8): only the DISPLAY preference is
+    /// persisted — no stored weight value is ever coerced kg↔lb.
+    ///
+    /// - Parameters:
+    ///   - displayUnit: the user's chosen display unit (kg/lb).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func updateUnitSettings(
+        displayUnit: WeightUnit,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { $0.withUpdatedUnitSettings($0.unitSettings.withDisplayUnit(displayUnit)) },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1). `buildCandidate` is the only thing
+    /// point above (append AND edit — EDIT-1/EDIT-2). `buildCandidate` is the only thing
     /// that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned

@@ -258,6 +258,61 @@ final class ProfileRealDataModel: ObservableObject {
         }
     }
 
+    // MARK: - EDIT-2: display-unit preference edit (sanctioned, DataHealth-gated write)
+
+    /// Honest in-RAM status of the most recent display-unit save (§15.4) — SEPARATE
+    /// from `saveStatus` so a unit toggle never surfaces a confirmation in the profile
+    /// edit section. `.idle` until the user explicitly toggles; never a fake success.
+    @Published private(set) var unitSaveStatus: ProfileEditSaveStatus = .idle
+
+    /// The display unit currently persisted in the loaded canonical document — the
+    /// seed/source-of-truth for the toggle: `displayUnit` if set, else the legacy
+    /// `weightUnit`, else kg. Lets the view tell a real user toggle apart from the
+    /// one-time programmatic seed (skip a redundant write) and snap back on failure.
+    var persistedDisplayUnit: WeightUnit {
+        guard case .ready(let data) = state else { return .kg }
+        return data.unitSettings.displayUnit ?? data.unitSettings.weightUnit ?? .kg
+    }
+
+    /// Persist a display-unit preference change through the SAME sanctioned,
+    /// DataHealth-gated write path as every other canonical write (§8): load existing
+    /// → rewrite ONLY `unitSettings.displayUnit` on the on-disk truth (weightUnit +
+    /// open-bag preserved) → defensive `buildCleanAppDataView` re-validation →
+    /// backup-before-overwrite → atomic save → honest fail. STORAGE STAYS KG — only
+    /// the display preference is persisted. NEVER writes on previews/tests (no live
+    /// store). Honest status, no fake success. Returns true iff the edit committed.
+    @discardableResult
+    func saveDisplayUnit(_ newUnit: WeightUnit) -> Bool {
+        guard isLive else { unitSaveStatus = .failed("当前环境不可保存"); return false }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+        guard let store else { unitSaveStatus = .failed("没有可写入的本机存储"); return false }
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.updateUnitSettings(displayUnit: newUnit) { candidate in
+                // Defensive §10 gate: re-encode → re-decode (re-runs the SchemaVersion
+                // guard) → DataHealth clean view; accept ONLY if the chosen display
+                // unit survives AND the unitSettings object is byte-identical pre/post
+                // clean (open-bag intact). No fake success — an invariant-breaking
+                // candidate is never written.
+                guard let bytes = try? candidate.canonicalJSONData(),
+                      let reDecoded = try? AppData(decoding: bytes) else { return false }
+                let cleaned = buildCleanAppDataView(reDecoded)
+                guard cleaned.raw.unitSettings.displayUnit == newUnit else { return false }
+                guard let a = try? cleaned.raw.unitSettings.encoded().canonicalJSONData(),
+                      let b = try? candidate.unitSettings.encoded().canonicalJSONData() else { return false }
+                return a == b
+            }
+            unitSaveStatus = .saved
+            reload()   // refresh every section (and other tabs on next appear) from fresh truth
+            return true
+        } catch {
+            unitSaveStatus = .failed(Self.saveErrorMessage(error))
+            return false
+        }
+    }
+
     private static func saveErrorMessage(_ error: Error) -> String {
         guard let e = error as? CanonicalSessionWriteError else {
             return "保存失败:\(error.localizedDescription)"
@@ -278,9 +333,10 @@ final class ProfileRealDataModel: ObservableObject {
 struct ProfileRootView: View {
     @StateObject private var model: ProfileRealDataModel
 
-    /// Display-unit preference as local UI state ONLY — toggling it never writes
-    /// UnitSettings/AppData (storage stays kg; the UnitSettings contract). Defaults to
-    /// kg and is seeded ONCE from the loaded unit settings on first appear.
+    /// Display-unit preference. Seeded ONCE from the loaded unit settings on first
+    /// appear; a later USER toggle PERSISTS it through the sanctioned, DataHealth-gated
+    /// write (EDIT-2, `model.saveDisplayUnit`) — storage stays kg, only the display
+    /// preference is saved. The one-time seed never writes (no auto-write, §8.3).
     @State private var displayUnit: WeightUnit = .kg
     @State private var didSeedDisplayUnit = false
 
@@ -489,10 +545,24 @@ struct ProfileRootView: View {
                 Text(ProfileDisplay.unitName(.lb)).tag(WeightUnit.lb)
             }
             .pickerStyle(.segmented)
+            // EDIT-2: a USER toggle persists the display preference (explicit action,
+            // never an auto-write — the one-time seed is filtered in persistDisplayUnit).
+            .onChange(of: displayUnit) { _, newUnit in
+                persistDisplayUnit(newUnit)
+            }
+
+            // EDIT-2: honest status of the unit-preference save — no fake success (§15.4).
+            if case .saved = model.unitSaveStatus {
+                Label("已保存", systemImage: "checkmark.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            if case .failed(let message) = model.unitSaveStatus {
+                Text(message).font(.footnote).foregroundStyle(.red)
+            }
         } header: {
             Text("单位")
         } footer: {
-            Text("重量始终以千克存储，此处仅切换显示单位，不会修改任何已保存的数据。")
+            Text("重量始终以千克(kg)存储;切换显示单位会把你的偏好经数据校验保存到本机,重启后保持。")
         }
     }
 
@@ -555,6 +625,18 @@ struct ProfileRootView: View {
         guard !didSeedDisplayUnit, case .ready(let data) = model.state else { return }
         displayUnit = data.unitSettings.displayUnit ?? data.unitSettings.weightUnit ?? .kg
         didSeedDisplayUnit = true
+    }
+
+    /// EDIT-2: persist a display-unit toggle — but ONLY when it is a real user action.
+    /// The one-time programmatic seed (and any pre-seed change) sets `displayUnit` to
+    /// the already-persisted value, so it never triggers a write (no auto-write, §8.3).
+    /// On a failed save the toggle snaps back to the persisted truth (honest, §15.4).
+    private func persistDisplayUnit(_ newUnit: WeightUnit) {
+        guard didSeedDisplayUnit else { return }                    // not seeded yet → ignore
+        guard newUnit != model.persistedDisplayUnit else { return } // seed / no-op → skip
+        if !model.saveDisplayUnit(newUnit) {
+            displayUnit = model.persistedDisplayUnit                // save failed → reflect reality
+        }
     }
 }
 
