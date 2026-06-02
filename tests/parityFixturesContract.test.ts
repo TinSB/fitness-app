@@ -43,6 +43,14 @@ const FIXTURE_IDS = [
   'training-decision/productive-floor-v1',
   'training-decision/no-legacy-advice-v1',
   'training-decision/clean-input-contract-v1',
+  // iOS-17e-0 progression parity scaffold — 3 synthetic fixtures whose history
+  // carries performed sets so the real engine emits its history-driven adaptive
+  // output (progressionMode / weeklyAdjustment). Swift decode-only-pins these;
+  // compute-assert lands as 17e-1~5 port the progression cluster. Generated;
+  // never hand-edited (§22).
+  'training-decision/progressive-overload-v1',
+  'training-decision/plateau-stall-v1',
+  'training-decision/insufficient-history-v1',
   // SR-0 smart-replacement parity scaffold — 4 synthetic fixtures whose
   // generated goldens collectively cover all four SmartReplacementPriority
   // values. Parity pipeline only; the engine port is SR-1+.
@@ -264,7 +272,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

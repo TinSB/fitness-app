@@ -254,10 +254,10 @@ describe('iosTrainingDecisionSwiftEngine — repo hygiene', () => {
     expect(existsSync(repoFile('pnpm-lock.yaml'))).toBe(false);
   });
 
-  // (32b) the 10 training-decision goldens are intact (4B2 changes no fixture).
-  it('iosTrainingDecisionSwiftEngine (32b) training-decision goldens unchanged (10 files)', () => {
+  // (32b) the 13 training-decision goldens are intact (4B2 changes no fixture).
+  it('iosTrainingDecisionSwiftEngine (32b) training-decision goldens unchanged (13 files)', () => {
     const goldens = readdirSync(repoFile('tests/fixtures/parity/golden/training-decision'))
       .filter((f) => f.endsWith('.json'));
-    expect(goldens.length).toBe(10);
+    expect(goldens.length).toBe(13);
   });
 });
