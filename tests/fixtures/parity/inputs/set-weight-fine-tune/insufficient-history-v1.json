@@ -1,0 +1,31 @@
+{
+  "parityMeta": {
+    "id": "set-weight-fine-tune/insufficient-history-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-4 setWeightFineTuneEngine parity — the sparse-history fallbacks. Two in-window push-a/bench-press sessions give only 2 samples (< MIN_SAMPLES 3), so buildSetWeightFineTune returns the most-recent working weight rounded to plate, samplesUsed 2, currentE1rmKg = the last sample's e1RM, projectedE1rmKg null, fallbackReason 'insufficient_history'. A non-matching-exercise probe pins the 0-sample variant (suggestedWeightKg 0, currentE1rmKg null). A targetReps-clamp probe pins clamp(targetReps, repMin, repMax). FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "74b481740484927b1a9891a0608102862eca5269",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "2 samples => < MIN_SAMPLES => sparse branch: last inserted = insufficient-s2 (62.5kg). 0-sample probe via unmatched exerciseId."
+  },
+  "exerciseId": "bench-press",
+  "targetReps": 7,
+  "repMin": 6,
+  "repMax": 8,
+  "sessions": [
+    { "id": "insufficient-s1", "daysAgo": 7, "sets": [{ "weight": 60, "reps": 6 }] },
+    { "id": "insufficient-s2", "daysAgo": 14, "sets": [{ "weight": 62.5, "reps": 6 }] }
+  ],
+  "probes": [
+    {
+      "label": "zero-samples-no-match",
+      "input": { "exerciseId": "no-such-exercise", "targetReps": 7, "repMin": 6, "repMax": 8 }
+    },
+    {
+      "label": "target-reps-clamped-high",
+      "input": { "exerciseId": "bench-press", "targetReps": 99, "repMin": 6, "repMax": 8 }
+    }
+  ]
+}

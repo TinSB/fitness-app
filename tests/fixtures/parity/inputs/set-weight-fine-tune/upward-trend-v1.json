@@ -1,0 +1,34 @@
+{
+  "parityMeta": {
+    "id": "set-weight-fine-tune/upward-trend-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-4 setWeightFineTuneEngine parity — gentle upward e1RM trend WITHIN the projection caps. Five in-window push-a/bench-press sessions (weekIndex 3..7) with linearly rising load (58→62kg x 6 reps) give a positive weekly slope whose projected e1RM stays between currentE1rm*0.95 and currentE1rm*1.04, so neither clamp arm fires and |slope| < currentE1rm*0.1 (fallbackReason undefined). buildSetWeightFineTune returns a 2.5kg-rounded suggestedWeightKg with the full basis. A baseExerciseId probe pins targetIds set-membership via base; a non-matching probe pins the 0-sample path. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "74b481740484927b1a9891a0608102862eca5269",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "asOfDate defaults to deterministicClockIso; sessions anchored inside the 8-week window. Rising load => positive slope; projected within [0.95c, 1.04c] => uncapped; not noisy => fallbackReason undefined."
+  },
+  "exerciseId": "bench-press",
+  "targetReps": 6,
+  "repMin": 6,
+  "repMax": 8,
+  "sessions": [
+    { "id": "up-s5", "daysAgo": 35, "sets": [{ "weight": 58, "reps": 6 }] },
+    { "id": "up-s4", "daysAgo": 28, "sets": [{ "weight": 59, "reps": 6 }] },
+    { "id": "up-s3", "daysAgo": 21, "sets": [{ "weight": 60, "reps": 6 }] },
+    { "id": "up-s2", "daysAgo": 14, "sets": [{ "weight": 61, "reps": 6 }] },
+    { "id": "up-s1", "daysAgo": 7, "sets": [{ "weight": 62, "reps": 6 }] }
+  ],
+  "probes": [
+    {
+      "label": "base-id-membership",
+      "input": { "exerciseId": "not-the-record-id", "baseExerciseId": "bench-press", "targetReps": 7, "repMin": 6, "repMax": 8 }
+    },
+    {
+      "label": "no-match-zero-samples",
+      "input": { "exerciseId": "totally-unrelated", "targetReps": 6, "repMin": 6, "repMax": 8 }
+    }
+  ]
+}

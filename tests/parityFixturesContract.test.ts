@@ -98,6 +98,19 @@ const FIXTURE_IDS = [
   'progression-suggestion/backoff-volume-drop-v1',
   'progression-suggestion/backoff-technique-streak-v1',
   'progression-suggestion/top-backoff-compound-v1',
+  // iOS-17e-4 setWeightFineTuneEngine port — 4 OUTPUT fixtures FUNCTION-LEVEL pinning
+  // the ported buildSetWeightFineTune (suggestedWeightKg + basis) over scalar params +
+  // history, with param-only probes. Generated; never hand-edited (§22).
+  'set-weight-fine-tune/upward-trend-v1',
+  'set-weight-fine-tune/downward-capped-v1',
+  'set-weight-fine-tune/noisy-trend-v1',
+  'set-weight-fine-tune/insufficient-history-v1',
+  // iOS-17e-4 loadFeedbackEngine port — 3 OUTPUT fixtures FUNCTION-LEVEL pinning the
+  // ported collectLoadFeedback / buildLoadFeedbackSummary / getLoadFeedbackAdjustment /
+  // upsertLoadFeedback. Generated; never hand-edited (§22).
+  'load-feedback/collect-summary-v1',
+  'load-feedback/adjustment-branches-v1',
+  'load-feedback/upsert-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

@@ -1,0 +1,25 @@
+{
+  "parityMeta": {
+    "id": "set-weight-fine-tune/noisy-trend-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-4 setWeightFineTuneEngine parity — steep e1RM climb tripping the noisy_trend fallback + the median trim + the UPPER projection clamp + the per-set filters. Four in-window push-a/bench-press sessions climb 50→80kg x 6 reps so |weeklySlope| > currentE1rm*0.1 (fallbackReason 'noisy_trend'); the top sample lands outside median*[0.7,1.3] so the trim drops it (effective = trimmed). Two sets in a daysAgo-10 session (rir 5; reps 30) and a daysAgo-400 out-of-window session carry huge loads that MUST be filtered — if any leaked, current/slope would change, so the golden pins the rir>4 / reps-out-of-range / window exclusions. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "74b481740484927b1a9891a0608102862eca5269",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Steep climb => |slope| > 0.1c => noisy_trend; top sample > median*1.3 => trimmed; projected > 1.04c => upper clamp. Excluded: rir 5, reps 30 (daysAgo 10), and out-of-window (daysAgo 400)."
+  },
+  "exerciseId": "bench-press",
+  "targetReps": 6,
+  "repMin": 6,
+  "repMax": 8,
+  "sessions": [
+    { "id": "ns-s4", "daysAgo": 28, "sets": [{ "weight": 50, "reps": 6 }] },
+    { "id": "ns-s3", "daysAgo": 21, "sets": [{ "weight": 60, "reps": 6 }] },
+    { "id": "ns-s2", "daysAgo": 14, "sets": [{ "weight": 70, "reps": 6 }] },
+    { "id": "ns-s1", "daysAgo": 7, "sets": [{ "weight": 80, "reps": 6 }] },
+    { "id": "ns-excl-quality", "daysAgo": 10, "sets": [{ "weight": 300, "reps": 6, "rir": 5 }, { "weight": 300, "reps": 30 }] },
+    { "id": "ns-excl-window", "daysAgo": 400, "sets": [{ "weight": 999, "reps": 6 }] }
+  ]
+}

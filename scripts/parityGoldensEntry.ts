@@ -134,6 +134,22 @@ import {
   buildSetPrescription,
 } from '../src/engines/progressionRulesEngine';
 import { buildSetWeightFineTune } from '../src/engines/setWeightFineTuneEngine';
+// iOS-17e-4 — setWeightFineTuneEngine + loadFeedbackEngine port parity slice.
+// Imports the REAL buildSetWeightFineTune (above) + the loadFeedbackEngine functions
+// so the fine-tune / load-feedback goldens are GENERATED from TS truth, never hand-
+// authored (§22). The Swift ports (SetWeightFineTuneEngine / LoadFeedbackEngine) re-run
+// the ported functions over the SAME echoed engineInput and assert equality function-
+// by-function (suggestedWeightKg + basis; collect/summary/adjustment + upsert array).
+// PURE — every fine-tune fixture passes an explicit asOfDate (= the deterministic
+// clock) so the goldens are byte-deterministic; no write path, no decision-output
+// wiring (that is 17e-5).
+import {
+  collectLoadFeedback,
+  upsertLoadFeedback,
+  buildLoadFeedbackSummary,
+  getLoadFeedbackAdjustment,
+} from '../src/engines/loadFeedbackEngine';
+import type { LoadFeedback, LoadFeedbackValue } from '../src/models/training-model';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -255,6 +271,31 @@ const FIXTURE_IDS = [
   'progression-suggestion/backoff-volume-drop-v1',
   'progression-suggestion/backoff-technique-streak-v1',
   'progression-suggestion/top-backoff-compound-v1',
+  // iOS-17e-4 setWeightFineTuneEngine port — 4 OUTPUT fixtures whose generated goldens
+  // FUNCTION-LEVEL pin the ported setWeightFineTuneEngine: each echoes the engineInput
+  // (scalar fine-tune params + history) and the REAL TS buildSetWeightFineTune output
+  // (suggestedWeightKg + basis: samplesUsed/windowWeeks/currentE1rmKg/projectedE1rmKg/
+  // weeklySlopeKg/fallbackReason), plus param-only probes over the same history. The
+  // Swift SetWeightFineTuneEngine re-runs the ported function on the SAME inputs and
+  // asserts equality. upward-trend (uncapped + non-noisy) / downward-capped (lower
+  // clamp) / noisy-trend (noisy_trend + trim + upper clamp + rir/reps/window filters) /
+  // insufficient-history (< MIN_SAMPLES + 0-sample + clamp). Every fixture passes an
+  // explicit asOfDate so the goldens are byte-deterministic. Generated; never hand-edited (§22).
+  'set-weight-fine-tune/upward-trend-v1',
+  'set-weight-fine-tune/downward-capped-v1',
+  'set-weight-fine-tune/noisy-trend-v1',
+  'set-weight-fine-tune/insufficient-history-v1',
+  // iOS-17e-4 loadFeedbackEngine port — 3 OUTPUT fixtures whose generated goldens
+  // FUNCTION-LEVEL pin the ported loadFeedbackEngine: collect-summary (collectLoadFeedback
+  // ordering/dataFlag filter/exerciseId filter/slice + buildLoadFeedbackSummary counts/
+  // dominant/total + adjustment) / adjustment-branches (getLoadFeedbackAdjustment
+  // conservative + slightly_aggressive + normal-default) / upsert (upsertLoadFeedback
+  // insert/insert-with-note/replace-keep-others-append). The Swift LoadFeedbackEngine
+  // re-runs the ported functions on the SAME inputs and asserts equality. Generated;
+  // never hand-edited (§22).
+  'load-feedback/collect-summary-v1',
+  'load-feedback/adjustment-branches-v1',
+  'load-feedback/upsert-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1375,6 +1416,190 @@ const generateProgression = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// iOS-17e-4 — setWeightFineTuneEngine OUTPUT parity
+//
+// Builds a synthetic, performed-set history via the SAME makeSession fixture helper the
+// iOS-17e-1..3 fixtures use, then runs the REAL buildSetWeightFineTune over an explicit
+// `asOfDate` (= deterministicClockIso — see the import note) and echoes BOTH the
+// engineInput (scalar params + history, verbatim — the Swift port decodes them and
+// re-runs the ported function) AND the computed result (SetWeightFineTuneResult). An
+// optional `probes` array runs param-only variations over the SAME history (different
+// targetReps / repMin / repMax / windowWeeks / baseExerciseId / exerciseId) so the
+// targetIds-membership, window-override, clamp and 0-sample branches are covered without
+// fabricating extra sessions. No decision output is touched. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type FineTuneSessionSpec = {
+  id: string;
+  daysAgo: number;
+  templateId?: string;
+  exerciseId?: string;
+  sets?: Array<{ weight: number; reps: number; rir?: number }>;
+};
+
+type FineTuneScalarInput = {
+  exerciseId?: string;
+  baseExerciseId?: string;
+  targetReps: number;
+  repMin: number;
+  repMax: number;
+  windowWeeks?: number;
+  asOfDate?: string;
+};
+
+const echoFineTuneInput = (i: FineTuneScalarInput) => ({
+  exerciseId: i.exerciseId,
+  baseExerciseId: i.baseExerciseId,
+  targetReps: i.targetReps,
+  repMin: i.repMin,
+  repMax: i.repMax,
+  windowWeeks: i.windowWeeks,
+  asOfDate: i.asOfDate,
+});
+
+const generateSetWeightFineTune = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: set-weight-fine-tune requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const exerciseId: string = input.exerciseId ?? getTemplate('push-a').exercises[0].id;
+  const sessions: FineTuneSessionSpec[] = Array.isArray(input.sessions) ? input.sessions : [];
+
+  const history: TrainingSession[] = sessions.map((s) =>
+    makeSession({
+      id: s.id,
+      date: dateOnlyDaysBefore(nowIso, s.daysAgo),
+      templateId: s.templateId ?? 'push-a',
+      exerciseId: s.exerciseId ?? exerciseId,
+      setSpecs: s.sets ?? [{ weight: 60, reps: 6 }],
+    }) as TrainingSession,
+  );
+
+  const baseScalar: FineTuneScalarInput = {
+    exerciseId: input.exerciseId ?? exerciseId,
+    baseExerciseId: input.baseExerciseId,
+    targetReps: number(input.targetReps),
+    repMin: number(input.repMin),
+    repMax: number(input.repMax),
+    windowWeeks: input.windowWeeks,
+    asOfDate: input.asOfDate ?? nowIso,
+  };
+  const result = buildSetWeightFineTune({ history, ...baseScalar });
+
+  const probes = (Array.isArray(input.probes) ? input.probes : []).map(
+    (p: { label?: string; input: Partial<FineTuneScalarInput> }) => {
+      const scalar: FineTuneScalarInput = { ...baseScalar, ...p.input };
+      // asOfDate defaults to the base (deterministic clock) unless the probe overrides it.
+      scalar.asOfDate = p.input.asOfDate ?? baseScalar.asOfDate;
+      return {
+        label: p.label ?? null,
+        input: echoFineTuneInput(scalar),
+        result: buildSetWeightFineTune({ history, ...scalar }),
+      };
+    },
+  );
+
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: { input: echoFineTuneInput(baseScalar), history },
+    result,
+    probes,
+  };
+};
+
+// ---------------------------------------------------------------------------
+// iOS-17e-4 — loadFeedbackEngine OUTPUT parity
+//
+// Builds a synthetic history via makeSession and attaches per-session `loadFeedback`
+// arrays (+ optional `dataFlag`) the way the e1rm generator attaches dataFlag, then runs
+// the REAL collectLoadFeedback / buildLoadFeedbackSummary / getLoadFeedbackAdjustment per
+// `probes[].exerciseId`, and upsertLoadFeedback per `upsertProbes[]`. Echoes the
+// engineInput history verbatim (the Swift port decodes the SAME sessions — loadFeedback /
+// dataFlag ride in the `_unknown` open bag) + every computed output. No decision output
+// is touched. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type LoadFeedbackSessionSpec = {
+  id: string;
+  daysAgo: number;
+  dataFlag?: string;
+  loadFeedback?: Array<{ exerciseId: string; feedback: LoadFeedbackValue; note?: string }>;
+};
+
+const generateLoadFeedback = (input: any, meta: ParityMeta) => {
+  const sessions: LoadFeedbackSessionSpec[] = Array.isArray(input.sessions) ? input.sessions : [];
+  if (sessions.length > 0 && !meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: load-feedback history fixtures require deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso ?? '';
+  const defaultExerciseId = getTemplate('push-a').exercises[0].id;
+
+  const history: TrainingSession[] = sessions.map((s) => {
+    const date = dateOnlyDaysBefore(nowIso, s.daysAgo);
+    const session = makeSession({
+      id: s.id,
+      date,
+      templateId: 'push-a',
+      exerciseId: defaultExerciseId,
+      setSpecs: [{ weight: 60, reps: 6 }],
+    }) as TrainingSession & Record<string, unknown>;
+    if (s.dataFlag !== undefined) session.dataFlag = s.dataFlag;
+    if (Array.isArray(s.loadFeedback)) {
+      session.loadFeedback = s.loadFeedback.map((f) => ({
+        exerciseId: f.exerciseId,
+        sessionId: s.id,
+        date,
+        feedback: f.feedback,
+        ...(f.note !== undefined ? { note: f.note } : {}),
+      })) as LoadFeedback[];
+    }
+    return session as TrainingSession;
+  });
+
+  const probes = (Array.isArray(input.probes) ? input.probes : []).map(
+    (p: { label?: string; exerciseId?: string }) => ({
+      label: p.label ?? null,
+      exerciseId: p.exerciseId ?? null,
+      collect: collectLoadFeedback(history, p.exerciseId),
+      summary: buildLoadFeedbackSummary(history, p.exerciseId),
+      adjustment: getLoadFeedbackAdjustment(history, p.exerciseId),
+    }),
+  );
+
+  const upsertProbes = (Array.isArray(input.upsertProbes) ? input.upsertProbes : []).map(
+    (p: {
+      label?: string;
+      session: { id: string; date: string; loadFeedback?: LoadFeedback[] };
+      exerciseId: string;
+      feedback: LoadFeedbackValue;
+      note?: string;
+    }) => {
+      const baseSession = {
+        id: p.session.id,
+        date: p.session.date,
+        ...(Array.isArray(p.session.loadFeedback) ? { loadFeedback: p.session.loadFeedback } : {}),
+      } as unknown as TrainingSession;
+      const next = upsertLoadFeedback(baseSession, p.exerciseId, p.feedback, p.note);
+      return {
+        label: p.label ?? null,
+        session: baseSession,
+        exerciseId: p.exerciseId,
+        feedback: p.feedback,
+        note: p.note ?? null,
+        resultLoadFeedback: next.loadFeedback ?? [],
+      };
+    },
+  );
+
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: { history },
+    probes,
+    upsertProbes,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -1420,6 +1645,13 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'progression-suggestion/backoff-volume-drop-v1': generateProgression,
   'progression-suggestion/backoff-technique-streak-v1': generateProgression,
   'progression-suggestion/top-backoff-compound-v1': generateProgression,
+  'set-weight-fine-tune/upward-trend-v1': generateSetWeightFineTune,
+  'set-weight-fine-tune/downward-capped-v1': generateSetWeightFineTune,
+  'set-weight-fine-tune/noisy-trend-v1': generateSetWeightFineTune,
+  'set-weight-fine-tune/insufficient-history-v1': generateSetWeightFineTune,
+  'load-feedback/collect-summary-v1': generateLoadFeedback,
+  'load-feedback/adjustment-branches-v1': generateLoadFeedback,
+  'load-feedback/upsert-v1': generateLoadFeedback,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
