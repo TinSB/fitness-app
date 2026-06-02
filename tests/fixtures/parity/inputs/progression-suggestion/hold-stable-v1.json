@@ -1,0 +1,31 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/hold-stable-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-3 progressionRulesEngine parity — hold (stable). A compound templateExercise (repMin 6 / repMax 8 / sets 3 / startWeight 60) whose recent sessions sit BELOW the rep ceiling (3 sets x 7 reps @ 60kg, rir 2) with no volume drop / no technique issue drives the hold path: shouldAdd false, shouldBackoff false, nextWeight = lastWeight (60), reps = repMax (8), default note '先把 60kg 稳定推进到目标次数上限'. shouldUseTopBackoff true; buildSetPrescription emits the top+backoff prescription. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "sourceNotes": "deterministicClockIso anchored in the PAST => live fineTune window empty (golden-neutral). Sessions NEWEST-FIRST. reps 7 < repMax 8 => not hitTop => hold."
+  },
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 60,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 2.5,
+    "progressionPercent": [5, 10]
+  },
+  "sessions": [
+    { "id": "hold-s-new", "daysAgo": 3, "sets": [{ "weight": 60, "reps": 7 }, { "weight": 60, "reps": 7 }, { "weight": 60, "reps": 7 }] },
+    { "id": "hold-s-prev", "daysAgo": 6, "sets": [{ "weight": 60, "reps": 7 }, { "weight": 60, "reps": 7 }, { "weight": 60, "reps": 7 }] }
+  ]
+}

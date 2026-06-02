@@ -1,0 +1,171 @@
+{
+  "engineInput": {
+    "exercise": {
+      "conservativeTopSet": true,
+      "id": "bench-press",
+      "kind": "isolation",
+      "name": "Synthetic isolation",
+      "progressionPercent": [
+        2,
+        5
+      ],
+      "progressionUnitKg": 1,
+      "repMax": 20,
+      "repMin": 12,
+      "rest": 90,
+      "sets": 3,
+      "startWeight": 10,
+      "targetRir": [
+        1,
+        2
+      ],
+      "targetRirText": "RIR 1-2"
+    },
+    "history": []
+  },
+  "fineTuneNeutrality": {
+    "fallbackReason": "insufficient_history",
+    "samplesUsed": 0
+  },
+  "parityGolden": {
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "progression-suggestion/no-history-baseline-v1"
+  },
+  "setPrescription": {
+    "backoffReps": 12,
+    "backoffWeight": 10,
+    "summary": "10kg x 12-20 x 3 / 保守版",
+    "topReps": 12,
+    "topWeight": 10
+  },
+  "setPrescriptionProbes": [
+    {
+      "exercise": {
+        "adaptiveTopSetFactor": 0.9,
+        "kind": "isolation",
+        "progressionUnitKg": 1,
+        "repMax": 12,
+        "repMin": 8,
+        "sets": 3,
+        "startWeight": 20
+      },
+      "label": "non-topBackoff adaptiveTopSetFactor<1 -> 保守版",
+      "setPrescription": {
+        "backoffReps": 10,
+        "backoffWeight": 18,
+        "summary": "18kg x 8-12 x 3 / 保守版",
+        "topReps": 10,
+        "topWeight": 18
+      },
+      "suggestion": {
+        "reps": 10,
+        "weight": 20
+      }
+    },
+    {
+      "exercise": {
+        "fatigueCost": "high",
+        "kind": "compound",
+        "progressionUnitKg": 2.5,
+        "repMax": 8,
+        "repMin": 6,
+        "sets": 3,
+        "startWeight": 60
+      },
+      "label": "topBackoff fatigueCost=high non-conservative (backoff drop 0.9)",
+      "setPrescription": {
+        "backoffReps": 7,
+        "backoffWeight": 55,
+        "summary": "顶组 60kg x 6；回退 55kg x 2",
+        "topReps": 6,
+        "topWeight": 60
+      },
+      "suggestion": {
+        "reps": 6,
+        "weight": 60
+      }
+    },
+    {
+      "exercise": {
+        "adaptiveBackoffFactor": 0.85,
+        "kind": "compound",
+        "progressionUnitKg": 2.5,
+        "repMax": 8,
+        "repMin": 6,
+        "sets": 3,
+        "startWeight": 60
+      },
+      "label": "topBackoff adaptiveBackoffFactor<0.92 -> 保守版",
+      "setPrescription": {
+        "backoffReps": 7,
+        "backoffWeight": 50,
+        "summary": "顶组 60kg x 6；回退 50kg x 2 / 保守版",
+        "topReps": 6,
+        "topWeight": 60
+      },
+      "suggestion": {
+        "reps": 6,
+        "weight": 60
+      }
+    }
+  ],
+  "shouldUseTopBackoff": false,
+  "sourceFixtureId": "progression-suggestion/no-history-baseline-v1",
+  "suggestion": {
+    "lastSummary": "暂无历史",
+    "note": "先建立基线，今天把第一组做保守一点，停在 RIR 1-2。 12-20 次是目标范围，不代表每组必须做到 20 次；数据不足时先从 12-14 次建立基线。",
+    "reps": 12,
+    "targetSummary": "10kg x 12-20 x 3 / RIR 1-2",
+    "weight": 10
+  },
+  "topBackoffProbes": [
+    {
+      "exercise": {
+        "kind": "compound",
+        "sets": 3,
+        "startWeight": 60
+      },
+      "label": "compound 3 sets 60kg -> true",
+      "shouldUseTopBackoff": true
+    },
+    {
+      "exercise": {
+        "kind": "compound",
+        "sets": 2,
+        "startWeight": 60
+      },
+      "label": "compound 2 sets -> false (sets<3)",
+      "shouldUseTopBackoff": false
+    },
+    {
+      "exercise": {
+        "kind": "machine",
+        "sets": 3,
+        "startWeight": 30
+      },
+      "label": "machine 3 sets 30kg -> true (boundary)",
+      "shouldUseTopBackoff": true
+    },
+    {
+      "exercise": {
+        "kind": "compound",
+        "sets": 3,
+        "startWeight": 25
+      },
+      "label": "compound 3 sets 25kg -> false (startWeight<30)",
+      "shouldUseTopBackoff": false
+    },
+    {
+      "exercise": {
+        "kind": "isolation",
+        "sets": 4,
+        "startWeight": 80
+      },
+      "label": "isolation -> false (kind)",
+      "shouldUseTopBackoff": false
+    }
+  ]
+}

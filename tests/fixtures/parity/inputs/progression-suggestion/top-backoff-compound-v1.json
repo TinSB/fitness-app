@@ -1,0 +1,33 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/top-backoff-compound-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-3 progressionRulesEngine parity — conservative top+backoff. A compound templateExercise (repMin 6 / repMax 8 / sets 3 / startWeight 60 / conservativeTopSet true / fatigueCost 'high') whose two recent sessions both hit the rep ceiling drives the conservativeBias hold: shouldAdd false (conservativeTopSet gates it), nextWeight = lastWeight (60), nextReps = repMin (conservativeBias rep clamp), note '已经打到过一次上限，再稳一练再加重'. shouldUseTopBackoff true; buildSetPrescription emits the CONSERVATIVE high-fatigue top+backoff prescription ('保守版', backoff drop 0.86). FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "sourceNotes": "deterministicClockIso anchored in the PAST => live fineTune window empty (golden-neutral). Sessions NEWEST-FIRST: both hit repMax but conservativeTopSet vetoes shouldAdd => conservative hold; conservativeTopSet+fatigueCost high drive the conservative buildSetPrescription branch."
+  },
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 60,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 2.5,
+    "progressionPercent": [5, 10],
+    "conservativeTopSet": true,
+    "fatigueCost": "high"
+  },
+  "sessions": [
+    { "id": "tb-s-new", "daysAgo": 3, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] },
+    { "id": "tb-s-prev", "daysAgo": 6, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] }
+  ]
+}

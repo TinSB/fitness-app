@@ -1,0 +1,31 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/backoff-volume-drop-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-3 progressionRulesEngine parity — backoff (volume drop). A compound templateExercise (repMin 6 / repMax 8 / sets 3 / startWeight 60 / progressionUnitKg 2.5) whose newest session volume (3x6 @ 60 = 1080) falls below 90% of the previous session (3x8 @ 60 = 1440) drives shouldBackoff via `dropped`: nextWeight = max(unit, lastWeight - increment) = 57.5, reps = repMin, note '最近表现回落'. shouldUseTopBackoff true; buildSetPrescription emits the top+backoff prescription. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "sourceNotes": "deterministicClockIso anchored in the PAST => live fineTune window empty (golden-neutral). Sessions NEWEST-FIRST: newest lower-volume than previous => dropped => backoff."
+  },
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 60,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 2.5,
+    "progressionPercent": [5, 10]
+  },
+  "sessions": [
+    { "id": "vd-s-new", "daysAgo": 3, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+    { "id": "vd-s-prev", "daysAgo": 6, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] }
+  ]
+}
