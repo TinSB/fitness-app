@@ -71,6 +71,15 @@ const FIXTURE_IDS = [
   'replacement-engine/lat-pulldown-equipment-v1',
   'replacement-engine/hack-squat-chain-v1',
   'replacement-engine/validation-synthetic-v1',
+  // iOS-17e-1 per-exercise e1RM port — 5 OUTPUT fixtures FUNCTION-LEVEL pinning the
+  // ported e1rmEngine (buildE1RMProfile / estimateOneRepMaxForExercise per-exercise
+  // estimate + getExerciseRecordPoolId + getE1RMConfidence probes). Generated; never
+  // hand-edited (§22).
+  'e1rm-engine/progressive-overload-v1',
+  'e1rm-engine/plateau-stall-v1',
+  'e1rm-engine/insufficient-history-v1',
+  'e1rm-engine/low-quality-filtered-v1',
+  'e1rm-engine/pool-confidence-probes-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -272,7 +281,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

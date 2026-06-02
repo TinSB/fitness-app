@@ -1,0 +1,17 @@
+{
+  "parityMeta": {
+    "id": "e1rm-engine/insufficient-history-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-1 per-exercise e1RM parity — insufficient-history boundary. ONE completed push-a bench-press session (two sets at 60 kg, reps 6). With < 3 high-quality recent candidates the engine takes the single_recent_low_confidence path: current is forced low-confidence (with the 'data insufficient' note), best falls back to a medium-confidence candidate. Pins the lower boundary of the per-exercise estimate (forced-low current + method='single_recent_low_confidence'). FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "bcbe04772b7689b776c7fd6143d588c2c9b2535f",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (push-a / bench-press). One session daysAgo 2, two sets at 60 kg => 2 recent high-quality candidates (< 3) => stableCurrentValue = min(recentValues), current forced 'low', method 'single_recent_low_confidence'."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [
+    { "id": "ih-e1-s1", "daysAgo": 2, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+  ]
+}

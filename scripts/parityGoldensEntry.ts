@@ -79,6 +79,18 @@ import {
   validateReplacementExerciseId,
   type ReplacementContext,
 } from '../src/engines/replacementEngine';
+// iOS-17e-1 — per-exercise e1RM engine port parity slice. Imports the REAL
+// e1rmEngine functions so the e1rm goldens are GENERATED from TS truth, never
+// hand-authored (§22). The Swift port (E1RMEngine) reproduces the SAME outputs
+// over the SAME echoed engineInput.history / probe inputs — reconciled
+// function-by-function (poolId / estimate / profile / confidence). PURE — no
+// write path, no decision-output wiring (that is 17e-5).
+import {
+  getExerciseRecordPoolId,
+  estimateOneRepMaxForExercise,
+  buildE1RMProfile,
+  getE1RMConfidence,
+} from '../src/engines/e1rmEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -154,6 +166,21 @@ const FIXTURE_IDS = [
   'replacement-engine/lat-pulldown-equipment-v1',
   'replacement-engine/hack-squat-chain-v1',
   'replacement-engine/validation-synthetic-v1',
+  // iOS-17e-1 per-exercise e1RM port — 5 OUTPUT fixtures whose generated goldens
+  // FUNCTION-LEVEL pin the ported e1rmEngine: each echoes the engineInput history
+  // + probe inputs and the REAL TS outputs (buildE1RMProfile / estimateOneRepMaxForExercise
+  // per-exercise estimate + getExerciseRecordPoolId pool-id probes + getE1RMConfidence
+  // probes). The Swift E1RMEngine re-runs the ported functions on the SAME inputs and
+  // asserts equality. progressive-overload (median_recent current + high best) /
+  // plateau-stall (flat trend) / insufficient-history (single_recent low) /
+  // low-quality-filtered (low-confidence branches + filterAnalyticsHistory exclusion of
+  // a test-flagged + a backfilled session) / pool-confidence-probes (all
+  // getExerciseRecordPoolId + getE1RMConfidence branches). Generated; never hand-edited (§22).
+  'e1rm-engine/progressive-overload-v1',
+  'e1rm-engine/plateau-stall-v1',
+  'e1rm-engine/insufficient-history-v1',
+  'e1rm-engine/low-quality-filtered-v1',
+  'e1rm-engine/pool-confidence-probes-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -968,6 +995,94 @@ const generateReplacementEngine = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// iOS-17e-1 — per-exercise e1RM OUTPUT parity
+//
+// Builds a synthetic, performed-set history via the SAME makeSession fixture
+// helper the iOS-4B0/17e-0 decision fixtures use (so the history shape is
+// engine-valid + deterministic from parityMeta.deterministicClockIso), then runs
+// the REAL e1rmEngine over it and echoes BOTH the engineInput (history +
+// exerciseId, verbatim — the Swift port decodes it and re-runs the ported
+// functions) AND the computed outputs:
+//   - profile  = buildE1RMProfile(history, exerciseId)            (E1RMProfile)
+//   - estimate = estimateOneRepMaxForExercise(history, exerciseId)(EstimatedOneRepMax | null)
+//   - poolIdProbes     = getExerciseRecordPoolId(probe.exercise) over arbitrary
+//                        exercise-identity shapes (pool-id + invalid-identity branches)
+//   - confidenceProbes = getE1RMConfidence(sourceSet, recentSets) over crafted
+//                        (low / medium / high) inputs
+// Optional per-session `dataFlag` / `startedAtDaysAgo` exercise the
+// filterAnalyticsHistory exclusion (test/excluded flag + back-filled session).
+// PURE / clockless engine (the clock is only the fixture-date seed) — no decision
+// output is touched. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type E1RMSessionSpec = {
+  id: string;
+  daysAgo: number;
+  templateId?: string;
+  exerciseId?: string;
+  dataFlag?: string;
+  startedAtDaysAgo?: number;
+  sets?: Array<{ weight: number; reps: number; rir?: number; painFlag?: boolean; painArea?: string; painSeverity?: number; techniqueQuality?: 'good' | 'acceptable' | 'poor' }>;
+};
+
+const generateE1RMEngine = (input: any, meta: ParityMeta) => {
+  const exerciseId: string = input.exerciseId ?? getTemplate('push-a').exercises[0].id;
+  const sessions: E1RMSessionSpec[] = Array.isArray(input.sessions) ? input.sessions : [];
+  // History-bearing fixtures derive their session dates from the deterministic
+  // clock; a pure-probe fixture (no sessions) may use generatedAtPolicy 'none'.
+  if (sessions.length > 0 && !meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: e1rm-engine history fixtures require deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso ?? '';
+
+  const history: TrainingSession[] = sessions.map((s) => {
+    const templateId = s.templateId ?? 'push-a';
+    const session = makeSession({
+      id: s.id,
+      date: dateOnlyDaysBefore(nowIso, s.daysAgo),
+      templateId,
+      exerciseId: s.exerciseId ?? exerciseId,
+      setSpecs: s.sets ?? [{ weight: 60, reps: 6 }],
+    }) as TrainingSession & Record<string, unknown>;
+    if (s.dataFlag !== undefined) session.dataFlag = s.dataFlag;
+    if (s.startedAtDaysAgo !== undefined) session.startedAt = isoDaysBefore(nowIso, s.startedAtDaysAgo);
+    return session as TrainingSession;
+  });
+
+  const profile = buildE1RMProfile(history, exerciseId);
+  const estimate = estimateOneRepMaxForExercise(history, exerciseId);
+
+  const poolIdProbes = (Array.isArray(input.poolIdProbes) ? input.poolIdProbes : []).map(
+    (p: { label?: string; exercise: ExercisePrescription }) => ({
+      label: p.label ?? null,
+      exercise: p.exercise,
+      poolId: getExerciseRecordPoolId(p.exercise),
+    }),
+  );
+
+  const confidenceProbes = (Array.isArray(input.confidenceProbes) ? input.confidenceProbes : []).map(
+    (p: { label?: string; sourceSet: any; recentSets?: any[] }) => {
+      const recentSets = Array.isArray(p.recentSets) ? p.recentSets : [];
+      return {
+        label: p.label ?? null,
+        sourceSet: p.sourceSet,
+        recentSets,
+        confidence: getE1RMConfidence(p.sourceSet, recentSets),
+      };
+    },
+  );
+
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: { exerciseId, history },
+    profile,
+    estimate: estimate ?? null,
+    poolIdProbes,
+    confidenceProbes,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -998,6 +1113,11 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'replacement-engine/lat-pulldown-equipment-v1': generateReplacementEngine,
   'replacement-engine/hack-squat-chain-v1': generateReplacementEngine,
   'replacement-engine/validation-synthetic-v1': generateReplacementEngine,
+  'e1rm-engine/progressive-overload-v1': generateE1RMEngine,
+  'e1rm-engine/plateau-stall-v1': generateE1RMEngine,
+  'e1rm-engine/insufficient-history-v1': generateE1RMEngine,
+  'e1rm-engine/low-quality-filtered-v1': generateE1RMEngine,
+  'e1rm-engine/pool-confidence-probes-v1': generateE1RMEngine,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

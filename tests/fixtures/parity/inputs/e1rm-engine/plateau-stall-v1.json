@@ -1,0 +1,21 @@
+{
+  "parityMeta": {
+    "id": "e1rm-engine/plateau-stall-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-1 per-exercise e1RM parity — plateau / flat history. Five completed push-a bench-press sessions at a FLAT top weight (60 kg every session, reps 6, default rir 2). The REAL e1rmEngine still yields a median_recent current and a high-confidence best, but current == best (no upward trend). Direct contrast to progressive-overload-v1: same count/cadence, flat weight. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "bcbe04772b7689b776c7fd6143d588c2c9b2535f",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (push-a / bench-press). Five sessions daysAgo 14/11/8/5/2, flat 60 kg => every e1rm equal => median == min == that value; zero spread => high confidence."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [
+    { "id": "ps-e1-s1", "daysAgo": 14, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+    { "id": "ps-e1-s2", "daysAgo": 11, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+    { "id": "ps-e1-s3", "daysAgo": 8, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+    { "id": "ps-e1-s4", "daysAgo": 5, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+    { "id": "ps-e1-s5", "daysAgo": 2, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] }
+  ]
+}

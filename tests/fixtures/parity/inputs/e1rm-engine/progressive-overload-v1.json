@@ -1,0 +1,21 @@
+{
+  "parityMeta": {
+    "id": "e1rm-engine/progressive-overload-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-1 per-exercise e1RM parity — progressive-overload history. Five completed push-a bench-press sessions log a strictly rising top weight (60→62.5→65→67.5→70 kg, reps 6, default rir 2, acceptable technique), spaced 3 days. The REAL e1rmEngine yields buildE1RMProfile.current via the median_recent path (>=3 high-quality recent candidates) and a high-confidence best (low intra-recent spread). Pins the rising-trend current+best+high-confidence branch of the per-exercise estimate. FUNCTION-LEVEL compute-assert on the Swift side (E1RMEngine re-runs the ported functions on the echoed engineInput.history).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "bcbe04772b7689b776c7fd6143d588c2c9b2535f",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history built via makeSession (push-a / bench-press). Five sessions daysAgo 14/11/8/5/2, two sets each at the same rising top weight. e1rm per set = roundToHalfKg(epley(w,6)); median of the recent five => stable current; low spread => high best."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [
+    { "id": "po-e1-s1", "daysAgo": 14, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+    { "id": "po-e1-s2", "daysAgo": 11, "sets": [{ "weight": 62.5, "reps": 6 }, { "weight": 62.5, "reps": 6 }] },
+    { "id": "po-e1-s3", "daysAgo": 8, "sets": [{ "weight": 65, "reps": 6 }, { "weight": 65, "reps": 6 }] },
+    { "id": "po-e1-s4", "daysAgo": 5, "sets": [{ "weight": 67.5, "reps": 6 }, { "weight": 67.5, "reps": 6 }] },
+    { "id": "po-e1-s5", "daysAgo": 2, "sets": [{ "weight": 70, "reps": 6 }, { "weight": 70, "reps": 6 }] }
+  ]
+}

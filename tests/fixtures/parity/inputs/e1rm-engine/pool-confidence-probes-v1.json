@@ -1,0 +1,40 @@
+{
+  "parityMeta": {
+    "id": "e1rm-engine/pool-confidence-probes-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-1 per-exercise e1RM parity — pure function probes (no history). poolIdProbes exercise EVERY getExerciseRecordPoolId branch: plain base, actual-wins, replacement-wins, canonical-wins, replacedFrom-uses-id, and the four invalid-identity paths (identityInvalid flag / legacy id / synthetic __alt id / unknown actual id) that return ''. confidenceProbes exercise EVERY getE1RMConfidence outcome: low (poor technique / pain / reps>12 / rir>=4), medium (too few stable recents), high (>=3 stable recents, low spread). With no sessions the profile is empty and estimate is null (the empty-history branch). FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "bcbe04772b7689b776c7fd6143d588c2c9b2535f",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Clockless — getExerciseRecordPoolId / getE1RMConfidence read only their direct arguments (no dates, no history). The probe inputs are echoed verbatim into the golden alongside the REAL TS verdicts; the Swift E1RMEngine re-runs the ported functions and asserts equality."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [],
+  "poolIdProbes": [
+    { "label": "plain-base", "exercise": { "id": "bench-press", "baseId": "bench-press" } },
+    { "label": "actual-wins", "exercise": { "id": "bench-press", "baseId": "bench-press", "actualExerciseId": "incline-db-press" } },
+    { "label": "replacement-wins", "exercise": { "id": "bench-press", "baseId": "bench-press", "replacementExerciseId": "machine-chest-press" } },
+    { "label": "canonical-wins", "exercise": { "id": "session-ex-1", "canonicalExerciseId": "cable-fly" } },
+    { "label": "replacedFrom-uses-id", "exercise": { "id": "bench-press", "baseId": "incline-db-press", "replacedFromId": "incline-db-press" } },
+    { "label": "invalid-identity-flag", "exercise": { "id": "bench-press", "baseId": "bench-press", "identityInvalid": true } },
+    { "label": "invalid-legacy-actual", "exercise": { "id": "bench-press", "baseId": "bench-press", "legacyActualExerciseId": "incline-db-press" } },
+    { "label": "invalid-synthetic-id", "exercise": { "id": "bench-press__alt_1", "baseId": "bench-press" } },
+    { "label": "invalid-unknown-actual", "exercise": { "id": "bench-press", "baseId": "bench-press", "actualExerciseId": "totally-unknown-exercise" } }
+  ],
+  "confidenceProbes": [
+    { "label": "low-poor-technique", "sourceSet": { "reps": 6, "rir": 2, "techniqueQuality": "poor", "painFlag": false }, "recentSets": [] },
+    { "label": "low-pain-flag", "sourceSet": { "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": true }, "recentSets": [] },
+    { "label": "low-high-reps", "sourceSet": { "reps": 15, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false }, "recentSets": [] },
+    { "label": "low-high-rir", "sourceSet": { "reps": 6, "rir": 5, "techniqueQuality": "acceptable", "painFlag": false }, "recentSets": [] },
+    { "label": "medium-few-stable", "sourceSet": { "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false }, "recentSets": [
+      { "weightKg": 60, "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false },
+      { "weightKg": 60, "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false }
+    ] },
+    { "label": "high-stable-low-spread", "sourceSet": { "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false }, "recentSets": [
+      { "weightKg": 60, "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false },
+      { "weightKg": 60, "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false },
+      { "weightKg": 62, "reps": 6, "rir": 2, "techniqueQuality": "acceptable", "painFlag": false }
+    ] }
+  ]
+}
