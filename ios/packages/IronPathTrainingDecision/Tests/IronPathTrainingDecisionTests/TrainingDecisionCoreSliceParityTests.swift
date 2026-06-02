@@ -215,6 +215,29 @@ final class TrainingDecisionCoreSliceParityTests: XCTestCase {
         XCTAssertEqual(slice(for: "severe-rest-v1").progressionMode, .pullBack)
     }
 
+    // MARK: - 3c'. weeklyAdjustment parity (NEW in iOS-17e-5 — weekly projection wired)
+
+    func test_weeklyAdjustment_matches_goldens_on_all_9_expanded_fixtures() throws {
+        for id in TrainingDecisionGoldens.expandedIds {
+            let golden = try TrainingDecisionGoldens.decode(id)
+            let goldenWA = try XCTUnwrap(golden.weeklyAdjustment, "\(id): expanded golden must carry weeklyAdjustment")
+            let computed = slice(for: id).weeklyAdjustment
+            XCTAssertEqual(computed.direction, goldenWA.direction, "\(id) weeklyAdjustment.direction")
+            XCTAssertEqual(computed.magnitudePct, goldenWA.magnitudePct, "\(id) weeklyAdjustment.magnitudePct")
+            XCTAssertEqual(computed.blockedBy, goldenWA.blockedBy, "\(id) weeklyAdjustment.blockedBy")
+            XCTAssertEqual(computed.appliesFromIsoDate, goldenWA.appliesFromIsoDate, "\(id) weeklyAdjustment.appliesFromIsoDate")
+        }
+        // The four distinct weekly outcomes the cold-start goldens encode:
+        // severe/explicit-deload -> decrease(5); reentry/reload -> hold(0) blocked;
+        // a plain normal session with no rising trend -> hold(0) unblocked.
+        XCTAssertEqual(slice(for: "severe-rest-v1").weeklyAdjustment.direction, "decrease")
+        XCTAssertEqual(slice(for: "deload-week-v1").weeklyAdjustment.direction, "decrease")
+        XCTAssertEqual(slice(for: "controlled-reload-v1").weeklyAdjustment.blockedBy, "severe-signal-required")
+        XCTAssertEqual(slice(for: "productive-floor-v1").weeklyAdjustment.blockedBy, "reentry-floor")
+        XCTAssertEqual(slice(for: "clean-input-contract-v1").weeklyAdjustment.direction, "hold")
+        XCTAssertNil(slice(for: "clean-input-contract-v1").weeklyAdjustment.blockedBy)
+    }
+
     // MARK: - 3d. perExercise / allTargetSets / exerciseRoleFloors parity (NEW in iOS-4B5)
 
     func test_perExercise_matches_goldens_on_all_9_expanded_fixtures() throws {

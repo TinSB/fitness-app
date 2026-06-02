@@ -28,6 +28,21 @@ enum TrainingDecisionGoldens {
     /// The 9 expanded-projection ids (everything except the narrow baseline).
     static let expandedIds: [String] = allIds.filter { $0 != "normal-session-v1" }
 
+    /// iOS-17e-5 — the 3 history-driven progression goldens, now COMPUTE-ASSERTED
+    /// (flipped from 17e-0's decode-only scaffold). Kept as a SEPARATE compute-assert
+    /// roster rather than folded into `allIds`/`expandedIds`: those drive the
+    /// cold-start parity/decode suites (zero-history fixtures whose synthetic inputs
+    /// are declared per-id), and polluting them would (a) break the cold-start tests'
+    /// per-id input force-unwrap and (b) put adaptive-history fixtures through
+    /// cold-start-shaped assertions. The cold-start goldens stay byte-identical and
+    /// their tests stay 10/9 — zero drift. These 3 are compute-asserted in
+    /// TrainingDecisionProgressionGoldenParityTests against their own synthetic inputs.
+    static let progressionIds: [String] = [
+        "progressive-overload-v1",
+        "plateau-stall-v1",
+        "insufficient-history-v1",
+    ]
+
     /// Repo root, resolved from this test file's compile-time path.
     static var repoRoot: URL {
         URL(fileURLWithPath: #filePath)

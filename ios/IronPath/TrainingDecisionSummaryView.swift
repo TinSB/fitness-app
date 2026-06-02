@@ -2,10 +2,12 @@
 //
 // Status card rendering the core-slice top-level fields the task requires:
 //   activePhase / sessionIntent / volumeMode / intensityMode / progressionMode
-//   / finalVolumeMultiplier.
+//   / finalVolumeMultiplier / weeklyAdjustment.
 //
 // Pure presentation. The slice is computed once upstream — this view never
-// triggers an engine call.
+// triggers an engine call. iOS-17e-5: progressionMode is now history-driven and the
+// weeklyAdjustment row reflects the adaptive weekly recommendation the engine derives
+// from recorded performed sets (read-only mirror of engine output; no source-of-truth write).
 
 import SwiftUI
 import IronPathTrainingDecision
@@ -29,6 +31,7 @@ struct TrainingDecisionSummaryView: View {
                     value: String(format: "%.2f", slice.finalVolumeMultiplier),
                     sub: "finalVolumeMultiplier"
                 )
+                row("周调整", value: weeklyAdjustmentText, sub: "weeklyAdjustment")
             }
         }
         .padding(14)
@@ -37,6 +40,14 @@ struct TrainingDecisionSummaryView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemBackground))
         )
+    }
+
+    /// Read-only projection of the engine's weeklyAdjustment (direction + magnitude).
+    /// e.g. "increase +5%" / "hold". Mirrors the slice; computes nothing.
+    private var weeklyAdjustmentText: String {
+        let direction = slice.weeklyAdjustment.direction ?? "—"
+        let pct = slice.weeklyAdjustment.magnitudePct ?? 0
+        return pct > 0 ? "\(direction) +\(Int(pct))%" : direction
     }
 
     @ViewBuilder

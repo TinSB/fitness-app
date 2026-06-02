@@ -114,4 +114,52 @@ enum TrainingDecisionModes {
     private static func fmt2(_ value: Double) -> String {
         String(format: "%.2f", value)
     }
+
+    // MARK: - iOS-17e-5 weekly progression projection
+
+    /// weeklyDirection + weeklyBlockReasons + the weeklyAdjustment projection.
+    struct WeeklyAdjustmentResult: Equatable {
+        let adjustment: WeeklyAdjustment
+        /// `weeklyBlockReasons` (trainingDecisionEngine.ts:1985) — drives blockedBy and
+        /// (in the full engine) the AR-4-weekly-blocked-by-phase trace code.
+        let blockReasons: [String]
+    }
+
+    /// weeklyDirection (trainingDecisionEngine.ts:1985-1995) folded into the
+    /// weeklyAdjustment object (line 2079-2087). Branch ORDER is contractual:
+    /// severe/explicit-deload wins (decrease), then a reentry/reload/deload phase
+    /// holds + blocks, then a rising e1RM trend increases, else hold. magnitudePct is
+    /// 5 unless holding (0); blockedBy is null unless a block reason was recorded, in
+    /// which case reentry-productive -> 'reentry-floor' else 'severe-signal-required'.
+    /// `nowIso` supplies appliesFromIsoDate via nowIso.slice(0,10) (the engine's
+    /// referenceDate fallback to "" when absent). PURE.
+    static func buildWeeklyAdjustment(
+        intent: SessionIntent,
+        severeFlag: Bool,
+        explicitDeloadAssigned: Bool,
+        e1rmTrendUp: Bool,
+        nowIso: String?
+    ) -> WeeklyAdjustmentResult {
+        var blockReasons: [String] = []
+        var direction = "hold"
+        if severeFlag || explicitDeloadAssigned {
+            direction = "decrease"
+        } else if intent == .reentryProductive || intent == .controlledReload || intent == .deloadWeek {
+            direction = "hold"
+            blockReasons.append("reentry-or-reload-no-additional-cut")
+        } else if e1rmTrendUp {
+            direction = "increase"
+        }
+
+        let blockedBy: String? = blockReasons.isEmpty
+            ? nil
+            : (intent == .reentryProductive ? "reentry-floor" : "severe-signal-required")
+        let adjustment = WeeklyAdjustment(
+            direction: direction,
+            magnitudePct: direction == "hold" ? 0 : 5,
+            blockedBy: blockedBy,
+            appliesFromIsoDate: nowIso.map { String($0.prefix(10)) } ?? ""
+        )
+        return WeeklyAdjustmentResult(adjustment: adjustment, blockReasons: blockReasons)
+    }
 }

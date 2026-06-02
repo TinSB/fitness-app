@@ -90,6 +90,17 @@ public struct WeeklyAdjustment: Equatable, Sendable {
         self.blockedBy = obj.optionalString("blockedBy")
         self.appliesFromIsoDate = obj.optionalString("appliesFromIsoDate")
     }
+
+    /// Compute-side memberwise init (iOS-17e-5) — lets the core slice MINT the
+    /// weeklyAdjustment the engine projects (trainingDecisionEngine.ts:2079-2087)
+    /// using the SAME shape the goldens decode into, so compute-vs-golden parity
+    /// compares one type. No JSON involved.
+    public init(direction: String?, magnitudePct: Double?, blockedBy: String?, appliesFromIsoDate: String?) {
+        self.direction = direction
+        self.magnitudePct = magnitudePct
+        self.blockedBy = blockedBy
+        self.appliesFromIsoDate = appliesFromIsoDate
+    }
 }
 
 /// `cleanInput.diagnostics` — the Clean Input Contract evidence.
