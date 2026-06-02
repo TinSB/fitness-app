@@ -1,0 +1,204 @@
+{
+  "confidenceProbes": [
+    {
+      "confidence": "low",
+      "label": "low-poor-technique",
+      "recentSets": [],
+      "sourceSet": {
+        "painFlag": false,
+        "reps": 6,
+        "rir": 2,
+        "techniqueQuality": "poor"
+      }
+    },
+    {
+      "confidence": "low",
+      "label": "low-pain-flag",
+      "recentSets": [],
+      "sourceSet": {
+        "painFlag": true,
+        "reps": 6,
+        "rir": 2,
+        "techniqueQuality": "acceptable"
+      }
+    },
+    {
+      "confidence": "low",
+      "label": "low-high-reps",
+      "recentSets": [],
+      "sourceSet": {
+        "painFlag": false,
+        "reps": 15,
+        "rir": 2,
+        "techniqueQuality": "acceptable"
+      }
+    },
+    {
+      "confidence": "low",
+      "label": "low-high-rir",
+      "recentSets": [],
+      "sourceSet": {
+        "painFlag": false,
+        "reps": 6,
+        "rir": 5,
+        "techniqueQuality": "acceptable"
+      }
+    },
+    {
+      "confidence": "medium",
+      "label": "medium-few-stable",
+      "recentSets": [
+        {
+          "painFlag": false,
+          "reps": 6,
+          "rir": 2,
+          "techniqueQuality": "acceptable",
+          "weightKg": 60
+        },
+        {
+          "painFlag": false,
+          "reps": 6,
+          "rir": 2,
+          "techniqueQuality": "acceptable",
+          "weightKg": 60
+        }
+      ],
+      "sourceSet": {
+        "painFlag": false,
+        "reps": 6,
+        "rir": 2,
+        "techniqueQuality": "acceptable"
+      }
+    },
+    {
+      "confidence": "high",
+      "label": "high-stable-low-spread",
+      "recentSets": [
+        {
+          "painFlag": false,
+          "reps": 6,
+          "rir": 2,
+          "techniqueQuality": "acceptable",
+          "weightKg": 60
+        },
+        {
+          "painFlag": false,
+          "reps": 6,
+          "rir": 2,
+          "techniqueQuality": "acceptable",
+          "weightKg": 60
+        },
+        {
+          "painFlag": false,
+          "reps": 6,
+          "rir": 2,
+          "techniqueQuality": "acceptable",
+          "weightKg": 62
+        }
+      ],
+      "sourceSet": {
+        "painFlag": false,
+        "reps": 6,
+        "rir": 2,
+        "techniqueQuality": "acceptable"
+      }
+    }
+  ],
+  "engineInput": {
+    "exerciseId": "bench-press",
+    "history": []
+  },
+  "estimate": null,
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "bcbe04772b7689b776c7fd6143d588c2c9b2535f",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "e1rm-engine/pool-confidence-probes-v1"
+  },
+  "poolIdProbes": [
+    {
+      "exercise": {
+        "baseId": "bench-press",
+        "id": "bench-press"
+      },
+      "label": "plain-base",
+      "poolId": "bench-press"
+    },
+    {
+      "exercise": {
+        "actualExerciseId": "incline-db-press",
+        "baseId": "bench-press",
+        "id": "bench-press"
+      },
+      "label": "actual-wins",
+      "poolId": "incline-db-press"
+    },
+    {
+      "exercise": {
+        "baseId": "bench-press",
+        "id": "bench-press",
+        "replacementExerciseId": "machine-chest-press"
+      },
+      "label": "replacement-wins",
+      "poolId": "machine-chest-press"
+    },
+    {
+      "exercise": {
+        "canonicalExerciseId": "cable-fly",
+        "id": "session-ex-1"
+      },
+      "label": "canonical-wins",
+      "poolId": "cable-fly"
+    },
+    {
+      "exercise": {
+        "baseId": "incline-db-press",
+        "id": "bench-press",
+        "replacedFromId": "incline-db-press"
+      },
+      "label": "replacedFrom-uses-id",
+      "poolId": "bench-press"
+    },
+    {
+      "exercise": {
+        "baseId": "bench-press",
+        "id": "bench-press",
+        "identityInvalid": true
+      },
+      "label": "invalid-identity-flag",
+      "poolId": ""
+    },
+    {
+      "exercise": {
+        "baseId": "bench-press",
+        "id": "bench-press",
+        "legacyActualExerciseId": "incline-db-press"
+      },
+      "label": "invalid-legacy-actual",
+      "poolId": ""
+    },
+    {
+      "exercise": {
+        "baseId": "bench-press",
+        "id": "bench-press__alt_1"
+      },
+      "label": "invalid-synthetic-id",
+      "poolId": ""
+    },
+    {
+      "exercise": {
+        "actualExerciseId": "totally-unknown-exercise",
+        "baseId": "bench-press",
+        "id": "bench-press"
+      },
+      "label": "invalid-unknown-actual",
+      "poolId": ""
+    }
+  ],
+  "profile": {
+    "exerciseId": "bench-press",
+    "recentValues": []
+  },
+  "sourceFixtureId": "e1rm-engine/pool-confidence-probes-v1"
+}

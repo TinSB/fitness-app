@@ -1,0 +1,22 @@
+{
+  "parityMeta": {
+    "id": "e1rm-engine/low-quality-filtered-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-1 per-exercise e1RM parity — low-confidence branches + filterAnalyticsHistory exclusion. Four completed push-a bench-press sessions each trip a distinct low-confidence signal (poor technique / pain flag / reps>12 / rir>=4), so no recent high-quality candidate survives: current is undefined and best falls back to candidates[0] at low confidence. TWO higher-weight, high-quality sessions are present but MUST be excluded by filterAnalyticsHistory — one dataFlag='test', one back-filled (claimed 40 days ago, actually started today, beyond the 7-day tolerance) — proving the engine ignores both. If the filter were broken these would dominate current/best, so the golden pins the exclusion. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "bcbe04772b7689b776c7fd6143d588c2c9b2535f",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (push-a / bench-press). Low-quality: s1 poor technique, s2 pain, s3 reps 15, s4 rir 5. Excluded: s5 dataFlag 'test' (most recent, w100), s6 back-filled (claimed daysAgo 40, startedAt today). Correct filterAnalyticsHistory drops s5+s6 => current undefined, best = candidates[0] (s1, low)."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [
+    { "id": "lq-e1-test", "daysAgo": 1, "dataFlag": "test", "sets": [{ "weight": 100, "reps": 6 }] },
+    { "id": "lq-e1-s1", "daysAgo": 2, "sets": [{ "weight": 70, "reps": 6, "techniqueQuality": "poor" }] },
+    { "id": "lq-e1-s2", "daysAgo": 5, "sets": [{ "weight": 65, "reps": 6, "painFlag": true, "painArea": "shoulder", "painSeverity": 2 }] },
+    { "id": "lq-e1-s3", "daysAgo": 8, "sets": [{ "weight": 60, "reps": 15 }] },
+    { "id": "lq-e1-s4", "daysAgo": 11, "sets": [{ "weight": 55, "reps": 6, "rir": 5 }] },
+    { "id": "lq-e1-backfill", "daysAgo": 40, "startedAtDaysAgo": 0, "sets": [{ "weight": 120, "reps": 6 }] }
+  ]
+}

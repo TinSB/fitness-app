@@ -184,17 +184,17 @@ describe('iOS-5 shell forbidden imports and runtime bridges', () => {
   });
 });
 
-// ---- 23. No golden fixture changes (parity --check still 27 / 0) ----
+// ---- 23. No golden fixture changes (parity --check still 32 / 0) ----
 
 describe('iOS-5 parity goldens are unchanged', () => {
-  it('iOS-5 parity --check still reports 27 fixtures / 0 changed', () => {
+  it('iOS-5 parity --check still reports 32 fixtures / 0 changed', () => {
     const result = spawnSync(
       process.execPath,
       [repoFile('scripts/generate-parity-goldens.mjs'), '--check'],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+27\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+32\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 240_000);
 });

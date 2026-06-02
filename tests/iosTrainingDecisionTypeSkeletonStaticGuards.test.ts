@@ -181,7 +181,7 @@ describe('iosTrainingDecisionTypeSkeleton — repo hygiene', () => {
     expect(existsSync(repoFile('pnpm-lock.yaml'))).toBe(false);
   });
 
-  // (21) Existing 27 parity fixtures still pass --check (golden ids intact).
+  // (21) Existing 32 parity fixtures still pass --check (golden ids intact).
   it('iosTrainingDecisionTypeSkeleton (21) 17 training+other golden fixtures intact', () => {
     const tdGoldens = readdirSync(repoFile('tests/fixtures/parity/golden/training-decision'))
       .filter((f) => f.endsWith('.json'));
