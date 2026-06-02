@@ -1,0 +1,397 @@
+{
+  "adaptiveState": {
+    "improvingIssues": [],
+    "issueScores": {
+      "breathing_ribcage": 6,
+      "overhead_press_restriction": 3,
+      "scapular_control": 6,
+      "upper_crossed": 3
+    },
+    "lastUpdated": "2026-05-27",
+    "moduleDose": {
+      "breathing_ribcage": "boost",
+      "overhead_press_restriction": "baseline",
+      "scapular_control": "boost",
+      "upper_crossed": "baseline"
+    },
+    "painByExercise": {
+      "shoulder-press": 2
+    },
+    "performanceDrops": []
+  },
+  "engineInput": {
+    "exerciseId": "shoulder-press",
+    "history": [
+      {
+        "completed": true,
+        "date": "2026-05-27",
+        "exercises": [
+          {
+            "alias": "肩推",
+            "alternativeIds": [
+              "machine-shoulder-press",
+              "smith-shoulder-press",
+              "landmine-press",
+              "db-bench-press",
+              "lateral-raise",
+              "triceps-pushdown",
+              "cable-fly"
+            ],
+            "alternativePriorities": {
+              "cable-fly": "not_recommended",
+              "db-bench-press": "optional",
+              "landmine-press": "acceptable",
+              "lateral-raise": "not_recommended",
+              "machine-shoulder-press": "priority",
+              "smith-shoulder-press": "priority",
+              "triceps-pushdown": "not_recommended"
+            },
+            "alternatives": [
+              "器械肩推"
+            ],
+            "baseId": "shoulder-press",
+            "canonicalExerciseId": "shoulder-press",
+            "contraindications": [
+              "overhead_press_restriction",
+              "scapular_control",
+              "breathing_ribcage"
+            ],
+            "equivalence": {
+              "id": "vertical-press",
+              "label": "垂直推链",
+              "members": [
+                "shoulder-press",
+                "machine-shoulder-press",
+                "smith-shoulder-press",
+                "landmine-press"
+              ],
+              "pattern": "垂直推",
+              "primaryMuscle": "肩"
+            },
+            "equivalenceChainId": "vertical-press",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "medium",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": true,
+            "id": "shoulder-press",
+            "kind": "compound",
+            "movementPattern": "垂直推",
+            "muscle": "肩",
+            "muscleContribution": {
+              "手臂": 0.5,
+              "肩": 1,
+              "胸": 0.2
+            },
+            "name": "哑铃肩推",
+            "orderPriority": 2,
+            "primaryMuscles": [
+              "肩"
+            ],
+            "progressionIds": [],
+            "progressionPercent": [
+              2,
+              5
+            ],
+            "progressionUnit": "1kg",
+            "progressionUnitKg": 1,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              6,
+              10
+            ],
+            "recommendedRestSec": [
+              90,
+              120
+            ],
+            "regressionIds": [
+              "machine-shoulder-press"
+            ],
+            "repMax": 10,
+            "repMin": 6,
+            "rest": 120,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "手臂",
+              "胸"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "shoulder-press-1",
+                "note": "",
+                "painArea": "肩",
+                "painFlag": true,
+                "painSeverity": 2,
+                "reps": 8,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 20
+              }
+            ],
+            "skillDemand": "medium",
+            "startWeight": 20,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "上肢",
+        "id": "pa-s1",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "upper",
+        "programTemplateName": "上肢",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "upper",
+        "templateName": "上肢",
+        "trainingMode": "hybrid"
+      },
+      {
+        "completed": true,
+        "date": "2026-05-20",
+        "exercises": [
+          {
+            "alias": "肩推",
+            "alternativeIds": [
+              "machine-shoulder-press",
+              "smith-shoulder-press",
+              "landmine-press",
+              "db-bench-press",
+              "lateral-raise",
+              "triceps-pushdown",
+              "cable-fly"
+            ],
+            "alternativePriorities": {
+              "cable-fly": "not_recommended",
+              "db-bench-press": "optional",
+              "landmine-press": "acceptable",
+              "lateral-raise": "not_recommended",
+              "machine-shoulder-press": "priority",
+              "smith-shoulder-press": "priority",
+              "triceps-pushdown": "not_recommended"
+            },
+            "alternatives": [
+              "器械肩推"
+            ],
+            "baseId": "shoulder-press",
+            "canonicalExerciseId": "shoulder-press",
+            "contraindications": [
+              "overhead_press_restriction",
+              "scapular_control",
+              "breathing_ribcage"
+            ],
+            "equivalence": {
+              "id": "vertical-press",
+              "label": "垂直推链",
+              "members": [
+                "shoulder-press",
+                "machine-shoulder-press",
+                "smith-shoulder-press",
+                "landmine-press"
+              ],
+              "pattern": "垂直推",
+              "primaryMuscle": "肩"
+            },
+            "equivalenceChainId": "vertical-press",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "medium",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": true,
+            "id": "shoulder-press",
+            "kind": "compound",
+            "movementPattern": "垂直推",
+            "muscle": "肩",
+            "muscleContribution": {
+              "手臂": 0.5,
+              "肩": 1,
+              "胸": 0.2
+            },
+            "name": "哑铃肩推",
+            "orderPriority": 2,
+            "primaryMuscles": [
+              "肩"
+            ],
+            "progressionIds": [],
+            "progressionPercent": [
+              2,
+              5
+            ],
+            "progressionUnit": "1kg",
+            "progressionUnitKg": 1,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              6,
+              10
+            ],
+            "recommendedRestSec": [
+              90,
+              120
+            ],
+            "regressionIds": [
+              "machine-shoulder-press"
+            ],
+            "repMax": 10,
+            "repMin": 6,
+            "rest": 120,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "手臂",
+              "胸"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "shoulder-press-1",
+                "note": "刺痛",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 8,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 20
+              }
+            ],
+            "skillDemand": "medium",
+            "startWeight": 20,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "上肢",
+        "id": "pa-s2",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "upper",
+        "programTemplateName": "上肢",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "upper",
+        "templateName": "上肢",
+        "trainingMode": "hybrid"
+      }
+    ],
+    "seedIssueScores": {}
+  },
+  "lastProbes": [
+    {
+      "exerciseId": "shoulder-press",
+      "label": "shoulder-press latest",
+      "snapshot": {
+        "baseId": "shoulder-press",
+        "exerciseId": "shoulder-press",
+        "sessionId": "pa-s1",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 8,
+            "weightKg": 20
+          }
+        ]
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "adaptive-feedback/pain-accumulation-v1"
+  },
+  "previousProbes": [
+    {
+      "exerciseId": "shoulder-press",
+      "label": "no skip == findLast",
+      "skipSessionId": null,
+      "snapshot": {
+        "baseId": "shoulder-press",
+        "exerciseId": "shoulder-press",
+        "sessionId": "pa-s1",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 8,
+            "weightKg": 20
+          }
+        ]
+      }
+    }
+  ],
+  "recentProbes": [
+    {
+      "count": 2,
+      "exerciseId": "shoulder-press",
+      "label": "limit 5 -> only 2 exist",
+      "limit": 5,
+      "snapshots": [
+        {
+          "baseId": "shoulder-press",
+          "exerciseId": "shoulder-press",
+          "sessionId": "pa-s1",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 20
+            }
+          ]
+        },
+        {
+          "baseId": "shoulder-press",
+          "exerciseId": "shoulder-press",
+          "sessionId": "pa-s2",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 20
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sourceFixtureId": "adaptive-feedback/pain-accumulation-v1"
+}

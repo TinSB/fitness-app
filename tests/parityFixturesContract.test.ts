@@ -80,6 +80,14 @@ const FIXTURE_IDS = [
   'e1rm-engine/insufficient-history-v1',
   'e1rm-engine/low-quality-filtered-v1',
   'e1rm-engine/pool-confidence-probes-v1',
+  // iOS-17e-2 adaptiveFeedbackEngine performance-lookup port — 4 OUTPUT fixtures
+  // FUNCTION-LEVEL pinning the ported performance-lookup engine (findLastPerformance /
+  // findPreviousPerformance / findRecentPerformances snapshots + buildAdaptiveState).
+  // Generated; never hand-edited (§22).
+  'adaptive-feedback/performance-drop-v1',
+  'adaptive-feedback/pain-accumulation-v1',
+  'adaptive-feedback/improving-and-seed-v1',
+  'adaptive-feedback/lookup-edge-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -281,7 +289,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

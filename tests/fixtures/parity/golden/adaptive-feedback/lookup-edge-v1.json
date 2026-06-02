@@ -1,0 +1,640 @@
+{
+  "adaptiveState": {
+    "improvingIssues": [],
+    "issueScores": {},
+    "lastUpdated": "2026-05-27",
+    "moduleDose": {},
+    "painByExercise": {},
+    "performanceDrops": []
+  },
+  "engineInput": {
+    "exerciseId": "bench-press",
+    "history": [
+      {
+        "completed": true,
+        "date": "2026-05-27",
+        "exercises": [
+          {
+            "alias": "卧推",
+            "alternativeIds": [
+              "db-bench-press",
+              "machine-chest-press",
+              "push-up",
+              "incline-db-press",
+              "cable-fly",
+              "triceps-pushdown",
+              "shoulder-press",
+              "machine-shoulder-press"
+            ],
+            "alternativePriorities": {
+              "cable-fly": "not_recommended",
+              "db-bench-press": "priority",
+              "incline-db-press": "angle",
+              "machine-chest-press": "priority",
+              "machine-shoulder-press": "not_recommended",
+              "push-up": "optional",
+              "shoulder-press": "not_recommended",
+              "triceps-pushdown": "not_recommended"
+            },
+            "alternatives": [
+              "器械推胸",
+              "哑铃卧推"
+            ],
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "contraindications": [
+              "upper_crossed",
+              "scapular_control",
+              "breathing_ribcage"
+            ],
+            "equivalence": {
+              "id": "horizontal-press",
+              "label": "水平推链",
+              "members": [
+                "bench-press",
+                "machine-chest-press",
+                "db-bench-press",
+                "push-up"
+              ],
+              "pattern": "水平推",
+              "primaryMuscle": "胸"
+            },
+            "equivalenceChainId": "horizontal-press",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "high",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": false,
+            "id": "bench-press",
+            "kind": "compound",
+            "movementPattern": "水平推",
+            "muscle": "胸",
+            "muscleContribution": {
+              "手臂": 0.5,
+              "肩": 0.4,
+              "胸": 1
+            },
+            "name": "平板卧推",
+            "orderPriority": 1,
+            "primaryMuscles": [
+              "胸"
+            ],
+            "progressionIds": [
+              "close-grip-bench"
+            ],
+            "progressionPercent": [
+              5,
+              10
+            ],
+            "progressionUnit": "2.5kg",
+            "progressionUnitKg": 2.5,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              6,
+              8
+            ],
+            "recommendedRestSec": [
+              150,
+              180
+            ],
+            "regressionIds": [
+              "machine-chest-press",
+              "db-bench-press"
+            ],
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "肩",
+              "手臂"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "note": "",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 6,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 60
+              }
+            ],
+            "skillDemand": "high",
+            "startWeight": 60,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "推",
+        "id": "le-s1",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "push-a",
+        "programTemplateName": "推 A",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "trainingMode": "hybrid"
+      },
+      {
+        "completed": true,
+        "date": "2026-05-20",
+        "exercises": [
+          {
+            "alias": "卧推",
+            "alternativeIds": [
+              "db-bench-press",
+              "machine-chest-press",
+              "push-up",
+              "incline-db-press",
+              "cable-fly",
+              "triceps-pushdown",
+              "shoulder-press",
+              "machine-shoulder-press"
+            ],
+            "alternativePriorities": {
+              "cable-fly": "not_recommended",
+              "db-bench-press": "priority",
+              "incline-db-press": "angle",
+              "machine-chest-press": "priority",
+              "machine-shoulder-press": "not_recommended",
+              "push-up": "optional",
+              "shoulder-press": "not_recommended",
+              "triceps-pushdown": "not_recommended"
+            },
+            "alternatives": [
+              "器械推胸",
+              "哑铃卧推"
+            ],
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "contraindications": [
+              "upper_crossed",
+              "scapular_control",
+              "breathing_ribcage"
+            ],
+            "equivalence": {
+              "id": "horizontal-press",
+              "label": "水平推链",
+              "members": [
+                "bench-press",
+                "machine-chest-press",
+                "db-bench-press",
+                "push-up"
+              ],
+              "pattern": "水平推",
+              "primaryMuscle": "胸"
+            },
+            "equivalenceChainId": "horizontal-press",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "high",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": false,
+            "id": "bench-press",
+            "kind": "compound",
+            "movementPattern": "水平推",
+            "muscle": "胸",
+            "muscleContribution": {
+              "手臂": 0.5,
+              "肩": 0.4,
+              "胸": 1
+            },
+            "name": "平板卧推",
+            "orderPriority": 1,
+            "primaryMuscles": [
+              "胸"
+            ],
+            "progressionIds": [
+              "close-grip-bench"
+            ],
+            "progressionPercent": [
+              5,
+              10
+            ],
+            "progressionUnit": "2.5kg",
+            "progressionUnitKg": 2.5,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              6,
+              8
+            ],
+            "recommendedRestSec": [
+              150,
+              180
+            ],
+            "regressionIds": [
+              "machine-chest-press",
+              "db-bench-press"
+            ],
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "肩",
+              "手臂"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "note": "",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 6,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 60
+              }
+            ],
+            "skillDemand": "high",
+            "startWeight": 60,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "推",
+        "id": "le-s2",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "push-a",
+        "programTemplateName": "推 A",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "trainingMode": "hybrid"
+      },
+      {
+        "completed": true,
+        "date": "2026-05-13",
+        "exercises": [
+          {
+            "alias": "卧推",
+            "alternativeIds": [
+              "db-bench-press",
+              "machine-chest-press",
+              "push-up",
+              "incline-db-press",
+              "cable-fly",
+              "triceps-pushdown",
+              "shoulder-press",
+              "machine-shoulder-press"
+            ],
+            "alternativePriorities": {
+              "cable-fly": "not_recommended",
+              "db-bench-press": "priority",
+              "incline-db-press": "angle",
+              "machine-chest-press": "priority",
+              "machine-shoulder-press": "not_recommended",
+              "push-up": "optional",
+              "shoulder-press": "not_recommended",
+              "triceps-pushdown": "not_recommended"
+            },
+            "alternatives": [
+              "器械推胸",
+              "哑铃卧推"
+            ],
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "contraindications": [
+              "upper_crossed",
+              "scapular_control",
+              "breathing_ribcage"
+            ],
+            "equivalence": {
+              "id": "horizontal-press",
+              "label": "水平推链",
+              "members": [
+                "bench-press",
+                "machine-chest-press",
+                "db-bench-press",
+                "push-up"
+              ],
+              "pattern": "水平推",
+              "primaryMuscle": "胸"
+            },
+            "equivalenceChainId": "horizontal-press",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "high",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": false,
+            "id": "bench-press",
+            "kind": "compound",
+            "movementPattern": "水平推",
+            "muscle": "胸",
+            "muscleContribution": {
+              "手臂": 0.5,
+              "肩": 0.4,
+              "胸": 1
+            },
+            "name": "平板卧推",
+            "orderPriority": 1,
+            "primaryMuscles": [
+              "胸"
+            ],
+            "progressionIds": [
+              "close-grip-bench"
+            ],
+            "progressionPercent": [
+              5,
+              10
+            ],
+            "progressionUnit": "2.5kg",
+            "progressionUnitKg": 2.5,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              6,
+              8
+            ],
+            "recommendedRestSec": [
+              150,
+              180
+            ],
+            "regressionIds": [
+              "machine-chest-press",
+              "db-bench-press"
+            ],
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "肩",
+              "手臂"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "note": "",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 6,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 60
+              }
+            ],
+            "skillDemand": "high",
+            "startWeight": 60,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "推",
+        "id": "le-s3",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "push-a",
+        "programTemplateName": "推 A",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "trainingMode": "hybrid"
+      }
+    ],
+    "seedIssueScores": {}
+  },
+  "lastProbes": [
+    {
+      "exerciseId": "bench-press",
+      "label": "found latest",
+      "snapshot": {
+        "baseId": "bench-press",
+        "exerciseId": "bench-press",
+        "sessionId": "le-s1",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 6,
+            "weightKg": 60
+          }
+        ]
+      }
+    },
+    {
+      "exerciseId": "ghost-lift",
+      "label": "absent -> null",
+      "snapshot": null
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "adaptive-feedback/lookup-edge-v1"
+  },
+  "previousProbes": [
+    {
+      "exerciseId": "bench-press",
+      "label": "no skip == findLast",
+      "skipSessionId": null,
+      "snapshot": {
+        "baseId": "bench-press",
+        "exerciseId": "bench-press",
+        "sessionId": "le-s1",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 6,
+            "weightKg": 60
+          }
+        ]
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "label": "skip latest -> day7",
+      "skipSessionId": "le-s1",
+      "snapshot": {
+        "baseId": "bench-press",
+        "exerciseId": "bench-press",
+        "sessionId": "le-s2",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 6,
+            "weightKg": 60
+          }
+        ]
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "label": "skip absent session -> null",
+      "skipSessionId": "nope-session",
+      "snapshot": null
+    }
+  ],
+  "recentProbes": [
+    {
+      "count": 1,
+      "exerciseId": "bench-press",
+      "label": "limit 1",
+      "limit": 1,
+      "snapshots": [
+        {
+          "baseId": "bench-press",
+          "exerciseId": "bench-press",
+          "sessionId": "le-s1",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weightKg": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "count": 2,
+      "exerciseId": "bench-press",
+      "label": "limit 2",
+      "limit": 2,
+      "snapshots": [
+        {
+          "baseId": "bench-press",
+          "exerciseId": "bench-press",
+          "sessionId": "le-s1",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weightKg": 60
+            }
+          ]
+        },
+        {
+          "baseId": "bench-press",
+          "exerciseId": "bench-press",
+          "sessionId": "le-s2",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weightKg": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "count": 3,
+      "exerciseId": "bench-press",
+      "label": "limit 5 (all 3)",
+      "limit": 5,
+      "snapshots": [
+        {
+          "baseId": "bench-press",
+          "exerciseId": "bench-press",
+          "sessionId": "le-s1",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weightKg": 60
+            }
+          ]
+        },
+        {
+          "baseId": "bench-press",
+          "exerciseId": "bench-press",
+          "sessionId": "le-s2",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weightKg": 60
+            }
+          ]
+        },
+        {
+          "baseId": "bench-press",
+          "exerciseId": "bench-press",
+          "sessionId": "le-s3",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weightKg": 60
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sourceFixtureId": "adaptive-feedback/lookup-edge-v1"
+}

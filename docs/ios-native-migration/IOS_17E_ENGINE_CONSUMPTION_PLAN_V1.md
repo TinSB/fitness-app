@@ -1,6 +1,6 @@
 # iOS-17e — Engine Consumption of Performed Sets (Closed Loop) — Plan V1
 
-> **Status:** 17e-0 (parity scaffold) shipped; 17e-1…17e-5 proposed (approved track).
+> **Status:** 17e-0 (parity scaffold) + 17e-1 (per-exercise e1RM) + 17e-2 (performance query) shipped; 17e-3…17e-5 proposed (approved track).
 > **Scope of 17e-0:** parity *baseline* only — **no engine logic ported.**
 > It adds history-bearing decision fixtures, generates their adaptive goldens,
 > and DECODE-ONLY-pins them on the Swift side. The progression-cluster port

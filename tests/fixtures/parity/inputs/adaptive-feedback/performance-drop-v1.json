@@ -1,0 +1,29 @@
+{
+  "parityMeta": {
+    "id": "adaptive-feedback/performance-drop-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-2 performance-lookup parity — performance-drop branch. Three completed push-a bench-press sessions, most-recent-first: the latest tops at 50x5 (value 250) while the two prior tops are 80x5 (value 400 each, baseline 400). latest < baseline*0.9 => buildAdaptiveState flags performanceDrops:[bench-press] and +2s the bench-press issues (upper_crossed/scapular_control/breathing_ribcage), all staying < 4 so moduleDose is baseline. No pain. FUNCTION-LEVEL compute-assert: the Swift AdaptiveFeedbackEngine re-runs findLast/findPrevious/findRecent + buildAdaptiveState on the echoed engineInput.history and asserts equality.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (push-a / bench-press), most-recent-first. performanceValue = max(topValue, volume*0.1); topValue uses number(weight)*max(1,reps). lastUpdated is substituted with the deterministic clock date (the TS new Date() wall-clock stamp is non-deterministic)."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [
+    { "id": "pd-s1", "daysAgo": 0, "sets": [{ "weight": 50, "reps": 5 }] },
+    { "id": "pd-s2", "daysAgo": 7, "sets": [{ "weight": 80, "reps": 5 }] },
+    { "id": "pd-s3", "daysAgo": 14, "sets": [{ "weight": 80, "reps": 5 }] }
+  ],
+  "lastProbes": [
+    { "label": "bench-press latest", "exerciseId": "bench-press" },
+    { "label": "absent exercise -> null", "exerciseId": "no-such-exercise" }
+  ],
+  "previousProbes": [
+    { "label": "skip latest -> day7", "exerciseId": "bench-press", "skipSessionId": "pd-s1" }
+  ],
+  "recentProbes": [
+    { "label": "all (limit 3)", "exerciseId": "bench-press", "limit": 3 }
+  ]
+}

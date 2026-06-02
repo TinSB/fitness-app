@@ -1,0 +1,27 @@
+{
+  "parityMeta": {
+    "id": "adaptive-feedback/pain-accumulation-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-2 performance-lookup parity — pain-accumulation + multi-rule issue bump + boost/baseline moduleDose. Two completed upper / shoulder-press sessions, the first flagged via set.painFlag and the second via a Chinese pain note (刺痛) — exercising BOTH hasPainFlag branches. painByExercise[shoulder-press]=2 (>=2) => findLastPerformance feeds issuesForExercise(shoulder-press), which matches BOTH the press rule and the shoulder-press rule, so scapular_control/breathing_ribcage are bumped TWICE (+3 each occurrence => 6 => boost) while upper_crossed/overhead_press_restriction land at 3 (baseline). Only 2 sessions so findRecentPerformances<3 — no drop/improve. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (upper / shoulder-press). painRegex matches the literal substring 刺痛. issuesForExercise is NOT deduped, so the buildAdaptiveState forEach applies the +3 bump once per occurrence. lastUpdated substituted with the deterministic clock date."
+  },
+  "exerciseId": "shoulder-press",
+  "sessions": [
+    { "id": "pa-s1", "daysAgo": 0, "templateId": "upper", "exerciseId": "shoulder-press", "sets": [{ "weight": 20, "reps": 8, "painFlag": true, "painArea": "肩", "painSeverity": 2 }] },
+    { "id": "pa-s2", "daysAgo": 7, "templateId": "upper", "exerciseId": "shoulder-press", "sets": [{ "weight": 20, "reps": 8, "note": "刺痛" }] }
+  ],
+  "lastProbes": [
+    { "label": "shoulder-press latest", "exerciseId": "shoulder-press" }
+  ],
+  "previousProbes": [
+    { "label": "no skip == findLast", "exerciseId": "shoulder-press" }
+  ],
+  "recentProbes": [
+    { "label": "limit 5 -> only 2 exist", "exerciseId": "shoulder-press", "limit": 5 }
+  ]
+}

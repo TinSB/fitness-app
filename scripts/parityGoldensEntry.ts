@@ -91,6 +91,25 @@ import {
   buildE1RMProfile,
   getE1RMConfidence,
 } from '../src/engines/e1rmEngine';
+// iOS-17e-2 — adaptiveFeedbackEngine performance-lookup port parity slice. Imports
+// the REAL performance-lookup functions so the adaptive-feedback goldens are
+// GENERATED from TS truth, never hand-authored (§22). The Swift port
+// (AdaptiveFeedbackEngine) re-runs the ported functions over the SAME echoed
+// engineInput.history + screening seed and asserts equality function-by-function
+// (findLast/findPrevious/findRecent snapshots + buildAdaptiveState issueScores /
+// painByExercise / performanceDrops / improvingIssues / moduleDose). PURE — no write
+// path, no decision-output wiring (that is 17e-5). `buildAdaptiveState` stamps
+// `lastUpdated` from the wall clock, so the generator substitutes the deterministic
+// clock date below (mirrors generateDataRepair omitting the clock-derived createdAt).
+import {
+  findLastPerformance,
+  findPreviousPerformance,
+  findRecentPerformances,
+  buildAdaptiveState,
+} from '../src/engines/adaptiveFeedbackEngine';
+import type { PerformanceSnapshot } from '../src/models/training-model';
+import { DEFAULT_SCREENING_PROFILE } from '../src/data/defaults';
+import { number, setWeightKg } from '../src/engines/engineUtils';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -181,6 +200,19 @@ const FIXTURE_IDS = [
   'e1rm-engine/insufficient-history-v1',
   'e1rm-engine/low-quality-filtered-v1',
   'e1rm-engine/pool-confidence-probes-v1',
+  // iOS-17e-2 adaptiveFeedbackEngine performance-lookup port — 4 OUTPUT fixtures
+  // whose generated goldens FUNCTION-LEVEL pin the ported performance-lookup engine:
+  // each echoes the engineInput history + screening issueScores seed and the REAL TS
+  // outputs (findLast/findPrevious/findRecent snapshot projections + buildAdaptiveState).
+  // performance-drop (drop branch + baseline moduleDose) / pain-accumulation (both
+  // hasPainFlag branches + multi-rule duplicate issue bump + boost/baseline) /
+  // improving-and-seed (improve branch + seeded issueScores merge + boost/taper) /
+  // lookup-edge (findLast/findPrevious-skip/findRecent-limit edge probes + no-op
+  // buildAdaptiveState). Generated; never hand-edited (§22).
+  'adaptive-feedback/performance-drop-v1',
+  'adaptive-feedback/pain-accumulation-v1',
+  'adaptive-feedback/improving-and-seed-v1',
+  'adaptive-feedback/lookup-edge-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1083,6 +1115,118 @@ const generateE1RMEngine = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// iOS-17e-2 — adaptiveFeedbackEngine performance-lookup OUTPUT parity
+//
+// Builds a synthetic, performed-set history via the SAME makeSession fixture helper
+// the iOS-4B0/17e-0/17e-1 fixtures use (engine-valid + deterministic from
+// parityMeta.deterministicClockIso), then runs the REAL performance-lookup functions
+// and echoes BOTH the engineInput (history + seedIssueScores, verbatim — the Swift
+// port decodes them and re-runs the ported functions) AND the computed outputs:
+//   - lastProbes      = findLastPerformance(history, exerciseId)          (snapshot|null)
+//   - previousProbes  = findPreviousPerformance(history, id, skipSessionId)(snapshot|null)
+//   - recentProbes    = findRecentPerformances(history, id, limit)         (snapshot[])
+//   - adaptiveState   = buildAdaptiveState(history, screening)             (AdaptiveState)
+// Each PerformanceSnapshot is projected to a stable shape (sessionId / exerciseId /
+// baseId / setCount / per-completed-set weightKg+reps) — enough to pin which session,
+// which exercise, and which completed sets matched, byte-for-byte. `screening` carries
+// only the issueScores seed (the ONLY screening field buildAdaptiveState reads,
+// adaptiveFeedbackEngine.ts:172). PURE / clockless engine apart from the wall-clock
+// `lastUpdated` stamp, which is replaced with the deterministic clock date so the
+// golden is reproducible. No decision output is touched. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type AdaptiveSessionSpec = {
+  id: string;
+  daysAgo: number;
+  templateId?: string;
+  exerciseId?: string;
+  sets?: Array<{ weight: number; reps: number; rir?: number; note?: string; painFlag?: boolean; painArea?: string; painSeverity?: number; techniqueQuality?: 'good' | 'acceptable' | 'poor' }>;
+};
+
+const projectAdaptiveSnapshot = (snapshot: PerformanceSnapshot | null) => {
+  if (!snapshot) return null;
+  return {
+    sessionId: snapshot.session.id ?? null,
+    exerciseId: snapshot.exercise.id ?? null,
+    baseId: (snapshot.exercise as Record<string, unknown>).baseId ?? null,
+    setCount: snapshot.sets.length,
+    sets: snapshot.sets.map((s) => ({ weightKg: setWeightKg(s), reps: number(s.reps) })),
+  };
+};
+
+const generateAdaptiveFeedback = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: adaptive-feedback requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const defaultExerciseId: string = input.exerciseId ?? getTemplate('push-a').exercises[0].id;
+  const sessions: AdaptiveSessionSpec[] = Array.isArray(input.sessions) ? input.sessions : [];
+
+  const history: TrainingSession[] = sessions.map((s) =>
+    makeSession({
+      id: s.id,
+      date: dateOnlyDaysBefore(nowIso, s.daysAgo),
+      templateId: s.templateId ?? 'push-a',
+      exerciseId: s.exerciseId ?? defaultExerciseId,
+      setSpecs: s.sets ?? [{ weight: 60, reps: 6 }],
+    }) as TrainingSession,
+  );
+
+  // The only screening field buildAdaptiveState reads is adaptiveState.issueScores.
+  const seedIssueScores = (input.screening?.issueScores ?? {}) as Record<string, number>;
+  const screening = {
+    ...DEFAULT_SCREENING_PROFILE,
+    adaptiveState: { ...DEFAULT_SCREENING_PROFILE.adaptiveState!, issueScores: seedIssueScores },
+  };
+
+  const lastProbes = (Array.isArray(input.lastProbes) ? input.lastProbes : []).map(
+    (p: { label?: string; exerciseId: string }) => ({
+      label: p.label ?? null,
+      exerciseId: p.exerciseId,
+      snapshot: projectAdaptiveSnapshot(findLastPerformance(history, p.exerciseId)),
+    }),
+  );
+
+  const previousProbes = (Array.isArray(input.previousProbes) ? input.previousProbes : []).map(
+    (p: { label?: string; exerciseId: string; skipSessionId?: string }) => ({
+      label: p.label ?? null,
+      exerciseId: p.exerciseId,
+      skipSessionId: p.skipSessionId ?? null,
+      snapshot: projectAdaptiveSnapshot(findPreviousPerformance(history, p.exerciseId, p.skipSessionId)),
+    }),
+  );
+
+  const recentProbes = (Array.isArray(input.recentProbes) ? input.recentProbes : []).map(
+    (p: { label?: string; exerciseId: string; limit?: number }) => {
+      const limit = p.limit ?? 3;
+      const snaps = findRecentPerformances(history, p.exerciseId, limit);
+      return {
+        label: p.label ?? null,
+        exerciseId: p.exerciseId,
+        limit,
+        count: snaps.length,
+        snapshots: snaps.map(projectAdaptiveSnapshot),
+      };
+    },
+  );
+
+  const adaptiveRaw = buildAdaptiveState(history, screening);
+  // buildAdaptiveState stamps lastUpdated from the wall clock (adaptiveFeedbackEngine.ts:224);
+  // substitute the deterministic clock date so the golden is byte-reproducible (the Swift
+  // port injects the SAME `today`). Mirrors generateDataRepair omitting the clock-derived createdAt.
+  const adaptiveState = { ...adaptiveRaw, lastUpdated: nowIso.slice(0, 10) };
+
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: { exerciseId: defaultExerciseId, seedIssueScores, history },
+    lastProbes,
+    previousProbes,
+    recentProbes,
+    adaptiveState,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -1118,6 +1262,10 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'e1rm-engine/insufficient-history-v1': generateE1RMEngine,
   'e1rm-engine/low-quality-filtered-v1': generateE1RMEngine,
   'e1rm-engine/pool-confidence-probes-v1': generateE1RMEngine,
+  'adaptive-feedback/performance-drop-v1': generateAdaptiveFeedback,
+  'adaptive-feedback/pain-accumulation-v1': generateAdaptiveFeedback,
+  'adaptive-feedback/improving-and-seed-v1': generateAdaptiveFeedback,
+  'adaptive-feedback/lookup-edge-v1': generateAdaptiveFeedback,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

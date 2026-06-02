@@ -1,0 +1,587 @@
+{
+  "adaptiveState": {
+    "improvingIssues": [
+      "thoracic_rotation",
+      "scapular_control"
+    ],
+    "issueScores": {
+      "core_control": 4,
+      "scapular_control": 3
+    },
+    "lastUpdated": "2026-05-27",
+    "moduleDose": {
+      "core_control": "boost",
+      "scapular_control": "taper",
+      "thoracic_rotation": "taper"
+    },
+    "painByExercise": {},
+    "performanceDrops": []
+  },
+  "engineInput": {
+    "exerciseId": "seated-row",
+    "history": [
+      {
+        "completed": true,
+        "date": "2026-05-27",
+        "exercises": [
+          {
+            "alias": "划船机",
+            "alternativeIds": [
+              "chest-supported-row",
+              "machine-row",
+              "one-arm-db-row",
+              "barbell-row",
+              "lat-pulldown"
+            ],
+            "alternativePriorities": {
+              "barbell-row": "optional",
+              "chest-supported-row": "priority",
+              "lat-pulldown": "not_recommended",
+              "machine-row": "priority",
+              "one-arm-db-row": "acceptable"
+            },
+            "alternatives": [
+              "胸托划船",
+              "单臂哑铃划船"
+            ],
+            "baseId": "seated-row",
+            "canonicalExerciseId": "seated-row",
+            "contraindications": [
+              "thoracic_rotation",
+              "scapular_control"
+            ],
+            "equivalence": {
+              "id": "horizontal-pull",
+              "label": "水平拉链",
+              "members": [
+                "seated-row",
+                "machine-row",
+                "chest-supported-row",
+                "barbell-row",
+                "t-bar-row",
+                "one-arm-db-row"
+              ],
+              "pattern": "水平拉",
+              "primaryMuscle": "背"
+            },
+            "equivalenceChainId": "horizontal-pull",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "medium",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": true,
+            "id": "seated-row",
+            "kind": "compound",
+            "movementPattern": "水平拉",
+            "muscle": "背",
+            "muscleContribution": {
+              "手臂": 0.4,
+              "肩": 0.3,
+              "背": 1
+            },
+            "name": "坐姿划船",
+            "orderPriority": 2,
+            "primaryMuscles": [
+              "背"
+            ],
+            "progressionIds": [
+              "barbell-row"
+            ],
+            "progressionPercent": [
+              5,
+              10
+            ],
+            "progressionUnit": "2.5kg",
+            "progressionUnitKg": 2.5,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              8,
+              12
+            ],
+            "recommendedRestSec": [
+              90,
+              120
+            ],
+            "regressionIds": [
+              "one-arm-db-row"
+            ],
+            "repMax": 12,
+            "repMin": 8,
+            "rest": 120,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "手臂",
+              "肩"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "seated-row-1",
+                "note": "",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 8,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 70
+              }
+            ],
+            "skillDemand": "medium",
+            "startWeight": 50,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "拉",
+        "id": "imp-s1",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "pull-a",
+        "programTemplateName": "拉 A",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "trainingMode": "hybrid"
+      },
+      {
+        "completed": true,
+        "date": "2026-05-20",
+        "exercises": [
+          {
+            "alias": "划船机",
+            "alternativeIds": [
+              "chest-supported-row",
+              "machine-row",
+              "one-arm-db-row",
+              "barbell-row",
+              "lat-pulldown"
+            ],
+            "alternativePriorities": {
+              "barbell-row": "optional",
+              "chest-supported-row": "priority",
+              "lat-pulldown": "not_recommended",
+              "machine-row": "priority",
+              "one-arm-db-row": "acceptable"
+            },
+            "alternatives": [
+              "胸托划船",
+              "单臂哑铃划船"
+            ],
+            "baseId": "seated-row",
+            "canonicalExerciseId": "seated-row",
+            "contraindications": [
+              "thoracic_rotation",
+              "scapular_control"
+            ],
+            "equivalence": {
+              "id": "horizontal-pull",
+              "label": "水平拉链",
+              "members": [
+                "seated-row",
+                "machine-row",
+                "chest-supported-row",
+                "barbell-row",
+                "t-bar-row",
+                "one-arm-db-row"
+              ],
+              "pattern": "水平拉",
+              "primaryMuscle": "背"
+            },
+            "equivalenceChainId": "horizontal-pull",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "medium",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": true,
+            "id": "seated-row",
+            "kind": "compound",
+            "movementPattern": "水平拉",
+            "muscle": "背",
+            "muscleContribution": {
+              "手臂": 0.4,
+              "肩": 0.3,
+              "背": 1
+            },
+            "name": "坐姿划船",
+            "orderPriority": 2,
+            "primaryMuscles": [
+              "背"
+            ],
+            "progressionIds": [
+              "barbell-row"
+            ],
+            "progressionPercent": [
+              5,
+              10
+            ],
+            "progressionUnit": "2.5kg",
+            "progressionUnitKg": 2.5,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              8,
+              12
+            ],
+            "recommendedRestSec": [
+              90,
+              120
+            ],
+            "regressionIds": [
+              "one-arm-db-row"
+            ],
+            "repMax": 12,
+            "repMin": 8,
+            "rest": 120,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "手臂",
+              "肩"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "seated-row-1",
+                "note": "",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 8,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 50
+              }
+            ],
+            "skillDemand": "medium",
+            "startWeight": 50,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "拉",
+        "id": "imp-s2",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "pull-a",
+        "programTemplateName": "拉 A",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "trainingMode": "hybrid"
+      },
+      {
+        "completed": true,
+        "date": "2026-05-13",
+        "exercises": [
+          {
+            "alias": "划船机",
+            "alternativeIds": [
+              "chest-supported-row",
+              "machine-row",
+              "one-arm-db-row",
+              "barbell-row",
+              "lat-pulldown"
+            ],
+            "alternativePriorities": {
+              "barbell-row": "optional",
+              "chest-supported-row": "priority",
+              "lat-pulldown": "not_recommended",
+              "machine-row": "priority",
+              "one-arm-db-row": "acceptable"
+            },
+            "alternatives": [
+              "胸托划船",
+              "单臂哑铃划船"
+            ],
+            "baseId": "seated-row",
+            "canonicalExerciseId": "seated-row",
+            "contraindications": [
+              "thoracic_rotation",
+              "scapular_control"
+            ],
+            "equivalence": {
+              "id": "horizontal-pull",
+              "label": "水平拉链",
+              "members": [
+                "seated-row",
+                "machine-row",
+                "chest-supported-row",
+                "barbell-row",
+                "t-bar-row",
+                "one-arm-db-row"
+              ],
+              "pattern": "水平拉",
+              "primaryMuscle": "背"
+            },
+            "equivalenceChainId": "horizontal-pull",
+            "evidenceTags": [
+              "渐进超负荷：连续稳定达标后再小幅加重。",
+              "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+              "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+            ],
+            "fatigueCost": "medium",
+            "goalBias": [
+              "力量",
+              "肌肥大"
+            ],
+            "highFrequencyOk": true,
+            "id": "seated-row",
+            "kind": "compound",
+            "movementPattern": "水平拉",
+            "muscle": "背",
+            "muscleContribution": {
+              "手臂": 0.4,
+              "肩": 0.3,
+              "背": 1
+            },
+            "name": "坐姿划船",
+            "orderPriority": 2,
+            "primaryMuscles": [
+              "背"
+            ],
+            "progressionIds": [
+              "barbell-row"
+            ],
+            "progressionPercent": [
+              5,
+              10
+            ],
+            "progressionUnit": "2.5kg",
+            "progressionUnitKg": 2.5,
+            "recommendedLoadRange": "约 65%-85% 1RM",
+            "recommendedRepRange": [
+              8,
+              12
+            ],
+            "recommendedRestSec": [
+              90,
+              120
+            ],
+            "regressionIds": [
+              "one-arm-db-row"
+            ],
+            "repMax": 12,
+            "repMin": 8,
+            "rest": 120,
+            "romPriority": "high",
+            "secondaryMuscles": [
+              "手臂",
+              "肩"
+            ],
+            "sets": [
+              {
+                "done": true,
+                "id": "seated-row-1",
+                "note": "",
+                "painArea": "",
+                "painFlag": false,
+                "painSeverity": 0,
+                "reps": 8,
+                "rir": 2,
+                "rpe": "",
+                "techniqueQuality": "acceptable",
+                "type": "top",
+                "weight": 50
+              }
+            ],
+            "skillDemand": "medium",
+            "startWeight": 50,
+            "targetRir": [
+              1,
+              3
+            ],
+            "techniqueStandard": {
+              "rom": "完整可控幅度",
+              "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+              "tempo": "2-0-1"
+            }
+          }
+        ],
+        "focus": "拉",
+        "id": "imp-s3",
+        "isExperimentalTemplate": false,
+        "programTemplateId": "pull-a",
+        "programTemplateName": "拉 A",
+        "status": {
+          "energy": "中",
+          "sleep": "一般",
+          "soreness": [
+            "无"
+          ],
+          "time": "60"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "trainingMode": "hybrid"
+      }
+    ],
+    "seedIssueScores": {
+      "core_control": 4,
+      "scapular_control": 3
+    }
+  },
+  "lastProbes": [
+    {
+      "exerciseId": "seated-row",
+      "label": "seated-row latest",
+      "snapshot": {
+        "baseId": "seated-row",
+        "exerciseId": "seated-row",
+        "sessionId": "imp-s1",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 8,
+            "weightKg": 70
+          }
+        ]
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "adaptive-feedback/improving-and-seed-v1"
+  },
+  "previousProbes": [
+    {
+      "exerciseId": "seated-row",
+      "label": "skip latest -> day7",
+      "skipSessionId": "imp-s1",
+      "snapshot": {
+        "baseId": "seated-row",
+        "exerciseId": "seated-row",
+        "sessionId": "imp-s2",
+        "setCount": 1,
+        "sets": [
+          {
+            "reps": 8,
+            "weightKg": 50
+          }
+        ]
+      }
+    }
+  ],
+  "recentProbes": [
+    {
+      "count": 2,
+      "exerciseId": "seated-row",
+      "label": "limit 2",
+      "limit": 2,
+      "snapshots": [
+        {
+          "baseId": "seated-row",
+          "exerciseId": "seated-row",
+          "sessionId": "imp-s1",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 70
+            }
+          ]
+        },
+        {
+          "baseId": "seated-row",
+          "exerciseId": "seated-row",
+          "sessionId": "imp-s2",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "count": 3,
+      "exerciseId": "seated-row",
+      "label": "limit 3 (all)",
+      "limit": 3,
+      "snapshots": [
+        {
+          "baseId": "seated-row",
+          "exerciseId": "seated-row",
+          "sessionId": "imp-s1",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 70
+            }
+          ]
+        },
+        {
+          "baseId": "seated-row",
+          "exerciseId": "seated-row",
+          "sessionId": "imp-s2",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 50
+            }
+          ]
+        },
+        {
+          "baseId": "seated-row",
+          "exerciseId": "seated-row",
+          "sessionId": "imp-s3",
+          "setCount": 1,
+          "sets": [
+            {
+              "reps": 8,
+              "weightKg": 50
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sourceFixtureId": "adaptive-feedback/improving-and-seed-v1"
+}
