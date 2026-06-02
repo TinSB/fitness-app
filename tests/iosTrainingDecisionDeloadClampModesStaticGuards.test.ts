@@ -159,10 +159,10 @@ describe('iosTrainingDecisionDeloadClampModes — forbidden imports + macros', (
 });
 
 describe('iosTrainingDecisionDeloadClampModes — hygiene', () => {
-  it('(23) training-decision goldens unchanged (10 files)', () => {
+  it('(23) training-decision goldens unchanged (13 files)', () => {
     const goldens = readdirSync(repoFile('tests/fixtures/parity/golden/training-decision'))
       .filter((f) => f.endsWith('.json'));
-    expect(goldens.length).toBe(10);
+    expect(goldens.length).toBe(13);
   });
   it('(24) no pnpm-lock.yaml', () => {
     expect(existsSync(repoFile('pnpm-lock.yaml'))).toBe(false);

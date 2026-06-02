@@ -156,10 +156,10 @@ describe('iosTrainingDecisionExercisePrescription — forbidden imports + macros
 });
 
 describe('iosTrainingDecisionExercisePrescription — hygiene', () => {
-  it('(20) training-decision goldens unchanged (10 files)', () => {
+  it('(20) training-decision goldens unchanged (13 files)', () => {
     const goldens = readdirSync(repoFile('tests/fixtures/parity/golden/training-decision'))
       .filter((f) => f.endsWith('.json'));
-    expect(goldens.length).toBe(10);
+    expect(goldens.length).toBe(13);
   });
   it('(21) no pnpm-lock.yaml', () => {
     expect(existsSync(repoFile('pnpm-lock.yaml'))).toBe(false);

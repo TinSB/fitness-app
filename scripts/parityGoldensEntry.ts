@@ -117,6 +117,17 @@ const FIXTURE_IDS = [
   'training-decision/productive-floor-v1',
   'training-decision/no-legacy-advice-v1',
   'training-decision/clean-input-contract-v1',
+  // iOS-17e-0 progression parity scaffold — 3 synthetic fixtures whose history
+  // carries performed sets (history[].exercises[].sets non-empty) so the REAL
+  // TS engine emits its history-driven adaptive output (progressionMode /
+  // weeklyAdjustment). They route through the SAME generateTrainingDecisionExpanded
+  // projection as the iOS-4B0 fixtures (no new golden shape). The Swift side
+  // DECODE-ONLY-pins these (compute-assert lands as 17e-1~5 port the progression
+  // cluster — the static native template cannot reproduce them yet). Additive;
+  // generated, never hand-edited (§22).
+  'training-decision/progressive-overload-v1',
+  'training-decision/plateau-stall-v1',
+  'training-decision/insufficient-history-v1',
   // SR-0 smart-replacement parity scaffold — 4 synthetic fixtures whose
   // generated goldens collectively cover all four SmartReplacementPriority
   // values (primary / secondary / angle_variation / avoid). Engine logic is
@@ -972,6 +983,11 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'training-decision/productive-floor-v1': generateTrainingDecisionExpanded,
   'training-decision/no-legacy-advice-v1': generateTrainingDecisionExpanded,
   'training-decision/clean-input-contract-v1': generateTrainingDecisionExpanded,
+  // iOS-17e-0 progression parity scaffold — reuse the expanded projection so the
+  // history-driven progressionMode / weeklyAdjustment land in the golden.
+  'training-decision/progressive-overload-v1': generateTrainingDecisionExpanded,
+  'training-decision/plateau-stall-v1': generateTrainingDecisionExpanded,
+  'training-decision/insufficient-history-v1': generateTrainingDecisionExpanded,
   'smart-replacement/explicit-priority-spread-v1': generateSmartReplacement,
   'smart-replacement/bench-press-natural-v1': generateSmartReplacement,
   'smart-replacement/low-readiness-fatigue-v1': generateSmartReplacement,

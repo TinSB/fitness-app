@@ -181,11 +181,11 @@ describe('iosTrainingDecisionTypeSkeleton — repo hygiene', () => {
     expect(existsSync(repoFile('pnpm-lock.yaml'))).toBe(false);
   });
 
-  // (21) Existing 24 parity fixtures still pass --check (golden ids intact).
-  it('iosTrainingDecisionTypeSkeleton (21) 14 training+other golden fixtures intact', () => {
+  // (21) Existing 27 parity fixtures still pass --check (golden ids intact).
+  it('iosTrainingDecisionTypeSkeleton (21) 17 training+other golden fixtures intact', () => {
     const tdGoldens = readdirSync(repoFile('tests/fixtures/parity/golden/training-decision'))
       .filter((f) => f.endsWith('.json'));
-    expect(tdGoldens.length).toBe(10); // 1 iOS-0 + 9 iOS-4B0
+    expect(tdGoldens.length).toBe(13); // 1 iOS-0 + 9 iOS-4B0 + 3 iOS-17e-0
     // The other 4 iOS-0 fixtures still present.
     for (const p of [
       'tests/fixtures/parity/golden/app-data/snapshot-hash-stable-v1.json',

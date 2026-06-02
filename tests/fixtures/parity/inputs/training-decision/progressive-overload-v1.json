@@ -1,0 +1,29 @@
+{
+  "parityMeta": {
+    "id": "training-decision/progressive-overload-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-0 progression parity scaffold — progressive-overload history. Five recent completed push-a sessions log the same main compound at a strictly rising top weight (60→62.5→65→67.5→70 kg) with NEUTRAL readiness and no training gap. The real TS trainingDecisionEngine reads these performed sets (isE1rmTrendUp=true over >=4 sessions, recoveryHigh=false) and produces the ADAPTIVE progressionMode='progress' / weeklyAdjustment output the static native template cannot. Same rising trend as controlled-reload-v1 but neutral (not low) readiness isolates the pure progression signal. DECODE-ONLY on the Swift side in 17e-0; compute-assert lands as 17e-1~5 port the progression cluster.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "9d815f7a9d06675979069ab46d16551eff769822",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic AppData. Five completed push-a sessions spaced 3 days (daysAgo 14/11/8/5/2), same exercise, strictly increasing top weight -> rising e1rm trend. Most recent 2 days before the clock (no gap -> normal phase persists). Default todayStatus keeps readiness out of the 'low' band, so recoveryHigh=false -> sessionIntent='normal-session' -> progressionMode='progress'."
+  },
+  "synthetic": {
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "sessions": [
+      { "id": "po-s1", "daysAgo": 14, "sets": [{ "weight": 60, "reps": 6 }, { "weight": 60, "reps": 6 }] },
+      { "id": "po-s2", "daysAgo": 11, "sets": [{ "weight": 62.5, "reps": 6 }, { "weight": 62.5, "reps": 6 }] },
+      { "id": "po-s3", "daysAgo": 8, "sets": [{ "weight": 65, "reps": 6 }, { "weight": 65, "reps": 6 }] },
+      { "id": "po-s4", "daysAgo": 5, "sets": [{ "weight": 67.5, "reps": 6 }, { "weight": 67.5, "reps": 6 }] },
+      { "id": "po-s5", "daysAgo": 2, "sets": [{ "weight": 70, "reps": 6 }, { "weight": 70, "reps": 6 }] }
+    ],
+    "todayStatus": { "daysAgo": 0 }
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}
