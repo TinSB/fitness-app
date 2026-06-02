@@ -19,10 +19,15 @@
 // input now carries the full template exercises (the engine enriches them via the
 // bounded knowledge map). See TrainingDecisionExercisePrescription.swift.
 //
-// OUT OF SCOPE (iOS-4B6+ / deferred): the support plan object, the full weeklyAdjustment
-// object, userFacing text, and the full ordered arbitrationTrace. This file MUST NOT
-// reference the supportPlan engine / the buildXxxUserFacing presenters / the full
-// arbitrationTrace builder / buildHealthSummary aggregation / buildTrainingLapseSignal.
+// iOS-17e-5 wires the history-driven weekly progression projection: the weeklyAdjustment
+// object (direction/magnitudePct/blockedBy/appliesFromIsoDate) is now produced from the
+// recorded performed sets via the SAME branch order as TS (e1rmTrendUp -> increase),
+// closing the loop the 17e-0 history goldens pinned. See TrainingDecisionModes.buildWeeklyAdjustment.
+//
+// OUT OF SCOPE (iOS-4B6+ / deferred): the support plan object, userFacing text, and the
+// full ordered arbitrationTrace. This file MUST NOT reference the supportPlan engine /
+// the buildXxxUserFacing presenters / the full arbitrationTrace builder /
+// buildHealthSummary aggregation / buildTrainingLapseSignal.
 
 import Foundation
 import IronPathDomain
@@ -210,6 +215,13 @@ public struct TrainingDecisionCoreSlice: Equatable, Sendable {
     public let volumeMode: VolumeMode
     public let intensityMode: IntensityMode
     public let progressionMode: ProgressionMode
+    /// iOS-17e-5: the history-driven weekly progression projection
+    /// (trainingDecisionEngine.ts:2079-2087). direction/magnitudePct/blockedBy/
+    /// appliesFromIsoDate are produced by the SAME branch order as TS — a rising
+    /// e1RM trend over performed sets yields direction='increase', a flat/too-short
+    /// history holds. Golden-parity-asserted (closed loop: engine now consumes the
+    /// recorded sets to adapt the weekly recommendation).
+    public let weeklyAdjustment: WeeklyAdjustment
     /// iOS-8: the adaptive deload decision (level/strategy/triggered/volumeMultiplier/
     /// reasons) that already feeds clampMultiplier (line ~300). Exposed verbatim so the
     /// native Focus surface can show the real deload level/strategy instead of "—".
@@ -328,6 +340,19 @@ public func buildTrainingDecisionFromCleanInput(
     let intensityMode = TrainingDecisionModes.intensityModeFor(intent: intent, trainingAdjustment: readiness.trainingAdjustment)
     let progressionMode = TrainingDecisionModes.progressionModeFor(intent: intent, e1rmTrendUp: e1rmTrendUp)
 
+    // iOS-17e-5 weekly progression projection (trainingDecisionEngine.ts:1985-1995,
+    // 2079-2087). Closed loop: e1rmTrendUp is derived from the recorded performed sets
+    // (TrainingDecisionE1RMTrend over history), so a rising trend drives an 'increase'
+    // weekly recommendation while a flat / too-short history holds. nowIso supplies
+    // appliesFromIsoDate (the injected clock — no system time).
+    let weekly = TrainingDecisionModes.buildWeeklyAdjustment(
+        intent: intent,
+        severeFlag: severeFlag,
+        explicitDeloadAssigned: input.explicitDeloadAssigned ?? false,
+        e1rmTrendUp: e1rmTrendUp,
+        nowIso: input.nowIso
+    )
+
     // iOS-4B5 exercise prescription: roleOf + role floors + the applyStatusRules set
     // pipeline + the adaptive conservativeLevel cut -> workingSetTargets. Consumes the
     // already-computed readiness (trainingAdjustment + level) + deload.level +
@@ -367,6 +392,7 @@ public func buildTrainingDecisionFromCleanInput(
         volumeMode: volumeMode,
         intensityMode: intensityMode,
         progressionMode: progressionMode,
+        weeklyAdjustment: weekly.adjustment,
         deload: deload,
         perExercise: perExercise,
         allTargetSets: allTargetSets,
