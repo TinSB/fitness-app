@@ -1,0 +1,158 @@
+{
+  "cases": [
+    {
+      "history": [],
+      "label": "no-history",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "currentMonthStreak": 0,
+        "currentWeekStreak": 0,
+        "longestMonthStreak": 0,
+        "longestWeekStreak": 0,
+        "reason": "尚无训练记录，开始第一次训练就会建立连续记录。",
+        "totalAnalyticsSessions": 0
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "id": "act-0"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-20",
+          "id": "act-7"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-13",
+          "id": "act-14"
+        }
+      ],
+      "label": "active-week-streak",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z",
+        "weekStartDayOfWeek": 1
+      },
+      "result": {
+        "currentMonthStreak": 1,
+        "currentWeekStreak": 3,
+        "lastActiveWeekKey": "2026-05-25",
+        "longestMonthStreak": 1,
+        "longestWeekStreak": 3,
+        "reason": "当前已连续训练 3 周；历史最长 3 周。",
+        "totalAnalyticsSessions": 3
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-20",
+          "id": "carry-7"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-13",
+          "id": "carry-14"
+        }
+      ],
+      "label": "carry-last-week",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "currentMonthStreak": 1,
+        "currentWeekStreak": 2,
+        "lastActiveWeekKey": "2026-05-18",
+        "longestMonthStreak": 1,
+        "longestWeekStreak": 2,
+        "reason": "当前已连续训练 2 周；历史最长 2 周。",
+        "totalAnalyticsSessions": 2
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "id": "brk-21"
+        },
+        {
+          "completed": true,
+          "date": "2026-04-29",
+          "id": "brk-28"
+        }
+      ],
+      "label": "broken-streak",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "currentMonthStreak": 2,
+        "currentWeekStreak": 0,
+        "lastActiveWeekKey": "2026-05-04",
+        "longestMonthStreak": 2,
+        "longestWeekStreak": 2,
+        "reason": "连续训练已中断（最近一次：2026-05-04 周）。",
+        "totalAnalyticsSessions": 2
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "id": "flt-0"
+        },
+        {
+          "completed": true,
+          "dataFlag": "test",
+          "date": "2026-05-20",
+          "id": "flt-7-test"
+        },
+        {
+          "completed": false,
+          "date": "2026-05-13",
+          "id": "flt-14-incomplete"
+        },
+        {
+          "completed": true,
+          "dataFlag": "excluded",
+          "date": "2026-05-06",
+          "id": "flt-21-excluded"
+        },
+        {
+          "completed": true,
+          "date": "2026-04-22",
+          "id": "flt-35"
+        }
+      ],
+      "label": "filtering-and-months",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "currentMonthStreak": 2,
+        "currentWeekStreak": 1,
+        "lastActiveWeekKey": "2026-05-25",
+        "longestMonthStreak": 2,
+        "longestWeekStreak": 1,
+        "reason": "当前已连续训练 1 周；历史最长 1 周。",
+        "totalAnalyticsSessions": 2
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "training-streak/streak-cases-v1"
+  },
+  "sourceFixtureId": "training-streak/streak-cases-v1"
+}

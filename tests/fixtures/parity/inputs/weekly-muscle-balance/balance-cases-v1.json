@@ -1,0 +1,85 @@
+{
+  "parityMeta": {
+    "id": "weekly-muscle-balance/balance-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-1 computeWeeklyMuscleBalance function-level parity — synthetic this-week muscle-balance cases (no-data / balanced / imbalanced over+under / muscleContribution+secondary-primary+week&dataFlag filtering). Generated from src/engines/weeklyMuscleBalanceEngine.ts; the Swift WeeklyMuscleBalanceEngine compute-asserts each case == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "no-data-this-week",
+      "sessions": [
+        {
+          "id": "nd-old", "daysAgo": 10,
+          "exercises": [
+            { "id": "ex-chest", "name": "卧推", "primaryMuscles": ["胸"], "sets": [{ "weight": 50, "reps": 10 }, { "weight": 50, "reps": 10 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "balanced",
+      "sessions": [
+        {
+          "id": "bal-0", "daysAgo": 0,
+          "exercises": [
+            { "id": "ex-chest", "name": "卧推", "primaryMuscles": ["胸"], "sets": [{ "weight": 40, "reps": 10 }, { "weight": 40, "reps": 10 }] },
+            { "id": "ex-back", "name": "划船", "primaryMuscles": ["背"], "sets": [{ "weight": 40, "reps": 10 }, { "weight": 40, "reps": 10 }] },
+            { "id": "ex-legs", "name": "深蹲", "primaryMuscles": ["腿"], "sets": [{ "weight": 40, "reps": 10 }, { "weight": 40, "reps": 10 }] },
+            { "id": "ex-shoulder", "name": "推举", "primaryMuscles": ["肩"], "sets": [{ "weight": 40, "reps": 10 }, { "weight": 40, "reps": 10 }] },
+            { "id": "ex-arms", "name": "弯举", "primaryMuscles": ["手臂"], "sets": [{ "weight": 40, "reps": 10 }, { "weight": 40, "reps": 10 }] },
+            { "id": "ex-core", "name": "卷腹", "primaryMuscles": ["核心"], "sets": [{ "weight": 40, "reps": 10 }, { "weight": 40, "reps": 10 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "imbalanced-over-under",
+      "sessions": [
+        {
+          "id": "imb-0", "daysAgo": 0,
+          "exercises": [
+            { "id": "ex-chest", "name": "卧推", "primaryMuscles": ["胸"], "sets": [
+              { "weight": 50, "reps": 10 }, { "weight": 50, "reps": 10 }, { "weight": 50, "reps": 10 },
+              { "weight": 50, "reps": 10 }, { "weight": 50, "reps": 10 }, { "weight": 50, "reps": 10 }
+            ] },
+            { "id": "ex-back", "name": "划船", "primaryMuscles": ["背"], "sets": [{ "weight": 50, "reps": 10 }] },
+            { "id": "ex-legs", "name": "深蹲", "primaryMuscles": ["腿"], "sets": [{ "weight": 50, "reps": 10 }] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "contribution-and-secondary-and-filtering",
+      "sessions": [
+        {
+          "id": "cs-0", "daysAgo": 0,
+          "exercises": [
+            { "id": "ex-contrib", "name": "上斜推", "muscleContribution": { "胸": 1, "肩": 0.5 }, "sets": [
+              { "weight": 30, "reps": 10 }, { "weight": 30, "reps": 10 }, { "weight": 30, "reps": 10 }
+            ] },
+            { "id": "ex-secondary", "name": "硬拉", "primaryMuscles": ["背", "核心"], "sets": [
+              { "weight": 40, "reps": 8 }, { "weight": 40, "reps": 8 }
+            ] }
+          ]
+        },
+        {
+          "id": "cs-1-test", "daysAgo": 1, "dataFlag": "test",
+          "exercises": [
+            { "id": "ex-chest", "name": "卧推", "primaryMuscles": ["胸"], "sets": [{ "weight": 50, "reps": 10 }] }
+          ]
+        },
+        {
+          "id": "cs-old", "daysAgo": 10,
+          "exercises": [
+            { "id": "ex-chest", "name": "卧推", "primaryMuscles": ["胸"], "sets": [{ "weight": 50, "reps": 10 }] }
+          ]
+        }
+      ]
+    }
+  ]
+}

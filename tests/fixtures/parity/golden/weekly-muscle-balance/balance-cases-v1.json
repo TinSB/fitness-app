@@ -1,0 +1,588 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-17",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-2",
+                  "reps": 10,
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "nd-old"
+        }
+      ],
+      "label": "no-data-this-week",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 0,
+        "entries": [
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "胸",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "背",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "腿",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "肩",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "手臂",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "核心",
+            "share": 0
+          }
+        ],
+        "headline": "本周尚无训练数据，平衡评分不可用。",
+        "overworkedMuscles": [],
+        "totalEffectiveSets": 0,
+        "totalEstimatedVolumeKg": 0,
+        "underworkedMuscles": [],
+        "weekStartKey": "2026-05-25"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-2",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "id": "ex-back",
+              "name": "划船",
+              "primaryMuscles": [
+                "背"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-back-1",
+                  "reps": 10,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-back-2",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "id": "ex-legs",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-legs-1",
+                  "reps": 10,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-legs-2",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "id": "ex-shoulder",
+              "name": "推举",
+              "primaryMuscles": [
+                "肩"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-shoulder-1",
+                  "reps": 10,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-shoulder-2",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "id": "ex-arms",
+              "name": "弯举",
+              "primaryMuscles": [
+                "手臂"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-arms-1",
+                  "reps": 10,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-arms-2",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "id": "ex-core",
+              "name": "卷腹",
+              "primaryMuscles": [
+                "核心"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-core-1",
+                  "reps": 10,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-core-2",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            }
+          ],
+          "id": "bal-0"
+        }
+      ],
+      "label": "balanced",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 100,
+        "entries": [
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 800,
+            "muscle": "胸",
+            "share": 16.7
+          },
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 800,
+            "muscle": "背",
+            "share": 16.7
+          },
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 800,
+            "muscle": "腿",
+            "share": 16.7
+          },
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 800,
+            "muscle": "肩",
+            "share": 16.7
+          },
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 800,
+            "muscle": "手臂",
+            "share": 16.7
+          },
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 800,
+            "muscle": "核心",
+            "share": 16.7
+          }
+        ],
+        "headline": "本周肌群训练量分布均衡。",
+        "overworkedMuscles": [],
+        "totalEffectiveSets": 12,
+        "totalEstimatedVolumeKg": 4800,
+        "underworkedMuscles": [],
+        "weekStartKey": "2026-05-25"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-2",
+                  "reps": 10,
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-3",
+                  "reps": 10,
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-4",
+                  "reps": 10,
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-5",
+                  "reps": 10,
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-6",
+                  "reps": 10,
+                  "weight": 50
+                }
+              ]
+            },
+            {
+              "id": "ex-back",
+              "name": "划船",
+              "primaryMuscles": [
+                "背"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-back-1",
+                  "reps": 10,
+                  "weight": 50
+                }
+              ]
+            },
+            {
+              "id": "ex-legs",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-legs-1",
+                  "reps": 10,
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "imb-0"
+        }
+      ],
+      "label": "imbalanced-over-under",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 0,
+        "entries": [
+          {
+            "effectiveSets": 6,
+            "estimatedVolumeKg": 3000,
+            "muscle": "胸",
+            "share": 75
+          },
+          {
+            "effectiveSets": 1,
+            "estimatedVolumeKg": 500,
+            "muscle": "背",
+            "share": 12.5
+          },
+          {
+            "effectiveSets": 1,
+            "estimatedVolumeKg": 500,
+            "muscle": "腿",
+            "share": 12.5
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "肩",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "手臂",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "核心",
+            "share": 0
+          }
+        ],
+        "headline": "本周肌群平衡：胸 偏多，肩 / 手臂 / 核心 偏少。",
+        "overworkedMuscles": [
+          "胸"
+        ],
+        "totalEffectiveSets": 8,
+        "totalEstimatedVolumeKg": 4000,
+        "underworkedMuscles": [
+          "肩",
+          "手臂",
+          "核心"
+        ],
+        "weekStartKey": "2026-05-25"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "ex-contrib",
+              "muscleContribution": {
+                "肩": 0.5,
+                "胸": 1
+              },
+              "name": "上斜推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-contrib-1",
+                  "reps": 10,
+                  "weight": 30
+                },
+                {
+                  "done": true,
+                  "id": "ex-contrib-2",
+                  "reps": 10,
+                  "weight": 30
+                },
+                {
+                  "done": true,
+                  "id": "ex-contrib-3",
+                  "reps": 10,
+                  "weight": 30
+                }
+              ]
+            },
+            {
+              "id": "ex-secondary",
+              "name": "硬拉",
+              "primaryMuscles": [
+                "背",
+                "核心"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-secondary-1",
+                  "reps": 8,
+                  "weight": 40
+                },
+                {
+                  "done": true,
+                  "id": "ex-secondary-2",
+                  "reps": 8,
+                  "weight": 40
+                }
+              ]
+            }
+          ],
+          "id": "cs-0"
+        },
+        {
+          "completed": true,
+          "dataFlag": "test",
+          "date": "2026-05-26",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "cs-1-test"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-17",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "cs-old"
+        }
+      ],
+      "label": "contribution-and-secondary-and-filtering",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 53,
+        "entries": [
+          {
+            "effectiveSets": 3,
+            "estimatedVolumeKg": 900,
+            "muscle": "胸",
+            "share": 40
+          },
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 640,
+            "muscle": "背",
+            "share": 26.7
+          },
+          {
+            "effectiveSets": 1.5,
+            "estimatedVolumeKg": 450,
+            "muscle": "肩",
+            "share": 20
+          },
+          {
+            "effectiveSets": 1,
+            "estimatedVolumeKg": 320,
+            "muscle": "核心",
+            "share": 13.3
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "腿",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "手臂",
+            "share": 0
+          }
+        ],
+        "headline": "本周肌群平衡：胸 偏多，腿 / 手臂 偏少。",
+        "overworkedMuscles": [
+          "胸"
+        ],
+        "totalEffectiveSets": 7.5,
+        "totalEstimatedVolumeKg": 2310,
+        "underworkedMuscles": [
+          "腿",
+          "手臂"
+        ],
+        "weekStartKey": "2026-05-25"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "weekly-muscle-balance/balance-cases-v1"
+  },
+  "sourceFixtureId": "weekly-muscle-balance/balance-cases-v1"
+}
