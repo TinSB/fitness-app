@@ -1,0 +1,452 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "name": "深蹲",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "weight": 100
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "name": "硬拉",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "udf-out"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "weight": 65
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "name": "深蹲",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "weight": 95
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "name": "硬拉",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "udf-in"
+        }
+      ],
+      "label": "up-down-flat",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 65,
+          "currentBestReps": 5,
+          "deltaKg": 5,
+          "deltaPercent": 8.3,
+          "direction": "up",
+          "exerciseId": "bench-press",
+          "exerciseName": "平板卧推",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 60,
+          "previousBestReps": 5,
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 120,
+          "currentBestReps": 5,
+          "deltaKg": 0,
+          "deltaPercent": 0,
+          "direction": "flat",
+          "exerciseId": "deadlift",
+          "exerciseName": "硬拉",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 120,
+          "previousBestReps": 5,
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 95,
+          "currentBestReps": 5,
+          "deltaKg": -5,
+          "deltaPercent": -5,
+          "direction": "down",
+          "exerciseId": "back-squat",
+          "exerciseName": "深蹲",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 100,
+          "previousBestReps": 5,
+          "windowDays": 14
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "canonicalExerciseId": "barbell-row",
+              "id": "barbell-row",
+              "name": "杠铃划船",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "barbell-row-1",
+                  "reps": 8,
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "ns-out"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "canonicalExerciseId": "push-up",
+              "id": "push-up",
+              "name": "俯卧撑",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "push-up-1",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            }
+          ],
+          "id": "ns-in"
+        }
+      ],
+      "label": "new-and-skip",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 40,
+          "currentBestReps": 10,
+          "direction": "new",
+          "exerciseId": "push-up",
+          "exerciseName": "俯卧撑",
+          "windowDays": 14
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "name": "深蹲",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "name": "硬拉",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "weight": 40
+                }
+              ]
+            }
+          ],
+          "id": "snl-out"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "canonicalExerciseId": "overhead-press",
+              "id": "overhead-press",
+              "name": "站姿推举",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "overhead-press-1",
+                  "reps": 8,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "weight": 55
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "name": "深蹲",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "weight": 50
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "name": "硬拉",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "weight": 45
+                }
+              ]
+            }
+          ],
+          "id": "snl-in"
+        }
+      ],
+      "label": "sort-new-first-and-limit",
+      "options": {
+        "limit": 3,
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 40,
+          "currentBestReps": 8,
+          "direction": "new",
+          "exerciseId": "overhead-press",
+          "exerciseName": "站姿推举",
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 55,
+          "currentBestReps": 5,
+          "deltaKg": 15,
+          "deltaPercent": 37.5,
+          "direction": "up",
+          "exerciseId": "bench-press",
+          "exerciseName": "平板卧推",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 40,
+          "previousBestReps": 5,
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 50,
+          "currentBestReps": 5,
+          "deltaKg": 10,
+          "deltaPercent": 25,
+          "direction": "up",
+          "exerciseId": "back-squat",
+          "exerciseName": "深蹲",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 40,
+          "previousBestReps": 5,
+          "windowDays": 14
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-12",
+          "exercises": [
+            {
+              "canonicalExerciseId": "incline-db-press",
+              "id": "incline-db-press",
+              "name": "上斜哑铃卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "incline-db-press-1",
+                  "reps": 5,
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "wb-pre"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-13",
+          "exercises": [
+            {
+              "canonicalExerciseId": "incline-db-press",
+              "id": "incline-db-press",
+              "name": "上斜哑铃卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "incline-db-press-1",
+                  "reps": 5,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "wb-cutoff"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "canonicalExerciseId": "incline-db-press",
+              "id": "incline-db-press",
+              "name": "上斜哑铃卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "incline-db-press-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "wb-now"
+        }
+      ],
+      "label": "window-boundary-and-pickbest-tie",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-27",
+          "currentBestKg": 60,
+          "currentBestReps": 8,
+          "deltaKg": 10,
+          "deltaPercent": 20,
+          "direction": "up",
+          "exerciseId": "incline-db-press",
+          "exerciseName": "上斜哑铃卧推",
+          "previousBestDate": "2026-05-12",
+          "previousBestKg": 50,
+          "previousBestReps": 5,
+          "windowDays": 14
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "recent-pr-delta/delta-cases-v1"
+  },
+  "sourceFixtureId": "recent-pr-delta/delta-cases-v1"
+}

@@ -150,6 +150,18 @@ import {
   getLoadFeedbackAdjustment,
 } from '../src/engines/loadFeedbackEngine';
 import type { LoadFeedback, LoadFeedbackValue } from '../src/models/training-model';
+// AN-1 — leaf-analytics engines parity slice. Imports the REAL pure analytics engines
+// (trainingStreakEngine / recentPRDeltaEngine / weeklyMuscleBalanceEngine) so the
+// analytics goldens are GENERATED from TS truth, never hand-authored (§22). Each engine
+// is PURE + clockless given an injected `options.nowIso` (every analytics fixture passes
+// the deterministic clock, so the goldens are byte-deterministic). The Swift ports
+// (TrainingStreakEngine / RecentPRDeltaEngine / WeeklyMuscleBalanceEngine) re-run the
+// ported functions on the SAME echoed engineInput.history + options and COMPUTE-ASSERT
+// the result function-by-function (streak counts / PR-delta list+order / muscle-balance
+// entries). PURE — no write path, no decision-output wiring.
+import { computeTrainingStreak } from '../src/engines/trainingStreakEngine';
+import { computeRecentPRDeltas } from '../src/engines/recentPRDeltaEngine';
+import { computeWeeklyMuscleBalance } from '../src/engines/weeklyMuscleBalanceEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -306,6 +318,17 @@ const FIXTURE_IDS = [
   'load-feedback/collect-summary-v1',
   'load-feedback/adjustment-branches-v1',
   'load-feedback/upsert-v1',
+  // AN-1 leaf-analytics engines port — 3 OUTPUT fixtures (one per metric) whose generated
+  // goldens FUNCTION-LEVEL pin the ported analytics engines. Each carries a `cases` array;
+  // every case echoes its engineInput (history + options) and the REAL TS engine output, and
+  // the Swift port re-runs the ported function on the SAME inputs and asserts equality.
+  // training-streak (no-history / active-week / carry-last-week / broken-streak / filtering+
+  // months) / recent-pr-delta (up-down-flat / new+skip / sort-new-first+limit / window-
+  // boundary+pickBest-tie) / weekly-muscle-balance (no-data / balanced / imbalanced over+
+  // under / muscleContribution+secondary+filtering). Generated; never hand-edited (§22).
+  'training-streak/streak-cases-v1',
+  'recent-pr-delta/delta-cases-v1',
+  'weekly-muscle-balance/balance-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1622,6 +1645,129 @@ const generateLoadFeedback = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// AN-1 — leaf-analytics engines OUTPUT parity (trainingStreak / recentPRDelta /
+// weeklyMuscleBalance)
+//
+// Each fixture carries a compact `cases` array; per case the generator materialises a
+// synthetic, deterministic `history` (dates derive from parityMeta.deterministicClockIso
+// via dateOnlyDaysBefore / isoDaysBefore — the SAME helpers the e1rm/decision fixtures
+// use) from a minimal session spec, runs the REAL analytics engine over it with an
+// explicit `options.nowIso` (= the deterministic clock), and echoes BOTH the engineInput
+// (history + options, verbatim — the Swift port decodes them and re-runs the ported
+// function) AND the computed result. PURE / clockless given the injected nowIso — no
+// decision output is touched. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type AnalyticsSetSpec = { weight: number; reps: number; done?: boolean; actualWeightKg?: number };
+type AnalyticsExerciseSpec = {
+  id: string;
+  name?: string;
+  canonicalExerciseId?: string;
+  baseId?: string;
+  muscle?: string;
+  primaryMuscles?: string[];
+  muscleContribution?: Record<string, number>;
+  sets?: AnalyticsSetSpec[];
+};
+type AnalyticsSessionSpec = {
+  id: string;
+  daysAgo: number;
+  completed?: boolean;
+  dataFlag?: string;
+  startedAtDaysAgo?: number;
+  finishedAtDaysAgo?: number;
+  exercises?: AnalyticsExerciseSpec[];
+};
+
+// Materialise a session spec into a TrainingSession-shaped object. Only the fields the
+// analytics engines read are emitted (completed / dataFlag / finishedAt / startedAt / date
+// / exercises[].sets / .name / .canonicalExerciseId / .baseId / .muscle / .primaryMuscles /
+// .muscleContribution). The Swift TrainingSession decodes typed fields + the open bag.
+const buildAnalyticsSession = (spec: AnalyticsSessionSpec, nowIso: string): TrainingSession => {
+  const session: Record<string, unknown> = {
+    id: spec.id,
+    date: dateOnlyDaysBefore(nowIso, spec.daysAgo),
+    completed: spec.completed ?? true,
+  };
+  if (spec.dataFlag !== undefined) session.dataFlag = spec.dataFlag;
+  if (spec.startedAtDaysAgo !== undefined) session.startedAt = isoDaysBefore(nowIso, spec.startedAtDaysAgo);
+  if (spec.finishedAtDaysAgo !== undefined) session.finishedAt = isoDaysBefore(nowIso, spec.finishedAtDaysAgo);
+  if (Array.isArray(spec.exercises)) {
+    session.exercises = spec.exercises.map((ex) => {
+      const exercise: Record<string, unknown> = { id: ex.id };
+      if (ex.name !== undefined) exercise.name = ex.name;
+      if (ex.canonicalExerciseId !== undefined) exercise.canonicalExerciseId = ex.canonicalExerciseId;
+      if (ex.baseId !== undefined) exercise.baseId = ex.baseId;
+      if (ex.muscle !== undefined) exercise.muscle = ex.muscle;
+      if (ex.primaryMuscles !== undefined) exercise.primaryMuscles = ex.primaryMuscles;
+      if (ex.muscleContribution !== undefined) exercise.muscleContribution = ex.muscleContribution;
+      exercise.sets = (ex.sets ?? []).map((s, i) => ({
+        id: `${ex.id}-${i + 1}`,
+        weight: s.weight,
+        reps: s.reps,
+        done: s.done ?? true,
+        ...(s.actualWeightKg !== undefined ? { actualWeightKg: s.actualWeightKg } : {}),
+      }));
+      return exercise;
+    });
+  }
+  return session as unknown as TrainingSession;
+};
+
+const generateTrainingStreak = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: training-streak requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; options?: { weekStartDayOfWeek?: number }; sessions?: AnalyticsSessionSpec[] }) => {
+      const history = (c.sessions ?? []).map((s) => buildAnalyticsSession(s, nowIso));
+      const options: Record<string, unknown> = { nowIso };
+      if (c.options?.weekStartDayOfWeek !== undefined) options.weekStartDayOfWeek = c.options.weekStartDayOfWeek;
+      const result = computeTrainingStreak(history, options as any);
+      return { label: c.label ?? null, options, history, result };
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateRecentPRDelta = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: recent-pr-delta requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; options?: { windowDays?: number; limit?: number }; sessions?: AnalyticsSessionSpec[] }) => {
+      const history = (c.sessions ?? []).map((s) => buildAnalyticsSession(s, nowIso));
+      const options: Record<string, unknown> = { nowIso };
+      if (c.options?.windowDays !== undefined) options.windowDays = c.options.windowDays;
+      if (c.options?.limit !== undefined) options.limit = c.options.limit;
+      const result = computeRecentPRDeltas(history, options as any);
+      return { label: c.label ?? null, options, history, result };
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateWeeklyMuscleBalance = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: weekly-muscle-balance requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; options?: { weekStartDayOfWeek?: number; focusMuscles?: string[] }; sessions?: AnalyticsSessionSpec[] }) => {
+      const history = (c.sessions ?? []).map((s) => buildAnalyticsSession(s, nowIso));
+      const options: Record<string, unknown> = { nowIso };
+      if (c.options?.weekStartDayOfWeek !== undefined) options.weekStartDayOfWeek = c.options.weekStartDayOfWeek;
+      if (c.options?.focusMuscles !== undefined) options.focusMuscles = c.options.focusMuscles;
+      const result = computeWeeklyMuscleBalance(history, options as any);
+      return { label: c.label ?? null, options, history, result };
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -1676,6 +1822,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'load-feedback/collect-summary-v1': generateLoadFeedback,
   'load-feedback/adjustment-branches-v1': generateLoadFeedback,
   'load-feedback/upsert-v1': generateLoadFeedback,
+  'training-streak/streak-cases-v1': generateTrainingStreak,
+  'recent-pr-delta/delta-cases-v1': generateRecentPRDelta,
+  'weekly-muscle-balance/balance-cases-v1': generateWeeklyMuscleBalance,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
