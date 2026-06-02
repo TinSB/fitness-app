@@ -1,0 +1,39 @@
+{
+  "parityMeta": {
+    "id": "load-feedback/upsert-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-4 loadFeedbackEngine parity — upsertLoadFeedback. Pins: insert into a session with no prior loadFeedback (no note); insert with a note; and replace an existing same-exercise entry while preserving a different-exercise entry, with the new entry appended at the END (mirrors {...session, loadFeedback: [...withoutCurrent, next]}). Each upsertProbe echoes the input session + the resulting loadFeedback array; the Swift port re-runs upsertLoadFeedback and asserts the array matches item-by-item. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "74b481740484927b1a9891a0608102862eca5269",
+    "generatedAtPolicy": "none"
+  },
+  "upsertProbes": [
+    {
+      "label": "insert-into-empty",
+      "session": { "id": "ups-1", "date": "2026-05-20" },
+      "exerciseId": "bench-press",
+      "feedback": "good"
+    },
+    {
+      "label": "insert-with-note",
+      "session": { "id": "ups-2", "date": "2026-05-21" },
+      "exerciseId": "bench-press",
+      "feedback": "too_heavy",
+      "note": "今天偏累"
+    },
+    {
+      "label": "replace-existing-keep-others",
+      "session": {
+        "id": "ups-3",
+        "date": "2026-05-22",
+        "loadFeedback": [
+          { "exerciseId": "bench-press", "sessionId": "ups-3", "date": "2026-05-22", "feedback": "too_light" },
+          { "exerciseId": "squat", "sessionId": "ups-3", "date": "2026-05-22", "feedback": "good" }
+        ]
+      },
+      "exerciseId": "bench-press",
+      "feedback": "too_heavy"
+    }
+  ]
+}

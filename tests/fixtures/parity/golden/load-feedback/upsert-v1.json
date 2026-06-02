@@ -1,0 +1,91 @@
+{
+  "engineInput": {
+    "history": []
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "74b481740484927b1a9891a0608102862eca5269",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "load-feedback/upsert-v1"
+  },
+  "probes": [],
+  "sourceFixtureId": "load-feedback/upsert-v1",
+  "upsertProbes": [
+    {
+      "exerciseId": "bench-press",
+      "feedback": "good",
+      "label": "insert-into-empty",
+      "note": null,
+      "resultLoadFeedback": [
+        {
+          "date": "2026-05-20",
+          "exerciseId": "bench-press",
+          "feedback": "good",
+          "sessionId": "ups-1"
+        }
+      ],
+      "session": {
+        "date": "2026-05-20",
+        "id": "ups-1"
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "feedback": "too_heavy",
+      "label": "insert-with-note",
+      "note": "今天偏累",
+      "resultLoadFeedback": [
+        {
+          "date": "2026-05-21",
+          "exerciseId": "bench-press",
+          "feedback": "too_heavy",
+          "note": "今天偏累",
+          "sessionId": "ups-2"
+        }
+      ],
+      "session": {
+        "date": "2026-05-21",
+        "id": "ups-2"
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "feedback": "too_heavy",
+      "label": "replace-existing-keep-others",
+      "note": null,
+      "resultLoadFeedback": [
+        {
+          "date": "2026-05-22",
+          "exerciseId": "squat",
+          "feedback": "good",
+          "sessionId": "ups-3"
+        },
+        {
+          "date": "2026-05-22",
+          "exerciseId": "bench-press",
+          "feedback": "too_heavy",
+          "sessionId": "ups-3"
+        }
+      ],
+      "session": {
+        "date": "2026-05-22",
+        "id": "ups-3",
+        "loadFeedback": [
+          {
+            "date": "2026-05-22",
+            "exerciseId": "bench-press",
+            "feedback": "too_light",
+            "sessionId": "ups-3"
+          },
+          {
+            "date": "2026-05-22",
+            "exerciseId": "squat",
+            "feedback": "good",
+            "sessionId": "ups-3"
+          }
+        ]
+      }
+    }
+  ]
+}

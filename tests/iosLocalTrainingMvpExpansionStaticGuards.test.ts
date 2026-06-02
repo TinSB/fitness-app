@@ -289,14 +289,14 @@ const changedFiles = (paths: string[]): string => {
 };
 
 describe('iOS-11 parity goldens + package/lockfile unchanged', () => {
-  it('20. parity --check still 42 fixtures / 0 changed; no golden file changed', () => {
+  it('20. parity --check still 49 fixtures / 0 changed; no golden file changed', () => {
     const result = spawnSync(
       process.execPath,
       [repoFile('scripts/generate-parity-goldens.mjs'), '--check'],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+42\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+49\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
     expect(changedFiles(['tests/fixtures/parity'])).toBe('');
   }, 240_000);

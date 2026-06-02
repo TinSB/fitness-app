@@ -1,0 +1,30 @@
+{
+  "parityMeta": {
+    "id": "set-weight-fine-tune/downward-capped-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-4 setWeightFineTuneEngine parity — declining e1RM trend hitting the LOWER projection clamp. Five in-window push-a/bench-press sessions with falling load (65→50kg x 6 reps) give a negative weekly slope steep enough that projected e1RM < currentE1rm*0.95, so clamp pins it to the 0.95 floor — yet |slope| stays under currentE1rm*0.1 so fallbackReason is undefined. Pins the lower-clamp arm + negative-slope basis. A windowWeeks=4 probe pins the window override. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "74b481740484927b1a9891a0608102862eca5269",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Falling load => negative slope; projected < 0.95c => lower clamp; |slope| < 0.1c => not noisy."
+  },
+  "exerciseId": "bench-press",
+  "targetReps": 6,
+  "repMin": 6,
+  "repMax": 8,
+  "sessions": [
+    { "id": "dn-s5", "daysAgo": 35, "sets": [{ "weight": 65, "reps": 6 }] },
+    { "id": "dn-s4", "daysAgo": 28, "sets": [{ "weight": 61.25, "reps": 6 }] },
+    { "id": "dn-s3", "daysAgo": 21, "sets": [{ "weight": 57.5, "reps": 6 }] },
+    { "id": "dn-s2", "daysAgo": 14, "sets": [{ "weight": 53.75, "reps": 6 }] },
+    { "id": "dn-s1", "daysAgo": 7, "sets": [{ "weight": 50, "reps": 6 }] }
+  ],
+  "probes": [
+    {
+      "label": "window-weeks-4",
+      "input": { "exerciseId": "bench-press", "targetReps": 8, "repMin": 6, "repMax": 8, "windowWeeks": 4 }
+    }
+  ]
+}
