@@ -1,0 +1,30 @@
+{
+  "parityMeta": {
+    "id": "adaptive-feedback/improving-and-seed-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-2 performance-lookup parity — improving branch + seeded issueScores + boost/taper moduleDose. Three completed pull-a / seated-row sessions, most-recent-first: latest 70x8 (value 560) vs the two prior 50x8 (value 400, baseline 400). latest > baseline*1.05 and no pain => improvingIssues gets the seated-row issues (thoracic_rotation/scapular_control). The screening seed pre-loads issueScores {core_control:4, scapular_control:3}: moduleDose => core_control boost (seed >=4), scapular_control taper (seeded 3 < 4 but improving), thoracic_rotation taper (improving). Proves the screening.adaptiveState.issueScores seed is merged (the ONLY screening field buildAdaptiveState reads). FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (pull-a / seated-row). The improving branch adds to improvingIssues (a Set, deduped) not issueScores. lastUpdated substituted with the deterministic clock date."
+  },
+  "exerciseId": "seated-row",
+  "screening": { "issueScores": { "core_control": 4, "scapular_control": 3 } },
+  "sessions": [
+    { "id": "imp-s1", "daysAgo": 0, "templateId": "pull-a", "exerciseId": "seated-row", "sets": [{ "weight": 70, "reps": 8 }] },
+    { "id": "imp-s2", "daysAgo": 7, "templateId": "pull-a", "exerciseId": "seated-row", "sets": [{ "weight": 50, "reps": 8 }] },
+    { "id": "imp-s3", "daysAgo": 14, "templateId": "pull-a", "exerciseId": "seated-row", "sets": [{ "weight": 50, "reps": 8 }] }
+  ],
+  "lastProbes": [
+    { "label": "seated-row latest", "exerciseId": "seated-row" }
+  ],
+  "previousProbes": [
+    { "label": "skip latest -> day7", "exerciseId": "seated-row", "skipSessionId": "imp-s1" }
+  ],
+  "recentProbes": [
+    { "label": "limit 2", "exerciseId": "seated-row", "limit": 2 },
+    { "label": "limit 3 (all)", "exerciseId": "seated-row", "limit": 3 }
+  ]
+}

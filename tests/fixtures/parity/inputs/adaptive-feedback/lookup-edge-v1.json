@@ -1,0 +1,33 @@
+{
+  "parityMeta": {
+    "id": "adaptive-feedback/lookup-edge-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-2 performance-lookup parity — lookup-function edge coverage + no-op buildAdaptiveState baseline. Three completed push-a bench-press sessions with FLAT performance (60x6, value 360 each) so buildAdaptiveState produces neither a drop nor an improvement and no pain — every output collection is empty. The probes pin the lookup functions across branches: findLastPerformance found vs absent (null); findPreviousPerformance with no skip (== findLast), skipping the latest (-> next match), and skipping an id that never appears in history (skipped never flips true -> null); findRecentPerformances at limits 1/2/5. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "73c63efaf60b8f56ed38ee875a3d34c29d7f5c56",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Synthetic history via makeSession (push-a / bench-press), most-recent-first. lastUpdated substituted with the deterministic clock date."
+  },
+  "exerciseId": "bench-press",
+  "sessions": [
+    { "id": "le-s1", "daysAgo": 0, "sets": [{ "weight": 60, "reps": 6 }] },
+    { "id": "le-s2", "daysAgo": 7, "sets": [{ "weight": 60, "reps": 6 }] },
+    { "id": "le-s3", "daysAgo": 14, "sets": [{ "weight": 60, "reps": 6 }] }
+  ],
+  "lastProbes": [
+    { "label": "found latest", "exerciseId": "bench-press" },
+    { "label": "absent -> null", "exerciseId": "ghost-lift" }
+  ],
+  "previousProbes": [
+    { "label": "no skip == findLast", "exerciseId": "bench-press" },
+    { "label": "skip latest -> day7", "exerciseId": "bench-press", "skipSessionId": "le-s1" },
+    { "label": "skip absent session -> null", "exerciseId": "bench-press", "skipSessionId": "nope-session" }
+  ],
+  "recentProbes": [
+    { "label": "limit 1", "exerciseId": "bench-press", "limit": 1 },
+    { "label": "limit 2", "exerciseId": "bench-press", "limit": 2 },
+    { "label": "limit 5 (all 3)", "exerciseId": "bench-press", "limit": 5 }
+  ]
+}
