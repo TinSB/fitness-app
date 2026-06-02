@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyStatusRules } from '../src/engines/exercisePrescriptionEngine';
 import { buildSupportPlan, buildWeeklyPrescription } from '../src/engines/supportPlanEngine';
 import { buildPlanViewModel } from '../src/presenters/planPresenter';
@@ -10,6 +10,20 @@ import { getTemplate, makeAppData, makeSession, makeStatus } from './fixtures';
 // "已停练约 X 天" 等 advisory 长文案，也不要求手动 apply。
 
 const REFERENCE_DATE = '2026-05-27';
+
+// FIX-2: 冻结"现在"到 REFERENCE_DATE。本文件多处通过 buildWeeklyPrescription /
+// buildSupportPlan / buildPlanViewModel 间接走引擎环境 new Date()
+// （supportPlanEngine getWeekStart 默认参数 = new Date()），不冻结时钟则真实日历
+// 漂移会让 fixture 相对今天的 gap/phase 改变、断言失效（time-bomb）。这里只把
+// "现在" 冻到 REFERENCE_DATE，fixture 日期仍相对它，断言意图不变。
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(`${REFERENCE_DATE}T12:00:00.000Z`));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 const dateDaysBefore = (days: number) => {
   const d = new Date(`${REFERENCE_DATE}T12:00:00.000Z`);
