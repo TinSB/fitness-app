@@ -136,7 +136,17 @@ const summarizeTechnique = (sets: TrainingSetLog[]) => {
 const recentPoorTechniqueCount = (recent: PerformanceSnapshot[]) =>
   recent.filter((performance) => averageTechniqueQuality(performance.sets) === 'poor').length;
 
-export const makeSuggestion = (templateExercise: ExerciseForProgression, history: TrainingSession[]): Suggestion => {
+// iOS-17e-6a: `asOfDate` makes the fineTune reference clock INJECTABLE. Production
+// callers (sessionBuilder / recommendationDiff) omit it, so `buildSetWeightFineTune`
+// keeps reading the wall clock (setWeightFineTuneEngine.ts:119) — behaviour unchanged.
+// The pure Swift port + the parity generator pass the deterministic `nowIso` (§11.2
+// injected clock) so the live fineTune projection is byte-reproducible instead of
+// wall-clock-dependent. Additive: a `undefined` asOfDate is exactly the old call.
+export const makeSuggestion = (
+  templateExercise: ExerciseForProgression,
+  history: TrainingSession[],
+  asOfDate?: string,
+): Suggestion => {
   const historyId = templateExercise.baseId || templateExercise.id;
   const recent = findRecentPerformances(history, historyId, 3);
   const last = recent[0];
@@ -206,6 +216,7 @@ export const makeSuggestion = (templateExercise: ExerciseForProgression, history
     targetReps: medianReps,
     repMin: number(templateExercise.repMin),
     repMax: number(templateExercise.repMax),
+    asOfDate,
   });
   // Any signal that the legacy decision tree wanted to hold the weight or
   // back off must veto the fineTune projection — fineTune is only the

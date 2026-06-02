@@ -98,6 +98,10 @@ const FIXTURE_IDS = [
   'progression-suggestion/backoff-volume-drop-v1',
   'progression-suggestion/backoff-technique-streak-v1',
   'progression-suggestion/top-backoff-compound-v1',
+  // iOS-17e-6a fineTune LIVE — 2 function-level fixtures pass an injected asOfDate over
+  // recent in-window history so the ported SetWeightFineTuneEngine projection FIRES.
+  'progression-suggestion/fine-tune-uptrend-applied-v1',
+  'progression-suggestion/fine-tune-legacy-respect-v1',
   // iOS-17e-4 setWeightFineTuneEngine port — 4 OUTPUT fixtures FUNCTION-LEVEL pinning
   // the ported buildSetWeightFineTune (suggestedWeightKg + basis) over scalar params +
   // history, with param-only probes. Generated; never hand-edited (§22).
@@ -312,7 +316,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

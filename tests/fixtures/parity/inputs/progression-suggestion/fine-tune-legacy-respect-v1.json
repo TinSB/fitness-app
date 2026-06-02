@@ -1,0 +1,33 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/fine-tune-legacy-respect-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-6a — fineTune LIVE, legacy-respect HONORED. A compound templateExercise (repMin 6 / repMax 8 / sets 3 / progressionUnitKg 2.5 / progressionPercent [5,10]) with three RECENT in-window push sessions at a FLAT top weight (60 kg, all 3x8 = hit ceiling) drives shouldAdd. With asOfDate = deterministicClockIso, the LIVE buildSetWeightFineTune sees a flat e1RM trend (slope 0) -> projects exactly lastWeight 60: applyFineTuneIfDataRich clamps (±10% [54,66]), 2.5-rounds (60), then the legacy-respect guard FIRES (baseline 62.5 > lastWeight 60 AND rounded 60 <= lastWeight 60) -> returns the legacy baseline 62.5 (the user hit the top of the range every set, that IS ready-to-add even with a flat regression). Output equals makeSuggestion(nil), but the golden's data-rich fineTuneNeutrality (samplesUsed 9, fallbackReason null) PROVES the live fineTune RAN and the legacy-respect branch chose baseline over the flat projection. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "6ae93c169cbc57f20eebd00d0fe1edd42535c665",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "asOfDate=true -> generator passes deterministicClockIso as the injected fineTune clock. RECENT in-window history (daysAgo 4/11/18) all 60kg @8 -> flat e1RM 76 (slope 0) -> projected weightForTarget(8) 60 -> rounded 60 <= lastWeight 60 with a legacy +increment(2.5)=62.5 wanting to add -> legacy-respect returns 62.5. Sessions NEWEST-FIRST."
+  },
+  "asOfDate": true,
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 60,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 2.5,
+    "progressionPercent": [5, 10]
+  },
+  "sessions": [
+    { "id": "ft-lr-s-new", "daysAgo": 4, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] },
+    { "id": "ft-lr-s-mid", "daysAgo": 11, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] },
+    { "id": "ft-lr-s-old", "daysAgo": 18, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] }
+  ]
+}

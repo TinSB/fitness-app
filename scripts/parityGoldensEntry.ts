@@ -271,6 +271,16 @@ const FIXTURE_IDS = [
   'progression-suggestion/backoff-volume-drop-v1',
   'progression-suggestion/backoff-technique-streak-v1',
   'progression-suggestion/top-backoff-compound-v1',
+  // iOS-17e-6a fineTune LIVE — 2 NEW function-level fixtures that pass an injected
+  // asOfDate (= deterministicClockIso) over RECENT in-window history so the ported
+  // SetWeightFineTuneEngine projection actually FIRES (the 17e-3 stub is removed). They
+  // exercise the live applyFineTuneIfDataRich body: `fine-tune-uptrend-applied` returns the
+  // ±10%-clamped / 2.5-rounded projection (legacy-respect skipped) and PROVES the live path
+  // changes the output vs the nil/legacy baseline; `fine-tune-legacy-respect` fires the
+  // legacy-respect guard (flat trend defers to legacy) while a data-rich fineTuneNeutrality
+  // proves the projection RAN. Additive; generated, never hand-edited (§22).
+  'progression-suggestion/fine-tune-uptrend-applied-v1',
+  'progression-suggestion/fine-tune-legacy-respect-v1',
   // iOS-17e-4 setWeightFineTuneEngine port — 4 OUTPUT fixtures whose generated goldens
   // FUNCTION-LEVEL pin the ported setWeightFineTuneEngine: each echoes the engineInput
   // (scalar fine-tune params + history) and the REAL TS buildSetWeightFineTune output
@@ -1326,10 +1336,16 @@ const generateAdaptiveFeedback = (input: any, meta: ParityMeta) => {
 //     the conservative / adaptive-factor / fatigueCost branches of buildSetPrescription
 //     and the kind/sets/startWeight boundary of shouldUseTopBackoff are covered.
 // The `exercise.id` is normalised to the history exercise id so findRecentPerformances
-// matches. Session dates derive from parityMeta.deterministicClockIso (anchored in the
-// PAST — see the fineTune NEUTRALITY note on the import — so the live fineTune window is
-// empty and the golden is byte-deterministic). No decision output is touched. Generated,
-// never hand-edited (§22).
+// matches. Session dates derive from parityMeta.deterministicClockIso. iOS-17e-6a threads
+// an OPTIONAL `input.asOfDate` into makeSuggestion + the fineTuneNeutrality probe:
+//   * existing 17e-3 fixtures OMIT it → makeSuggestion reads the WALL CLOCK and their
+//     deep-2020 history is outside any plausible live window → fineTune insufficient →
+//     legacy baseline → goldens byte-identical (zero drift).
+//   * NEW fine-tune-* fixtures SET asOfDate = deterministicClockIso (the §11.2 injected
+//     clock) with RECENT in-window history → the LIVE fineTune projection fires, so the
+//     ±10%-clamp / 2.5-round / legacy-respect body of applyFineTuneIfDataRich is exercised
+//     and the golden is still byte-deterministic (clock is fixed, not wall).
+// No decision output is touched. Generated, never hand-edited (§22).
 // ---------------------------------------------------------------------------
 
 type ProgressionSessionSpec = {
@@ -1343,6 +1359,11 @@ const generateProgression = (input: any, meta: ParityMeta) => {
     throw new Error('parityGoldensEntry: progression-suggestion requires deterministicClockIso');
   }
   const nowIso = meta.deterministicClockIso;
+  // iOS-17e-6a: OPTIONAL injected fineTune clock. Omitted by the 17e-3 fixtures (wall-clock
+  // → insufficient → byte-identical); set to deterministicClockIso by the fine-tune-* live
+  // fixtures so the projection fires deterministically. A literal `true` means "use nowIso".
+  const asOfDate: string | undefined =
+    input.asOfDate === true ? nowIso : (typeof input.asOfDate === 'string' ? input.asOfDate : undefined);
   const templateId: string = input.templateId ?? 'push-a';
   const exerciseId: string = input.exerciseId ?? getTemplate(templateId).exercises[0].id;
   const sessions: ProgressionSessionSpec[] = Array.isArray(input.sessions) ? input.sessions : [];
@@ -1363,7 +1384,7 @@ const generateProgression = (input: any, meta: ParityMeta) => {
   // SAME echoed object and applies the identical number()/?? defaults).
   const exercise = { ...(input.exercise ?? {}), id: exerciseId };
 
-  const suggestion = makeSuggestion(exercise as any, history);
+  const suggestion = makeSuggestion(exercise as any, history, asOfDate);
   const topBackoff = shouldUseTopBackoff(exercise as any);
   const setPrescription = buildSetPrescription(exercise as any, {
     weight: suggestion.weight,
@@ -1382,6 +1403,7 @@ const generateProgression = (input: any, meta: ParityMeta) => {
     targetReps: number((exercise as any).repMin),
     repMin: number((exercise as any).repMin),
     repMax: number((exercise as any).repMax),
+    asOfDate,
   });
 
   const topBackoffProbes = (Array.isArray(input.topBackoffProbes) ? input.topBackoffProbes : []).map(
@@ -1645,6 +1667,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'progression-suggestion/backoff-volume-drop-v1': generateProgression,
   'progression-suggestion/backoff-technique-streak-v1': generateProgression,
   'progression-suggestion/top-backoff-compound-v1': generateProgression,
+  'progression-suggestion/fine-tune-uptrend-applied-v1': generateProgression,
+  'progression-suggestion/fine-tune-legacy-respect-v1': generateProgression,
   'set-weight-fine-tune/upward-trend-v1': generateSetWeightFineTune,
   'set-weight-fine-tune/downward-capped-v1': generateSetWeightFineTune,
   'set-weight-fine-tune/noisy-trend-v1': generateSetWeightFineTune,
