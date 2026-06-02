@@ -1,0 +1,34 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/backoff-technique-streak-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-3 progressionRulesEngine parity — backoff (technique streak). A compound templateExercise (repMin 6 / repMax 8 / sets 3 / startWeight 60 / regressionIds + replacementSuggested) whose two most recent sessions log POOR technique drives shouldBackoff via techniqueSuggestsBackoff (streak>=2): nextWeight = lastWeight - increment = 57.5, reps = repMin, note '最近两次动作质量都偏差' + the regression hint + the replacement hint. lastSummary carries '/ 技术较差'. shouldUseTopBackoff true; buildSetPrescription emits the top+backoff prescription. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "sourceNotes": "deterministicClockIso anchored in the PAST => live fineTune window empty (golden-neutral). Sessions NEWEST-FIRST: two newest sessions all-poor technique => poorTechniqueStreak=2 => techniqueSuggestsBackoff."
+  },
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 60,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 2.5,
+    "progressionPercent": [5, 10],
+    "regressionIds": ["incline-db-press"],
+    "replacementSuggested": "incline-db-press"
+  },
+  "sessions": [
+    { "id": "ts-s-new", "daysAgo": 3, "sets": [{ "weight": 60, "reps": 7, "techniqueQuality": "poor" }, { "weight": 60, "reps": 7, "techniqueQuality": "poor" }, { "weight": 60, "reps": 7, "techniqueQuality": "poor" }] },
+    { "id": "ts-s-prev", "daysAgo": 6, "sets": [{ "weight": 60, "reps": 7, "techniqueQuality": "poor" }, { "weight": 60, "reps": 7, "techniqueQuality": "poor" }, { "weight": 60, "reps": 7, "techniqueQuality": "poor" }] },
+    { "id": "ts-s-prev2", "daysAgo": 9, "sets": [{ "weight": 60, "reps": 7, "techniqueQuality": "acceptable" }, { "weight": 60, "reps": 7, "techniqueQuality": "acceptable" }, { "weight": 60, "reps": 7, "techniqueQuality": "acceptable" }] }
+  ]
+}

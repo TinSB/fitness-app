@@ -1,0 +1,53 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/no-history-baseline-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-3 progressionRulesEngine parity — no-history baseline. An isolation templateExercise (repMin 12 / repMax 20 / startWeight 10 / sets 3 / conservativeTopSet true) with EMPTY history drives makeSuggestion's first branch: baseline weight=startWeight, reps=repMin, lastSummary '暂无历史', the conservative + isolation(repMax>=20) rangeNote. shouldUseTopBackoff is false (isolation) and buildSetPrescription takes the conservative non-topBackoff '保守版' path. topBackoffProbes pin the kind/sets/startWeight boundary; setPrescriptionProbes pin the adaptiveTopSetFactor<1 / fatigueCost='high' / adaptiveBackoffFactor<0.92 branches of buildSetPrescription. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "sourceNotes": "deterministicClockIso is anchored in the PAST so the live buildSetWeightFineTune 8-week wall-clock window is always empty (fineTuneNeutrality.fallbackReason='insufficient_history'); the deferred fineTune projection is golden-neutral. Empty history => makeSuggestion first branch. Probe exercises drive shouldUseTopBackoff + buildSetPrescription branches directly."
+  },
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic isolation",
+    "kind": "isolation",
+    "sets": 3,
+    "repMin": 12,
+    "repMax": 20,
+    "startWeight": 10,
+    "rest": 90,
+    "targetRir": [1, 2],
+    "targetRirText": "RIR 1-2",
+    "progressionUnitKg": 1,
+    "progressionPercent": [2, 5],
+    "conservativeTopSet": true
+  },
+  "sessions": [],
+  "topBackoffProbes": [
+    { "label": "compound 3 sets 60kg -> true", "exercise": { "kind": "compound", "sets": 3, "startWeight": 60 } },
+    { "label": "compound 2 sets -> false (sets<3)", "exercise": { "kind": "compound", "sets": 2, "startWeight": 60 } },
+    { "label": "machine 3 sets 30kg -> true (boundary)", "exercise": { "kind": "machine", "sets": 3, "startWeight": 30 } },
+    { "label": "compound 3 sets 25kg -> false (startWeight<30)", "exercise": { "kind": "compound", "sets": 3, "startWeight": 25 } },
+    { "label": "isolation -> false (kind)", "exercise": { "kind": "isolation", "sets": 4, "startWeight": 80 } }
+  ],
+  "setPrescriptionProbes": [
+    {
+      "label": "non-topBackoff adaptiveTopSetFactor<1 -> 保守版",
+      "exercise": { "kind": "isolation", "sets": 3, "repMin": 8, "repMax": 12, "startWeight": 20, "progressionUnitKg": 1, "adaptiveTopSetFactor": 0.9 },
+      "suggestion": { "weight": 20, "reps": 10 }
+    },
+    {
+      "label": "topBackoff fatigueCost=high non-conservative (backoff drop 0.9)",
+      "exercise": { "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "startWeight": 60, "progressionUnitKg": 2.5, "fatigueCost": "high" },
+      "suggestion": { "weight": 60, "reps": 6 }
+    },
+    {
+      "label": "topBackoff adaptiveBackoffFactor<0.92 -> 保守版",
+      "exercise": { "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "startWeight": 60, "progressionUnitKg": 2.5, "adaptiveBackoffFactor": 0.85 },
+      "suggestion": { "weight": 60, "reps": 6 }
+    }
+  ]
+}

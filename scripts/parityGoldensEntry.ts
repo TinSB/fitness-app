@@ -110,6 +110,30 @@ import {
 import type { PerformanceSnapshot } from '../src/models/training-model';
 import { DEFAULT_SCREENING_PROFILE } from '../src/data/defaults';
 import { number, setWeightKg } from '../src/engines/engineUtils';
+// iOS-17e-3 — progressionRulesEngine progressive-suggestion port parity slice.
+// Imports the REAL makeSuggestion / shouldUseTopBackoff / buildSetPrescription so the
+// progression-suggestion goldens are GENERATED from TS truth, never hand-authored
+// (§22). The Swift port (ProgressionRulesEngine) re-runs the ported functions over
+// the SAME echoed engineInput.exercise + history and asserts equality function-by-
+// function (suggestion weight/reps/lastSummary/targetSummary/note + shouldUseTopBackoff
+// + setPrescription top/backoff weight+reps+summary). PURE — no write path, no
+// decision-output wiring (that is 17e-5).
+//
+// fineTune NEUTRALITY: makeSuggestion calls buildSetWeightFineTune WITHOUT asOfDate
+// (setWeightFineTuneEngine.ts:119 → wall clock). These fixtures anchor their history
+// far in the past (old deterministicClockIso) so the live 8-week window is ALWAYS
+// empty → fineTune returns 'insufficient_history' and applyFineTuneIfDataRich
+// (progressionRulesEngine.ts:88) is a no-op → byte-deterministic golden regardless of
+// generation time. We import buildSetWeightFineTune ONLY to echo that fallbackReason
+// so the parity test can assert the deferral premise holds (the live projection port
+// is a later slice; the Swift port DEFERS it golden-neutral, mirroring the
+// TrainingDecisionExercisePrescription precedent).
+import {
+  makeSuggestion,
+  shouldUseTopBackoff,
+  buildSetPrescription,
+} from '../src/engines/progressionRulesEngine';
+import { buildSetWeightFineTune } from '../src/engines/setWeightFineTuneEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -213,6 +237,24 @@ const FIXTURE_IDS = [
   'adaptive-feedback/pain-accumulation-v1',
   'adaptive-feedback/improving-and-seed-v1',
   'adaptive-feedback/lookup-edge-v1',
+  // iOS-17e-3 progressionRulesEngine progressive-suggestion port — 6 OUTPUT fixtures
+  // whose generated goldens FUNCTION-LEVEL pin the ported progressionRulesEngine: each
+  // echoes the engineInput (templateExercise + history) and the REAL TS outputs
+  // (makeSuggestion weight/reps/lastSummary/targetSummary/note + shouldUseTopBackoff +
+  // buildSetPrescription top/backoff weight+reps+summary), plus a fineTuneNeutrality
+  // guard proving the deferred live fineTune projection is inert (insufficient_history).
+  // no-history-baseline (first-session baseline + conservative + isolation rangeNote) /
+  // increase-double-top (hit-ceiling twice → +increment) / hold-stable (hold at top) /
+  // backoff-volume-drop (volume regression backoff) / backoff-technique-streak (poor
+  // technique streak backoff + regression hint) / top-backoff-compound (top+backoff set
+  // prescription). The Swift ProgressionRulesEngine re-runs the ported functions on the
+  // SAME inputs and asserts equality. Generated; never hand-edited (§22).
+  'progression-suggestion/no-history-baseline-v1',
+  'progression-suggestion/increase-double-top-v1',
+  'progression-suggestion/hold-stable-v1',
+  'progression-suggestion/backoff-volume-drop-v1',
+  'progression-suggestion/backoff-technique-streak-v1',
+  'progression-suggestion/top-backoff-compound-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1227,6 +1269,112 @@ const generateAdaptiveFeedback = (input: any, meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// iOS-17e-3 — progressionRulesEngine progressive-suggestion OUTPUT parity
+//
+// Builds a synthetic, performed-set history via the SAME makeSession fixture helper
+// the iOS-4B0/17e-0/17e-1/17e-2 fixtures use, then runs the REAL progressionRulesEngine
+// over an explicit `templateExercise` (ExerciseForProgression) and echoes BOTH the
+// engineInput (exercise + history, verbatim — the Swift port decodes them and re-runs
+// the ported functions) AND the computed outputs:
+//   - suggestion          = makeSuggestion(exercise, history)        (Suggestion)
+//   - shouldUseTopBackoff = shouldUseTopBackoff(exercise)            (boolean)
+//   - setPrescription     = buildSetPrescription(exercise, {weight,reps})
+//   - fineTuneNeutrality  = buildSetWeightFineTune(...).basis fallbackReason+samplesUsed
+//   - optional topBackoffProbes / setPrescriptionProbes pin extra exercise shapes so
+//     the conservative / adaptive-factor / fatigueCost branches of buildSetPrescription
+//     and the kind/sets/startWeight boundary of shouldUseTopBackoff are covered.
+// The `exercise.id` is normalised to the history exercise id so findRecentPerformances
+// matches. Session dates derive from parityMeta.deterministicClockIso (anchored in the
+// PAST — see the fineTune NEUTRALITY note on the import — so the live fineTune window is
+// empty and the golden is byte-deterministic). No decision output is touched. Generated,
+// never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type ProgressionSessionSpec = {
+  id: string;
+  daysAgo: number;
+  sets?: Array<{ weight: number; reps: number; rir?: number; note?: string; painFlag?: boolean; techniqueQuality?: 'good' | 'acceptable' | 'poor' }>;
+};
+
+const generateProgression = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: progression-suggestion requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const templateId: string = input.templateId ?? 'push-a';
+  const exerciseId: string = input.exerciseId ?? getTemplate(templateId).exercises[0].id;
+  const sessions: ProgressionSessionSpec[] = Array.isArray(input.sessions) ? input.sessions : [];
+
+  const history: TrainingSession[] = sessions.map((s) =>
+    makeSession({
+      id: s.id,
+      date: dateOnlyDaysBefore(nowIso, s.daysAgo),
+      templateId,
+      exerciseId,
+      setSpecs: s.sets ?? [{ weight: 60, reps: 6 }],
+    }) as TrainingSession,
+  );
+
+  // The templateExercise (ExerciseForProgression) the engine consumes. `id` is
+  // normalised to the history exercise id so findRecentPerformances/findPreviousPerformance
+  // match; every other field is the fixture's verbatim spec (the Swift port decodes the
+  // SAME echoed object and applies the identical number()/?? defaults).
+  const exercise = { ...(input.exercise ?? {}), id: exerciseId };
+
+  const suggestion = makeSuggestion(exercise as any, history);
+  const topBackoff = shouldUseTopBackoff(exercise as any);
+  const setPrescription = buildSetPrescription(exercise as any, {
+    weight: suggestion.weight,
+    reps: suggestion.reps,
+  });
+
+  // Echo the live fineTune fallbackReason so the parity test can ASSERT the deferral
+  // premise (golden-neutral / inert) holds for this fixture. Mirrors the same call
+  // makeSuggestion makes (progressionRulesEngine.ts:202); fallbackReason depends only on
+  // in-window sample count, so the exact targetReps does not matter here.
+  const historyId = (exercise as any).baseId || (exercise as any).id;
+  const fineTune = buildSetWeightFineTune({
+    history,
+    exerciseId: historyId,
+    baseExerciseId: (exercise as any).baseId,
+    targetReps: number((exercise as any).repMin),
+    repMin: number((exercise as any).repMin),
+    repMax: number((exercise as any).repMax),
+  });
+
+  const topBackoffProbes = (Array.isArray(input.topBackoffProbes) ? input.topBackoffProbes : []).map(
+    (p: { label?: string; exercise: any }) => ({
+      label: p.label ?? null,
+      exercise: p.exercise,
+      shouldUseTopBackoff: shouldUseTopBackoff(p.exercise),
+    }),
+  );
+
+  const setPrescriptionProbes = (Array.isArray(input.setPrescriptionProbes) ? input.setPrescriptionProbes : []).map(
+    (p: { label?: string; exercise: any; suggestion: { weight: number; reps: number } }) => ({
+      label: p.label ?? null,
+      exercise: p.exercise,
+      suggestion: p.suggestion,
+      setPrescription: buildSetPrescription(p.exercise, p.suggestion),
+    }),
+  );
+
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: { exercise, history },
+    suggestion,
+    shouldUseTopBackoff: topBackoff,
+    setPrescription,
+    fineTuneNeutrality: {
+      fallbackReason: fineTune.basis.fallbackReason ?? null,
+      samplesUsed: fineTune.basis.samplesUsed,
+    },
+    topBackoffProbes,
+    setPrescriptionProbes,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -1266,6 +1414,12 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'adaptive-feedback/pain-accumulation-v1': generateAdaptiveFeedback,
   'adaptive-feedback/improving-and-seed-v1': generateAdaptiveFeedback,
   'adaptive-feedback/lookup-edge-v1': generateAdaptiveFeedback,
+  'progression-suggestion/no-history-baseline-v1': generateProgression,
+  'progression-suggestion/increase-double-top-v1': generateProgression,
+  'progression-suggestion/hold-stable-v1': generateProgression,
+  'progression-suggestion/backoff-volume-drop-v1': generateProgression,
+  'progression-suggestion/backoff-technique-streak-v1': generateProgression,
+  'progression-suggestion/top-backoff-compound-v1': generateProgression,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

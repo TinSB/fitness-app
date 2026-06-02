@@ -1,0 +1,31 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/increase-double-top-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-3 progressionRulesEngine parity — increase (double top). A compound templateExercise (repMin 6 / repMax 8 / sets 3 / startWeight 60 / progressionUnitKg 2.5 / progressionPercent [5,10]) with the two most recent sessions BOTH hitting the rep ceiling (3 sets x 8 reps @ 60kg, rir 2, acceptable technique) drives shouldAdd: nextWeight = lastWeight + increment(2.5) = 62.5, reps = repMin, note '连续两次打满上限'. shouldUseTopBackoff true; buildSetPrescription emits the non-conservative top+backoff prescription. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "577dcd8815c969d1380a3e21c5ce33f58cc10e42",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2020-01-15T08:00:00.000Z",
+    "sourceNotes": "deterministicClockIso anchored in the PAST => live fineTune window empty (golden-neutral). Sessions listed NEWEST-FIRST so findRecentPerformances yields recent[0]=last, recent[1]=previous. Both hit repMax => hitTop && previousHitTop => shouldAdd."
+  },
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 60,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 2.5,
+    "progressionPercent": [5, 10]
+  },
+  "sessions": [
+    { "id": "inc-s-new", "daysAgo": 3, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] },
+    { "id": "inc-s-prev", "daysAgo": 6, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] }
+  ]
+}
