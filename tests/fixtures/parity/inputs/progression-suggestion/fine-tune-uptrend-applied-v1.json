@@ -1,0 +1,33 @@
+{
+  "parityMeta": {
+    "id": "progression-suggestion/fine-tune-uptrend-applied-v1",
+    "schemaVersion": 8,
+    "describes": "iOS-17e-6a — fineTune LIVE, projection APPLIED. A compound templateExercise (repMin 6 / repMax 8 / sets 3 / progressionUnitKg 5 / progressionPercent [5,10]) with three RECENT in-window push sessions at a rising top weight (50 -> 55 -> 60 kg, all 3x8 reps = hit ceiling) drives shouldAdd. With asOfDate = deterministicClockIso (the §11.2 injected clock), the LIVE buildSetWeightFineTune projects a +4%/wk-capped e1RM -> a 2.5kg-grid weight (62.5) that is MORE conservative than the blunt legacy +increment(5)=65: applyFineTuneIfDataRich clamps to ±10% of lastWeight(60)=[54,66], 2.5-rounds, the legacy-respect guard is EVALUATED but skipped (rounded 62.5 > lastWeight 60), and the projection is returned (62.5). This is the CONTRAST fixture: makeSuggestion(nil) would fall back to insufficient_history -> legacy baseline 65, so the live path provably CHANGES the output. FUNCTION-LEVEL compute-assert on the Swift side.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "6ae93c169cbc57f20eebd00d0fe1edd42535c665",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "asOfDate=true -> the generator passes deterministicClockIso as the injected fineTune clock, so the RECENT in-window history (daysAgo 4/11/18 spaced 7d -> distinct week indices 7/6/5) drives the live projection deterministically (NOT the wall clock). Sessions listed NEWEST-FIRST. Rising e1RM (epley 50/55/60 @8 = 63.33/69.67/76) -> positive slope, currentE1rm 76 capped to 79.04 -> weightForTarget(8) 62.4 -> 62.5. progressionUnitKg 5 makes the legacy increment 5 (baseline 65), so the conservative fineTune 62.5 diverges from legacy."
+  },
+  "asOfDate": true,
+  "exerciseId": "bench-press",
+  "exercise": {
+    "name": "Synthetic compound",
+    "kind": "compound",
+    "sets": 3,
+    "repMin": 6,
+    "repMax": 8,
+    "startWeight": 50,
+    "rest": 150,
+    "targetRir": [1, 3],
+    "targetRirText": "RIR 1-3",
+    "progressionUnitKg": 5,
+    "progressionPercent": [5, 10]
+  },
+  "sessions": [
+    { "id": "ft-up-s-new", "daysAgo": 4, "sets": [{ "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 }] },
+    { "id": "ft-up-s-mid", "daysAgo": 11, "sets": [{ "weight": 55, "reps": 8 }, { "weight": 55, "reps": 8 }, { "weight": 55, "reps": 8 }] },
+    { "id": "ft-up-s-old", "daysAgo": 18, "sets": [{ "weight": 50, "reps": 8 }, { "weight": 50, "reps": 8 }, { "weight": 50, "reps": 8 }] }
+  ]
+}

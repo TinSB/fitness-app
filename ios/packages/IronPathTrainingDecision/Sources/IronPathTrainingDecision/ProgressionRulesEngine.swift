@@ -18,24 +18,27 @@
 //     (17e-1, E1RMEngine.swift:70/126), shared verbatim so `setVolume` / `number`
 //     semantics stay identical across engines.
 //
-// fineTune DEFERRED (golden-neutral) — the single intentional gap:
-//   makeSuggestion calls `buildSetWeightFineTune` (setWeightFineTuneEngine.ts) WITHOUT an
-//   asOfDate, so the TS reads the WALL CLOCK (setWeightFineTuneEngine.ts:119) — it is NOT
-//   pure. setWeightFineTuneEngine is NOT ported in this slice. Every 17e-3 parity fixture
-//   anchors its history outside the live 8-week window, so the TS fineTune returns the
-//   `insufficient_history` fallback (suggestedWeightKg 0) and `applyFineTuneIfDataRich`
-//   (ts:88) is a no-op → the engine output is exactly the legacy decision-tree baseline.
-//   We reproduce that fallback verbatim below so the Swift port is PURE / `zero : Date`;
-//   the live e1RM-trend projection ports in a later slice. The generated golden's
-//   `fineTuneNeutrality` field asserts the deferral premise (fallbackReason ==
-//   "insufficient_history") for every fixture. This mirrors the prescription-port
-//   precedent (TrainingDecisionExercisePrescription.swift:16-21, "no mature fineTune
-//   data; documented golden-neutral … fineTune trust override").
+// fineTune LIVE (iOS-17e-6a) — the 17e-3 golden-neutral stub is REMOVED:
+//   makeSuggestion now calls the already-ported `SetWeightFineTuneEngine.buildSetWeightFineTune`
+//   (17e-4) for real, threading an injected `asOfDate` (§11.2 clock). The pure port REQUIRES
+//   a non-nil asOfDate to compute a projection: a `nil` asOfDate hits the SAME
+//   `insufficient_history` fallback the TS wall-clock branch lands on for out-of-window
+//   history (SetWeightFineTuneEngine.swift:255-257), so passing `nil` reproduces the OLD
+//   golden-neutral behaviour EXACTLY — the existing 6 `progression-suggestion/*` goldens
+//   (deterministicClockIso anchored in 2020, history out of any plausible wall-clock window,
+//   so the TS generator's wall-clock fineTune is also insufficient) stay byte-identical and
+//   `applyFineTuneIfDataRich` is a no-op → legacy decision-tree baseline.
+//   ⚠️ asOfDate CONTRACT: `nil` SILENTLY degrades to the legacy path. Any LIVE decision
+//   wiring (the iOS-17e-6b per-exercise frame, deferred) MUST pass the injected `nowIso`
+//   so the projection actually fires — passing `nil` from a live path is a SILENT bug, not
+//   a crash. The fineTune-rich parity fixtures pass `asOfDate = deterministicClockIso` so
+//   the `±10% clamp / 2.5-round / legacy-respect` body of `applyFineTuneIfDataRich` is
+//   actually exercised by goldens.
 //
-// PURE: consumes `templateExercise` + `history: [TrainingSession]` (already a §11 clean
-// input); no IO, no clock, no randomness. It is NOT wired into the decision output here
-// (that is 17e-5); this slice only adds the progressive-suggestion functions and
-// parity-pins them function-by-function.
+// PURE: consumes `templateExercise` + `history: [TrainingSession]` + an optional injected
+// `asOfDate` (all §11 clean inputs); no IO, no ambient clock, no randomness. It is NOT yet
+// wired into the decision output (that frame wiring is the deferred 17e-6b); this slice
+// makes the ported fineTune projection LIVE + parity-pins its live branches.
 
 import Foundation
 import IronPathDomain
@@ -305,10 +308,13 @@ public enum ProgressionRulesEngine {
         recent.filter { averageTechniqueQuality($0.sets) == "poor" }.count
     }
 
-    /// `applyFineTuneIfDataRich` (progressionRulesEngine.ts:88). Ported in full for fidelity;
-    /// the live `fineTuneSuggested` / `fineTuneFallbackReason` are the DEFERRED golden-neutral
-    /// fallback (see the file header), so for every 17e-3 fixture the second guard short-
-    /// circuits to `baselineWeight`.
+    /// `applyFineTuneIfDataRich` (progressionRulesEngine.ts:88). Blends the LIVE fineTune
+    /// projection (iOS-17e-6a) into the decision tree: a hard-backoff path or an
+    /// insufficient/invalid fineTune short-circuits to `baselineWeight`; otherwise the
+    /// projection is ±10%-clamped to the last working weight, 2.5kg-rounded, and a flat
+    /// trend that would undercut a legacy "ready to add" is respected (returns baseline).
+    /// With a `nil` asOfDate the fallbackReason is `insufficient_history`, so this stays a
+    /// no-op (the 17e-3 golden-neutral behaviour).
     private static func applyFineTuneIfDataRich(
         _ baselineWeight: Double,
         _ lastWorkingWeight: Double,
@@ -333,7 +339,12 @@ public enum ProgressionRulesEngine {
 
     // MARK: - makeSuggestion (progressionRulesEngine.ts:139)
 
-    public static func makeSuggestion(_ templateExercise: ExerciseForProgression, _ history: [TrainingSession]) -> Suggestion {
+    /// `asOfDate` is the §11.2 injected clock fed to the live fineTune projection. It
+    /// DEFAULTS to `nil`, which reproduces the 17e-3 golden-neutral behaviour exactly
+    /// (nil → `SetWeightFineTuneEngine` `insufficient_history` fallback → legacy baseline),
+    /// so the existing function-level callers/goldens are unchanged. A live decision wiring
+    /// MUST pass the injected `nowIso` (see the file header asOfDate CONTRACT).
+    public static func makeSuggestion(_ templateExercise: ExerciseForProgression, _ history: [TrainingSession], asOfDate: String? = nil) -> Suggestion {
         let historyId = truthy(templateExercise.baseId) ?? templateExercise.id   // baseId || id
         let recent = AdaptiveFeedbackEngine.findRecentPerformances(history, historyId, limit: 3)
         let last = recent.first
@@ -405,13 +416,34 @@ public enum ProgressionRulesEngine {
             baselineWeight = lastWeight
         }
 
-        // ts:186-228 — fineTune projection. DEFERRED golden-neutral (see file header): the
-        // live buildSetWeightFineTune is not ported; for every 17e-3 fixture it returns the
-        // 'insufficient_history' fallback (suggestedWeightKg 0), so applyFineTuneIfDataRich
-        // is a no-op and nextWeight == baselineWeight. `medianReps` (ts:198-201) only feeds
-        // the deferred projection, so it is omitted here.
-        let fineTuneSuggestedWeightKg = 0.0
-        let fineTuneFallbackReason: String? = "insufficient_history"
+        // ts:198-201 — medianReps: the user's actual working reps (median of the last
+        // session's positive rep counts), so the fineTune projection stays in the ballpark
+        // of their lived experience rather than repMin (the heavy end). `length / 2` is JS
+        // float-div then Math.floor; for a non-negative count Swift Int-div is identical.
+        let recentReps = last.sets.map { E1RMEngine.number($0.reps) }.filter { $0 > 0 }
+        let medianReps: Double = recentReps.isEmpty
+            ? jsRound((number(templateExercise.repMin) + number(templateExercise.repMax)) / 2)
+            : recentReps.sorted()[recentReps.count / 2]
+
+        // ts:202-228 — LIVE fineTune projection (iOS-17e-6a; the 17e-3 stub is removed).
+        // Calls the already-ported SetWeightFineTuneEngine (17e-4) with the injected
+        // `asOfDate`. ⚠️ asOfDate CONTRACT (file header): `nil` → insufficient_history
+        // fallback → applyFineTuneIfDataRich no-op → legacy baseline (the 17e-3 goldens'
+        // unchanged behaviour); a LIVE wiring MUST pass the injected nowIso so the
+        // projection fires. PURE — SetWeightFineTuneEngine reads only the injected clock.
+        let fineTune = SetWeightFineTuneEngine.buildSetWeightFineTune(
+            SetWeightFineTuneEngine.SetWeightFineTuneInput(
+                history: history,
+                exerciseId: historyId,
+                baseExerciseId: templateExercise.baseId,
+                targetReps: medianReps,
+                repMin: number(templateExercise.repMin),
+                repMax: number(templateExercise.repMax),
+                asOfDate: asOfDate
+            )
+        )
+        let fineTuneSuggestedWeightKg = fineTune.suggestedWeightKg
+        let fineTuneFallbackReason = fineTune.basis.fallbackReason
         let safetyBrake = shouldBackoff
             || techniqueBlocksProgress
             || (templateExercise.progressLocked == true)

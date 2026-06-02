@@ -212,4 +212,81 @@ final class ProgressionRulesEngineParityTests: XCTestCase {
             XCTAssertEqual(neutrality.optionalDouble("samplesUsed"), 0, "\(id): fineTune samplesUsed must be 0")
         }
     }
+
+    // MARK: - (5) iOS-17e-6a — fineTune LIVE function-level parity
+    //
+    // The 17e-3 golden-neutral stub is GONE: makeSuggestion now calls the real
+    // SetWeightFineTuneEngine threading an injected asOfDate. These 2 fixtures pass
+    // asOfDate = deterministicClockIso over RECENT in-window history so the live
+    // applyFineTuneIfDataRich body (±10% clamp / 2.5-round / legacy-respect) is exercised.
+
+    enum FineTuneLive {
+        static let ids: [String] = [
+            "fine-tune-uptrend-applied-v1",   // projection APPLIED (legacy-respect skipped) -> diverges from legacy
+            "fine-tune-legacy-respect-v1",    // legacy-respect FIRES (flat trend defers to legacy baseline)
+        ]
+    }
+
+    private func asOfDate(_ root: OrderedJSONObject, _ id: String) throws -> String {
+        let pg = try XCTUnwrap(root.optionalObject("parityGolden"), "\(id): parityGolden")
+        return try XCTUnwrap(pg.optionalString("deterministicClockIso"), "\(id): deterministicClockIso")
+    }
+
+    func testFineTuneLiveGoldensDiscovered() throws {
+        XCTAssertEqual(FineTuneLive.ids.count, 2)
+        for id in FineTuneLive.ids {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: Goldens.goldenURL(id).path), "missing golden \(id)")
+            XCTAssertEqual(try Goldens.root(id).optionalString("sourceFixtureId"), "progression-suggestion/\(id)", "\(id): sourceFixtureId")
+        }
+    }
+
+    /// makeSuggestion(asOfDate = injected clock) reproduces the golden — the LIVE fineTune
+    /// path (data-rich projection), plus buildSetPrescription over the live suggestion.
+    func testFineTuneLiveMakeSuggestionParity() throws {
+        for id in FineTuneLive.ids {
+            let root = try Goldens.root(id)
+            let exercise = try exercise(root, id)
+            let history = try history(root, id)
+            let asOf = try asOfDate(root, id)
+
+            let actual = ProgressionRulesEngine.makeSuggestion(exercise, history, asOfDate: asOf)
+            let golden = decodeSuggestion(try XCTUnwrap(root.optionalObject("suggestion"), "\(id): suggestion"))
+            XCTAssertEqual(actual, golden, "\(id): live makeSuggestion mismatch")
+
+            let presActual = ProgressionRulesEngine.buildSetPrescription(
+                exercise, ProgressionRulesEngine.SuggestionInput(weight: golden.weight, reps: golden.reps))
+            let presGolden = decodeSetPrescription(try XCTUnwrap(root.optionalObject("setPrescription"), "\(id): setPrescription"))
+            XCTAssertEqual(presActual, presGolden, "\(id): live buildSetPrescription mismatch")
+        }
+    }
+
+    /// The fineTune is genuinely DATA-RICH (NOT the insufficient_history stub) — proves the
+    /// projection actually ran (9 in-window samples) rather than the deferred no-op.
+    func testFineTuneLiveIsDataRich() throws {
+        for id in FineTuneLive.ids {
+            let root = try Goldens.root(id)
+            let neutrality = try XCTUnwrap(root.optionalObject("fineTuneNeutrality"), "\(id): fineTuneNeutrality")
+            XCTAssertNil(neutrality.optionalString("fallbackReason"), "\(id): live fineTune must NOT be insufficient_history")
+            XCTAssertEqual(neutrality.optionalDouble("samplesUsed"), 9, "\(id): live fineTune samplesUsed (3 sessions x 3 sets)")
+        }
+    }
+
+    /// asOfDate CONTRACT (the audit #1 防死 guard, exercised): a `nil` asOfDate SILENTLY
+    /// degrades to the legacy baseline. The uptrend fixture's live projection (62.5) DIVERGES
+    /// from the nil/legacy baseline (lastWeight 60 + increment 5 = 65), proving the injected
+    /// clock is load-bearing — passing nil from a live decision path is a silent regression,
+    /// not a crash, so the live wiring MUST pass nowIso.
+    func testFineTuneLiveAsOfDateContractIsLoadBearing() throws {
+        let id = "fine-tune-uptrend-applied-v1"
+        let root = try Goldens.root(id)
+        let exercise = try exercise(root, id)
+        let history = try history(root, id)
+        let asOf = try asOfDate(root, id)
+
+        let live = ProgressionRulesEngine.makeSuggestion(exercise, history, asOfDate: asOf)
+        let nilClock = ProgressionRulesEngine.makeSuggestion(exercise, history, asOfDate: nil)
+        XCTAssertEqual(live.weight, 62.5, "\(id): live ±10%-clamped / rounded projection weight")
+        XCTAssertEqual(nilClock.weight, 65, "\(id): nil asOfDate -> insufficient -> legacy +increment(5) baseline")
+        XCTAssertNotEqual(live.weight, nilClock.weight, "\(id): the injected clock must change the suggested weight")
+    }
 }
