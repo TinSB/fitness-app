@@ -1,0 +1,30 @@
+{
+  "parityMeta": {
+    "id": "analytics/adherence-report-tie-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-8 sort-stability load-bearing fixture for buildAdherenceReport's skippedExercises count-desc sort. The single case has six exercises in ONE session, each with a single incomplete set (planned 1 > actual 0) so each is skipped EXACTLY once — a PURE count tie (every count == 1). JS Array.prototype.sort is STABLE, so the count-desc sort keeps the Map first-seen (insertion) order; the slice(0,5) cut then drops the last-inserted tie member. The exercise ids are in reverse-alphabetical INSERTION order so the pinned skippedExercises order [skip-zulu, skip-yankee, skip-xray, skip-whiskey, skip-victor] is visibly insertion-ordered, NOT id-sorted. This is load-bearing for the Swift AnalyticsDashboardEngine.stableSorted port: Swift's sort(by:) is not contractually stable, so the port breaks ties on the original index to GUARANTEE this JS order. Generated from src/engines/analytics.ts:406 via scripts/generate-parity-goldens.mjs; the Swift compute-asserts the full AdherenceReport == golden. Generated, never hand-edited (master-architecture §22).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "skip-count-tie-stable-insertion-order",
+      "sessions": [
+        {
+          "id": "tie-1", "daysAgo": 2, "templateName": "全跳过",
+          "exercises": [
+            { "id": "skip-zulu", "sets": [{ "weight": 60, "reps": 8, "done": false }] },
+            { "id": "skip-yankee", "sets": [{ "weight": 60, "reps": 8, "done": false }] },
+            { "id": "skip-xray", "sets": [{ "weight": 60, "reps": 8, "done": false }] },
+            { "id": "skip-whiskey", "sets": [{ "weight": 60, "reps": 8, "done": false }] },
+            { "id": "skip-victor", "sets": [{ "weight": 60, "reps": 8, "done": false }] },
+            { "id": "skip-uniform", "sets": [{ "weight": 60, "reps": 8, "done": false }] }
+          ]
+        }
+      ]
+    }
+  ]
+}

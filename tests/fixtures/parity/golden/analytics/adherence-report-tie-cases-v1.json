@@ -1,0 +1,142 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "skip-zulu",
+              "sets": [
+                {
+                  "done": false,
+                  "id": "skip-zulu-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "skip-yankee",
+              "sets": [
+                {
+                  "done": false,
+                  "id": "skip-yankee-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "skip-xray",
+              "sets": [
+                {
+                  "done": false,
+                  "id": "skip-xray-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "skip-whiskey",
+              "sets": [
+                {
+                  "done": false,
+                  "id": "skip-whiskey-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "skip-victor",
+              "sets": [
+                {
+                  "done": false,
+                  "id": "skip-victor-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "skip-uniform",
+              "sets": [
+                {
+                  "done": false,
+                  "id": "skip-uniform-1",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "tie-1",
+          "templateName": "全跳过"
+        }
+      ],
+      "label": "skip-count-tie-stable-insertion-order",
+      "result": {
+        "actualSets": 0,
+        "confidence": "low",
+        "mainlineRate": 0,
+        "overallRate": 0,
+        "plannedSets": 6,
+        "recentSessionCount": 1,
+        "recentSessions": [
+          {
+            "actualSets": 0,
+            "adherenceRate": 0,
+            "correctionActualSets": 0,
+            "correctionPlannedSets": 0,
+            "date": "2026-05-30",
+            "functionalActualSets": 0,
+            "functionalPlannedSets": 0,
+            "hasSupportData": false,
+            "mainActualSets": 0,
+            "mainPlannedSets": 6,
+            "plannedSets": 6,
+            "sessionId": "tie-1",
+            "templateName": "全跳过"
+          }
+        ],
+        "skippedExercises": [
+          {
+            "count": 1,
+            "exerciseId": "skip-zulu"
+          },
+          {
+            "count": 1,
+            "exerciseId": "skip-yankee"
+          },
+          {
+            "count": 1,
+            "exerciseId": "skip-xray"
+          },
+          {
+            "count": 1,
+            "exerciseId": "skip-whiskey"
+          },
+          {
+            "count": 1,
+            "exerciseId": "skip-victor"
+          }
+        ],
+        "skippedSupportExercises": [],
+        "suggestions": [
+          "最近整体完成率偏低，下周先降低复杂度，让计划更容易执行。",
+          "主训练完成率也在下降，下周建议把周训练量下修 10%-20%。"
+        ]
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "analytics/adherence-report-tie-cases-v1"
+  },
+  "sourceFixtureId": "analytics/adherence-report-tie-cases-v1"
+}
