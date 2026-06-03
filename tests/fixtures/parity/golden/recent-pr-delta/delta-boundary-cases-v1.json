@@ -1,0 +1,283 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "canonicalExerciseId": "gamma",
+              "id": "gamma",
+              "name": "Gamma",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "gamma-1",
+                  "reps": 5,
+                  "weight": 100
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "delta-ex",
+              "id": "delta-ex",
+              "name": "Delta",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "delta-ex-1",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tie-out"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "canonicalExerciseId": "alpha-new",
+              "id": "alpha-new",
+              "name": "Alpha",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "alpha-new-1",
+                  "reps": 5,
+                  "weight": 50
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "beta-new",
+              "id": "beta-new",
+              "name": "Beta",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "beta-new-1",
+                  "reps": 5,
+                  "weight": 50
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "gamma",
+              "id": "gamma",
+              "name": "Gamma",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "gamma-1",
+                  "reps": 5,
+                  "weight": 105
+                }
+              ]
+            },
+            {
+              "canonicalExerciseId": "delta-ex",
+              "id": "delta-ex",
+              "name": "Delta",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "delta-ex-1",
+                  "reps": 5,
+                  "weight": 85
+                }
+              ]
+            }
+          ],
+          "id": "tie-in"
+        }
+      ],
+      "label": "both-new-and-equal-delta-tie",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 50,
+          "currentBestReps": 5,
+          "direction": "new",
+          "exerciseId": "alpha-new",
+          "exerciseName": "Alpha",
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 50,
+          "currentBestReps": 5,
+          "direction": "new",
+          "exerciseId": "beta-new",
+          "exerciseName": "Beta",
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 105,
+          "currentBestReps": 5,
+          "deltaKg": 5,
+          "deltaPercent": 5,
+          "direction": "up",
+          "exerciseId": "gamma",
+          "exerciseName": "Gamma",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 100,
+          "previousBestReps": 5,
+          "windowDays": 14
+        },
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 85,
+          "currentBestReps": 5,
+          "deltaKg": 5,
+          "deltaPercent": 6.3,
+          "direction": "up",
+          "exerciseId": "delta-ex",
+          "exerciseName": "Delta",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 80,
+          "previousBestReps": 5,
+          "windowDays": 14
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-22",
+          "exercises": [
+            {
+              "canonicalExerciseId": "tie-ex",
+              "id": "tie-ex",
+              "name": "TieExercise",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "tie-ex-1",
+                  "reps": 5,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "pb-first"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "canonicalExerciseId": "tie-ex",
+              "id": "tie-ex",
+              "name": "TieExercise",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "tie-ex-1",
+                  "reps": 5,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "pb-second"
+        }
+      ],
+      "label": "pickbest-full-equality-tie",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-22",
+          "currentBestKg": 60,
+          "currentBestReps": 5,
+          "direction": "new",
+          "exerciseId": "tie-ex",
+          "exerciseName": "TieExercise",
+          "windowDays": 14
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "canonicalExerciseId": "round-ex",
+              "id": "round-ex",
+              "name": "RoundExercise",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "round-ex-1",
+                  "reps": 5,
+                  "weight": 20
+                }
+              ]
+            }
+          ],
+          "id": "rt-out"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "canonicalExerciseId": "round-ex",
+              "id": "round-ex",
+              "name": "RoundExercise",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "round-ex-1",
+                  "reps": 5,
+                  "weight": 25.555
+                }
+              ]
+            }
+          ],
+          "id": "rt-in"
+        }
+      ],
+      "label": "delta-rounding-half-tie",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": [
+        {
+          "currentBestDate": "2026-05-24",
+          "currentBestKg": 25.555,
+          "currentBestReps": 5,
+          "deltaKg": 5.55,
+          "deltaPercent": 27.8,
+          "direction": "up",
+          "exerciseId": "round-ex",
+          "exerciseName": "RoundExercise",
+          "previousBestDate": "2026-05-06",
+          "previousBestKg": 20,
+          "previousBestReps": 5,
+          "windowDays": 14
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "recent-pr-delta/delta-boundary-cases-v1"
+  },
+  "sourceFixtureId": "recent-pr-delta/delta-boundary-cases-v1"
+}

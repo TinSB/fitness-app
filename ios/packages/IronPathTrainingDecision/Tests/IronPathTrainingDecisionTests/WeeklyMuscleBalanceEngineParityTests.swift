@@ -100,4 +100,37 @@ final class WeeklyMuscleBalanceEngineParityTests: XCTestCase {
             XCTAssertEqual(actual, golden, "weekly-muscle-balance/\(label): computeWeeklyMuscleBalance mismatch")
         }
     }
+
+    // MARK: - AN-1b boundary fixtures (balance-boundary-cases-v1)
+
+    private static var boundaryGoldenURL: URL {
+        repoRoot.appendingPathComponent(
+            "tests/fixtures/parity/golden/weekly-muscle-balance/balance-boundary-cases-v1.json", isDirectory: false
+        )
+    }
+
+    private func boundaryRoot() throws -> OrderedJSONObject {
+        let data = try Data(contentsOf: Self.boundaryGoldenURL)
+        return try JSONValue(decoding: data).requireObject("weekly-muscle-balance/balance-boundary-cases-v1")
+    }
+
+    /// AN-1b coverage-debt pins: non-focus muscles surfacing via `effectiveSets > 0` + Map
+    /// insertion-order tie + the `roundToFixed` `.XX5` tie (effectiveSets `2.67` — the old
+    /// multiply-then-round would have produced `2.68`), `focusEntries.count < 2` gate, and
+    /// the ±12 overworked/underworked threshold hit EXACTLY (shares 62 / 38 → ±12).
+    func testComputeWeeklyMuscleBalanceParityForBoundaryCases() throws {
+        let root = try boundaryRoot()
+        XCTAssertEqual(root.optionalString("sourceFixtureId"), "weekly-muscle-balance/balance-boundary-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 3, "expected the 3 muscle-balance boundary cases")
+        for caseValue in cases {
+            let c = try caseValue.requireObject("weekly-muscle-balance boundary case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            let history = try history(c)
+            let options = try options(c)
+            let actual = WeeklyMuscleBalanceEngine.computeWeeklyMuscleBalance(history, options)
+            let golden = try decodeResult(try XCTUnwrap(c.optionalObject("result"), "\(label): result"))
+            XCTAssertEqual(actual, golden, "weekly-muscle-balance/\(label): computeWeeklyMuscleBalance mismatch")
+        }
+    }
 }

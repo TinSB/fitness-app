@@ -86,4 +86,36 @@ final class TrainingStreakEngineParityTests: XCTestCase {
             XCTAssertEqual(actual, golden, "training-streak/\(label): computeTrainingStreak mismatch")
         }
     }
+
+    // MARK: - AN-1b boundary fixtures (streak-boundary-cases-v1)
+
+    private static var boundaryGoldenURL: URL {
+        repoRoot.appendingPathComponent(
+            "tests/fixtures/parity/golden/training-streak/streak-boundary-cases-v1.json", isDirectory: false
+        )
+    }
+
+    private func boundaryRoot() throws -> OrderedJSONObject {
+        let data = try Data(contentsOf: Self.boundaryGoldenURL)
+        return try JSONValue(decoding: data).requireObject("training-streak/streak-boundary-cases-v1")
+    }
+
+    /// AN-1b coverage-debt pins: the `finishedAt ?? startedAt ?? date` precedence + the
+    /// full-ISO→noon `safeDate` branch + non-Monday (Sunday) `weekStartDayOfWeek`, and
+    /// `prevMonthKey` cross-year underflow + month-carry (`2026-01` → `2025-12`).
+    func testComputeTrainingStreakParityForBoundaryCases() throws {
+        let root = try boundaryRoot()
+        XCTAssertEqual(root.optionalString("sourceFixtureId"), "training-streak/streak-boundary-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 2, "expected the 2 streak boundary cases")
+        for caseValue in cases {
+            let c = try caseValue.requireObject("training-streak boundary case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            let history = try history(c)
+            let options = try options(c)
+            let actual = TrainingStreakEngine.computeTrainingStreak(history, options)
+            let golden = decodeResult(try XCTUnwrap(c.optionalObject("result"), "\(label): result"))
+            XCTAssertEqual(actual, golden, "training-streak/\(label): computeTrainingStreak mismatch")
+        }
+    }
 }

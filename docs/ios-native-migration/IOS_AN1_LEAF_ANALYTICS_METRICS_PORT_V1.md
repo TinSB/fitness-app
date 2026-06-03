@@ -43,6 +43,11 @@ Shared byte-identical helpers (`safeDate` / `isAnalyticsSession` / `startOfWeekU
 - **JS number formatting.** `Number(x.toFixed(n))` → `AnalyticsSupport.roundToFixed`;
   `Math.round` → `jsMathRound` (`floor(x + 0.5)`). Fixtures use non-tie decimals so the
   ported rounding matches JS bit-for-bit (the compute-assert pins exact Double `==`).
+  **[Refined by AN-1b]** the AN-1 `roundToFixed` was `(value * p).rounded() / p`, which
+  DIVERGES from JS `toFixed` on `.XX5` ties (`2.675`→`2.68` not `2.67`); AN-1b rewrites it
+  to a faithful ECMAScript `Number.prototype.toFixed` reproduction (decimal-string,
+  never `.rounded()`) + adds tie/boundary fixtures — see
+  `IOS_AN1B_ROUNDTOFIXED_FIDELITY_V1.md`.
 
 ## Parity
 

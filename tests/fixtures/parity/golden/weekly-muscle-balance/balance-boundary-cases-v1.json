@@ -1,0 +1,231 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "ex-calf",
+              "muscleContribution": {
+                "小腿": 2.675
+              },
+              "name": "提踵",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-calf-1",
+                  "reps": 10,
+                  "weight": 30
+                }
+              ]
+            },
+            {
+              "id": "ex-forearm",
+              "muscleContribution": {
+                "前臂": 2.675
+              },
+              "name": "腕弯举",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-forearm-1",
+                  "reps": 10,
+                  "weight": 30
+                }
+              ]
+            }
+          ],
+          "id": "nf-0"
+        }
+      ],
+      "label": "non-focus-insertion-and-half-tie",
+      "options": {
+        "focusMuscles": [
+          "胸",
+          "背"
+        ],
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 0,
+        "entries": [
+          {
+            "effectiveSets": 2.67,
+            "estimatedVolumeKg": 803,
+            "muscle": "小腿",
+            "share": 49.9
+          },
+          {
+            "effectiveSets": 2.67,
+            "estimatedVolumeKg": 803,
+            "muscle": "前臂",
+            "share": 49.9
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "胸",
+            "share": 0
+          },
+          {
+            "effectiveSets": 0,
+            "estimatedVolumeKg": 0,
+            "muscle": "背",
+            "share": 0
+          }
+        ],
+        "headline": "本周肌群平衡：胸 / 背 偏少。",
+        "overworkedMuscles": [],
+        "totalEffectiveSets": 5.35,
+        "totalEstimatedVolumeKg": 1605,
+        "underworkedMuscles": [
+          "胸",
+          "背"
+        ],
+        "weekStartKey": "2026-05-25"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "ex-chest-2",
+                  "reps": 10,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "sf-0"
+        }
+      ],
+      "label": "single-focus-count-lt2",
+      "options": {
+        "focusMuscles": [
+          "胸"
+        ],
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 100,
+        "entries": [
+          {
+            "effectiveSets": 2,
+            "estimatedVolumeKg": 1200,
+            "muscle": "胸",
+            "share": 100
+          }
+        ],
+        "headline": "本周肌群训练量分布均衡。",
+        "overworkedMuscles": [],
+        "totalEffectiveSets": 2,
+        "totalEstimatedVolumeKg": 1200,
+        "underworkedMuscles": [],
+        "weekStartKey": "2026-05-25"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "ex-chest",
+              "muscleContribution": {
+                "胸": 6.2
+              },
+              "name": "卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-chest-1",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            },
+            {
+              "id": "ex-back",
+              "muscleContribution": {
+                "背": 3.8
+              },
+              "name": "划船",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "ex-back-1",
+                  "reps": 10,
+                  "weight": 40
+                }
+              ]
+            }
+          ],
+          "id": "th-0"
+        }
+      ],
+      "label": "threshold-12-boundary",
+      "options": {
+        "focusMuscles": [
+          "胸",
+          "背"
+        ],
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "balanceScore": 76,
+        "entries": [
+          {
+            "effectiveSets": 6.2,
+            "estimatedVolumeKg": 2480,
+            "muscle": "胸",
+            "share": 62
+          },
+          {
+            "effectiveSets": 3.8,
+            "estimatedVolumeKg": 1520,
+            "muscle": "背",
+            "share": 38
+          }
+        ],
+        "headline": "本周肌群平衡：胸 偏多，背 偏少。",
+        "overworkedMuscles": [
+          "胸"
+        ],
+        "totalEffectiveSets": 10,
+        "totalEstimatedVolumeKg": 4000,
+        "underworkedMuscles": [
+          "背"
+        ],
+        "weekStartKey": "2026-05-25"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "weekly-muscle-balance/balance-boundary-cases-v1"
+  },
+  "sourceFixtureId": "weekly-muscle-balance/balance-boundary-cases-v1"
+}

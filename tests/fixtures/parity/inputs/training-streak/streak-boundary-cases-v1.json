@@ -1,0 +1,30 @@
+{
+  "parityMeta": {
+    "id": "training-streak/streak-boundary-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-1b computeTrainingStreak boundary/coverage-debt parity — additive cases the AN-1 streak fixture did not pin: finishedAt-precedence + full-ISO→noon safeDate branch + non-Monday (Sunday) weekStartDayOfWeek, and prevMonthKey cross-year underflow + month-carry. Generated from src/engines/trainingStreakEngine.ts; the Swift TrainingStreakEngine compute-asserts each case == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "finished-at-precedence-sunday-week",
+      "options": { "weekStartDayOfWeek": 0 },
+      "sessions": [
+        { "id": "fa-now", "daysAgo": 60, "startedAtDaysAgo": 40, "finishedAtDaysAgo": 0 },
+        { "id": "fa-7", "daysAgo": 65, "finishedAtDaysAgo": 7 }
+      ]
+    },
+    {
+      "label": "cross-year-month-carry",
+      "sessions": [
+        { "id": "cy-jan", "daysAgo": 132 },
+        { "id": "cy-dec", "daysAgo": 163 },
+        { "id": "cy-nov", "daysAgo": 193 }
+      ]
+    }
+  ]
+}

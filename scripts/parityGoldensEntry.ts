@@ -329,6 +329,17 @@ const FIXTURE_IDS = [
   'training-streak/streak-cases-v1',
   'recent-pr-delta/delta-cases-v1',
   'weekly-muscle-balance/balance-cases-v1',
+  // AN-1b boundary/coverage-debt fixtures — additive NEW fixtures (one per metric, run
+  // through the SAME three generators) pinning the AN-1 audit's untested branches
+  // (finishedAt-precedence + full-ISO→noon safeDate + non-Monday week start / prevMonthKey
+  // cross-year underflow / sort both-new NaN-tie + equal-deltaKg tie / pickBest full-equality
+  // tie / non-focus muscle + Map insertion order + count<2 + ±12 threshold) AND the
+  // `roundToFixed` `.XX5` ties that exercise the AN-1b fidelity fix (deltaKg 5.55 /
+  // effectiveSets 2.67 — the old multiply-then-round would mis-round these). Generated;
+  // never hand-edited (§22).
+  'training-streak/streak-boundary-cases-v1',
+  'recent-pr-delta/delta-boundary-cases-v1',
+  'weekly-muscle-balance/balance-boundary-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1825,6 +1836,10 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'training-streak/streak-cases-v1': generateTrainingStreak,
   'recent-pr-delta/delta-cases-v1': generateRecentPRDelta,
   'weekly-muscle-balance/balance-cases-v1': generateWeeklyMuscleBalance,
+  // AN-1b boundary fixtures — reuse the SAME three generators (no new generator logic).
+  'training-streak/streak-boundary-cases-v1': generateTrainingStreak,
+  'recent-pr-delta/delta-boundary-cases-v1': generateRecentPRDelta,
+  'weekly-muscle-balance/balance-boundary-cases-v1': generateWeeklyMuscleBalance,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
