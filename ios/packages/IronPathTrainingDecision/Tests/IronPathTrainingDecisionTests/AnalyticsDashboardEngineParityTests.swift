@@ -233,4 +233,34 @@ final class AnalyticsDashboardEngineParityTests: XCTestCase {
             XCTAssertEqual(actual, golden, "adherence-report/\(label): buildAdherenceReport mismatch")
         }
     }
+
+    // MARK: - analytics/adherence-report-tie-cases-v1 (AN-8 sort-stability load-bearing)
+
+    /// The AN-8 tie golden: a PURE skippedExercises count tie (every count == 1) whose
+    /// JS-stable insertion order is pinned through the slice(0,5) cut. Reproducing it
+    /// requires `stableSorted`'s original-index tiebreak — Swift's `sort(by:)` is not
+    /// contractually stable. Generated from the REAL TS engine, never hand-edited (§22).
+    func testBuildAdherenceReportTieCaseParity() throws {
+        let root = try goldenRoot("analytics/adherence-report-tie-cases-v1")
+        XCTAssertEqual(root.optionalString("sourceFixtureId"), "analytics/adherence-report-tie-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 1, "expected the AN-8 tie case")
+        for caseValue in cases {
+            let c = try caseValue.requireObject("adherence-report tie case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            let history = try history(c)
+            let actual = AnalyticsDashboardEngine.buildAdherenceReport(history)
+            let golden = decodeAdherenceReport(try XCTUnwrap(c.optionalObject("result"), "\(label): result"))
+            XCTAssertEqual(actual, golden, "adherence-report-tie/\(label): buildAdherenceReport mismatch")
+            // Load-bearing, asserted explicitly: equal-count skips keep the JS insertion
+            // (Map first-seen) order through the slice(0,5) cut — only stableSorted's
+            // original-index tiebreak guarantees this.
+            XCTAssertTrue(actual.skippedExercises.allSatisfy { $0.count == 1 }, "\(label): pure tie (every count == 1)")
+            XCTAssertEqual(
+                actual.skippedExercises.map(\.exerciseId),
+                ["skip-zulu", "skip-yankee", "skip-xray", "skip-whiskey", "skip-victor"],
+                "\(label): equal-count skips must keep JS insertion order through slice(0,5)"
+            )
+        }
+    }
 }

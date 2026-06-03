@@ -448,6 +448,10 @@ const FIXTURE_IDS = [
   'analytics/prs-cases-v1',
   'analytics/weekly-report-cases-v1',
   'analytics/adherence-report-cases-v1',
+  // AN-8 sort-stability tie fixture — an ADDITIVE (§22) single-case fixture whose
+  // skippedExercises count tie pins the JS-stable insertion order the Swift stableSorted
+  // port reproduces (Array.sort is not contractually stable). Generated, never hand-edited.
+  'analytics/adherence-report-tie-cases-v1',
   // AN-4 sessionDetailSummaryEngine (sessionQuality-consumed subset) + sessionQualityEngine
   // port — 2 OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL pinning the ported functions.
   // quality-cases pins buildSessionQualityResult across the level/signal/confidence/early-return
@@ -2586,6 +2590,10 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'analytics/prs-cases-v1': generatePrs,
   'analytics/weekly-report-cases-v1': generateWeeklyReport,
   'analytics/adherence-report-cases-v1': generateAdherenceReport,
+  // AN-8 sort-stability tie fixture — routed through the SAME adherence generator; its
+  // single case is a PURE skippedExercises count tie that pins the JS-stable insertion
+  // order through the slice(0,5) cut (load-bearing for the Swift stableSorted port).
+  'analytics/adherence-report-tie-cases-v1': generateAdherenceReport,
   // AN-4 sessionDetailSummary + sessionQuality fixtures — both routed through the single generator.
   'session-quality/quality-cases-v1': generateSessionQuality,
   'session-quality/grouping-and-input-cases-v1': generateSessionQuality,

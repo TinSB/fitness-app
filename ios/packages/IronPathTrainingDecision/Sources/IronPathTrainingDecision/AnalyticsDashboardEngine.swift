@@ -158,6 +158,23 @@ public enum AnalyticsDashboardEngine {
         return out
     }
 
+    /// A STABLE sort driven by a JS-style three-way comparator (negative = left first).
+    /// Ties (comparator == 0) keep their ORIGINAL relative order via the pre-sort index,
+    /// mirroring `Array.prototype.sort`'s GUARANTEED stability (ES2019) — which Swift's
+    /// `sort(by:)` does NOT contractually provide (its stdlib sort happens to be stable
+    /// today, but the API explicitly does not promise it). Every dashboard sort that
+    /// mirrors a JS stable sort routes through here so the JS insertion order on ties is
+    /// GUARANTEED, never left to the unspecified stdlib stability. Same shape as the
+    /// SmartReplacement / PainPattern / RecentPRDelta precedents; `internal` (not private)
+    /// so the load-bearing tie test can assert the tiebreak directly.
+    static func stableSorted<T>(_ array: [T], _ comparator: (T, T) -> Int) -> [T] {
+        array.enumerated().sorted { lhs, rhs in
+            let c = comparator(lhs.element, rhs.element)
+            if c != 0 { return c < 0 }
+            return lhs.offset < rhs.offset
+        }.map { $0.element }
+    }
+
     // MARK: - buildMuscleVolumeDashboard (analytics.ts:112)
 
     /// The minimal `WeeklyPrescription` shape the dashboard consumes
@@ -257,14 +274,18 @@ public enum AnalyticsDashboardEngine {
             )
         }
 
-        // .sort(order[status] asc || remainingSets desc) — stable (Swift ≥5).
+        // .sort(order[status] asc || remainingSets desc). JS `Array.prototype.sort` is
+        // STABLE (ES2019); Swift's `sort(by:)` is NOT contractually stable, so route
+        // through `stableSorted` (original-index tiebreak) to GUARANTEE the JS insertion
+        // order on (status, remainingSets) ties, never relying on stdlib stability.
         func statusOrder(_ s: String) -> Int {
             switch s { case "low": return 0; case "near_target": return 1; case "on_target": return 2; case "high": return 3; default: return 0 }
         }
-        rows.sort { left, right in
+        rows = stableSorted(rows) { left, right in
             let ol = statusOrder(left.status), or = statusOrder(right.status)
-            if ol != or { return ol < or }
-            return left.remainingSets > right.remainingSets
+            if ol != or { return ol < or ? -1 : 1 }
+            if left.remainingSets != right.remainingSets { return left.remainingSets > right.remainingSets ? -1 : 1 }
+            return 0
         }
         return rows
     }
@@ -419,8 +440,13 @@ public enum AnalyticsDashboardEngine {
         }
 
         var combined = maxWeight.items + fixedReps.items + sessionTotals.items + estimatedMaxes.items
-        // .sort((a, b) => b.date.localeCompare(a.date)) — descending date, stable.
-        combined.sort { $0.date > $1.date }
+        // .sort((a, b) => b.date.localeCompare(a.date)) — descending date. JS
+        // `Array.prototype.sort` is STABLE, so equal-date PRs keep their insertion order
+        // (maxWeight → fixedReps → sessionTotals → estimatedMaxes); `stableSorted` pins
+        // that order regardless of the (unspecified) Swift stdlib sort stability.
+        combined = stableSorted(combined) { left, right in
+            left.date != right.date ? (left.date > right.date ? -1 : 1) : 0
+        }
         return Array(combined.prefix(8))
     }
 
@@ -665,11 +691,14 @@ public enum AnalyticsDashboardEngine {
         let supportCoverage = !recentSessions.isEmpty ? supportDataSessions / Double(recentSessions.count) : 1
         let confidence = supportCoverage >= 0.75 ? "high" : (supportCoverage >= 0.35 ? "medium" : "low")
 
-        // skippedExercises: map → sort by count desc (stable) → slice(0,5)
+        // skippedExercises: map → sort by count desc → slice(0,5). JS Array.sort is
+        // STABLE, so equal-count rows keep the Map insertion (first-seen) order;
+        // `stableSorted` reproduces that independent of the unspecified Swift stdlib
+        // sort stability.
         var skippedExerciseRows = skippedExercises.map { (key, agg) in
             SkippedExercise(exerciseId: key, count: Double(agg.count), mostCommonReason: agg.reasons.mostCommon)
         }
-        skippedExerciseRows.sort { $0.count > $1.count }
+        skippedExerciseRows = stableSorted(skippedExerciseRows) { $0.count != $1.count ? ($0.count > $1.count ? -1 : 1) : 0 }
         let skippedExerciseTop = Array(skippedExerciseRows.prefix(5))
 
         var skippedSupportRows = skippedSupportExercises.map { (key, agg) -> SkippedSupportExercise in
@@ -682,7 +711,8 @@ public enum AnalyticsDashboardEngine {
                 mostCommonReason: agg.reasons.mostCommon
             )
         }
-        skippedSupportRows.sort { $0.count > $1.count }
+        // sort by count desc → slice(0,6); JS-stable insertion order on count ties via stableSorted.
+        skippedSupportRows = stableSorted(skippedSupportRows) { $0.count != $1.count ? ($0.count > $1.count ? -1 : 1) : 0 }
         let skippedSupportTop = Array(skippedSupportRows.prefix(6))
 
         return AdherenceReport(
