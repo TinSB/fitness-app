@@ -1,0 +1,108 @@
+{
+  "parityMeta": {
+    "id": "plateau-detection/plateau-boundary-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-2 detectExercisePlateau boundary/branch parity — additive cases the status fixture did not pin: insufficient via sets<5 (distinct from sessions<3), a count<4 non-insufficient 'none' (low confidence), possible_plateau driven by flatE1rm via the e1rmProfile.recentValues union shape (+ e1rmCount>=5 high confidence), the e1rmProfile current/best and bare e1rmKg union shapes, fatigue via the painPatterns param (exerciseId-match + severityAvg>=4), the load-feedback-good signal, the techniqueQualitySummary param override (set quality good, param poor), exerciseMatches via the _unknown canonicalExerciseId alias, and the loadFeedback array / summary-object / record-of-values input union shapes. Generated from src/engines/plateauDetectionEngine.ts; the Swift PlateauDetectionEngine compute-asserts each case == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "1c53660bb96cc3c9c7be76e32466f5243b2097d8",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "insufficient-too-few-sets",
+      "exerciseId": "bench-press",
+      "sessions": [
+        { "id": "is-1", "daysAgo": 21, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "is-2", "daysAgo": 12, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 62, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "is-3", "daysAgo": 3, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "none-three-perf-low-confidence",
+      "exerciseId": "bench-press",
+      "sessions": [
+        { "id": "n3-1", "daysAgo": 21, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "n3-2", "daysAgo": 12, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "n3-3", "daysAgo": 3, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 65, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 65, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "possible-plateau-flat-e1rm-high-confidence",
+      "exerciseId": "bench-press",
+      "e1rmProfile": { "exerciseId": "bench-press", "recentValues": [100, 100, 100, 100, 100], "method": "median_recent" },
+      "sessions": [
+        { "id": "fe-1", "daysAgo": 44, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 50, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 50, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fe-2", "daysAgo": 33, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fe-3", "daysAgo": 22, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fe-4", "daysAgo": 11, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 65, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 65, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fe-5", "daysAgo": 3, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 70, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 70, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "fatigue-pain-pattern-param",
+      "exerciseId": "bench-press",
+      "painPatterns": [
+        { "area": "shoulder", "exerciseId": "bench-press", "frequency": 3, "severityAvg": 2, "lastOccurredAt": "2026-05-01", "suggestedAction": "monitor" },
+        { "area": "knee", "exerciseId": "back-squat", "frequency": 2, "severityAvg": 5, "lastOccurredAt": "2026-04-20", "suggestedAction": "deload" }
+      ],
+      "sessions": [
+        { "id": "fp-1", "daysAgo": 26, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fp-2", "daysAgo": 18, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 62, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 62, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fp-3", "daysAgo": 9, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "fp-4", "daysAgo": 2, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 66, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 66, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "load-feedback-summary-good-signal",
+      "exerciseId": "bench-press",
+      "loadFeedback": { "exerciseId": "bench-press", "total": 4, "counts": { "too_light": 0, "good": 3, "too_heavy": 1 }, "dominantFeedback": "good", "adjustment": { "direction": "normal", "reasons": [] } },
+      "sessions": [
+        { "id": "lg-1", "daysAgo": 26, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "lg-2", "daysAgo": 18, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 58, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 58, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "lg-3", "daysAgo": 9, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 61, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 61, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "lg-4", "daysAgo": 2, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "load-too-aggressive-array-and-e1rm-estimate",
+      "exerciseId": "bench-press",
+      "loadFeedback": [
+        { "exerciseId": "bench-press", "feedback": "too_heavy" },
+        { "exerciseId": "bench-press", "feedback": "too_heavy" },
+        { "exerciseId": "bench-press", "feedback": "too_heavy" }
+      ],
+      "e1rmProfile": { "exerciseId": "bench-press", "e1rmKg": 120, "formula": "epley", "confidence": "high", "notes": [] },
+      "sessions": [
+        { "id": "aa-1", "daysAgo": 26, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 60, "reps": 5, "rir": 1, "techniqueQuality": "good" }, { "weight": 60, "reps": 5, "rir": 1, "techniqueQuality": "good" }] }] },
+        { "id": "aa-2", "daysAgo": 18, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 64, "reps": 4, "rir": 0, "techniqueQuality": "good" }, { "weight": 64, "reps": 4, "rir": 0, "techniqueQuality": "good" }] }] },
+        { "id": "aa-3", "daysAgo": 9, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 68, "reps": 4, "rir": 0, "techniqueQuality": "good" }, { "weight": 68, "reps": 4, "rir": 0, "techniqueQuality": "good" }] }] },
+        { "id": "aa-4", "daysAgo": 2, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 70, "reps": 3, "rir": 0, "techniqueQuality": "good" }, { "weight": 70, "reps": 3, "rir": 0, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "load-feedback-record-good-signal",
+      "exerciseId": "bench-press",
+      "loadFeedback": { "alpha": "good", "beta": { "counts": { "too_light": 0, "good": 2, "too_heavy": 0 }, "adjustment": { "direction": "normal", "reasons": [] } } },
+      "sessions": [
+        { "id": "lr-1", "daysAgo": 26, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 55, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "lr-2", "daysAgo": 18, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 58, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 58, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "lr-3", "daysAgo": 9, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 61, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 61, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "lr-4", "daysAgo": 2, "exercises": [{ "id": "bench-press", "name": "平板卧推", "sets": [{ "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "technique-summary-param-override-and-e1rm-current-best",
+      "exerciseId": "bench-press",
+      "techniqueQualitySummary": { "totalSets": 8, "good": 1, "acceptable": 1, "poor": 6, "goodOrAcceptableRate": 0.25, "poorRate": 0.75, "rirRecordedRate": 1 },
+      "e1rmProfile": { "exerciseId": "bench-press", "current": { "e1rmKg": 100 }, "best": { "e1rmKg": 110 } },
+      "sessions": [
+        { "id": "to-1", "daysAgo": 26, "exercises": [{ "id": "bench-press-variant", "name": "平板卧推", "canonicalExerciseId": "bench-press", "sets": [{ "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "to-2", "daysAgo": 18, "exercises": [{ "id": "bench-press-variant", "name": "平板卧推", "canonicalExerciseId": "bench-press", "sets": [{ "weight": 62, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 62, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "to-3", "daysAgo": 9, "exercises": [{ "id": "bench-press-variant", "name": "平板卧推", "canonicalExerciseId": "bench-press", "sets": [{ "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "to-4", "daysAgo": 2, "exercises": [{ "id": "bench-press-variant", "name": "平板卧推", "canonicalExerciseId": "bench-press", "sets": [{ "weight": 66, "reps": 6, "rir": 2, "techniqueQuality": "good" }, { "weight": 66, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    }
+  ]
+}
