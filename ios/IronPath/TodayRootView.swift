@@ -128,8 +128,91 @@ final class TodayRealDataModel: ObservableObject {
     }
 }
 
+/// Thin @MainActor view-model for the 今日 surface's READ-ONLY 训练洞察 (insights)
+/// block (AN-7). Same shape + IO seam as `TodayRealDataModel`: it opts the running app
+/// into the SAME sanctioned canonical store, loads it READ-ONLY, builds the DataHealth
+/// clean view (the §10 chokepoint), and delegates the clean-view → analytics →
+/// `TrainingInsightsSummary` transform to the pure `resolveTrainingInsightsState`. It
+/// NEVER touches FileManager directly, NEVER writes, and surfaces an honest state for
+/// every failure. Kept SEPARATE from the readiness model so the insights block is a
+/// pure, isolated addition — the existing readiness path is untouched.
+@MainActor
+final class TrainingInsightsModel: ObservableObject {
+    @Published private(set) var state: TrainingInsightsState
+
+    /// The sanctioned canonical store (the §8 source of truth), read-only. Optional so
+    /// previews/tests opt OUT of disk entirely; the running app injects it on appear.
+    private var store: AppDataStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()`).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the
+    /// canonical store, opted in on appear via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.now = now
+        self.isLive = true
+    }
+
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a
+    /// preview renders a chosen state without ever reading the real on-disk document.
+    init(previewState: TrainingInsightsState) {
+        self.state = previewState
+        self.store = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
+
+    /// True for the running app; false for pinned previews.
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the write path uses
+    /// (Application Support / `IronPathAppData`). Idempotent; `#if os(iOS)` + the live
+    /// guard keep previews/tests off disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view → analytics engines
+    /// → insights summary (in `resolveTrainingInsightsState`). NEVER writes, NEVER
+    /// overwrites an unreadable document, NEVER crashes — every failure → honest state.
+    /// A SINGLE `instant` drives both the clean view's guard clock and the engines'
+    /// reference time, so the read is internally consistent.
+    func reload() {
+        guard isLive else { return }
+        let instant = now()
+        state = resolveTrainingInsightsState(readOutcome(now: instant), now: instant)
+    }
+
+    /// The ONLY IO + the DataHealth clean-view construction (the §10 chokepoint the app
+    /// layer performs, mirroring `TodayRealDataModel`). No write: a missing file (or no
+    /// live source) → `.missing`; a present-but-unreadable document → `.unreadable`
+    /// (left untouched on disk, never overwritten — raw AppData never reaches the
+    /// engines).
+    private func readOutcome(now: Date) -> InsightsAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
+    }
+}
+
 struct TodayRootView: View {
     @StateObject private var model: TodayRealDataModel
+
+    /// READ-ONLY 训练洞察 (AN-7). A second, isolated @StateObject (the `widgetWriter`
+    /// precedent) so the insights block adds nothing to the existing readiness path.
+    @StateObject private var insights: TrainingInsightsModel
 
     @State private var showTrainingEntry = false
 
@@ -144,11 +227,22 @@ struct TodayRootView: View {
     /// type-checked as nonisolated.
     @MainActor init() {
         _model = StateObject(wrappedValue: TodayRealDataModel())
+        _insights = StateObject(wrappedValue: TrainingInsightsModel())
     }
 
-    /// Previews/tests inject a pinned model (e.g. `TodayRealDataModel(previewState:)`).
+    /// Previews/tests inject a pinned readiness model (e.g.
+    /// `TodayRealDataModel(previewState:)`). The insights block defaults to an honest
+    /// pinned-empty (no disk) so existing readiness previews keep their call site; an
+    /// insights-specific preview uses `init(model:insights:)` below.
     @MainActor init(model: TodayRealDataModel) {
         _model = StateObject(wrappedValue: model)
+        _insights = StateObject(wrappedValue: TrainingInsightsModel(previewState: .empty))
+    }
+
+    /// Previews/tests inject pinned readiness + insights models (both off-disk).
+    @MainActor init(model: TodayRealDataModel, insights: TrainingInsightsModel) {
+        _model = StateObject(wrappedValue: model)
+        _insights = StateObject(wrappedValue: insights)
     }
 
     var body: some View {
@@ -156,6 +250,7 @@ struct TodayRootView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 content
+                insightsSection
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -171,6 +266,11 @@ struct TodayRootView: View {
             // Opt the running app into the real canonical store and read it (read-only).
             model.activateLiveSourceIfNeeded()
             model.reload()
+            // AN-7: the 训练洞察 block reads the SAME canonical store read-only and
+            // computes its summary from the DataHealth clean view (§10/§11). Guarded by
+            // its own live flag, so previews/tests stay off disk.
+            insights.activateLiveSourceIfNeeded()
+            insights.reload()
             // Previews/tests pin their state and never touch the live App Group sink.
             guard model.isLiveLoadEnabled else { return }
             // W-1/W-2: publish a DERIVED read-only readiness snapshot for the widget
@@ -279,6 +379,139 @@ struct TodayRootView: View {
         )
     }
 
+    // MARK: - AN-7 训练洞察 (read-only analytics surface)
+
+    /// The READ-ONLY 训练洞察 block. Renders the AN-1…6 analytics outputs the pure
+    /// `resolveTrainingInsightsState` produced from the DataHealth clean view (§10/§11).
+    /// On `.empty` / `.unavailable` it renders nothing — the readiness `content` above
+    /// already shows the honest no-data / degrade state for the same canonical store,
+    /// so a second one here would be redundant.
+    @ViewBuilder
+    private var insightsSection: some View {
+        if case .ready(let summary) = insights.state {
+            insightsContent(summary)
+        }
+    }
+
+    private func insightsContent(_ summary: TrainingInsightsSummary) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("训练洞察")
+                .font(.title3.weight(.semibold))
+            Text("基于你本机的真实训练记录（经 DataHealth 数据校验后只读派生），由分析引擎计算。本区只读展示，不修改任何已保存的数据。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            insightCard(title: "连续打卡", rows: summary.streakRows, emptyText: "数据不足")
+            insightCard(title: "近期 PR", rows: summary.prRows, emptyText: "近期窗口内暂无新的个人纪录。")
+            insightCard(title: "趋势", rows: summary.trendRows, emptyText: "核心动作暂无足够数据生成趋势。")
+            muscleInsightCard(summary)
+            intelligenceCard(summary)
+        }
+    }
+
+    /// A titled card of labeled rows, or an honest one-line placeholder when empty.
+    private func insightCard(title: String, rows: [SurfaceRow], emptyText: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.headline)
+            if rows.isEmpty {
+                Text(emptyText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                rowStack(rows)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    /// 肌群平衡 — the engine headline (over/under-worked summary) above the score /
+    /// effective-set / per-muscle rows.
+    private func muscleInsightCard(_ summary: TrainingInsightsSummary) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("肌群平衡").font(.headline)
+            Text(summary.muscleHeadline)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            rowStack(summary.muscleRows)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    /// 智能摘要 — key insights (always ≥1), flagged plateaus, and recommended actions.
+    private func intelligenceCard(_ summary: TrainingInsightsSummary) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("智能摘要").font(.headline)
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(summary.keyInsights.enumerated()), id: \.offset) { _, insight in
+                    bulletLine(insight)
+                }
+            }
+            if !summary.plateauRows.isEmpty {
+                Text("平台期信号")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.top, 2)
+                rowStack(summary.plateauRows)
+            }
+            if !summary.recommendedActions.isEmpty {
+                Text("建议下一步")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(summary.recommendedActions.enumerated()), id: \.offset) { _, action in
+                        bulletLine(action)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    /// Shared label/value row stack (mirrors `card(rows:)`).
+    private func rowStack(_ rows: [SurfaceRow]) -> some View {
+        VStack(spacing: 6) {
+            ForEach(rows) { row in
+                HStack(alignment: .firstTextBaseline) {
+                    Text(row.label)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(row.value)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                }
+            }
+        }
+    }
+
+    /// A small leading-bullet line for free-text insight / action strings.
+    private func bulletLine(_ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("·").font(.subheadline).foregroundStyle(.secondary)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     private func infoCard(
         title: String,
         message: String,
@@ -330,4 +563,62 @@ struct TodayRootView: View {
 
 #Preview("不可读") {
     TodayRootView(model: TodayRealDataModel(previewState: .unavailable))
+}
+
+#Preview("含洞察") {
+    TodayRootView(
+        model: TodayRealDataModel(previewState: .ready(
+            TodayReadinessSummary(
+                slice: FocusModePreviewData.sampleCoreSlice(for: .normal),
+                todayStatus: TodayStatus(
+                    date: FocusModePreviewData.referenceDateOnly,
+                    sleep: "一般",
+                    energy: "中",
+                    time: "60",
+                    soreness: ["无"]
+                )
+            )
+        )),
+        insights: TrainingInsightsModel(previewState: .ready(TodayInsightsPreviewData.summary))
+    )
+}
+
+/// Deterministic preview-only sample for the 训练洞察 block. NOT canonical AppData and
+/// never written to disk — it only feeds the SwiftUI preview so it renders without a
+/// device store. Built through the GENUINE public summary init (the same path the live
+/// resolver uses), so the preview reflects real engine output. The synthetic bench-press
+/// history rises weekly so PR / trend populate honestly.
+private enum TodayInsightsPreviewData {
+    private static func benchSession(id: String, date: String, weight: Int64) -> TrainingSession {
+        TrainingSession(
+            id: id,
+            date: date,
+            finishedAt: "\(date)T10:00:00.000Z",
+            completed: true,
+            focusSessionComplete: true,
+            exercises: [
+                ExercisePrescription(
+                    id: "bench-press",
+                    exerciseId: "bench-press",
+                    name: "平板卧推",
+                    sets: [
+                        TrainingSetLog(setIndex: .integer(0), weight: .integer(weight), reps: .integer(6), techniqueQuality: "good", done: true),
+                        TrainingSetLog(setIndex: .integer(1), weight: .integer(weight), reps: .integer(6), techniqueQuality: "good", done: true),
+                        TrainingSetLog(setIndex: .integer(2), weight: .integer(weight), reps: .integer(6), techniqueQuality: "good", done: true),
+                    ]
+                ),
+            ]
+        )
+    }
+
+    /// Oldest-first (canonical order); the summary init reverses it internally.
+    static let summary = TrainingInsightsSummary(
+        cleanedHistory: [
+            benchSession(id: "bp-1", date: "2026-05-13", weight: 60),
+            benchSession(id: "bp-2", date: "2026-05-20", weight: 64),
+            benchSession(id: "bp-3", date: "2026-05-27", weight: 68),
+            benchSession(id: "bp-4", date: "2026-06-02", weight: 72),
+        ],
+        nowIso: "2026-06-03T10:00:00.000Z"
+    )
 }
