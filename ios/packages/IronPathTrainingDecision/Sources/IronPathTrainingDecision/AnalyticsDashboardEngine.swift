@@ -160,13 +160,15 @@ public enum AnalyticsDashboardEngine {
 
     /// A STABLE sort driven by a JS-style three-way comparator (negative = left first).
     /// Ties (comparator == 0) keep their ORIGINAL relative order via the pre-sort index,
-    /// mirroring `Array.prototype.sort`'s GUARANTEED stability (ES2019) — which Swift's
-    /// `sort(by:)` does NOT contractually provide (its stdlib sort happens to be stable
-    /// today, but the API explicitly does not promise it). Every dashboard sort that
-    /// mirrors a JS stable sort routes through here so the JS insertion order on ties is
-    /// GUARANTEED, never left to the unspecified stdlib stability. Same shape as the
-    /// SmartReplacement / PainPattern / RecentPRDelta precedents; `internal` (not private)
-    /// so the load-bearing tie test can assert the tiebreak directly.
+    /// mirroring `Array.prototype.sort`'s GUARANTEED stability (ES2019). Swift's
+    /// `sort(by:)`/`sorted(by:)` is ALSO contractually stable since Swift 5.8 (SE-0372
+    /// "Document Sorting as Stable"; this repo is Swift 6.3.2), so a plain `.sorted` with
+    /// the same comparator would already keep insertion order on ties. `stableSorted` is
+    /// kept anyway to match the SmartReplacement / PainPattern / RecentPRDelta precedents
+    /// and to make the "JS insertion order on ties" intent explicit in-line — a
+    /// self-documenting three-way-comparator + original-index tiebreak, NOT because the
+    /// stdlib sort is unstable. `internal` (not private) so the load-bearing tie test can
+    /// assert the tiebreak directly.
     static func stableSorted<T>(_ array: [T], _ comparator: (T, T) -> Int) -> [T] {
         array.enumerated().sorted { lhs, rhs in
             let c = comparator(lhs.element, rhs.element)
@@ -275,9 +277,10 @@ public enum AnalyticsDashboardEngine {
         }
 
         // .sort(order[status] asc || remainingSets desc). JS `Array.prototype.sort` is
-        // STABLE (ES2019); Swift's `sort(by:)` is NOT contractually stable, so route
-        // through `stableSorted` (original-index tiebreak) to GUARANTEE the JS insertion
-        // order on (status, remainingSets) ties, never relying on stdlib stability.
+        // STABLE (ES2019); Swift's `sort(by:)` is ALSO stable since Swift 5.8 (SE-0372),
+        // so this keeps ties either way — `stableSorted` (original-index tiebreak) is used
+        // to make the JS insertion-order-on-ties intent explicit on (status, remainingSets)
+        // ties, matching the repo precedents (not because the stdlib sort is unstable).
         func statusOrder(_ s: String) -> Int {
             switch s { case "low": return 0; case "near_target": return 1; case "on_target": return 2; case "high": return 3; default: return 0 }
         }
@@ -442,8 +445,9 @@ public enum AnalyticsDashboardEngine {
         var combined = maxWeight.items + fixedReps.items + sessionTotals.items + estimatedMaxes.items
         // .sort((a, b) => b.date.localeCompare(a.date)) — descending date. JS
         // `Array.prototype.sort` is STABLE, so equal-date PRs keep their insertion order
-        // (maxWeight → fixedReps → sessionTotals → estimatedMaxes); `stableSorted` pins
-        // that order regardless of the (unspecified) Swift stdlib sort stability.
+        // (maxWeight → fixedReps → sessionTotals → estimatedMaxes); Swift's sort is ALSO
+        // stable since Swift 5.8 (SE-0372), so `stableSorted` pins that order as an
+        // explicit, self-documenting tiebreak (not because the stdlib sort is unstable).
         combined = stableSorted(combined) { left, right in
             left.date != right.date ? (left.date > right.date ? -1 : 1) : 0
         }
@@ -692,9 +696,9 @@ public enum AnalyticsDashboardEngine {
         let confidence = supportCoverage >= 0.75 ? "high" : (supportCoverage >= 0.35 ? "medium" : "low")
 
         // skippedExercises: map → sort by count desc → slice(0,5). JS Array.sort is
-        // STABLE, so equal-count rows keep the Map insertion (first-seen) order;
-        // `stableSorted` reproduces that independent of the unspecified Swift stdlib
-        // sort stability.
+        // STABLE, so equal-count rows keep the Map insertion (first-seen) order; Swift's
+        // sort is ALSO stable since Swift 5.8 (SE-0372), so `stableSorted` reproduces that
+        // as an explicit, self-documenting tiebreak (not because the stdlib sort is unstable).
         var skippedExerciseRows = skippedExercises.map { (key, agg) in
             SkippedExercise(exerciseId: key, count: Double(agg.count), mostCommonReason: agg.reasons.mostCommon)
         }

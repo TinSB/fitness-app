@@ -1,21 +1,24 @@
 // AN-8 — sort-stability load-bearing tests for AnalyticsDashboardEngine.
 //
 // The AN-3 dashboard sorts mirror JS `Array.prototype.sort`, which is STABLE (ES2019):
-// equal-key elements keep their insertion order. Swift's `sort(by:)` is NOT
-// contractually stable — the API explicitly does not promise it — so the port routes
+// equal-key elements keep their insertion order. Swift's `sort(by:)` is ALSO
+// contractually stable since Swift 5.8 (SE-0372 "Document Sorting as Stable"; this repo
+// is Swift 6.3.2), so a plain `.sorted` would keep ties too — the port still routes
 // every such sort through `AnalyticsDashboardEngine.stableSorted`, which breaks
-// comparator ties on the ORIGINAL index. These tests prove that tiebreak is
-// LOAD-BEARING: the output order on a genuine tie is decided by the insertion-order
-// rule (not the comparator, not stdlib luck), matching the committed adherence-report
-// golden's `skip-count-tie-stable-order` case (generated from the REAL TS engine). Pure
+// comparator ties on the ORIGINAL index, to make the JS insertion-order-on-ties intent
+// explicit (matching the SmartReplacement / PainPattern / RecentPRDelta precedents), not
+// because the stdlib sort is unstable. These tests prove that tiebreak is LOAD-BEARING:
+// the output order on a genuine tie is decided by the insertion-order rule (not the
+// comparator), matching the committed golden `analytics/adherence-report-tie-cases-v1`
+// case `skip-count-tie-stable-insertion-order` (generated from the REAL TS engine). Pure
 // / read-only; no IO.
 //
-// HONEST SCOPE NOTE: on the current Swift toolchain `Array.sort` is empirically stable,
-// so a fixture where a BARE `.sort` visibly reorders ties cannot be constructed — the
-// gap `stableSorted` closes is CONTRACTUAL (the unspecified stability), not an observed
-// divergence. These tests therefore prove the tiebreak RULE determines the order and pin
-// the JS insertion order so any future stdlib-stability change is caught. Same intent as
-// the SmartReplacement / PainPattern / RecentPRDelta precedents.
+// SCOPE NOTE: because both the JS and Swift sorts are stable here, a fixture where a BARE
+// `.sort` visibly reorders ties cannot be constructed — what `stableSorted` adds is an
+// explicit, self-documenting encoding of the JS insertion-order-on-ties intent, not a fix
+// for an unstable stdlib sort. These tests prove the tiebreak RULE determines the order
+// and pin the JS insertion order so any future change is caught. Same intent as the
+// SmartReplacement / PainPattern / RecentPRDelta precedents.
 
 import XCTest
 import IronPathDomain
@@ -47,7 +50,8 @@ final class AnalyticsDashboardSortStabilityTests: XCTestCase {
         // insertion-order rule yields one order; a reversed-index tiebreak over the
         // IDENTICAL comparator-equal block yields a DIFFERENT order. So the insertion-order
         // tiebreak is what makes the port match JS (and the golden) — it is load-bearing,
-        // not a no-op and not reliant on the unspecified stdlib stability.
+        // not a no-op: the explicit index tiebreak in the closure (not the comparator)
+        // pins the tie order.
         let input = [Row(id: "z", key: 1), Row(id: "y", key: 1), Row(id: "x", key: 1), Row(id: "w", key: 1)]
         let insertionOrder = AnalyticsDashboardEngine.stableSorted(input, byKeyDesc).map(\.id)
         let reversedTieRule = input.enumerated().sorted { lhs, rhs in
@@ -74,8 +78,8 @@ final class AnalyticsDashboardSortStabilityTests: XCTestCase {
         // (planned 1 > actual 0). Every skip count == 1, so the count-desc sort is a PURE
         // tie; only insertion order (the Map first-seen order) can resolve it. Ids are in
         // reverse-alphabetical INSERTION order so the result is visibly insertion-ordered,
-        // not id-sorted. Mirrors golden analytics/adherence-report-cases-v1
-        // `skip-count-tie-stable-order` (generated from the real TS engine).
+        // not id-sorted. Mirrors golden analytics/adherence-report-tie-cases-v1 case
+        // `skip-count-tie-stable-insertion-order` (generated from the real TS engine).
         let ids = ["skip-zulu", "skip-yankee", "skip-xray", "skip-whiskey", "skip-victor", "skip-uniform"]
         let exercises = ids.map {
             ExercisePrescription(id: $0, sets: [TrainingSetLog(weight: .double(60), reps: .integer(8), done: false)])

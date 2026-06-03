@@ -237,9 +237,11 @@ final class AnalyticsDashboardEngineParityTests: XCTestCase {
     // MARK: - analytics/adherence-report-tie-cases-v1 (AN-8 sort-stability load-bearing)
 
     /// The AN-8 tie golden: a PURE skippedExercises count tie (every count == 1) whose
-    /// JS-stable insertion order is pinned through the slice(0,5) cut. Reproducing it
-    /// requires `stableSorted`'s original-index tiebreak — Swift's `sort(by:)` is not
-    /// contractually stable. Generated from the REAL TS engine, never hand-edited (§22).
+    /// JS-stable insertion order is pinned through the slice(0,5) cut. `stableSorted`'s
+    /// original-index tiebreak makes that insertion-order intent explicit; Swift's
+    /// `sort(by:)` is itself contractually stable since Swift 5.8 (SE-0372), so a plain
+    /// `.sorted` would also hold the order. Generated from the REAL TS engine, never
+    /// hand-edited (§22).
     func testBuildAdherenceReportTieCaseParity() throws {
         let root = try goldenRoot("analytics/adherence-report-tie-cases-v1")
         XCTAssertEqual(root.optionalString("sourceFixtureId"), "analytics/adherence-report-tie-cases-v1")
@@ -253,8 +255,8 @@ final class AnalyticsDashboardEngineParityTests: XCTestCase {
             let golden = decodeAdherenceReport(try XCTUnwrap(c.optionalObject("result"), "\(label): result"))
             XCTAssertEqual(actual, golden, "adherence-report-tie/\(label): buildAdherenceReport mismatch")
             // Load-bearing, asserted explicitly: equal-count skips keep the JS insertion
-            // (Map first-seen) order through the slice(0,5) cut — only stableSorted's
-            // original-index tiebreak guarantees this.
+            // (Map first-seen) order through the slice(0,5) cut — stableSorted's
+            // original-index tiebreak encodes that insertion-order intent explicitly.
             XCTAssertTrue(actual.skippedExercises.allSatisfy { $0.count == 1 }, "\(label): pure tie (every count == 1)")
             XCTAssertEqual(
                 actual.skippedExercises.map(\.exerciseId),
