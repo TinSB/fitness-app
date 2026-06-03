@@ -1,0 +1,68 @@
+{
+  "parityMeta": {
+    "id": "analytics/exercise-trend-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-3 buildExerciseTrend + trendStatus + CORE_TREND_EXERCISES function-level parity — topSet selection (max weight, then max reps tie-break), completedHighQualitySets low-confidence (pain) exclusion, the `topWeight || volume` empty-point filter, slice(0,6) cap, formatExerciseName display name, and trendStatus all four states (数据不足 <3 points / 推进中 recent>older / 回落 recent<older*0.95 / 可能停滞 otherwise). Generated from src/engines/analytics.ts:152/178/84; the Swift AnalyticsDashboardEngine compute-asserts each trend array + status + the coreTrendExercises constant == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "progressing-and-slice-6",
+      "exerciseId": "bench-press",
+      "sessions": [
+        { "id": "pg-1", "daysAgo": 2, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 76, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "pg-2", "daysAgo": 9, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 72, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "pg-3", "daysAgo": 16, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 68, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "pg-4", "daysAgo": 23, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 64, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "pg-5", "daysAgo": 30, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "pg-6", "daysAgo": 37, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 56, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "pg-7", "daysAgo": 44, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 52, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "declining",
+      "exerciseId": "squat",
+      "sessions": [
+        { "id": "dc-1", "daysAgo": 2, "exercises": [{ "id": "squat", "sets": [{ "weight": 90, "reps": 5, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "dc-2", "daysAgo": 9, "exercises": [{ "id": "squat", "sets": [{ "weight": 95, "reps": 5, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "dc-3", "daysAgo": 16, "exercises": [{ "id": "squat", "sets": [{ "weight": 115, "reps": 5, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "dc-4", "daysAgo": 23, "exercises": [{ "id": "squat", "sets": [{ "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "stagnant",
+      "exerciseId": "lat-pulldown",
+      "sessions": [
+        { "id": "st-1", "daysAgo": 2, "exercises": [{ "id": "lat-pulldown", "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "st-2", "daysAgo": 9, "exercises": [{ "id": "lat-pulldown", "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "st-3", "daysAgo": 16, "exercises": [{ "id": "lat-pulldown", "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "insufficient-two-points",
+      "exerciseId": "romanian-deadlift",
+      "sessions": [
+        { "id": "in-1", "daysAgo": 2, "exercises": [{ "id": "romanian-deadlift", "sets": [{ "weight": 80, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "in-2", "daysAgo": 9, "exercises": [{ "id": "romanian-deadlift", "sets": [{ "weight": 80, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "topset-tie-and-low-quality-filter",
+      "exerciseId": "bench-press",
+      "sessions": [
+        { "id": "tf-1", "daysAgo": 2, "exercises": [{ "id": "bench-press", "sets": [
+          { "weight": 100, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+          { "weight": 100, "reps": 7, "rir": 2, "techniqueQuality": "good" },
+          { "weight": 95, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+        ] }] },
+        { "id": "tf-2", "daysAgo": 9, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 92, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "tf-3", "daysAgo": 16, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 88, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "tf-pain-only", "daysAgo": 23, "exercises": [{ "id": "bench-press", "sets": [{ "weight": 84, "reps": 6, "rir": 2, "painFlag": true }] }] }
+      ]
+    }
+  ]
+}

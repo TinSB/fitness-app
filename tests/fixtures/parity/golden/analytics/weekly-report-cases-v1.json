@@ -1,0 +1,223 @@
+{
+  "cases": [
+    {
+      "asOfDate": "2026-06-01T00:00:00.000Z",
+      "bodyWeights": [
+        {
+          "date": "2026-06-01",
+          "value": 73
+        },
+        {
+          "date": "2026-05-30",
+          "value": 73.5
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-05-31",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "focus": "推",
+          "id": "wr-1",
+          "templateName": "推 A"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "id": "barbell-row",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "barbell-row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "wr-2",
+          "templateName": "拉 A"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 62
+                }
+              ]
+            }
+          ],
+          "focus": "推",
+          "id": "wr-3",
+          "templateName": "推 A"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "focus": "腿",
+          "id": "wr-out",
+          "templateName": "腿 A"
+        }
+      ],
+      "label": "standard-week-focus-and-bodyweight",
+      "result": "训练次数：3\n完成组数：4\n有效组数：4（有效分 4）\n总训练量：1892kg\n训练分布：推2次 / 拉 A1次\n当前体重：73kg"
+    },
+    {
+      "asOfDate": "2026-06-01T00:00:00.000Z",
+      "bodyWeights": [],
+      "history": [
+        {
+          "date": "2026-05-22",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "focus": "推",
+          "id": "ew-1",
+          "templateName": "推 A"
+        },
+        {
+          "date": "2026-05-12",
+          "exercises": [
+            {
+              "id": "barbell-row",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "barbell-row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "focus": "拉",
+          "id": "ew-2",
+          "templateName": "拉 A"
+        }
+      ],
+      "label": "empty-window-no-bodyweight",
+      "result": "训练次数：0\n完成组数：0\n有效组数：0（有效分 0）\n总训练量：0kg\n训练分布：暂无\n当前体重：未记录"
+    },
+    {
+      "asOfDate": "2026-06-01T00:00:00.000Z",
+      "bodyWeights": [
+        {
+          "date": "2026-06-01",
+          "value": 0
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "bd-in",
+          "templateName": "推 A"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "bd-out",
+          "templateName": "推 A"
+        }
+      ],
+      "label": "boundary-day-8-excluded-and-zero-bodyweight",
+      "result": "训练次数：1\n完成组数：1\n有效组数：1（有效分 1）\n总训练量：480kg\n训练分布：推 A1次\n当前体重：未记录"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "analytics/weekly-report-cases-v1"
+  },
+  "sourceFixtureId": "analytics/weekly-report-cases-v1"
+}

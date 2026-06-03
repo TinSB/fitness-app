@@ -1,0 +1,100 @@
+{
+  "parityMeta": {
+    "id": "analytics/adherence-report-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-3 buildAdherenceReport function-level parity — setCountForExercise (array length) vs completedSets actual, supportExerciseLogs correction/functional planned+min(completed,planned), the `correctionPlanned || (hasSupportData?0:supportPlannedFromBlock)` row fallback, ratio() overall/mainline/correction/functional rates, every suggestion branch (overall<70 / mainline<75 / correction<60 / functional<60 / top skip time / top skip pain / default), supportCoverage→confidence high/medium/low, skippedExercises (baseId||id, count-desc sort) + skippedSupportExercises (moduleId:exerciseId:blockType key, incrementReason mostCommon, count-desc sort), recentSessions.slice(0,7). Generated from src/engines/analytics.ts:406; the Swift AnalyticsDashboardEngine.buildAdherenceReport compute-asserts the full AdherenceReport == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "full-support-coverage-time-skip",
+      "sessions": [
+        {
+          "id": "fs-1", "daysAgo": 2, "templateName": "推 A",
+          "exercises": [
+            { "id": "bench-press", "sets": [
+              { "weight": 60, "reps": 8, "done": true },
+              { "weight": 60, "reps": 8, "done": true },
+              { "weight": 60, "reps": 8, "done": false },
+              { "weight": 60, "reps": 8, "done": false }
+            ] }
+          ],
+          "supportExerciseLogs": [
+            { "moduleId": "corr-m1", "exerciseId": "face-pull", "blockType": "correction", "plannedSets": 3, "completedSets": 1, "skippedReason": "time" },
+            { "moduleId": "func-m1", "exerciseId": "farmer-carry", "blockType": "functional", "plannedSets": 2, "completedSets": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "no-support-block-fallback-default-suggestion",
+      "sessions": [
+        {
+          "id": "nb-1", "daysAgo": 2, "templateName": "推 A",
+          "exercises": [
+            { "id": "bench-press", "sets": [
+              { "weight": 60, "reps": 8, "done": true },
+              { "weight": 60, "reps": 8, "done": true }
+            ] }
+          ],
+          "correctionBlock": [{ "id": "cb-1", "exercises": [{ "exerciseId": "face-pull", "sets": 3 }] }],
+          "functionalBlock": [{ "id": "fb-1", "exercises": [{ "exerciseId": "farmer-carry", "sets": 2 }] }]
+        }
+      ]
+    },
+    {
+      "label": "medium-coverage-pain-skip-and-skipped-sort",
+      "sessions": [
+        {
+          "id": "mp-1", "daysAgo": 2, "templateName": "推 A",
+          "exercises": [
+            { "id": "bench-press", "sets": [
+              { "weight": 60, "reps": 8, "done": true },
+              { "weight": 60, "reps": 8, "done": false },
+              { "weight": 60, "reps": 8, "done": false }
+            ] }
+          ],
+          "supportExerciseLogs": [
+            { "moduleId": "corr-a", "exerciseId": "face-pull", "blockType": "correction", "plannedSets": 3, "completedSets": 0, "skippedReason": "pain" }
+          ]
+        },
+        {
+          "id": "mp-2", "daysAgo": 4, "templateName": "腿 A",
+          "exercises": [
+            { "id": "squat", "baseId": "squat-base", "sets": [
+              { "weight": 100, "reps": 5, "done": true },
+              { "weight": 100, "reps": 5, "done": false },
+              { "weight": 100, "reps": 5, "done": false }
+            ] }
+          ],
+          "supportExerciseLogs": [
+            { "moduleId": "corr-b", "exerciseId": "band-pull-apart", "blockType": "correction", "plannedSets": 2, "completedSets": 0, "skippedReason": "pain" }
+          ]
+        },
+        {
+          "id": "mp-3", "daysAgo": 6, "templateName": "推 A",
+          "exercises": [
+            { "id": "bench-press", "sets": [
+              { "weight": 60, "reps": 8, "done": true },
+              { "weight": 60, "reps": 8, "done": false },
+              { "weight": 60, "reps": 8, "done": false }
+            ] }
+          ]
+        },
+        {
+          "id": "mp-4", "daysAgo": 8, "templateName": "推 A",
+          "exercises": [
+            { "id": "bench-press", "sets": [
+              { "weight": 60, "reps": 8, "done": true },
+              { "weight": 60, "reps": 8, "done": true }
+            ] }
+          ]
+        }
+      ]
+    }
+  ]
+}

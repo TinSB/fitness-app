@@ -1,0 +1,31 @@
+{
+  "parityMeta": {
+    "id": "effective-set/evaluate-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-3 evaluateEffectiveSet function-level parity — one case per scoring/flag/confidence branch (identity_invalid via exercise + via set / warmup / incomplete not-done + zero-weight + zero-reps / poor_technique / pain / unknown_rir empty + undefined / too_easy rir>=5 + rir==4 / valid_effort rir 1-3 / near-failure else rir==0 + rir==null→0 / below-repMin via exercise.repMin + via context.plannedReps / combined-low). Generated from src/engines/effectiveSetEngine.ts:7; the Swift EffectiveSetEngine.evaluateEffectiveSet compute-asserts each result == golden (isEffective / score / confidence / flags / reasons).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    { "label": "identity-invalid-via-exercise", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 2, "done": true }, "exercise": { "id": "bench-press", "identityInvalid": true } },
+    { "label": "identity-invalid-via-set", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 2, "done": true, "identityInvalid": true } },
+    { "label": "warmup", "set": { "id": "s", "type": "warmup", "weight": 60, "reps": 6, "rir": 2, "done": true } },
+    { "label": "incomplete-not-done", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 2, "done": false } },
+    { "label": "incomplete-zero-weight", "set": { "id": "s", "weight": 0, "reps": 6, "rir": 2, "done": true } },
+    { "label": "incomplete-zero-reps", "set": { "id": "s", "weight": 60, "reps": 0, "rir": 2, "done": true } },
+    { "label": "poor-technique", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 2, "done": true, "techniqueQuality": "poor" } },
+    { "label": "pain", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 2, "done": true, "painFlag": true } },
+    { "label": "unknown-rir-empty-string", "set": { "id": "s", "weight": 60, "reps": 6, "rir": "", "done": true } },
+    { "label": "unknown-rir-undefined", "set": { "id": "s", "weight": 60, "reps": 6, "done": true } },
+    { "label": "too-easy-rir-5", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 5, "done": true } },
+    { "label": "too-easy-rir-4", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 4, "done": true } },
+    { "label": "valid-effort-rir-2", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 2, "done": true } },
+    { "label": "near-failure-rir-0", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 0, "done": true } },
+    { "label": "rir-null-coerces-to-zero", "set": { "id": "s", "weight": 60, "reps": 6, "rir": null, "done": true } },
+    { "label": "below-rep-min-via-exercise", "set": { "id": "s", "weight": 60, "reps": 4, "rir": 2, "done": true }, "exercise": { "id": "bench-press", "repMin": 6, "repMax": 10 } },
+    { "label": "below-rep-min-via-context", "set": { "id": "s", "weight": 60, "reps": 4, "rir": 2, "done": true }, "context": { "plannedReps": [8, 12] } },
+    { "label": "combined-poor-pain-too-easy", "set": { "id": "s", "weight": 60, "reps": 6, "rir": 5, "done": true, "techniqueQuality": "poor", "painFlag": true } }
+  ]
+}

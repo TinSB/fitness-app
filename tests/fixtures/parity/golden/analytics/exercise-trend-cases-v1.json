@@ -1,0 +1,597 @@
+{
+  "cases": [
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 76
+                }
+              ]
+            }
+          ],
+          "id": "pg-1"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 72
+                }
+              ]
+            }
+          ],
+          "id": "pg-2"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 68
+                }
+              ]
+            }
+          ],
+          "id": "pg-3"
+        },
+        {
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "pg-4"
+        },
+        {
+          "date": "2026-05-02",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "pg-5"
+        },
+        {
+          "date": "2026-04-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 56
+                }
+              ]
+            }
+          ],
+          "id": "pg-6"
+        },
+        {
+          "date": "2026-04-18",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 52
+                }
+              ]
+            }
+          ],
+          "id": "pg-7"
+        }
+      ],
+      "label": "progressing-and-slice-6",
+      "status": "推进中",
+      "trend": [
+        {
+          "date": "2026-05-30",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 76,
+          "volume": 456
+        },
+        {
+          "date": "2026-05-23",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 72,
+          "volume": 432
+        },
+        {
+          "date": "2026-05-16",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 68,
+          "volume": 408
+        },
+        {
+          "date": "2026-05-09",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 64,
+          "volume": 384
+        },
+        {
+          "date": "2026-05-02",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 60,
+          "volume": 360
+        },
+        {
+          "date": "2026-04-25",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 56,
+          "volume": 336
+        }
+      ]
+    },
+    {
+      "exerciseId": "squat",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 90
+                }
+              ]
+            }
+          ],
+          "id": "dc-1"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 95
+                }
+              ]
+            }
+          ],
+          "id": "dc-2"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 115
+                }
+              ]
+            }
+          ],
+          "id": "dc-3"
+        },
+        {
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "dc-4"
+        }
+      ],
+      "label": "declining",
+      "status": "回落",
+      "trend": [
+        {
+          "date": "2026-05-30",
+          "name": "深蹲",
+          "topReps": 5,
+          "topWeight": 90,
+          "volume": 450
+        },
+        {
+          "date": "2026-05-23",
+          "name": "深蹲",
+          "topReps": 5,
+          "topWeight": 95,
+          "volume": 475
+        },
+        {
+          "date": "2026-05-16",
+          "name": "深蹲",
+          "topReps": 5,
+          "topWeight": 115,
+          "volume": 575
+        },
+        {
+          "date": "2026-05-09",
+          "name": "深蹲",
+          "topReps": 5,
+          "topWeight": 120,
+          "volume": 600
+        }
+      ]
+    },
+    {
+      "exerciseId": "lat-pulldown",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "lat-pulldown",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "lat-pulldown-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "st-1"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "id": "lat-pulldown",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "lat-pulldown-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "st-2"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "id": "lat-pulldown",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "lat-pulldown-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "st-3"
+        }
+      ],
+      "label": "stagnant",
+      "status": "可能停滞",
+      "trend": [
+        {
+          "date": "2026-05-30",
+          "name": "高位下拉",
+          "topReps": 8,
+          "topWeight": 60,
+          "volume": 480
+        },
+        {
+          "date": "2026-05-23",
+          "name": "高位下拉",
+          "topReps": 8,
+          "topWeight": 60,
+          "volume": 480
+        },
+        {
+          "date": "2026-05-16",
+          "name": "高位下拉",
+          "topReps": 8,
+          "topWeight": 60,
+          "volume": 480
+        }
+      ]
+    },
+    {
+      "exerciseId": "romanian-deadlift",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "romanian-deadlift",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "romanian-deadlift-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "in-1"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "id": "romanian-deadlift",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "romanian-deadlift-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "in-2"
+        }
+      ],
+      "label": "insufficient-two-points",
+      "status": "数据不足",
+      "trend": [
+        {
+          "date": "2026-05-30",
+          "name": "罗马尼亚硬拉",
+          "topReps": 8,
+          "topWeight": 80,
+          "volume": 640
+        },
+        {
+          "date": "2026-05-23",
+          "name": "罗马尼亚硬拉",
+          "topReps": 8,
+          "topWeight": 80,
+          "volume": 640
+        }
+      ]
+    },
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 7,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 95
+                }
+              ]
+            }
+          ],
+          "id": "tf-1"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 92
+                }
+              ]
+            }
+          ],
+          "id": "tf-2"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 88
+                }
+              ]
+            }
+          ],
+          "id": "tf-3"
+        },
+        {
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "reps": 6,
+                  "rir": 2,
+                  "weight": 84
+                }
+              ]
+            }
+          ],
+          "id": "tf-pain-only"
+        }
+      ],
+      "label": "topset-tie-and-low-quality-filter",
+      "status": "推进中",
+      "trend": [
+        {
+          "date": "2026-05-30",
+          "name": "平板卧推",
+          "topReps": 7,
+          "topWeight": 100,
+          "volume": 1960
+        },
+        {
+          "date": "2026-05-23",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 92,
+          "volume": 552
+        },
+        {
+          "date": "2026-05-16",
+          "name": "平板卧推",
+          "topReps": 6,
+          "topWeight": 88,
+          "volume": 528
+        }
+      ]
+    }
+  ],
+  "coreTrendExercises": [
+    {
+      "id": "bench-press",
+      "label": "卧推"
+    },
+    {
+      "id": "squat",
+      "label": "深蹲"
+    },
+    {
+      "id": "romanian-deadlift",
+      "label": "RDL"
+    },
+    {
+      "id": "lat-pulldown",
+      "label": "下拉"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "analytics/exercise-trend-cases-v1"
+  },
+  "sourceFixtureId": "analytics/exercise-trend-cases-v1"
+}

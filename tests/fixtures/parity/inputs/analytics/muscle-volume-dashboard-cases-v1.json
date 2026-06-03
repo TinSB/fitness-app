@@ -1,0 +1,100 @@
+{
+  "parityMeta": {
+    "id": "analytics/muscle-volume-dashboard-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-3 buildMuscleVolumeDashboard function-level parity — getVolumeStatus all four bands (low <0.75 / near_target [0.75,0.95) / on_target [0.95,1.15) / high >=1.15) + target<=0 high (weighted>0) and low (weighted==0), weekStart `date >= weekStart` window filter, the no-weekStart history.slice(0,7) fallback, buildVolumeNotes per status + effectiveSets>highConfidence note, byMuscle muscles absent from targets appended with target 0, the status-order + remainingSets-desc sort. Generated from src/engines/analytics.ts:112; the Swift AnalyticsDashboardEngine.buildMuscleVolumeDashboard compute-asserts each row array == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "status-bands-with-week-start",
+      "weeklyPrescription": {
+        "weekStartDaysAgo": 7,
+        "muscles": [
+          { "muscle": "chest", "target": 16 },
+          { "muscle": "legs", "target": 4 },
+          { "muscle": "shoulders", "target": 5 },
+          { "muscle": "back", "target": 2 }
+        ]
+      },
+      "sessions": [
+        {
+          "id": "sb-1", "daysAgo": 3,
+          "exercises": [
+            { "id": "bench-press", "primaryMuscles": ["chest"], "sets": [
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ] },
+            { "id": "squat", "primaryMuscles": ["legs"], "sets": [
+              { "weight": 100, "reps": 6, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 100, "reps": 6, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 100, "reps": 6, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 100, "reps": 6, "rir": 2, "techniqueQuality": "good" }
+            ] },
+            { "id": "shoulder-press", "primaryMuscles": ["shoulders"], "sets": [
+              { "weight": 25, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 25, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 25, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 25, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ] },
+            { "id": "barbell-row", "primaryMuscles": ["back"], "sets": [
+              { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ] }
+          ]
+        },
+        {
+          "id": "sb-old", "daysAgo": 12,
+          "exercises": [
+            { "id": "bench-press", "primaryMuscles": ["chest"], "sets": [
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "no-week-start-slice-7-and-target-zero-high",
+      "sessions": [
+        { "id": "s7-1", "daysAgo": 1, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-2", "daysAgo": 2, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-3", "daysAgo": 3, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-4", "daysAgo": 4, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-5", "daysAgo": 5, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-6", "daysAgo": 6, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-7", "daysAgo": 7, "exercises": [{ "id": "bench-press", "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "s7-8", "daysAgo": 8, "exercises": [{ "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 6, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "target-zero-low-and-low-status-note",
+      "weeklyPrescription": {
+        "weekStartDaysAgo": 7,
+        "muscles": [
+          { "muscle": "calves", "target": 0 },
+          { "muscle": "chest", "target": 20 }
+        ]
+      },
+      "sessions": [
+        {
+          "id": "tz-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "primaryMuscles": ["chest"], "sets": [
+              { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 60, "reps": 8, "rir": "", "techniqueQuality": "good" }
+            ] }
+          ]
+        }
+      ]
+    }
+  ]
+}

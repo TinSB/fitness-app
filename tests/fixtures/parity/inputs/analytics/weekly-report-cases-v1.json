@@ -1,0 +1,52 @@
+{
+  "parityMeta": {
+    "id": "analytics/weekly-report-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-3 buildWeeklyReport function-level parity — the INJECTED-clock (options.nowIso = §11.2 deterministic clock) 7-day window `new Date(session.date) >= now - 7d` (boundary daysAgo==7 included, daysAgo>7 excluded), sessionVolume + sessionCompletedSets + buildEffectiveVolumeSummary aggregation, the `focus || templateName` distribution count (`键N次` joined by ' / ', empty → 暂无), and latestWeight (bodyWeights[0].value truthy → `Wkg`, missing/0 → 未记录). The Swift AnalyticsDashboardEngine.buildWeeklyReport injects asOfDate (zero `: Date`) and compute-asserts the joined report string == golden. Generated from src/engines/analytics.ts:293.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "standard-week-focus-and-bodyweight",
+      "asOfDate": true,
+      "bodyWeights": [{ "date": "2026-06-01", "value": 73 }, { "date": "2026-05-30", "value": 73.5 }],
+      "sessions": [
+        { "id": "wr-1", "daysAgo": 1, "focus": "推", "templateName": "推 A", "exercises": [{ "id": "bench-press", "sets": [
+          { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+          { "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+        ] }] },
+        { "id": "wr-2", "daysAgo": 4, "templateName": "拉 A", "exercises": [{ "id": "barbell-row", "sets": [
+          { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+        ] }] },
+        { "id": "wr-3", "daysAgo": 7, "focus": "推", "templateName": "推 A", "exercises": [{ "id": "bench-press", "sets": [
+          { "weight": 62, "reps": 6, "rir": 2, "techniqueQuality": "good" }
+        ] }] },
+        { "id": "wr-out", "daysAgo": 9, "focus": "腿", "templateName": "腿 A", "exercises": [{ "id": "squat", "sets": [
+          { "weight": 100, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+        ] }] }
+      ]
+    },
+    {
+      "label": "empty-window-no-bodyweight",
+      "asOfDate": true,
+      "bodyWeights": [],
+      "sessions": [
+        { "id": "ew-1", "daysAgo": 10, "focus": "推", "templateName": "推 A", "exercises": [{ "id": "bench-press", "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "ew-2", "daysAgo": 20, "focus": "拉", "templateName": "拉 A", "exercises": [{ "id": "barbell-row", "sets": [{ "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    },
+    {
+      "label": "boundary-day-8-excluded-and-zero-bodyweight",
+      "asOfDate": true,
+      "bodyWeights": [{ "date": "2026-06-01", "value": 0 }],
+      "sessions": [
+        { "id": "bd-in", "daysAgo": 7, "templateName": "推 A", "exercises": [{ "id": "bench-press", "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] },
+        { "id": "bd-out", "daysAgo": 8, "templateName": "推 A", "exercises": [{ "id": "bench-press", "sets": [{ "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }] }] }
+      ]
+    }
+  ]
+}

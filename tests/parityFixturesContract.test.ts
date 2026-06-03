@@ -132,6 +132,19 @@ const FIXTURE_IDS = [
   // branch/boundary debt. Generated; never hand-edited (§22).
   'plateau-detection/plateau-status-cases-v1',
   'plateau-detection/plateau-boundary-cases-v1',
+  // AN-3 effectiveSetEngine (analytics-consumed subset) + analytics.ts dashboard port — 7
+  // OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL pinning evaluateEffectiveSet /
+  // buildEffectiveVolumeSummary (+ countEffectiveSets / getMuscleContribution) and the
+  // analytics dashboard exports (buildMuscleVolumeDashboard / buildExerciseTrend / trendStatus /
+  // buildPrs / buildWeeklyReport / buildAdherenceReport / CORE_TREND_EXERCISES). Generated;
+  // never hand-edited (§22).
+  'effective-set/evaluate-cases-v1',
+  'effective-set/volume-summary-cases-v1',
+  'analytics/muscle-volume-dashboard-cases-v1',
+  'analytics/exercise-trend-cases-v1',
+  'analytics/prs-cases-v1',
+  'analytics/weekly-report-cases-v1',
+  'analytics/adherence-report-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -333,7 +346,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live + 3 AN-1 leaf-analytics + 3 AN-1b boundary + 2 AN-2 plateau-detection)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live + 3 AN-1 leaf-analytics + 3 AN-1b boundary + 2 AN-2 plateau-detection + 2 AN-3 effective-set + 5 AN-3 analytics)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

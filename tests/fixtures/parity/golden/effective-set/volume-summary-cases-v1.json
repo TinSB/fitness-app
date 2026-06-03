@@ -1,0 +1,437 @@
+{
+  "cases": [
+    {
+      "countProbes": [
+        {
+          "count": 3,
+          "label": "default-min-score",
+          "sessionIndex": 0
+        },
+        {
+          "count": 2,
+          "label": "min-score-0.9",
+          "minScore": 0.9,
+          "sessionIndex": 0
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "secondaryMuscles": [
+                "triceps"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "painFlag": true,
+                  "reps": 6,
+                  "rir": 2,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-4",
+                  "reps": 10,
+                  "rir": 2,
+                  "type": "corrective",
+                  "weight": 20
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-5",
+                  "reps": 10,
+                  "rir": 2,
+                  "type": "functional",
+                  "weight": 20
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-6",
+                  "reps": 12,
+                  "rir": 2,
+                  "type": "warmup",
+                  "weight": 30
+                }
+              ]
+            },
+            {
+              "id": "shoulder-press",
+              "muscleContribution": {
+                "shoulders": 1,
+                "triceps": 0.4
+              },
+              "name": "哑铃肩推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "shoulder-press-1",
+                  "reps": 8,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 25
+                }
+              ]
+            }
+          ],
+          "id": "vs-1"
+        }
+      ],
+      "label": "mixed-confidence-and-muscles",
+      "summary": {
+        "byMuscle": {
+          "chest": {
+            "completedSets": 4,
+            "effectiveScore": 2.3,
+            "effectiveSets": 2,
+            "highConfidenceEffectiveSets": 1,
+            "highConfidenceWeightedSets": 1,
+            "lowConfidenceEffectiveSets": 0,
+            "mediumConfidenceEffectiveSets": 1,
+            "weightedEffectiveSets": 1.8
+          },
+          "shoulders": {
+            "completedSets": 1,
+            "effectiveScore": 1,
+            "effectiveSets": 1,
+            "highConfidenceEffectiveSets": 1,
+            "highConfidenceWeightedSets": 1,
+            "lowConfidenceEffectiveSets": 0,
+            "mediumConfidenceEffectiveSets": 0,
+            "weightedEffectiveSets": 1
+          },
+          "triceps": {
+            "completedSets": 5,
+            "effectiveScore": 3.3,
+            "effectiveSets": 3,
+            "highConfidenceEffectiveSets": 2,
+            "highConfidenceWeightedSets": 0.9,
+            "lowConfidenceEffectiveSets": 0,
+            "mediumConfidenceEffectiveSets": 1,
+            "weightedEffectiveSets": 1.3
+          }
+        },
+        "completedSets": 5,
+        "effectiveScore": 3.3,
+        "effectiveSets": 3,
+        "highConfidenceEffectiveSets": 2,
+        "lowConfidenceEffectiveSets": 0,
+        "mediumConfidenceEffectiveSets": 1,
+        "reasons": [
+          "努力程度落在 RIR 1-3 的有效区间。",
+          "未记录 RIR，按中等置信度计入。",
+          "该组出现不适，不作为高质量有效组。",
+          "热身组用于准备，不计入肌肥大有效组。"
+        ]
+      }
+    },
+    {
+      "dateRange": {
+        "from": "2026-05-12",
+        "to": "2026-05-31"
+      },
+      "history": [
+        {
+          "date": "2026-04-22",
+          "exercises": [
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "dr-old"
+        },
+        {
+          "date": "2026-05-17",
+          "exercises": [
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "dr-mid"
+        },
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "dr-recent"
+        },
+        {
+          "dataFlag": "test",
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "dr-test"
+        },
+        {
+          "dataFlag": "excluded",
+          "date": "2026-05-26",
+          "exercises": [
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "dr-excluded"
+        }
+      ],
+      "label": "date-range-and-dataflag-filter",
+      "summary": {
+        "byMuscle": {
+          "legs": {
+            "completedSets": 2,
+            "effectiveScore": 2,
+            "effectiveSets": 2,
+            "highConfidenceEffectiveSets": 2,
+            "highConfidenceWeightedSets": 2,
+            "lowConfidenceEffectiveSets": 0,
+            "mediumConfidenceEffectiveSets": 0,
+            "weightedEffectiveSets": 2
+          }
+        },
+        "completedSets": 2,
+        "effectiveScore": 2,
+        "effectiveSets": 2,
+        "highConfidenceEffectiveSets": 2,
+        "lowConfidenceEffectiveSets": 0,
+        "mediumConfidenceEffectiveSets": 0,
+        "reasons": [
+          "努力程度落在 RIR 1-3 的有效区间。"
+        ]
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-31",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "identityInvalid": true,
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "ii-1"
+        }
+      ],
+      "label": "invalid-identity-reason",
+      "summary": {
+        "byMuscle": {
+          "legs": {
+            "completedSets": 1,
+            "effectiveScore": 1,
+            "effectiveSets": 1,
+            "highConfidenceEffectiveSets": 1,
+            "highConfidenceWeightedSets": 1,
+            "lowConfidenceEffectiveSets": 0,
+            "mediumConfidenceEffectiveSets": 0,
+            "weightedEffectiveSets": 1
+          }
+        },
+        "completedSets": 1,
+        "effectiveScore": 1,
+        "effectiveSets": 1,
+        "highConfidenceEffectiveSets": 1,
+        "lowConfidenceEffectiveSets": 0,
+        "mediumConfidenceEffectiveSets": 0,
+        "reasons": [
+          "动作身份需要检查，相关组暂不计入有效组。",
+          "努力程度落在 RIR 1-3 的有效区间。"
+        ]
+      }
+    },
+    {
+      "contributionProbes": [
+        {
+          "contribution": {
+            "chest": 1,
+            "shoulders": 0.5,
+            "triceps": 0.5
+          },
+          "exercise": {
+            "id": "bench-press",
+            "primaryMuscles": [
+              "chest"
+            ],
+            "secondaryMuscles": [
+              "triceps",
+              "shoulders"
+            ]
+          },
+          "label": "primary-and-secondary"
+        },
+        {
+          "contribution": {
+            "back": 1
+          },
+          "exercise": {
+            "id": "barbell-row",
+            "muscle": "back"
+          },
+          "label": "muscle-only-fallback"
+        },
+        {
+          "contribution": {
+            "back": 1,
+            "biceps": 0.3
+          },
+          "exercise": {
+            "id": "machine-row",
+            "muscleContribution": {
+              "back": 1,
+              "biceps": 0.3
+            }
+          },
+          "label": "explicit-muscle-contribution"
+        },
+        {
+          "contribution": {
+            "back": 1
+          },
+          "exercise": {
+            "id": "deadlift",
+            "primaryMuscles": [
+              "back"
+            ],
+            "secondaryMuscles": [
+              "back"
+            ]
+          },
+          "label": "primary-equals-secondary-max"
+        }
+      ],
+      "history": [],
+      "label": "muscle-contribution-probes",
+      "summary": {
+        "byMuscle": {},
+        "completedSets": 0,
+        "effectiveScore": 0,
+        "effectiveSets": 0,
+        "highConfidenceEffectiveSets": 0,
+        "lowConfidenceEffectiveSets": 0,
+        "mediumConfidenceEffectiveSets": 0,
+        "reasons": []
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "effective-set/volume-summary-cases-v1"
+  },
+  "sourceFixtureId": "effective-set/volume-summary-cases-v1"
+}

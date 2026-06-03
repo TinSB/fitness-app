@@ -290,11 +290,17 @@ export const buildPrs = (history: TrainingSession[]): PrItem[] => {
     .slice(0, 8);
 };
 
-export const buildWeeklyReport = (history: TrainingSession[], bodyWeights: BodyWeightEntry[]) => {
+export const buildWeeklyReport = (history: TrainingSession[], bodyWeights: BodyWeightEntry[], options?: { nowIso?: string }) => {
   history = analyticsHistory(history);
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(start.getDate() - 7);
+  // AN-3: the live UI passes no clock → wall-clock `new Date()` (production path, byte-unchanged).
+  // The parity generator injects `options.nowIso` (the §11.2 deterministic clock) so the golden
+  // is byte-deterministic; with an injected clock the 7-day window is exact UTC ms arithmetic
+  // (`now - 7 * 86_400_000`), which the Swift port (AnalyticsDashboardEngine.buildWeeklyReport,
+  // via E1RMEngine.safeDateMs) reproduces. Mirrors the AN-1 `options.nowIso || new Date()` /
+  // iOS-17e-6a injected-asOfDate precedent. PURE / zero `: Date` on the Swift side.
+  const now = options?.nowIso ? new Date(options.nowIso) : new Date();
+  const start = options?.nowIso ? new Date(now.getTime() - 7 * 86_400_000) : new Date(now);
+  if (!options?.nowIso) start.setDate(start.getDate() - 7);
 
   const sessions = history.filter((session) => new Date(session.date) >= start);
   const volume = sessions.reduce((sum, session) => sum + sessionVolume(session), 0);

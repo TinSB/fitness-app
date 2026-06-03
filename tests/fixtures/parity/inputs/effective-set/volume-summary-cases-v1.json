@@ -1,0 +1,78 @@
+{
+  "parityMeta": {
+    "id": "effective-set/volume-summary-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-3 buildEffectiveVolumeSummary + countEffectiveSets + getMuscleContribution function-level parity — byMuscle aggregation (primary 1.0 / secondary 0.5 / explicit muscleContribution), high/medium/low confidence buckets, corrective+functional set skip, warmup set counted-but-zero, effectiveScore + weightedEffectiveSets + highConfidenceWeightedSets Math.round(x*10)/10 rounding, reasons dedup, dataFlag test/excluded filter, dateRange from/to filter, invalid-identity reason. countProbes pin countEffectiveSets (default 0.75 + minScore override + corrective/functional exclusion); contributionProbes pin getMuscleContribution (primary-only / primary+secondary / explicit map / muscle-only / primary==secondary max). Generated from src/engines/effectiveSetEngine.ts; the Swift EffectiveSetEngine compute-asserts each summary/count/contribution == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "mixed-confidence-and-muscles",
+      "sessions": [
+        {
+          "id": "vs-1", "daysAgo": 3,
+          "exercises": [
+            {
+              "id": "bench-press", "name": "平板卧推", "primaryMuscles": ["chest"], "secondaryMuscles": ["triceps"],
+              "sets": [
+                { "weight": 60, "reps": 6, "rir": 2, "techniqueQuality": "good" },
+                { "weight": 60, "reps": 6 },
+                { "weight": 60, "reps": 6, "rir": 2, "painFlag": true },
+                { "weight": 20, "reps": 10, "rir": 2, "type": "corrective" },
+                { "weight": 20, "reps": 10, "rir": 2, "type": "functional" },
+                { "weight": 30, "reps": 12, "rir": 2, "type": "warmup" }
+              ]
+            },
+            {
+              "id": "shoulder-press", "name": "哑铃肩推", "muscleContribution": { "shoulders": 1, "triceps": 0.4 },
+              "sets": [
+                { "weight": 25, "reps": 8, "rir": 1, "techniqueQuality": "good" }
+              ]
+            }
+          ]
+        }
+      ],
+      "countProbes": [
+        { "label": "default-min-score", "sessionIndex": 0 },
+        { "label": "min-score-0.9", "sessionIndex": 0, "minScore": 0.9 }
+      ]
+    },
+    {
+      "label": "date-range-and-dataflag-filter",
+      "sessions": [
+        { "id": "dr-old", "daysAgo": 40, "exercises": [{ "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] },
+        { "id": "dr-mid", "daysAgo": 15, "exercises": [{ "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] },
+        { "id": "dr-recent", "daysAgo": 2, "exercises": [{ "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] },
+        { "id": "dr-test", "daysAgo": 5, "dataFlag": "test", "exercises": [{ "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] },
+        { "id": "dr-excluded", "daysAgo": 6, "dataFlag": "excluded", "exercises": [{ "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] }
+      ],
+      "dateRange": { "fromDaysAgo": 20, "toDaysAgo": 1 }
+    },
+    {
+      "label": "invalid-identity-reason",
+      "sessions": [
+        {
+          "id": "ii-1", "daysAgo": 1,
+          "exercises": [
+            { "id": "bench-press", "identityInvalid": true, "primaryMuscles": ["chest"], "sets": [{ "weight": 60, "reps": 6, "rir": 2 }] },
+            { "id": "squat", "primaryMuscles": ["legs"], "sets": [{ "weight": 100, "reps": 5, "rir": 2, "techniqueQuality": "good" }] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "muscle-contribution-probes",
+      "sessions": [],
+      "contributionProbes": [
+        { "label": "primary-and-secondary", "exercise": { "id": "bench-press", "primaryMuscles": ["chest"], "secondaryMuscles": ["triceps", "shoulders"] } },
+        { "label": "muscle-only-fallback", "exercise": { "id": "barbell-row", "muscle": "back" } },
+        { "label": "explicit-muscle-contribution", "exercise": { "id": "machine-row", "muscleContribution": { "back": 1, "biceps": 0.3 } } },
+        { "label": "primary-equals-secondary-max", "exercise": { "id": "deadlift", "primaryMuscles": ["back"], "secondaryMuscles": ["back"] } }
+      ]
+    }
+  ]
+}
