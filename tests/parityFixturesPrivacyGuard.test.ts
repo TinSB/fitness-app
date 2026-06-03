@@ -35,6 +35,10 @@ const PRIVACY_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
 const PRIVACY_ALLOWLIST_VALUES = new Set([
   '<redacted>',
   'synthetic-user',
+  // The canonical synthetic local-only user id baked into the app defaults
+  // (DEFAULT_USER_PROFILE.id, src/data/defaults.ts) — a committed constant, not
+  // PII. Surfaced by the PA-S3 default-program-data snapshot golden.
+  'local-user',
   'iPhone',
   'iPad',
   'redacted-device',

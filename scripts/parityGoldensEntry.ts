@@ -109,6 +109,20 @@ import {
 } from '../src/engines/adaptiveFeedbackEngine';
 import type { PerformanceSnapshot } from '../src/models/training-model';
 import { DEFAULT_SCREENING_PROFILE } from '../src/data/defaults';
+// PA-S3 — trainingData data-constant port parity slice. Imports the REAL frozen
+// data constants (src/data/defaults.ts DEFAULT_PROGRAM_TEMPLATE +
+// src/data/defaultTemplates.ts INITIAL_TEMPLATES + src/data/supportModules.ts
+// CORRECTION_MODULES / FUNCTIONAL_ADDONS; DEFAULT_SCREENING_PROFILE above) so the
+// default-program-data snapshot golden is GENERATED from TS truth, never hand-
+// authored (§22). INITIAL_TEMPLATES carries the REAL makeExercise output
+// (alternativeIds/alternativePriorities derived from the REAL
+// EXERCISE_KNOWLEDGE_OVERRIDES), so the Swift port (DefaultTrainingData /
+// SupportModules), which reuses the SR-1/SR-2 entry points, reconciles every
+// template/module/exercise field item-by-item. Pure data, no clock →
+// generatedAtPolicy 'none'.
+import { DEFAULT_PROGRAM_TEMPLATE } from '../src/data/defaults';
+import { INITIAL_TEMPLATES } from '../src/data/defaultTemplates';
+import { CORRECTION_MODULES, FUNCTIONAL_ADDONS } from '../src/data/supportModules';
 import { number, setWeightKg } from '../src/engines/engineUtils';
 // PA-S2 — engineUtils enrichExercise/buildExerciseMetadata port parity slice. Imports
 // the REAL enrich functions so the enrich-exercise goldens are GENERATED from TS truth,
@@ -561,6 +575,14 @@ const FIXTURE_IDS = [
   // enrichExercise/buildExerciseMetadata on each echoed input and reconciles metadata +
   // enriched field-by-field. The override DATA tables are PA-S3. Generated; never hand-edited (§22).
   'enrich-exercise/default-branches-v1',
+  // PA-S3 trainingData data-constant port — 1 snapshot fixture dumping the six
+  // frozen data constants (DEFAULT_PROGRAM_TEMPLATE + INITIAL_TEMPLATES with the
+  // REAL makeExercise output + CORRECTION_MODULES + FUNCTIONAL_ADDONS +
+  // DEFAULT_SCREENING_PROFILE) + per-constant counts, so the Swift port
+  // (DefaultTrainingData / SupportModules) reconciles every template / module /
+  // exercise / makeExercise field item-by-item (reusing the SR-1/SR-2 entry
+  // points, never re-porting the override tables). Generated; never hand-edited (§22).
+  'default-program-data/snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -630,6 +652,11 @@ const PRIVACY_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
 const PRIVACY_ALLOWLIST_VALUES = new Set([
   '<redacted>',
   'synthetic-user',
+  // The canonical synthetic local-only user id baked into the app defaults
+  // (DEFAULT_USER_PROFILE.id / DEFAULT_PROGRAM_TEMPLATE.userId /
+  // DEFAULT_SCREENING_PROFILE.userId, src/data/defaults.ts) — a committed
+  // constant, not PII. Surfaced by the PA-S3 default-program-data snapshot.
+  'local-user',
   'iPhone',
   'iPad',
   'redacted-device',
@@ -2654,6 +2681,49 @@ const generateI18nTermsSnapshot = (_input: any, _meta: ParityMeta) => {
   return { counts, tables, termProbes };
 };
 
+// ---------------------------------------------------------------------------
+// PA-S3 — trainingData data-constant snapshot
+//
+// Dumps the six frozen data constants the PA-S3 Swift port mirrors:
+// DEFAULT_PROGRAM_TEMPLATE (the rich projection over INITIAL_TEMPLATES) +
+// INITIAL_TEMPLATES (with the REAL makeExercise output) + CORRECTION_MODULES +
+// FUNCTIONAL_ADDONS + DEFAULT_SCREENING_PROFILE, plus per-constant counts. It
+// transcribes frozen data + the REAL makeExercise transform — it COMPUTES no
+// decision. No engine call, no clock → generatedAtPolicy 'none'.
+// ---------------------------------------------------------------------------
+
+const generateDefaultProgramData = (_input: any, _meta: ParityMeta) => {
+  const correctionExerciseCount = CORRECTION_MODULES.reduce(
+    (n, m) => n + m.exercises.length,
+    0,
+  );
+  const functionalExerciseCount = FUNCTIONAL_ADDONS.reduce(
+    (n, a) => n + a.exercises.length,
+    0,
+  );
+  const totalTemplateExercises = INITIAL_TEMPLATES.reduce(
+    (n, t) => n + t.exercises.length,
+    0,
+  );
+  return {
+    counts: {
+      initialTemplates: INITIAL_TEMPLATES.length,
+      totalTemplateExercises,
+      dayTemplates: (DEFAULT_PROGRAM_TEMPLATE.dayTemplates ?? []).length,
+      weeklyMuscleTargets: Object.keys(DEFAULT_PROGRAM_TEMPLATE.weeklyMuscleTargets ?? {}).length,
+      correctionModules: CORRECTION_MODULES.length,
+      functionalAddons: FUNCTIONAL_ADDONS.length,
+      correctionExercises: correctionExerciseCount,
+      functionalExercises: functionalExerciseCount,
+    },
+    defaultProgramTemplate: DEFAULT_PROGRAM_TEMPLATE,
+    initialTemplates: INITIAL_TEMPLATES,
+    correctionModules: CORRECTION_MODULES,
+    functionalAddons: FUNCTIONAL_ADDONS,
+    defaultScreeningProfile: DEFAULT_SCREENING_PROFILE,
+  };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2745,6 +2815,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'i18n/terms-snapshot-v1': generateI18nTermsSnapshot,
   // PA-S2 engineUtils enrichExercise/buildExerciseMetadata port (empty-seam default branches).
   'enrich-exercise/default-branches-v1': generateEnrichExercise,
+  // PA-S3 trainingData data-constant snapshot (default program/templates/support-modules/screening).
+  'default-program-data/snapshot-v1': generateDefaultProgramData,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

@@ -307,7 +307,7 @@ describe('iOS-9 parity goldens unchanged', () => {
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+76\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+77\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
     // and nothing under the goldens tree was touched by this branch
     expect(changedFiles(['tests/fixtures/parity'])).toBe('');
