@@ -14,11 +14,14 @@
 // `setWeightKg` are the already-ported `E1RMEngine.*` (E1RMEngine.swift:70/126/157),
 // shared verbatim so `completedSets` semantics stay identical across engines.
 //
-// `enrichExercise` is intentionally NOT ported: every site that wraps an exercise in
-// `enrichExercise(...)` before `issuesForExercise(...)` is a no-op for THIS slice —
-// `issuesForExercise` reads ONLY `String(exercise.baseId || exercise.id)` (the
+// `enrichExercise` is a no-op for THIS engine's slice: every site that wraps an exercise
+// in `enrichExercise(...)` before `issuesForExercise(...)` does not change the observed
+// fields — `issuesForExercise` reads ONLY `String(exercise.baseId || exercise.id)` (the
 // ISSUE_FROM_PATTERN `match` predicates, adaptiveFeedbackEngine.ts:48-66), and
-// `enrichExercise` leaves baseId/id untouched. Likewise `fallbackExercise(id)`
+// `enrichExercise` leaves baseId/id untouched. (PA-S2 note: `enrichExercise` /
+// `buildExerciseMetadata` ARE now faithfully ported in `EngineUtils.swift` for the PA
+// engine cluster; this engine still does not need them, so nothing is wired here.)
+// Likewise `fallbackExercise(id)`
 // (adaptiveFeedbackEngine.ts:103) only ever feeds `issuesForExercise`, so its sole
 // observable property here is its `id` (= the probed exerciseId; it carries no baseId).
 //
