@@ -1,0 +1,1273 @@
+{
+  "cases": [
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "is-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-15",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 62
+                }
+              ]
+            }
+          ],
+          "id": "is-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "is-3"
+        }
+      ],
+      "label": "insufficient-too-few-sets",
+      "result": {
+        "confidence": "low",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "data-depth",
+            "label": "记录数量不足",
+            "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+            "severity": "warning"
+          }
+        ],
+        "status": "insufficient_data",
+        "suggestedActions": [
+          "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+        ],
+        "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+        "title": "平板卧推 数据不足"
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-06",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                }
+              ]
+            }
+          ],
+          "id": "n3-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-15",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "n3-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 65
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 65
+                }
+              ]
+            }
+          ],
+          "id": "n3-3"
+        }
+      ],
+      "label": "none-three-perf-low-confidence",
+      "result": {
+        "confidence": "low",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 3 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "progress-normal",
+            "label": "暂无平台迹象",
+            "reason": "近期记录没有显示持续停滞，可以继续按当前建议执行。",
+            "severity": "info"
+          }
+        ],
+        "status": "none",
+        "suggestedActions": [
+          "继续按当前推荐执行，并保持重量、次数、余力（RIR）和动作质量记录。"
+        ],
+        "summary": "当前没有看到持续平台期迹象。继续保持记录，后续如果连续多次无进步再复查。",
+        "title": "平板卧推 进展正常"
+      }
+    },
+    {
+      "e1rmProfile": {
+        "exerciseId": "bench-press",
+        "method": "median_recent",
+        "recentValues": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      },
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-04-13",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "fe-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-04-24",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                }
+              ]
+            }
+          ],
+          "id": "fe-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-05",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "fe-3"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 65
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 65
+                }
+              ]
+            }
+          ],
+          "id": "fe-4"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "fe-5"
+        }
+      ],
+      "label": "possible-plateau-flat-e1rm-high-confidence",
+      "result": {
+        "confidence": "high",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 5 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "progress-flat",
+            "label": "近期进展放缓",
+            "reason": "近期 e1RM 趋势没有明显上升，同时需要结合重量、次数和完成率一起判断。",
+            "severity": "warning"
+          },
+          {
+            "id": "completion-stable",
+            "label": "完成率稳定",
+            "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+            "severity": "info"
+          }
+        ],
+        "status": "possible_plateau",
+        "suggestedActions": [
+          "继续观察 1–2 次训练，确认是否只是短期波动。",
+          "下次先维持重量，争取提高完成质量或目标次数。"
+        ],
+        "summary": "近期进展有放缓迹象，但还不足以直接判断为平台期。建议继续观察并优先提高完成质量。",
+        "title": "平板卧推 进展放缓"
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-01",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "fp-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 62
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 62
+                }
+              ]
+            }
+          ],
+          "id": "fp-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "fp-3"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 66
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 66
+                }
+              ]
+            }
+          ],
+          "id": "fp-4"
+        }
+      ],
+      "label": "fatigue-pain-pattern-param",
+      "painPatterns": [
+        {
+          "area": "shoulder",
+          "exerciseId": "bench-press",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-01",
+          "severityAvg": 2,
+          "suggestedAction": "monitor"
+        },
+        {
+          "area": "knee",
+          "exerciseId": "back-squat",
+          "frequency": 2,
+          "lastOccurredAt": "2026-04-20",
+          "severityAvg": 5,
+          "suggestedAction": "deload"
+        }
+      ],
+      "result": {
+        "confidence": "medium",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 4 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "completion-stable",
+            "label": "完成率稳定",
+            "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+            "severity": "info"
+          },
+          {
+            "id": "pain-or-fatigue",
+            "label": "疲劳或不适记录",
+            "reason": "近期出现不适标记或相关不适模式，建议把风险控制放在加重之前。",
+            "severity": "serious"
+          }
+        ],
+        "status": "fatigue_limited",
+        "suggestedActions": [
+          "下次先降低风险动作的压力，必要时选择更稳妥的替代动作。",
+          "如果不适持续出现，先避免强行加重。"
+        ],
+        "summary": "当前更像是疲劳或不适限制了表现。建议先降低风险，再考虑增加重量或训练量。",
+        "title": "平板卧推 受疲劳或不适限制"
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-01",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                }
+              ]
+            }
+          ],
+          "id": "lg-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 58
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 58
+                }
+              ]
+            }
+          ],
+          "id": "lg-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 61
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 61
+                }
+              ]
+            }
+          ],
+          "id": "lg-3"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "lg-4"
+        }
+      ],
+      "label": "load-feedback-summary-good-signal",
+      "loadFeedback": {
+        "adjustment": {
+          "direction": "normal",
+          "reasons": []
+        },
+        "counts": {
+          "good": 3,
+          "too_heavy": 1,
+          "too_light": 0
+        },
+        "dominantFeedback": "good",
+        "exerciseId": "bench-press",
+        "total": 4
+      },
+      "result": {
+        "confidence": "medium",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 4 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "completion-stable",
+            "label": "完成率稳定",
+            "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+            "severity": "info"
+          },
+          {
+            "id": "load-feedback-good",
+            "label": "重量反馈稳定",
+            "reason": "近期重量反馈整体可接受，进展判断更可靠。",
+            "severity": "info"
+          },
+          {
+            "id": "progress-normal",
+            "label": "暂无平台迹象",
+            "reason": "近期记录没有显示持续停滞，可以继续按当前建议执行。",
+            "severity": "info"
+          }
+        ],
+        "status": "none",
+        "suggestedActions": [
+          "继续按当前推荐执行，并保持重量、次数、余力（RIR）和动作质量记录。"
+        ],
+        "summary": "当前没有看到持续平台期迹象。继续保持记录，后续如果连续多次无进步再复查。",
+        "title": "平板卧推 进展正常"
+      }
+    },
+    {
+      "e1rmProfile": {
+        "confidence": "high",
+        "e1rmKg": 120,
+        "exerciseId": "bench-press",
+        "formula": "epley",
+        "notes": []
+      },
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-01",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "aa-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 4,
+                  "rir": 0,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 4,
+                  "rir": 0,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "aa-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 4,
+                  "rir": 0,
+                  "techniqueQuality": "good",
+                  "weight": 68
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 4,
+                  "rir": 0,
+                  "techniqueQuality": "good",
+                  "weight": 68
+                }
+              ]
+            }
+          ],
+          "id": "aa-3"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 3,
+                  "rir": 0,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 3,
+                  "rir": 0,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "aa-4"
+        }
+      ],
+      "label": "load-too-aggressive-array-and-e1rm-estimate",
+      "loadFeedback": [
+        {
+          "exerciseId": "bench-press",
+          "feedback": "too_heavy"
+        },
+        {
+          "exerciseId": "bench-press",
+          "feedback": "too_heavy"
+        },
+        {
+          "exerciseId": "bench-press",
+          "feedback": "too_heavy"
+        }
+      ],
+      "result": {
+        "confidence": "medium",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 4 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "completion-stable",
+            "label": "完成率稳定",
+            "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+            "severity": "info"
+          },
+          {
+            "id": "load-feedback-heavy",
+            "label": "重量反馈偏重",
+            "reason": "最近多次反馈显示重量偏重，进展受限可能来自推进过快。",
+            "severity": "serious"
+          }
+        ],
+        "status": "load_too_aggressive",
+        "suggestedActions": [
+          "下次先维持或小幅下调重量，确认不是重量推进过快。",
+          "优先完成目标次数和动作质量，再考虑继续加重。"
+        ],
+        "summary": "当前更像是重量推进过快。建议下次先维持或小幅回退，避免把短期吃力误判为平台期。",
+        "title": "平板卧推 可能推进过快"
+      }
+    },
+    {
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-01",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 55
+                }
+              ]
+            }
+          ],
+          "id": "lr-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 58
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 58
+                }
+              ]
+            }
+          ],
+          "id": "lr-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 61
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 61
+                }
+              ]
+            }
+          ],
+          "id": "lr-3"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "lr-4"
+        }
+      ],
+      "label": "load-feedback-record-good-signal",
+      "loadFeedback": {
+        "alpha": "good",
+        "beta": {
+          "adjustment": {
+            "direction": "normal",
+            "reasons": []
+          },
+          "counts": {
+            "good": 2,
+            "too_heavy": 0,
+            "too_light": 0
+          }
+        }
+      },
+      "result": {
+        "confidence": "medium",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 4 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "completion-stable",
+            "label": "完成率稳定",
+            "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+            "severity": "info"
+          },
+          {
+            "id": "load-feedback-good",
+            "label": "重量反馈稳定",
+            "reason": "近期重量反馈整体可接受，进展判断更可靠。",
+            "severity": "info"
+          },
+          {
+            "id": "progress-normal",
+            "label": "暂无平台迹象",
+            "reason": "近期记录没有显示持续停滞，可以继续按当前建议执行。",
+            "severity": "info"
+          }
+        ],
+        "status": "none",
+        "suggestedActions": [
+          "继续按当前推荐执行，并保持重量、次数、余力（RIR）和动作质量记录。"
+        ],
+        "summary": "当前没有看到持续平台期迹象。继续保持记录，后续如果连续多次无进步再复查。",
+        "title": "平板卧推 进展正常"
+      }
+    },
+    {
+      "e1rmProfile": {
+        "best": {
+          "e1rmKg": 110
+        },
+        "current": {
+          "e1rmKg": 100
+        },
+        "exerciseId": "bench-press"
+      },
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-01",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press-variant",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-variant-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-variant-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "to-1"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press-variant",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-variant-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 62
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-variant-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 62
+                }
+              ]
+            }
+          ],
+          "id": "to-2"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press-variant",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-variant-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-variant-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 64
+                }
+              ]
+            }
+          ],
+          "id": "to-3"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press-variant",
+              "name": "平板卧推",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-variant-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 66
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-variant-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 66
+                }
+              ]
+            }
+          ],
+          "id": "to-4"
+        }
+      ],
+      "label": "technique-summary-param-override-and-e1rm-current-best",
+      "result": {
+        "confidence": "medium",
+        "exerciseId": "bench-press",
+        "signals": [
+          {
+            "id": "history-depth",
+            "label": "历史记录可用于判断",
+            "reason": "已找到 4 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+            "severity": "info"
+          },
+          {
+            "id": "completion-stable",
+            "label": "完成率稳定",
+            "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+            "severity": "info"
+          },
+          {
+            "id": "technique-quality",
+            "label": "动作质量限制",
+            "reason": "近期有多组动作质量偏低，建议先解决执行质量，再判断是否需要加重。",
+            "severity": "serious"
+          }
+        ],
+        "status": "technique_limited",
+        "suggestedActions": [
+          "下次先把重量维持在可控范围，优先提高动作质量。",
+          "如果动作变形明显，先减少加重频率。"
+        ],
+        "summary": "当前更像是动作质量限制了表现。建议先稳定动作质量，再判断是否需要继续推进。",
+        "title": "平板卧推 受动作质量限制"
+      },
+      "techniqueQualitySummary": {
+        "acceptable": 1,
+        "good": 1,
+        "goodOrAcceptableRate": 0.25,
+        "poor": 6,
+        "poorRate": 0.75,
+        "rirRecordedRate": 1,
+        "totalSets": 8
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "1c53660bb96cc3c9c7be76e32466f5243b2097d8",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "plateau-detection/plateau-boundary-cases-v1"
+  },
+  "sourceFixtureId": "plateau-detection/plateau-boundary-cases-v1"
+}

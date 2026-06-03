@@ -162,6 +162,15 @@ import type { LoadFeedback, LoadFeedbackValue } from '../src/models/training-mod
 import { computeTrainingStreak } from '../src/engines/trainingStreakEngine';
 import { computeRecentPRDeltas } from '../src/engines/recentPRDeltaEngine';
 import { computeWeeklyMuscleBalance } from '../src/engines/weeklyMuscleBalanceEngine';
+// AN-2 — plateauDetectionEngine parity slice. Imports the REAL detectExercisePlateau so
+// the plateau goldens are GENERATED from TS truth, never hand-authored (§22). The engine
+// is PURE + clockless (every date comparison is over the session's OWN date strings; no
+// `new Date()` / Date.now() anywhere in its path), so its history fixtures derive their
+// session dates from the deterministic clock and the goldens are byte-deterministic. The
+// Swift port (PlateauDetectionEngine) re-runs detectExercisePlateau on the SAME echoed
+// engineInput (history + optional external summaries) and COMPUTE-ASSERTs the result
+// (status / signals / suggestedActions / title / summary / confidence) == golden.
+import { detectExercisePlateau } from '../src/engines/plateauDetectionEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -340,6 +349,17 @@ const FIXTURE_IDS = [
   'training-streak/streak-boundary-cases-v1',
   'recent-pr-delta/delta-boundary-cases-v1',
   'weekly-muscle-balance/balance-boundary-cases-v1',
+  // AN-2 plateauDetectionEngine port — 2 OUTPUT fixtures (each a `cases` array) FUNCTION-
+  // LEVEL pinning the ported detectExercisePlateau. plateau-status-cases covers ALL eight
+  // PlateauStatus values (none / possible_plateau / plateau / fatigue_limited /
+  // technique_limited / volume_limited / load_too_aggressive / insufficient_data) via the
+  // status-arbitration precedence; plateau-boundary-cases pins the branch/coverage debt
+  // (count<4 sets/perf boundaries + flatE1rm-via-recentValues + e1rm current/best & e1rmKg
+  // union shapes + painPatterns-param fatigue + techniqueQualitySummary-param override +
+  // loadFeedback array / summary-object / record-of-values input shapes). Generated; never
+  // hand-edited (§22).
+  'plateau-detection/plateau-status-cases-v1',
+  'plateau-detection/plateau-boundary-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1779,6 +1799,137 @@ const generateWeeklyMuscleBalance = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// AN-2 — plateauDetectionEngine OUTPUT parity (detectExercisePlateau)
+//
+// Each fixture carries a compact `cases` array; per case the generator materialises a
+// synthetic, deterministic `history` (session dates derive from
+// parityMeta.deterministicClockIso via dateOnlyDaysBefore / isoDaysBefore — the SAME
+// helpers the AN-1 / e1rm fixtures use) from a session spec that carries the rich
+// per-set fields the plateau engine reads (techniqueQuality / rir / painFlag / set `type`)
+// + per-session loadFeedback / dataFlag / identity fields, runs the REAL
+// detectExercisePlateau over it with the case's optional external inputs echoed VERBATIM,
+// and emits BOTH the engineInput (history + the optional params the Swift port re-runs
+// against) AND the computed result. PURE / clockless. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type PlateauSetSpec = {
+  weight?: number;
+  reps?: number;
+  done?: boolean;
+  actualWeightKg?: number;
+  rir?: number | string;
+  techniqueQuality?: 'good' | 'acceptable' | 'poor';
+  painFlag?: boolean;
+  type?: string;
+};
+type PlateauExerciseSpec = {
+  id: string;
+  name?: string;
+  canonicalExerciseId?: string;
+  baseId?: string;
+  actualExerciseId?: string;
+  originalExerciseId?: string;
+  replacementExerciseId?: string;
+  replacedFromId?: string;
+  sets?: PlateauSetSpec[];
+};
+type PlateauSessionSpec = {
+  id: string;
+  daysAgo: number;
+  dataFlag?: string;
+  startedAtDaysAgo?: number;
+  finishedAtDaysAgo?: number;
+  loadFeedback?: Array<{ exerciseId: string; feedback: LoadFeedbackValue; note?: string }>;
+  exercises?: PlateauExerciseSpec[];
+};
+
+// Materialise a plateau session spec into a TrainingSession-shaped object. Only the
+// fields the plateau engine reads are emitted; the Swift TrainingSession decodes the
+// typed fields + the open bag (loadFeedback / dataFlag / set.type / exercise identity
+// aliases ride in `_unknown`).
+const buildPlateauSession = (spec: PlateauSessionSpec, nowIso: string): TrainingSession => {
+  const date = dateOnlyDaysBefore(nowIso, spec.daysAgo);
+  const session: Record<string, unknown> = { id: spec.id, date, completed: true };
+  if (spec.dataFlag !== undefined) session.dataFlag = spec.dataFlag;
+  if (spec.startedAtDaysAgo !== undefined) session.startedAt = isoDaysBefore(nowIso, spec.startedAtDaysAgo);
+  if (spec.finishedAtDaysAgo !== undefined) session.finishedAt = isoDaysBefore(nowIso, spec.finishedAtDaysAgo);
+  if (Array.isArray(spec.loadFeedback)) {
+    session.loadFeedback = spec.loadFeedback.map((f) => ({
+      exerciseId: f.exerciseId,
+      sessionId: spec.id,
+      date,
+      feedback: f.feedback,
+      ...(f.note !== undefined ? { note: f.note } : {}),
+    }));
+  }
+  if (Array.isArray(spec.exercises)) {
+    session.exercises = spec.exercises.map((ex) => {
+      const exercise: Record<string, unknown> = { id: ex.id };
+      if (ex.name !== undefined) exercise.name = ex.name;
+      if (ex.canonicalExerciseId !== undefined) exercise.canonicalExerciseId = ex.canonicalExerciseId;
+      if (ex.baseId !== undefined) exercise.baseId = ex.baseId;
+      if (ex.actualExerciseId !== undefined) exercise.actualExerciseId = ex.actualExerciseId;
+      if (ex.originalExerciseId !== undefined) exercise.originalExerciseId = ex.originalExerciseId;
+      if (ex.replacementExerciseId !== undefined) exercise.replacementExerciseId = ex.replacementExerciseId;
+      if (ex.replacedFromId !== undefined) exercise.replacedFromId = ex.replacedFromId;
+      exercise.sets = (ex.sets ?? []).map((s, i) => {
+        const set: Record<string, unknown> = { id: `${ex.id}-${i + 1}`, done: s.done ?? true };
+        if (s.weight !== undefined) set.weight = s.weight;
+        if (s.actualWeightKg !== undefined) set.actualWeightKg = s.actualWeightKg;
+        if (s.reps !== undefined) set.reps = s.reps;
+        if (s.rir !== undefined) set.rir = s.rir;
+        if (s.techniqueQuality !== undefined) set.techniqueQuality = s.techniqueQuality;
+        if (s.painFlag !== undefined) set.painFlag = s.painFlag;
+        if (s.type !== undefined) set.type = s.type;
+        return set;
+      });
+      return exercise;
+    });
+  }
+  return session as unknown as TrainingSession;
+};
+
+const generatePlateauDetection = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: plateau-detection requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: {
+      label?: string;
+      exerciseId: string;
+      sessions?: PlateauSessionSpec[];
+      e1rmProfile?: unknown;
+      loadFeedback?: unknown;
+      effectiveSetSummary?: unknown;
+      techniqueQualitySummary?: unknown;
+      painPatterns?: unknown;
+    }) => {
+      const history = (c.sessions ?? []).map((s) => buildPlateauSession(s, nowIso));
+      // Build the engine params, threading through ONLY the optional external inputs the
+      // case provides (so canonicalStringify drops the absent ones — the Swift port reads
+      // each optionally). The engine treats these as opaque external inputs.
+      const params: Parameters<typeof detectExercisePlateau>[0] = { exerciseId: c.exerciseId, history };
+      if (c.e1rmProfile !== undefined) params.e1rmProfile = c.e1rmProfile as never;
+      if (c.loadFeedback !== undefined) params.loadFeedback = c.loadFeedback as never;
+      if (c.effectiveSetSummary !== undefined) params.effectiveSetSummary = c.effectiveSetSummary as never;
+      if (c.techniqueQualitySummary !== undefined) params.techniqueQualitySummary = c.techniqueQualitySummary as never;
+      if (c.painPatterns !== undefined) params.painPatterns = c.painPatterns as never;
+      const result = detectExercisePlateau(params);
+      const echoed: Record<string, unknown> = { label: c.label ?? null, exerciseId: c.exerciseId, history };
+      if (c.e1rmProfile !== undefined) echoed.e1rmProfile = c.e1rmProfile;
+      if (c.loadFeedback !== undefined) echoed.loadFeedback = c.loadFeedback;
+      if (c.effectiveSetSummary !== undefined) echoed.effectiveSetSummary = c.effectiveSetSummary;
+      if (c.techniqueQualitySummary !== undefined) echoed.techniqueQualitySummary = c.techniqueQualitySummary;
+      if (c.painPatterns !== undefined) echoed.painPatterns = c.painPatterns;
+      echoed.result = result;
+      return echoed;
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -1840,6 +1991,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'training-streak/streak-boundary-cases-v1': generateTrainingStreak,
   'recent-pr-delta/delta-boundary-cases-v1': generateRecentPRDelta,
   'weekly-muscle-balance/balance-boundary-cases-v1': generateWeeklyMuscleBalance,
+  // AN-2 plateau-detection fixtures — both routed through the single plateau generator.
+  'plateau-detection/plateau-status-cases-v1': generatePlateauDetection,
+  'plateau-detection/plateau-boundary-cases-v1': generatePlateauDetection,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
