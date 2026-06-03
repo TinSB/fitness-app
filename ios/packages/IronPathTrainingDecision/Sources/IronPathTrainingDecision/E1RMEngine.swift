@@ -122,6 +122,17 @@ public enum E1RMEngine {
         set.done == true || isLegacyCompletedSet(set)
     }
 
+    /// `isIncompleteSet` (engineUtils.ts:95): `done === false || (done === undefined
+    /// && !String(completedAt || '').trim())`. AN-4 sessionQualityEngine consumes this;
+    /// no prior ported engine needed it, so it is ported IN PLACE here beside its
+    /// engineUtils sibling `isCompletedSet`. (JSON `null` decodes to Swift `nil` — same
+    /// modeling boundary as `isCompletedSet`; AN-4 fixtures never carry `done: null`.)
+    static func isIncompleteSet(_ set: TrainingSetLog) -> Bool {
+        if set.done == false { return true }
+        return set.done == nil
+            && (set.completedAt ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     /// `setWeightKg` (engineUtils.ts:86): `number(actualWeightKg ?? weight)`.
     static func setWeightKg(_ set: TrainingSetLog) -> Double {
         number(set.actualWeightKg ?? set.weight)
