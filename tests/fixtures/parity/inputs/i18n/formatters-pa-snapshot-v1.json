@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "i18n/formatters-pa-snapshot-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S4 i18n/formatters PA-subset port — a snapshot of the THREE display formatters programAdjustmentEngine.ts imports from src/i18n/formatters (formatProgramTemplateName / formatDayTemplateName / formatAdjustmentChangeLabel, plus the formatTemplateName delegate chain and its private deps TEMPLATE_NAME_MAP / normalizeDisplayKey / localizeTemplateNameText). The golden dumps the two private tables (TEMPLATE_NAME_MAP and the inline change-label record, reconstructed by routing each key through the REAL formatter), per-table counts, and a branch-covering probe set (input->output) for all three formatters. The Swift port (IronPathL10n.Formatters) reconstructs both tables from its mirrored dictionaries and re-runs each probe input, asserting equality with this golden entry-by-entry and branch-by-branch, so no map entry, branch, regex, normalization step, or fallback string can drift in transcription.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "b4144df3fd07d710d5b5e3d953ba81690712be87",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No input params — the generator imports the REAL formatters from src/i18n/formatters.ts and (a) reconstructs the two tables by routing their full key universe (transcribed from formatters.ts:62-83 and :498-506) through the real formatter (every key normalizes to itself and hits the map, so the readback equals the raw table value), and (b) runs each formatter over branch-covering probe inputs. No engine call, no clock -> generatedAtPolicy 'none'. De-dup note: formatExerciseName (formatters.ts:492-494) reuses IronPathTrainingDecision.ExerciseLibrary.formatExerciseDisplayName and formatMuscleName (formatters.ts:219) reuses IronPathTrainingDecision.VolumeAdaptationEngine.formatMuscleName — neither is re-ported here (a second copy would force an IronPathL10n->downstream dependency, breaking the zero-dependency leaf contract). formatAdjustmentRiskLevel (formatters.ts:509-516) / formatAdjustmentReviewStatus (formatters.ts:519-528) are NOT imported by programAdjustmentEngine and are not ported in this slice. The Swift port models TS `value: unknown` with a local IronPathL10n.Formatters.NameValue rather than IronPathDomain.JSONValue, to keep IronPathL10n zero-dependency (importing JSONValue would require an IronPathL10n->IronPathDomain Package.swift edge)."
+  }
+}

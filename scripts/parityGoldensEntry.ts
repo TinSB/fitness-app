@@ -284,6 +284,21 @@ import {
   MUSCLE_LABELS,
   term,
 } from '../src/i18n/terms';
+// PA-S4 — i18n/formatters PA-subset port parity slice. Imports the REAL
+// formatters (src/i18n/formatters.ts) so the formatters-pa snapshot golden is
+// GENERATED from TS truth, never hand-authored (§22). Only the 3 formatters the
+// programAdjustmentEngine consumes are exercised here (formatProgramTemplateName
+// / formatDayTemplateName / formatAdjustmentChangeLabel). Their private tables
+// (TEMPLATE_NAME_MAP / the inline change-label record) are NOT exported by
+// formatters.ts, so the golden reconstructs them by routing each key through the
+// REAL formatter (every key normalizes to itself and hits the map, so the
+// readback equals the raw table value). No engine call, no clock →
+// generatedAtPolicy 'none'.
+import {
+  formatProgramTemplateName,
+  formatDayTemplateName,
+  formatAdjustmentChangeLabel,
+} from '../src/i18n/formatters';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -583,6 +598,16 @@ const FIXTURE_IDS = [
   // exercise / makeExercise field item-by-item (reusing the SR-1/SR-2 entry
   // points, never re-porting the override tables). Generated; never hand-edited (§22).
   'default-program-data/snapshot-v1',
+  // PA-S4 i18n/formatters PA-subset port — 1 snapshot fixture dumping the two
+  // private formatters.ts tables (TEMPLATE_NAME_MAP / the inline change-label
+  // record, reconstructed by routing each key through the REAL formatter) +
+  // per-table counts + a branch-covering probe set (input→output for
+  // formatProgramTemplateName / formatDayTemplateName / formatAdjustmentChangeLabel),
+  // so the Swift port (IronPathL10n.Formatters) reconciles every table entry +
+  // every branch. formatExerciseName/formatMuscleName reuse the IronPathTrainingDecision
+  // ported items; riskLevel/reviewStatus are not used by the PA engine and not ported.
+  // Pure display, no clock. Generated; never hand-edited (§22).
+  'i18n/formatters-pa-snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2682,6 +2707,105 @@ const generateI18nTermsSnapshot = (_input: any, _meta: ParityMeta) => {
 };
 
 // ---------------------------------------------------------------------------
+// PA-S4 — i18n/formatters PA-subset snapshot
+//
+// Dumps the two private formatters.ts tables the Swift IronPathL10n.Formatters
+// port mirrors (TEMPLATE_NAME_MAP / the inline formatAdjustmentChangeLabel
+// record) + per-table counts + a branch-covering probe set. formatters.ts does
+// NOT export those tables, so each table is reconstructed by routing its full
+// key universe through the REAL formatter — every key normalizes to itself and
+// hits the map directly, so the readback equals the raw table value (and a typo'd
+// key would route to the fallback and be caught by the Swift reconciliation).
+// The probes freeze input→output of the REAL formatters over every documented
+// branch (map hit / normalize / camelCase / parens-strip / localize / already-CJK
+// / residual-English-word fallback / object id+nameZh / no-hit fallback / empty /
+// null / all 7 change labels + unknown). All outputs are deterministic, no clock →
+// generatedAtPolicy 'none'. Only the 3 engine-consumed formatters are exercised;
+// formatExerciseName/formatMuscleName reuse the IronPathTrainingDecision ports,
+// and riskLevel/reviewStatus are not used by the PA engine — none re-ported here.
+// ---------------------------------------------------------------------------
+
+const generateI18nFormattersPaSnapshot = (_input: any, _meta: ParityMeta) => {
+  // (a) Reconstruct the two private formatters.ts tables from TS truth. The key
+  // universe is transcribed from formatters.ts:62-83 (TEMPLATE_NAME_MAP) and
+  // :498-506 (the inline change-label record); each value is read back through
+  // the REAL formatter so the golden is GENERATED, never hand-authored (§22).
+  const templateNameKeys = [
+    'push-a', 'pusha', 'push',
+    'pull-a', 'pulla', 'pull',
+    'legs-a', 'legsa', 'legs',
+    'upper-a', 'uppera', 'upper',
+    'lower-a', 'lowera', 'lower',
+    'full-body', 'fullbody',
+    'arms', 'quick-30', 'crowded-gym',
+  ];
+  const templateNameMap: Record<string, string> = {};
+  for (const key of templateNameKeys) {
+    templateNameMap[key] = formatProgramTemplateName(key);
+  }
+  const adjustmentChangeKeys = [
+    'add_sets', 'remove_sets', 'add_new_exercise', 'swap_exercise',
+    'reduce_support', 'increase_support', 'keep',
+  ];
+  const adjustmentChangeLabels: Record<string, string> = {};
+  for (const key of adjustmentChangeKeys) {
+    adjustmentChangeLabels[key] = formatAdjustmentChangeLabel(key);
+  }
+
+  const tables = { templateNameMap, adjustmentChangeLabels };
+  const counts = {
+    tables: Object.keys(tables).length,
+    templateNameMap: Object.keys(templateNameMap).length,
+    adjustmentChangeLabels: Object.keys(adjustmentChangeLabels).length,
+  };
+
+  // (b) Branch-covering probes — input echoed verbatim + the REAL formatter's
+  // output. Inputs are kept space/dash-delimited so the ported NSRegularExpression
+  // \b boundaries match JS \b exactly (JS \b is ASCII-word-only; ICU \w includes
+  // CJK, so an English template word glued directly to a CJK char would diverge —
+  // none of these inputs do that, matching the engine's real id/name shapes).
+  const probe = (fn: (v: any) => string, input: unknown) => ({ input, expected: fn(input) });
+  const probes = {
+    formatProgramTemplateName: [
+      probe(formatProgramTemplateName, 'push-a'),                            // id-style string → map hit
+      probe(formatProgramTemplateName, 'Push A'),                            // normalize (space→dash) → map hit
+      probe(formatProgramTemplateName, 'pushA'),                             // camelCase split → map hit
+      probe(formatProgramTemplateName, 'Push(高级)'),                        // parens stripped → 'push' map hit
+      probe(formatProgramTemplateName, 'Pull A 计划'),                       // localize → '拉 A …'
+      probe(formatProgramTemplateName, '胸部专项'),                          // already CJK → returned as-is
+      probe(formatProgramTemplateName, 'Push 强化'),                         // CJK but residual English word → fallback
+      probe(formatProgramTemplateName, { id: 'pull-a', name: 'whatever' }),  // object id → map hit
+      probe(formatProgramTemplateName, { id: 'custom-xyz', nameZh: '自定义训练' }), // object nameZh CJK
+      probe(formatProgramTemplateName, { id: 'custom-xyz' }),                // no candidate hits → fallback
+      probe(formatProgramTemplateName, null),                                // null → fallback '未知模板'
+      probe(formatProgramTemplateName, ''),                                  // '' → fallback '未知模板'
+    ],
+    formatDayTemplateName: [
+      probe(formatDayTemplateName, 'legs-a'),                                // map hit → '腿 A'
+      probe(formatDayTemplateName, '深蹲日'),                                // already CJK → as-is
+      probe(formatDayTemplateName, 'Lower A'),                               // normalize → map hit '下肢 A'
+      probe(formatDayTemplateName, { name: 'full-body' }),                   // object name → map hit '全身训练'
+      probe(formatDayTemplateName, null),                                    // null → fallback '未指定训练日'
+      probe(formatDayTemplateName, ''),                                      // '' → fallback '未指定训练日'
+    ],
+    formatAdjustmentChangeLabel: [
+      probe(formatAdjustmentChangeLabel, 'add_sets'),
+      probe(formatAdjustmentChangeLabel, 'remove_sets'),
+      probe(formatAdjustmentChangeLabel, 'add_new_exercise'),
+      probe(formatAdjustmentChangeLabel, 'swap_exercise'),
+      probe(formatAdjustmentChangeLabel, 'reduce_support'),
+      probe(formatAdjustmentChangeLabel, 'increase_support'),
+      probe(formatAdjustmentChangeLabel, 'keep'),
+      probe(formatAdjustmentChangeLabel, 'totally_unknown'),                 // unknown → '计划调整'
+      probe(formatAdjustmentChangeLabel, ''),                                // '' → '计划调整'
+      probe(formatAdjustmentChangeLabel, null),                              // null → '计划调整'
+    ],
+  };
+
+  return { counts, tables, probes };
+};
+
+// ---------------------------------------------------------------------------
 // PA-S3 — trainingData data-constant snapshot
 //
 // Dumps the six frozen data constants the PA-S3 Swift port mirrors:
@@ -2817,6 +2941,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'enrich-exercise/default-branches-v1': generateEnrichExercise,
   // PA-S3 trainingData data-constant snapshot (default program/templates/support-modules/screening).
   'default-program-data/snapshot-v1': generateDefaultProgramData,
+  // PA-S4 i18n/formatters PA-subset snapshot (template-name + change-label formatters).
+  'i18n/formatters-pa-snapshot-v1': generateI18nFormattersPaSnapshot,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
