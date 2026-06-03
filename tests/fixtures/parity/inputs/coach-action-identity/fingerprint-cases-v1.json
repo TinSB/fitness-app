@@ -1,0 +1,134 @@
+{
+  "parityMeta": {
+    "id": "coach-action-identity/fingerprint-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S5 buildCoachActionFingerprint function-level parity — synthetic action+context cases covering the context muscle/exercise/template target precedence, action.targetType/targetId fallback, suggestedChange.muscleId/exerciseIds[0] target fallback, every literal fallback (coach-action/template-unknown/muscle-none/exercise-none/current-cycle/target-none), every suggestedChangeType branch (add_sets/remove_sets/swap_exercise/support_*/keep/none + explicit-fallback-wins), exerciseIds comma-join, weekId-wins-over-cycleId, the textDigest reason/description/title fallback, and the normalizePart/normalizeText regex segments. Generated from src/engines/coachActionIdentityEngine.ts; the Swift CoachActionIdentityEngine EXACT-asserts each fingerprint string == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e2af42ae51ad27b7f2d4ee2ab39504ea1359b628",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — the FNV-1a fingerprint engine carries no wall clock, no IO, no randomness; pure string/number transforms. All ids/text are synthetic (no email/token/userId)."
+  },
+  "cases": [
+    {
+      "label": "context-muscle-priority + add_sets + reason-digest + weekId",
+      "kind": "fingerprint",
+      "action": {
+        "source": "volumeAdaptation",
+        "actionType": "review_volume",
+        "targetType": "session",
+        "targetId": "sess-1",
+        "title": "title-ignored",
+        "description": "desc-ignored",
+        "reason": "increase chest volume"
+      },
+      "context": {
+        "muscleId": "chest",
+        "sourceTemplateId": "tpl-1",
+        "weekId": "w-3",
+        "suggestedChange": { "muscleId": "chest", "setsDelta": 2 }
+      }
+    },
+    {
+      "label": "context-exercise-priority + remove_sets + description-digest + cycleId",
+      "kind": "fingerprint",
+      "action": {
+        "source": "plateau",
+        "actionType": "review_exercise",
+        "targetType": "muscle",
+        "targetId": "should-be-overridden",
+        "description": "swap the bench"
+      },
+      "context": {
+        "exerciseId": "bench-press",
+        "cycleId": "cyc-2",
+        "suggestedChange": { "setsDelta": -1 }
+      }
+    },
+    {
+      "label": "context-template-priority + swap_exercise + title-digest + current-cycle",
+      "kind": "fingerprint",
+      "action": {
+        "source": "recovery",
+        "actionType": "open_replacement_sheet",
+        "title": "Replace machine row"
+      },
+      "context": {
+        "templateId": "day-push",
+        "suggestedChange": { "removeExerciseIds": ["ex-old"] }
+      }
+    },
+    {
+      "label": "action-target-fallback + support_reduce",
+      "kind": "fingerprint",
+      "action": {
+        "source": "sessionQuality",
+        "actionType": "review_session",
+        "targetType": "plan",
+        "targetId": "plan-7",
+        "reason": "support dose"
+      },
+      "context": {
+        "suggestedChange": { "supportDoseAdjustment": "reduce" }
+      }
+    },
+    {
+      "label": "suggestedChange.muscleId target-fallback + keep + exerciseIds-join + empty-digest",
+      "kind": "fingerprint",
+      "action": {
+        "source": "setAnomaly",
+        "actionType": "open_record_detail"
+      },
+      "context": {
+        "suggestedChange": { "muscleId": "back", "exerciseIds": ["lat-pulldown", "row"] }
+      }
+    },
+    {
+      "label": "all-literal-fallbacks (empty action + empty context)",
+      "kind": "fingerprint",
+      "action": {},
+      "context": {}
+    },
+    {
+      "label": "suggestedChangeType explicit-fallback-wins over setsDelta",
+      "kind": "fingerprint",
+      "action": {
+        "source": "volumeAdaptation",
+        "actionType": "create_plan_adjustment_preview",
+        "reason": "fallback wins"
+      },
+      "context": {
+        "suggestedChangeType": "remove_sets",
+        "suggestedChange": { "setsDelta": 5 }
+      }
+    },
+    {
+      "label": "normalizePart/normalizeText regex segments (spaces/case/specials/tabs/CJK)",
+      "kind": "fingerprint",
+      "action": {
+        "source": "Volume Adaptation!!",
+        "actionType": "REVIEW_VOLUME",
+        "reason": "  Mixed   CASE  and\tTabs  "
+      },
+      "context": {
+        "muscleId": "Quads & Hams",
+        "sourceTemplateId": "Tpl::A.B_C-D",
+        "weekId": "Week #3"
+      }
+    },
+    {
+      "label": "weekId-wins-over-cycleId + support_boost + exerciseIds[0] target-fallback",
+      "kind": "fingerprint",
+      "action": {
+        "source": "recovery",
+        "actionType": "keep_observing",
+        "reason": "rest week"
+      },
+      "context": {
+        "weekId": "wk-9",
+        "cycleId": "cyc-9",
+        "suggestedChange": { "supportDoseAdjustment": "boost", "exerciseIds": ["only-one"] }
+      }
+    }
+  ]
+}

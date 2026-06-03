@@ -1,0 +1,86 @@
+{
+  "parityMeta": {
+    "id": "coach-action-identity/dedupe-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S5 dedupeProgramAdjustmentDraftsByFingerprint function-level parity — synthetic draft-list cases covering the 'recommendation' status skip, same-fingerprint draftStatusRank win, rank-tie draftTime win, computed-fingerprint collapse (no sourceFingerprint), the final draftTime-DESC sort, and the equal-draftTime JS-stable insertion order. Generated from src/engines/coachActionIdentityEngine.ts; the Swift CoachActionIdentityEngine asserts the ordered surviving-draft id list == golden dedupedIds.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e2af42ae51ad27b7f2d4ee2ab39504ea1359b628",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — dedupe is a pure Map-group + stable sort. draftTime values are same-format ISO strings so localeCompare == lexicographic order. Most cases pin distinct/collapsing fingerprints via sourceFingerprint; one case omits sourceFingerprint to prove the dedupe computes fingerprints. All ids/text are synthetic."
+  },
+  "cases": [
+    {
+      "label": "skip 'recommendation' status + time-desc of survivors",
+      "kind": "dedupe",
+      "drafts": [
+        { "id": "r1", "status": "recommendation", "sourceFingerprint": "fp-r", "createdAt": "2026-01-09T00:00:00.000Z" },
+        { "id": "b1", "status": "applied", "sourceFingerprint": "fp-b", "appliedAt": "2026-02-01T00:00:00.000Z" },
+        { "id": "c1", "status": "draft", "sourceFingerprint": "fp-c", "createdAt": "2026-01-01T00:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "same fingerprint → higher draftStatusRank wins (rank dominates time)",
+      "kind": "dedupe",
+      "drafts": [
+        { "id": "a2", "status": "draft", "sourceFingerprint": "fp-2", "createdAt": "2026-01-05T00:00:00.000Z" },
+        { "id": "b2", "status": "applied", "sourceFingerprint": "fp-2", "appliedAt": "2026-01-02T00:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "same fingerprint + equal rank → later draftTime wins",
+      "kind": "dedupe",
+      "drafts": [
+        { "id": "a3", "status": "draft", "sourceFingerprint": "fp-3", "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "b3", "status": "previewed", "sourceFingerprint": "fp-3", "createdAt": "2026-01-09T00:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "computed fingerprint collapse (no sourceFingerprint) → applied wins",
+      "kind": "dedupe",
+      "drafts": [
+        {
+          "id": "a4",
+          "status": "draft",
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "sourceRecommendationId": "volume-rec",
+          "sourceProgramTemplateId": "tpl-1",
+          "title": "Add chest volume",
+          "summary": "More sets",
+          "explanation": "progressive overload",
+          "changes": [{ "type": "add_sets", "muscleId": "chest", "reason": "more volume" }]
+        },
+        {
+          "id": "b4",
+          "status": "applied",
+          "appliedAt": "2026-01-09T00:00:00.000Z",
+          "createdAt": "2026-01-05T00:00:00.000Z",
+          "sourceRecommendationId": "volume-rec",
+          "sourceProgramTemplateId": "tpl-1",
+          "title": "Add chest volume",
+          "summary": "More sets",
+          "explanation": "progressive overload",
+          "changes": [{ "type": "add_sets", "muscleId": "chest", "reason": "more volume" }]
+        }
+      ]
+    },
+    {
+      "label": "distinct fingerprints → final draftTime-DESC sort",
+      "kind": "dedupe",
+      "drafts": [
+        { "id": "a5", "status": "draft", "sourceFingerprint": "fp-5a", "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "b5", "status": "draft", "sourceFingerprint": "fp-5b", "createdAt": "2026-03-01T00:00:00.000Z" },
+        { "id": "c5", "status": "draft", "sourceFingerprint": "fp-5c", "createdAt": "2026-02-01T00:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "equal draftTime → JS-stable insertion order preserved",
+      "kind": "dedupe",
+      "drafts": [
+        { "id": "a6", "status": "draft", "sourceFingerprint": "fp-6a", "createdAt": "2026-05-05T00:00:00.000Z" },
+        { "id": "b6", "status": "draft", "sourceFingerprint": "fp-6b", "createdAt": "2026-05-05T00:00:00.000Z" },
+        { "id": "c6", "status": "draft", "sourceFingerprint": "fp-6c", "createdAt": "2026-05-05T00:00:00.000Z" }
+      ]
+    }
+  ]
+}

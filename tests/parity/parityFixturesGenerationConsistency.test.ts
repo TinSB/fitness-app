@@ -67,7 +67,7 @@ describe('parityFixturesGenerationConsistency', () => {
     // 1 AN-6 intelligence-summary + 1 AN-8 sort-stability tie +
     // 1 PA-S0 i18n-terms + 1 PA-S2 enrich-exercise +
     // 1 PA-S3 default-program-data + 1 PA-S4 i18n-formatters parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+78\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+81\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });

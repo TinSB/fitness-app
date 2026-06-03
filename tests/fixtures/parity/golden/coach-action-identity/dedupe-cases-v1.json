@@ -1,0 +1,184 @@
+{
+  "cases": [
+    {
+      "dedupedIds": [
+        "b1",
+        "c1"
+      ],
+      "drafts": [
+        {
+          "createdAt": "2026-01-09T00:00:00.000Z",
+          "id": "r1",
+          "sourceFingerprint": "fp-r",
+          "status": "recommendation"
+        },
+        {
+          "appliedAt": "2026-02-01T00:00:00.000Z",
+          "id": "b1",
+          "sourceFingerprint": "fp-b",
+          "status": "applied"
+        },
+        {
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "id": "c1",
+          "sourceFingerprint": "fp-c",
+          "status": "draft"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "skip 'recommendation' status + time-desc of survivors"
+    },
+    {
+      "dedupedIds": [
+        "b2"
+      ],
+      "drafts": [
+        {
+          "createdAt": "2026-01-05T00:00:00.000Z",
+          "id": "a2",
+          "sourceFingerprint": "fp-2",
+          "status": "draft"
+        },
+        {
+          "appliedAt": "2026-01-02T00:00:00.000Z",
+          "id": "b2",
+          "sourceFingerprint": "fp-2",
+          "status": "applied"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "same fingerprint → higher draftStatusRank wins (rank dominates time)"
+    },
+    {
+      "dedupedIds": [
+        "b3"
+      ],
+      "drafts": [
+        {
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "id": "a3",
+          "sourceFingerprint": "fp-3",
+          "status": "draft"
+        },
+        {
+          "createdAt": "2026-01-09T00:00:00.000Z",
+          "id": "b3",
+          "sourceFingerprint": "fp-3",
+          "status": "previewed"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "same fingerprint + equal rank → later draftTime wins"
+    },
+    {
+      "dedupedIds": [
+        "b4"
+      ],
+      "drafts": [
+        {
+          "changes": [
+            {
+              "muscleId": "chest",
+              "reason": "more volume",
+              "type": "add_sets"
+            }
+          ],
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "explanation": "progressive overload",
+          "id": "a4",
+          "sourceProgramTemplateId": "tpl-1",
+          "sourceRecommendationId": "volume-rec",
+          "status": "draft",
+          "summary": "More sets",
+          "title": "Add chest volume"
+        },
+        {
+          "appliedAt": "2026-01-09T00:00:00.000Z",
+          "changes": [
+            {
+              "muscleId": "chest",
+              "reason": "more volume",
+              "type": "add_sets"
+            }
+          ],
+          "createdAt": "2026-01-05T00:00:00.000Z",
+          "explanation": "progressive overload",
+          "id": "b4",
+          "sourceProgramTemplateId": "tpl-1",
+          "sourceRecommendationId": "volume-rec",
+          "status": "applied",
+          "summary": "More sets",
+          "title": "Add chest volume"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "computed fingerprint collapse (no sourceFingerprint) → applied wins"
+    },
+    {
+      "dedupedIds": [
+        "b5",
+        "c5",
+        "a5"
+      ],
+      "drafts": [
+        {
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "id": "a5",
+          "sourceFingerprint": "fp-5a",
+          "status": "draft"
+        },
+        {
+          "createdAt": "2026-03-01T00:00:00.000Z",
+          "id": "b5",
+          "sourceFingerprint": "fp-5b",
+          "status": "draft"
+        },
+        {
+          "createdAt": "2026-02-01T00:00:00.000Z",
+          "id": "c5",
+          "sourceFingerprint": "fp-5c",
+          "status": "draft"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "distinct fingerprints → final draftTime-DESC sort"
+    },
+    {
+      "dedupedIds": [
+        "a6",
+        "b6",
+        "c6"
+      ],
+      "drafts": [
+        {
+          "createdAt": "2026-05-05T00:00:00.000Z",
+          "id": "a6",
+          "sourceFingerprint": "fp-6a",
+          "status": "draft"
+        },
+        {
+          "createdAt": "2026-05-05T00:00:00.000Z",
+          "id": "b6",
+          "sourceFingerprint": "fp-6b",
+          "status": "draft"
+        },
+        {
+          "createdAt": "2026-05-05T00:00:00.000Z",
+          "id": "c6",
+          "sourceFingerprint": "fp-6c",
+          "status": "draft"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "equal draftTime → JS-stable insertion order preserved"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e2af42ae51ad27b7f2d4ee2ab39504ea1359b628",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "coach-action-identity/dedupe-cases-v1"
+  },
+  "sourceFixtureId": "coach-action-identity/dedupe-cases-v1"
+}

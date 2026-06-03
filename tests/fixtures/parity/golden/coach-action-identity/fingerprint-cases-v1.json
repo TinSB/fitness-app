@@ -1,0 +1,165 @@
+{
+  "cases": [
+    {
+      "action": {
+        "actionType": "review_volume",
+        "description": "desc-ignored",
+        "reason": "increase chest volume",
+        "source": "volumeAdaptation",
+        "targetId": "sess-1",
+        "targetType": "session",
+        "title": "title-ignored"
+      },
+      "context": {
+        "muscleId": "chest",
+        "sourceTemplateId": "tpl-1",
+        "suggestedChange": {
+          "muscleId": "chest",
+          "setsDelta": 2
+        },
+        "weekId": "w-3"
+      },
+      "fingerprint": "coach-action|volumeadaptation|review_volume|muscle|chest|tpl-1|add_sets|chest|exercise-none|w-3|c0a4e94e",
+      "kind": "fingerprint",
+      "label": "context-muscle-priority + add_sets + reason-digest + weekId"
+    },
+    {
+      "action": {
+        "actionType": "review_exercise",
+        "description": "swap the bench",
+        "source": "plateau",
+        "targetId": "should-be-overridden",
+        "targetType": "muscle"
+      },
+      "context": {
+        "cycleId": "cyc-2",
+        "exerciseId": "bench-press",
+        "suggestedChange": {
+          "setsDelta": -1
+        }
+      },
+      "fingerprint": "coach-action|plateau|review_exercise|exercise|bench-press|template-unknown|remove_sets|muscle-none|bench-press|cyc-2|8c37804f",
+      "kind": "fingerprint",
+      "label": "context-exercise-priority + remove_sets + description-digest + cycleId"
+    },
+    {
+      "action": {
+        "actionType": "open_replacement_sheet",
+        "source": "recovery",
+        "title": "Replace machine row"
+      },
+      "context": {
+        "suggestedChange": {
+          "removeExerciseIds": [
+            "ex-old"
+          ]
+        },
+        "templateId": "day-push"
+      },
+      "fingerprint": "coach-action|recovery|open_replacement_sheet|template|day-push|template-unknown|swap_exercise|muscle-none|exercise-none|current-cycle|c0ad3dea",
+      "kind": "fingerprint",
+      "label": "context-template-priority + swap_exercise + title-digest + current-cycle"
+    },
+    {
+      "action": {
+        "actionType": "review_session",
+        "reason": "support dose",
+        "source": "sessionQuality",
+        "targetId": "plan-7",
+        "targetType": "plan"
+      },
+      "context": {
+        "suggestedChange": {
+          "supportDoseAdjustment": "reduce"
+        }
+      },
+      "fingerprint": "coach-action|sessionquality|review_session|plan|plan-7|template-unknown|support_reduce|muscle-none|exercise-none|current-cycle|f4b089e9",
+      "kind": "fingerprint",
+      "label": "action-target-fallback + support_reduce"
+    },
+    {
+      "action": {
+        "actionType": "open_record_detail",
+        "source": "setAnomaly"
+      },
+      "context": {
+        "suggestedChange": {
+          "exerciseIds": [
+            "lat-pulldown",
+            "row"
+          ],
+          "muscleId": "back"
+        }
+      },
+      "fingerprint": "coach-action|setanomaly|open_record_detail|none|back|template-unknown|keep|back|lat-pulldown-row|current-cycle|811c9dc5",
+      "kind": "fingerprint",
+      "label": "suggestedChange.muscleId target-fallback + keep + exerciseIds-join + empty-digest"
+    },
+    {
+      "action": {},
+      "context": {},
+      "fingerprint": "coach-action|none|none|none|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|811c9dc5",
+      "kind": "fingerprint",
+      "label": "all-literal-fallbacks (empty action + empty context)"
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "reason": "fallback wins",
+        "source": "volumeAdaptation"
+      },
+      "context": {
+        "suggestedChange": {
+          "setsDelta": 5
+        },
+        "suggestedChangeType": "remove_sets"
+      },
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|none|target-none|template-unknown|remove_sets|muscle-none|exercise-none|current-cycle|fa205fda",
+      "kind": "fingerprint",
+      "label": "suggestedChangeType explicit-fallback-wins over setsDelta"
+    },
+    {
+      "action": {
+        "actionType": "REVIEW_VOLUME",
+        "reason": "  Mixed   CASE  and\tTabs  ",
+        "source": "Volume Adaptation!!"
+      },
+      "context": {
+        "muscleId": "Quads & Hams",
+        "sourceTemplateId": "Tpl::A.B_C-D",
+        "weekId": "Week #3"
+      },
+      "fingerprint": "coach-action|volume-adaptation|review_volume|muscle|quads-hams|tpl::a.b_c-d|none|quads-hams|exercise-none|week-3|dcc9adc7",
+      "kind": "fingerprint",
+      "label": "normalizePart/normalizeText regex segments (spaces/case/specials/tabs/CJK)"
+    },
+    {
+      "action": {
+        "actionType": "keep_observing",
+        "reason": "rest week",
+        "source": "recovery"
+      },
+      "context": {
+        "cycleId": "cyc-9",
+        "suggestedChange": {
+          "exerciseIds": [
+            "only-one"
+          ],
+          "supportDoseAdjustment": "boost"
+        },
+        "weekId": "wk-9"
+      },
+      "fingerprint": "coach-action|recovery|keep_observing|none|only-one|template-unknown|support_boost|muscle-none|only-one|wk-9|f85ed28d",
+      "kind": "fingerprint",
+      "label": "weekId-wins-over-cycleId + support_boost + exerciseIds[0] target-fallback"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e2af42ae51ad27b7f2d4ee2ab39504ea1359b628",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "coach-action-identity/fingerprint-cases-v1"
+  },
+  "sourceFixtureId": "coach-action-identity/fingerprint-cases-v1"
+}
