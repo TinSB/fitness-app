@@ -1,0 +1,135 @@
+{
+  "parityMeta": {
+    "id": "enrich-exercise/default-branches-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S2 engineUtils enrichExercise/buildExerciseMetadata OUTPUT parity over the EMPTY override/equivalence seam. Eight representative ExerciseTemplate inputs with SYNTHETIC ids (asserted absent from EXERCISE_KNOWLEDGE_OVERRIDES and EXERCISE_EQUIVALENCE_CHAINS) so the real TS engine runs only the default-derivation branches this slice ports — the override DATA tables are PA-S3. Cases cover: compound (kind compound + kind machine) vs isolation; bigMuscle (胸/背/腿) vs not; the progressionUnitKg ||-chain (bigMuscle->2.5, startWeight>=40->2.5, isolation-small->1, parsed-string '0.5kg'->0.5, explicit progressionUnitKg->5); the techniqueStandard default rom branch (compound->完整可控幅度 / isolation->受控完整幅度) plus an exercise.techniqueStandard overlay (tempo + extra key); the alternativeIds/alternativePriorities exercise fallback; and a non-schema open-bag key (customTag) round-tripping through enrichExercise's spread. FUNCTION-LEVEL compute-assert: the Swift EngineUtils.enrichExercise/buildExerciseMetadata re-run on each echoed exercise and reconcile metadata + enriched field-by-field.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "098a0a94704d9ec609e51d9104a6ad6871429ff1",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — enrichExercise/buildExerciseMetadata carry no wall clock. override = {} and equivalence = undefined because every id is synthetic (absent from both knowledge tables); the generator throws if any id collides with the real tables, guaranteeing the golden pins the empty-seam default branches only."
+  },
+  "cases": [
+    {
+      "label": "compound + bigMuscle(腿) default — progressionUnitKg 2.5 via bigMuscle",
+      "exercise": {
+        "id": "pa-s2-compound-big",
+        "name": "PA-S2 合成深蹲",
+        "muscle": "腿",
+        "kind": "compound",
+        "sets": 4,
+        "repMin": 5,
+        "repMax": 8,
+        "rest": 120,
+        "startWeight": 60
+      }
+    },
+    {
+      "label": "isolation + small muscle(手臂) + startWeight<40 — progressionUnitKg 1, rom 受控完整幅度",
+      "exercise": {
+        "id": "pa-s2-iso-small",
+        "name": "PA-S2 合成弯举",
+        "muscle": "手臂",
+        "kind": "isolation",
+        "sets": 3,
+        "repMin": 10,
+        "repMax": 15,
+        "rest": 60,
+        "startWeight": 10
+      }
+    },
+    {
+      "label": "machine counts as compound + bigMuscle(背)",
+      "exercise": {
+        "id": "pa-s2-machine",
+        "name": "PA-S2 合成机械划船",
+        "muscle": "背",
+        "kind": "machine",
+        "sets": 3,
+        "repMin": 8,
+        "repMax": 12,
+        "rest": 90,
+        "startWeight": 50
+      }
+    },
+    {
+      "label": "exercise.techniqueStandard overlay (tempo override + extra key)",
+      "exercise": {
+        "id": "pa-s2-tech-override",
+        "name": "PA-S2 合成卧推",
+        "muscle": "胸",
+        "kind": "compound",
+        "sets": 4,
+        "repMin": 6,
+        "repMax": 10,
+        "rest": 100,
+        "startWeight": 40,
+        "techniqueStandard": {
+          "tempo": "3-1-1",
+          "cue": "保持肩胛后缩"
+        }
+      }
+    },
+    {
+      "label": "exercise.progressionUnit string parsed — '0.5kg' -> 0.5",
+      "exercise": {
+        "id": "pa-s2-prog-unit",
+        "name": "PA-S2 合成侧平举",
+        "muscle": "肩",
+        "kind": "isolation",
+        "sets": 3,
+        "repMin": 12,
+        "repMax": 15,
+        "rest": 75,
+        "startWeight": 8,
+        "progressionUnit": "0.5kg"
+      }
+    },
+    {
+      "label": "explicit exercise.progressionUnitKg wins the ||-chain — 5",
+      "exercise": {
+        "id": "pa-s2-prog-kg",
+        "name": "PA-S2 合成硬拉",
+        "muscle": "腿",
+        "kind": "compound",
+        "sets": 3,
+        "repMin": 4,
+        "repMax": 6,
+        "rest": 150,
+        "startWeight": 100,
+        "progressionUnitKg": 5
+      }
+    },
+    {
+      "label": "alternativeIds/alternativePriorities exercise fallback + open-bag customTag round-trip",
+      "exercise": {
+        "id": "pa-s2-alts",
+        "name": "PA-S2 合成高位下拉",
+        "muscle": "背",
+        "kind": "compound",
+        "sets": 3,
+        "repMin": 8,
+        "repMax": 12,
+        "rest": 90,
+        "startWeight": 40,
+        "alternativeIds": ["pa-s2-alt-x", "pa-s2-alt-y"],
+        "alternativePriorities": { "pa-s2-alt-x": "primary" },
+        "customTag": "open-bag-roundtrip"
+      }
+    },
+    {
+      "label": "isolation + small muscle(肩) + startWeight>=40 — progressionUnitKg 2.5 via startWeight",
+      "exercise": {
+        "id": "pa-s2-heavy-small",
+        "name": "PA-S2 合成器械肩推",
+        "muscle": "肩",
+        "kind": "isolation",
+        "sets": 3,
+        "repMin": 8,
+        "repMax": 12,
+        "rest": 90,
+        "startWeight": 45
+      }
+    }
+  ]
+}

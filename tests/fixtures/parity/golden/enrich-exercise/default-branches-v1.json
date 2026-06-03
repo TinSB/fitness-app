@@ -1,0 +1,1205 @@
+{
+  "engineInput": {
+    "cases": [
+      {
+        "exercise": {
+          "id": "pa-s2-compound-big",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "PA-S2 合成深蹲",
+          "repMax": 8,
+          "repMin": 5,
+          "rest": 120,
+          "sets": 4,
+          "startWeight": 60
+        },
+        "label": "compound + bigMuscle(腿) default — progressionUnitKg 2.5 via bigMuscle"
+      },
+      {
+        "exercise": {
+          "id": "pa-s2-iso-small",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "PA-S2 合成弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 3,
+          "startWeight": 10
+        },
+        "label": "isolation + small muscle(手臂) + startWeight<40 — progressionUnitKg 1, rom 受控完整幅度"
+      },
+      {
+        "exercise": {
+          "id": "pa-s2-machine",
+          "kind": "machine",
+          "muscle": "背",
+          "name": "PA-S2 合成机械划船",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 50
+        },
+        "label": "machine counts as compound + bigMuscle(背)"
+      },
+      {
+        "exercise": {
+          "id": "pa-s2-tech-override",
+          "kind": "compound",
+          "muscle": "胸",
+          "name": "PA-S2 合成卧推",
+          "repMax": 10,
+          "repMin": 6,
+          "rest": 100,
+          "sets": 4,
+          "startWeight": 40,
+          "techniqueStandard": {
+            "cue": "保持肩胛后缩",
+            "tempo": "3-1-1"
+          }
+        },
+        "label": "exercise.techniqueStandard overlay (tempo override + extra key)"
+      },
+      {
+        "exercise": {
+          "id": "pa-s2-prog-unit",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "PA-S2 合成侧平举",
+          "progressionUnit": "0.5kg",
+          "repMax": 15,
+          "repMin": 12,
+          "rest": 75,
+          "sets": 3,
+          "startWeight": 8
+        },
+        "label": "exercise.progressionUnit string parsed — '0.5kg' -> 0.5"
+      },
+      {
+        "exercise": {
+          "id": "pa-s2-prog-kg",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "PA-S2 合成硬拉",
+          "progressionUnitKg": 5,
+          "repMax": 6,
+          "repMin": 4,
+          "rest": 150,
+          "sets": 3,
+          "startWeight": 100
+        },
+        "label": "explicit exercise.progressionUnitKg wins the ||-chain — 5"
+      },
+      {
+        "exercise": {
+          "alternativeIds": [
+            "pa-s2-alt-x",
+            "pa-s2-alt-y"
+          ],
+          "alternativePriorities": {
+            "pa-s2-alt-x": "primary"
+          },
+          "customTag": "open-bag-roundtrip",
+          "id": "pa-s2-alts",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "PA-S2 合成高位下拉",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 40
+        },
+        "label": "alternativeIds/alternativePriorities exercise fallback + open-bag customTag round-trip"
+      },
+      {
+        "exercise": {
+          "id": "pa-s2-heavy-small",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "PA-S2 合成器械肩推",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 45
+        },
+        "label": "isolation + small muscle(肩) + startWeight>=40 — progressionUnitKg 2.5 via startWeight"
+      }
+    ]
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "098a0a94704d9ec609e51d9104a6ad6871429ff1",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "enrich-exercise/default-branches-v1"
+  },
+  "results": [
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-compound-big",
+        "contraindications": [],
+        "equivalence": {
+          "label": "腿",
+          "members": [
+            "pa-s2-compound-big"
+          ],
+          "pattern": "腿",
+          "primaryMuscle": "腿"
+        },
+        "equivalenceChainId": "pa-s2-compound-big",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-compound-big",
+        "kind": "compound",
+        "movementPattern": "腿",
+        "muscle": "腿",
+        "name": "PA-S2 合成深蹲",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "腿"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          5,
+          8
+        ],
+        "recommendedRestSec": [
+          90,
+          120
+        ],
+        "regressionIds": [],
+        "repMax": 8,
+        "repMin": 5,
+        "rest": 120,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 4,
+        "skillDemand": "medium",
+        "startWeight": 60,
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "compound + bigMuscle(腿) default — progressionUnitKg 2.5 via bigMuscle",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-compound-big",
+        "contraindications": [],
+        "equivalence": {
+          "label": "腿",
+          "members": [
+            "pa-s2-compound-big"
+          ],
+          "pattern": "腿",
+          "primaryMuscle": "腿"
+        },
+        "equivalenceChainId": "pa-s2-compound-big",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "腿",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "腿"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          5,
+          8
+        ],
+        "recommendedRestSec": [
+          90,
+          120
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "medium",
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-iso-small",
+        "contraindications": [],
+        "equivalence": {
+          "label": "手臂",
+          "members": [
+            "pa-s2-iso-small"
+          ],
+          "pattern": "手臂",
+          "primaryMuscle": "手臂"
+        },
+        "equivalenceChainId": "pa-s2-iso-small",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "low",
+        "goalBias": [
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-iso-small",
+        "kind": "isolation",
+        "movementPattern": "手臂",
+        "muscle": "手臂",
+        "name": "PA-S2 合成弯举",
+        "orderPriority": 6,
+        "primaryMuscles": [
+          "手臂"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          2,
+          5
+        ],
+        "progressionUnit": "1kg",
+        "progressionUnitKg": 1,
+        "recommendedLoadRange": "约 50%-75% 1RM",
+        "recommendedRepRange": [
+          10,
+          15
+        ],
+        "recommendedRestSec": [
+          45,
+          60
+        ],
+        "regressionIds": [],
+        "repMax": 15,
+        "repMin": 10,
+        "rest": 60,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 3,
+        "skillDemand": "low",
+        "startWeight": 10,
+        "targetRir": [
+          1,
+          2
+        ],
+        "techniqueStandard": {
+          "rom": "受控完整幅度",
+          "stopRule": "目标肌群失控或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "isolation + small muscle(手臂) + startWeight<40 — progressionUnitKg 1, rom 受控完整幅度",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-iso-small",
+        "contraindications": [],
+        "equivalence": {
+          "label": "手臂",
+          "members": [
+            "pa-s2-iso-small"
+          ],
+          "pattern": "手臂",
+          "primaryMuscle": "手臂"
+        },
+        "equivalenceChainId": "pa-s2-iso-small",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "low",
+        "goalBias": [
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "手臂",
+        "orderPriority": 6,
+        "primaryMuscles": [
+          "手臂"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          2,
+          5
+        ],
+        "progressionUnit": "1kg",
+        "progressionUnitKg": 1,
+        "recommendedLoadRange": "约 50%-75% 1RM",
+        "recommendedRepRange": [
+          10,
+          15
+        ],
+        "recommendedRestSec": [
+          45,
+          60
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "low",
+        "targetRir": [
+          1,
+          2
+        ],
+        "techniqueStandard": {
+          "rom": "受控完整幅度",
+          "stopRule": "目标肌群失控或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-machine",
+        "contraindications": [],
+        "equivalence": {
+          "label": "背",
+          "members": [
+            "pa-s2-machine"
+          ],
+          "pattern": "背",
+          "primaryMuscle": "背"
+        },
+        "equivalenceChainId": "pa-s2-machine",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-machine",
+        "kind": "machine",
+        "movementPattern": "背",
+        "muscle": "背",
+        "name": "PA-S2 合成机械划船",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "背"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          8,
+          12
+        ],
+        "recommendedRestSec": [
+          60,
+          90
+        ],
+        "regressionIds": [],
+        "repMax": 12,
+        "repMin": 8,
+        "rest": 90,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 3,
+        "skillDemand": "medium",
+        "startWeight": 50,
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "machine counts as compound + bigMuscle(背)",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-machine",
+        "contraindications": [],
+        "equivalence": {
+          "label": "背",
+          "members": [
+            "pa-s2-machine"
+          ],
+          "pattern": "背",
+          "primaryMuscle": "背"
+        },
+        "equivalenceChainId": "pa-s2-machine",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "背",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "背"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          8,
+          12
+        ],
+        "recommendedRestSec": [
+          60,
+          90
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "medium",
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-tech-override",
+        "contraindications": [],
+        "equivalence": {
+          "label": "胸",
+          "members": [
+            "pa-s2-tech-override"
+          ],
+          "pattern": "胸",
+          "primaryMuscle": "胸"
+        },
+        "equivalenceChainId": "pa-s2-tech-override",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-tech-override",
+        "kind": "compound",
+        "movementPattern": "胸",
+        "muscle": "胸",
+        "name": "PA-S2 合成卧推",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "胸"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          6,
+          10
+        ],
+        "recommendedRestSec": [
+          70,
+          100
+        ],
+        "regressionIds": [],
+        "repMax": 10,
+        "repMin": 6,
+        "rest": 100,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 4,
+        "skillDemand": "medium",
+        "startWeight": 40,
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "cue": "保持肩胛后缩",
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "3-1-1"
+        }
+      },
+      "label": "exercise.techniqueStandard overlay (tempo override + extra key)",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-tech-override",
+        "contraindications": [],
+        "equivalence": {
+          "label": "胸",
+          "members": [
+            "pa-s2-tech-override"
+          ],
+          "pattern": "胸",
+          "primaryMuscle": "胸"
+        },
+        "equivalenceChainId": "pa-s2-tech-override",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "胸",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "胸"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          6,
+          10
+        ],
+        "recommendedRestSec": [
+          70,
+          100
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "medium",
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "cue": "保持肩胛后缩",
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "3-1-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-prog-unit",
+        "contraindications": [],
+        "equivalence": {
+          "label": "肩",
+          "members": [
+            "pa-s2-prog-unit"
+          ],
+          "pattern": "肩",
+          "primaryMuscle": "肩"
+        },
+        "equivalenceChainId": "pa-s2-prog-unit",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "low",
+        "goalBias": [
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-prog-unit",
+        "kind": "isolation",
+        "movementPattern": "肩",
+        "muscle": "肩",
+        "name": "PA-S2 合成侧平举",
+        "orderPriority": 6,
+        "primaryMuscles": [
+          "肩"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          2,
+          5
+        ],
+        "progressionUnit": "0.5kg",
+        "progressionUnitKg": 0.5,
+        "recommendedLoadRange": "约 50%-75% 1RM",
+        "recommendedRepRange": [
+          12,
+          15
+        ],
+        "recommendedRestSec": [
+          45,
+          75
+        ],
+        "regressionIds": [],
+        "repMax": 15,
+        "repMin": 12,
+        "rest": 75,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 3,
+        "skillDemand": "low",
+        "startWeight": 8,
+        "targetRir": [
+          1,
+          2
+        ],
+        "techniqueStandard": {
+          "rom": "受控完整幅度",
+          "stopRule": "目标肌群失控或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "exercise.progressionUnit string parsed — '0.5kg' -> 0.5",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-prog-unit",
+        "contraindications": [],
+        "equivalence": {
+          "label": "肩",
+          "members": [
+            "pa-s2-prog-unit"
+          ],
+          "pattern": "肩",
+          "primaryMuscle": "肩"
+        },
+        "equivalenceChainId": "pa-s2-prog-unit",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "low",
+        "goalBias": [
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "肩",
+        "orderPriority": 6,
+        "primaryMuscles": [
+          "肩"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          2,
+          5
+        ],
+        "progressionUnit": "0.5kg",
+        "progressionUnitKg": 0.5,
+        "recommendedLoadRange": "约 50%-75% 1RM",
+        "recommendedRepRange": [
+          12,
+          15
+        ],
+        "recommendedRestSec": [
+          45,
+          75
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "low",
+        "targetRir": [
+          1,
+          2
+        ],
+        "techniqueStandard": {
+          "rom": "受控完整幅度",
+          "stopRule": "目标肌群失控或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-prog-kg",
+        "contraindications": [],
+        "equivalence": {
+          "label": "腿",
+          "members": [
+            "pa-s2-prog-kg"
+          ],
+          "pattern": "腿",
+          "primaryMuscle": "腿"
+        },
+        "equivalenceChainId": "pa-s2-prog-kg",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-prog-kg",
+        "kind": "compound",
+        "movementPattern": "腿",
+        "muscle": "腿",
+        "name": "PA-S2 合成硬拉",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "腿"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "5kg",
+        "progressionUnitKg": 5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          4,
+          6
+        ],
+        "recommendedRestSec": [
+          120,
+          150
+        ],
+        "regressionIds": [],
+        "repMax": 6,
+        "repMin": 4,
+        "rest": 150,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 3,
+        "skillDemand": "medium",
+        "startWeight": 100,
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "explicit exercise.progressionUnitKg wins the ||-chain — 5",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-prog-kg",
+        "contraindications": [],
+        "equivalence": {
+          "label": "腿",
+          "members": [
+            "pa-s2-prog-kg"
+          ],
+          "pattern": "腿",
+          "primaryMuscle": "腿"
+        },
+        "equivalenceChainId": "pa-s2-prog-kg",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "腿",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "腿"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "5kg",
+        "progressionUnitKg": 5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          4,
+          6
+        ],
+        "recommendedRestSec": [
+          120,
+          150
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "medium",
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [
+          "pa-s2-alt-x",
+          "pa-s2-alt-y"
+        ],
+        "alternativePriorities": {
+          "pa-s2-alt-x": "primary"
+        },
+        "canonicalExerciseId": "pa-s2-alts",
+        "contraindications": [],
+        "customTag": "open-bag-roundtrip",
+        "equivalence": {
+          "label": "背",
+          "members": [
+            "pa-s2-alts"
+          ],
+          "pattern": "背",
+          "primaryMuscle": "背"
+        },
+        "equivalenceChainId": "pa-s2-alts",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-alts",
+        "kind": "compound",
+        "movementPattern": "背",
+        "muscle": "背",
+        "name": "PA-S2 合成高位下拉",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "背"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          8,
+          12
+        ],
+        "recommendedRestSec": [
+          60,
+          90
+        ],
+        "regressionIds": [],
+        "repMax": 12,
+        "repMin": 8,
+        "rest": 90,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 3,
+        "skillDemand": "medium",
+        "startWeight": 40,
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "alternativeIds/alternativePriorities exercise fallback + open-bag customTag round-trip",
+      "metadata": {
+        "alternativeIds": [
+          "pa-s2-alt-x",
+          "pa-s2-alt-y"
+        ],
+        "alternativePriorities": {
+          "pa-s2-alt-x": "primary"
+        },
+        "canonicalExerciseId": "pa-s2-alts",
+        "contraindications": [],
+        "equivalence": {
+          "label": "背",
+          "members": [
+            "pa-s2-alts"
+          ],
+          "pattern": "背",
+          "primaryMuscle": "背"
+        },
+        "equivalenceChainId": "pa-s2-alts",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "medium",
+        "goalBias": [
+          "力量",
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "背",
+        "orderPriority": 3,
+        "primaryMuscles": [
+          "背"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          5,
+          10
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 65%-85% 1RM",
+        "recommendedRepRange": [
+          8,
+          12
+        ],
+        "recommendedRestSec": [
+          60,
+          90
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "medium",
+        "targetRir": [
+          1,
+          3
+        ],
+        "techniqueStandard": {
+          "rom": "完整可控幅度",
+          "stopRule": "动作明显变形、速度明显下降或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    },
+    {
+      "enriched": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-heavy-small",
+        "contraindications": [],
+        "equivalence": {
+          "label": "肩",
+          "members": [
+            "pa-s2-heavy-small"
+          ],
+          "pattern": "肩",
+          "primaryMuscle": "肩"
+        },
+        "equivalenceChainId": "pa-s2-heavy-small",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "low",
+        "goalBias": [
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "id": "pa-s2-heavy-small",
+        "kind": "isolation",
+        "movementPattern": "肩",
+        "muscle": "肩",
+        "name": "PA-S2 合成器械肩推",
+        "orderPriority": 6,
+        "primaryMuscles": [
+          "肩"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          2,
+          5
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 50%-75% 1RM",
+        "recommendedRepRange": [
+          8,
+          12
+        ],
+        "recommendedRestSec": [
+          60,
+          90
+        ],
+        "regressionIds": [],
+        "repMax": 12,
+        "repMin": 8,
+        "rest": 90,
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "sets": 3,
+        "skillDemand": "low",
+        "startWeight": 45,
+        "targetRir": [
+          1,
+          2
+        ],
+        "techniqueStandard": {
+          "rom": "受控完整幅度",
+          "stopRule": "目标肌群失控或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      },
+      "label": "isolation + small muscle(肩) + startWeight>=40 — progressionUnitKg 2.5 via startWeight",
+      "metadata": {
+        "alternativeIds": [],
+        "alternativePriorities": {},
+        "canonicalExerciseId": "pa-s2-heavy-small",
+        "contraindications": [],
+        "equivalence": {
+          "label": "肩",
+          "members": [
+            "pa-s2-heavy-small"
+          ],
+          "pattern": "肩",
+          "primaryMuscle": "肩"
+        },
+        "equivalenceChainId": "pa-s2-heavy-small",
+        "evidenceTags": [
+          "渐进超负荷：连续稳定达标后再小幅加重。",
+          "训练频率：大肌群每周至少安排 2 次有效刺激更利于长期执行。",
+          "肌肥大主线：用每周有效组数、RIR 和动作质量共同决定是否推进。"
+        ],
+        "fatigueCost": "low",
+        "goalBias": [
+          "肌肥大"
+        ],
+        "highFrequencyOk": true,
+        "movementPattern": "肩",
+        "orderPriority": 6,
+        "primaryMuscles": [
+          "肩"
+        ],
+        "progressionIds": [],
+        "progressionPercent": [
+          2,
+          5
+        ],
+        "progressionUnit": "2.5kg",
+        "progressionUnitKg": 2.5,
+        "recommendedLoadRange": "约 50%-75% 1RM",
+        "recommendedRepRange": [
+          8,
+          12
+        ],
+        "recommendedRestSec": [
+          60,
+          90
+        ],
+        "regressionIds": [],
+        "romPriority": "high",
+        "secondaryMuscles": [],
+        "skillDemand": "low",
+        "targetRir": [
+          1,
+          2
+        ],
+        "techniqueStandard": {
+          "rom": "受控完整幅度",
+          "stopRule": "目标肌群失控或出现不适时停止该组",
+          "tempo": "2-0-1"
+        }
+      }
+    }
+  ],
+  "sourceFixtureId": "enrich-exercise/default-branches-v1"
+}

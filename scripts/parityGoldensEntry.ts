@@ -110,6 +110,15 @@ import {
 import type { PerformanceSnapshot } from '../src/models/training-model';
 import { DEFAULT_SCREENING_PROFILE } from '../src/data/defaults';
 import { number, setWeightKg } from '../src/engines/engineUtils';
+// PA-S2 — engineUtils enrichExercise/buildExerciseMetadata port parity slice. Imports
+// the REAL enrich functions so the enrich-exercise goldens are GENERATED from TS truth,
+// never hand-authored (§22). The Swift port (EngineUtils.enrichExercise /
+// buildExerciseMetadata) reproduces the SAME outputs over the SAME echoed input
+// exercises. The fixture uses SYNTHETIC ids absent from EXERCISE_KNOWLEDGE_OVERRIDES /
+// EXERCISE_EQUIVALENCE_CHAINS, so the REAL TS engine runs the EMPTY-seam (default-branch)
+// logic — exactly the branch this slice ports; the override DATA tables are PA-S3. PURE —
+// no write path, no clock.
+import { enrichExercise, buildExerciseMetadata } from '../src/engines/engineUtils';
 // iOS-17e-3 — progressionRulesEngine progressive-suggestion port parity slice.
 // Imports the REAL makeSuggestion / shouldUseTopBackoff / buildSetPrescription so the
 // progression-suggestion goldens are GENERATED from TS truth, never hand-authored
@@ -546,6 +555,12 @@ const FIXTURE_IDS = [
   // reconciles every label entry-by-entry. Pure data, no clock. Generated;
   // never hand-edited (§22).
   'i18n/terms-snapshot-v1',
+  // PA-S2 engineUtils enrichExercise/buildExerciseMetadata port — 1 OUTPUT fixture (a
+  // `cases` array) FUNCTION-LEVEL pinning the ported enrich tools over the EMPTY override /
+  // equivalence seam (synthetic ids, default branches). The Swift EngineUtils re-runs
+  // enrichExercise/buildExerciseMetadata on each echoed input and reconciles metadata +
+  // enriched field-by-field. The override DATA tables are PA-S3. Generated; never hand-edited (§22).
+  'enrich-exercise/default-branches-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1557,6 +1572,60 @@ const generateAdaptiveFeedback = (input: any, meta: ParityMeta) => {
     previousProbes,
     recentProbes,
     adaptiveState,
+  };
+};
+
+// ---------------------------------------------------------------------------
+// PA-S2 — engineUtils enrichExercise / buildExerciseMetadata OUTPUT parity
+//
+// Runs the REAL `enrichExercise` / `buildExerciseMetadata` over a set of representative
+// ExerciseTemplate-shaped inputs and echoes BOTH the engineInput (each raw exercise,
+// verbatim — the Swift port decodes it and re-runs the ported functions) AND the computed
+// outputs (`metadata` = buildExerciseMetadata, `enriched` = {...exercise, ...metadata}).
+//
+// EMPTY-SEAM PIN: every input id is SYNTHETIC and asserted absent from both
+// EXERCISE_KNOWLEDGE_OVERRIDES and EXERCISE_EQUIVALENCE_CHAINS, so the TS engine takes
+// `override = {}` / `equivalence = undefined` — the default-derivation branches this slice
+// ports. The override DATA tables (~1000-line value table) are PA-S3 and are NOT exercised
+// here. The cases jointly cover: compound (kind compound + kind machine) vs isolation ·
+// bigMuscle (胸/背/腿) vs not · the progressionUnitKg ||-chain (bigMuscle 2.5 default /
+// startWeight>=40 2.5 / isolation-small 1 / parsed-string 0.5 / explicit kg) · the
+// techniqueStandard default rom branch (compound→完整 / isolation→受控) + exercise.techniqueStandard
+// overlay · alternativeIds/alternativePriorities exercise fallback · a non-schema open-bag key
+// round-trip. Generated; never hand-edited (§22). PURE — no write path, no clock.
+// ---------------------------------------------------------------------------
+
+const generateEnrichExercise = (input: any, meta: ParityMeta) => {
+  const cases: any[] = Array.isArray(input.cases) ? input.cases : [];
+  const projected = cases.map((c: any, i: number) => {
+    const exercise = (c?.exercise ?? {}) as Record<string, unknown>;
+    const id = String(exercise.id ?? '');
+    // PA-S2 pins the EMPTY-seam branch: reject any id that would pull real override /
+    // equivalence DATA (that is PA-S3), so the golden cannot silently capture override output.
+    if (EXERCISE_KNOWLEDGE_OVERRIDES[id]) {
+      throw new Error(
+        `parityGoldensEntry: enrich-exercise input id "${id}" must be absent from ` +
+          `EXERCISE_KNOWLEDGE_OVERRIDES (PA-S2 pins the empty-seam branch; override data is PA-S3)`,
+      );
+    }
+    if (EXERCISE_EQUIVALENCE_CHAINS[id]) {
+      throw new Error(
+        `parityGoldensEntry: enrich-exercise input id "${id}" must be absent from ` +
+          `EXERCISE_EQUIVALENCE_CHAINS (PA-S2 pins the empty-seam branch; equivalence data is PA-S3)`,
+      );
+    }
+    const label = String(c?.label ?? id ?? `case-${i}`);
+    return {
+      label,
+      exercise,
+      metadata: buildExerciseMetadata(exercise as never),
+      enriched: enrichExercise(exercise as never),
+    };
+  });
+  return {
+    sourceFixtureId: meta.id,
+    engineInput: { cases: projected.map((p) => ({ label: p.label, exercise: p.exercise })) },
+    results: projected.map((p) => ({ label: p.label, metadata: p.metadata, enriched: p.enriched })),
   };
 };
 
@@ -2674,6 +2743,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'intelligence-summary/summary-cases-v1': generateIntelligenceSummary,
   // PA-S0 i18n/terms data port snapshot.
   'i18n/terms-snapshot-v1': generateI18nTermsSnapshot,
+  // PA-S2 engineUtils enrichExercise/buildExerciseMetadata port (empty-seam default branches).
+  'enrich-exercise/default-branches-v1': generateEnrichExercise,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
