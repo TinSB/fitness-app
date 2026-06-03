@@ -1,0 +1,216 @@
+{
+  "parityMeta": {
+    "id": "pain-pattern/aggregation-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-5 buildPainPatterns (trainingLevel-consumed subset) function-level parity. single-exercise-watch (1 painFlag → exercise watch, area<2 filtered) / exercise-substitute-area-deload (freq≥4 → exercise substitute + area deload) / exercise-deload-area-seek (severityAvg≥4.5&freq≥4 → exercise deload + area severityAvg≥4.5 seek_professional) / area-seek-via-frequency (two exercises same area, area freq≥6 → seek_professional + area-before-exercise frequency tiebreak) / multi-area-combined (two areas → per-area patterns + the distinctAreas≥2 combined ' / ' pattern + severityAvg/frequency sort) / note-derived-severity (painSeverity absent → /sharp|刺痛|剧烈/→4, /ache|酸|不适/→2, default 2) / lookback-excludes-old (default 30d window drops the 40-days-ago session) / maxsessions-and-options (explicit currentDate anchor + lookbackDays + maxSessions slice cap) / excluded-dataflag (test+excluded sessions filtered out) / no-pain-empty (no painFlag → []). Generated from src/engines/painPatternEngine.ts via scripts/generate-parity-goldens.mjs; the Swift PainPatternEngine compute-asserts each pattern list == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "4ccc7993c9f7b516583553a5465396127a293960",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "single-exercise-watch",
+      "sessions": [
+        {
+          "id": "pp-watch-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "painFlag": true, "painSeverity": 2 } ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "exercise-substitute-area-deload",
+      "sessions": [
+        {
+          "id": "pp-sub-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "exercise-deload-area-seek",
+      "sessions": [
+        {
+          "id": "pp-deload-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "area-seek-via-frequency",
+      "sessions": [
+        {
+          "id": "pp-areaseek-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 }
+              ] },
+            { "id": "chest-dip", "baseId": "chest-dip", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "multi-area-combined",
+      "sessions": [
+        {
+          "id": "pp-multi-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 3 },
+                { "painFlag": true, "painSeverity": 3 }
+              ] },
+            { "id": "back-squat", "baseId": "back-squat", "muscle": "knee",
+              "sets": [
+                { "painFlag": true, "painSeverity": 4 },
+                { "painFlag": true, "painSeverity": 4 }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "note-derived-severity",
+      "sessions": [
+        {
+          "id": "pp-note-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "note": "sharp pain at the bottom" },
+                { "painFlag": true, "note": "刺痛" },
+                { "painFlag": true, "note": "有点酸" },
+                { "painFlag": true, "note": "felt tired" }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "lookback-excludes-old",
+      "sessions": [
+        {
+          "id": "pp-recent-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "painFlag": true, "painSeverity": 3 } ] }
+          ]
+        },
+        {
+          "id": "pp-old-1", "daysAgo": 40,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "painFlag": true, "painSeverity": 5 } ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "maxsessions-and-options",
+      "currentDateDaysAgo": 0,
+      "lookbackDays": 30,
+      "maxSessions": 2,
+      "sessions": [
+        {
+          "id": "pp-opt-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "painFlag": true, "painSeverity": 2 } ] }
+          ]
+        },
+        {
+          "id": "pp-opt-2", "daysAgo": 5,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "painFlag": true, "painSeverity": 3 } ] }
+          ]
+        },
+        {
+          "id": "pp-opt-3", "daysAgo": 8,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "painFlag": true, "painSeverity": 4 } ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "excluded-dataflag",
+      "sessions": [
+        {
+          "id": "pp-test-1", "daysAgo": 2, "dataFlag": "test",
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 }
+              ] }
+          ]
+        },
+        {
+          "id": "pp-excluded-1", "daysAgo": 3, "dataFlag": "excluded",
+          "exercises": [
+            { "id": "back-squat", "baseId": "back-squat", "muscle": "knee",
+              "sets": [
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 },
+                { "painFlag": true, "painSeverity": 5 }
+              ] }
+          ]
+        },
+        {
+          "id": "pp-normal-1", "daysAgo": 4,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "painFlag": true, "painSeverity": 2 },
+                { "painFlag": true, "painSeverity": 2 }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "no-pain-empty",
+      "sessions": [
+        {
+          "id": "pp-nopain-1", "daysAgo": 2,
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "muscle": "chest",
+              "sets": [ { "weight": 60, "reps": 8 }, { "weight": 60, "reps": 8 } ] }
+          ]
+        }
+      ]
+    }
+  ]
+}

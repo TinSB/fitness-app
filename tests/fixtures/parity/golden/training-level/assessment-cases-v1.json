@@ -1,0 +1,3483 @@
+{
+  "cases": [
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "unknown",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "至少完成 2–3 次正式训练，建立初始训练基线。",
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。",
+          "更多 RIR 记录会提高有效组和等级判断置信度。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "尚无正式训练记录，系统只能显示数据不足。",
+            "score": 0
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "currentE1RM 还缺少高质量来源组。",
+            "score": 0
+          },
+          {
+            "confidence": "low",
+            "name": "动作质量",
+            "reason": "还没有足够动作质量记录。",
+            "score": 0
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "high",
+            "name": "完成度",
+            "reason": "还没有完成度数据。",
+            "score": 0
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "还没有可用于频率判断的训练周。",
+            "score": 0
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "还没有有效组数据。",
+            "score": 0
+          }
+        ]
+      },
+      "history": [],
+      "label": "empty-unknown",
+      "levelLabelProbe": "数据不足",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 0,
+        "goodOrAcceptableRate": 0,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 0,
+        "totalSets": 0
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "unknown",
+        "limitations": [
+          "训练频率还不稳定，暂不建议高容量模板。"
+        ],
+        "nextDataNeeded": [
+          "至少完成 2–3 次正式训练，建立初始训练基线。",
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "已有 1 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 18
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 42
+          },
+          {
+            "confidence": "low",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 1.0 次。",
+            "score": 38
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "高置信有效组 3/3，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tl1-1"
+        }
+      ],
+      "label": "one-session-unknown",
+      "levelLabelProbe": "数据不足",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 3,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 3
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "unknown",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "至少完成 2–3 次正式训练，建立初始训练基线。",
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "已有 2 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 18
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 44
+          },
+          {
+            "confidence": "low",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 2.0 次。",
+            "score": 58
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "高置信有效组 6/6，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tl2-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tl2-2"
+        }
+      ],
+      "label": "two-sessions-unknown",
+      "levelLabelProbe": "数据不足",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 6,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 6
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "novice_plus",
+        "limitations": [
+          "训练频率还不稳定，暂不建议高容量模板。"
+        ],
+        "nextDataNeeded": [
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "已有 3 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 42
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 46
+          },
+          {
+            "confidence": "low",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 1.5 次。",
+            "score": 38
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "高置信有效组 9/9，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tl3-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            }
+          ],
+          "id": "tl3-2"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                }
+              ]
+            }
+          ],
+          "id": "tl3-3"
+        }
+      ],
+      "label": "three-sessions-clean",
+      "levelLabelProbe": "入门进阶",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 9,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 9
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "novice_plus",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "已有 5 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 42
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 50
+          },
+          {
+            "confidence": "medium",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 2.5 次。",
+            "score": 58
+          },
+          {
+            "confidence": "medium",
+            "name": "有效组质量",
+            "reason": "高置信有效组 15/15，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tl5-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            }
+          ],
+          "id": "tl5-2"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            }
+          ],
+          "id": "tl5-3"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                }
+              ]
+            }
+          ],
+          "id": "tl5-4"
+        },
+        {
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                }
+              ]
+            }
+          ],
+          "id": "tl5-5"
+        }
+      ],
+      "label": "five-sessions-clean",
+      "levelLabelProbe": "入门进阶",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 15,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 15
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "medium",
+        "level": "intermediate",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": true,
+          "aggressiveProgression": false,
+          "higherVolume": true,
+          "topBackoff": true
+        },
+        "signals": [
+          {
+            "confidence": "medium",
+            "name": "训练记录数量",
+            "reason": "已有 8 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 68
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 56
+          },
+          {
+            "confidence": "high",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "medium",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "medium",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 2.7 次。",
+            "score": 58
+          },
+          {
+            "confidence": "medium",
+            "name": "有效组质量",
+            "reason": "高置信有效组 24/24，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tl8-1"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            }
+          ],
+          "id": "tl8-2"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            }
+          ],
+          "id": "tl8-3"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                }
+              ]
+            }
+          ],
+          "id": "tl8-4"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                }
+              ]
+            }
+          ],
+          "id": "tl8-5"
+        },
+        {
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            }
+          ],
+          "id": "tl8-6"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            }
+          ],
+          "id": "tl8-7"
+        },
+        {
+          "date": "2026-05-14",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                }
+              ]
+            }
+          ],
+          "id": "tl8-8"
+        }
+      ],
+      "label": "eight-sessions-clean",
+      "levelLabelProbe": "中阶",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 24,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 24
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "high",
+        "level": "advanced",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "继续保持重量、次数、RIR、动作质量和不适标记的完整记录。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": true,
+          "aggressiveProgression": true,
+          "higherVolume": true,
+          "topBackoff": true
+        },
+        "signals": [
+          {
+            "confidence": "high",
+            "name": "训练记录数量",
+            "reason": "已有 12 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 90
+          },
+          {
+            "confidence": "high",
+            "name": "力量稳定性",
+            "reason": "有 2 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 90
+          },
+          {
+            "confidence": "high",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "medium",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "medium",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 3.0 次。",
+            "score": 72
+          },
+          {
+            "confidence": "high",
+            "name": "有效组质量",
+            "reason": "高置信有效组 72/72，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "tl12-1"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 121
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 121
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 121
+                }
+              ]
+            }
+          ],
+          "id": "tl12-2"
+        },
+        {
+          "date": "2026-05-26",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 122
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 122
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 122
+                }
+              ]
+            }
+          ],
+          "id": "tl12-3"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 123
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 123
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 123
+                }
+              ]
+            }
+          ],
+          "id": "tl12-4"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 124
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 124
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 124
+                }
+              ]
+            }
+          ],
+          "id": "tl12-5"
+        },
+        {
+          "date": "2026-05-19",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 125
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 125
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 125
+                }
+              ]
+            }
+          ],
+          "id": "tl12-6"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 125
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 125
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 125
+                }
+              ]
+            }
+          ],
+          "id": "tl12-7"
+        },
+        {
+          "date": "2026-05-14",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 126
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 126
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 126
+                }
+              ]
+            }
+          ],
+          "id": "tl12-8"
+        },
+        {
+          "date": "2026-05-12",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 127
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 127
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 127
+                }
+              ]
+            }
+          ],
+          "id": "tl12-9"
+        },
+        {
+          "date": "2026-05-09",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 87
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 87
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 87
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 128
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 128
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 128
+                }
+              ]
+            }
+          ],
+          "id": "tl12-10"
+        },
+        {
+          "date": "2026-05-07",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 87
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 87
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 87
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 129
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 129
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 129
+                }
+              ]
+            }
+          ],
+          "id": "tl12-11"
+        },
+        {
+          "date": "2026-05-05",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 88
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 88
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 88
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "canonicalExerciseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 130
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 130
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 130
+                }
+              ]
+            }
+          ],
+          "id": "tl12-12"
+        }
+      ],
+      "label": "twelve-sessions-rich",
+      "levelLabelProbe": "高阶",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 72,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 72
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "medium",
+        "level": "novice_plus",
+        "limitations": [
+          "近期不适记录偏高，高级训练功能保持关闭或保守。"
+        ],
+        "nextDataNeeded": [
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "medium",
+            "name": "训练记录数量",
+            "reason": "已有 7 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 68
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 54
+          },
+          {
+            "confidence": "medium",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "medium",
+            "name": "不适记录",
+            "reason": "近期有 2 个不适模式，训练建议会保持保守。",
+            "score": 25
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "medium",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 2.3 次。",
+            "score": 58
+          },
+          {
+            "confidence": "medium",
+            "name": "有效组质量",
+            "reason": "高置信有效组 21/21，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-1"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-2"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-3"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-4"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-5"
+        },
+        {
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-6"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 86
+                }
+              ]
+            }
+          ],
+          "id": "tlhp-7"
+        }
+      ],
+      "label": "highpain-override",
+      "levelLabelProbe": "入门进阶",
+      "painPatterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-20",
+          "severityAvg": 4,
+          "suggestedAction": "deload"
+        },
+        {
+          "area": "knee",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-18",
+          "severityAvg": 4.5,
+          "suggestedAction": "seek_professional"
+        }
+      ],
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 21,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 21
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "medium",
+        "level": "novice_plus",
+        "limitations": [
+          "poor technique 比例偏高，不允许判定为高阶。"
+        ],
+        "nextDataNeeded": [
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "medium",
+            "name": "训练记录数量",
+            "reason": "已有 6 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 68
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 52
+          },
+          {
+            "confidence": "high",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 50%，poor 占比 50%。",
+            "score": 25
+          },
+          {
+            "confidence": "medium",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "medium",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 3.0 次。",
+            "score": 72
+          },
+          {
+            "confidence": "medium",
+            "name": "有效组质量",
+            "reason": "高置信有效组 18/18，RIR 记录率 80%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlpt-1"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            }
+          ],
+          "id": "tlpt-2"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            }
+          ],
+          "id": "tlpt-3"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 83
+                }
+              ]
+            }
+          ],
+          "id": "tlpt-4"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 84
+                }
+              ]
+            }
+          ],
+          "id": "tlpt-5"
+        },
+        {
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            }
+          ],
+          "id": "tlpt-6"
+        }
+      ],
+      "label": "poor-technique-override",
+      "levelLabelProbe": "入门进阶",
+      "techniqueQualitySummary": {
+        "acceptable": 10,
+        "good": 10,
+        "goodOrAcceptableRate": 0.5,
+        "poor": 20,
+        "poorRate": 0.5,
+        "rirRecordedRate": 0.8,
+        "totalSets": 40
+      },
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 18,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 18
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "medium",
+        "level": "novice_plus",
+        "limitations": [
+          "完成率不足，暂不启用高训练量建议。"
+        ],
+        "nextDataNeeded": [
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "medium",
+            "name": "训练记录数量",
+            "reason": "已有 6 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 68
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 52
+          },
+          {
+            "confidence": "low",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "medium",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 25%，主训练完成率 25%。",
+            "score": 25
+          },
+          {
+            "confidence": "medium",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 3.0 次。",
+            "score": 72
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "高置信有效组 6/6，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlla-1"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlla-2"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlla-3"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlla-4"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlla-5"
+        },
+        {
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "weight": 80
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlla-6"
+        }
+      ],
+      "label": "low-adherence",
+      "levelLabelProbe": "入门进阶",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 6,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 6
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "unknown",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "至少完成 2–3 次正式训练，建立初始训练基线。",
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "已有 2 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 18
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 44
+          },
+          {
+            "confidence": "low",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 100%，poor 占比 0%。",
+            "score": 82
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "没有明显重复不适模式。",
+            "score": 88
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 4.3 次。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "高置信有效组 6/6，RIR 记录率 100%。",
+            "score": 82
+          }
+        ]
+      },
+      "calendarData": {
+        "weeklyFrequency": [
+          {
+            "sessionCount": 4
+          },
+          {
+            "sessionCount": 4
+          },
+          {
+            "sessionCount": 4
+          },
+          {
+            "sessionCount": 5
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlcal-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            }
+          ],
+          "id": "tlcal-2"
+        }
+      ],
+      "label": "calendar-frequency-override",
+      "levelLabelProbe": "数据不足",
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 6,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 6
+      }
+    },
+    {
+      "assessment": {
+        "confidence": "low",
+        "level": "novice_plus",
+        "limitations": [
+          "等级判断会继续随真实训练记录更新。"
+        ],
+        "nextDataNeeded": [
+          "继续记录到 6 次以上，系统才能给出中等置信判断。",
+          "为核心动作记录重量、次数、RIR 和动作质量，用于 currentE1RM。"
+        ],
+        "readinessForAdvancedFeatures": {
+          "advancedExerciseSelection": false,
+          "aggressiveProgression": false,
+          "higherVolume": false,
+          "topBackoff": false
+        },
+        "signals": [
+          {
+            "confidence": "low",
+            "name": "训练记录数量",
+            "reason": "已有 3 次正式训练记录；等级判断会随记录增加而变稳。",
+            "score": 42
+          },
+          {
+            "confidence": "low",
+            "name": "力量稳定性",
+            "reason": "有 1 个动作具备中高置信 currentE1RM；不会用单次最高重量直接判断等级。",
+            "score": 46
+          },
+          {
+            "confidence": "high",
+            "name": "动作质量",
+            "reason": "good/acceptable 占比 97%，poor 占比 3%。",
+            "score": 82
+          },
+          {
+            "confidence": "low",
+            "name": "不适记录",
+            "reason": "近期有 1 个不适模式，训练建议会保持保守。",
+            "score": 65
+          },
+          {
+            "confidence": "low",
+            "name": "完成度",
+            "reason": "最近完成率 100%，主训练完成率 100%。",
+            "score": 85
+          },
+          {
+            "confidence": "low",
+            "name": "训练频率",
+            "reason": "最近训练频率约每周 2.7 次。",
+            "score": 58
+          },
+          {
+            "confidence": "low",
+            "name": "有效组质量",
+            "reason": "高置信有效组 9/9，RIR 记录率 75%。",
+            "score": 82
+          }
+        ]
+      },
+      "calendarData": {
+        "weeklyFrequency": [
+          {
+            "sessionCount": 3
+          },
+          {
+            "sessionCount": 2
+          },
+          {
+            "sessionCount": 3
+          }
+        ]
+      },
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "tlall-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 81
+                }
+              ]
+            }
+          ],
+          "id": "tlall-2"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 82
+                }
+              ]
+            }
+          ],
+          "id": "tlall-3"
+        }
+      ],
+      "label": "all-overrides",
+      "levelLabelProbe": "入门进阶",
+      "painPatterns": [
+        {
+          "area": "shoulder",
+          "exerciseId": "overhead-press",
+          "frequency": 1,
+          "lastOccurredAt": "2026-05-22",
+          "severityAvg": 3,
+          "suggestedAction": "watch"
+        }
+      ],
+      "techniqueQualitySummary": {
+        "acceptable": 4,
+        "good": 25,
+        "goodOrAcceptableRate": 0.9667,
+        "poor": 1,
+        "poorRate": 0.0333,
+        "rirRecordedRate": 0.75,
+        "totalSets": 30
+      },
+      "techniqueQualitySummaryProbe": {
+        "acceptable": 0,
+        "good": 9,
+        "goodOrAcceptableRate": 1,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 1,
+        "totalSets": 9
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "4ccc7993c9f7b516583553a5465396127a293960",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "training-level/assessment-cases-v1"
+  },
+  "sourceFixtureId": "training-level/assessment-cases-v1"
+}
