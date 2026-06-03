@@ -1,0 +1,199 @@
+{
+  "cases": [
+    {
+      "draft": {
+        "changes": [
+          {
+            "muscleId": "chest",
+            "reason": "r",
+            "type": "add_sets"
+          }
+        ],
+        "id": "d1",
+        "sourceFingerprint": "coach-action|preset|fp",
+        "status": "draft",
+        "summary": "S",
+        "title": "T"
+      },
+      "fingerprint": "coach-action|preset|fp",
+      "kind": "draft",
+      "label": "draft sourceFingerprint short-circuit"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "day1",
+            "exerciseId": "bench",
+            "muscleId": "chest",
+            "reason": "chg reason",
+            "type": "add_sets"
+          }
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "explanation": "expl chest",
+        "id": "d2",
+        "sourceProgramTemplateId": "tplB",
+        "sourceRecommendationId": "volume-rec-1",
+        "sourceTemplateId": "tplA",
+        "status": "draft",
+        "summary": "Sum",
+        "title": "Add chest"
+      },
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|tpla|add_sets|chest|bench|current-cycle|ea8f2811",
+      "kind": "draft",
+      "label": "draft firstChange→muscle + volume source + sourceTemplateId-wins + reason-from-explanation"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "day2",
+            "exerciseId": "machine-row",
+            "reason": "swap reason",
+            "type": "swap_exercise"
+          }
+        ],
+        "createdAt": "2026-02-01T00:00:00.000Z",
+        "id": "d3",
+        "sourceProgramTemplateId": "tplC",
+        "sourceRecommendationId": "plateau-detected",
+        "status": "previewed",
+        "summary": "SumExercise",
+        "title": "Swap"
+      },
+      "fingerprint": "coach-action|plateau|create_plan_adjustment_preview|exercise|machine-row|tplc|swap_exercise|muscle-none|machine-row|current-cycle|a806857e",
+      "kind": "draft",
+      "label": "draft firstChange→exercise + plateau source + sourceProgramTemplateId-fallback + reason-from-change"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "day3",
+            "reason": "deload",
+            "type": "reduce_support"
+          }
+        ],
+        "createdAt": "2026-03-01T00:00:00.000Z",
+        "id": "d4",
+        "selectedRecommendationIds": [
+          "recovery-week-rec"
+        ],
+        "sourceProgramTemplateId": "tplD",
+        "status": "ready_to_apply",
+        "summary": "deload summary",
+        "title": "Deload"
+      },
+      "fingerprint": "coach-action|recovery|create_plan_adjustment_preview|template|day3|tpld|reduce_support|muscle-none|exercise-none|current-cycle|472ac5ba",
+      "kind": "draft",
+      "label": "draft firstChange→template + recovery source via selectedRecommendationIds + reason-from-change"
+    },
+    {
+      "draft": {
+        "changes": [],
+        "createdAt": "2026-04-01T00:00:00.000Z",
+        "id": "d5",
+        "status": "draft_created",
+        "summary": "sum5",
+        "title": "Plan tweak"
+      },
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|plan|plan|template-unknown|none|muscle-none|exercise-none|current-cycle|ff264527",
+      "kind": "draft",
+      "label": "draft no-change→plan + default source + reason-from-summary + template-unknown"
+    },
+    {
+      "fingerprint": "coach-action|history|fp",
+      "item": {
+        "appliedAt": "2026-01-01T00:00:00.000Z",
+        "changes": [
+          {
+            "muscleId": "legs",
+            "reason": "r",
+            "type": "add_sets"
+          }
+        ],
+        "id": "h1",
+        "rollbackAvailable": true,
+        "sourceFingerprint": "coach-action|history|fp"
+      },
+      "kind": "history",
+      "label": "history sourceFingerprint short-circuit"
+    },
+    {
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|legs|htpl|add_sets|legs|exercise-none|current-cycle|f7858d8b",
+      "item": {
+        "appliedAt": "2026-02-01T00:00:00.000Z",
+        "changes": [
+          {
+            "muscleId": "legs",
+            "reason": "chg",
+            "type": "add_sets"
+          }
+        ],
+        "id": "h2",
+        "rollbackAvailable": false,
+        "selectedRecommendationIds": [
+          "volume-up"
+        ],
+        "sourceProgramTemplateId": "htpl"
+      },
+      "kind": "history",
+      "label": "history full '计划调整' fallback (no main/experimental/explanation) + reason-from-change + volume source"
+    },
+    {
+      "fingerprint": "coach-action|plateau|create_plan_adjustment_preview|exercise|hack-squat|htpl3|swap_exercise|muscle-none|hack-squat|current-cycle|a56d2c72",
+      "item": {
+        "appliedAt": "2026-03-01T00:00:00.000Z",
+        "changes": [
+          {
+            "exerciseId": "hack-squat",
+            "reason": "cr",
+            "type": "swap_exercise"
+          }
+        ],
+        "experimentalProgramTemplateName": "Exp Plan",
+        "explanation": "detailed explanation",
+        "id": "h3",
+        "mainChangeSummary": "Increased squat volume",
+        "rollbackAvailable": true,
+        "selectedRecommendationIds": [
+          "plateau-x"
+        ],
+        "sourceProgramTemplateId": "htpl3"
+      },
+      "kind": "history",
+      "label": "history title-from-mainChangeSummary + description/reason-from-explanation + plateau source"
+    },
+    {
+      "fingerprint": "coach-action|recovery|create_plan_adjustment_preview|template|hday|htpl4|reduce_support|muscle-none|exercise-none|current-cycle|4e546592",
+      "item": {
+        "appliedAt": "2026-04-01T00:00:00.000Z",
+        "changes": [
+          {
+            "dayTemplateId": "hday",
+            "reason": "rs",
+            "type": "reduce_support"
+          }
+        ],
+        "experimentalProgramTemplateName": "Experimental Hypertrophy",
+        "id": "h4",
+        "rollbackAvailable": false,
+        "selectedRecommendationIds": [
+          "recovery-rec"
+        ],
+        "sourceProgramTemplateId": "htpl4"
+      },
+      "kind": "history",
+      "label": "history title-from-experimentalName + description-'计划调整' + recovery source"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e2af42ae51ad27b7f2d4ee2ab39504ea1359b628",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "coach-action-identity/draft-history-fingerprint-cases-v1"
+  },
+  "sourceFixtureId": "coach-action-identity/draft-history-fingerprint-cases-v1"
+}

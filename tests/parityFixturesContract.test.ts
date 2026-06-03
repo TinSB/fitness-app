@@ -180,6 +180,13 @@ const FIXTURE_IDS = [
   // port (IronPathL10n.Formatters) to reconcile entry-by-entry + branch-by-branch.
   // Generated; never hand-edited (§22).
   'i18n/formatters-pa-snapshot-v1',
+  // PA-S5 coachActionIdentityEngine fingerprint port — 3 OUTPUT fixtures
+  // (buildCoachActionFingerprint + the draft/history wrappers + dedupe) that the
+  // Swift CoachActionIdentityEngine compute-asserts function-by-function.
+  // Generated; never hand-edited (§22).
+  'coach-action-identity/fingerprint-cases-v1',
+  'coach-action-identity/draft-history-fingerprint-cases-v1',
+  'coach-action-identity/dedupe-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

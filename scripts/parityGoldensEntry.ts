@@ -304,6 +304,21 @@ import {
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
 // bundles cleanly under `vite build --ssr`.
 import { makeAppData, makeSession, makeStatus, getTemplate } from '../tests/fixtures';
+// PA-S5 — coachActionIdentityEngine fingerprint port parity slice. Imports the REAL
+// pure FNV-1a fingerprint functions so the coach-action-identity goldens are GENERATED
+// from TS truth, never hand-authored (§22). The Swift port (CoachActionIdentityEngine)
+// re-runs the SAME functions over the SAME echoed engineInput (action+context / draft /
+// item / drafts) and EXACT-asserts each fingerprint string + the deduped id order.
+// PURE / clockless — zero Date, no write path → generatedAtPolicy 'none'. Only the
+// 7-field FingerprintAction Pick (ts:4-7) is exercised; coachActionEngine is NOT imported.
+import {
+  buildCoachActionFingerprint,
+  buildProgramAdjustmentDraftFingerprint,
+  buildProgramAdjustmentHistoryFingerprint,
+  dedupeProgramAdjustmentDraftsByFingerprint,
+  type CoachActionFingerprintContext,
+} from '../src/engines/coachActionIdentityEngine';
+import type { ProgramAdjustmentDraft, ProgramAdjustmentHistoryItem } from '../src/models/training-model';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -608,6 +623,27 @@ const FIXTURE_IDS = [
   // ported items; riskLevel/reviewStatus are not used by the PA engine and not ported.
   // Pure display, no clock. Generated; never hand-edited (§22).
   'i18n/formatters-pa-snapshot-v1',
+  // PA-S5 coachActionIdentityEngine fingerprint port — 3 OUTPUT fixtures (each a
+  // `cases` array) FUNCTION-LEVEL pinning the ported pure FNV-1a engine. Each case
+  // echoes its engineInput + the REAL TS output; the Swift CoachActionIdentityEngine
+  // re-runs the SAME function on the SAME input and EXACT-asserts the result string.
+  // fingerprint-cases pins buildCoachActionFingerprint (context muscle/exercise/template
+  // target precedence · action.targetType/targetId fallback · suggestedChange.muscleId/
+  // exerciseIds[0] target fallback · all literal fallbacks coach-action/template-unknown/
+  // muscle-none/exercise-none/current-cycle/target-none · suggestedChangeType add_sets/
+  // remove_sets/swap_exercise/support_*/keep/none + fallback-wins · exerciseIds join ·
+  // weekId vs cycleId · textDigest from reason/description/title + normalizePart regex
+  // segments). draft-history-fingerprint-cases pins the two wrapper fns
+  // (sourceFingerprint short-circuit · firstChange→targetFromChange muscle/exercise/
+  // template/plan · sourceFromRecommendationId volume/plateau/recovery/default · the
+  // HistoryItem mainChangeSummary/experimentalProgramTemplateName/'计划调整' fallback
+  // chain). dedupe-cases pins dedupeProgramAdjustmentDraftsByFingerprint (skip
+  // 'recommendation' · same-fingerprint rank win · rank-tie time win · computed-fingerprint
+  // collapse · final time-DESC sort · equal-time JS-stable insertion order). PURE /
+  // clockless → generatedAtPolicy 'none'. Generated; never hand-edited (§22).
+  'coach-action-identity/fingerprint-cases-v1',
+  'coach-action-identity/draft-history-fingerprint-cases-v1',
+  'coach-action-identity/dedupe-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2848,6 +2884,52 @@ const generateDefaultProgramData = (_input: any, _meta: ParityMeta) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// PA-S5 — coachActionIdentityEngine fingerprint OUTPUT parity
+//
+// Each fixture carries a compact `cases` array; per case the generator dispatches on
+// `kind` to the matching REAL pure function, echoes the engineInput VERBATIM (the
+// objects the Swift port re-decodes + re-runs), and writes the REAL TS output:
+//   kind 'fingerprint' → buildCoachActionFingerprint(action, context) → `fingerprint`
+//   kind 'draft'       → buildProgramAdjustmentDraftFingerprint(draft) → `fingerprint`
+//   kind 'history'     → buildProgramAdjustmentHistoryFingerprint(item) → `fingerprint`
+//   kind 'dedupe'      → dedupeProgramAdjustmentDraftsByFingerprint(drafts) → `dedupedIds`
+// The fingerprint is a deterministic FNV-1a string (EXACT `==` on the Swift side); the
+// dedupe result is echoed as the ordered surviving-draft `id` list. PURE / clockless —
+// the engine carries no Date, so the goldens are byte-deterministic regardless of
+// generation time. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateCoachActionIdentity = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const kind = c.kind as string;
+    if (kind === 'fingerprint') {
+      const action = c.action ?? {};
+      const context = (c.context ?? {}) as CoachActionFingerprintContext;
+      const fingerprint = buildCoachActionFingerprint(action, context);
+      return { label: c.label ?? null, kind, action, context: c.context ?? {}, fingerprint };
+    }
+    if (kind === 'draft') {
+      const draft = c.draft as ProgramAdjustmentDraft;
+      const fingerprint = buildProgramAdjustmentDraftFingerprint(draft);
+      return { label: c.label ?? null, kind, draft: c.draft, fingerprint };
+    }
+    if (kind === 'history') {
+      const item = c.item as ProgramAdjustmentHistoryItem;
+      const fingerprint = buildProgramAdjustmentHistoryFingerprint(item);
+      return { label: c.label ?? null, kind, item: c.item, fingerprint };
+    }
+    if (kind === 'dedupe') {
+      const drafts = (Array.isArray(c.drafts) ? c.drafts : []) as ProgramAdjustmentDraft[];
+      const deduped = dedupeProgramAdjustmentDraftsByFingerprint(drafts);
+      const dedupedIds = deduped.map((d) => d.id);
+      return { label: c.label ?? null, kind, drafts: c.drafts ?? [], dedupedIds };
+    }
+    throw new Error(`parityGoldensEntry: coach-action-identity unknown case kind '${String(kind)}'`);
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2943,6 +3025,11 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'default-program-data/snapshot-v1': generateDefaultProgramData,
   // PA-S4 i18n/formatters PA-subset snapshot (template-name + change-label formatters).
   'i18n/formatters-pa-snapshot-v1': generateI18nFormattersPaSnapshot,
+  // PA-S5 coachActionIdentityEngine fingerprint fixtures — all three routed through the
+  // single dispatch-by-kind generator (fingerprint / draft+history / dedupe).
+  'coach-action-identity/fingerprint-cases-v1': generateCoachActionIdentity,
+  'coach-action-identity/draft-history-fingerprint-cases-v1': generateCoachActionIdentity,
+  'coach-action-identity/dedupe-cases-v1': generateCoachActionIdentity,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
