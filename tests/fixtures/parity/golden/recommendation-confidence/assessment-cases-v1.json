@@ -1,0 +1,1668 @@
+{
+  "cases": [
+    {
+      "exerciseId": "bench-press",
+      "history": [],
+      "label": "empty-history-low",
+      "result": {
+        "level": "low",
+        "missingData": [
+          "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+          "补充动作质量记录。",
+          "补充余力（RIR）记录。",
+          "记录推荐重量反馈。",
+          "继续积累可用于力量估算的高质量正式组。"
+        ],
+        "reasons": [
+          {
+            "effect": "lower_confidence",
+            "id": "history-sparse",
+            "label": "训练记录不足",
+            "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "technique-missing",
+            "label": "动作质量缺失",
+            "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "rir-missing",
+            "label": "余力记录缺失",
+            "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+          }
+        ],
+        "score": 0,
+        "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+        "title": "推荐可信度：低"
+      }
+    },
+    {
+      "e1rmProfile": {
+        "current": {
+          "confidence": "high",
+          "e1rmKg": 100,
+          "sourceSet": {
+            "painFlag": false,
+            "techniqueQuality": "good"
+          }
+        }
+      },
+      "effectiveSetSummary": {
+        "completedSets": 4,
+        "effectiveSets": 4,
+        "highConfidenceEffectiveSets": 3
+      },
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-4",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "rc-single-1",
+          "loadFeedback": [
+            {
+              "date": "2026-05-30",
+              "exerciseId": "bench-press",
+              "feedback": "good",
+              "sessionId": "rc-single-1"
+            },
+            {
+              "date": "2026-05-30",
+              "exerciseId": "other-lift",
+              "feedback": "too_heavy",
+              "sessionId": "rc-single-1"
+            }
+          ]
+        }
+      ],
+      "label": "single-session-rich-forced-low",
+      "loadFeedback": {
+        "adjustment": {
+          "dominantFeedback": "good"
+        },
+        "counts": {
+          "good": 3,
+          "too_heavy": 0,
+          "too_light": 0
+        }
+      },
+      "result": {
+        "level": "low",
+        "missingData": [
+          "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+        ],
+        "reasons": [
+          {
+            "effect": "lower_confidence",
+            "id": "history-sparse",
+            "label": "训练记录不足",
+            "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "load-feedback-stable",
+            "label": "重量反馈稳定",
+            "reason": "推荐重量反馈方向比较稳定。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "e1rm-high-quality",
+            "label": "力量基准可靠",
+            "reason": "当前力量估算来自较高质量记录，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "effective-sets-stable",
+            "label": "有效组稳定",
+            "reason": "近期有效组和高置信有效组比例较稳定。"
+          }
+        ],
+        "score": 86,
+        "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+        "title": "推荐可信度：低"
+      }
+    },
+    {
+      "e1rmProfile": {
+        "best": {
+          "confidence": "high",
+          "e1rmKg": 102,
+          "sourceSet": {
+            "painFlag": false,
+            "techniqueQuality": "good"
+          }
+        },
+        "current": {
+          "confidence": "high",
+          "e1rmKg": 100,
+          "sourceSet": {
+            "painFlag": false,
+            "techniqueQuality": "good"
+          }
+        }
+      },
+      "effectiveSetSummary": {
+        "completedSets": 10,
+        "effectiveSets": 9,
+        "highConfidenceEffectiveSets": 7
+      },
+      "exerciseId": "bench-press",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 82.5
+                }
+              ]
+            }
+          ],
+          "id": "rc-hi-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 82.5
+                }
+              ]
+            }
+          ],
+          "id": "rc-hi-2"
+        },
+        {
+          "date": "2026-05-23",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "rc-hi-3"
+        },
+        {
+          "date": "2026-05-20",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 77.5
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "rc-hi-4"
+        },
+        {
+          "date": "2026-05-16",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 75
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 77.5
+                }
+              ]
+            }
+          ],
+          "id": "rc-hi-5"
+        }
+      ],
+      "label": "high-confidence-strong",
+      "loadFeedback": {
+        "adjustment": {
+          "dominantFeedback": "good"
+        },
+        "counts": {
+          "good": 4,
+          "too_heavy": 0,
+          "too_light": 0
+        }
+      },
+      "result": {
+        "level": "high",
+        "missingData": [],
+        "reasons": [
+          {
+            "effect": "raise_confidence",
+            "id": "history-stable",
+            "label": "近期记录稳定",
+            "reason": "已有 5 次同动作正式记录，可用于校准推荐。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "load-feedback-stable",
+            "label": "重量反馈稳定",
+            "reason": "推荐重量反馈方向比较稳定。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "e1rm-high-quality",
+            "label": "力量基准可靠",
+            "reason": "当前力量估算来自较高质量记录，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "effective-sets-stable",
+            "label": "有效组稳定",
+            "reason": "近期有效组和高置信有效组比例较稳定。"
+          }
+        ],
+        "score": 100,
+        "summary": "这条推荐可信度较高。已有 5 次同动作正式记录，可用于校准推荐。",
+        "title": "推荐可信度：高"
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "e1rmProfile": {
+        "current": {
+          "confidence": "medium",
+          "e1rmKg": 140,
+          "sourceSet": {
+            "painFlag": false,
+            "techniqueQuality": "good"
+          }
+        }
+      },
+      "effectiveSetSummary": {
+        "completedSets": 10,
+        "effectiveSets": 6,
+        "highConfidenceEffectiveSets": 3
+      },
+      "exerciseId": "squat",
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "rc-mid-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "techniqueQuality": "acceptable",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "rc-mid-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "techniqueQuality": "good",
+                  "weight": 117.5
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "techniqueQuality": "good",
+                  "weight": 117.5
+                }
+              ]
+            }
+          ],
+          "id": "rc-mid-3"
+        }
+      ],
+      "label": "medium-building-plain",
+      "result": {
+        "level": "medium",
+        "missingData": [
+          "记录推荐重量反馈。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "informational",
+            "id": "e1rm-medium",
+            "label": "力量基准可参考",
+            "reason": "已有力量估算，但仍需要更多稳定记录提高可信度。"
+          }
+        ],
+        "score": 65,
+        "summary": "这条推荐可信度中等。已有可参考数据，但仍有部分记录需要继续积累。",
+        "title": "推荐可信度：中等"
+      },
+      "techniqueQualitySummary": {
+        "acceptable": 0,
+        "good": 7,
+        "goodOrAcceptableRate": 0.8,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 0.7,
+        "totalSets": 9
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "exerciseId": "deadlift",
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "deadlift",
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "poor",
+                  "weight": 150
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "deadlift-2",
+                  "reps": 5,
+                  "techniqueQuality": "acceptable",
+                  "weight": 150
+                }
+              ]
+            }
+          ],
+          "id": "rc-tp-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "deadlift",
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "poor",
+                  "weight": 150
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "deadlift-2",
+                  "reps": 5,
+                  "techniqueQuality": "acceptable",
+                  "weight": 150
+                }
+              ]
+            }
+          ],
+          "id": "rc-tp-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "deadlift",
+              "canonicalExerciseId": "deadlift",
+              "id": "deadlift",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "techniqueQuality": "acceptable",
+                  "weight": 150
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "deadlift-2",
+                  "reps": 5,
+                  "techniqueQuality": "acceptable",
+                  "weight": 150
+                }
+              ]
+            }
+          ],
+          "id": "rc-tp-3"
+        }
+      ],
+      "label": "technique-poor-rir-incomplete",
+      "result": {
+        "level": "low",
+        "missingData": [
+          "记录推荐重量反馈。",
+          "继续积累可用于力量估算的高质量正式组。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "technique-poor",
+            "label": "动作质量偏低",
+            "reason": "近期动作质量偏差较多，推荐需要保守参考。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "rir-incomplete",
+            "label": "余力记录不完整",
+            "reason": "部分正式组缺少余力（RIR），推荐可信度下调。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "effective-sets-weak",
+            "label": "有效组证据偏弱",
+            "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+          }
+        ],
+        "score": 21,
+        "summary": "这条推荐建议保守参考。近期动作质量偏差较多，推荐需要保守参考。",
+        "title": "推荐可信度：低"
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "exerciseId": "overhead-press",
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "overhead-press",
+              "canonicalExerciseId": "overhead-press",
+              "id": "overhead-press",
+              "muscle": "shoulders",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "overhead-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "overhead-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "rc-pv-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "overhead-press",
+              "canonicalExerciseId": "overhead-press",
+              "id": "overhead-press",
+              "muscle": "shoulders",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "overhead-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "overhead-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "rc-pv-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "overhead-press",
+              "canonicalExerciseId": "overhead-press",
+              "id": "overhead-press",
+              "muscle": "shoulders",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "overhead-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "overhead-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "rc-pv-3"
+        }
+      ],
+      "label": "pain-and-volatile",
+      "loadFeedback": [
+        {
+          "feedback": "too_heavy"
+        },
+        {
+          "feedback": "too_heavy"
+        },
+        {
+          "feedback": "too_light"
+        },
+        {
+          "feedback": "good"
+        }
+      ],
+      "painPatterns": [
+        {
+          "area": "shoulders",
+          "exerciseId": "overhead-press",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-25",
+          "severityAvg": 4,
+          "suggestedAction": "deload"
+        }
+      ],
+      "result": {
+        "level": "low",
+        "missingData": [
+          "继续积累可用于力量估算的高质量正式组。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "pain-pattern",
+            "label": "不适记录明显",
+            "reason": "近期不适记录与当前推荐相关，建议优先保守执行。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "load-feedback-volatile",
+            "label": "重量反馈波动",
+            "reason": "近期既有偏重也有偏轻反馈，说明推荐重量仍需校准。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "effective-sets-weak",
+            "label": "有效组证据偏弱",
+            "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+          }
+        ],
+        "score": 30,
+        "summary": "这条推荐建议保守参考。近期不适记录与当前推荐相关，建议优先保守执行。",
+        "title": "推荐可信度：低"
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "e1rmProfile": {
+        "confidence": "low",
+        "e1rmKg": 90,
+        "sourceSet": {
+          "painFlag": false,
+          "techniqueQuality": "good"
+        }
+      },
+      "effectiveSetSummary": {
+        "completedSets": 12,
+        "effectiveSets": 4,
+        "highConfidenceEffectiveSets": 1
+      },
+      "exerciseId": "row",
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "row",
+              "canonicalExerciseId": "row",
+              "id": "row",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "row-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "rc-lw-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "row",
+              "canonicalExerciseId": "row",
+              "id": "row",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "row-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "rc-lw-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "row",
+              "canonicalExerciseId": "row",
+              "id": "row",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "row-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "rc-lw-3"
+        }
+      ],
+      "label": "e1rm-low-effective-weak",
+      "result": {
+        "level": "medium",
+        "missingData": [
+          "记录推荐重量反馈。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "e1rm-low-confidence",
+            "label": "力量基准置信度低",
+            "reason": "当前力量估算置信度偏低，推荐应保守参考。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "effective-sets-weak",
+            "label": "有效组证据偏弱",
+            "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "training-baseline",
+            "label": "训练基线仍在建立",
+            "reason": "训练基线仍在建立，系统不会把推荐解释为高置信推进。"
+          }
+        ],
+        "score": 56,
+        "summary": "这条推荐可信度中等。已有可参考数据，但仍有部分记录需要继续积累。",
+        "title": "推荐可信度：中等"
+      },
+      "trainingLevel": "unknown"
+    },
+    {
+      "exerciseId": "leg-press",
+      "history": [
+        {
+          "date": "2026-05-30",
+          "editedAt": "2026-05-31T08:00:00.000Z",
+          "editHistory": [
+            {
+              "at": "2026-05-31T08:00:00.000Z",
+              "fields": [
+                "weight"
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "actualExerciseId": "leg-press",
+              "baseId": "leg-press",
+              "canonicalExerciseId": "leg-press",
+              "id": "leg-press",
+              "muscle": "quads",
+              "originalExerciseId": "hack-squat",
+              "replacementExerciseId": "leg-press",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 200
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 200
+                }
+              ]
+            }
+          ],
+          "id": "rc-re-1"
+        },
+        {
+          "date": "2026-05-26",
+          "exercises": [
+            {
+              "baseId": "leg-press",
+              "canonicalExerciseId": "leg-press",
+              "id": "leg-press",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 200
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 200
+                }
+              ]
+            }
+          ],
+          "id": "rc-re-2"
+        },
+        {
+          "date": "2026-05-22",
+          "exercises": [
+            {
+              "baseId": "leg-press",
+              "canonicalExerciseId": "leg-press",
+              "id": "leg-press",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 195
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 195
+                }
+              ]
+            }
+          ],
+          "id": "rc-re-3"
+        }
+      ],
+      "label": "recent-replacement-and-edits-number",
+      "recentEdits": 1,
+      "result": {
+        "level": "low",
+        "missingData": [
+          "记录推荐重量反馈。",
+          "继续积累可用于力量估算的高质量正式组。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "effective-sets-weak",
+            "label": "有效组证据偏弱",
+            "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "recent-replacement",
+            "label": "近期替代动作",
+            "reason": "近期刚发生动作替代，原动作和实际执行动作的数据还需要重新稳定。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "recent-edits",
+            "label": "历史记录刚修正",
+            "reason": "最近修正过历史记录，推荐会等待数据重新稳定。"
+          }
+        ],
+        "score": 40,
+        "summary": "这条推荐建议保守参考。有效组或高置信有效组不足，推荐可信度下调。",
+        "title": "推荐可信度：低"
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "exerciseId": "curl",
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "curl",
+              "canonicalExerciseId": "curl",
+              "id": "curl",
+              "muscle": "biceps",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "curl-1",
+                  "reps": 10,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 20
+                },
+                {
+                  "displayUnit": "lb",
+                  "done": true,
+                  "id": "curl-2",
+                  "reps": 10,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 45
+                }
+              ]
+            }
+          ],
+          "id": "rc-mu-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "curl",
+              "canonicalExerciseId": "curl",
+              "id": "curl",
+              "muscle": "biceps",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "curl-1",
+                  "reps": 10,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 20
+                },
+                {
+                  "displayUnit": "lb",
+                  "done": true,
+                  "id": "curl-2",
+                  "reps": 10,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 45
+                }
+              ]
+            }
+          ],
+          "id": "rc-mu-2"
+        }
+      ],
+      "label": "mixed-units-sparse-beginner",
+      "result": {
+        "level": "medium",
+        "missingData": [
+          "记录推荐重量反馈。",
+          "继续积累可用于力量估算的高质量正式组。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "effective-sets-weak",
+            "label": "有效组证据偏弱",
+            "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "unit-history-sparse",
+            "label": "单位记录需要稳定",
+            "reason": "近期单位显示不完全一致，且历史记录较少，建议先保守参考。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "training-baseline",
+            "label": "训练基线仍在建立",
+            "reason": "训练基线仍在建立，系统不会把推荐解释为高置信推进。"
+          }
+        ],
+        "score": 54,
+        "summary": "这条推荐可信度中等。已有可参考数据，但仍有部分记录需要继续积累。",
+        "title": "推荐可信度：中等"
+      },
+      "trainingLevel": "beginner"
+    },
+    {
+      "e1rmProfile": {
+        "current": {
+          "confidence": "medium",
+          "e1rmKg": 140,
+          "sourceSet": {
+            "painFlag": false,
+            "techniqueQuality": "good"
+          }
+        }
+      },
+      "effectiveSetSummary": {
+        "completedSets": 10,
+        "effectiveSets": 6,
+        "highConfidenceEffectiveSets": 3
+      },
+      "exerciseId": "squat",
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "rc-me-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "techniqueQuality": "acceptable",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "rc-me-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "techniqueQuality": "good",
+                  "weight": 117.5
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "techniqueQuality": "good",
+                  "weight": 117.5
+                }
+              ]
+            }
+          ],
+          "id": "rc-me-3"
+        }
+      ],
+      "label": "medium-with-edits-array",
+      "recentEdits": [
+        {
+          "editedAt": "2026-05-31T08:00:00.000Z",
+          "fields": [
+            "reps"
+          ]
+        }
+      ],
+      "result": {
+        "level": "medium",
+        "missingData": [
+          "记录推荐重量反馈。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "informational",
+            "id": "e1rm-medium",
+            "label": "力量基准可参考",
+            "reason": "已有力量估算，但仍需要更多稳定记录提高可信度。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "recent-edits",
+            "label": "历史记录刚修正",
+            "reason": "最近修正过历史记录，推荐会等待数据重新稳定。"
+          }
+        ],
+        "score": 59,
+        "summary": "这条推荐可信度中等，建议保守参考。最近修正过历史记录，推荐会等待数据重新稳定。",
+        "title": "推荐可信度：中等"
+      },
+      "techniqueQualitySummary": {
+        "acceptable": 0,
+        "good": 7,
+        "goodOrAcceptableRate": 0.8,
+        "poor": 0,
+        "poorRate": 0,
+        "rirRecordedRate": 0.7,
+        "totalSets": 9
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "rc-lf-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "rc-lf-2"
+        }
+      ],
+      "label": "load-feedback-stable-other-no-exercise-id",
+      "loadFeedback": {
+        "a": "too_heavy",
+        "b": "too_heavy",
+        "c": "too_heavy"
+      },
+      "result": {
+        "level": "medium",
+        "missingData": [
+          "继续积累可用于力量估算的高质量正式组。"
+        ],
+        "reasons": [
+          {
+            "effect": "informational",
+            "id": "history-building",
+            "label": "记录正在积累",
+            "reason": "已有一些同动作记录，但样本量仍在积累中。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "technique-stable",
+            "label": "动作质量稳定",
+            "reason": "动作质量记录整体稳定，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "rir-complete",
+            "label": "余力记录完整",
+            "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "no-pain",
+            "label": "无明显不适",
+            "reason": "近期同动作记录没有明显不适标记。"
+          },
+          {
+            "effect": "raise_confidence",
+            "id": "load-feedback-stable",
+            "label": "重量反馈稳定",
+            "reason": "推荐重量反馈方向比较稳定。"
+          },
+          {
+            "effect": "lower_confidence",
+            "id": "effective-sets-weak",
+            "label": "有效组证据偏弱",
+            "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+          }
+        ],
+        "score": 72,
+        "summary": "这条推荐可信度中等。已有可参考数据，但仍有部分记录需要继续积累。",
+        "title": "推荐可信度：中等"
+      },
+      "trainingLevel": "intermediate"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "6342dc622ae095f664b12dfd64ea66fe3ad95da4",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "recommendation-confidence/assessment-cases-v1"
+  },
+  "sourceFixtureId": "recommendation-confidence/assessment-cases-v1"
+}

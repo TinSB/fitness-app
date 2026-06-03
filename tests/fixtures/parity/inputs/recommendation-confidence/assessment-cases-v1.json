@@ -1,0 +1,160 @@
+{
+  "parityMeta": {
+    "id": "recommendation-confidence/assessment-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-5b buildRecommendationConfidence function-level parity. empty-history-low (0 sessions → forced low + history-sparse-0 + technique-missing + rir-missing + e1rm-absent + feedback-total-0 → low summary) / single-session-rich-forced-low (1 session, every raiser present but level forced low at ≤1 session + session.loadFeedback exerciseId-filter path) / high-confidence-strong (5 sessions/10 sets all good+rir, no pain, e1rm high-quality, stable good-dominant summary feedback, effective-sets-stable → high + high summary) / medium-building-plain (3 sessions history-building + techniqueQualitySummary-override no-reason + no-pain + e1rm-medium + effective-neither + feedback-total-0 + intermediate → medium-plain summary) / technique-poor-rir-incomplete (poor≥2 + rirRecordedRate<0.5 + e1rm-absent) / pain-and-volatile (painPatterns severityAvg≥3.5 → pain-pattern + 74 cap, loadFeedback ARRAY too_heavy+too_light → volatile) / e1rm-low-effective-weak (e1rmKg+sourceSet union → low-confidence + effective-sets-weak + trainingLevel 'unknown' baseline) / recent-replacement-and-edits-number (actual≠original replacement + recentEdits NUMBER + session.editedAt/editHistory → recent-edits + 92 cap) / mixed-units-sparse-beginner (kg+lb displayUnit sparse history + trainingLevel 'beginner' baseline) / medium-with-edits-array (recentEdits ARRAY + medium-risk summary) / load-feedback-stable-other-no-exercise-id (record-of-values too_heavy-dominant → stable +4 branch + NO exerciseId match-all). Each case echoes the engineInput + buildRecommendationConfidence result. Generated from src/engines/recommendationConfidenceEngine.ts via scripts/generate-parity-goldens.mjs; the Swift RecommendationConfidenceEngine compute-asserts each result == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "6342dc622ae095f664b12dfd64ea66fe3ad95da4",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "empty-history-low",
+      "exerciseId": "bench-press",
+      "sessions": []
+    },
+    {
+      "label": "single-session-rich-forced-low",
+      "exerciseId": "bench-press",
+      "sessions": [
+        {
+          "id": "rc-single-1", "daysAgo": 2,
+          "loadFeedback": [
+            { "exerciseId": "bench-press", "sessionId": "rc-single-1", "date": "2026-05-30", "feedback": "good" },
+            { "exerciseId": "other-lift", "sessionId": "rc-single-1", "date": "2026-05-30", "feedback": "too_heavy" }
+          ],
+          "exercises": [
+            { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+              "sets": [
+                { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" },
+                { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" },
+                { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" },
+                { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }
+              ] }
+          ]
+        }
+      ],
+      "e1rmProfile": { "current": { "e1rmKg": 100, "confidence": "high", "sourceSet": { "techniqueQuality": "good", "painFlag": false } } },
+      "loadFeedback": { "counts": { "good": 3, "too_heavy": 0, "too_light": 0 }, "adjustment": { "dominantFeedback": "good" } },
+      "effectiveSetSummary": { "completedSets": 4, "effectiveSets": 4, "highConfidenceEffectiveSets": 3 }
+    },
+    {
+      "label": "high-confidence-strong",
+      "exerciseId": "bench-press",
+      "sessions": [
+        { "id": "rc-hi-1", "daysAgo": 2, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 82.5, "reps": 5, "rir": 1, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-hi-2", "daysAgo": 5, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 82.5, "reps": 5, "rir": 1, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-hi-3", "daysAgo": 9, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 80, "reps": 6, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-hi-4", "daysAgo": 12, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 77.5, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-hi-5", "daysAgo": 16, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 75, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 77.5, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "e1rmProfile": { "current": { "e1rmKg": 100, "confidence": "high", "sourceSet": { "techniqueQuality": "good", "painFlag": false } }, "best": { "e1rmKg": 102, "confidence": "high", "sourceSet": { "techniqueQuality": "good", "painFlag": false } } },
+      "loadFeedback": { "counts": { "good": 4, "too_heavy": 0, "too_light": 0 }, "adjustment": { "dominantFeedback": "good" } },
+      "effectiveSetSummary": { "completedSets": 10, "effectiveSets": 9, "highConfidenceEffectiveSets": 7 },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "medium-building-plain",
+      "exerciseId": "squat",
+      "sessions": [
+        { "id": "rc-mid-1", "daysAgo": 3, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 120, "reps": 5, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-mid-2", "daysAgo": 7, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 120, "reps": 5, "techniqueQuality": "acceptable", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-mid-3", "daysAgo": 11, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 117.5, "reps": 5, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 117.5, "reps": 5, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "techniqueQualitySummary": { "totalSets": 9, "good": 7, "acceptable": 0, "poor": 0, "goodOrAcceptableRate": 0.8, "poorRate": 0, "rirRecordedRate": 0.7 },
+      "e1rmProfile": { "current": { "e1rmKg": 140, "confidence": "medium", "sourceSet": { "techniqueQuality": "good", "painFlag": false } } },
+      "effectiveSetSummary": { "completedSets": 10, "effectiveSets": 6, "highConfidenceEffectiveSets": 3 },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "technique-poor-rir-incomplete",
+      "exerciseId": "deadlift",
+      "sessions": [
+        { "id": "rc-tp-1", "daysAgo": 3, "exercises": [ { "id": "deadlift", "baseId": "deadlift", "canonicalExerciseId": "deadlift", "muscle": "back", "sets": [ { "weight": 150, "reps": 5, "rir": 1, "techniqueQuality": "poor", "displayUnit": "kg" }, { "weight": 150, "reps": 5, "techniqueQuality": "acceptable", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-tp-2", "daysAgo": 7, "exercises": [ { "id": "deadlift", "baseId": "deadlift", "canonicalExerciseId": "deadlift", "muscle": "back", "sets": [ { "weight": 150, "reps": 5, "rir": 1, "techniqueQuality": "poor", "displayUnit": "kg" }, { "weight": 150, "reps": 5, "techniqueQuality": "acceptable", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-tp-3", "daysAgo": 11, "exercises": [ { "id": "deadlift", "baseId": "deadlift", "canonicalExerciseId": "deadlift", "muscle": "back", "sets": [ { "weight": 150, "reps": 5, "techniqueQuality": "acceptable", "displayUnit": "kg" }, { "weight": 150, "reps": 5, "techniqueQuality": "acceptable", "displayUnit": "kg" } ] } ] }
+      ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "pain-and-volatile",
+      "exerciseId": "overhead-press",
+      "sessions": [
+        { "id": "rc-pv-1", "daysAgo": 3, "exercises": [ { "id": "overhead-press", "baseId": "overhead-press", "canonicalExerciseId": "overhead-press", "muscle": "shoulders", "sets": [ { "weight": 50, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 50, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-pv-2", "daysAgo": 7, "exercises": [ { "id": "overhead-press", "baseId": "overhead-press", "canonicalExerciseId": "overhead-press", "muscle": "shoulders", "sets": [ { "weight": 50, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 50, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-pv-3", "daysAgo": 11, "exercises": [ { "id": "overhead-press", "baseId": "overhead-press", "canonicalExerciseId": "overhead-press", "muscle": "shoulders", "sets": [ { "weight": 50, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 50, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "painPatterns": [
+        { "area": "shoulders", "exerciseId": "overhead-press", "frequency": 3, "severityAvg": 4, "lastOccurredAt": "2026-05-25", "suggestedAction": "deload" }
+      ],
+      "loadFeedback": [
+        { "feedback": "too_heavy" },
+        { "feedback": "too_heavy" },
+        { "feedback": "too_light" },
+        { "feedback": "good" }
+      ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "e1rm-low-effective-weak",
+      "exerciseId": "row",
+      "sessions": [
+        { "id": "rc-lw-1", "daysAgo": 3, "exercises": [ { "id": "row", "baseId": "row", "canonicalExerciseId": "row", "muscle": "back", "sets": [ { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-lw-2", "daysAgo": 7, "exercises": [ { "id": "row", "baseId": "row", "canonicalExerciseId": "row", "muscle": "back", "sets": [ { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-lw-3", "daysAgo": 11, "exercises": [ { "id": "row", "baseId": "row", "canonicalExerciseId": "row", "muscle": "back", "sets": [ { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 70, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "e1rmProfile": { "e1rmKg": 90, "confidence": "low", "sourceSet": { "techniqueQuality": "good", "painFlag": false } },
+      "effectiveSetSummary": { "completedSets": 12, "effectiveSets": 4, "highConfidenceEffectiveSets": 1 },
+      "trainingLevel": "unknown"
+    },
+    {
+      "label": "recent-replacement-and-edits-number",
+      "exerciseId": "leg-press",
+      "sessions": [
+        {
+          "id": "rc-re-1", "daysAgo": 2, "editedAt": "2026-05-31T08:00:00.000Z",
+          "editHistory": [ { "at": "2026-05-31T08:00:00.000Z", "fields": ["weight"] } ],
+          "exercises": [ { "id": "leg-press", "baseId": "leg-press", "canonicalExerciseId": "leg-press", "originalExerciseId": "hack-squat", "actualExerciseId": "leg-press", "replacementExerciseId": "leg-press", "muscle": "quads", "sets": [ { "weight": 200, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 200, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ]
+        },
+        { "id": "rc-re-2", "daysAgo": 6, "exercises": [ { "id": "leg-press", "baseId": "leg-press", "canonicalExerciseId": "leg-press", "muscle": "quads", "sets": [ { "weight": 200, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 200, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-re-3", "daysAgo": 10, "exercises": [ { "id": "leg-press", "baseId": "leg-press", "canonicalExerciseId": "leg-press", "muscle": "quads", "sets": [ { "weight": 195, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 195, "reps": 8, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "recentEdits": 1,
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "mixed-units-sparse-beginner",
+      "exerciseId": "curl",
+      "sessions": [
+        { "id": "rc-mu-1", "daysAgo": 3, "exercises": [ { "id": "curl", "baseId": "curl", "canonicalExerciseId": "curl", "muscle": "biceps", "sets": [ { "weight": 20, "reps": 10, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 45, "reps": 10, "rir": 2, "techniqueQuality": "good", "displayUnit": "lb" } ] } ] },
+        { "id": "rc-mu-2", "daysAgo": 7, "exercises": [ { "id": "curl", "baseId": "curl", "canonicalExerciseId": "curl", "muscle": "biceps", "sets": [ { "weight": 20, "reps": 10, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 45, "reps": 10, "rir": 2, "techniqueQuality": "good", "displayUnit": "lb" } ] } ] }
+      ],
+      "trainingLevel": "beginner"
+    },
+    {
+      "label": "medium-with-edits-array",
+      "exerciseId": "squat",
+      "sessions": [
+        { "id": "rc-me-1", "daysAgo": 3, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 120, "reps": 5, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-me-2", "daysAgo": 7, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 120, "reps": 5, "techniqueQuality": "acceptable", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-me-3", "daysAgo": 11, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 117.5, "reps": 5, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 117.5, "reps": 5, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "techniqueQualitySummary": { "totalSets": 9, "good": 7, "acceptable": 0, "poor": 0, "goodOrAcceptableRate": 0.8, "poorRate": 0, "rirRecordedRate": 0.7 },
+      "e1rmProfile": { "current": { "e1rmKg": 140, "confidence": "medium", "sourceSet": { "techniqueQuality": "good", "painFlag": false } } },
+      "effectiveSetSummary": { "completedSets": 10, "effectiveSets": 6, "highConfidenceEffectiveSets": 3 },
+      "recentEdits": [ { "editedAt": "2026-05-31T08:00:00.000Z", "fields": ["reps"] } ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "load-feedback-stable-other-no-exercise-id",
+      "sessions": [
+        { "id": "rc-lf-1", "daysAgo": 3, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] },
+        { "id": "rc-lf-2", "daysAgo": 7, "exercises": [ { "id": "squat", "baseId": "squat", "canonicalExerciseId": "squat", "muscle": "quads", "sets": [ { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" }, { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good", "displayUnit": "kg" } ] } ] }
+      ],
+      "loadFeedback": { "a": "too_heavy", "b": "too_heavy", "c": "too_heavy" },
+      "trainingLevel": "intermediate"
+    }
+  ]
+}

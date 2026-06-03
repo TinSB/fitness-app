@@ -1,0 +1,418 @@
+{
+  "cases": [
+    {
+      "label": "no-rows-empty",
+      "report": {
+        "muscles": [],
+        "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": []
+    },
+    {
+      "label": "insufficient-data-no-evidence-unmapped",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "low",
+            "decision": "insufficient_data",
+            "muscleId": "forearms",
+            "reason": "可用训练量和完成度记录还不够，暂时不建议调整。当前约 0 组。",
+            "suggestedActions": [
+              "继续记录未标注肌群的完成组、有效组、余力（RIR）和动作质量。"
+            ],
+            "title": "未标注肌群：数据不足训练量"
+          }
+        ],
+        "summary": "下周训练量建议：数据不足 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 0,
+          "effectiveSets": 0,
+          "muscleId": "forearms",
+          "targetSets": 0,
+          "weightedEffectiveSets": 0
+        }
+      ]
+    },
+    {
+      "adherenceReport": {
+        "mainlineRate": 90,
+        "overallRate": 90,
+        "recentSessionCount": 1
+      },
+      "label": "data-sparse-insufficient",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "low",
+            "decision": "insufficient_data",
+            "muscleId": "chest",
+            "reason": "可用训练量和完成度记录还不够，暂时不建议调整。当前约 5/12 组。",
+            "suggestedActions": [
+              "继续记录胸的完成组、有效组、余力（RIR）和动作质量。"
+            ],
+            "title": "胸：数据不足训练量"
+          }
+        ],
+        "summary": "下周训练量建议：数据不足 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 6,
+          "effectiveSets": 5,
+          "muscleId": "chest",
+          "targetSets": 12,
+          "weightedEffectiveSets": 5
+        }
+      ]
+    },
+    {
+      "label": "hold-training-level-unknown",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "low",
+            "decision": "hold",
+            "muscleId": "quads",
+            "reason": "系统仍在建立训练基线，暂时不建议直接增减训练量。当前约 8/12 组。",
+            "setsDelta": 0,
+            "suggestedActions": [
+              "暂缓调整股四头肌训练量，继续收集记录。",
+              "本周不要自动改计划，等数据更稳定后再进入计划调整预览。"
+            ],
+            "title": "股四头肌：暂缓训练量"
+          }
+        ],
+        "summary": "下周训练量建议：暂缓 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "weeklyVolumeSummary": {
+        "muscles": [
+          {
+            "completedSets": 8,
+            "effectiveSets": 8,
+            "muscleId": "quads",
+            "targetSets": 12,
+            "weightedEffectiveSets": 8
+          }
+        ]
+      }
+    },
+    {
+      "adherenceReport": {
+        "mainlineRate": 90,
+        "overallRate": 90,
+        "recentSessionCount": 5
+      },
+      "effectiveSetSummary": {
+        "byMuscle": {
+          "chest": {
+            "completedSets": 14,
+            "effectiveSets": 14,
+            "highConfidenceEffectiveSets": 12,
+            "weightedEffectiveSets": 14
+          }
+        }
+      },
+      "label": "decrease-volume-high",
+      "loadFeedback": {
+        "adjustment": {},
+        "counts": {
+          "good": 0,
+          "too_heavy": 3,
+          "too_light": 0
+        }
+      },
+      "report": {
+        "muscles": [
+          {
+            "confidence": "high",
+            "decision": "decrease",
+            "muscleId": "chest",
+            "reason": "训练量已经偏高，重量反馈多次偏重，下周先保守处理。当前约 14/10 组。",
+            "setsDelta": -2,
+            "suggestedActions": [
+              "下周先给胸减少 2 组。",
+              "优先保留关键主训练，减少额外辅助量。"
+            ],
+            "title": "胸：减少训练量"
+          }
+        ],
+        "summary": "下周训练量建议：减少 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "muscleId": "chest",
+          "targetSets": 10
+        }
+      ]
+    },
+    {
+      "adherenceReport": {
+        "mainlineRate": 60,
+        "overallRate": 60,
+        "recentSessionCount": 5
+      },
+      "label": "decrease-strong-risk-multi",
+      "loadFeedback": [
+        {
+          "feedback": "too_heavy"
+        },
+        {
+          "feedback": "too_heavy"
+        },
+        {
+          "feedback": "good"
+        }
+      ],
+      "painPatterns": [
+        {
+          "area": "shoulders",
+          "exerciseId": "overhead-press",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-25",
+          "severityAvg": 4,
+          "suggestedAction": "substitute"
+        }
+      ],
+      "report": {
+        "muscles": [
+          {
+            "confidence": "high",
+            "decision": "decrease",
+            "muscleId": "shoulders",
+            "reason": "近期有相关不适记录，近期完成率下降，重量反馈多次偏重，训练质量或动作质量不够稳定，下周先保守处理。当前约 8/12 组。",
+            "setsDelta": -2,
+            "suggestedActions": [
+              "下周先给肩减少 2 组。",
+              "优先保留关键主训练，减少额外辅助量。"
+            ],
+            "title": "肩：减少训练量"
+          }
+        ],
+        "summary": "下周训练量建议：减少 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "sessionQualityResults": [
+        {
+          "confidence": "medium",
+          "issues": [
+            {
+              "id": "technique",
+              "label": "动作质量偏低",
+              "reason": "近期动作质量下降。",
+              "tone": "warning"
+            }
+          ],
+          "level": "low",
+          "nextSuggestions": [],
+          "positives": [],
+          "score": 40,
+          "summary": "本次训练质量偏低。",
+          "title": "本次质量偏低"
+        },
+        {
+          "confidence": "medium",
+          "issues": [],
+          "level": "low",
+          "nextSuggestions": [],
+          "positives": [],
+          "score": 45,
+          "summary": "本次训练质量偏低。",
+          "title": "本次质量偏低"
+        },
+        {
+          "confidence": "medium",
+          "issues": [],
+          "level": "medium",
+          "nextSuggestions": [],
+          "positives": [],
+          "score": 60,
+          "summary": "本次训练质量中等。",
+          "title": "本次质量中等"
+        }
+      ],
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 8,
+          "effectiveSets": 8,
+          "muscleId": "shoulders",
+          "targetSets": 12,
+          "weightedEffectiveSets": 8
+        }
+      ]
+    },
+    {
+      "label": "increase-volume-low",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "medium",
+            "decision": "increase",
+            "muscleId": "quads",
+            "reason": "该肌群低于目标，但近期完成度和训练质量可以支持小幅加量。当前约 6/12 组。",
+            "setsDelta": 2,
+            "suggestedActions": [
+              "下周只给股四头肌增加 2 组，先观察完成度和不适反馈。",
+              "优先把新增组放在动作质量稳定的训练日。"
+            ],
+            "title": "股四头肌：增加训练量"
+          }
+        ],
+        "summary": "下周训练量建议：增加 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 6,
+          "effectiveSets": 6,
+          "muscleId": "quads",
+          "remainingSets": 6,
+          "targetSets": 12,
+          "weightedEffectiveSets": 6
+        }
+      ]
+    },
+    {
+      "label": "maintain-near-target",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "medium",
+            "decision": "maintain",
+            "muscleId": "back",
+            "reason": "该肌群有效组接近目标，当前更适合维持训练量。当前约 11/12 组。",
+            "setsDelta": 0,
+            "suggestedActions": [
+              "下周维持背当前训练量。",
+              "继续记录余力（RIR）和动作质量，用于下次复核。"
+            ],
+            "title": "背：维持训练量"
+          }
+        ],
+        "summary": "下周训练量建议：维持 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 11,
+          "effectiveSets": 11,
+          "muscleId": "back",
+          "status": "near_target",
+          "targetSets": 12,
+          "weightedEffectiveSets": 11
+        }
+      ]
+    },
+    {
+      "adherenceReport": {
+        "mainlineRate": 70,
+        "overallRate": 70,
+        "recentSessionCount": 4
+      },
+      "label": "hold-final-inconsistent",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "low",
+            "decision": "hold",
+            "muscleId": "hamstrings",
+            "reason": "当前信号不够一致，暂时不建议主动增减训练量。当前约 6/12 组。",
+            "setsDelta": 0,
+            "suggestedActions": [
+              "暂缓调整腘绳肌训练量，继续收集记录。",
+              "本周不要自动改计划，等数据更稳定后再进入计划调整预览。"
+            ],
+            "title": "腘绳肌：暂缓训练量"
+          }
+        ],
+        "summary": "下周训练量建议：暂缓 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 6,
+          "effectiveSets": 6,
+          "muscleId": "hamstrings",
+          "targetSets": 12,
+          "weightedEffectiveSets": 6
+        }
+      ]
+    },
+    {
+      "label": "multi-muscle-mixed",
+      "report": {
+        "muscles": [
+          {
+            "confidence": "medium",
+            "decision": "increase",
+            "muscleId": "chest",
+            "reason": "该肌群低于目标，但近期完成度和训练质量可以支持小幅加量。当前约 6/12 组。",
+            "setsDelta": 2,
+            "suggestedActions": [
+              "下周只给自定义胸增加 2 组，先观察完成度和不适反馈。",
+              "优先把新增组放在动作质量稳定的训练日。"
+            ],
+            "title": "自定义胸：增加训练量"
+          },
+          {
+            "confidence": "medium",
+            "decision": "maintain",
+            "muscleId": "back",
+            "reason": "该肌群有效组接近目标，当前更适合维持训练量。当前约 11/12 组。",
+            "setsDelta": 0,
+            "suggestedActions": [
+              "下周维持背当前训练量。",
+              "继续记录余力（RIR）和动作质量，用于下次复核。"
+            ],
+            "title": "背：维持训练量"
+          },
+          {
+            "confidence": "medium",
+            "decision": "decrease",
+            "muscleId": "腿",
+            "reason": "训练量已经偏高，下周先保守处理。当前约 14/10 组。",
+            "setsDelta": -2,
+            "suggestedActions": [
+              "下周先给腿减少 2 组。",
+              "优先保留关键主训练，减少额外辅助量。"
+            ],
+            "title": "腿：减少训练量"
+          }
+        ],
+        "summary": "下周训练量建议：增加 1 个肌群，维持 1 个肌群，减少 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "muscleId": "chest",
+          "muscleName": "自定义胸",
+          "targetSets": 12,
+          "weightedEffectiveSets": 6
+        },
+        {
+          "muscle": "back",
+          "targetSets": 12,
+          "weightedEffectiveSets": 11
+        },
+        {
+          "muscleId": "腿",
+          "targetSets": 10,
+          "weightedEffectiveSets": 14
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "6342dc622ae095f664b12dfd64ea66fe3ad95da4",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "volume-adaptation/report-cases-v1"
+  },
+  "sourceFixtureId": "volume-adaptation/report-cases-v1"
+}

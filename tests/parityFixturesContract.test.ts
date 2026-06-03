@@ -151,6 +151,9 @@ const FIXTURE_IDS = [
   // AN-5 painPattern (trainingLevel-consumed subset) + trainingLevel fixtures.
   'pain-pattern/aggregation-cases-v1',
   'training-level/assessment-cases-v1',
+  // AN-5b recommendationConfidence + volumeAdaptation fixtures.
+  'recommendation-confidence/assessment-cases-v1',
+  'volume-adaptation/report-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -352,7 +355,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live + 3 AN-1 leaf-analytics + 3 AN-1b boundary + 2 AN-2 plateau-detection + 2 AN-3 effective-set + 5 AN-3 analytics + 2 AN-4 session-quality + 2 AN-5 pain-pattern/training-level)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live + 3 AN-1 leaf-analytics + 3 AN-1b boundary + 2 AN-2 plateau-detection + 2 AN-3 effective-set + 5 AN-3 analytics + 2 AN-4 session-quality + 2 AN-5 pain-pattern/training-level + 2 AN-5b recommendation-confidence/volume-adaptation)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {
