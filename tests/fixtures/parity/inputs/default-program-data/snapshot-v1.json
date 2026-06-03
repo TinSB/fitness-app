@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "default-program-data/snapshot-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S3 trainingData data-constant port — a full snapshot of the six frozen data constants (DEFAULT_PROGRAM_TEMPLATE from src/data/defaults.ts:83 + INITIAL_TEMPLATES from src/data/defaultTemplates.ts:9 carrying the REAL makeExercise output from src/data/exerciseLibrary.ts:1500 + CORRECTION_MODULES from src/data/supportModules.ts:3 + FUNCTIONAL_ADDONS from src/data/supportModules.ts:185 + DEFAULT_SCREENING_PROFILE from src/data/defaults.ts:47), plus per-constant counts. The Swift port (IronPathTrainingDecision DefaultTrainingData / SupportModules) reconstructs the same snapshot from its mirrored constants and asserts it equals this golden item-by-item (every template / day-template / module / addon / nested-exercise field + each makeExercise product's alternativeIds/alternativePriorities), so no entry can be dropped or altered in transcription.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "81637797d7218ce3909162821b9004b99ab8fefd",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No input params — the generator transcribes the static, committed data constants directly from src/data/* (no engine call, no clock, generatedAtPolicy 'none'). makeExercise's alternativeIds/alternativePriorities are derived from the REAL EXERCISE_KNOWLEDGE_OVERRIDES (exerciseLibrary.ts:485); the Swift port reuses the already-ported ReplacementEngineKnowledge (SR-2) + ExerciseLibrary.mapLegacyAlternativeLabelsToIds (SR-1) rather than re-porting the override tables, and this golden reconciles the result. DEFAULT_MESOCYCLE_PLAN (defaults.ts:114, carries new Date()) is OUT OF SCOPE and not referenced by any of these six constants."
+  }
+}

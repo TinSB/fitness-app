@@ -1,0 +1,2104 @@
+{
+  "correctionModules": [
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 10,
+      "exercises": [
+        {
+          "cue": "先打开胸椎，不要用腰椎代偿",
+          "exerciseId": "thoracic_extension_foam",
+          "name": "泡沫轴胸椎伸展",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "肋骨下沉，前锯肌带动上举",
+          "exerciseId": "wall_slide",
+          "name": "墙滑",
+          "repMax": 12,
+          "repMin": 10,
+          "sets": 2
+        },
+        {
+          "cue": "后拉时别耸肩",
+          "exerciseId": "face_pull",
+          "name": "面拉",
+          "repMax": 15,
+          "repMin": 12,
+          "sets": 2
+        },
+        {
+          "cue": "轻收下巴，激活深颈屈肌",
+          "exerciseId": "chin_tuck",
+          "holdSec": 3,
+          "name": "收下巴",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_upper_crossed_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 12,
+      "minimumEffectiveDose": 8,
+      "name": "上交叉纠偏热身包",
+      "stage": "warmup",
+      "taperRules": [
+        "连续两周 issue score 下降时回到维持剂量"
+      ],
+      "targetIssue": "upper_crossed"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 8,
+      "exercises": [
+        {
+          "cue": "先稳住肋骨，再收肩胛",
+          "exerciseId": "band_pull_apart",
+          "name": "弹力带拉开",
+          "repMax": 15,
+          "repMin": 12,
+          "sets": 2
+        },
+        {
+          "cue": "只动肩胛，不塌腰",
+          "exerciseId": "scap_pushup",
+          "name": "肩胛俯卧撑",
+          "repMax": 12,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "控制上旋，不耸肩",
+          "exerciseId": "wall_slide",
+          "name": "墙滑",
+          "repMax": 12,
+          "repMin": 10,
+          "sets": 1
+        }
+      ],
+      "id": "corr_scapular_control_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 10,
+      "minimumEffectiveDose": 6,
+      "name": "肩胛控制激活包",
+      "stage": "warmup",
+      "taperRules": [
+        "最近两次上肢主动作恢复正常时降回基线"
+      ],
+      "targetIssue": "scapular_control"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 8,
+      "exercises": [
+        {
+          "cue": "腰背贴地，呼气锁住肋骨",
+          "exerciseId": "dead_bug",
+          "name": "死虫",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "骨盆不要旋转",
+          "exerciseId": "side_plank",
+          "holdSec": 20,
+          "name": "侧桥",
+          "repMax": 30,
+          "repMin": 20,
+          "sets": 2
+        }
+      ],
+      "id": "corr_core_control_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 10,
+      "minimumEffectiveDose": 6,
+      "name": "核心控制纠偏包",
+      "stage": "warmup",
+      "taperRules": [
+        "深蹲和髋铰链表现稳定后降回基线"
+      ],
+      "targetIssue": "core_control"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 8,
+      "exercises": [
+        {
+          "cue": "膝盖始终对准脚尖",
+          "exerciseId": "mini_band_walk",
+          "name": "弹力带侧步",
+          "repMax": 12,
+          "repMin": 10,
+          "sets": 2
+        },
+        {
+          "cue": "骨盆保持水平",
+          "exerciseId": "single_leg_glute_bridge",
+          "name": "单腿臀桥",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_hip_stability_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 10,
+      "minimumEffectiveDose": 6,
+      "name": "髋稳定纠偏包",
+      "stage": "warmup",
+      "taperRules": [
+        "单腿稳定问题改善后减少到最小有效剂量"
+      ],
+      "targetIssue": "hip_stability"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 7,
+      "exercises": [
+        {
+          "cue": "脚跟不离地，推动胫骨前移",
+          "exerciseId": "knee_to_wall",
+          "name": "膝触墙",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "补足踝背屈末端控制",
+          "exerciseId": "soleus_raise",
+          "name": "屈膝提踵",
+          "repMax": 15,
+          "repMin": 12,
+          "sets": 2
+        }
+      ],
+      "id": "corr_ankle_mobility_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 9,
+      "minimumEffectiveDose": 5,
+      "name": "踝活动受限补丁",
+      "stage": "warmup",
+      "taperRules": [
+        "深蹲模式改善后维持每周一次"
+      ],
+      "targetIssue": "ankle_mobility"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 7,
+      "exercises": [
+        {
+          "cue": "重心压在中足，先找直立躯干",
+          "exerciseId": "counterbalance_squat",
+          "name": "配重前举深蹲",
+          "repMax": 8,
+          "repMin": 6,
+          "sets": 2
+        },
+        {
+          "cue": "膝盖前送，保持胸廓堆叠",
+          "exerciseId": "heel_elevated_squat",
+          "name": "抬跟深蹲",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_squat_lean_forward_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 9,
+      "minimumEffectiveDose": 5,
+      "name": "深蹲前倾补丁",
+      "stage": "warmup",
+      "taperRules": [
+        "深蹲轨迹稳定后回到维持剂量"
+      ],
+      "targetIssue": "squat_lean_forward"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 7,
+      "exercises": [
+        {
+          "cue": "呼气收肋，后腿臀部主动发力",
+          "exerciseId": "half_kneeling_hip_flexor",
+          "holdSec": 20,
+          "name": "半跪髋屈肌伸展",
+          "repMax": 8,
+          "repMin": 6,
+          "sets": 2
+        },
+        {
+          "cue": "避免腰椎代偿，保持骨盆稳定",
+          "exerciseId": "glute_bridge_march",
+          "name": "桥式交替抬腿",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_hip_flexor_tightness_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 9,
+      "minimumEffectiveDose": 5,
+      "name": "髋屈肌紧张补丁",
+      "stage": "warmup",
+      "taperRules": [
+        "骨盆位置恢复稳定后降到最小有效剂量"
+      ],
+      "targetIssue": "hip_flexor_tightness"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 8,
+      "exercises": [
+        {
+          "cue": "保持三点贴杆，用髋部后移发力",
+          "exerciseId": "hip_hinge_dowel",
+          "name": "棍棒髋铰链",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "不要扭腰，保持肋骨和骨盆堆叠",
+          "exerciseId": "bird_dog",
+          "name": "鸟狗式",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_lumbar_compensation_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 10,
+      "minimumEffectiveDose": 6,
+      "name": "下背代偿控制包",
+      "stage": "warmup",
+      "taperRules": [
+        "硬拉与划船恢复稳定后回到基线剂量"
+      ],
+      "targetIssue": "lumbar_compensation"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 7,
+      "exercises": [
+        {
+          "cue": "旋转来自胸椎，不要借腰发力",
+          "exerciseId": "open_book",
+          "name": "开书式",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "配合呼气打开上背",
+          "exerciseId": "thread_the_needle",
+          "name": "穿针引线",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_thoracic_rotation_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 9,
+      "minimumEffectiveDose": 5,
+      "name": "胸椎旋转补丁",
+      "stage": "warmup",
+      "taperRules": [
+        "上背旋转控制改善后减回维持剂量"
+      ],
+      "targetIssue": "thoracic_rotation"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 7,
+      "exercises": [
+        {
+          "cue": "先找肩胛上旋，再推进",
+          "exerciseId": "half_kneeling_landmine_press",
+          "name": "半跪地雷管推",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        },
+        {
+          "cue": "避免耸肩和腰椎代偿",
+          "exerciseId": "wall_slide_lift_off",
+          "name": "墙滑离墙",
+          "repMax": 10,
+          "repMin": 8,
+          "sets": 2
+        }
+      ],
+      "id": "corr_overhead_press_restriction_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 9,
+      "minimumEffectiveDose": 5,
+      "name": "垂直推举受限补丁",
+      "stage": "warmup",
+      "taperRules": [
+        "上举动作稳定后改为维持剂量"
+      ],
+      "targetIssue": "overhead_press_restriction"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 6,
+      "exercises": [
+        {
+          "cue": "长呼气，把肋骨带回中立位",
+          "exerciseId": "90_90_breathing",
+          "name": "90/90 呼吸",
+          "repMax": 6,
+          "repMin": 5,
+          "sets": 2
+        },
+        {
+          "cue": "保持腹压，不让腰椎塌陷",
+          "exerciseId": "bear_exhale",
+          "name": "熊式呼气",
+          "repMax": 6,
+          "repMin": 5,
+          "sets": 2
+        }
+      ],
+      "id": "corr_breathing_ribcage_01",
+      "insertionStage": "warmup",
+      "maxRecommendedDose": 8,
+      "minimumEffectiveDose": 4,
+      "name": "呼吸与肋骨位置控制",
+      "stage": "warmup",
+      "taperRules": [
+        "呼吸堆叠稳定后回到最小剂量"
+      ],
+      "targetIssue": "breathing_ribcage"
+    }
+  ],
+  "counts": {
+    "correctionExercises": 25,
+    "correctionModules": 11,
+    "dayTemplates": 8,
+    "functionalAddons": 6,
+    "functionalExercises": 11,
+    "initialTemplates": 8,
+    "totalTemplateExercises": 44,
+    "weeklyMuscleTargets": 10
+  },
+  "defaultProgramTemplate": {
+    "correctionStrategy": "moderate",
+    "daysPerWeek": 4,
+    "dayTemplates": [
+      {
+        "correctionBlockIds": [
+          "corr_upper_crossed_01",
+          "corr_scapular_control_01"
+        ],
+        "estimatedDurationMin": 70,
+        "focusMuscles": [
+          "胸",
+          "肩",
+          "手臂"
+        ],
+        "functionalBlockIds": [
+          "func_overhead_stability_01"
+        ],
+        "id": "push-a",
+        "mainExerciseIds": [
+          "bench-press",
+          "incline-db-press",
+          "machine-chest-press",
+          "cable-fly",
+          "lateral-raise",
+          "triceps-pushdown"
+        ],
+        "name": "推 A"
+      },
+      {
+        "correctionBlockIds": [
+          "corr_scapular_control_01",
+          "corr_thoracic_rotation_01"
+        ],
+        "estimatedDurationMin": 70,
+        "focusMuscles": [
+          "背",
+          "肩",
+          "手臂"
+        ],
+        "functionalBlockIds": [
+          "func_core_anti_rotation_01"
+        ],
+        "id": "pull-a",
+        "mainExerciseIds": [
+          "lat-pulldown",
+          "seated-row",
+          "barbell-row",
+          "face-pull",
+          "db-curl",
+          "hammer-curl"
+        ],
+        "name": "拉 A"
+      },
+      {
+        "correctionBlockIds": [
+          "corr_ankle_mobility_01",
+          "corr_core_control_01"
+        ],
+        "estimatedDurationMin": 80,
+        "focusMuscles": [
+          "腿"
+        ],
+        "functionalBlockIds": [
+          "func_single_leg_01"
+        ],
+        "id": "legs-a",
+        "mainExerciseIds": [
+          "squat",
+          "romanian-deadlift",
+          "leg-press",
+          "leg-curl",
+          "calf-raise"
+        ],
+        "name": "腿 A"
+      },
+      {
+        "correctionBlockIds": [
+          "corr_upper_crossed_01",
+          "corr_scapular_control_01"
+        ],
+        "estimatedDurationMin": 70,
+        "focusMuscles": [
+          "胸",
+          "背",
+          "肩",
+          "手臂"
+        ],
+        "functionalBlockIds": [
+          "func_overhead_stability_01"
+        ],
+        "id": "upper",
+        "mainExerciseIds": [
+          "db-bench-press",
+          "lat-pulldown",
+          "shoulder-press",
+          "one-arm-db-row",
+          "lateral-raise",
+          "triceps-pushdown",
+          "db-curl"
+        ],
+        "name": "上肢"
+      },
+      {
+        "correctionBlockIds": [
+          "corr_ankle_mobility_01",
+          "corr_core_control_01"
+        ],
+        "estimatedDurationMin": 70,
+        "focusMuscles": [
+          "腿"
+        ],
+        "functionalBlockIds": [
+          "func_single_leg_01"
+        ],
+        "id": "lower",
+        "mainExerciseIds": [
+          "hack-squat",
+          "db-rdl",
+          "leg-press",
+          "leg-curl",
+          "calf-raise"
+        ],
+        "name": "下肢"
+      },
+      {
+        "correctionBlockIds": [],
+        "estimatedDurationMin": 45,
+        "focusMuscles": [
+          "手臂",
+          "肩"
+        ],
+        "functionalBlockIds": [
+          "func_carry_capacity_01"
+        ],
+        "id": "arms",
+        "mainExerciseIds": [
+          "close-grip-bench",
+          "preacher-curl",
+          "triceps-pushdown",
+          "hammer-curl",
+          "lateral-raise"
+        ],
+        "name": "手臂 + 三角肌"
+      },
+      {
+        "correctionBlockIds": [],
+        "estimatedDurationMin": 30,
+        "focusMuscles": [
+          "胸",
+          "背",
+          "腿",
+          "肩"
+        ],
+        "functionalBlockIds": [
+          "func_carry_capacity_01"
+        ],
+        "id": "quick-30",
+        "mainExerciseIds": [
+          "bench-press",
+          "lat-pulldown",
+          "hack-squat",
+          "lateral-raise"
+        ],
+        "name": "快练 30"
+      },
+      {
+        "correctionBlockIds": [],
+        "estimatedDurationMin": 55,
+        "focusMuscles": [
+          "胸",
+          "背",
+          "腿",
+          "手臂"
+        ],
+        "functionalBlockIds": [
+          "func_carry_capacity_01"
+        ],
+        "id": "crowded-gym",
+        "mainExerciseIds": [
+          "machine-chest-press",
+          "lat-pulldown",
+          "leg-press",
+          "cable-fly",
+          "triceps-pushdown",
+          "hammer-curl"
+        ],
+        "name": "人多替代"
+      }
+    ],
+    "functionalStrategy": "standard",
+    "id": "program-hypertrophy-support",
+    "primaryGoal": "hypertrophy",
+    "splitType": "upper_lower",
+    "userId": "local-user",
+    "weeklyMuscleTargets": {
+      "abs": 6,
+      "back": 14,
+      "biceps": 8,
+      "calves": 6,
+      "chest": 12,
+      "glutes": 8,
+      "hamstrings": 8,
+      "quads": 10,
+      "shoulders": 10,
+      "triceps": 8
+    }
+  },
+  "defaultScreeningProfile": {
+    "adaptiveState": {
+      "improvingIssues": [],
+      "issueScores": {},
+      "lastUpdated": "",
+      "moduleDose": {},
+      "painByExercise": {},
+      "performanceDrops": []
+    },
+    "correctionPriority": [
+      "upper_crossed",
+      "scapular_control",
+      "core_control"
+    ],
+    "movementFlags": {
+      "ankleMobility": "limited",
+      "hingePattern": "good",
+      "hipFlexorLength": "limited",
+      "lumbarControl": "good",
+      "overheadMobility": "limited",
+      "ribCagePosition": "limited",
+      "scapularControl": "limited",
+      "singleLegStability": "limited",
+      "squatPattern": "good",
+      "thoracicRotation": "limited",
+      "trunkStability": "limited",
+      "verticalPressTolerance": "limited"
+    },
+    "painTriggers": [],
+    "postureFlags": {
+      "anteriorPelvicTilt": "none",
+      "dynamicKneeValgus": "none",
+      "forwardHead": "mild",
+      "roundedShoulders": "moderate",
+      "thoracicKyphosis": "mild"
+    },
+    "restrictedExercises": [],
+    "userId": "local-user"
+  },
+  "functionalAddons": [
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 8,
+      "exercises": [
+        {
+          "exerciseId": "pallof_press",
+          "name": "帕洛夫抗旋推",
+          "repMax": 12,
+          "repMin": 10,
+          "restSec": 45,
+          "sets": 3
+        },
+        {
+          "distanceM": 20,
+          "exerciseId": "single_arm_carry",
+          "name": "单臂农夫走",
+          "restSec": 45,
+          "sets": 3
+        }
+      ],
+      "id": "func_core_anti_rotation_01",
+      "insertionRule": "after_main",
+      "insertionStage": "after_main",
+      "maxRecommendedDose": 10,
+      "minimumEffectiveDose": 6,
+      "name": "抗旋转核心补丁",
+      "taperRules": [
+        "连续两周 trunk stability 改善后回到维持"
+      ],
+      "targetAbility": "anti_rotation"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 8,
+      "exercises": [
+        {
+          "exerciseId": "single_leg_rdl",
+          "name": "单腿 RDL",
+          "repMax": 10,
+          "repMin": 8,
+          "restSec": 45,
+          "sets": 2
+        },
+        {
+          "exerciseId": "split_squat_iso",
+          "name": "分腿蹲等长停留",
+          "repMax": 8,
+          "repMin": 6,
+          "restSec": 45,
+          "sets": 2
+        }
+      ],
+      "id": "func_single_leg_01",
+      "insertionRule": "after_main",
+      "insertionStage": "after_main",
+      "maxRecommendedDose": 10,
+      "minimumEffectiveDose": 6,
+      "name": "单腿稳定补丁",
+      "taperRules": [
+        "单腿控制稳定后保留最小剂量"
+      ],
+      "targetAbility": "single_leg_stability"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 6,
+      "exercises": [
+        {
+          "distanceM": 25,
+          "exerciseId": "farmer_carry",
+          "name": "农夫走",
+          "restSec": 45,
+          "sets": 3
+        }
+      ],
+      "id": "func_carry_capacity_01",
+      "insertionRule": "finisher",
+      "insertionStage": "finisher",
+      "maxRecommendedDose": 8,
+      "minimumEffectiveDose": 4,
+      "name": "搬运能力补丁",
+      "taperRules": [
+        "整体疲劳偏高时改成维持剂量"
+      ],
+      "targetAbility": "carry_capacity"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 6,
+      "exercises": [
+        {
+          "exerciseId": "bottom_up_press",
+          "name": "倒置壶铃推举",
+          "repMax": 8,
+          "repMin": 6,
+          "restSec": 45,
+          "sets": 2
+        },
+        {
+          "distanceM": 15,
+          "exerciseId": "waiter_carry",
+          "name": "服务员行走",
+          "restSec": 45,
+          "sets": 2
+        }
+      ],
+      "id": "func_overhead_stability_01",
+      "insertionRule": "after_main",
+      "insertionStage": "after_main",
+      "maxRecommendedDose": 8,
+      "minimumEffectiveDose": 4,
+      "name": "上举稳定补丁",
+      "taperRules": [
+        "垂直推恢复后减为每周一次"
+      ],
+      "targetAbility": "overhead_stability"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 6,
+      "exercises": [
+        {
+          "distanceM": 20,
+          "exerciseId": "march_carry",
+          "name": "行进式负重行走",
+          "restSec": 45,
+          "sets": 2
+        },
+        {
+          "exerciseId": "step_up_hold",
+          "name": "登阶停留",
+          "repMax": 8,
+          "repMin": 6,
+          "restSec": 45,
+          "sets": 2
+        }
+      ],
+      "id": "func_gait_bracing_01",
+      "insertionRule": "finisher",
+      "insertionStage": "finisher",
+      "maxRecommendedDose": 8,
+      "minimumEffectiveDose": 4,
+      "name": "步态与支撑补丁",
+      "taperRules": [
+        "下肢稳定恢复后回到维持剂量"
+      ],
+      "targetAbility": "gait_bracing"
+    },
+    {
+      "doseStrategy": "adaptive",
+      "durationMin": 6,
+      "exercises": [
+        {
+          "exerciseId": "single_leg_reach",
+          "name": "单腿前伸触碰",
+          "repMax": 8,
+          "repMin": 6,
+          "restSec": 45,
+          "sets": 2
+        },
+        {
+          "exerciseId": "lateral_step_down",
+          "name": "侧向下台阶",
+          "repMax": 8,
+          "repMin": 6,
+          "restSec": 45,
+          "sets": 2
+        }
+      ],
+      "id": "func_balance_01",
+      "insertionRule": "after_main",
+      "insertionStage": "after_main",
+      "maxRecommendedDose": 8,
+      "minimumEffectiveDose": 4,
+      "name": "平衡与落地控制",
+      "taperRules": [
+        "单腿稳定改善后减到最小有效剂量"
+      ],
+      "targetAbility": "balance"
+    }
+  ],
+  "initialTemplates": [
+    {
+      "duration": 70,
+      "exercises": [
+        {
+          "alias": "卧推",
+          "alternativeIds": [
+            "db-bench-press",
+            "machine-chest-press",
+            "push-up",
+            "incline-db-press",
+            "cable-fly",
+            "triceps-pushdown",
+            "shoulder-press",
+            "machine-shoulder-press"
+          ],
+          "alternativePriorities": {
+            "cable-fly": "not_recommended",
+            "db-bench-press": "priority",
+            "incline-db-press": "angle",
+            "machine-chest-press": "priority",
+            "machine-shoulder-press": "not_recommended",
+            "push-up": "optional",
+            "shoulder-press": "not_recommended",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "器械推胸",
+            "哑铃卧推"
+          ],
+          "id": "bench-press",
+          "kind": "compound",
+          "muscle": "胸",
+          "name": "平板卧推",
+          "repMax": 8,
+          "repMin": 6,
+          "rest": 180,
+          "sets": 3,
+          "startWeight": 60
+        },
+        {
+          "alias": "上斜哑铃",
+          "alternativeIds": [
+            "smith-incline-press",
+            "machine-incline-chest-press",
+            "machine-chest-press",
+            "db-bench-press"
+          ],
+          "alternativePriorities": {
+            "db-bench-press": "angle",
+            "machine-chest-press": "acceptable",
+            "machine-incline-chest-press": "priority",
+            "smith-incline-press": "priority"
+          },
+          "alternatives": [
+            "上斜器械推胸"
+          ],
+          "id": "incline-db-press",
+          "kind": "compound",
+          "muscle": "胸",
+          "name": "上斜哑铃卧推",
+          "repMax": 10,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 22.5
+        },
+        {
+          "alias": "胸推机",
+          "alternativeIds": [
+            "db-bench-press",
+            "bench-press",
+            "push-up"
+          ],
+          "alternativePriorities": {
+            "bench-press": "optional",
+            "db-bench-press": "priority",
+            "push-up": "optional"
+          },
+          "alternatives": [
+            "双杠臂屈伸"
+          ],
+          "id": "machine-chest-press",
+          "kind": "machine",
+          "muscle": "胸",
+          "name": "器械推胸",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 2,
+          "startWeight": 55
+        },
+        {
+          "alias": "夹胸",
+          "alternativeIds": [
+            "pec-deck-fly",
+            "db-fly",
+            "machine-chest-press",
+            "assisted-dip"
+          ],
+          "alternativePriorities": {
+            "assisted-dip": "compound_fallback",
+            "db-fly": "acceptable",
+            "machine-chest-press": "equipment_fallback",
+            "pec-deck-fly": "priority"
+          },
+          "alternatives": [
+            "蝴蝶机夹胸"
+          ],
+          "id": "cable-fly",
+          "kind": "isolation",
+          "muscle": "胸",
+          "name": "绳索夹胸",
+          "repMax": 15,
+          "repMin": 12,
+          "rest": 75,
+          "sets": 2,
+          "startWeight": 17.5
+        },
+        {
+          "alias": "侧平举",
+          "alternativeIds": [
+            "cable-lateral-raise",
+            "machine-lateral-raise",
+            "rear-delt-raise",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "cable-lateral-raise": "priority",
+            "machine-lateral-raise": "priority",
+            "rear-delt-raise": "not_recommended",
+            "shoulder-press": "not_recommended"
+          },
+          "alternatives": [
+            "绳索侧平举"
+          ],
+          "id": "lateral-raise",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "哑铃侧平举",
+          "repMax": 20,
+          "repMin": 12,
+          "rest": 60,
+          "sets": 4,
+          "startWeight": 7.5
+        },
+        {
+          "alias": "三头下压",
+          "alternativeIds": [
+            "straight-bar-pushdown",
+            "overhead-cable-triceps-extension",
+            "skull-crusher",
+            "close-grip-bench",
+            "assisted-dip",
+            "bench-press",
+            "shoulder-press",
+            "cable-fly"
+          ],
+          "alternativePriorities": {
+            "assisted-dip": "compound_fallback",
+            "bench-press": "not_recommended",
+            "cable-fly": "not_recommended",
+            "close-grip-bench": "compound_fallback",
+            "overhead-cable-triceps-extension": "acceptable",
+            "shoulder-press": "not_recommended",
+            "skull-crusher": "optional",
+            "straight-bar-pushdown": "priority"
+          },
+          "alternatives": [
+            "窄握卧推"
+          ],
+          "id": "triceps-pushdown",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "绳索下压",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 75,
+          "sets": 3,
+          "startWeight": 25
+        }
+      ],
+      "focus": "推",
+      "id": "push-a",
+      "name": "推 A",
+      "note": "胸、肩、肱三头优先，卧推排在第一位，辅助动作服务肌肥大总量。"
+    },
+    {
+      "duration": 70,
+      "exercises": [
+        {
+          "alias": "下拉",
+          "alternativeIds": [
+            "assisted-pull-up",
+            "pull-up",
+            "single-arm-lat-pulldown",
+            "machine-row",
+            "seated-row",
+            "triceps-pushdown",
+            "cable-fly",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "assisted-pull-up": "priority",
+            "cable-fly": "not_recommended",
+            "machine-row": "equipment_fallback",
+            "pull-up": "priority",
+            "seated-row": "optional",
+            "shoulder-press": "not_recommended",
+            "single-arm-lat-pulldown": "angle",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "引体向上",
+            "单臂下拉"
+          ],
+          "id": "lat-pulldown",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "高位下拉",
+          "repMax": 10,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 55
+        },
+        {
+          "alias": "划船机",
+          "alternativeIds": [
+            "chest-supported-row",
+            "machine-row",
+            "one-arm-db-row",
+            "barbell-row",
+            "lat-pulldown"
+          ],
+          "alternativePriorities": {
+            "barbell-row": "optional",
+            "chest-supported-row": "priority",
+            "lat-pulldown": "not_recommended",
+            "machine-row": "priority",
+            "one-arm-db-row": "acceptable"
+          },
+          "alternatives": [
+            "胸托划船",
+            "单臂哑铃划船"
+          ],
+          "id": "seated-row",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "坐姿划船",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 50
+        },
+        {
+          "alias": "杠铃划船",
+          "alternativeIds": [
+            "chest-supported-row",
+            "t-bar-row",
+            "one-arm-db-row",
+            "seated-row",
+            "machine-row"
+          ],
+          "alternativePriorities": {
+            "chest-supported-row": "priority",
+            "machine-row": "optional",
+            "one-arm-db-row": "acceptable",
+            "seated-row": "acceptable",
+            "t-bar-row": "priority"
+          },
+          "alternatives": [
+            "T 杠划船"
+          ],
+          "id": "barbell-row",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "杠铃划船",
+          "repMax": 10,
+          "repMin": 6,
+          "rest": 150,
+          "sets": 3,
+          "startWeight": 50
+        },
+        {
+          "alias": "面拉",
+          "alternativeIds": [
+            "reverse-pec-deck",
+            "cable-rear-delt-fly",
+            "rear-delt-raise",
+            "lateral-raise"
+          ],
+          "alternativePriorities": {
+            "cable-rear-delt-fly": "priority",
+            "lateral-raise": "optional",
+            "rear-delt-raise": "priority",
+            "reverse-pec-deck": "priority"
+          },
+          "alternatives": [
+            "反向飞鸟"
+          ],
+          "id": "face-pull",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "面拉",
+          "repMax": 20,
+          "repMin": 12,
+          "rest": 60,
+          "sets": 3,
+          "startWeight": 20
+        },
+        {
+          "alias": "二头弯举",
+          "alternativeIds": [
+            "ez-bar-curl",
+            "preacher-curl",
+            "cable-curl",
+            "incline-db-curl",
+            "hammer-curl"
+          ],
+          "alternativePriorities": {
+            "cable-curl": "priority",
+            "ez-bar-curl": "priority",
+            "hammer-curl": "optional",
+            "incline-db-curl": "acceptable",
+            "preacher-curl": "priority"
+          },
+          "alternatives": [
+            "杠铃弯举"
+          ],
+          "id": "db-curl",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "哑铃弯举",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 75,
+          "sets": 3,
+          "startWeight": 12.5
+        },
+        {
+          "alias": "锤式弯举",
+          "alternativeIds": [
+            "rope-hammer-curl",
+            "db-curl",
+            "ez-bar-curl"
+          ],
+          "alternativePriorities": {
+            "db-curl": "acceptable",
+            "ez-bar-curl": "optional",
+            "rope-hammer-curl": "priority"
+          },
+          "alternatives": [
+            "绳索锤式弯举"
+          ],
+          "id": "hammer-curl",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "锤式弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 75,
+          "sets": 2,
+          "startWeight": 12.5
+        }
+      ],
+      "focus": "拉",
+      "id": "pull-a",
+      "name": "拉 A",
+      "note": "背阔和中背优先，最后补手臂；肩胛控制差时保留面拉。"
+    },
+    {
+      "duration": 80,
+      "exercises": [
+        {
+          "alias": "深蹲",
+          "alternativeIds": [
+            "hack-squat",
+            "smith-squat",
+            "leg-press",
+            "belt-squat",
+            "goblet-squat",
+            "leg-curl",
+            "calf-raise",
+            "seated-calf-raise"
+          ],
+          "alternativePriorities": {
+            "belt-squat": "acceptable",
+            "calf-raise": "not_recommended",
+            "goblet-squat": "optional",
+            "hack-squat": "priority",
+            "leg-curl": "not_recommended",
+            "leg-press": "acceptable",
+            "seated-calf-raise": "not_recommended",
+            "smith-squat": "priority"
+          },
+          "alternatives": [
+            "哈克深蹲",
+            "腿举"
+          ],
+          "id": "squat",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "深蹲",
+          "repMax": 8,
+          "repMin": 5,
+          "rest": 210,
+          "sets": 4,
+          "startWeight": 80
+        },
+        {
+          "alias": "RDL",
+          "alternativeIds": [
+            "db-rdl",
+            "hip-thrust",
+            "leg-curl",
+            "seated-leg-curl",
+            "lying-leg-curl",
+            "calf-raise",
+            "leg-extension"
+          ],
+          "alternativePriorities": {
+            "calf-raise": "not_recommended",
+            "db-rdl": "priority",
+            "hip-thrust": "acceptable",
+            "leg-curl": "optional",
+            "leg-extension": "not_recommended",
+            "lying-leg-curl": "optional",
+            "seated-leg-curl": "optional"
+          },
+          "alternatives": [
+            "哑铃 RDL"
+          ],
+          "id": "romanian-deadlift",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "罗马尼亚硬拉",
+          "repMax": 10,
+          "repMin": 6,
+          "rest": 180,
+          "sets": 3,
+          "startWeight": 70
+        },
+        {
+          "alias": "腿举",
+          "alternativeIds": [],
+          "alternatives": [
+            "高脚位腿举"
+          ],
+          "id": "leg-press",
+          "kind": "machine",
+          "muscle": "腿",
+          "name": "腿举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 140
+        },
+        {
+          "alias": "腿弯举",
+          "alternativeIds": [
+            "seated-leg-curl",
+            "lying-leg-curl",
+            "nordic-curl",
+            "romanian-deadlift"
+          ],
+          "alternativePriorities": {
+            "lying-leg-curl": "priority",
+            "nordic-curl": "acceptable",
+            "romanian-deadlift": "optional",
+            "seated-leg-curl": "priority"
+          },
+          "alternatives": [
+            "北欧腿弯举"
+          ],
+          "id": "leg-curl",
+          "kind": "isolation",
+          "muscle": "腿",
+          "name": "腿弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 75,
+          "sets": 3,
+          "startWeight": 40
+        },
+        {
+          "alias": "提踵",
+          "alternativeIds": [
+            "seated-calf-raise",
+            "standing-calf-raise",
+            "leg-press-calf-raise"
+          ],
+          "alternativePriorities": {
+            "leg-press-calf-raise": "acceptable",
+            "seated-calf-raise": "priority",
+            "standing-calf-raise": "priority"
+          },
+          "alternatives": [
+            "坐姿提踵"
+          ],
+          "id": "calf-raise",
+          "kind": "isolation",
+          "muscle": "腿",
+          "name": "提踵",
+          "repMax": 20,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 4,
+          "startWeight": 50
+        }
+      ],
+      "focus": "腿",
+      "id": "legs-a",
+      "name": "腿 A",
+      "note": "先做深蹲模式，再做髋铰链和腿后侧；训练量高时优先保证动作质量。"
+    },
+    {
+      "duration": 70,
+      "exercises": [
+        {
+          "alias": "哑铃卧推",
+          "alternativeIds": [
+            "machine-chest-press",
+            "bench-press",
+            "push-up",
+            "incline-db-press"
+          ],
+          "alternativePriorities": {
+            "bench-press": "optional",
+            "incline-db-press": "angle",
+            "machine-chest-press": "priority",
+            "push-up": "optional"
+          },
+          "alternatives": [
+            "器械推胸"
+          ],
+          "id": "db-bench-press",
+          "kind": "compound",
+          "muscle": "胸",
+          "name": "哑铃卧推",
+          "repMax": 10,
+          "repMin": 6,
+          "rest": 150,
+          "sets": 3,
+          "startWeight": 30
+        },
+        {
+          "alias": "下拉",
+          "alternativeIds": [
+            "assisted-pull-up",
+            "pull-up",
+            "single-arm-lat-pulldown",
+            "machine-row",
+            "seated-row",
+            "triceps-pushdown",
+            "cable-fly",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "assisted-pull-up": "priority",
+            "cable-fly": "not_recommended",
+            "machine-row": "equipment_fallback",
+            "pull-up": "priority",
+            "seated-row": "optional",
+            "shoulder-press": "not_recommended",
+            "single-arm-lat-pulldown": "angle",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "引体向上"
+          ],
+          "id": "lat-pulldown",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "高位下拉",
+          "repMax": 10,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 55
+        },
+        {
+          "alias": "肩推",
+          "alternativeIds": [
+            "machine-shoulder-press",
+            "smith-shoulder-press",
+            "landmine-press",
+            "db-bench-press",
+            "lateral-raise",
+            "triceps-pushdown",
+            "cable-fly"
+          ],
+          "alternativePriorities": {
+            "cable-fly": "not_recommended",
+            "db-bench-press": "optional",
+            "landmine-press": "acceptable",
+            "lateral-raise": "not_recommended",
+            "machine-shoulder-press": "priority",
+            "smith-shoulder-press": "priority",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "器械肩推"
+          ],
+          "id": "shoulder-press",
+          "kind": "compound",
+          "muscle": "肩",
+          "name": "哑铃肩推",
+          "repMax": 10,
+          "repMin": 6,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 20
+        },
+        {
+          "alias": "单臂划船",
+          "alternativeIds": [
+            "chest-supported-row"
+          ],
+          "alternatives": [
+            "胸托划船"
+          ],
+          "id": "one-arm-db-row",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "单臂哑铃划船",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 26
+        },
+        {
+          "alias": "侧平举",
+          "alternativeIds": [
+            "cable-lateral-raise",
+            "machine-lateral-raise",
+            "rear-delt-raise",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "cable-lateral-raise": "priority",
+            "machine-lateral-raise": "priority",
+            "rear-delt-raise": "not_recommended",
+            "shoulder-press": "not_recommended"
+          },
+          "alternatives": [
+            "绳索侧平举"
+          ],
+          "id": "lateral-raise",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "哑铃侧平举",
+          "repMax": 20,
+          "repMin": 12,
+          "rest": 60,
+          "sets": 3,
+          "startWeight": 7.5
+        },
+        {
+          "alias": "三头下压",
+          "alternativeIds": [
+            "straight-bar-pushdown",
+            "overhead-cable-triceps-extension",
+            "skull-crusher",
+            "close-grip-bench",
+            "assisted-dip",
+            "bench-press",
+            "shoulder-press",
+            "cable-fly"
+          ],
+          "alternativePriorities": {
+            "assisted-dip": "compound_fallback",
+            "bench-press": "not_recommended",
+            "cable-fly": "not_recommended",
+            "close-grip-bench": "compound_fallback",
+            "overhead-cable-triceps-extension": "acceptable",
+            "shoulder-press": "not_recommended",
+            "skull-crusher": "optional",
+            "straight-bar-pushdown": "priority"
+          },
+          "alternatives": [
+            "窄握卧推"
+          ],
+          "id": "triceps-pushdown",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "绳索下压",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 2,
+          "startWeight": 25
+        },
+        {
+          "alias": "弯举",
+          "alternativeIds": [
+            "ez-bar-curl",
+            "preacher-curl",
+            "cable-curl",
+            "incline-db-curl",
+            "hammer-curl"
+          ],
+          "alternativePriorities": {
+            "cable-curl": "priority",
+            "ez-bar-curl": "priority",
+            "hammer-curl": "optional",
+            "incline-db-curl": "acceptable",
+            "preacher-curl": "priority"
+          },
+          "alternatives": [
+            "牧师凳弯举"
+          ],
+          "id": "db-curl",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "哑铃弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 2,
+          "startWeight": 12.5
+        }
+      ],
+      "focus": "上肢",
+      "id": "upper",
+      "name": "上肢",
+      "note": "上肢综合模板，适合时间有限但仍要保留推、拉和肩部刺激的日子。"
+    },
+    {
+      "duration": 70,
+      "exercises": [
+        {
+          "alias": "哈克深蹲",
+          "alternativeIds": [
+            "squat",
+            "leg-press"
+          ],
+          "alternatives": [
+            "深蹲",
+            "腿举"
+          ],
+          "id": "hack-squat",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "哈克深蹲",
+          "repMax": 10,
+          "repMin": 6,
+          "rest": 150,
+          "sets": 3,
+          "startWeight": 80
+        },
+        {
+          "alias": "哑铃 RDL",
+          "alternativeIds": [
+            "romanian-deadlift"
+          ],
+          "alternatives": [
+            "罗马尼亚硬拉"
+          ],
+          "id": "db-rdl",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "哑铃罗马尼亚硬拉",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 30
+        },
+        {
+          "alias": "腿举",
+          "alternativeIds": [],
+          "alternatives": [
+            "高脚位腿举"
+          ],
+          "id": "leg-press",
+          "kind": "machine",
+          "muscle": "腿",
+          "name": "腿举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 140
+        },
+        {
+          "alias": "腿弯举",
+          "alternativeIds": [
+            "seated-leg-curl",
+            "lying-leg-curl",
+            "nordic-curl",
+            "romanian-deadlift"
+          ],
+          "alternativePriorities": {
+            "lying-leg-curl": "priority",
+            "nordic-curl": "acceptable",
+            "romanian-deadlift": "optional",
+            "seated-leg-curl": "priority"
+          },
+          "alternatives": [
+            "北欧腿弯举"
+          ],
+          "id": "leg-curl",
+          "kind": "isolation",
+          "muscle": "腿",
+          "name": "腿弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 75,
+          "sets": 3,
+          "startWeight": 35
+        },
+        {
+          "alias": "提踵",
+          "alternativeIds": [
+            "seated-calf-raise",
+            "standing-calf-raise",
+            "leg-press-calf-raise"
+          ],
+          "alternativePriorities": {
+            "leg-press-calf-raise": "acceptable",
+            "seated-calf-raise": "priority",
+            "standing-calf-raise": "priority"
+          },
+          "alternatives": [
+            "坐姿提踵"
+          ],
+          "id": "calf-raise",
+          "kind": "isolation",
+          "muscle": "腿",
+          "name": "提踵",
+          "repMax": 20,
+          "repMin": 12,
+          "rest": 60,
+          "sets": 4,
+          "startWeight": 45
+        }
+      ],
+      "focus": "下肢",
+      "id": "lower",
+      "name": "下肢",
+      "note": "下肢综合模板，优先腿推和髋铰链，适合恢复压力较高时使用。"
+    },
+    {
+      "duration": 45,
+      "exercises": [
+        {
+          "alias": "窄握卧推",
+          "alternativeIds": [
+            "triceps-pushdown"
+          ],
+          "alternatives": [
+            "绳索下压"
+          ],
+          "id": "close-grip-bench",
+          "kind": "compound",
+          "muscle": "手臂",
+          "name": "窄握卧推",
+          "repMax": 8,
+          "repMin": 6,
+          "rest": 120,
+          "sets": 3,
+          "startWeight": 50
+        },
+        {
+          "alias": "牧师凳弯举",
+          "alternativeIds": [
+            "db-curl"
+          ],
+          "alternatives": [
+            "哑铃弯举"
+          ],
+          "id": "preacher-curl",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "牧师凳弯举",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 60,
+          "sets": 3,
+          "startWeight": 25
+        },
+        {
+          "alias": "下压",
+          "alternativeIds": [
+            "straight-bar-pushdown",
+            "overhead-cable-triceps-extension",
+            "skull-crusher",
+            "close-grip-bench",
+            "assisted-dip",
+            "bench-press",
+            "shoulder-press",
+            "cable-fly"
+          ],
+          "alternativePriorities": {
+            "assisted-dip": "compound_fallback",
+            "bench-press": "not_recommended",
+            "cable-fly": "not_recommended",
+            "close-grip-bench": "compound_fallback",
+            "overhead-cable-triceps-extension": "acceptable",
+            "shoulder-press": "not_recommended",
+            "skull-crusher": "optional",
+            "straight-bar-pushdown": "priority"
+          },
+          "alternatives": [
+            "过顶臂屈伸"
+          ],
+          "id": "triceps-pushdown",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "绳索下压",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 3,
+          "startWeight": 25
+        },
+        {
+          "alias": "锤式弯举",
+          "alternativeIds": [
+            "rope-hammer-curl",
+            "db-curl",
+            "ez-bar-curl"
+          ],
+          "alternativePriorities": {
+            "db-curl": "acceptable",
+            "ez-bar-curl": "optional",
+            "rope-hammer-curl": "priority"
+          },
+          "alternatives": [
+            "绳索锤式弯举"
+          ],
+          "id": "hammer-curl",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "锤式弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 3,
+          "startWeight": 12.5
+        },
+        {
+          "alias": "侧平举",
+          "alternativeIds": [
+            "cable-lateral-raise",
+            "machine-lateral-raise",
+            "rear-delt-raise",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "cable-lateral-raise": "priority",
+            "machine-lateral-raise": "priority",
+            "rear-delt-raise": "not_recommended",
+            "shoulder-press": "not_recommended"
+          },
+          "alternatives": [
+            "绳索侧平举"
+          ],
+          "id": "lateral-raise",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "哑铃侧平举",
+          "repMax": 20,
+          "repMin": 12,
+          "rest": 60,
+          "sets": 4,
+          "startWeight": 7.5
+        }
+      ],
+      "focus": "手臂",
+      "id": "arms",
+      "name": "手臂 + 三角肌",
+      "note": "补手臂和侧束，主打低疲劳、高完成度，不抢下一次主训练恢复。"
+    },
+    {
+      "duration": 30,
+      "exercises": [
+        {
+          "alias": "卧推",
+          "alternativeIds": [
+            "db-bench-press",
+            "machine-chest-press",
+            "push-up",
+            "incline-db-press",
+            "cable-fly",
+            "triceps-pushdown",
+            "shoulder-press",
+            "machine-shoulder-press"
+          ],
+          "alternativePriorities": {
+            "cable-fly": "not_recommended",
+            "db-bench-press": "priority",
+            "incline-db-press": "angle",
+            "machine-chest-press": "priority",
+            "machine-shoulder-press": "not_recommended",
+            "push-up": "optional",
+            "shoulder-press": "not_recommended",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "器械推胸"
+          ],
+          "id": "bench-press",
+          "kind": "compound",
+          "muscle": "胸",
+          "name": "平板卧推",
+          "repMax": 8,
+          "repMin": 5,
+          "rest": 150,
+          "sets": 2,
+          "startWeight": 60
+        },
+        {
+          "alias": "下拉",
+          "alternativeIds": [
+            "assisted-pull-up",
+            "pull-up",
+            "single-arm-lat-pulldown",
+            "machine-row",
+            "seated-row",
+            "triceps-pushdown",
+            "cable-fly",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "assisted-pull-up": "priority",
+            "cable-fly": "not_recommended",
+            "machine-row": "equipment_fallback",
+            "pull-up": "priority",
+            "seated-row": "optional",
+            "shoulder-press": "not_recommended",
+            "single-arm-lat-pulldown": "angle",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "引体向上"
+          ],
+          "id": "lat-pulldown",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "高位下拉",
+          "repMax": 10,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 2,
+          "startWeight": 55
+        },
+        {
+          "alias": "哈克深蹲",
+          "alternativeIds": [
+            "leg-press"
+          ],
+          "alternatives": [
+            "腿举"
+          ],
+          "id": "hack-squat",
+          "kind": "compound",
+          "muscle": "腿",
+          "name": "哈克深蹲",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 120,
+          "sets": 2,
+          "startWeight": 80
+        },
+        {
+          "alias": "侧平举",
+          "alternativeIds": [
+            "cable-lateral-raise",
+            "machine-lateral-raise",
+            "rear-delt-raise",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "cable-lateral-raise": "priority",
+            "machine-lateral-raise": "priority",
+            "rear-delt-raise": "not_recommended",
+            "shoulder-press": "not_recommended"
+          },
+          "alternatives": [
+            "绳索侧平举"
+          ],
+          "id": "lateral-raise",
+          "kind": "isolation",
+          "muscle": "肩",
+          "name": "哑铃侧平举",
+          "repMax": 20,
+          "repMin": 12,
+          "rest": 45,
+          "sets": 2,
+          "startWeight": 7.5
+        }
+      ],
+      "focus": "快练",
+      "id": "quick-30",
+      "name": "快练 30",
+      "note": "只有 30 分钟时使用，保留主线动作和最低有效剂量。"
+    },
+    {
+      "duration": 55,
+      "exercises": [
+        {
+          "alias": "胸推机",
+          "alternativeIds": [
+            "db-bench-press",
+            "bench-press",
+            "push-up"
+          ],
+          "alternativePriorities": {
+            "bench-press": "optional",
+            "db-bench-press": "priority",
+            "push-up": "optional"
+          },
+          "alternatives": [
+            "哑铃卧推"
+          ],
+          "id": "machine-chest-press",
+          "kind": "machine",
+          "muscle": "胸",
+          "name": "器械推胸",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 55
+        },
+        {
+          "alias": "下拉",
+          "alternativeIds": [
+            "assisted-pull-up",
+            "pull-up",
+            "single-arm-lat-pulldown",
+            "machine-row",
+            "seated-row",
+            "triceps-pushdown",
+            "cable-fly",
+            "shoulder-press"
+          ],
+          "alternativePriorities": {
+            "assisted-pull-up": "priority",
+            "cable-fly": "not_recommended",
+            "machine-row": "equipment_fallback",
+            "pull-up": "priority",
+            "seated-row": "optional",
+            "shoulder-press": "not_recommended",
+            "single-arm-lat-pulldown": "angle",
+            "triceps-pushdown": "not_recommended"
+          },
+          "alternatives": [
+            "单臂下拉"
+          ],
+          "id": "lat-pulldown",
+          "kind": "compound",
+          "muscle": "背",
+          "name": "高位下拉",
+          "repMax": 12,
+          "repMin": 8,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 50
+        },
+        {
+          "alias": "腿举",
+          "alternativeIds": [],
+          "alternatives": [
+            "高脚位腿举"
+          ],
+          "id": "leg-press",
+          "kind": "machine",
+          "muscle": "腿",
+          "name": "腿举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 90,
+          "sets": 3,
+          "startWeight": 140
+        },
+        {
+          "alias": "夹胸",
+          "alternativeIds": [
+            "pec-deck-fly",
+            "db-fly",
+            "machine-chest-press",
+            "assisted-dip"
+          ],
+          "alternativePriorities": {
+            "assisted-dip": "compound_fallback",
+            "db-fly": "acceptable",
+            "machine-chest-press": "equipment_fallback",
+            "pec-deck-fly": "priority"
+          },
+          "alternatives": [
+            "蝴蝶机夹胸"
+          ],
+          "id": "cable-fly",
+          "kind": "isolation",
+          "muscle": "胸",
+          "name": "绳索夹胸",
+          "repMax": 15,
+          "repMin": 12,
+          "rest": 60,
+          "sets": 2,
+          "startWeight": 17.5
+        },
+        {
+          "alias": "下压",
+          "alternativeIds": [
+            "straight-bar-pushdown",
+            "overhead-cable-triceps-extension",
+            "skull-crusher",
+            "close-grip-bench",
+            "assisted-dip",
+            "bench-press",
+            "shoulder-press",
+            "cable-fly"
+          ],
+          "alternativePriorities": {
+            "assisted-dip": "compound_fallback",
+            "bench-press": "not_recommended",
+            "cable-fly": "not_recommended",
+            "close-grip-bench": "compound_fallback",
+            "overhead-cable-triceps-extension": "acceptable",
+            "shoulder-press": "not_recommended",
+            "skull-crusher": "optional",
+            "straight-bar-pushdown": "priority"
+          },
+          "alternatives": [
+            "绳索过顶臂屈伸"
+          ],
+          "id": "triceps-pushdown",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "绳索下压",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 2,
+          "startWeight": 25
+        },
+        {
+          "alias": "锤式弯举",
+          "alternativeIds": [
+            "rope-hammer-curl",
+            "db-curl",
+            "ez-bar-curl"
+          ],
+          "alternativePriorities": {
+            "db-curl": "acceptable",
+            "ez-bar-curl": "optional",
+            "rope-hammer-curl": "priority"
+          },
+          "alternatives": [
+            "哑铃弯举"
+          ],
+          "id": "hammer-curl",
+          "kind": "isolation",
+          "muscle": "手臂",
+          "name": "绳索锤式弯举",
+          "repMax": 15,
+          "repMin": 10,
+          "rest": 60,
+          "sets": 2,
+          "startWeight": 15
+        }
+      ],
+      "focus": "替代",
+      "id": "crowded-gym",
+      "name": "人多替代",
+      "note": "健身房拥挤时使用，优先选择器械和单站点组合，保持训练刺激但减少等待。"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "81637797d7218ce3909162821b9004b99ab8fefd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "default-program-data/snapshot-v1"
+  }
+}
