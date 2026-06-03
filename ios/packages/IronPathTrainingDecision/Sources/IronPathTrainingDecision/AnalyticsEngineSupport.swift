@@ -173,12 +173,67 @@ enum AnalyticsSupport {
     // MARK: - JS number formatting helpers
 
     /// `Number(value.toFixed(digits))` for the values these engines round
-    /// (`deltaKg`/`deltaPercent`/`effectiveSets`/`share`). Non-tie decimals (the
-    /// only shape the fixtures produce) round identically to JS `toFixed`; the
-    /// compute-assert pins this exactly (`==`).
+    /// (`deltaKg`/`deltaPercent`/`effectiveSets`/`share`) — a FAITHFUL reproduction
+    /// of ECMAScript `Number.prototype.toFixed` (ES2023 §21.1.3.3) parsed back with
+    /// `Number(string)`, exact for every finite double (including `.XX5` ties + the
+    /// IEEE-754-representation cases).
+    ///
+    /// The earlier `(value * p).rounded() / p` was NOT faithful: the `value * p`
+    /// multiply rounds to a double and can cross the `.5` boundary the true value
+    /// sits below — e.g. `2.675 * 100 == 267.5` in IEEE-754 (the literal `2.675` is
+    /// stored as `2.67499999999999982…`), so `.rounded()` (half-away) yields `2.68`,
+    /// whereas `(2.675).toFixed(2) === "2.67"` because `toFixed` rounds the EXACT
+    /// real value of `x`, not a multiplied approximation. (`0.15`→`.1`, `0.35`→`.3`,
+    /// `1.555`→`1.55`, `-2.675`→`-2.67` diverge the same way.)
+    ///
+    /// Spec algorithm: pick integer `n` minimising `|n / 10^digits − x|` over the
+    /// EXACT `x`, ties to the larger `n`; the sign is split off first (steps 5–6), so
+    /// it is round-half-AWAY-from-zero on the magnitude. We reproduce it with pure
+    /// decimal-string semantics (never `.rounded()`):
+    ///   1. take the magnitude's EXACT decimal expansion — a finite double is a dyadic
+    ///      rational whose decimal terminates; `%.340f` (340 ≫ the ≤~110 fractional
+    ///      digits any analytics-domain magnitude needs) prints it exactly (printf is
+    ///      correctly rounded, and past the true length it emits trailing zeros);
+    ///   2. round that string half-away-from-zero at `digits` places (carry-propagated)
+    ///      — `firstRemovedDigit >= '5'` rounds up, covering both the exact-`.5` tie
+    ///      (ties→larger n) and the `> .5` case;
+    ///   3. parse back with `Double(_:)`, which (like JS `Number(string)`) is `strtod`
+    ///      correctly-rounded — so the result is bit-identical to `Number(toFixed)`.
     static func roundToFixed(_ value: Double, _ digits: Int) -> Double {
-        let p = pow(10.0, Double(digits))
-        return (value * p).rounded() / p
+        guard value.isFinite else { return value } // analytics inputs are finite; NaN/±Inf passthrough
+        let negative = value < 0
+        let magnitude = negative ? -value : value
+        // EXACT decimal expansion of the double (see step 1 above).
+        let exact = String(format: "%.340f", magnitude)
+        let parts = exact.split(separator: ".", maxSplits: 1, omittingEmptySubsequences: false)
+        var intDigits = Array(parts[0])
+        var fracDigits = parts.count > 1 ? Array(parts[1]) : []
+        while fracDigits.count < digits { fracDigits.append("0") }
+        var keptDigits = Array(fracDigits[0..<digits])
+        let firstRemoved: Character = digits < fracDigits.count ? fracDigits[digits] : "0"
+        // round-half-away on the magnitude (ECMAScript ties→larger n).
+        var carry = firstRemoved >= "5"
+        if carry {
+            var i = keptDigits.count - 1
+            while i >= 0 && carry {
+                let d = keptDigits[i].wholeNumberValue! + 1
+                if d == 10 { keptDigits[i] = "0" } else { keptDigits[i] = Character(String(d)); carry = false }
+                i -= 1
+            }
+            if carry { // overflow past the most-significant kept frac digit → into integer part
+                var j = intDigits.count - 1
+                while j >= 0 && carry {
+                    let d = intDigits[j].wholeNumberValue! + 1
+                    if d == 10 { intDigits[j] = "0" } else { intDigits[j] = Character(String(d)); carry = false }
+                    j -= 1
+                }
+                if carry { intDigits.insert("1", at: 0) }
+            }
+        }
+        var s = String(intDigits)
+        if digits > 0 { s += "." + String(keptDigits) }
+        if negative { s = "-" + s } // toFixed prepends '-' from the original sign (incl. "-0")
+        return Double(s) ?? 0
     }
 
     /// JS `Math.round(value)` = `floor(value + 0.5)` (half rounds toward +∞),

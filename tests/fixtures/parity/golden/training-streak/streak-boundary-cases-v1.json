@@ -1,0 +1,75 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-03-28",
+          "finishedAt": "2026-05-27T10:00:00.000Z",
+          "id": "fa-now",
+          "startedAt": "2026-04-17T10:00:00.000Z"
+        },
+        {
+          "completed": true,
+          "date": "2026-03-23",
+          "finishedAt": "2026-05-20T10:00:00.000Z",
+          "id": "fa-7"
+        }
+      ],
+      "label": "finished-at-precedence-sunday-week",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z",
+        "weekStartDayOfWeek": 0
+      },
+      "result": {
+        "currentMonthStreak": 1,
+        "currentWeekStreak": 2,
+        "lastActiveWeekKey": "2026-05-24",
+        "longestMonthStreak": 1,
+        "longestWeekStreak": 2,
+        "reason": "当前已连续训练 2 周；历史最长 2 周。",
+        "totalAnalyticsSessions": 2
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-01-15",
+          "id": "cy-jan"
+        },
+        {
+          "completed": true,
+          "date": "2025-12-15",
+          "id": "cy-dec"
+        },
+        {
+          "completed": true,
+          "date": "2025-11-15",
+          "id": "cy-nov"
+        }
+      ],
+      "label": "cross-year-month-carry",
+      "options": {
+        "nowIso": "2026-05-27T10:00:00.000Z"
+      },
+      "result": {
+        "currentMonthStreak": 0,
+        "currentWeekStreak": 0,
+        "lastActiveWeekKey": "2026-01-12",
+        "longestMonthStreak": 3,
+        "longestWeekStreak": 1,
+        "reason": "连续训练已中断（最近一次：2026-01-12 周）。",
+        "totalAnalyticsSessions": 3
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "35852182b733a9e32e260bf7eb87bb8eb30818b3",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "training-streak/streak-boundary-cases-v1"
+  },
+  "sourceFixtureId": "training-streak/streak-boundary-cases-v1"
+}

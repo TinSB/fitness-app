@@ -121,6 +121,12 @@ const FIXTURE_IDS = [
   'training-streak/streak-cases-v1',
   'recent-pr-delta/delta-cases-v1',
   'weekly-muscle-balance/balance-cases-v1',
+  // AN-1b boundary/coverage-debt fixtures — additive NEW fixtures (one per metric) pinning
+  // the AN-1 audit's untested branches + the roundToFixed `.XX5` ties. Generated; never
+  // hand-edited (§22).
+  'training-streak/streak-boundary-cases-v1',
+  'recent-pr-delta/delta-boundary-cases-v1',
+  'weekly-muscle-balance/balance-boundary-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

@@ -97,4 +97,37 @@ final class RecentPRDeltaEngineParityTests: XCTestCase {
             XCTAssertEqual(actual, golden, "recent-pr-delta/\(label): computeRecentPRDeltas mismatch")
         }
     }
+
+    // MARK: - AN-1b boundary fixtures (delta-boundary-cases-v1)
+
+    private static var boundaryGoldenURL: URL {
+        repoRoot.appendingPathComponent(
+            "tests/fixtures/parity/golden/recent-pr-delta/delta-boundary-cases-v1.json", isDirectory: false
+        )
+    }
+
+    private func boundaryRoot() throws -> OrderedJSONObject {
+        let data = try Data(contentsOf: Self.boundaryGoldenURL)
+        return try JSONValue(decoding: data).requireObject("recent-pr-delta/delta-boundary-cases-v1")
+    }
+
+    /// AN-1b coverage-debt pins: both-new NaN-tie + equal-`deltaKg` 0-tie (JS-stable
+    /// insertion order), `pickBest` full-equality (weight AND reps) first-seen-wins, and
+    /// the `roundToFixed` `.XX5` tie (deltaKg `5.55` — the old multiply-then-round
+    /// `roundToFixed` would have produced `5.56`, so this case PROVES the fidelity fix).
+    func testComputeRecentPRDeltasParityForBoundaryCases() throws {
+        let root = try boundaryRoot()
+        XCTAssertEqual(root.optionalString("sourceFixtureId"), "recent-pr-delta/delta-boundary-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 3, "expected the 3 PR-delta boundary cases")
+        for caseValue in cases {
+            let c = try caseValue.requireObject("recent-pr-delta boundary case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            let history = try history(c)
+            let options = try options(c)
+            let actual = RecentPRDeltaEngine.computeRecentPRDeltas(history, options)
+            let golden = try decodeResult(c.optionalArray("result"))
+            XCTAssertEqual(actual, golden, "recent-pr-delta/\(label): computeRecentPRDeltas mismatch")
+        }
+    }
 }
