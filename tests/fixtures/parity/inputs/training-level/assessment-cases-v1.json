@@ -1,0 +1,256 @@
+{
+  "parityMeta": {
+    "id": "training-level/assessment-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-5 buildTrainingLevelAssessment (+ buildTechniqueQualitySummary / formatAutoTrainingLevel probes) function-level parity. empty-unknown (0 sessions → unknown, all-low signals, every nextDataNeeded) / one-session-unknown + two-sessions-unknown (count≤2 → unknown) / three-sessions-clean (count 3-5 band) / five-sessions-clean / eight-sessions-clean (count≥6 band) / twelve-sessions-rich (12 clean sessions, 2 lifts, ~3/wk frequency — advanced &&-chain attempt) / highpain-override (painPatterns override → painSeverity≥8 → painScore 25, highPain limitation + downgrade) / poor-technique-override (techniqueQualitySummary override poorRate 0.5 → poorTechnique limitation + downgrade) / low-adherence (incomplete sets → overallRate<75 → lowAdherence limitation) / calendar-frequency-override (calendarData.weeklyFrequency counts path → 4.25 avg → toFixed '4.3') / all-overrides (painPatterns+technique+calendar short-circuit together). Each case echoes the assessment + buildTechniqueQualitySummary + formatAutoTrainingLevel probes. Generated from src/engines/trainingLevelEngine.ts via scripts/generate-parity-goldens.mjs; the Swift TrainingLevelEngine compute-asserts each assessment == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "4ccc7993c9f7b516583553a5465396127a293960",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "empty-unknown",
+      "sessions": []
+    },
+    {
+      "label": "one-session-unknown",
+      "sessions": [
+        { "id": "tl1-1", "daysAgo": 2, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] }
+      ]
+    },
+    {
+      "label": "two-sessions-unknown",
+      "sessions": [
+        { "id": "tl2-1", "daysAgo": 2, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl2-2", "daysAgo": 5, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] }
+      ]
+    },
+    {
+      "label": "three-sessions-clean",
+      "sessions": [
+        { "id": "tl3-1", "daysAgo": 2, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl3-2", "daysAgo": 5, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl3-3", "daysAgo": 8, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] }
+      ]
+    },
+    {
+      "label": "five-sessions-clean",
+      "sessions": [
+        { "id": "tl5-1", "daysAgo": 2, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl5-2", "daysAgo": 5, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl5-3", "daysAgo": 8, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl5-4", "daysAgo": 11, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] },
+        { "id": "tl5-5", "daysAgo": 14, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [
+              { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" },
+              { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }
+            ] }
+        ] }
+      ]
+    },
+    {
+      "label": "eight-sessions-clean",
+      "sessions": [
+        { "id": "tl8-1", "daysAgo": 2, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-2", "daysAgo": 4, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-3", "daysAgo": 7, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-4", "daysAgo": 9, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-5", "daysAgo": 11, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-6", "daysAgo": 14, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-7", "daysAgo": 16, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl8-8", "daysAgo": 18, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest",
+            "sets": [ { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] }
+      ]
+    },
+    {
+      "label": "twelve-sessions-rich",
+      "sessions": [
+        { "id": "tl12-1", "daysAgo": 2, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 120, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-2", "daysAgo": 4, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 121, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 121, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 121, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-3", "daysAgo": 6, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 122, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 122, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 122, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-4", "daysAgo": 9, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 123, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 123, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 123, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-5", "daysAgo": 11, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 124, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 124, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 124, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-6", "daysAgo": 13, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 125, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 125, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 125, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-7", "daysAgo": 16, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 125, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 125, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 125, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-8", "daysAgo": 18, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 126, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 126, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 126, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-9", "daysAgo": 20, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 127, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 127, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 127, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-10", "daysAgo": 23, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 87, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 87, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 87, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 128, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 128, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 128, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-11", "daysAgo": 25, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 87, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 87, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 87, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 129, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 129, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 129, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tl12-12", "daysAgo": 27, "exercises": [
+          { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 88, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 88, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 88, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] },
+          { "id": "back-squat", "baseId": "back-squat", "canonicalExerciseId": "back-squat", "muscle": "quads", "sets": [ { "weight": 130, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 130, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 130, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] }
+      ]
+    },
+    {
+      "label": "highpain-override",
+      "painPatterns": [
+        { "area": "chest", "exerciseId": "bench-press", "frequency": 3, "severityAvg": 4, "lastOccurredAt": "2026-05-20", "suggestedAction": "deload" },
+        { "area": "knee", "frequency": 2, "severityAvg": 4.5, "lastOccurredAt": "2026-05-18", "suggestedAction": "seek_professional" }
+      ],
+      "sessions": [
+        { "id": "tlhp-1", "daysAgo": 2, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlhp-2", "daysAgo": 4, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlhp-3", "daysAgo": 7, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlhp-4", "daysAgo": 9, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlhp-5", "daysAgo": 11, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlhp-6", "daysAgo": 14, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlhp-7", "daysAgo": 16, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 86, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] }
+      ]
+    },
+    {
+      "label": "poor-technique-override",
+      "techniqueQualitySummary": { "totalSets": 40, "good": 10, "acceptable": 10, "poor": 20, "goodOrAcceptableRate": 0.5, "poorRate": 0.5, "rirRecordedRate": 0.8 },
+      "sessions": [
+        { "id": "tlpt-1", "daysAgo": 2, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlpt-2", "daysAgo": 4, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlpt-3", "daysAgo": 7, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlpt-4", "daysAgo": 9, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 83, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlpt-5", "daysAgo": 11, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 84, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlpt-6", "daysAgo": 14, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 85, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] }
+      ]
+    },
+    {
+      "label": "low-adherence",
+      "sessions": [
+        { "id": "tlla-1", "daysAgo": 2, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "done": true }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false } ] } ] },
+        { "id": "tlla-2", "daysAgo": 4, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "done": true }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false } ] } ] },
+        { "id": "tlla-3", "daysAgo": 7, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "done": true }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false } ] } ] },
+        { "id": "tlla-4", "daysAgo": 9, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "done": true }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false } ] } ] },
+        { "id": "tlla-5", "daysAgo": 11, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "done": true }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false } ] } ] },
+        { "id": "tlla-6", "daysAgo": 14, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good", "done": true }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false }, { "weight": 80, "reps": 5, "done": false } ] } ] }
+      ]
+    },
+    {
+      "label": "calendar-frequency-override",
+      "calendarData": { "weeklyFrequency": [ { "sessionCount": 4 }, { "sessionCount": 4 }, { "sessionCount": 4 }, { "sessionCount": 5 } ] },
+      "sessions": [
+        { "id": "tlcal-1", "daysAgo": 2, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlcal-2", "daysAgo": 5, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] }
+      ]
+    },
+    {
+      "label": "all-overrides",
+      "painPatterns": [
+        { "area": "shoulder", "exerciseId": "overhead-press", "frequency": 1, "severityAvg": 3, "lastOccurredAt": "2026-05-22", "suggestedAction": "watch" }
+      ],
+      "techniqueQualitySummary": { "totalSets": 30, "good": 25, "acceptable": 4, "poor": 1, "goodOrAcceptableRate": 0.9667, "poorRate": 0.0333, "rirRecordedRate": 0.75 },
+      "calendarData": { "weeklyFrequency": [ { "sessionCount": 3 }, { "sessionCount": 2 }, { "sessionCount": 3 } ] },
+      "sessions": [
+        { "id": "tlall-1", "daysAgo": 2, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 80, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlall-2", "daysAgo": 5, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 81, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] },
+        { "id": "tlall-3", "daysAgo": 8, "exercises": [ { "id": "bench-press", "baseId": "bench-press", "canonicalExerciseId": "bench-press", "muscle": "chest", "sets": [ { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" }, { "weight": 82, "reps": 5, "rir": 2, "techniqueQuality": "good" } ] } ] }
+      ]
+    }
+  ]
+}

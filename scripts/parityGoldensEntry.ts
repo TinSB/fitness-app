@@ -205,6 +205,20 @@ import {
   groupSessionSetsByType,
   buildWorkingOnlySession,
 } from '../src/engines/sessionDetailSummaryEngine';
+// AN-5 — painPatternEngine (trainingLevel-consumed subset) + trainingLevelEngine port
+// parity slice. Imports the REAL engine functions so the pain-pattern / training-level
+// goldens are GENERATED from TS truth, never hand-authored (§22). The Swift ports
+// (PainPatternEngine / TrainingLevelEngine) re-run the SAME functions over each case's
+// echoed engineInput and COMPUTE-ASSERT the result (buildPainPatterns full pattern list +
+// buildTrainingLevelAssessment full assessment + buildTechniqueQualitySummary /
+// formatAutoTrainingLevel probes). PURE / clockless — every session date derives from
+// parityMeta.deterministicClockIso so the goldens are byte-deterministic.
+import { buildPainPatterns } from '../src/engines/painPatternEngine';
+import {
+  buildTrainingLevelAssessment,
+  buildTechniqueQualitySummary,
+  formatAutoTrainingLevel,
+} from '../src/engines/trainingLevelEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -427,6 +441,22 @@ const FIXTURE_IDS = [
   // so the two sessionDetail functions are pinned directly. Generated; never hand-edited (§22).
   'session-quality/quality-cases-v1',
   'session-quality/grouping-and-input-cases-v1',
+  // AN-5 painPatternEngine (trainingLevel-consumed subset) + trainingLevelEngine port — 2
+  // OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL pinning the ported functions.
+  // pain-pattern/aggregation-cases pins buildPainPatterns across the suggestedAction matrix
+  // (exercise watch/substitute/deload · area watch/deload/seek_professional · multi-area
+  // combined), painSeverityFromSet (painSeverity>0 · note sharp/刺痛 → 4 · ache/酸 → 2 ·
+  // default 2), the lookback-window + maxSessions slice, the excluded-dataFlag filter, and
+  // the severityAvg-desc/frequency-desc stable sort. training-level/assessment-cases pins
+  // buildTrainingLevelAssessment across the level bands (unknown count 0 / ≤2 · beginner ·
+  // novice_plus · intermediate · advanced-attempt) + every signal (score/confidence/reason)
+  // + the highPain/poorTechnique/lowAdherence/unstableFrequency limitations & downgrades +
+  // readinessForAdvancedFeatures + nextDataNeeded, plus the provided-vs-computed override
+  // short-circuit (painPatterns / techniqueQualitySummary / calendarData) and a
+  // buildTechniqueQualitySummary + formatAutoTrainingLevel probe per case. Generated; never
+  // hand-edited (§22).
+  'pain-pattern/aggregation-cases-v1',
+  'training-level/assessment-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2241,6 +2271,72 @@ const generateSessionQuality = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// AN-5 — painPatternEngine (trainingLevel-consumed subset) + trainingLevelEngine
+// OUTPUT parity. Each case materialises a synthetic history (via the shared
+// materializeAnalyticsSession — ONLY date fields derive from the deterministic clock;
+// every other field passes through verbatim), runs the REAL engine, and echoes BOTH the
+// engineInput and the computed result. The optional external inputs (currentDate /
+// lookbackDays / maxSessions for pain-pattern; painPatterns / techniqueQualitySummary /
+// calendarData overrides for training-level) are threaded through ONLY when the case
+// provides them (so canonicalStringify drops absent ones — the Swift port reads each
+// optionally). PURE / clockless apart from the OPTIONAL injected currentDate.
+// Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generatePainPattern = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: pain-pattern requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    // Build the options bag, threading ONLY what the case provides. `currentDateDaysAgo`
+    // derives a deterministic date-only anchor; an explicit `currentDate` is used verbatim.
+    const options: { currentDate?: string; lookbackDays?: number; maxSessions?: number } = {};
+    if (c.currentDateDaysAgo !== undefined) options.currentDate = dateOnlyDaysBefore(nowIso, c.currentDateDaysAgo);
+    else if (c.currentDate !== undefined) options.currentDate = c.currentDate;
+    if (c.lookbackDays !== undefined) options.lookbackDays = c.lookbackDays;
+    if (c.maxSessions !== undefined) options.maxSessions = c.maxSessions;
+    const patterns = buildPainPatterns(history, options);
+    const echoed: Record<string, unknown> = { label: c.label ?? null, history };
+    if (Object.keys(options).length) echoed.options = options;
+    echoed.patterns = patterns;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateTrainingLevel = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: training-level requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    // Thread ONLY the optional external inputs the case provides (so canonicalStringify drops
+    // absent ones — the Swift port reads each optionally and falls back to computing). The
+    // engine treats these as opaque external summaries.
+    const params: Parameters<typeof buildTrainingLevelAssessment>[0] = { history };
+    if (c.painPatterns !== undefined) params.painPatterns = c.painPatterns;
+    if (c.techniqueQualitySummary !== undefined) params.techniqueQualitySummary = c.techniqueQualitySummary;
+    if (c.calendarData !== undefined) params.calendarData = c.calendarData;
+    const assessment = buildTrainingLevelAssessment(params);
+    // Per-case probes pinning the other two exported functions directly.
+    const techniqueQualitySummaryProbe = buildTechniqueQualitySummary(history);
+    const levelLabelProbe = formatAutoTrainingLevel(assessment.level);
+    const echoed: Record<string, unknown> = { label: c.label ?? null, history };
+    if (c.painPatterns !== undefined) echoed.painPatterns = c.painPatterns;
+    if (c.techniqueQualitySummary !== undefined) echoed.techniqueQualitySummary = c.techniqueQualitySummary;
+    if (c.calendarData !== undefined) echoed.calendarData = c.calendarData;
+    echoed.assessment = assessment;
+    echoed.techniqueQualitySummaryProbe = techniqueQualitySummaryProbe;
+    echoed.levelLabelProbe = levelLabelProbe;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2316,6 +2412,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // AN-4 sessionDetailSummary + sessionQuality fixtures — both routed through the single generator.
   'session-quality/quality-cases-v1': generateSessionQuality,
   'session-quality/grouping-and-input-cases-v1': generateSessionQuality,
+  // AN-5 painPattern + trainingLevel fixtures.
+  'pain-pattern/aggregation-cases-v1': generatePainPattern,
+  'training-level/assessment-cases-v1': generateTrainingLevel,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

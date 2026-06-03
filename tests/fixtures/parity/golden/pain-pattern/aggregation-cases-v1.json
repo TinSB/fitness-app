@@ -1,0 +1,676 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 2
+                }
+              ]
+            }
+          ],
+          "id": "pp-watch-1"
+        }
+      ],
+      "label": "single-exercise-watch",
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 1,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2,
+          "suggestedAction": "watch"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-4",
+                  "painFlag": true,
+                  "painSeverity": 2
+                }
+              ]
+            }
+          ],
+          "id": "pp-sub-1"
+        }
+      ],
+      "label": "exercise-substitute-area-deload",
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2,
+          "suggestedAction": "substitute"
+        },
+        {
+          "area": "chest",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2,
+          "suggestedAction": "deload"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-4",
+                  "painFlag": true,
+                  "painSeverity": 5
+                }
+              ]
+            }
+          ],
+          "id": "pp-deload-1"
+        }
+      ],
+      "label": "exercise-deload-area-seek",
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 5,
+          "suggestedAction": "deload"
+        },
+        {
+          "area": "chest",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 5,
+          "suggestedAction": "seek_professional"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "painFlag": true,
+                  "painSeverity": 2
+                }
+              ]
+            },
+            {
+              "baseId": "chest-dip",
+              "id": "chest-dip",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "chest-dip-1",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "chest-dip-2",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "chest-dip-3",
+                  "painFlag": true,
+                  "painSeverity": 2
+                }
+              ]
+            }
+          ],
+          "id": "pp-areaseek-1"
+        }
+      ],
+      "label": "area-seek-via-frequency",
+      "patterns": [
+        {
+          "area": "chest",
+          "frequency": 6,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2,
+          "suggestedAction": "seek_professional"
+        },
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2,
+          "suggestedAction": "watch"
+        },
+        {
+          "area": "chest",
+          "exerciseId": "chest-dip",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2,
+          "suggestedAction": "watch"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 3
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "painFlag": true,
+                  "painSeverity": 3
+                }
+              ]
+            },
+            {
+              "baseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "knee",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "painFlag": true,
+                  "painSeverity": 4
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "painFlag": true,
+                  "painSeverity": 4
+                }
+              ]
+            }
+          ],
+          "id": "pp-multi-1"
+        }
+      ],
+      "label": "multi-area-combined",
+      "patterns": [
+        {
+          "area": "knee",
+          "exerciseId": "back-squat",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 4,
+          "suggestedAction": "substitute"
+        },
+        {
+          "area": "knee",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 4,
+          "suggestedAction": "deload"
+        },
+        {
+          "area": "chest / knee",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 3.5,
+          "suggestedAction": "watch"
+        },
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 3,
+          "suggestedAction": "watch"
+        },
+        {
+          "area": "chest",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 3,
+          "suggestedAction": "watch"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "note": "sharp pain at the bottom",
+                  "painFlag": true
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "note": "刺痛",
+                  "painFlag": true
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "note": "有点酸",
+                  "painFlag": true
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-4",
+                  "note": "felt tired",
+                  "painFlag": true
+                }
+              ]
+            }
+          ],
+          "id": "pp-note-1"
+        }
+      ],
+      "label": "note-derived-severity",
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 3,
+          "suggestedAction": "substitute"
+        },
+        {
+          "area": "chest",
+          "frequency": 4,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 3,
+          "suggestedAction": "deload"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 3
+                }
+              ]
+            }
+          ],
+          "id": "pp-recent-1"
+        },
+        {
+          "date": "2026-04-22",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 5
+                }
+              ]
+            }
+          ],
+          "id": "pp-old-1"
+        }
+      ],
+      "label": "lookback-excludes-old",
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 1,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 3,
+          "suggestedAction": "watch"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 2
+                }
+              ]
+            }
+          ],
+          "id": "pp-opt-1"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 3
+                }
+              ]
+            }
+          ],
+          "id": "pp-opt-2"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 4
+                }
+              ]
+            }
+          ],
+          "id": "pp-opt-3"
+        }
+      ],
+      "label": "maxsessions-and-options",
+      "options": {
+        "currentDate": "2026-06-01",
+        "lookbackDays": 30,
+        "maxSessions": 2
+      },
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2.5,
+          "suggestedAction": "watch"
+        },
+        {
+          "area": "chest",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-30",
+          "severityAvg": 2.5,
+          "suggestedAction": "watch"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "dataFlag": "test",
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "painFlag": true,
+                  "painSeverity": 5
+                }
+              ]
+            }
+          ],
+          "id": "pp-test-1"
+        },
+        {
+          "dataFlag": "excluded",
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "back-squat",
+              "id": "back-squat",
+              "muscle": "knee",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "back-squat-1",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-2",
+                  "painFlag": true,
+                  "painSeverity": 5
+                },
+                {
+                  "done": true,
+                  "id": "back-squat-3",
+                  "painFlag": true,
+                  "painSeverity": 5
+                }
+              ]
+            }
+          ],
+          "id": "pp-excluded-1"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "painFlag": true,
+                  "painSeverity": 2
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "painFlag": true,
+                  "painSeverity": 2
+                }
+              ]
+            }
+          ],
+          "id": "pp-normal-1"
+        }
+      ],
+      "label": "excluded-dataflag",
+      "patterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-28",
+          "severityAvg": 2,
+          "suggestedAction": "watch"
+        },
+        {
+          "area": "chest",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-28",
+          "severityAvg": 2,
+          "suggestedAction": "watch"
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "pp-nopain-1"
+        }
+      ],
+      "label": "no-pain-empty",
+      "patterns": []
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "4ccc7993c9f7b516583553a5465396127a293960",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "pain-pattern/aggregation-cases-v1"
+  },
+  "sourceFixtureId": "pain-pattern/aggregation-cases-v1"
+}
