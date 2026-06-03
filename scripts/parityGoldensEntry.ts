@@ -219,6 +219,15 @@ import {
   buildTechniqueQualitySummary,
   formatAutoTrainingLevel,
 } from '../src/engines/trainingLevelEngine';
+// AN-5b — recommendationConfidenceEngine + volumeAdaptationEngine port parity slice (the two
+// AN-6 intelligenceSummary leaves not yet ported). Imports the REAL engine functions so the
+// recommendation-confidence / volume-adaptation goldens are GENERATED from TS truth, never
+// hand-authored (§22). The Swift ports (RecommendationConfidenceEngine / VolumeAdaptationEngine)
+// re-run the SAME functions over each case's echoed engineInput and COMPUTE-ASSERT the result.
+// recommendation-confidence is PURE / clockless apart from history dates derived from
+// parityMeta.deterministicClockIso; volume-adaptation consumes only opaque summaries (no clock).
+import { buildRecommendationConfidence } from '../src/engines/recommendationConfidenceEngine';
+import { buildVolumeAdaptationReport } from '../src/engines/volumeAdaptationEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -457,6 +466,25 @@ const FIXTURE_IDS = [
   // hand-edited (§22).
   'pain-pattern/aggregation-cases-v1',
   'training-level/assessment-cases-v1',
+  // AN-5b recommendationConfidenceEngine + volumeAdaptationEngine port — the two AN-6
+  // intelligenceSummary leaves (trainingIntelligenceSummaryEngine.ts:225 recommendationConfidence +
+  // :246 buildVolumeAdaptationReport) not yet ported. 2 OUTPUT fixtures (each a `cases` array)
+  // FUNCTION-LEVEL pinning the ported functions. recommendation-confidence/assessment-cases pins
+  // buildRecommendationConfidence across the level bands (forced-low at ≤1 session · high ·
+  // medium-plain) + every reason branch (history sparse/stable/building · technique
+  // missing/stable/poor · rir missing/complete/incomplete · pain-pattern/no-pain · load-feedback
+  // volatile/stable-good-dominant/stable-other/total-0 · e1rm high-quality/low-confidence/medium/
+  // absent · effective-sets stable/weak · recent-replacement · recent-edits + the 92 cap ·
+  // mixed-units-sparse · training-baseline) + the pain 74 cap + the loadFeedback array/summary/
+  // record-of-values + recentEdits number/array union shapes + the no-exerciseId match-all path.
+  // volume-adaptation/report-cases pins buildVolumeAdaptationReport across every decision
+  // (insufficient_data no-evidence + dataSparse · hold trainingLevelUnknown + final-inconsistent ·
+  // decrease volumeHigh + strongRisk-multi · increase volumeLow · maintain nearTarget) + the
+  // confidence bands + formatMuscleName (mapped/unmapped→未标注肌群/row.muscleName override/byMuscle
+  // lookup) + the weeklyVolumeSummary array vs {muscles} shapes + multi-muscle summaryParts.
+  // Generated; never hand-edited (§22).
+  'recommendation-confidence/assessment-cases-v1',
+  'volume-adaptation/report-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2337,6 +2365,84 @@ const generateTrainingLevel = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// AN-5b — recommendationConfidenceEngine OUTPUT parity. Each case materialises a synthetic
+// history (via the shared materializeAnalyticsSession — ONLY date fields derive from the
+// deterministic clock; every other field passes through verbatim), threads ONLY the optional
+// external inputs the case provides (exerciseId / e1rmProfile / effectiveSetSummary /
+// loadFeedback / techniqueQualitySummary / painPatterns / trainingLevel / recentEdits — so
+// canonicalStringify drops absent ones; the Swift port reads each optionally), runs the REAL
+// buildRecommendationConfidence, and echoes BOTH the engineInput and the computed result.
+// PURE / clockless apart from the history dates. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateRecommendationConfidence = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: recommendation-confidence requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const params: Parameters<typeof buildRecommendationConfidence>[0] = { history };
+    if (c.exerciseId !== undefined) params.exerciseId = c.exerciseId;
+    if (c.e1rmProfile !== undefined) params.e1rmProfile = c.e1rmProfile;
+    if (c.effectiveSetSummary !== undefined) params.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.loadFeedback !== undefined) params.loadFeedback = c.loadFeedback;
+    if (c.techniqueQualitySummary !== undefined) params.techniqueQualitySummary = c.techniqueQualitySummary;
+    if (c.painPatterns !== undefined) params.painPatterns = c.painPatterns;
+    if (c.trainingLevel !== undefined) params.trainingLevel = c.trainingLevel;
+    if (c.recentEdits !== undefined) params.recentEdits = c.recentEdits;
+    const result = buildRecommendationConfidence(params);
+    const echoed: Record<string, unknown> = { label: c.label ?? null };
+    if (c.exerciseId !== undefined) echoed.exerciseId = c.exerciseId;
+    echoed.history = history;
+    if (c.e1rmProfile !== undefined) echoed.e1rmProfile = c.e1rmProfile;
+    if (c.effectiveSetSummary !== undefined) echoed.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.loadFeedback !== undefined) echoed.loadFeedback = c.loadFeedback;
+    if (c.techniqueQualitySummary !== undefined) echoed.techniqueQualitySummary = c.techniqueQualitySummary;
+    if (c.painPatterns !== undefined) echoed.painPatterns = c.painPatterns;
+    if (c.trainingLevel !== undefined) echoed.trainingLevel = c.trainingLevel;
+    if (c.recentEdits !== undefined) echoed.recentEdits = c.recentEdits;
+    echoed.result = result;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+// ---------------------------------------------------------------------------
+// AN-5b — volumeAdaptationEngine OUTPUT parity. Each case threads ONLY the optional external
+// summaries it provides (weeklyVolumeSummary / effectiveSetSummary / adherenceReport /
+// painPatterns / loadFeedback / sessionQualityResults / trainingLevel — all opaque inputs the
+// engine duck-types), runs the REAL buildVolumeAdaptationReport, and echoes BOTH the engineInput
+// and the computed report. PURE / clockless (the engine consumes no history and reads no clock).
+// Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateVolumeAdaptation = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const params: Parameters<typeof buildVolumeAdaptationReport>[0] = {};
+    if (c.weeklyVolumeSummary !== undefined) params.weeklyVolumeSummary = c.weeklyVolumeSummary;
+    if (c.effectiveSetSummary !== undefined) params.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.adherenceReport !== undefined) params.adherenceReport = c.adherenceReport;
+    if (c.painPatterns !== undefined) params.painPatterns = c.painPatterns;
+    if (c.loadFeedback !== undefined) params.loadFeedback = c.loadFeedback;
+    if (c.sessionQualityResults !== undefined) params.sessionQualityResults = c.sessionQualityResults;
+    if (c.trainingLevel !== undefined) params.trainingLevel = c.trainingLevel;
+    const report = buildVolumeAdaptationReport(params);
+    const echoed: Record<string, unknown> = { label: c.label ?? null };
+    if (c.weeklyVolumeSummary !== undefined) echoed.weeklyVolumeSummary = c.weeklyVolumeSummary;
+    if (c.effectiveSetSummary !== undefined) echoed.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.adherenceReport !== undefined) echoed.adherenceReport = c.adherenceReport;
+    if (c.painPatterns !== undefined) echoed.painPatterns = c.painPatterns;
+    if (c.loadFeedback !== undefined) echoed.loadFeedback = c.loadFeedback;
+    if (c.sessionQualityResults !== undefined) echoed.sessionQualityResults = c.sessionQualityResults;
+    if (c.trainingLevel !== undefined) echoed.trainingLevel = c.trainingLevel;
+    echoed.report = report;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2415,6 +2521,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // AN-5 painPattern + trainingLevel fixtures.
   'pain-pattern/aggregation-cases-v1': generatePainPattern,
   'training-level/assessment-cases-v1': generateTrainingLevel,
+  // AN-5b recommendationConfidence + volumeAdaptation fixtures.
+  'recommendation-confidence/assessment-cases-v1': generateRecommendationConfidence,
+  'volume-adaptation/report-cases-v1': generateVolumeAdaptation,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

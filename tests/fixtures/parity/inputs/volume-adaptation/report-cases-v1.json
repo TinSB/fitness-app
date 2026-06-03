@@ -1,0 +1,107 @@
+{
+  "parityMeta": {
+    "id": "volume-adaptation/report-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-5b buildVolumeAdaptationReport function-level parity. no-rows-empty (empty weeklyVolumeSummary → early-return empty report) / insufficient-data-no-evidence-unmapped (noVolumeEvidence → insufficient_data + formatMuscleName unmapped 'forearms' → 未标注肌群 + volumeText targetSets≤0 form) / data-sparse-insufficient (adherence recentSessionCount 1 → dataSparse → insufficient_data + formatMuscleName 'chest'→胸) / hold-training-level-unknown ({muscles:[…]} object form + trainingLevel absent → hold + volumeText targetSets>0 form + 'quads'→股四头肌) / decrease-volume-high (effectiveSetSummary.byMuscle lookup, ratio 1.4 → volumeIsHigh, loadFeedback SUMMARY-object too_heavy → heavyFeedbackRisk → decrease -2 + confidence high) / decrease-strong-risk-multi (volumeIsLow but painRisk substitute + adherencePoor + loadFeedback ARRAY heavy + sessionQualityResults hasLowQuality/poorTechnique → strongRisk multi-reason join → decrease) / increase-volume-low (ratio 0.5 → volumeIsLow + no adherenceReport → adherenceGood + stableEnough → increase delta + confidence medium) / maintain-near-target (status 'near_target' → maintain + 'back'→背) / hold-final-inconsistent (volumeIsLow but adherenceGood-false-not-poor → final hold + 'hamstrings'→腘绳肌) / multi-muscle-mixed (3 muscles increase+maintain+decrease → summaryParts join + row.muscleName override + 'muscle'-alias key + CJK muscleId '腿'). Each case echoes the engineInput + buildVolumeAdaptationReport report. Generated from src/engines/volumeAdaptationEngine.ts via scripts/generate-parity-goldens.mjs; the Swift VolumeAdaptationEngine compute-asserts each report == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "6342dc622ae095f664b12dfd64ea66fe3ad95da4",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "no-rows-empty",
+      "weeklyVolumeSummary": [],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "insufficient-data-no-evidence-unmapped",
+      "weeklyVolumeSummary": [
+        { "muscleId": "forearms", "targetSets": 0, "completedSets": 0, "effectiveSets": 0, "weightedEffectiveSets": 0 }
+      ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "data-sparse-insufficient",
+      "weeklyVolumeSummary": [
+        { "muscleId": "chest", "targetSets": 12, "completedSets": 6, "effectiveSets": 5, "weightedEffectiveSets": 5 }
+      ],
+      "adherenceReport": { "recentSessionCount": 1, "overallRate": 90, "mainlineRate": 90 },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "hold-training-level-unknown",
+      "weeklyVolumeSummary": {
+        "muscles": [
+          { "muscleId": "quads", "targetSets": 12, "completedSets": 8, "effectiveSets": 8, "weightedEffectiveSets": 8 }
+        ]
+      }
+    },
+    {
+      "label": "decrease-volume-high",
+      "weeklyVolumeSummary": [
+        { "muscleId": "chest", "targetSets": 10 }
+      ],
+      "effectiveSetSummary": {
+        "byMuscle": {
+          "chest": { "completedSets": 14, "effectiveSets": 14, "highConfidenceEffectiveSets": 12, "weightedEffectiveSets": 14 }
+        }
+      },
+      "adherenceReport": { "recentSessionCount": 5, "overallRate": 90, "mainlineRate": 90 },
+      "loadFeedback": { "counts": { "too_heavy": 3, "too_light": 0, "good": 0 }, "adjustment": {} },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "decrease-strong-risk-multi",
+      "weeklyVolumeSummary": [
+        { "muscleId": "shoulders", "targetSets": 12, "completedSets": 8, "effectiveSets": 8, "weightedEffectiveSets": 8 }
+      ],
+      "adherenceReport": { "recentSessionCount": 5, "overallRate": 60, "mainlineRate": 60 },
+      "painPatterns": [
+        { "area": "shoulders", "exerciseId": "overhead-press", "frequency": 3, "severityAvg": 4, "lastOccurredAt": "2026-05-25", "suggestedAction": "substitute" }
+      ],
+      "loadFeedback": [
+        { "feedback": "too_heavy" },
+        { "feedback": "too_heavy" },
+        { "feedback": "good" }
+      ],
+      "sessionQualityResults": [
+        { "level": "low", "score": 40, "title": "本次质量偏低", "summary": "本次训练质量偏低。", "positives": [], "issues": [ { "id": "technique", "label": "动作质量偏低", "tone": "warning", "reason": "近期动作质量下降。" } ], "nextSuggestions": [], "confidence": "medium" },
+        { "level": "low", "score": 45, "title": "本次质量偏低", "summary": "本次训练质量偏低。", "positives": [], "issues": [], "nextSuggestions": [], "confidence": "medium" },
+        { "level": "medium", "score": 60, "title": "本次质量中等", "summary": "本次训练质量中等。", "positives": [], "issues": [], "nextSuggestions": [], "confidence": "medium" }
+      ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "increase-volume-low",
+      "weeklyVolumeSummary": [
+        { "muscleId": "quads", "targetSets": 12, "completedSets": 6, "effectiveSets": 6, "weightedEffectiveSets": 6, "remainingSets": 6 }
+      ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "maintain-near-target",
+      "weeklyVolumeSummary": [
+        { "muscleId": "back", "targetSets": 12, "completedSets": 11, "effectiveSets": 11, "weightedEffectiveSets": 11, "status": "near_target" }
+      ],
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "hold-final-inconsistent",
+      "weeklyVolumeSummary": [
+        { "muscleId": "hamstrings", "targetSets": 12, "completedSets": 6, "effectiveSets": 6, "weightedEffectiveSets": 6 }
+      ],
+      "adherenceReport": { "recentSessionCount": 4, "overallRate": 70, "mainlineRate": 70 },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "label": "multi-muscle-mixed",
+      "weeklyVolumeSummary": [
+        { "muscleId": "chest", "muscleName": "自定义胸", "targetSets": 12, "weightedEffectiveSets": 6 },
+        { "muscle": "back", "targetSets": 12, "weightedEffectiveSets": 11 },
+        { "muscleId": "腿", "targetSets": 10, "weightedEffectiveSets": 14 }
+      ],
+      "trainingLevel": "intermediate"
+    }
+  ]
+}
