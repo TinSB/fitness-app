@@ -1,0 +1,139 @@
+{
+  "counts": {
+    "DELOAD_LEVEL_LABELS": 4,
+    "DELOAD_STRATEGY_LABELS": 4,
+    "EFFECTIVE_PHASE_DISPLAY_LABELS": 6,
+    "INTENSITY_BIAS_LABELS": 3,
+    "MUSCLE_LABELS": 5,
+    "PHASE_LABELS": 4,
+    "READINESS_ADJUSTMENT_LABELS": 4,
+    "SKIP_REASON_LABELS": 7,
+    "SUPPORT_BLOCK_LABELS": 2,
+    "tables": 11,
+    "TECHNIQUE_QUALITY_LABELS": 3,
+    "TERMS": 24
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "84a3b4b97c2212016cc904d69bb60a3958e41ee5",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "i18n/terms-snapshot-v1"
+  },
+  "tables": {
+    "DELOAD_LEVEL_LABELS": {
+      "none": "正常推进",
+      "red": "恢复优先",
+      "watch": "观察",
+      "yellow": "减量观察"
+    },
+    "DELOAD_STRATEGY_LABELS": {
+      "none": "按原计划推进",
+      "recovery_template": "切换到恢复优先安排",
+      "reduce_accessories": "减少辅助动作",
+      "reduce_volume": "下修训练量"
+    },
+    "EFFECTIVE_PHASE_DISPLAY_LABELS": {
+      "base": "基础周",
+      "build": "构建周",
+      "deload": "减量周",
+      "overload": "过载周",
+      "reentry": "回归周",
+      "restart": "重新开始"
+    },
+    "INTENSITY_BIAS_LABELS": {
+      "aggressive": "积极",
+      "conservative": "保守",
+      "normal": "标准"
+    },
+    "MUSCLE_LABELS": {
+      "arms": "手臂",
+      "back": "背",
+      "chest": "胸",
+      "legs": "腿",
+      "shoulders": "肩"
+    },
+    "PHASE_LABELS": {
+      "base": "基础周",
+      "build": "构建周",
+      "deload": "减量周",
+      "overload": "过载周"
+    },
+    "READINESS_ADJUSTMENT_LABELS": {
+      "conservative": "保守训练",
+      "normal": "正常推进",
+      "push": "积极推进",
+      "recovery": "恢复优先"
+    },
+    "SKIP_REASON_LABELS": {
+      "equipment": "器械受限",
+      "forgot": "漏记",
+      "not_needed": "本次不需要",
+      "other": "其他原因",
+      "pain": "出现不适",
+      "time": "时间不足",
+      "too_tired": "疲劳过高"
+    },
+    "SUPPORT_BLOCK_LABELS": {
+      "correction": "纠偏模块",
+      "functional": "功能补丁"
+    },
+    "TECHNIQUE_QUALITY_LABELS": {
+      "acceptable": "可接受",
+      "good": "良好",
+      "poor": "较差"
+    },
+    "TERMS": {
+      "adherence": "完成度",
+      "backoffSet": "回退组",
+      "base": "基础周",
+      "build": "构建周",
+      "correctionBlock": "纠偏模块",
+      "deload": "减量周",
+      "functionalBlock": "功能补丁",
+      "mainTraining": "主训练",
+      "mesocycle": "训练周期",
+      "oneRm": "1RM",
+      "overload": "过载周",
+      "painPattern": "不适模式",
+      "progressionExercise": "进阶动作",
+      "progressionSuggestion": "进阶建议",
+      "readinessScore": "准备度评分",
+      "regressionExercise": "回退动作",
+      "RIR": "RIR",
+      "ROM": "ROM",
+      "RPE": "RPE",
+      "supportLayer": "辅助层",
+      "techniqueQuality": "动作质量",
+      "topSet": "顶组",
+      "weeklyBudget": "周剂量预算",
+      "weeklyCoachReview": "每周训练总结"
+    }
+  },
+  "termProbes": {
+    "adherence": "完成度",
+    "backoffSet": "回退组",
+    "base": "基础周",
+    "build": "构建周",
+    "correctionBlock": "纠偏模块",
+    "deload": "减量周",
+    "functionalBlock": "功能补丁",
+    "mainTraining": "主训练",
+    "mesocycle": "训练周期",
+    "oneRm": "1RM",
+    "overload": "过载周",
+    "painPattern": "不适模式",
+    "progressionExercise": "进阶动作",
+    "progressionSuggestion": "进阶建议",
+    "readinessScore": "准备度评分",
+    "regressionExercise": "回退动作",
+    "RIR": "RIR",
+    "ROM": "ROM",
+    "RPE": "RPE",
+    "supportLayer": "辅助层",
+    "techniqueQuality": "动作质量",
+    "topSet": "顶组",
+    "weeklyBudget": "周剂量预算",
+    "weeklyCoachReview": "每周训练总结"
+  }
+}

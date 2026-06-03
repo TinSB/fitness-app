@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "i18n/terms-snapshot-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S0 i18n/terms data port — a full snapshot of the eleven frozen label tables (TERMS / PHASE_LABELS / EFFECTIVE_PHASE_DISPLAY_LABELS / INTENSITY_BIAS_LABELS / TECHNIQUE_QUALITY_LABELS / SUPPORT_BLOCK_LABELS / SKIP_REASON_LABELS / DELOAD_LEVEL_LABELS / DELOAD_STRATEGY_LABELS / READINESS_ADJUSTMENT_LABELS / MUSCLE_LABELS from src/i18n/terms.ts) keyed by their TS keys, plus per-table counts and every TERMS key routed through term(). The Swift port (IronPathL10n.Terms) reconstructs the same snapshot from its mirrored tables + term() and asserts it equals this golden entry-by-entry (Chinese values verbatim), so no label can be dropped or altered in transcription.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "84a3b4b97c2212016cc904d69bb60a3958e41ee5",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No input params — the generator transcribes the static, committed label tables directly from src/i18n/terms.ts (no engine call, no clock, generatedAtPolicy 'none'). terms.ts is the PA track's one clean leaf (zero imports, zero runtime logic). De-dup note: terms.MUSCLE_LABELS (5: chest/back/legs/shoulders/arms -> 胸/背/腿/肩/手臂) is a DISTINCT TS constant from formatters.ts MUSCLE_LABELS (18 entries, already ported into IronPathTrainingDecision.VolumeAdaptationEngine.muscleLabels); the two share these 5 Chinese values but have different key universes and live in different source files — not merged here. The S4 i18n/formatters port consolidates the shared muscle vocabulary."
+  }
+}

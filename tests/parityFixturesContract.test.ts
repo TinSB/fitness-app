@@ -159,6 +159,10 @@ const FIXTURE_IDS = [
   'volume-adaptation/report-cases-v1',
   // AN-6 trainingIntelligenceSummary top-level fixture (closes the analysis engine layer).
   'intelligence-summary/summary-cases-v1',
+  // PA-S0 i18n/terms data port — 1 snapshot fixture dumping the eleven frozen label
+  // tables + term() probes for the Swift IronPathL10n.Terms port to reconcile
+  // entry-by-entry. Generated; never hand-edited (§22).
+  'i18n/terms-snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -360,7 +364,7 @@ describe('parityFixtures — input fixtures must not include non-deterministic c
 });
 
 describe('parityFixtures — fixture inventory has not silently grown beyond the declared contract', () => {
-  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live + 3 AN-1 leaf-analytics + 3 AN-1b boundary + 2 AN-2 plateau-detection + 2 AN-3 effective-set + 5 AN-3 analytics + 2 AN-4 session-quality + 2 AN-5 pain-pattern/training-level + 2 AN-5b recommendation-confidence/volume-adaptation + 1 AN-6 intelligence-summary + 1 AN-8 sort-stability tie)', () => {
+  it('parityFixtures inputs/ and golden/ each carry exactly the declared fixture ids (5 iOS-0 + 9 iOS-4B0 TrainingDecision + 3 iOS-17e-0 progression + 4 SR-0 smart-replacement + 1 SR-1 exercise-library + 5 SR-2 replacement-engine + 5 iOS-17e-1 e1rm-engine + 4 iOS-17e-2 adaptive-feedback + 6 iOS-17e-3 progression-suggestion + 4 iOS-17e-4 set-weight-fine-tune + 3 iOS-17e-4 load-feedback + 2 iOS-17e-6a fine-tune-live + 3 AN-1 leaf-analytics + 3 AN-1b boundary + 2 AN-2 plateau-detection + 2 AN-3 effective-set + 5 AN-3 analytics + 2 AN-4 session-quality + 2 AN-5 pain-pattern/training-level + 2 AN-5b recommendation-confidence/volume-adaptation + 1 AN-6 intelligence-summary + 1 AN-8 sort-stability tie + 1 PA-S0 i18n-terms)', () => {
     const observed: string[] = [];
     const walk = (root: string, prefix = '') => {
       for (const entry of readdirSync(root, { withFileTypes: true })) {

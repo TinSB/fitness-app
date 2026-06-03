@@ -240,6 +240,27 @@ import { buildVolumeAdaptationReport } from '../src/engines/volumeAdaptationEngi
 // recommendedActions) == golden. PURE / clockless apart from history dates derived from
 // parityMeta.deterministicClockIso.
 import { buildTrainingIntelligenceSummary } from '../src/engines/trainingIntelligenceSummaryEngine';
+// PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
+// tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
+// truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
+// track (zero imports, zero runtime logic — pure `as const` label data). The
+// Swift port (IronPathL10n.Terms) mirrors these 11 tables + term(); the golden
+// mechanically reconciles every entry item-by-item. No engine call, no clock →
+// generatedAtPolicy 'none'.
+import {
+  TERMS,
+  PHASE_LABELS,
+  EFFECTIVE_PHASE_DISPLAY_LABELS,
+  INTENSITY_BIAS_LABELS,
+  TECHNIQUE_QUALITY_LABELS,
+  SUPPORT_BLOCK_LABELS,
+  SKIP_REASON_LABELS,
+  DELOAD_LEVEL_LABELS,
+  DELOAD_STRATEGY_LABELS,
+  READINESS_ADJUSTMENT_LABELS,
+  MUSCLE_LABELS,
+  term,
+} from '../src/i18n/terms';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -516,6 +537,15 @@ const FIXTURE_IDS = [
   // the Swift TrainingIntelligenceSummaryEngine compute-asserts each summary == golden. Generated;
   // never hand-edited (§22).
   'intelligence-summary/summary-cases-v1',
+  // PA-S0 i18n/terms data port — 1 snapshot fixture dumping the eleven frozen
+  // label tables (TERMS / PHASE_LABELS / EFFECTIVE_PHASE_DISPLAY_LABELS /
+  // INTENSITY_BIAS_LABELS / TECHNIQUE_QUALITY_LABELS / SUPPORT_BLOCK_LABELS /
+  // SKIP_REASON_LABELS / DELOAD_LEVEL_LABELS / DELOAD_STRATEGY_LABELS /
+  // READINESS_ADJUSTMENT_LABELS / MUSCLE_LABELS) keyed by their TS keys + every
+  // TERMS key routed through term(), so the Swift port (IronPathL10n.Terms)
+  // reconciles every label entry-by-entry. Pure data, no clock. Generated;
+  // never hand-edited (§22).
+  'i18n/terms-snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2518,6 +2548,43 @@ const generateIntelligenceSummary = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// PA-S0 — i18n/terms snapshot
+//
+// Dumps the eleven frozen label tables from src/i18n/terms.ts verbatim (keyed by
+// their TS export name) + per-table counts + every TERMS key routed through
+// term() (so the ported term(key) === TERMS[key] equivalence is pinned). The
+// Swift IronPathL10n.Terms tables reconcile every entry item-by-item. This
+// transcribes frozen DATA — it COMPUTES nothing (no clock, no engine).
+// ---------------------------------------------------------------------------
+
+const generateI18nTermsSnapshot = (_input: any, _meta: ParityMeta) => {
+  const tables = {
+    TERMS,
+    PHASE_LABELS,
+    EFFECTIVE_PHASE_DISPLAY_LABELS,
+    INTENSITY_BIAS_LABELS,
+    TECHNIQUE_QUALITY_LABELS,
+    SUPPORT_BLOCK_LABELS,
+    SKIP_REASON_LABELS,
+    DELOAD_LEVEL_LABELS,
+    DELOAD_STRATEGY_LABELS,
+    READINESS_ADJUSTMENT_LABELS,
+    MUSCLE_LABELS,
+  };
+  const counts: Record<string, number> = { tables: Object.keys(tables).length };
+  for (const [name, table] of Object.entries(tables)) {
+    counts[name] = Object.keys(table).length;
+  }
+  // term() probes — every TERMS key routed through term() (terms.ts:103). Each
+  // value === TERMS[key], so this pins the ported lookup over the full key set.
+  const termProbes: Record<string, string> = {};
+  for (const key of Object.keys(TERMS)) {
+    termProbes[key] = term(key as keyof typeof TERMS);
+  }
+  return { counts, tables, termProbes };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2605,6 +2672,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'volume-adaptation/report-cases-v1': generateVolumeAdaptation,
   // AN-6 trainingIntelligenceSummary top-level fixture.
   'intelligence-summary/summary-cases-v1': generateIntelligenceSummary,
+  // PA-S0 i18n/terms data port snapshot.
+  'i18n/terms-snapshot-v1': generateI18nTermsSnapshot,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
