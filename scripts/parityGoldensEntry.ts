@@ -228,6 +228,18 @@ import {
 // parityMeta.deterministicClockIso; volume-adaptation consumes only opaque summaries (no clock).
 import { buildRecommendationConfidence } from '../src/engines/recommendationConfidenceEngine';
 import { buildVolumeAdaptationReport } from '../src/engines/volumeAdaptationEngine';
+// AN-6 — trainingIntelligenceSummaryEngine TOP-LEVEL port parity slice (closes the analysis
+// engine layer). Imports the REAL buildTrainingIntelligenceSummary so the intelligence-summary
+// goldens are GENERATED from TS truth, never hand-authored (§22). The top aggregator consumes
+// the already-ported AN-1~5 leaves (sessionQuality / recommendationConfidence / plateau /
+// volumeAdaptation / e1rm / filterAnalyticsHistory / replacement / formatExerciseName) and
+// re-emits their results + derived keyInsights/recommendedActions. The Swift port
+// (TrainingIntelligenceSummaryEngine) re-runs buildTrainingIntelligenceSummary over each case's
+// echoed engineInput and COMPUTE-ASSERTs the FULL summary (sessionQuality? +
+// recommendationConfidence[] + plateauResults[] + volumeAdaptation + keyInsights +
+// recommendedActions) == golden. PURE / clockless apart from history dates derived from
+// parityMeta.deterministicClockIso.
+import { buildTrainingIntelligenceSummary } from '../src/engines/trainingIntelligenceSummaryEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -485,6 +497,21 @@ const FIXTURE_IDS = [
   // Generated; never hand-edited (§22).
   'recommendation-confidence/assessment-cases-v1',
   'volume-adaptation/report-cases-v1',
+  // AN-6 trainingIntelligenceSummaryEngine TOP-LEVEL port — 1 OUTPUT fixture (a `cases` array)
+  // FUNCTION-LEVEL pinning the ported buildTrainingIntelligenceSummary. The cases jointly cover
+  // the summary's branches: empty (no latest/history → fallback insight + keep-observing
+  // '继续记录训练') · high-quality latest (sessionQuality high insight, no review-latest action) ·
+  // low-quality latest (review-latest action + quality insight) · important plateau (review-exercise
+  // action + plateau insight + label-from-history) · volume increase/decrease (review-volume +
+  // create-adjustment-preview actions + volume insight) · volume hold (insight only, no action) ·
+  // pain patterns (fed to sessionQuality/plateau/recommendationConfidence/volumeAdaptation) ·
+  // test-flagged latest (dataFlag filter → no sessionQuality, keep-observing '继续记录训练') ·
+  // e1rmProfiles-driven + multi-exercise selection (slice(0,4) cap) · full-combo (every action +
+  // keyInsights slice(0,4) cap). Each case echoes the engineInput + the full summary. Generated
+  // from src/engines/trainingIntelligenceSummaryEngine.ts via scripts/generate-parity-goldens.mjs;
+  // the Swift TrainingIntelligenceSummaryEngine compute-asserts each summary == golden. Generated;
+  // never hand-edited (§22).
+  'intelligence-summary/summary-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2443,6 +2470,50 @@ const generateVolumeAdaptation = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// AN-6 — trainingIntelligenceSummaryEngine TOP-LEVEL OUTPUT parity. Each case materialises an
+// OPTIONAL latest session + a synthetic history (via the shared materializeAnalyticsSession —
+// ONLY date fields derive from the deterministic clock; every other field passes through
+// verbatim), threads ONLY the optional external inputs the case provides (weeklyVolumeSummary /
+// e1rmProfiles / effectiveSetSummary / loadFeedback / painPatterns / trainingLevel — all opaque
+// inputs the engine + its leaves duck-type; so canonicalStringify drops absent ones and the
+// Swift port reads each optionally), runs the REAL buildTrainingIntelligenceSummary, and echoes
+// BOTH the engineInput and the full computed summary. PURE / clockless apart from the history
+// dates. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateIntelligenceSummary = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: intelligence-summary requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const latestSession = c.latestSession !== undefined ? materializeAnalyticsSession(c.latestSession, nowIso) : undefined;
+    const history = (c.history ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const params: Parameters<typeof buildTrainingIntelligenceSummary>[0] = { history };
+    if (latestSession !== undefined) params.latestSession = latestSession;
+    if (c.weeklyVolumeSummary !== undefined) params.weeklyVolumeSummary = c.weeklyVolumeSummary;
+    if (c.e1rmProfiles !== undefined) params.e1rmProfiles = c.e1rmProfiles;
+    if (c.effectiveSetSummary !== undefined) params.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.loadFeedback !== undefined) params.loadFeedback = c.loadFeedback;
+    if (c.painPatterns !== undefined) params.painPatterns = c.painPatterns;
+    if (c.trainingLevel !== undefined) params.trainingLevel = c.trainingLevel;
+    const summary = buildTrainingIntelligenceSummary(params);
+    const echoed: Record<string, unknown> = { label: c.label ?? null };
+    if (latestSession !== undefined) echoed.latestSession = latestSession;
+    echoed.history = history;
+    if (c.weeklyVolumeSummary !== undefined) echoed.weeklyVolumeSummary = c.weeklyVolumeSummary;
+    if (c.e1rmProfiles !== undefined) echoed.e1rmProfiles = c.e1rmProfiles;
+    if (c.effectiveSetSummary !== undefined) echoed.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.loadFeedback !== undefined) echoed.loadFeedback = c.loadFeedback;
+    if (c.painPatterns !== undefined) echoed.painPatterns = c.painPatterns;
+    if (c.trainingLevel !== undefined) echoed.trainingLevel = c.trainingLevel;
+    echoed.summary = summary;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2524,6 +2595,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // AN-5b recommendationConfidence + volumeAdaptation fixtures.
   'recommendation-confidence/assessment-cases-v1': generateRecommendationConfidence,
   'volume-adaptation/report-cases-v1': generateVolumeAdaptation,
+  // AN-6 trainingIntelligenceSummary top-level fixture.
+  'intelligence-summary/summary-cases-v1': generateIntelligenceSummary,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

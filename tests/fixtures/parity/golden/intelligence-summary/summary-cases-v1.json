@@ -1,0 +1,2616 @@
+{
+  "cases": [
+    {
+      "history": [],
+      "label": "empty-no-data",
+      "summary": {
+        "keyInsights": [
+          "当前训练智能数据还在积累中，继续记录训练、余力（RIR）和动作质量后会更稳定。"
+        ],
+        "plateauResults": [],
+        "recommendationConfidence": [],
+        "recommendedActions": [
+          {
+            "actionType": "keep_observing",
+            "id": "keep-observing",
+            "label": "继续记录训练",
+            "reason": "当前没有需要立即处理的高优先级信号，继续记录后判断会更稳定。",
+            "requiresConfirmation": false
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      }
+    },
+    {
+      "history": [],
+      "label": "high-quality-latest-no-history",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "id": "bench-press",
+            "muscle": "chest",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 80
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 80
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-3",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 80
+              }
+            ]
+          }
+        ],
+        "id": "is-hi-latest"
+      },
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量较好，可以作为后续推荐参考。",
+          "平板卧推 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "bench-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "补充动作质量记录。",
+              "补充余力（RIR）记录。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "technique-missing",
+                "label": "动作质量缺失",
+                "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "rir-missing",
+                "label": "余力记录缺失",
+                "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+              }
+            ],
+            "score": 0,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "keep_observing",
+            "id": "keep-observing",
+            "label": "继续观察",
+            "reason": "当前没有需要立即处理的高优先级信号，继续记录后判断会更稳定。",
+            "requiresConfirmation": false
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [],
+          "level": "high",
+          "nextSuggestions": [
+            "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 3/3 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "effective-quality",
+              "label": "有效训练质量稳定",
+              "reason": "正式组中有 3 组高置信有效组。",
+              "tone": "positive"
+            },
+            {
+              "id": "technique-good",
+              "label": "动作质量稳定",
+              "reason": "正式组动作质量记录整体稳定。",
+              "tone": "positive"
+            }
+          ],
+          "score": 100,
+          "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+          "title": "本次训练质量：高"
+        },
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "is-low-h1"
+        }
+      ],
+      "label": "low-quality-latest",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "id": "bench-press",
+            "muscle": "chest",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-1",
+                "painFlag": true,
+                "reps": 5,
+                "rir": 0,
+                "techniqueQuality": "poor",
+                "weight": 80
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 3,
+                "techniqueQuality": "poor",
+                "weight": 80
+              },
+              {
+                "displayUnit": "kg",
+                "done": false,
+                "id": "bench-press-3",
+                "reps": 0,
+                "weight": 80
+              }
+            ]
+          }
+        ],
+        "id": "is-low-latest"
+      },
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量偏低，下次建议先保证关键主训练完成度。",
+          "平板卧推 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "bench-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 34,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "review_session",
+            "id": "review-latest-session",
+            "label": "查看本次训练",
+            "reason": "最近一次训练质量还有可复核空间，建议先查看完成组、动作质量和不适标记。",
+            "requiresConfirmation": false
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [
+            {
+              "id": "effective-quality-low",
+              "label": "高质量有效组不足",
+              "reason": "正式组完成了，但高置信有效组不足，建议结合动作质量和余力（RIR）复查。",
+              "tone": "warning"
+            },
+            {
+              "id": "pain-flag",
+              "label": "出现不适标记",
+              "reason": "1 组正式组记录了不适，这些组不会作为高质量亮点。",
+              "tone": "negative"
+            },
+            {
+              "id": "poor-technique",
+              "label": "动作质量偏低",
+              "reason": "2 组动作质量较差，会降低本次训练质量评分。",
+              "tone": "negative"
+            },
+            {
+              "id": "rir-missing",
+              "label": "余力（RIR）记录不完整",
+              "reason": "1 组正式组缺少余力（RIR），本次判断置信度会下降。",
+              "tone": "warning"
+            },
+            {
+              "id": "main-incomplete",
+              "label": "主训练未完全完成",
+              "reason": "部分主训练动作或正式组未完成，不会计入有效组、总量、PR 或 e1RM。",
+              "tone": "warning"
+            }
+          ],
+          "level": "low",
+          "nextSuggestions": [
+            "下次优先处理不适动作，必要时降低负荷或使用替代动作。",
+            "下次先维持重量，优先把动作质量做稳。",
+            "下次先确保关键主训练完成，再考虑辅助动作。"
+          ],
+          "positives": [],
+          "score": 48,
+          "summary": "本次训练完成度或执行质量偏低，建议先复查关键记录。 部分主训练未完成，未完成组不会计入有效组、总量、PR 或 e1RM。 部分正式组记录了不适。 动作质量记录存在偏低。 余力（RIR）记录不完整。",
+          "title": "本次训练质量：偏低"
+        },
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-pl-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-pl-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-pl-3"
+        },
+        {
+          "date": "2026-05-17",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-pl-4"
+        },
+        {
+          "date": "2026-05-13",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-pl-5"
+        }
+      ],
+      "label": "plateau-history-squat",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "squat",
+            "canonicalExerciseId": "squat",
+            "id": "squat",
+            "muscle": "quads",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "squat-1",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 120
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "squat-2",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 120
+              }
+            ]
+          }
+        ],
+        "id": "is-pl-latest"
+      },
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量较好，可以作为后续推荐参考。",
+          "深蹲 近期进展放缓，先继续观察并提高完成质量。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "medium",
+            "exerciseId": "squat",
+            "signals": [
+              {
+                "id": "history-depth",
+                "label": "历史记录可用于判断",
+                "reason": "已找到 5 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+                "severity": "info"
+              },
+              {
+                "id": "progress-flat",
+                "label": "近期进展放缓",
+                "reason": "近期多次训练的重量、次数和单组表现没有明显上升。",
+                "severity": "warning"
+              },
+              {
+                "id": "completion-stable",
+                "label": "完成率稳定",
+                "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+                "severity": "info"
+              }
+            ],
+            "status": "possible_plateau",
+            "suggestedActions": [
+              "继续观察 1–2 次训练，确认是否只是短期波动。",
+              "下次先维持重量，争取提高完成质量或目标次数。"
+            ],
+            "summary": "近期进展有放缓迹象，但还不足以直接判断为平台期。建议继续观察并优先提高完成质量。",
+            "title": "该动作 进展放缓"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "high",
+            "missingData": [
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "raise_confidence",
+                "id": "history-stable",
+                "label": "近期记录稳定",
+                "reason": "已有 5 次同动作正式记录，可用于校准推荐。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "no-pain",
+                "label": "无明显不适",
+                "reason": "近期同动作记录没有明显不适标记。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 80,
+            "summary": "这条推荐可信度较高。已有 5 次同动作正式记录，可用于校准推荐。",
+            "title": "推荐可信度：高"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "review_exercise",
+            "id": "review-exercise-squat",
+            "label": "查看动作进展",
+            "reason": "有动作出现进展放缓或限制信号，建议先查看该动作历史。",
+            "requiresConfirmation": false
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [],
+          "level": "high",
+          "nextSuggestions": [
+            "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 2/2 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "effective-quality",
+              "label": "有效训练质量稳定",
+              "reason": "正式组中有 2 组高置信有效组。",
+              "tone": "positive"
+            },
+            {
+              "id": "technique-good",
+              "label": "动作质量稳定",
+              "reason": "正式组动作质量记录整体稳定。",
+              "tone": "positive"
+            }
+          ],
+          "score": 100,
+          "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+          "title": "本次训练质量：高"
+        },
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "leg-press",
+              "canonicalExerciseId": "leg-press",
+              "id": "leg-press",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 195
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "leg-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 195
+                }
+              ]
+            }
+          ],
+          "id": "is-vi-1"
+        }
+      ],
+      "label": "volume-increase",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "leg-press",
+            "canonicalExerciseId": "leg-press",
+            "id": "leg-press",
+            "muscle": "quads",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "leg-press-1",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 200
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "leg-press-2",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 200
+              }
+            ]
+          }
+        ],
+        "id": "is-vi-latest"
+      },
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量较好，可以作为后续推荐参考。",
+          "股四头肌 下周可小幅增加 2 组。",
+          "腿举 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "leg-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 34,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "review_volume",
+            "id": "review-volume-quads",
+            "label": "查看训练量建议",
+            "reason": "有肌群训练量可能需要小幅调整，先查看原因和建议组数。",
+            "requiresConfirmation": false
+          },
+          {
+            "actionType": "create_adjustment_preview",
+            "id": "create-adjustment-preview",
+            "label": "生成计划调整预览",
+            "reason": "仅生成可确认的预览，不会自动修改当前计划。",
+            "requiresConfirmation": true
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [],
+          "level": "high",
+          "nextSuggestions": [
+            "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 2/2 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "effective-quality",
+              "label": "有效训练质量稳定",
+              "reason": "正式组中有 2 组高置信有效组。",
+              "tone": "positive"
+            },
+            {
+              "id": "technique-good",
+              "label": "动作质量稳定",
+              "reason": "正式组动作质量记录整体稳定。",
+              "tone": "positive"
+            }
+          ],
+          "score": 100,
+          "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+          "title": "本次训练质量：高"
+        },
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "increase",
+              "muscleId": "quads",
+              "reason": "该肌群低于目标，但近期完成度和训练质量可以支持小幅加量。当前约 6/12 组。",
+              "setsDelta": 2,
+              "suggestedActions": [
+                "下周只给股四头肌增加 2 组，先观察完成度和不适反馈。",
+                "优先把新增组放在动作质量稳定的训练日。"
+              ],
+              "title": "股四头肌：增加训练量"
+            }
+          ],
+          "summary": "下周训练量建议：增加 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+        }
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "completedSets": 6,
+          "effectiveSets": 6,
+          "muscleId": "quads",
+          "remainingSets": 6,
+          "targetSets": 12,
+          "weightedEffectiveSets": 6
+        }
+      ]
+    },
+    {
+      "effectiveSetSummary": {
+        "byMuscle": {
+          "chest": {
+            "completedSets": 14,
+            "effectiveSets": 14,
+            "highConfidenceEffectiveSets": 12,
+            "weightedEffectiveSets": 14
+          }
+        }
+      },
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "bench-press",
+              "canonicalExerciseId": "bench-press",
+              "id": "bench-press",
+              "muscle": "chest",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 1,
+                  "techniqueQuality": "good",
+                  "weight": 85
+                }
+              ]
+            }
+          ],
+          "id": "is-vd-1"
+        }
+      ],
+      "label": "volume-decrease-heavy",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "id": "bench-press",
+            "muscle": "chest",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 5,
+                "rir": 1,
+                "techniqueQuality": "good",
+                "weight": 85
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 5,
+                "rir": 1,
+                "techniqueQuality": "good",
+                "weight": 85
+              }
+            ]
+          }
+        ],
+        "id": "is-vd-latest"
+      },
+      "loadFeedback": {
+        "adjustment": {},
+        "counts": {
+          "good": 0,
+          "too_heavy": 3,
+          "too_light": 0
+        }
+      },
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量中等，建议复核动作质量和余力（RIR）记录。",
+          "胸 下周建议减少 2 组，优先控制疲劳。",
+          "平板卧推 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "bench-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "load-feedback-stable",
+                "label": "重量反馈稳定",
+                "reason": "推荐重量反馈方向比较稳定。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 38,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "review_session",
+            "id": "review-latest-session",
+            "label": "查看本次训练",
+            "reason": "最近一次训练质量还有可复核空间，建议先查看完成组、动作质量和不适标记。",
+            "requiresConfirmation": false
+          },
+          {
+            "actionType": "review_volume",
+            "id": "review-volume-chest",
+            "label": "查看训练量建议",
+            "reason": "有肌群训练量可能需要小幅调整，先查看原因和建议组数。",
+            "requiresConfirmation": false
+          },
+          {
+            "actionType": "create_adjustment_preview",
+            "id": "create-adjustment-preview",
+            "label": "生成计划调整预览",
+            "reason": "仅生成可确认的预览，不会自动修改当前计划。",
+            "requiresConfirmation": true
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [
+            {
+              "id": "effective-quality-low",
+              "label": "高质量有效组不足",
+              "reason": "正式组完成了，但高置信有效组不足，建议结合动作质量和余力（RIR）复查。",
+              "tone": "warning"
+            },
+            {
+              "id": "load-too-heavy",
+              "label": "重量反馈偏重",
+              "reason": "本次有推荐重量偏重反馈，下次不宜直接加重。",
+              "tone": "warning"
+            }
+          ],
+          "level": "medium",
+          "nextSuggestions": [
+            "下次相关动作先维持或小幅下调重量，不急于加重。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 2/2 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "technique-good",
+              "label": "动作质量稳定",
+              "reason": "正式组动作质量记录整体稳定。",
+              "tone": "positive"
+            }
+          ],
+          "score": 68,
+          "summary": "你完成了主要训练，但仍有影响质量或置信度的信号。 重量反馈偏重。",
+          "title": "本次训练质量：中等"
+        },
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "decrease",
+              "muscleId": "chest",
+              "reason": "训练量已经偏高，重量反馈多次偏重，训练质量或动作质量不够稳定，下周先保守处理。当前约 14/10 组。",
+              "setsDelta": -2,
+              "suggestedActions": [
+                "下周先给胸减少 2 组。",
+                "优先保留关键主训练，减少额外辅助量。"
+              ],
+              "title": "胸：减少训练量"
+            }
+          ],
+          "summary": "下周训练量建议：减少 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+        }
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "muscleId": "chest",
+          "targetSets": 10
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-vh-1"
+        }
+      ],
+      "label": "volume-hold",
+      "summary": {
+        "keyInsights": [
+          "股四头肌 暂缓调整，先继续积累稳定记录。",
+          "深蹲 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "squat",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 34,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "keep_observing",
+            "id": "keep-observing",
+            "label": "继续记录训练",
+            "reason": "当前没有需要立即处理的高优先级信号，继续记录后判断会更稳定。",
+            "requiresConfirmation": false
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "low",
+              "decision": "hold",
+              "muscleId": "quads",
+              "reason": "系统仍在建立训练基线，暂时不建议直接增减训练量。当前约 8/12 组。",
+              "setsDelta": 0,
+              "suggestedActions": [
+                "暂缓调整股四头肌训练量，继续收集记录。",
+                "本周不要自动改计划，等数据更稳定后再进入计划调整预览。"
+              ],
+              "title": "股四头肌：暂缓训练量"
+            }
+          ],
+          "summary": "下周训练量建议：暂缓 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+        }
+      },
+      "weeklyVolumeSummary": {
+        "muscles": [
+          {
+            "completedSets": 8,
+            "effectiveSets": 8,
+            "muscleId": "quads",
+            "targetSets": 12,
+            "weightedEffectiveSets": 8
+          }
+        ]
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "shoulder-press",
+              "canonicalExerciseId": "shoulder-press",
+              "id": "shoulder-press",
+              "muscle": "shoulders",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "shoulder-press-1",
+                  "painFlag": true,
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "shoulder-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "is-pn-1"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "baseId": "shoulder-press",
+              "canonicalExerciseId": "shoulder-press",
+              "id": "shoulder-press",
+              "muscle": "shoulders",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "shoulder-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "shoulder-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 50
+                }
+              ]
+            }
+          ],
+          "id": "is-pn-2"
+        }
+      ],
+      "label": "pain-combo",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "shoulder-press",
+            "canonicalExerciseId": "shoulder-press",
+            "id": "shoulder-press",
+            "muscle": "shoulders",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "shoulder-press-1",
+                "painFlag": true,
+                "reps": 5,
+                "rir": 1,
+                "techniqueQuality": "acceptable",
+                "weight": 50
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "shoulder-press-2",
+                "reps": 5,
+                "rir": 1,
+                "techniqueQuality": "acceptable",
+                "weight": 50
+              }
+            ]
+          }
+        ],
+        "id": "is-pn-latest"
+      },
+      "loadFeedback": [
+        {
+          "feedback": "too_heavy"
+        },
+        {
+          "feedback": "too_heavy"
+        },
+        {
+          "feedback": "good"
+        }
+      ],
+      "painPatterns": [
+        {
+          "area": "shoulders",
+          "exerciseId": "shoulder-press",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-25",
+          "severityAvg": 4,
+          "suggestedAction": "deload"
+        }
+      ],
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量较好，可以作为后续推荐参考。",
+          "哑铃肩推 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "shoulder-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "informational",
+                "id": "history-building",
+                "label": "记录正在积累",
+                "reason": "已有一些同动作记录，但样本量仍在积累中。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "pain-pattern",
+                "label": "不适记录明显",
+                "reason": "近期不适记录与当前推荐相关，建议优先保守执行。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 42,
+            "summary": "这条推荐建议保守参考。近期不适记录与当前推荐相关，建议优先保守执行。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "keep_observing",
+            "id": "keep-observing",
+            "label": "继续观察",
+            "reason": "当前没有需要立即处理的高优先级信号，继续记录后判断会更稳定。",
+            "requiresConfirmation": false
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [
+            {
+              "id": "pain-flag",
+              "label": "出现不适标记",
+              "reason": "1 组正式组记录了不适，这些组不会作为高质量亮点。",
+              "tone": "negative"
+            },
+            {
+              "id": "pain-pattern",
+              "label": "近期不适需要关注",
+              "reason": "近期不适记录与本次训练相关，下次应优先确认动作选择和负荷。",
+              "tone": "warning"
+            },
+            {
+              "id": "load-too-heavy",
+              "label": "重量反馈偏重",
+              "reason": "本次有推荐重量偏重反馈，下次不宜直接加重。",
+              "tone": "warning"
+            }
+          ],
+          "level": "high",
+          "nextSuggestions": [
+            "下次优先处理不适动作，必要时降低负荷或使用替代动作。",
+            "下次相关动作先维持或小幅下调重量，不急于加重。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 2/2 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "effective-quality",
+              "label": "有效训练质量稳定",
+              "reason": "正式组中有 1 组高置信有效组。",
+              "tone": "positive"
+            }
+          ],
+          "score": 82,
+          "summary": "你完成了主要训练，动作质量和有效组表现较稳定。 重量反馈偏重。 部分正式组记录了不适。",
+          "title": "本次训练质量：高"
+        },
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-tf-1"
+        }
+      ],
+      "label": "test-flagged-latest",
+      "latestSession": {
+        "dataFlag": "test",
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "id": "bench-press",
+            "muscle": "chest",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 80
+              }
+            ]
+          }
+        ],
+        "id": "is-tf-latest"
+      },
+      "summary": {
+        "keyInsights": [
+          "深蹲 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "squat",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 34,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "keep_observing",
+            "id": "keep-observing",
+            "label": "继续记录训练",
+            "reason": "当前没有需要立即处理的高优先级信号，继续记录后判断会更稳定。",
+            "requiresConfirmation": false
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      }
+    },
+    {
+      "e1rmProfiles": [
+        {
+          "best": {
+            "confidence": "high",
+            "e1rmKg": 162,
+            "sourceSet": {
+              "painFlag": false,
+              "techniqueQuality": "good"
+            }
+          },
+          "current": {
+            "confidence": "high",
+            "e1rmKg": 160,
+            "sourceSet": {
+              "painFlag": false,
+              "techniqueQuality": "good"
+            }
+          },
+          "exerciseId": "hack-squat",
+          "method": "median_recent",
+          "recentValues": [
+            158,
+            159,
+            160
+          ]
+        },
+        {
+          "current": {
+            "confidence": "medium",
+            "e1rmKg": 240,
+            "sourceSet": {
+              "painFlag": false,
+              "techniqueQuality": "good"
+            }
+          },
+          "exerciseId": "leg-press",
+          "method": "single_recent_low_confidence",
+          "recentValues": [
+            238,
+            240
+          ]
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "barbell-row",
+              "canonicalExerciseId": "barbell-row",
+              "id": "barbell-row",
+              "muscle": "back",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "barbell-row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "is-mc-1"
+        }
+      ],
+      "label": "e1rm-profiles-multi-cap",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "id": "bench-press",
+            "muscle": "chest",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 80
+              }
+            ]
+          },
+          {
+            "baseId": "squat",
+            "canonicalExerciseId": "squat",
+            "id": "squat",
+            "muscle": "quads",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "squat-1",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 120
+              }
+            ]
+          },
+          {
+            "baseId": "deadlift",
+            "canonicalExerciseId": "deadlift",
+            "id": "deadlift",
+            "muscle": "back",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "deadlift-1",
+                "reps": 5,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "weight": 150
+              }
+            ]
+          }
+        ],
+        "id": "is-mc-latest"
+      },
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量较好，可以作为后续推荐参考。",
+          "平板卧推 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "bench-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          },
+          {
+            "confidence": "low",
+            "exerciseId": "squat",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          },
+          {
+            "confidence": "low",
+            "exerciseId": "deadlift",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          },
+          {
+            "confidence": "low",
+            "exerciseId": "hack-squat",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "补充动作质量记录。",
+              "补充余力（RIR）记录。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "technique-missing",
+                "label": "动作质量缺失",
+                "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "rir-missing",
+                "label": "余力记录缺失",
+                "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+              }
+            ],
+            "score": 0,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          },
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "补充动作质量记录。",
+              "补充余力（RIR）记录。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "technique-missing",
+                "label": "动作质量缺失",
+                "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "rir-missing",
+                "label": "余力记录缺失",
+                "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+              }
+            ],
+            "score": 0,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          },
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "补充动作质量记录。",
+              "补充余力（RIR）记录。",
+              "记录推荐重量反馈。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "technique-missing",
+                "label": "动作质量缺失",
+                "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "rir-missing",
+                "label": "余力记录缺失",
+                "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+              }
+            ],
+            "score": 0,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          },
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "补充动作质量记录。",
+              "补充余力（RIR）记录。",
+              "记录推荐重量反馈。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "technique-missing",
+                "label": "动作质量缺失",
+                "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "rir-missing",
+                "label": "余力记录缺失",
+                "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "e1rm-high-quality",
+                "label": "力量基准可靠",
+                "reason": "当前力量估算来自较高质量记录，推荐可信度提高。"
+              }
+            ],
+            "score": 7,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "keep_observing",
+            "id": "keep-observing",
+            "label": "继续观察",
+            "reason": "当前没有需要立即处理的高优先级信号，继续记录后判断会更稳定。",
+            "requiresConfirmation": false
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [],
+          "level": "high",
+          "nextSuggestions": [
+            "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 3/3 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "effective-quality",
+              "label": "有效训练质量稳定",
+              "reason": "正式组中有 3 组高置信有效组。",
+              "tone": "positive"
+            },
+            {
+              "id": "technique-good",
+              "label": "动作质量稳定",
+              "reason": "正式组动作质量记录整体稳定。",
+              "tone": "positive"
+            }
+          ],
+          "score": 100,
+          "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+          "title": "本次训练质量：高"
+        },
+        "volumeAdaptation": {
+          "muscles": [],
+          "summary": "训练量数据不足，暂时无法判断下周每个肌群应该增加、维持或减少。"
+        }
+      },
+      "trainingLevel": "intermediate"
+    },
+    {
+      "e1rmProfiles": [
+        {
+          "current": {
+            "confidence": "high",
+            "e1rmKg": 140,
+            "sourceSet": {
+              "painFlag": false,
+              "techniqueQuality": "good"
+            }
+          },
+          "exerciseId": "squat",
+          "method": "median_recent",
+          "recentValues": [
+            140,
+            140,
+            140
+          ]
+        }
+      ],
+      "effectiveSetSummary": {
+        "byMuscle": {
+          "chest": {
+            "completedSets": 14,
+            "effectiveSets": 14,
+            "highConfidenceEffectiveSets": 12,
+            "weightedEffectiveSets": 14
+          }
+        },
+        "completedSets": 4,
+        "effectiveSets": 2,
+        "highConfidenceEffectiveSets": 1
+      },
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-fc-1"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-fc-2"
+        },
+        {
+          "date": "2026-05-21",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-fc-3"
+        },
+        {
+          "date": "2026-05-17",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-fc-4"
+        },
+        {
+          "date": "2026-05-13",
+          "exercises": [
+            {
+              "baseId": "squat",
+              "canonicalExerciseId": "squat",
+              "id": "squat",
+              "muscle": "quads",
+              "sets": [
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "displayUnit": "kg",
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "is-fc-5"
+        }
+      ],
+      "label": "full-combo",
+      "latestSession": {
+        "date": "2026-06-01",
+        "exercises": [
+          {
+            "baseId": "bench-press",
+            "canonicalExerciseId": "bench-press",
+            "id": "bench-press",
+            "muscle": "chest",
+            "sets": [
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-1",
+                "painFlag": true,
+                "reps": 4,
+                "rir": 0,
+                "techniqueQuality": "poor",
+                "weight": 85
+              },
+              {
+                "displayUnit": "kg",
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 3,
+                "techniqueQuality": "poor",
+                "weight": 85
+              }
+            ]
+          }
+        ],
+        "id": "is-fc-latest"
+      },
+      "loadFeedback": {
+        "adjustment": {},
+        "counts": {
+          "good": 0,
+          "too_heavy": 3,
+          "too_light": 0
+        }
+      },
+      "painPatterns": [
+        {
+          "area": "chest",
+          "exerciseId": "bench-press",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-26",
+          "severityAvg": 4,
+          "suggestedAction": "watch"
+        }
+      ],
+      "summary": {
+        "keyInsights": [
+          "最近一次训练质量中等，建议复核动作质量和余力（RIR）记录。",
+          "深蹲 反馈偏重，下一次不宜急于加重。",
+          "胸 下周建议减少 2 组，优先控制疲劳。",
+          "平板卧推 的推荐可信度偏低，建议保守参考。"
+        ],
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "bench-press",
+            "signals": [
+              {
+                "id": "data-depth",
+                "label": "记录数量不足",
+                "reason": "同动作正式训练记录还不够，暂时不能稳定判断是否进入平台期。",
+                "severity": "warning"
+              }
+            ],
+            "status": "insufficient_data",
+            "suggestedActions": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。"
+            ],
+            "summary": "当前只能作为观察参考。继续记录几次同动作训练后，平台期判断会更可靠。",
+            "title": "该动作 数据不足"
+          },
+          {
+            "confidence": "medium",
+            "exerciseId": "squat",
+            "signals": [
+              {
+                "id": "history-depth",
+                "label": "历史记录可用于判断",
+                "reason": "已找到 5 次同动作正式训练记录，系统会结合完成情况和趋势判断。",
+                "severity": "info"
+              },
+              {
+                "id": "progress-flat",
+                "label": "近期进展放缓",
+                "reason": "近期多次训练的重量、次数和单组表现没有明显上升。",
+                "severity": "warning"
+              },
+              {
+                "id": "completion-stable",
+                "label": "完成率稳定",
+                "reason": "近期主要组完成情况较稳定，因此进展放缓更值得关注。",
+                "severity": "info"
+              },
+              {
+                "id": "load-feedback-heavy",
+                "label": "重量反馈偏重",
+                "reason": "最近多次反馈显示重量偏重，进展受限可能来自推进过快。",
+                "severity": "serious"
+              },
+              {
+                "id": "pain-or-fatigue",
+                "label": "疲劳或不适记录",
+                "reason": "近期出现不适标记或相关不适模式，建议把风险控制放在加重之前。",
+                "severity": "serious"
+              },
+              {
+                "id": "effective-volume-low",
+                "label": "有效训练量不足",
+                "reason": "完成组存在，但高质量有效组不足，可能限制该动作继续进步。",
+                "severity": "warning"
+              }
+            ],
+            "status": "load_too_aggressive",
+            "suggestedActions": [
+              "下次先维持或小幅下调重量，确认不是重量推进过快。",
+              "优先完成目标次数和动作质量，再考虑继续加重。"
+            ],
+            "summary": "当前更像是重量推进过快。建议下次先维持或小幅回退，避免把短期吃力误判为平台期。",
+            "title": "该动作 可能推进过快"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "继续记录同动作的重量、次数、余力（RIR）和动作质量。",
+              "补充动作质量记录。",
+              "补充余力（RIR）记录。",
+              "继续积累可用于力量估算的高质量正式组。"
+            ],
+            "reasons": [
+              {
+                "effect": "lower_confidence",
+                "id": "history-sparse",
+                "label": "训练记录不足",
+                "reason": "同动作近期记录太少，这条推荐建议保守参考。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "technique-missing",
+                "label": "动作质量缺失",
+                "reason": "缺少动作质量记录，系统无法判断推荐是否建立在稳定动作上。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "rir-missing",
+                "label": "余力记录缺失",
+                "reason": "缺少余力（RIR）记录，系统难以判断实际接近力竭程度。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "pain-pattern",
+                "label": "不适记录明显",
+                "reason": "近期不适记录与当前推荐相关，建议优先保守执行。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "load-feedback-stable",
+                "label": "重量反馈稳定",
+                "reason": "推荐重量反馈方向比较稳定。"
+              }
+            ],
+            "score": 0,
+            "summary": "这条推荐建议保守参考。同动作近期记录太少，这条推荐建议保守参考。",
+            "title": "推荐可信度：低"
+          },
+          {
+            "level": "medium",
+            "missingData": [],
+            "reasons": [
+              {
+                "effect": "raise_confidence",
+                "id": "history-stable",
+                "label": "近期记录稳定",
+                "reason": "已有 5 次同动作正式记录，可用于校准推荐。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "technique-stable",
+                "label": "动作质量稳定",
+                "reason": "动作质量记录整体稳定，推荐可信度提高。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "rir-complete",
+                "label": "余力记录完整",
+                "reason": "余力（RIR）记录较完整，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "pain-pattern",
+                "label": "不适记录明显",
+                "reason": "近期不适记录与当前推荐相关，建议优先保守执行。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "load-feedback-stable",
+                "label": "重量反馈稳定",
+                "reason": "推荐重量反馈方向比较稳定。"
+              },
+              {
+                "effect": "raise_confidence",
+                "id": "e1rm-high-quality",
+                "label": "力量基准可靠",
+                "reason": "当前力量估算来自较高质量记录，推荐可信度提高。"
+              },
+              {
+                "effect": "lower_confidence",
+                "id": "effective-sets-weak",
+                "label": "有效组证据偏弱",
+                "reason": "有效组或高置信有效组不足，推荐可信度下调。"
+              }
+            ],
+            "score": 74,
+            "summary": "这条推荐可信度中等，建议保守参考。近期不适记录与当前推荐相关，建议优先保守执行。",
+            "title": "推荐可信度：中等"
+          }
+        ],
+        "recommendedActions": [
+          {
+            "actionType": "review_session",
+            "id": "review-latest-session",
+            "label": "查看本次训练",
+            "reason": "最近一次训练质量还有可复核空间，建议先查看完成组、动作质量和不适标记。",
+            "requiresConfirmation": false
+          },
+          {
+            "actionType": "review_exercise",
+            "id": "review-exercise-squat",
+            "label": "查看动作进展",
+            "reason": "有动作出现进展放缓或限制信号，建议先查看该动作历史。",
+            "requiresConfirmation": false
+          },
+          {
+            "actionType": "review_volume",
+            "id": "review-volume-chest",
+            "label": "查看训练量建议",
+            "reason": "有肌群训练量可能需要小幅调整，先查看原因和建议组数。",
+            "requiresConfirmation": false
+          },
+          {
+            "actionType": "create_adjustment_preview",
+            "id": "create-adjustment-preview",
+            "label": "生成计划调整预览",
+            "reason": "仅生成可确认的预览，不会自动修改当前计划。",
+            "requiresConfirmation": true
+          }
+        ],
+        "sessionQuality": {
+          "confidence": "medium",
+          "issues": [
+            {
+              "id": "pain-flag",
+              "label": "出现不适标记",
+              "reason": "1 组正式组记录了不适，这些组不会作为高质量亮点。",
+              "tone": "negative"
+            },
+            {
+              "id": "pain-pattern",
+              "label": "近期不适需要关注",
+              "reason": "近期不适记录与本次训练相关，下次应优先确认动作选择和负荷。",
+              "tone": "warning"
+            },
+            {
+              "id": "poor-technique",
+              "label": "动作质量偏低",
+              "reason": "2 组动作质量较差，会降低本次训练质量评分。",
+              "tone": "negative"
+            },
+            {
+              "id": "rir-missing",
+              "label": "余力（RIR）记录不完整",
+              "reason": "1 组正式组缺少余力（RIR），本次判断置信度会下降。",
+              "tone": "warning"
+            },
+            {
+              "id": "load-too-heavy",
+              "label": "重量反馈偏重",
+              "reason": "本次有推荐重量偏重反馈，下次不宜直接加重。",
+              "tone": "warning"
+            }
+          ],
+          "level": "medium",
+          "nextSuggestions": [
+            "下次优先处理不适动作，必要时降低负荷或使用替代动作。",
+            "下次先维持重量，优先把动作质量做稳。",
+            "下次相关动作先维持或小幅下调重量，不急于加重。"
+          ],
+          "positives": [
+            {
+              "id": "main-completion",
+              "label": "主训练完成度高",
+              "reason": "完成 2/2 组主训练。",
+              "tone": "positive"
+            },
+            {
+              "id": "effective-quality",
+              "label": "有效训练质量稳定",
+              "reason": "正式组中有 1 组高置信有效组。",
+              "tone": "positive"
+            }
+          ],
+          "score": 70,
+          "summary": "你完成了主要训练，但仍有影响质量或置信度的信号。 重量反馈偏重。 部分正式组记录了不适。 动作质量记录存在偏低。 余力（RIR）记录不完整。",
+          "title": "本次训练质量：中等"
+        },
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "decrease",
+              "muscleId": "chest",
+              "reason": "训练量已经偏高，近期有相关不适记录，重量反馈多次偏重，训练质量或动作质量不够稳定，下周先保守处理。当前约 14/10 组。",
+              "setsDelta": -2,
+              "suggestedActions": [
+                "下周先给胸减少 2 组。",
+                "优先保留关键主训练，减少额外辅助量。"
+              ],
+              "title": "胸：减少训练量"
+            }
+          ],
+          "summary": "下周训练量建议：减少 1 个肌群。所有调整都只作为建议，需要用户确认后才进入计划调整预览。"
+        }
+      },
+      "trainingLevel": "intermediate",
+      "weeklyVolumeSummary": [
+        {
+          "muscleId": "chest",
+          "targetSets": 10
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "4c878e3981d28e6ffb4c2bf7db4eeeeff28c5e75",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "intelligence-summary/summary-cases-v1"
+  },
+  "sourceFixtureId": "intelligence-summary/summary-cases-v1"
+}
