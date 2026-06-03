@@ -193,6 +193,18 @@ import {
   CORE_TREND_EXERCISES,
 } from '../src/engines/analytics';
 import type { BodyWeightEntry } from '../src/models/training-model';
+// AN-4 — sessionDetailSummaryEngine (sessionQuality-consumed subset) + sessionQualityEngine
+// port parity slice. Imports the REAL engine functions so the session-quality goldens are
+// GENERATED from TS truth, never hand-authored (§22). The Swift ports (SessionDetailSummaryEngine /
+// SessionQualityEngine) re-run the SAME functions over each case's echoed engineInput and
+// COMPUTE-ASSERT the result (buildSessionQualityResult full result + groupSessionSetsByType /
+// buildWorkingOnlySession structural probes). PURE / clockless — every session date derives from
+// parityMeta.deterministicClockIso so the goldens are byte-deterministic.
+import { buildSessionQualityResult } from '../src/engines/sessionQualityEngine';
+import {
+  groupSessionSetsByType,
+  buildWorkingOnlySession,
+} from '../src/engines/sessionDetailSummaryEngine';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -401,6 +413,20 @@ const FIXTURE_IDS = [
   'analytics/prs-cases-v1',
   'analytics/weekly-report-cases-v1',
   'analytics/adherence-report-cases-v1',
+  // AN-4 sessionDetailSummaryEngine (sessionQuality-consumed subset) + sessionQualityEngine
+  // port — 2 OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL pinning the ported functions.
+  // quality-cases pins buildSessionQualityResult across the level/signal/confidence/early-return
+  // branches (insufficient_data / high / medium / low + every positive+issue signal + score caps +
+  // confidence bands); grouping-and-input-cases pins groupSessionSetsByType classification
+  // (warmup by type/isWarmup/:warmup: id/setType+stepType · support→uncategorized · inferred
+  // working · focusWarmup merge+dedup · supportExerciseLogs passthrough) + buildWorkingOnlySession
+  // reconstruction (dataFlag→normal · focusWarmup cleared · set type→straight) AND the
+  // normalizeLoadFeedback union shapes (LoadFeedback[] / LoadFeedbackSummary / record-of-values /
+  // session.loadFeedback) + painPatterns match + effectiveSetSummary provided-vs-computed +
+  // number-form prescription/sets. Each case echoes the result + a `grouped`/`workingOnly` probe
+  // so the two sessionDetail functions are pinned directly. Generated; never hand-edited (§22).
+  'session-quality/quality-cases-v1',
+  'session-quality/grouping-and-input-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2149,6 +2175,72 @@ const generateAdherenceReport = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// AN-4 — sessionDetailSummaryEngine (sessionQuality-consumed subset) +
+// sessionQualityEngine OUTPUT parity. Each case materialises a synthetic session
+// (via the shared materializeAnalyticsSession — ONLY date fields derive from the
+// deterministic clock; every other field passes through verbatim), runs the REAL
+// buildSessionQualityResult, and echoes BOTH the engineInput and the computed
+// result PLUS structural probes for the two CALLed sessionDetail functions
+// (groupSessionSetsByType / buildWorkingOnlySession). Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const buildGroupedProbe = (grouped: ReturnType<typeof groupSessionSetsByType>) => ({
+  warmupSetCount: grouped.warmupSets.length,
+  workingSetCount: grouped.workingSets.length,
+  uncategorizedSetCount: grouped.uncategorizedSets.length,
+  supportSetCount: grouped.supportSets.length,
+  groups: grouped.exerciseGroups.map((g) => ({
+    exerciseId: g.exerciseId ?? null,
+    warmup: g.warmupSets.length,
+    working: g.workingSets.length,
+    uncategorized: g.uncategorizedSets.length,
+  })),
+  // `item.set.type` after classification (warmup entries → 'warmup'; working entries keep
+  // their original type, undefined → null) — pins classifySet + the warmup type rewrite.
+  workingSetTypes: grouped.workingSets.map((it: any) => it.set.type ?? null),
+  warmupSetTypes: grouped.warmupSets.map((it: any) => it.set.type ?? null),
+});
+
+const buildWorkingOnlyProbe = (workingOnly: any) => ({
+  dataFlag: workingOnly.dataFlag ?? null,
+  focusWarmupSetLogsLength: Array.isArray(workingOnly.focusWarmupSetLogs) ? workingOnly.focusWarmupSetLogs.length : 0,
+  exercises: (workingOnly.exercises ?? []).map((ex: any) => ({
+    id: ex.id ?? null,
+    setCount: Array.isArray(ex.sets) ? ex.sets.length : 0,
+    // `item.set.type || 'straight'` — pins the working-only set type defaulting.
+    setTypes: Array.isArray(ex.sets) ? ex.sets.map((s: any) => s.type ?? null) : [],
+  })),
+});
+
+const generateSessionQuality = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: session-quality requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const session = materializeAnalyticsSession(c.session ?? {}, nowIso);
+    // Thread ONLY the optional params the case provides (so canonicalStringify drops absent
+    // ones — the Swift port reads each optionally). The engine treats these as opaque inputs.
+    const params: Parameters<typeof buildSessionQualityResult>[0] = { session };
+    if (c.effectiveSetSummary !== undefined) params.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.loadFeedback !== undefined) params.loadFeedback = c.loadFeedback;
+    if (c.painPatterns !== undefined) params.painPatterns = c.painPatterns;
+    const result = buildSessionQualityResult(params);
+    const grouped = groupSessionSetsByType(session);
+    const workingOnly = buildWorkingOnlySession(session);
+    const echoed: Record<string, unknown> = { label: c.label ?? null, session };
+    if (c.effectiveSetSummary !== undefined) echoed.effectiveSetSummary = c.effectiveSetSummary;
+    if (c.loadFeedback !== undefined) echoed.loadFeedback = c.loadFeedback;
+    if (c.painPatterns !== undefined) echoed.painPatterns = c.painPatterns;
+    echoed.result = result;
+    echoed.grouped = buildGroupedProbe(grouped);
+    echoed.workingOnly = buildWorkingOnlyProbe(workingOnly);
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -2221,6 +2313,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'analytics/prs-cases-v1': generatePrs,
   'analytics/weekly-report-cases-v1': generateWeeklyReport,
   'analytics/adherence-report-cases-v1': generateAdherenceReport,
+  // AN-4 sessionDetailSummary + sessionQuality fixtures — both routed through the single generator.
+  'session-quality/quality-cases-v1': generateSessionQuality,
+  'session-quality/grouping-and-input-cases-v1': generateSessionQuality,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

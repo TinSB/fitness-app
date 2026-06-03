@@ -1,0 +1,979 @@
+{
+  "cases": [
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "ex1",
+            "uncategorized": 2,
+            "warmup": 3,
+            "working": 4
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 2,
+        "warmupSetCount": 3,
+        "warmupSetTypes": [
+          "warmup",
+          "warmup",
+          "warmup"
+        ],
+        "workingSetCount": 4,
+        "workingSetTypes": [
+          "working",
+          null,
+          null,
+          null
+        ]
+      },
+      "label": "classification-variants",
+      "result": {
+        "confidence": "high",
+        "issues": [
+          {
+            "id": "main-completion-low",
+            "label": "主训练完成不足",
+            "reason": "主训练完成 4/8 组，训练刺激不够稳定。",
+            "tone": "negative"
+          }
+        ],
+        "level": "high",
+        "nextSuggestions": [
+          "下次先确保关键主训练完成，再考虑辅助动作。",
+          "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+        ],
+        "positives": [
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 4 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "warmup-recorded",
+            "label": "热身记录可见",
+            "reason": "已记录 3 组热身；热身组用于准备，不作为高质量有效组。",
+            "tone": "neutral"
+          }
+        ],
+        "score": 86,
+        "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+        "title": "本次训练质量：高"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "ex1",
+            "sets": [
+              {
+                "done": true,
+                "id": "ex1-1",
+                "reps": 8,
+                "rir": 2,
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "ex1-2",
+                "reps": 8,
+                "rir": 2,
+                "setType": "top",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "ex1-3",
+                "reps": 8,
+                "rir": 2,
+                "stepType": "backoff",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "ex1-4",
+                "reps": 8,
+                "rir": 2,
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "ex1-5",
+                "reps": 10,
+                "type": "warmup",
+                "weight": 30
+              },
+              {
+                "done": true,
+                "id": "ex1-6",
+                "isWarmup": true,
+                "reps": 10,
+                "weight": 30
+              },
+              {
+                "done": true,
+                "id": "main:ex1:warmup:1",
+                "reps": 10,
+                "weight": 30
+              },
+              {
+                "done": true,
+                "id": "ex1-8",
+                "reps": 12,
+                "type": "support",
+                "weight": 20
+              },
+              {
+                "done": true,
+                "id": "ex1-9",
+                "reps": 12,
+                "type": "corrective",
+                "weight": 20
+              }
+            ]
+          }
+        ],
+        "id": "sq-classify"
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "ex1",
+            "setCount": 4,
+            "setTypes": [
+              "working",
+              "straight",
+              "straight",
+              "straight"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "bench-press",
+            "uncategorized": 0,
+            "warmup": 3,
+            "working": 1
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 3,
+        "warmupSetTypes": [
+          "warmup",
+          "warmup",
+          "warmup"
+        ],
+        "workingSetCount": 1,
+        "workingSetTypes": [
+          "working"
+        ]
+      },
+      "label": "focuswarmup-merge-dedup",
+      "result": {
+        "confidence": "low",
+        "issues": [],
+        "level": "high",
+        "nextSuggestions": [
+          "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+        ],
+        "positives": [
+          {
+            "id": "main-completion",
+            "label": "主训练完成度高",
+            "reason": "完成 1/1 组主训练。",
+            "tone": "positive"
+          },
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 1 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "warmup-recorded",
+            "label": "热身记录可见",
+            "reason": "已记录 2 组热身；热身组用于准备，不作为高质量有效组。",
+            "tone": "neutral"
+          }
+        ],
+        "score": 100,
+        "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+        "title": "本次训练质量：高"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              {
+                "done": true,
+                "id": "w1",
+                "reps": 10,
+                "type": "warmup",
+                "weight": 30
+              },
+              {
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 8,
+                "rir": 2,
+                "type": "working",
+                "weight": 60
+              }
+            ]
+          }
+        ],
+        "focusWarmupSetLogs": [
+          {
+            "done": true,
+            "id": "w1",
+            "reps": 10,
+            "weight": 30
+          },
+          {
+            "done": false,
+            "exerciseId": "bench-press",
+            "id": "fw2",
+            "reps": 8,
+            "weight": 20
+          },
+          {
+            "done": true,
+            "exerciseId": "unknown-ex",
+            "id": "fw3",
+            "reps": 8,
+            "weight": 20
+          }
+        ],
+        "id": "sq-focuswarmup"
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "setCount": 1,
+            "setTypes": [
+              "working"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "squat",
+            "uncategorized": 0,
+            "warmup": 0,
+            "working": 0
+          }
+        ],
+        "supportSetCount": 1,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 0,
+        "warmupSetTypes": [],
+        "workingSetCount": 0,
+        "workingSetTypes": []
+      },
+      "label": "number-form-sets-and-support-skipped",
+      "result": {
+        "confidence": "low",
+        "issues": [
+          {
+            "id": "main-completion-low",
+            "label": "主训练完成不足",
+            "reason": "主训练完成 0/4 组，训练刺激不够稳定。",
+            "tone": "negative"
+          },
+          {
+            "id": "support-skipped",
+            "label": "辅助训练未完全完成",
+            "reason": "部分辅助动作未完成，主要影响本次训练完整度。",
+            "tone": "neutral"
+          }
+        ],
+        "level": "low",
+        "nextSuggestions": [
+          "下次先确保关键主训练完成，再考虑辅助动作。"
+        ],
+        "positives": [],
+        "score": 31,
+        "summary": "本次训练完成度或执行质量偏低，建议先复查关键记录。",
+        "title": "本次训练质量：偏低"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "squat",
+            "sets": 4
+          }
+        ],
+        "id": "sq-support",
+        "supportExerciseLogs": [
+          {
+            "blockType": "corrective",
+            "completedSets": 2,
+            "exerciseId": "plank",
+            "moduleId": "m1",
+            "plannedSets": 3
+          }
+        ]
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "squat",
+            "setCount": 0,
+            "setTypes": []
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "bench-press",
+            "uncategorized": 0,
+            "warmup": 0,
+            "working": 2
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 0,
+        "warmupSetTypes": [],
+        "workingSetCount": 2,
+        "workingSetTypes": [
+          "working",
+          "working"
+        ]
+      },
+      "label": "loadfeedback-array-and-session",
+      "loadFeedback": [
+        {
+          "date": "2026-05-30",
+          "exerciseId": "bench-press",
+          "feedback": "too_heavy",
+          "sessionId": "sq-lf-array"
+        },
+        {
+          "date": "2026-05-30",
+          "exerciseId": "incline-db-press",
+          "feedback": "good",
+          "sessionId": "sq-lf-array"
+        }
+      ],
+      "result": {
+        "confidence": "medium",
+        "issues": [
+          {
+            "id": "load-too-heavy",
+            "label": "重量反馈偏重",
+            "reason": "本次有推荐重量偏重反馈，下次不宜直接加重。",
+            "tone": "warning"
+          }
+        ],
+        "level": "high",
+        "nextSuggestions": [
+          "下次相关动作先维持或小幅下调重量，不急于加重。",
+          "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+        ],
+        "positives": [
+          {
+            "id": "main-completion",
+            "label": "主训练完成度高",
+            "reason": "完成 2/2 组主训练。",
+            "tone": "positive"
+          },
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 2 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "technique-good",
+            "label": "动作质量稳定",
+            "reason": "正式组动作质量记录整体稳定。",
+            "tone": "positive"
+          }
+        ],
+        "score": 99,
+        "summary": "你完成了主要训练，动作质量和有效组表现较稳定。 重量反馈偏重。",
+        "title": "本次训练质量：高"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              }
+            ]
+          }
+        ],
+        "id": "sq-lf-array",
+        "loadFeedback": [
+          {
+            "date": "2026-05-30",
+            "exerciseId": "bench-press",
+            "feedback": "too_light",
+            "sessionId": "sq-lf-array"
+          }
+        ]
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "setCount": 2,
+            "setTypes": [
+              "working",
+              "working"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "bench-press",
+            "uncategorized": 0,
+            "warmup": 0,
+            "working": 2
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 0,
+        "warmupSetTypes": [],
+        "workingSetCount": 2,
+        "workingSetTypes": [
+          "working",
+          "working"
+        ]
+      },
+      "label": "loadfeedback-summary-object-good",
+      "loadFeedback": {
+        "adjustment": {
+          "direction": "normal",
+          "dominantFeedback": "good",
+          "reasons": []
+        },
+        "counts": {
+          "good": 2,
+          "too_heavy": 0,
+          "too_light": 0
+        },
+        "dominantFeedback": "good",
+        "totalSessions": 3
+      },
+      "result": {
+        "confidence": "medium",
+        "issues": [],
+        "level": "high",
+        "nextSuggestions": [
+          "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+        ],
+        "positives": [
+          {
+            "id": "main-completion",
+            "label": "主训练完成度高",
+            "reason": "完成 2/2 组主训练。",
+            "tone": "positive"
+          },
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 2 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "technique-good",
+            "label": "动作质量稳定",
+            "reason": "正式组动作质量记录整体稳定。",
+            "tone": "positive"
+          },
+          {
+            "id": "load-feedback-good",
+            "label": "重量反馈合适",
+            "reason": "本次推荐重量反馈整体合适。",
+            "tone": "positive"
+          }
+        ],
+        "score": 100,
+        "summary": "你完成了主要训练，动作质量和有效组表现较稳定。",
+        "title": "本次训练质量：高"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              }
+            ]
+          }
+        ],
+        "id": "sq-lf-summary"
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "setCount": 2,
+            "setTypes": [
+              "working",
+              "working"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "bench-press",
+            "uncategorized": 0,
+            "warmup": 0,
+            "working": 2
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 0,
+        "warmupSetTypes": [],
+        "workingSetCount": 2,
+        "workingSetTypes": [
+          "working",
+          "working"
+        ]
+      },
+      "label": "loadfeedback-record-and-painpattern",
+      "loadFeedback": {
+        "bench-press": "too_light",
+        "squat": {
+          "adjustment": {
+            "direction": "conservative",
+            "dominantFeedback": "too_heavy",
+            "reasons": []
+          },
+          "counts": {
+            "good": 0,
+            "too_heavy": 1,
+            "too_light": 0
+          },
+          "dominantFeedback": "too_heavy"
+        }
+      },
+      "painPatterns": [
+        {
+          "area": "shoulder",
+          "exerciseId": "bench-press",
+          "frequency": 2,
+          "lastOccurredAt": "2026-05-20",
+          "severityAvg": 2,
+          "suggestedAction": "monitor"
+        }
+      ],
+      "result": {
+        "confidence": "medium",
+        "issues": [
+          {
+            "id": "pain-pattern",
+            "label": "近期不适需要关注",
+            "reason": "近期不适记录与本次训练相关，下次应优先确认动作选择和负荷。",
+            "tone": "warning"
+          },
+          {
+            "id": "load-too-heavy",
+            "label": "重量反馈偏重",
+            "reason": "本次有推荐重量偏重反馈，下次不宜直接加重。",
+            "tone": "warning"
+          }
+        ],
+        "level": "high",
+        "nextSuggestions": [
+          "下次优先处理不适动作，必要时降低负荷或使用替代动作。",
+          "下次相关动作先维持或小幅下调重量，不急于加重。",
+          "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+        ],
+        "positives": [
+          {
+            "id": "main-completion",
+            "label": "主训练完成度高",
+            "reason": "完成 2/2 组主训练。",
+            "tone": "positive"
+          },
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 2 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "technique-good",
+            "label": "动作质量稳定",
+            "reason": "正式组动作质量记录整体稳定。",
+            "tone": "positive"
+          }
+        ],
+        "score": 96,
+        "summary": "你完成了主要训练，动作质量和有效组表现较稳定。 重量反馈偏重。",
+        "title": "本次训练质量：高"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              }
+            ]
+          }
+        ],
+        "id": "sq-lf-record"
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "setCount": 2,
+            "setTypes": [
+              "working",
+              "working"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "effectiveSetSummary": {
+        "completedSets": 2,
+        "effectiveSets": 2,
+        "highConfidenceEffectiveSets": 2
+      },
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "bench-press",
+            "uncategorized": 0,
+            "warmup": 0,
+            "working": 2
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 0,
+        "warmupSetTypes": [],
+        "workingSetCount": 2,
+        "workingSetTypes": [
+          "working",
+          "working"
+        ]
+      },
+      "label": "provided-effective-summary-and-early-end",
+      "result": {
+        "confidence": "low",
+        "issues": [
+          {
+            "id": "rir-missing",
+            "label": "余力（RIR）记录不完整",
+            "reason": "2 组正式组缺少余力（RIR），本次判断置信度会下降。",
+            "tone": "warning"
+          },
+          {
+            "id": "main-incomplete",
+            "label": "主训练未完全完成",
+            "reason": "部分主训练动作或正式组未完成，不会计入有效组、总量、PR 或 e1RM。",
+            "tone": "warning"
+          }
+        ],
+        "level": "medium",
+        "nextSuggestions": [
+          "下次补全余力（RIR）记录，让后续推荐更可信。"
+        ],
+        "positives": [
+          {
+            "id": "main-completion",
+            "label": "主训练完成度高",
+            "reason": "完成 2/2 组主训练。",
+            "tone": "positive"
+          },
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 2 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "technique-good",
+            "label": "动作质量稳定",
+            "reason": "正式组动作质量记录整体稳定。",
+            "tone": "positive"
+          }
+        ],
+        "score": 72,
+        "summary": "你完成了主要训练，但仍有影响质量或置信度的信号。 部分主训练未完成，未完成组不会计入有效组、总量、PR 或 e1RM。 余力（RIR）记录不完整。",
+        "title": "本次训练质量：中等"
+      },
+      "session": {
+        "date": "2026-05-30",
+        "earlyEndReason": "incomplete_main_work",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 8,
+                "rir": "",
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 8,
+                "rir": "",
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              }
+            ]
+          }
+        ],
+        "id": "sq-provided"
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "setCount": 2,
+            "setTypes": [
+              "working",
+              "working"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    },
+    {
+      "grouped": {
+        "groups": [
+          {
+            "exerciseId": "bench-press",
+            "uncategorized": 0,
+            "warmup": 0,
+            "working": 4
+          }
+        ],
+        "supportSetCount": 0,
+        "uncategorizedSetCount": 0,
+        "warmupSetCount": 0,
+        "warmupSetTypes": [],
+        "workingSetCount": 4,
+        "workingSetTypes": [
+          "working",
+          "working",
+          "working",
+          "working"
+        ]
+      },
+      "label": "data-flag-test-cap",
+      "result": {
+        "confidence": "medium",
+        "issues": [
+          {
+            "id": "data-flag",
+            "label": "不参与统计",
+            "reason": "这次训练已标记为测试数据，可以查看质量报告，但不会参与训练统计。",
+            "tone": "warning"
+          }
+        ],
+        "level": "high",
+        "nextSuggestions": [
+          "保持当前训练节奏，继续记录动作质量和余力（RIR）。"
+        ],
+        "positives": [
+          {
+            "id": "main-completion",
+            "label": "主训练完成度高",
+            "reason": "完成 4/4 组主训练。",
+            "tone": "positive"
+          },
+          {
+            "id": "effective-quality",
+            "label": "有效训练质量稳定",
+            "reason": "正式组中有 4 组高置信有效组。",
+            "tone": "positive"
+          },
+          {
+            "id": "technique-good",
+            "label": "动作质量稳定",
+            "reason": "正式组动作质量记录整体稳定。",
+            "tone": "positive"
+          }
+        ],
+        "score": 82,
+        "summary": "这次训练为测试数据，不参与统计。 你完成了主要训练，动作质量和有效组表现较稳定。",
+        "title": "本次训练质量：高"
+      },
+      "session": {
+        "dataFlag": "test",
+        "date": "2026-05-30",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "prescription": {
+              "sets": 4
+            },
+            "sets": [
+              {
+                "done": true,
+                "id": "bench-press-1",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "bench-press-2",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 60
+              },
+              {
+                "done": true,
+                "id": "bench-press-3",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 62
+              },
+              {
+                "done": true,
+                "id": "bench-press-4",
+                "reps": 8,
+                "rir": 2,
+                "techniqueQuality": "good",
+                "type": "working",
+                "weight": 62
+              }
+            ]
+          }
+        ],
+        "id": "sq-dataflag"
+      },
+      "workingOnly": {
+        "dataFlag": "normal",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "setCount": 4,
+            "setTypes": [
+              "working",
+              "working",
+              "working",
+              "working"
+            ]
+          }
+        ],
+        "focusWarmupSetLogsLength": 0
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f3b298ca43a5b90032538cb8f1d13bad03afad26",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "session-quality/grouping-and-input-cases-v1"
+  },
+  "sourceFixtureId": "session-quality/grouping-and-input-cases-v1"
+}

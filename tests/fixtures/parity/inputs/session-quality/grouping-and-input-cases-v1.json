@@ -1,0 +1,171 @@
+{
+  "parityMeta": {
+    "id": "session-quality/grouping-and-input-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-4 groupSessionSetsByType + buildWorkingOnlySession + normalizeLoadFeedback function-level parity. classification-variants (classifySet: working type/setType/stepType/inferred · warmup type/isWarmup/:warmup:-id · support+corrective→uncategorized + warmup type rewrite) / focuswarmup-merge-dedup (parseWarmupExerciseId explicit+:warmup:-prefix+byIdentity-fallback + dedup by set.id + strict-done) / number-form-sets-and-support-skipped (typeof sets==='number' plannedWorkingSets + supportExerciseLogs passthrough + supportSkipped) / loadfeedback-array-and-session (LoadFeedback[] 'feedback' branch + session.loadFeedback fold-in + too_heavy issue) / loadfeedback-summary-object-good (isLoadFeedbackSummary addSummary counts/dominant/adjustment + good positive) / loadfeedback-record-and-painpattern (Record<string,value|summary> branch + painPatterns exerciseId match) / provided-effective-summary-and-early-end (effectiveSetSummary || compute override + earlyEndReason cap+issue) / data-flag-test-cap (dataFlag test cap 82 + data-flag issue + buildWorkingOnlySession dataFlag→normal effective compute). Each case echoes the result + grouped/workingOnly probes. Generated from src/engines/{sessionDetailSummaryEngine,sessionQualityEngine}.ts; the Swift ports compute-assert each == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f3b298ca43a5b90032538cb8f1d13bad03afad26",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "classification-variants",
+      "session": {
+        "id": "sq-classify", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "ex1",
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2 },
+              { "setType": "top", "weight": 60, "reps": 8, "rir": 2 },
+              { "stepType": "backoff", "weight": 60, "reps": 8, "rir": 2 },
+              { "weight": 60, "reps": 8, "rir": 2 },
+              { "type": "warmup", "weight": 30, "reps": 10 },
+              { "isWarmup": true, "weight": 30, "reps": 10 },
+              { "id": "main:ex1:warmup:1", "weight": 30, "reps": 10 },
+              { "type": "support", "weight": 20, "reps": 12 },
+              { "type": "corrective", "weight": 20, "reps": 12 }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "focuswarmup-merge-dedup",
+      "session": {
+        "id": "sq-focuswarmup", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              { "id": "w1", "type": "warmup", "weight": 30, "reps": 10, "done": true },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2 }
+            ]
+          }
+        ],
+        "focusWarmupSetLogs": [
+          { "id": "w1", "weight": 30, "reps": 10, "done": true },
+          { "id": "fw2", "exerciseId": "bench-press", "weight": 20, "reps": 8, "done": false },
+          { "id": "fw3", "exerciseId": "unknown-ex", "weight": 20, "reps": 8, "done": true }
+        ]
+      }
+    },
+    {
+      "label": "number-form-sets-and-support-skipped",
+      "session": {
+        "id": "sq-support", "daysAgo": 2,
+        "exercises": [
+          { "id": "squat", "sets": 4 }
+        ],
+        "supportExerciseLogs": [
+          { "moduleId": "m1", "exerciseId": "plank", "blockType": "corrective", "plannedSets": 3, "completedSets": 2 }
+        ]
+      }
+    },
+    {
+      "label": "loadfeedback-array-and-session",
+      "session": {
+        "id": "sq-lf-array", "daysAgo": 2,
+        "loadFeedback": [
+          { "exerciseId": "bench-press", "sessionId": "sq-lf-array", "date": "2026-05-30", "feedback": "too_light" }
+        ],
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ]
+          }
+        ]
+      },
+      "loadFeedback": [
+        { "exerciseId": "bench-press", "sessionId": "sq-lf-array", "date": "2026-05-30", "feedback": "too_heavy" },
+        { "exerciseId": "incline-db-press", "sessionId": "sq-lf-array", "date": "2026-05-30", "feedback": "good" }
+      ]
+    },
+    {
+      "label": "loadfeedback-summary-object-good",
+      "session": {
+        "id": "sq-lf-summary", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ]
+          }
+        ]
+      },
+      "loadFeedback": {
+        "counts": { "too_heavy": 0, "too_light": 0, "good": 2 },
+        "adjustment": { "direction": "normal", "dominantFeedback": "good", "reasons": [] },
+        "dominantFeedback": "good",
+        "totalSessions": 3
+      }
+    },
+    {
+      "label": "loadfeedback-record-and-painpattern",
+      "session": {
+        "id": "sq-lf-record", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ]
+          }
+        ]
+      },
+      "loadFeedback": {
+        "bench-press": "too_light",
+        "squat": {
+          "counts": { "too_heavy": 1, "too_light": 0, "good": 0 },
+          "adjustment": { "direction": "conservative", "dominantFeedback": "too_heavy", "reasons": [] },
+          "dominantFeedback": "too_heavy"
+        }
+      },
+      "painPatterns": [
+        { "area": "shoulder", "exerciseId": "bench-press", "frequency": 2, "severityAvg": 2, "lastOccurredAt": "2026-05-20", "suggestedAction": "monitor" }
+      ]
+    },
+    {
+      "label": "provided-effective-summary-and-early-end",
+      "session": {
+        "id": "sq-provided", "daysAgo": 2,
+        "earlyEndReason": "incomplete_main_work",
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": "", "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": "", "techniqueQuality": "good" }
+            ]
+          }
+        ]
+      },
+      "effectiveSetSummary": { "effectiveSets": 2, "highConfidenceEffectiveSets": 2, "completedSets": 2 }
+    },
+    {
+      "label": "data-flag-test-cap",
+      "session": {
+        "id": "sq-dataflag", "daysAgo": 2, "dataFlag": "test",
+        "exercises": [
+          {
+            "id": "bench-press", "prescription": { "sets": 4 },
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 62, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 62, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

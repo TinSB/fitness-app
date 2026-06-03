@@ -1,0 +1,97 @@
+{
+  "parityMeta": {
+    "id": "session-quality/quality-cases-v1",
+    "schemaVersion": 8,
+    "describes": "AN-4 buildSessionQualityResult function-level parity — level/signal/confidence/score-cap branches. insufficient-data-warmup-only (totalCompletedSets<=0 early return + warmup-visible positive) / high-clean-4sets (mainCompletion≥0.9 + effective-quality + technique-good + confidence high) / medium-incomplete-cap72 (mainCompletion 0.5 main-completion-low + skipped cap 72 + main-incomplete + confidence medium) / low-mostly-incomplete-cap55 (mainCompletion<0.5 cap 55 + completed<2 confidence low) / degraded-pain-poor-abnormal-missingrir (effective-quality-low warning + pain-flag + poor-technique + rir-missing + abnormal-input + safetyScore + abnormal confidence low). Each case echoes the SessionQualityResult + groupSessionSetsByType / buildWorkingOnlySession structural probes. Generated from src/engines/sessionQualityEngine.ts via scripts/generate-parity-goldens.mjs; the Swift SessionQualityEngine compute-asserts each result == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f3b298ca43a5b90032538cb8f1d13bad03afad26",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "label": "insufficient-data-warmup-only",
+      "session": {
+        "id": "sq-insuff", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "sets": [
+              { "type": "warmup", "weight": 30, "reps": 10, "done": true },
+              { "type": "working", "weight": 60, "reps": 8, "done": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "high-clean-4sets",
+      "session": {
+        "id": "sq-high", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press", "prescription": { "sets": 4 },
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 62, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 62, "reps": 8, "rir": 2, "techniqueQuality": "good" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "medium-incomplete-cap72",
+      "session": {
+        "id": "sq-medium", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press", "prescription": { "sets": 4 },
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "done": false },
+              { "type": "working", "weight": 60, "reps": 8, "done": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "low-mostly-incomplete-cap55",
+      "session": {
+        "id": "sq-low", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press", "prescription": { "sets": 4 },
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": 2, "techniqueQuality": "good" },
+              { "type": "working", "weight": 60, "reps": 8, "done": false },
+              { "type": "working", "weight": 60, "reps": 8, "done": false },
+              { "type": "working", "weight": 60, "reps": 8, "done": false }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "degraded-pain-poor-abnormal-missingrir",
+      "session": {
+        "id": "sq-degraded", "daysAgo": 2,
+        "exercises": [
+          {
+            "id": "bench-press", "prescription": { "sets": 4 },
+            "sets": [
+              { "type": "working", "weight": 60, "reps": 8, "rir": "", "painFlag": true },
+              { "type": "working", "weight": 60, "reps": 8, "rir": "", "painFlag": true },
+              { "type": "working", "weight": 60, "reps": 8, "rir": "", "techniqueQuality": "poor" },
+              { "type": "working", "weight": 60, "reps": 99, "rir": "", "techniqueQuality": "poor" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
