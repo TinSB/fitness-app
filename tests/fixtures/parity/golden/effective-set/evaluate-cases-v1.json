@@ -1,0 +1,420 @@
+{
+  "cases": [
+    {
+      "exercise": {
+        "id": "bench-press",
+        "identityInvalid": true
+      },
+      "label": "identity-invalid-via-exercise",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "identity_invalid"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "动作身份需要检查，暂不计入有效组。"
+        ],
+        "score": 0
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "identity-invalid-via-set",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "identity_invalid"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "动作身份需要检查，暂不计入有效组。"
+        ],
+        "score": 0
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "identityInvalid": true,
+        "reps": 6,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "warmup",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "warmup"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "热身组用于准备，不计入肌肥大有效组。"
+        ],
+        "score": 0
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 2,
+        "type": "warmup",
+        "weight": 60
+      }
+    },
+    {
+      "label": "incomplete-not-done",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "incomplete"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "该组未完整完成，不能计入有效组。"
+        ],
+        "score": 0
+      },
+      "set": {
+        "done": false,
+        "id": "s",
+        "reps": 6,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "incomplete-zero-weight",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "incomplete"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "该组未完整完成，不能计入有效组。"
+        ],
+        "score": 0
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 2,
+        "weight": 0
+      }
+    },
+    {
+      "label": "incomplete-zero-reps",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "incomplete"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "该组未完整完成，不能计入有效组。"
+        ],
+        "score": 0
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 0,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "poor-technique",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "poor_technique",
+          "valid_effort"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "动作质量较差，有效刺激和数据可信度下调。",
+          "努力程度落在 RIR 1-3 的有效区间。"
+        ],
+        "score": 0.45
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 2,
+        "techniqueQuality": "poor",
+        "weight": 60
+      }
+    },
+    {
+      "label": "pain",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "pain",
+          "valid_effort"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "该组出现不适，不作为高质量有效组。",
+          "努力程度落在 RIR 1-3 的有效区间。"
+        ],
+        "score": 0.5
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "painFlag": true,
+        "reps": 6,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "unknown-rir-empty-string",
+      "result": {
+        "confidence": "medium",
+        "flags": [
+          "unknown_rir"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "未记录 RIR，按中等置信度计入。"
+        ],
+        "score": 0.82
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": "",
+        "weight": 60
+      }
+    },
+    {
+      "label": "unknown-rir-undefined",
+      "result": {
+        "confidence": "medium",
+        "flags": [
+          "unknown_rir"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "未记录 RIR，按中等置信度计入。"
+        ],
+        "score": 0.82
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "weight": 60
+      }
+    },
+    {
+      "label": "too-easy-rir-5",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "too_easy"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "RIR 过高，说明该组可能明显偏轻。"
+        ],
+        "score": 0.45
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 5,
+        "weight": 60
+      }
+    },
+    {
+      "label": "too-easy-rir-4",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "too_easy"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "RIR 偏高，有效性下调。"
+        ],
+        "score": 0.65
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 4,
+        "weight": 60
+      }
+    },
+    {
+      "label": "valid-effort-rir-2",
+      "result": {
+        "confidence": "high",
+        "flags": [
+          "valid_effort"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "努力程度落在 RIR 1-3 的有效区间。"
+        ],
+        "score": 1
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "near-failure-rir-0",
+      "result": {
+        "confidence": "high",
+        "flags": [
+          "valid_effort"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "接近力竭，但需要关注疲劳成本和动作质量。"
+        ],
+        "score": 0.9
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": 0,
+        "weight": 60
+      }
+    },
+    {
+      "label": "rir-null-coerces-to-zero",
+      "result": {
+        "confidence": "high",
+        "flags": [
+          "valid_effort"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "接近力竭，但需要关注疲劳成本和动作质量。"
+        ],
+        "score": 0.9
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 6,
+        "rir": null,
+        "weight": 60
+      }
+    },
+    {
+      "exercise": {
+        "id": "bench-press",
+        "repMax": 10,
+        "repMin": 6
+      },
+      "label": "below-rep-min-via-exercise",
+      "result": {
+        "confidence": "high",
+        "flags": [
+          "valid_effort"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "努力程度落在 RIR 1-3 的有效区间。",
+          "实际次数低于处方下限，有效性下调。"
+        ],
+        "score": 0.75
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 4,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "context": {
+        "plannedReps": [
+          8,
+          12
+        ]
+      },
+      "label": "below-rep-min-via-context",
+      "result": {
+        "confidence": "high",
+        "flags": [
+          "valid_effort"
+        ],
+        "isEffective": true,
+        "reasons": [
+          "努力程度落在 RIR 1-3 的有效区间。",
+          "实际次数低于处方下限，有效性下调。"
+        ],
+        "score": 0.75
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "reps": 4,
+        "rir": 2,
+        "weight": 60
+      }
+    },
+    {
+      "label": "combined-poor-pain-too-easy",
+      "result": {
+        "confidence": "low",
+        "flags": [
+          "poor_technique",
+          "pain",
+          "too_easy"
+        ],
+        "isEffective": false,
+        "reasons": [
+          "动作质量较差，有效刺激和数据可信度下调。",
+          "该组出现不适，不作为高质量有效组。",
+          "RIR 过高，说明该组可能明显偏轻。"
+        ],
+        "score": 0.10125
+      },
+      "set": {
+        "done": true,
+        "id": "s",
+        "painFlag": true,
+        "reps": 6,
+        "rir": 5,
+        "techniqueQuality": "poor",
+        "weight": 60
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "effective-set/evaluate-cases-v1"
+  },
+  "sourceFixtureId": "effective-set/evaluate-cases-v1"
+}

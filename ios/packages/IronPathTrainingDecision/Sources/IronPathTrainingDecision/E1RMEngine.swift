@@ -183,7 +183,10 @@ public enum E1RMEngine {
     /// `safeDate` (sessionBackfillToleranceEngine.ts:18) → ms since epoch, matching
     /// JS `new Date(value).getTime()` for the two shapes the fixtures carry:
     /// a bare `YYYY-MM-DD` (parsed as UTC midnight) and a full ISO `…Z` timestamp.
-    private static func safeDateMs(_ value: String?) -> Double? {
+    /// Internal (not private) so AN-3 `AnalyticsDashboardEngine.buildWeeklyReport` can
+    /// REUSE the exact `new Date(value)` semantics (bare→UTC-midnight, full-ISO→instant)
+    /// for its injected-clock 7-day window — reuse over a re-port of the same parse.
+    static func safeDateMs(_ value: String?) -> Double? {
         guard let value, !value.isEmpty else { return nil }
         if value.count == 10, !value.contains("T") {
             // `new Date("2026-05-01")` → UTC midnight.

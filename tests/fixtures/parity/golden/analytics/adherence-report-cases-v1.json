@@ -1,0 +1,442 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-4",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "fs-1",
+          "supportExerciseLogs": [
+            {
+              "blockType": "correction",
+              "completedSets": 1,
+              "exerciseId": "face-pull",
+              "moduleId": "corr-m1",
+              "plannedSets": 3,
+              "skippedReason": "time"
+            },
+            {
+              "blockType": "functional",
+              "completedSets": 2,
+              "exerciseId": "farmer-carry",
+              "moduleId": "func-m1",
+              "plannedSets": 2
+            }
+          ],
+          "templateName": "推 A"
+        }
+      ],
+      "label": "full-support-coverage-time-skip",
+      "result": {
+        "actualSets": 5,
+        "confidence": "high",
+        "correctionRate": 33,
+        "functionalRate": 100,
+        "mainlineRate": 50,
+        "overallRate": 56,
+        "plannedSets": 9,
+        "recentSessionCount": 1,
+        "recentSessions": [
+          {
+            "actualSets": 5,
+            "adherenceRate": 56,
+            "correctionActualSets": 1,
+            "correctionPlannedSets": 3,
+            "date": "2026-05-30",
+            "functionalActualSets": 2,
+            "functionalPlannedSets": 2,
+            "hasSupportData": true,
+            "mainActualSets": 2,
+            "mainPlannedSets": 4,
+            "plannedSets": 9,
+            "sessionId": "fs-1",
+            "templateName": "推 A"
+          }
+        ],
+        "skippedExercises": [
+          {
+            "count": 1,
+            "exerciseId": "bench-press"
+          }
+        ],
+        "skippedSupportExercises": [
+          {
+            "blockType": "correction",
+            "count": 1,
+            "exerciseId": "face-pull",
+            "moduleId": "corr-m1",
+            "mostCommonReason": "time"
+          }
+        ],
+        "suggestions": [
+          "最近整体完成率偏低，下周先降低复杂度，让计划更容易执行。",
+          "主训练完成率也在下降，下周建议把周训练量下修 10%-20%。",
+          "纠偏模块经常做不完，先缩到最小有效剂量。",
+          "最近最常见的跳过原因是时间不足，优先缩短训练而不是继续堆内容。"
+        ]
+      }
+    },
+    {
+      "history": [
+        {
+          "correctionBlock": [
+            {
+              "exercises": [
+                {
+                  "exerciseId": "face-pull",
+                  "sets": 3
+                }
+              ],
+              "id": "cb-1"
+            }
+          ],
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "functionalBlock": [
+            {
+              "exercises": [
+                {
+                  "exerciseId": "farmer-carry",
+                  "sets": 2
+                }
+              ],
+              "id": "fb-1"
+            }
+          ],
+          "id": "nb-1",
+          "templateName": "推 A"
+        }
+      ],
+      "label": "no-support-block-fallback-default-suggestion",
+      "result": {
+        "actualSets": 2,
+        "confidence": "low",
+        "mainlineRate": 100,
+        "overallRate": 100,
+        "plannedSets": 2,
+        "recentSessionCount": 1,
+        "recentSessions": [
+          {
+            "actualSets": 2,
+            "adherenceRate": 100,
+            "correctionActualSets": 0,
+            "correctionPlannedSets": 3,
+            "date": "2026-05-30",
+            "functionalActualSets": 0,
+            "functionalPlannedSets": 2,
+            "hasSupportData": false,
+            "mainActualSets": 2,
+            "mainPlannedSets": 2,
+            "plannedSets": 2,
+            "sessionId": "nb-1",
+            "templateName": "推 A"
+          }
+        ],
+        "skippedExercises": [],
+        "skippedSupportExercises": [],
+        "suggestions": [
+          "最近完成度稳定，可以继续按当前结构推进。"
+        ]
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "mp-1",
+          "supportExerciseLogs": [
+            {
+              "blockType": "correction",
+              "completedSets": 0,
+              "exerciseId": "face-pull",
+              "moduleId": "corr-a",
+              "plannedSets": 3,
+              "skippedReason": "pain"
+            }
+          ],
+          "templateName": "推 A"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "baseId": "squat-base",
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "weight": 100
+                },
+                {
+                  "done": false,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "weight": 100
+                },
+                {
+                  "done": false,
+                  "id": "squat-3",
+                  "reps": 5,
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "mp-2",
+          "supportExerciseLogs": [
+            {
+              "blockType": "correction",
+              "completedSets": 0,
+              "exerciseId": "band-pull-apart",
+              "moduleId": "corr-b",
+              "plannedSets": 2,
+              "skippedReason": "pain"
+            }
+          ],
+          "templateName": "腿 A"
+        },
+        {
+          "date": "2026-05-26",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": false,
+                  "id": "bench-press-3",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "mp-3",
+          "templateName": "推 A"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "mp-4",
+          "templateName": "推 A"
+        }
+      ],
+      "label": "medium-coverage-pain-skip-and-skipped-sort",
+      "result": {
+        "actualSets": 5,
+        "confidence": "medium",
+        "correctionRate": 0,
+        "mainlineRate": 45,
+        "overallRate": 31,
+        "plannedSets": 16,
+        "recentSessionCount": 4,
+        "recentSessions": [
+          {
+            "actualSets": 1,
+            "adherenceRate": 17,
+            "correctionActualSets": 0,
+            "correctionPlannedSets": 3,
+            "date": "2026-05-30",
+            "functionalActualSets": 0,
+            "functionalPlannedSets": 0,
+            "hasSupportData": true,
+            "mainActualSets": 1,
+            "mainPlannedSets": 3,
+            "plannedSets": 6,
+            "sessionId": "mp-1",
+            "templateName": "推 A"
+          },
+          {
+            "actualSets": 1,
+            "adherenceRate": 20,
+            "correctionActualSets": 0,
+            "correctionPlannedSets": 2,
+            "date": "2026-05-28",
+            "functionalActualSets": 0,
+            "functionalPlannedSets": 0,
+            "hasSupportData": true,
+            "mainActualSets": 1,
+            "mainPlannedSets": 3,
+            "plannedSets": 5,
+            "sessionId": "mp-2",
+            "templateName": "腿 A"
+          },
+          {
+            "actualSets": 1,
+            "adherenceRate": 33,
+            "correctionActualSets": 0,
+            "correctionPlannedSets": 0,
+            "date": "2026-05-26",
+            "functionalActualSets": 0,
+            "functionalPlannedSets": 0,
+            "hasSupportData": false,
+            "mainActualSets": 1,
+            "mainPlannedSets": 3,
+            "plannedSets": 3,
+            "sessionId": "mp-3",
+            "templateName": "推 A"
+          },
+          {
+            "actualSets": 2,
+            "adherenceRate": 100,
+            "correctionActualSets": 0,
+            "correctionPlannedSets": 0,
+            "date": "2026-05-24",
+            "functionalActualSets": 0,
+            "functionalPlannedSets": 0,
+            "hasSupportData": false,
+            "mainActualSets": 2,
+            "mainPlannedSets": 2,
+            "plannedSets": 2,
+            "sessionId": "mp-4",
+            "templateName": "推 A"
+          }
+        ],
+        "skippedExercises": [
+          {
+            "count": 2,
+            "exerciseId": "bench-press"
+          },
+          {
+            "count": 1,
+            "exerciseId": "squat-base"
+          }
+        ],
+        "skippedSupportExercises": [
+          {
+            "blockType": "correction",
+            "count": 1,
+            "exerciseId": "face-pull",
+            "moduleId": "corr-a",
+            "mostCommonReason": "pain"
+          },
+          {
+            "blockType": "correction",
+            "count": 1,
+            "exerciseId": "band-pull-apart",
+            "moduleId": "corr-b",
+            "mostCommonReason": "pain"
+          }
+        ],
+        "suggestions": [
+          "最近整体完成率偏低，下周先降低复杂度，让计划更容易执行。",
+          "主训练完成率也在下降，下周建议把周训练量下修 10%-20%。",
+          "纠偏模块经常做不完，先缩到最小有效剂量。",
+          "最近有较多因为不适而跳过的记录，下周应优先替代动作或降低负荷。"
+        ]
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "analytics/adherence-report-cases-v1"
+  },
+  "sourceFixtureId": "analytics/adherence-report-cases-v1"
+}

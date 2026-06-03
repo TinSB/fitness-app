@@ -1,0 +1,373 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 80
+                }
+              ]
+            }
+          ],
+          "id": "pr-b1"
+        },
+        {
+          "date": "2026-05-20",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 75
+                }
+              ]
+            }
+          ],
+          "id": "pr-b2"
+        },
+        {
+          "date": "2026-05-10",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "pr-b3"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                },
+                {
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 120
+                }
+              ]
+            }
+          ],
+          "id": "pr-s1"
+        }
+      ],
+      "label": "multi-metric-prs-and-slice",
+      "result": [
+        {
+          "date": "2026-05-30",
+          "displayValue": "80kg x 5",
+          "exercise": "平板卧推",
+          "exerciseId": "bench-press",
+          "key": "bench-press-weight",
+          "metric": "max_weight",
+          "quality": "high_quality",
+          "raw": 80,
+          "reasons": [
+            "动作质量和努力程度达到高质量记录标准。"
+          ],
+          "type": "最大重量 PR",
+          "value": 80
+        },
+        {
+          "date": "2026-05-30",
+          "displayValue": "80kg x 5",
+          "exercise": "平板卧推",
+          "exerciseId": "bench-press",
+          "key": "bench-press-80-reps",
+          "metric": "reps_at_weight",
+          "quality": "high_quality",
+          "raw": 5,
+          "reasons": [
+            "动作质量和努力程度达到高质量记录标准。"
+          ],
+          "type": "固定重量次数 PR",
+          "value": 5
+        },
+        {
+          "date": "2026-05-30",
+          "displayValue": "800kg",
+          "exercise": "平板卧推",
+          "exerciseId": "bench-press",
+          "key": "bench-press-volume",
+          "metric": "volume",
+          "quality": "high_quality",
+          "raw": 800,
+          "reasons": [
+            "本次记录由高质量工作组构成。"
+          ],
+          "type": "单次训练总量 PR",
+          "value": 800
+        },
+        {
+          "date": "2026-05-30",
+          "displayValue": "93.5kg",
+          "exercise": "平板卧推",
+          "exerciseId": "bench-press",
+          "key": "bench-press-e1rm",
+          "metric": "estimated_1rm",
+          "quality": "standard",
+          "raw": 93.5,
+          "reasons": [
+            "历史最高可信估算，仅用于进度回看。"
+          ],
+          "type": "估算 1RM PR",
+          "value": 93.5
+        },
+        {
+          "date": "2026-05-27",
+          "displayValue": "120kg x 5",
+          "exercise": "深蹲",
+          "exerciseId": "squat",
+          "key": "squat-weight",
+          "metric": "max_weight",
+          "quality": "high_quality",
+          "raw": 120,
+          "reasons": [
+            "动作质量和努力程度达到高质量记录标准。"
+          ],
+          "type": "最大重量 PR",
+          "value": 120
+        },
+        {
+          "date": "2026-05-27",
+          "displayValue": "120kg x 5",
+          "exercise": "深蹲",
+          "exerciseId": "squat",
+          "key": "squat-120-reps",
+          "metric": "reps_at_weight",
+          "quality": "high_quality",
+          "raw": 5,
+          "reasons": [
+            "动作质量和努力程度达到高质量记录标准。"
+          ],
+          "type": "固定重量次数 PR",
+          "value": 5
+        },
+        {
+          "date": "2026-05-27",
+          "displayValue": "1200kg",
+          "exercise": "深蹲",
+          "exerciseId": "squat",
+          "key": "squat-volume",
+          "metric": "volume",
+          "quality": "high_quality",
+          "raw": 1200,
+          "reasons": [
+            "本次记录由高质量工作组构成。"
+          ],
+          "type": "单次训练总量 PR",
+          "value": 1200
+        },
+        {
+          "date": "2026-05-27",
+          "displayValue": "140kg",
+          "exercise": "深蹲",
+          "exerciseId": "squat",
+          "key": "squat-e1rm",
+          "metric": "estimated_1rm",
+          "quality": "standard",
+          "raw": 140,
+          "reasons": [
+            "历史最高可信估算，仅用于进度回看。"
+          ],
+          "type": "估算 1RM PR",
+          "value": 140
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "id": "deadlift",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "type": "warmup",
+                  "weight": 50
+                },
+                {
+                  "done": true,
+                  "id": "deadlift-2",
+                  "painFlag": true,
+                  "reps": 20,
+                  "rir": 2,
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "actualExerciseId": "squat__alt_1",
+              "id": "squat",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 200
+                }
+              ]
+            }
+          ],
+          "id": "lq-1"
+        },
+        {
+          "date": "2026-05-18",
+          "exercises": [
+            {
+              "id": "deadlift",
+              "sets": [
+                {
+                  "done": true,
+                  "id": "deadlift-1",
+                  "reps": 5,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "lq-2"
+        }
+      ],
+      "label": "low-quality-volume-invalid-skip-warmup-filter",
+      "result": [
+        {
+          "date": "2026-05-29",
+          "displayValue": "50kg x 5",
+          "exercise": "硬拉",
+          "exerciseId": "deadlift",
+          "key": "deadlift-50-reps",
+          "metric": "reps_at_weight",
+          "quality": "standard",
+          "raw": 5,
+          "reasons": [
+            "热身组用于准备，不计入肌肥大有效组。"
+          ],
+          "type": "固定重量次数 PR",
+          "value": 5
+        },
+        {
+          "date": "2026-05-29",
+          "displayValue": "1200kg",
+          "exercise": "硬拉",
+          "exerciseId": "deadlift",
+          "key": "deadlift-volume",
+          "metric": "volume",
+          "quality": "low_confidence",
+          "raw": 1200,
+          "reasons": [
+            "该组出现不适，不能标记为高质量记录。"
+          ],
+          "type": "单次训练总量 PR",
+          "value": 1200
+        },
+        {
+          "date": "2026-05-18",
+          "displayValue": "100kg x 5",
+          "exercise": "硬拉",
+          "exerciseId": "deadlift",
+          "key": "deadlift-weight",
+          "metric": "max_weight",
+          "quality": "high_quality",
+          "raw": 100,
+          "reasons": [
+            "动作质量和努力程度达到高质量记录标准。"
+          ],
+          "type": "最大重量 PR",
+          "value": 100
+        },
+        {
+          "date": "2026-05-18",
+          "displayValue": "100kg x 5",
+          "exercise": "硬拉",
+          "exerciseId": "deadlift",
+          "key": "deadlift-100-reps",
+          "metric": "reps_at_weight",
+          "quality": "high_quality",
+          "raw": 5,
+          "reasons": [
+            "动作质量和努力程度达到高质量记录标准。"
+          ],
+          "type": "固定重量次数 PR",
+          "value": 5
+        },
+        {
+          "date": "2026-05-18",
+          "displayValue": "116.5kg",
+          "exercise": "硬拉",
+          "exerciseId": "deadlift",
+          "key": "deadlift-e1rm",
+          "metric": "estimated_1rm",
+          "quality": "standard",
+          "raw": 116.5,
+          "reasons": [
+            "历史最高可信估算，仅用于进度回看。"
+          ],
+          "type": "估算 1RM PR",
+          "value": 116.5
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "analytics/prs-cases-v1"
+  },
+  "sourceFixtureId": "analytics/prs-cases-v1"
+}

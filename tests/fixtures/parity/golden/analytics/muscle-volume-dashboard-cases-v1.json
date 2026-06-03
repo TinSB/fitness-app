@@ -1,0 +1,575 @@
+{
+  "cases": [
+    {
+      "history": [
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-3",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-4",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            },
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                },
+                {
+                  "done": true,
+                  "id": "squat-2",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                },
+                {
+                  "done": true,
+                  "id": "squat-3",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                },
+                {
+                  "done": true,
+                  "id": "squat-4",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                }
+              ]
+            },
+            {
+              "id": "shoulder-press",
+              "primaryMuscles": [
+                "shoulders"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "shoulder-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 25
+                },
+                {
+                  "done": true,
+                  "id": "shoulder-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 25
+                },
+                {
+                  "done": true,
+                  "id": "shoulder-press-3",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 25
+                },
+                {
+                  "done": true,
+                  "id": "shoulder-press-4",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 25
+                }
+              ]
+            },
+            {
+              "id": "barbell-row",
+              "primaryMuscles": [
+                "back"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "barbell-row-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "done": true,
+                  "id": "barbell-row-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "done": true,
+                  "id": "barbell-row-3",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                },
+                {
+                  "done": true,
+                  "id": "barbell-row-4",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 70
+                }
+              ]
+            }
+          ],
+          "id": "sb-1"
+        },
+        {
+          "date": "2026-05-20",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "sb-old"
+        }
+      ],
+      "label": "status-bands-with-week-start",
+      "result": [
+        {
+          "completedSets": 4,
+          "effectiveSets": 4,
+          "highConfidenceEffectiveSets": 4,
+          "muscleId": "chest",
+          "muscleName": "chest",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周还差约 12 组加权有效组。"
+          ],
+          "remainingSets": 12,
+          "status": "low",
+          "targetSets": 16,
+          "weightedEffectiveSets": 4
+        },
+        {
+          "completedSets": 4,
+          "effectiveSets": 4,
+          "highConfidenceEffectiveSets": 4,
+          "muscleId": "shoulders",
+          "muscleName": "shoulders",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周训练量接近目标，后续优先补高质量工作组。"
+          ],
+          "remainingSets": 1,
+          "status": "near_target",
+          "targetSets": 5,
+          "weightedEffectiveSets": 4
+        },
+        {
+          "completedSets": 4,
+          "effectiveSets": 4,
+          "highConfidenceEffectiveSets": 4,
+          "muscleId": "legs",
+          "muscleName": "legs",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周训练量已基本达标，继续保持恢复质量。"
+          ],
+          "remainingSets": 0,
+          "status": "on_target",
+          "targetSets": 4,
+          "weightedEffectiveSets": 4
+        },
+        {
+          "completedSets": 4,
+          "effectiveSets": 4,
+          "highConfidenceEffectiveSets": 4,
+          "muscleId": "back",
+          "muscleName": "back",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周训练量可能偏高，注意恢复和动作质量。"
+          ],
+          "remainingSets": 0,
+          "status": "high",
+          "targetSets": 2,
+          "weightedEffectiveSets": 4
+        }
+      ],
+      "weeklyPrescription": {
+        "muscles": [
+          {
+            "muscle": "chest",
+            "target": 16
+          },
+          {
+            "muscle": "legs",
+            "target": 4
+          },
+          {
+            "muscle": "shoulders",
+            "target": 5
+          },
+          {
+            "muscle": "back",
+            "target": 2
+          }
+        ],
+        "weekStart": "2026-05-25"
+      }
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-31",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-1"
+        },
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-2"
+        },
+        {
+          "date": "2026-05-29",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-3"
+        },
+        {
+          "date": "2026-05-28",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-4"
+        },
+        {
+          "date": "2026-05-27",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-5"
+        },
+        {
+          "date": "2026-05-26",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-6"
+        },
+        {
+          "date": "2026-05-25",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "s7-7"
+        },
+        {
+          "date": "2026-05-24",
+          "exercises": [
+            {
+              "id": "squat",
+              "primaryMuscles": [
+                "legs"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "squat-1",
+                  "reps": 6,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 100
+                }
+              ]
+            }
+          ],
+          "id": "s7-8"
+        }
+      ],
+      "label": "no-week-start-slice-7-and-target-zero-high",
+      "result": [
+        {
+          "completedSets": 7,
+          "effectiveSets": 7,
+          "highConfidenceEffectiveSets": 7,
+          "muscleId": "chest",
+          "muscleName": "chest",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周训练量可能偏高，注意恢复和动作质量。"
+          ],
+          "remainingSets": 0,
+          "status": "high",
+          "targetSets": 0,
+          "weightedEffectiveSets": 7
+        }
+      ]
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-30",
+          "exercises": [
+            {
+              "id": "bench-press",
+              "primaryMuscles": [
+                "chest"
+              ],
+              "sets": [
+                {
+                  "done": true,
+                  "id": "bench-press-1",
+                  "reps": 8,
+                  "rir": 2,
+                  "techniqueQuality": "good",
+                  "weight": 60
+                },
+                {
+                  "done": true,
+                  "id": "bench-press-2",
+                  "reps": 8,
+                  "rir": "",
+                  "techniqueQuality": "good",
+                  "weight": 60
+                }
+              ]
+            }
+          ],
+          "id": "tz-1"
+        }
+      ],
+      "label": "target-zero-low-and-low-status-note",
+      "result": [
+        {
+          "completedSets": 2,
+          "effectiveSets": 2,
+          "highConfidenceEffectiveSets": 1,
+          "muscleId": "chest",
+          "muscleName": "chest",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周还差约 18.2 组加权有效组。",
+            "部分有效组置信度不是高，建议结合 RIR 和动作质量复查。"
+          ],
+          "remainingSets": 18.2,
+          "status": "low",
+          "targetSets": 20,
+          "weightedEffectiveSets": 1.8
+        },
+        {
+          "completedSets": 0,
+          "effectiveSets": 0,
+          "highConfidenceEffectiveSets": 0,
+          "muscleId": "calves",
+          "muscleName": "calves",
+          "notes": [
+            "加权有效组是训练量估算，不是精确生理测量。",
+            "本周还差约 0 组加权有效组。"
+          ],
+          "remainingSets": 0,
+          "status": "low",
+          "targetSets": 0,
+          "weightedEffectiveSets": 0
+        }
+      ],
+      "weeklyPrescription": {
+        "muscles": [
+          {
+            "muscle": "calves",
+            "target": 0
+          },
+          {
+            "muscle": "chest",
+            "target": 20
+          }
+        ],
+        "weekStart": "2026-05-25"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-01T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f5feae3311dcb56cb8dad1f3149f77f498e2efcd",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "analytics/muscle-volume-dashboard-cases-v1"
+  },
+  "sourceFixtureId": "analytics/muscle-volume-dashboard-cases-v1"
+}

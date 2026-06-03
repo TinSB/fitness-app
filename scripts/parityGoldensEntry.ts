@@ -171,6 +171,28 @@ import { computeWeeklyMuscleBalance } from '../src/engines/weeklyMuscleBalanceEn
 // engineInput (history + optional external summaries) and COMPUTE-ASSERTs the result
 // (status / signals / suggestedActions / title / summary / confidence) == golden.
 import { detectExercisePlateau } from '../src/engines/plateauDetectionEngine';
+// AN-3 — effectiveSetEngine (analytics-consumed subset) + analytics.ts dashboard parity
+// slice. Imports the REAL effective-set + analytics functions so the goldens are GENERATED
+// from TS truth, never hand-authored (§22). The Swift ports (EffectiveSetEngine /
+// AnalyticsDashboardEngine) re-run the SAME functions over each case's echoed engineInput and
+// COMPUTE-ASSERT the result. PURE / clockless apart from buildWeeklyReport's INJECTED
+// `options.nowIso` (= the deterministic clock) so its 7-day-window golden is byte-deterministic.
+import {
+  evaluateEffectiveSet,
+  countEffectiveSets,
+  getMuscleContribution,
+  buildEffectiveVolumeSummary,
+} from '../src/engines/effectiveSetEngine';
+import {
+  buildMuscleVolumeDashboard,
+  buildExerciseTrend,
+  trendStatus,
+  buildPrs,
+  buildWeeklyReport,
+  buildAdherenceReport,
+  CORE_TREND_EXERCISES,
+} from '../src/engines/analytics';
+import type { BodyWeightEntry } from '../src/models/training-model';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
 // engine-valid. tests/fixtures.ts is plain TS (no test-runner imports) and
@@ -360,6 +382,25 @@ const FIXTURE_IDS = [
   // hand-edited (§22).
   'plateau-detection/plateau-status-cases-v1',
   'plateau-detection/plateau-boundary-cases-v1',
+  // AN-3 effectiveSetEngine (analytics-consumed subset) + analytics.ts dashboard port — 7
+  // OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL pinning the ported functions.
+  // effective-set: evaluate-cases (evaluateEffectiveSet every flag/score/confidence branch) +
+  // volume-summary-cases (buildEffectiveVolumeSummary byMuscle/reasons/dateRange/dataFlag/
+  // corrective+functional skip/rounding + countEffectiveSets + getMuscleContribution probes).
+  // analytics: muscle-volume-dashboard-cases (status low/near/on/high + target≤0 + weekStart vs
+  // slice(0,7) + notes + sort) · exercise-trend-cases (buildExerciseTrend topSet/slice(0,6)/filter
+  // + trendStatus 数据不足/推进中/回落/可能停滞 + CORE_TREND_EXERCISES) · prs-cases (buildPrs
+  // maxWeight/fixedReps/sessionTotals/estimatedMaxes + quality + sort+slice(0,8)) · weekly-report-
+  // cases (buildWeeklyReport injected-nowIso 7-day window + focus + latestWeight) · adherence-
+  // report-cases (buildAdherenceReport rates/suggestions/confidence/skipped + supportPlannedFromBlock).
+  // Generated; never hand-edited (§22).
+  'effective-set/evaluate-cases-v1',
+  'effective-set/volume-summary-cases-v1',
+  'analytics/muscle-volume-dashboard-cases-v1',
+  'analytics/exercise-trend-cases-v1',
+  'analytics/prs-cases-v1',
+  'analytics/weekly-report-cases-v1',
+  'analytics/adherence-report-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1930,6 +1971,184 @@ const generatePlateauDetection = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// AN-3 — effectiveSetEngine (analytics-consumed subset) + analytics.ts dashboard
+// OUTPUT parity. Each fixture carries a `cases` array; per case the generator
+// materialises a synthetic history/exercise/set from a verbatim spec (ONLY
+// `date`/`startedAt`/`finishedAt` are derived from parityMeta.deterministicClockIso via
+// dateOnlyDaysBefore/isoDaysBefore — every other field is the fixture's own value, passed
+// through), runs the REAL effectiveSet/analytics function, and echoes BOTH the engineInput
+// and the computed result. PURE / clockless apart from buildWeeklyReport's INJECTED
+// `options.nowIso`. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+type AnalyticsAnySpec = Record<string, any>;
+
+// Materialise a near-final session spec: convert `daysAgo`/`startedAtDaysAgo`/
+// `finishedAtDaysAgo` to deterministic date strings; pass every other field through
+// verbatim (dataFlag / templateName / focus / supportExerciseLogs / correctionBlock /
+// functionalBlock ride in the open bag). Sets get an auto id (`${ex.id}-${i+1}`) when none
+// is given, and `done:true` ONLY when neither `done` nor `completedAt` is provided (so the
+// incomplete + legacy-completed branches stay reachable).
+const materializeAnalyticsSession = (spec: AnalyticsAnySpec, nowIso: string): TrainingSession => {
+  const { daysAgo, startedAtDaysAgo, finishedAtDaysAgo, exercises, ...rest } = spec;
+  const session: AnalyticsAnySpec = { ...rest };
+  if (daysAgo !== undefined) session.date = dateOnlyDaysBefore(nowIso, daysAgo);
+  if (startedAtDaysAgo !== undefined) session.startedAt = isoDaysBefore(nowIso, startedAtDaysAgo);
+  if (finishedAtDaysAgo !== undefined) session.finishedAt = isoDaysBefore(nowIso, finishedAtDaysAgo);
+  if (Array.isArray(exercises)) {
+    session.exercises = exercises.map((ex: AnalyticsAnySpec) => {
+      const { sets, ...exRest } = ex;
+      const exercise: AnalyticsAnySpec = { ...exRest };
+      if (Array.isArray(sets)) {
+        exercise.sets = sets.map((s: AnalyticsAnySpec, i: number) => {
+          const set: AnalyticsAnySpec = { ...s, id: s.id ?? `${ex.id}-${i + 1}` };
+          if (s.done === undefined && s.completedAt === undefined) set.done = true;
+          return set;
+        });
+      } else if (sets !== undefined) {
+        exercise.sets = sets; // integer/template form passes through (setCountForExercise reads number(sets))
+      }
+      return exercise;
+    });
+  }
+  return session as unknown as TrainingSession;
+};
+
+const resolveAnalyticsDateRange = (raw: any, nowIso: string) => {
+  if (!raw) return undefined;
+  const range: { from?: string; to?: string } = {};
+  if (raw.fromDaysAgo !== undefined) range.from = dateOnlyDaysBefore(nowIso, raw.fromDaysAgo);
+  else if (raw.from !== undefined) range.from = raw.from;
+  if (raw.toDaysAgo !== undefined) range.to = dateOnlyDaysBefore(nowIso, raw.toDaysAgo);
+  else if (raw.to !== undefined) range.to = raw.to;
+  return range;
+};
+
+const generateEffectiveSetEvaluate = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; set: any; exercise?: any; context?: { plannedReps?: [number, number] } }) => {
+      const result = evaluateEffectiveSet(c.set, c.exercise, c.context);
+      const echoed: Record<string, unknown> = { label: c.label ?? null, set: c.set };
+      if (c.exercise !== undefined) echoed.exercise = c.exercise;
+      if (c.context !== undefined) echoed.context = c.context;
+      echoed.result = result;
+      return echoed;
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateEffectiveSetVolume = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: effective-set/volume-summary requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const dateRange = resolveAnalyticsDateRange(c.dateRange, nowIso);
+    const summary = buildEffectiveVolumeSummary(history, dateRange);
+    const countProbes = (Array.isArray(c.countProbes) ? c.countProbes : []).map((p: any) => ({
+      label: p.label ?? null,
+      sessionIndex: p.sessionIndex,
+      minScore: p.minScore,
+      count: countEffectiveSets(history[p.sessionIndex], p.minScore !== undefined ? { minScore: p.minScore } : undefined),
+    }));
+    const contributionProbes = (Array.isArray(c.contributionProbes) ? c.contributionProbes : []).map((p: any) => ({
+      label: p.label ?? null,
+      exercise: p.exercise,
+      contribution: getMuscleContribution(p.exercise),
+    }));
+    const echoed: Record<string, unknown> = { label: c.label ?? null, history };
+    if (dateRange !== undefined) echoed.dateRange = dateRange;
+    echoed.summary = summary;
+    if (countProbes.length) echoed.countProbes = countProbes;
+    if (contributionProbes.length) echoed.contributionProbes = contributionProbes;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateMuscleVolumeDashboard = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: analytics/muscle-volume-dashboard requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    // weekStart derives from `weekStartDaysAgo` (deterministic, nowIso-relative) when given;
+    // an explicit `weekStart` string is used verbatim. number(target) is the fixture value.
+    let wp: any = null;
+    if (c.weeklyPrescription) {
+      const { weekStartDaysAgo, ...rest } = c.weeklyPrescription;
+      wp = { ...rest };
+      if (weekStartDaysAgo !== undefined) wp.weekStart = dateOnlyDaysBefore(nowIso, weekStartDaysAgo);
+    }
+    const result = buildMuscleVolumeDashboard(history, wp);
+    const echoed: Record<string, unknown> = { label: c.label ?? null, history };
+    if (wp !== null) echoed.weeklyPrescription = wp;
+    echoed.result = result;
+    return echoed;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateExerciseTrend = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: analytics/exercise-trend requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const trend = buildExerciseTrend(history, c.exerciseId);
+    const status = trendStatus(trend);
+    return { label: c.label ?? null, exerciseId: c.exerciseId, history, trend, status };
+  });
+  return { sourceFixtureId: meta.id, coreTrendExercises: CORE_TREND_EXERCISES, cases };
+};
+
+const generatePrs = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: analytics/prs requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const result = buildPrs(history);
+    return { label: c.label ?? null, history, result };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateWeeklyReport = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: analytics/weekly-report requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const bodyWeights = (Array.isArray(c.bodyWeights) ? c.bodyWeights : []) as BodyWeightEntry[];
+    // asOfDate: `true` (or omitted) → the deterministic clock; an explicit string is used verbatim.
+    const asOfDate = c.asOfDate === true || c.asOfDate === undefined ? nowIso : String(c.asOfDate);
+    const result = buildWeeklyReport(history, bodyWeights, { nowIso: asOfDate });
+    return { label: c.label ?? null, asOfDate, bodyWeights, history, result };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateAdherenceReport = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: analytics/adherence-report requires deterministicClockIso');
+  }
+  const nowIso = meta.deterministicClockIso;
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (c.sessions ?? []).map((s: any) => materializeAnalyticsSession(s, nowIso));
+    const result = buildAdherenceReport(history);
+    return { label: c.label ?? null, history, result };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -1994,6 +2213,14 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // AN-2 plateau-detection fixtures — both routed through the single plateau generator.
   'plateau-detection/plateau-status-cases-v1': generatePlateauDetection,
   'plateau-detection/plateau-boundary-cases-v1': generatePlateauDetection,
+  // AN-3 effectiveSet + analytics dashboard fixtures.
+  'effective-set/evaluate-cases-v1': generateEffectiveSetEvaluate,
+  'effective-set/volume-summary-cases-v1': generateEffectiveSetVolume,
+  'analytics/muscle-volume-dashboard-cases-v1': generateMuscleVolumeDashboard,
+  'analytics/exercise-trend-cases-v1': generateExerciseTrend,
+  'analytics/prs-cases-v1': generatePrs,
+  'analytics/weekly-report-cases-v1': generateWeeklyReport,
+  'analytics/adherence-report-cases-v1': generateAdherenceReport,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
