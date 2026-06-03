@@ -1,0 +1,177 @@
+{
+  "counts": {
+    "adjustmentChangeLabels": 7,
+    "tables": 2,
+    "templateNameMap": 20
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "b4144df3fd07d710d5b5e3d953ba81690712be87",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "i18n/formatters-pa-snapshot-v1"
+  },
+  "probes": {
+    "formatAdjustmentChangeLabel": [
+      {
+        "expected": "增加组数",
+        "input": "add_sets"
+      },
+      {
+        "expected": "减少组数",
+        "input": "remove_sets"
+      },
+      {
+        "expected": "新增动作",
+        "input": "add_new_exercise"
+      },
+      {
+        "expected": "替代动作",
+        "input": "swap_exercise"
+      },
+      {
+        "expected": "减少辅助层",
+        "input": "reduce_support"
+      },
+      {
+        "expected": "增加辅助层",
+        "input": "increase_support"
+      },
+      {
+        "expected": "保持当前结构",
+        "input": "keep"
+      },
+      {
+        "expected": "计划调整",
+        "input": "totally_unknown"
+      },
+      {
+        "expected": "计划调整",
+        "input": ""
+      },
+      {
+        "expected": "计划调整",
+        "input": null
+      }
+    ],
+    "formatDayTemplateName": [
+      {
+        "expected": "腿 A",
+        "input": "legs-a"
+      },
+      {
+        "expected": "深蹲日",
+        "input": "深蹲日"
+      },
+      {
+        "expected": "下肢 A",
+        "input": "Lower A"
+      },
+      {
+        "expected": "全身训练",
+        "input": {
+          "name": "full-body"
+        }
+      },
+      {
+        "expected": "未指定训练日",
+        "input": null
+      },
+      {
+        "expected": "未指定训练日",
+        "input": ""
+      }
+    ],
+    "formatProgramTemplateName": [
+      {
+        "expected": "推 A",
+        "input": "push-a"
+      },
+      {
+        "expected": "推 A",
+        "input": "Push A"
+      },
+      {
+        "expected": "推 A",
+        "input": "pushA"
+      },
+      {
+        "expected": "推 A",
+        "input": "Push(高级)"
+      },
+      {
+        "expected": "拉 A 计划",
+        "input": "Pull A 计划"
+      },
+      {
+        "expected": "胸部专项",
+        "input": "胸部专项"
+      },
+      {
+        "expected": "未知模板",
+        "input": "Push 强化"
+      },
+      {
+        "expected": "拉 A",
+        "input": {
+          "id": "pull-a",
+          "name": "whatever"
+        }
+      },
+      {
+        "expected": "自定义训练",
+        "input": {
+          "id": "custom-xyz",
+          "nameZh": "自定义训练"
+        }
+      },
+      {
+        "expected": "未知模板",
+        "input": {
+          "id": "custom-xyz"
+        }
+      },
+      {
+        "expected": "未知模板",
+        "input": null
+      },
+      {
+        "expected": "未知模板",
+        "input": ""
+      }
+    ]
+  },
+  "tables": {
+    "adjustmentChangeLabels": {
+      "add_new_exercise": "新增动作",
+      "add_sets": "增加组数",
+      "increase_support": "增加辅助层",
+      "keep": "保持当前结构",
+      "reduce_support": "减少辅助层",
+      "remove_sets": "减少组数",
+      "swap_exercise": "替代动作"
+    },
+    "templateNameMap": {
+      "arms": "手臂补量",
+      "crowded-gym": "人多替代",
+      "full-body": "全身训练",
+      "fullbody": "全身训练",
+      "legs": "腿 A",
+      "legs-a": "腿 A",
+      "legsa": "腿 A",
+      "lower": "下肢 A",
+      "lower-a": "下肢 A",
+      "lowera": "下肢 A",
+      "pull": "拉 A",
+      "pull-a": "拉 A",
+      "pulla": "拉 A",
+      "push": "推 A",
+      "push-a": "推 A",
+      "pusha": "推 A",
+      "quick-30": "30 分钟快练",
+      "upper": "上肢 A",
+      "upper-a": "上肢 A",
+      "uppera": "上肢 A"
+    }
+  }
+}

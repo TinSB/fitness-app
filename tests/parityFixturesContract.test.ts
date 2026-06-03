@@ -174,6 +174,12 @@ const FIXTURE_IDS = [
   // counts for the Swift port (DefaultTrainingData / SupportModules) to reconcile item-by-item.
   // Generated; never hand-edited (§22).
   'default-program-data/snapshot-v1',
+  // PA-S4 i18n/formatters PA-subset port — 1 snapshot fixture dumping the two private
+  // formatters.ts tables (TEMPLATE_NAME_MAP / the inline change-label record) + per-table
+  // counts + a branch-covering probe set for the 3 engine-consumed formatters, for the Swift
+  // port (IronPathL10n.Formatters) to reconcile entry-by-entry + branch-by-branch.
+  // Generated; never hand-edited (§22).
+  'i18n/formatters-pa-snapshot-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
