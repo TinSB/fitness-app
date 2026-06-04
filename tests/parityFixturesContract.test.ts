@@ -231,6 +231,10 @@ const FIXTURE_IDS = [
   // engines) + the formatTrainingMode i18n formatter. Generated; never hand-edited (§22).
   'exercise-recovery/knowledge-snapshot-v1',
   'i18n/training-mode-cases-v1',
+  // SC-1b exerciseRecoveryConflictEngine port — 1 ADDITIVE OUTPUT fixture (recovery-conflict
+  // cases) pinning buildExerciseRecoveryConflict across the conflict-level / action / scoring /
+  // movement-pattern / override-merge branches. Generated; never hand-edited (§22).
+  'exercise-recovery-conflict/conflict-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

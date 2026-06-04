@@ -71,8 +71,10 @@ describe('parityFixturesGenerationConsistency', () => {
     // 4 PA-S6 plan-adjustment-identity +
     // 2 PA-S7 program-adjust (hash + rollback) +
     // 2 PA-S8 program-adjust (select-day + build-diff) +
-    // 2 PA-S9 program-adjust (create-draft + apply-draft) parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+98\s+fixture/);
+    // 2 PA-S9 program-adjust (create-draft + apply-draft) +
+    // 1 SC-1 workout-cycle + 2 SC-0 scheduling-foundation (exercise-recovery knowledge +
+    // i18n training-mode) + 1 SC-1b exercise-recovery-conflict parity fixtures).
+    expect(result.stdout).toMatch(/checked\s+99\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });

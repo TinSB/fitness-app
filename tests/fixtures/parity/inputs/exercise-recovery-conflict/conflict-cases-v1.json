@@ -1,0 +1,155 @@
+{
+  "parityMeta": {
+    "id": "exercise-recovery-conflict/conflict-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-1b buildExerciseRecoveryConflict function-level parity — synthetic recovery-conflict cases covering conflictLevel none/low/moderate/high (0.75/3.5/7 thresholds), the full recommendedAction matrix (keep/reduce_intensity/reduce_volume/substitute/skip via level×hasPain×fatigueCost), the contribution/primary/secondary/movement-pattern sub-scores, every movementScore area branch (shoulder 5/4/1.5 · chest 6 · back 6/4/2 · leg 6 · arm 6/2), the isLegPressText guard, mergeSources pain-overrides-soreness, the affectedAreas >=0.75 filter, formatExerciseName display-id/Chinese-name/English-name branches, multi-key area text + English token, and the EXERCISE_KNOWLEDGE_OVERRIDES merge via real ids (bench-press/squat/leg-press). Generated from src/engines/exerciseRecoveryConflictEngine.ts; the Swift ExerciseRecoveryConflictEngine compute-asserts each case == golden. Clockless: no Date on the engine path → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e024b64e404f2f6f4ccb145a77c673b18a1ceec5",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "no-areas-keep",
+      "exercise": { "id": "syn-1", "primaryMuscles": ["胸"] }
+    },
+    {
+      "label": "unrelated-area-none",
+      "exercise": { "id": "syn-2", "primaryMuscles": ["胸"], "movementPattern": "飞鸟" },
+      "sorenessAreas": ["腿部"]
+    },
+    {
+      "label": "none-no-wu-guard",
+      "exercise": { "id": "syn-1", "primaryMuscles": ["胸"] },
+      "sorenessAreas": ["无"],
+      "painAreas": ["none"]
+    },
+    {
+      "label": "low-no-pain-keep-contribution",
+      "exercise": { "id": "syn-3", "muscleContribution": { "胸": 0.5 } },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "low-pain-reduce-intensity-contribution",
+      "exercise": { "id": "syn-4", "muscleContribution": { "胸": 0.4 }, "fatigueCost": "low", "skillDemand": "low" },
+      "painAreas": ["胸"]
+    },
+    {
+      "label": "moderate-no-pain-reduce-intensity-primary",
+      "exercise": { "id": "syn-5", "primaryMuscles": ["腿"] },
+      "sorenessAreas": ["腿部"]
+    },
+    {
+      "label": "moderate-pain-substitute-secondary",
+      "exercise": { "id": "syn-6", "secondaryMuscles": ["手臂"] },
+      "painAreas": ["手臂"]
+    },
+    {
+      "label": "high-pain-skip",
+      "exercise": { "id": "syn-7", "primaryMuscles": ["胸"], "movementPattern": "卧推" },
+      "painAreas": ["胸部"]
+    },
+    {
+      "label": "high-no-pain-fatigue-high-substitute",
+      "exercise": { "id": "syn-8", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "high" },
+      "sorenessAreas": ["胸"]
+    },
+    {
+      "label": "high-no-pain-fatigue-low-reduce-volume",
+      "exercise": { "id": "syn-9", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "low", "skillDemand": "low" },
+      "sorenessAreas": ["胸"]
+    },
+    {
+      "label": "merge-pain-overrides-soreness",
+      "exercise": { "id": "syn-1", "primaryMuscles": ["胸"] },
+      "sorenessAreas": ["胸部"],
+      "painAreas": ["胸"]
+    },
+    {
+      "label": "multi-area-both-affected",
+      "exercise": { "id": "syn-10", "primaryMuscles": ["胸", "背"] },
+      "sorenessAreas": ["胸部", "背部"]
+    },
+    {
+      "label": "multi-area-filtered",
+      "exercise": { "id": "syn-1", "primaryMuscles": ["胸"] },
+      "sorenessAreas": ["胸部", "手臂"]
+    },
+    {
+      "label": "mv-shoulder-vertical-5",
+      "exercise": { "id": "mv-1", "movementPattern": "垂直推" },
+      "sorenessAreas": ["肩部"]
+    },
+    {
+      "label": "mv-shoulder-horizontal-4",
+      "exercise": { "id": "mv-2", "movementPattern": "上斜推" },
+      "sorenessAreas": ["肩部"]
+    },
+    {
+      "label": "mv-shoulder-row-1p5",
+      "exercise": { "id": "mv-3", "movementPattern": "面拉" },
+      "sorenessAreas": ["肩部"]
+    },
+    {
+      "label": "mv-back-vertical-pull-6",
+      "exercise": { "id": "mv-4", "movementPattern": "垂直拉" },
+      "sorenessAreas": ["背部"]
+    },
+    {
+      "label": "mv-back-hinge-4",
+      "exercise": { "id": "mv-5", "movementPattern": "髋铰链" },
+      "sorenessAreas": ["背部"]
+    },
+    {
+      "label": "mv-back-squat-2",
+      "exercise": { "id": "mv-6", "movementPattern": "深蹲" },
+      "sorenessAreas": ["背部"]
+    },
+    {
+      "label": "mv-leg-6",
+      "exercise": { "id": "mv-7", "movementPattern": "膝屈" },
+      "sorenessAreas": ["腿部"]
+    },
+    {
+      "label": "mv-arm-curl-6",
+      "exercise": { "id": "mv-8", "movementPattern": "弯举" },
+      "sorenessAreas": ["手臂"]
+    },
+    {
+      "label": "mv-arm-press-2",
+      "exercise": { "id": "mv-9", "movementPattern": "肩推" },
+      "sorenessAreas": ["手臂"]
+    },
+    {
+      "label": "areakeys-multi-and-english",
+      "exercise": { "id": "syn-11", "primaryMuscles": ["肩", "胸"] },
+      "sorenessAreas": ["肩部和胸部"],
+      "painAreas": ["knee"]
+    },
+    {
+      "label": "format-name-chinese-input",
+      "exercise": { "id": "syn-12", "name": "自定义动作甲", "primaryMuscles": ["胸"] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "format-name-english-input-fallback",
+      "exercise": { "id": "syn-13", "name": "Custom Movement", "primaryMuscles": ["胸"] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "real-bench-press-override-merge",
+      "exercise": { "id": "bench-press" },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "real-squat-back-pain-override-merge",
+      "exercise": { "id": "squat" },
+      "painAreas": ["背部"]
+    },
+    {
+      "label": "real-leg-press-shoulder-guard-none",
+      "exercise": { "id": "leg-press" },
+      "sorenessAreas": ["肩部"]
+    }
+  ]
+}

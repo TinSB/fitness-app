@@ -1,0 +1,642 @@
+{
+  "cases": [
+    {
+      "exercise": {
+        "id": "syn-1",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "no-areas-keep",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [],
+        "conflictLevel": "none",
+        "exerciseId": "syn-1",
+        "exerciseName": "未命名动作",
+        "reason": "未命名动作与已标记部位没有明显训练重叠，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": []
+    },
+    {
+      "exercise": {
+        "id": "syn-2",
+        "movementPattern": "飞鸟",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "unrelated-area-none",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [],
+        "conflictLevel": "none",
+        "exerciseId": "syn-2",
+        "exerciseName": "未命名动作",
+        "reason": "未命名动作与已标记部位没有明显训练重叠，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "腿部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-1",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "none-no-wu-guard",
+      "painAreas": [
+        "none"
+      ],
+      "result": {
+        "affectedAreas": [],
+        "conflictLevel": "none",
+        "exerciseId": "syn-1",
+        "exerciseName": "未命名动作",
+        "reason": "未命名动作与已标记部位没有明显训练重叠，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "无"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-3",
+        "muscleContribution": {
+          "胸": 0.5
+        }
+      },
+      "label": "low-no-pain-keep-contribution",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "low",
+        "exerciseId": "syn-3",
+        "exerciseName": "未命名动作",
+        "reason": "胸部酸痛与未命名动作存在轻度恢复冲突：，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ]
+    },
+    {
+      "exercise": {
+        "fatigueCost": "low",
+        "id": "syn-4",
+        "muscleContribution": {
+          "胸": 0.4
+        },
+        "skillDemand": "low"
+      },
+      "label": "low-pain-reduce-intensity-contribution",
+      "painAreas": [
+        "胸"
+      ],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "low",
+        "exerciseId": "syn-4",
+        "exerciseName": "未命名动作",
+        "reason": "胸部不适与未命名动作存在轻度恢复冲突：，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": []
+    },
+    {
+      "exercise": {
+        "id": "syn-5",
+        "primaryMuscles": [
+          "腿"
+        ]
+      },
+      "label": "moderate-no-pain-reduce-intensity-primary",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "腿部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-5",
+        "exerciseName": "未命名动作",
+        "reason": "腿部酸痛与未命名动作存在中等恢复冲突：腿部是主要训练部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "腿部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-6",
+        "secondaryMuscles": [
+          "手臂"
+        ]
+      },
+      "label": "moderate-pain-substitute-secondary",
+      "painAreas": [
+        "手臂"
+      ],
+      "result": {
+        "affectedAreas": [
+          "手臂"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-6",
+        "exerciseName": "未命名动作",
+        "reason": "手臂不适与未命名动作存在中等恢复冲突：手臂参与稳定或辅助，建议优先考虑替代动作。",
+        "recommendedAction": "substitute"
+      },
+      "sorenessAreas": []
+    },
+    {
+      "exercise": {
+        "id": "syn-7",
+        "movementPattern": "卧推",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "high-pain-skip",
+      "painAreas": [
+        "胸部"
+      ],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "high",
+        "exerciseId": "syn-7",
+        "exerciseName": "未命名动作",
+        "reason": "胸部不适与未命名动作存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+        "recommendedAction": "skip"
+      },
+      "sorenessAreas": []
+    },
+    {
+      "exercise": {
+        "fatigueCost": "high",
+        "id": "syn-8",
+        "movementPattern": "卧推",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "high-no-pain-fatigue-high-substitute",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "high",
+        "exerciseId": "syn-8",
+        "exerciseName": "未命名动作",
+        "reason": "胸部酸痛与未命名动作存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议优先考虑替代动作。",
+        "recommendedAction": "substitute"
+      },
+      "sorenessAreas": [
+        "胸"
+      ]
+    },
+    {
+      "exercise": {
+        "fatigueCost": "low",
+        "id": "syn-9",
+        "movementPattern": "卧推",
+        "primaryMuscles": [
+          "胸"
+        ],
+        "skillDemand": "low"
+      },
+      "label": "high-no-pain-fatigue-low-reduce-volume",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "high",
+        "exerciseId": "syn-9",
+        "exerciseName": "未命名动作",
+        "reason": "胸部酸痛与未命名动作存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+        "recommendedAction": "reduce_volume"
+      },
+      "sorenessAreas": [
+        "胸"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-1",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "merge-pain-overrides-soreness",
+      "painAreas": [
+        "胸"
+      ],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "high",
+        "exerciseId": "syn-1",
+        "exerciseName": "未命名动作",
+        "reason": "胸部不适与未命名动作存在较高恢复冲突：胸部是主要训练部位，建议本次先跳过。",
+        "recommendedAction": "skip"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-10",
+        "primaryMuscles": [
+          "胸",
+          "背"
+        ]
+      },
+      "label": "multi-area-both-affected",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部",
+          "背部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-10",
+        "exerciseName": "未命名动作",
+        "reason": "胸部酸痛与未命名动作存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "胸部",
+        "背部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-1",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "multi-area-filtered",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-1",
+        "exerciseName": "未命名动作",
+        "reason": "胸部酸痛与未命名动作存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "胸部",
+        "手臂"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-1",
+        "movementPattern": "垂直推"
+      },
+      "label": "mv-shoulder-vertical-5",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "肩部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "mv-1",
+        "exerciseName": "未命名动作",
+        "reason": "肩部酸痛与未命名动作存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "肩部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-2",
+        "movementPattern": "上斜推"
+      },
+      "label": "mv-shoulder-horizontal-4",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "肩部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "mv-2",
+        "exerciseName": "未命名动作",
+        "reason": "肩部酸痛与未命名动作存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "肩部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-3",
+        "movementPattern": "面拉"
+      },
+      "label": "mv-shoulder-row-1p5",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "肩部"
+        ],
+        "conflictLevel": "low",
+        "exerciseId": "mv-3",
+        "exerciseName": "未命名动作",
+        "reason": "肩部酸痛与未命名动作存在轻度恢复冲突：动作模式会轻度调用相关部位，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "肩部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-4",
+        "movementPattern": "垂直拉"
+      },
+      "label": "mv-back-vertical-pull-6",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "背部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "mv-4",
+        "exerciseName": "未命名动作",
+        "reason": "背部酸痛与未命名动作存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "背部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-5",
+        "movementPattern": "髋铰链"
+      },
+      "label": "mv-back-hinge-4",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "背部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "mv-5",
+        "exerciseName": "未命名动作",
+        "reason": "背部酸痛与未命名动作存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "背部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-6",
+        "movementPattern": "深蹲"
+      },
+      "label": "mv-back-squat-2",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "背部"
+        ],
+        "conflictLevel": "low",
+        "exerciseId": "mv-6",
+        "exerciseName": "未命名动作",
+        "reason": "背部酸痛与未命名动作存在轻度恢复冲突：动作模式会轻度调用相关部位，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "背部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-7",
+        "movementPattern": "膝屈"
+      },
+      "label": "mv-leg-6",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "腿部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "mv-7",
+        "exerciseName": "未命名动作",
+        "reason": "腿部酸痛与未命名动作存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "腿部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-8",
+        "movementPattern": "弯举"
+      },
+      "label": "mv-arm-curl-6",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "手臂"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "mv-8",
+        "exerciseName": "未命名动作",
+        "reason": "手臂酸痛与未命名动作存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "手臂"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "mv-9",
+        "movementPattern": "肩推"
+      },
+      "label": "mv-arm-press-2",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "手臂"
+        ],
+        "conflictLevel": "low",
+        "exerciseId": "mv-9",
+        "exerciseName": "未命名动作",
+        "reason": "手臂酸痛与未命名动作存在轻度恢复冲突：动作模式会轻度调用相关部位，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "手臂"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-11",
+        "primaryMuscles": [
+          "肩",
+          "胸"
+        ]
+      },
+      "label": "areakeys-multi-and-english",
+      "painAreas": [
+        "knee"
+      ],
+      "result": {
+        "affectedAreas": [
+          "肩部",
+          "胸部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-11",
+        "exerciseName": "未命名动作",
+        "reason": "肩部酸痛与未命名动作存在中等恢复冲突：肩部是主要训练部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "肩部和胸部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-12",
+        "name": "自定义动作甲",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "format-name-chinese-input",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-12",
+        "exerciseName": "自定义动作甲",
+        "reason": "胸部酸痛与自定义动作甲存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "syn-13",
+        "name": "Custom Movement",
+        "primaryMuscles": [
+          "胸"
+        ]
+      },
+      "label": "format-name-english-input-fallback",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "moderate",
+        "exerciseId": "syn-13",
+        "exerciseName": "未命名动作",
+        "reason": "胸部酸痛与未命名动作存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+        "recommendedAction": "reduce_intensity"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "bench-press"
+      },
+      "label": "real-bench-press-override-merge",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictLevel": "high",
+        "exerciseId": "bench-press",
+        "exerciseName": "平板卧推",
+        "reason": "胸部酸痛与平板卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议优先考虑替代动作。",
+        "recommendedAction": "substitute"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ]
+    },
+    {
+      "exercise": {
+        "id": "squat"
+      },
+      "label": "real-squat-back-pain-override-merge",
+      "painAreas": [
+        "背部"
+      ],
+      "result": {
+        "affectedAreas": [
+          "背部"
+        ],
+        "conflictLevel": "high",
+        "exerciseId": "squat",
+        "exerciseName": "深蹲",
+        "reason": "背部不适与深蹲存在较高恢复冲突：背部参与稳定或辅助，动作模式会轻度调用相关部位，建议本次先跳过。",
+        "recommendedAction": "skip"
+      },
+      "sorenessAreas": []
+    },
+    {
+      "exercise": {
+        "id": "leg-press"
+      },
+      "label": "real-leg-press-shoulder-guard-none",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [],
+        "conflictLevel": "none",
+        "exerciseId": "leg-press",
+        "exerciseName": "腿举",
+        "reason": "腿举与已标记部位没有明显训练重叠，可以按计划执行。",
+        "recommendedAction": "keep"
+      },
+      "sorenessAreas": [
+        "肩部"
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e024b64e404f2f6f4ccb145a77c673b18a1ceec5",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "exercise-recovery-conflict/conflict-cases-v1"
+  },
+  "sourceFixtureId": "exercise-recovery-conflict/conflict-cases-v1"
+}
