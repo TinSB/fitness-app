@@ -1,0 +1,719 @@
+{
+  "cases": [
+    {
+      "input": {
+        "appData": {
+          "schemaVersion": 8,
+          "templates": [
+            {
+              "duration": 60,
+              "exercises": [
+                {
+                  "id": "cc2-bench",
+                  "kind": "compound",
+                  "muscle": "chest",
+                  "name": "卧推",
+                  "repMax": 10,
+                  "repMin": 6,
+                  "rest": 120,
+                  "sets": 4,
+                  "startWeight": 60
+                },
+                {
+                  "id": "cc2-chest-press",
+                  "kind": "machine",
+                  "muscle": "chest",
+                  "name": "器械推胸",
+                  "repMax": 12,
+                  "repMin": 10,
+                  "rest": 90,
+                  "sets": 3,
+                  "startWeight": 40
+                }
+              ],
+              "focus": "chest",
+              "id": "tpl-chest",
+              "name": "胸日",
+              "note": ""
+            }
+          ]
+        },
+        "dailyAdjustment": {
+          "confidence": "high",
+          "reasons": [
+            "近 3 日睡眠不足，恢复评分偏低。"
+          ],
+          "type": "rest_or_recovery"
+        },
+        "dataHealthReport": {
+          "issues": [
+            {
+              "affectedIds": [
+                "sess-1"
+              ],
+              "canAutoFix": false,
+              "category": "history",
+              "id": "hd-info",
+              "message": "部分历史缺少 RIR。",
+              "severity": "info",
+              "title": "历史记录可补充"
+            },
+            {
+              "affectedIds": [
+                "hk-1"
+              ],
+              "canAutoFix": false,
+              "category": "healthData",
+              "id": "hd-err",
+              "message": "缺少体重记录。",
+              "severity": "error",
+              "title": "健康数据缺失"
+            },
+            {
+              "affectedIds": [
+                "tpl-chest"
+              ],
+              "canAutoFix": true,
+              "category": "template",
+              "id": "hd-warn",
+              "message": "训练模板存在重复动作。",
+              "severity": "warning",
+              "title": "模板需检查"
+            }
+          ],
+          "status": "has_errors",
+          "summary": "检测到 3 个数据健康问题。"
+        },
+        "nextWorkout": {
+          "reason": "按计划轮换到上肢日。",
+          "templateId": "tpl-upper",
+          "templateName": "上肢日",
+          "warnings": [
+            "注意肩部不适。"
+          ]
+        },
+        "now": "2026-06-04T08:00:00.000Z",
+        "plateauResults": [
+          {
+            "confidence": "high",
+            "exerciseId": "cc2-bench",
+            "signals": [
+              {
+                "id": "pl-1",
+                "label": "e1RM 持平",
+                "reason": "估算 1RM 连续持平。",
+                "severity": "warning"
+              }
+            ],
+            "status": "plateau",
+            "suggestedActions": [
+              "考虑调整训练量。"
+            ],
+            "summary": "卧推近 4 周无进展。",
+            "title": "卧推进展停滞"
+          }
+        ],
+        "recommendationConfidence": [
+          {
+            "level": "low",
+            "missingData": [
+              "最近 2 周训练记录"
+            ],
+            "reasons": [
+              {
+                "effect": "降低置信",
+                "id": "rc-1",
+                "label": "历史不足",
+                "reason": "有效训练记录不足。"
+              }
+            ],
+            "score": 30,
+            "summary": "数据不足，推荐仅供参考。",
+            "title": "推荐置信度低"
+          }
+        ],
+        "recoveryRecommendation": {
+          "kind": "rest",
+          "reasons": [
+            "综合恢复评分低于阈值。"
+          ],
+          "requiresConfirmationToOverride": true,
+          "summary": "今天更适合完全休息。",
+          "templateId": "tpl-rest"
+        },
+        "sessionQuality": {
+          "issues": [
+            {
+              "id": "sq-1",
+              "label": "RIR 记录少",
+              "reason": "多数组缺少 RIR 记录。",
+              "tone": "warning"
+            }
+          ],
+          "level": "low",
+          "nextSuggestions": [
+            "下次记录每组 RIR。"
+          ],
+          "summary": "本次训练质量偏低。"
+        },
+        "setAnomalies": [
+          {
+            "id": "sa-crit",
+            "message": "本组重量明显异常。",
+            "requiresConfirmation": true,
+            "severity": "critical",
+            "suggestedAction": "请确认输入。",
+            "title": "异常重量输入"
+          },
+          {
+            "id": "sa-warn",
+            "message": "本组次数高于历史。",
+            "requiresConfirmation": false,
+            "severity": "warning",
+            "title": "次数偏高"
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "increase",
+              "muscleId": "chest",
+              "reason": "胸部周训练量低于目标。",
+              "setsDelta": 2,
+              "suggestedActions": [
+                "下周增加 2 组。"
+              ],
+              "title": "胸部可加量"
+            }
+          ],
+          "summary": "胸部训练量建议增加。"
+        }
+      },
+      "kind": "buildCoachActions",
+      "label": "comprehensive (no active session) — every source branch + dedupe + priority/dataHealth-first sort",
+      "result": [
+        {
+          "actionType": "open_data_health",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "健康数据缺失",
+          "id": "data-health-hd-err",
+          "priority": "urgent",
+          "reason": "缺少体重记录。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "dataHealth",
+          "sourceFingerprint": "coach-action|datahealth|open_data_health|healthdata|hk-1|template-unknown|none|muscle-none|exercise-none|current-cycle|bb48f76f",
+          "status": "pending",
+          "targetId": "hk-1",
+          "targetType": "healthData",
+          "title": "优先检查数据健康"
+        },
+        {
+          "actionType": "review_session",
+          "confirmDescription": "系统检测到重量、次数或 RIR 可能异常，请确认不是输入错误。",
+          "confirmTitle": "确认保存这组？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "异常重量输入",
+          "id": "set-anomaly-sa-crit",
+          "priority": "urgent",
+          "reason": "本组重量明显异常。",
+          "requiresConfirmation": true,
+          "reversible": false,
+          "source": "setAnomaly",
+          "sourceFingerprint": "coach-action|setanomaly|review_session|session|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|f83710bf",
+          "status": "pending",
+          "targetType": "session",
+          "title": "确认异常训练输入"
+        },
+        {
+          "actionType": "open_data_health",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "模板需检查",
+          "id": "data-health-hd-warn",
+          "priority": "high",
+          "reason": "训练模板存在重复动作。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "dataHealth",
+          "sourceFingerprint": "coach-action|datahealth|open_data_health|plan|tpl-chest|template-unknown|none|muscle-none|exercise-none|current-cycle|efcf2d3b",
+          "status": "pending",
+          "targetId": "tpl-chest",
+          "targetType": "plan",
+          "title": "复查数据健康提醒"
+        },
+        {
+          "actionType": "apply_temporary_session_adjustment",
+          "confirmDescription": "只影响本次训练，不会修改原训练模板或长期计划。",
+          "confirmTitle": "采用本次临时调整？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "今天更适合恢复或低负荷训练。",
+          "expiresAt": "2026-06-05T08:00:00.000Z",
+          "id": "daily-adjustment-rest_or_recovery",
+          "priority": "high",
+          "reason": "近 3 日睡眠不足，恢复评分偏低。",
+          "requiresConfirmation": true,
+          "reversible": true,
+          "source": "dailyAdjustment",
+          "sourceFingerprint": "coach-action|dailyadjustment|apply_temporary_session_adjustment|session|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|a2f45f3",
+          "status": "pending",
+          "targetType": "session",
+          "title": "今日自动调整：恢复或低负荷"
+        },
+        {
+          "actionType": "keep_observing",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "今天更适合完全休息。",
+          "expiresAt": "2026-06-05T08:00:00.000Z",
+          "id": "recovery-rest-tpl-rest",
+          "priority": "high",
+          "reason": "综合恢复评分低于阈值。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "recovery",
+          "sourceFingerprint": "coach-action|recovery|keep_observing|template|tpl-rest|template-unknown|none|muscle-none|exercise-none|current-cycle|c93924c8",
+          "status": "pending",
+          "targetId": "tpl-rest",
+          "targetType": "template",
+          "title": "查看恢复建议"
+        },
+        {
+          "actionType": "open_data_health",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "历史记录可补充",
+          "id": "data-health-hd-info",
+          "priority": "medium",
+          "reason": "部分历史缺少 RIR。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "dataHealth",
+          "sourceFingerprint": "coach-action|datahealth|open_data_health|session|sess-1|template-unknown|none|muscle-none|exercise-none|current-cycle|4fbe254f",
+          "status": "pending",
+          "targetId": "sess-1",
+          "targetType": "session",
+          "title": "复查数据健康提醒"
+        },
+        {
+          "actionType": "open_next_workout",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "注意肩部不适。",
+          "expiresAt": "2026-06-05T08:00:00.000Z",
+          "id": "next-workout-tpl-upper",
+          "priority": "medium",
+          "reason": "按计划轮换到上肢日。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "nextWorkout",
+          "sourceFingerprint": "coach-action|nextworkout|open_next_workout|template|tpl-upper|template-unknown|none|muscle-none|exercise-none|current-cycle|62629e82",
+          "status": "pending",
+          "targetId": "tpl-upper",
+          "targetType": "template",
+          "title": "查看下次训练：上肢日"
+        },
+        {
+          "actionType": "create_plan_adjustment_preview",
+          "confirmDescription": "只生成预览，不会直接修改正式计划。",
+          "confirmTitle": "生成计划调整预览？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "卧推进展停滞",
+          "id": "plateau-cc2-bench-plateau",
+          "priority": "medium",
+          "reason": "卧推近 4 周无进展。",
+          "requiresConfirmation": true,
+          "reversible": true,
+          "source": "plateau",
+          "sourceFingerprint": "coach-action|plateau|create_plan_adjustment_preview|exercise|cc2-bench|tpl-chest|remove_sets|muscle-none|cc2-bench|current-cycle|9f27e9cb",
+          "status": "pending",
+          "targetId": "cc2-bench",
+          "targetType": "exercise",
+          "title": "生成动作调整预览"
+        },
+        {
+          "actionType": "review_session",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "本次训练质量偏低。",
+          "id": "session-quality-low",
+          "priority": "medium",
+          "reason": "多数组缺少 RIR 记录。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "sessionQuality",
+          "sourceFingerprint": "coach-action|sessionquality|review_session|session|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|2aaa251e",
+          "status": "pending",
+          "targetType": "session",
+          "title": "复查本次训练质量"
+        },
+        {
+          "actionType": "review_session",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "次数偏高",
+          "id": "set-anomaly-sa-warn",
+          "priority": "medium",
+          "reason": "本组次数高于历史。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "setAnomaly",
+          "sourceFingerprint": "coach-action|setanomaly|review_session|session|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|bc88f54c",
+          "status": "pending",
+          "targetType": "session",
+          "title": "复查训练输入"
+        },
+        {
+          "actionType": "create_plan_adjustment_preview",
+          "confirmDescription": "只生成可检查的草案，不会自动覆盖当前训练计划。",
+          "confirmTitle": "生成计划调整预览？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "胸部可加量",
+          "id": "volume-preview-chest-increase",
+          "priority": "medium",
+          "reason": "胸部周训练量低于目标。",
+          "requiresConfirmation": true,
+          "reversible": true,
+          "source": "volumeAdaptation",
+          "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|tpl-chest|add_sets|chest|exercise-none|current-cycle|cf2f8d53",
+          "status": "pending",
+          "targetId": "chest",
+          "targetType": "muscle",
+          "title": "生成训练量调整预览"
+        },
+        {
+          "actionType": "keep_observing",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "数据不足，推荐仅供参考。",
+          "id": "recommendation-confidence-0",
+          "priority": "low",
+          "reason": "有效训练记录不足。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "recommendationConfidence",
+          "sourceFingerprint": "coach-action|recommendationconfidence|keep_observing|none|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|74880aff",
+          "status": "pending",
+          "title": "推荐建议保守参考"
+        },
+        {
+          "actionType": "review_volume",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "胸部可加量",
+          "id": "review-volume-chest",
+          "priority": "low",
+          "reason": "胸部周训练量低于目标。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "volumeAdaptation",
+          "sourceFingerprint": "coach-action|volumeadaptation|review_volume|muscle|chest|template-unknown|none|muscle-none|exercise-none|current-cycle|cf2f8d53",
+          "status": "pending",
+          "targetId": "chest",
+          "targetType": "muscle",
+          "title": "查看训练量建议"
+        }
+      ]
+    },
+    {
+      "input": {
+        "appData": {
+          "activeSession": {
+            "completed": false,
+            "id": "active-1"
+          },
+          "schemaVersion": 8,
+          "templates": []
+        },
+        "dataHealthReport": {
+          "issues": [
+            {
+              "canAutoFix": false,
+              "category": "healthData",
+              "id": "hd-err",
+              "message": "缺少体重记录。",
+              "severity": "error",
+              "title": "健康数据缺失"
+            },
+            {
+              "canAutoFix": false,
+              "category": "history",
+              "id": "hd-info",
+              "message": "部分历史缺少 RIR。",
+              "severity": "info",
+              "title": "历史可补充"
+            }
+          ],
+          "status": "has_errors",
+          "summary": "检测到数据健康问题。"
+        },
+        "now": "2026-06-04T08:00:00.000Z",
+        "sessionQuality": {
+          "issues": [],
+          "level": "low",
+          "nextSuggestions": [],
+          "summary": "本次训练质量偏低。"
+        },
+        "setAnomalies": [
+          {
+            "id": "sa-crit",
+            "message": "本组重量明显异常。",
+            "requiresConfirmation": true,
+            "severity": "critical",
+            "title": "异常重量输入"
+          },
+          {
+            "id": "sa-warn",
+            "message": "本组次数高于历史。",
+            "requiresConfirmation": false,
+            "severity": "warning",
+            "title": "次数偏高"
+          }
+        ]
+      },
+      "kind": "buildCoachActions",
+      "label": "active session in progress → lowNoiseDuringActiveSession (urgent/high dataHealth + urgent setAnomaly, slice(0,2))",
+      "result": [
+        {
+          "actionType": "open_data_health",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "健康数据缺失",
+          "id": "data-health-hd-err",
+          "priority": "urgent",
+          "reason": "缺少体重记录。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "dataHealth",
+          "sourceFingerprint": "coach-action|datahealth|open_data_health|healthdata|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|bb48f76f",
+          "status": "pending",
+          "targetType": "healthData",
+          "title": "优先检查数据健康"
+        },
+        {
+          "actionType": "review_session",
+          "confirmDescription": "系统检测到重量、次数或 RIR 可能异常，请确认不是输入错误。",
+          "confirmTitle": "确认保存这组？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "异常重量输入",
+          "id": "set-anomaly-sa-crit",
+          "priority": "urgent",
+          "reason": "本组重量明显异常。",
+          "requiresConfirmation": true,
+          "reversible": false,
+          "source": "setAnomaly",
+          "sourceFingerprint": "coach-action|setanomaly|review_session|session|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|f83710bf",
+          "status": "pending",
+          "targetType": "session",
+          "title": "确认异常训练输入"
+        }
+      ]
+    },
+    {
+      "input": {
+        "appData": {
+          "schemaVersion": 8
+        },
+        "now": "2026-06-04T08:00:00.000Z"
+      },
+      "kind": "buildCoachActions",
+      "label": "minimal — no templates, all result inputs absent → empty list",
+      "result": []
+    },
+    {
+      "input": {
+        "appData": {
+          "schemaVersion": 8,
+          "templates": []
+        },
+        "dailyAdjustment": {
+          "confidence": "low",
+          "reasons": [],
+          "type": "normal"
+        },
+        "nextWorkout": {
+          "reason": "按计划轮换到下肢日。",
+          "recovery": {
+            "kind": "modified_train",
+            "reasons": [
+              "膝盖近期略有不适。"
+            ],
+            "requiresConfirmationToOverride": true,
+            "summary": "建议采用保守版下肢训练。",
+            "templateId": "tpl-lower"
+          },
+          "templateId": "tpl-lower",
+          "templateName": "下肢日",
+          "warnings": []
+        },
+        "now": "2026-06-04T08:00:00.000Z"
+      },
+      "kind": "buildCoachActions",
+      "label": "dailyAdjustment normal (skipped) + nextWorkout no-warnings (low) + recovery fallback via nextWorkout.recovery (modified_train)",
+      "result": [
+        {
+          "actionType": "apply_temporary_session_adjustment",
+          "confirmDescription": "只影响本次训练，不会修改原模板。",
+          "confirmTitle": "采用本次保守训练？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "建议采用保守版下肢训练。",
+          "expiresAt": "2026-06-05T08:00:00.000Z",
+          "id": "recovery-modified_train-tpl-lower",
+          "priority": "medium",
+          "reason": "膝盖近期略有不适。",
+          "requiresConfirmation": true,
+          "reversible": true,
+          "source": "recovery",
+          "sourceFingerprint": "coach-action|recovery|apply_temporary_session_adjustment|template|tpl-lower|template-unknown|none|muscle-none|exercise-none|current-cycle|d60d1523",
+          "status": "pending",
+          "targetId": "tpl-lower",
+          "targetType": "template",
+          "title": "采用恢复保守版"
+        },
+        {
+          "actionType": "open_next_workout",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "打开下次训练建议详情，确认后再开始。",
+          "expiresAt": "2026-06-05T08:00:00.000Z",
+          "id": "next-workout-tpl-lower",
+          "priority": "low",
+          "reason": "按计划轮换到下肢日。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "nextWorkout",
+          "sourceFingerprint": "coach-action|nextworkout|open_next_workout|template|tpl-lower|template-unknown|none|muscle-none|exercise-none|current-cycle|532c9783",
+          "status": "pending",
+          "targetId": "tpl-lower",
+          "targetType": "template",
+          "title": "查看下次训练：下肢日"
+        }
+      ]
+    },
+    {
+      "input": {
+        "appData": {
+          "schemaVersion": 8,
+          "templates": []
+        },
+        "now": "2026-06-04T08:00:00.000Z",
+        "plateauResults": [
+          {
+            "confidence": "low",
+            "exerciseId": "cc2-row",
+            "signals": [],
+            "status": "possible_plateau",
+            "suggestedActions": [
+              "保持观察。"
+            ],
+            "summary": "划船进展放缓。",
+            "title": "划船可能停滞"
+          },
+          {
+            "confidence": "high",
+            "exerciseId": "cc2-curl",
+            "signals": [],
+            "status": "none",
+            "suggestedActions": [],
+            "summary": "弯举进展正常。",
+            "title": "弯举正常"
+          }
+        ],
+        "recommendationConfidence": {
+          "level": "low",
+          "missingData": [
+            "更多训练记录"
+          ],
+          "reasons": [],
+          "score": 25,
+          "summary": "推荐仅供参考。",
+          "title": "置信度低"
+        }
+      },
+      "kind": "buildCoachActions",
+      "label": "recommendationConfidence SINGLE object form + possible_plateau review_exercise (confidence low) + plateau status none filtered out",
+      "result": [
+        {
+          "actionType": "review_exercise",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "划船可能停滞",
+          "id": "plateau-cc2-row-possible_plateau",
+          "priority": "medium",
+          "reason": "划船进展放缓。",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "plateau",
+          "sourceFingerprint": "coach-action|plateau|review_exercise|exercise|cc2-row|template-unknown|remove_sets|muscle-none|cc2-row|current-cycle|f2d413f3",
+          "status": "pending",
+          "targetId": "cc2-row",
+          "targetType": "exercise",
+          "title": "查看动作进展"
+        },
+        {
+          "actionType": "keep_observing",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "推荐仅供参考。",
+          "id": "recommendation-confidence-0",
+          "priority": "low",
+          "reason": "更多训练记录",
+          "requiresConfirmation": false,
+          "reversible": false,
+          "source": "recommendationConfidence",
+          "sourceFingerprint": "coach-action|recommendationconfidence|keep_observing|none|target-none|template-unknown|none|muscle-none|exercise-none|current-cycle|41c91684",
+          "status": "pending",
+          "title": "推荐建议保守参考"
+        }
+      ]
+    },
+    {
+      "input": {
+        "appData": {
+          "schemaVersion": 8,
+          "templates": []
+        },
+        "now": "2026-06-04T08:00:00.000Z",
+        "plateauResults": [
+          {
+            "confidence": "high",
+            "exerciseId": "cc2-dup",
+            "signals": [],
+            "status": "plateau",
+            "suggestedActions": [],
+            "summary": "信号 A。",
+            "title": "停滞 A"
+          },
+          {
+            "confidence": "high",
+            "exerciseId": "cc2-dup",
+            "signals": [],
+            "status": "plateau",
+            "suggestedActions": [],
+            "summary": "信号 B。",
+            "title": "停滞 B"
+          }
+        ]
+      },
+      "kind": "buildCoachActions",
+      "label": "dedupe — two plateau results with identical exerciseId+status collapse to one action",
+      "result": [
+        {
+          "actionType": "create_plan_adjustment_preview",
+          "confirmDescription": "只生成预览，不会直接修改正式计划。",
+          "confirmTitle": "生成计划调整预览？",
+          "createdAt": "2026-06-04T08:00:00.000Z",
+          "description": "停滞 A",
+          "id": "plateau-cc2-dup-plateau",
+          "priority": "medium",
+          "reason": "信号 A。",
+          "requiresConfirmation": true,
+          "reversible": true,
+          "source": "plateau",
+          "sourceFingerprint": "coach-action|plateau|create_plan_adjustment_preview|exercise|cc2-dup|template-unknown|remove_sets|muscle-none|cc2-dup|current-cycle|e37d80fc",
+          "status": "pending",
+          "targetId": "cc2-dup",
+          "targetType": "exercise",
+          "title": "生成动作调整预览"
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e8dac0c17cc09191ada924531d916ec6c6ace4bc",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "coach-action/build-actions-cases-v1"
+  },
+  "sourceFixtureId": "coach-action/build-actions-cases-v1"
+}

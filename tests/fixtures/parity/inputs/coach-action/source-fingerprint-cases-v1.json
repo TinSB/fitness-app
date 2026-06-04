@@ -1,0 +1,60 @@
+{
+  "parityMeta": {
+    "id": "coach-action/source-fingerprint-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-2 coachActionEngine — FUNCTION-LEVEL parity for buildCoachActionSourceFingerprint (src/engines/coachActionEngine.ts:138). Each case echoes the action (the 7-field Pick) + options (CoachActionFingerprintContext) and the REAL fingerprint string. Cases pin: the `title || '' / description || '' / reason || ''` empty-string projection (ts:144-148); the sourceTemplateId / suggestedChangeType context; the suggestedChange{muscleId,setsDelta} context; and the muscleId/exerciseId context. The Swift CoachActionEngine.buildCoachActionSourceFingerprint re-runs the SAME wrapper (delegating to the PA-S5 CoachActionIdentityEngine.buildCoachActionFingerprint) over the echoed action+options and EXACT-asserts the fingerprint string == golden `result`, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e8dac0c17cc09191ada924531d916ec6c6ace4bc",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — buildCoachActionSourceFingerprint is PURE (FNV-1a string transform; no new Date / Date.now / Math.random). Synthetic ids + Chinese visible text. No email/token/userId/deviceLabel."
+  },
+  "cases": [
+    {
+      "kind": "sourceFingerprint",
+      "label": "minimal — no title/description/reason (→ '' fallbacks), empty options",
+      "action": {
+        "actionType": "open_data_health",
+        "source": "dataHealth",
+        "targetId": "tpl-chest",
+        "targetType": "plan"
+      },
+      "options": {}
+    },
+    {
+      "kind": "sourceFingerprint",
+      "label": "full text + sourceTemplateId + suggestedChangeType context",
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "source": "plateau",
+        "targetId": "cc2-bench",
+        "targetType": "exercise",
+        "title": "生成动作调整预览",
+        "description": "卧推进展停滞",
+        "reason": "卧推近 4 周无进展。"
+      },
+      "options": {
+        "sourceTemplateId": "tpl-chest",
+        "suggestedChangeType": "remove_sets",
+        "exerciseId": "cc2-bench"
+      }
+    },
+    {
+      "kind": "sourceFingerprint",
+      "label": "suggestedChange{muscleId,setsDelta} + muscleId context (derived changeType add_sets)",
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "source": "volumeAdaptation",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "生成训练量调整预览",
+        "description": "胸部可加量",
+        "reason": "胸部周训练量低于目标。"
+      },
+      "options": {
+        "sourceTemplateId": "tpl-chest",
+        "suggestedChange": { "muscleId": "chest", "setsDelta": 2 }
+      }
+    }
+  ]
+}

@@ -1,0 +1,509 @@
+{
+  "cases": [
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "胸部可加量",
+        "id": "volume-preview-chest-increase",
+        "priority": "medium",
+        "reason": "胸部周训练量低于目标。",
+        "requiresConfirmation": true,
+        "reversible": true,
+        "source": "volumeAdaptation",
+        "status": "pending",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "生成训练量调整预览"
+      },
+      "context": {
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "cc2-bench",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "卧推",
+                "repMax": 10,
+                "repMin": 6,
+                "rest": 120,
+                "sets": 4,
+                "startWeight": 60
+              },
+              {
+                "id": "cc2-chest-press",
+                "kind": "machine",
+                "muscle": "chest",
+                "name": "器械推胸",
+                "repMax": 12,
+                "repMin": 10,
+                "rest": 90,
+                "sets": 3,
+                "startWeight": 40
+              }
+            ],
+            "focus": "chest",
+            "id": "tpl-chest",
+            "name": "胸日",
+            "note": ""
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "increase",
+              "muscleId": "chest",
+              "reason": "胸部周训练量低于目标。",
+              "setsDelta": 2,
+              "suggestedActions": [
+                "下周增加 2 组。"
+              ],
+              "title": "胸部可加量"
+            }
+          ],
+          "summary": "胸部训练量建议增加。"
+        }
+      },
+      "kind": "adjustmentDraft",
+      "label": "muscle branch — volumeItem setsDelta gate + findTemplateByMuscle + firstExerciseForMuscle → volume recommendation",
+      "result": {
+        "recommendation": {
+          "category": "volume",
+          "confidence": "medium",
+          "id": "coach-action-volume-preview-chest-increase",
+          "issue": "胸部可加量",
+          "priority": "medium",
+          "reason": "胸部周训练量低于目标。",
+          "recommendation": "胸部周训练量低于目标。",
+          "suggestedChange": {
+            "exerciseIds": [
+              "cc2-bench"
+            ],
+            "muscleId": "chest",
+            "setsDelta": 2
+          },
+          "targetId": "chest",
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        },
+        "sourceTemplate": {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "cc2-bench",
+              "kind": "compound",
+              "muscle": "chest",
+              "name": "卧推",
+              "repMax": 10,
+              "repMin": 6,
+              "rest": 120,
+              "sets": 4,
+              "startWeight": 60
+            },
+            {
+              "id": "cc2-chest-press",
+              "kind": "machine",
+              "muscle": "chest",
+              "name": "器械推胸",
+              "repMax": 12,
+              "repMin": 10,
+              "rest": 90,
+              "sets": 3,
+              "startWeight": 40
+            }
+          ],
+          "focus": "chest",
+          "id": "tpl-chest",
+          "name": "胸日",
+          "note": ""
+        }
+      }
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "卧推进展停滞",
+        "id": "plateau-bench-press-plateau",
+        "priority": "medium",
+        "reason": "卧推近 4 周无进展。",
+        "requiresConfirmation": true,
+        "reversible": true,
+        "source": "plateau",
+        "status": "pending",
+        "targetId": "bench-press",
+        "targetType": "exercise",
+        "title": "生成动作调整预览"
+      },
+      "context": {
+        "plateauResults": [
+          {
+            "confidence": "high",
+            "exerciseId": "bench-press",
+            "signals": [],
+            "status": "plateau",
+            "suggestedActions": [
+              "考虑调整训练量。"
+            ],
+            "summary": "卧推近 4 周无进展。",
+            "title": "卧推进展停滞"
+          }
+        ],
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "bench-press",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "平板卧推",
+                "repMax": 10,
+                "repMin": 6,
+                "rest": 120,
+                "sets": 4,
+                "startWeight": 60
+              }
+            ],
+            "focus": "chest",
+            "id": "tpl-chest",
+            "name": "胸日",
+            "note": ""
+          }
+        ]
+      },
+      "kind": "adjustmentDraft",
+      "label": "exercise branch (table-hit label '平板卧推') + plateau confidence → exercise_selection recommendation",
+      "result": {
+        "recommendation": {
+          "category": "exercise_selection",
+          "confidence": "high",
+          "id": "coach-action-plateau-bench-press-plateau",
+          "issue": "卧推进展停滞",
+          "priority": "medium",
+          "reason": "卧推近 4 周无进展。",
+          "recommendation": "卧推近 4 周无进展。",
+          "suggestedChange": {
+            "exerciseIds": [
+              "bench-press"
+            ],
+            "setsDelta": -1
+          },
+          "targetId": "bench-press",
+          "targetLabel": "平板卧推",
+          "targetType": "exercise"
+        },
+        "sourceTemplate": {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "bench-press",
+              "kind": "compound",
+              "muscle": "chest",
+              "name": "平板卧推",
+              "repMax": 10,
+              "repMin": 6,
+              "rest": 120,
+              "sets": 4,
+              "startWeight": 60
+            }
+          ],
+          "focus": "chest",
+          "id": "tpl-chest",
+          "name": "胸日",
+          "note": ""
+        }
+      }
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "动作进展停滞",
+        "id": "plateau-cc2-bench-plateau",
+        "priority": "high",
+        "reason": "该动作进展停滞，建议调整。",
+        "requiresConfirmation": true,
+        "reversible": true,
+        "source": "plateau",
+        "status": "pending",
+        "targetId": "cc2-bench",
+        "targetType": "exercise",
+        "title": "生成动作调整预览"
+      },
+      "context": {
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "cc2-bench",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "卧推",
+                "repMax": 10,
+                "repMin": 6,
+                "rest": 120,
+                "sets": 4,
+                "startWeight": 60
+              }
+            ],
+            "focus": "chest",
+            "id": "tpl-chest",
+            "name": "胸日",
+            "note": ""
+          }
+        ]
+      },
+      "kind": "adjustmentDraft",
+      "label": "exercise branch (fallback label '未命名动作', no plateau) → confidence from action priority",
+      "result": {
+        "recommendation": {
+          "category": "exercise_selection",
+          "confidence": "high",
+          "id": "coach-action-plateau-cc2-bench-plateau",
+          "issue": "动作进展停滞",
+          "priority": "high",
+          "reason": "该动作进展停滞，建议调整。",
+          "recommendation": "该动作进展停滞，建议调整。",
+          "suggestedChange": {
+            "exerciseIds": [
+              "cc2-bench"
+            ],
+            "setsDelta": -1
+          },
+          "targetId": "cc2-bench",
+          "targetLabel": "未命名动作",
+          "targetType": "exercise"
+        },
+        "sourceTemplate": {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "cc2-bench",
+              "kind": "compound",
+              "muscle": "chest",
+              "name": "卧推",
+              "repMax": 10,
+              "repMin": 6,
+              "rest": 120,
+              "sets": 4,
+              "startWeight": 60
+            }
+          ],
+          "focus": "chest",
+          "id": "tpl-chest",
+          "name": "胸日",
+          "note": ""
+        }
+      }
+    },
+    {
+      "action": {
+        "actionType": "review_volume",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "胸部训练量",
+        "id": "review-volume-chest",
+        "priority": "low",
+        "reason": "胸部训练量参考。",
+        "requiresConfirmation": false,
+        "reversible": false,
+        "source": "volumeAdaptation",
+        "status": "pending",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "查看训练量建议"
+      },
+      "context": {
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "cc2-bench",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "卧推",
+                "repMax": 10,
+                "repMin": 6,
+                "rest": 120,
+                "sets": 4,
+                "startWeight": 60
+              }
+            ],
+            "focus": "chest",
+            "id": "tpl-chest",
+            "name": "胸日",
+            "note": ""
+          }
+        ]
+      },
+      "kind": "adjustmentDraft",
+      "label": "null — actionType is not create_plan_adjustment_preview",
+      "result": null
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "胸部可加量",
+        "id": "volume-preview-chest-increase",
+        "priority": "medium",
+        "reason": "胸部周训练量低于目标。",
+        "requiresConfirmation": true,
+        "reversible": true,
+        "source": "volumeAdaptation",
+        "status": "pending",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "生成训练量调整预览"
+      },
+      "context": {
+        "templates": [],
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "increase",
+              "muscleId": "chest",
+              "reason": "胸部周训练量低于目标。",
+              "setsDelta": 2,
+              "suggestedActions": [],
+              "title": "胸部可加量"
+            }
+          ],
+          "summary": "胸部训练量建议增加。"
+        }
+      },
+      "kind": "adjustmentDraft",
+      "label": "null — no templates in context",
+      "result": null
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "胸部可加量",
+        "id": "volume-preview-chest-increase",
+        "priority": "medium",
+        "reason": "胸部周训练量低于目标。",
+        "requiresConfirmation": true,
+        "reversible": true,
+        "source": "volumeAdaptation",
+        "status": "pending",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "生成训练量调整预览"
+      },
+      "context": {
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "cc2-bench",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "卧推",
+                "repMax": 10,
+                "repMin": 6,
+                "rest": 120,
+                "sets": 4,
+                "startWeight": 60
+              }
+            ],
+            "focus": "chest",
+            "id": "tpl-chest",
+            "name": "胸日",
+            "note": ""
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "maintain",
+              "muscleId": "chest",
+              "reason": "胸部训练量达标。",
+              "suggestedActions": [],
+              "title": "胸部维持"
+            }
+          ],
+          "summary": "胸部训练量维持。"
+        }
+      },
+      "kind": "adjustmentDraft",
+      "label": "null — muscle branch but volumeItem has no setsDelta",
+      "result": null
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "createdAt": "2026-06-04T08:00:00.000Z",
+        "description": "背部可加量",
+        "id": "volume-preview-back-increase",
+        "priority": "medium",
+        "reason": "背部周训练量低于目标。",
+        "requiresConfirmation": true,
+        "reversible": true,
+        "source": "volumeAdaptation",
+        "status": "pending",
+        "targetId": "back",
+        "targetType": "muscle",
+        "title": "生成训练量调整预览"
+      },
+      "context": {
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "cc2-bench",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "卧推",
+                "repMax": 10,
+                "repMin": 6,
+                "rest": 120,
+                "sets": 4,
+                "startWeight": 60
+              }
+            ],
+            "focus": "chest",
+            "id": "tpl-chest",
+            "name": "胸日",
+            "note": ""
+          }
+        ],
+        "volumeAdaptation": {
+          "muscles": [
+            {
+              "confidence": "medium",
+              "decision": "increase",
+              "muscleId": "back",
+              "reason": "背部周训练量低于目标。",
+              "setsDelta": 2,
+              "suggestedActions": [],
+              "title": "背部可加量"
+            }
+          ],
+          "summary": "背部训练量建议增加。"
+        }
+      },
+      "kind": "adjustmentDraft",
+      "label": "null — muscle branch, setsDelta present, but no template matches the muscle",
+      "result": null
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e8dac0c17cc09191ada924531d916ec6c6ace4bc",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "coach-action/adjustment-draft-cases-v1"
+  },
+  "sourceFixtureId": "coach-action/adjustment-draft-cases-v1"
+}
