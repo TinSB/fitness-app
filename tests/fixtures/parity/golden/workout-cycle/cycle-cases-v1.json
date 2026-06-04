@@ -1,0 +1,424 @@
+{
+  "cases": [
+    {
+      "history": [],
+      "label": "empty-ordered",
+      "orderedTemplateIds": [],
+      "result": {
+        "completedInCurrentCycle": [],
+        "isCycleComplete": false,
+        "missingInCurrentCycle": [],
+        "orderedTemplateIds": [],
+        "reason": "当前没有可用训练日顺序，暂时无法判断下次训练。"
+      }
+    },
+    {
+      "history": [],
+      "label": "whitespace-dedupes-to-empty",
+      "orderedTemplateIds": [
+        "  ",
+        " "
+      ],
+      "result": {
+        "completedInCurrentCycle": [],
+        "isCycleComplete": false,
+        "missingInCurrentCycle": [],
+        "orderedTemplateIds": [],
+        "reason": "当前没有可用训练日顺序，暂时无法判断下次训练。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-20",
+          "id": "nr-cardio",
+          "templateId": "cardio"
+        },
+        {
+          "completed": false,
+          "date": "2026-05-21",
+          "id": "nr-incomplete",
+          "templateId": "push"
+        },
+        {
+          "completed": true,
+          "dataFlag": "excluded",
+          "date": "2026-05-22",
+          "id": "nr-excluded",
+          "templateId": "pull"
+        },
+        {
+          "completed": true,
+          "dataFlag": "test",
+          "date": "2026-05-23",
+          "id": "nr-test",
+          "templateId": "legs"
+        }
+      ],
+      "label": "no-records-and-filters",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [],
+        "isCycleComplete": false,
+        "missingInCurrentCycle": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "nextTemplateId": "push",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "还没有本轮正式完成记录，建议从推开始。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "finishedAt": "2026-05-25T08:00:00.000Z",
+          "id": "op-push",
+          "sourceProgramTemplateId": "push"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-28",
+          "finishedAt": "2026-05-28T08:00:00.000Z",
+          "id": "op-pull",
+          "programTemplateId": "pull"
+        }
+      ],
+      "label": "open-cycle-partial",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "push",
+          "pull"
+        ],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "pull",
+        "missingInCurrentCycle": [
+          "legs"
+        ],
+        "nextTemplateId": "legs",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "当前这一轮已完成推、拉，还缺腿，因此今天建议腿。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-23",
+          "id": "cc-push",
+          "templateId": "push"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-26",
+          "id": "cc-pull",
+          "templateId": "pull"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-29",
+          "id": "cc-legs",
+          "templateId": "legs"
+        }
+      ],
+      "label": "closed-cycle-complete",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "isCycleComplete": true,
+        "lastCompletedTemplateId": "legs",
+        "missingInCurrentCycle": [],
+        "nextTemplateId": "push",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "上一轮推、拉、腿已完成；下次进入新一轮，建议从推开始。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-20",
+          "id": "co-push1",
+          "templateId": "push"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-23",
+          "id": "co-pull1",
+          "templateId": "pull"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-26",
+          "id": "co-legs1",
+          "templateId": "legs"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-29",
+          "id": "co-push2",
+          "templateId": "push"
+        }
+      ],
+      "label": "closed-then-open",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "push"
+        ],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "push",
+        "missingInCurrentCycle": [
+          "pull",
+          "legs"
+        ],
+        "nextTemplateId": "pull",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "当前这一轮已完成推，还缺拉、腿，因此今天建议拉。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-04-15",
+          "finishedAt": "2026-04-15T08:00:00.000Z",
+          "id": "gap-push",
+          "templateId": "push"
+        }
+      ],
+      "label": "thirty-day-gap-restart",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "push",
+        "missingInCurrentCycle": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "nextTemplateId": "push",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "距离上次主轮转较久，系统从新一轮开始，建议从推开始。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "id": "fg-push",
+          "templateId": "push"
+        },
+        {
+          "completed": true,
+          "date": "2026-06-15",
+          "id": "fg-pull-future",
+          "templateId": "pull"
+        }
+      ],
+      "label": "future-session-gated",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "push"
+        ],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "push",
+        "missingInCurrentCycle": [
+          "pull",
+          "legs"
+        ],
+        "nextTemplateId": "pull",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "当前这一轮已完成推，还缺拉、腿，因此今天建议拉。"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2024-01-01",
+          "id": "nd-push",
+          "templateId": "push"
+        },
+        {
+          "completed": true,
+          "date": "2024-01-08",
+          "id": "nd-pull",
+          "templateId": "pull"
+        }
+      ],
+      "label": "no-current-date",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "push",
+          "pull"
+        ],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "pull",
+        "missingInCurrentCycle": [
+          "legs"
+        ],
+        "nextTemplateId": "legs",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "当前这一轮已完成推、拉，还缺腿，因此今天建议腿。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-25",
+          "id": "lf-upper",
+          "templateId": "upper-a"
+        }
+      ],
+      "label": "label-fallback-and-dedup",
+      "orderedTemplateIds": [
+        "upper-a",
+        "upper-a",
+        "lower-b"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "upper-a"
+        ],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "upper-a",
+        "missingInCurrentCycle": [
+          "lower-b"
+        ],
+        "nextTemplateId": "lower-b",
+        "orderedTemplateIds": [
+          "upper-a",
+          "lower-b"
+        ],
+        "reason": "当前这一轮已完成upper a，还缺lower b，因此今天建议lower b。"
+      }
+    },
+    {
+      "currentDate": "2026-06-01",
+      "history": [
+        {
+          "completed": true,
+          "id": "sa-push",
+          "startedAt": "2026-05-25T08:00:00.000Z",
+          "templateId": "push"
+        },
+        {
+          "completed": true,
+          "date": "2026-05-28",
+          "id": "sa-pull",
+          "templateId": "pull"
+        }
+      ],
+      "label": "started-at-precedence",
+      "orderedTemplateIds": [
+        "push",
+        "pull",
+        "legs"
+      ],
+      "result": {
+        "completedInCurrentCycle": [
+          "push",
+          "pull"
+        ],
+        "isCycleComplete": false,
+        "lastCompletedTemplateId": "pull",
+        "missingInCurrentCycle": [
+          "legs"
+        ],
+        "nextTemplateId": "legs",
+        "orderedTemplateIds": [
+          "push",
+          "pull",
+          "legs"
+        ],
+        "reason": "当前这一轮已完成推、拉，还缺腿，因此今天建议腿。"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "a1e63d939cdd079e2e2cfa68e0d392c35f389d4a",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "workout-cycle/cycle-cases-v1"
+  },
+  "sourceFixtureId": "workout-cycle/cycle-cases-v1"
+}
