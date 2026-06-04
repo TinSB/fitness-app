@@ -1,0 +1,236 @@
+{
+  "cases": [
+    {
+      "hash": "tpl-aaaffc62",
+      "kind": "hash",
+      "label": "hashProgramTemplate: TrainingTemplate with exercises (integer numbers, key sort over typed + open-bag fields)",
+      "template": {
+        "duration": 60,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "Bench Press",
+            "repMax": 8,
+            "repMin": 5,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          },
+          {
+            "id": "row",
+            "kind": "compound",
+            "muscle": "back",
+            "name": "Barbell Row",
+            "repMax": 12,
+            "repMin": 8,
+            "rest": 120,
+            "sets": 3,
+            "startWeight": 50
+          }
+        ],
+        "focus": "upper",
+        "id": "tpl-upper-a",
+        "isExperimentalTemplate": false,
+        "name": "Upper A",
+        "note": "main upper day"
+      },
+      "templateKind": "training"
+    },
+    {
+      "hash": "tpl-ee7163fa",
+      "kind": "hash",
+      "label": "hashProgramTemplate: ProgramTemplate with dayTemplates + weeklyMuscleTargets (nested object/array recursion)",
+      "template": {
+        "correctionStrategy": "moderate",
+        "daysPerWeek": 4,
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 60,
+            "focusMuscles": [
+              "chest",
+              "back"
+            ],
+            "functionalBlockIds": [],
+            "id": "day-upper",
+            "mainExerciseIds": [
+              "bench-press",
+              "row"
+            ],
+            "name": "Upper"
+          },
+          {
+            "correctionBlockIds": [
+              "corr-1"
+            ],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "legs"
+            ],
+            "functionalBlockIds": [
+              "fn-1"
+            ],
+            "id": "day-lower",
+            "mainExerciseIds": [
+              "squat"
+            ],
+            "name": "Lower"
+          }
+        ],
+        "functionalStrategy": "standard",
+        "id": "program-1",
+        "primaryGoal": "hypertrophy",
+        "splitType": "upper_lower",
+        "userId": "synthetic-user",
+        "weeklyMuscleTargets": {
+          "arms": 6,
+          "back": 14,
+          "chest": 12,
+          "legs": 16,
+          "shoulders": 8
+        }
+      },
+      "templateKind": "program"
+    },
+    {
+      "hash": "tpl-24ee568",
+      "kind": "hash",
+      "label": "hashProgramTemplate: Chinese name + note + exercise labels (UTF-16 charCodeAt boundary)",
+      "template": {
+        "duration": 55,
+        "exercises": [
+          {
+            "id": "incline-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "name": "上斜卧推",
+            "repMax": 10,
+            "repMin": 6,
+            "rest": 150,
+            "sets": 4,
+            "startWeight": 40
+          }
+        ],
+        "focus": "上肢",
+        "id": "tpl-zh",
+        "name": "上肢推日",
+        "note": "胸、肩、三头为主，注意离心控制。"
+      },
+      "templateKind": "training"
+    },
+    {
+      "hash": "tpl-ea0970d3",
+      "kind": "hash",
+      "label": "hashProgramTemplate: nested array/object key-ordering probe (localeCompare case-insensitive primary key sort)",
+      "template": {
+        "correctionStrategy": "light",
+        "daysPerWeek": 3,
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 75,
+            "focusMuscles": [
+              "legs",
+              "back",
+              "chest"
+            ],
+            "functionalBlockIds": [],
+            "id": "d1",
+            "mainExerciseIds": [
+              "squat",
+              "bench-press",
+              "row"
+            ],
+            "name": "Full"
+          }
+        ],
+        "functionalStrategy": "minimal",
+        "id": "program-sort-probe",
+        "nestedProbe": {
+          "outer": {
+            "alpha": {
+              "Beta": 2,
+              "delta": 3,
+              "gamma": 1
+            },
+            "zed": [
+              3,
+              2,
+              1
+            ]
+          }
+        },
+        "primaryGoal": "strength",
+        "splitType": "full_body",
+        "userId": "synthetic-user",
+        "weeklyMuscleTargets": {
+          "apple": 2,
+          "apricot": 4,
+          "b1": 7,
+          "b10": 5,
+          "b2": 6,
+          "Banana": 3,
+          "Zebra": 1
+        }
+      },
+      "templateKind": "program"
+    },
+    {
+      "hash": "tpl-5465b825",
+      "kind": "hash",
+      "label": "hashProgramTemplate: empty template object (TrainingTemplate overload) → stableStringify '{}'",
+      "template": {},
+      "templateKind": "training"
+    },
+    {
+      "hash": "tpl-5465b825",
+      "kind": "hash",
+      "label": "hashProgramTemplate: empty template object (ProgramTemplate overload) → same hash as the TrainingTemplate empty",
+      "template": {},
+      "templateKind": "program"
+    },
+    {
+      "hash": "tpl-273a55b3",
+      "kind": "hash",
+      "label": "hashProgramTemplate: number text — integer/decimal/zero/negative (JSON.stringify number rendering)",
+      "template": {
+        "customMetrics": {
+          "decVal": 3.14,
+          "intVal": 100,
+          "negDec": -2.5,
+          "zeroVal": 0
+        },
+        "duration": 0,
+        "exercises": [
+          {
+            "id": "ex-dec",
+            "kind": "isolation",
+            "muscle": "quads",
+            "name": "Decimals",
+            "progressionUnitKg": 1.25,
+            "repMax": 12,
+            "repMin": 8,
+            "rest": 90,
+            "sets": 3,
+            "startWeight": 2.5
+          }
+        ],
+        "focus": "test",
+        "id": "tpl-numbers",
+        "name": "Numbers",
+        "note": ""
+      },
+      "templateKind": "training"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/hash-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/hash-cases-v1"
+}

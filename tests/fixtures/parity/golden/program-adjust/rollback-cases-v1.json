@@ -1,0 +1,274 @@
+{
+  "cases": [
+    {
+      "item": {
+        "appliedAt": "2026-01-10T10:00:00.000Z",
+        "changes": [
+          {
+            "id": "chg-1",
+            "reason": "volume too low",
+            "type": "add_sets"
+          }
+        ],
+        "experimentalProgramTemplateId": "program-1-exp",
+        "experimentalProgramTemplateName": "Experimental Program",
+        "id": "hist-1",
+        "legacyClientField": {
+          "note": "future field preserved via open bag",
+          "weight": 3
+        },
+        "mainChangeSummary": "增加胸部组数",
+        "rollbackAvailable": true,
+        "selectedRecommendationIds": [
+          "rec-1",
+          "rec-2"
+        ],
+        "sourceProgramSnapshot": {
+          "correctionStrategy": "moderate",
+          "daysPerWeek": 4,
+          "dayTemplates": [
+            {
+              "correctionBlockIds": [],
+              "estimatedDurationMin": 60,
+              "focusMuscles": [
+                "chest"
+              ],
+              "functionalBlockIds": [],
+              "id": "day-upper",
+              "mainExerciseIds": [
+                "bench-press"
+              ],
+              "name": "Upper"
+            }
+          ],
+          "functionalStrategy": "standard",
+          "id": "program-1",
+          "primaryGoal": "hypertrophy",
+          "splitType": "upper_lower",
+          "userId": "synthetic-user",
+          "weeklyMuscleTargets": {
+            "back": 14,
+            "chest": 12
+          }
+        },
+        "sourceProgramTemplateId": "program-1",
+        "sourceProgramTemplateName": "Base Program",
+        "status": "applied"
+      },
+      "kind": "rollback",
+      "label": "rollbackAdjustment: with sourceProgramSnapshot → restoredProgramTemplate = clone(snapshot); status applied→rolled_back; open-bag passthrough",
+      "now": "2026-01-15T08:30:00.000Z",
+      "restoredProgramTemplate": {
+        "correctionStrategy": "moderate",
+        "daysPerWeek": 4,
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 60,
+            "focusMuscles": [
+              "chest"
+            ],
+            "functionalBlockIds": [],
+            "id": "day-upper",
+            "mainExerciseIds": [
+              "bench-press"
+            ],
+            "name": "Upper"
+          }
+        ],
+        "functionalStrategy": "standard",
+        "id": "program-1",
+        "primaryGoal": "hypertrophy",
+        "splitType": "upper_lower",
+        "userId": "synthetic-user",
+        "weeklyMuscleTargets": {
+          "back": 14,
+          "chest": 12
+        }
+      },
+      "restoredTemplateId": "program-1",
+      "updatedHistoryItem": {
+        "appliedAt": "2026-01-10T10:00:00.000Z",
+        "changes": [
+          {
+            "id": "chg-1",
+            "reason": "volume too low",
+            "type": "add_sets"
+          }
+        ],
+        "experimentalProgramTemplateId": "program-1-exp",
+        "experimentalProgramTemplateName": "Experimental Program",
+        "id": "hist-1",
+        "legacyClientField": {
+          "note": "future field preserved via open bag",
+          "weight": 3
+        },
+        "mainChangeSummary": "增加胸部组数",
+        "rollbackAvailable": false,
+        "rolledBackAt": "2026-01-15T08:30:00.000Z",
+        "selectedRecommendationIds": [
+          "rec-1",
+          "rec-2"
+        ],
+        "sourceProgramSnapshot": {
+          "correctionStrategy": "moderate",
+          "daysPerWeek": 4,
+          "dayTemplates": [
+            {
+              "correctionBlockIds": [],
+              "estimatedDurationMin": 60,
+              "focusMuscles": [
+                "chest"
+              ],
+              "functionalBlockIds": [],
+              "id": "day-upper",
+              "mainExerciseIds": [
+                "bench-press"
+              ],
+              "name": "Upper"
+            }
+          ],
+          "functionalStrategy": "standard",
+          "id": "program-1",
+          "primaryGoal": "hypertrophy",
+          "splitType": "upper_lower",
+          "userId": "synthetic-user",
+          "weeklyMuscleTargets": {
+            "back": 14,
+            "chest": 12
+          }
+        },
+        "sourceProgramTemplateId": "program-1",
+        "sourceProgramTemplateName": "Base Program",
+        "status": "rolled_back"
+      }
+    },
+    {
+      "item": {
+        "appliedAt": "2026-01-11T11:00:00.000Z",
+        "changes": [],
+        "experimentalProgramTemplateId": "program-2-exp",
+        "id": "hist-2",
+        "rollbackAvailable": true,
+        "selectedRecommendationIds": [],
+        "sourceProgramTemplateId": "program-2",
+        "status": "applied"
+      },
+      "kind": "rollback",
+      "label": "rollbackAdjustment: no sourceProgramSnapshot → restoredProgramTemplate null",
+      "now": "2026-01-15T08:30:00.000Z",
+      "restoredProgramTemplate": null,
+      "restoredTemplateId": "program-2",
+      "updatedHistoryItem": {
+        "appliedAt": "2026-01-11T11:00:00.000Z",
+        "changes": [],
+        "experimentalProgramTemplateId": "program-2-exp",
+        "id": "hist-2",
+        "rollbackAvailable": false,
+        "rolledBackAt": "2026-01-15T08:30:00.000Z",
+        "selectedRecommendationIds": [],
+        "sourceProgramTemplateId": "program-2",
+        "status": "rolled_back"
+      }
+    },
+    {
+      "item": {
+        "appliedAt": "2026-02-01T09:00:00.000Z",
+        "changes": [
+          {
+            "id": "chg-9",
+            "reason": "pain",
+            "type": "swap_exercise"
+          }
+        ],
+        "effectReview": {
+          "score": 3,
+          "verdict": "pending"
+        },
+        "experimentalProgramTemplateId": "program-3-exp",
+        "extraOpenBagField": "preserved",
+        "id": "hist-3",
+        "rollbackAvailable": true,
+        "rolledBackAt": "2025-12-31T00:00:00.000Z",
+        "selectedRecommendationIds": [
+          "rec-9"
+        ],
+        "sourceCoachActionId": "coach-action-9",
+        "sourceFingerprint": "fp-xyz",
+        "sourceProgramSnapshot": {
+          "correctionStrategy": "light",
+          "daysPerWeek": 3,
+          "dayTemplates": [],
+          "functionalStrategy": "minimal",
+          "id": "program-3",
+          "primaryGoal": "strength",
+          "splitType": "full_body",
+          "userId": "local-user",
+          "weeklyMuscleTargets": {}
+        },
+        "sourceProgramTemplateId": "program-3",
+        "status": "applied"
+      },
+      "kind": "rollback",
+      "label": "rollbackAdjustment: explicit per-case injected now (≠ meta default) overwrites a present rolledBackAt; effectReview + open-bag passthrough",
+      "now": "2026-02-20T15:45:30.000Z",
+      "restoredProgramTemplate": {
+        "correctionStrategy": "light",
+        "daysPerWeek": 3,
+        "dayTemplates": [],
+        "functionalStrategy": "minimal",
+        "id": "program-3",
+        "primaryGoal": "strength",
+        "splitType": "full_body",
+        "userId": "local-user",
+        "weeklyMuscleTargets": {}
+      },
+      "restoredTemplateId": "program-3",
+      "updatedHistoryItem": {
+        "appliedAt": "2026-02-01T09:00:00.000Z",
+        "changes": [
+          {
+            "id": "chg-9",
+            "reason": "pain",
+            "type": "swap_exercise"
+          }
+        ],
+        "effectReview": {
+          "score": 3,
+          "verdict": "pending"
+        },
+        "experimentalProgramTemplateId": "program-3-exp",
+        "extraOpenBagField": "preserved",
+        "id": "hist-3",
+        "rollbackAvailable": false,
+        "rolledBackAt": "2026-02-20T15:45:30.000Z",
+        "selectedRecommendationIds": [
+          "rec-9"
+        ],
+        "sourceCoachActionId": "coach-action-9",
+        "sourceFingerprint": "fp-xyz",
+        "sourceProgramSnapshot": {
+          "correctionStrategy": "light",
+          "daysPerWeek": 3,
+          "dayTemplates": [],
+          "functionalStrategy": "minimal",
+          "id": "program-3",
+          "primaryGoal": "strength",
+          "splitType": "full_body",
+          "userId": "local-user",
+          "weeklyMuscleTargets": {}
+        },
+        "sourceProgramTemplateId": "program-3",
+        "status": "rolled_back"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/rollback-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/rollback-cases-v1"
+}
