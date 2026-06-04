@@ -200,14 +200,21 @@ public enum Formatters {
 
     /// `localizeTemplateNameText` (formatters.ts:178-185): six case-insensitive
     /// `\b…\b` template-name substitutions, regex + replacement text mirrored verbatim.
+    ///
+    /// `\b` FIDELITY: JS `\b` is an ASCII word boundary (`\w` = `[A-Za-z0-9_]`), but
+    /// NSRegularExpression (ICU) `\b` treats CJK scalars as word chars — so an English
+    /// token glued directly to a CJK char (`full body训练`) sees a boundary under JS but
+    /// NOT under ICU, diverging. We spell `\b` as the explicit ASCII look-arounds JS
+    /// means: `(?<![A-Za-z0-9_])` / `(?![A-Za-z0-9_])`. The English-glued-to-CJK probe
+    /// golden pins the equivalence.
     private static func localizeTemplateNameText(_ value: String) -> String {
         var s = value
-        s = regexReplaceAll(s, "\\bpush[\\s_-]*a\\b", "推 A", caseInsensitive: true)        // :180
-        s = regexReplaceAll(s, "\\bpull[\\s_-]*a\\b", "拉 A", caseInsensitive: true)        // :181
-        s = regexReplaceAll(s, "\\blegs[\\s_-]*a\\b", "腿 A", caseInsensitive: true)        // :182
-        s = regexReplaceAll(s, "\\bupper[\\s_-]*a\\b", "上肢 A", caseInsensitive: true)     // :183
-        s = regexReplaceAll(s, "\\blower[\\s_-]*a\\b", "下肢 A", caseInsensitive: true)     // :184
-        s = regexReplaceAll(s, "\\bfull[\\s_-]*body\\b", "全身训练", caseInsensitive: true) // :185
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])push[\\s_-]*a(?![A-Za-z0-9_])", "推 A", caseInsensitive: true)        // :180
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])pull[\\s_-]*a(?![A-Za-z0-9_])", "拉 A", caseInsensitive: true)        // :181
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])legs[\\s_-]*a(?![A-Za-z0-9_])", "腿 A", caseInsensitive: true)        // :182
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])upper[\\s_-]*a(?![A-Za-z0-9_])", "上肢 A", caseInsensitive: true)     // :183
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])lower[\\s_-]*a(?![A-Za-z0-9_])", "下肢 A", caseInsensitive: true)     // :184
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])full[\\s_-]*body(?![A-Za-z0-9_])", "全身训练", caseInsensitive: true) // :185
         return s
     }
 
@@ -221,9 +228,11 @@ public enum Formatters {
     }
 
     /// `/\b(push|pull|legs|upper|lower|full body)\b/i.test(value)` (formatters.ts:203) —
-    /// true iff a residual English template word remains after localization.
+    /// true iff a residual English template word remains after localization. Uses the
+    /// ASCII `\b` look-arounds (see localizeTemplateNameText) so a CJK-glued English
+    /// token matches as it does under JS `\b`, not under ICU's CJK-inclusive `\b`.
     private static func containsEnglishTemplateWord(_ value: String) -> Bool {
-        regexMatches(value, "\\b(push|pull|legs|upper|lower|full body)\\b", caseInsensitive: true)
+        regexMatches(value, "(?<![A-Za-z0-9_])(push|pull|legs|upper|lower|full body)(?![A-Za-z0-9_])", caseInsensitive: true)
     }
 
     /// Global regex replace (`String.prototype.replace(/…/g, …)`). The replacement

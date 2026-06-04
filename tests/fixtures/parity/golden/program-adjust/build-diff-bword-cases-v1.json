@@ -1,0 +1,111 @@
+{
+  "cases": [
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "id": "c1",
+            "muscleId": "胸",
+            "reason": "恢复压力偏高",
+            "type": "reduce_support"
+          }
+        ],
+        "id": "draft-bword-1",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "天名为英文直接黏 CJK 的辅助层调整。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "reduce_support over a day whose name is an English template word glued to CJK ('legs训练') → ASCII-\\b lock: summarizeSupportState's formatDayTemplateName hits the residual-English-word guard and returns fallback '未指定训练日', NOT the raw 'legs训练'",
+      "programTemplate": {
+        "correctionStrategy": "moderate",
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [
+              "corr_scapular_control_01",
+              "corr_thoracic_rotation_01"
+            ],
+            "estimatedDurationMin": 60,
+            "focusMuscles": [
+              "胸"
+            ],
+            "functionalBlockIds": [
+              "func_overhead_stability_01",
+              "func_core_anti_rotation_01"
+            ],
+            "id": "push-a",
+            "mainExerciseIds": [
+              "bench-press"
+            ],
+            "name": "legs训练"
+          }
+        ],
+        "functionalStrategy": "standard",
+        "id": "prog-bword-1"
+      },
+      "result": {
+        "changes": [
+          {
+            "after": "推 A 实验版：纠偏 light / 功能 minimal / 纠偏模块 1 项 / 功能补丁 1 项",
+            "before": "未指定训练日：纠偏 moderate / 功能 standard / 纠偏模块 2 项 / 功能补丁 2 项",
+            "changeId": "c1",
+            "label": "减少 support",
+            "reason": "恢复压力偏高",
+            "riskLevel": "low",
+            "type": "reduce_support"
+          }
+        ],
+        "summary": "天名为英文直接黏 CJK 的辅助层调整。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": [
+        {
+          "duration": 70,
+          "exercises": [
+            {
+              "id": "bench-press",
+              "kind": "compound",
+              "muscle": "胸",
+              "repMax": 8,
+              "repMin": 6,
+              "rest": 180,
+              "sets": 3,
+              "startWeight": 60
+            }
+          ],
+          "focus": "推",
+          "id": "push-a",
+          "name": "推 A"
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "aac72ebe5db171317a3e9bbcbeb3335fdaf8baa7",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/build-diff-bword-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/build-diff-bword-cases-v1"
+}

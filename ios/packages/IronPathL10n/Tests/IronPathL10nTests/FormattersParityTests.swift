@@ -214,6 +214,20 @@ final class FormattersParityTests: XCTestCase {
         XCTAssertEqual(Formatters.formatProgramTemplateName(.string("Push 强化")), "未知模板")
     }
 
+    // PA-FIX (S4 \b fidelity): an English template token glued DIRECTLY to a CJK char
+    // (no space/dash). JS `\b` is ASCII-word-only and DOES see a boundary between the
+    // English token and the CJK char; an unfixed NSRegularExpression (ICU) `\b` treats
+    // CJK as a word char and would see NONE — leaking the raw glued string instead of
+    // the localized/fallback result. The expected values are the REAL TS outputs.
+    func testAsciiWordBoundaryGluedToCjk() {
+        // residual-English-word guard fires (boundary before 训) → fallback.
+        XCTAssertEqual(Formatters.formatProgramTemplateName(.string("Push训练")), "未知模板")
+        // localize END boundary fires (boundary after "body", before 训) → '全身训练' + '训练'.
+        XCTAssertEqual(Formatters.formatProgramTemplateName(.string("full body训练")), "全身训练训练")
+        // day formatter shares the same chain → residual-word guard → day fallback.
+        XCTAssertEqual(Formatters.formatDayTemplateName(.string("legs训练")), "未指定训练日")
+    }
+
     // formatProgramTemplateName — object candidate order id → nameZh → name → label.
     func testObjectCandidates() {
         XCTAssertEqual(Formatters.formatProgramTemplateName(.object(id: "pull-a", name: "whatever")), "拉 A")

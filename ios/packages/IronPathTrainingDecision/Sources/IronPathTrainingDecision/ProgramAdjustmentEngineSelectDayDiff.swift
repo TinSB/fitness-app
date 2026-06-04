@@ -591,7 +591,7 @@ extension ProgramAdjustmentEngine {
         // const dayLabel = formatDayTemplateName(day?.name || fallbackName || dayTemplateId);  (ts:523)
         let dayLabel = formatDayTemplateName(jsOrString(day?.name, jsOrString(fallbackName, dayTemplateId)))
         // `${dayLabel}：纠偏 ${correctionStrategy} / 功能 ${functionalStrategy} / 纠偏模块 N 项 / 功能补丁 M 项`  (ts:524)
-        return "\(dayLabel)：纠偏 \(programTemplate.correctionStrategy ?? "undefined") / 功能 \(programTemplate.functionalStrategy ?? "undefined") / 纠偏模块 \(day?.correctionBlockIds.count ?? 0) 项 / 功能补丁 \(day?.functionalBlockIds.count ?? 0) 项"
+        return "\(dayLabel)：纠偏 \(programTemplate.correctionStrategy ?? "undefined") / 功能 \(programTemplate.functionalStrategy ?? "undefined") / 纠偏模块 \(day?.correctionBlockIds?.count ?? 0) 项 / 功能补丁 \(day?.functionalBlockIds?.count ?? 0) 项"
     }
 
     /// `stepStrategy(sequence, current, direction)` (ts:527-534).
@@ -612,15 +612,14 @@ extension ProgramAdjustmentEngine {
         //   id: experimental.id, name: experimental.name, mainExerciseIds: experimental.exercises.map(...),
         //   estimatedDurationMin: experimental.duration };  (ts:542-548)
         let base: WDay = index != nil ? programTemplate.dayTemplates[index!] : dayTemplateFromTrainingTemplate(sourceTemplate)
-        let nextDay = WDay(
-            id: experimentalTemplate.id,
-            name: experimentalTemplate.name,
-            focusMuscles: base.focusMuscles,                 // {...base} spread
-            correctionBlockIds: base.correctionBlockIds,     // {...base} spread
-            mainExerciseIds: experimentalTemplate.exercises.map { baseOrId($0) },  // override
-            functionalBlockIds: base.functionalBlockIds,     // {...base} spread
-            estimatedDurationMin: experimentalTemplate.duration  // override
-        )
+        // const nextDay = { ...base, id, name, mainExerciseIds, estimatedDurationMin };  (ts:542-548)
+        // {...base} copies EVERY base key — focusMuscles / correction+functional blocks AND any
+        // unknown / future per-day key (data safety) — then the four documented overrides land.
+        let nextDay = WDay(copying: base)
+        nextDay.id = experimentalTemplate.id
+        nextDay.name = experimentalTemplate.name
+        nextDay.mainExerciseIds = experimentalTemplate.exercises.map { baseOrId($0) }
+        nextDay.estimatedDurationMin = experimentalTemplate.duration
         // if (index>=0) dayTemplates[index] = nextDay; else dayTemplates.push(nextDay);  (ts:549-550)
         if let index { programTemplate.dayTemplates[index] = nextDay } else { programTemplate.dayTemplates.append(nextDay) }
         return nextDay  // ts:551
@@ -659,9 +658,12 @@ extension ProgramAdjustmentEngine {
             if nextCorrection != programTemplate.correctionStrategy { programTemplate.correctionStrategy = nextCorrection; changed = true }  // ts:581-584
             if nextFunctional != programTemplate.functionalStrategy { programTemplate.functionalStrategy = nextFunctional; changed = true }  // ts:585-588
             // if (day.correctionBlockIds.length > 1) day.correctionBlockIds = slice(0, length-1);  (ts:589-592)
-            if day.correctionBlockIds.count > 1 { day.correctionBlockIds = Array(day.correctionBlockIds.dropLast()); changed = true }
+            // `?? []` only guards the now-Optional block field; a day reaching applySupportChange
+            // always HAS it (dayTemplateFromTrainingTemplate seeds [] / an existing day carries it),
+            // so the fallback is never taken — it just keeps the lossless WDay typing well-formed.
+            if (day.correctionBlockIds ?? []).count > 1 { day.correctionBlockIds = Array((day.correctionBlockIds ?? []).dropLast()); changed = true }
             // if (day.functionalBlockIds.length > 1) day.functionalBlockIds = slice(0, length-1);  (ts:593-596)
-            if day.functionalBlockIds.count > 1 { day.functionalBlockIds = Array(day.functionalBlockIds.dropLast()); changed = true }
+            if (day.functionalBlockIds ?? []).count > 1 { day.functionalBlockIds = Array((day.functionalBlockIds ?? []).dropLast()); changed = true }
             // if (number(day.estimatedDurationMin) > 35) { day.est = max(30, number(est) - 5); experimental.duration = est; }  (ts:597-601)
             if E1RMEngine.number(day.estimatedDurationMin) > 35 {
                 let next = jsNum(max(30, E1RMEngine.number(day.estimatedDurationMin) - 5))
@@ -679,15 +681,15 @@ extension ProgramAdjustmentEngine {
             // const correctionId = pickSupportModuleForDay(experimental, change.muscleId);  (ts:615)
             let correctionId = pickSupportModuleForDay(experimentalTemplate, change.muscleId)
             // if (correctionId && !includes && CORRECTION_MODULES.some(m => m.id === correctionId)) push;  (ts:616-619)
-            if jsTruthyString(correctionId) && !day.correctionBlockIds.contains(correctionId) && SupportModules.correctionModules.contains(where: { $0.id == correctionId }) {
-                day.correctionBlockIds = day.correctionBlockIds + [correctionId]
+            if jsTruthyString(correctionId) && !(day.correctionBlockIds ?? []).contains(correctionId) && SupportModules.correctionModules.contains(where: { $0.id == correctionId }) {
+                day.correctionBlockIds = (day.correctionBlockIds ?? []) + [correctionId]
                 changed = true
             }
             // const functionalId = pickFunctionalAddonForDay(experimental, change.muscleId);  (ts:620)
             let functionalId = pickFunctionalAddonForDay(experimentalTemplate, change.muscleId)
             // if (functionalId && !includes && FUNCTIONAL_ADDONS.some(a => a.id === functionalId)) push;  (ts:621-624)
-            if jsTruthyString(functionalId) && !day.functionalBlockIds.contains(functionalId) && SupportModules.functionalAddons.contains(where: { $0.id == functionalId }) {
-                day.functionalBlockIds = day.functionalBlockIds + [functionalId]
+            if jsTruthyString(functionalId) && !(day.functionalBlockIds ?? []).contains(functionalId) && SupportModules.functionalAddons.contains(where: { $0.id == functionalId }) {
+                day.functionalBlockIds = (day.functionalBlockIds ?? []) + [functionalId]
                 changed = true
             }
             // day.estimatedDurationMin = Math.max(number(est), number(est) + 5); experimental.duration = est; changed = true;  (ts:625-627)
@@ -898,7 +900,10 @@ extension ProgramAdjustmentEngine {
                 // localizeTemplateNameText(candidate.trim())  (ts:202)
                 let localized = localizeTemplateNameText(candidate.trimmingCharacters(in: .whitespacesAndNewlines))
                 // /[㐀-鿿]/.test(localized) && !/\b(push|pull|legs|upper|lower|full body)\b/i.test(localized)  (ts:203)
-                if containsCjk(localized) && !regexTest(localized, "\\b(push|pull|legs|upper|lower|full body)\\b") {
+                // ASCII `\b` (see localizeTemplateNameText): ICU `\b` would miss an English word
+                // glued to a CJK char (e.g. `push训练`), where JS `\b` finds a boundary — so the
+                // residual-English-word guard must use the explicit ASCII look-arounds.
+                if containsCjk(localized) && !regexTest(localized, "(?<![A-Za-z0-9_])(push|pull|legs|upper|lower|full body)(?![A-Za-z0-9_])") {
                     return localized
                 }
             }
@@ -919,14 +924,22 @@ extension ProgramAdjustmentEngine {
 
     /// `localizeTemplateNameText` (formatters.ts:178-185): six case-insensitive `\b…\b`
     /// template-name substitutions, regex + replacement verbatim.
+    ///
+    /// `\b` FIDELITY: JS `\b` is an ASCII word boundary (`\w` = `[A-Za-z0-9_]`), but
+    /// NSRegularExpression (ICU) `\b` uses Unicode word boundaries where CJK scalars
+    /// ARE word chars — so an English template token glued directly to a CJK char
+    /// (e.g. `full body训练`) would see NO boundary under ICU but DOES under JS, diverging.
+    /// We therefore spell `\b` as the explicit ASCII look-arounds JS `\b` means here:
+    /// `(?<![A-Za-z0-9_])` before a leading word char, `(?![A-Za-z0-9_])` after a
+    /// trailing one. The English-glued-to-CJK probe golden pins the equivalence.
     private static func localizeTemplateNameText(_ value: String) -> String {
         var s = value
-        s = regexReplaceAll(s, "\\bpush[\\s_-]*a\\b", "推 A", caseInsensitive: true)        // ts:180
-        s = regexReplaceAll(s, "\\bpull[\\s_-]*a\\b", "拉 A", caseInsensitive: true)        // ts:181
-        s = regexReplaceAll(s, "\\blegs[\\s_-]*a\\b", "腿 A", caseInsensitive: true)        // ts:182
-        s = regexReplaceAll(s, "\\bupper[\\s_-]*a\\b", "上肢 A", caseInsensitive: true)     // ts:183
-        s = regexReplaceAll(s, "\\blower[\\s_-]*a\\b", "下肢 A", caseInsensitive: true)     // ts:184
-        s = regexReplaceAll(s, "\\bfull[\\s_-]*body\\b", "全身训练", caseInsensitive: true) // ts:185
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])push[\\s_-]*a(?![A-Za-z0-9_])", "推 A", caseInsensitive: true)        // ts:180
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])pull[\\s_-]*a(?![A-Za-z0-9_])", "拉 A", caseInsensitive: true)        // ts:181
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])legs[\\s_-]*a(?![A-Za-z0-9_])", "腿 A", caseInsensitive: true)        // ts:182
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])upper[\\s_-]*a(?![A-Za-z0-9_])", "上肢 A", caseInsensitive: true)     // ts:183
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])lower[\\s_-]*a(?![A-Za-z0-9_])", "下肢 A", caseInsensitive: true)     // ts:184
+        s = regexReplaceAll(s, "(?<![A-Za-z0-9_])full[\\s_-]*body(?![A-Za-z0-9_])", "全身训练", caseInsensitive: true) // ts:185
         return s
     }
 
@@ -1045,15 +1058,32 @@ private struct MutObj {
 }
 
 /// Mutable mirror of a `DayTemplate` (class = the find→mutate→read aliasing JS relies on).
+///
+/// LOSSLESS (PA-FIX — data safety): `applyAdjustmentDraft` rebuilds `updatedProgramTemplate`'s
+/// whole `dayTemplates` array from these mirrors, and that program is the EXACT value the S10
+/// write boundary persists. So this mirror must NOT drop a day's unknown / future keys, nor
+/// materialise an ABSENT optional block as `[]`. It therefore follows the PA-S1 `DayTemplate`
+/// open-bag paradigm exactly: the documented block fields are `Optional` (nil = the key is
+/// absent, NOT an empty array), and `unknown` is the open bag carrying every non-typed key
+/// verbatim. `encoded()` re-emits ONLY present typed fields + the bag — so TS `{...base}`
+/// (preserves every key of an existing day) and `cloneProgram` (preserves untouched days
+/// verbatim) are reproduced faithfully. A fresh `dayTemplateFromTrainingTemplate` day still
+/// materialises `correctionBlockIds: []` / `functionalBlockIds: []` because the TS literal
+/// (ts:145/147) does — the distinction is "absent ⇒ omit" vs "TS wrote [] ⇒ keep []".
 private final class WDay {
     var id: String?
     var name: String?
-    var focusMuscles: [String]
-    var correctionBlockIds: [String]
-    var mainExerciseIds: [String]
-    var functionalBlockIds: [String]
-    var estimatedDurationMin: JSONValue
-    init(id: String?, name: String?, focusMuscles: [String], correctionBlockIds: [String], mainExerciseIds: [String], functionalBlockIds: [String], estimatedDurationMin: JSONValue) {
+    var focusMuscles: [String]?
+    var correctionBlockIds: [String]?
+    var mainExerciseIds: [String]?
+    var functionalBlockIds: [String]?
+    var estimatedDurationMin: JSONValue   // .null ⇒ key absent (omitted on encode, like JS undefined)
+    var unknown: [OrderedJSONObject.Entry]
+    init(
+        id: String?, name: String?, focusMuscles: [String]?, correctionBlockIds: [String]?,
+        mainExerciseIds: [String]?, functionalBlockIds: [String]?, estimatedDurationMin: JSONValue,
+        unknown: [OrderedJSONObject.Entry] = []
+    ) {
         self.id = id
         self.name = name
         self.focusMuscles = focusMuscles
@@ -1061,29 +1091,46 @@ private final class WDay {
         self.mainExerciseIds = mainExerciseIds
         self.functionalBlockIds = functionalBlockIds
         self.estimatedDurationMin = estimatedDurationMin
+        self.unknown = unknown
     }
     convenience init(from day: DayTemplate) {
         self.init(
             id: day.id,
             name: day.name,
-            focusMuscles: day.focusMuscles ?? [],
-            correctionBlockIds: day.correctionBlockIds ?? [],
-            mainExerciseIds: day.mainExerciseIds ?? [],
-            functionalBlockIds: day.functionalBlockIds ?? [],
-            estimatedDurationMin: day.estimatedDurationMin.map { JSONValue.number($0) } ?? .null
+            focusMuscles: day.focusMuscles,                 // preserve nil (absent ≠ [])
+            correctionBlockIds: day.correctionBlockIds,
+            mainExerciseIds: day.mainExerciseIds,
+            functionalBlockIds: day.functionalBlockIds,
+            estimatedDurationMin: day.estimatedDurationMin.map { JSONValue.number($0) } ?? .null,
+            unknown: day._unknown.entries                   // carry the open bag verbatim
         )
     }
-    /// Project back to a typed `DayTemplate` (only used by buildProgramDayTemplates' false branch).
-    func asDayTemplate() -> DayTemplate {
-        DayTemplate(
-            id: id,
-            name: name,
-            focusMuscles: focusMuscles,
-            correctionBlockIds: correctionBlockIds,
-            mainExerciseIds: mainExerciseIds,
-            functionalBlockIds: functionalBlockIds,
-            estimatedDurationMin: estimatedDurationMin.numberValue
+    /// Faithful JS `{ ...other }` shallow clone — copies EVERY key (typed + the open bag).
+    convenience init(copying other: WDay) {
+        self.init(
+            id: other.id, name: other.name, focusMuscles: other.focusMuscles,
+            correctionBlockIds: other.correctionBlockIds, mainExerciseIds: other.mainExerciseIds,
+            functionalBlockIds: other.functionalBlockIds, estimatedDurationMin: other.estimatedDurationMin,
+            unknown: other.unknown
         )
+    }
+    /// Lossless `JSONValue` projection: present typed fields + the open bag (nil / .null omitted),
+    /// mirroring `DayTemplate.encoded()`. The key-sorted canonical emit makes entry order irrelevant.
+    func encoded() -> JSONValue {
+        var typed: [OrderedJSONObject.Entry] = []
+        if let id { typed.append(.init(key: "id", value: .string(id))) }
+        if let name { typed.append(.init(key: "name", value: .string(name))) }
+        if let focusMuscles { typed.append(.init(key: "focusMuscles", value: .array(focusMuscles.map { .string($0) }))) }
+        if let correctionBlockIds { typed.append(.init(key: "correctionBlockIds", value: .array(correctionBlockIds.map { .string($0) }))) }
+        if let mainExerciseIds { typed.append(.init(key: "mainExerciseIds", value: .array(mainExerciseIds.map { .string($0) }))) }
+        if let functionalBlockIds { typed.append(.init(key: "functionalBlockIds", value: .array(functionalBlockIds.map { .string($0) }))) }
+        if case .null = estimatedDurationMin {} else { typed.append(.init(key: "estimatedDurationMin", value: estimatedDurationMin)) }
+        return .object(OrderedJSONObject(entries: unknown).appending(typed))
+    }
+    /// Project back to a typed `DayTemplate` (buildProgramDayTemplates' false branch). Lossless —
+    /// `DayTemplate` carries its own open bag, so decode∘`encoded()` is canonically identical.
+    func asDayTemplate() -> DayTemplate {
+        (try? DayTemplate(decoding: encoded())) ?? DayTemplate()
     }
 }
 
@@ -1717,7 +1764,10 @@ extension ProgramAdjustmentEngine {
         }
         if let cs = wProgram.correctionStrategy { updatedFull["correctionStrategy"] = .string(cs) }
         if let fs = wProgram.functionalStrategy { updatedFull["functionalStrategy"] = .string(fs) }
-        updatedFull["dayTemplates"] = .array(wProgram.dayTemplates.map { $0.asDayTemplate().encoded() })
+        // Lossless re-projection of the (possibly support-mutated) days: WDay.encoded() carries each
+        // day's open bag + omits absent optional blocks, so untouched days survive verbatim and the
+        // touched day keeps its unknown keys — matching TS cloneProgram + in-place mutation (data safety).
+        updatedFull["dayTemplates"] = .array(wProgram.dayTemplates.map { $0.encoded() })
 
         // historyItem (ts:888-904). sourceFingerprint = draft.sourceFingerprint || build…(draft) (ts:894).
         let historyFp = jsTruthyString(draft.sourceFingerprint)
