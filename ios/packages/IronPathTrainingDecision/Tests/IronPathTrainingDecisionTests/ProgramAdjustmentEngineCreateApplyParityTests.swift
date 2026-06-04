@@ -55,7 +55,7 @@ final class ProgramAdjustmentEngineCreateApplyParityTests: XCTestCase {
     // MARK: - envelopes
 
     func testGoldenEnvelopes() throws {
-        for name in ["create-draft-cases-v1", "apply-draft-cases-v1"] {
+        for name in ["create-draft-cases-v1", "apply-draft-cases-v1", "apply-draft-opaque-cases-v1"] {
             XCTAssertTrue(
                 FileManager.default.fileExists(atPath: Self.goldenURL(name).path),
                 "missing program-adjust golden: \(name)"
@@ -119,6 +119,49 @@ final class ProgramAdjustmentEngineCreateApplyParityTests: XCTestCase {
             // Omitted (null) currentProgramTemplate / templates ⇒ the TS default params
             // (DEFAULT_PROGRAM_TEMPLATE / [sourceProgramTemplate]); pass nil so the Swift port
             // substitutes the same defaults.
+            let programValue = c.rawValue("currentProgramTemplate")
+            let currentProgram: ProgramTemplate? = (programValue == nil || programValue!.isNull)
+                ? nil : try ProgramTemplate(decoding: programValue!)
+            let templatesValue = c.rawValue("templates")
+            let templates: [TrainingTemplate]? = (templatesValue == nil || templatesValue!.isNull)
+                ? nil : try (templatesValue!.arrayValue ?? []).map { try TrainingTemplate(decoding: $0) }
+
+            let nowIso = try XCTUnwrap(c.optionalString("now"), "\(label): now")
+            let historyIdSeed = try XCTUnwrap(c.optionalString("historyIdSeed"), "\(label): historyIdSeed")
+
+            let result = Engine.applyAdjustmentDraft(
+                draft, sourceProgramTemplate: source,
+                currentProgramTemplate: currentProgram, templates: templates,
+                nowIso: nowIso, historyIdSeed: historyIdSeed
+            )
+
+            let computed = try result.encoded().canonicalJSONString()
+            let golden = try XCTUnwrap(c.rawValue("result"), "\(label): result").canonicalJSONString()
+            XCTAssertEqual(computed, golden, "\(fixtureId)/\(label): ApplyAdjustmentDraftResult canonical mismatch")
+        }
+    }
+
+    // MARK: - apply-draft-opaque-cases (PA-FIX: WDay open-bag round-trip / data safety)
+
+    /// Pins the S10 data-safety prerequisite: applyAdjustmentDraft rebuilds
+    /// `updatedProgramTemplate.dayTemplates` (the value the §8.3 write boundary persists),
+    /// and the lossless WDay open-bag mirror must carry each day's UNKNOWN/future keys +
+    /// keep an ABSENT optional block omitted (not materialised as []). The golden is the
+    /// REAL TS result (cloneProgram + in-place mutation); the pre-fix lossy WDay (7 fields,
+    /// no `_unknown`, `?? []`) would drop the unknown keys and emit empty arrays → mismatch.
+    /// Same shape as `testApplyDraftCasesParity`, over the additive opaque fixture.
+    func testApplyDraftOpaqueCasesParity() throws {
+        let fixtureId = "program-adjust/apply-draft-opaque-cases-v1"
+        let root = try root(fixtureId, "apply-draft-opaque-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 1, "expected the open-bag data-safety case")
+        for value in cases {
+            let c = try value.requireObject("program-adjust apply-draft-opaque case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            XCTAssertEqual(c.optionalString("kind"), "apply-draft", "\(label): kind")
+
+            let draft = try ProgramAdjustmentDraft(decoding: try XCTUnwrap(c.rawValue("draft"), "\(label): draft"))
+            let source = try TrainingTemplate(decoding: try XCTUnwrap(c.rawValue("sourceProgramTemplate"), "\(label): sourceProgramTemplate"))
             let programValue = c.rawValue("currentProgramTemplate")
             let currentProgram: ProgramTemplate? = (programValue == nil || programValue!.isNull)
                 ? nil : try ProgramTemplate(decoding: programValue!)

@@ -1,0 +1,334 @@
+{
+  "cases": [
+    {
+      "currentProgramTemplate": {
+        "correctionStrategy": "moderate",
+        "daysPerWeek": 3,
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [
+              "corr_scapular_control_01"
+            ],
+            "customBlock": {
+              "list": [
+                1,
+                2
+              ],
+              "nestedKey": "kept"
+            },
+            "estimatedDurationMin": 70,
+            "experimentalRpeCap": 8.5,
+            "focusMuscles": [
+              "chest"
+            ],
+            "id": "push-a",
+            "mainExerciseIds": [
+              "bench-press"
+            ],
+            "name": "推 A",
+            "themeColor": "crimson"
+          },
+          {
+            "estimatedDurationMin": 65,
+            "focusMuscles": [
+              "back"
+            ],
+            "futureBlockIds": [
+              "fut-1"
+            ],
+            "id": "pull-b",
+            "legacyNotes": "kept verbatim",
+            "mainExerciseIds": [
+              "row"
+            ],
+            "name": "拉 B",
+            "themeColor": "navy"
+          }
+        ],
+        "functionalStrategy": "standard",
+        "futureTopLevelKey": {
+          "kept": "verbatim"
+        },
+        "id": "program-1",
+        "primaryGoal": "hypertrophy",
+        "splitType": "ppl",
+        "userId": "synthetic-user",
+        "weeklyMuscleTargets": {
+          "back": 10,
+          "chest": 12
+        }
+      },
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "c1",
+            "muscleId": "chest",
+            "reason": "胸推容量偏低",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "draftRevision": 1,
+        "explanation": "胸推容量偏低",
+        "id": "adjustment-draft-opaque-r1",
+        "notes": [],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-1"
+        ],
+        "sourceFingerprint": "fp-push-a-opaque",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-89d2487c",
+        "status": "ready_to_apply",
+        "summary": "增加卧推组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "historyIdSeed": "test-history-seed",
+      "kind": "apply-draft",
+      "label": "data safety: applies add_sets while PRESERVING per-day unknown keys + ABSENT optional blocks — touched day keeps its open bag via ensureProgramDayTemplate {...base}, untouched day + program-level open bag survive the cloneProgram rebuild verbatim",
+      "now": "2026-01-15T08:30:00.000Z",
+      "result": {
+        "draft": {
+          "appliedAt": "2026-01-15T08:30:00.000Z",
+          "changes": [
+            {
+              "dayTemplateId": "push-a",
+              "dayTemplateName": "推 A",
+              "exerciseId": "bench-press",
+              "exerciseName": "平板卧推",
+              "id": "c1",
+              "muscleId": "chest",
+              "reason": "胸推容量偏低",
+              "setsDelta": 2,
+              "type": "add_sets"
+            }
+          ],
+          "confidence": "high",
+          "createdAt": "2026-01-10T00:00:00.000Z",
+          "draftRevision": 1,
+          "experimentalProgramTemplateId": "push-a-experiment-que-r1",
+          "explanation": "胸推容量偏低",
+          "id": "adjustment-draft-opaque-r1",
+          "notes": [],
+          "riskLevel": "low",
+          "selectedRecommendationIds": [
+            "rec-1"
+          ],
+          "sourceFingerprint": "fp-push-a-opaque",
+          "sourceProgramTemplateId": "push-a",
+          "sourceTemplateId": "push-a",
+          "sourceTemplateSnapshotHash": "tpl-89d2487c",
+          "status": "applied",
+          "summary": "增加卧推组数。",
+          "title": "推 A 下周实验调整"
+        },
+        "experimentalTemplate": {
+          "adjustmentSummary": "平板卧推：+2 组",
+          "appliedAt": "2026-01-15T08:30:00.000Z",
+          "duration": 78,
+          "exercises": [
+            {
+              "id": "bench-press",
+              "kind": "compound",
+              "muscle": "chest",
+              "name": "平板卧推",
+              "repMax": 8,
+              "repMin": 6,
+              "rest": 180,
+              "sets": 5,
+              "startWeight": 60
+            }
+          ],
+          "focus": "推",
+          "id": "push-a-experiment-que-r1",
+          "isExperimentalTemplate": true,
+          "name": "推 A 实验版",
+          "note": "基础推日\n实验调整：增加卧推组数。",
+          "sourceTemplateId": "push-a",
+          "sourceTemplateName": "推 A",
+          "updatedAt": "2026-01-15T08:30:00.000Z"
+        },
+        "historyItem": {
+          "appliedAt": "2026-01-15T08:30:00.000Z",
+          "changes": [
+            {
+              "dayTemplateId": "push-a",
+              "dayTemplateName": "推 A",
+              "exerciseId": "bench-press",
+              "exerciseName": "平板卧推",
+              "id": "c1",
+              "muscleId": "chest",
+              "reason": "胸推容量偏低",
+              "setsDelta": 2,
+              "type": "add_sets"
+            }
+          ],
+          "experimentalProgramTemplateId": "push-a-experiment-que-r1",
+          "experimentalProgramTemplateName": "推 A 实验版",
+          "explanation": "胸推容量偏低",
+          "id": "adjustment-history-test-history-seed",
+          "mainChangeSummary": "平板卧推：+2 组",
+          "rollbackAvailable": true,
+          "selectedRecommendationIds": [
+            "rec-1"
+          ],
+          "sourceFingerprint": "fp-push-a-opaque",
+          "sourceProgramSnapshot": {
+            "correctionStrategy": "moderate",
+            "daysPerWeek": 3,
+            "dayTemplates": [
+              {
+                "correctionBlockIds": [
+                  "corr_scapular_control_01"
+                ],
+                "customBlock": {
+                  "list": [
+                    1,
+                    2
+                  ],
+                  "nestedKey": "kept"
+                },
+                "estimatedDurationMin": 70,
+                "experimentalRpeCap": 8.5,
+                "focusMuscles": [
+                  "chest"
+                ],
+                "id": "push-a",
+                "mainExerciseIds": [
+                  "bench-press"
+                ],
+                "name": "推 A",
+                "themeColor": "crimson"
+              },
+              {
+                "estimatedDurationMin": 65,
+                "focusMuscles": [
+                  "back"
+                ],
+                "futureBlockIds": [
+                  "fut-1"
+                ],
+                "id": "pull-b",
+                "legacyNotes": "kept verbatim",
+                "mainExerciseIds": [
+                  "row"
+                ],
+                "name": "拉 B",
+                "themeColor": "navy"
+              }
+            ],
+            "functionalStrategy": "standard",
+            "futureTopLevelKey": {
+              "kept": "verbatim"
+            },
+            "id": "program-1",
+            "primaryGoal": "hypertrophy",
+            "splitType": "ppl",
+            "userId": "synthetic-user",
+            "weeklyMuscleTargets": {
+              "back": 10,
+              "chest": 12
+            }
+          },
+          "sourceProgramTemplateId": "push-a",
+          "sourceProgramTemplateName": "推 A",
+          "status": "applied"
+        },
+        "ok": true,
+        "updatedProgramTemplate": {
+          "correctionStrategy": "moderate",
+          "daysPerWeek": 3,
+          "dayTemplates": [
+            {
+              "correctionBlockIds": [
+                "corr_scapular_control_01"
+              ],
+              "customBlock": {
+                "list": [
+                  1,
+                  2
+                ],
+                "nestedKey": "kept"
+              },
+              "estimatedDurationMin": 78,
+              "experimentalRpeCap": 8.5,
+              "focusMuscles": [
+                "chest"
+              ],
+              "id": "push-a-experiment-que-r1",
+              "mainExerciseIds": [
+                "bench-press"
+              ],
+              "name": "推 A 实验版",
+              "themeColor": "crimson"
+            },
+            {
+              "estimatedDurationMin": 65,
+              "focusMuscles": [
+                "back"
+              ],
+              "futureBlockIds": [
+                "fut-1"
+              ],
+              "id": "pull-b",
+              "legacyNotes": "kept verbatim",
+              "mainExerciseIds": [
+                "row"
+              ],
+              "name": "拉 B",
+              "themeColor": "navy"
+            }
+          ],
+          "functionalStrategy": "standard",
+          "futureTopLevelKey": {
+            "kept": "verbatim"
+          },
+          "id": "program-1",
+          "primaryGoal": "hypertrophy",
+          "splitType": "ppl",
+          "userId": "synthetic-user",
+          "weeklyMuscleTargets": {
+            "back": 10,
+            "chest": 12
+          }
+        }
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "平板卧推",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A",
+        "note": "基础推日"
+      },
+      "templates": null
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "aac72ebe5db171317a3e9bbcbeb3335fdaf8baa7",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/apply-draft-opaque-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/apply-draft-opaque-cases-v1"
+}

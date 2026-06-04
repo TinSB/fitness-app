@@ -252,16 +252,24 @@ public enum ProgramAdjustmentEngine {
     /// sort. Node default-locale `localeCompare` over the ASCII identifier keys these
     /// templates carry is a case-INSENSITIVE primary comparison (letters/digits in
     /// natural order — e.g. `daysPerWeek` < `dayTemplates` because the lowercased
-    /// `'s'` < `'t'`, which raw code-point order would get wrong). The fixtures never
-    /// contain two keys equal-when-lowercased, so the locale tertiary case tie-break
-    /// (which sorts lower-before-upper, UNLIKE the §9 `canonicalKeyOrder` code-point
-    /// tie-break) is never exercised; raw scalar `<` provides a deterministic total
-    /// order for that unreached branch. Verified key-set-by-key-set against real
-    /// `String.prototype.localeCompare`; the goldens are the final judge.
+    /// `'s'` < `'t'`, which raw code-point order would get wrong), and its case
+    /// tertiary tie-break — applied when two keys are equal once lowercased — sorts
+    /// lower-BEFORE-upper (`'a'.localeCompare('A') < 0`, verified against Node). This
+    /// tie-break is the ONE point where stableStringify's order DELIBERATELY differs
+    /// from the §9 `canonicalKeyOrder` (JSONValue.swift), whose tie-break is raw
+    /// code-point order (upper-before-lower); that divergence is exactly why S7 does
+    /// NOT route through the §9 canonical path and keeps this localeCompare-faithful
+    /// comparator (see the file header). For ASCII keys equal when lowercased,
+    /// lower-before-upper is precisely raw `>` (lowercase letters carry the higher
+    /// code points), the EXACT inverse of `canonicalKeyOrder`'s `<` tie-break. The
+    /// case-folding hash golden pins it; the goldens (generated from the REAL TS
+    /// engine) are the final byte-level judge.
     private static func keyOrderLess(_ a: String, _ b: String) -> Bool {
         let al = a.lowercased()
         let bl = b.lowercased()
         if al != bl { return al < bl }
-        return a < b
+        // localeCompare tertiary: lower-before-upper. For ASCII case-only differences
+        // this is raw code-point `>` — the inverse of §9 canonicalKeyOrder's `<`.
+        return a > b
     }
 }

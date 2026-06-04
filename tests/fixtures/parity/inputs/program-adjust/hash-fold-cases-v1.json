@@ -1,0 +1,26 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/hash-fold-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-FIX (S7 hash fidelity) hashProgramTemplate case-folding tie-break parity — a synthetic template whose open-bag object carries keys that are EQUAL once lowercased (AB/ab/Ab/aB and zz/ZZ). The inline stableStringify sorts keys by JS String.prototype.localeCompare, whose tertiary case tie-break sorts lower-BEFORE-upper (ab,aB,Ab,AB,zz,ZZ) — the EXACT INVERSE of the §9 canonicalKeyOrder raw code-point tie-break (upper-before-lower). Existing hash-cases-v1 never carries two keys equal-when-lowercased, so this branch was unexercised and the keyOrderLess case tie-break could byte-drift undetected; this fixture pins it. Generated from src/engines/programAdjustmentEngine.ts; the Swift port (with the keyOrderLess tie-break corrected to localeCompare-faithful) EXACT-asserts the hash string == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "aac72ebe5db171317a3e9bbcbeb3335fdaf8baa7",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — pure stableStringify + FNV-1a transform. Synthetic template; no email/token/userId. The caseFoldProbe keys exercise the localeCompare case tertiary tie-break only."
+  },
+  "cases": [
+    {
+      "label": "hashProgramTemplate: case-folding tie-break — keys equal when lowercased sort lower-before-upper (localeCompare tertiary, NOT §9 code-point)",
+      "kind": "hash",
+      "templateKind": "training",
+      "template": {
+        "id": "tpl-case-fold",
+        "name": "Case Fold",
+        "focus": "test",
+        "duration": 50,
+        "caseFoldProbe": { "AB": 1, "ab": 2, "Ab": 3, "aB": 4, "zz": 5, "ZZ": 6 }
+      }
+    }
+  ]
+}

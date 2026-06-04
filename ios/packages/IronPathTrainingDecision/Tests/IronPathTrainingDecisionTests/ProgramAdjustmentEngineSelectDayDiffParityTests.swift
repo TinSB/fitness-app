@@ -57,7 +57,7 @@ final class ProgramAdjustmentEngineSelectDayDiffParityTests: XCTestCase {
     // MARK: - envelopes
 
     func testGoldenEnvelopes() throws {
-        for name in ["select-day-cases-v1", "build-diff-cases-v1"] {
+        for name in ["select-day-cases-v1", "build-diff-cases-v1", "build-diff-bword-cases-v1"] {
             XCTAssertTrue(
                 FileManager.default.fileExists(atPath: Self.goldenURL(name).path),
                 "missing program-adjust golden: \(name)"
@@ -116,6 +116,42 @@ final class ProgramAdjustmentEngineSelectDayDiffParityTests: XCTestCase {
             // Omitted (null) programTemplate / templates ⇒ the TS default params
             // (DEFAULT_PROGRAM_TEMPLATE / [sourceProgramTemplate]); pass nil so the Swift
             // port substitutes the same defaults.
+            let programValue = c.rawValue("programTemplate")
+            let program: ProgramTemplate? = (programValue == nil || programValue!.isNull)
+                ? nil : try ProgramTemplate(decoding: programValue!)
+            let templatesValue = c.rawValue("templates")
+            let templates: [TrainingTemplate]? = (templatesValue == nil || templatesValue!.isNull)
+                ? nil : try (templatesValue!.arrayValue ?? []).map { try TrainingTemplate(decoding: $0) }
+
+            let result = Engine.buildAdjustmentDiff(
+                draft: draft, sourceProgramTemplate: source, programTemplate: program, templates: templates
+            )
+
+            let computed = try result.encoded().canonicalJSONString()
+            let goldenResult = try XCTUnwrap(c.rawValue("result"), "\(label): result").canonicalJSONString()
+            XCTAssertEqual(computed, goldenResult, "\(fixtureId)/\(label): ProgramAdjustmentDiff canonical mismatch")
+        }
+    }
+
+    // MARK: - build-diff-bword-cases (PA-FIX: engine-mirror ASCII \b word boundary)
+
+    /// Pins the S4 engine-mirror fix: a day name that glues an English template token
+    /// to a CJK char ('legs训练') must format through the residual-English-word guard
+    /// to the fallback '未指定训练日' (JS ASCII `\b` finds the boundary), NOT leak the raw
+    /// name (an unfixed ICU `\b` treats CJK as a word char and finds none). Same shape
+    /// as `testBuildDiffCasesParity`, over the additive bword fixture.
+    func testBuildDiffBwordCasesParity() throws {
+        let fixtureId = "program-adjust/build-diff-bword-cases-v1"
+        let root = try root(fixtureId, "build-diff-bword-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 1, "expected the ASCII-\\b build-diff case")
+        for value in cases {
+            let c = try value.requireObject("program-adjust build-diff-bword case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            XCTAssertEqual(c.optionalString("kind"), "build-diff", "\(label): kind")
+
+            let draft = try ProgramAdjustmentDraft(decoding: try XCTUnwrap(c.rawValue("draft"), "\(label): draft"))
+            let source = try TrainingTemplate(decoding: try XCTUnwrap(c.rawValue("sourceProgramTemplate"), "\(label): sourceProgramTemplate"))
             let programValue = c.rawValue("programTemplate")
             let program: ProgramTemplate? = (programValue == nil || programValue!.isNull)
                 ? nil : try ProgramTemplate(decoding: programValue!)

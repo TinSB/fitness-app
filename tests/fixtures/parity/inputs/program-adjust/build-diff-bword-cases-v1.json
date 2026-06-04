@@ -1,0 +1,47 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/build-diff-bword-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-FIX (S4 \\b fidelity, engine-mirror) buildAdjustmentDiff word-boundary parity — a reduce_support diff over a day whose NAME is an English template token glued directly to a CJK char ('legs训练', no separator). summarizeSupportState formats that day name through the engine's local formatTemplateName mirror; JS \\b is ASCII-word-only and DOES find a boundary between 'legs' and '训', so the residual-English-word guard fires and the day label falls back to '未指定训练日'. An unfixed NSRegularExpression (ICU) \\b treats CJK as a word char, finds NO boundary, and would leak the raw 'legs训练'. Existing build-diff-cases-v1 keeps English tokens space/dash-delimited, so this divergence was unexercised; this fixture pins it. Generated from src/engines/programAdjustmentEngine.ts; the Swift port (with \\b spelled as explicit ASCII look-arounds) compute-asserts the ProgramAdjustmentDiff == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "aac72ebe5db171317a3e9bbcbeb3335fdaf8baa7",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — buildAdjustmentDiff is clockless. Synthetic template; userId-free; no email/token. The 'legs训练' day name exercises the ASCII word-boundary fix only."
+  },
+  "cases": [
+    {
+      "label": "reduce_support over a day whose name is an English template word glued to CJK ('legs训练') → ASCII-\\b lock: summarizeSupportState's formatDayTemplateName hits the residual-English-word guard and returns fallback '未指定训练日', NOT the raw 'legs训练'",
+      "kind": "build-diff",
+      "draft": {
+        "id": "draft-bword-1",
+        "title": "推 A 下周实验调整",
+        "summary": "天名为英文直接黏 CJK 的辅助层调整。",
+        "sourceProgramTemplateId": "push-a",
+        "changes": [
+          { "id": "c1", "type": "reduce_support", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "muscleId": "胸", "reason": "恢复压力偏高" }
+        ]
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70,
+        "exercises": [
+          { "id": "bench-press", "muscle": "胸", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "programTemplate": {
+        "id": "prog-bword-1", "correctionStrategy": "moderate", "functionalStrategy": "standard",
+        "dayTemplates": [
+          { "id": "push-a", "name": "legs训练", "focusMuscles": ["胸"], "correctionBlockIds": ["corr_scapular_control_01", "corr_thoracic_rotation_01"], "mainExerciseIds": ["bench-press"], "functionalBlockIds": ["func_overhead_stability_01", "func_core_anti_rotation_01"], "estimatedDurationMin": 60 }
+        ]
+      },
+      "templates": [
+        {
+          "id": "push-a", "name": "推 A", "focus": "推", "duration": 70,
+          "exercises": [
+            { "id": "bench-press", "muscle": "胸", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+          ]
+        }
+      ]
+    }
+  ]
+}

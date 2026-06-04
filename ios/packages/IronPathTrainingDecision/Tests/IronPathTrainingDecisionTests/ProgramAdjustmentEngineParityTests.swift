@@ -67,7 +67,7 @@ final class ProgramAdjustmentEngineParityTests: XCTestCase {
     // MARK: - envelopes
 
     func testGoldenEnvelopes() throws {
-        let names = ["hash-cases-v1", "rollback-cases-v1"]
+        let names = ["hash-cases-v1", "rollback-cases-v1", "hash-fold-cases-v1"]
         for name in names {
             XCTAssertTrue(
                 FileManager.default.fileExists(atPath: Self.goldenURL(name).path),
@@ -109,6 +109,37 @@ final class ProgramAdjustmentEngineParityTests: XCTestCase {
         // to stableStringify('{}'), independent of which typed projection decodes them.
         if emptyHashes.count >= 2 {
             XCTAssertEqual(Set(emptyHashes).count, 1, "empty template overloads must agree on the hash")
+        }
+    }
+
+    // MARK: - hash-fold-cases (PA-FIX: keyOrderLess localeCompare case tie-break)
+
+    /// Pins the S7 fidelity fix: for keys EQUAL once lowercased, stableStringify's
+    /// localeCompare case tie-break sorts lower-before-upper (the inverse of §9
+    /// canonicalKeyOrder's code-point tie-break). The golden is the REAL TS hash; a
+    /// regressed keyOrderLess (code-point `<`) would byte-drift the serialization.
+    func testHashFoldCasesParity() throws {
+        let fixtureId = "program-adjust/hash-fold-cases-v1"
+        let root = try root(fixtureId, "hash-fold-cases-v1")
+        let cases = root.optionalArray("cases") ?? []
+        XCTAssertGreaterThanOrEqual(cases.count, 1, "expected the case-folding hash case")
+        for value in cases {
+            let c = try value.requireObject("program-adjust hash-fold case")
+            let label = c.optionalString("label") ?? "(unlabeled)"
+            XCTAssertEqual(c.optionalString("kind"), "hash", "\(label): kind")
+            let templateValue = try XCTUnwrap(c.rawValue("template"), "\(label): template")
+            let golden = try XCTUnwrap(c.optionalString("hash"), "\(label): hash")
+            let actual: String
+            switch c.optionalString("templateKind") {
+            case "training":
+                actual = Engine.hashProgramTemplate(try TrainingTemplate(decoding: templateValue))
+            case "program":
+                actual = Engine.hashProgramTemplate(try ProgramTemplate(decoding: templateValue))
+            case let other:
+                XCTFail("\(label): unexpected templateKind \(other ?? "nil")")
+                continue
+            }
+            XCTAssertEqual(actual, golden, "\(fixtureId)/\(label): hashProgramTemplate (case-fold) mismatch")
         }
     }
 

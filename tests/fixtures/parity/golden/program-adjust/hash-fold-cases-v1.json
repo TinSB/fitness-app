@@ -1,0 +1,32 @@
+{
+  "cases": [
+    {
+      "hash": "tpl-fbc82f06",
+      "kind": "hash",
+      "label": "hashProgramTemplate: case-folding tie-break — keys equal when lowercased sort lower-before-upper (localeCompare tertiary, NOT §9 code-point)",
+      "template": {
+        "caseFoldProbe": {
+          "ab": 2,
+          "aB": 4,
+          "Ab": 3,
+          "AB": 1,
+          "zz": 5,
+          "ZZ": 6
+        },
+        "duration": 50,
+        "focus": "test",
+        "id": "tpl-case-fold",
+        "name": "Case Fold"
+      },
+      "templateKind": "training"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "aac72ebe5db171317a3e9bbcbeb3335fdaf8baa7",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/hash-fold-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/hash-fold-cases-v1"
+}

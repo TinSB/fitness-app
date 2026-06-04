@@ -742,6 +742,17 @@ const FIXTURE_IDS = [
   // Clock + makeId seed are injected (deterministic-clock). Generated, never hand-edited (§22).
   'program-adjust/create-draft-cases-v1',
   'program-adjust/apply-draft-cases-v1',
+  // PA-FIX (PA medium-debt cleanup) — 3 ADDITIVE goldens locking the audit fixes,
+  // each reusing an existing generator over a NEW fixture file (existing goldens stay
+  // byte-identical, §22): hash-fold pins the S7 keyOrderLess localeCompare case
+  // tie-break (keys equal when lowercased); build-diff-bword pins the S4 engine-mirror
+  // ASCII \b fix (English token glued to CJK); apply-draft-opaque pins the WDay
+  // open-bag round-trip (per-day unknown keys + absent optional blocks survive the
+  // applyAdjustmentDraft rebuild — the S10 data-safety prerequisite). Generated,
+  // never hand-edited (§22).
+  'program-adjust/hash-fold-cases-v1',
+  'program-adjust/build-diff-bword-cases-v1',
+  'program-adjust/apply-draft-opaque-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3467,6 +3478,10 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'program-adjust/build-diff-cases-v1': generateProgramAdjustBuildDiff,
   'program-adjust/create-draft-cases-v1': generateProgramAdjustCreateDraft,
   'program-adjust/apply-draft-cases-v1': generateProgramAdjustApplyDraft,
+  // PA-FIX — reuse the existing generators over the NEW additive fixtures.
+  'program-adjust/hash-fold-cases-v1': generateProgramAdjustHash,
+  'program-adjust/build-diff-bword-cases-v1': generateProgramAdjustBuildDiff,
+  'program-adjust/apply-draft-opaque-cases-v1': generateProgramAdjustApplyDraft,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

@@ -1,0 +1,60 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/apply-draft-opaque-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-FIX (S10 data-safety prerequisite) applyAdjustmentDraft open-bag round-trip parity — applies an add_sets draft while the current program's dayTemplates carry per-day UNKNOWN/future keys (themeColor / experimentalRpeCap / customBlock / legacyNotes / futureBlockIds), an ABSENT optional block (functionalBlockIds omitted), and a program-level unknown key (futureTopLevelKey). applyAdjustmentDraft rebuilds updatedProgramTemplate.dayTemplates, and that program is the value the S10 write boundary persists — so the rebuild MUST NOT drop unknown keys nor materialise an absent optional block as []. The touched day keeps its open bag through ensureProgramDayTemplate's {...base} spread; the untouched day + the program-level bag survive the cloneProgram rebuild verbatim. Existing apply-draft-cases-v1 days carry all documented blocks and no unknown keys, so the lossy projection was undetected; this fixture pins it (introspection-style load-bearing). Generated from src/engines/programAdjustmentEngine.ts; the Swift port (with the lossless WDay open-bag mirror) canonical-asserts the ApplyAdjustmentDraftResult == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "aac72ebe5db171317a3e9bbcbeb3335fdaf8baa7",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "sourceNotes": "applyAdjustmentDraft reads the wall clock for appliedAt (ts:829) + makeId for the history id (ts:889); the generator substitutes the injected deterministicClockIso / fixed historyIdSeed so the golden is byte-deterministic. All drafts/templates synthetic; userId values use the allowlisted synthetic-user placeholder; no email/token. The themeColor/customBlock/futureTopLevelKey/legacyNotes/futureBlockIds keys are synthetic unknown-field placeholders proving open-bag passthrough. ZERO WRITE — applyAdjustmentDraft only returns the result."
+  },
+  "cases": [
+    {
+      "label": "data safety: applies add_sets while PRESERVING per-day unknown keys + ABSENT optional blocks — touched day keeps its open bag via ensureProgramDayTemplate {...base}, untouched day + program-level open bag survive the cloneProgram rebuild verbatim",
+      "kind": "apply-draft",
+      "snapshotHashFromSource": true,
+      "draft": {
+        "id": "adjustment-draft-opaque-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "sourceFingerprint": "fp-push-a-opaque",
+        "title": "推 A 下周实验调整",
+        "summary": "增加卧推组数。",
+        "selectedRecommendationIds": ["rec-1"],
+        "changes": [
+          { "id": "c1", "type": "add_sets", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "bench-press", "exerciseName": "平板卧推", "muscleId": "chest", "setsDelta": 2, "reason": "胸推容量偏低" }
+        ],
+        "confidence": "high",
+        "riskLevel": "low",
+        "explanation": "胸推容量偏低",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "note": "基础推日",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "chest": 12, "back": 10 },
+        "futureTopLevelKey": { "kept": "verbatim" },
+        "dayTemplates": [
+          {
+            "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": ["corr_scapular_control_01"], "mainExerciseIds": ["bench-press"], "estimatedDurationMin": 70,
+            "themeColor": "crimson", "experimentalRpeCap": 8.5, "customBlock": { "nestedKey": "kept", "list": [1, 2] }
+          },
+          {
+            "id": "pull-b", "name": "拉 B", "focusMuscles": ["back"], "mainExerciseIds": ["row"], "estimatedDurationMin": 65,
+            "themeColor": "navy", "legacyNotes": "kept verbatim", "futureBlockIds": ["fut-1"]
+          }
+        ]
+      }
+    }
+  ]
+}
