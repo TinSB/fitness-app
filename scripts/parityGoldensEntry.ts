@@ -357,7 +357,15 @@ import type { AdjustmentChange } from '../src/models/training-model';
 // program-adjust select-day / build-diff goldens are GENERATED from TS truth
 // (both are clockless → generatedAtPolicy 'none'; the new Date() at ts:829 lives
 // in applyAdjustmentDraft, NOT in buildAdjustmentDiff). Generated, never hand-edited (§22).
-import { hashProgramTemplate, rollbackAdjustment, selectBestDayForNewExercise, buildAdjustmentDiff } from '../src/engines/programAdjustmentEngine';
+// PA-S9 (PA-1c) — adds the LAST two exports createAdjustmentDraftFromRecommendations
+// (ts:471) + applyAdjustmentDraft (ts:809), completing PA-1. Both read the wall clock
+// (ts:489/496 createdAt + sourceTemplateUpdatedAt fallback; ts:829 appliedAt) and
+// applyAdjustmentDraft's history id uses makeId (ts:889, Date.now()+random); the generator
+// runs the REAL TS engine then SUBSTITUTES only those non-deterministic fields with the
+// injected parityMeta.deterministicClockIso / a fixed makeId seed (none feed any
+// fingerprint/id), mirroring the Swift port's nowIso/historyIdSeed injection. Generated,
+// never hand-edited (§22). generatedAtPolicy 'deterministic-clock'.
+import { hashProgramTemplate, rollbackAdjustment, selectBestDayForNewExercise, buildAdjustmentDiff, createAdjustmentDraftFromRecommendations, applyAdjustmentDraft } from '../src/engines/programAdjustmentEngine';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -724,6 +732,16 @@ const FIXTURE_IDS = [
   // riskLevel tiers. Generated, never hand-edited (§22).
   'program-adjust/select-day-cases-v1',
   'program-adjust/build-diff-cases-v1',
+  // PA-S9 (PA-1c) — createAdjustmentDraftFromRecommendations / applyAdjustmentDraft OUTPUT
+  // parity (completing PA-1). create-draft pins the changeFromRecommendation branches
+  // (add_sets / add_new / remove_sets / swap / support / keep), resolvePrimarySourceTemplateId,
+  // confidence + riskLevel tiers, buildAdjustmentChangeId, the empty-actionable draft, and the
+  // S6 fingerprint/instanceId rewrite + S8 diffPreview. apply-draft pins the hash-match apply /
+  // hash-mismatch expired early-return, add_new-without-day skip, support apply & skip, exercise
+  // apply & skip, summarizeMainChanges, ensureProgramDayTemplate, and the historyItem assembly.
+  // Clock + makeId seed are injected (deterministic-clock). Generated, never hand-edited (§22).
+  'program-adjust/create-draft-cases-v1',
+  'program-adjust/apply-draft-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3234,6 +3252,107 @@ const generateProgramAdjustBuildDiff = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// PA-S9 (PA-1c) — createAdjustmentDraftFromRecommendations OUTPUT parity. Runs the REAL TS
+// createDraft (which threads changeFromRecommendation / resolvePrimarySourceTemplateId /
+// highestConfidence / riskLevelForDraft / buildAdjustmentChangeId + S6 fingerprint/instanceId
+// + S8 buildAdjustmentDiff), then SUBSTITUTES the two wall-clock fields (ts:489 createdAt;
+// ts:496 sourceTemplateUpdatedAt fallback — only when the resolved source has no updatedAt).
+// Neither feeds the fingerprint/id, so the post-hoc substitution is faithful and matches the
+// Swift port's injected nowIso. Echoes engineInput VERBATIM + the rewritten draft.
+const generateProgramAdjustCreateDraft = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: program-adjust/create-draft requires deterministicClockIso');
+  }
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'create-draft') {
+      throw new Error(`parityGoldensEntry: program-adjust/create-draft unknown case kind '${String(c.kind)}'`);
+    }
+    const nowIso = c.now ?? meta.deterministicClockIso;
+    const context = c.context ?? {};
+    const result = createAdjustmentDraftFromRecommendations(c.recommendations, c.sourceProgramTemplate, context);
+    // ts:489 createdAt — always a wall-clock read; pin it.
+    result.createdAt = nowIso;
+    // ts:496 sourceTemplateUpdatedAt = resolvedSource.updatedAt || new Date(): pin ONLY when
+    // the value is the wall-clock fallback (i.e. not one of the provided templates' updatedAt),
+    // mirroring the Swift `resolvedSource.updatedAt ?? nowIso`.
+    const availableTemplates = (Array.isArray(context.templates) && context.templates.length)
+      ? context.templates : [c.sourceProgramTemplate];
+    const providedUpdatedAts = new Set(availableTemplates.map((t: any) => t?.updatedAt).filter(Boolean));
+    if (!providedUpdatedAts.has(result.sourceTemplateUpdatedAt)) {
+      result.sourceTemplateUpdatedAt = nowIso;
+    }
+    return {
+      label: c.label ?? null,
+      kind: 'create-draft',
+      now: nowIso,
+      recommendations: c.recommendations,
+      sourceProgramTemplate: c.sourceProgramTemplate,
+      context,
+      result,
+    };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+// PA-S9 (PA-1c) — applyAdjustmentDraft OUTPUT parity. PURE / ZERO WRITE: the REAL TS engine
+// computes the experimental template / updated program / history item on CLONES and RETURNS
+// them (no persistence). The generator SUBSTITUTES only the wall-clock / random fields TS
+// produces — ts:829 appliedAt (→ experimentalTemplate.updatedAt/.appliedAt, draft.appliedAt,
+// historyItem.appliedAt) and ts:889 makeId('adjustment-history') (→ historyItem.id) — with the
+// injected nowIso / `adjustment-history-${historyIdSeed}`; none feed any fingerprint. The
+// expired early-return (hash mismatch, ts:816) has NO clock field. Echoes engineInput VERBATIM
+// + the ApplyAdjustmentDraftResult. The Swift port takes nowIso/historyIdSeed explicitly and
+// canonical-asserts.
+const generateProgramAdjustApplyDraft = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: program-adjust/apply-draft requires deterministicClockIso');
+  }
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'apply-draft') {
+      throw new Error(`parityGoldensEntry: program-adjust/apply-draft unknown case kind '${String(c.kind)}'`);
+    }
+    const nowIso = c.now ?? meta.deterministicClockIso;
+    const historyIdSeed = c.historyIdSeed ?? 'test-history-seed';
+    // `snapshotHashFromSource: true` → set the draft's sourceTemplateSnapshotHash to the REAL
+    // hashProgramTemplate(source) so the expiry guard (ts:816) sees a MATCH and proceeds to
+    // apply (the "hash match → applies" branch). The hash is echoed in the draft so the Swift
+    // port reads the identical value — no offline hash computation, no drift.
+    const draft = c.draft as ProgramAdjustmentDraft;
+    if (c.snapshotHashFromSource) {
+      draft.sourceTemplateSnapshotHash = hashProgramTemplate(c.sourceProgramTemplate);
+    }
+    const result = applyAdjustmentDraft(
+      draft,
+      c.sourceProgramTemplate,
+      c.currentProgramTemplate,
+      c.templates,
+    );
+    if (result.ok) {
+      if (result.experimentalTemplate) {
+        result.experimentalTemplate.updatedAt = nowIso; // ts:837
+        result.experimentalTemplate.appliedAt = nowIso; // ts:841
+      }
+      if (result.draft) result.draft.appliedAt = nowIso; // ts:911
+      if (result.historyItem) {
+        result.historyItem.appliedAt = nowIso; // ts:890
+        result.historyItem.id = `adjustment-history-${historyIdSeed}`; // ts:889 (makeId injected)
+      }
+    }
+    return {
+      label: c.label ?? null,
+      kind: 'apply-draft',
+      now: nowIso,
+      historyIdSeed,
+      draft,
+      sourceProgramTemplate: c.sourceProgramTemplate,
+      currentProgramTemplate: c.currentProgramTemplate ?? null,
+      templates: c.templates ?? null,
+      result,
+    };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3346,6 +3465,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'program-adjust/rollback-cases-v1': generateProgramAdjustRollback,
   'program-adjust/select-day-cases-v1': generateProgramAdjustSelectDay,
   'program-adjust/build-diff-cases-v1': generateProgramAdjustBuildDiff,
+  'program-adjust/create-draft-cases-v1': generateProgramAdjustCreateDraft,
+  'program-adjust/apply-draft-cases-v1': generateProgramAdjustApplyDraft,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
