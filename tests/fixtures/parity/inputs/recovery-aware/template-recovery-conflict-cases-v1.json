@@ -1,0 +1,119 @@
+{
+  "parityMeta": {
+    "id": "recovery-aware/template-recovery-conflict-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-A buildTemplateRecoveryConflict function-level parity — synthetic templates driving templateLevelFromExerciseConflicts (none/low/moderate/high via high/highMain/ratio), templateKindFromConflict (train/modified_train/rest/active_recovery via level×readiness×pain×highMainCount, incl. lowReadiness score<50 AND trainingAdjustment='recovery'), changeForConflict (skip_accessory · reduce_volume accessory · substitute main+alternatives · reduce_intensity main+high · reduce_volume main+moderate) + uniqueChanges dedup, conflictingExercises (moderate/high, rank-sorted) + safeExercises (none/low), and every summary branch (train-none/train-low/modified_train topConflict+safeCount/rest/active_recovery) incl. the formatTemplateName map + CJK-passthrough. Consumes the SC-1b buildExerciseRecoveryConflict per exercise. Generated from src/engines/recoveryAwareScheduler.ts; the Swift RecoveryAwareScheduler compute-asserts each case == golden. Clockless → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "36daab0e5e9a9b9bdad77998a94dc6d54102e637",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "empty-exercises-train-none",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "cjk-name-passthrough-train-none",
+      "template": { "id": "custom-day", "name": "胸部强化日", "exercises": [] }
+    },
+    {
+      "label": "low-conflict-train",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "ex-low", "name": "辅助胸", "secondaryMuscles": ["胸"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "moderate-two-accessory-modified-train",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "ex-mod1", "name": "胸动作一", "primaryMuscles": ["胸"] },
+        { "id": "ex-mod2", "name": "胸动作二", "primaryMuscles": ["胸"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "high-main-pain-lowreadiness-rest",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "painAreas": ["胸部"],
+      "readinessResult": { "score": 40, "trainingAdjustment": "normal" }
+    },
+    {
+      "label": "high-main-soreness-lowreadiness-active-recovery",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "sorenessAreas": ["胸部"],
+      "readinessResult": { "score": 45, "trainingAdjustment": "conservative" }
+    },
+    {
+      "label": "high-main-pain-active-recovery-no-lowreadiness",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "painAreas": ["胸部"],
+      "readinessResult": { "score": 80, "trainingAdjustment": "normal" }
+    },
+    {
+      "label": "lowreadiness-via-recovery-adjustment-rest",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "painAreas": ["胸部"],
+      "readinessResult": { "score": 80, "trainingAdjustment": "recovery" }
+    },
+    {
+      "label": "high-three-accessory-modified-train-skip-accessory",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "a1", "name": "卧推机一", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "low" },
+        { "id": "a2", "name": "卧推机二", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "low" },
+        { "id": "a3", "name": "卧推机三", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "low" }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "high-main-substitute-with-alternatives",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "s1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound", "alternatives": ["alt-x"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "high-main-reduce-intensity-no-alternatives",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "r1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "moderate-main-reduce-volume-no-alternatives",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "mm1", "name": "胸大肌训练", "primaryMuscles": ["胸"], "kind": "compound" }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "duplicate-exercise-unique-changes-dedup",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "dup1", "name": "卧推机", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "low" },
+        { "id": "dup1", "name": "卧推机", "primaryMuscles": ["胸"], "movementPattern": "卧推", "fatigueCost": "low" }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "mixed-high-and-safe-exercises",
+      "template": { "id": "push-a", "name": "推 A", "exercises": [
+        { "id": "hi", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推" },
+        { "id": "safe", "name": "腿举", "primaryMuscles": ["腿"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    }
+  ]
+}

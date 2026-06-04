@@ -235,6 +235,13 @@ const FIXTURE_IDS = [
   // cases) pinning buildExerciseRecoveryConflict across the conflict-level / action / scoring /
   // movement-pattern / override-merge branches. Generated; never hand-edited (§22).
   'exercise-recovery-conflict/conflict-cases-v1',
+  // SC-A recoveryAwareScheduler port — 3 ADDITIVE OUTPUT fixtures (body-part-conflict /
+  // template-recovery-conflict / recommendation cases) pinning buildTemplateBodyPartConflictScore /
+  // buildTemplateRecoveryConflict / buildRecoveryAwareRecommendation across every scoring /
+  // level / kind / change / dispatch branch. Generated; never hand-edited (§22).
+  'recovery-aware/body-part-conflict-cases-v1',
+  'recovery-aware/template-recovery-conflict-cases-v1',
+  'recovery-aware/recommendation-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
