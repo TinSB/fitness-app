@@ -1,0 +1,1666 @@
+{
+  "cases": [
+    {
+      "activeSession": {
+        "completed": false,
+        "id": "act1",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "history": [],
+      "label": "active-session-incomplete-short-circuit",
+      "result": {
+        "alternatives": [],
+        "confidence": "high",
+        "kind": "train",
+        "reason": "今天已有进行中的训练，优先继续推 A。系统不会生成覆盖当前训练的下次建议。",
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "m1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        }
+      ]
+    },
+    {
+      "history": [],
+      "label": "no-templates-active-recovery-default",
+      "result": {
+        "alternatives": [],
+        "confidence": "low",
+        "kind": "active_recovery",
+        "reason": "当前没有可用训练模板，因此暂时无法判断下次练什么。",
+        "templateName": "暂无下次建议",
+        "warnings": [
+          "请先确认训练计划中至少有一个可用模板。"
+        ]
+      },
+      "templates": [],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [],
+      "label": "cold-start-no-history-ppl",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          },
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          }
+        ],
+        "confidence": "low",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "push-a",
+        "plannedTemplateName": "推 A",
+        "reason": "按计划轮转判断：还没有本轮正式完成记录，建议从推 A开始。 还没有可用于轮转的正式训练记录，先从推 A开始。",
+        "recommendedTemplateId": "push-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "推 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "推 A 可以按计划训练。",
+          "templateId": "push-a",
+          "templateName": "推 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "p1",
+                "exerciseName": "杠铃卧推",
+                "reason": "杠铃卧推与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "推 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          "title": "今日建议：推 A"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "open-cycle-from-history-anchor",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "pull-a",
+        "plannedTemplateName": "拉 A",
+        "reason": "按计划轮转判断：当前这一轮已完成推 A，还缺拉 A、腿 A，因此今天建议拉 A。",
+        "recommendedTemplateId": "pull-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "拉 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "拉 A 可以按计划训练。",
+          "templateId": "pull-a",
+          "templateName": "拉 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "u1",
+                "exerciseName": "引体向上",
+                "reason": "引体向上与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "拉 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          },
+          "title": "今日建议：拉 A"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-28",
+          "finishedAt": "2026-05-28T09:00:00.000Z",
+          "id": "old-pull",
+          "templateId": "pull-a"
+        },
+        {
+          "completed": true,
+          "date": "2026-06-01",
+          "finishedAt": "2026-06-01T09:00:00.000Z",
+          "id": "today-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "today-completed-anchor",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "legs-a",
+        "plannedTemplateName": "腿 A",
+        "reason": "按计划轮转判断：当前这一轮已完成推 A、拉 A，还缺腿 A，因此今天建议腿 A。 这是下次建议，不会覆盖今天已经完成的训练状态。",
+        "recommendedTemplateId": "legs-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "腿 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "腿 A 可以按计划训练。",
+          "templateId": "legs-a",
+          "templateName": "腿 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "l1",
+                "exerciseName": "深蹲",
+                "reason": "深蹲与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "腿 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          },
+          "title": "今日建议：腿 A"
+        },
+        "templateId": "legs-a",
+        "templateName": "腿 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "completedSessionIds": [
+          "today-push"
+        ],
+        "date": "2026-06-01",
+        "lastCompletedSessionId": "today-push",
+        "primaryAction": "view_summary",
+        "status": "completed"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "readiness-low-lowload-swap",
+      "readinessResult": {
+        "score": 38,
+        "trainingAdjustment": "recovery"
+      },
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          }
+        ],
+        "confidence": "low",
+        "conflictLevel": "none",
+        "kind": "train",
+        "overrideReason": "原计划下次是 拉 A，但准备度较低，因此当前建议改为 30 分钟快练 或低负荷安排。",
+        "plannedTemplateId": "pull-a",
+        "plannedTemplateName": "拉 A",
+        "reason": "按计划轮转判断：当前这一轮已完成推 A，还缺拉 A，因此今天建议拉 A。 原计划下次是 拉 A，但准备度较低，因此当前建议改为 30 分钟快练 或低负荷安排。",
+        "recommendedTemplateId": "quick-30",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "30 分钟快练 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "30 分钟快练 可以按计划训练。",
+          "templateId": "quick-30",
+          "templateName": "30 分钟快练",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "q1",
+                "exerciseName": "哑铃推举",
+                "reason": "哑铃推举与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "30 分钟快练 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "quick-30",
+            "templateName": "30 分钟快练"
+          },
+          "title": "今日建议：30 分钟快练"
+        },
+        "templateId": "quick-30",
+        "templateName": "30 分钟快练",
+        "warnings": [
+          "准备度较低，建议把下次训练作为恢复或低负荷日执行。"
+        ]
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 30,
+          "exercises": [
+            {
+              "id": "q1",
+              "kind": "compound",
+              "name": "哑铃推举",
+              "primaryMuscles": [
+                "肩"
+              ]
+            }
+          ],
+          "id": "quick-30",
+          "name": "30 分钟快练"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-pull",
+          "templateId": "pull-a"
+        }
+      ],
+      "label": "readiness-conservative-warning",
+      "readinessResult": {
+        "score": 72,
+        "trainingAdjustment": "conservative"
+      },
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          }
+        ],
+        "confidence": "medium",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "push-a",
+        "plannedTemplateName": "推 A",
+        "reason": "按计划轮转判断：当前这一轮已完成拉 A，还缺推 A，因此今天建议推 A。",
+        "recommendedTemplateId": "push-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "推 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "推 A 可以按计划训练。",
+          "templateId": "push-a",
+          "templateName": "推 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "p1",
+                "exerciseName": "杠铃卧推",
+                "reason": "杠铃卧推与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "推 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          "title": "今日建议：推 A"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "warnings": [
+          "当前恢复状态提示需要保守执行。"
+        ]
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "training-mode-strength-label",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "pull-a",
+        "plannedTemplateName": "拉 A",
+        "reason": "按计划轮转判断：当前这一轮已完成推 A，还缺拉 A，因此今天建议拉 A。 当前训练侧重为力量，仅用于解释本次建议，不会改变计划顺序。",
+        "recommendedTemplateId": "pull-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "拉 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "拉 A 可以按计划训练。",
+          "templateId": "pull-a",
+          "templateName": "拉 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "u1",
+                "exerciseName": "引体向上",
+                "reason": "引体向上与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "拉 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          },
+          "title": "今日建议：拉 A"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      },
+      "trainingMode": "strength"
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "soreness-recovery-rest-low-readiness",
+      "painAreas": [
+        "胸部"
+      ],
+      "readinessResult": {
+        "score": 35,
+        "trainingAdjustment": "recovery"
+      },
+      "result": {
+        "alternatives": [],
+        "confidence": "low",
+        "conflictLevel": "high",
+        "kind": "rest",
+        "overrideReason": "推 A 与今天的恢复信号冲突较高，且准备度偏低。建议今天休息或做很轻量的恢复活动。",
+        "plannedTemplateId": "push-a",
+        "plannedTemplateName": "推 A",
+        "reason": "按计划轮转判断：上一轮推、拉、腿已完成；下次进入新一轮，建议从推 A开始。 准备度较低，建议保守执行下次训练。 本次出现重复模板，是因为其他模板存在更高风险或计划中缺少可用备选。 推 A 与今天的恢复信号冲突较高，且准备度偏低。建议今天休息或做很轻量的恢复活动。",
+        "recovery": {
+          "affectedAreas": [
+            "胸部"
+          ],
+          "conflictLevel": "high",
+          "kind": "rest",
+          "reasons": [
+            "推 A 与今天恢复状态冲突较高，且准备度偏低，建议休息。",
+            "胸部不适与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "胸部不适与上斜卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "准备度偏低时，高冲突模板不适合作为正常训练推荐。"
+          ],
+          "requiresConfirmationToOverride": true,
+          "suggestedChanges": [
+            {
+              "reason": "今天保留恢复空间，不强行安排正式训练。",
+              "type": "rest"
+            }
+          ],
+          "summary": "推 A 与今天的恢复信号冲突较高，且准备度偏低。建议今天休息或做很轻量的恢复活动。",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [
+              {
+                "affectedAreas": [
+                  "胸部"
+                ],
+                "conflictLevel": "high",
+                "exerciseId": "p1",
+                "exerciseName": "杠铃卧推",
+                "reason": "胸部不适与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+                "recommendedAction": "skip"
+              },
+              {
+                "affectedAreas": [
+                  "胸部"
+                ],
+                "conflictLevel": "high",
+                "exerciseId": "p2",
+                "exerciseName": "上斜卧推",
+                "reason": "胸部不适与上斜卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+                "recommendedAction": "skip"
+              }
+            ],
+            "conflictLevel": "high",
+            "kind": "rest",
+            "safeExercises": [],
+            "suggestedChanges": [
+              {
+                "exerciseId": "p1",
+                "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+                "type": "reduce_intensity"
+              },
+              {
+                "exerciseId": "p2",
+                "reason": "上斜卧推 与恢复信号重叠，本次保持保守。",
+                "type": "reduce_intensity"
+              }
+            ],
+            "summary": "推 A 与今天恢复状态冲突较高，且准备度偏低，建议休息。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          "title": "今日建议：休息"
+        },
+        "templateName": "休息",
+        "warnings": [
+          "准备度较低，建议降低负荷、减少组数或缩短训练。",
+          "下次建议仍是推 A，请确认这是因为计划里没有更合适的备选，或近期不适、训练量不足导致需要重复。",
+          "推 A 与今天恢复状态冲突较高，且准备度偏低，建议休息。",
+          "胸部不适与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。"
+        ]
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "movementPattern": "卧推",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            },
+            {
+              "id": "p2",
+              "kind": "compound",
+              "movementPattern": "卧推",
+              "name": "上斜卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "soreness-recovery-override-alternative",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "legs-a",
+        "plannedTemplateName": "腿 A",
+        "reason": "按计划轮转判断：当前这一轮已完成推 A，还缺腿 A，因此今天建议腿 A。",
+        "recommendedTemplateId": "legs-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "腿 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "腿 A 可以按计划训练。",
+          "templateId": "legs-a",
+          "templateName": "腿 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "l1",
+                "exerciseName": "深蹲",
+                "reason": "深蹲与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "腿 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          },
+          "title": "今日建议：腿 A"
+        },
+        "templateId": "legs-a",
+        "templateName": "腿 A",
+        "warnings": []
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "movementPattern": "卧推",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            },
+            {
+              "id": "p2",
+              "kind": "compound",
+              "movementPattern": "卧推",
+              "name": "上斜卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 50,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "weekly-deficit-reasons-alternatives",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          {
+            "reason": "腿本周训练量还差约 9 组。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "pull-a",
+        "plannedTemplateName": "拉 A",
+        "reason": "按计划轮转判断：当前这一轮已完成推 A，还缺拉 A、腿 A，因此今天建议拉 A。",
+        "recommendedTemplateId": "pull-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "拉 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "拉 A 可以按计划训练。",
+          "templateId": "pull-a",
+          "templateName": "拉 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "u1",
+                "exerciseName": "引体向上",
+                "reason": "引体向上与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "拉 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          },
+          "title": "今日建议：拉 A"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      },
+      "weeklyVolumeSummary": {
+        "byMuscle": {
+          "chest": {
+            "targetSets": 14,
+            "weightedEffectiveSets": 14
+          }
+        },
+        "muscles": [
+          {
+            "muscle": "back",
+            "targetSets": 16,
+            "weightedEffectiveSets": 4.5
+          },
+          {
+            "muscle": "legs",
+            "targetSets": 18,
+            "weightedEffectiveSets": 9
+          }
+        ]
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-pull",
+          "templateId": "pull-a"
+        }
+      ],
+      "label": "pain-warnings-surfaced",
+      "painPatterns": [
+        {
+          "area": "肩",
+          "frequency": 3,
+          "lastOccurredAt": "2026-05-29",
+          "severityAvg": 4,
+          "suggestedAction": "deload"
+        }
+      ],
+      "result": {
+        "alternatives": [
+          {
+            "reason": "肩近期有不适记录，建议避免直接安排高风险训练日。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          }
+        ],
+        "confidence": "low",
+        "conflictLevel": "moderate",
+        "kind": "modified_train",
+        "plannedTemplateId": "push-a",
+        "plannedTemplateName": "推 A",
+        "reason": "按计划轮转判断：当前这一轮已完成拉 A，还缺推 A，因此今天建议推 A。 推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+        "recommendedTemplateId": "push-a",
+        "recovery": {
+          "affectedAreas": [
+            "肩部"
+          ],
+          "conflictLevel": "moderate",
+          "kind": "modified_train",
+          "reasons": [
+            "推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+            "肩部酸痛与杠铃卧推存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。"
+          ],
+          "requiresConfirmationToOverride": true,
+          "suggestedChanges": [
+            {
+              "reason": "本次只做保守调整，不改变原训练模板。",
+              "target": "push-a",
+              "type": "reduce_volume"
+            },
+            {
+              "reason": "高冲突动作降低强度，保留更多余力（RIR）。",
+              "target": "push-a",
+              "type": "reduce_intensity"
+            },
+            {
+              "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+              "target": "p1",
+              "type": "reduce_volume"
+            }
+          ],
+          "summary": "推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+          "templateId": "push-a",
+          "templateName": "推 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [
+              {
+                "affectedAreas": [
+                  "肩部"
+                ],
+                "conflictLevel": "moderate",
+                "exerciseId": "p1",
+                "exerciseName": "杠铃卧推",
+                "reason": "肩部酸痛与杠铃卧推存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。",
+                "recommendedAction": "reduce_intensity"
+              }
+            ],
+            "conflictLevel": "moderate",
+            "kind": "modified_train",
+            "safeExercises": [],
+            "suggestedChanges": [
+              {
+                "exerciseId": "p1",
+                "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+                "type": "reduce_volume"
+              }
+            ],
+            "summary": "推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          "title": "今日建议：推 A（保守版）"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "warnings": [
+          "肩近期有不适记录，建议避免直接安排高风险训练日。",
+          "推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+          "肩部酸痛与杠铃卧推存在中等恢复冲突：动作模式会明显调用相关部位，建议降低强度。"
+        ]
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-pull",
+          "programTemplateId": "pull-a",
+          "templateId": "pull-a"
+        }
+      ],
+      "label": "program-order-rotation-used",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "id": "pull-a",
+            "name": "拉 A",
+            "order": 1
+          },
+          {
+            "id": "push-a",
+            "name": "推 A",
+            "order": 2
+          },
+          {
+            "id": "legs-a",
+            "name": "腿 A",
+            "order": 3
+          }
+        ],
+        "id": "prog1"
+      },
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          },
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "push-a",
+        "plannedTemplateName": "推 A",
+        "reason": "按计划轮转判断：当前这一轮已完成拉 A，还缺推 A、腿 A，因此今天建议推 A。",
+        "recommendedTemplateId": "push-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "推 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "推 A 可以按计划训练。",
+          "templateId": "push-a",
+          "templateName": "推 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "p1",
+                "exerciseName": "杠铃卧推",
+                "reason": "杠铃卧推与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "推 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          "title": "今日建议：推 A"
+        },
+        "templateId": "push-a",
+        "templateName": "推 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-30",
+          "finishedAt": "2026-05-30T09:00:00.000Z",
+          "id": "h-upper",
+          "templateId": "upper-a"
+        }
+      ],
+      "label": "non-ppl-rotation-upper-lower",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "upper-a",
+            "templateName": "上肢 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "lower-a",
+        "plannedTemplateName": "下肢 A",
+        "reason": "按计划轮转判断：当前这一轮已完成upper a，还缺lower a，因此今天建议lower a。",
+        "recommendedTemplateId": "lower-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "下肢 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "下肢 A 可以按计划训练。",
+          "templateId": "lower-a",
+          "templateName": "下肢 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "la1",
+                "exerciseName": "深蹲",
+                "reason": "深蹲与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "下肢 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "lower-a",
+            "templateName": "下肢 A"
+          },
+          "title": "今日建议：下肢 A"
+        },
+        "templateId": "lower-a",
+        "templateName": "下肢 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 55,
+          "exercises": [
+            {
+              "id": "ua1",
+              "kind": "compound",
+              "name": "卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "upper-a",
+          "name": "上肢 A"
+        },
+        {
+          "duration": 55,
+          "exercises": [
+            {
+              "id": "la1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "lower-a",
+          "name": "下肢 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-04-01",
+          "finishedAt": "2026-04-01T09:00:00.000Z",
+          "id": "stale-push",
+          "templateId": "push-a"
+        }
+      ],
+      "label": "thirty-day-gap-restart",
+      "result": {
+        "alternatives": [
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "push-a",
+            "templateName": "推 A"
+          },
+          {
+            "reason": "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。",
+            "templateId": "legs-a",
+            "templateName": "腿 A"
+          }
+        ],
+        "confidence": "high",
+        "conflictLevel": "none",
+        "kind": "train",
+        "plannedTemplateId": "pull-a",
+        "plannedTemplateName": "拉 A",
+        "reason": "按计划轮转判断：距离上次主轮转较久，系统从新一轮开始，建议从推 A开始。",
+        "recommendedTemplateId": "pull-a",
+        "recovery": {
+          "affectedAreas": [],
+          "conflictLevel": "none",
+          "kind": "train",
+          "reasons": [
+            "拉 A 与今天标记的恢复部位没有明显重叠。"
+          ],
+          "requiresConfirmationToOverride": false,
+          "suggestedChanges": [],
+          "summary": "拉 A 可以按计划训练。",
+          "templateId": "pull-a",
+          "templateName": "拉 A",
+          "templateRecoveryConflict": {
+            "conflictingExercises": [],
+            "conflictLevel": "none",
+            "kind": "train",
+            "safeExercises": [
+              {
+                "affectedAreas": [],
+                "conflictLevel": "none",
+                "exerciseId": "u1",
+                "exerciseName": "引体向上",
+                "reason": "引体向上与已标记部位没有明显训练重叠，可以按计划执行。",
+                "recommendedAction": "keep"
+              }
+            ],
+            "suggestedChanges": [],
+            "summary": "拉 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+            "templateId": "pull-a",
+            "templateName": "拉 A"
+          },
+          "title": "今日建议：拉 A"
+        },
+        "templateId": "pull-a",
+        "templateName": "拉 A",
+        "warnings": []
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "p1",
+              "kind": "compound",
+              "name": "杠铃卧推",
+              "primaryMuscles": [
+                "胸"
+              ]
+            }
+          ],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "u1",
+              "kind": "compound",
+              "name": "引体向上",
+              "primaryMuscles": [
+                "背"
+              ]
+            }
+          ],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [
+            {
+              "id": "l1",
+              "kind": "compound",
+              "name": "深蹲",
+              "primaryMuscles": [
+                "腿"
+              ]
+            }
+          ],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "todayState": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "0312ffaaefb881d3a9ca8f8711a8bfed8cd43c32",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "next-workout/recommendation-cases-v1"
+  },
+  "sourceFixtureId": "next-workout/recommendation-cases-v1"
+}
