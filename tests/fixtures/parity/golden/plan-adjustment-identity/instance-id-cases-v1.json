@@ -1,0 +1,124 @@
+{
+  "cases": [
+    {
+      "instanceId": "adjustment-draft-coach-action-volumeadaptation-muscle-chest-r1",
+      "kind": "instanceId",
+      "label": "instanceId: basic slug + default revision 1 (revision omitted)",
+      "parentDraftId": null,
+      "revision": null,
+      "sourceFingerprint": "coach-action|volumeadaptation|muscle|chest"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-simple-r3",
+      "kind": "instanceId",
+      "label": "instanceId: explicit integer revision 3",
+      "parentDraftId": null,
+      "revision": 3,
+      "sourceFingerprint": "fp-simple"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-half-up-r3",
+      "kind": "instanceId",
+      "label": "instanceId: fractional 2.5 → Math.round half-up → 3",
+      "parentDraftId": null,
+      "revision": 2.5,
+      "sourceFingerprint": "fp-half-up"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-round-down-r2",
+      "kind": "instanceId",
+      "label": "instanceId: fractional 2.4 → 2",
+      "parentDraftId": null,
+      "revision": 2.4,
+      "sourceFingerprint": "fp-round-down"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-half-one-r1",
+      "kind": "instanceId",
+      "label": "instanceId: 0.5 → round 1 → max(1,1)=1",
+      "parentDraftId": null,
+      "revision": 0.5,
+      "sourceFingerprint": "fp-half-one"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-neg-half-r1",
+      "kind": "instanceId",
+      "label": "instanceId: -0.5 → round -0=0 → max(1,0)=1",
+      "parentDraftId": null,
+      "revision": -0.5,
+      "sourceFingerprint": "fp-neg-half"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-zero-r1",
+      "kind": "instanceId",
+      "label": "instanceId: 0 → round 0 → max(1,0)=1 (clamp)",
+      "parentDraftId": null,
+      "revision": 0,
+      "sourceFingerprint": "fp-zero"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-with-parent-parent-draft-1-r2",
+      "kind": "instanceId",
+      "label": "instanceId: parentDraftId present → -slice(0,24) suffix",
+      "parentDraftId": "parent-draft-1",
+      "revision": 2,
+      "sourceFingerprint": "fp-with-parent"
+    },
+    {
+      "instanceId": "adjustment-draft-21850855-r1",
+      "kind": "instanceId",
+      "label": "instanceId: CJK-only fingerprint normalizes to empty → stableHash(original) fallback",
+      "parentDraftId": null,
+      "revision": null,
+      "sourceFingerprint": "计划调整指纹"
+    },
+    {
+      "instanceId": "adjustment-draft-f52d1915-r1",
+      "kind": "instanceId",
+      "label": "instanceId: special-only fingerprint '###!!!' → empty → stableHash fallback",
+      "parentDraftId": null,
+      "revision": null,
+      "sourceFingerprint": "###!!!"
+    },
+    {
+      "instanceId": "adjustment-draft-coach-action-volumeadaptation-muscle-chest-templ-r4",
+      "kind": "instanceId",
+      "label": "instanceId: long fingerprint with | separators → collapse to - and slice(0,48)",
+      "parentDraftId": null,
+      "revision": 4,
+      "sourceFingerprint": "coach-action|volumeadaptation|muscle|chest|template-unknown|add_sets|chest|exercise-none|w-3|abc1234567"
+    },
+    {
+      "instanceId": "adjustment-draft-fp-long-parent-adjustment-draft-very-lo-r2",
+      "kind": "instanceId",
+      "label": "instanceId: long parentDraftId slug → slice(0,24)",
+      "parentDraftId": "adjustment-draft-very-long-parent-identifier-1234567890",
+      "revision": 2,
+      "sourceFingerprint": "fp-long-parent"
+    },
+    {
+      "instanceId": "adjustment-draft-mixed-case-__slug-r1",
+      "kind": "instanceId",
+      "label": "instanceId: edge dashes + spaces + uppercase → trim/collapse/strip",
+      "parentDraftId": null,
+      "revision": 1,
+      "sourceFingerprint": "  --Mixed CASE  __Slug-- "
+    },
+    {
+      "instanceId": "adjustment-draft-fp-empty-parent-r2",
+      "kind": "instanceId",
+      "label": "instanceId: empty parentDraftId string → no suffix (falsy)",
+      "parentDraftId": "",
+      "revision": 2,
+      "sourceFingerprint": "fp-empty-parent"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "plan-adjustment-identity/instance-id-cases-v1"
+  },
+  "sourceFixtureId": "plan-adjustment-identity/instance-id-cases-v1"
+}

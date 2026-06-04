@@ -187,6 +187,14 @@ const FIXTURE_IDS = [
   'coach-action-identity/fingerprint-cases-v1',
   'coach-action-identity/draft-history-fingerprint-cases-v1',
   'coach-action-identity/dedupe-cases-v1',
+  // PA-S6 planAdjustmentIdentityEngine port — 4 OUTPUT fixtures (the 6 fingerprint
+  // exports + dedupe alias / buildPlanAdjustmentDraftInstanceId / upsert branches /
+  // findReusable+regenerate) that the Swift PlanAdjustmentIdentityEngine
+  // compute-asserts function-by-function. Generated; never hand-edited (§22).
+  'plan-adjustment-identity/fingerprint-cases-v1',
+  'plan-adjustment-identity/instance-id-cases-v1',
+  'plan-adjustment-identity/upsert-cases-v1',
+  'plan-adjustment-identity/regenerate-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

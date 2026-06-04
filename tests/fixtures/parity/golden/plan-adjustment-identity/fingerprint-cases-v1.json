@@ -1,0 +1,368 @@
+{
+  "cases": [
+    {
+      "fingerprint": "coach-action|plateau|review_volume|muscle|chest|tpl-1|add_sets|chest|exercise-none|w-3|576f4c3e",
+      "input": {
+        "actionType": "review_volume",
+        "changeSummary": "ignored-when-title-set",
+        "source": "plateau",
+        "sourceTemplateId": "tpl-1",
+        "suggestedChange": {
+          "muscleId": "chest",
+          "setsDelta": 2
+        },
+        "targetMuscleId": "chest",
+        "title": "Raise chest volume",
+        "weekId": "w-3"
+      },
+      "kind": "input",
+      "label": "input: targetMuscleId priority + source plateau + custom actionType + title/changeSummary"
+    },
+    {
+      "fingerprint": "coach-action|recovery|create_plan_adjustment_preview|muscle|back|prog-9|add_sets|back|exercise-none|cyc-2|ea659c3f",
+      "input": {
+        "cycleId": "cyc-2",
+        "reason": "deload chest",
+        "source": "recovery",
+        "sourceProgramTemplateId": "prog-9",
+        "suggestedChange": {
+          "muscleId": "back",
+          "setsDelta": 3
+        }
+      },
+      "kind": "input",
+      "label": "input: suggestedChange.muscleId fallback (no targetMuscleId) + source recovery + add_sets"
+    },
+    {
+      "fingerprint": "coach-action|datahealth|create_plan_adjustment_preview|exercise|bench-press|tpl-2|remove_sets|muscle-none|bench-press|current-cycle|322c2f2",
+      "input": {
+        "description": "fix bench data",
+        "source": "dataHealth",
+        "sourceTemplateId": "tpl-2",
+        "suggestedChange": {
+          "setsDelta": -1
+        },
+        "targetExerciseId": "bench-press"
+      },
+      "kind": "input",
+      "label": "input: targetExerciseId priority + source dataHealth + remove_sets"
+    },
+    {
+      "fingerprint": "coach-action|dailyadjustment|create_plan_adjustment_preview|exercise|lat-pulldown|template-unknown|swap_exercise|muscle-none|lat-pulldown-row|wk-7|6461fb96",
+      "input": {
+        "reason": "swap row",
+        "source": "dailyAdjustment",
+        "suggestedChange": {
+          "exerciseIds": [
+            "lat-pulldown",
+            "row"
+          ],
+          "removeExerciseIds": [
+            "machine-row"
+          ]
+        },
+        "weekId": "wk-7"
+      },
+      "kind": "input",
+      "label": "input: suggestedChange.exerciseIds[0] fallback + source dailyAdjustment + swap_exercise"
+    },
+    {
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|template|day-push|tpl-3|support_reduce|muscle-none|exercise-none|current-cycle|c4050cbd",
+      "input": {
+        "sourceTemplateId": "tpl-3",
+        "suggestedChange": {
+          "supportDoseAdjustment": "reduce"
+        },
+        "targetDayTemplateId": "day-push",
+        "targetTemplateId": "tpl-ignored",
+        "title": "Push day tweak"
+      },
+      "kind": "input",
+      "label": "input: targetDayTemplateId/targetTemplateId → template + default source (volumeAdaptation) + support_reduce"
+    },
+    {
+      "fingerprint": "coach-action|plateau|create_plan_adjustment_preview|plan|plan-tpl-7|plan-tpl-7|none|muscle-none|exercise-none|current-cycle|963082c2",
+      "input": {
+        "reason": "global plan nudge",
+        "source": "plateau",
+        "sourceTemplateId": "plan-tpl-7"
+      },
+      "kind": "input",
+      "label": "input: plan fallback (sourceTemplateId) + reason drives title/description/reason"
+    },
+    {
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|plan|prog-plan-4|prog-plan-4|none|muscle-none|exercise-none|current-cycle|5f01d8aa",
+      "input": {
+        "changeSummary": "summary text",
+        "sourceProgramTemplateId": "prog-plan-4"
+      },
+      "kind": "input",
+      "label": "input: plan fallback (sourceProgramTemplateId) + no source → volumeAdaptation + changeSummary drives text"
+    },
+    {
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|plan|plan|template-unknown|none|muscle-none|exercise-none|current-cycle|c4050cbd",
+      "input": {},
+      "kind": "input",
+      "label": "input: all-empty → plan/'plan' targetId + all literal text fallbacks 计划调整"
+    },
+    {
+      "action": {
+        "actionType": "review_volume",
+        "description": "d",
+        "reason": "r",
+        "source": "volumeAdaptation",
+        "sourceFingerprint": "precomputed|coach|fp",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "t"
+      },
+      "context": {
+        "muscleId": "chest"
+      },
+      "fingerprint": "precomputed|coach|fp",
+      "kind": "coachAction",
+      "label": "coachAction: sourceFingerprint present → short-circuit returns it (no S5 call)"
+    },
+    {
+      "action": {
+        "actionType": "open_replacement_sheet",
+        "reason": "plateau on bench",
+        "source": "plateau",
+        "targetId": "bench-press",
+        "targetType": "exercise"
+      },
+      "context": {
+        "exerciseId": "bench-press",
+        "sourceTemplateId": "tpl-5",
+        "weekId": "w-1"
+      },
+      "fingerprint": "coach-action|plateau|open_replacement_sheet|exercise|bench-press|tpl-5|none|muscle-none|bench-press|w-1|8d1c1948",
+      "kind": "coachAction",
+      "label": "coachAction: no sourceFingerprint → S5 buildCoachActionFingerprint(action, context)"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "id": "ch-1",
+            "muscleId": "chest",
+            "reason": "more chest",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-05-01T00:00:00.000Z",
+        "id": "draft-fp-1",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "rec-1"
+        ],
+        "sourceFingerprint": "stored|draft|fp",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "ready_to_apply",
+        "summary": "S",
+        "title": "T"
+      },
+      "fingerprint": "stored|draft|fp",
+      "kind": "draft",
+      "label": "draft: sourceFingerprint present → short-circuit returns it"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "id": "ch-2",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-05-02T00:00:00.000Z",
+        "explanation": "Chest lagging",
+        "id": "draft-fp-2",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "volume-rec-7"
+        ],
+        "sourceProgramTemplateId": "prog-2",
+        "sourceRecommendationId": "volume-rec-7",
+        "status": "draft_created",
+        "summary": "Increase chest weekly sets",
+        "title": "Add chest sets"
+      },
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|prog-2|add_sets|chest|exercise-none|current-cycle|d2334d79",
+      "kind": "draft",
+      "label": "draft: no sourceFingerprint → computed via S5 (firstChange muscle target + volume source)"
+    },
+    {
+      "fingerprint": "coach-action|recovery|create_plan_adjustment_preview|muscle|quads|prog-3|remove_sets|quads|exercise-none|current-cycle|90baa591",
+      "item": {
+        "appliedAt": "2026-04-01T00:00:00.000Z",
+        "changes": [
+          {
+            "id": "ch-3",
+            "muscleId": "quads",
+            "reason": "fatigue",
+            "setsDelta": -1,
+            "type": "remove_sets"
+          }
+        ],
+        "experimentalProgramTemplateId": "exp-3",
+        "explanation": "High fatigue on quads",
+        "id": "hist-fp-1",
+        "mainChangeSummary": "Reduce quad volume",
+        "rollbackAvailable": true,
+        "selectedRecommendationIds": [
+          "recovery-rec-2"
+        ],
+        "sourceProgramTemplateId": "prog-3"
+      },
+      "kind": "history",
+      "label": "history: no sourceFingerprint → computed via S5 (mainChangeSummary title + recovery source)"
+    },
+    {
+      "fingerprint": "stored|history|fp",
+      "item": {
+        "appliedAt": "2026-04-05T00:00:00.000Z",
+        "changes": [],
+        "experimentalProgramTemplateId": "exp-4",
+        "id": "hist-fp-2",
+        "rollbackAvailable": false,
+        "selectedRecommendationIds": [
+          "rec-x"
+        ],
+        "sourceFingerprint": "stored|history|fp",
+        "sourceProgramTemplateId": "prog-4"
+      },
+      "kind": "history",
+      "label": "history: sourceFingerprint present → short-circuit returns it"
+    },
+    {
+      "change": {
+        "id": "chg-1",
+        "muscleId": "chest",
+        "reason": "chest stalled",
+        "setsDelta": 2,
+        "type": "add_sets"
+      },
+      "fingerprint": "coach-action|plateau|create_plan_adjustment_preview|muscle|chest|tpl-8|add_sets|chest|exercise-none|w-2|6193bb45",
+      "input": {
+        "source": "plateau",
+        "sourceTemplateId": "tpl-8",
+        "weekId": "w-2"
+      },
+      "kind": "change",
+      "label": "change: muscleId + add_sets type + reason + input(source/weekId/sourceTemplateId)"
+    },
+    {
+      "change": {
+        "exerciseId": "bench-press",
+        "id": "chg-2",
+        "previewNote": "swap bench for db press",
+        "reason": "",
+        "type": "swap_exercise"
+      },
+      "fingerprint": "coach-action|recovery|create_plan_adjustment_preview|exercise|bench-press|template-unknown|swap_exercise|muscle-none|bench-press|cyc-5|59559130",
+      "input": {
+        "cycleId": "cyc-5",
+        "source": "recovery"
+      },
+      "kind": "change",
+      "label": "change: exerciseId + previewNote (reason empty → changeSummary=previewNote)"
+    },
+    {
+      "change": {
+        "dayTemplateId": "day-pull",
+        "id": "chg-3",
+        "reason": "no change",
+        "type": "keep"
+      },
+      "fingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|template|day-pull|template-unknown|keep|muscle-none|exercise-none|current-cycle|547b9d7a",
+      "input": {},
+      "kind": "change",
+      "label": "change: dayTemplateId → template target + keep type + default input{}"
+    },
+    {
+      "dedupedIds": [
+        "dd-3-other",
+        "dd-1-applied"
+      ],
+      "drafts": [
+        {
+          "appliedAt": "2026-03-02T00:00:00.000Z",
+          "changes": [],
+          "confidence": "high",
+          "createdAt": "2026-03-01T00:00:00.000Z",
+          "id": "dd-1-applied",
+          "notes": [],
+          "selectedRecommendationIds": [
+            "r"
+          ],
+          "sourceFingerprint": "FP-DD",
+          "sourceProgramTemplateId": "prog-d",
+          "status": "applied",
+          "summary": "a",
+          "title": "A"
+        },
+        {
+          "changes": [],
+          "confidence": "high",
+          "createdAt": "2026-03-05T00:00:00.000Z",
+          "id": "dd-2-draft",
+          "notes": [],
+          "selectedRecommendationIds": [
+            "r"
+          ],
+          "sourceFingerprint": "FP-DD",
+          "sourceProgramTemplateId": "prog-d",
+          "status": "draft_created",
+          "summary": "a2",
+          "title": "A2"
+        },
+        {
+          "changes": [],
+          "confidence": "high",
+          "createdAt": "2026-03-06T00:00:00.000Z",
+          "id": "dd-3-other",
+          "notes": [],
+          "selectedRecommendationIds": [
+            "r"
+          ],
+          "sourceFingerprint": "FP-OTHER",
+          "sourceProgramTemplateId": "prog-d",
+          "status": "ready_to_apply",
+          "summary": "b",
+          "title": "B"
+        },
+        {
+          "changes": [],
+          "confidence": "high",
+          "createdAt": "2026-03-07T00:00:00.000Z",
+          "id": "dd-4-recommendation-skip",
+          "notes": [],
+          "selectedRecommendationIds": [
+            "r"
+          ],
+          "sourceFingerprint": "FP-DD",
+          "sourceProgramTemplateId": "prog-d",
+          "status": "recommendation",
+          "summary": "c",
+          "title": "C"
+        }
+      ],
+      "kind": "dedupe",
+      "label": "dedupe: alias forwards to S5 dedupeProgramAdjustmentDraftsByFingerprint (rank + time-DESC + skip recommendation)"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "plan-adjustment-identity/fingerprint-cases-v1"
+  },
+  "sourceFixtureId": "plan-adjustment-identity/fingerprint-cases-v1"
+}

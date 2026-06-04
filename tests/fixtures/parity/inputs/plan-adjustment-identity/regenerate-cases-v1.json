@@ -1,0 +1,138 @@
+{
+  "parityMeta": {
+    "id": "plan-adjustment-identity/regenerate-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S6 findReusablePlanAdjustmentDraft + buildRegeneratedPlanAdjustmentDraft function-level parity — synthetic cases pinning findReusable (item.id===source.id skip / fingerprint equality / reusable-status filter / the rolled_back-source guard: status!=='rolled_back' || !source.id || item.parentDraftId===source.id) and regenerate (existing short-circuit → existingDraft; nextRevision = Math.max(1, sameSource.draftRevision||1)+1; INJECTED now → createdAt (NO wall clock, §11); id = options.draftId || `adjustment-draft-${source.id}-r${nextRevision}`; parentDraftId=source.id; status='ready_to_apply'; cleared appliedAt/rolledBackAt/experimentalProgramTemplateId; computed-vs-stored sourceFingerprint). Generated from src/engines/planAdjustmentIdentityEngine.ts; the Swift port asserts foundId/existingDraftId/sourceFingerprint and canonical-compares the regenerated draft.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-06-03T00:00:00.000Z",
+    "sourceNotes": "The ONLY clock is the injected `now` (deterministicClockIso) passed into buildRegeneratedPlanAdjustmentDraft; the engine reads no wall clock. All ids/text synthetic (no email/token/userId)."
+  },
+  "cases": [
+    {
+      "label": "findReusable: found (id != source, fp matches, reusable, source not rolled_back)",
+      "kind": "findReusable",
+      "sourceDraft": { "id": "src-1", "status": "ready_to_apply", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "reuse-1", "createdAt": "2026-05-01T00:00:00.000Z", "status": "previewed", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" }
+      ]
+    },
+    {
+      "label": "findReusable: skip self (item.id === source.id) → null",
+      "kind": "findReusable",
+      "sourceDraft": { "id": "src-2", "status": "draft_created", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "src-2", "createdAt": "2026-05-01T00:00:00.000Z", "status": "ready_to_apply", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" }
+      ]
+    },
+    {
+      "label": "findReusable: fingerprint mismatch → null",
+      "kind": "findReusable",
+      "sourceDraft": { "id": "src-3", "status": "draft_created", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "other-3", "createdAt": "2026-05-01T00:00:00.000Z", "status": "ready_to_apply", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP-OTHER" }
+      ]
+    },
+    {
+      "label": "findReusable: non-reusable status (applied) → null",
+      "kind": "findReusable",
+      "sourceDraft": { "id": "src-4", "status": "draft_created", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "applied-4", "createdAt": "2026-05-01T00:00:00.000Z", "status": "applied", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" }
+      ]
+    },
+    {
+      "label": "findReusable: rolled_back source + item.parentDraftId !== source.id → guard filters → null",
+      "kind": "findReusable",
+      "sourceDraft": { "id": "src-5", "status": "rolled_back", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "reuse-5", "parentDraftId": "other-parent", "createdAt": "2026-05-01T00:00:00.000Z", "status": "ready_to_apply", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" }
+      ]
+    },
+    {
+      "label": "findReusable: rolled_back source + item.parentDraftId === source.id → guard passes → found",
+      "kind": "findReusable",
+      "sourceDraft": { "id": "src-6", "status": "rolled_back", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "reuse-6", "parentDraftId": "src-6", "createdAt": "2026-05-01T00:00:00.000Z", "status": "ready_to_apply", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" }
+      ]
+    },
+    {
+      "label": "regenerate: existing reusable short-circuit → existingDraft, no new draft",
+      "kind": "regenerate",
+      "sourceDraft": { "id": "src-r1", "status": "ready_to_apply", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" },
+      "drafts": [
+        { "id": "reuse-r1", "createdAt": "2026-05-01T00:00:00.000Z", "status": "previewed", "sourceProgramTemplateId": "prog-1", "sourceFingerprint": "FP1" }
+      ],
+      "now": "2026-06-03T00:00:00.000Z"
+    },
+    {
+      "label": "regenerate: new draft (empty drafts) → nextRevision 2, injected now, cleared appliedAt/experimentalProgramTemplateId, open-bag preserved",
+      "kind": "regenerate",
+      "sourceDraft": {
+        "id": "src-r2",
+        "createdAt": "2026-04-01T00:00:00.000Z",
+        "appliedAt": "2026-04-02T00:00:00.000Z",
+        "status": "applied",
+        "sourceProgramTemplateId": "prog-2",
+        "experimentalProgramTemplateId": "exp-2",
+        "sourceFingerprint": "FP1",
+        "title": "Apply more chest",
+        "summary": "Chest volume bump",
+        "explanation": "Chest lagging",
+        "selectedRecommendationIds": ["rec-r2"],
+        "changes": [{ "id": "chr2", "type": "add_sets", "muscleId": "chest", "setsDelta": 2, "reason": "chest priority" }],
+        "confidence": "high",
+        "riskLevel": "low",
+        "notes": ["keep form"],
+        "extraOpenBagKey": "preserved-through-spread"
+      },
+      "drafts": [],
+      "now": "2026-06-03T00:00:00.000Z"
+    },
+    {
+      "label": "regenerate: sameSource draftRevision 4 → nextRevision 5 + draftId override + non-reusable does not short-circuit",
+      "kind": "regenerate",
+      "sourceDraft": {
+        "id": "src-r3",
+        "createdAt": "2026-04-10T00:00:00.000Z",
+        "status": "applied",
+        "sourceProgramTemplateId": "prog-3",
+        "sourceFingerprint": "FP2",
+        "title": "Re-apply",
+        "summary": "again",
+        "selectedRecommendationIds": ["rec-r3"],
+        "changes": [{ "id": "chr3", "type": "remove_sets", "muscleId": "quads", "setsDelta": -1, "reason": "fatigue" }],
+        "confidence": "medium",
+        "notes": []
+      },
+      "drafts": [
+        { "id": "other-r3", "createdAt": "2026-04-15T00:00:00.000Z", "status": "dismissed", "draftRevision": 4, "sourceProgramTemplateId": "prog-3", "sourceFingerprint": "FP2" }
+      ],
+      "now": "2026-06-03T00:00:00.000Z",
+      "draftId": "custom-id-override-r5"
+    },
+    {
+      "label": "regenerate: source has no sourceFingerprint → computed via S5; nextRevision 2",
+      "kind": "regenerate",
+      "sourceDraft": {
+        "id": "src-r4",
+        "createdAt": "2026-04-20T00:00:00.000Z",
+        "status": "applied",
+        "sourceProgramTemplateId": "prog-4",
+        "sourceRecommendationId": "volume-rec-4",
+        "title": "Computed source",
+        "summary": "Add chest sets",
+        "explanation": "Chest lagging",
+        "selectedRecommendationIds": ["volume-rec-4"],
+        "changes": [{ "id": "chr4", "type": "add_sets", "muscleId": "chest", "setsDelta": 2, "reason": "chest priority" }],
+        "confidence": "high",
+        "notes": []
+      },
+      "drafts": [],
+      "now": "2026-06-03T00:00:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,488 @@
+{
+  "cases": [
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "changes": [
+          {
+            "id": "c1",
+            "muscleId": "chest",
+            "reason": "more chest",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-05-10T00:00:00.000Z",
+        "id": "cand-1",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "rec-1"
+        ],
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created",
+        "summary": "fresh draft",
+        "title": "Create me"
+      },
+      "createdDraft": {
+        "changes": [
+          {
+            "id": "c1",
+            "muscleId": "chest",
+            "reason": "more chest",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-05-10T00:00:00.000Z",
+        "draftRevision": 1,
+        "id": "adjustment-draft-fp1-r1",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "rec-1"
+        ],
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created",
+        "summary": "fresh draft",
+        "title": "Create me"
+      },
+      "drafts": [],
+      "kind": "upsert",
+      "label": "create-empty: no drafts/history, default sourceFingerprint = candidate.sourceFingerprint",
+      "result": {
+        "createdDraftId": "adjustment-draft-fp1-r1",
+        "draftIds": [
+          "adjustment-draft-fp1-r1"
+        ],
+        "historyItemId": null,
+        "outcome": "created",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "adjustment-draft-fp1-r1"
+      },
+      "sourceFingerprint": null
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "createdAt": "2026-05-11T00:00:00.000Z",
+        "id": "cand-p",
+        "parentDraftId": "parent-1",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "child-old",
+          "parentDraftId": "parent-1",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        }
+      ],
+      "kind": "upsert",
+      "label": "parent existingChild → opened_existing (reusable child with matching parentDraftId)",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [
+          "child-old"
+        ],
+        "historyItemId": null,
+        "outcome": "opened_existing",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "child-old"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "createdAt": "2026-05-12T00:00:00.000Z",
+        "id": "cand-a",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [
+        {
+          "createdAt": "2026-05-02T00:00:00.000Z",
+          "id": "active-1",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "previewed"
+        }
+      ],
+      "kind": "upsert",
+      "label": "activeDraft → opened_existing (reusable, no parent)",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [
+          "active-1"
+        ],
+        "historyItemId": null,
+        "outcome": "opened_existing",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "active-1"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "createdAt": "2026-05-13T00:00:00.000Z",
+        "id": "cand-ap",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [
+        {
+          "appliedAt": "2026-03-02T00:00:00.000Z",
+          "createdAt": "2026-03-01T00:00:00.000Z",
+          "id": "applied-1",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "applied"
+        }
+      ],
+      "kind": "upsert",
+      "label": "appliedDraft → already_applied (status applied, not reusable)",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [
+          "applied-1"
+        ],
+        "historyItemId": null,
+        "outcome": "already_applied",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "applied-1"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [
+        {
+          "appliedAt": "2026-03-05T00:00:00.000Z",
+          "changes": [],
+          "experimentalProgramTemplateId": "exp-1",
+          "id": "hist-1",
+          "rollbackAvailable": true,
+          "selectedRecommendationIds": [
+            "rec-h"
+          ],
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1"
+        }
+      ],
+      "candidateDraft": {
+        "createdAt": "2026-05-14T00:00:00.000Z",
+        "id": "cand-h",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [],
+      "kind": "upsert",
+      "label": "appliedHistory → already_applied (history matches, not rolled_back, no rolledBackAt)",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [],
+        "historyItemId": "hist-1",
+        "outcome": "already_applied",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": null
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "createdAt": "2026-05-15T00:00:00.000Z",
+        "id": "cand-d",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [
+        {
+          "createdAt": "2026-01-15T00:00:00.000Z",
+          "id": "dismissed-1",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "dismissed"
+        }
+      ],
+      "kind": "upsert",
+      "label": "handledDraft → previously_handled (dismissed, no reusable/applied/history)",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [
+          "dismissed-1"
+        ],
+        "historyItemId": null,
+        "outcome": "previously_handled",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "dismissed-1"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "createdAt": "2026-05-16T00:00:00.000Z",
+        "id": "cand-r",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [
+        {
+          "createdAt": "2026-02-01T00:00:00.000Z",
+          "id": "rb-1",
+          "rolledBackAt": "2026-02-10T00:00:00.000Z",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "rolled_back"
+        }
+      ],
+      "kind": "upsert",
+      "label": "rolledBackDraft (no parent) → previously_handled",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [
+          "rb-1"
+        ],
+        "historyItemId": null,
+        "outcome": "previously_handled",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "rb-1"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "changes": [
+          {
+            "id": "crp",
+            "muscleId": "back",
+            "reason": "back volume",
+            "setsDelta": 1,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-05-17T00:00:00.000Z",
+        "id": "cand-rp",
+        "notes": [
+          "note-rp"
+        ],
+        "parentDraftId": "parent-9",
+        "selectedRecommendationIds": [
+          "rec-rp"
+        ],
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created",
+        "summary": "child of parent-9",
+        "title": "Reopen after rollback"
+      },
+      "createdDraft": {
+        "changes": [
+          {
+            "id": "crp",
+            "muscleId": "back",
+            "reason": "back volume",
+            "setsDelta": 1,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-05-17T00:00:00.000Z",
+        "draftRevision": 3,
+        "id": "adjustment-draft-fp1-parent-9-r3",
+        "notes": [
+          "note-rp"
+        ],
+        "parentDraftId": "parent-9",
+        "selectedRecommendationIds": [
+          "rec-rp"
+        ],
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created",
+        "summary": "child of parent-9",
+        "title": "Reopen after rollback"
+      },
+      "drafts": [
+        {
+          "createdAt": "2026-02-05T00:00:00.000Z",
+          "draftRevision": 2,
+          "id": "rb-2",
+          "parentDraftId": "other-parent",
+          "rolledBackAt": "2026-02-12T00:00:00.000Z",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "rolled_back"
+        }
+      ],
+      "kind": "upsert",
+      "label": "rolled_back present BUT candidate has parent → skip rolledBack branch → create (revision from sameSource +1, parentPart in id, prepend)",
+      "result": {
+        "createdDraftId": "adjustment-draft-fp1-parent-9-r3",
+        "draftIds": [
+          "adjustment-draft-fp1-parent-9-r3",
+          "rb-2"
+        ],
+        "historyItemId": null,
+        "outcome": "created",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "adjustment-draft-fp1-parent-9-r3"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "createdAt": "2026-05-18T00:00:00.000Z",
+        "id": "cand-tie",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      },
+      "createdDraft": null,
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "r-a",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        },
+        {
+          "createdAt": "2026-05-02T00:00:00.000Z",
+          "id": "r-b",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        },
+        {
+          "createdAt": "2026-05-02T00:00:00.000Z",
+          "id": "r-c",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        }
+      ],
+      "kind": "upsert",
+      "label": "newestDraft time-DESC + JS-stable tie: pick newest reusable by createdAt, ties keep insertion order",
+      "result": {
+        "createdDraftId": null,
+        "draftIds": [
+          "r-a",
+          "r-b",
+          "r-c"
+        ],
+        "historyItemId": null,
+        "outcome": "opened_existing",
+        "sourceFingerprint": "FP1",
+        "targetDraftId": "r-b"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "adjustmentHistory": [],
+      "candidateDraft": {
+        "changes": [
+          {
+            "id": "cc",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-05-19T00:00:00.000Z",
+        "explanation": "Chest lagging",
+        "id": "cand-computed",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "volume-rec-1"
+        ],
+        "sourceProgramTemplateId": "prog-2",
+        "sourceRecommendationId": "volume-rec-1",
+        "status": "draft_created",
+        "summary": "Add chest sets",
+        "title": "Computed fingerprint draft"
+      },
+      "createdDraft": {
+        "changes": [
+          {
+            "id": "cc",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-05-19T00:00:00.000Z",
+        "draftRevision": 1,
+        "explanation": "Chest lagging",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "volume-rec-1"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|prog-2|add_sets|chest|exercise-none|current-cycle|d2334d79",
+        "sourceProgramTemplateId": "prog-2",
+        "sourceRecommendationId": "volume-rec-1",
+        "status": "draft_created",
+        "summary": "Add chest sets",
+        "title": "Computed fingerprint draft"
+      },
+      "drafts": [
+        {
+          "createdAt": "2026-04-20T00:00:00.000Z",
+          "id": "noise-1",
+          "sourceFingerprint": "FP-NOISE",
+          "sourceProgramTemplateId": "prog-2",
+          "status": "ready_to_apply"
+        }
+      ],
+      "kind": "upsert",
+      "label": "create with computed fingerprint (candidate has no sourceFingerprint → S5 default) + non-matching draft preserved",
+      "result": {
+        "createdDraftId": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "draftIds": [
+          "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+          "noise-1"
+        ],
+        "historyItemId": null,
+        "outcome": "created",
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|prog-2|add_sets|chest|exercise-none|current-cycle|d2334d79",
+        "targetDraftId": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1"
+      },
+      "sourceFingerprint": null
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "plan-adjustment-identity/upsert-cases-v1"
+  },
+  "sourceFixtureId": "plan-adjustment-identity/upsert-cases-v1"
+}
