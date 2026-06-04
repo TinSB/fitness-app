@@ -1,0 +1,353 @@
+{
+  "cases": [
+    {
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "reuse-1",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "previewed"
+        }
+      ],
+      "foundId": "reuse-1",
+      "kind": "findReusable",
+      "label": "findReusable: found (id != source, fp matches, reusable, source not rolled_back)",
+      "sourceDraft": {
+        "id": "src-1",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "ready_to_apply"
+      }
+    },
+    {
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "src-2",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        }
+      ],
+      "foundId": null,
+      "kind": "findReusable",
+      "label": "findReusable: skip self (item.id === source.id) → null",
+      "sourceDraft": {
+        "id": "src-2",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      }
+    },
+    {
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "other-3",
+          "sourceFingerprint": "FP-OTHER",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        }
+      ],
+      "foundId": null,
+      "kind": "findReusable",
+      "label": "findReusable: fingerprint mismatch → null",
+      "sourceDraft": {
+        "id": "src-3",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      }
+    },
+    {
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "applied-4",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "applied"
+        }
+      ],
+      "foundId": null,
+      "kind": "findReusable",
+      "label": "findReusable: non-reusable status (applied) → null",
+      "sourceDraft": {
+        "id": "src-4",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "draft_created"
+      }
+    },
+    {
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "reuse-5",
+          "parentDraftId": "other-parent",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        }
+      ],
+      "foundId": null,
+      "kind": "findReusable",
+      "label": "findReusable: rolled_back source + item.parentDraftId !== source.id → guard filters → null",
+      "sourceDraft": {
+        "id": "src-5",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "rolled_back"
+      }
+    },
+    {
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "reuse-6",
+          "parentDraftId": "src-6",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "ready_to_apply"
+        }
+      ],
+      "foundId": "reuse-6",
+      "kind": "findReusable",
+      "label": "findReusable: rolled_back source + item.parentDraftId === source.id → guard passes → found",
+      "sourceDraft": {
+        "id": "src-6",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "rolled_back"
+      }
+    },
+    {
+      "draft": null,
+      "draftId": null,
+      "drafts": [
+        {
+          "createdAt": "2026-05-01T00:00:00.000Z",
+          "id": "reuse-r1",
+          "sourceFingerprint": "FP1",
+          "sourceProgramTemplateId": "prog-1",
+          "status": "previewed"
+        }
+      ],
+      "existingDraftId": "reuse-r1",
+      "kind": "regenerate",
+      "label": "regenerate: existing reusable short-circuit → existingDraft, no new draft",
+      "now": "2026-06-03T00:00:00.000Z",
+      "sourceDraft": {
+        "id": "src-r1",
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-1",
+        "status": "ready_to_apply"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "id": "chr2",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-06-03T00:00:00.000Z",
+        "draftRevision": 2,
+        "explanation": "Chest lagging",
+        "extraOpenBagKey": "preserved-through-spread",
+        "id": "adjustment-draft-src-r2-r2",
+        "notes": [
+          "keep form"
+        ],
+        "parentDraftId": "src-r2",
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-r2"
+        ],
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-2",
+        "status": "ready_to_apply",
+        "summary": "Chest volume bump",
+        "title": "Apply more chest"
+      },
+      "draftId": null,
+      "drafts": [],
+      "existingDraftId": null,
+      "kind": "regenerate",
+      "label": "regenerate: new draft (empty drafts) → nextRevision 2, injected now, cleared appliedAt/experimentalProgramTemplateId, open-bag preserved",
+      "now": "2026-06-03T00:00:00.000Z",
+      "sourceDraft": {
+        "appliedAt": "2026-04-02T00:00:00.000Z",
+        "changes": [
+          {
+            "id": "chr2",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-04-01T00:00:00.000Z",
+        "experimentalProgramTemplateId": "exp-2",
+        "explanation": "Chest lagging",
+        "extraOpenBagKey": "preserved-through-spread",
+        "id": "src-r2",
+        "notes": [
+          "keep form"
+        ],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-r2"
+        ],
+        "sourceFingerprint": "FP1",
+        "sourceProgramTemplateId": "prog-2",
+        "status": "applied",
+        "summary": "Chest volume bump",
+        "title": "Apply more chest"
+      },
+      "sourceFingerprint": "FP1"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "id": "chr3",
+            "muscleId": "quads",
+            "reason": "fatigue",
+            "setsDelta": -1,
+            "type": "remove_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-06-03T00:00:00.000Z",
+        "draftRevision": 5,
+        "id": "custom-id-override-r5",
+        "notes": [],
+        "parentDraftId": "src-r3",
+        "selectedRecommendationIds": [
+          "rec-r3"
+        ],
+        "sourceFingerprint": "FP2",
+        "sourceProgramTemplateId": "prog-3",
+        "status": "ready_to_apply",
+        "summary": "again",
+        "title": "Re-apply"
+      },
+      "draftId": "custom-id-override-r5",
+      "drafts": [
+        {
+          "createdAt": "2026-04-15T00:00:00.000Z",
+          "draftRevision": 4,
+          "id": "other-r3",
+          "sourceFingerprint": "FP2",
+          "sourceProgramTemplateId": "prog-3",
+          "status": "dismissed"
+        }
+      ],
+      "existingDraftId": null,
+      "kind": "regenerate",
+      "label": "regenerate: sameSource draftRevision 4 → nextRevision 5 + draftId override + non-reusable does not short-circuit",
+      "now": "2026-06-03T00:00:00.000Z",
+      "sourceDraft": {
+        "changes": [
+          {
+            "id": "chr3",
+            "muscleId": "quads",
+            "reason": "fatigue",
+            "setsDelta": -1,
+            "type": "remove_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-04-10T00:00:00.000Z",
+        "id": "src-r3",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "rec-r3"
+        ],
+        "sourceFingerprint": "FP2",
+        "sourceProgramTemplateId": "prog-3",
+        "status": "applied",
+        "summary": "again",
+        "title": "Re-apply"
+      },
+      "sourceFingerprint": "FP2"
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "id": "chr4",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-06-03T00:00:00.000Z",
+        "draftRevision": 2,
+        "explanation": "Chest lagging",
+        "id": "adjustment-draft-src-r4-r2",
+        "notes": [],
+        "parentDraftId": "src-r4",
+        "selectedRecommendationIds": [
+          "volume-rec-4"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|prog-4|add_sets|chest|exercise-none|current-cycle|d2334d79",
+        "sourceProgramTemplateId": "prog-4",
+        "sourceRecommendationId": "volume-rec-4",
+        "status": "ready_to_apply",
+        "summary": "Add chest sets",
+        "title": "Computed source"
+      },
+      "draftId": null,
+      "drafts": [],
+      "existingDraftId": null,
+      "kind": "regenerate",
+      "label": "regenerate: source has no sourceFingerprint → computed via S5; nextRevision 2",
+      "now": "2026-06-03T00:00:00.000Z",
+      "sourceDraft": {
+        "changes": [
+          {
+            "id": "chr4",
+            "muscleId": "chest",
+            "reason": "chest priority",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-04-20T00:00:00.000Z",
+        "explanation": "Chest lagging",
+        "id": "src-r4",
+        "notes": [],
+        "selectedRecommendationIds": [
+          "volume-rec-4"
+        ],
+        "sourceProgramTemplateId": "prog-4",
+        "sourceRecommendationId": "volume-rec-4",
+        "status": "applied",
+        "summary": "Add chest sets",
+        "title": "Computed source"
+      },
+      "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|prog-4|add_sets|chest|exercise-none|current-cycle|d2334d79"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-06-03T00:00:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "plan-adjustment-identity/regenerate-cases-v1"
+  },
+  "sourceFixtureId": "plan-adjustment-identity/regenerate-cases-v1"
+}

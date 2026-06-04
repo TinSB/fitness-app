@@ -1,0 +1,260 @@
+{
+  "parityMeta": {
+    "id": "plan-adjustment-identity/fingerprint-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S6 plan-adjustment fingerprint function-level parity — synthetic cases covering buildPlanAdjustmentFingerprint (targetFromInput muscle/exercise/template/plan precedence + suggestedChange.muscleId/exerciseIds[0] fallback via JSONValue + sourceFromInput plateau/recovery/dataHealth/dailyAdjustment/default + title/description/reason '计划调整' fallback chains + the suggestedChange bridge add_sets/remove_sets/swap_exercise/support_*), buildPlanAdjustmentFingerprintFromCoachAction (sourceFingerprint short-circuit vs S5 buildCoachActionFingerprint), buildPlanAdjustmentFingerprintFromDraft / FromHistory (S5 forwarders + sourceFingerprint short-circuit), buildPlanAdjustmentFingerprintFromChange (change field mapping + change.reason||previewNote changeSummary), and the dedupePlanAdjustmentDraftsByFingerprint S5 alias. Generated from src/engines/planAdjustmentIdentityEngine.ts; the Swift PlanAdjustmentIdentityEngine EXACT-asserts each fingerprint string == golden and the deduped id order.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — every fingerprint/dedupe path is a pure string/number/array transform with no wall clock, no IO, no randomness. All ids/text are synthetic (no email/token/userId)."
+  },
+  "cases": [
+    {
+      "label": "input: targetMuscleId priority + source plateau + custom actionType + title/changeSummary",
+      "kind": "input",
+      "input": {
+        "source": "plateau",
+        "actionType": "review_volume",
+        "targetMuscleId": "chest",
+        "sourceTemplateId": "tpl-1",
+        "weekId": "w-3",
+        "title": "Raise chest volume",
+        "changeSummary": "ignored-when-title-set",
+        "suggestedChange": { "muscleId": "chest", "setsDelta": 2 }
+      }
+    },
+    {
+      "label": "input: suggestedChange.muscleId fallback (no targetMuscleId) + source recovery + add_sets",
+      "kind": "input",
+      "input": {
+        "source": "recovery",
+        "sourceProgramTemplateId": "prog-9",
+        "cycleId": "cyc-2",
+        "reason": "deload chest",
+        "suggestedChange": { "muscleId": "back", "setsDelta": 3 }
+      }
+    },
+    {
+      "label": "input: targetExerciseId priority + source dataHealth + remove_sets",
+      "kind": "input",
+      "input": {
+        "source": "dataHealth",
+        "targetExerciseId": "bench-press",
+        "sourceTemplateId": "tpl-2",
+        "description": "fix bench data",
+        "suggestedChange": { "setsDelta": -1 }
+      }
+    },
+    {
+      "label": "input: suggestedChange.exerciseIds[0] fallback + source dailyAdjustment + swap_exercise",
+      "kind": "input",
+      "input": {
+        "source": "dailyAdjustment",
+        "weekId": "wk-7",
+        "reason": "swap row",
+        "suggestedChange": { "exerciseIds": ["lat-pulldown", "row"], "removeExerciseIds": ["machine-row"] }
+      }
+    },
+    {
+      "label": "input: targetDayTemplateId/targetTemplateId → template + default source (volumeAdaptation) + support_reduce",
+      "kind": "input",
+      "input": {
+        "targetDayTemplateId": "day-push",
+        "targetTemplateId": "tpl-ignored",
+        "sourceTemplateId": "tpl-3",
+        "title": "Push day tweak",
+        "suggestedChange": { "supportDoseAdjustment": "reduce" }
+      }
+    },
+    {
+      "label": "input: plan fallback (sourceTemplateId) + reason drives title/description/reason",
+      "kind": "input",
+      "input": {
+        "source": "plateau",
+        "sourceTemplateId": "plan-tpl-7",
+        "reason": "global plan nudge"
+      }
+    },
+    {
+      "label": "input: plan fallback (sourceProgramTemplateId) + no source → volumeAdaptation + changeSummary drives text",
+      "kind": "input",
+      "input": {
+        "sourceProgramTemplateId": "prog-plan-4",
+        "changeSummary": "summary text"
+      }
+    },
+    {
+      "label": "input: all-empty → plan/'plan' targetId + all literal text fallbacks 计划调整",
+      "kind": "input",
+      "input": {}
+    },
+    {
+      "label": "coachAction: sourceFingerprint present → short-circuit returns it (no S5 call)",
+      "kind": "coachAction",
+      "action": {
+        "source": "volumeAdaptation",
+        "actionType": "review_volume",
+        "targetType": "muscle",
+        "targetId": "chest",
+        "title": "t",
+        "description": "d",
+        "reason": "r",
+        "sourceFingerprint": "precomputed|coach|fp"
+      },
+      "context": { "muscleId": "chest" }
+    },
+    {
+      "label": "coachAction: no sourceFingerprint → S5 buildCoachActionFingerprint(action, context)",
+      "kind": "coachAction",
+      "action": {
+        "source": "plateau",
+        "actionType": "open_replacement_sheet",
+        "targetType": "exercise",
+        "targetId": "bench-press",
+        "reason": "plateau on bench"
+      },
+      "context": { "exerciseId": "bench-press", "sourceTemplateId": "tpl-5", "weekId": "w-1" }
+    },
+    {
+      "label": "draft: sourceFingerprint present → short-circuit returns it",
+      "kind": "draft",
+      "draft": {
+        "id": "draft-fp-1",
+        "createdAt": "2026-05-01T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "prog-1",
+        "sourceFingerprint": "stored|draft|fp",
+        "title": "T",
+        "summary": "S",
+        "selectedRecommendationIds": ["rec-1"],
+        "changes": [{ "id": "ch-1", "type": "add_sets", "muscleId": "chest", "setsDelta": 2, "reason": "more chest" }],
+        "confidence": "high",
+        "notes": []
+      }
+    },
+    {
+      "label": "draft: no sourceFingerprint → computed via S5 (firstChange muscle target + volume source)",
+      "kind": "draft",
+      "draft": {
+        "id": "draft-fp-2",
+        "createdAt": "2026-05-02T00:00:00.000Z",
+        "status": "draft_created",
+        "sourceProgramTemplateId": "prog-2",
+        "sourceRecommendationId": "volume-rec-7",
+        "title": "Add chest sets",
+        "summary": "Increase chest weekly sets",
+        "explanation": "Chest lagging",
+        "selectedRecommendationIds": ["volume-rec-7"],
+        "changes": [{ "id": "ch-2", "type": "add_sets", "muscleId": "chest", "setsDelta": 2, "reason": "chest priority" }],
+        "confidence": "medium",
+        "notes": []
+      }
+    },
+    {
+      "label": "history: no sourceFingerprint → computed via S5 (mainChangeSummary title + recovery source)",
+      "kind": "history",
+      "item": {
+        "id": "hist-fp-1",
+        "appliedAt": "2026-04-01T00:00:00.000Z",
+        "sourceProgramTemplateId": "prog-3",
+        "experimentalProgramTemplateId": "exp-3",
+        "selectedRecommendationIds": ["recovery-rec-2"],
+        "changes": [{ "id": "ch-3", "type": "remove_sets", "muscleId": "quads", "setsDelta": -1, "reason": "fatigue" }],
+        "mainChangeSummary": "Reduce quad volume",
+        "explanation": "High fatigue on quads",
+        "rollbackAvailable": true
+      }
+    },
+    {
+      "label": "history: sourceFingerprint present → short-circuit returns it",
+      "kind": "history",
+      "item": {
+        "id": "hist-fp-2",
+        "appliedAt": "2026-04-05T00:00:00.000Z",
+        "sourceProgramTemplateId": "prog-4",
+        "experimentalProgramTemplateId": "exp-4",
+        "sourceFingerprint": "stored|history|fp",
+        "selectedRecommendationIds": ["rec-x"],
+        "changes": [],
+        "rollbackAvailable": false
+      }
+    },
+    {
+      "label": "change: muscleId + add_sets type + reason + input(source/weekId/sourceTemplateId)",
+      "kind": "change",
+      "change": { "id": "chg-1", "type": "add_sets", "muscleId": "chest", "setsDelta": 2, "reason": "chest stalled" },
+      "input": { "source": "plateau", "weekId": "w-2", "sourceTemplateId": "tpl-8" }
+    },
+    {
+      "label": "change: exerciseId + previewNote (reason empty → changeSummary=previewNote)",
+      "kind": "change",
+      "change": { "id": "chg-2", "type": "swap_exercise", "exerciseId": "bench-press", "reason": "", "previewNote": "swap bench for db press" },
+      "input": { "source": "recovery", "cycleId": "cyc-5" }
+    },
+    {
+      "label": "change: dayTemplateId → template target + keep type + default input{}",
+      "kind": "change",
+      "change": { "id": "chg-3", "type": "keep", "dayTemplateId": "day-pull", "reason": "no change" }
+    },
+    {
+      "label": "dedupe: alias forwards to S5 dedupeProgramAdjustmentDraftsByFingerprint (rank + time-DESC + skip recommendation)",
+      "kind": "dedupe",
+      "drafts": [
+        {
+          "id": "dd-1-applied",
+          "createdAt": "2026-03-01T00:00:00.000Z",
+          "appliedAt": "2026-03-02T00:00:00.000Z",
+          "status": "applied",
+          "sourceProgramTemplateId": "prog-d",
+          "sourceFingerprint": "FP-DD",
+          "title": "A",
+          "summary": "a",
+          "selectedRecommendationIds": ["r"],
+          "changes": [],
+          "confidence": "high",
+          "notes": []
+        },
+        {
+          "id": "dd-2-draft",
+          "createdAt": "2026-03-05T00:00:00.000Z",
+          "status": "draft_created",
+          "sourceProgramTemplateId": "prog-d",
+          "sourceFingerprint": "FP-DD",
+          "title": "A2",
+          "summary": "a2",
+          "selectedRecommendationIds": ["r"],
+          "changes": [],
+          "confidence": "high",
+          "notes": []
+        },
+        {
+          "id": "dd-3-other",
+          "createdAt": "2026-03-06T00:00:00.000Z",
+          "status": "ready_to_apply",
+          "sourceProgramTemplateId": "prog-d",
+          "sourceFingerprint": "FP-OTHER",
+          "title": "B",
+          "summary": "b",
+          "selectedRecommendationIds": ["r"],
+          "changes": [],
+          "confidence": "high",
+          "notes": []
+        },
+        {
+          "id": "dd-4-recommendation-skip",
+          "createdAt": "2026-03-07T00:00:00.000Z",
+          "status": "recommendation",
+          "sourceProgramTemplateId": "prog-d",
+          "sourceFingerprint": "FP-DD",
+          "title": "C",
+          "summary": "c",
+          "selectedRecommendationIds": ["r"],
+          "changes": [],
+          "confidence": "high",
+          "notes": []
+        }
+      ]
+    }
+  ]
+}

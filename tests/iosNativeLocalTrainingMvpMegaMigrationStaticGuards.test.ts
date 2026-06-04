@@ -232,7 +232,7 @@ describe('iOS-8 parity goldens unchanged', () => {
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+81\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+85\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 240_000);
 });

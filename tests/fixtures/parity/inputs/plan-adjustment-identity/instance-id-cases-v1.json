@@ -1,0 +1,98 @@
+{
+  "parityMeta": {
+    "id": "plan-adjustment-identity/instance-id-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S6 buildPlanAdjustmentDraftInstanceId function-level parity — synthetic cases pinning stableIdPart (trim/lowercase/[^a-z0-9_-]+→- collapse/strip-edges/slice(0,48) + stableHash FNV-1a empty-fallback over the ORIGINAL value), the parentDraftId slice(0,24) suffix, and Math.max(1, Math.round(revision)) half-up-toward-+∞ / clamp boundaries (.5 / -.5 / 0 / fractional / default 1). Generated from src/engines/planAdjustmentIdentityEngine.ts; the Swift port EXACT-asserts each instanceId string == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f47dcc58e276770598880f67bf9485b71b5cd34f",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — pure id-slug FNV transform. All values are synthetic (no email/token/userId)."
+  },
+  "cases": [
+    {
+      "label": "instanceId: basic slug + default revision 1 (revision omitted)",
+      "kind": "instanceId",
+      "sourceFingerprint": "coach-action|volumeadaptation|muscle|chest"
+    },
+    {
+      "label": "instanceId: explicit integer revision 3",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-simple",
+      "revision": 3
+    },
+    {
+      "label": "instanceId: fractional 2.5 → Math.round half-up → 3",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-half-up",
+      "revision": 2.5
+    },
+    {
+      "label": "instanceId: fractional 2.4 → 2",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-round-down",
+      "revision": 2.4
+    },
+    {
+      "label": "instanceId: 0.5 → round 1 → max(1,1)=1",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-half-one",
+      "revision": 0.5
+    },
+    {
+      "label": "instanceId: -0.5 → round -0=0 → max(1,0)=1",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-neg-half",
+      "revision": -0.5
+    },
+    {
+      "label": "instanceId: 0 → round 0 → max(1,0)=1 (clamp)",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-zero",
+      "revision": 0
+    },
+    {
+      "label": "instanceId: parentDraftId present → -slice(0,24) suffix",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-with-parent",
+      "revision": 2,
+      "parentDraftId": "parent-draft-1"
+    },
+    {
+      "label": "instanceId: CJK-only fingerprint normalizes to empty → stableHash(original) fallback",
+      "kind": "instanceId",
+      "sourceFingerprint": "计划调整指纹"
+    },
+    {
+      "label": "instanceId: special-only fingerprint '###!!!' → empty → stableHash fallback",
+      "kind": "instanceId",
+      "sourceFingerprint": "###!!!"
+    },
+    {
+      "label": "instanceId: long fingerprint with | separators → collapse to - and slice(0,48)",
+      "kind": "instanceId",
+      "sourceFingerprint": "coach-action|volumeadaptation|muscle|chest|template-unknown|add_sets|chest|exercise-none|w-3|abc1234567",
+      "revision": 4
+    },
+    {
+      "label": "instanceId: long parentDraftId slug → slice(0,24)",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-long-parent",
+      "revision": 2,
+      "parentDraftId": "adjustment-draft-very-long-parent-identifier-1234567890"
+    },
+    {
+      "label": "instanceId: edge dashes + spaces + uppercase → trim/collapse/strip",
+      "kind": "instanceId",
+      "sourceFingerprint": "  --Mixed CASE  __Slug-- ",
+      "revision": 1
+    },
+    {
+      "label": "instanceId: empty parentDraftId string → no suffix (falsy)",
+      "kind": "instanceId",
+      "sourceFingerprint": "fp-empty-parent",
+      "revision": 2,
+      "parentDraftId": ""
+    }
+  ]
+}

@@ -319,6 +319,29 @@ import {
   type CoachActionFingerprintContext,
 } from '../src/engines/coachActionIdentityEngine';
 import type { ProgramAdjustmentDraft, ProgramAdjustmentHistoryItem } from '../src/models/training-model';
+// PA-S6 — planAdjustmentIdentityEngine port parity slice. Imports the REAL pure
+// identity functions so the plan-adjustment-identity goldens are GENERATED from TS
+// truth, never hand-authored (§22). The Swift port (PlanAdjustmentIdentityEngine)
+// re-runs the SAME functions over the SAME echoed engineInput (input/action+context/
+// draft/item/change → fingerprint, sourceFingerprint+revision+parentDraftId →
+// instanceId, drafts+history+candidate → upsert result, sourceDraft+drafts →
+// findReusable/regenerate) and EXACT/canonical-asserts each output. PURE / read-only;
+// only `buildRegeneratedPlanAdjustmentDraft` is time-aware and takes an INJECTED now
+// (no wall clock) → the regenerate fixture uses generatedAtPolicy 'deterministic-clock';
+// the rest are clockless ('none'). Reuses the PA-S5 fingerprint family + PA-S1 types.
+import {
+  buildPlanAdjustmentFingerprint,
+  buildPlanAdjustmentFingerprintFromCoachAction,
+  buildPlanAdjustmentFingerprintFromDraft,
+  buildPlanAdjustmentFingerprintFromHistory,
+  buildPlanAdjustmentFingerprintFromChange,
+  buildPlanAdjustmentDraftInstanceId,
+  upsertPlanAdjustmentDraftByFingerprint,
+  findReusablePlanAdjustmentDraft,
+  buildRegeneratedPlanAdjustmentDraft,
+  dedupePlanAdjustmentDraftsByFingerprint,
+} from '../src/engines/planAdjustmentIdentityEngine';
+import type { AdjustmentChange } from '../src/models/training-model';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -644,6 +667,28 @@ const FIXTURE_IDS = [
   'coach-action-identity/fingerprint-cases-v1',
   'coach-action-identity/draft-history-fingerprint-cases-v1',
   'coach-action-identity/dedupe-cases-v1',
+  // PA-S6 planAdjustmentIdentityEngine port — 4 fixtures, all routed through the single
+  // dispatch-by-kind generatePlanAdjustmentIdentity. fingerprint-cases pins the 6
+  // fingerprint exports (buildPlanAdjustmentFingerprint targetFromInput muscle/exercise/
+  // template/plan precedence + suggestedChange.muscleId/exerciseIds[0] fallback +
+  // sourceFromInput plateau/recovery/dataHealth/dailyAdjustment/default + the title/
+  // description/reason '计划调整' fallback chains; FromCoachAction sourceFingerprint
+  // short-circuit vs S5; FromDraft/FromHistory forwarders; FromChange field mapping +
+  // change.reason||previewNote; the dedupe alias). instance-id-cases pins
+  // buildPlanAdjustmentDraftInstanceId (stableIdPart regex/slice(0,48)/stableHash
+  // empty-fallback + parentDraftId slice(0,24) + Math.max(1,Math.round(revision))
+  // half-up/clamp boundaries). upsert-cases pins every upsert branch+outcome
+  // (parent existingChild / activeDraft / appliedDraft / appliedHistory / handledDraft /
+  // rolledBackDraft / create + newestDraft time-DESC tie + normalizeDraftForUpsert
+  // revision + prepend-dedupe). regenerate-cases pins findReusablePlanAdjustmentDraft
+  // (id-skip / fingerprint / reusable status / rolled_back parent guard) and
+  // buildRegeneratedPlanAdjustmentDraft (existing short-circuit / nextRevision /
+  // INJECTED now / cleared appliedAt+rolledBackAt+experimentalProgramTemplateId).
+  // Generated, never hand-edited (§22).
+  'plan-adjustment-identity/fingerprint-cases-v1',
+  'plan-adjustment-identity/instance-id-cases-v1',
+  'plan-adjustment-identity/upsert-cases-v1',
+  'plan-adjustment-identity/regenerate-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -2930,6 +2975,123 @@ const generateCoachActionIdentity = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// PA-S6 — planAdjustmentIdentityEngine OUTPUT parity
+//
+// Each fixture carries a compact `cases` array; per case the generator dispatches on
+// `kind` to the matching REAL pure function, echoes the engineInput VERBATIM, and
+// writes the REAL TS output:
+//   kind 'input'        → buildPlanAdjustmentFingerprint(input)                     → `fingerprint`
+//   kind 'coachAction'  → buildPlanAdjustmentFingerprintFromCoachAction(action,ctx) → `fingerprint`
+//   kind 'draft'        → buildPlanAdjustmentFingerprintFromDraft(draft)            → `fingerprint`
+//   kind 'history'      → buildPlanAdjustmentFingerprintFromHistory(item)           → `fingerprint`
+//   kind 'change'       → buildPlanAdjustmentFingerprintFromChange(change,input)    → `fingerprint`
+//   kind 'dedupe'       → dedupePlanAdjustmentDraftsByFingerprint(drafts)           → `dedupedIds`
+//   kind 'instanceId'   → buildPlanAdjustmentDraftInstanceId(fp,revision,parent)    → `instanceId`
+//   kind 'upsert'       → upsertPlanAdjustmentDraftByFingerprint(...)               → `result` (+createdDraft)
+//   kind 'findReusable' → findReusablePlanAdjustmentDraft(sourceDraft,drafts)       → `foundId`
+//   kind 'regenerate'   → buildRegeneratedPlanAdjustmentDraft(sourceDraft,drafts,{now,draftId})
+//                                                                                   → `sourceFingerprint`/`existingDraftId`/`draft`
+// Fingerprints + instanceIds are deterministic strings (EXACT `==`); upsert/regenerate
+// drafts are echoed in full for canonical-equality on the Swift side. The injected
+// `now` (regenerate) is the ONLY time input — taken from the case (else
+// meta.deterministicClockIso); NO wall clock is read, so the goldens stay
+// byte-deterministic. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generatePlanAdjustmentIdentity = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const kind = c.kind as string;
+    const label = c.label ?? null;
+    if (kind === 'input') {
+      const fingerprint = buildPlanAdjustmentFingerprint(c.input ?? {});
+      return { label, kind, input: c.input ?? {}, fingerprint };
+    }
+    if (kind === 'coachAction') {
+      const fingerprint = buildPlanAdjustmentFingerprintFromCoachAction(c.action ?? {}, c.context ?? {});
+      return { label, kind, action: c.action ?? {}, context: c.context ?? {}, fingerprint };
+    }
+    if (kind === 'draft') {
+      const fingerprint = buildPlanAdjustmentFingerprintFromDraft(c.draft as ProgramAdjustmentDraft);
+      return { label, kind, draft: c.draft, fingerprint };
+    }
+    if (kind === 'history') {
+      const fingerprint = buildPlanAdjustmentFingerprintFromHistory(c.item as ProgramAdjustmentHistoryItem);
+      return { label, kind, item: c.item, fingerprint };
+    }
+    if (kind === 'change') {
+      const fingerprint = buildPlanAdjustmentFingerprintFromChange(c.change as AdjustmentChange, c.input ?? {});
+      return { label, kind, change: c.change, input: c.input ?? {}, fingerprint };
+    }
+    if (kind === 'dedupe') {
+      const drafts = (Array.isArray(c.drafts) ? c.drafts : []) as ProgramAdjustmentDraft[];
+      const deduped = dedupePlanAdjustmentDraftsByFingerprint(drafts);
+      return { label, kind, drafts: c.drafts ?? [], dedupedIds: deduped.map((d) => d.id ?? null) };
+    }
+    if (kind === 'instanceId') {
+      const instanceId = buildPlanAdjustmentDraftInstanceId(c.sourceFingerprint, c.revision, c.parentDraftId);
+      return {
+        label, kind,
+        sourceFingerprint: c.sourceFingerprint,
+        revision: c.revision ?? null,
+        parentDraftId: c.parentDraftId ?? null,
+        instanceId,
+      };
+    }
+    if (kind === 'upsert') {
+      const result = upsertPlanAdjustmentDraftByFingerprint(
+        (c.drafts ?? []) as ProgramAdjustmentDraft[],
+        (c.adjustmentHistory ?? []) as ProgramAdjustmentHistoryItem[],
+        c.candidateDraft as ProgramAdjustmentDraft,
+        c.sourceFingerprint,
+      );
+      return {
+        label, kind,
+        drafts: c.drafts ?? [],
+        adjustmentHistory: c.adjustmentHistory ?? [],
+        candidateDraft: c.candidateDraft,
+        sourceFingerprint: c.sourceFingerprint ?? null,
+        result: {
+          outcome: result.outcome,
+          sourceFingerprint: result.sourceFingerprint,
+          draftIds: result.drafts.map((d) => d.id ?? null),
+          targetDraftId: result.targetDraft?.id ?? null,
+          historyItemId: result.historyItem?.id ?? null,
+          createdDraftId: result.createdDraft?.id ?? null,
+        },
+        createdDraft: result.createdDraft ?? null,
+      };
+    }
+    if (kind === 'findReusable') {
+      const found = findReusablePlanAdjustmentDraft(
+        c.sourceDraft as ProgramAdjustmentDraft,
+        (c.drafts ?? []) as ProgramAdjustmentDraft[],
+      );
+      return { label, kind, sourceDraft: c.sourceDraft, drafts: c.drafts ?? [], foundId: found?.id ?? null };
+    }
+    if (kind === 'regenerate') {
+      const now = c.now ?? meta.deterministicClockIso;
+      const result = buildRegeneratedPlanAdjustmentDraft(
+        c.sourceDraft as ProgramAdjustmentDraft,
+        (c.drafts ?? []) as ProgramAdjustmentDraft[],
+        { now, draftId: c.draftId },
+      );
+      return {
+        label, kind,
+        sourceDraft: c.sourceDraft,
+        drafts: c.drafts ?? [],
+        now: now ?? null,
+        draftId: c.draftId ?? null,
+        sourceFingerprint: result.sourceFingerprint,
+        existingDraftId: result.existingDraft?.id ?? null,
+        draft: result.draft ?? null,
+      };
+    }
+    throw new Error(`parityGoldensEntry: plan-adjustment-identity unknown case kind '${String(kind)}'`);
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3030,6 +3192,13 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'coach-action-identity/fingerprint-cases-v1': generateCoachActionIdentity,
   'coach-action-identity/draft-history-fingerprint-cases-v1': generateCoachActionIdentity,
   'coach-action-identity/dedupe-cases-v1': generateCoachActionIdentity,
+  // PA-S6 planAdjustmentIdentityEngine fixtures — all four routed through the single
+  // dispatch-by-kind generator (input/coachAction/draft/history/change/dedupe/instanceId/
+  // upsert/findReusable/regenerate).
+  'plan-adjustment-identity/fingerprint-cases-v1': generatePlanAdjustmentIdentity,
+  'plan-adjustment-identity/instance-id-cases-v1': generatePlanAdjustmentIdentity,
+  'plan-adjustment-identity/upsert-cases-v1': generatePlanAdjustmentIdentity,
+  'plan-adjustment-identity/regenerate-cases-v1': generatePlanAdjustmentIdentity,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
