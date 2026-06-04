@@ -223,6 +223,8 @@ const FIXTURE_IDS = [
   // JSONValue.canonicalJSONString() (canonicalKeyOrder corrected to
   // localeCompare-faithful) reproduces canonicalJson + snapshotHash byte-for-byte.
   'app-data/canonical-keyorder-fold-v1',
+  // SC-1 workoutCycleScheduler port — 1 OUTPUT fixture (cycle-position cases).
+  'workout-cycle/cycle-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

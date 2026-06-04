@@ -263,6 +263,19 @@ import { buildVolumeAdaptationReport } from '../src/engines/volumeAdaptationEngi
 // recommendedActions) == golden. PURE / clockless apart from history dates derived from
 // parityMeta.deterministicClockIso.
 import { buildTrainingIntelligenceSummary } from '../src/engines/trainingIntelligenceSummaryEngine';
+// SC-1 — workoutCycleScheduler port parity slice (scheduling-track leaf). Imports the
+// REAL buildWorkoutCycleState so the cycle goldens are GENERATED from TS truth, never
+// hand-authored (§22). The engine is fully self-contained (workoutCycleScheduler.ts
+// imports ONLY the TrainingSession type — no ./engines import, no data table, no clock)
+// and PURE: `currentDate` is an explicit input, so every fixture is byte-deterministic
+// with generatedAtPolicy 'none'. The Swift port (WorkoutCycleScheduler) re-runs
+// buildWorkoutCycleState over each case's echoed engineInput (orderedTemplateIds +
+// currentDate + history) and COMPUTE-ASSERTs the full WorkoutCycleState == golden. PURE —
+// no write path, no decision-output wiring (that is SC-4). The companion
+// recoveryAwareScheduler is DEFERRED (it is NOT self-contained — it pulls the un-ported
+// exerciseRecoveryConflictEngine + EXERCISE_KNOWLEDGE_OVERRIDES values + a shared
+// formatExerciseName, all out of this slice's "only these engines" bound).
+import { buildWorkoutCycleState } from '../src/engines/workoutCycleScheduler';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -762,6 +775,20 @@ const FIXTURE_IDS = [
   // localeCompare-faithful lower-before-upper) reproduces byte-for-byte. Generated,
   // never hand-edited (§22).
   'app-data/canonical-keyorder-fold-v1',
+  // SC-1 workoutCycleScheduler port — 1 OUTPUT fixture (a `cases` array) FUNCTION-LEVEL
+  // pinning the ported buildWorkoutCycleState. The cases jointly cover every branch:
+  // empty-ordered (+ whitespace-dedupes-to-empty early return) · no-records-and-filters
+  // (completed!=true / dataFlag test+excluded filters + non-resolving templateId → the
+  // "还没有本轮正式完成记录" reason) · open-cycle-partial (sourceProgramTemplateId /
+  // programTemplateId precedence + the "已完成…还缺…" reason) · closed-cycle-complete
+  // (cycle close → isCycleComplete + the hardcoded "推、拉、腿" reason) · closed-then-open
+  // (closedCycleCount>0 AND a reopened partial cycle) · thirty-day-gap-restart (>30d since
+  // latest → restart-from-new-cycle + lastCompletedTemplateId resolve) · future-session-
+  // gated (sessionDate>currentDate excluded) · no-current-date (the !current keep-all +
+  // restart-skip path) · label-fallback-and-dedup (ordered dedup + templateLabel '-'→' '
+  // fallback) · started-at-precedence (sessionSortKey startedAt rung). Each case echoes the
+  // engineInput + the full result. Generated; never hand-edited (§22).
+  'workout-cycle/cycle-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3416,6 +3443,32 @@ const generateProgramAdjustApplyDraft = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// SC-1 — workoutCycleScheduler OUTPUT parity (buildWorkoutCycleState)
+//
+// Each case carries an explicit `orderedTemplateIds` + optional `currentDate` + a literal
+// `sessions` array (TrainingSession-shaped objects; the cycle engine reads completed /
+// dataFlag / finishedAt|startedAt|date / sourceProgramTemplateId|programTemplateId|templateId,
+// the last four riding in the Swift TrainingSession open bag). The generator runs the REAL
+// buildWorkoutCycleState over each case verbatim and emits BOTH the engineInput
+// (orderedTemplateIds + currentDate + history) AND the computed result. PURE / clockless
+// (currentDate is an explicit input — no Date). Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateWorkoutCycle = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; orderedTemplateIds?: string[]; currentDate?: string; sessions?: unknown[] }) => {
+      const orderedTemplateIds = Array.isArray(c.orderedTemplateIds) ? c.orderedTemplateIds : [];
+      const history = (Array.isArray(c.sessions) ? c.sessions : []) as TrainingSession[];
+      const result = buildWorkoutCycleState({ history, orderedTemplateIds, currentDate: c.currentDate });
+      const out: Record<string, unknown> = { label: c.label ?? null, orderedTemplateIds, history, result };
+      if (c.currentDate !== undefined) out.currentDate = c.currentDate;
+      return out;
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3536,6 +3589,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'program-adjust/apply-draft-opaque-cases-v1': generateProgramAdjustApplyDraft,
   // FIX-B (§9 canonicalKeyOrder fidelity) — canonical-keyorder OUTPUT parity.
   'app-data/canonical-keyorder-fold-v1': generateCanonicalKeyOrderFold,
+  // SC-1 workoutCycleScheduler OUTPUT parity.
+  'workout-cycle/cycle-cases-v1': generateWorkoutCycle,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

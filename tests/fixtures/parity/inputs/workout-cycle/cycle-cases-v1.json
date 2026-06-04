@@ -1,0 +1,106 @@
+{
+  "parityMeta": {
+    "id": "workout-cycle/cycle-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-1 buildWorkoutCycleState function-level parity — synthetic cycle-position cases (empty-ordered / whitespace-dedupe-empty / no-records+filters / open-partial / closed-complete / closed-then-open / 30d-gap-restart / future-session-gated / no-currentDate / label-fallback+dedup / startedAt-precedence). Generated from src/engines/workoutCycleScheduler.ts; the Swift WorkoutCycleScheduler compute-asserts each case == golden. Clockless: currentDate is an explicit input, no wall clock → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "a1e63d939cdd079e2e2cfa68e0d392c35f389d4a",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "empty-ordered",
+      "orderedTemplateIds": [],
+      "sessions": []
+    },
+    {
+      "label": "whitespace-dedupes-to-empty",
+      "orderedTemplateIds": ["  ", " "],
+      "sessions": []
+    },
+    {
+      "label": "no-records-and-filters",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "nr-cardio", "completed": true, "date": "2026-05-20", "templateId": "cardio" },
+        { "id": "nr-incomplete", "completed": false, "date": "2026-05-21", "templateId": "push" },
+        { "id": "nr-excluded", "completed": true, "dataFlag": "excluded", "date": "2026-05-22", "templateId": "pull" },
+        { "id": "nr-test", "completed": true, "dataFlag": "test", "date": "2026-05-23", "templateId": "legs" }
+      ]
+    },
+    {
+      "label": "open-cycle-partial",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "op-push", "completed": true, "finishedAt": "2026-05-25T08:00:00.000Z", "date": "2026-05-25", "sourceProgramTemplateId": "push" },
+        { "id": "op-pull", "completed": true, "finishedAt": "2026-05-28T08:00:00.000Z", "date": "2026-05-28", "programTemplateId": "pull" }
+      ]
+    },
+    {
+      "label": "closed-cycle-complete",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "cc-push", "completed": true, "date": "2026-05-23", "templateId": "push" },
+        { "id": "cc-pull", "completed": true, "date": "2026-05-26", "templateId": "pull" },
+        { "id": "cc-legs", "completed": true, "date": "2026-05-29", "templateId": "legs" }
+      ]
+    },
+    {
+      "label": "closed-then-open",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "co-push1", "completed": true, "date": "2026-05-20", "templateId": "push" },
+        { "id": "co-pull1", "completed": true, "date": "2026-05-23", "templateId": "pull" },
+        { "id": "co-legs1", "completed": true, "date": "2026-05-26", "templateId": "legs" },
+        { "id": "co-push2", "completed": true, "date": "2026-05-29", "templateId": "push" }
+      ]
+    },
+    {
+      "label": "thirty-day-gap-restart",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "gap-push", "completed": true, "finishedAt": "2026-04-15T08:00:00.000Z", "date": "2026-04-15", "templateId": "push" }
+      ]
+    },
+    {
+      "label": "future-session-gated",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "fg-push", "completed": true, "date": "2026-05-25", "templateId": "push" },
+        { "id": "fg-pull-future", "completed": true, "date": "2026-06-15", "templateId": "pull" }
+      ]
+    },
+    {
+      "label": "no-current-date",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "sessions": [
+        { "id": "nd-push", "completed": true, "date": "2024-01-01", "templateId": "push" },
+        { "id": "nd-pull", "completed": true, "date": "2024-01-08", "templateId": "pull" }
+      ]
+    },
+    {
+      "label": "label-fallback-and-dedup",
+      "orderedTemplateIds": ["upper-a", "upper-a", "lower-b"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "lf-upper", "completed": true, "date": "2026-05-25", "templateId": "upper-a" }
+      ]
+    },
+    {
+      "label": "started-at-precedence",
+      "orderedTemplateIds": ["push", "pull", "legs"],
+      "currentDate": "2026-06-01",
+      "sessions": [
+        { "id": "sa-push", "completed": true, "startedAt": "2026-05-25T08:00:00.000Z", "templateId": "push" },
+        { "id": "sa-pull", "completed": true, "date": "2026-05-28", "templateId": "pull" }
+      ]
+    }
+  ]
+}
