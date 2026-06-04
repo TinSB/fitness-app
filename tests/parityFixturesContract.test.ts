@@ -252,6 +252,9 @@ const FIXTURE_IDS = [
   // the two ordering exports via dispatch-by-kind). Generated; never hand-edited (§22).
   'next-workout/recommendation-cases-v1',
   'next-workout/ordered-templates-cases-v1',
+  // CC-0 coachAction-foundation — 1 ADDITIVE OUTPUT fixture (sortDataHealthIssues
+  // function-level parity). Generated; never hand-edited (§22).
+  'data-health/sort-issues-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

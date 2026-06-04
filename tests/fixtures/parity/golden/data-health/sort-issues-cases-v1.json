@@ -1,0 +1,401 @@
+{
+  "cases": [
+    {
+      "issues": [
+        {
+          "canAutoFix": false,
+          "category": "summary",
+          "id": "a-info",
+          "message": "info row",
+          "severity": "info",
+          "title": "Z-would-be-first-by-title"
+        },
+        {
+          "canAutoFix": true,
+          "category": "unit",
+          "id": "a-error",
+          "message": "error row",
+          "severity": "error",
+          "title": "Z-error-sorts-last-by-title"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "a-warning",
+          "message": "warning row",
+          "severity": "warning",
+          "title": "M-middle"
+        }
+      ],
+      "label": "severity DESC beats title ASC — anti-aligned titles (error has the title that would sort LAST, info the title that would sort FIRST); severity must override",
+      "result": [
+        {
+          "canAutoFix": true,
+          "category": "unit",
+          "id": "a-error",
+          "message": "error row",
+          "severity": "error",
+          "title": "Z-error-sorts-last-by-title"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "a-warning",
+          "message": "warning row",
+          "severity": "warning",
+          "title": "M-middle"
+        },
+        {
+          "canAutoFix": false,
+          "category": "summary",
+          "id": "a-info",
+          "message": "info row",
+          "severity": "info",
+          "title": "Z-would-be-first-by-title"
+        }
+      ]
+    },
+    {
+      "issues": [
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "b-cherry",
+          "message": "c",
+          "severity": "warning",
+          "title": "Cherry"
+        },
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "b-apple",
+          "message": "a",
+          "severity": "warning",
+          "title": "Apple"
+        },
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "b-banana",
+          "message": "b",
+          "severity": "warning",
+          "title": "Banana"
+        }
+      ],
+      "label": "same-severity ASCII title tie-break (all warning) — scrambled Cherry/Apple/Banana sorts Apple<Banana<Cherry",
+      "result": [
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "b-apple",
+          "message": "a",
+          "severity": "warning",
+          "title": "Apple"
+        },
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "b-banana",
+          "message": "b",
+          "severity": "warning",
+          "title": "Banana"
+        },
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "b-cherry",
+          "message": "c",
+          "severity": "warning",
+          "title": "Cherry"
+        }
+      ]
+    },
+    {
+      "issues": [
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "c-zhi",
+          "message": "zhi",
+          "severity": "error",
+          "title": "智能分析失败"
+        },
+        {
+          "canAutoFix": true,
+          "category": "unit",
+          "id": "c-dan",
+          "message": "dan",
+          "severity": "error",
+          "title": "单位换算异常"
+        },
+        {
+          "canAutoFix": false,
+          "category": "template",
+          "id": "c-mo",
+          "message": "mo",
+          "severity": "error",
+          "title": "模板结构损坏"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "c-li",
+          "message": "li",
+          "severity": "error",
+          "title": "历史记录缺失"
+        }
+      ],
+      "label": "same-severity zh-CN PINYIN title tie-break (all error) — scrambled 智/单/模/历 sorts by pinyin 单(dan)<历(li)<模(mo)<智(zhi), which DIFFERS from code-point order",
+      "result": [
+        {
+          "canAutoFix": true,
+          "category": "unit",
+          "id": "c-dan",
+          "message": "dan",
+          "severity": "error",
+          "title": "单位换算异常"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "c-li",
+          "message": "li",
+          "severity": "error",
+          "title": "历史记录缺失"
+        },
+        {
+          "canAutoFix": false,
+          "category": "template",
+          "id": "c-mo",
+          "message": "mo",
+          "severity": "error",
+          "title": "模板结构损坏"
+        },
+        {
+          "canAutoFix": false,
+          "category": "analytics",
+          "id": "c-zhi",
+          "message": "zhi",
+          "severity": "error",
+          "title": "智能分析失败"
+        }
+      ]
+    },
+    {
+      "issues": [
+        {
+          "canAutoFix": true,
+          "category": "replacement",
+          "id": "d-err",
+          "message": "err",
+          "severity": "error",
+          "title": "X-top"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "d-first",
+          "message": "first",
+          "severity": "warning",
+          "title": "重复问题"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "d-second",
+          "message": "second",
+          "severity": "warning",
+          "title": "重复问题"
+        }
+      ],
+      "label": "JS-stable equal-key preservation — an error floats above two warnings whose severity AND title are IDENTICAL (comparator==0); the two warnings keep input order (first before second)",
+      "result": [
+        {
+          "canAutoFix": true,
+          "category": "replacement",
+          "id": "d-err",
+          "message": "err",
+          "severity": "error",
+          "title": "X-top"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "d-first",
+          "message": "first",
+          "severity": "warning",
+          "title": "重复问题"
+        },
+        {
+          "canAutoFix": false,
+          "category": "history",
+          "id": "d-second",
+          "message": "second",
+          "severity": "warning",
+          "title": "重复问题"
+        }
+      ]
+    },
+    {
+      "issues": [],
+      "label": "empty array — sortDataHealthIssues([]) returns []",
+      "result": []
+    },
+    {
+      "issues": [
+        {
+          "affectedIds": [
+            "m1"
+          ],
+          "canAutoFix": true,
+          "category": "healthData",
+          "id": "f-only",
+          "message": "only",
+          "severity": "warning",
+          "suggestedAction": "review",
+          "title": "唯一问题"
+        }
+      ],
+      "label": "single element — returned unchanged",
+      "result": [
+        {
+          "affectedIds": [
+            "m1"
+          ],
+          "canAutoFix": true,
+          "category": "healthData",
+          "id": "f-only",
+          "message": "only",
+          "severity": "warning",
+          "suggestedAction": "review",
+          "title": "唯一问题"
+        }
+      ]
+    },
+    {
+      "issues": [
+        {
+          "canAutoFix": false,
+          "category": "summary",
+          "id": "g1",
+          "message": "m1",
+          "severity": "info",
+          "title": "信息B"
+        },
+        {
+          "affectedIds": [
+            "x1",
+            "x2"
+          ],
+          "canAutoFix": true,
+          "category": "replacement",
+          "id": "g2",
+          "message": "m2",
+          "severity": "error",
+          "suggestedAction": "auto-fix",
+          "title": "错误A"
+        },
+        {
+          "canAutoFix": false,
+          "category": "healthData",
+          "id": "g3",
+          "message": "m3",
+          "severity": "warning",
+          "title": "警告B"
+        },
+        {
+          "canAutoFix": true,
+          "category": "template",
+          "id": "g4",
+          "message": "m4",
+          "severity": "error",
+          "title": "错误B"
+        },
+        {
+          "affectedIds": [],
+          "canAutoFix": false,
+          "category": "unknown",
+          "id": "g5",
+          "message": "m5",
+          "severity": "warning",
+          "suggestedAction": "review",
+          "title": "警告A"
+        },
+        {
+          "canAutoFix": true,
+          "category": "unit",
+          "id": "g6",
+          "message": "m6",
+          "severity": "info",
+          "title": "信息A"
+        }
+      ],
+      "label": "full mixed — every DataHealthIssue field, all three severities, all eight category values, same-severity Chinese title tie-breaks; expect 错误A,错误B,警告A,警告B,信息A,信息B",
+      "result": [
+        {
+          "affectedIds": [
+            "x1",
+            "x2"
+          ],
+          "canAutoFix": true,
+          "category": "replacement",
+          "id": "g2",
+          "message": "m2",
+          "severity": "error",
+          "suggestedAction": "auto-fix",
+          "title": "错误A"
+        },
+        {
+          "canAutoFix": true,
+          "category": "template",
+          "id": "g4",
+          "message": "m4",
+          "severity": "error",
+          "title": "错误B"
+        },
+        {
+          "affectedIds": [],
+          "canAutoFix": false,
+          "category": "unknown",
+          "id": "g5",
+          "message": "m5",
+          "severity": "warning",
+          "suggestedAction": "review",
+          "title": "警告A"
+        },
+        {
+          "canAutoFix": false,
+          "category": "healthData",
+          "id": "g3",
+          "message": "m3",
+          "severity": "warning",
+          "title": "警告B"
+        },
+        {
+          "canAutoFix": true,
+          "category": "unit",
+          "id": "g6",
+          "message": "m6",
+          "severity": "info",
+          "title": "信息A"
+        },
+        {
+          "canAutoFix": false,
+          "category": "summary",
+          "id": "g1",
+          "message": "m1",
+          "severity": "info",
+          "title": "信息B"
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "02b84a7f853870ff0f96504b07b5b2aa9cb45e69",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "data-health/sort-issues-cases-v1"
+  },
+  "sourceFixtureId": "data-health/sort-issues-cases-v1"
+}
