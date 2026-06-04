@@ -1,0 +1,134 @@
+{
+  "parityMeta": {
+    "id": "weekly-coach/program-adjustment-preview-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-1 weeklyCoachActionEngine — FUNCTION-LEVEL parity for buildProgramAdjustmentPreview (src/engines/weeklyCoachActionEngine.ts:350). Each case echoes the input WeeklyActionRecommendation[] (+ optional programTemplate) and the REAL engine output. Cases pin: the no-actionable preview-keep fallback (ts:355); the change mapping flatMap (add_sets when number(setsDelta)>0 with exerciseIds[0] ts:370, remove_sets when <0 ts:379, swap_exercise per removeExerciseId ts:387, reduce_support when supportDoseAdjustment && !=='keep' ts:394, keep otherwise ts:400); the changes.slice(0,6) cut (ts:414); the programTemplate.splitType summary vs generic summary (ts:411-413); and the preview confidence high-if-any-high-else-medium (ts:415). The Swift WeeklyCoachActionEngine.buildProgramAdjustmentPreview re-runs the SAME builder over the echoed recommendations and COMPUTE-ASSERTs the preview list (id/title/summary/changes/confidence) == golden `result`, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "a6767fbed7b365cdcd3ef8a90be2416cd4df3f1c",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — buildProgramAdjustmentPreview is PURE (no new Date / Date.now / Math.random). Synthetic exercise ids + Chinese muscle names; no email/token/userId/deviceLabel. The input recommendations carry only the fields the builder reads (suggestedChange / recommendation / confidence) plus id/category/targetType/targetLabel for shape realism."
+  },
+  "cases": [
+    {
+      "kind": "programPreview",
+      "label": "no actionable (no suggestedChange) → preview-keep fallback (ts:355)",
+      "recommendations": [
+        {
+          "id": "recovery-exercise-bench-press",
+          "category": "recovery",
+          "targetType": "exercise",
+          "targetId": "bench-press",
+          "targetLabel": "平板卧推",
+          "issue": "历史最佳 e1RM 明显高于当前稳定估算。",
+          "recommendation": "下周训练重量继续以当前 e1RM 为准，不追历史最高。",
+          "reason": "当前估算 100kg，历史最佳 110kg。",
+          "evidenceRuleIds": ["progressive_overload"],
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "kind": "programPreview",
+      "label": "all change types + programTemplate splitType summary + high confidence + slice(0,6) drops the 7th change",
+      "programTemplate": { "splitType": "upper_lower" },
+      "recommendations": [
+        {
+          "id": "volume-muscle-胸",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetId": "胸",
+          "targetLabel": "胸部",
+          "issue": "胸部 本周加权有效组明显低于目标。",
+          "recommendation": "下周优先补 4 组胸部训练量，可放在 哑铃卧推 / 上斜器械推胸。",
+          "reason": "目标 12 组，目前加权有效组 6.5，还差约 6 组。",
+          "suggestedChange": { "muscleId": "胸", "setsDelta": 4, "exerciseIds": ["db-bench-press", "machine-incline-chest-press"] },
+          "evidenceRuleIds": ["weekly_volume_distribution", "progressive_overload"],
+          "confidence": "high"
+        },
+        {
+          "id": "recovery-muscle-腿",
+          "category": "recovery",
+          "targetType": "muscle",
+          "targetId": "腿",
+          "targetLabel": "腿部",
+          "issue": "腿部 本周训练量可能偏高。",
+          "recommendation": "下周不建议继续增加腿部辅助动作，可减少 1–2 组或维持现状。",
+          "reason": "当前加权有效组 20 已超过目标 16。",
+          "suggestedChange": { "muscleId": "腿", "setsDelta": -2 },
+          "evidenceRuleIds": ["weekly_volume_distribution", "deload_volume_reduction"],
+          "confidence": "medium"
+        },
+        {
+          "id": "pain-exercise-bench-press",
+          "category": "pain",
+          "targetType": "exercise",
+          "targetId": "bench-press",
+          "targetLabel": "bench-press",
+          "issue": "肘 近期出现重复不适记录。",
+          "recommendation": "下周避免把该动作作为补量首选，优先使用更稳定的替代动作。",
+          "reason": "频率 3，平均强度 2.4，系统建议采取保守训练处理。",
+          "suggestedChange": { "removeExerciseIds": ["bench-press", "overhead-press"] },
+          "evidenceRuleIds": ["pain_conservative_rule"],
+          "confidence": "medium"
+        },
+        {
+          "id": "adherence-program-计划可执行性",
+          "category": "adherence",
+          "targetType": "program",
+          "targetLabel": "计划可执行性",
+          "issue": "最近训练完成度只有 65%。",
+          "recommendation": "下周先减少计划复杂度，优先保留主训练和最关键的 1 个辅助模块。",
+          "reason": "完成度偏低时，继续加内容通常会让计划更难执行。",
+          "suggestedChange": { "volumeMultiplier": 0.9, "supportDoseAdjustment": "reduce" },
+          "evidenceRuleIds": ["weekly_volume_distribution"],
+          "confidence": "medium"
+        },
+        {
+          "id": "volume-muscle-肩",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetId": "肩",
+          "targetLabel": "肩部",
+          "issue": "肩部 本周训练量已达标。",
+          "recommendation": "下周维持肩部当前训练量，不需要额外加量。",
+          "reason": "当前加权有效组 9/10，继续提高动作质量比堆组数更重要。",
+          "suggestedChange": { "muscleId": "肩", "setsDelta": 0 },
+          "evidenceRuleIds": ["weekly_volume_distribution"],
+          "confidence": "medium"
+        },
+        {
+          "id": "load_feedback-program-推荐重量",
+          "category": "load_feedback",
+          "targetType": "program",
+          "targetLabel": "推荐重量",
+          "issue": "最近多次反馈推荐重量偏重。",
+          "recommendation": "下周相关动作先采用保守推进，不直接提高当前 e1RM。",
+          "reason": "重量反馈是校准信号，不应直接覆盖训练表现数据。",
+          "suggestedChange": { "volumeMultiplier": 0.95 },
+          "evidenceRuleIds": ["progressive_overload", "rir_effort_control"],
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "kind": "programPreview",
+      "label": "no programTemplate → generic summary + medium confidence (no high rec) + single add_sets change",
+      "recommendations": [
+        {
+          "id": "volume-muscle-胸",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetId": "胸",
+          "targetLabel": "胸部",
+          "issue": "胸部 本周加权有效组明显低于目标。",
+          "recommendation": "下周优先补 3 组胸部训练量，可放在 哑铃卧推。",
+          "reason": "目标 12 组，目前加权有效组 7，还差约 5 组。",
+          "suggestedChange": { "muscleId": "胸", "setsDelta": 3, "exerciseIds": ["db-bench-press"] },
+          "evidenceRuleIds": ["weekly_volume_distribution", "progressive_overload"],
+          "confidence": "medium"
+        }
+      ]
+    }
+  ]
+}

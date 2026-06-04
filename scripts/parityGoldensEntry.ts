@@ -353,6 +353,21 @@ import {
   sortDataHealthIssues,
   type DataHealthIssue,
 } from '../src/engines/dataHealthEngine';
+// CC-1 — weeklyCoachActionEngine port parity slice. Imports the REAL pure builders
+// so the weekly-coach goldens are GENERATED from TS truth, never hand-authored (§22).
+// All three exports are PURE / clockless (no Date.now / new Date / Math.random in the
+// engine path), so every fixture uses generatedAtPolicy 'none'. The Swift port
+// (WeeklyCoachActionEngine) re-runs the SAME builders over each case's echoed input and
+// COMPUTE-ASSERTs the result function-by-function (recommendExercisesForMuscleGap list +
+// order + reasons · buildWeeklyActionRecommendations full rec list + sort + slice ·
+// buildProgramAdjustmentPreview changes + summary + confidence). Every case passes an
+// EXPLICIT exerciseLibrary so the default-library fallback (EXERCISE_KNOWLEDGE_OVERRIDES
+// values, not yet native) is never hit — it is deferred golden-neutral.
+import {
+  recommendExercisesForMuscleGap,
+  buildWeeklyActionRecommendations,
+  buildProgramAdjustmentPreview,
+} from '../src/engines/weeklyCoachActionEngine';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -960,6 +975,26 @@ const FIXTURE_IDS = [
   // SAME comparator over the echoed `issues` and COMPUTE-ASSERTs the order == golden
   // `result`. Additive; generated, never hand-edited (§22).
   'data-health/sort-issues-cases-v1',
+  // CC-1 weeklyCoachActionEngine — three OUTPUT fixtures (each a `cases` array,
+  // dispatch-by-kind) FUNCTION-LEVEL pinning the three pure builders:
+  // exercise-recommendations-cases-v1 pins recommendExercisesForMuscleGap (contribution
+  // sources muscleContribution/primary/secondary/muscle · primary/secondary/avoid
+  // priority · restricted + pain-risk avoid · heavy-feedback + low-adherence secondary ·
+  // fatigue/contribution stable ordering · empty-reasons fallback · filtered-out + empty
+  // library). weekly-actions-cases-v1 pins buildWeeklyActionRecommendations (empty-dash
+  // fallback · low/near_target/on_target/high volume branches · deload mesocycle · pain-
+  // risk priority drop · technique low-confidence branch · adherence<70 · heavy load-
+  // feedback · pain slice(0,2)+watch-skip · e1RM gap qualify/skip · priorityScore +
+  // localeCompare(zh-CN) stable sort + slice(0,10)). program-adjustment-preview-cases-v1
+  // pins buildProgramAdjustmentPreview (no-actionable preview-keep · add_sets/remove_sets/
+  // swap_exercise/reduce_support/keep change mapping · slice(0,6) · splitType summary ·
+  // high/medium confidence). The Swift WeeklyCoachActionEngine re-runs each builder over
+  // the echoed input and COMPUTE-ASSERTs the result == golden. Additive; generated, never
+  // hand-edited (§22). Every case passes an explicit exerciseLibrary (default-library
+  // fallback deferred golden-neutral — see WeeklyCoachActionEngine.swift header).
+  'weekly-coach/exercise-recommendations-cases-v1',
+  'weekly-coach/weekly-actions-cases-v1',
+  'weekly-coach/program-adjustment-preview-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -4045,6 +4080,43 @@ const generateSortDataHealthIssues = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// CC-1 — weeklyCoachActionEngine OUTPUT parity (coach-action track)
+//
+// Dispatch-by-kind generator shared by all three weekly-coach fixtures. Each case
+// echoes its engine input verbatim AND the REAL TS builder output. PURE / clockless.
+// Generated, never hand-edited (§22).
+//   kind 'recommendExercises' → recommendExercisesForMuscleGap(muscleId, context) → `result`
+//   kind 'weeklyActions'      → buildWeeklyActionRecommendations(input)            → `result`
+//   kind 'programPreview'     → buildProgramAdjustmentPreview(recommendations, tpl) → `result`
+// ---------------------------------------------------------------------------
+
+const generateWeeklyCoach = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    switch (c.kind) {
+      case 'recommendExercises': {
+        const context = c.context ?? {};
+        const result = recommendExercisesForMuscleGap(c.muscleId, context);
+        return { label: c.label ?? null, kind: c.kind, muscleId: c.muscleId, context, result };
+      }
+      case 'weeklyActions': {
+        const engineInput = c.input ?? {};
+        const result = buildWeeklyActionRecommendations(engineInput);
+        return { label: c.label ?? null, kind: c.kind, input: engineInput, result };
+      }
+      case 'programPreview': {
+        const recommendations = c.recommendations ?? [];
+        const programTemplate = c.programTemplate ?? null;
+        const result = buildProgramAdjustmentPreview(recommendations, programTemplate);
+        return { label: c.label ?? null, kind: c.kind, recommendations, programTemplate, result };
+      }
+      default:
+        throw new Error(`weekly-coach: unknown kind ${String(c.kind)}`);
+    }
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -4184,6 +4256,11 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'next-workout/ordered-templates-cases-v1': generateNextWorkoutOrdered,
   // CC-0 sortDataHealthIssues OUTPUT parity (coachAction-foundation slice).
   'data-health/sort-issues-cases-v1': generateSortDataHealthIssues,
+  // CC-1 weeklyCoachActionEngine OUTPUT parity — all three routed through the single
+  // dispatch-by-kind generator (recommendExercises / weeklyActions / programPreview).
+  'weekly-coach/exercise-recommendations-cases-v1': generateWeeklyCoach,
+  'weekly-coach/weekly-actions-cases-v1': generateWeeklyCoach,
+  'weekly-coach/program-adjustment-preview-cases-v1': generateWeeklyCoach,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

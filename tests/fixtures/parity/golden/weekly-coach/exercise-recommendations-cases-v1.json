@@ -1,0 +1,267 @@
+{
+  "cases": [
+    {
+      "context": {
+        "exerciseLibrary": {
+          "bench-press": {
+            "fatigueCost": "high",
+            "muscleContribution": {
+              "胸": 1
+            }
+          },
+          "db-bench-press": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 0.8
+            }
+          },
+          "machine-chest-press": {
+            "fatigueCost": "low",
+            "muscleContribution": {
+              "胸": 0.95
+            }
+          }
+        }
+      },
+      "kind": "recommendExercises",
+      "label": "primary/secondary ordering + reason chains — low-fatigue high-contribution first, high-fatigue last; 能直接补充 only when contribution>=0.9 && !high",
+      "muscleId": "胸",
+      "result": [
+        {
+          "exerciseId": "machine-chest-press",
+          "fatigueCost": "low",
+          "label": "器械推胸",
+          "priority": "primary",
+          "reason": "能直接补充胸训练量。 疲劳成本较低，适合用作下周补量。"
+        },
+        {
+          "exerciseId": "db-bench-press",
+          "fatigueCost": "medium",
+          "label": "哑铃卧推",
+          "priority": "primary",
+          "reason": "疲劳成本较低，适合用作下周补量。"
+        },
+        {
+          "exerciseId": "bench-press",
+          "fatigueCost": "high",
+          "label": "平板卧推",
+          "priority": "secondary",
+          "reason": "疲劳成本较高，补量时不作为首选。"
+        }
+      ]
+    },
+    {
+      "context": {
+        "exerciseLibrary": {
+          "bench-press": {
+            "fatigueCost": "high",
+            "muscleContribution": {
+              "胸": 1
+            }
+          }
+        },
+        "restrictedExercises": [
+          "bench-press"
+        ]
+      },
+      "kind": "recommendExercises",
+      "label": "restricted exercise → avoid (该动作已被当前筛查限制。)",
+      "muscleId": "胸",
+      "result": [
+        {
+          "exerciseId": "bench-press",
+          "fatigueCost": "high",
+          "label": "平板卧推",
+          "priority": "avoid",
+          "reason": "该动作已被当前筛查限制。"
+        }
+      ]
+    },
+    {
+      "context": {
+        "exerciseLibrary": {
+          "bench-press": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 1
+            }
+          },
+          "db-bench-press": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 0.7
+            }
+          }
+        },
+        "painPatterns": [
+          {
+            "area": "胸",
+            "exerciseId": "bench-press",
+            "frequency": 3,
+            "severityAvg": 2.5,
+            "suggestedAction": "substitute"
+          },
+          {
+            "area": "胸",
+            "exerciseId": "db-bench-press",
+            "frequency": 1,
+            "severityAvg": 1.2,
+            "suggestedAction": "watch"
+          }
+        ]
+      },
+      "kind": "recommendExercises",
+      "label": "pain-risk substitute → avoid (该动作近期有重复不适记录。); watch is NOT a risk → stays primary",
+      "muscleId": "胸",
+      "result": [
+        {
+          "exerciseId": "db-bench-press",
+          "fatigueCost": "medium",
+          "label": "哑铃卧推",
+          "priority": "primary",
+          "reason": "疲劳成本较低，适合用作下周补量。"
+        },
+        {
+          "exerciseId": "bench-press",
+          "fatigueCost": "medium",
+          "label": "平板卧推",
+          "priority": "avoid",
+          "reason": "该动作近期有重复不适记录。"
+        }
+      ]
+    },
+    {
+      "context": {
+        "exerciseLibrary": {
+          "a-machine-row": {
+            "fatigueCost": "medium",
+            "primaryMuscles": [
+              "背"
+            ]
+          },
+          "b-seated-row": {
+            "fatigueCost": "medium",
+            "primaryMuscles": [
+              "背"
+            ]
+          }
+        },
+        "loadFeedbackByExercise": {
+          "a-machine-row": {
+            "counts": {
+              "good": 1,
+              "too_heavy": 2,
+              "too_light": 0
+            }
+          }
+        },
+        "recentLowAdherenceExerciseIds": [
+          "b-seated-row"
+        ]
+      },
+      "kind": "recommendExercises",
+      "label": "heavy-feedback + low-adherence both → secondary, with their reason lines; equal sort keys keep iteration order",
+      "muscleId": "背",
+      "result": [
+        {
+          "exerciseId": "a-machine-row",
+          "fatigueCost": "medium",
+          "label": "a-machine-row",
+          "priority": "secondary",
+          "reason": "能直接补充背训练量。 疲劳成本较低，适合用作下周补量。 最近该动作有推荐重量偏重反馈，先降低优先级。"
+        },
+        {
+          "exerciseId": "b-seated-row",
+          "fatigueCost": "medium",
+          "label": "b-seated-row",
+          "priority": "secondary",
+          "reason": "能直接补充背训练量。 疲劳成本较低，适合用作下周补量。 该动作近期完成度偏低，先作为备选。"
+        }
+      ]
+    },
+    {
+      "context": {
+        "exerciseLibrary": {
+          "c-fallback": {
+            "fatigueCost": "unknown",
+            "muscleContribution": {
+              "肩": 0.5
+            }
+          },
+          "m-muscle-field": {
+            "fatigueCost": "low",
+            "muscle": "肩"
+          },
+          "p-primary": {
+            "fatigueCost": "medium",
+            "primaryMuscles": [
+              "肩"
+            ]
+          },
+          "s-secondary": {
+            "fatigueCost": "medium",
+            "secondaryMuscles": [
+              "肩"
+            ]
+          },
+          "z-nomatch": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 1
+            }
+          }
+        }
+      },
+      "kind": "recommendExercises",
+      "label": "contribution sources (muscle field / primary / secondary) + no-match filtered + empty-reasons fallback (可为X提供训练量。 via non-standard fatigueCost)",
+      "muscleId": "肩",
+      "result": [
+        {
+          "exerciseId": "m-muscle-field",
+          "fatigueCost": "low",
+          "label": "m-muscle-field",
+          "priority": "primary",
+          "reason": "能直接补充肩训练量。 疲劳成本较低，适合用作下周补量。"
+        },
+        {
+          "exerciseId": "p-primary",
+          "fatigueCost": "medium",
+          "label": "p-primary",
+          "priority": "primary",
+          "reason": "能直接补充肩训练量。 疲劳成本较低，适合用作下周补量。"
+        },
+        {
+          "exerciseId": "s-secondary",
+          "fatigueCost": "medium",
+          "label": "s-secondary",
+          "priority": "primary",
+          "reason": "疲劳成本较低，适合用作下周补量。"
+        },
+        {
+          "exerciseId": "c-fallback",
+          "fatigueCost": "unknown",
+          "label": "c-fallback",
+          "priority": "primary",
+          "reason": "可为肩提供训练量。"
+        }
+      ]
+    },
+    {
+      "context": {
+        "exerciseLibrary": {}
+      },
+      "kind": "recommendExercises",
+      "label": "explicit empty library → [] (no fallback; {} is truthy in TS)",
+      "muscleId": "胸",
+      "result": []
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "a6767fbed7b365cdcd3ef8a90be2416cd4df3f1c",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "weekly-coach/exercise-recommendations-cases-v1"
+  },
+  "sourceFixtureId": "weekly-coach/exercise-recommendations-cases-v1"
+}
