@@ -1,0 +1,343 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/apply-draft-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S9 (PA-1c) applyAdjustmentDraft function-level parity — synthetic drafts + source/current templates pinning: the hash-mismatch expired early-return (ts:816), the hash-match apply path (sourceTemplateSnapshotHash set from hashProgramTemplate(source) via snapshotHashFromSource) and the no-snapshot apply path, add_new_exercise WITHOUT a dayTemplateId → skipped (skipReason), add_new_exercise WITH a dayTemplateId → applied (inserted enriched exercise), add_sets/remove_sets applied & not-found-skipped, swap_exercise applied (replacementExerciseId) & skipped (no replacement), reduce_support applied (room) & skipped (no room), increase_support applied (always changed), the ensureProgramDayTemplate final day, summarizeMainChanges (first 3 non-skipped), and the historyItem assembly (sourceFingerprint = draft.sourceFingerprint || build…; sourceProgramSnapshot = cloneProgram(current); makeId injected id). PURE / ZERO WRITE — the engine computes on clones and RETURNS the result, never persists. Generated from src/engines/programAdjustmentEngine.ts; the wall-clock appliedAt (ts:829 → experimentalTemplate.updatedAt/.appliedAt, draft.appliedAt, historyItem.appliedAt) and the makeId history id (ts:889) are substituted by the injected deterministicClockIso / `adjustment-history-${historyIdSeed}` (none feed any fingerprint). The Swift port takes nowIso/historyIdSeed explicitly and canonical-asserts the ApplyAdjustmentDraftResult == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "4aa6d40bfac7008babc57954dc0bc8481af8ab9a",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "sourceNotes": "applyAdjustmentDraft reads the wall clock for appliedAt (ts:829) and makeId (a wall-clock + randomness suffix) for the history id (ts:889); the generator substitutes those with the injected deterministicClockIso / fixed historyIdSeed so the goldens are byte-deterministic. All drafts/templates synthetic; userId values use the allowlisted synthetic-user placeholder; no email/token. ZERO WRITE — applyAdjustmentDraft only returns the result (source-of-truth write is the later S10 slice)."
+  },
+  "cases": [
+    {
+      "label": "hash mismatch (draft.sourceTemplateSnapshotHash != hash(source)) → expired early return (ok:false, draft.status='expired')",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-stale-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-staleff",
+        "sourceFingerprint": "fp-push-a-1",
+        "title": "推 A 下周实验调整",
+        "summary": "增加卧推组数。",
+        "selectedRecommendationIds": ["rec-1"],
+        "changes": [
+          { "id": "c1", "type": "add_sets", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "bench-press", "exerciseName": "平板卧推", "muscleId": "chest", "setsDelta": 2, "reason": "胸推容量偏低" }
+        ],
+        "confidence": "high",
+        "riskLevel": "low",
+        "explanation": "胸推容量偏低",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "note": "基础推日",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "chest": 12 },
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": ["bench-press"], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      }
+    },
+    {
+      "label": "no snapshot hash → applies add_sets; experimentalTemplate sets+duration, updatedProgramTemplate day, historyItem (no sourceFingerprint → computed)",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-apply1-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "title": "推 A 下周实验调整",
+        "summary": "增加卧推组数并减少夹胸组数。",
+        "selectedRecommendationIds": ["rec-1", "rec-2"],
+        "changes": [
+          { "id": "c1", "type": "add_sets", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "bench-press", "exerciseName": "平板卧推", "muscleId": "chest", "setsDelta": 2, "reason": "胸推容量偏低" },
+          { "id": "c2", "type": "remove_sets", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "cable-fly", "exerciseName": "绳索夹胸", "muscleId": "chest", "setsDelta": -1, "reason": "胸部疲劳偏高" }
+        ],
+        "confidence": "high",
+        "riskLevel": "low",
+        "explanation": "胸推容量偏低；胸部疲劳偏高",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "note": "基础推日",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 },
+          { "id": "cable-fly", "name": "绳索夹胸", "muscle": "chest", "kind": "isolation", "sets": 3, "repMin": 12, "repMax": 15, "rest": 75, "startWeight": 17.5 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "chest": 12 },
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": ["bench-press", "cable-fly"], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      }
+    },
+    {
+      "label": "hash match (sourceTemplateSnapshotHash = hash(source) injected) → applies add_sets",
+      "kind": "apply-draft",
+      "snapshotHashFromSource": true,
+      "draft": {
+        "id": "adjustment-draft-match1-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "sourceFingerprint": "fp-push-a-match",
+        "title": "推 A 下周实验调整",
+        "summary": "增加卧推组数。",
+        "selectedRecommendationIds": ["rec-1"],
+        "changes": [
+          { "id": "c1", "type": "add_sets", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "bench-press", "exerciseName": "平板卧推", "muscleId": "chest", "setsDelta": 2, "reason": "胸推容量偏低" }
+        ],
+        "confidence": "high",
+        "riskLevel": "low",
+        "explanation": "胸推容量偏低",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "note": "基础推日",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "chest": 12 },
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": ["bench-press"], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      }
+    },
+    {
+      "label": "add_new_exercise WITHOUT dayTemplateId → skipped (skipReason); summarizeMainChanges empty → adjustmentSummary fallback",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-skipnew-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "pull-a",
+        "sourceTemplateId": "pull-a",
+        "sourceFingerprint": "fp-pull-a-skip",
+        "title": "拉 A 下周实验调整",
+        "summary": "新增一个背部动作。",
+        "selectedRecommendationIds": ["rec-3"],
+        "changes": [
+          { "id": "c1", "type": "add_new_exercise", "exerciseId": "synthetic-back-ext", "exerciseName": "合成背部伸展", "muscleId": "back", "sets": 2, "repMin": 10, "repMax": 12, "restSec": 90, "reason": "背阔肌容量不足，但无法安全决定训练日" }
+        ],
+        "confidence": "low",
+        "riskLevel": "high",
+        "explanation": "背阔肌容量不足",
+        "notes": ["系统暂时不能安全决定插入哪个训练日，请手动确认后重新生成预览。"]
+      },
+      "sourceProgramTemplate": {
+        "id": "pull-a", "name": "拉 A", "focus": "拉", "duration": 65, "note": "基础拉日",
+        "exercises": [
+          { "id": "barbell-row", "name": "杠铃划船", "muscle": "back", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 50 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "back": 14 },
+        "dayTemplates": [
+          { "id": "pull-a", "name": "拉 A", "focusMuscles": ["back"], "correctionBlockIds": [], "mainExerciseIds": ["barbell-row"], "functionalBlockIds": [], "estimatedDurationMin": 65 }
+        ]
+      }
+    },
+    {
+      "label": "add_new_exercise WITH dayTemplateId → applied (inserted enriched exercise after bench-press)",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-addnew-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "sourceFingerprint": "fp-push-a-addnew",
+        "title": "推 A 下周实验调整",
+        "summary": "新增一个孤立胸部动作。",
+        "selectedRecommendationIds": ["rec-4"],
+        "changes": [
+          { "id": "c1", "type": "add_new_exercise", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "synthetic-chest-iso", "exerciseName": "合成胸部孤立", "muscleId": "chest", "sets": 2, "repMin": 12, "repMax": 15, "restSec": 75, "insertAfterExerciseId": "bench-press", "insertPositionLabel": "辅助动作区，位于 平板卧推 之后", "reason": "胸部孤立容量不足" }
+        ],
+        "confidence": "medium",
+        "riskLevel": "medium",
+        "explanation": "胸部孤立容量不足",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "note": "基础推日",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "chest": 12 },
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": ["bench-press"], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      }
+    },
+    {
+      "label": "reduce_support applied (correctionStrategy moderate→light, duration>35 reduced) → updatedProgramTemplate strategy/day mutation",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-reduce-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "legs-a",
+        "sourceTemplateId": "legs-a",
+        "sourceFingerprint": "fp-legs-a-reduce",
+        "title": "腿 A 下周实验调整",
+        "summary": "下调辅助层剂量。",
+        "selectedRecommendationIds": ["rec-5"],
+        "changes": [
+          { "id": "c1", "type": "reduce_support", "dayTemplateId": "legs-a", "dayTemplateName": "腿 A", "reason": "整体疲劳偏高" }
+        ],
+        "confidence": "low",
+        "riskLevel": "low",
+        "explanation": "整体疲劳偏高",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "legs-a", "name": "腿 A", "focus": "腿", "duration": 80, "note": "基础腿日",
+        "exercises": [
+          { "id": "back-squat", "name": "深蹲", "muscle": "quads", "kind": "compound", "sets": 4, "repMin": 5, "repMax": 8, "rest": 210, "startWeight": 90 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "strength", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "quads": 12 },
+        "dayTemplates": [
+          { "id": "legs-a", "name": "腿 A", "focusMuscles": ["quads"], "correctionBlockIds": ["corr_ankle_mobility_01", "corr_core_control_01"], "mainExerciseIds": ["back-squat"], "functionalBlockIds": ["func_single_leg_01", "func_core_anti_rotation_01"], "estimatedDurationMin": 80 }
+        ]
+      }
+    },
+    {
+      "label": "reduce_support NO room (light/minimal, short day, no blocks) → not applied → skipped (skipReason)",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-supskip-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "quick-a",
+        "sourceTemplateId": "quick-a",
+        "sourceFingerprint": "fp-quick-a-skip",
+        "title": "快练 A 下周实验调整",
+        "summary": "下调辅助层剂量。",
+        "selectedRecommendationIds": ["rec-6"],
+        "changes": [
+          { "id": "c1", "type": "reduce_support", "dayTemplateId": "quick-a", "dayTemplateName": "快练 A", "reason": "已是最低辅助层" }
+        ],
+        "confidence": "low",
+        "riskLevel": "low",
+        "explanation": "已是最低辅助层",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "quick-a", "name": "快练 A", "focus": "全身", "duration": 30, "note": "极简日",
+        "exercises": [
+          { "id": "goblet-squat", "name": "高脚杯深蹲", "muscle": "quads", "kind": "compound", "sets": 2, "repMin": 10, "repMax": 12, "rest": 90, "startWeight": 20 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-2", "userId": "synthetic-user", "primaryGoal": "general", "splitType": "fullbody", "daysPerWeek": 3,
+        "correctionStrategy": "light", "functionalStrategy": "minimal", "weeklyMuscleTargets": { "quads": 8 },
+        "dayTemplates": []
+      }
+    },
+    {
+      "label": "multi-change: increase_support applied + swap_exercise applied + add_sets not-found skipped → summarizeMainChanges (first 3) + historyItem changes",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-multi-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "legs-a",
+        "sourceTemplateId": "legs-a",
+        "sourceFingerprint": "fp-legs-a-multi",
+        "title": "腿 A 下周实验调整",
+        "summary": "增加辅助层并替换一个动作。",
+        "selectedRecommendationIds": ["rec-7", "rec-8", "rec-9"],
+        "changes": [
+          { "id": "c1", "type": "increase_support", "dayTemplateId": "legs-a", "dayTemplateName": "腿 A", "muscleId": "quads", "reason": "需要更多踝关节灵活性" },
+          { "id": "c2", "type": "swap_exercise", "dayTemplateId": "legs-a", "dayTemplateName": "腿 A", "exerciseId": "leg-extension", "exerciseName": "腿屈伸", "replacementExerciseId": "bulgarian-split-squat", "replacementExerciseName": "保加利亚分腿蹲", "muscleId": "quads", "reason": "膝盖不适，替换为单腿动作" },
+          { "id": "c3", "type": "add_sets", "dayTemplateId": "legs-a", "dayTemplateName": "腿 A", "exerciseId": "nonexistent-ex", "exerciseName": "不存在动作", "muscleId": "无此肌群", "setsDelta": 2, "reason": "找不到的动作" }
+        ],
+        "confidence": "medium",
+        "riskLevel": "medium",
+        "explanation": "需要更多踝关节灵活性；膝盖不适；找不到的动作",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "legs-a", "name": "腿 A", "focus": "腿", "duration": 80, "note": "基础腿日",
+        "exercises": [
+          { "id": "back-squat", "name": "深蹲", "muscle": "quads", "kind": "compound", "sets": 4, "repMin": 5, "repMax": 8, "rest": 210, "startWeight": 90 },
+          { "id": "leg-extension", "name": "腿屈伸", "muscle": "quads", "kind": "isolation", "sets": 3, "repMin": 12, "repMax": 15, "rest": 75, "startWeight": 40 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "light", "functionalStrategy": "minimal", "weeklyMuscleTargets": { "quads": 12 },
+        "dayTemplates": [
+          { "id": "legs-a", "name": "腿 A", "focusMuscles": ["quads"], "correctionBlockIds": [], "mainExerciseIds": ["back-squat", "leg-extension"], "functionalBlockIds": [], "estimatedDurationMin": 80 }
+        ]
+      }
+    },
+    {
+      "label": "swap_exercise WITHOUT replacement → not applied → skipped (skipReason '未能安全应用')",
+      "kind": "apply-draft",
+      "draft": {
+        "id": "adjustment-draft-swapskip-r1",
+        "draftRevision": 1,
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "sourceProgramTemplateId": "push-a",
+        "sourceTemplateId": "push-a",
+        "sourceFingerprint": "fp-push-a-swapskip",
+        "title": "推 A 下周实验调整",
+        "summary": "替换过顶推举但缺少替代动作。",
+        "selectedRecommendationIds": ["rec-10"],
+        "changes": [
+          { "id": "c1", "type": "swap_exercise", "dayTemplateId": "push-a", "dayTemplateName": "推 A", "exerciseId": "overhead-press", "exerciseName": "过顶推举", "muscleId": "shoulders", "reason": "肩部疼痛需替换" }
+        ],
+        "confidence": "high",
+        "riskLevel": "high",
+        "explanation": "肩部疼痛需替换",
+        "notes": []
+      },
+      "sourceProgramTemplate": {
+        "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "note": "基础推日",
+        "exercises": [
+          { "id": "overhead-press", "name": "过顶推举", "muscle": "shoulders", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 150, "startWeight": 30 }
+        ]
+      },
+      "currentProgramTemplate": {
+        "id": "program-1", "userId": "synthetic-user", "primaryGoal": "hypertrophy", "splitType": "ppl", "daysPerWeek": 3,
+        "correctionStrategy": "moderate", "functionalStrategy": "standard", "weeklyMuscleTargets": { "shoulders": 10 },
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["shoulders"], "correctionBlockIds": [], "mainExerciseIds": ["overhead-press"], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      }
+    }
+  ]
+}

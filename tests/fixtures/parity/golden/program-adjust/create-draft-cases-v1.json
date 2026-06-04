@@ -1,0 +1,1181 @@
+{
+  "cases": [
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "add_sets existing exercise → high confidence (highestConfidence), low risk (|setsDelta|<3)",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "high",
+          "id": "rec-vol-1",
+          "issue": "胸推容量偏低",
+          "priority": "high",
+          "reason": "近四周胸推有效组数低于目标",
+          "recommendation": "增加卧推组数",
+          "suggestedChange": {
+            "exerciseIds": [
+              "bench-press"
+            ],
+            "muscleId": "chest",
+            "setsDelta": 2
+          },
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "rec-vol-1-change-b92047d8",
+            "muscleId": "chest",
+            "reason": "增加卧推组数",
+            "setsDelta": 2,
+            "sourceRecommendationId": "rec-vol-1",
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "平板卧推：5 组",
+              "before": "平板卧推：3 组",
+              "changeId": "rec-vol-1-change-b92047d8",
+              "label": "增加组数",
+              "reason": "增加卧推组数",
+              "riskLevel": "low",
+              "type": "add_sets"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "推 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "推 A 实验版",
+        "explanation": "近四周胸推有效组数低于目标",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-vol-1"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|push-a|add_sets|chest|bench-press|current-cycle|fdf2dcad",
+        "sourceProgramTemplateId": "push-a",
+        "sourceRecommendationId": "rec-vol-1",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-d49c664f",
+        "sourceTemplateUpdatedAt": "2026-01-01T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "平板卧推",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          },
+          {
+            "id": "cable-fly",
+            "kind": "isolation",
+            "muscle": "chest",
+            "name": "绳索夹胸",
+            "repMax": 15,
+            "repMin": 12,
+            "rest": 75,
+            "sets": 2,
+            "startWeight": 17.5
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A",
+        "updatedAt": "2026-01-01T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "add_sets existing, |setsDelta|>=3 → medium risk",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "medium",
+          "id": "rec-vol-2",
+          "issue": "胸推容量明显不足",
+          "priority": "medium",
+          "reason": "需要更强刺激",
+          "recommendation": "较大幅度增加卧推组数",
+          "suggestedChange": {
+            "exerciseIds": [
+              "bench-press"
+            ],
+            "muscleId": "chest",
+            "setsDelta": 3
+          },
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "rec-vol-2-change-259f8cc7",
+            "muscleId": "chest",
+            "reason": "较大幅度增加卧推组数",
+            "setsDelta": 3,
+            "sourceRecommendationId": "rec-vol-2",
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "平板卧推：6 组",
+              "before": "平板卧推：3 组",
+              "changeId": "rec-vol-2-change-259f8cc7",
+              "label": "增加组数",
+              "reason": "较大幅度增加卧推组数",
+              "riskLevel": "low",
+              "type": "add_sets"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "推 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "推 A 实验版",
+        "explanation": "需要更强刺激",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "medium",
+        "selectedRecommendationIds": [
+          "rec-vol-2"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|push-a|add_sets|chest|bench-press|current-cycle|82f4b8ba",
+        "sourceProgramTemplateId": "push-a",
+        "sourceRecommendationId": "rec-vol-2",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-8c37c194",
+        "sourceTemplateUpdatedAt": "2026-01-02T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "平板卧推",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A",
+        "updatedAt": "2026-01-02T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {
+        "programTemplate": {
+          "correctionStrategy": "moderate",
+          "dayTemplates": [
+            {
+              "correctionBlockIds": [],
+              "estimatedDurationMin": 65,
+              "focusMuscles": [
+                "back"
+              ],
+              "functionalBlockIds": [],
+              "id": "pull-a",
+              "mainExerciseIds": [
+                "barbell-row"
+              ],
+              "name": "拉 A"
+            }
+          ],
+          "functionalStrategy": "standard",
+          "id": "program-1",
+          "userId": "synthetic-user"
+        },
+        "templates": [
+          {
+            "duration": 65,
+            "exercises": [
+              {
+                "id": "barbell-row",
+                "kind": "compound",
+                "muscle": "back",
+                "name": "杠铃划船",
+                "repMax": 10,
+                "repMin": 8,
+                "rest": 150,
+                "sets": 3,
+                "startWeight": 50
+              }
+            ],
+            "focus": "拉",
+            "id": "pull-a",
+            "name": "拉 A",
+            "updatedAt": "2026-01-03T00:00:00.000Z"
+          }
+        ]
+      },
+      "kind": "create-draft",
+      "label": "add_new_exercise with a resolved day (context.programTemplate) → previewNote/confidence path + diffPreview",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "high",
+          "id": "rec-add-new",
+          "issue": "背阔肌容量偏低且当前训练日缺少该动作",
+          "priority": "high",
+          "reason": "背阔肌有效组数不足",
+          "recommendation": "新增一个背部动作",
+          "suggestedChange": {
+            "exerciseIds": [
+              "synthetic-back-ext"
+            ],
+            "muscleId": "back",
+            "setsDelta": 2
+          },
+          "targetLabel": "背",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "pull-a",
+            "dayTemplateName": "拉 A",
+            "exerciseId": "synthetic-back-ext",
+            "exerciseName": "未命名动作",
+            "id": "rec-add-new-change-b0b6ab6e",
+            "insertAfterExerciseId": "barbell-row",
+            "insertPositionLabel": "辅助动作区，位于 杠铃划船 之后",
+            "muscleId": "back",
+            "reason": "新增一个背部动作",
+            "repMax": 12,
+            "repMin": 8,
+            "restSec": 90,
+            "sets": 2,
+            "sourceRecommendationId": "rec-add-new",
+            "type": "add_new_exercise"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "拉 A：新增 未命名动作 2 组，8-12 次，休息 90 秒，位置：辅助动作区，位于 杠铃划船 之后",
+              "before": "拉 A：当前没有 未命名动作",
+              "changeId": "rec-add-new-change-b0b6ab6e",
+              "label": "新增动作",
+              "reason": "新增一个背部动作",
+              "riskLevel": "medium",
+              "type": "add_new_exercise"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "拉 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "拉 A 实验版",
+        "explanation": "背阔肌有效组数不足",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "medium",
+        "selectedRecommendationIds": [
+          "rec-add-new"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|back|pull-a|add_new_exercise|back|synthetic-back-ext|current-cycle|df427296",
+        "sourceProgramTemplateId": "pull-a",
+        "sourceRecommendationId": "rec-add-new",
+        "sourceTemplateId": "pull-a",
+        "sourceTemplateSnapshotHash": "tpl-4a46089d",
+        "sourceTemplateUpdatedAt": "2026-01-03T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "拉 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 65,
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "kind": "compound",
+            "muscle": "back",
+            "name": "杠铃划船",
+            "repMax": 10,
+            "repMin": 8,
+            "rest": 150,
+            "sets": 3,
+            "startWeight": 50
+          }
+        ],
+        "focus": "拉",
+        "id": "pull-a",
+        "name": "拉 A",
+        "updatedAt": "2026-01-03T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {
+        "screeningProfile": {
+          "restrictedExercises": [
+            "restricted-back-ex"
+          ]
+        }
+      },
+      "kind": "create-draft",
+      "label": "add_new_exercise blocked by pain/restricted → NO dayTemplateId → confidence low + riskLevel high",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "high",
+          "id": "rec-add-new-pain",
+          "issue": "背阔肌容量偏低但该动作有疼痛信号",
+          "priority": "high",
+          "reason": "背阔肌有效组数不足",
+          "recommendation": "新增一个背部动作",
+          "suggestedChange": {
+            "exerciseIds": [
+              "restricted-back-ex"
+            ],
+            "muscleId": "back",
+            "setsDelta": 2
+          },
+          "targetLabel": "背",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "exerciseId": "restricted-back-ex",
+            "exerciseName": "未命名动作",
+            "id": "rec-add-new-pain-change-c1dcb64a",
+            "muscleId": "back",
+            "previewNote": "未命名动作 近期受到 pain 或 restricted 信号影响，系统不会自动插入。",
+            "reason": "新增一个背部动作",
+            "repMax": 12,
+            "repMin": 8,
+            "restSec": 90,
+            "sets": 2,
+            "sourceRecommendationId": "rec-add-new-pain",
+            "type": "add_new_exercise"
+          }
+        ],
+        "confidence": "low",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "拉 A：系统暂时不能安全自动插入，需要手动选择训练日",
+              "before": "拉 A：当前没有 未命名动作",
+              "changeId": "rec-add-new-pain-change-c1dcb64a",
+              "label": "新增动作",
+              "reason": "新增一个背部动作 未命名动作 近期受到 pain 或 restricted 信号影响，系统不会自动插入。",
+              "riskLevel": "high",
+              "type": "add_new_exercise"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "拉 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "拉 A 实验版",
+        "explanation": "背阔肌有效组数不足",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [
+          "未命名动作 近期受到 pain 或 restricted 信号影响，系统不会自动插入。"
+        ],
+        "riskLevel": "high",
+        "selectedRecommendationIds": [
+          "rec-add-new-pain"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|back|pull-a|add_new_exercise|back|restricted-back-ex|current-cycle|df427296",
+        "sourceProgramTemplateId": "pull-a",
+        "sourceRecommendationId": "rec-add-new-pain",
+        "sourceTemplateId": "pull-a",
+        "sourceTemplateSnapshotHash": "tpl-e8cef110",
+        "sourceTemplateUpdatedAt": "2026-01-04T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "拉 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 65,
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "kind": "compound",
+            "muscle": "back",
+            "name": "杠铃划船",
+            "repMax": 10,
+            "repMin": 8,
+            "rest": 150,
+            "sets": 3,
+            "startWeight": 50
+          }
+        ],
+        "focus": "拉",
+        "id": "pull-a",
+        "name": "拉 A",
+        "updatedAt": "2026-01-04T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "remove_sets (setsDelta<0)",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "recovery",
+          "confidence": "medium",
+          "id": "rec-remove",
+          "issue": "胸部疲劳偏高",
+          "priority": "medium",
+          "reason": "胸部恢复不足",
+          "recommendation": "减少夹胸组数",
+          "suggestedChange": {
+            "exerciseIds": [
+              "cable-fly"
+            ],
+            "muscleId": "chest",
+            "setsDelta": -2
+          },
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "cable-fly",
+            "exerciseName": "绳索夹胸",
+            "id": "rec-remove-change-7b657c48",
+            "muscleId": "chest",
+            "reason": "减少夹胸组数",
+            "setsDelta": -2,
+            "sourceRecommendationId": "rec-remove",
+            "type": "remove_sets"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "绳索夹胸：1 组",
+              "before": "绳索夹胸：3 组",
+              "changeId": "rec-remove-change-7b657c48",
+              "label": "减少组数",
+              "reason": "减少夹胸组数",
+              "riskLevel": "low",
+              "type": "remove_sets"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "推 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "推 A 实验版",
+        "explanation": "胸部恢复不足",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-remove"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|push-a|remove_sets|chest|cable-fly|current-cycle|9991610c",
+        "sourceProgramTemplateId": "push-a",
+        "sourceRecommendationId": "rec-remove",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-65a2a2c7",
+        "sourceTemplateUpdatedAt": "2026-01-05T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "cable-fly",
+            "kind": "isolation",
+            "muscle": "chest",
+            "name": "绳索夹胸",
+            "repMax": 15,
+            "repMin": 12,
+            "rest": 75,
+            "sets": 3,
+            "startWeight": 17.5
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A",
+        "updatedAt": "2026-01-05T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "swap via removeExerciseIds → swap_exercise changes (id `${rec.id}-swap-${i+1}`)",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "recovery",
+          "confidence": "medium",
+          "id": "rec-swap",
+          "issue": "过顶推举引发肩部不适",
+          "priority": "high",
+          "reason": "肩部疼痛信号",
+          "recommendation": "替换为更安全的肩部动作",
+          "suggestedChange": {
+            "muscleId": "shoulders",
+            "removeExerciseIds": [
+              "overhead-press",
+              "upright-row"
+            ]
+          },
+          "targetLabel": "过顶推举",
+          "targetType": "exercise"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "overhead-press",
+            "exerciseName": "未命名动作",
+            "id": "rec-swap-swap-1",
+            "muscleId": "shoulders",
+            "reason": "替换为更安全的肩部动作",
+            "sourceRecommendationId": "rec-swap",
+            "type": "swap_exercise"
+          },
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "upright-row",
+            "exerciseName": "未命名动作",
+            "id": "rec-swap-swap-2",
+            "muscleId": "shoulders",
+            "reason": "替换为更安全的肩部动作",
+            "sourceRecommendationId": "rec-swap",
+            "type": "swap_exercise"
+          }
+        ],
+        "confidence": "medium",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "需要人工选择更安全的替代动作",
+              "before": "未命名动作",
+              "changeId": "rec-swap-swap-1",
+              "label": "替代动作",
+              "reason": "替换为更安全的肩部动作",
+              "riskLevel": "high",
+              "type": "swap_exercise"
+            },
+            {
+              "after": "需要人工选择更安全的替代动作",
+              "before": "未命名动作",
+              "changeId": "rec-swap-swap-2",
+              "label": "替代动作",
+              "reason": "替换为更安全的肩部动作",
+              "riskLevel": "high",
+              "type": "swap_exercise"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "推 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "推 A 实验版",
+        "explanation": "肩部疼痛信号",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "medium",
+        "selectedRecommendationIds": [
+          "rec-swap"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|shoulders|push-a|swap_exercise|shoulders|overhead-press|current-cycle|3d18f5d",
+        "sourceProgramTemplateId": "push-a",
+        "sourceRecommendationId": "rec-swap",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-664cb26c",
+        "sourceTemplateUpdatedAt": "2026-01-06T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "overhead-press",
+            "kind": "compound",
+            "muscle": "shoulders",
+            "name": "过顶推举",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 150,
+            "sets": 3,
+            "startWeight": 30
+          },
+          {
+            "id": "upright-row",
+            "kind": "isolation",
+            "muscle": "shoulders",
+            "name": "直立划船",
+            "repMax": 15,
+            "repMin": 12,
+            "rest": 75,
+            "sets": 2,
+            "startWeight": 20
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A",
+        "updatedAt": "2026-01-06T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "reduce_support (supportDoseAdjustment reduce) → reduce_support keep-day change",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "recovery",
+          "confidence": "low",
+          "id": "rec-support",
+          "issue": "辅助层负荷偏高",
+          "priority": "low",
+          "reason": "整体疲劳偏高",
+          "recommendation": "下调辅助层剂量",
+          "suggestedChange": {
+            "supportDoseAdjustment": "reduce"
+          },
+          "targetLabel": "辅助层",
+          "targetType": "program"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "legs-a",
+            "dayTemplateName": "腿 A",
+            "id": "rec-support-change-1dedb28a",
+            "reason": "下调辅助层剂量",
+            "sourceRecommendationId": "rec-support",
+            "type": "reduce_support"
+          }
+        ],
+        "confidence": "low",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "腿 A 实验版：纠偏 light / 功能 minimal / 纠偏模块 1 项 / 功能补丁 1 项",
+              "before": "腿 A：纠偏 moderate / 功能 standard / 纠偏模块 2 项 / 功能补丁 1 项",
+              "changeId": "rec-support-change-1dedb28a",
+              "label": "减少 support",
+              "reason": "下调辅助层剂量",
+              "riskLevel": "low",
+              "type": "reduce_support"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "腿 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "腿 A 实验版",
+        "explanation": "整体疲劳偏高",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-support"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|template|legs-a|legs-a|reduce_support|muscle-none|exercise-none|current-cycle|43a654e8",
+        "sourceProgramTemplateId": "legs-a",
+        "sourceRecommendationId": "rec-support",
+        "sourceTemplateId": "legs-a",
+        "sourceTemplateSnapshotHash": "tpl-f38049c3",
+        "sourceTemplateUpdatedAt": "2026-01-07T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "腿 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 80,
+        "exercises": [
+          {
+            "id": "back-squat",
+            "kind": "compound",
+            "muscle": "quads",
+            "name": "深蹲",
+            "repMax": 8,
+            "repMin": 5,
+            "rest": 210,
+            "sets": 4,
+            "startWeight": 90
+          }
+        ],
+        "focus": "腿",
+        "id": "legs-a",
+        "name": "腿 A",
+        "updatedAt": "2026-01-07T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "keep (suggestedChange with no actionable delta/swap/support) → keep change",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "low",
+          "id": "rec-keep",
+          "issue": "当前结构合适",
+          "priority": "low",
+          "reason": "无需调整",
+          "recommendation": "保持当前结构",
+          "suggestedChange": {
+            "muscleId": "chest"
+          },
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "id": "rec-keep-change-c04b6b4b",
+            "muscleId": "chest",
+            "reason": "保持当前结构",
+            "sourceRecommendationId": "rec-keep",
+            "type": "keep"
+          }
+        ],
+        "confidence": "low",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "保持当前结构",
+              "before": "保持当前结构",
+              "changeId": "rec-keep-change-c04b6b4b",
+              "label": "保持当前结构",
+              "reason": "保持当前结构",
+              "riskLevel": "high",
+              "type": "keep"
+            }
+          ],
+          "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "推 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "推 A 实验版",
+        "explanation": "无需调整",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-keep"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|push-a|keep|chest|exercise-none|current-cycle|6a62943a",
+        "sourceProgramTemplateId": "push-a",
+        "sourceRecommendationId": "rec-keep",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-7649ee42",
+        "sourceTemplateUpdatedAt": "2026-01-08T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 1 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "平板卧推",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A",
+        "updatedAt": "2026-01-08T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {},
+      "kind": "create-draft",
+      "label": "empty actionable (no suggestedChange) → empty changes, summary/notes hint, riskLevel high, confidence highestConfidence",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "medium",
+          "id": "rec-info-1",
+          "issue": "信息性建议",
+          "priority": "medium",
+          "reason": "仅供参考",
+          "recommendation": "关注背部恢复",
+          "targetLabel": "背",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [],
+        "confidence": "medium",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [],
+          "summary": "当前没有可安全自动应用的训练计划调整。",
+          "title": "拉 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "拉 A 实验版",
+        "explanation": "根据近期训练记录生成，应用前需要用户确认。",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [
+          "当前建议更适合作为人工参考，暂不生成自动调整。"
+        ],
+        "riskLevel": "high",
+        "selectedRecommendationIds": [
+          "rec-info-1"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|plan|plan|pull-a|none|muscle-none|exercise-none|current-cycle|8374d345",
+        "sourceProgramTemplateId": "pull-a",
+        "sourceRecommendationId": "rec-info-1",
+        "sourceTemplateId": "pull-a",
+        "sourceTemplateSnapshotHash": "tpl-cda9ef7",
+        "sourceTemplateUpdatedAt": "2026-01-09T00:00:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "当前没有可安全自动应用的训练计划调整。",
+        "title": "拉 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 65,
+        "exercises": [
+          {
+            "id": "barbell-row",
+            "kind": "compound",
+            "muscle": "back",
+            "name": "杠铃划船",
+            "repMax": 10,
+            "repMin": 8,
+            "rest": 150,
+            "sets": 3,
+            "startWeight": 50
+          }
+        ],
+        "focus": "拉",
+        "id": "pull-a",
+        "name": "拉 A",
+        "updatedAt": "2026-01-09T00:00:00.000Z"
+      }
+    },
+    {
+      "context": {
+        "templates": [
+          {
+            "duration": 70,
+            "exercises": [
+              {
+                "id": "bench-press",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "平板卧推",
+                "repMax": 8,
+                "repMin": 6,
+                "rest": 180,
+                "sets": 3,
+                "startWeight": 60
+              },
+              {
+                "id": "incline-press",
+                "kind": "compound",
+                "muscle": "chest",
+                "name": "上斜卧推",
+                "repMax": 10,
+                "repMin": 8,
+                "rest": 150,
+                "sets": 3,
+                "startWeight": 40
+              }
+            ],
+            "focus": "推",
+            "id": "push-a",
+            "name": "推 A"
+          },
+          {
+            "duration": 65,
+            "exercises": [
+              {
+                "id": "barbell-row",
+                "kind": "compound",
+                "muscle": "back",
+                "name": "杠铃划船",
+                "repMax": 10,
+                "repMin": 8,
+                "rest": 150,
+                "sets": 3,
+                "startWeight": 50
+              }
+            ],
+            "focus": "拉",
+            "id": "pull-a",
+            "name": "拉 A"
+          }
+        ]
+      },
+      "kind": "create-draft",
+      "label": "multi-change across templates → resolvePrimarySourceTemplateId picks most-frequent day; source WITHOUT updatedAt → sourceTemplateUpdatedAt fallback = injected nowIso",
+      "now": "2026-01-15T08:30:00.000Z",
+      "recommendations": [
+        {
+          "category": "volume",
+          "confidence": "high",
+          "id": "rec-multi-1",
+          "issue": "胸推容量偏低",
+          "priority": "high",
+          "reason": "胸推不足",
+          "recommendation": "增加卧推组数",
+          "suggestedChange": {
+            "exerciseIds": [
+              "bench-press"
+            ],
+            "muscleId": "chest",
+            "setsDelta": 2
+          },
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        },
+        {
+          "category": "volume",
+          "confidence": "medium",
+          "id": "rec-multi-2",
+          "issue": "上斜胸容量偏低",
+          "priority": "medium",
+          "reason": "上斜胸不足",
+          "recommendation": "增加上斜卧推组数",
+          "suggestedChange": {
+            "exerciseIds": [
+              "incline-press"
+            ],
+            "muscleId": "chest",
+            "setsDelta": 1
+          },
+          "targetLabel": "胸",
+          "targetType": "muscle"
+        },
+        {
+          "category": "volume",
+          "confidence": "low",
+          "id": "rec-multi-3",
+          "issue": "背阔肌容量偏低",
+          "priority": "medium",
+          "reason": "背阔肌不足",
+          "recommendation": "增加划船组数",
+          "suggestedChange": {
+            "exerciseIds": [
+              "barbell-row"
+            ],
+            "muscleId": "back",
+            "setsDelta": 1
+          },
+          "targetLabel": "背",
+          "targetType": "muscle"
+        }
+      ],
+      "result": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "rec-multi-1-change-b92047d8",
+            "muscleId": "chest",
+            "reason": "增加卧推组数",
+            "setsDelta": 2,
+            "sourceRecommendationId": "rec-multi-1",
+            "type": "add_sets"
+          },
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "incline-press",
+            "exerciseName": "上斜卧推",
+            "id": "rec-multi-2-change-91ad81cd",
+            "muscleId": "chest",
+            "reason": "增加上斜卧推组数",
+            "setsDelta": 1,
+            "sourceRecommendationId": "rec-multi-2",
+            "type": "add_sets"
+          },
+          {
+            "dayTemplateId": "pull-a",
+            "dayTemplateName": "拉 A",
+            "exerciseId": "barbell-row",
+            "exerciseName": "杠铃划船",
+            "id": "rec-multi-3-change-2371fb9",
+            "muscleId": "back",
+            "reason": "增加划船组数",
+            "setsDelta": 1,
+            "sourceRecommendationId": "rec-multi-3",
+            "type": "add_sets"
+          }
+        ],
+        "confidence": "high",
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "diffPreview": {
+          "changes": [
+            {
+              "after": "平板卧推：5 组",
+              "before": "平板卧推：3 组",
+              "changeId": "rec-multi-1-change-b92047d8",
+              "label": "增加组数",
+              "reason": "增加卧推组数",
+              "riskLevel": "low",
+              "type": "add_sets"
+            },
+            {
+              "after": "上斜卧推：4 组",
+              "before": "上斜卧推：3 组",
+              "changeId": "rec-multi-2-change-91ad81cd",
+              "label": "增加组数",
+              "reason": "增加上斜卧推组数",
+              "riskLevel": "low",
+              "type": "add_sets"
+            },
+            {
+              "after": "杠铃划船：4 组",
+              "before": "杠铃划船：3 组",
+              "changeId": "rec-multi-3-change-2371fb9",
+              "label": "增加组数",
+              "reason": "增加划船组数",
+              "riskLevel": "low",
+              "type": "add_sets"
+            }
+          ],
+          "summary": "基于 3 条建议生成实验调整预览，应用前会校验原模板版本。",
+          "title": "推 A 下周实验调整"
+        },
+        "draftRevision": 1,
+        "experimentalTemplateName": "推 A 实验版",
+        "explanation": "胸推不足；上斜胸不足；背阔肌不足",
+        "id": "adjustment-draft-coach-action-volumeadaptation-create_plan_adjust-r1",
+        "notes": [],
+        "riskLevel": "low",
+        "selectedRecommendationIds": [
+          "rec-multi-1",
+          "rec-multi-2",
+          "rec-multi-3"
+        ],
+        "sourceFingerprint": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|push-a|add_sets|chest|bench-press|current-cycle|55d15b2b",
+        "sourceProgramTemplateId": "push-a",
+        "sourceRecommendationId": "rec-multi-1",
+        "sourceTemplateId": "push-a",
+        "sourceTemplateSnapshotHash": "tpl-cfca68b6",
+        "sourceTemplateUpdatedAt": "2026-01-15T08:30:00.000Z",
+        "status": "ready_to_apply",
+        "summary": "基于 3 条建议生成实验调整预览，应用前会校验原模板版本。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "平板卧推",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          },
+          {
+            "id": "incline-press",
+            "kind": "compound",
+            "muscle": "chest",
+            "name": "上斜卧推",
+            "repMax": 10,
+            "repMin": 8,
+            "rest": 150,
+            "sets": 3,
+            "startWeight": 40
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "generatedAtPolicy": "deterministic-clock",
+    "generatedFromCommit": "4aa6d40bfac7008babc57954dc0bc8481af8ab9a",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/create-draft-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/create-draft-cases-v1"
+}

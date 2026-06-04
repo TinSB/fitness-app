@@ -1114,3 +1114,691 @@ private struct WTemplate {
         self.exercises = (template.exercises ?? []).map { MutObj($0.encoded()) }
     }
 }
+
+// MARK: ===========================================================================
+// PA-S9 (PA-1c) — createAdjustmentDraftFromRecommendations + applyAdjustmentDraft
+// (the final cluster of programAdjustmentEngine, completing PA-1).
+//
+// Faithful line-by-line Swift port of the LAST two PURE exports of
+// `src/engines/programAdjustmentEngine.ts` plus the helpers private to them:
+//   * createAdjustmentDraftFromRecommendations (ts:471-519)
+//   * applyAdjustmentDraft                      (ts:809-919)
+//   helpers (new this slice): makeId(:80) / highestConfidence(:135) + confidenceRank(:66)
+//   / stableIdHash(:102) / buildAdjustmentChangeId(:111) / changeFromRecommendation(:328)
+//   / resolveSourceTemplateForRecommendation(:210) / resolvePrimarySourceTemplateId(:446)
+//   / riskLevelForDraftChange(:457) / riskLevelForDraft(:464) / summarizeMainChanges(:791)
+//   / formatAdjustmentChangeLabel(formatters.ts:496) + the ApplyAdjustmentDraftResult type (ts:57-64).
+//
+// LIVES IN THIS FILE (not a new one) to REUSE — never re-port — the file-private S8
+// machinery these two functions hard-depend on: the W* working model
+// (WTemplate / WProgram / WDay / MutObj), `applyExerciseChange` / `applySupportChange`
+// / `ensureProgramDayTemplate` / `findExerciseIndex` / `buildExerciseSeed` /
+// `exerciseMatchesId` / `matchesMuscle` / `findTemplateById` / `selectBestDayForNewExercise`
+// (S8), the formatter shims (formatExerciseName / formatDayTemplateName /
+// formatProgramTemplateName), and the JS-semantics helpers (jsTruthyString / jsTruthyNumber /
+// jsTruthyJSON / jsOrString / jsNum / jsNumString / jsRound / baseOrId / stableSorted /
+// regexReplaceAll). Swift file-scoped `private` is reachable from a second extension of
+// the SAME type in the SAME file, so nothing is duplicated and no S8 signature/semantics
+// changes. It also reuses S7 `hashProgramTemplate` + `stableStringify` and S6
+// `buildPlanAdjustmentFingerprintFromDraft` / `buildPlanAdjustmentDraftInstanceId`.
+//
+// PURE / READ-ONLY — ZERO WRITES: `applyAdjustmentDraft` computes the experimental
+// template / updated program / history item on CLONES and RETURNS them in
+// `ApplyAdjustmentDraftResult`; it NEVER persists, never calls CanonicalSessionWriter /
+// JSONFileAppDataStore / any §8 write boundary (applying to source-of-truth is the later
+// PA write slice S10).
+//
+// TIME / ID INJECTION (§11, zero `: Date`, zero randomness): TS reads
+// `new Date().toISOString()` (ts:489/496 createDraft; ts:829 applyDraft) and
+// `makeId = Date.now()+Math.random()` (ts:80, via ts:889). The Swift port reads NEITHER
+// clock NOR randomness: `nowIso` is a REQUIRED injected ISO string and `historyIdSeed`
+// the REQUIRED injected `makeId` seed (the iOS-17e-6a / identity injected-clock contract).
+// Given identical inputs the result is identical; the goldens substitute these with
+// parityMeta.deterministicClockIso / a fixed seed and the Swift compute-assert injects the
+// same values. Goldens are GENERATED from the REAL TS engine, never hand-edited (§22).
+
+extension ProgramAdjustmentEngine {
+
+    // MARK: - makeId (programAdjustmentEngine.ts:80)
+
+    /// `makeId(prefix) = `${prefix}-${Date.now()}-${random}`` (ts:80). PURE port: the
+    /// non-deterministic `Date.now()+Math.random()` suffix is replaced by the injected
+    /// `idSeed`, so `makeId("adjustment-history", idSeed: "s") == "adjustment-history-s"`.
+    static func makeId(_ prefix: String, idSeed: String) -> String { "\(prefix)-\(idSeed)" }
+
+    // MARK: - confidenceRank + highestConfidence (programAdjustmentEngine.ts:66 / :135)
+
+    /// `confidenceRank` (ts:66): { low:0, medium:1, high:2 }.
+    static let confidenceRank: [EstimateConfidence: Int] = [.low: 0, .medium: 1, .high: 2]
+
+    /// `highestConfidence(recommendations)` (ts:135-139): reduce to the highest-ranked
+    /// confidence, seeded at 'low'. A recommendation with no/unknown confidence
+    /// (`confidenceRank[undefined]` → `undefined > n` is false) never raises the best.
+    static func highestConfidence(_ recommendations: [WeeklyActionRecommendation]) -> EstimateConfidence {
+        var best: EstimateConfidence = .low
+        for item in recommendations {
+            guard let c = item.confidence, let cr = confidenceRank[c] else { continue }
+            if cr > (confidenceRank[best] ?? 0) { best = c }
+        }
+        return best
+    }
+
+    // MARK: - formatAdjustmentChangeLabel (i18n/formatters.ts:496-507) — local mirror
+    //
+    // NOTE: distinct from S8 `changeTypeLabel` for support — formatters.ts uses
+    // '减少辅助层' / '增加辅助层' (ts:503-504) where changeTypeLabel uses '减少 support' /
+    // '增加 support' (engine ts:72-73). summarizeMainChanges's default arm uses THIS map.
+
+    /// `formatAdjustmentChangeLabel` (formatters.ts:496-507): the closed label map, else '计划调整'.
+    static let adjustmentChangeLabelMap: [String: String] = [
+        "add_sets": "增加组数",          // formatters.ts:499
+        "remove_sets": "减少组数",       // formatters.ts:500
+        "add_new_exercise": "新增动作",  // formatters.ts:501
+        "swap_exercise": "替代动作",     // formatters.ts:502
+        "reduce_support": "减少辅助层",  // formatters.ts:503
+        "increase_support": "增加辅助层", // formatters.ts:504
+        "keep": "保持当前结构",          // formatters.ts:505
+    ]
+    static func formatAdjustmentChangeLabel(_ type: AdjustmentChangeType?) -> String {
+        (type.flatMap { adjustmentChangeLabelMap[$0.rawValue] }) ?? "计划调整"  // formatters.ts:507
+    }
+
+    // MARK: - stableIdHash + buildAdjustmentChangeId (programAdjustmentEngine.ts:102 / :111)
+
+    /// `stableIdHash(value)` (ts:102-109): FNV-1a over UTF-16 code units →
+    /// `(hash>>>0).toString(16)` (lowercase hex, NO `tpl-` prefix). The id-slug FNV
+    /// (distinct from hashProgramTemplate's prefixed variant); UInt32 wrapping `&*`/`^=`
+    /// reproduces the signed `Math.imul`/`>>>0` chain bit-for-bit.
+    static func stableIdHash(_ value: String) -> String {
+        var hash: UInt32 = 2166136261
+        for unit in value.utf16 {
+            hash ^= UInt32(unit)
+            hash = hash &* 16777619
+        }
+        return String(hash, radix: 16)
+    }
+
+    /// One `.map(part => String(part || 'none').trim().toLowerCase()
+    /// .replace(/[^a-z0-9_-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,''))` part (ts:121-127).
+    static func slugifyIdPart(_ part: String?) -> String {
+        let raw = jsTruthyString(part) ? part! : "none"           // String(part || 'none')
+        var s = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        s = regexReplaceAll(s, "[^a-z0-9_-]+", "-")
+        s = regexReplaceAll(s, "-+", "-")
+        s = regexReplaceAll(s, "^-|-$", "")
+        return s
+    }
+
+    /// `buildAdjustmentChangeId(recommendation, sourceTemplate, suffix='change')` (ts:111-130):
+    /// `[rec.id, suffix, stableIdHash(stableStringify({sourceTemplateId, suggestedChange||{}})).slice(0,10)]`
+    /// each slugified, empties dropped, joined by '-'. Reuses S7 `stableStringify`.
+    static func buildAdjustmentChangeId(
+        _ recommendation: WeeklyActionRecommendation,
+        _ sourceTemplate: TrainingTemplate,
+        _ suffix: String = "change"
+    ) -> String {
+        // { sourceTemplateId: sourceTemplate.id, suggestedChange: recommendation.suggestedChange || {} }
+        // — an undefined id is dropped by stableStringify (ts:86); `|| {}` keeps a present
+        // (even empty) object, else an empty object.
+        var entries: [OrderedJSONObject.Entry] = []
+        if let sid = sourceTemplate.id { entries.append(.init(key: "sourceTemplateId", value: .string(sid))) }
+        let sc: JSONValue = (recommendation.suggestedChange.map { jsTruthyJSON($0) } == true)
+            ? recommendation.suggestedChange! : .object(OrderedJSONObject())
+        entries.append(.init(key: "suggestedChange", value: sc))
+        let serialized = Self.stableStringify(.object(OrderedJSONObject(entries: entries)))  // S7
+        let hashPart = String(stableIdHash(serialized).prefix(10))                           // .slice(0,10)
+        return [recommendation.id, suffix, hashPart]
+            .map { slugifyIdPart($0) }
+            .filter { !$0.isEmpty }                                                          // .filter(Boolean)
+            .joined(separator: "-")
+    }
+
+    // MARK: - resolveSourceTemplateForRecommendation (programAdjustmentEngine.ts:210-226)
+
+    /// exerciseIds[0] match → muscleId match → fallbackTemplate (ts:210-226).
+    static func resolveSourceTemplateForRecommendation(
+        _ recommendation: WeeklyActionRecommendation,
+        _ templates: [TrainingTemplate],
+        _ fallbackTemplate: TrainingTemplate
+    ) -> TrainingTemplate {
+        let sc = recommendation.suggestedChange?.objectValue
+        // const exerciseId = recommendation.suggestedChange?.exerciseIds?.[0];  (ts:215)
+        let exerciseId = sc?["exerciseIds"]?.arrayValue?.first?.stringValue
+        if jsTruthyString(exerciseId) {
+            if let exact = templates.first(where: { tpl in
+                (tpl.exercises ?? []).contains { exerciseMatchesId(MutObj($0.encoded()), exerciseId) }
+            }) { return exact }
+        }
+        // const muscleId = recommendation.suggestedChange?.muscleId;  (ts:220)
+        let muscleId = sc?["muscleId"]?.stringValue
+        if jsTruthyString(muscleId) {
+            if let same = templates.first(where: { tpl in
+                (tpl.exercises ?? []).contains { matchesMuscle(MutObj($0.encoded()), muscleId) }
+            }) { return same }
+        }
+        return fallbackTemplate
+    }
+
+    // MARK: - resolvePrimarySourceTemplateId (programAdjustmentEngine.ts:446-455)
+
+    /// Most-frequent `change.dayTemplateId` (ties → first-seen via JS Object.entries
+    /// insertion order + stable descending sort), else fallbackId (ts:446-455).
+    static func resolvePrimarySourceTemplateId(_ changes: [AdjustmentChange], _ fallbackId: String?) -> String? {
+        var order: [String] = []
+        var counts: [String: Int] = [:]
+        for change in changes {
+            guard let dayId = change.dayTemplateId, jsTruthyString(dayId) else { continue }  // if (!dayId) return result;
+            if counts[dayId] == nil { order.append(dayId) }
+            counts[dayId, default: 0] += 1
+        }
+        // Object.entries(counts).sort((l, r) => r[1] - l[1])  (ts:453) — stable, descending.
+        let ranked = stableSorted(order) { left, right in (counts[right] ?? 0) - (counts[left] ?? 0) }
+        if let top = ranked.first, jsTruthyString(top) { return top }                        // ranked[0]?.[0] ||
+        return fallbackId
+    }
+
+    // MARK: - riskLevelForDraftChange / riskLevelForDraft (programAdjustmentEngine.ts:457 / :464)
+
+    /// `riskLevelForDraftChange(change)` (ts:457-462). DISTINCT from S8 `riskLevelForChange`
+    /// (the diff-row variant): swap/add_new key off dayTemplateId; add/remove_sets off
+    /// `|setsDelta||sets| >= 3`.
+    static func riskLevelForDraftChange(_ change: AdjustmentChange) -> String {
+        if change.type == .swapExercise || change.type == .addNewExercise {               // ts:458
+            return jsTruthyString(change.dayTemplateId) ? "medium" : "high"
+        }
+        if change.type == .addSets || change.type == .removeSets {                         // ts:459
+            let n = jsTruthyNumber(change.setsDelta) ? change.setsDelta : change.sets       // setsDelta || sets
+            return abs(E1RMEngine.number(n)) >= 3 ? "medium" : "low"
+        }
+        if change.type == .reduceSupport || change.type == .increaseSupport { return "low" } // ts:460
+        return "low"                                                                        // ts:461
+    }
+
+    /// `riskLevelForDraft(changes)` (ts:464-469): empty → high; any high → high; any medium → medium; else low.
+    static func riskLevelForDraft(_ changes: [AdjustmentChange]) -> String {
+        if changes.isEmpty { return "high" }                                                // ts:465
+        if changes.contains(where: { riskLevelForDraftChange($0) == "high" }) { return "high" }    // ts:466
+        if changes.contains(where: { riskLevelForDraftChange($0) == "medium" }) { return "medium" } // ts:467
+        return "low"                                                                        // ts:468
+    }
+
+    // MARK: - changeFromRecommendation (programAdjustmentEngine.ts:328-444)
+
+    /// `changeFromRecommendation(recommendation, sourceTemplate, context)` (ts:328-444).
+    /// Reads `suggestedChange` subfields (raw JSONValue) and dispatches to the change kind.
+    static func changeFromRecommendation(
+        _ recommendation: WeeklyActionRecommendation,
+        _ sourceTemplate: TrainingTemplate,
+        context: AdjustmentDraftContext = AdjustmentDraftContext()
+    ) -> [AdjustmentChange] {
+        guard let scRaw = recommendation.suggestedChange, jsTruthyJSON(scRaw) else { return [] }  // if (!change) return [];  (ts:334)
+        let sc = scRaw.objectValue
+        let changeMuscleId = sc?["muscleId"]?.stringValue                                   // change.muscleId
+        let setsDelta = sc?["setsDelta"]?.numberValue                                       // change.setsDelta
+        let setsDeltaN = E1RMEngine.number(setsDelta)
+        let baseId = buildAdjustmentChangeId(recommendation, sourceTemplate)                // base.id (ts:337)
+
+        // Shared base fields (ts:336-341): id / muscleId / reason / sourceRecommendationId.
+        func make(
+            id: String, type: AdjustmentChangeType,
+            dayTemplateId: String?, dayTemplateName: String?,
+            exerciseId: String? = nil, exerciseName: String? = nil,
+            sets: NumberRepr? = nil, setsDelta: NumberRepr? = nil,
+            repMin: NumberRepr? = nil, repMax: NumberRepr? = nil, restSec: NumberRepr? = nil,
+            insertAfterExerciseId: String? = nil, insertPositionLabel: String? = nil,
+            previewNote: String? = nil
+        ) -> AdjustmentChange {
+            AdjustmentChange(
+                id: id, type: type, dayTemplateId: dayTemplateId, dayTemplateName: dayTemplateName,
+                exerciseId: exerciseId, exerciseName: exerciseName, muscleId: changeMuscleId,
+                setsDelta: setsDelta, sets: sets, repMin: repMin, repMax: repMax, restSec: restSec,
+                insertAfterExerciseId: insertAfterExerciseId, insertPositionLabel: insertPositionLabel,
+                previewNote: previewNote, reason: recommendation.recommendation,
+                sourceRecommendationId: recommendation.id
+            )
+        }
+
+        // if (number(change.setsDelta) > 0) { ... }  (ts:343-384)
+        if setsDeltaN > 0 {
+            let exerciseId = sc?["exerciseIds"]?.arrayValue?.first?.stringValue             // change.exerciseIds?.[0]
+            let existing = (sourceTemplate.exercises ?? []).first { exerciseMatchesId(MutObj($0.encoded()), exerciseId) }
+            if let existing {                                                               // ts:346 (add_sets)
+                return [make(
+                    id: baseId, type: .addSets, dayTemplateId: sourceTemplate.id, dayTemplateName: sourceTemplate.name,
+                    exerciseId: existing.id, exerciseName: existing.name,
+                    setsDelta: nr(max(1, jsRound(setsDeltaN)))                              // Math.max(1, Math.round(...))
+                )]
+            }
+            if jsTruthyString(exerciseId) {                                                 // ts:360 (add_new_exercise)
+                let selection = selectBestDayForNewExercise(
+                    .id(exerciseId!),
+                    programTemplate: context.programTemplate ?? DefaultTrainingData.defaultProgramTemplate,  // || DEFAULT_PROGRAM_TEMPLATE
+                    targetMuscleId: changeMuscleId,
+                    context: NewExerciseSelectionContext(
+                        programTemplate: context.programTemplate, templates: context.templates,
+                        screeningProfile: context.screeningProfile, painPatterns: context.painPatterns,
+                        sourceTemplateId: sourceTemplate.id                                 // {...context, sourceTemplateId}
+                    )
+                )
+                let seed = buildExerciseSeed(exerciseId!, changeMuscleId)
+                return [make(
+                    id: baseId, type: .addNewExercise,
+                    dayTemplateId: selection.dayTemplateId, dayTemplateName: selection.dayTemplateName,
+                    exerciseId: exerciseId, exerciseName: seed.name,
+                    sets: nr(max(1, jsRound(setsDeltaN))),                                  // Math.max(1, Math.round(...))
+                    repMin: seed.repMin, repMax: seed.repMax, restSec: seed.rest,
+                    insertAfterExerciseId: selection.insertAfterExerciseId,
+                    insertPositionLabel: selection.insertPositionLabel, previewNote: selection.note
+                )]
+            }
+            // setsDelta>0 but neither existing nor exerciseId → fall through (ts faithful).
+        }
+
+        // if (number(change.setsDelta) < 0) { ... }  (ts:386-400)
+        if setsDeltaN < 0 {
+            let exerciseId = sc?["exerciseIds"]?.arrayValue?.first?.stringValue
+            let existing = (sourceTemplate.exercises ?? []).first { exerciseMatchesId(MutObj($0.encoded()), exerciseId) }
+            let exName = jsTruthyString(existing?.name) ? existing!.name! : formatExerciseName(exerciseId)  // existing?.name || formatExerciseName(exerciseId)
+            return [make(
+                id: baseId, type: .removeSets, dayTemplateId: sourceTemplate.id, dayTemplateName: sourceTemplate.name,
+                exerciseId: jsOrString(existing?.id, exerciseId), exerciseName: exName,     // existing?.id || exerciseId
+                setsDelta: nr(min(-1, jsRound(setsDeltaN)))                                 // Math.min(-1, Math.round(...))
+            )]
+        }
+
+        // if (change.removeExerciseIds?.length) { ... }  (ts:402-412) — swap per removed id.
+        let removeIds = sc?["removeExerciseIds"]?.arrayValue ?? []
+        if !removeIds.isEmpty {
+            return removeIds.enumerated().map { index, raw in
+                let exerciseId = raw.stringValue
+                return make(
+                    id: "\(recommendation.id ?? "undefined")-swap-\(index + 1)",            // `${rec.id}-swap-${index+1}`
+                    type: .swapExercise, dayTemplateId: sourceTemplate.id, dayTemplateName: sourceTemplate.name,
+                    exerciseId: exerciseId, exerciseName: formatExerciseName(exerciseId)
+                )
+            }
+        }
+
+        // supportDoseAdjustment branches (ts:414-434) then keep (ts:436-443).
+        let support = sc?["supportDoseAdjustment"]?.stringValue
+        if support == "reduce" || support == "minimal" {
+            return [make(id: baseId, type: .reduceSupport, dayTemplateId: sourceTemplate.id, dayTemplateName: sourceTemplate.name)]
+        }
+        if support == "increase" || support == "boost" {
+            return [make(id: baseId, type: .increaseSupport, dayTemplateId: sourceTemplate.id, dayTemplateName: sourceTemplate.name)]
+        }
+        return [make(id: baseId, type: .keep, dayTemplateId: sourceTemplate.id, dayTemplateName: sourceTemplate.name)]
+    }
+
+    // MARK: - createAdjustmentDraftFromRecommendations (programAdjustmentEngine.ts:471-519)
+
+    /// `createAdjustmentDraftFromRecommendations(recommendations, sourceProgramTemplate, context)`
+    /// (ts:471). PURE / zero-write. `nowIso` is the REQUIRED injected clock replacing the
+    /// TS `new Date().toISOString()` (ts:489 createdAt / ts:496 sourceTemplateUpdatedAt
+    /// fallback). Reuses S6 fingerprint/instanceId, S7 hash, S8 buildAdjustmentDiff.
+    public static func createAdjustmentDraftFromRecommendations(
+        _ recommendations: [WeeklyActionRecommendation],
+        sourceProgramTemplate: TrainingTemplate,
+        context: AdjustmentDraftContext = AdjustmentDraftContext(),
+        nowIso: String
+    ) -> ProgramAdjustmentDraft {
+        // const actionable = recommendations.filter(item => item.suggestedChange);  (ts:476)
+        let actionable = recommendations.filter { item in
+            if let sc = item.suggestedChange { return jsTruthyJSON(sc) }
+            return false
+        }
+        // const availableTemplates = context.templates?.length ? context.templates : [sourceProgramTemplate];  (ts:477)
+        let availableTemplates: [TrainingTemplate] =
+            (context.templates?.isEmpty == false) ? context.templates! : [sourceProgramTemplate]
+        // const changes = actionable.flatMap(rec => changeFromRecommendation(rec, resolveSource(rec), context));  (ts:478-481)
+        let changes = actionable.flatMap { recommendation -> [AdjustmentChange] in
+            let template = resolveSourceTemplateForRecommendation(recommendation, availableTemplates, sourceProgramTemplate)
+            return changeFromRecommendation(recommendation, template, context: context)
+        }
+        // const sourceProgramTemplateId = resolvePrimarySourceTemplateId(changes, sourceProgramTemplate.id);  (ts:482)
+        let sourceProgramTemplateId = resolvePrimarySourceTemplateId(changes, sourceProgramTemplate.id)
+        // const resolvedSourceTemplate = findTemplateById(availableTemplates, sourceProgramTemplateId) || sourceProgramTemplate;  (ts:483)
+        let resolvedSourceTemplate = findTemplateById(availableTemplates, sourceProgramTemplateId) ?? sourceProgramTemplate
+        // const notes = changes.flatMap(change => change.previewNote ? [change.previewNote] : []);  (ts:484)
+        let notes = changes.compactMap { jsTruthyString($0.previewNote) ? $0.previewNote : nil }
+
+        let programName = formatProgramTemplateName(resolvedSourceTemplate)
+        // confidence (ts:503-507)
+        let confidence: EstimateConfidence
+        if changes.contains(where: { $0.type == .addNewExercise && !jsTruthyString($0.dayTemplateId) }) {
+            confidence = .low
+        } else if !notes.isEmpty {
+            confidence = .medium
+        } else {
+            confidence = highestConfidence(recommendations)
+        }
+        // explanation (ts:509): actionable.map(reason||recommendation).filter(Boolean).join('；') || fallback
+        let explanationParts = actionable.compactMap { item -> String? in
+            let v = jsOrString(item.reason, item.recommendation)
+            return jsTruthyString(v) ? v : nil
+        }
+        let explanation = explanationParts.isEmpty
+            ? "根据近期训练记录生成，应用前需要用户确认。"
+            : explanationParts.joined(separator: "；")
+        // notes (ts:510): notes.length ? notes : actionable.length ? [] : [hint]
+        let draftNotes: [String]
+        if !notes.isEmpty { draftNotes = notes }
+        else if !actionable.isEmpty { draftNotes = [] }
+        else { draftNotes = ["当前建议更适合作为人工参考，暂不生成自动调整。"] }
+
+        // The pre-rewrite draft (ts:486-511). createdAt + sourceTemplateUpdatedAt fallback
+        // use the injected nowIso. selectedRecommendationIds maps every rec id (required field).
+        let pre = ProgramAdjustmentDraft(
+            id: "adjustment-draft-pending",                                                // ts:487
+            draftRevision: .integer(1),                                                    // ts:488
+            createdAt: nowIso,                                                             // ts:489 (injected)
+            status: "ready_to_apply",                                                      // ts:490
+            sourceProgramTemplateId: resolvedSourceTemplate.id,                            // ts:491
+            sourceTemplateId: resolvedSourceTemplate.id,                                   // ts:492
+            sourceRecommendationId: recommendations.first?.id,                             // ts:493
+            experimentalTemplateName: "\(programName) 实验版",                              // ts:494
+            sourceTemplateSnapshotHash: hashProgramTemplate(resolvedSourceTemplate),       // ts:495 (S7)
+            sourceTemplateUpdatedAt: jsTruthyString(resolvedSourceTemplate.updatedAt)      // ts:496 (|| injected)
+                ? resolvedSourceTemplate.updatedAt : nowIso,
+            title: "\(programName) 下周实验调整",                                           // ts:497
+            summary: changes.isEmpty                                                        // ts:498-500
+                ? "当前没有可安全自动应用的训练计划调整。"
+                : "基于 \(actionable.count) 条建议生成实验调整预览，应用前会校验原模板版本。",
+            selectedRecommendationIds: recommendations.map { $0.id ?? "" },                 // ts:501
+            changes: changes,                                                              // ts:502
+            confidence: confidence,                                                        // ts:503
+            riskLevel: riskLevelForDraft(changes),                                         // ts:508
+            explanation: explanation,                                                      // ts:509
+            notes: draftNotes                                                              // ts:510
+        )
+
+        // const sourceFingerprint = draft.sourceFingerprint || buildPlanAdjustmentFingerprintFromDraft(draft);  (ts:512)
+        let sourceFingerprint = jsTruthyString(pre.sourceFingerprint)
+            ? pre.sourceFingerprint!
+            : PlanAdjustmentIdentityEngine.buildPlanAdjustmentFingerprintFromDraft(pre)
+        // id = buildPlanAdjustmentDraftInstanceId(sourceFingerprint, draft.draftRevision||1, draft.parentDraftId)  (ts:515)
+        let instanceId = PlanAdjustmentIdentityEngine.buildPlanAdjustmentDraftInstanceId(sourceFingerprint, 1, pre.parentDraftId)
+        // diffPreview = buildAdjustmentDiff(draft, resolvedSourceTemplate, context.programTemplate||DEFAULT, availableTemplates)  (ts:517)
+        let diff = buildAdjustmentDiff(
+            draft: pre, sourceProgramTemplate: resolvedSourceTemplate,
+            programTemplate: context.programTemplate, templates: availableTemplates
+        )
+
+        // return { ...draft, id, sourceFingerprint, diffPreview };  (ts:513-518)
+        return ProgramAdjustmentDraft(
+            id: instanceId,
+            parentDraftId: pre.parentDraftId, draftRevision: pre.draftRevision, createdAt: pre.createdAt,
+            status: pre.status, sourceProgramTemplateId: pre.sourceProgramTemplateId, sourceTemplateId: pre.sourceTemplateId,
+            sourceCoachActionId: pre.sourceCoachActionId, sourceRecommendationId: pre.sourceRecommendationId,
+            sourceFingerprint: sourceFingerprint, experimentalProgramTemplateId: pre.experimentalProgramTemplateId,
+            experimentalTemplateName: pre.experimentalTemplateName, appliedAt: pre.appliedAt, rolledBackAt: pre.rolledBackAt,
+            sourceTemplateSnapshotHash: pre.sourceTemplateSnapshotHash, sourceTemplateUpdatedAt: pre.sourceTemplateUpdatedAt,
+            title: pre.title, summary: pre.summary, selectedRecommendationIds: pre.selectedRecommendationIds,
+            changes: pre.changes, confidence: pre.confidence, riskLevel: pre.riskLevel, explanation: pre.explanation,
+            diffPreview: diff, notes: pre.notes, _unknown: pre._unknown
+        )
+    }
+
+    // MARK: - summarizeMainChanges (programAdjustmentEngine.ts:791-807)
+
+    /// `summarizeMainChanges(changes)` (ts:791-807): drop skipped, take first 3, render
+    /// per-type, join ' / '. The default arm uses `formatAdjustmentChangeLabel` (the
+    /// formatters.ts variant — '减少辅助层' etc.), NOT S8 changeTypeLabel.
+    static func summarizeMainChanges(_ changes: [AdjustmentChange]) -> String {
+        let kept = changes.filter { $0.skipped != true }.prefix(3)                          // !skipped + slice(0,3)
+        let parts = kept.map { change -> String in
+            if change.type == .addNewExercise {                                            // ts:796-797
+                return "\(formatDayTemplateName(jsOrString(change.dayTemplateName, change.dayTemplateId))) 新增 \(formatExerciseName(jsOrString(change.exerciseName, change.exerciseId)))"
+            }
+            if change.type == .addSets || change.type == .removeSets {                      // ts:799-800
+                let n = E1RMEngine.number(change.setsDelta)
+                return "\(formatExerciseName(jsOrString(change.exerciseName, change.exerciseId)))：\(n > 0 ? "+" : "")\(jsNumString(n)) 组"
+            }
+            if change.type == .swapExercise {                                              // ts:802-803
+                return "\(formatExerciseName(jsOrString(change.exerciseName, change.exerciseId))) 改为 \(formatExerciseName(jsOrString(change.replacementExerciseName, change.replacementExerciseId)))"
+            }
+            return formatAdjustmentChangeLabel(change.type)                                 // ts:805
+        }
+        return parts.joined(separator: " / ")
+    }
+
+    // MARK: - ApplyAdjustmentDraftResult (programAdjustmentEngine.ts:57-64)
+
+    /// The TS `ApplyAdjustmentDraftResult` return shape (ts:57-64). `experimentalTemplate`
+    /// / `updatedProgramTemplate` are carried as lossless raw `JSONValue` (the mutated full
+    /// template / program objects); `draft` / `historyItem` as the typed PA-S1 values.
+    public struct ApplyAdjustmentDraftResult: Equatable, Sendable {
+        public let ok: Bool
+        public let message: String?
+        public let draft: ProgramAdjustmentDraft
+        public let experimentalTemplate: JSONValue?
+        public let updatedProgramTemplate: JSONValue?
+        public let historyItem: ProgramAdjustmentHistoryItem?
+
+        public init(
+            ok: Bool, message: String? = nil, draft: ProgramAdjustmentDraft,
+            experimentalTemplate: JSONValue? = nil, updatedProgramTemplate: JSONValue? = nil,
+            historyItem: ProgramAdjustmentHistoryItem? = nil
+        ) {
+            self.ok = ok
+            self.message = message
+            self.draft = draft
+            self.experimentalTemplate = experimentalTemplate
+            self.updatedProgramTemplate = updatedProgramTemplate
+            self.historyItem = historyItem
+        }
+
+        /// `{ ok, message?, draft, experimentalTemplate?, updatedProgramTemplate?, historyItem? }`
+        /// — optional members omitted when nil (matching JSON.stringify dropping undefined).
+        public func encoded() -> JSONValue {
+            var entries: [OrderedJSONObject.Entry] = []
+            entries.append(.init(key: "ok", value: .bool(ok)))
+            if let message { entries.append(.init(key: "message", value: .string(message))) }
+            entries.append(.init(key: "draft", value: draft.encoded()))
+            if let experimentalTemplate { entries.append(.init(key: "experimentalTemplate", value: experimentalTemplate)) }
+            if let updatedProgramTemplate { entries.append(.init(key: "updatedProgramTemplate", value: updatedProgramTemplate)) }
+            if let historyItem { entries.append(.init(key: "historyItem", value: historyItem.encoded())) }
+            return .object(OrderedJSONObject(entries: entries))
+        }
+    }
+
+    // MARK: - applyAdjustmentDraft (programAdjustmentEngine.ts:809-919)
+
+    /// `applyAdjustmentDraft(draft, sourceProgramTemplate, currentProgramTemplate, templates)`
+    /// (ts:809). PURE / ZERO WRITE — returns the result, NEVER persists (source-of-truth
+    /// write is the later S10 slice). `nowIso` replaces the TS `new Date()` (ts:829) and
+    /// `historyIdSeed` the `makeId('adjustment-history')` random suffix (ts:889). Reuses S7
+    /// hash, S8 applySupportChange / applyExerciseChange / ensureProgramDayTemplate, S6 fingerprint.
+    public static func applyAdjustmentDraft(
+        _ draft: ProgramAdjustmentDraft,
+        sourceProgramTemplate: TrainingTemplate,
+        currentProgramTemplate: ProgramTemplate? = nil,
+        templates: [TrainingTemplate]? = nil,
+        nowIso: String,
+        historyIdSeed: String
+    ) -> ApplyAdjustmentDraftResult {
+        _ = templates  // present in the TS signature (ts:813) but unused by the body.
+        let currentProgram = currentProgramTemplate ?? DefaultTrainingData.defaultProgramTemplate  // ts:812 default
+
+        // const currentHash = hashProgramTemplate(sourceProgramTemplate);  (ts:815)
+        let currentHash = hashProgramTemplate(sourceProgramTemplate)
+        // if (draft.sourceTemplateSnapshotHash && draft.sourceTemplateSnapshotHash !== currentHash) → expired  (ts:816-825)
+        if jsTruthyString(draft.sourceTemplateSnapshotHash) && draft.sourceTemplateSnapshotHash != currentHash {
+            return ApplyAdjustmentDraftResult(
+                ok: false,
+                message: "原模板已变化，请重新生成调整预览。",                               // ts:819
+                draft: draftWithOverrides(draft, status: "expired")                         // ts:820-823
+            )
+        }
+
+        // const appliedAt = nowIso (injected, replaces new Date(), ts:829)
+        let appliedAt = nowIso
+        // const experimentalId = `${sourceProgramTemplate.id}-experiment-${draft.id.slice(-6)}`;  (ts:830)
+        let experimentalId = "\(sourceProgramTemplate.id ?? "undefined")-experiment-\(String((draft.id ?? "").suffix(6)))"
+        let experimentalName = "\(formatProgramTemplateName(sourceProgramTemplate)) 实验版"  // ts:835
+
+        // experimentalTemplate = cloneTemplate(sourceProgramTemplate) + scalar overrides (ts:827/834-841).
+        // Kept as a lossless full object; the W* helpers mutate only exercises/duration which
+        // we sync back, while note/updatedAt/… (untouched by the helpers) live here.
+        var experimentalFull = MutObj(EngineValueUtils.clone(sourceProgramTemplate.encoded()))
+        // const note = `${sourceProgramTemplate.note || ''}\n实验调整：${draft.summary}`.trim();  (ts:836)
+        let baseNote = "\(jsTruthyString(sourceProgramTemplate.note) ? sourceProgramTemplate.note! : "")\n实验调整：\(draft.summary ?? "")"
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        experimentalFull["id"] = .string(experimentalId)                                   // ts:834
+        experimentalFull["name"] = .string(experimentalName)                               // ts:835
+        experimentalFull["note"] = .string(baseNote)                                       // ts:836
+        experimentalFull["updatedAt"] = .string(appliedAt)                                 // ts:837
+        experimentalFull["sourceTemplateId"] = sourceProgramTemplate.id.map { JSONValue.string($0) }  // ts:838 (undefined → omit)
+        experimentalFull["sourceTemplateName"] = sourceProgramTemplate.name.map { JSONValue.string($0) } // ts:839
+        experimentalFull["isExperimentalTemplate"] = .bool(true)                           // ts:840
+        experimentalFull["appliedAt"] = .string(appliedAt)                                 // ts:841
+
+        // W* working copies for the S8 helpers. wExp carries the experimental id/name so the
+        // helpers (and ensureProgramDayTemplate inside applySupportChange) see them.
+        var wExp = WTemplate(from: sourceProgramTemplate)
+        wExp.id = experimentalId
+        wExp.name = experimentalName
+        var updatedFull = MutObj(EngineValueUtils.clone(currentProgram.encoded()))          // cloneProgram(current) ts:828
+        let wProgram = WProgram(from: currentProgram)
+
+        var appliedChanges: [AdjustmentChange] = []                                         // ts:831
+        var skippedNotes: [String] = []                                                     // ts:832
+
+        // draft.changes.forEach(change => { ... });  (ts:843-876)
+        for change in (draft.changes ?? []) {
+            // add_new_exercise without a resolved day → skip (ts:846-852).
+            if change.type == .addNewExercise && !jsTruthyString(change.dayTemplateId) {
+                let reason = "系统暂时不能安全决定插入哪个训练日，请手动确认后重新生成预览。"  // ts:848
+                appliedChanges.append(changeWithSkip(change, skipped: true, skipReason: reason))
+                skippedNotes.append(reason)
+                continue
+            }
+            // reduce/increase_support → applySupportChange (ts:854-865).
+            if change.type == .reduceSupport || change.type == .increaseSupport {
+                let applied = applySupportChange(wProgram, &wExp, WTemplate(from: sourceProgramTemplate), change)
+                if applied {
+                    appliedChanges.append(change)
+                } else {
+                    let reason = "当前 support 配置没有足够安全的调整空间，已跳过。"          // ts:860
+                    appliedChanges.append(changeWithSkip(change, skipped: true, skipReason: reason))
+                    skippedNotes.append(reason)
+                }
+                continue
+            }
+            // exercise change (ts:867-875).
+            let applied = applyExerciseChange(&wExp, change)
+            if applied {
+                appliedChanges.append(change)
+            } else {
+                let reason = "未能安全应用：\(change.reason ?? "")"                          // ts:872
+                appliedChanges.append(changeWithSkip(change, skipped: true, skipReason: reason))
+                skippedNotes.append(reason)
+            }
+        }
+
+        // const dayTemplate = ensureProgramDayTemplate(updatedProgramTemplate, source, experimentalTemplate);  (ts:878)
+        let dayTemplate = ensureProgramDayTemplate(wProgram, WTemplate(from: sourceProgramTemplate), wExp)
+        dayTemplate.name = experimentalName                                                 // ts:879
+        dayTemplate.mainExerciseIds = wExp.exercises.map { baseOrId($0) }                   // ts:880
+        dayTemplate.estimatedDurationMin = wExp.duration                                    // ts:881
+
+        // experimentalTemplate.adjustmentSummary = summarizeMainChanges(appliedChanges) || fallback  (ts:882)
+        let mainSummary = summarizeMainChanges(appliedChanges)
+        let adjustmentSummary = mainSummary.isEmpty ? "本次以 support 微调为主" : mainSummary
+
+        // Sync the W* mutations back into the lossless full objects.
+        experimentalFull["exercises"] = .array(wExp.exercises.map { $0.json })
+        experimentalFull["duration"] = wExp.duration
+        experimentalFull["adjustmentSummary"] = .string(adjustmentSummary)
+        if !skippedNotes.isEmpty {                                                          // ts:884-886
+            let combined = "\(baseNote)\n\(skippedNotes.joined(separator: "\n"))"
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            experimentalFull["note"] = .string(combined)
+        }
+        if let cs = wProgram.correctionStrategy { updatedFull["correctionStrategy"] = .string(cs) }
+        if let fs = wProgram.functionalStrategy { updatedFull["functionalStrategy"] = .string(fs) }
+        updatedFull["dayTemplates"] = .array(wProgram.dayTemplates.map { $0.asDayTemplate().encoded() })
+
+        // historyItem (ts:888-904). sourceFingerprint = draft.sourceFingerprint || build…(draft) (ts:894).
+        let historyFp = jsTruthyString(draft.sourceFingerprint)
+            ? draft.sourceFingerprint!
+            : PlanAdjustmentIdentityEngine.buildPlanAdjustmentFingerprintFromDraft(draft)
+        let snapshot = try? ProgramTemplate(decoding: EngineValueUtils.clone(currentProgram.encoded()))  // cloneProgram(current) ts:903
+        let historyItem = ProgramAdjustmentHistoryItem(
+            id: makeId("adjustment-history", idSeed: historyIdSeed),                        // ts:889 (injected makeId)
+            appliedAt: appliedAt,                                                           // ts:890
+            sourceProgramTemplateId: sourceProgramTemplate.id,                              // ts:891
+            experimentalProgramTemplateId: experimentalId,                                  // ts:892
+            sourceCoachActionId: draft.sourceCoachActionId,                                 // ts:893
+            sourceFingerprint: historyFp,                                                   // ts:894
+            sourceProgramTemplateName: sourceProgramTemplate.name,                          // ts:895
+            experimentalProgramTemplateName: experimentalName,                              // ts:896
+            mainChangeSummary: adjustmentSummary,                                           // ts:897
+            selectedRecommendationIds: draft.selectedRecommendationIds,                     // ts:898
+            changes: appliedChanges,                                                        // ts:899
+            status: "applied",                                                              // ts:900
+            explanation: draft.explanation,                                                 // ts:901
+            rollbackAvailable: true,                                                        // ts:902
+            sourceProgramSnapshot: snapshot                                                 // ts:903
+        )
+
+        // return { ok:true, draft:{...draft, status, appliedAt, sourceFingerprint, experimentalProgramTemplateId},
+        //   experimentalTemplate, updatedProgramTemplate, historyItem };  (ts:906-918)
+        let appliedDraft = draftWithOverrides(
+            draft, status: "applied", appliedAt: appliedAt,
+            sourceFingerprint: historyFp, experimentalProgramTemplateId: experimentalId
+        )
+        return ApplyAdjustmentDraftResult(
+            ok: true, draft: appliedDraft,
+            experimentalTemplate: experimentalFull.json, updatedProgramTemplate: updatedFull.json,
+            historyItem: historyItem
+        )
+    }
+
+    // MARK: - PA-S9 local helpers
+
+    /// JS number → NumberRepr with integer collapse (whole → .integer), matching the
+    /// JSON.stringify integer text the goldens carry.
+    private static func nr(_ d: Double) -> NumberRepr {
+        if d.isFinite, d.truncatingRemainder(dividingBy: 1) == 0, abs(d) < 9_007_199_254_740_992 {
+            return .integer(Int64(d))
+        }
+        return .double(d)
+    }
+
+    /// `{ ...change }` then optionally set skipped/skipReason (ts:844/847-848/859-860/871-872).
+    private static func changeWithSkip(_ c: AdjustmentChange, skipped: Bool, skipReason: String) -> AdjustmentChange {
+        AdjustmentChange(
+            id: c.id, type: c.type, dayTemplateId: c.dayTemplateId, dayTemplateName: c.dayTemplateName,
+            exerciseId: c.exerciseId, exerciseName: c.exerciseName, replacementExerciseId: c.replacementExerciseId,
+            replacementExerciseName: c.replacementExerciseName, muscleId: c.muscleId, setsDelta: c.setsDelta,
+            sets: c.sets, repMin: c.repMin, repMax: c.repMax, restSec: c.restSec,
+            insertAfterExerciseId: c.insertAfterExerciseId, insertPositionLabel: c.insertPositionLabel,
+            previewNote: c.previewNote, skipped: skipped, skipReason: skipReason,
+            reason: c.reason, sourceRecommendationId: c.sourceRecommendationId, _unknown: c._unknown
+        )
+    }
+
+    /// `{ ...draft, <overrides> }` (ts:820-823 expired / ts:908-914 applied). Copies every
+    /// field, overrides `status` (always) + appliedAt / sourceFingerprint /
+    /// experimentalProgramTemplateId when provided; carries the `_unknown` open bag through.
+    private static func draftWithOverrides(
+        _ d: ProgramAdjustmentDraft, status: String,
+        appliedAt: String? = nil, sourceFingerprint: String? = nil, experimentalProgramTemplateId: String? = nil
+    ) -> ProgramAdjustmentDraft {
+        ProgramAdjustmentDraft(
+            id: d.id, parentDraftId: d.parentDraftId, draftRevision: d.draftRevision, createdAt: d.createdAt,
+            status: status,
+            sourceProgramTemplateId: d.sourceProgramTemplateId, sourceTemplateId: d.sourceTemplateId,
+            sourceCoachActionId: d.sourceCoachActionId, sourceRecommendationId: d.sourceRecommendationId,
+            sourceFingerprint: sourceFingerprint ?? d.sourceFingerprint,
+            experimentalProgramTemplateId: experimentalProgramTemplateId ?? d.experimentalProgramTemplateId,
+            experimentalTemplateName: d.experimentalTemplateName,
+            appliedAt: appliedAt ?? d.appliedAt, rolledBackAt: d.rolledBackAt,
+            sourceTemplateSnapshotHash: d.sourceTemplateSnapshotHash, sourceTemplateUpdatedAt: d.sourceTemplateUpdatedAt,
+            title: d.title, summary: d.summary, selectedRecommendationIds: d.selectedRecommendationIds,
+            changes: d.changes, confidence: d.confidence, riskLevel: d.riskLevel, explanation: d.explanation,
+            diffPreview: d.diffPreview, notes: d.notes, _unknown: d._unknown
+        )
+    }
+}

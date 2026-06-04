@@ -69,8 +69,10 @@ describe('parityFixturesGenerationConsistency', () => {
     // 1 PA-S3 default-program-data + 1 PA-S4 i18n-formatters +
     // 3 PA-S5 coach-action-identity +
     // 4 PA-S6 plan-adjustment-identity +
-    // 2 PA-S7 program-adjust (hash + rollback) parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+89\s+fixture/);
+    // 2 PA-S7 program-adjust (hash + rollback) +
+    // 2 PA-S8 program-adjust (select-day + build-diff) +
+    // 2 PA-S9 program-adjust (create-draft + apply-draft) parity fixtures).
+    expect(result.stdout).toMatch(/checked\s+91\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });

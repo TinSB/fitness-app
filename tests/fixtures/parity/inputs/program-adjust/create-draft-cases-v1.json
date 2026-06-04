@@ -1,0 +1,376 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/create-draft-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S9 (PA-1c) createAdjustmentDraftFromRecommendations function-level parity — synthetic WeeklyActionRecommendations + source/context templates pinning: changeFromRecommendation branches (add_sets existing, add_new_exercise with a resolved day, add_new_exercise with NO day via pain/restricted → confidence low, remove_sets, swap via removeExerciseIds, reduce/increase_support, keep), resolvePrimarySourceTemplateId across multiple templates, confidence (add_new-no-day → low / previewNote → medium / else highestConfidence) and riskLevelForDraft tiers (|setsDelta|>=3 → medium; add_new-no-day → high), buildAdjustmentChangeId (stableStringify + stableIdHash slug), the empty-actionable draft (summary/notes/riskLevel high), the sourceTemplateUpdatedAt fallback when the resolved source has no updatedAt, and the S6 buildPlanAdjustmentFingerprintFromDraft + buildPlanAdjustmentDraftInstanceId id rewrite + S8 buildAdjustmentDiff diffPreview. Generated from src/engines/programAdjustmentEngine.ts; createdAt (ts:489) and the sourceTemplateUpdatedAt wall-clock fallback (ts:496) are substituted by the injected deterministicClockIso (neither feeds the fingerprint/id). The Swift port takes nowIso explicitly and canonical-asserts the rewritten ProgramAdjustmentDraft == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "4aa6d40bfac7008babc57954dc0bc8481af8ab9a",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "sourceNotes": "createAdjustmentDraftFromRecommendations reads new Date() for createdAt (ts:489) and the sourceTemplateUpdatedAt fallback (ts:496); the generator substitutes those with the injected deterministicClockIso so the goldens are byte-deterministic. All recommendations/templates synthetic; userId values use the allowlisted synthetic-user placeholder; no email/token."
+  },
+  "cases": [
+    {
+      "label": "add_sets existing exercise → high confidence (highestConfidence), low risk (|setsDelta|<3)",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-vol-1",
+          "priority": "high",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "胸",
+          "issue": "胸推容量偏低",
+          "recommendation": "增加卧推组数",
+          "reason": "近四周胸推有效组数低于目标",
+          "confidence": "high",
+          "suggestedChange": { "muscleId": "chest", "setsDelta": 2, "exerciseIds": ["bench-press"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "push-a",
+        "name": "推 A",
+        "focus": "推",
+        "duration": 70,
+        "updatedAt": "2026-01-01T00:00:00.000Z",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 },
+          { "id": "cable-fly", "name": "绳索夹胸", "muscle": "chest", "kind": "isolation", "sets": 2, "repMin": 12, "repMax": 15, "rest": 75, "startWeight": 17.5 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "add_sets existing, |setsDelta|>=3 → medium risk",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-vol-2",
+          "priority": "medium",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "胸",
+          "issue": "胸推容量明显不足",
+          "recommendation": "较大幅度增加卧推组数",
+          "reason": "需要更强刺激",
+          "confidence": "medium",
+          "suggestedChange": { "muscleId": "chest", "setsDelta": 3, "exerciseIds": ["bench-press"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "push-a",
+        "name": "推 A",
+        "focus": "推",
+        "duration": 70,
+        "updatedAt": "2026-01-02T00:00:00.000Z",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "add_new_exercise with a resolved day (context.programTemplate) → previewNote/confidence path + diffPreview",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-add-new",
+          "priority": "high",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "背",
+          "issue": "背阔肌容量偏低且当前训练日缺少该动作",
+          "recommendation": "新增一个背部动作",
+          "reason": "背阔肌有效组数不足",
+          "confidence": "high",
+          "suggestedChange": { "muscleId": "back", "setsDelta": 2, "exerciseIds": ["synthetic-back-ext"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "pull-a",
+        "name": "拉 A",
+        "focus": "拉",
+        "duration": 65,
+        "updatedAt": "2026-01-03T00:00:00.000Z",
+        "exercises": [
+          { "id": "barbell-row", "name": "杠铃划船", "muscle": "back", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 50 }
+        ]
+      },
+      "context": {
+        "programTemplate": {
+          "id": "program-1",
+          "userId": "synthetic-user",
+          "correctionStrategy": "moderate",
+          "functionalStrategy": "standard",
+          "dayTemplates": [
+            { "id": "pull-a", "name": "拉 A", "focusMuscles": ["back"], "correctionBlockIds": [], "mainExerciseIds": ["barbell-row"], "functionalBlockIds": [], "estimatedDurationMin": 65 }
+          ]
+        },
+        "templates": [
+          {
+            "id": "pull-a",
+            "name": "拉 A",
+            "focus": "拉",
+            "duration": 65,
+            "updatedAt": "2026-01-03T00:00:00.000Z",
+            "exercises": [
+              { "id": "barbell-row", "name": "杠铃划船", "muscle": "back", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 50 }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "add_new_exercise blocked by pain/restricted → NO dayTemplateId → confidence low + riskLevel high",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-add-new-pain",
+          "priority": "high",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "背",
+          "issue": "背阔肌容量偏低但该动作有疼痛信号",
+          "recommendation": "新增一个背部动作",
+          "reason": "背阔肌有效组数不足",
+          "confidence": "high",
+          "suggestedChange": { "muscleId": "back", "setsDelta": 2, "exerciseIds": ["restricted-back-ex"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "pull-a",
+        "name": "拉 A",
+        "focus": "拉",
+        "duration": 65,
+        "updatedAt": "2026-01-04T00:00:00.000Z",
+        "exercises": [
+          { "id": "barbell-row", "name": "杠铃划船", "muscle": "back", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 50 }
+        ]
+      },
+      "context": {
+        "screeningProfile": { "restrictedExercises": ["restricted-back-ex"] }
+      }
+    },
+    {
+      "label": "remove_sets (setsDelta<0)",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-remove",
+          "priority": "medium",
+          "category": "recovery",
+          "targetType": "muscle",
+          "targetLabel": "胸",
+          "issue": "胸部疲劳偏高",
+          "recommendation": "减少夹胸组数",
+          "reason": "胸部恢复不足",
+          "confidence": "medium",
+          "suggestedChange": { "muscleId": "chest", "setsDelta": -2, "exerciseIds": ["cable-fly"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "push-a",
+        "name": "推 A",
+        "focus": "推",
+        "duration": 70,
+        "updatedAt": "2026-01-05T00:00:00.000Z",
+        "exercises": [
+          { "id": "cable-fly", "name": "绳索夹胸", "muscle": "chest", "kind": "isolation", "sets": 3, "repMin": 12, "repMax": 15, "rest": 75, "startWeight": 17.5 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "swap via removeExerciseIds → swap_exercise changes (id `${rec.id}-swap-${i+1}`)",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-swap",
+          "priority": "high",
+          "category": "recovery",
+          "targetType": "exercise",
+          "targetLabel": "过顶推举",
+          "issue": "过顶推举引发肩部不适",
+          "recommendation": "替换为更安全的肩部动作",
+          "reason": "肩部疼痛信号",
+          "confidence": "medium",
+          "suggestedChange": { "muscleId": "shoulders", "removeExerciseIds": ["overhead-press", "upright-row"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "push-a",
+        "name": "推 A",
+        "focus": "推",
+        "duration": 70,
+        "updatedAt": "2026-01-06T00:00:00.000Z",
+        "exercises": [
+          { "id": "overhead-press", "name": "过顶推举", "muscle": "shoulders", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 150, "startWeight": 30 },
+          { "id": "upright-row", "name": "直立划船", "muscle": "shoulders", "kind": "isolation", "sets": 2, "repMin": 12, "repMax": 15, "rest": 75, "startWeight": 20 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "reduce_support (supportDoseAdjustment reduce) → reduce_support keep-day change",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-support",
+          "priority": "low",
+          "category": "recovery",
+          "targetType": "program",
+          "targetLabel": "辅助层",
+          "issue": "辅助层负荷偏高",
+          "recommendation": "下调辅助层剂量",
+          "reason": "整体疲劳偏高",
+          "confidence": "low",
+          "suggestedChange": { "supportDoseAdjustment": "reduce" }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "legs-a",
+        "name": "腿 A",
+        "focus": "腿",
+        "duration": 80,
+        "updatedAt": "2026-01-07T00:00:00.000Z",
+        "exercises": [
+          { "id": "back-squat", "name": "深蹲", "muscle": "quads", "kind": "compound", "sets": 4, "repMin": 5, "repMax": 8, "rest": 210, "startWeight": 90 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "keep (suggestedChange with no actionable delta/swap/support) → keep change",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-keep",
+          "priority": "low",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "胸",
+          "issue": "当前结构合适",
+          "recommendation": "保持当前结构",
+          "reason": "无需调整",
+          "confidence": "low",
+          "suggestedChange": { "muscleId": "chest" }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "push-a",
+        "name": "推 A",
+        "focus": "推",
+        "duration": 70,
+        "updatedAt": "2026-01-08T00:00:00.000Z",
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "empty actionable (no suggestedChange) → empty changes, summary/notes hint, riskLevel high, confidence highestConfidence",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-info-1",
+          "priority": "medium",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "背",
+          "issue": "信息性建议",
+          "recommendation": "关注背部恢复",
+          "reason": "仅供参考",
+          "confidence": "medium"
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "pull-a",
+        "name": "拉 A",
+        "focus": "拉",
+        "duration": 65,
+        "updatedAt": "2026-01-09T00:00:00.000Z",
+        "exercises": [
+          { "id": "barbell-row", "name": "杠铃划船", "muscle": "back", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 50 }
+        ]
+      },
+      "context": {}
+    },
+    {
+      "label": "multi-change across templates → resolvePrimarySourceTemplateId picks most-frequent day; source WITHOUT updatedAt → sourceTemplateUpdatedAt fallback = injected nowIso",
+      "kind": "create-draft",
+      "recommendations": [
+        {
+          "id": "rec-multi-1",
+          "priority": "high",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "胸",
+          "issue": "胸推容量偏低",
+          "recommendation": "增加卧推组数",
+          "reason": "胸推不足",
+          "confidence": "high",
+          "suggestedChange": { "muscleId": "chest", "setsDelta": 2, "exerciseIds": ["bench-press"] }
+        },
+        {
+          "id": "rec-multi-2",
+          "priority": "medium",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "胸",
+          "issue": "上斜胸容量偏低",
+          "recommendation": "增加上斜卧推组数",
+          "reason": "上斜胸不足",
+          "confidence": "medium",
+          "suggestedChange": { "muscleId": "chest", "setsDelta": 1, "exerciseIds": ["incline-press"] }
+        },
+        {
+          "id": "rec-multi-3",
+          "priority": "medium",
+          "category": "volume",
+          "targetType": "muscle",
+          "targetLabel": "背",
+          "issue": "背阔肌容量偏低",
+          "recommendation": "增加划船组数",
+          "reason": "背阔肌不足",
+          "confidence": "low",
+          "suggestedChange": { "muscleId": "back", "setsDelta": 1, "exerciseIds": ["barbell-row"] }
+        }
+      ],
+      "sourceProgramTemplate": {
+        "id": "push-a",
+        "name": "推 A",
+        "focus": "推",
+        "duration": 70,
+        "exercises": [
+          { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 },
+          { "id": "incline-press", "name": "上斜卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 40 }
+        ]
+      },
+      "context": {
+        "templates": [
+          {
+            "id": "push-a",
+            "name": "推 A",
+            "focus": "推",
+            "duration": 70,
+            "exercises": [
+              { "id": "bench-press", "name": "平板卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 6, "repMax": 8, "rest": 180, "startWeight": 60 },
+              { "id": "incline-press", "name": "上斜卧推", "muscle": "chest", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 40 }
+            ]
+          },
+          {
+            "id": "pull-a",
+            "name": "拉 A",
+            "focus": "拉",
+            "duration": 65,
+            "exercises": [
+              { "id": "barbell-row", "name": "杠铃划船", "muscle": "back", "kind": "compound", "sets": 3, "repMin": 8, "repMax": 10, "rest": 150, "startWeight": 50 }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
