@@ -242,6 +242,12 @@ const FIXTURE_IDS = [
   'recovery-aware/body-part-conflict-cases-v1',
   'recovery-aware/template-recovery-conflict-cases-v1',
   'recovery-aware/recommendation-cases-v1',
+  // SC-B trainingCalendar self-contained subset + todayState port — 2 ADDITIVE OUTPUT fixtures
+  // (calendar-helpers dispatch-by-kind over the 10 self-contained helpers · today-state
+  // buildTodayTrainingState branches). Generated; never hand-edited (§22). The aggregator
+  // buildTrainingCalendar is DEFERRED (real prerequisite: the COMPLETE sessionDetailSummary).
+  'calendar-helpers/helper-cases-v1',
+  'today-state/today-state-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

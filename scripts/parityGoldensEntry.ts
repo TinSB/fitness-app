@@ -301,6 +301,33 @@ import {
   buildTemplateBodyPartConflictScore,
   buildTemplateRecoveryConflict,
 } from '../src/engines/recoveryAwareScheduler';
+// SC-B — trainingCalendarEngine self-contained subset + todayStateEngine port parity slice.
+// Imports the REAL self-contained helpers so the calendar-helpers / today-state goldens are
+// GENERATED from TS truth, never hand-authored (§22). The 10 trainingCalendarEngine helpers
+// depend ONLY on engineUtils monthKey/number defaults + the TrainingSession type;
+// buildTodayTrainingState depends only on toLocalDateKey + the session type. The Swift ports
+// (TrainingCalendarEngine / TodayStateEngine) re-run each function over the SAME echoed
+// engineInput and COMPUTE-ASSERT the result == golden. PURE / clockless — every date is an
+// explicit input; the monthKey() / new Date() DEFAULTS are injected seams that every fixture
+// supplies, so the goldens are byte-deterministic (generatedAtPolicy 'none'). The full-ISO
+// toLocalDateKey branch resolves under TZ=America/New_York (the CI civil zone); fixture
+// timestamps are UTC-hour ≥ 06:00 so the NY-local date is DST-invariant. The aggregator
+// buildTrainingCalendar is DEFERRED (NOT imported) — it alone calls buildSessionDetailSummary
+// (ts:209), whose COMPLETE port is its real prerequisite (AN-4 ported only the sessionQuality-
+// called subset); same DEFER precedent as SC-1's recoveryAwareScheduler.
+import {
+  toLocalDateKey,
+  getSessionCalendarDate,
+  normalizeCalendarMonth,
+  addCalendarMonths,
+  buildTrainingCalendarMonthRange,
+  clampCalendarMonth,
+  getLatestTrainingDateKey,
+  getInitialCalendarMonth,
+  getDefaultCalendarDateForMonth,
+  resolveCalendarSelectedDate,
+} from '../src/engines/trainingCalendarEngine';
+import { buildTodayTrainingState } from '../src/engines/todayStateEngine';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -863,6 +890,26 @@ const FIXTURE_IDS = [
   'recovery-aware/body-part-conflict-cases-v1',
   'recovery-aware/template-recovery-conflict-cases-v1',
   'recovery-aware/recommendation-cases-v1',
+  // SC-B trainingCalendar self-contained subset + todayState port — 2 OUTPUT fixtures (each a
+  // `cases` array) FUNCTION-LEVEL pinning the ported helpers. calendar-helpers/helper-cases-v1 is
+  // a dispatch-by-`kind` fixture covering all 10 self-contained trainingCalendarEngine helpers
+  // (toLocalDateKey branches 1-4 incl. the full-ISO→NY-civil date / getSessionCalendarDate
+  // precedence / normalizeCalendarMonth valid+fallback / addCalendarMonths month arithmetic incl.
+  // year underflow/overflow / buildTrainingCalendarMonthRange no-history+before/after current+
+  // filtering / clampCalendarMonth within/below/above / getLatestTrainingDateKey month-filter+
+  // empty+full-ISO / getInitialCalendarMonth selected/latest/current / getDefaultCalendarDateForMonth
+  // latest/fallback-match/mismatch/none / resolveCalendarSelectedDate in-month/default). today-state/
+  // today-state-cases-v1 pins buildTodayTrainingState across in_progress / completed (single+
+  // newest-first sort+test/excluded/incomplete filter+date-mismatch) / not_started (planned+none) +
+  // the currentLocalDate fallback. The Swift ports (TrainingCalendarEngine / TodayStateEngine)
+  // compute-assert each case == golden. Generated from src/engines/{trainingCalendarEngine,
+  // todayStateEngine}.ts via scripts/generate-parity-goldens.mjs (never hand-edited §22). PURE /
+  // clockless — every date is an explicit input; the monthKey()/new Date() defaults are injected
+  // seams (fixtures never rely on the wall clock). The aggregator buildTrainingCalendar is DEFERRED
+  // (its real prerequisite is the COMPLETE sessionDetailSummary; AN-4 ported only the called
+  // subset) — same DEFER precedent as SC-1's recoveryAwareScheduler. Additive.
+  'calendar-helpers/helper-cases-v1',
+  'today-state/today-state-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3731,6 +3778,131 @@ const generateRecoveryRecommendation = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// SC-B — trainingCalendar self-contained subset OUTPUT parity (10 helpers, dispatch-by-kind)
+//
+// Each case carries a `kind` selecting the helper + that helper's echoed inputs; the generator
+// runs the REAL helper verbatim and emits the inputs + computed `result`. normalizeCalendarMonth
+// cases ALWAYS pass an explicit `fallback` (so the internal monthKey() default is never the
+// decider); the month-defaulting helpers (addCalendarMonths / clamp / getDefault / resolve) only
+// ever receive VALID `YYYY-MM` months, so their internal normalizeCalendarMonth(month) returns the
+// candidate and the eagerly-evaluated monthKey() default is discarded → byte-deterministic output.
+// PURE / clockless. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateCalendarHelpers = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const out: Record<string, unknown> = { label: c.label ?? null, kind: c.kind };
+    switch (c.kind) {
+      case 'toLocalDateKey': {
+        out.value = c.value ?? null;
+        out.result = toLocalDateKey(c.value);
+        break;
+      }
+      case 'getSessionCalendarDate': {
+        const session = (c.session ?? {}) as TrainingSession;
+        out.session = c.session ?? {};
+        out.result = getSessionCalendarDate(session);
+        break;
+      }
+      case 'normalizeCalendarMonth': {
+        out.month = c.month ?? null;
+        out.fallback = c.fallback;
+        out.result = normalizeCalendarMonth(c.month, c.fallback);
+        break;
+      }
+      case 'addCalendarMonths': {
+        out.month = c.month;
+        out.delta = c.delta;
+        out.result = addCalendarMonths(c.month, c.delta);
+        break;
+      }
+      case 'buildTrainingCalendarMonthRange': {
+        const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+        out.history = history;
+        out.currentMonth = c.currentMonth;
+        out.result = buildTrainingCalendarMonthRange(history, c.currentMonth);
+        break;
+      }
+      case 'clampCalendarMonth': {
+        out.month = c.month;
+        out.range = c.range;
+        out.result = clampCalendarMonth(c.month, c.range as TrainingCalendarMonthRangeInput);
+        break;
+      }
+      case 'getLatestTrainingDateKey': {
+        const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+        out.history = history;
+        if (c.month !== undefined) out.month = c.month;
+        out.result = getLatestTrainingDateKey(history, c.month);
+        break;
+      }
+      case 'getInitialCalendarMonth': {
+        const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+        out.history = history;
+        if (c.selectedDate !== undefined) out.selectedDate = c.selectedDate;
+        out.currentMonth = c.currentMonth;
+        out.result = getInitialCalendarMonth(history, c.selectedDate, c.currentMonth);
+        break;
+      }
+      case 'getDefaultCalendarDateForMonth': {
+        const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+        out.history = history;
+        out.month = c.month;
+        if (c.fallbackDate !== undefined) out.fallbackDate = c.fallbackDate;
+        out.result = getDefaultCalendarDateForMonth(history, c.month, c.fallbackDate);
+        break;
+      }
+      case 'resolveCalendarSelectedDate': {
+        const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+        out.history = history;
+        out.month = c.month;
+        if (c.currentSelectedDate !== undefined) out.currentSelectedDate = c.currentSelectedDate;
+        if (c.fallbackDate !== undefined) out.fallbackDate = c.fallbackDate;
+        out.result = resolveCalendarSelectedDate(history, c.month, c.currentSelectedDate, c.fallbackDate);
+        break;
+      }
+      default:
+        throw new Error(`calendar-helpers: unknown kind ${String(c.kind)}`);
+    }
+    return out;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+// The `range` literal a clampCalendarMonth case carries (the buildTrainingCalendarMonthRange shape).
+type TrainingCalendarMonthRangeInput = Parameters<typeof clampCalendarMonth>[1];
+
+// ---------------------------------------------------------------------------
+// SC-B — todayStateEngine OUTPUT parity (buildTodayTrainingState)
+//
+// Each case echoes the engineInput (activeSession? / history / selectedDate? / currentLocalDate? /
+// plannedTemplateId?) and the computed TodayTrainingState. EVERY case supplies selectedDate or
+// currentLocalDate so the TS `new Date().toISOString()` final fallback (ts:47) is never reached →
+// byte-deterministic. Optional union fields the engine omits drop under canonicalStringify. PURE /
+// clockless. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateTodayState = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+    const result = buildTodayTrainingState({
+      activeSession: c.activeSession ?? undefined,
+      history,
+      selectedDate: c.selectedDate,
+      currentLocalDate: c.currentLocalDate,
+      plannedTemplateId: c.plannedTemplateId,
+    });
+    const out: Record<string, unknown> = { label: c.label ?? null, history, result };
+    if (c.activeSession !== undefined) out.activeSession = c.activeSession;
+    if (c.selectedDate !== undefined) out.selectedDate = c.selectedDate;
+    if (c.currentLocalDate !== undefined) out.currentLocalDate = c.currentLocalDate;
+    if (c.plannedTemplateId !== undefined) out.plannedTemplateId = c.plannedTemplateId;
+    return out;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3862,6 +4034,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'recovery-aware/body-part-conflict-cases-v1': generateRecoveryBodyPart,
   'recovery-aware/template-recovery-conflict-cases-v1': generateRecoveryTemplateConflict,
   'recovery-aware/recommendation-cases-v1': generateRecoveryRecommendation,
+  // SC-B trainingCalendar self-contained subset + todayState OUTPUT parity.
+  'calendar-helpers/helper-cases-v1': generateCalendarHelpers,
+  'today-state/today-state-cases-v1': generateTodayState,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
