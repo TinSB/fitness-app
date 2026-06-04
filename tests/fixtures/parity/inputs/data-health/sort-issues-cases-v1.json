@@ -1,0 +1,68 @@
+{
+  "parityMeta": {
+    "id": "data-health/sort-issues-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-0 coachAction-foundation — FUNCTION-LEVEL parity for sortDataHealthIssues (src/engines/dataHealthEngine.ts:41). The REAL sort is a STABLE copy-sort: primary severity DESC via dataHealthSeverityRank (error 3 > warning 2 > info 1), tie-break left.title.localeCompare(right.title, 'zh-CN') ASC. Cases pin every comparator branch — severity-beats-title (anti-aligned titles), same-severity ASCII title tie-break, same-severity zh-CN PINYIN tie-break (titles whose pinyin order DIFFERS from code-point order, so the golden proves localeCompare collation rather than ordinal compare), JS-stable equal-key preservation, empty + single-element edges, and a full mixed case carrying every DataHealthIssue field across all three severities + all eight category values. Generated from the REAL sortDataHealthIssues; the Swift DataHealthEngine.sortDataHealthIssues re-runs the SAME comparator over each echoed `issues` and COMPUTE-ASSERTs the order == golden `result`, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "02b84a7f853870ff0f96504b07b5b2aa9cb45e69",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — pure stable comparator over an array copy (the ONLY observable output is issue order). Synthetic ids / ASCII + Chinese titles / synthetic messages; no email/token/userId. The zh-CN pinyin tie-break case uses 单(dan)/历(li)/模(mo)/智(zhi): pinyin order 单<历<模<智 INVERTS the code-point order 单<历<智<模 for 模/智, so this case fails an ordinal compare and only passes under the localeCompare('zh-CN') collation."
+  },
+  "cases": [
+    {
+      "label": "severity DESC beats title ASC — anti-aligned titles (error has the title that would sort LAST, info the title that would sort FIRST); severity must override",
+      "issues": [
+        { "id": "a-info", "severity": "info", "category": "summary", "title": "Z-would-be-first-by-title", "message": "info row", "canAutoFix": false },
+        { "id": "a-error", "severity": "error", "category": "unit", "title": "Z-error-sorts-last-by-title", "message": "error row", "canAutoFix": true },
+        { "id": "a-warning", "severity": "warning", "category": "history", "title": "M-middle", "message": "warning row", "canAutoFix": false }
+      ]
+    },
+    {
+      "label": "same-severity ASCII title tie-break (all warning) — scrambled Cherry/Apple/Banana sorts Apple<Banana<Cherry",
+      "issues": [
+        { "id": "b-cherry", "severity": "warning", "category": "analytics", "title": "Cherry", "message": "c", "canAutoFix": false },
+        { "id": "b-apple", "severity": "warning", "category": "analytics", "title": "Apple", "message": "a", "canAutoFix": false },
+        { "id": "b-banana", "severity": "warning", "category": "analytics", "title": "Banana", "message": "b", "canAutoFix": false }
+      ]
+    },
+    {
+      "label": "same-severity zh-CN PINYIN title tie-break (all error) — scrambled 智/单/模/历 sorts by pinyin 单(dan)<历(li)<模(mo)<智(zhi), which DIFFERS from code-point order",
+      "issues": [
+        { "id": "c-zhi", "severity": "error", "category": "analytics", "title": "智能分析失败", "message": "zhi", "canAutoFix": false },
+        { "id": "c-dan", "severity": "error", "category": "unit", "title": "单位换算异常", "message": "dan", "canAutoFix": true },
+        { "id": "c-mo", "severity": "error", "category": "template", "title": "模板结构损坏", "message": "mo", "canAutoFix": false },
+        { "id": "c-li", "severity": "error", "category": "history", "title": "历史记录缺失", "message": "li", "canAutoFix": false }
+      ]
+    },
+    {
+      "label": "JS-stable equal-key preservation — an error floats above two warnings whose severity AND title are IDENTICAL (comparator==0); the two warnings keep input order (first before second)",
+      "issues": [
+        { "id": "d-err", "severity": "error", "category": "replacement", "title": "X-top", "message": "err", "canAutoFix": true },
+        { "id": "d-first", "severity": "warning", "category": "history", "title": "重复问题", "message": "first", "canAutoFix": false },
+        { "id": "d-second", "severity": "warning", "category": "history", "title": "重复问题", "message": "second", "canAutoFix": false }
+      ]
+    },
+    {
+      "label": "empty array — sortDataHealthIssues([]) returns []",
+      "issues": []
+    },
+    {
+      "label": "single element — returned unchanged",
+      "issues": [
+        { "id": "f-only", "severity": "warning", "category": "healthData", "title": "唯一问题", "message": "only", "affectedIds": ["m1"], "canAutoFix": true, "suggestedAction": "review" }
+      ]
+    },
+    {
+      "label": "full mixed — every DataHealthIssue field, all three severities, all eight category values, same-severity Chinese title tie-breaks; expect 错误A,错误B,警告A,警告B,信息A,信息B",
+      "issues": [
+        { "id": "g1", "severity": "info", "category": "summary", "title": "信息B", "message": "m1", "canAutoFix": false },
+        { "id": "g2", "severity": "error", "category": "replacement", "title": "错误A", "message": "m2", "affectedIds": ["x1", "x2"], "canAutoFix": true, "suggestedAction": "auto-fix" },
+        { "id": "g3", "severity": "warning", "category": "healthData", "title": "警告B", "message": "m3", "canAutoFix": false },
+        { "id": "g4", "severity": "error", "category": "template", "title": "错误B", "message": "m4", "canAutoFix": true },
+        { "id": "g5", "severity": "warning", "category": "unknown", "title": "警告A", "message": "m5", "affectedIds": [], "canAutoFix": false, "suggestedAction": "review" },
+        { "id": "g6", "severity": "info", "category": "unit", "title": "信息A", "message": "m6", "canAutoFix": true }
+      ]
+    }
+  ]
+}

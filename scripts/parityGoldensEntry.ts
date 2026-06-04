@@ -340,6 +340,19 @@ import {
   getOrderedProgramDayTemplates,
   getOrderedTrainingTemplates,
 } from '../src/engines/nextWorkoutScheduler';
+// CC-0 — coachAction-foundation parity slice. Imports the REAL `sortDataHealthIssues`
+// (+ its `DataHealthIssue` type) so the sort golden is GENERATED from TS truth, never
+// hand-authored (§22). `sortDataHealthIssues` is PURE / clockless (a stable copy-sort:
+// severity DESC then `title.localeCompare(_, 'zh-CN')`) with zero engine deps, so its
+// fixture uses generatedAtPolicy 'none'. The Swift DataHealthEngine.sortDataHealthIssues
+// re-runs the SAME comparator over the echoed input and COMPUTE-ASSERTs the order ==
+// golden. CC-0 ports ONLY this sort + the 3 foundation type families it / coachAction
+// read (DataHealthIssue/Report · DailyTrainingAdjustment · SetAnomaly); the daily /
+// anomaly ENGINE logic is each its own later track.
+import {
+  sortDataHealthIssues,
+  type DataHealthIssue,
+} from '../src/engines/dataHealthEngine';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -938,6 +951,15 @@ const FIXTURE_IDS = [
   // COMPUTE-ASSERTs the result == golden. Additive; generated, never hand-edited (§22).
   'next-workout/recommendation-cases-v1',
   'next-workout/ordered-templates-cases-v1',
+  // CC-0 coachAction-foundation — one OUTPUT fixture (a `cases` array) FUNCTION-LEVEL
+  // pinning `sortDataHealthIssues`: severity DESC (error>warning>info) · same-severity
+  // ASCII title tie-break · same-severity zh-CN PINYIN title tie-break (proves the
+  // `localeCompare(_, 'zh-CN')` collation, NOT code-point order) · JS-stable equal-key
+  // preservation · empty / single-element edges · a full mixed case carrying every
+  // DataHealthIssue field. The Swift DataHealthEngine.sortDataHealthIssues re-runs the
+  // SAME comparator over the echoed `issues` and COMPUTE-ASSERTs the order == golden
+  // `result`. Additive; generated, never hand-edited (§22).
+  'data-health/sort-issues-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -4002,6 +4024,27 @@ const generateNextWorkoutOrdered = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// CC-0 — sortDataHealthIssues OUTPUT parity (coachAction-foundation slice)
+//
+// Each case carries an `issues` array of synthetic DataHealthIssue objects (all
+// fields synthetic — no PII). The generator runs the REAL `sortDataHealthIssues`
+// over a copy and emits BOTH the echoed `issues` (the Swift port re-sorts these)
+// AND the computed `result` (the sorted order). PURE / clockless. Generated,
+// never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateSortDataHealthIssues = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; issues?: DataHealthIssue[] }) => {
+      const issues = Array.isArray(c.issues) ? c.issues : [];
+      const result = sortDataHealthIssues(issues);
+      return { label: c.label ?? null, issues, result };
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -4139,6 +4182,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // SC-C nextWorkoutScheduler OUTPUT parity (buildNextWorkoutRecommendation + the two ordering exports).
   'next-workout/recommendation-cases-v1': generateNextWorkoutRecommendation,
   'next-workout/ordered-templates-cases-v1': generateNextWorkoutOrdered,
+  // CC-0 sortDataHealthIssues OUTPUT parity (coachAction-foundation slice).
+  'data-health/sort-issues-cases-v1': generateSortDataHealthIssues,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
