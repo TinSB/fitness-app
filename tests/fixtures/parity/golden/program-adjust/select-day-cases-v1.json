@@ -1,0 +1,488 @@
+{
+  "cases": [
+    {
+      "context": {
+        "screeningProfile": {
+          "restrictedExercises": [
+            "pa-test-row"
+          ],
+          "userId": "local-user"
+        },
+        "templates": [
+          {
+            "duration": 70,
+            "exercises": [
+              {
+                "id": "lat-pulldown",
+                "kind": "compound",
+                "muscle": "背"
+              },
+              {
+                "id": "db-curl",
+                "kind": "isolation",
+                "muscle": "手臂"
+              }
+            ],
+            "focus": "拉",
+            "id": "pull-a",
+            "name": "拉 A"
+          }
+        ]
+      },
+      "exercise": {
+        "alias": "测试划船",
+        "id": "pa-test-row",
+        "kind": "compound",
+        "muscle": "背",
+        "name": "测试划船",
+        "repMax": 10,
+        "repMin": 8,
+        "rest": 120,
+        "sets": 3,
+        "startWeight": 40
+      },
+      "kind": "select-day",
+      "label": "pain via restrictedExercises + ExerciseTemplate object input (compound) → low + note",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "back"
+            ],
+            "functionalBlockIds": [],
+            "id": "pull-a",
+            "mainExerciseIds": [],
+            "name": "拉 A"
+          }
+        ],
+        "id": "prog-sel-1"
+      },
+      "result": {
+        "confidence": "low",
+        "note": "测试划船 近期受到 pain 或 restricted 信号影响，系统不会自动插入。"
+      },
+      "targetMuscleId": "back"
+    },
+    {
+      "context": {
+        "painPatterns": [
+          {
+            "exerciseId": "lateral-raise",
+            "suggestedAction": "substitute"
+          }
+        ]
+      },
+      "exercise": "lateral-raise",
+      "kind": "select-day",
+      "label": "pain via painPattern suggestedAction='substitute' + string input found in INITIAL_TEMPLATES → low + note",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "shoulders"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [],
+            "name": "推 A"
+          }
+        ],
+        "id": "prog-sel-2"
+      },
+      "result": {
+        "confidence": "low",
+        "note": "哑铃侧平举 近期受到 pain 或 restricted 信号影响，系统不会自动插入。"
+      },
+      "targetMuscleId": "shoulders"
+    },
+    {
+      "context": {
+        "templates": [
+          {
+            "duration": 70,
+            "exercises": [
+              {
+                "id": "lat-pulldown",
+                "kind": "compound",
+                "muscle": "背"
+              },
+              {
+                "id": "face-pull",
+                "kind": "isolation",
+                "muscle": "肩"
+              },
+              {
+                "id": "db-curl",
+                "kind": "isolation",
+                "muscle": "手臂"
+              }
+            ],
+            "focus": "拉",
+            "id": "pull-a",
+            "name": "拉 A"
+          }
+        ]
+      },
+      "exercise": "pa-novel-iso",
+      "kind": "select-day",
+      "label": "keyword 'back' hit (pull-a) → high, anchor = first non-compound (db-curl)",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "back"
+            ],
+            "functionalBlockIds": [],
+            "id": "pull-a",
+            "mainExerciseIds": [],
+            "name": "拉 A"
+          },
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "chest"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [],
+            "name": "推 A"
+          }
+        ],
+        "id": "prog-sel-3"
+      },
+      "result": {
+        "confidence": "high",
+        "dayTemplateId": "pull-a",
+        "dayTemplateName": "拉 A",
+        "insertAfterExerciseId": "db-curl",
+        "insertPositionLabel": "辅助动作区，位于 哑铃弯举 之后"
+      },
+      "targetMuscleId": "back"
+    },
+    {
+      "context": {
+        "templates": [
+          {
+            "duration": 90,
+            "exercises": [
+              {
+                "id": "squat",
+                "kind": "compound",
+                "muscle": "腿"
+              },
+              {
+                "id": "leg-curl",
+                "kind": "isolation",
+                "muscle": "腿"
+              },
+              {
+                "id": "calf-raise",
+                "kind": "isolation",
+                "muscle": "腿"
+              }
+            ],
+            "focus": "腿",
+            "id": "legs-a",
+            "name": "腿 A"
+          }
+        ]
+      },
+      "exercise": "pa-squat-novel",
+      "kind": "select-day",
+      "label": "longDay (90) + compound highFatigue penalty → medium, anchor = first non-compound (calf-raise)",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 90,
+            "focusMuscles": [
+              "quads"
+            ],
+            "functionalBlockIds": [],
+            "id": "legs-a",
+            "mainExerciseIds": [],
+            "name": "腿 A"
+          }
+        ],
+        "id": "prog-sel-4"
+      },
+      "result": {
+        "confidence": "medium",
+        "dayTemplateId": "legs-a",
+        "dayTemplateName": "腿 A",
+        "insertAfterExerciseId": "calf-raise",
+        "insertPositionLabel": "辅助动作区，位于 提踵 之后",
+        "note": "该训练日已经偏长，系统会把新动作尽量放在辅助动作区。"
+      },
+      "targetMuscleId": "quads"
+    },
+    {
+      "context": {
+        "sourceTemplateId": "arms-a",
+        "templates": [
+          {
+            "duration": 45,
+            "exercises": [
+              {
+                "id": "preacher-curl",
+                "kind": "isolation",
+                "muscle": "手臂"
+              }
+            ],
+            "focus": "手臂",
+            "id": "arms-a",
+            "name": "手臂 A"
+          }
+        ]
+      },
+      "exercise": "pa-novel-curl",
+      "kind": "select-day",
+      "label": "score<2 (sourceTemplateId weight only, biceps keywords miss) → low candidate",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 45,
+            "focusMuscles": [
+              "arms"
+            ],
+            "functionalBlockIds": [],
+            "id": "arms-a",
+            "mainExerciseIds": [],
+            "name": "手臂 A"
+          }
+        ],
+        "id": "prog-sel-5"
+      },
+      "result": {
+        "confidence": "low",
+        "dayTemplateId": "arms-a",
+        "dayTemplateName": "手臂 A",
+        "insertAfterExerciseId": "preacher-curl",
+        "insertPositionLabel": "辅助动作区，位于 牧师凳弯举 之后",
+        "note": "系统可以给出候选训练日，但当前把握不高，建议你手动确认。"
+      },
+      "targetMuscleId": "biceps"
+    },
+    {
+      "context": {
+        "templates": [
+          {
+            "duration": 85,
+            "exercises": [
+              {
+                "id": "bench-press",
+                "kind": "compound",
+                "muscle": "胸"
+              },
+              {
+                "id": "incline-db-press",
+                "kind": "compound",
+                "muscle": "胸"
+              }
+            ],
+            "focus": "推",
+            "id": "push-a",
+            "name": "推 A"
+          }
+        ]
+      },
+      "exercise": "pa-press-novel",
+      "kind": "select-day",
+      "label": "duration exactly 85 boundary → longDay medium, anchor = reversed[0] (all compound)",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 85,
+            "focusMuscles": [
+              "chest"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [],
+            "name": "推 A"
+          }
+        ],
+        "id": "prog-sel-6"
+      },
+      "result": {
+        "confidence": "medium",
+        "dayTemplateId": "push-a",
+        "dayTemplateName": "推 A",
+        "insertAfterExerciseId": "incline-db-press",
+        "insertPositionLabel": "辅助动作区，位于 上斜哑铃卧推 之后",
+        "note": "该训练日已经偏长，系统会把新动作尽量放在辅助动作区。"
+      },
+      "targetMuscleId": "chest"
+    },
+    {
+      "context": {
+        "templates": [
+          {
+            "duration": 60,
+            "exercises": [
+              {
+                "id": "bench-press",
+                "kind": "compound",
+                "muscle": "胸"
+              }
+            ],
+            "focus": "其它",
+            "id": "other-x",
+            "name": "其它"
+          }
+        ]
+      },
+      "exercise": "pa-novel-iso",
+      "kind": "select-day",
+      "label": "targetMuscleId null + score 0 tie (stable sort → first day) + anchor 末尾 (template missing)",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "back"
+            ],
+            "functionalBlockIds": [],
+            "id": "pull-a",
+            "mainExerciseIds": [],
+            "name": "拉 A"
+          },
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "chest"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [],
+            "name": "推 A"
+          }
+        ],
+        "id": "prog-sel-7"
+      },
+      "result": {
+        "confidence": "low",
+        "dayTemplateId": "pull-a",
+        "dayTemplateName": "拉 A",
+        "insertPositionLabel": "辅助动作区末尾",
+        "note": "系统可以给出候选训练日，但当前把握不高，建议你手动确认。"
+      },
+      "targetMuscleId": null
+    },
+    {
+      "context": {
+        "templates": [
+          {
+            "duration": 70,
+            "exercises": [
+              {
+                "id": "db-bench-press",
+                "kind": "compound",
+                "muscle": "胸"
+              },
+              {
+                "id": "lateral-raise",
+                "kind": "isolation",
+                "muscle": "肩"
+              }
+            ],
+            "focus": "上肢",
+            "id": "upper-a",
+            "name": "上肢 A"
+          }
+        ]
+      },
+      "exercise": "pa-novel-iso",
+      "kind": "select-day",
+      "label": "empty programTemplate.dayTemplates → derive from context.templates (dayTemplateFromTrainingTemplate), Chinese-muscle trainsTarget",
+      "programTemplate": {
+        "dayTemplates": [],
+        "id": "prog-sel-8"
+      },
+      "result": {
+        "confidence": "high",
+        "dayTemplateId": "upper-a",
+        "dayTemplateName": "上肢 A",
+        "insertAfterExerciseId": "lateral-raise",
+        "insertPositionLabel": "辅助动作区，位于 哑铃侧平举 之后"
+      },
+      "targetMuscleId": "胸"
+    },
+    {
+      "context": {
+        "painPatterns": [
+          {
+            "exerciseId": "pa-novel-iso",
+            "suggestedAction": "watch"
+          }
+        ],
+        "templates": [
+          {
+            "duration": 70,
+            "exercises": [
+              {
+                "id": "bench-press",
+                "kind": "compound",
+                "muscle": "胸"
+              },
+              {
+                "id": "lateral-raise",
+                "kind": "isolation",
+                "muscle": "肩"
+              }
+            ],
+            "focus": "推",
+            "id": "push-a",
+            "name": "推 A"
+          }
+        ]
+      },
+      "exercise": "pa-novel-iso",
+      "kind": "select-day",
+      "label": "painPattern suggestedAction='watch' does NOT restrict → normal high selection (shoulders keyword)",
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [],
+            "estimatedDurationMin": 70,
+            "focusMuscles": [
+              "shoulders"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [],
+            "name": "推 A"
+          }
+        ],
+        "id": "prog-sel-9"
+      },
+      "result": {
+        "confidence": "high",
+        "dayTemplateId": "push-a",
+        "dayTemplateName": "推 A",
+        "insertAfterExerciseId": "lateral-raise",
+        "insertPositionLabel": "辅助动作区，位于 哑铃侧平举 之后"
+      },
+      "targetMuscleId": "shoulders"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/select-day-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/select-day-cases-v1"
+}

@@ -1,0 +1,179 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/select-day-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S8 (PA-1b) selectBestDayForNewExercise function-level parity — synthetic inputs pinning the pain/restricted early return (restrictedExercises + painPattern suggestedAction !== 'watch'), the per-day scoring (trainsTarget +4 / keyword +3 / sourceTemplateId +1 / longDay&&highFatigue -3, longDay = duration >= 85, highFatigue = fatigueCost==='high' || kind==='compound'), the JS-stable score sort, the three confidence branches (score<2 low candidate / longDay medium / hit high) and chooseInsertAnchor (first-non-compound 之后 / reversed[0] / 辅助动作区末尾 when the template is missing). Covers string vs ExerciseTemplate input, the back/chest/quads/biceps/shoulders + null + Chinese-muscle keyword branches, the duration==85 boundary, and the rich-dayTemplates vs empty-dayTemplates (derive-from-templates) projections. The no-day (!best) branch is UNREACHABLE while INITIAL_TEMPLATES is non-empty (templates is never empty ⇒ dayTemplates is never empty), so real TS cannot generate it. Generated from src/engines/programAdjustmentEngine.ts; the Swift port compute-asserts each DaySelectionResult field == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — pure scoring + string transform, zero Date. All exercises are synthetic ids (absent from EXERCISE_KNOWLEDGE_OVERRIDES) or library ids whose observable output (name via formatExerciseDisplayName) is override-independent; the only override-derived field (fatigueCost) is exercised solely through compound-driven highFatigue. No email/token; no userId values."
+  },
+  "cases": [
+    {
+      "label": "pain via restrictedExercises + ExerciseTemplate object input (compound) → low + note",
+      "kind": "select-day",
+      "exercise": {
+        "id": "pa-test-row",
+        "name": "测试划船",
+        "alias": "测试划船",
+        "muscle": "背",
+        "kind": "compound",
+        "sets": 3,
+        "repMin": 8,
+        "repMax": 10,
+        "rest": 120,
+        "startWeight": 40
+      },
+      "targetMuscleId": "back",
+      "programTemplate": {
+        "id": "prog-sel-1",
+        "dayTemplates": [
+          { "id": "pull-a", "name": "拉 A", "focusMuscles": ["back"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      },
+      "context": {
+        "screeningProfile": { "userId": "local-user", "restrictedExercises": ["pa-test-row"] },
+        "templates": [
+          { "id": "pull-a", "name": "拉 A", "focus": "拉", "duration": 70, "exercises": [ { "id": "lat-pulldown", "muscle": "背", "kind": "compound" }, { "id": "db-curl", "muscle": "手臂", "kind": "isolation" } ] }
+        ]
+      }
+    },
+    {
+      "label": "pain via painPattern suggestedAction='substitute' + string input found in INITIAL_TEMPLATES → low + note",
+      "kind": "select-day",
+      "exercise": "lateral-raise",
+      "targetMuscleId": "shoulders",
+      "programTemplate": {
+        "id": "prog-sel-2",
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["shoulders"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      },
+      "context": {
+        "painPatterns": [ { "exerciseId": "lateral-raise", "suggestedAction": "substitute" } ]
+      }
+    },
+    {
+      "label": "keyword 'back' hit (pull-a) → high, anchor = first non-compound (db-curl)",
+      "kind": "select-day",
+      "exercise": "pa-novel-iso",
+      "targetMuscleId": "back",
+      "programTemplate": {
+        "id": "prog-sel-3",
+        "dayTemplates": [
+          { "id": "pull-a", "name": "拉 A", "focusMuscles": ["back"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 },
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      },
+      "context": {
+        "templates": [
+          { "id": "pull-a", "name": "拉 A", "focus": "拉", "duration": 70, "exercises": [ { "id": "lat-pulldown", "muscle": "背", "kind": "compound" }, { "id": "face-pull", "muscle": "肩", "kind": "isolation" }, { "id": "db-curl", "muscle": "手臂", "kind": "isolation" } ] }
+        ]
+      }
+    },
+    {
+      "label": "longDay (90) + compound highFatigue penalty → medium, anchor = first non-compound (calf-raise)",
+      "kind": "select-day",
+      "exercise": "pa-squat-novel",
+      "targetMuscleId": "quads",
+      "programTemplate": {
+        "id": "prog-sel-4",
+        "dayTemplates": [
+          { "id": "legs-a", "name": "腿 A", "focusMuscles": ["quads"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 90 }
+        ]
+      },
+      "context": {
+        "templates": [
+          { "id": "legs-a", "name": "腿 A", "focus": "腿", "duration": 90, "exercises": [ { "id": "squat", "muscle": "腿", "kind": "compound" }, { "id": "leg-curl", "muscle": "腿", "kind": "isolation" }, { "id": "calf-raise", "muscle": "腿", "kind": "isolation" } ] }
+        ]
+      }
+    },
+    {
+      "label": "score<2 (sourceTemplateId weight only, biceps keywords miss) → low candidate",
+      "kind": "select-day",
+      "exercise": "pa-novel-curl",
+      "targetMuscleId": "biceps",
+      "programTemplate": {
+        "id": "prog-sel-5",
+        "dayTemplates": [
+          { "id": "arms-a", "name": "手臂 A", "focusMuscles": ["arms"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 45 }
+        ]
+      },
+      "context": {
+        "sourceTemplateId": "arms-a",
+        "templates": [
+          { "id": "arms-a", "name": "手臂 A", "focus": "手臂", "duration": 45, "exercises": [ { "id": "preacher-curl", "muscle": "手臂", "kind": "isolation" } ] }
+        ]
+      }
+    },
+    {
+      "label": "duration exactly 85 boundary → longDay medium, anchor = reversed[0] (all compound)",
+      "kind": "select-day",
+      "exercise": "pa-press-novel",
+      "targetMuscleId": "chest",
+      "programTemplate": {
+        "id": "prog-sel-6",
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 85 }
+        ]
+      },
+      "context": {
+        "templates": [
+          { "id": "push-a", "name": "推 A", "focus": "推", "duration": 85, "exercises": [ { "id": "bench-press", "muscle": "胸", "kind": "compound" }, { "id": "incline-db-press", "muscle": "胸", "kind": "compound" } ] }
+        ]
+      }
+    },
+    {
+      "label": "targetMuscleId null + score 0 tie (stable sort → first day) + anchor 末尾 (template missing)",
+      "kind": "select-day",
+      "exercise": "pa-novel-iso",
+      "targetMuscleId": null,
+      "programTemplate": {
+        "id": "prog-sel-7",
+        "dayTemplates": [
+          { "id": "pull-a", "name": "拉 A", "focusMuscles": ["back"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 },
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["chest"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      },
+      "context": {
+        "templates": [
+          { "id": "other-x", "name": "其它", "focus": "其它", "duration": 60, "exercises": [ { "id": "bench-press", "muscle": "胸", "kind": "compound" } ] }
+        ]
+      }
+    },
+    {
+      "label": "empty programTemplate.dayTemplates → derive from context.templates (dayTemplateFromTrainingTemplate), Chinese-muscle trainsTarget",
+      "kind": "select-day",
+      "exercise": "pa-novel-iso",
+      "targetMuscleId": "胸",
+      "programTemplate": {
+        "id": "prog-sel-8",
+        "dayTemplates": []
+      },
+      "context": {
+        "templates": [
+          { "id": "upper-a", "name": "上肢 A", "focus": "上肢", "duration": 70, "exercises": [ { "id": "db-bench-press", "muscle": "胸", "kind": "compound" }, { "id": "lateral-raise", "muscle": "肩", "kind": "isolation" } ] }
+        ]
+      }
+    },
+    {
+      "label": "painPattern suggestedAction='watch' does NOT restrict → normal high selection (shoulders keyword)",
+      "kind": "select-day",
+      "exercise": "pa-novel-iso",
+      "targetMuscleId": "shoulders",
+      "programTemplate": {
+        "id": "prog-sel-9",
+        "dayTemplates": [
+          { "id": "push-a", "name": "推 A", "focusMuscles": ["shoulders"], "correctionBlockIds": [], "mainExerciseIds": [], "functionalBlockIds": [], "estimatedDurationMin": 70 }
+        ]
+      },
+      "context": {
+        "painPatterns": [ { "exerciseId": "pa-novel-iso", "suggestedAction": "watch" } ],
+        "templates": [
+          { "id": "push-a", "name": "推 A", "focus": "推", "duration": 70, "exercises": [ { "id": "bench-press", "muscle": "胸", "kind": "compound" }, { "id": "lateral-raise", "muscle": "肩", "kind": "isolation" } ] }
+        ]
+      }
+    }
+  ]
+}

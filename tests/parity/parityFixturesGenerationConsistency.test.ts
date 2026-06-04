@@ -70,7 +70,7 @@ describe('parityFixturesGenerationConsistency', () => {
     // 3 PA-S5 coach-action-identity +
     // 4 PA-S6 plan-adjustment-identity +
     // 2 PA-S7 program-adjust (hash + rollback) parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+87\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+89\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });

@@ -352,7 +352,12 @@ import type { AdjustmentChange } from '../src/models/training-model';
 // Swift port (ProgramAdjustmentEngine) re-runs the SAME functions over the SAME echoed
 // engineInput (template → hash; historyItem + injected now → restore result) and
 // EXACT/canonical-asserts each output. Reuses the PA-S1 types + S2 clone.
-import { hashProgramTemplate, rollbackAdjustment } from '../src/engines/programAdjustmentEngine';
+// PA-S8 (PA-1b) — adds the TWO data-dense PURE / clockless exports
+// selectBestDayForNewExercise (ts:259) + buildAdjustmentDiff (ts:709) so the
+// program-adjust select-day / build-diff goldens are GENERATED from TS truth
+// (both are clockless → generatedAtPolicy 'none'; the new Date() at ts:829 lives
+// in applyAdjustmentDraft, NOT in buildAdjustmentDiff). Generated, never hand-edited (§22).
+import { hashProgramTemplate, rollbackAdjustment, selectBestDayForNewExercise, buildAdjustmentDiff } from '../src/engines/programAdjustmentEngine';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -711,6 +716,14 @@ const FIXTURE_IDS = [
   // with open-bag passthrough). Generated, never hand-edited (§22).
   'program-adjust/hash-cases-v1',
   'program-adjust/rollback-cases-v1',
+  // PA-S8 (PA-1b) — selectBestDayForNewExercise / buildAdjustmentDiff OUTPUT parity
+  // (clockless). select-day pins the pain/no-day/score<2/longDay/keyword/source-weight/
+  // compound-penalty branches + string vs ExerciseTemplate input; build-diff pins every
+  // change-type branch (add/remove_sets found/not-found, add_new with/without dayTemplateId,
+  // swap with/without replacement, reduce/increase_support applied/not-applied, keep) and
+  // riskLevel tiers. Generated, never hand-edited (§22).
+  'program-adjust/select-day-cases-v1',
+  'program-adjust/build-diff-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3175,6 +3188,52 @@ const generateProgramAdjustRollback = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// PA-S8 (PA-1b) — selectBestDayForNewExercise OUTPUT parity. PURE / clockless →
+// generatedAtPolicy 'none'. Echoes the engineInput VERBATIM (exercise / programTemplate /
+// targetMuscleId / context) + the DaySelectionResult. Generated, never hand-edited (§22).
+const generateProgramAdjustSelectDay = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'select-day') {
+      throw new Error(`parityGoldensEntry: program-adjust/select-day unknown case kind '${String(c.kind)}'`);
+    }
+    const result = selectBestDayForNewExercise(c.exercise, c.programTemplate, c.targetMuscleId, c.context ?? {});
+    return {
+      label: c.label ?? null,
+      kind: 'select-day',
+      exercise: c.exercise,
+      programTemplate: c.programTemplate,
+      targetMuscleId: c.targetMuscleId ?? null,
+      context: c.context ?? {},
+      result,
+    };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+// PA-S8 (PA-1b) — buildAdjustmentDiff OUTPUT parity. PURE / clockless → generatedAtPolicy
+// 'none'. To exercise the TS default params, a case OMITS `programTemplate` / `templates`
+// (absent ⇒ `undefined` ⇒ DEFAULT_PROGRAM_TEMPLATE / [sourceProgramTemplate]); the echo
+// records the omitted slots as null and the Swift port substitutes the same defaults.
+// Echoes the engineInput VERBATIM + the ProgramAdjustmentDiff. Generated, never hand-edited (§22).
+const generateProgramAdjustBuildDiff = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'build-diff') {
+      throw new Error(`parityGoldensEntry: program-adjust/build-diff unknown case kind '${String(c.kind)}'`);
+    }
+    const result = buildAdjustmentDiff(c.draft as ProgramAdjustmentDraft, c.sourceProgramTemplate, c.programTemplate, c.templates);
+    return {
+      label: c.label ?? null,
+      kind: 'build-diff',
+      draft: c.draft,
+      sourceProgramTemplate: c.sourceProgramTemplate,
+      programTemplate: c.programTemplate ?? null,
+      templates: c.templates ?? null,
+      result,
+    };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3285,6 +3344,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // PA-S7 (PA-1a) programAdjustmentEngine minimal port — hash + rollback.
   'program-adjust/hash-cases-v1': generateProgramAdjustHash,
   'program-adjust/rollback-cases-v1': generateProgramAdjustRollback,
+  'program-adjust/select-day-cases-v1': generateProgramAdjustSelectDay,
+  'program-adjust/build-diff-cases-v1': generateProgramAdjustBuildDiff,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

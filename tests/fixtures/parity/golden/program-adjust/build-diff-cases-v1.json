@@ -1,0 +1,887 @@
+{
+  "cases": [
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "c1",
+            "reason": "胸推容量偏低",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "id": "draft-d1",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "增加卧推组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "add_sets found, |setsDelta|<4 → applied low (default programTemplate + templates params)",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "平板卧推：5 组",
+            "before": "平板卧推：3 组",
+            "changeId": "c1",
+            "label": "增加组数",
+            "reason": "胸推容量偏低",
+            "riskLevel": "low",
+            "type": "add_sets"
+          }
+        ],
+        "summary": "增加卧推组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          },
+          {
+            "id": "cable-fly",
+            "kind": "isolation",
+            "muscle": "胸",
+            "repMax": 15,
+            "repMin": 12,
+            "rest": 75,
+            "sets": 2,
+            "startWeight": 17.5
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "c1",
+            "reason": "需要更大刺激",
+            "setsDelta": 4,
+            "type": "add_sets"
+          }
+        ],
+        "id": "draft-d2",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "大幅增加卧推组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "add_sets found, |setsDelta|>=4 → applied medium",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "平板卧推：7 组",
+            "before": "平板卧推：3 组",
+            "changeId": "c1",
+            "label": "增加组数",
+            "reason": "需要更大刺激",
+            "riskLevel": "medium",
+            "type": "add_sets"
+          }
+        ],
+        "summary": "大幅增加卧推组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "cable-fly",
+            "exerciseName": "绳索夹胸",
+            "id": "c1",
+            "reason": "胸部疲劳偏高",
+            "setsDelta": -2,
+            "type": "remove_sets"
+          }
+        ],
+        "id": "draft-d3",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "减少夹胸组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "remove_sets found → applied (negative setsDelta clamps nextSets to >=1)",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "绳索夹胸：1 组",
+            "before": "绳索夹胸：2 组",
+            "changeId": "c1",
+            "label": "减少组数",
+            "reason": "胸部疲劳偏高",
+            "riskLevel": "low",
+            "type": "remove_sets"
+          }
+        ],
+        "summary": "减少夹胸组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "cable-fly",
+            "kind": "isolation",
+            "muscle": "胸",
+            "repMax": 15,
+            "repMin": 12,
+            "rest": 75,
+            "sets": 2,
+            "startWeight": 17.5
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "nonexistent-x",
+            "exerciseName": "不存在动作",
+            "id": "c1",
+            "muscleId": "无此肌群",
+            "reason": "找不到动作",
+            "setsDelta": 2,
+            "type": "add_sets"
+          }
+        ],
+        "id": "draft-d4",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "尝试增加一个不存在动作的组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "add_sets NOT found (no matching exercise / muscle) → not applied high",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "需要你手动确认具体动作后再调整",
+            "before": "当前模板里没有找到可直接调整的动作",
+            "changeId": "c1",
+            "label": "增加组数",
+            "reason": "找不到动作",
+            "riskLevel": "high",
+            "type": "add_sets"
+          }
+        ],
+        "summary": "尝试增加一个不存在动作的组数。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "pa-new-fly",
+            "exerciseName": "新夹胸",
+            "id": "c1",
+            "insertPositionLabel": "辅助动作区末尾",
+            "muscleId": "胸",
+            "reason": "增加胸部容量",
+            "repMax": 15,
+            "repMin": 10,
+            "restSec": 75,
+            "sets": 3,
+            "type": "add_new_exercise"
+          }
+        ],
+        "id": "draft-d5",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "新增一个夹胸动作。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "add_new_exercise WITH dayTemplateId → applied medium, after appends reps/rest/position",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "推 A：新增 新夹胸 3 组，10-15 次，休息 75 秒，位置：辅助动作区末尾",
+            "before": "推 A：当前没有 新夹胸",
+            "changeId": "c1",
+            "label": "新增动作",
+            "reason": "增加胸部容量",
+            "riskLevel": "medium",
+            "type": "add_new_exercise"
+          }
+        ],
+        "summary": "新增一个夹胸动作。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "exerciseId": "pa-new-row",
+            "exerciseName": "新划船",
+            "id": "c1",
+            "muscleId": "背",
+            "reason": "无法安全决定训练日",
+            "repMax": 12,
+            "repMin": 8,
+            "restSec": 90,
+            "sets": 3,
+            "type": "add_new_exercise"
+          }
+        ],
+        "id": "draft-d6",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "新增动作但没有安全训练日。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "add_new_exercise WITHOUT dayTemplateId → not applied high (manual-select)",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "推 A：系统暂时不能安全自动插入，需要手动选择训练日",
+            "before": "推 A：当前没有 新划船",
+            "changeId": "c1",
+            "label": "新增动作",
+            "reason": "无法安全决定训练日",
+            "riskLevel": "high",
+            "type": "add_new_exercise"
+          }
+        ],
+        "summary": "新增动作但没有安全训练日。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "c1",
+            "reason": "肩部不适",
+            "replacementExerciseId": "pa-swap-press",
+            "replacementExerciseName": "替代推",
+            "type": "swap_exercise"
+          }
+        ],
+        "id": "draft-d7",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "替换卧推。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "swap_exercise WITH replacementExerciseId → applied medium",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "替代推（替代）",
+            "before": "平板卧推",
+            "changeId": "c1",
+            "label": "替代动作",
+            "reason": "肩部不适",
+            "riskLevel": "medium",
+            "type": "swap_exercise"
+          }
+        ],
+        "summary": "替换卧推。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "cable-fly",
+            "exerciseName": "绳索夹胸",
+            "id": "c1",
+            "reason": "肘部不适",
+            "type": "swap_exercise"
+          }
+        ],
+        "id": "draft-d8",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "需要替换但未指定替代动作。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "swap_exercise WITHOUT replacementExerciseId → not applied high (manual)",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "需要人工选择更安全的替代动作",
+            "before": "绳索夹胸",
+            "changeId": "c1",
+            "label": "替代动作",
+            "reason": "肘部不适",
+            "riskLevel": "high",
+            "type": "swap_exercise"
+          }
+        ],
+        "summary": "需要替换但未指定替代动作。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "cable-fly",
+            "kind": "isolation",
+            "muscle": "胸",
+            "repMax": 15,
+            "repMin": 12,
+            "rest": 75,
+            "sets": 2,
+            "startWeight": 17.5
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "id": "c1",
+            "muscleId": "胸",
+            "reason": "恢复压力偏高",
+            "type": "reduce_support"
+          }
+        ],
+        "id": "draft-d9",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "减少辅助层负荷。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "reduce_support APPLIED (room to step down + trim blocks + shorten) → applied low",
+      "programTemplate": {
+        "correctionStrategy": "moderate",
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [
+              "corr_scapular_control_01",
+              "corr_thoracic_rotation_01"
+            ],
+            "estimatedDurationMin": 60,
+            "focusMuscles": [
+              "胸"
+            ],
+            "functionalBlockIds": [
+              "func_overhead_stability_01",
+              "func_core_anti_rotation_01"
+            ],
+            "id": "push-a",
+            "mainExerciseIds": [
+              "bench-press"
+            ],
+            "name": "推 A"
+          }
+        ],
+        "functionalStrategy": "standard",
+        "id": "prog-diff-9"
+      },
+      "result": {
+        "changes": [
+          {
+            "after": "推 A 实验版：纠偏 light / 功能 minimal / 纠偏模块 1 项 / 功能补丁 1 项",
+            "before": "推 A：纠偏 moderate / 功能 standard / 纠偏模块 2 项 / 功能补丁 2 项",
+            "changeId": "c1",
+            "label": "减少 support",
+            "reason": "恢复压力偏高",
+            "riskLevel": "low",
+            "type": "reduce_support"
+          }
+        ],
+        "summary": "减少辅助层负荷。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": [
+        {
+          "duration": 70,
+          "exercises": [
+            {
+              "id": "bench-press",
+              "kind": "compound",
+              "muscle": "胸",
+              "repMax": 8,
+              "repMin": 6,
+              "rest": 180,
+              "sets": 3,
+              "startWeight": 60
+            }
+          ],
+          "focus": "推",
+          "id": "push-a",
+          "name": "推 A"
+        }
+      ]
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "id": "c1",
+            "muscleId": "胸",
+            "reason": "纠偏需求上升",
+            "type": "increase_support"
+          }
+        ],
+        "id": "draft-d10",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "增加辅助层。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "increase_support APPLIED (always changed; adds corr/func modules) → applied low",
+      "programTemplate": {
+        "correctionStrategy": "moderate",
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [
+              "corr_core_control_01"
+            ],
+            "estimatedDurationMin": 60,
+            "focusMuscles": [
+              "胸"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [
+              "bench-press"
+            ],
+            "name": "推 A"
+          }
+        ],
+        "functionalStrategy": "standard",
+        "id": "prog-diff-10"
+      },
+      "result": {
+        "changes": [
+          {
+            "after": "推 A 实验版：纠偏 aggressive / 功能 enhanced / 纠偏模块 2 项 / 功能补丁 1 项",
+            "before": "推 A：纠偏 moderate / 功能 standard / 纠偏模块 1 项 / 功能补丁 0 项",
+            "changeId": "c1",
+            "label": "增加 support",
+            "reason": "纠偏需求上升",
+            "riskLevel": "low",
+            "type": "increase_support"
+          }
+        ],
+        "summary": "增加辅助层。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": [
+        {
+          "duration": 70,
+          "exercises": [
+            {
+              "id": "bench-press",
+              "kind": "compound",
+              "muscle": "胸",
+              "repMax": 8,
+              "repMin": 6,
+              "rest": 180,
+              "sets": 3,
+              "startWeight": 60
+            }
+          ],
+          "focus": "推",
+          "id": "push-a",
+          "name": "推 A"
+        }
+      ]
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "id": "c1",
+            "muscleId": "胸",
+            "reason": "已最低仍想减",
+            "type": "reduce_support"
+          }
+        ],
+        "id": "draft-d11",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "尝试再减但没有空间。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "reduce_support NOT applied (already minimal, no room) → not applied high + note",
+      "programTemplate": {
+        "correctionStrategy": "light",
+        "dayTemplates": [
+          {
+            "correctionBlockIds": [
+              "corr_core_control_01"
+            ],
+            "estimatedDurationMin": 30,
+            "focusMuscles": [
+              "胸"
+            ],
+            "functionalBlockIds": [],
+            "id": "push-a",
+            "mainExerciseIds": [
+              "bench-press"
+            ],
+            "name": "推 A"
+          }
+        ],
+        "functionalStrategy": "minimal",
+        "id": "prog-diff-11"
+      },
+      "result": {
+        "changes": [
+          {
+            "after": "推 A 实验版：纠偏 light / 功能 minimal / 纠偏模块 1 项 / 功能补丁 0 项",
+            "before": "推 A：纠偏 light / 功能 minimal / 纠偏模块 1 项 / 功能补丁 0 项",
+            "changeId": "c1",
+            "label": "减少 support",
+            "reason": "已最低仍想减 当前 support 配置没有足够安全的调整空间。",
+            "riskLevel": "high",
+            "type": "reduce_support"
+          }
+        ],
+        "summary": "尝试再减但没有空间。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 30,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": [
+        {
+          "duration": 70,
+          "exercises": [
+            {
+              "id": "bench-press",
+              "kind": "compound",
+              "muscle": "胸",
+              "repMax": 8,
+              "repMin": 6,
+              "rest": 180,
+              "sets": 3,
+              "startWeight": 60
+            }
+          ],
+          "focus": "推",
+          "id": "push-a",
+          "name": "推 A"
+        }
+      ]
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "id": "c1",
+            "reason": "本周维持",
+            "type": "keep"
+          }
+        ],
+        "id": "draft-d12",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "保持当前结构。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "keep type → untouched 保持当前结构 / 保持当前结构, not applied high",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "保持当前结构",
+            "before": "保持当前结构",
+            "changeId": "c1",
+            "label": "保持当前结构",
+            "reason": "本周维持",
+            "riskLevel": "high",
+            "type": "keep"
+          }
+        ],
+        "summary": "保持当前结构。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    },
+    {
+      "draft": {
+        "changes": [
+          {
+            "dayTemplateId": "push-a",
+            "dayTemplateName": "推 A",
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "id": "c1",
+            "previewNote": "系统已自动选择训练日，请确认。",
+            "reason": "小幅加量",
+            "setsDelta": 1,
+            "type": "add_sets"
+          }
+        ],
+        "id": "draft-d13",
+        "sourceProgramTemplateId": "push-a",
+        "summary": "带预览说明的小幅加组。",
+        "title": "推 A 下周实验调整"
+      },
+      "kind": "build-diff",
+      "label": "previewNote present on an applied add_sets → reason concatenation + note→high risk",
+      "programTemplate": null,
+      "result": {
+        "changes": [
+          {
+            "after": "平板卧推：4 组",
+            "before": "平板卧推：3 组",
+            "changeId": "c1",
+            "label": "增加组数",
+            "reason": "小幅加量 系统已自动选择训练日，请确认。",
+            "riskLevel": "high",
+            "type": "add_sets"
+          }
+        ],
+        "summary": "带预览说明的小幅加组。",
+        "title": "推 A 下周实验调整"
+      },
+      "sourceProgramTemplate": {
+        "duration": 70,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "kind": "compound",
+            "muscle": "胸",
+            "repMax": 8,
+            "repMin": 6,
+            "rest": 180,
+            "sets": 3,
+            "startWeight": 60
+          }
+        ],
+        "focus": "推",
+        "id": "push-a",
+        "name": "推 A"
+      },
+      "templates": null
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "program-adjust/build-diff-cases-v1"
+  },
+  "sourceFixtureId": "program-adjust/build-diff-cases-v1"
+}
