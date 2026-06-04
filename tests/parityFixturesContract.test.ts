@@ -261,6 +261,12 @@ const FIXTURE_IDS = [
   'weekly-coach/exercise-recommendations-cases-v1',
   'weekly-coach/weekly-actions-cases-v1',
   'weekly-coach/program-adjustment-preview-cases-v1',
+  // CC-2 coachActionEngine top-level aggregator — 3 ADDITIVE OUTPUT fixtures (buildCoachActions
+  // + buildCoachActionAdjustmentDraftInput + buildCoachActionSourceFingerprint function-level
+  // parity). Generated; never hand-edited (§22).
+  'coach-action/build-actions-cases-v1',
+  'coach-action/adjustment-draft-cases-v1',
+  'coach-action/source-fingerprint-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

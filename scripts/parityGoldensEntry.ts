@@ -368,6 +368,21 @@ import {
   buildWeeklyActionRecommendations,
   buildProgramAdjustmentPreview,
 } from '../src/engines/weeklyCoachActionEngine';
+// CC-2 — coachActionEngine top-level aggregator port parity slice. Imports the REAL pure
+// builders so the coach-action goldens are GENERATED from TS truth, never hand-authored
+// (§22). buildCoachActions (the aggregator) reads a clock ONLY via the INJECTED `now`
+// (the `new Date()` fallback is never hit — every case passes an explicit `now`), so every
+// fixture uses generatedAtPolicy 'none'; buildCoachActionAdjustmentDraftInput /
+// buildCoachActionSourceFingerprint are clockless. The Swift port (CoachActionEngine)
+// re-runs the SAME builders over each case's echoed input and COMPUTE-ASSERTs the result
+// function-by-function (buildCoachActions ordered CoachAction[] canonical-JSON ·
+// buildCoachActionAdjustmentDraftInput { recommendation, sourceTemplate } | null ·
+// buildCoachActionSourceFingerprint exact string).
+import {
+  buildCoachActions,
+  buildCoachActionAdjustmentDraftInput,
+  buildCoachActionSourceFingerprint,
+} from '../src/engines/coachActionEngine';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -995,6 +1010,20 @@ const FIXTURE_IDS = [
   'weekly-coach/exercise-recommendations-cases-v1',
   'weekly-coach/weekly-actions-cases-v1',
   'weekly-coach/program-adjustment-preview-cases-v1',
+  // CC-2 coachActionEngine top-level aggregator — three OUTPUT fixtures (each a `cases`
+  // array, dispatch-by-kind) FUNCTION-LEVEL pinning the three pure builders:
+  // build-actions-cases-v1 pins buildCoachActions (every source builder + dedupe + the
+  // priority DESC / dataHealth-first / id sort + lowNoiseDuringActiveSession gate +
+  // tomorrowIso expiresAt). adjustment-draft-cases-v1 pins buildCoachActionAdjustmentDraftInput
+  // (muscle + exercise branches + formatExerciseName table-hit/fallback + every null
+  // short-circuit). source-fingerprint-cases-v1 pins buildCoachActionSourceFingerprint (the
+  // `… || ''` field projection + context). The Swift CoachActionEngine re-runs each builder
+  // over the echoed input and COMPUTE-ASSERTs the result == golden. Additive; generated,
+  // never hand-edited (§22). Every case passes an explicit `now`; the `cc2-` template
+  // exercise ids avoid EXERCISE_KNOWLEDGE_OVERRIDES so enrichExercise stays default-branch.
+  'coach-action/build-actions-cases-v1',
+  'coach-action/adjustment-draft-cases-v1',
+  'coach-action/source-fingerprint-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -4117,6 +4146,45 @@ const generateWeeklyCoach = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// CC-2 — coachActionEngine top-level aggregator OUTPUT parity (coach-action track)
+//
+// Dispatch-by-kind generator shared by all three coach-action fixtures. Each case echoes
+// its engine input verbatim AND the REAL TS builder output. PURE — `buildCoachActions`
+// reads a clock ONLY via the INJECTED `now` (the `new Date()` fallback is never hit).
+// Generated, never hand-edited (§22).
+//   kind 'buildCoachActions'   → buildCoachActions(input)                       → `result`
+//   kind 'adjustmentDraft'     → buildCoachActionAdjustmentDraftInput(action,ctx) → `result` (object|null)
+//   kind 'sourceFingerprint'   → buildCoachActionSourceFingerprint(action,options) → `result` (string)
+// ---------------------------------------------------------------------------
+
+const generateCoachAction = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    switch (c.kind) {
+      case 'buildCoachActions': {
+        const engineInput = c.input ?? {};
+        const result = buildCoachActions(engineInput);
+        return { label: c.label ?? null, kind: c.kind, input: engineInput, result };
+      }
+      case 'adjustmentDraft': {
+        const action = c.action;
+        const context = c.context ?? {};
+        const result = buildCoachActionAdjustmentDraftInput(action, context);
+        return { label: c.label ?? null, kind: c.kind, action, context, result };
+      }
+      case 'sourceFingerprint': {
+        const action = c.action;
+        const options = c.options ?? {};
+        const result = buildCoachActionSourceFingerprint(action, options);
+        return { label: c.label ?? null, kind: c.kind, action, options, result };
+      }
+      default:
+        throw new Error(`coach-action: unknown kind ${String(c.kind)}`);
+    }
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -4261,6 +4329,11 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'weekly-coach/exercise-recommendations-cases-v1': generateWeeklyCoach,
   'weekly-coach/weekly-actions-cases-v1': generateWeeklyCoach,
   'weekly-coach/program-adjustment-preview-cases-v1': generateWeeklyCoach,
+  // CC-2 coachActionEngine aggregator OUTPUT parity — all three routed through the single
+  // dispatch-by-kind generator (buildCoachActions / adjustmentDraft / sourceFingerprint).
+  'coach-action/build-actions-cases-v1': generateCoachAction,
+  'coach-action/adjustment-draft-cases-v1': generateCoachAction,
+  'coach-action/source-fingerprint-cases-v1': generateCoachAction,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

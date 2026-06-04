@@ -1,0 +1,171 @@
+{
+  "parityMeta": {
+    "id": "coach-action/build-actions-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-2 coachActionEngine — FUNCTION-LEVEL parity for buildCoachActions (src/engines/coachActionEngine.ts:624). Each case echoes the BuildCoachActionsInput (appData + the already-native type-only result inputs: dailyAdjustment / nextWorkout / dataHealthReport / sessionQuality / plateauResults / volumeAdaptation / recommendationConfidence / setAnomalies / recoveryRecommendation + an explicit `now`) and the REAL engine output (the ordered CoachAction[]). Cases pin: every source builder (dataHealthActions ts:306 + severity sort + slice(0,3); setAnomalyActions ts:577 critical/warning slice(0,2); dailyAdjustmentAction ts:366 + normal-skip; nextWorkoutAction ts:392 + warnings priority; recoveryAction ts:412 via recoveryRecommendation AND the nextWorkout.recovery fallback + modified branch; sessionQualityAction ts:434; plateauActions ts:460 create_preview vs review_exercise + the actionSeed fingerprint with sourceTemplate; volumeActions ts:502 preview+review + the suggestedChange fingerprint; recommendationConfidenceActions ts:556 single AND array forms); dedupeActions priority-keep (ts:599); sortActions priority DESC + dataHealth-first + id tie-break (ts:608); lowNoiseDuringActiveSession gate (ts:617); tomorrowIso expiresAt (ts:113). The Swift CoachActionEngine.buildCoachActions re-runs the SAME builder over each echoed input and COMPUTE-ASSERTs the ordered CoachAction list (canonical-JSON) == golden `result`, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e8dac0c17cc09191ada924531d916ec6c6ace4bc",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No wall clock — `now` is an EXPLICIT input on every case (the `new Date()` fallback at ts:637 is never hit). `now` is 2026-06-04T08:00:00.000Z (June, DST-invariant under TZ=America/New_York) so tomorrowIso's NY-local setDate(+1) equals +86_400_000 ms UTC = 2026-06-05T08:00:00.000Z. Synthetic exercise ids use a `cc2-` prefix NOT present in EXERCISE_KNOWLEDGE_OVERRIDES so enrichExercise lands on its default branch (primaryMuscles=[muscle], secondaryMuscles=[]) — bit-identical to the empty-seam Swift EngineUtils.enrichExercise. Within each priority tier the competing action ids differ at an ASCII letter/digit (never a hyphen) so id.localeCompare reproduces with a code-point comparison. No email/token/userId/deviceLabel. Chinese muscle/exercise names only."
+  },
+  "cases": [
+    {
+      "kind": "buildCoachActions",
+      "label": "comprehensive (no active session) — every source branch + dedupe + priority/dataHealth-first sort",
+      "input": {
+        "now": "2026-06-04T08:00:00.000Z",
+        "appData": {
+          "schemaVersion": 8,
+          "templates": [
+            {
+              "id": "tpl-chest",
+              "name": "胸日",
+              "focus": "chest",
+              "duration": 60,
+              "note": "",
+              "exercises": [
+                { "id": "cc2-bench", "name": "卧推", "muscle": "chest", "kind": "compound", "sets": 4, "repMin": 6, "repMax": 10, "rest": 120, "startWeight": 60 },
+                { "id": "cc2-chest-press", "name": "器械推胸", "muscle": "chest", "kind": "machine", "sets": 3, "repMin": 10, "repMax": 12, "rest": 90, "startWeight": 40 }
+              ]
+            }
+          ]
+        },
+        "dataHealthReport": {
+          "status": "has_errors",
+          "summary": "检测到 3 个数据健康问题。",
+          "issues": [
+            { "id": "hd-info", "severity": "info", "category": "history", "title": "历史记录可补充", "message": "部分历史缺少 RIR。", "affectedIds": ["sess-1"], "canAutoFix": false },
+            { "id": "hd-err", "severity": "error", "category": "healthData", "title": "健康数据缺失", "message": "缺少体重记录。", "affectedIds": ["hk-1"], "canAutoFix": false },
+            { "id": "hd-warn", "severity": "warning", "category": "template", "title": "模板需检查", "message": "训练模板存在重复动作。", "affectedIds": ["tpl-chest"], "canAutoFix": true }
+          ]
+        },
+        "setAnomalies": [
+          { "id": "sa-crit", "severity": "critical", "title": "异常重量输入", "message": "本组重量明显异常。", "suggestedAction": "请确认输入。", "requiresConfirmation": true },
+          { "id": "sa-warn", "severity": "warning", "title": "次数偏高", "message": "本组次数高于历史。", "requiresConfirmation": false }
+        ],
+        "dailyAdjustment": {
+          "type": "rest_or_recovery",
+          "reasons": ["近 3 日睡眠不足，恢复评分偏低。"],
+          "confidence": "high"
+        },
+        "nextWorkout": {
+          "templateId": "tpl-upper",
+          "templateName": "上肢日",
+          "reason": "按计划轮换到上肢日。",
+          "warnings": ["注意肩部不适。"]
+        },
+        "recoveryRecommendation": {
+          "kind": "rest",
+          "templateId": "tpl-rest",
+          "summary": "今天更适合完全休息。",
+          "reasons": ["综合恢复评分低于阈值。"],
+          "requiresConfirmationToOverride": true
+        },
+        "sessionQuality": {
+          "level": "low",
+          "summary": "本次训练质量偏低。",
+          "issues": [{ "id": "sq-1", "label": "RIR 记录少", "tone": "warning", "reason": "多数组缺少 RIR 记录。" }],
+          "nextSuggestions": ["下次记录每组 RIR。"]
+        },
+        "plateauResults": [
+          { "exerciseId": "cc2-bench", "status": "plateau", "title": "卧推进展停滞", "summary": "卧推近 4 周无进展。", "signals": [{ "id": "pl-1", "label": "e1RM 持平", "reason": "估算 1RM 连续持平。", "severity": "warning" }], "suggestedActions": ["考虑调整训练量。"], "confidence": "high" }
+        ],
+        "volumeAdaptation": {
+          "summary": "胸部训练量建议增加。",
+          "muscles": [
+            { "muscleId": "chest", "decision": "increase", "setsDelta": 2, "title": "胸部可加量", "reason": "胸部周训练量低于目标。", "confidence": "medium", "suggestedActions": ["下周增加 2 组。"] }
+          ]
+        },
+        "recommendationConfidence": [
+          { "level": "low", "score": 30, "title": "推荐置信度低", "summary": "数据不足，推荐仅供参考。", "reasons": [{ "id": "rc-1", "label": "历史不足", "effect": "降低置信", "reason": "有效训练记录不足。" }], "missingData": ["最近 2 周训练记录"] }
+        ]
+      }
+    },
+    {
+      "kind": "buildCoachActions",
+      "label": "active session in progress → lowNoiseDuringActiveSession (urgent/high dataHealth + urgent setAnomaly, slice(0,2))",
+      "input": {
+        "now": "2026-06-04T08:00:00.000Z",
+        "appData": {
+          "schemaVersion": 8,
+          "activeSession": { "id": "active-1", "completed": false },
+          "templates": []
+        },
+        "dataHealthReport": {
+          "status": "has_errors",
+          "summary": "检测到数据健康问题。",
+          "issues": [
+            { "id": "hd-err", "severity": "error", "category": "healthData", "title": "健康数据缺失", "message": "缺少体重记录。", "canAutoFix": false },
+            { "id": "hd-info", "severity": "info", "category": "history", "title": "历史可补充", "message": "部分历史缺少 RIR。", "canAutoFix": false }
+          ]
+        },
+        "setAnomalies": [
+          { "id": "sa-crit", "severity": "critical", "title": "异常重量输入", "message": "本组重量明显异常。", "requiresConfirmation": true },
+          { "id": "sa-warn", "severity": "warning", "title": "次数偏高", "message": "本组次数高于历史。", "requiresConfirmation": false }
+        ],
+        "sessionQuality": {
+          "level": "low",
+          "summary": "本次训练质量偏低。",
+          "issues": [],
+          "nextSuggestions": []
+        }
+      }
+    },
+    {
+      "kind": "buildCoachActions",
+      "label": "minimal — no templates, all result inputs absent → empty list",
+      "input": {
+        "now": "2026-06-04T08:00:00.000Z",
+        "appData": { "schemaVersion": 8 }
+      }
+    },
+    {
+      "kind": "buildCoachActions",
+      "label": "dailyAdjustment normal (skipped) + nextWorkout no-warnings (low) + recovery fallback via nextWorkout.recovery (modified_train)",
+      "input": {
+        "now": "2026-06-04T08:00:00.000Z",
+        "appData": { "schemaVersion": 8, "templates": [] },
+        "dailyAdjustment": { "type": "normal", "reasons": [], "confidence": "low" },
+        "nextWorkout": {
+          "templateId": "tpl-lower",
+          "templateName": "下肢日",
+          "reason": "按计划轮换到下肢日。",
+          "warnings": [],
+          "recovery": {
+            "kind": "modified_train",
+            "templateId": "tpl-lower",
+            "summary": "建议采用保守版下肢训练。",
+            "reasons": ["膝盖近期略有不适。"],
+            "requiresConfirmationToOverride": true
+          }
+        }
+      }
+    },
+    {
+      "kind": "buildCoachActions",
+      "label": "recommendationConfidence SINGLE object form + possible_plateau review_exercise (confidence low) + plateau status none filtered out",
+      "input": {
+        "now": "2026-06-04T08:00:00.000Z",
+        "appData": { "schemaVersion": 8, "templates": [] },
+        "plateauResults": [
+          { "exerciseId": "cc2-row", "status": "possible_plateau", "title": "划船可能停滞", "summary": "划船进展放缓。", "signals": [], "suggestedActions": ["保持观察。"], "confidence": "low" },
+          { "exerciseId": "cc2-curl", "status": "none", "title": "弯举正常", "summary": "弯举进展正常。", "signals": [], "suggestedActions": [], "confidence": "high" }
+        ],
+        "recommendationConfidence": { "level": "low", "score": 25, "title": "置信度低", "summary": "推荐仅供参考。", "reasons": [], "missingData": ["更多训练记录"] }
+      }
+    },
+    {
+      "kind": "buildCoachActions",
+      "label": "dedupe — two plateau results with identical exerciseId+status collapse to one action",
+      "input": {
+        "now": "2026-06-04T08:00:00.000Z",
+        "appData": { "schemaVersion": 8, "templates": [] },
+        "plateauResults": [
+          { "exerciseId": "cc2-dup", "status": "plateau", "title": "停滞 A", "summary": "信号 A。", "signals": [], "suggestedActions": [], "confidence": "high" },
+          { "exerciseId": "cc2-dup", "status": "plateau", "title": "停滞 B", "summary": "信号 B。", "signals": [], "suggestedActions": [], "confidence": "high" }
+        ]
+      }
+    }
+  ]
+}

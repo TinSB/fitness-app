@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "action": {
+        "actionType": "open_data_health",
+        "source": "dataHealth",
+        "targetId": "tpl-chest",
+        "targetType": "plan"
+      },
+      "kind": "sourceFingerprint",
+      "label": "minimal — no title/description/reason (→ '' fallbacks), empty options",
+      "options": {},
+      "result": "coach-action|datahealth|open_data_health|plan|tpl-chest|template-unknown|none|muscle-none|exercise-none|current-cycle|811c9dc5"
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "description": "卧推进展停滞",
+        "reason": "卧推近 4 周无进展。",
+        "source": "plateau",
+        "targetId": "cc2-bench",
+        "targetType": "exercise",
+        "title": "生成动作调整预览"
+      },
+      "kind": "sourceFingerprint",
+      "label": "full text + sourceTemplateId + suggestedChangeType context",
+      "options": {
+        "exerciseId": "cc2-bench",
+        "sourceTemplateId": "tpl-chest",
+        "suggestedChangeType": "remove_sets"
+      },
+      "result": "coach-action|plateau|create_plan_adjustment_preview|exercise|cc2-bench|tpl-chest|remove_sets|muscle-none|cc2-bench|current-cycle|9f27e9cb"
+    },
+    {
+      "action": {
+        "actionType": "create_plan_adjustment_preview",
+        "description": "胸部可加量",
+        "reason": "胸部周训练量低于目标。",
+        "source": "volumeAdaptation",
+        "targetId": "chest",
+        "targetType": "muscle",
+        "title": "生成训练量调整预览"
+      },
+      "kind": "sourceFingerprint",
+      "label": "suggestedChange{muscleId,setsDelta} + muscleId context (derived changeType add_sets)",
+      "options": {
+        "sourceTemplateId": "tpl-chest",
+        "suggestedChange": {
+          "muscleId": "chest",
+          "setsDelta": 2
+        }
+      },
+      "result": "coach-action|volumeadaptation|create_plan_adjustment_preview|muscle|chest|tpl-chest|add_sets|chest|exercise-none|current-cycle|cf2f8d53"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "e8dac0c17cc09191ada924531d916ec6c6ace4bc",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "coach-action/source-fingerprint-cases-v1"
+  },
+  "sourceFixtureId": "coach-action/source-fingerprint-cases-v1"
+}
