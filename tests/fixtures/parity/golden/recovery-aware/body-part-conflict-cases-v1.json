@@ -1,0 +1,757 @@
+{
+  "cases": [
+    {
+      "label": "null-template",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [],
+        "conflictingExercises": [],
+        "level": "none",
+        "score": 0
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": null
+    },
+    {
+      "label": "no-sources",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [],
+        "conflictingExercises": [],
+        "level": "none",
+        "score": 0
+      },
+      "sorenessAreas": [],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-1",
+            "name": "合成卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-1"
+      }
+    },
+    {
+      "label": "all-guard-tokens-no-sources",
+      "painAreas": [
+        "none",
+        "no"
+      ],
+      "result": {
+        "affectedAreas": [],
+        "conflictingExercises": [],
+        "level": "none",
+        "score": 0
+      },
+      "sorenessAreas": [
+        "无"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-1",
+            "name": "合成卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-1"
+      }
+    },
+    {
+      "label": "single-primary-low",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-1",
+            "exerciseName": "合成卧推",
+            "reason": "合成卧推 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-1",
+            "name": "合成卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-2"
+      }
+    },
+    {
+      "label": "single-no-pain-moderate",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-3",
+            "exerciseName": "合成推胸",
+            "reason": "合成推胸 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "moderate",
+        "score": 6
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-3",
+            "movementPattern": "水平推",
+            "name": "合成推胸",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-3"
+      }
+    },
+    {
+      "label": "high-pain-bump-5p1",
+      "painAreas": [
+        "胸部"
+      ],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-4",
+            "exerciseName": "合成压胸",
+            "reason": "合成压胸 与胸部不适存在训练重叠。"
+          }
+        ],
+        "level": "high",
+        "score": 5.1
+      },
+      "sorenessAreas": [],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-4",
+            "name": "合成压胸",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-4"
+      }
+    },
+    {
+      "label": "high-no-pain-full-stack",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-5",
+            "exerciseName": "全栈胸",
+            "reason": "全栈胸 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "high",
+        "score": 8.9
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-5",
+            "movementPattern": "水平推",
+            "muscleContribution": {
+              "胸": 1
+            },
+            "name": "全栈胸",
+            "primaryMuscles": [
+              "胸"
+            ],
+            "secondaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-5"
+      }
+    },
+    {
+      "label": "movement-shoulder-3",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "肩部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-1",
+            "exerciseName": "垂直推举",
+            "reason": "垂直推举 与肩部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "肩部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-1",
+            "movementPattern": "垂直推",
+            "name": "垂直推举"
+          }
+        ],
+        "id": "t-6"
+      }
+    },
+    {
+      "label": "movement-shoulder-2",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "肩部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-2",
+            "exerciseName": "上斜推举",
+            "reason": "上斜推举 与肩部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 2
+      },
+      "sorenessAreas": [
+        "肩部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-2",
+            "movementPattern": "上斜推",
+            "name": "上斜推举"
+          }
+        ],
+        "id": "t-7"
+      }
+    },
+    {
+      "label": "movement-shoulder-1",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "肩部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-3",
+            "exerciseName": "面拉",
+            "reason": "面拉 与肩部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 1
+      },
+      "sorenessAreas": [
+        "肩部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-3",
+            "movementPattern": "面拉",
+            "name": "面拉"
+          }
+        ],
+        "id": "t-8"
+      }
+    },
+    {
+      "label": "movement-chest-3",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-4",
+            "exerciseName": "飞鸟",
+            "reason": "飞鸟 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-4",
+            "movementPattern": "飞鸟",
+            "name": "飞鸟"
+          }
+        ],
+        "id": "t-9"
+      }
+    },
+    {
+      "label": "movement-back-3",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "背部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-5",
+            "exerciseName": "划船",
+            "reason": "划船 与背部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "背部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-5",
+            "movementPattern": "划船",
+            "name": "划船"
+          }
+        ],
+        "id": "t-10"
+      }
+    },
+    {
+      "label": "movement-leg-3",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "腿部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-6",
+            "exerciseName": "深蹲",
+            "reason": "深蹲 与腿部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "腿部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-6",
+            "movementPattern": "深蹲",
+            "name": "深蹲"
+          }
+        ],
+        "id": "t-11"
+      }
+    },
+    {
+      "label": "movement-arm-2-english",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "手臂"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "mv-7",
+            "exerciseName": "弯举",
+            "reason": "弯举 与手臂酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 2
+      },
+      "sorenessAreas": [
+        "手臂"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mv-7",
+            "movementPattern": "curl",
+            "name": "弯举"
+          }
+        ],
+        "id": "t-12"
+      }
+    },
+    {
+      "label": "contribution-and-secondary-keys",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "腿部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-c",
+            "exerciseName": "腿部贡献",
+            "reason": "腿部贡献 与腿部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 2.6
+      },
+      "sorenessAreas": [
+        "腿部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-c",
+            "muscleContribution": {
+              "腿": 0.8
+            },
+            "name": "腿部贡献"
+          }
+        ],
+        "id": "t-13"
+      }
+    },
+    {
+      "label": "contribution-capped-at-1p5",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "腿部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-cap",
+            "exerciseName": "腿部高贡献",
+            "reason": "腿部高贡献 与腿部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 2.9
+      },
+      "sorenessAreas": [
+        "腿部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-cap",
+            "muscleContribution": {
+              "腿": 2
+            },
+            "name": "腿部高贡献"
+          }
+        ],
+        "id": "t-14"
+      }
+    },
+    {
+      "label": "secondary-muscles-only",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "手臂"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-sec",
+            "exerciseName": "手臂辅助",
+            "reason": "手臂辅助 与手臂酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 1.4
+      },
+      "sorenessAreas": [
+        "手臂"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-sec",
+            "name": "手臂辅助",
+            "secondaryMuscles": [
+              "手臂"
+            ]
+          }
+        ],
+        "id": "t-15"
+      }
+    },
+    {
+      "label": "merge-pain-overrides-soreness",
+      "painAreas": [
+        "胸"
+      ],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-m",
+            "exerciseName": "合成胸动作",
+            "reason": "合成胸动作 与胸部不适存在训练重叠。"
+          }
+        ],
+        "level": "high",
+        "score": 5.1
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-m",
+            "name": "合成胸动作",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-16"
+      }
+    },
+    {
+      "label": "multi-source-affected-areas",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部",
+          "背部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-multi",
+            "exerciseName": "胸背复合",
+            "reason": "胸背复合 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "胸部",
+        "背部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-multi",
+            "name": "胸背复合",
+            "primaryMuscles": [
+              "胸",
+              "背"
+            ]
+          }
+        ],
+        "id": "t-17"
+      }
+    },
+    {
+      "label": "multi-exercise-sum-and-slice5",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "syn-e1",
+            "exerciseName": "胸动作一",
+            "reason": "胸动作一 与胸部酸痛存在训练重叠。"
+          },
+          {
+            "exerciseId": "syn-e2",
+            "exerciseName": "胸动作二",
+            "reason": "胸动作二 与胸部酸痛存在训练重叠。"
+          },
+          {
+            "exerciseId": "syn-e3",
+            "exerciseName": "胸动作三",
+            "reason": "胸动作三 与胸部酸痛存在训练重叠。"
+          },
+          {
+            "exerciseId": "syn-e4",
+            "exerciseName": "胸动作四",
+            "reason": "胸动作四 与胸部酸痛存在训练重叠。"
+          },
+          {
+            "exerciseId": "syn-e5",
+            "exerciseName": "胸动作五",
+            "reason": "胸动作五 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "high",
+        "score": 18
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "syn-e1",
+            "name": "胸动作一",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "syn-e2",
+            "name": "胸动作二",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "syn-e3",
+            "name": "胸动作三",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "syn-e4",
+            "name": "胸动作四",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "syn-e5",
+            "name": "胸动作五",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "syn-e6",
+            "name": "胸动作六",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "t-18"
+      }
+    },
+    {
+      "label": "real-bench-press-override-merge",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "胸部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "reason": "平板卧推 与胸部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "high",
+        "score": 8.9
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "bench-press"
+          }
+        ],
+        "id": "t-19"
+      }
+    },
+    {
+      "exerciseLibrary": {
+        "bench-press": {
+          "primaryMuscles": [
+            "背"
+          ]
+        }
+      },
+      "label": "external-library-overrides-primary",
+      "painAreas": [],
+      "result": {
+        "affectedAreas": [
+          "背部"
+        ],
+        "conflictingExercises": [
+          {
+            "exerciseId": "bench-press",
+            "exerciseName": "平板卧推",
+            "reason": "平板卧推 与背部酸痛存在训练重叠。"
+          }
+        ],
+        "level": "low",
+        "score": 3
+      },
+      "sorenessAreas": [
+        "背部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "bench-press"
+          }
+        ],
+        "id": "t-20"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "36daab0e5e9a9b9bdad77998a94dc6d54102e637",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "recovery-aware/body-part-conflict-cases-v1"
+  },
+  "sourceFixtureId": "recovery-aware/body-part-conflict-cases-v1"
+}

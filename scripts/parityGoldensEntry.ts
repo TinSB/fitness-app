@@ -289,6 +289,18 @@ import { buildWorkoutCycleState } from '../src/engines/workoutCycleScheduler';
 // field is String / [String] / enum-string (the float scoring is internal), so the golden
 // carries no number-formatting surface. The companion recoveryAwareScheduler stays DEFERRED.
 import { buildExerciseRecoveryConflict } from '../src/engines/exerciseRecoveryConflictEngine';
+// SC-A — recoveryAwareScheduler port parity slice. Imports the REAL exported scorers so the
+// recovery-aware goldens are GENERATED from TS truth, never hand-authored (§22). All five engine
+// imports are already native (EXERCISE_KNOWLEDGE_OVERRIDES values ← SR-3/SC-0, formatExerciseName ←
+// SR-1, formatTemplateName transcribed locally, number ← E1RM, buildExerciseRecoveryConflict ←
+// SC-1b), so the Swift port (RecoveryAwareScheduler) re-runs each function over the echoed
+// engineInput and COMPUTE-ASSERTs the full result == golden. PURE / clockless (readiness +
+// availableTime are explicit inputs; no Date on the engine path) → generatedAtPolicy 'none'.
+import {
+  buildRecoveryAwareRecommendation,
+  buildTemplateBodyPartConflictScore,
+  buildTemplateRecoveryConflict,
+} from '../src/engines/recoveryAwareScheduler';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -834,6 +846,23 @@ const FIXTURE_IDS = [
   // the EXERCISE_KNOWLEDGE_OVERRIDES merge end-to-end (reusing SR-3/SR-2/SC-0). Each case echoes
   // the engineInput + the full result. Additive; generated, never hand-edited (§22).
   'exercise-recovery-conflict/conflict-cases-v1',
+  // SC-A recoveryAwareScheduler port — 3 OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL
+  // pinning the three exported scorers. (1) body-part-conflict: the local metaForExercise /
+  // scoreExerciseForArea / movementScore (shoulder 3/2/1 · chest 3 · back 3 · leg 3 · arm 2) /
+  // levelForScore (0.5/4/8 + the hasPain>=5 high-bump) path — null-template / no-source guards,
+  // primary/secondary/contribution/pattern sub-scores, mergeSources pain-overrides-soreness, the
+  // round(sum*10)/10 aggregation, conflictingExercises sort+slice(0,5), the EXERCISE_KNOWLEDGE_
+  // OVERRIDES merge (real ids) and the external exerciseLibrary overwrite. (2) template-recovery-
+  // conflict: templateLevelFromExerciseConflicts / templateKindFromConflict (train/modified_train/
+  // rest/active_recovery via level×readiness×pain×highMainCount) / changeForConflict (skip_accessory
+  // · reduce_volume · substitute · reduce_intensity) + uniqueChanges + every summary branch. (3)
+  // recommendation: the full buildRecoveryAwareRecommendation dispatch — no-template default · high+
+  // lowReadiness rest · shouldPreferAlternative (alternative found / none) · mobility_only (availableTime
+  // 1-30) · modified_train · low/none train · preferred/template/templates[0] precedence. Each case
+  // echoes the engineInput + the full result. Additive; generated, never hand-edited (§22).
+  'recovery-aware/body-part-conflict-cases-v1',
+  'recovery-aware/template-recovery-conflict-cases-v1',
+  'recovery-aware/recommendation-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3632,6 +3661,76 @@ const generateRecoveryConflict = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// SC-A — recoveryAwareScheduler OUTPUT parity (3 exported scorers)
+//
+// Each generator runs the REAL exported function over the echoed engineInput and emits BOTH the
+// input (so the Swift RecoveryAwareScheduler port reconstructs the SAME arguments) AND the computed
+// result. PURE / clockless — readinessResult ({ score, trainingAdjustment } is all the engine
+// reads) + availableTimeMin are explicit inputs; no Date anywhere on the path. The echoed `template`
+// objects are the verbatim case objects (the Swift port decodes them via TrainingTemplate(decoding:)).
+// Optional output keys the engine leaves undefined drop out under canonicalStringify, matching the
+// Swift Optional-absent decode. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateRecoveryBodyPart = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; template?: unknown; sorenessAreas?: string[]; painAreas?: string[]; exerciseLibrary?: unknown }) => {
+      const template = (c.template ?? null) as Parameters<typeof buildTemplateBodyPartConflictScore>[0]['template'];
+      const sorenessAreas = Array.isArray(c.sorenessAreas) ? c.sorenessAreas : [];
+      const painAreas = Array.isArray(c.painAreas) ? c.painAreas : [];
+      const exerciseLibrary = c.exerciseLibrary as Parameters<typeof buildTemplateBodyPartConflictScore>[0]['exerciseLibrary'];
+      const result = buildTemplateBodyPartConflictScore({ template, sorenessAreas, painAreas, exerciseLibrary });
+      const out: Record<string, unknown> = { label: c.label ?? null, template: c.template ?? null, sorenessAreas, painAreas, result };
+      if (c.exerciseLibrary !== undefined) out.exerciseLibrary = c.exerciseLibrary;
+      return out;
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateRecoveryTemplateConflict = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; template?: unknown; sorenessAreas?: string[]; painAreas?: string[]; readinessResult?: unknown }) => {
+      const template = (c.template ?? {}) as Parameters<typeof buildTemplateRecoveryConflict>[0]['template'];
+      const sorenessAreas = Array.isArray(c.sorenessAreas) ? c.sorenessAreas : [];
+      const painAreas = Array.isArray(c.painAreas) ? c.painAreas : [];
+      const readinessResult = (c.readinessResult ?? null) as Parameters<typeof buildTemplateRecoveryConflict>[0]['readinessResult'];
+      const result = buildTemplateRecoveryConflict({ template, sorenessAreas, painAreas, readinessResult });
+      const out: Record<string, unknown> = { label: c.label ?? null, template: c.template ?? null, sorenessAreas, painAreas, result };
+      if (c.readinessResult !== undefined) out.readinessResult = c.readinessResult;
+      return out;
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateRecoveryRecommendation = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const templates = Array.isArray(c.templates) ? c.templates : [];
+    const sorenessAreas = Array.isArray(c.sorenessAreas) ? c.sorenessAreas : [];
+    const painAreas = Array.isArray(c.painAreas) ? c.painAreas : [];
+    const result = buildRecoveryAwareRecommendation({
+      preferredTemplate: c.preferredTemplate ?? undefined,
+      template: c.template ?? undefined,
+      templates,
+      sorenessAreas,
+      painAreas,
+      readinessResult: c.readinessResult ?? undefined,
+      availableTimeMin: c.availableTimeMin,
+      exerciseLibrary: c.exerciseLibrary,
+    } as Parameters<typeof buildRecoveryAwareRecommendation>[0]);
+    const out: Record<string, unknown> = { label: c.label ?? null, templates, sorenessAreas, painAreas, result };
+    if (c.preferredTemplate !== undefined) out.preferredTemplate = c.preferredTemplate;
+    if (c.template !== undefined) out.template = c.template;
+    if (c.readinessResult !== undefined) out.readinessResult = c.readinessResult;
+    if (c.availableTimeMin !== undefined) out.availableTimeMin = c.availableTimeMin;
+    if (c.exerciseLibrary !== undefined) out.exerciseLibrary = c.exerciseLibrary;
+    return out;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3759,6 +3858,10 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'i18n/training-mode-cases-v1': generateI18nTrainingModeSnapshot,
   // SC-1b exerciseRecoveryConflictEngine OUTPUT parity.
   'exercise-recovery-conflict/conflict-cases-v1': generateRecoveryConflict,
+  // SC-A recoveryAwareScheduler OUTPUT parity (3 exported scorers).
+  'recovery-aware/body-part-conflict-cases-v1': generateRecoveryBodyPart,
+  'recovery-aware/template-recovery-conflict-cases-v1': generateRecoveryTemplateConflict,
+  'recovery-aware/recommendation-cases-v1': generateRecoveryRecommendation,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

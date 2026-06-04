@@ -1,0 +1,850 @@
+{
+  "cases": [
+    {
+      "label": "empty-exercises-train-none",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [],
+        "conflictLevel": "none",
+        "kind": "train",
+        "safeExercises": [],
+        "suggestedChanges": [],
+        "summary": "推 A 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "cjk-name-passthrough-train-none",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [],
+        "conflictLevel": "none",
+        "kind": "train",
+        "safeExercises": [],
+        "suggestedChanges": [],
+        "summary": "胸部强化日 与今天标记的恢复部位没有明显冲突，可以按计划训练。",
+        "templateId": "custom-day",
+        "templateName": "胸部强化日"
+      },
+      "sorenessAreas": [],
+      "template": {
+        "exercises": [],
+        "id": "custom-day",
+        "name": "胸部强化日"
+      }
+    },
+    {
+      "label": "low-conflict-train",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [],
+        "conflictLevel": "low",
+        "kind": "train",
+        "safeExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "low",
+            "exerciseId": "ex-low",
+            "exerciseName": "辅助胸",
+            "reason": "胸部酸痛与辅助胸存在轻度恢复冲突：胸部参与稳定或辅助，可以按计划执行。",
+            "recommendedAction": "keep"
+          }
+        ],
+        "suggestedChanges": [],
+        "summary": "推 A 只有轻度恢复冲突，可以训练，注意相关动作的反馈。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "ex-low",
+            "name": "辅助胸",
+            "secondaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "moderate-two-accessory-modified-train",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "moderate",
+            "exerciseId": "ex-mod1",
+            "exerciseName": "胸动作一",
+            "reason": "胸部酸痛与胸动作一存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+            "recommendedAction": "reduce_intensity"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "moderate",
+            "exerciseId": "ex-mod2",
+            "exerciseName": "胸动作二",
+            "reason": "胸部酸痛与胸动作二存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+            "recommendedAction": "reduce_intensity"
+          }
+        ],
+        "conflictLevel": "moderate",
+        "kind": "modified_train",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "ex-mod1",
+            "reason": "胸动作一 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "reduce_volume"
+          },
+          {
+            "exerciseId": "ex-mod2",
+            "reason": "胸动作二 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "reduce_volume"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整胸动作一，其余 0 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "ex-mod1",
+            "name": "胸动作一",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "ex-mod2",
+            "name": "胸动作二",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "high-main-pain-lowreadiness-rest",
+      "painAreas": [
+        "胸部"
+      ],
+      "readinessResult": {
+        "score": 40,
+        "trainingAdjustment": "normal"
+      },
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m1",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部不适与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "recommendedAction": "skip"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m2",
+            "exerciseName": "上斜卧推",
+            "reason": "胸部不适与上斜卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "recommendedAction": "skip"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "rest",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "m1",
+            "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          },
+          {
+            "exerciseId": "m2",
+            "reason": "上斜卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          }
+        ],
+        "summary": "推 A 与今天恢复状态冲突较高，且准备度偏低，建议休息。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [],
+      "template": {
+        "exercises": [
+          {
+            "id": "m1",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "m2",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "上斜卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "high-main-soreness-lowreadiness-active-recovery",
+      "painAreas": [],
+      "readinessResult": {
+        "score": 45,
+        "trainingAdjustment": "conservative"
+      },
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m1",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部酸痛与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m2",
+            "exerciseName": "上斜卧推",
+            "reason": "胸部酸痛与上斜卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "active_recovery",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "m1",
+            "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          },
+          {
+            "exerciseId": "m2",
+            "reason": "上斜卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          }
+        ],
+        "summary": "推 A 与今天恢复状态冲突较高，建议主动恢复。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "m1",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "m2",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "上斜卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "high-main-pain-active-recovery-no-lowreadiness",
+      "painAreas": [
+        "胸部"
+      ],
+      "readinessResult": {
+        "score": 80,
+        "trainingAdjustment": "normal"
+      },
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m1",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部不适与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "recommendedAction": "skip"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m2",
+            "exerciseName": "上斜卧推",
+            "reason": "胸部不适与上斜卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "recommendedAction": "skip"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "active_recovery",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "m1",
+            "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          },
+          {
+            "exerciseId": "m2",
+            "reason": "上斜卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          }
+        ],
+        "summary": "推 A 与今天恢复状态冲突较高，建议主动恢复。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [],
+      "template": {
+        "exercises": [
+          {
+            "id": "m1",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "m2",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "上斜卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "lowreadiness-via-recovery-adjustment-rest",
+      "painAreas": [
+        "胸部"
+      ],
+      "readinessResult": {
+        "score": 80,
+        "trainingAdjustment": "recovery"
+      },
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m1",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部不适与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "recommendedAction": "skip"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "m2",
+            "exerciseName": "上斜卧推",
+            "reason": "胸部不适与上斜卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议本次先跳过。",
+            "recommendedAction": "skip"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "rest",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "m1",
+            "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          },
+          {
+            "exerciseId": "m2",
+            "reason": "上斜卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          }
+        ],
+        "summary": "推 A 与今天恢复状态冲突较高，且准备度偏低，建议休息。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [],
+      "template": {
+        "exercises": [
+          {
+            "id": "m1",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "m2",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "上斜卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "high-three-accessory-modified-train-skip-accessory",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "a1",
+            "exerciseName": "卧推机一",
+            "reason": "胸部酸痛与卧推机一存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "a2",
+            "exerciseName": "卧推机二",
+            "reason": "胸部酸痛与卧推机二存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "a3",
+            "exerciseName": "卧推机三",
+            "reason": "胸部酸痛与卧推机三存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "modified_train",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "a1",
+            "reason": "卧推机一 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "skip_accessory"
+          },
+          {
+            "exerciseId": "a2",
+            "reason": "卧推机二 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "skip_accessory"
+          },
+          {
+            "exerciseId": "a3",
+            "reason": "卧推机三 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "skip_accessory"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整卧推机一，其余 0 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "fatigueCost": "low",
+            "id": "a1",
+            "movementPattern": "卧推",
+            "name": "卧推机一",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "fatigueCost": "low",
+            "id": "a2",
+            "movementPattern": "卧推",
+            "name": "卧推机二",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "fatigueCost": "low",
+            "id": "a3",
+            "movementPattern": "卧推",
+            "name": "卧推机三",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "high-main-substitute-with-alternatives",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "s1",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部酸痛与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "modified_train",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "s1",
+            "reason": "杠铃卧推 冲突较高，优先考虑低冲突替代动作。",
+            "type": "substitute"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "alternatives": [
+              "alt-x"
+            ],
+            "id": "s1",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "high-main-reduce-intensity-no-alternatives",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "r1",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部酸痛与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "modified_train",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "r1",
+            "reason": "杠铃卧推 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_intensity"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整杠铃卧推，其余 0 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "r1",
+            "kind": "compound",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "moderate-main-reduce-volume-no-alternatives",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "moderate",
+            "exerciseId": "mm1",
+            "exerciseName": "胸大肌训练",
+            "reason": "胸部酸痛与胸大肌训练存在中等恢复冲突：胸部是主要训练部位，建议降低强度。",
+            "recommendedAction": "reduce_intensity"
+          }
+        ],
+        "conflictLevel": "moderate",
+        "kind": "modified_train",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "mm1",
+            "reason": "胸大肌训练 与恢复信号重叠，本次保持保守。",
+            "type": "reduce_volume"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整胸大肌训练，其余 0 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "mm1",
+            "kind": "compound",
+            "name": "胸大肌训练",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "duplicate-exercise-unique-changes-dedup",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "dup1",
+            "exerciseName": "卧推机",
+            "reason": "胸部酸痛与卧推机存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          },
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "dup1",
+            "exerciseName": "卧推机",
+            "reason": "胸部酸痛与卧推机存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          }
+        ],
+        "conflictLevel": "high",
+        "kind": "modified_train",
+        "safeExercises": [],
+        "suggestedChanges": [
+          {
+            "exerciseId": "dup1",
+            "reason": "卧推机 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "skip_accessory"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整卧推机，其余 0 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "fatigueCost": "low",
+            "id": "dup1",
+            "movementPattern": "卧推",
+            "name": "卧推机",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "fatigueCost": "low",
+            "id": "dup1",
+            "movementPattern": "卧推",
+            "name": "卧推机",
+            "primaryMuscles": [
+              "胸"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    },
+    {
+      "label": "mixed-high-and-safe-exercises",
+      "painAreas": [],
+      "result": {
+        "conflictingExercises": [
+          {
+            "affectedAreas": [
+              "胸部"
+            ],
+            "conflictLevel": "high",
+            "exerciseId": "hi",
+            "exerciseName": "杠铃卧推",
+            "reason": "胸部酸痛与杠铃卧推存在较高恢复冲突：胸部是主要训练部位，动作模式会明显调用相关部位，建议减少训练量。",
+            "recommendedAction": "reduce_volume"
+          }
+        ],
+        "conflictLevel": "moderate",
+        "kind": "modified_train",
+        "safeExercises": [
+          {
+            "affectedAreas": [],
+            "conflictLevel": "none",
+            "exerciseId": "safe",
+            "exerciseName": "腿举",
+            "reason": "腿举与已标记部位没有明显训练重叠，可以按计划执行。",
+            "recommendedAction": "keep"
+          }
+        ],
+        "suggestedChanges": [
+          {
+            "exerciseId": "hi",
+            "reason": "杠铃卧推 与恢复信号重叠，作为辅助动作可先减少或跳过。",
+            "type": "skip_accessory"
+          }
+        ],
+        "summary": "推 A 建议按保守版执行：重点调整杠铃卧推，其余 1 个低冲突动作可以保留。",
+        "templateId": "push-a",
+        "templateName": "推 A"
+      },
+      "sorenessAreas": [
+        "胸部"
+      ],
+      "template": {
+        "exercises": [
+          {
+            "id": "hi",
+            "movementPattern": "卧推",
+            "name": "杠铃卧推",
+            "primaryMuscles": [
+              "胸"
+            ]
+          },
+          {
+            "id": "safe",
+            "name": "腿举",
+            "primaryMuscles": [
+              "腿"
+            ]
+          }
+        ],
+        "id": "push-a",
+        "name": "推 A"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "36daab0e5e9a9b9bdad77998a94dc6d54102e637",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "recovery-aware/template-recovery-conflict-cases-v1"
+  },
+  "sourceFixtureId": "recovery-aware/template-recovery-conflict-cases-v1"
+}

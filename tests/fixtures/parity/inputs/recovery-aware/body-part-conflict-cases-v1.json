@@ -1,0 +1,132 @@
+{
+  "parityMeta": {
+    "id": "recovery-aware/body-part-conflict-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-A buildTemplateBodyPartConflictScore function-level parity — synthetic + real-id cases covering the null-template / empty-sources / 无|none|no guards, the primary(3) / secondary(1.4) / contribution(min 1.5) / movementScore(shoulder 3/2/1 · chest 3 · back 3 · leg 3 · arm 2) sub-scores, levelForScore thresholds (0.5/4/8 + the hasPain>=5 high-bump), mergeSources pain-overrides-soreness (1.7>1), the round(sum*10)/10 aggregation, conflictingExercises sort+slice(0,5), affectedAreas=source labels, the EXERCISE_KNOWLEDGE_OVERRIDES merge via a real id (bench-press), and the external exerciseLibrary overwrite. Generated from src/engines/recoveryAwareScheduler.ts; the Swift RecoveryAwareScheduler compute-asserts each case == golden. Clockless: no Date on the engine path → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "36daab0e5e9a9b9bdad77998a94dc6d54102e637",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "null-template",
+      "template": null,
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "no-sources",
+      "template": { "id": "t-1", "exercises": [{ "id": "syn-1", "name": "合成卧推", "primaryMuscles": ["胸"] }] }
+    },
+    {
+      "label": "all-guard-tokens-no-sources",
+      "template": { "id": "t-1", "exercises": [{ "id": "syn-1", "name": "合成卧推", "primaryMuscles": ["胸"] }] },
+      "sorenessAreas": ["无"],
+      "painAreas": ["none", "no"]
+    },
+    {
+      "label": "single-primary-low",
+      "template": { "id": "t-2", "exercises": [{ "id": "syn-1", "name": "合成卧推", "primaryMuscles": ["胸"] }] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "single-no-pain-moderate",
+      "template": { "id": "t-3", "exercises": [{ "id": "syn-3", "name": "合成推胸", "primaryMuscles": ["胸"], "movementPattern": "水平推" }] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "high-pain-bump-5p1",
+      "template": { "id": "t-4", "exercises": [{ "id": "syn-4", "name": "合成压胸", "primaryMuscles": ["胸"] }] },
+      "painAreas": ["胸部"]
+    },
+    {
+      "label": "high-no-pain-full-stack",
+      "template": { "id": "t-5", "exercises": [{ "id": "syn-5", "name": "全栈胸", "primaryMuscles": ["胸"], "secondaryMuscles": ["胸"], "muscleContribution": { "胸": 1 }, "movementPattern": "水平推" }] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "movement-shoulder-3",
+      "template": { "id": "t-6", "exercises": [{ "id": "mv-1", "name": "垂直推举", "movementPattern": "垂直推" }] },
+      "sorenessAreas": ["肩部"]
+    },
+    {
+      "label": "movement-shoulder-2",
+      "template": { "id": "t-7", "exercises": [{ "id": "mv-2", "name": "上斜推举", "movementPattern": "上斜推" }] },
+      "sorenessAreas": ["肩部"]
+    },
+    {
+      "label": "movement-shoulder-1",
+      "template": { "id": "t-8", "exercises": [{ "id": "mv-3", "name": "面拉", "movementPattern": "面拉" }] },
+      "sorenessAreas": ["肩部"]
+    },
+    {
+      "label": "movement-chest-3",
+      "template": { "id": "t-9", "exercises": [{ "id": "mv-4", "name": "飞鸟", "movementPattern": "飞鸟" }] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "movement-back-3",
+      "template": { "id": "t-10", "exercises": [{ "id": "mv-5", "name": "划船", "movementPattern": "划船" }] },
+      "sorenessAreas": ["背部"]
+    },
+    {
+      "label": "movement-leg-3",
+      "template": { "id": "t-11", "exercises": [{ "id": "mv-6", "name": "深蹲", "movementPattern": "深蹲" }] },
+      "sorenessAreas": ["腿部"]
+    },
+    {
+      "label": "movement-arm-2-english",
+      "template": { "id": "t-12", "exercises": [{ "id": "mv-7", "name": "弯举", "movementPattern": "curl" }] },
+      "sorenessAreas": ["手臂"]
+    },
+    {
+      "label": "contribution-and-secondary-keys",
+      "template": { "id": "t-13", "exercises": [{ "id": "syn-c", "name": "腿部贡献", "muscleContribution": { "腿": 0.8 } }] },
+      "sorenessAreas": ["腿部"]
+    },
+    {
+      "label": "contribution-capped-at-1p5",
+      "template": { "id": "t-14", "exercises": [{ "id": "syn-cap", "name": "腿部高贡献", "muscleContribution": { "腿": 2 } }] },
+      "sorenessAreas": ["腿部"]
+    },
+    {
+      "label": "secondary-muscles-only",
+      "template": { "id": "t-15", "exercises": [{ "id": "syn-sec", "name": "手臂辅助", "secondaryMuscles": ["手臂"] }] },
+      "sorenessAreas": ["手臂"]
+    },
+    {
+      "label": "merge-pain-overrides-soreness",
+      "template": { "id": "t-16", "exercises": [{ "id": "syn-m", "name": "合成胸动作", "primaryMuscles": ["胸"] }] },
+      "sorenessAreas": ["胸部"],
+      "painAreas": ["胸"]
+    },
+    {
+      "label": "multi-source-affected-areas",
+      "template": { "id": "t-17", "exercises": [{ "id": "syn-multi", "name": "胸背复合", "primaryMuscles": ["胸", "背"] }] },
+      "sorenessAreas": ["胸部", "背部"]
+    },
+    {
+      "label": "multi-exercise-sum-and-slice5",
+      "template": { "id": "t-18", "exercises": [
+        { "id": "syn-e1", "name": "胸动作一", "primaryMuscles": ["胸"] },
+        { "id": "syn-e2", "name": "胸动作二", "primaryMuscles": ["胸"] },
+        { "id": "syn-e3", "name": "胸动作三", "primaryMuscles": ["胸"] },
+        { "id": "syn-e4", "name": "胸动作四", "primaryMuscles": ["胸"] },
+        { "id": "syn-e5", "name": "胸动作五", "primaryMuscles": ["胸"] },
+        { "id": "syn-e6", "name": "胸动作六", "primaryMuscles": ["胸"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "real-bench-press-override-merge",
+      "template": { "id": "t-19", "exercises": [{ "id": "bench-press" }] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "external-library-overrides-primary",
+      "template": { "id": "t-20", "exercises": [{ "id": "bench-press" }] },
+      "exerciseLibrary": { "bench-press": { "primaryMuscles": ["背"] } },
+      "sorenessAreas": ["背部"]
+    }
+  ]
+}

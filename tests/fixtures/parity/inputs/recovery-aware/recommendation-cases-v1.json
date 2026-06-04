@@ -1,0 +1,125 @@
+{
+  "parityMeta": {
+    "id": "recovery-aware/recommendation-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-A buildRecoveryAwareRecommendation function-level parity — the full daily-recommendation dispatch: no-template active_recovery default · high+lowReadiness rest · shouldPreferAlternative (alternative found → train, with findLowerConflictTemplate rank+duration tiebreak / none found → active_recovery) · mobility_only (availableTime 1-30) · modified_train (availableTime>30 / 0) with mapTemplateSuggestedChanges prefix · low train (reduce_intensity) · none train (no changes) · preferred/template/templates[0] target precedence. Consumes buildTemplateRecoveryConflict (SC-1b under the hood). Generated from src/engines/recoveryAwareScheduler.ts; the Swift RecoveryAwareScheduler compute-asserts each case == golden. Clockless (readiness + availableTime explicit inputs) → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "36daab0e5e9a9b9bdad77998a94dc6d54102e637",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "no-template-active-recovery-default",
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "high-lowreadiness-rest",
+      "preferredTemplate": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "painAreas": ["胸部"],
+      "readinessResult": { "score": 40, "trainingAdjustment": "normal" }
+    },
+    {
+      "label": "prefer-alternative-found-train",
+      "preferredTemplate": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "templates": [
+        { "id": "legs-a", "name": "腿 A", "duration": 45, "exercises": [{ "id": "leg1", "name": "腿举", "primaryMuscles": ["腿"] }] }
+      ],
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "prefer-alternative-duration-tiebreak",
+      "preferredTemplate": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "templates": [
+        { "id": "upper-a", "name": "上肢 A", "duration": 50, "exercises": [{ "id": "leg1", "name": "腿举", "primaryMuscles": ["腿"] }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 40, "exercises": [{ "id": "leg2", "name": "腿弯举", "primaryMuscles": ["腿"] }] }
+      ],
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "prefer-alternative-none-active-recovery",
+      "preferredTemplate": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+        { "id": "m2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "templates": [],
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "mobility-only-moderate-availtime-20",
+      "template": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "mm1", "name": "胸大肌训练", "primaryMuscles": ["胸"], "kind": "compound" }
+      ] },
+      "sorenessAreas": ["胸部"],
+      "availableTimeMin": 20
+    },
+    {
+      "label": "modified-train-moderate-availtime-60",
+      "template": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "mm1", "name": "胸大肌训练", "primaryMuscles": ["胸"], "kind": "compound" }
+      ] },
+      "sorenessAreas": ["胸部"],
+      "availableTimeMin": 60
+    },
+    {
+      "label": "modified-train-moderate-no-availtime",
+      "template": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "mm1", "name": "胸大肌训练", "primaryMuscles": ["胸"], "kind": "compound" }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "low-train-reduce-intensity",
+      "template": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "ex-low", "name": "辅助胸", "secondaryMuscles": ["胸"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "none-train-no-changes",
+      "template": { "id": "legs-a", "name": "腿 A", "duration": 45, "exercises": [
+        { "id": "leg1", "name": "腿举", "primaryMuscles": ["腿"] }
+      ] },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "templates0-precedence-train",
+      "templates": [
+        { "id": "legs-a", "name": "腿 A", "duration": 45, "exercises": [{ "id": "leg1", "name": "腿举", "primaryMuscles": ["腿"] }] }
+      ],
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "template-over-templates0",
+      "template": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "ex-low", "name": "辅助胸", "secondaryMuscles": ["胸"] }
+      ] },
+      "templates": [
+        { "id": "legs-a", "name": "腿 A", "duration": 45, "exercises": [{ "id": "leg1", "name": "腿举", "primaryMuscles": ["腿"] }] }
+      ],
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "preferred-over-template-and-templates0",
+      "preferredTemplate": { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+        { "id": "ex-low", "name": "辅助胸", "secondaryMuscles": ["胸"] }
+      ] },
+      "template": { "id": "pull-a", "name": "拉 A", "duration": 55, "exercises": [
+        { "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+      ] },
+      "templates": [
+        { "id": "legs-a", "name": "腿 A", "duration": 45, "exercises": [{ "id": "leg1", "name": "腿举", "primaryMuscles": ["腿"] }] }
+      ],
+      "sorenessAreas": ["胸部"]
+    }
+  ]
+}
