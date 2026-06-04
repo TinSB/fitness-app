@@ -1,0 +1,533 @@
+{
+  "counts": {
+    "knowledgeOverrideIds": 63,
+    "withMuscleContribution": 63,
+    "withSecondaryMuscles": 63
+  },
+  "knowledge": {
+    "assisted-dip": {
+      "muscleContribution": {
+        "手臂": 0.6,
+        "肩": 0.3,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "肩"
+      ]
+    },
+    "assisted-pull-up": {
+      "muscleContribution": {
+        "手臂": 0.45,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂"
+      ]
+    },
+    "barbell-row": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "背": 1,
+        "腿": 0.2
+      },
+      "secondaryMuscles": [
+        "腿",
+        "手臂"
+      ]
+    },
+    "belt-squat": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "bench-press": {
+      "muscleContribution": {
+        "手臂": 0.5,
+        "肩": 0.4,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "cable-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "cable-fly": {
+      "muscleContribution": {
+        "胸": 1
+      },
+      "secondaryMuscles": []
+    },
+    "cable-lateral-raise": {
+      "muscleContribution": {
+        "肩": 1
+      },
+      "secondaryMuscles": []
+    },
+    "cable-rear-delt-fly": {
+      "muscleContribution": {
+        "肩": 0.85,
+        "背": 0.2
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "calf-raise": {
+      "muscleContribution": {
+        "腿": 0.8
+      },
+      "secondaryMuscles": []
+    },
+    "chest-supported-row": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "肩": 0.25,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "肩"
+      ]
+    },
+    "close-grip-bench": {
+      "muscleContribution": {
+        "手臂": 1,
+        "肩": 0.3,
+        "胸": 0.6
+      },
+      "secondaryMuscles": [
+        "胸",
+        "肩"
+      ]
+    },
+    "db-bench-press": {
+      "muscleContribution": {
+        "手臂": 0.5,
+        "肩": 0.4,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "db-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "db-fly": {
+      "muscleContribution": {
+        "胸": 1
+      },
+      "secondaryMuscles": []
+    },
+    "db-rdl": {
+      "muscleContribution": {
+        "背": 0.4,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "deadlift": {
+      "muscleContribution": {
+        "背": 0.6,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "ez-bar-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "face-pull": {
+      "muscleContribution": {
+        "肩": 0.8,
+        "背": 0.25
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "goblet-squat": {
+      "muscleContribution": {
+        "背": 0.2,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "hack-squat": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "hammer-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "hip-thrust": {
+      "muscleContribution": {
+        "背": 0.2,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "incline-db-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "incline-db-press": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "肩": 0.5,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "landmine-press": {
+      "muscleContribution": {
+        "手臂": 0.35,
+        "肩": 1,
+        "胸": 0.35
+      },
+      "secondaryMuscles": [
+        "胸",
+        "手臂"
+      ]
+    },
+    "lat-pulldown": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂"
+      ]
+    },
+    "lateral-raise": {
+      "muscleContribution": {
+        "肩": 1
+      },
+      "secondaryMuscles": []
+    },
+    "leg-curl": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "leg-extension": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "leg-press": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "leg-press-calf-raise": {
+      "muscleContribution": {
+        "腿": 0.8
+      },
+      "secondaryMuscles": []
+    },
+    "lying-leg-curl": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "machine-chest-press": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "肩": 0.4,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "machine-incline-chest-press": {
+      "muscleContribution": {
+        "手臂": 0.35,
+        "肩": 0.45,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "machine-lateral-raise": {
+      "muscleContribution": {
+        "肩": 1
+      },
+      "secondaryMuscles": []
+    },
+    "machine-row": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂"
+      ]
+    },
+    "machine-shoulder-press": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "肩": 1,
+        "胸": 0.15
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "胸"
+      ]
+    },
+    "nordic-curl": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "one-arm-db-row": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂"
+      ]
+    },
+    "overhead-cable-triceps-extension": {
+      "muscleContribution": {
+        "手臂": 1,
+        "肩": 0.15
+      },
+      "secondaryMuscles": [
+        "肩"
+      ]
+    },
+    "pec-deck-fly": {
+      "muscleContribution": {
+        "胸": 1
+      },
+      "secondaryMuscles": []
+    },
+    "preacher-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "pull-up": {
+      "muscleContribution": {
+        "手臂": 0.5,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂"
+      ]
+    },
+    "push-up": {
+      "muscleContribution": {
+        "手臂": 0.45,
+        "肩": 0.35,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "rear-delt-raise": {
+      "muscleContribution": {
+        "肩": 0.85,
+        "背": 0.2
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "reverse-pec-deck": {
+      "muscleContribution": {
+        "肩": 0.85,
+        "背": 0.2
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "romanian-deadlift": {
+      "muscleContribution": {
+        "背": 0.5,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "rope-hammer-curl": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "seated-calf-raise": {
+      "muscleContribution": {
+        "腿": 0.8
+      },
+      "secondaryMuscles": []
+    },
+    "seated-leg-curl": {
+      "muscleContribution": {
+        "腿": 1
+      },
+      "secondaryMuscles": []
+    },
+    "seated-row": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "肩": 0.3,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "肩"
+      ]
+    },
+    "shoulder-press": {
+      "muscleContribution": {
+        "手臂": 0.5,
+        "肩": 1,
+        "胸": 0.2
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "胸"
+      ]
+    },
+    "single-arm-lat-pulldown": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "背": 1
+      },
+      "secondaryMuscles": [
+        "手臂"
+      ]
+    },
+    "skull-crusher": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "smith-incline-press": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "肩": 0.5,
+        "胸": 1
+      },
+      "secondaryMuscles": [
+        "肩",
+        "手臂"
+      ]
+    },
+    "smith-shoulder-press": {
+      "muscleContribution": {
+        "手臂": 0.45,
+        "肩": 1,
+        "胸": 0.15
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "胸"
+      ]
+    },
+    "smith-squat": {
+      "muscleContribution": {
+        "背": 0.25,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "squat": {
+      "muscleContribution": {
+        "背": 0.4,
+        "腿": 1
+      },
+      "secondaryMuscles": [
+        "背"
+      ]
+    },
+    "standing-calf-raise": {
+      "muscleContribution": {
+        "腿": 0.8
+      },
+      "secondaryMuscles": []
+    },
+    "straight-bar-pushdown": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    },
+    "t-bar-row": {
+      "muscleContribution": {
+        "手臂": 0.4,
+        "背": 1,
+        "腿": 0.2
+      },
+      "secondaryMuscles": [
+        "手臂",
+        "腿"
+      ]
+    },
+    "triceps-pushdown": {
+      "muscleContribution": {
+        "手臂": 1
+      },
+      "secondaryMuscles": []
+    }
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "b308307ce0f2e466b3709e2907f1556e8fa3d52b",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "exercise-recovery/knowledge-snapshot-v1"
+  }
+}

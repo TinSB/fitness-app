@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "exercise-recovery/knowledge-snapshot-v1",
+    "schemaVersion": 8,
+    "describes": "SC-0 exercise-recovery knowledge snapshot — the EXERCISE_KNOWLEDGE_OVERRIDES fields the recovery/scheduler engines read that SR-2/SR-3 left out: secondaryMuscles + muscleContribution (read by exerciseRecoveryConflictEngine.scoreExerciseForSource and recoveryAwareScheduler.scoreExerciseForArea). Dumps each override id's value for those two fields (a field present iff the TS override defines it; secondaryMuscles may be a DEFINED empty array). The Swift ExerciseRecoveryKnowledge reconciles every entry item-by-item; primaryMuscles / skillDemand / movementPattern reuse SR-3 SmartReplacementKnowledge and fatigueCost reuses SR-2 ReplacementEngineKnowledge — none re-ported.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "b308307ce0f2e466b3709e2907f1556e8fa3d52b",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No engine input — generateExerciseRecoveryKnowledge transcribes the frozen src/data/exerciseLibrary.ts EXERCISE_KNOWLEDGE_OVERRIDES table (secondaryMuscles + muscleContribution only). Generated; never hand-edited (parity contract §22)."
+  }
+}

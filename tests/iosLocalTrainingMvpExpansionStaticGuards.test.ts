@@ -296,7 +296,7 @@ describe('iOS-11 parity goldens + package/lockfile unchanged', () => {
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' },
     );
     expect(result.status, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
-    expect(result.stdout).toMatch(/checked\s+96\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+98\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
     expect(changedFiles(['tests/fixtures/parity'])).toBe('');
   }, 240_000);
