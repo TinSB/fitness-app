@@ -276,6 +276,19 @@ import { buildTrainingIntelligenceSummary } from '../src/engines/trainingIntelli
 // exerciseRecoveryConflictEngine + EXERCISE_KNOWLEDGE_OVERRIDES values + a shared
 // formatExerciseName, all out of this slice's "only these engines" bound).
 import { buildWorkoutCycleState } from '../src/engines/workoutCycleScheduler';
+// SC-1b — exerciseRecoveryConflictEngine port parity slice (recoveryAware hard prerequisite).
+// Imports the REAL buildExerciseRecoveryConflict so the recovery-conflict goldens are GENERATED
+// from TS truth, never hand-authored (§22). The engine merges EXERCISE_KNOWLEDGE_OVERRIDES[id]
+// under each exercise input and reads six override fields downstream — all already native
+// (movementPattern/primaryMuscles/skillDemand ← SR-3, fatigueCost ← SR-2, secondaryMuscles/
+// muscleContribution ← SC-0) + formatExerciseName (SR-1) — so the Swift port
+// (ExerciseRecoveryConflictEngine) re-runs the SAME function over each case's echoed
+// engineInput (exercise + sorenessAreas + painAreas) and COMPUTE-ASSERTs the full Conflict
+// (exerciseId / exerciseName / conflictLevel / affectedAreas / reason / recommendedAction) ==
+// golden. PURE / clockless — zero Date, no write path → generatedAtPolicy 'none'. Every output
+// field is String / [String] / enum-string (the float scoring is internal), so the golden
+// carries no number-formatting surface. The companion recoveryAwareScheduler stays DEFERRED.
+import { buildExerciseRecoveryConflict } from '../src/engines/exerciseRecoveryConflictEngine';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -806,6 +819,21 @@ const FIXTURE_IDS = [
   // was not yet native. Both additive; generated, never hand-edited (§22).
   'exercise-recovery/knowledge-snapshot-v1',
   'i18n/training-mode-cases-v1',
+  // SC-1b exerciseRecoveryConflictEngine port — 1 OUTPUT fixture (a `cases` array) FUNCTION-
+  // LEVEL pinning the ported buildExerciseRecoveryConflict. The cases jointly cover every
+  // branch: no-areas / unrelated-area / none|no|无 guard → conflictLevel none + keep · the
+  // contribution / primary / secondary / movement-pattern sub-scores in isolation · all four
+  // levels (none/low/moderate/high via the 0.75/3.5/7 thresholds) · the full recommendedAction
+  // matrix (keep · reduce_intensity · reduce_volume · substitute · skip via level×hasPain×
+  // fatigueCost) · mergeSources pain-overrides-soreness (1.7>1 weight) · affectedAreas ≥0.75
+  // filter + multi-source · every movementScore area branch (shoulder 5/4/1.5 · chest 6 ·
+  // back 6/4/2 · leg 6 · arm 6/2) · the isLegPressText guard (leg-press ⇏ shoulder/chest/arm) ·
+  // formatExerciseName (display-id → Chinese name · Chinese input name · English input name →
+  // fallback) · multi-key area text + English token. Synthetic-id cases pass metadata inline
+  // (empty-override default branch); real-id cases (bench-press / squat / leg-press) exercise
+  // the EXERCISE_KNOWLEDGE_OVERRIDES merge end-to-end (reusing SR-3/SR-2/SC-0). Each case echoes
+  // the engineInput + the full result. Additive; generated, never hand-edited (§22).
+  'exercise-recovery-conflict/conflict-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3580,6 +3608,30 @@ const generateWorkoutCycle = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// SC-1b — exerciseRecoveryConflictEngine OUTPUT parity (buildExerciseRecoveryConflict)
+//
+// Each case carries an `exercise` object (id + optional metadata fields) + optional
+// `sorenessAreas` / `painAreas` string arrays. The generator runs the REAL
+// buildExerciseRecoveryConflict over each case verbatim and emits BOTH the engineInput
+// (exercise + sorenessAreas + painAreas, echoed so the Swift port reconstructs the SAME
+// ExerciseInput) AND the computed Conflict result. PURE / clockless (no Date anywhere on the
+// engine path). Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateRecoveryConflict = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map(
+    (c: { label?: string; exercise?: Record<string, unknown>; sorenessAreas?: string[]; painAreas?: string[] }) => {
+      const exercise = (c.exercise ?? { id: '' }) as Parameters<typeof buildExerciseRecoveryConflict>[0]['exercise'];
+      const sorenessAreas = Array.isArray(c.sorenessAreas) ? c.sorenessAreas : [];
+      const painAreas = Array.isArray(c.painAreas) ? c.painAreas : [];
+      const result = buildExerciseRecoveryConflict({ exercise, sorenessAreas, painAreas });
+      return { label: c.label ?? null, exercise, sorenessAreas, painAreas, result };
+    },
+  );
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3705,6 +3757,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // SC-0 scheduling-track foundation snapshots (recovery override fields + formatTrainingMode).
   'exercise-recovery/knowledge-snapshot-v1': generateExerciseRecoveryKnowledge,
   'i18n/training-mode-cases-v1': generateI18nTrainingModeSnapshot,
+  // SC-1b exerciseRecoveryConflictEngine OUTPUT parity.
+  'exercise-recovery-conflict/conflict-cases-v1': generateRecoveryConflict,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
