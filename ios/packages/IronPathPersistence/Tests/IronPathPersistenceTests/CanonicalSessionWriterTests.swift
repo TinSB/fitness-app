@@ -1417,4 +1417,179 @@ final class CanonicalSessionWriterTests: XCTestCase {
         XCTAssertEqual(ex?.sets?.first?.weight?.doubleValue ?? -1, 60, accuracy: 1e-9)
         XCTAssertEqual(ex?.sets?.first?.done, true)
     }
+
+    // MARK: - PA-2: apply program adjustment (SAME gated path, sanctioned MUTATION)
+
+    /// A WHOLE new editable program template (the engine's applied / restored program):
+    /// new scalars + rich `dayTemplates` / `weeklyMuscleTargets` in the open bag.
+    private func makeProgram(
+        id: String,
+        primaryGoal: String,
+        daysPerWeek: Int,
+        extraKey: String? = nil
+    ) throws -> ProgramTemplate {
+        let extra = extraKey.map { ",\"experimentProgramKey\":\"\($0)\"" } ?? ""
+        let json = """
+        {"id":"\(id)","userId":"u1","primaryGoal":"\(primaryGoal)","splitType":"全身","daysPerWeek":\(daysPerWeek),\
+        "correctionStrategy":"hinge","functionalStrategy":"carry",\
+        "dayTemplates":[{"id":"d1","name":"\(primaryGoal) 实验版","exercises":[{"id":"squat","sets":5}]}],\
+        "weeklyMuscleTargets":{"quads":16,"chest":12}\(extra)}
+        """
+        return try ProgramTemplate(decoding: JSONValue(decoding: Data(json.utf8)))
+    }
+
+    func testApplyProgramAdjustmentFirstWriteSeedsBaseWithoutBackup() throws {
+        let store = FakeAppDataStore()   // no existing file
+        let writer = CanonicalSessionWriter(store: store)
+        let result = try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4)
+        ) { _ in true }
+
+        XCTAssertTrue(result.createdNewStore)
+        XCTAssertNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 0, "first write must not attempt a backup")
+        XCTAssertEqual(store.saveCount, 1, "exactly one gated save")
+        XCTAssertEqual(store.stored?.programTemplate.id, "p1-experiment")
+        XCTAssertEqual(store.stored?.programTemplate.primaryGoal, "力量")
+        XCTAssertEqual(store.stored?.programTemplate.daysPerWeek?.intValue, 4)
+        XCTAssertEqual(store.stored?.programTemplate.dayTemplates?.first?.id, "d1")
+        XCTAssertEqual(store.stored?.programTemplate.weeklyMuscleTargets?["quads"]?.intValue, 16)
+        XCTAssertEqual(store.stored?.schemaVersion, .current)
+    }
+
+    func testApplyProgramAdjustmentSecondWriteBacksUpAndReplacesWholeTemplate() throws {
+        // Seed a document whose program carries a key the NEW template omits, plus an
+        // engine-managed mesocycle plan (an OUTPUT) + history — none of which the apply
+        // may touch except the programTemplate key itself.
+        let seedJSON = """
+        {"schemaVersion":8,\
+        "programTemplate":{"id":"p1","primaryGoal":"增肌","staleProgramKey":"dropme"},\
+        "mesocyclePlan":{"id":"m1","phase":"积累期","weeks":[{"index":1},{"index":2}]},\
+        "history":[{"id":"old","completed":true}]}
+        """
+        let seed = try AppData(decoding: Data(seedJSON.utf8))
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        let result = try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4)
+        ) { _ in true }
+
+        XCTAssertFalse(result.createdNewStore)
+        XCTAssertNotNil(result.backupURL)
+        XCTAssertEqual(store.backupCount, 1, "an existing document must be backed up before overwrite")
+        XCTAssertEqual(store.saveCount, 1, "exactly one gated save — no second write path")
+        // The whole programTemplate is replaced (stale key gone).
+        XCTAssertEqual(store.stored?.programTemplate.id, "p1-experiment")
+        XCTAssertEqual(store.stored?.programTemplate.primaryGoal, "力量")
+        XCTAssertNil(store.stored?.programTemplate._unknown["staleProgramKey"], "wholesale apply must drop the old program key")
+        // input-not-output: the engine-managed mesocycle (OUTPUT) + history survive verbatim.
+        XCTAssertEqual(store.stored?.mesocyclePlan.id, "m1")
+        XCTAssertEqual(store.stored?.mesocyclePlan.weeks?.arrayValue?.count, 2)
+        XCTAssertEqual(store.stored?.history.count, 1)
+        XCTAssertEqual(store.stored?.history.first?.id, "old")
+        XCTAssertEqual(store.stored?.schemaVersion, .current, "apply must not bump schema")
+    }
+
+    func testApplyProgramAdjustmentValidationRejectionWritesNothing() throws {
+        let seed = AppData.emptyCurrent().withUpdatedProgramConfig(
+            primaryGoal: "增肌", splitType: "全身", daysPerWeek: .integer(3)
+        )
+        let store = FakeAppDataStore(stored: seed)
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4)
+        ) { _ in false }) { error in
+            guard case CanonicalSessionWriteError.validationRejected = error else {
+                return XCTFail("expected .validationRejected, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0)
+        XCTAssertEqual(store.backupCount, 0)
+        // The prior program is untouched — a rejected apply never lands.
+        XCTAssertEqual(store.stored?.programTemplate.primaryGoal, "增肌")
+    }
+
+    func testApplyProgramAdjustmentGateReceivesCandidateWithNewTemplate() throws {
+        let store = FakeAppDataStore()
+        let writer = CanonicalSessionWriter(store: store)
+        var seenId: String?
+        var seenGoal: String?
+        _ = try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4)
+        ) { candidate in
+            seenId = candidate.programTemplate.id
+            seenGoal = candidate.programTemplate.primaryGoal
+            return true
+        }
+        XCTAssertEqual(seenId, "p1-experiment", "the gate must see the candidate with the new template already applied")
+        XCTAssertEqual(seenGoal, "力量")
+    }
+
+    func testApplyProgramAdjustmentUnreadableExistingDocumentIsNeverOverwritten() throws {
+        let store = FakeAppDataStore(stored: AppData.emptyCurrent())
+        store.loadError = AppDataStoreError.decodeFailed("corrupt")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4)
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.existingDocumentUnreadable = error else {
+                return XCTFail("expected .existingDocumentUnreadable, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "must not overwrite unparseable data")
+        XCTAssertEqual(store.backupCount, 0)
+    }
+
+    func testApplyProgramAdjustmentBackupFailureStopsBeforeSave() throws {
+        let seed = AppData.emptyCurrent().withUpdatedProgramConfig(
+            primaryGoal: "增肌", splitType: nil, daysPerWeek: .integer(3)
+        )
+        let store = FakeAppDataStore(stored: seed)
+        store.backupError = AppDataStoreError.backupFailed("disk full")
+        let writer = CanonicalSessionWriter(store: store)
+
+        XCTAssertThrowsError(try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4)
+        ) { _ in true }) { error in
+            guard case CanonicalSessionWriteError.backupFailed = error else {
+                return XCTFail("expected .backupFailed, got \(error)")
+            }
+        }
+        XCTAssertEqual(store.saveCount, 0, "a failed backup must stop before the save")
+    }
+
+    /// Rollback flows through the SAME entry (a sanctioned MUTATION, not a §14 restore):
+    /// writing the restored snapshot template persists like any other apply.
+    func testApplyProgramAdjustmentRollbackSnapshotPersistsThroughRealStore() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ironpath-pa2-writer-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = JSONFileAppDataStore(directory: dir, filename: "appdata.json")
+        let writer = CanonicalSessionWriter(store: store)
+
+        // Seed by APPLYing an experimental template (first write, no backup)…
+        let r1 = try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1-experiment", primaryGoal: "力量", daysPerWeek: 4, extraKey: "exp")
+        ) { _ in true }
+        XCTAssertTrue(r1.createdNewStore)
+        // …then ROLL BACK by writing the restored ORIGINAL snapshot through the SAME seam
+        // (backs up the experimental file, then atomically saves the restore).
+        let r2 = try writer.applyProgramAdjustment(
+            updatedProgramTemplate: makeProgram(id: "p1", primaryGoal: "增肌", daysPerWeek: 3)
+        ) { _ in true }
+        XCTAssertFalse(r2.createdNewStore)
+        let backupURL = try XCTUnwrap(r2.backupURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backupURL.path), "rollback must back up before overwrite")
+
+        // Reload from disk: the restored original is the source of truth; the experimental
+        // program's open-bag key is gone (wholesale replacement).
+        let loaded = try store.load()
+        XCTAssertEqual(loaded.programTemplate.id, "p1")
+        XCTAssertEqual(loaded.programTemplate.primaryGoal, "增肌")
+        XCTAssertEqual(loaded.programTemplate.daysPerWeek?.intValue, 3)
+        XCTAssertNil(loaded.programTemplate._unknown["experimentProgramKey"], "rollback must drop the experimental program's keys")
+    }
 }

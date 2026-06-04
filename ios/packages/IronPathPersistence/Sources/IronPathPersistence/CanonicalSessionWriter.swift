@@ -58,6 +58,17 @@
 //     actual exercise is an ENGINE INPUT; it NEVER touches an engine OUTPUT (the
 //     engine-opened `originalExerciseId`, the `mesocyclePlan` weeks blob, prescription/
 //     advice fields, computed phase/readiness/e1RM).
+//   • `applyProgramAdjustment` — apply a Plan-Adaptive (PA) weekly adjustment by writing
+//     a WHOLE new editable `ProgramTemplate` (the engine's `applyAdjustmentDraft`
+//     `updatedProgramTemplate`, or `rollbackAdjustment`'s `restoredProgramTemplate`) →
+//     `AppData.programTemplate` (PA-2). A sanctioned MUTATION: it rewrites ONLY the
+//     `programTemplate` key via the pure open-bag `AppData.withUpdatedProgramTemplate`,
+//     open-bag/schema/timestamp preserving; every other top-level key (including the
+//     engine-managed `mesocyclePlan` weeks blob) survives verbatim. The program template
+//     is an ENGINE INPUT (its `dayTemplates` / `weeklyMuscleTargets` / strategies); the
+//     engine recomputes the plan FROM it, so this write never touches an engine OUTPUT
+//     (§11). Rollback flows through this SAME entry (writing the restored snapshot) — it
+//     is a sanctioned MUTATION, NOT a §14 full restore.
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -474,8 +485,49 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// PA-2: apply a Plan-Adaptive weekly adjustment by writing a WHOLE new editable
+    /// `ProgramTemplate` into `AppData.programTemplate` and persist — through the SAME
+    /// sanctioned, DataHealth-gated write path as every entry above (§8 rule 4: NOT a
+    /// second/parallel write path). The candidate builder is the pure open-bag
+    /// `AppData.withUpdatedProgramTemplate` (rewrites ONLY the `programTemplate` key;
+    /// every other top-level key — including the engine-managed `mesocyclePlan` weeks
+    /// blob — schema, and all ISO timestamps are preserving), so an apply is a sanctioned
+    /// MUTATION, not a restore (§13/§14).
+    ///
+    /// `updatedProgramTemplate` is the PA engine's product — `applyAdjustmentDraft`'s
+    /// `updatedProgramTemplate` for an APPLY, or `rollbackAdjustment`'s
+    /// `restoredProgramTemplate` for a ROLLBACK; BOTH flow through this one entry, so a
+    /// rollback is also a sanctioned MUTATION on this single write path, NOT a §14 full
+    /// restore. The program template is an ENGINE INPUT (its `dayTemplates` /
+    /// `weeklyMuscleTargets` / `correctionStrategy` / `functionalStrategy`); the engine
+    /// recomputes the `mesocyclePlan` / prescriptions / phase / readiness / e1RM FROM it,
+    /// so this write NEVER touches an engine OUTPUT (§11). The new template already
+    /// carries any time it needs (the engine stamped it with an INJECTED clock); this
+    /// writer reads no clock. The caller supplies the DataHealth gate (defensive
+    /// read-only clean-view re-validation before the write commits); a rejected candidate
+    /// is NEVER written (no fake success).
+    ///
+    /// - Parameters:
+    ///   - updatedProgramTemplate: the WHOLE new editable program template to write (the
+    ///     engine's applied / restored program), replacing the `programTemplate` key.
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func applyProgramAdjustment(
+        updatedProgramTemplate: ProgramTemplate,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { $0.withUpdatedProgramTemplate(updatedProgramTemplate) },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1 + SR-4). `buildCandidate` is the only
+    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1 + SR-4 + PA-2). `buildCandidate` is the only
     /// thing that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned
