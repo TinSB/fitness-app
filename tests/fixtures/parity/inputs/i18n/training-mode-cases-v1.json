@@ -1,0 +1,12 @@
+{
+  "parityMeta": {
+    "id": "i18n/training-mode-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-0 i18n/formatters formatTrainingMode snapshot — the one display formatter the recovery/scheduler engines import from src/i18n/formatters that was not yet native (formatMuscleName=AN-3; formatTemplateName/formatExerciseName already ported). formatTrainingMode (formatters.ts:213-214) = lookupLabel(value, TRAINING_MODE_LABELS). The golden reconstructs TRAINING_MODE_LABELS (formatters.ts:85-89) by routing each key through the REAL formatter and freezes branch-covering probes (map hit / lowercase-normalize / already-CJK as-is / CJK non-label fallback / unknown non-CJK -> 未知状态 / '' -> 未知状态). The Swift SchedulingFormatters.formatTrainingMode mirrors the lookupLabel STRING path and re-runs each probe, asserting equality branch-by-branch.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "b308307ce0f2e466b3709e2907f1556e8fa3d52b",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No input params — the generator imports the REAL formatTrainingMode from src/i18n/formatters.ts, reconstructs TRAINING_MODE_LABELS through it, and runs branch-covering string probes. The consumer nextWorkoutScheduler.ts:409 calls formatTrainingMode only on a truthy string (`trainingMode ? formatTrainingMode(trainingMode) : ''`), so the value is always a string; the object path of lookupLabel is unreachable from that call site and intentionally NOT ported (same scoping as AN-3 formatMuscleName). No engine call, no clock -> generatedAtPolicy 'none'. Generated; never hand-edited (parity contract §22)."
+  }
+}

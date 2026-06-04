@@ -311,6 +311,14 @@ import {
   formatProgramTemplateName,
   formatDayTemplateName,
   formatAdjustmentChangeLabel,
+  // SC-0 — scheduling-track foundation. `formatTrainingMode` (formatters.ts:213-214)
+  // is the ONE display formatter the recovery/scheduler engines (nextWorkoutScheduler.ts:409)
+  // import from src/i18n/formatters that is NOT yet native (formatMuscleName=AN-3,
+  // formatTemplateName/formatExerciseName already ported). The Swift port
+  // (IronPathTrainingDecision.SchedulingFormatters.formatTrainingMode) mirrors the
+  // lookupLabel STRING path + TRAINING_MODE_LABELS; the i18n/training-mode-cases-v1
+  // golden reconciles the table + every branch. Generated from TS, never hand-edited (§22).
+  formatTrainingMode,
 } from '../src/i18n/formatters';
 // iOS-4B0: synthetic AppData builders reused from the test fixture helpers so
 // the expanded TrainingDecision parity fixtures stay small + deterministic +
@@ -789,6 +797,15 @@ const FIXTURE_IDS = [
   // fallback) · started-at-precedence (sessionSortKey startedAt rung). Each case echoes the
   // engineInput + the full result. Generated; never hand-edited (§22).
   'workout-cycle/cycle-cases-v1',
+  // SC-0 scheduling-track foundation (recovery/scheduler engines depend on these):
+  // (1) the exercise-recovery knowledge snapshot — the secondaryMuscles +
+  // muscleContribution override fields SR-2/SR-3 left out, read by
+  // exerciseRecoveryConflictEngine / recoveryAwareScheduler; the Swift
+  // ExerciseRecoveryKnowledge reconciles every entry item-by-item. (2) the
+  // formatTrainingMode snapshot — the one i18n formatter those engines import that
+  // was not yet native. Both additive; generated, never hand-edited (§22).
+  'exercise-recovery/knowledge-snapshot-v1',
+  'i18n/training-mode-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -1614,6 +1631,48 @@ const generateReplacementEngineKnowledge = (_input: any, _meta: ParityMeta) => {
       knowledgeOverrideIds: Object.keys(knowledge).length,
     },
     equivalenceChains,
+    knowledge,
+  };
+};
+
+// ---------------------------------------------------------------------------
+// SC-0 — exercise-recovery knowledge snapshot (scheduling-track foundation)
+//
+// Dumps the EXERCISE_KNOWLEDGE_OVERRIDES fields the recovery/scheduler engines read
+// that SR-2/SR-3 deliberately LEFT OUT. SR-3 (SmartReplacementKnowledge) ported
+// movementPattern / primaryMuscles / skillDemand / kind / contraindications and
+// SR-2 (ReplacementEngineKnowledge) ported fatigueCost — its header states
+// secondaryMuscles + muscleContribution are "NOT read by the smart engine →
+// intentionally NOT ported". But the recovery-conflict engines DO read them:
+//   exerciseRecoveryConflictEngine.ts:163  secondaryMuscles  (scoreExerciseForSource)
+//   exerciseRecoveryConflictEngine.ts:166  muscleContribution
+//   recoveryAwareScheduler.ts:178          secondaryMuscles  (scoreExerciseForArea)
+//   recoveryAwareScheduler.ts:181          muscleContribution
+// So SC-0 ports ONLY those two genuinely-missing fields (primaryMuscles / skillDemand /
+// movementPattern reuse SR-3, fatigueCost reuses SR-2 — never re-ported). The Swift
+// ExerciseRecoveryKnowledge reconciles every entry item-by-item against this snapshot.
+// A field is present iff the TS override defines it (secondaryMuscles can be [] — a
+// DEFINED empty array, distinct from absent). Transcribes frozen data — COMPUTES nothing.
+// ---------------------------------------------------------------------------
+
+const RECOVERY_KNOWLEDGE_FIELDS = ['secondaryMuscles', 'muscleContribution'] as const;
+
+const generateExerciseRecoveryKnowledge = (_input: any, _meta: ParityMeta) => {
+  const knowledge: Record<string, Record<string, unknown>> = {};
+  for (const [id, override] of Object.entries(EXERCISE_KNOWLEDGE_OVERRIDES)) {
+    const entry: Record<string, unknown> = {};
+    for (const field of RECOVERY_KNOWLEDGE_FIELDS) {
+      const value = (override as Record<string, unknown>)[field];
+      if (value !== undefined) entry[field] = value;
+    }
+    knowledge[id] = entry;
+  }
+  return {
+    counts: {
+      knowledgeOverrideIds: Object.keys(knowledge).length,
+      withSecondaryMuscles: Object.values(knowledge).filter((e) => 'secondaryMuscles' in e).length,
+      withMuscleContribution: Object.values(knowledge).filter((e) => 'muscleContribution' in e).length,
+    },
     knowledge,
   };
 };
@@ -3030,6 +3089,58 @@ const generateI18nFormattersPaSnapshot = (_input: any, _meta: ParityMeta) => {
 };
 
 // ---------------------------------------------------------------------------
+// SC-0 — i18n/formatters formatTrainingMode snapshot (scheduling-track foundation)
+//
+// Pins the ONE display formatter the recovery/scheduler engines import from
+// src/i18n/formatters that is not yet native: formatTrainingMode (formatters.ts:213-214
+// = lookupLabel('formatTrainingMode', value, TRAINING_MODE_LABELS)). The Swift port
+// (IronPathTrainingDecision.SchedulingFormatters.formatTrainingMode) mirrors the
+// lookupLabel STRING path only — the consumer nextWorkoutScheduler.ts:409 calls it as
+// `trainingMode ? formatTrainingMode(trainingMode) : ''`, so the value is always a
+// (truthy) string; the object path of lookupLabel is unreachable from this call site
+// and intentionally NOT ported (same scoping as AN-3 formatMuscleName). The golden (a)
+// reconstructs TRAINING_MODE_LABELS (formatters.ts:85-89) by routing each key through
+// the REAL formatter (every key normalizes to itself and hits the map) and (b) freezes
+// branch-covering probes (map hit / lowercase-normalize / already-CJK as-is / CJK
+// non-label fallback / unknown non-CJK → 未知状态 / '' → 未知状态). No clock →
+// generatedAtPolicy 'none'. Generated from TS, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateI18nTrainingModeSnapshot = (_input: any, _meta: ParityMeta) => {
+  // (a) Reconstruct TRAINING_MODE_LABELS (formatters.ts:85-89) from TS truth — each
+  // key routed through the REAL formatter (normalizes to itself → map hit).
+  const trainingModeKeys = ['hybrid', 'strength', 'hypertrophy'];
+  const trainingModeLabels: Record<string, string> = {};
+  for (const key of trainingModeKeys) {
+    trainingModeLabels[key] = formatTrainingMode(key);
+  }
+  const tables = { trainingModeLabels };
+  const counts = {
+    tables: Object.keys(tables).length,
+    trainingModeLabels: Object.keys(trainingModeLabels).length,
+  };
+
+  // (b) Branch-covering probes — input echoed verbatim + the REAL formatter's output.
+  // All inputs are STRINGS (the only shape the scheduler call site passes).
+  const probe = (input: string) => ({ input, expected: formatTrainingMode(input) });
+  const probes = {
+    formatTrainingMode: [
+      probe('hybrid'),       // map hit → 综合
+      probe('strength'),     // map hit → 力量
+      probe('hypertrophy'),  // map hit → 肌肥大（增肌）
+      probe('Hybrid'),       // lowercase-normalize → 综合
+      probe('HYPERTROPHY'),  // lowercase-normalize → 肌肥大（增肌）
+      probe('综合'),          // already CJK, no map entry → returned as-is
+      probe('耐力'),          // CJK but not a label → CJK fallback returns as-is
+      probe('endurance'),    // unknown non-CJK → 未知状态
+      probe(''),             // '' → 未知状态 (empty default)
+    ],
+  };
+
+  return { counts, tables, probes };
+};
+
+// ---------------------------------------------------------------------------
 // PA-S3 — trainingData data-constant snapshot
 //
 // Dumps the six frozen data constants the PA-S3 Swift port mirrors:
@@ -3591,6 +3702,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'app-data/canonical-keyorder-fold-v1': generateCanonicalKeyOrderFold,
   // SC-1 workoutCycleScheduler OUTPUT parity.
   'workout-cycle/cycle-cases-v1': generateWorkoutCycle,
+  // SC-0 scheduling-track foundation snapshots (recovery override fields + formatTrainingMode).
+  'exercise-recovery/knowledge-snapshot-v1': generateExerciseRecoveryKnowledge,
+  'i18n/training-mode-cases-v1': generateI18nTrainingModeSnapshot,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 

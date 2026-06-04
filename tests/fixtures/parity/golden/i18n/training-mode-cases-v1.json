@@ -1,0 +1,60 @@
+{
+  "counts": {
+    "tables": 1,
+    "trainingModeLabels": 3
+  },
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "b308307ce0f2e466b3709e2907f1556e8fa3d52b",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "i18n/training-mode-cases-v1"
+  },
+  "probes": {
+    "formatTrainingMode": [
+      {
+        "expected": "综合",
+        "input": "hybrid"
+      },
+      {
+        "expected": "力量",
+        "input": "strength"
+      },
+      {
+        "expected": "肌肥大（增肌）",
+        "input": "hypertrophy"
+      },
+      {
+        "expected": "综合",
+        "input": "Hybrid"
+      },
+      {
+        "expected": "肌肥大（增肌）",
+        "input": "HYPERTROPHY"
+      },
+      {
+        "expected": "综合",
+        "input": "综合"
+      },
+      {
+        "expected": "耐力",
+        "input": "耐力"
+      },
+      {
+        "expected": "未知状态",
+        "input": "endurance"
+      },
+      {
+        "expected": "未知状态",
+        "input": ""
+      }
+    ]
+  },
+  "tables": {
+    "trainingModeLabels": {
+      "hybrid": "综合",
+      "hypertrophy": "肌肥大（增肌）",
+      "strength": "力量"
+    }
+  }
+}
