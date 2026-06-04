@@ -195,6 +195,11 @@ const FIXTURE_IDS = [
   'plan-adjustment-identity/instance-id-cases-v1',
   'plan-adjustment-identity/upsert-cases-v1',
   'plan-adjustment-identity/regenerate-cases-v1',
+  // PA-S7 (PA-1a) programAdjustmentEngine minimal port — 2 OUTPUT fixtures
+  // (hashProgramTemplate + rollbackAdjustment) the Swift ProgramAdjustmentEngine
+  // compute-asserts function-by-function. Generated; never hand-edited (§22).
+  'program-adjust/hash-cases-v1',
+  'program-adjust/rollback-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

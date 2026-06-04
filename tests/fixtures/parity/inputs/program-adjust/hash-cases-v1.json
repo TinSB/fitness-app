@@ -1,0 +1,177 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/hash-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S7 (PA-1a) hashProgramTemplate function-level parity — synthetic templates pinning the inline stableStringify (localeCompare case-insensitive key sort / JSON.stringify primitive text for string|number|boolean|null / nested array+object recursion) + FNV-1a (UTF-16 charCodeAt iteration / Math.imul 32-bit wrapping / >>>0 / `tpl-`+lowercase-hex). Covers a TrainingTemplate input, a ProgramTemplate input, a Chinese name+note template (UTF-16 charCodeAt boundary), a nested array/object key-ordering probe, the empty template (as both overloads), and integer/decimal/zero/negative number text. Generated from src/engines/programAdjustmentEngine.ts; the Swift port EXACT-asserts each hash string == golden.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — pure stableStringify + FNV-1a transform. All templates are synthetic (no email/token; userId values use the allowlisted synthetic-user / local-user placeholders)."
+  },
+  "cases": [
+    {
+      "label": "hashProgramTemplate: TrainingTemplate with exercises (integer numbers, key sort over typed + open-bag fields)",
+      "kind": "hash",
+      "templateKind": "training",
+      "template": {
+        "id": "tpl-upper-a",
+        "name": "Upper A",
+        "focus": "upper",
+        "duration": 60,
+        "note": "main upper day",
+        "isExperimentalTemplate": false,
+        "exercises": [
+          {
+            "id": "bench-press",
+            "name": "Bench Press",
+            "muscle": "chest",
+            "kind": "compound",
+            "sets": 3,
+            "repMin": 5,
+            "repMax": 8,
+            "rest": 180,
+            "startWeight": 60
+          },
+          {
+            "id": "row",
+            "name": "Barbell Row",
+            "muscle": "back",
+            "kind": "compound",
+            "sets": 3,
+            "repMin": 8,
+            "repMax": 12,
+            "rest": 120,
+            "startWeight": 50
+          }
+        ]
+      }
+    },
+    {
+      "label": "hashProgramTemplate: ProgramTemplate with dayTemplates + weeklyMuscleTargets (nested object/array recursion)",
+      "kind": "hash",
+      "templateKind": "program",
+      "template": {
+        "id": "program-1",
+        "userId": "synthetic-user",
+        "primaryGoal": "hypertrophy",
+        "splitType": "upper_lower",
+        "daysPerWeek": 4,
+        "correctionStrategy": "moderate",
+        "functionalStrategy": "standard",
+        "weeklyMuscleTargets": { "chest": 12, "back": 14, "legs": 16, "shoulders": 8, "arms": 6 },
+        "dayTemplates": [
+          {
+            "id": "day-upper",
+            "name": "Upper",
+            "focusMuscles": ["chest", "back"],
+            "correctionBlockIds": [],
+            "mainExerciseIds": ["bench-press", "row"],
+            "functionalBlockIds": [],
+            "estimatedDurationMin": 60
+          },
+          {
+            "id": "day-lower",
+            "name": "Lower",
+            "focusMuscles": ["legs"],
+            "correctionBlockIds": ["corr-1"],
+            "mainExerciseIds": ["squat"],
+            "functionalBlockIds": ["fn-1"],
+            "estimatedDurationMin": 70
+          }
+        ]
+      }
+    },
+    {
+      "label": "hashProgramTemplate: Chinese name + note + exercise labels (UTF-16 charCodeAt boundary)",
+      "kind": "hash",
+      "templateKind": "training",
+      "template": {
+        "id": "tpl-zh",
+        "name": "上肢推日",
+        "focus": "上肢",
+        "duration": 55,
+        "note": "胸、肩、三头为主，注意离心控制。",
+        "exercises": [
+          {
+            "id": "incline-press",
+            "name": "上斜卧推",
+            "muscle": "胸",
+            "kind": "compound",
+            "sets": 4,
+            "repMin": 6,
+            "repMax": 10,
+            "rest": 150,
+            "startWeight": 40
+          }
+        ]
+      }
+    },
+    {
+      "label": "hashProgramTemplate: nested array/object key-ordering probe (localeCompare case-insensitive primary key sort)",
+      "kind": "hash",
+      "templateKind": "program",
+      "template": {
+        "id": "program-sort-probe",
+        "userId": "synthetic-user",
+        "primaryGoal": "strength",
+        "splitType": "full_body",
+        "daysPerWeek": 3,
+        "correctionStrategy": "light",
+        "functionalStrategy": "minimal",
+        "weeklyMuscleTargets": { "Zebra": 1, "apple": 2, "Banana": 3, "apricot": 4, "b10": 5, "b2": 6, "b1": 7 },
+        "dayTemplates": [
+          {
+            "id": "d1",
+            "name": "Full",
+            "focusMuscles": ["legs", "back", "chest"],
+            "correctionBlockIds": [],
+            "mainExerciseIds": ["squat", "bench-press", "row"],
+            "functionalBlockIds": [],
+            "estimatedDurationMin": 75
+          }
+        ],
+        "nestedProbe": { "outer": { "zed": [3, 2, 1], "alpha": { "gamma": 1, "Beta": 2, "delta": 3 } } }
+      }
+    },
+    {
+      "label": "hashProgramTemplate: empty template object (TrainingTemplate overload) → stableStringify '{}'",
+      "kind": "hash",
+      "templateKind": "training",
+      "template": {}
+    },
+    {
+      "label": "hashProgramTemplate: empty template object (ProgramTemplate overload) → same hash as the TrainingTemplate empty",
+      "kind": "hash",
+      "templateKind": "program",
+      "template": {}
+    },
+    {
+      "label": "hashProgramTemplate: number text — integer/decimal/zero/negative (JSON.stringify number rendering)",
+      "kind": "hash",
+      "templateKind": "training",
+      "template": {
+        "id": "tpl-numbers",
+        "name": "Numbers",
+        "focus": "test",
+        "duration": 0,
+        "note": "",
+        "exercises": [
+          {
+            "id": "ex-dec",
+            "name": "Decimals",
+            "muscle": "quads",
+            "kind": "isolation",
+            "sets": 3,
+            "repMin": 8,
+            "repMax": 12,
+            "rest": 90,
+            "startWeight": 2.5,
+            "progressionUnitKg": 1.25
+          }
+        ],
+        "customMetrics": { "intVal": 100, "decVal": 3.14, "zeroVal": 0, "negDec": -2.5 }
+      }
+    }
+  ]
+}

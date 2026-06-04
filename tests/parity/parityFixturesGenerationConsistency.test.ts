@@ -68,8 +68,9 @@ describe('parityFixturesGenerationConsistency', () => {
     // 1 PA-S0 i18n-terms + 1 PA-S2 enrich-exercise +
     // 1 PA-S3 default-program-data + 1 PA-S4 i18n-formatters +
     // 3 PA-S5 coach-action-identity +
-    // 4 PA-S6 plan-adjustment-identity parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+85\s+fixture/);
+    // 4 PA-S6 plan-adjustment-identity +
+    // 2 PA-S7 program-adjust (hash + rollback) parity fixtures).
+    expect(result.stdout).toMatch(/checked\s+87\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });

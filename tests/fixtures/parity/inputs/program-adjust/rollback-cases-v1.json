@@ -1,0 +1,103 @@
+{
+  "parityMeta": {
+    "id": "program-adjust/rollback-cases-v1",
+    "schemaVersion": 8,
+    "describes": "PA-S7 (PA-1a) rollbackAdjustment function-level parity — synthetic ProgramAdjustmentHistoryItems pinning restoredTemplateId (= sourceProgramTemplateId), restoredProgramTemplate = cloneProgram(sourceProgramSnapshot) (= S2 clone) or undefined when absent, and updatedHistoryItem = { ...historyItem, status:'rolled_back', rollbackAvailable:false, rolledBackAt:<injected now> } with the _unknown open bag carried through. Covers with-snapshot (clone returned), no-snapshot (restoredProgramTemplate null), and an explicit per-case injected clock that overwrites a present rolledBackAt plus effectReview/open-bag passthrough. Generated from src/engines/programAdjustmentEngine.ts; the wall-clock field (the only new Date() read, ts:934) is substituted by the injected clock; the Swift port takes nowIso explicitly and canonical-asserts.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "360d42c9bb7f273edaafb4636d0109a8cc176d09",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-01-15T08:30:00.000Z",
+    "sourceNotes": "rollbackAdjustment reads new Date() once for rolledBackAt; the generator substitutes that single field with the injected deterministicClockIso (or the case-level now) so the golden is byte-deterministic. All items are synthetic (no email/token; userId values use the allowlisted synthetic-user / local-user placeholders)."
+  },
+  "cases": [
+    {
+      "label": "rollbackAdjustment: with sourceProgramSnapshot → restoredProgramTemplate = clone(snapshot); status applied→rolled_back; open-bag passthrough",
+      "kind": "rollback",
+      "item": {
+        "id": "hist-1",
+        "appliedAt": "2026-01-10T10:00:00.000Z",
+        "sourceProgramTemplateId": "program-1",
+        "experimentalProgramTemplateId": "program-1-exp",
+        "sourceProgramTemplateName": "Base Program",
+        "experimentalProgramTemplateName": "Experimental Program",
+        "mainChangeSummary": "增加胸部组数",
+        "selectedRecommendationIds": ["rec-1", "rec-2"],
+        "changes": [
+          { "id": "chg-1", "type": "add_sets", "reason": "volume too low" }
+        ],
+        "status": "applied",
+        "rollbackAvailable": true,
+        "sourceProgramSnapshot": {
+          "id": "program-1",
+          "userId": "synthetic-user",
+          "primaryGoal": "hypertrophy",
+          "splitType": "upper_lower",
+          "daysPerWeek": 4,
+          "correctionStrategy": "moderate",
+          "functionalStrategy": "standard",
+          "weeklyMuscleTargets": { "chest": 12, "back": 14 },
+          "dayTemplates": [
+            {
+              "id": "day-upper",
+              "name": "Upper",
+              "focusMuscles": ["chest"],
+              "correctionBlockIds": [],
+              "mainExerciseIds": ["bench-press"],
+              "functionalBlockIds": [],
+              "estimatedDurationMin": 60
+            }
+          ]
+        },
+        "legacyClientField": { "note": "future field preserved via open bag", "weight": 3 }
+      }
+    },
+    {
+      "label": "rollbackAdjustment: no sourceProgramSnapshot → restoredProgramTemplate null",
+      "kind": "rollback",
+      "item": {
+        "id": "hist-2",
+        "appliedAt": "2026-01-11T11:00:00.000Z",
+        "sourceProgramTemplateId": "program-2",
+        "experimentalProgramTemplateId": "program-2-exp",
+        "selectedRecommendationIds": [],
+        "changes": [],
+        "status": "applied",
+        "rollbackAvailable": true
+      }
+    },
+    {
+      "label": "rollbackAdjustment: explicit per-case injected now (≠ meta default) overwrites a present rolledBackAt; effectReview + open-bag passthrough",
+      "kind": "rollback",
+      "now": "2026-02-20T15:45:30.000Z",
+      "item": {
+        "id": "hist-3",
+        "appliedAt": "2026-02-01T09:00:00.000Z",
+        "sourceProgramTemplateId": "program-3",
+        "experimentalProgramTemplateId": "program-3-exp",
+        "sourceCoachActionId": "coach-action-9",
+        "sourceFingerprint": "fp-xyz",
+        "selectedRecommendationIds": ["rec-9"],
+        "changes": [
+          { "id": "chg-9", "type": "swap_exercise", "reason": "pain" }
+        ],
+        "status": "applied",
+        "rollbackAvailable": true,
+        "rolledBackAt": "2025-12-31T00:00:00.000Z",
+        "effectReview": { "verdict": "pending", "score": 3 },
+        "sourceProgramSnapshot": {
+          "id": "program-3",
+          "userId": "local-user",
+          "primaryGoal": "strength",
+          "splitType": "full_body",
+          "daysPerWeek": 3,
+          "correctionStrategy": "light",
+          "functionalStrategy": "minimal",
+          "weeklyMuscleTargets": {},
+          "dayTemplates": []
+        },
+        "extraOpenBagField": "preserved"
+      }
+    }
+  ]
+}

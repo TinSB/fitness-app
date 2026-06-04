@@ -342,6 +342,17 @@ import {
   dedupePlanAdjustmentDraftsByFingerprint,
 } from '../src/engines/planAdjustmentIdentityEngine';
 import type { AdjustmentChange } from '../src/models/training-model';
+// PA-S7 (PA-1a) — programAdjustmentEngine minimal port parity slice. Imports the TWO
+// dependency-minimal PURE exports so the program-adjust goldens are GENERATED from TS
+// truth, never hand-authored (§22): hashProgramTemplate (+ its inline stableStringify /
+// FNV-1a) is clockless ('none'); rollbackAdjustment reads the wall clock once
+// (`new Date().toISOString()`, ts:934) — the ONE non-deterministic field
+// (`updatedHistoryItem.rolledBackAt`) is substituted by parityMeta.deterministicClockIso
+// so its golden stays byte-deterministic (generatedAtPolicy 'deterministic-clock'). The
+// Swift port (ProgramAdjustmentEngine) re-runs the SAME functions over the SAME echoed
+// engineInput (template → hash; historyItem + injected now → restore result) and
+// EXACT/canonical-asserts each output. Reuses the PA-S1 types + S2 clone.
+import { hashProgramTemplate, rollbackAdjustment } from '../src/engines/programAdjustmentEngine';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -689,6 +700,17 @@ const FIXTURE_IDS = [
   'plan-adjustment-identity/instance-id-cases-v1',
   'plan-adjustment-identity/upsert-cases-v1',
   'plan-adjustment-identity/regenerate-cases-v1',
+  // PA-S7 (PA-1a) programAdjustmentEngine minimal port — 2 OUTPUT fixtures. hash-cases
+  // pins hashProgramTemplate (inline stableStringify localeCompare key sort /
+  // undefined-omit / JSON.stringify primitive text + FNV-1a UTF-16 charCodeAt / 32-bit
+  // wrapping / lowercase hex) across TrainingTemplate + ProgramTemplate inputs, Chinese
+  // name/note (UTF-16 boundary), nested array/object key ordering, the empty template,
+  // and integer/decimal number text. rollback-cases pins rollbackAdjustment
+  // (restoredTemplateId + cloneProgram=S2-clone snapshot / nil + the {...spread,
+  // status:'rolled_back', rollbackAvailable:false, rolledBackAt:<injected now>} override
+  // with open-bag passthrough). Generated, never hand-edited (§22).
+  'program-adjust/hash-cases-v1',
+  'program-adjust/rollback-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3092,6 +3114,67 @@ const generatePlanAdjustmentIdentity = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// PA-S7 (PA-1a) — programAdjustmentEngine.hashProgramTemplate OUTPUT parity
+//
+// Each `hash` case carries a synthetic `template` object (a TrainingTemplate or
+// ProgramTemplate shape, flagged by `templateKind` for the Swift overload it calls);
+// the generator echoes the template VERBATIM and writes the REAL TS
+// `hashProgramTemplate(template)` string (EXACT `==` on the Swift side). PURE / clockless
+// → generatedAtPolicy 'none'. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateProgramAdjustHash = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'hash') {
+      throw new Error(`parityGoldensEntry: program-adjust/hash unknown case kind '${String(c.kind)}'`);
+    }
+    const hash = hashProgramTemplate(c.template);
+    return { label: c.label ?? null, kind: 'hash', templateKind: c.templateKind ?? null, template: c.template, hash };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+// ---------------------------------------------------------------------------
+// PA-S7 (PA-1a) — programAdjustmentEngine.rollbackAdjustment OUTPUT parity
+//
+// Each `rollback` case carries a synthetic `historyItem`. The generator runs the REAL TS
+// `rollbackAdjustment(historyItem)` and echoes the engineInput VERBATIM, then SUBSTITUTES
+// the single wall-clock field — `updatedHistoryItem.rolledBackAt`, the only place TS reads
+// `new Date()` (ts:934) — with the injected `now` (case `now`, else
+// meta.deterministicClockIso) so the golden is byte-deterministic. Every other field
+// (restoredTemplateId / cloneProgram'd snapshot / the spread + status + rollbackAvailable +
+// open-bag passthrough) is REAL TS output. The Swift port takes `nowIso` explicitly and
+// canonical-asserts. generatedAtPolicy 'deterministic-clock'. Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateProgramAdjustRollback = (input: any, meta: ParityMeta) => {
+  if (!meta.deterministicClockIso) {
+    throw new Error('parityGoldensEntry: program-adjust/rollback requires deterministicClockIso');
+  }
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'rollback') {
+      throw new Error(`parityGoldensEntry: program-adjust/rollback unknown case kind '${String(c.kind)}'`);
+    }
+    const nowIso = c.now ?? meta.deterministicClockIso;
+    const result = rollbackAdjustment(c.item as ProgramAdjustmentHistoryItem);
+    // The ONLY wall-clock read in rollbackAdjustment (ts:934) — replace it with the
+    // injected deterministic clock so the golden is stable; this mirrors the Swift port's
+    // required `nowIso` injection. No other field is touched.
+    result.updatedHistoryItem.rolledBackAt = nowIso;
+    return {
+      label: c.label ?? null,
+      kind: 'rollback',
+      now: nowIso,
+      item: c.item,
+      restoredTemplateId: result.restoredTemplateId,
+      restoredProgramTemplate: result.restoredProgramTemplate ?? null,
+      updatedHistoryItem: result.updatedHistoryItem,
+    };
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -3199,6 +3282,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'plan-adjustment-identity/instance-id-cases-v1': generatePlanAdjustmentIdentity,
   'plan-adjustment-identity/upsert-cases-v1': generatePlanAdjustmentIdentity,
   'plan-adjustment-identity/regenerate-cases-v1': generatePlanAdjustmentIdentity,
+  // PA-S7 (PA-1a) programAdjustmentEngine minimal port — hash + rollback.
+  'program-adjust/hash-cases-v1': generateProgramAdjustHash,
+  'program-adjust/rollback-cases-v1': generateProgramAdjustRollback,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
