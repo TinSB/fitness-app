@@ -753,6 +753,15 @@ const FIXTURE_IDS = [
   'program-adjust/hash-fold-cases-v1',
   'program-adjust/build-diff-bword-cases-v1',
   'program-adjust/apply-draft-opaque-cases-v1',
+  // FIX-B (§9 canonicalKeyOrder fidelity) — 1 ADDITIVE golden (existing goldens
+  // stay byte-identical, §22) pinning the §9 canonical key order against the REAL
+  // canonical-stringify: a `cases` array of case-folded sibling-key objects whose
+  // canonicalJson (= JSON.stringify(sortKeysDeep) = accountBoundaryLocalInventory.ts
+  // stableStringify, byte-identical) + snapshotHash (= buildAppDataSnapshotHash) the
+  // Swift JSONValue.canonicalJSONString() (with canonicalKeyOrder corrected to
+  // localeCompare-faithful lower-before-upper) reproduces byte-for-byte. Generated,
+  // never hand-edited (§22).
+  'app-data/canonical-keyorder-fold-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -948,6 +957,49 @@ const generateSnapshotHash = (input: any, meta: ParityMeta) => {
     snapshotHashPrefix: SNAPSHOT_HASH_PREFIX,
     stableStringifyHashInputSummary,
   };
+};
+
+// ---------------------------------------------------------------------------
+// FIX-B (§9 canonicalKeyOrder fidelity) — canonical-keyorder OUTPUT parity
+//
+// Each case carries a synthetic `payload` whose sibling keys are equal once
+// lowercased. The golden echoes the payload VERBATIM plus two REAL-TS targets:
+//   * `canonicalJson` = JSON.stringify(sortKeysDeep(payload)) — the compact §9
+//     canonical byte form (localeCompare-sorted keys, JSON.stringify key/primitive
+//     rendering, undefined-drop). This is BYTE-IDENTICAL to the authoritative
+//     stableStringify at src/cloudProduction/accountBoundaryLocalInventory.ts:116
+//     (the §9 canonical contract the Swift comment cites): both sort by the SAME
+//     localeCompare, render keys/primitives via the SAME JSON.stringify, drop
+//     undefined the SAME way, and emit compact — so the two strings agree exactly
+//     for any JSON-representable value. sortKeysDeep is the generator's own canonical
+//     key-sort helper used for every golden file, so this is canonical-stringify
+//     truth, never a one-off hand-authored order.
+//   * `snapshotHash` = buildAppDataSnapshotHash(payload) — the REAL exported §9
+//     FNV-1a hash over that same canonical string, anchoring the golden to TS truth.
+// The Swift JSONValue.canonicalJSONString() (with the localeCompare-faithful
+// canonicalKeyOrder) must equal canonicalJson byte-for-byte AND its FNV-1a must
+// equal snapshotHash, case-by-case. PURE / clockless → generatedAtPolicy 'none'.
+// Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateCanonicalKeyOrderFold = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    if (c.kind !== 'canonical-keyorder') {
+      throw new Error(
+        `parityGoldensEntry: app-data/canonical-keyorder unknown case kind '${String(c.kind)}'`,
+      );
+    }
+    const canonicalJson = JSON.stringify(sortKeysDeep(c.payload));
+    const snapshotHash = buildAppDataSnapshotHash(c.payload);
+    return {
+      label: c.label ?? null,
+      kind: 'canonical-keyorder',
+      payload: c.payload,
+      canonicalJson,
+      snapshotHash,
+    };
+  });
+  return { sourceFixtureId: meta.id, cases };
 };
 
 const loadPointerAppData = (input: any): AppData => {
@@ -3482,6 +3534,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'program-adjust/hash-fold-cases-v1': generateProgramAdjustHash,
   'program-adjust/build-diff-bword-cases-v1': generateProgramAdjustBuildDiff,
   'program-adjust/apply-draft-opaque-cases-v1': generateProgramAdjustApplyDraft,
+  // FIX-B (§9 canonicalKeyOrder fidelity) — canonical-keyorder OUTPUT parity.
+  'app-data/canonical-keyorder-fold-v1': generateCanonicalKeyOrderFold,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
