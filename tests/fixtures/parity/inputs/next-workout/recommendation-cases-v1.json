@@ -1,0 +1,205 @@
+{
+  "parityMeta": {
+    "id": "next-workout/recommendation-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-C buildNextWorkoutRecommendation function-level parity — the full next-workout dispatch: active-session short-circuit · no-templates active_recovery default · cold-start (no history → !anchorSession low confidence) · open-cycle from history anchor · today-completed anchor (lastCompletedSessionId + '这是下次建议' reason) · readiness-low lowLoad swap (override) · readiness conservative/recovery warning · trainingMode label · soreness-driven recovery rest / active_recovery / modified_train / recovery-override template · weekly-deficit reasons → alternatives · pain warnings · program-order rotation (usedProgramOrder, no PPL fallback) · repeat-template warning. Consumes getOrderedTrainingTemplates / buildWorkoutCycleState (SC-1) / buildRecoveryAwareRecommendation + buildTemplateRecoveryConflict (SC-A) / the i18n formatters (SC-0/AN-3). Generated from src/engines/nextWorkoutScheduler.ts; the Swift NextWorkoutScheduler compute-asserts each case == golden. Clockless: todayState.date is the only 'today', an explicit input → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "0312ffaaefb881d3a9ca8f8711a8bfed8cd43c32",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "active-session-incomplete-short-circuit",
+      "activeSession": { "id": "act1", "completed": false, "templateId": "push-a", "templateName": "推 A" },
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "m1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] }
+      ]
+    },
+    {
+      "label": "no-templates-active-recovery-default",
+      "templates": [],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" }
+    },
+    {
+      "label": "cold-start-no-history-ppl",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" }
+    },
+    {
+      "label": "open-cycle-from-history-anchor",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-push", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" }
+    },
+    {
+      "label": "today-completed-anchor",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "old-pull", "completed": true, "date": "2026-05-28", "finishedAt": "2026-05-28T09:00:00.000Z", "templateId": "pull-a" },
+        { "id": "today-push", "completed": true, "date": "2026-06-01", "finishedAt": "2026-06-01T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "completed", "date": "2026-06-01", "primaryAction": "view_summary", "lastCompletedSessionId": "today-push", "completedSessionIds": ["today-push"] }
+    },
+    {
+      "label": "readiness-low-lowload-swap",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "quick-30", "name": "30 分钟快练", "duration": 30, "exercises": [{ "id": "q1", "name": "哑铃推举", "primaryMuscles": ["肩"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-push", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "readinessResult": { "score": 38, "trainingAdjustment": "recovery" }
+    },
+    {
+      "label": "readiness-conservative-warning",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-pull", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "pull-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "readinessResult": { "score": 72, "trainingAdjustment": "conservative" }
+    },
+    {
+      "label": "training-mode-strength-label",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-push", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "trainingMode": "strength"
+    },
+    {
+      "label": "soreness-recovery-rest-low-readiness",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+          { "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+          { "id": "p2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+        ] }
+      ],
+      "history": [
+        { "id": "h-push", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "sorenessAreas": ["胸部"],
+      "painAreas": ["胸部"],
+      "readinessResult": { "score": 35, "trainingAdjustment": "recovery" }
+    },
+    {
+      "label": "soreness-recovery-override-alternative",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [
+          { "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" },
+          { "id": "p2", "name": "上斜卧推", "primaryMuscles": ["胸"], "movementPattern": "卧推", "kind": "compound" }
+        ] },
+        { "id": "legs-a", "name": "腿 A", "duration": 50, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-push", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "sorenessAreas": ["胸部"]
+    },
+    {
+      "label": "weekly-deficit-reasons-alternatives",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-push", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "weeklyVolumeSummary": {
+        "muscles": [
+          { "muscle": "back", "targetSets": 16, "weightedEffectiveSets": 4.5 },
+          { "muscle": "legs", "targetSets": 18, "weightedEffectiveSets": 9 }
+        ],
+        "byMuscle": {
+          "chest": { "targetSets": 14, "weightedEffectiveSets": 14 }
+        }
+      }
+    },
+    {
+      "label": "pain-warnings-surfaced",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-pull", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "pull-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" },
+      "painPatterns": [
+        { "area": "肩", "frequency": 3, "severityAvg": 4, "lastOccurredAt": "2026-05-29", "suggestedAction": "deload" }
+      ]
+    },
+    {
+      "label": "program-order-rotation-used",
+      "programTemplate": {
+        "id": "prog1",
+        "dayTemplates": [
+          { "id": "pull-a", "name": "拉 A", "order": 1 },
+          { "id": "push-a", "name": "推 A", "order": 2 },
+          { "id": "legs-a", "name": "腿 A", "order": 3 }
+        ]
+      },
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-pull", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "programTemplateId": "pull-a", "templateId": "pull-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" }
+    },
+    {
+      "label": "non-ppl-rotation-upper-lower",
+      "templates": [
+        { "id": "upper-a", "name": "上肢 A", "duration": 55, "exercises": [{ "id": "ua1", "name": "卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "lower-a", "name": "下肢 A", "duration": 55, "exercises": [{ "id": "la1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "h-upper", "completed": true, "date": "2026-05-30", "finishedAt": "2026-05-30T09:00:00.000Z", "templateId": "upper-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" }
+    },
+    {
+      "label": "thirty-day-gap-restart",
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [{ "id": "p1", "name": "杠铃卧推", "primaryMuscles": ["胸"], "kind": "compound" }] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [{ "id": "u1", "name": "引体向上", "primaryMuscles": ["背"], "kind": "compound" }] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [{ "id": "l1", "name": "深蹲", "primaryMuscles": ["腿"], "kind": "compound" }] }
+      ],
+      "history": [
+        { "id": "stale-push", "completed": true, "date": "2026-04-01", "finishedAt": "2026-04-01T09:00:00.000Z", "templateId": "push-a" }
+      ],
+      "todayState": { "status": "not_started", "date": "2026-06-01", "primaryAction": "start_training" }
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "parityMeta": {
+    "id": "next-workout/ordered-templates-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-C getOrderedProgramDayTemplates / getOrderedTrainingTemplates function-level parity (dispatch-by-kind). getOrderedProgramDayTemplates: explicit order / sortIndex / dayNumber / sequence nullish precedence + the index-fallback (order<=0 or absent) + stable tie order; no programTemplate → []. getOrderedTrainingTemplates: program-day order resolved by exact-id / sourceTemplateId / alias(dayKey|dayNameKey), unresolved days dropped, remaining appended, usedProgramOrder gate (both non-empty). Generated from src/engines/nextWorkoutScheduler.ts; the Swift NextWorkoutScheduler compute-asserts the ordered id sequence (+ usedProgramOrder) == golden. PURE / clockless → generatedAtPolicy 'none'.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "0312ffaaefb881d3a9ca8f8711a8bfed8cd43c32",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "ordered-days-explicit-order",
+      "kind": "getOrderedProgramDayTemplates",
+      "programTemplate": {
+        "id": "prog1",
+        "dayTemplates": [
+          { "id": "legs-a", "name": "腿 A", "order": 3 },
+          { "id": "push-a", "name": "推 A", "order": 1 },
+          { "id": "pull-a", "name": "拉 A", "order": 2 }
+        ]
+      }
+    },
+    {
+      "label": "ordered-days-sortindex-nullish-fallback",
+      "kind": "getOrderedProgramDayTemplates",
+      "programTemplate": {
+        "id": "prog2",
+        "dayTemplates": [
+          { "id": "d-b", "name": "B", "sortIndex": 2 },
+          { "id": "d-a", "name": "A", "sortIndex": 1 },
+          { "id": "d-c", "name": "C" }
+        ]
+      }
+    },
+    {
+      "label": "ordered-days-daynumber-then-sequence-then-index",
+      "kind": "getOrderedProgramDayTemplates",
+      "programTemplate": {
+        "id": "prog3",
+        "dayTemplates": [
+          { "id": "d-x", "name": "X", "dayNumber": 5 },
+          { "id": "d-y", "name": "Y", "sequence": 2 },
+          { "id": "d-z", "name": "Z", "order": 0 },
+          { "id": "d-w", "name": "W" }
+        ]
+      }
+    },
+    {
+      "label": "ordered-days-no-program",
+      "kind": "getOrderedProgramDayTemplates"
+    },
+    {
+      "label": "ordered-templates-program-order-exact-id",
+      "kind": "getOrderedTrainingTemplates",
+      "programTemplate": {
+        "id": "prog4",
+        "dayTemplates": [
+          { "id": "pull-a", "name": "拉 A", "order": 1 },
+          { "id": "push-a", "name": "推 A", "order": 2 }
+        ]
+      },
+      "templates": [
+        { "id": "push-a", "name": "推 A", "duration": 60, "exercises": [] },
+        { "id": "pull-a", "name": "拉 A", "duration": 60, "exercises": [] },
+        { "id": "legs-a", "name": "腿 A", "duration": 60, "exercises": [] }
+      ]
+    },
+    {
+      "label": "ordered-templates-source-and-alias-resolve",
+      "kind": "getOrderedTrainingTemplates",
+      "programTemplate": {
+        "id": "prog5",
+        "dayTemplates": [
+          { "id": "day-push", "name": "推 A", "order": 1 },
+          { "id": "day-pull", "name": "拉 A", "order": 2 },
+          { "id": "missing-day", "name": "缺失日", "order": 3 }
+        ]
+      },
+      "templates": [
+        { "id": "t-push", "name": "推 A", "sourceTemplateId": "day-push", "duration": 60, "exercises": [] },
+        { "id": "t-pull", "name": "拉 A", "duration": 60, "exercises": [] },
+        { "id": "t-extra", "name": "补充日", "duration": 40, "exercises": [] }
+      ]
+    },
+    {
+      "label": "ordered-templates-no-program-passthrough",
+      "kind": "getOrderedTrainingTemplates",
+      "templates": [
+        { "id": "a-1", "name": "A", "duration": 60, "exercises": [] },
+        { "id": "b-2", "name": "B", "duration": 50, "exercises": [] }
+      ]
+    }
+  ]
+}

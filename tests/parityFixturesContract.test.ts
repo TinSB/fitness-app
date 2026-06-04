@@ -248,6 +248,10 @@ const FIXTURE_IDS = [
   // buildTrainingCalendar is DEFERRED (real prerequisite: the COMPLETE sessionDetailSummary).
   'calendar-helpers/helper-cases-v1',
   'today-state/today-state-cases-v1',
+  // SC-C nextWorkoutScheduler port — 2 ADDITIVE OUTPUT fixtures (recommendation dispatch +
+  // the two ordering exports via dispatch-by-kind). Generated; never hand-edited (§22).
+  'next-workout/recommendation-cases-v1',
+  'next-workout/ordered-templates-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

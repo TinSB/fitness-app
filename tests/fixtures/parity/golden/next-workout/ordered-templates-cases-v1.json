@@ -1,0 +1,227 @@
+{
+  "cases": [
+    {
+      "kind": "getOrderedProgramDayTemplates",
+      "label": "ordered-days-explicit-order",
+      "orderedDayIds": [
+        "push-a",
+        "pull-a",
+        "legs-a"
+      ],
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "id": "legs-a",
+            "name": "腿 A",
+            "order": 3
+          },
+          {
+            "id": "push-a",
+            "name": "推 A",
+            "order": 1
+          },
+          {
+            "id": "pull-a",
+            "name": "拉 A",
+            "order": 2
+          }
+        ],
+        "id": "prog1"
+      }
+    },
+    {
+      "kind": "getOrderedProgramDayTemplates",
+      "label": "ordered-days-sortindex-nullish-fallback",
+      "orderedDayIds": [
+        "d-a",
+        "d-b",
+        "d-c"
+      ],
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "id": "d-b",
+            "name": "B",
+            "sortIndex": 2
+          },
+          {
+            "id": "d-a",
+            "name": "A",
+            "sortIndex": 1
+          },
+          {
+            "id": "d-c",
+            "name": "C"
+          }
+        ],
+        "id": "prog2"
+      }
+    },
+    {
+      "kind": "getOrderedProgramDayTemplates",
+      "label": "ordered-days-daynumber-then-sequence-then-index",
+      "orderedDayIds": [
+        "d-y",
+        "d-z",
+        "d-w",
+        "d-x"
+      ],
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "dayNumber": 5,
+            "id": "d-x",
+            "name": "X"
+          },
+          {
+            "id": "d-y",
+            "name": "Y",
+            "sequence": 2
+          },
+          {
+            "id": "d-z",
+            "name": "Z",
+            "order": 0
+          },
+          {
+            "id": "d-w",
+            "name": "W"
+          }
+        ],
+        "id": "prog3"
+      }
+    },
+    {
+      "kind": "getOrderedProgramDayTemplates",
+      "label": "ordered-days-no-program",
+      "orderedDayIds": []
+    },
+    {
+      "kind": "getOrderedTrainingTemplates",
+      "label": "ordered-templates-program-order-exact-id",
+      "orderedTemplateIds": [
+        "pull-a",
+        "push-a",
+        "legs-a"
+      ],
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "id": "pull-a",
+            "name": "拉 A",
+            "order": 1
+          },
+          {
+            "id": "push-a",
+            "name": "推 A",
+            "order": 2
+          }
+        ],
+        "id": "prog4"
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [],
+          "id": "push-a",
+          "name": "推 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [],
+          "id": "pull-a",
+          "name": "拉 A"
+        },
+        {
+          "duration": 60,
+          "exercises": [],
+          "id": "legs-a",
+          "name": "腿 A"
+        }
+      ],
+      "usedProgramOrder": true
+    },
+    {
+      "kind": "getOrderedTrainingTemplates",
+      "label": "ordered-templates-source-and-alias-resolve",
+      "orderedTemplateIds": [
+        "t-push",
+        "t-pull",
+        "t-extra"
+      ],
+      "programTemplate": {
+        "dayTemplates": [
+          {
+            "id": "day-push",
+            "name": "推 A",
+            "order": 1
+          },
+          {
+            "id": "day-pull",
+            "name": "拉 A",
+            "order": 2
+          },
+          {
+            "id": "missing-day",
+            "name": "缺失日",
+            "order": 3
+          }
+        ],
+        "id": "prog5"
+      },
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [],
+          "id": "t-push",
+          "name": "推 A",
+          "sourceTemplateId": "day-push"
+        },
+        {
+          "duration": 60,
+          "exercises": [],
+          "id": "t-pull",
+          "name": "拉 A"
+        },
+        {
+          "duration": 40,
+          "exercises": [],
+          "id": "t-extra",
+          "name": "补充日"
+        }
+      ],
+      "usedProgramOrder": true
+    },
+    {
+      "kind": "getOrderedTrainingTemplates",
+      "label": "ordered-templates-no-program-passthrough",
+      "orderedTemplateIds": [
+        "a-1",
+        "b-2"
+      ],
+      "templates": [
+        {
+          "duration": 60,
+          "exercises": [],
+          "id": "a-1",
+          "name": "A"
+        },
+        {
+          "duration": 50,
+          "exercises": [],
+          "id": "b-2",
+          "name": "B"
+        }
+      ],
+      "usedProgramOrder": false
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "0312ffaaefb881d3a9ca8f8711a8bfed8cd43c32",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "next-workout/ordered-templates-cases-v1"
+  },
+  "sourceFixtureId": "next-workout/ordered-templates-cases-v1"
+}

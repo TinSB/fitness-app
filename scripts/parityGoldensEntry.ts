@@ -328,6 +328,18 @@ import {
   resolveCalendarSelectedDate,
 } from '../src/engines/trainingCalendarEngine';
 import { buildTodayTrainingState } from '../src/engines/todayStateEngine';
+// SC-C — nextWorkoutScheduler port parity slice. Imports the REAL exports so the next-workout
+// goldens are GENERATED from TS truth, never hand-authored (§22). Every dependency is already
+// native (formatters ← SC-0/AN-3, number ← E1RM/engineUtils, buildWorkoutCycleState ← SC-1,
+// buildRecoveryAwareRecommendation + buildTemplateRecoveryConflict ← SC-A, TodayTrainingState ←
+// SC-B), so the Swift port (NextWorkoutScheduler) re-runs each export over the echoed engineInput
+// and COMPUTE-ASSERTs the result == golden. PURE / clockless (todayState.date is the only 'today',
+// an explicit input; no Date on the engine path) → generatedAtPolicy 'none'.
+import {
+  buildNextWorkoutRecommendation,
+  getOrderedProgramDayTemplates,
+  getOrderedTrainingTemplates,
+} from '../src/engines/nextWorkoutScheduler';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -910,6 +922,22 @@ const FIXTURE_IDS = [
   // subset) — same DEFER precedent as SC-1's recoveryAwareScheduler. Additive.
   'calendar-helpers/helper-cases-v1',
   'today-state/today-state-cases-v1',
+  // SC-C nextWorkoutScheduler port — 2 OUTPUT fixtures (each a `cases` array) FUNCTION-LEVEL
+  // pinning the three exports. recommendation-cases-v1 pins buildNextWorkoutRecommendation across
+  // every dispatch branch: active-session short-circuit · no-templates active_recovery default ·
+  // cold-start (!anchorSession → low confidence) · open-cycle-from-history anchor · today-completed
+  // anchor (lastCompletedSessionId + the '这是下次建议' reason) · readiness-low lowLoad swap
+  // (override) · readiness conservative/recovery warning · trainingMode label · soreness-driven
+  // recovery rest / recovery-override-alternative · weekly-deficit reasons → alternatives · pain
+  // warnings · program-order rotation (usedProgramOrder, no PPL fallback) · non-PPL upper/lower
+  // rotation · 30-day-gap restart. ordered-templates-cases-v1 (dispatch-by-kind) pins
+  // getOrderedProgramDayTemplates (order/sortIndex/dayNumber/sequence nullish precedence + index
+  // fallback + stable ties + no-program []) and getOrderedTrainingTemplates (exact-id /
+  // sourceTemplateId / alias resolve, unresolved dropped, remaining appended, usedProgramOrder
+  // gate). The Swift NextWorkoutScheduler re-runs each export over the echoed engineInput and
+  // COMPUTE-ASSERTs the result == golden. Additive; generated, never hand-edited (§22).
+  'next-workout/recommendation-cases-v1',
+  'next-workout/ordered-templates-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -3903,6 +3931,77 @@ const generateTodayState = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// SC-C — nextWorkoutScheduler OUTPUT parity (3 exports)
+//
+// recommendation: each case echoes the engineInput (history / templates always; activeSession /
+// programTemplate / todayState / weeklyVolumeSummary / painPatterns / sorenessAreas / painAreas /
+// readinessResult / trainingMode only when provided) and the computed NextWorkoutRecommendation.
+// ordered-templates: a dispatch-by-`kind` fixture; getOrderedProgramDayTemplates emits the ordered
+// day-id sequence (the functions only reorder, never transform, so the id sequence fully pins the
+// sort); getOrderedTrainingTemplates emits the ordered template-id sequence + usedProgramOrder.
+// The generator runs the REAL exports verbatim. PURE / clockless (todayState.date is the only
+// 'today', an explicit input — no Date). Generated, never hand-edited (§22).
+// ---------------------------------------------------------------------------
+
+const generateNextWorkoutRecommendation = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const history = (Array.isArray(c.history) ? c.history : []) as TrainingSession[];
+    const templates = Array.isArray(c.templates) ? c.templates : [];
+    const result = buildNextWorkoutRecommendation({
+      history,
+      activeSession: c.activeSession ?? null,
+      programTemplate: c.programTemplate ?? undefined,
+      templates,
+      todayState: c.todayState ?? undefined,
+      weeklyVolumeSummary: c.weeklyVolumeSummary ?? undefined,
+      painPatterns: Array.isArray(c.painPatterns) ? c.painPatterns : [],
+      sorenessAreas: Array.isArray(c.sorenessAreas) ? c.sorenessAreas : [],
+      painAreas: Array.isArray(c.painAreas) ? c.painAreas : [],
+      readinessResult: c.readinessResult ?? undefined,
+      trainingMode: c.trainingMode,
+    } as Parameters<typeof buildNextWorkoutRecommendation>[0]);
+    const out: Record<string, unknown> = { label: c.label ?? null, history, templates, result };
+    if (c.activeSession !== undefined) out.activeSession = c.activeSession;
+    if (c.programTemplate !== undefined) out.programTemplate = c.programTemplate;
+    if (c.todayState !== undefined) out.todayState = c.todayState;
+    if (c.weeklyVolumeSummary !== undefined) out.weeklyVolumeSummary = c.weeklyVolumeSummary;
+    if (c.painPatterns !== undefined) out.painPatterns = c.painPatterns;
+    if (c.sorenessAreas !== undefined) out.sorenessAreas = c.sorenessAreas;
+    if (c.painAreas !== undefined) out.painAreas = c.painAreas;
+    if (c.readinessResult !== undefined) out.readinessResult = c.readinessResult;
+    if (c.trainingMode !== undefined) out.trainingMode = c.trainingMode;
+    return out;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
+const generateNextWorkoutOrdered = (input: any, meta: ParityMeta) => {
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const out: Record<string, unknown> = { label: c.label ?? null, kind: c.kind };
+    if (c.programTemplate !== undefined) out.programTemplate = c.programTemplate;
+    switch (c.kind) {
+      case 'getOrderedProgramDayTemplates': {
+        const days = getOrderedProgramDayTemplates(c.programTemplate ?? undefined);
+        out.orderedDayIds = days.map((d: { id?: string }) => d?.id ?? null);
+        break;
+      }
+      case 'getOrderedTrainingTemplates': {
+        const templates = Array.isArray(c.templates) ? c.templates : [];
+        out.templates = templates;
+        const res = getOrderedTrainingTemplates(templates, c.programTemplate ?? undefined);
+        out.orderedTemplateIds = res.templates.map((t: { id?: string }) => t?.id ?? null);
+        out.usedProgramOrder = res.usedProgramOrder;
+        break;
+      }
+      default:
+        throw new Error(`next-workout-ordered: unknown kind ${String(c.kind)}`);
+    }
+    return out;
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -4037,6 +4136,9 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   // SC-B trainingCalendar self-contained subset + todayState OUTPUT parity.
   'calendar-helpers/helper-cases-v1': generateCalendarHelpers,
   'today-state/today-state-cases-v1': generateTodayState,
+  // SC-C nextWorkoutScheduler OUTPUT parity (buildNextWorkoutRecommendation + the two ordering exports).
+  'next-workout/recommendation-cases-v1': generateNextWorkoutRecommendation,
+  'next-workout/ordered-templates-cases-v1': generateNextWorkoutOrdered,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
