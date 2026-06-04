@@ -207,12 +207,94 @@ final class TrainingInsightsModel: ObservableObject {
     }
 }
 
+/// Thin @MainActor view-model for the 今日 surface's READ-ONLY 下次训练/恢复 (scheduling)
+/// block (SC-D). Same shape + IO seam as `TrainingInsightsModel`: it opts the running app
+/// into the SAME sanctioned canonical store, loads it READ-ONLY, builds the DataHealth clean
+/// view (the §10 chokepoint), and delegates the clean-view → schedulers →
+/// `NextWorkoutScheduleSummary` transform to the pure `resolveNextWorkoutScheduleState`. It
+/// NEVER touches FileManager directly, NEVER writes, and surfaces an honest state for every
+/// failure. Kept SEPARATE from the readiness / insights models so the scheduling block is a
+/// pure, isolated addition — the existing read paths are untouched.
+@MainActor
+final class NextWorkoutScheduleModel: ObservableObject {
+    @Published private(set) var state: NextWorkoutScheduleState
+
+    /// The sanctioned canonical store (the §8 source of truth), read-only. Optional so
+    /// previews/tests opt OUT of disk entirely; the running app injects it on appear.
+    private var store: AppDataStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()`).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the
+    /// canonical store, opted in on appear via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.now = now
+        self.isLive = true
+    }
+
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a preview
+    /// renders a chosen state without ever reading the real on-disk document.
+    init(previewState: NextWorkoutScheduleState) {
+        self.state = previewState
+        self.store = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
+
+    /// True for the running app; false for pinned previews.
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the write path uses
+    /// (Application Support / `IronPathAppData`). Idempotent; `#if os(iOS)` + the live guard
+    /// keep previews/tests off disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view → schedulers → schedule
+    /// summary (in `resolveNextWorkoutScheduleState`). NEVER writes, NEVER overwrites an
+    /// unreadable document, NEVER crashes — every failure → honest state. A SINGLE `instant`
+    /// drives both the clean view's guard clock and the schedulers' reference time, so the
+    /// read is internally consistent.
+    func reload() {
+        guard isLive else { return }
+        let instant = now()
+        state = resolveNextWorkoutScheduleState(readOutcome(now: instant), now: instant)
+    }
+
+    /// The ONLY IO + the DataHealth clean-view construction (the §10 chokepoint the app layer
+    /// performs, mirroring `TrainingInsightsModel`). No write: a missing file (or no live
+    /// source) → `.missing`; a present-but-unreadable document → `.unreadable` (left untouched
+    /// on disk, never overwritten — raw AppData never reaches the schedulers).
+    private func readOutcome(now: Date) -> NextWorkoutAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
+    }
+}
+
 struct TodayRootView: View {
     @StateObject private var model: TodayRealDataModel
 
     /// READ-ONLY 训练洞察 (AN-7). A second, isolated @StateObject (the `widgetWriter`
     /// precedent) so the insights block adds nothing to the existing readiness path.
     @StateObject private var insights: TrainingInsightsModel
+
+    /// READ-ONLY 下次训练/恢复 (SC-D). A third, isolated @StateObject so the scheduling block
+    /// adds nothing to the existing readiness / insights paths.
+    @StateObject private var schedule: NextWorkoutScheduleModel
 
     @State private var showTrainingEntry = false
 
@@ -228,21 +310,39 @@ struct TodayRootView: View {
     @MainActor init() {
         _model = StateObject(wrappedValue: TodayRealDataModel())
         _insights = StateObject(wrappedValue: TrainingInsightsModel())
+        _schedule = StateObject(wrappedValue: NextWorkoutScheduleModel())
     }
 
     /// Previews/tests inject a pinned readiness model (e.g.
-    /// `TodayRealDataModel(previewState:)`). The insights block defaults to an honest
-    /// pinned-empty (no disk) so existing readiness previews keep their call site; an
-    /// insights-specific preview uses `init(model:insights:)` below.
+    /// `TodayRealDataModel(previewState:)`). The insights + scheduling blocks default to an
+    /// honest pinned-empty (no disk) so existing readiness previews keep their call site; an
+    /// insights/scheduling-specific preview uses `init(model:insights:schedule:)` below.
     @MainActor init(model: TodayRealDataModel) {
         _model = StateObject(wrappedValue: model)
         _insights = StateObject(wrappedValue: TrainingInsightsModel(previewState: .empty))
+        _schedule = StateObject(wrappedValue: NextWorkoutScheduleModel(previewState: .empty))
     }
 
-    /// Previews/tests inject pinned readiness + insights models (both off-disk).
+    /// Previews/tests inject pinned readiness + insights models. The scheduling block
+    /// defaults to an honest pinned-empty (no disk) so existing insights previews keep their
+    /// call site; a scheduling-specific preview uses `init(model:insights:schedule:)` below.
+    /// (Built in the @MainActor body, not a default argument — default args are type-checked
+    /// as nonisolated, which cannot build the main-actor-isolated model.)
     @MainActor init(model: TodayRealDataModel, insights: TrainingInsightsModel) {
         _model = StateObject(wrappedValue: model)
         _insights = StateObject(wrappedValue: insights)
+        _schedule = StateObject(wrappedValue: NextWorkoutScheduleModel(previewState: .empty))
+    }
+
+    /// Previews/tests inject pinned readiness + insights + scheduling models (all off-disk).
+    @MainActor init(
+        model: TodayRealDataModel,
+        insights: TrainingInsightsModel,
+        schedule: NextWorkoutScheduleModel
+    ) {
+        _model = StateObject(wrappedValue: model)
+        _insights = StateObject(wrappedValue: insights)
+        _schedule = StateObject(wrappedValue: schedule)
     }
 
     var body: some View {
@@ -250,6 +350,7 @@ struct TodayRootView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 content
+                scheduleSection
                 insightsSection
             }
             .padding(16)
@@ -271,6 +372,11 @@ struct TodayRootView: View {
             // its own live flag, so previews/tests stay off disk.
             insights.activateLiveSourceIfNeeded()
             insights.reload()
+            // SC-D: the 下次训练/恢复 block reads the SAME canonical store read-only and
+            // computes its summary from the DataHealth clean view (§10/§11). Guarded by its
+            // own live flag, so previews/tests stay off disk.
+            schedule.activateLiveSourceIfNeeded()
+            schedule.reload()
             // Previews/tests pin their state and never touch the live App Group sink.
             guard model.isLiveLoadEnabled else { return }
             // W-1/W-2: publish a DERIVED read-only readiness snapshot for the widget
@@ -367,6 +473,121 @@ struct TodayRootView: View {
                         Text(row.value)
                             .font(.subheadline)
                             .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    // MARK: - SC-D 下次训练/恢复 (read-only scheduling surface)
+
+    /// The READ-ONLY 下次训练/恢复 block. Renders the SC-C `buildNextWorkoutRecommendation`
+    /// output + its nested SC-A recovery recommendation the pure
+    /// `resolveNextWorkoutScheduleState` produced from the DataHealth clean view (§10/§11).
+    /// On `.empty` / `.unavailable` it renders nothing — the readiness `content` above already
+    /// shows the honest no-data / degrade state for the same canonical store, so a second one
+    /// here would be redundant.
+    @ViewBuilder
+    private var scheduleSection: some View {
+        if case .ready(let summary) = schedule.state {
+            scheduleContent(summary)
+        }
+    }
+
+    private func scheduleContent(_ summary: NextWorkoutScheduleSummary) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("下次训练")
+                .font(.title3.weight(.semibold))
+            Text("基于你本机的真实训练记录（经 DataHealth 数据校验后只读派生），由调度引擎计算。本区只读展示，不修改任何已保存的数据或计划。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            nextWorkoutCard(summary)
+            if let recovery = summary.recovery {
+                recoveryCard(recovery)
+            }
+        }
+    }
+
+    /// 下次训练 — the recommended day headline + kind, the at-a-glance rows, the engine's
+    /// reason, any override explanation, warnings, and alternatives.
+    private func nextWorkoutCard(_ summary: NextWorkoutScheduleSummary) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(summary.headline).font(.headline)
+                Spacer()
+                Text(summary.kindLabel)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            rowStack(summary.scheduleRows)
+            Text(summary.reason)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let override = summary.overrideReason, !override.isEmpty {
+                Text(override)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if !summary.warnings.isEmpty {
+                Text("注意事项")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(summary.warnings.enumerated()), id: \.offset) { _, warning in
+                        bulletLine(warning)
+                    }
+                }
+            }
+            if !summary.alternatives.isEmpty {
+                Text("备选训练日")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.top, 2)
+                rowStack(summary.alternatives)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    /// 恢复感知推荐 — the nested recovery recommendation's title/summary + kind/conflict rows +
+    /// affected areas + reasons.
+    private func recoveryCard(_ recovery: NextWorkoutScheduleSummary.RecoverySection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("恢复感知推荐").font(.headline)
+            Text(recovery.title)
+                .font(.subheadline.weight(.medium))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(recovery.summary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            rowStack([
+                SurfaceRow(id: "recovery-kind", label: "恢复建议", value: recovery.kindLabel),
+                SurfaceRow(id: "recovery-conflict", label: "恢复冲突", value: recovery.conflictLabel),
+            ])
+            if !recovery.affectedAreas.isEmpty {
+                rowStack([
+                    SurfaceRow(id: "recovery-areas", label: "相关部位", value: recovery.affectedAreas.joined(separator: "、")),
+                ])
+            }
+            if !recovery.reasons.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(recovery.reasons.enumerated()), id: \.offset) { _, reason in
+                        bulletLine(reason)
                     }
                 }
             }
@@ -621,4 +842,68 @@ private enum TodayInsightsPreviewData {
         ],
         nowIso: "2026-06-03T10:00:00.000Z"
     )
+}
+
+#Preview("含下次训练") {
+    TodayRootView(
+        model: TodayRealDataModel(previewState: .ready(
+            TodayReadinessSummary(
+                slice: FocusModePreviewData.sampleCoreSlice(for: .normal),
+                todayStatus: TodayStatus(
+                    date: FocusModePreviewData.referenceDateOnly,
+                    sleep: "一般",
+                    energy: "中",
+                    time: "60",
+                    soreness: ["无"]
+                )
+            )
+        )),
+        insights: TrainingInsightsModel(previewState: .empty),
+        schedule: NextWorkoutScheduleModel(previewState: .ready(TodaySchedulePreviewData.summary))
+    )
+}
+
+/// Deterministic preview-only sample for the 下次训练/恢复 block. NOT canonical AppData and
+/// never written to disk — it only feeds the SwiftUI preview so it renders without a device
+/// store. Built through the GENUINE public summary init (the same path the live resolver uses),
+/// so the preview reflects the real scheduler output shape — a 调整后训练 recommendation that
+/// overrode the planned push day for a recovery-aware pull day.
+private enum TodaySchedulePreviewData {
+    static let summary: NextWorkoutScheduleSummary = {
+        let recovery = RecoveryAwareScheduler.RecoveryAwareRecommendation(
+            kind: .modifiedTrain,
+            templateId: "pull-a",
+            templateName: "拉力 A",
+            title: "今日建议：拉力 A（适度调整）",
+            summary: "肩部近期有轻微不适，建议优先安排拉力动作并降低推举类负荷。",
+            conflictLevel: .low,
+            affectedAreas: ["肩"],
+            reasons: ["肩部近 3 天有不适记录", "推举类动作与该部位冲突，建议本次减量执行"],
+            suggestedChanges: [],
+            templateRecoveryConflict: nil,
+            requiresConfirmationToOverride: false
+        )
+        let recommendation = NextWorkoutScheduler.NextWorkoutRecommendation(
+            kind: .modifiedTrain,
+            plannedTemplateId: "push-a",
+            plannedTemplateName: "推力 A",
+            recommendedTemplateId: "pull-a",
+            overrideReason: "原计划下次是 推力 A，但近期肩部不适与该训练日冲突，因此当前建议改为 拉力 A。",
+            templateId: "pull-a",
+            templateName: "拉力 A",
+            confidence: .medium,
+            reason: "按计划轮转判断：已完成上一轮推力日，下一日为拉力 A。结合近期恢复信号做了适度调整。",
+            warnings: ["肩部近期有不适记录，建议避免直接安排高风险训练日。"],
+            conflictLevel: .low,
+            recovery: recovery,
+            alternatives: [
+                NextWorkoutScheduler.NextWorkoutRecommendation.Alternative(
+                    templateId: "legs-a",
+                    templateName: "腿部 A",
+                    reason: "作为备选训练日，可在时间、器械或恢复状态变化时手动选择。"
+                ),
+            ]
+        )
+        return NextWorkoutScheduleSummary(recommendation: recommendation)
+    }()
 }
