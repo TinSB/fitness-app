@@ -115,9 +115,10 @@ final class ProgramAdjustmentEngineParityTests: XCTestCase {
     // MARK: - hash-fold-cases (PA-FIX: keyOrderLess localeCompare case tie-break)
 
     /// Pins the S7 fidelity fix: for keys EQUAL once lowercased, stableStringify's
-    /// localeCompare case tie-break sorts lower-before-upper (the inverse of §9
-    /// canonicalKeyOrder's code-point tie-break). The golden is the REAL TS hash; a
-    /// regressed keyOrderLess (code-point `<`) would byte-drift the serialization.
+    /// localeCompare case tie-break sorts lower-before-upper (the SAME direction §9
+    /// canonicalKeyOrder uses as of FIX-B, which corrected its old code-point
+    /// tie-break). The golden is the REAL TS hash; a regressed keyOrderLess
+    /// (code-point `<`) would byte-drift the serialization.
     func testHashFoldCasesParity() throws {
         let fixtureId = "program-adjust/hash-fold-cases-v1"
         let root = try root(fixtureId, "hash-fold-cases-v1")

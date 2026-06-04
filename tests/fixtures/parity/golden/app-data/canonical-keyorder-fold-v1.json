@@ -1,0 +1,87 @@
+{
+  "cases": [
+    {
+      "canonicalJson": "{\"bar\":3,\"Bar\":4,\"foo\":2,\"Foo\":1}",
+      "kind": "canonical-keyorder",
+      "label": "top-level single-letter case-fold pair (task example) — bar<Bar, foo<Foo (lower-before-upper), bar-group before foo-group (primary b<f)",
+      "payload": {
+        "bar": 3,
+        "Bar": 4,
+        "foo": 2,
+        "Foo": 1
+      },
+      "snapshotHash": "phase19b-e75adce9"
+    },
+    {
+      "canonicalJson": "{\"ab\":2,\"aB\":4,\"Ab\":3,\"AB\":1,\"zz\":5,\"ZZ\":6}",
+      "kind": "canonical-keyorder",
+      "label": "the S7 hash-fold key set (cross-consistent with program-adjust/hash-fold-cases-v1) — ab,aB,Ab,AB then zz,ZZ",
+      "payload": {
+        "ab": 2,
+        "aB": 4,
+        "Ab": 3,
+        "AB": 1,
+        "zz": 5,
+        "ZZ": 6
+      },
+      "snapshotHash": "phase19b-7957e5fa"
+    },
+    {
+      "canonicalJson": "{\"a\":7,\"A\":8,\"Z\":{\"bb\":2,\"bB\":3,\"Bb\":1,\"BB\":4}}",
+      "kind": "canonical-keyorder",
+      "label": "nested object fold + top-level fold — inner Z{bb,bB,Bb,BB} sorts recursively, outer a<A<Z",
+      "payload": {
+        "a": 7,
+        "A": 8,
+        "Z": {
+          "bb": 2,
+          "bB": 3,
+          "Bb": 1,
+          "BB": 4
+        }
+      },
+      "snapshotHash": "phase19b-5a5bfc5a"
+    },
+    {
+      "canonicalJson": "{\"apple\":1,\"Apple\":2,\"banana\":3,\"Banana\":4,\"cherry\":5}",
+      "kind": "canonical-keyorder",
+      "label": "mixed non-folding siblings interleaved with folds — primary order apple<banana<cherry preserved, only the equal-when-lowercased ties flip to lower-before-upper",
+      "payload": {
+        "apple": 1,
+        "Apple": 2,
+        "banana": 3,
+        "Banana": 4,
+        "cherry": 5
+      },
+      "snapshotHash": "phase19b-2b56e663"
+    },
+    {
+      "canonicalJson": "{\"arr\":[{\"x\":2,\"X\":1},{\"y\":4,\"Y\":3}],\"m\":6,\"M\":5}",
+      "kind": "canonical-keyorder",
+      "label": "array recurses into element objects — each arr element's X/x + Y/y keys sort, plus top-level M/m fold",
+      "payload": {
+        "arr": [
+          {
+            "x": 2,
+            "X": 1
+          },
+          {
+            "y": 4,
+            "Y": 3
+          }
+        ],
+        "m": 6,
+        "M": 5
+      },
+      "snapshotHash": "phase19b-c5515355"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "4abfd441dbbb56497b61338750b673158fde30f2",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "app-data/canonical-keyorder-fold-v1"
+  },
+  "sourceFixtureId": "app-data/canonical-keyorder-fold-v1"
+}

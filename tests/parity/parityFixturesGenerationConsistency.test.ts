@@ -72,7 +72,7 @@ describe('parityFixturesGenerationConsistency', () => {
     // 2 PA-S7 program-adjust (hash + rollback) +
     // 2 PA-S8 program-adjust (select-day + build-diff) +
     // 2 PA-S9 program-adjust (create-draft + apply-draft) parity fixtures).
-    expect(result.stdout).toMatch(/checked\s+94\s+fixture/);
+    expect(result.stdout).toMatch(/checked\s+95\s+fixture/);
     expect(result.stdout).toMatch(/0\s+changed/);
   }, 120_000);
 });

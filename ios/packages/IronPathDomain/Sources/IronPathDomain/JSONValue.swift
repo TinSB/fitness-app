@@ -114,8 +114,8 @@ public struct OrderedJSONObject: Equatable, Hashable, Sendable {
 
     /// Returns a new `OrderedJSONObject` whose entries are sorted
     /// using the canonical-emit key order (case-insensitive primary,
-    /// code-point tie-break). Mirrors TypeScript's `localeCompare`
-    /// default-locale behaviour at
+    /// localeCompare tertiary tie-break — lower-before-upper). Mirrors
+    /// TypeScript's `localeCompare` default-locale behaviour at
     /// `src/cloudProduction/accountBoundaryLocalInventory.ts:116`.
     public func canonicalized() -> OrderedJSONObject {
         OrderedJSONObject(entries: entries.sorted {
@@ -124,19 +124,35 @@ public struct OrderedJSONObject: Equatable, Hashable, Sendable {
     }
 }
 
-/// Canonical-emit key comparator. TS-side `stableStringify` uses
-/// `String.prototype.localeCompare()` which in Node default-locale
-/// performs a case-insensitive primary comparison with code-point
-/// tie-break. Swift's `String.<` is strict Unicode-code-point order,
-/// so e.g. it sorts `"prIndependent"` before `"prescription"` (capital
-/// `I` at U+0049 precedes lowercase `e` at U+0065). To reproduce the
-/// TS order, we lowercase both keys for the primary pass and break
-/// ties with raw `<`.
+/// Canonical-emit key comparator. TS-side `stableStringify`
+/// (`src/cloudProduction/accountBoundaryLocalInventory.ts:116`) sorts keys by
+/// `String.prototype.localeCompare()`, which in Node default-locale performs a
+/// case-INSENSITIVE primary comparison (letters/digits in natural order — so it
+/// sorts `"prescription"` before `"prIndependent"`, which Swift's raw `String.<`
+/// code-point order would get wrong: capital `I` at U+0049 precedes lowercase `e`
+/// at U+0065), then breaks ties — keys EQUAL once lowercased — at the tertiary
+/// CASE level, sorting lower-BEFORE-upper (`'a'.localeCompare('A') < 0`). We
+/// reproduce both: lowercase both keys for the primary pass, and for the
+/// tie-break use raw `>` — for ASCII keys differing only in case the lowercase
+/// letter carries the HIGHER code point, so `>` IS lower-before-upper.
+///
+/// FIX-B fidelity fix: this tie-break previously used raw `<` (upper-before-lower,
+/// the EXACT inverse of TS `localeCompare`). No fixture carried two sibling keys
+/// equal when lowercased, so `canonicalJSONData()` byte-diverged from the TS
+/// canonical form ONLY on such keys — a latent cross-end parity debt (Swift stayed
+/// internally consistent, so round-trip/snapshot-hash were green). The golden
+/// `app-data/canonical-keyorder-fold-v1` (generated from the REAL canonical-
+/// stringify) now pins the order byte-for-byte; this matches the §9-independent
+/// `ProgramAdjustmentEngine.keyOrderLess` (S7), which already used `>`.
 public func canonicalKeyOrder(_ a: String, _ b: String) -> Bool {
     let al = a.lowercased()
     let bl = b.lowercased()
     if al != bl { return al < bl }
-    return a < b
+    // localeCompare tertiary: lower-before-upper. For ASCII case-only differences
+    // this is raw code-point `>` (lowercase carries the higher code points) —
+    // FIX-B corrected this from the prior `<`. Pinned by the case-fold golden
+    // `app-data/canonical-keyorder-fold-v1`.
+    return a > b
 }
 
 // MARK: - Foundation interop

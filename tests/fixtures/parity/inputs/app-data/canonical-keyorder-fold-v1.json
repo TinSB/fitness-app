@@ -1,0 +1,39 @@
+{
+  "parityMeta": {
+    "id": "app-data/canonical-keyorder-fold-v1",
+    "schemaVersion": 8,
+    "describes": "FIX-B (§9 canonicalKeyOrder fidelity) — synthetic objects whose sibling keys are EQUAL once lowercased (Foo/foo, AB/ab/Ab/aB, Z's Bb/bb, arr elements X/x, …). The §9 canonical byte form is the compact JSON over localeCompare-sorted keys, BYTE-IDENTICAL to src/cloudProduction/accountBoundaryLocalInventory.ts:116 stableStringify (same localeCompare key sort, same JSON.stringify key/primitive rendering, same undefined-drop). localeCompare's tertiary case tie-break sorts lower-BEFORE-upper (bar,Bar,foo,Foo — the EXACT INVERSE of the §9 canonicalKeyOrder raw code-point tie-break that shipped before FIX-B, which sorted upper-before-lower). Existing app-data goldens never carry two sibling keys equal-when-lowercased, so the canonicalKeyOrder tie-break was unexercised and could byte-drift undetected against the TS canonical-stringify; this fixture pins it. Generated from the REAL canonical-stringify (sortKeysDeep/localeCompare) + the REAL buildAppDataSnapshotHash; the Swift JSONValue.canonicalJSONString() (with canonicalKeyOrder corrected to localeCompare-faithful) is the byte-level judge — its canonical string must equal canonicalJson and its FNV-1a must equal snapshotHash, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "4abfd441dbbb56497b61338750b673158fde30f2",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — pure canonical-stringify + FNV-1a transform. Synthetic ASCII keys + integer values (the ONLY observable difference between two canonicalisations is key order, so the comparator is what is pinned). No email/token/userId. The case-fold sibling keys exercise the §9 canonicalKeyOrder case tertiary tie-break."
+  },
+  "cases": [
+    {
+      "label": "top-level single-letter case-fold pair (task example) — bar<Bar, foo<Foo (lower-before-upper), bar-group before foo-group (primary b<f)",
+      "kind": "canonical-keyorder",
+      "payload": { "Foo": 1, "foo": 2, "bar": 3, "Bar": 4 }
+    },
+    {
+      "label": "the S7 hash-fold key set (cross-consistent with program-adjust/hash-fold-cases-v1) — ab,aB,Ab,AB then zz,ZZ",
+      "kind": "canonical-keyorder",
+      "payload": { "AB": 1, "ab": 2, "Ab": 3, "aB": 4, "zz": 5, "ZZ": 6 }
+    },
+    {
+      "label": "nested object fold + top-level fold — inner Z{bb,bB,Bb,BB} sorts recursively, outer a<A<Z",
+      "kind": "canonical-keyorder",
+      "payload": { "Z": { "Bb": 1, "bb": 2, "bB": 3, "BB": 4 }, "a": 7, "A": 8 }
+    },
+    {
+      "label": "mixed non-folding siblings interleaved with folds — primary order apple<banana<cherry preserved, only the equal-when-lowercased ties flip to lower-before-upper",
+      "kind": "canonical-keyorder",
+      "payload": { "apple": 1, "Apple": 2, "banana": 3, "Banana": 4, "cherry": 5 }
+    },
+    {
+      "label": "array recurses into element objects — each arr element's X/x + Y/y keys sort, plus top-level M/m fold",
+      "kind": "canonical-keyorder",
+      "payload": { "arr": [ { "X": 1, "x": 2 }, { "Y": 3, "y": 4 } ], "M": 5, "m": 6 }
+    }
+  ]
+}

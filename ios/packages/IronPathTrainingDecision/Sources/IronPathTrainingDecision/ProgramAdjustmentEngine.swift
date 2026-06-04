@@ -21,15 +21,16 @@
 //     `JSON.parse(JSON.stringify())`, engineUtils.ts:28) for `cloneProgram`.
 //
 // stableStringify FIDELITY (the precision core): the inline TS stableStringify is
-// a DISTINCT serializer from the repo's §9 `JSONValue.canonicalJSONString()` —
-// they agree on the case-insensitive *primary* key order but the §9
-// `canonicalKeyOrder` tie-break is code-point order (upper-before-lower) whereas
-// JS `String.prototype.localeCompare` breaks ties lower-before-upper. So this port
-// does NOT route through the §9 canonical path; it reimplements stableStringify
-// over `JSONValue` with its OWN `localeCompare`-equivalent comparator
-// (`keyOrderLess`) and JS-`JSON.stringify`-faithful primitive rendering. The
-// program-adjust goldens (generated from the REAL TS engine) are the byte-level
-// judge.
+// a DISTINCT serializer from the repo's §9 `JSONValue.canonicalJSONString()`. They
+// agree on the case-insensitive *primary* key order AND — as of FIX-B — on the
+// case tie-break too: both break ties lower-before-upper (the JS
+// `String.prototype.localeCompare` tertiary; §9 `canonicalKeyOrder` was corrected
+// from its old code-point upper-before-lower tie-break in FIX-B). This port still
+// keeps its OWN `localeCompare`-equivalent comparator (`keyOrderLess`) rather than
+// routing through §9 — the engine reimplements stableStringify over `JSONValue`
+// self-contained (line-by-line with the TS inline stableStringify); that locality
+// is intentional and no longer reflects a tie-break divergence. The program-adjust
+// goldens (generated from the REAL TS engine) are the byte-level judge.
 //
 // TIME INJECTION (§11): TS `rollbackAdjustment` reads the wall clock once
 // (`rolledBackAt: new Date().toISOString()`, ts:934). The Swift port DOES NOT call
@@ -254,22 +255,23 @@ public enum ProgramAdjustmentEngine {
     /// natural order — e.g. `daysPerWeek` < `dayTemplates` because the lowercased
     /// `'s'` < `'t'`, which raw code-point order would get wrong), and its case
     /// tertiary tie-break — applied when two keys are equal once lowercased — sorts
-    /// lower-BEFORE-upper (`'a'.localeCompare('A') < 0`, verified against Node). This
-    /// tie-break is the ONE point where stableStringify's order DELIBERATELY differs
-    /// from the §9 `canonicalKeyOrder` (JSONValue.swift), whose tie-break is raw
-    /// code-point order (upper-before-lower); that divergence is exactly why S7 does
-    /// NOT route through the §9 canonical path and keeps this localeCompare-faithful
-    /// comparator (see the file header). For ASCII keys equal when lowercased,
-    /// lower-before-upper is precisely raw `>` (lowercase letters carry the higher
-    /// code points), the EXACT inverse of `canonicalKeyOrder`'s `<` tie-break. The
-    /// case-folding hash golden pins it; the goldens (generated from the REAL TS
-    /// engine) are the final byte-level judge.
+    /// lower-BEFORE-upper (`'a'.localeCompare('A') < 0`, verified against Node). As of
+    /// FIX-B the §9 `canonicalKeyOrder` (JSONValue.swift) breaks ties the SAME way —
+    /// it was corrected from its old raw code-point upper-before-lower tie-break — so
+    /// the two comparators now AGREE; S7 still keeps this self-contained
+    /// localeCompare-faithful comparator rather than routing through §9 (the locality
+    /// is intentional, see the file header), not because of a tie-break divergence.
+    /// For ASCII keys equal when lowercased, lower-before-upper is precisely raw `>`
+    /// (lowercase letters carry the higher code points). The case-folding hash golden
+    /// pins it; the goldens (generated from the REAL TS engine) are the final
+    /// byte-level judge.
     private static func keyOrderLess(_ a: String, _ b: String) -> Bool {
         let al = a.lowercased()
         let bl = b.lowercased()
         if al != bl { return al < bl }
         // localeCompare tertiary: lower-before-upper. For ASCII case-only differences
-        // this is raw code-point `>` — the inverse of §9 canonicalKeyOrder's `<`.
+        // this is raw code-point `>` (lowercase carries the higher code points) — the
+        // same direction §9 canonicalKeyOrder now uses (aligned in FIX-B).
         return a > b
     }
 }
