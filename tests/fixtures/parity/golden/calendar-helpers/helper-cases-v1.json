@@ -1,0 +1,443 @@
+{
+  "cases": [
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-empty",
+      "result": "",
+      "value": ""
+    },
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-date-key-passthrough",
+      "result": "2026-05-25",
+      "value": "2026-05-25"
+    },
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-full-iso-edt",
+      "result": "2026-05-25",
+      "value": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-full-iso-est",
+      "result": "2026-01-15",
+      "value": "2026-01-15T08:00:00.000Z"
+    },
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-full-iso-late-hour",
+      "result": "2026-07-04",
+      "value": "2026-07-04T23:30:00.000Z"
+    },
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-garbage-short",
+      "result": "garbage",
+      "value": "garbage"
+    },
+    {
+      "kind": "toLocalDateKey",
+      "label": "toLocalDateKey-garbage-long-slice10",
+      "result": "not-a-date",
+      "value": "not-a-date-string"
+    },
+    {
+      "kind": "getSessionCalendarDate",
+      "label": "getSessionCalendarDate-finishedAt-precedence",
+      "result": "2026-05-26",
+      "session": {
+        "date": "2026-05-25",
+        "finishedAt": "2026-05-26T09:15:00.000Z",
+        "id": "s-fin",
+        "startedAt": "2026-05-26T08:00:00.000Z"
+      }
+    },
+    {
+      "kind": "getSessionCalendarDate",
+      "label": "getSessionCalendarDate-startedAt-fallback",
+      "result": "2026-05-27",
+      "session": {
+        "date": "2026-05-20",
+        "id": "s-start",
+        "startedAt": "2026-05-27T10:00:00.000Z"
+      }
+    },
+    {
+      "kind": "getSessionCalendarDate",
+      "label": "getSessionCalendarDate-date-fallback",
+      "result": "2026-05-20",
+      "session": {
+        "date": "2026-05-20",
+        "id": "s-date"
+      }
+    },
+    {
+      "kind": "getSessionCalendarDate",
+      "label": "getSessionCalendarDate-empty-session",
+      "result": "",
+      "session": {
+        "id": "s-empty"
+      }
+    },
+    {
+      "fallback": "2026-06",
+      "kind": "normalizeCalendarMonth",
+      "label": "normalizeCalendarMonth-valid-7",
+      "month": "2026-05",
+      "result": "2026-05"
+    },
+    {
+      "fallback": "2026-06",
+      "kind": "normalizeCalendarMonth",
+      "label": "normalizeCalendarMonth-valid-from-longer",
+      "month": "2026-05-25",
+      "result": "2026-05"
+    },
+    {
+      "fallback": "2026-06",
+      "kind": "normalizeCalendarMonth",
+      "label": "normalizeCalendarMonth-invalid-falls-back",
+      "month": "bad",
+      "result": "2026-06"
+    },
+    {
+      "fallback": "2026-06",
+      "kind": "normalizeCalendarMonth",
+      "label": "normalizeCalendarMonth-empty-falls-back",
+      "month": "",
+      "result": "2026-06"
+    },
+    {
+      "fallback": "2026-06",
+      "kind": "normalizeCalendarMonth",
+      "label": "normalizeCalendarMonth-null-falls-back",
+      "month": null,
+      "result": "2026-06"
+    },
+    {
+      "delta": 1,
+      "kind": "addCalendarMonths",
+      "label": "addCalendarMonths-plus-one",
+      "month": "2026-05",
+      "result": "2026-06"
+    },
+    {
+      "delta": -1,
+      "kind": "addCalendarMonths",
+      "label": "addCalendarMonths-minus-into-prev-year",
+      "month": "2026-01",
+      "result": "2025-12"
+    },
+    {
+      "delta": 3,
+      "kind": "addCalendarMonths",
+      "label": "addCalendarMonths-plus-cross-year",
+      "month": "2026-11",
+      "result": "2027-02"
+    },
+    {
+      "delta": -4,
+      "kind": "addCalendarMonths",
+      "label": "addCalendarMonths-minus-multi",
+      "month": "2026-01",
+      "result": "2025-09"
+    },
+    {
+      "delta": 0,
+      "kind": "addCalendarMonths",
+      "label": "addCalendarMonths-zero",
+      "month": "2026-05",
+      "result": "2026-05"
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [],
+      "kind": "buildTrainingCalendarMonthRange",
+      "label": "buildTrainingCalendarMonthRange-no-history",
+      "result": {
+        "earliestMonth": "2026-06",
+        "hasHistory": false,
+        "latestMonth": "2026-06"
+      }
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [
+        {
+          "date": "2026-03-10",
+          "id": "h1"
+        },
+        {
+          "date": "2026-04-22",
+          "id": "h2"
+        }
+      ],
+      "kind": "buildTrainingCalendarMonthRange",
+      "label": "buildTrainingCalendarMonthRange-before-current",
+      "result": {
+        "earliestMonth": "2026-03",
+        "hasHistory": true,
+        "latestMonth": "2026-06"
+      }
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [
+        {
+          "date": "2026-08-05",
+          "id": "h3"
+        }
+      ],
+      "kind": "buildTrainingCalendarMonthRange",
+      "label": "buildTrainingCalendarMonthRange-after-current",
+      "result": {
+        "earliestMonth": "2026-08",
+        "hasHistory": true,
+        "latestMonth": "2026-08"
+      }
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [
+        {
+          "finishedAt": "2026-05-26T09:15:00.000Z",
+          "id": "h4"
+        },
+        {
+          "id": "h5-empty"
+        }
+      ],
+      "kind": "buildTrainingCalendarMonthRange",
+      "label": "buildTrainingCalendarMonthRange-full-iso-and-filter",
+      "result": {
+        "earliestMonth": "2026-05",
+        "hasHistory": true,
+        "latestMonth": "2026-06"
+      }
+    },
+    {
+      "kind": "clampCalendarMonth",
+      "label": "clampCalendarMonth-within",
+      "month": "2026-05",
+      "range": {
+        "earliestMonth": "2026-03",
+        "hasHistory": true,
+        "latestMonth": "2026-08"
+      },
+      "result": "2026-05"
+    },
+    {
+      "kind": "clampCalendarMonth",
+      "label": "clampCalendarMonth-below",
+      "month": "2026-01",
+      "range": {
+        "earliestMonth": "2026-03",
+        "hasHistory": true,
+        "latestMonth": "2026-08"
+      },
+      "result": "2026-03"
+    },
+    {
+      "kind": "clampCalendarMonth",
+      "label": "clampCalendarMonth-above",
+      "month": "2026-12",
+      "range": {
+        "earliestMonth": "2026-03",
+        "hasHistory": true,
+        "latestMonth": "2026-08"
+      },
+      "result": "2026-08"
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-20",
+          "id": "l1"
+        },
+        {
+          "date": "2026-05-28",
+          "id": "l2"
+        },
+        {
+          "date": "2026-04-15",
+          "id": "l3"
+        }
+      ],
+      "kind": "getLatestTrainingDateKey",
+      "label": "getLatestTrainingDateKey-no-month-filter",
+      "result": "2026-05-28"
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-20",
+          "id": "l1"
+        },
+        {
+          "date": "2026-05-28",
+          "id": "l2"
+        },
+        {
+          "date": "2026-04-15",
+          "id": "l3"
+        }
+      ],
+      "kind": "getLatestTrainingDateKey",
+      "label": "getLatestTrainingDateKey-with-month-filter",
+      "month": "2026-04",
+      "result": "2026-04-15"
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-20",
+          "id": "l1"
+        }
+      ],
+      "kind": "getLatestTrainingDateKey",
+      "label": "getLatestTrainingDateKey-month-no-match",
+      "month": "2026-09",
+      "result": ""
+    },
+    {
+      "history": [],
+      "kind": "getLatestTrainingDateKey",
+      "label": "getLatestTrainingDateKey-empty",
+      "result": ""
+    },
+    {
+      "history": [
+        {
+          "finishedAt": "2026-05-26T09:15:00.000Z",
+          "id": "l4"
+        },
+        {
+          "date": "2026-05-20",
+          "id": "l5"
+        }
+      ],
+      "kind": "getLatestTrainingDateKey",
+      "label": "getLatestTrainingDateKey-full-iso",
+      "result": "2026-05-26"
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [],
+      "kind": "getInitialCalendarMonth",
+      "label": "getInitialCalendarMonth-selected-date",
+      "result": "2026-09",
+      "selectedDate": "2026-09-15"
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [],
+      "kind": "getInitialCalendarMonth",
+      "label": "getInitialCalendarMonth-selected-invalid-to-current",
+      "result": "2026-06",
+      "selectedDate": "xx"
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [
+        {
+          "date": "2026-07-10",
+          "id": "i1"
+        }
+      ],
+      "kind": "getInitialCalendarMonth",
+      "label": "getInitialCalendarMonth-no-selected-uses-latest",
+      "result": "2026-07"
+    },
+    {
+      "currentMonth": "2026-06",
+      "history": [],
+      "kind": "getInitialCalendarMonth",
+      "label": "getInitialCalendarMonth-no-selected-no-history-uses-current",
+      "result": "2026-06"
+    },
+    {
+      "history": [
+        {
+          "date": "2026-05-10",
+          "id": "d1"
+        },
+        {
+          "date": "2026-05-22",
+          "id": "d2"
+        }
+      ],
+      "kind": "getDefaultCalendarDateForMonth",
+      "label": "getDefaultCalendarDateForMonth-latest-in-month",
+      "month": "2026-05",
+      "result": "2026-05-22"
+    },
+    {
+      "fallbackDate": "2026-05-07",
+      "history": [],
+      "kind": "getDefaultCalendarDateForMonth",
+      "label": "getDefaultCalendarDateForMonth-no-latest-fallback-matches",
+      "month": "2026-05",
+      "result": "2026-05-07"
+    },
+    {
+      "fallbackDate": "2026-08-01",
+      "history": [],
+      "kind": "getDefaultCalendarDateForMonth",
+      "label": "getDefaultCalendarDateForMonth-no-latest-fallback-mismatch",
+      "month": "2026-05",
+      "result": "2026-05-01"
+    },
+    {
+      "history": [],
+      "kind": "getDefaultCalendarDateForMonth",
+      "label": "getDefaultCalendarDateForMonth-no-latest-no-fallback",
+      "month": "2026-05",
+      "result": "2026-05-01"
+    },
+    {
+      "currentSelectedDate": "2026-05-20",
+      "history": [],
+      "kind": "resolveCalendarSelectedDate",
+      "label": "resolveCalendarSelectedDate-current-in-month",
+      "month": "2026-05",
+      "result": "2026-05-20"
+    },
+    {
+      "currentSelectedDate": "2026-08-01",
+      "history": [
+        {
+          "date": "2026-05-22",
+          "id": "r1"
+        }
+      ],
+      "kind": "resolveCalendarSelectedDate",
+      "label": "resolveCalendarSelectedDate-current-out-of-month-defaults",
+      "month": "2026-05",
+      "result": "2026-05-22"
+    },
+    {
+      "history": [],
+      "kind": "resolveCalendarSelectedDate",
+      "label": "resolveCalendarSelectedDate-no-current-defaults-to-first",
+      "month": "2026-05",
+      "result": "2026-05-01"
+    },
+    {
+      "fallbackDate": "2026-05-09",
+      "history": [],
+      "kind": "resolveCalendarSelectedDate",
+      "label": "resolveCalendarSelectedDate-no-current-fallback",
+      "month": "2026-05",
+      "result": "2026-05-09"
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "f71fdcb5e63e0c0ff023eacb3f7b10e1b305ec35",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "calendar-helpers/helper-cases-v1"
+  },
+  "sourceFixtureId": "calendar-helpers/helper-cases-v1"
+}

@@ -1,0 +1,67 @@
+{
+  "parityMeta": {
+    "id": "calendar-helpers/helper-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-B trainingCalendarEngine self-contained subset function-level parity — dispatch-by-kind cases over the 10 PURE helpers (toLocalDateKey empty/date-key/full-ISO-NY-civil/garbage · getSessionCalendarDate finishedAt|startedAt|date precedence · normalizeCalendarMonth valid+explicit-fallback · addCalendarMonths month arithmetic incl. year under/overflow · buildTrainingCalendarMonthRange no-history+before/after-current+filtering · clampCalendarMonth within/below/above · getLatestTrainingDateKey month-filter/empty/full-ISO · getInitialCalendarMonth selected/latest/current · getDefaultCalendarDateForMonth latest/fallback-match/mismatch/none · resolveCalendarSelectedDate in-month/default). Generated from src/engines/trainingCalendarEngine.ts; the Swift TrainingCalendarEngine compute-asserts each case == golden. Clockless: every date/month is an explicit input; the monthKey() default is an injected seam (normalizeCalendarMonth passes fallback explicitly; the month-defaulting helpers receive only valid months) → generatedAtPolicy 'none'. Full-ISO toLocalDateKey resolves under TZ=America/New_York (CI civil zone); timestamps are UTC-hour >= 06:00 so the NY-local date is DST-invariant. The aggregator buildTrainingCalendar is DEFERRED (real prerequisite: the COMPLETE sessionDetailSummary).",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f71fdcb5e63e0c0ff023eacb3f7b10e1b305ec35",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    { "label": "toLocalDateKey-empty", "kind": "toLocalDateKey", "value": "" },
+    { "label": "toLocalDateKey-date-key-passthrough", "kind": "toLocalDateKey", "value": "2026-05-25" },
+    { "label": "toLocalDateKey-full-iso-edt", "kind": "toLocalDateKey", "value": "2026-05-25T08:00:00.000Z" },
+    { "label": "toLocalDateKey-full-iso-est", "kind": "toLocalDateKey", "value": "2026-01-15T08:00:00.000Z" },
+    { "label": "toLocalDateKey-full-iso-late-hour", "kind": "toLocalDateKey", "value": "2026-07-04T23:30:00.000Z" },
+    { "label": "toLocalDateKey-garbage-short", "kind": "toLocalDateKey", "value": "garbage" },
+    { "label": "toLocalDateKey-garbage-long-slice10", "kind": "toLocalDateKey", "value": "not-a-date-string" },
+
+    { "label": "getSessionCalendarDate-finishedAt-precedence", "kind": "getSessionCalendarDate", "session": { "id": "s-fin", "finishedAt": "2026-05-26T09:15:00.000Z", "startedAt": "2026-05-26T08:00:00.000Z", "date": "2026-05-25" } },
+    { "label": "getSessionCalendarDate-startedAt-fallback", "kind": "getSessionCalendarDate", "session": { "id": "s-start", "startedAt": "2026-05-27T10:00:00.000Z", "date": "2026-05-20" } },
+    { "label": "getSessionCalendarDate-date-fallback", "kind": "getSessionCalendarDate", "session": { "id": "s-date", "date": "2026-05-20" } },
+    { "label": "getSessionCalendarDate-empty-session", "kind": "getSessionCalendarDate", "session": { "id": "s-empty" } },
+
+    { "label": "normalizeCalendarMonth-valid-7", "kind": "normalizeCalendarMonth", "month": "2026-05", "fallback": "2026-06" },
+    { "label": "normalizeCalendarMonth-valid-from-longer", "kind": "normalizeCalendarMonth", "month": "2026-05-25", "fallback": "2026-06" },
+    { "label": "normalizeCalendarMonth-invalid-falls-back", "kind": "normalizeCalendarMonth", "month": "bad", "fallback": "2026-06" },
+    { "label": "normalizeCalendarMonth-empty-falls-back", "kind": "normalizeCalendarMonth", "month": "", "fallback": "2026-06" },
+    { "label": "normalizeCalendarMonth-null-falls-back", "kind": "normalizeCalendarMonth", "month": null, "fallback": "2026-06" },
+
+    { "label": "addCalendarMonths-plus-one", "kind": "addCalendarMonths", "month": "2026-05", "delta": 1 },
+    { "label": "addCalendarMonths-minus-into-prev-year", "kind": "addCalendarMonths", "month": "2026-01", "delta": -1 },
+    { "label": "addCalendarMonths-plus-cross-year", "kind": "addCalendarMonths", "month": "2026-11", "delta": 3 },
+    { "label": "addCalendarMonths-minus-multi", "kind": "addCalendarMonths", "month": "2026-01", "delta": -4 },
+    { "label": "addCalendarMonths-zero", "kind": "addCalendarMonths", "month": "2026-05", "delta": 0 },
+
+    { "label": "buildTrainingCalendarMonthRange-no-history", "kind": "buildTrainingCalendarMonthRange", "currentMonth": "2026-06", "history": [] },
+    { "label": "buildTrainingCalendarMonthRange-before-current", "kind": "buildTrainingCalendarMonthRange", "currentMonth": "2026-06", "history": [ { "id": "h1", "date": "2026-03-10" }, { "id": "h2", "date": "2026-04-22" } ] },
+    { "label": "buildTrainingCalendarMonthRange-after-current", "kind": "buildTrainingCalendarMonthRange", "currentMonth": "2026-06", "history": [ { "id": "h3", "date": "2026-08-05" } ] },
+    { "label": "buildTrainingCalendarMonthRange-full-iso-and-filter", "kind": "buildTrainingCalendarMonthRange", "currentMonth": "2026-06", "history": [ { "id": "h4", "finishedAt": "2026-05-26T09:15:00.000Z" }, { "id": "h5-empty" } ] },
+
+    { "label": "clampCalendarMonth-within", "kind": "clampCalendarMonth", "month": "2026-05", "range": { "earliestMonth": "2026-03", "latestMonth": "2026-08", "hasHistory": true } },
+    { "label": "clampCalendarMonth-below", "kind": "clampCalendarMonth", "month": "2026-01", "range": { "earliestMonth": "2026-03", "latestMonth": "2026-08", "hasHistory": true } },
+    { "label": "clampCalendarMonth-above", "kind": "clampCalendarMonth", "month": "2026-12", "range": { "earliestMonth": "2026-03", "latestMonth": "2026-08", "hasHistory": true } },
+
+    { "label": "getLatestTrainingDateKey-no-month-filter", "kind": "getLatestTrainingDateKey", "history": [ { "id": "l1", "date": "2026-05-20" }, { "id": "l2", "date": "2026-05-28" }, { "id": "l3", "date": "2026-04-15" } ] },
+    { "label": "getLatestTrainingDateKey-with-month-filter", "kind": "getLatestTrainingDateKey", "month": "2026-04", "history": [ { "id": "l1", "date": "2026-05-20" }, { "id": "l2", "date": "2026-05-28" }, { "id": "l3", "date": "2026-04-15" } ] },
+    { "label": "getLatestTrainingDateKey-month-no-match", "kind": "getLatestTrainingDateKey", "month": "2026-09", "history": [ { "id": "l1", "date": "2026-05-20" } ] },
+    { "label": "getLatestTrainingDateKey-empty", "kind": "getLatestTrainingDateKey", "history": [] },
+    { "label": "getLatestTrainingDateKey-full-iso", "kind": "getLatestTrainingDateKey", "history": [ { "id": "l4", "finishedAt": "2026-05-26T09:15:00.000Z" }, { "id": "l5", "date": "2026-05-20" } ] },
+
+    { "label": "getInitialCalendarMonth-selected-date", "kind": "getInitialCalendarMonth", "selectedDate": "2026-09-15", "currentMonth": "2026-06", "history": [] },
+    { "label": "getInitialCalendarMonth-selected-invalid-to-current", "kind": "getInitialCalendarMonth", "selectedDate": "xx", "currentMonth": "2026-06", "history": [] },
+    { "label": "getInitialCalendarMonth-no-selected-uses-latest", "kind": "getInitialCalendarMonth", "currentMonth": "2026-06", "history": [ { "id": "i1", "date": "2026-07-10" } ] },
+    { "label": "getInitialCalendarMonth-no-selected-no-history-uses-current", "kind": "getInitialCalendarMonth", "currentMonth": "2026-06", "history": [] },
+
+    { "label": "getDefaultCalendarDateForMonth-latest-in-month", "kind": "getDefaultCalendarDateForMonth", "month": "2026-05", "history": [ { "id": "d1", "date": "2026-05-10" }, { "id": "d2", "date": "2026-05-22" } ] },
+    { "label": "getDefaultCalendarDateForMonth-no-latest-fallback-matches", "kind": "getDefaultCalendarDateForMonth", "month": "2026-05", "fallbackDate": "2026-05-07", "history": [] },
+    { "label": "getDefaultCalendarDateForMonth-no-latest-fallback-mismatch", "kind": "getDefaultCalendarDateForMonth", "month": "2026-05", "fallbackDate": "2026-08-01", "history": [] },
+    { "label": "getDefaultCalendarDateForMonth-no-latest-no-fallback", "kind": "getDefaultCalendarDateForMonth", "month": "2026-05", "history": [] },
+
+    { "label": "resolveCalendarSelectedDate-current-in-month", "kind": "resolveCalendarSelectedDate", "month": "2026-05", "currentSelectedDate": "2026-05-20", "history": [] },
+    { "label": "resolveCalendarSelectedDate-current-out-of-month-defaults", "kind": "resolveCalendarSelectedDate", "month": "2026-05", "currentSelectedDate": "2026-08-01", "history": [ { "id": "r1", "date": "2026-05-22" } ] },
+    { "label": "resolveCalendarSelectedDate-no-current-defaults-to-first", "kind": "resolveCalendarSelectedDate", "month": "2026-05", "history": [] },
+    { "label": "resolveCalendarSelectedDate-no-current-fallback", "kind": "resolveCalendarSelectedDate", "month": "2026-05", "fallbackDate": "2026-05-09", "history": [] }
+  ]
+}

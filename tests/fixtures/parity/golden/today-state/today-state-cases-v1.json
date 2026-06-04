@@ -1,0 +1,209 @@
+{
+  "cases": [
+    {
+      "activeSession": {
+        "completed": false,
+        "id": "act-1"
+      },
+      "history": [],
+      "label": "in-progress-active-incomplete",
+      "result": {
+        "activeSessionId": "act-1",
+        "date": "2026-06-01",
+        "primaryAction": "continue_training",
+        "status": "in_progress"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "activeSession": {
+        "id": "act-2"
+      },
+      "currentLocalDate": "2026-06-02",
+      "history": [],
+      "label": "in-progress-no-completed-flag",
+      "result": {
+        "activeSessionId": "act-2",
+        "date": "2026-06-02",
+        "primaryAction": "continue_training",
+        "status": "in_progress"
+      }
+    },
+    {
+      "activeSession": {
+        "completed": true,
+        "id": "act-3"
+      },
+      "history": [],
+      "label": "active-but-completed-falls-through-to-not-started",
+      "result": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-06-01",
+          "finishedAt": "2026-06-01T08:00:00.000Z",
+          "id": "s1"
+        }
+      ],
+      "label": "completed-single",
+      "result": {
+        "completedSessionIds": [
+          "s1"
+        ],
+        "date": "2026-06-01",
+        "lastCompletedSessionId": "s1",
+        "primaryAction": "view_summary",
+        "status": "completed"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-06-01",
+          "finishedAt": "2026-06-01T08:00:00.000Z",
+          "id": "early"
+        },
+        {
+          "completed": true,
+          "date": "2026-06-01",
+          "finishedAt": "2026-06-01T20:00:00.000Z",
+          "id": "late"
+        }
+      ],
+      "label": "completed-multiple-newest-first",
+      "result": {
+        "completedSessionIds": [
+          "late",
+          "early"
+        ],
+        "date": "2026-06-01",
+        "lastCompletedSessionId": "late",
+        "primaryAction": "view_summary",
+        "status": "completed"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-06-01",
+          "id": "ok"
+        },
+        {
+          "completed": true,
+          "dataFlag": "test",
+          "date": "2026-06-01",
+          "id": "test"
+        },
+        {
+          "completed": true,
+          "dataFlag": "excluded",
+          "date": "2026-06-01",
+          "id": "excl"
+        },
+        {
+          "completed": false,
+          "date": "2026-06-01",
+          "id": "incomplete"
+        }
+      ],
+      "label": "completed-filters-test-excluded-incomplete",
+      "result": {
+        "completedSessionIds": [
+          "ok"
+        ],
+        "date": "2026-06-01",
+        "lastCompletedSessionId": "ok",
+        "primaryAction": "view_summary",
+        "status": "completed"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "history": [
+        {
+          "completed": true,
+          "date": "2026-05-01",
+          "id": "other"
+        }
+      ],
+      "label": "completed-date-mismatch-not-started",
+      "result": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "currentLocalDate": "2026-06-04",
+      "history": [
+        {
+          "completed": true,
+          "finishedAt": "2026-06-04T08:00:00.000Z",
+          "id": "f1"
+        }
+      ],
+      "label": "completed-full-iso-session-date-key",
+      "result": {
+        "completedSessionIds": [
+          "f1"
+        ],
+        "date": "2026-06-04",
+        "lastCompletedSessionId": "f1",
+        "primaryAction": "view_summary",
+        "status": "completed"
+      }
+    },
+    {
+      "history": [],
+      "label": "not-started-with-planned",
+      "plannedTemplateId": "push-a",
+      "result": {
+        "date": "2026-06-01",
+        "plannedTemplateId": "push-a",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "history": [],
+      "label": "not-started-no-planned",
+      "result": {
+        "date": "2026-06-01",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      },
+      "selectedDate": "2026-06-01"
+    },
+    {
+      "currentLocalDate": "2026-06-03",
+      "history": [],
+      "label": "current-local-date-fallback",
+      "result": {
+        "date": "2026-06-03",
+        "primaryAction": "start_training",
+        "status": "not_started"
+      }
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "f71fdcb5e63e0c0ff023eacb3f7b10e1b305ec35",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "today-state/today-state-cases-v1"
+  },
+  "sourceFixtureId": "today-state/today-state-cases-v1"
+}

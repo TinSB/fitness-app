@@ -1,0 +1,86 @@
+{
+  "parityMeta": {
+    "id": "today-state/today-state-cases-v1",
+    "schemaVersion": 8,
+    "describes": "SC-B buildTodayTrainingState function-level parity — in_progress (active+completed-false / active+no-completed-flag) · active-but-completed falls through · completed (single / newest-first sort by recentTimestamp / test+excluded+incomplete filter / full-ISO sessionDateKey) · date-mismatch → not_started · not_started (with plannedTemplateId / none) · currentLocalDate fallback. Generated from src/engines/todayStateEngine.ts; the Swift TodayStateEngine compute-asserts each case == golden. Clockless: every case supplies selectedDate or currentLocalDate so the new Date() fallback (ts:47) is never reached → generatedAtPolicy 'none'. Session/date timestamps resolve under TZ=America/New_York (CI civil zone); full-ISO values are UTC-hour >= 06:00 so the NY-local date is DST-invariant.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f71fdcb5e63e0c0ff023eacb3f7b10e1b305ec35",
+    "generatedAtPolicy": "none"
+  },
+  "cases": [
+    {
+      "label": "in-progress-active-incomplete",
+      "activeSession": { "id": "act-1", "completed": false },
+      "selectedDate": "2026-06-01",
+      "history": []
+    },
+    {
+      "label": "in-progress-no-completed-flag",
+      "activeSession": { "id": "act-2" },
+      "currentLocalDate": "2026-06-02",
+      "history": []
+    },
+    {
+      "label": "active-but-completed-falls-through-to-not-started",
+      "activeSession": { "id": "act-3", "completed": true },
+      "selectedDate": "2026-06-01",
+      "history": []
+    },
+    {
+      "label": "completed-single",
+      "selectedDate": "2026-06-01",
+      "history": [
+        { "id": "s1", "completed": true, "date": "2026-06-01", "finishedAt": "2026-06-01T08:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "completed-multiple-newest-first",
+      "selectedDate": "2026-06-01",
+      "history": [
+        { "id": "early", "completed": true, "date": "2026-06-01", "finishedAt": "2026-06-01T08:00:00.000Z" },
+        { "id": "late", "completed": true, "date": "2026-06-01", "finishedAt": "2026-06-01T20:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "completed-filters-test-excluded-incomplete",
+      "selectedDate": "2026-06-01",
+      "history": [
+        { "id": "ok", "completed": true, "date": "2026-06-01" },
+        { "id": "test", "completed": true, "dataFlag": "test", "date": "2026-06-01" },
+        { "id": "excl", "completed": true, "dataFlag": "excluded", "date": "2026-06-01" },
+        { "id": "incomplete", "completed": false, "date": "2026-06-01" }
+      ]
+    },
+    {
+      "label": "completed-date-mismatch-not-started",
+      "selectedDate": "2026-06-01",
+      "history": [
+        { "id": "other", "completed": true, "date": "2026-05-01" }
+      ]
+    },
+    {
+      "label": "completed-full-iso-session-date-key",
+      "currentLocalDate": "2026-06-04",
+      "history": [
+        { "id": "f1", "completed": true, "finishedAt": "2026-06-04T08:00:00.000Z" }
+      ]
+    },
+    {
+      "label": "not-started-with-planned",
+      "selectedDate": "2026-06-01",
+      "plannedTemplateId": "push-a",
+      "history": []
+    },
+    {
+      "label": "not-started-no-planned",
+      "selectedDate": "2026-06-01",
+      "history": []
+    },
+    {
+      "label": "current-local-date-fallback",
+      "currentLocalDate": "2026-06-03",
+      "history": []
+    }
+  ]
+}
