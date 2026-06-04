@@ -28,6 +28,7 @@ import SwiftUI
 import IronPathDomain
 import IronPathDataHealth
 import IronPathPersistence
+import IronPathTrainingDecision
 
 /// Honest in-RAM status of the most recent program-config edit save — no fake success
 /// (master §15.4). `.idle` until the user explicitly saves. Mirrors EDIT-1/EDIT-3's
@@ -37,6 +38,20 @@ enum PlanEditSaveStatus: Equatable {
     case idle
     case saved
     case failed(String)
+}
+
+/// Honest outcome of a PA-2 Plan-Adaptive apply / rollback write — no fake success
+/// (master §15.4). Returned by the streaming methods so a caller (UI or test) can react
+/// without reading `@Published` status. `.rejected` is an HONEST non-write the engine /
+/// snapshot guard produced (e.g. the source template changed → `expired`, or there is no
+/// snapshot to roll back); `.failed` is a thrown write/validation/backup/decode error;
+/// `.noStore` means no live writable canonical store (previews/tests) — none of these
+/// ever persisted anything.
+enum ProgramAdjustmentWriteOutcome: Equatable {
+    case applied
+    case rejected(String)
+    case failed(String)
+    case noStore
 }
 
 /// In-RAM editable form for the three program-template scalar config fields (two-step
@@ -218,6 +233,191 @@ final class PlanRealDataModel: ObservableObject {
         }
     }
 
+    // MARK: - PA-2: Plan-Adaptive apply-write (createDraft → diff preview → applyDraft → gated write; + rollback)
+
+    /// Honest in-RAM status of the most recent PA apply / rollback write (§15.4). `.idle`
+    /// until the user explicitly applies / rolls back; never a fake success.
+    @Published private(set) var programAdjustmentStatus: PlanEditSaveStatus = .idle
+
+    /// The history item produced by the most recent successful APPLY, kept in RAM so the
+    /// UI can offer a "撤销上次调整" (rollback) entry. Cleared once rolled back. (The full
+    /// PA history read surface — `programAdjustmentHistory` — is a separate read slice;
+    /// this write slice only remembers what it just applied this session.)
+    @Published private(set) var lastAppliedAdjustment: ProgramAdjustmentHistoryItem?
+
+    /// Reset the PA apply status + the in-RAM last-applied item (e.g. on leaving the surface).
+    func clearProgramAdjustmentStatus() {
+        programAdjustmentStatus = .idle
+        lastAppliedAdjustment = nil
+    }
+
+    /// READ-ONLY preview: build the adjustment draft + its `diffPreview` from the weekly
+    /// recommendations (consuming the ported PA-1 `createAdjustmentDraftFromRecommendations`,
+    /// `asOfIso` INJECTED — no `Date()`). This NEVER writes (the `buildAdjustmentDiff` the
+    /// draft carries previews on clones, §11). The current on-disk `programTemplate` is read
+    /// read-only as the diff base; `nil` when no live source (previews/tests). Returns the
+    /// draft whose `.diffPreview` the UI renders before any explicit apply.
+    func previewWeeklyProgramAdjustment(
+        recommendations: [WeeklyActionRecommendation],
+        sourceTemplate: TrainingTemplate,
+        templates: [TrainingTemplate],
+        asOfIso: String
+    ) -> ProgramAdjustmentDraft {
+        let context = ProgramAdjustmentEngine.AdjustmentDraftContext(
+            programTemplate: currentProgramTemplateReadOnly(),
+            templates: templates
+        )
+        return ProgramAdjustmentEngine.createAdjustmentDraftFromRecommendations(
+            recommendations,
+            sourceProgramTemplate: sourceTemplate,
+            context: context,
+            nowIso: asOfIso
+        )
+    }
+
+    /// Apply a previewed adjustment draft and persist the new `programTemplate` through the
+    /// SAME sanctioned, DataHealth-gated write path as every other canonical write (§8): run
+    /// the ported PA-1 `applyAdjustmentDraft` (`asOfIso` / `historyIdSeed` INJECTED — no
+    /// `Date()`/randomness) over the FRESH on-disk `programTemplate`; a stale source-template
+    /// snapshot hash → honest `expired`, NOTHING written; on success decode the lossless
+    /// `updatedProgramTemplate` and write it via
+    /// `CanonicalSessionWriter.applyProgramAdjustment` with the defensive §10 clean-view
+    /// gate → backup → atomic save → honest fail → reload. NEVER writes on previews/tests
+    /// (no live store). No fake success. Two-step + explicit: the caller only invokes this
+    /// after the user confirms the read-only diff.
+    @discardableResult
+    func applyWeeklyProgramAdjustment(
+        draft: ProgramAdjustmentDraft,
+        sourceTemplate: TrainingTemplate,
+        templates: [TrainingTemplate],
+        asOfIso: String,
+        historyIdSeed: String
+    ) -> ProgramAdjustmentWriteOutcome {
+        guard isLive else {
+            programAdjustmentStatus = .failed("当前环境不可保存")
+            return .noStore
+        }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+        guard let store else {
+            programAdjustmentStatus = .failed("没有可写入的本机存储")
+            return .noStore
+        }
+        // PA-1 pure: build the applied program over the FRESH on-disk template. The
+        // snapshot-hash guard inside makes a stale source → `expired` (honest, NO write).
+        let result = ProgramAdjustmentEngine.applyAdjustmentDraft(
+            draft,
+            sourceProgramTemplate: sourceTemplate,
+            currentProgramTemplate: currentProgramTemplateReadOnly(),
+            templates: templates,
+            nowIso: asOfIso,
+            historyIdSeed: historyIdSeed
+        )
+        guard result.ok, let updatedJSON = result.updatedProgramTemplate, let historyItem = result.historyItem else {
+            let message = result.message ?? "计划调整失败，请重新生成预览。"
+            programAdjustmentStatus = .failed(message)
+            return .rejected(message)
+        }
+        // `updatedProgramTemplate` is the lossless raw program object; decode (open-bag) to
+        // the typed value the write seam takes (round-trip-faithful, PA-S1).
+        guard let updatedProgram = try? ProgramTemplate(decoding: updatedJSON) else {
+            programAdjustmentStatus = .failed("调整结果无法解析，未保存")
+            return .failed("调整结果无法解析，未保存")
+        }
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.applyProgramAdjustment(updatedProgramTemplate: updatedProgram, validate: Self.acceptsProgramTemplateWrite)
+            programAdjustmentStatus = .saved
+            lastAppliedAdjustment = historyItem
+            reload()   // refresh the surface from fresh truth; the engine recomputes from the new template
+            return .applied
+        } catch {
+            let message = Self.saveErrorMessage(error)
+            programAdjustmentStatus = .failed(message)
+            return .failed(message)
+        }
+    }
+
+    /// Roll back a previously-applied adjustment by restoring its source snapshot through
+    /// the SAME write seam (a sanctioned MUTATION, NOT a §14 full restore): run the ported
+    /// PA-1 `rollbackAdjustment` (`asOfIso` INJECTED) → write the restored snapshot
+    /// `programTemplate` via `CanonicalSessionWriter.applyProgramAdjustment` with the SAME
+    /// defensive §10 gate → reload. A history item with no snapshot → honest `rejected`,
+    /// NOTHING written. NEVER writes on previews/tests. No fake success.
+    @discardableResult
+    func rollbackWeeklyProgramAdjustment(
+        historyItem: ProgramAdjustmentHistoryItem,
+        asOfIso: String
+    ) -> ProgramAdjustmentWriteOutcome {
+        guard isLive else {
+            programAdjustmentStatus = .failed("当前环境不可保存")
+            return .noStore
+        }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+        guard let store else {
+            programAdjustmentStatus = .failed("没有可写入的本机存储")
+            return .noStore
+        }
+        let rollback = ProgramAdjustmentEngine.rollbackAdjustment(historyItem, nowIso: asOfIso)
+        guard let restored = rollback.restoredProgramTemplate else {
+            programAdjustmentStatus = .failed("没有可回滚的原始模板快照，未改动")
+            return .rejected("没有可回滚的原始模板快照，未改动")
+        }
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.applyProgramAdjustment(updatedProgramTemplate: restored, validate: Self.acceptsProgramTemplateWrite)
+            programAdjustmentStatus = .saved
+            lastAppliedAdjustment = nil   // the applied experiment was rolled back
+            reload()
+            return .applied
+        } catch {
+            let message = Self.saveErrorMessage(error)
+            programAdjustmentStatus = .failed(message)
+            return .failed(message)
+        }
+    }
+
+    /// The current on-disk `programTemplate` as the engine input (read-only load). `nil`
+    /// when no live store / no file / unreadable — the PA engine then defaults internally.
+    /// NEVER writes.
+    private func currentProgramTemplateReadOnly() -> ProgramTemplate? {
+        guard let store, store.hasExistingFile, let appData = try? store.load() else { return nil }
+        return appData.programTemplate
+    }
+
+    /// ISO-8601 instant from the INJECTED clock (`now`), `.SSSZ`-precision/UTC — the
+    /// app-layer clock seam the PA engines consume as `nowIso` (never an inline wall
+    /// clock; mirrors `FocusModeMvpState.iso8601`). Deterministic when `now` is pinned.
+    func nowIso() -> String {
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        return fmt.string(from: now())
+    }
+
+    /// Defensive §10 gate for a PA programTemplate write: re-run the candidate through the
+    /// SAME read-only DataHealth ingress the other edits use (`processIncomingAppData` →
+    /// `cleanView`, the #448 single-chokepoint lesson — never persist a raw AppData) and
+    /// accept ONLY when the candidate's WHOLE new `programTemplate` survives the clean
+    /// view's RAW projection byte-identically (canonical emit is key-order-independent;
+    /// `buildCleanAppDataView` leaves `programTemplate` untouched, so RAW is the correct
+    /// reference). No fake success — an invariant-breaking candidate is never written.
+    /// `static` (it reads only the candidate + pure functions) so it passes as the plain
+    /// `(AppData) -> Bool` gate without main-actor isolation friction.
+    private static func acceptsProgramTemplateWrite(_ candidate: AppData) -> Bool {
+        guard let ingress = try? processIncomingAppData(
+            appData: candidate,
+            source: .postSessionComplete,
+            options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+        ) else { return false }
+        guard let cleaned = try? ingress.cleanView.raw.programTemplate.encoded().canonicalJSONData(),
+              let intended = try? candidate.programTemplate.encoded().canonicalJSONData() else { return false }
+        return cleaned == intended
+    }
+
     private static func saveErrorMessage(_ error: Error) -> String {
         guard let e = error as? CanonicalSessionWriteError else {
             return "保存失败:\(error.localizedDescription)"
@@ -319,6 +519,71 @@ struct PlanRootView: View {
         if plan.hasCorrectionStrategy || plan.hasFunctionalStrategy {
             strategyDisclosure(plan)
         }
+        // 计划自适应 (PA-2) — read-only by default (#440); two-step, explicit, non-auto,
+        // device-local, rollback-able. The write seam (preview → apply → rollback) lives in
+        // the model; the live weekly-recommendation source is a separate read slice, so this
+        // surface honestly reflects the current state without fabricating a suggestion.
+        planAdjustmentDisclosure
+    }
+
+    // MARK: - PA-2 计划自适应 (read-only disclosure; two-step apply / rollback via the model)
+
+    /// A restrained, read-only disclosure for the Plan-Adaptive apply-write feature. It is
+    /// explicit + two-step + non-auto by construction: nothing is ever written from here
+    /// except the user's explicit 「撤销上次调整」 (rollback) of an adjustment applied THIS
+    /// session, which routes through the SAME sanctioned gated write seam. Honest empty:
+    /// the weekly-recommendation read surface is a separate slice, so until it lands this
+    /// shows an honest "暂无可应用的调整" rather than a fabricated suggestion.
+    @ViewBuilder
+    private var planAdjustmentDisclosure: some View {
+        DisclosureGroup("计划自适应") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("根据近期训练自动生成的「下周实验调整」会先给出只读预览，确认后才会写入本机，且可随时撤销。只在本机生效、不联网、不自动应用。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if let applied = model.lastAppliedAdjustment {
+                    // An adjustment was applied THIS session — offer an explicit rollback.
+                    if let summary = applied.mainChangeSummary, !summary.isEmpty {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("已应用").font(.subheadline).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(summary).font(.subheadline).foregroundStyle(.primary)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    Button("撤销上次调整") { rollbackLastAdjustment(applied) }
+                        .buttonStyle(.bordered)
+                } else {
+                    Text("本周暂无可应用的计划调整建议。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Honest status (§15.4): a successful apply/rollback or an honest failure.
+                switch model.programAdjustmentStatus {
+                case .saved:
+                    Label("已写入本机", systemImage: "checkmark.circle")
+                        .font(.footnote).foregroundStyle(.secondary)
+                case .failed(let message):
+                    Text(message).font(.footnote).foregroundStyle(.red)
+                case .idle:
+                    EmptyView()
+                }
+            }
+            .padding(.top, 6)
+        }
+        .font(.headline)
+        .tint(.primary)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+    }
+
+    /// Explicit rollback of the adjustment applied this session, through the SAME gated
+    /// write seam (a sanctioned MUTATION, not a §14 restore). `asOfIso` is the model's
+    /// INJECTED clock — no inline wall clock.
+    private func rollbackLastAdjustment(_ historyItem: ProgramAdjustmentHistoryItem) {
+        _ = model.rollbackWeeklyProgramAdjustment(historyItem: historyItem, asOfIso: model.nowIso())
     }
 
     // MARK: - EDIT-4 program card (two-step 编辑 → 保存)
