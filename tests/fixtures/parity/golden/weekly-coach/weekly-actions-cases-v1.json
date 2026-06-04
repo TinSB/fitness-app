@@ -1,0 +1,472 @@
+{
+  "cases": [
+    {
+      "input": {
+        "muscleVolumeDashboard": []
+      },
+      "kind": "weeklyActions",
+      "label": "empty dashboard → single low-confidence adherence fallback rec (ts:255)",
+      "result": [
+        {
+          "category": "adherence",
+          "confidence": "low",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution"
+          ],
+          "id": "adherence-program-训练记录",
+          "issue": "当前训练记录还不足以生成高置信行动建议。",
+          "priority": "low",
+          "reason": "肌群训练量、完成度和动作质量数据不足时，系统不会假装给出精确调整。",
+          "recommendation": "继续记录 2–3 次完整训练，尤其是 RIR、动作质量和实际完成组数。",
+          "targetLabel": "训练记录",
+          "targetType": "program"
+        }
+      ]
+    },
+    {
+      "input": {
+        "adherenceReport": {
+          "confidence": "medium",
+          "overallRate": 65
+        },
+        "e1rmProfiles": [
+          {
+            "best": {
+              "e1rmKg": 110
+            },
+            "current": {
+              "confidence": "high",
+              "e1rmKg": 100
+            },
+            "exerciseId": "bench-press"
+          },
+          {
+            "best": {
+              "e1rmKg": 143
+            },
+            "current": {
+              "confidence": "medium",
+              "e1rmKg": 140
+            },
+            "exerciseId": "squat"
+          }
+        ],
+        "exerciseLibrary": {
+          "db-bench-press": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 0.9
+            }
+          },
+          "incline-db-press": {
+            "fatigueCost": "low",
+            "muscleContribution": {
+              "胸": 0.7
+            }
+          }
+        },
+        "loadFeedbackSummary": {
+          "counts": {
+            "good": 1,
+            "too_heavy": 3,
+            "too_light": 0
+          }
+        },
+        "muscleVolumeDashboard": [
+          {
+            "completedSets": 6,
+            "effectiveSets": 5,
+            "highConfidenceEffectiveSets": 4,
+            "muscleId": "胸",
+            "muscleName": "胸部",
+            "remainingSets": 6,
+            "status": "low",
+            "targetSets": 12,
+            "weightedEffectiveSets": 6.5
+          },
+          {
+            "completedSets": 13,
+            "effectiveSets": 12,
+            "highConfidenceEffectiveSets": 11,
+            "muscleId": "背",
+            "muscleName": "背部",
+            "remainingSets": 1,
+            "status": "near_target",
+            "targetSets": 14,
+            "weightedEffectiveSets": 13
+          },
+          {
+            "completedSets": 20,
+            "effectiveSets": 19,
+            "highConfidenceEffectiveSets": 18,
+            "muscleId": "腿",
+            "muscleName": "腿部",
+            "remainingSets": 0,
+            "status": "high",
+            "targetSets": 16,
+            "weightedEffectiveSets": 20
+          },
+          {
+            "completedSets": 10,
+            "effectiveSets": 9,
+            "highConfidenceEffectiveSets": 3,
+            "muscleId": "肩",
+            "muscleName": "肩部",
+            "remainingSets": 0,
+            "status": "on_target",
+            "targetSets": 10,
+            "weightedEffectiveSets": 9
+          }
+        ],
+        "painPatterns": [
+          {
+            "area": "肘",
+            "exerciseId": "bench-press",
+            "frequency": 3,
+            "severityAvg": 2.4,
+            "suggestedAction": "substitute"
+          },
+          {
+            "area": "腕",
+            "frequency": 2,
+            "severityAvg": 1.8,
+            "suggestedAction": "watch"
+          }
+        ],
+        "screeningProfile": {
+          "restrictedExercises": [
+            "leg-press"
+          ]
+        }
+      },
+      "kind": "weeklyActions",
+      "label": "comprehensive — low(+exercise text)/near_target/on_target(+technique)/high volume + adherence<70 + heavy load-feedback + pain(substitute)/watch-skip + e1RM qualify/skip → priorityScore + zh-CN localeCompare sort",
+      "result": [
+        {
+          "category": "adherence",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution"
+          ],
+          "id": "adherence-program-计划可执行性",
+          "issue": "最近训练完成度只有 65%。",
+          "priority": "high",
+          "reason": "完成度偏低时，继续加内容通常会让计划更难执行。",
+          "recommendation": "下周先减少计划复杂度，优先保留主训练和最关键的 1 个辅助模块。",
+          "suggestedChange": {
+            "supportDoseAdjustment": "reduce",
+            "volumeMultiplier": 0.9
+          },
+          "targetLabel": "计划可执行性",
+          "targetType": "program"
+        },
+        {
+          "category": "technique",
+          "confidence": "high",
+          "evidenceRuleIds": [
+            "technique_quality_gate",
+            "rir_effort_control"
+          ],
+          "id": "technique-muscle-肩",
+          "issue": "肩部 完成组不少，但高置信有效组偏低。",
+          "priority": "high",
+          "reason": "完成 10 组，但高置信有效组只有 3 组。",
+          "recommendation": "下周优先记录 RIR 和动作质量，先把工作组做成高置信有效组，而不是盲目加量。",
+          "suggestedChange": {
+            "muscleId": "肩",
+            "setsDelta": 0
+          },
+          "targetId": "肩",
+          "targetLabel": "肩部",
+          "targetType": "muscle"
+        },
+        {
+          "category": "volume",
+          "confidence": "high",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution",
+            "progressive_overload"
+          ],
+          "id": "volume-muscle-胸",
+          "issue": "胸部 本周加权有效组明显低于目标。",
+          "priority": "high",
+          "reason": "目标 12 组，目前加权有效组 6.5，还差约 6 组。",
+          "recommendation": "下周优先补 4 组胸部训练量，可放在 上斜哑铃卧推 / 哑铃卧推。",
+          "suggestedChange": {
+            "exerciseIds": [
+              "incline-db-press",
+              "db-bench-press"
+            ],
+            "muscleId": "胸",
+            "setsDelta": 4
+          },
+          "targetId": "胸",
+          "targetLabel": "胸部",
+          "targetType": "muscle"
+        },
+        {
+          "category": "load_feedback",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "progressive_overload",
+            "rir_effort_control"
+          ],
+          "id": "load_feedback-program-推荐重量",
+          "issue": "最近多次反馈推荐重量偏重。",
+          "priority": "medium",
+          "reason": "重量反馈是校准信号，不应直接覆盖训练表现数据。",
+          "recommendation": "下周相关动作先采用保守推进，不直接提高当前 e1RM。",
+          "suggestedChange": {
+            "volumeMultiplier": 0.95
+          },
+          "targetLabel": "推荐重量",
+          "targetType": "program"
+        },
+        {
+          "category": "recovery",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution",
+            "deload_volume_reduction"
+          ],
+          "id": "recovery-muscle-腿",
+          "issue": "腿部 本周训练量可能偏高。",
+          "priority": "medium",
+          "reason": "当前加权有效组 20 已超过目标 16，继续加量可能提高疲劳成本。",
+          "recommendation": "下周不建议继续增加腿部辅助动作，可减少 1–2 组或维持现状。",
+          "suggestedChange": {
+            "muscleId": "腿",
+            "setsDelta": -2
+          },
+          "targetId": "腿",
+          "targetLabel": "腿部",
+          "targetType": "muscle"
+        },
+        {
+          "category": "pain",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "pain_conservative_rule"
+          ],
+          "id": "pain-exercise-bench-press",
+          "issue": "肘 近期出现重复不适记录。",
+          "priority": "medium",
+          "reason": "频率 3，平均强度 2.4，系统建议采取保守训练处理。",
+          "recommendation": "下周避免把该动作作为补量首选，优先使用更稳定的替代动作。",
+          "suggestedChange": {
+            "removeExerciseIds": [
+              "bench-press"
+            ]
+          },
+          "targetId": "bench-press",
+          "targetLabel": "bench-press",
+          "targetType": "exercise"
+        },
+        {
+          "category": "volume",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution"
+          ],
+          "id": "volume-muscle-背",
+          "issue": "背部 本周训练量已接近目标。",
+          "priority": "low",
+          "reason": "当前加权有效组 13/14，继续提高动作质量比堆组数更重要。",
+          "recommendation": "下周维持背部当前训练量，不需要额外加量。",
+          "suggestedChange": {
+            "muscleId": "背",
+            "setsDelta": 0
+          },
+          "targetId": "背",
+          "targetLabel": "背部",
+          "targetType": "muscle"
+        },
+        {
+          "category": "volume",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution"
+          ],
+          "id": "volume-muscle-肩",
+          "issue": "肩部 本周训练量已达标。",
+          "priority": "low",
+          "reason": "当前加权有效组 9/10，继续提高动作质量比堆组数更重要。",
+          "recommendation": "下周维持肩部当前训练量，不需要额外加量。",
+          "suggestedChange": {
+            "muscleId": "肩",
+            "setsDelta": 0
+          },
+          "targetId": "肩",
+          "targetLabel": "肩部",
+          "targetType": "muscle"
+        },
+        {
+          "category": "recovery",
+          "confidence": "high",
+          "evidenceRuleIds": [
+            "progressive_overload"
+          ],
+          "id": "recovery-exercise-bench-press",
+          "issue": "历史最佳 e1RM 明显高于当前稳定估算。",
+          "priority": "low",
+          "reason": "当前估算 100kg，历史最佳 110kg；近期能力比历史峰值更能代表下周可用负荷。",
+          "recommendation": "下周训练重量继续以当前 e1RM 为准，不追历史最高。",
+          "targetId": "bench-press",
+          "targetLabel": "平板卧推",
+          "targetType": "exercise"
+        }
+      ]
+    },
+    {
+      "input": {
+        "exerciseLibrary": {
+          "db-bench-press": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 0.9
+            }
+          },
+          "incline-db-press": {
+            "fatigueCost": "low",
+            "muscleContribution": {
+              "胸": 0.7
+            }
+          }
+        },
+        "mesocycleWeek": {
+          "phase": "deload"
+        },
+        "muscleVolumeDashboard": [
+          {
+            "completedSets": 6,
+            "effectiveSets": 5,
+            "highConfidenceEffectiveSets": 4,
+            "muscleId": "胸",
+            "muscleName": "胸部",
+            "remainingSets": 6,
+            "status": "low",
+            "targetSets": 12,
+            "weightedEffectiveSets": 6
+          }
+        ]
+      },
+      "kind": "weeklyActions",
+      "label": "deload week + low row → mesocycle rec (setsDelta 0, volumeMultiplier 0.6) instead of volume top-up (ts:158)",
+      "result": [
+        {
+          "category": "mesocycle",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "deload_volume_reduction",
+            "weekly_volume_distribution"
+          ],
+          "id": "mesocycle-muscle-胸",
+          "issue": "胸部 本周低于目标，但当前处于减量周。",
+          "priority": "medium",
+          "reason": "减量周的优先级是降低疲劳，训练量不足先记录为后续周期的补量参考。",
+          "recommendation": "下周先按减量周完成恢复，不强行补量。",
+          "suggestedChange": {
+            "muscleId": "胸",
+            "setsDelta": 0,
+            "volumeMultiplier": 0.6
+          },
+          "targetId": "胸",
+          "targetLabel": "胸部",
+          "targetType": "muscle"
+        }
+      ]
+    },
+    {
+      "input": {
+        "exerciseLibrary": {
+          "db-bench-press": {
+            "fatigueCost": "medium",
+            "muscleContribution": {
+              "胸": 0.9
+            }
+          },
+          "incline-db-press": {
+            "fatigueCost": "low",
+            "muscleContribution": {
+              "胸": 0.7
+            }
+          }
+        },
+        "muscleVolumeDashboard": [
+          {
+            "completedSets": 6,
+            "effectiveSets": 5,
+            "highConfidenceEffectiveSets": 4,
+            "muscleId": "胸",
+            "muscleName": "胸部",
+            "remainingSets": 6,
+            "status": "low",
+            "targetSets": 12,
+            "weightedEffectiveSets": 6
+          }
+        ],
+        "painPatterns": [
+          {
+            "area": "胸",
+            "frequency": 2,
+            "severityAvg": 2,
+            "suggestedAction": "deload"
+          }
+        ]
+      },
+      "kind": "weeklyActions",
+      "label": "pain-risk on a low row → volume priority drops high→medium (ts:177) + pain program rec (no exerciseId, ts:318/320)",
+      "result": [
+        {
+          "category": "pain",
+          "confidence": "medium",
+          "evidenceRuleIds": [
+            "pain_conservative_rule"
+          ],
+          "id": "pain-program-胸",
+          "issue": "胸 近期出现重复不适记录。",
+          "priority": "medium",
+          "reason": "频率 2，平均强度 2.0，系统建议采取保守训练处理。",
+          "recommendation": "下周降低相关部位训练压力，并观察不适是否持续。",
+          "suggestedChange": {
+            "volumeMultiplier": 0.9
+          },
+          "targetLabel": "胸",
+          "targetType": "program"
+        },
+        {
+          "category": "volume",
+          "confidence": "high",
+          "evidenceRuleIds": [
+            "weekly_volume_distribution",
+            "progressive_overload"
+          ],
+          "id": "volume-muscle-胸",
+          "issue": "胸部 本周加权有效组明显低于目标。",
+          "priority": "medium",
+          "reason": "目标 12 组，目前加权有效组 6，还差约 6 组。",
+          "recommendation": "下周优先补 4 组胸部训练量，可放在 上斜哑铃卧推 / 哑铃卧推。",
+          "suggestedChange": {
+            "exerciseIds": [
+              "incline-db-press",
+              "db-bench-press"
+            ],
+            "muscleId": "胸",
+            "setsDelta": 4
+          },
+          "targetId": "胸",
+          "targetLabel": "胸部",
+          "targetType": "muscle"
+        }
+      ]
+    }
+  ],
+  "parityGolden": {
+    "deterministicClockIso": null,
+    "generatedAtPolicy": "none",
+    "generatedFromCommit": "a6767fbed7b365cdcd3ef8a90be2416cd4df3f1c",
+    "generatorVersion": "v1",
+    "sourceFixtureId": "weekly-coach/weekly-actions-cases-v1"
+  },
+  "sourceFixtureId": "weekly-coach/weekly-actions-cases-v1"
+}

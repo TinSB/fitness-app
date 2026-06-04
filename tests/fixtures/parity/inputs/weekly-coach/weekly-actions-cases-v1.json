@@ -1,0 +1,76 @@
+{
+  "parityMeta": {
+    "id": "weekly-coach/weekly-actions-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-1 weeklyCoachActionEngine — FUNCTION-LEVEL parity for buildWeeklyActionRecommendations (src/engines/weeklyCoachActionEngine.ts:252). Each case echoes the WeeklyCoachActionInput (always with an EXPLICIT exerciseLibrary so the default-library fallback is never hit — every row calls recommendExercisesForMuscleGap at ts:147) and the REAL engine output. Cases pin: the empty-dashboard low-confidence fallback (ts:255); the four volume-status branches (low normal high/medium ts:174, near_target/on_target low ts:195, high recovery ts:213) + deload mesocycle branch (ts:158) + pain-risk priority drop (ts:177); the technique low-high-confidence branch (ts:231 hasLowHighConfidence); adherence<70 (ts:273); heavy load-feedback (ts:290); the pain loop slice(0,2)+watch-skip with exercise vs program targetType (ts:308-325); the e1RM gap qualify/skip (ts:327-343); and the final priorityScore + targetLabel.localeCompare(_, 'zh-CN') STABLE sort + slice(0,10) (ts:345-347). The Swift WeeklyCoachActionEngine.buildWeeklyActionRecommendations re-runs the SAME builder over each echoed input and COMPUTE-ASSERTs the ordered WeeklyActionRecommendation list == golden `result`, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "a6767fbed7b365cdcd3ef8a90be2416cd4df3f1c",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — buildWeeklyActionRecommendations is PURE (no new Date / Date.now / Math.random). Synthetic exercise ids + Chinese muscle names; no email/token/userId/deviceLabel. severityAvg values avoid exact .x5 ties so toFixed(1) is unambiguous across the JS toFixed (ties→larger) and Swift %.1f (half-to-even) implementations. Library keys are authored in ascending code-point order so the TS Object.entries iteration matches the Swift JSON-decode key order."
+  },
+  "cases": [
+    {
+      "kind": "weeklyActions",
+      "label": "empty dashboard → single low-confidence adherence fallback rec (ts:255)",
+      "input": { "muscleVolumeDashboard": [] }
+    },
+    {
+      "kind": "weeklyActions",
+      "label": "comprehensive — low(+exercise text)/near_target/on_target(+technique)/high volume + adherence<70 + heavy load-feedback + pain(substitute)/watch-skip + e1RM qualify/skip → priorityScore + zh-CN localeCompare sort",
+      "input": {
+        "muscleVolumeDashboard": [
+          { "muscleId": "胸", "muscleName": "胸部", "status": "low", "targetSets": 12, "completedSets": 6, "effectiveSets": 5, "highConfidenceEffectiveSets": 4, "weightedEffectiveSets": 6.5, "remainingSets": 6 },
+          { "muscleId": "背", "muscleName": "背部", "status": "near_target", "targetSets": 14, "completedSets": 13, "effectiveSets": 12, "highConfidenceEffectiveSets": 11, "weightedEffectiveSets": 13, "remainingSets": 1 },
+          { "muscleId": "腿", "muscleName": "腿部", "status": "high", "targetSets": 16, "completedSets": 20, "effectiveSets": 19, "highConfidenceEffectiveSets": 18, "weightedEffectiveSets": 20, "remainingSets": 0 },
+          { "muscleId": "肩", "muscleName": "肩部", "status": "on_target", "targetSets": 10, "completedSets": 10, "effectiveSets": 9, "highConfidenceEffectiveSets": 3, "weightedEffectiveSets": 9, "remainingSets": 0 }
+        ],
+        "exerciseLibrary": {
+          "db-bench-press": { "muscleContribution": { "胸": 0.9 }, "fatigueCost": "medium" },
+          "incline-db-press": { "muscleContribution": { "胸": 0.7 }, "fatigueCost": "low" }
+        },
+        "adherenceReport": { "overallRate": 65, "confidence": "medium" },
+        "loadFeedbackSummary": { "counts": { "too_light": 0, "good": 1, "too_heavy": 3 } },
+        "painPatterns": [
+          { "area": "肘", "exerciseId": "bench-press", "frequency": 3, "severityAvg": 2.4, "suggestedAction": "substitute" },
+          { "area": "腕", "frequency": 2, "severityAvg": 1.8, "suggestedAction": "watch" }
+        ],
+        "e1rmProfiles": [
+          { "exerciseId": "bench-press", "current": { "e1rmKg": 100, "confidence": "high" }, "best": { "e1rmKg": 110 } },
+          { "exerciseId": "squat", "current": { "e1rmKg": 140, "confidence": "medium" }, "best": { "e1rmKg": 143 } }
+        ],
+        "screeningProfile": { "restrictedExercises": ["leg-press"] }
+      }
+    },
+    {
+      "kind": "weeklyActions",
+      "label": "deload week + low row → mesocycle rec (setsDelta 0, volumeMultiplier 0.6) instead of volume top-up (ts:158)",
+      "input": {
+        "muscleVolumeDashboard": [
+          { "muscleId": "胸", "muscleName": "胸部", "status": "low", "targetSets": 12, "completedSets": 6, "effectiveSets": 5, "highConfidenceEffectiveSets": 4, "weightedEffectiveSets": 6, "remainingSets": 6 }
+        ],
+        "mesocycleWeek": { "phase": "deload" },
+        "exerciseLibrary": {
+          "db-bench-press": { "muscleContribution": { "胸": 0.9 }, "fatigueCost": "medium" },
+          "incline-db-press": { "muscleContribution": { "胸": 0.7 }, "fatigueCost": "low" }
+        }
+      }
+    },
+    {
+      "kind": "weeklyActions",
+      "label": "pain-risk on a low row → volume priority drops high→medium (ts:177) + pain program rec (no exerciseId, ts:318/320)",
+      "input": {
+        "muscleVolumeDashboard": [
+          { "muscleId": "胸", "muscleName": "胸部", "status": "low", "targetSets": 12, "completedSets": 6, "effectiveSets": 5, "highConfidenceEffectiveSets": 4, "weightedEffectiveSets": 6, "remainingSets": 6 }
+        ],
+        "painPatterns": [
+          { "area": "胸", "frequency": 2, "severityAvg": 2.0, "suggestedAction": "deload" }
+        ],
+        "exerciseLibrary": {
+          "db-bench-press": { "muscleContribution": { "胸": 0.9 }, "fatigueCost": "medium" },
+          "incline-db-press": { "muscleContribution": { "胸": 0.7 }, "fatigueCost": "low" }
+        }
+      }
+    }
+  ]
+}

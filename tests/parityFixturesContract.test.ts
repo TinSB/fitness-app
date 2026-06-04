@@ -255,6 +255,12 @@ const FIXTURE_IDS = [
   // CC-0 coachAction-foundation — 1 ADDITIVE OUTPUT fixture (sortDataHealthIssues
   // function-level parity). Generated; never hand-edited (§22).
   'data-health/sort-issues-cases-v1',
+  // CC-1 weeklyCoachActionEngine — 3 ADDITIVE OUTPUT fixtures (recommendExercisesForMuscleGap
+  // + buildWeeklyActionRecommendations + buildProgramAdjustmentPreview function-level
+  // parity). Generated; never hand-edited (§22).
+  'weekly-coach/exercise-recommendations-cases-v1',
+  'weekly-coach/weekly-actions-cases-v1',
+  'weekly-coach/program-adjustment-preview-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];

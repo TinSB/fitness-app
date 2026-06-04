@@ -1,0 +1,87 @@
+{
+  "parityMeta": {
+    "id": "weekly-coach/exercise-recommendations-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-1 weeklyCoachActionEngine — FUNCTION-LEVEL parity for recommendExercisesForMuscleGap (src/engines/weeklyCoachActionEngine.ts:77). Each case echoes muscleId + the ExerciseRecommendationContext (always an EXPLICIT exerciseLibrary so the EXERCISE_KNOWLEDGE_OVERRIDES default-library fallback at ts:81 is never hit — deferred golden-neutral) and the REAL engine output. Cases pin: contribution sources (muscleContribution map ts:57 truthy, primaryMuscles=1 ts:58, secondaryMuscles=0.5 ts:59, muscle===id ts:60, no-match filtered ts:87); primary/secondary/avoid priority (fatigueCost high / heavy-feedback / low-adherence → secondary ts:102; restricted ts:90/98 + pain-risk ts:91/98 → avoid); the reason chains (能直接补充 ts:103, 疲劳成本较低 ts:104, 疲劳成本较高 ts:105, heavy ts:106, low-adherence ts:107, restricted/pain ts:100) including the empty-reasons fallback 可为X提供训练量 (ts:113, reached by a non-standard fatigueCost so no fatigue reason fires); the STABLE sort priorityOrder→fatigueScore→contribution DESC (ts:120-128); and the empty-library [] edge. The Swift WeeklyCoachActionEngine.recommendExercisesForMuscleGap re-runs the SAME builder over each echoed input and COMPUTE-ASSERTs the ordered list (exerciseId/label/reason/fatigueCost/priority) == golden `result`, case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "a6767fbed7b365cdcd3ef8a90be2416cd4df3f1c",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — recommendExercisesForMuscleGap is PURE (no new Date / Date.now / Math.random). Synthetic exercise ids + Chinese muscle names; no email/token/userId/deviceLabel. Library keys are authored in ascending code-point order so the TS Object.entries iteration matches the Swift JSON-decode key order (which sorts keys on ingest), making the stable tie-break order identical on both ends."
+  },
+  "cases": [
+    {
+      "kind": "recommendExercises",
+      "label": "primary/secondary ordering + reason chains — low-fatigue high-contribution first, high-fatigue last; 能直接补充 only when contribution>=0.9 && !high",
+      "muscleId": "胸",
+      "context": {
+        "exerciseLibrary": {
+          "bench-press": { "muscleContribution": { "胸": 1 }, "fatigueCost": "high" },
+          "db-bench-press": { "muscleContribution": { "胸": 0.8 }, "fatigueCost": "medium" },
+          "machine-chest-press": { "muscleContribution": { "胸": 0.95 }, "fatigueCost": "low" }
+        }
+      }
+    },
+    {
+      "kind": "recommendExercises",
+      "label": "restricted exercise → avoid (该动作已被当前筛查限制。)",
+      "muscleId": "胸",
+      "context": {
+        "exerciseLibrary": {
+          "bench-press": { "muscleContribution": { "胸": 1 }, "fatigueCost": "high" }
+        },
+        "restrictedExercises": ["bench-press"]
+      }
+    },
+    {
+      "kind": "recommendExercises",
+      "label": "pain-risk substitute → avoid (该动作近期有重复不适记录。); watch is NOT a risk → stays primary",
+      "muscleId": "胸",
+      "context": {
+        "exerciseLibrary": {
+          "bench-press": { "muscleContribution": { "胸": 1 }, "fatigueCost": "medium" },
+          "db-bench-press": { "muscleContribution": { "胸": 0.7 }, "fatigueCost": "medium" }
+        },
+        "painPatterns": [
+          { "area": "胸", "exerciseId": "bench-press", "frequency": 3, "severityAvg": 2.5, "suggestedAction": "substitute" },
+          { "area": "胸", "exerciseId": "db-bench-press", "frequency": 1, "severityAvg": 1.2, "suggestedAction": "watch" }
+        ]
+      }
+    },
+    {
+      "kind": "recommendExercises",
+      "label": "heavy-feedback + low-adherence both → secondary, with their reason lines; equal sort keys keep iteration order",
+      "muscleId": "背",
+      "context": {
+        "exerciseLibrary": {
+          "a-machine-row": { "primaryMuscles": ["背"], "fatigueCost": "medium" },
+          "b-seated-row": { "primaryMuscles": ["背"], "fatigueCost": "medium" }
+        },
+        "loadFeedbackByExercise": {
+          "a-machine-row": { "counts": { "too_light": 0, "good": 1, "too_heavy": 2 } }
+        },
+        "recentLowAdherenceExerciseIds": ["b-seated-row"]
+      }
+    },
+    {
+      "kind": "recommendExercises",
+      "label": "contribution sources (muscle field / primary / secondary) + no-match filtered + empty-reasons fallback (可为X提供训练量。 via non-standard fatigueCost)",
+      "muscleId": "肩",
+      "context": {
+        "exerciseLibrary": {
+          "c-fallback": { "muscleContribution": { "肩": 0.5 }, "fatigueCost": "unknown" },
+          "m-muscle-field": { "muscle": "肩", "fatigueCost": "low" },
+          "p-primary": { "primaryMuscles": ["肩"], "fatigueCost": "medium" },
+          "s-secondary": { "secondaryMuscles": ["肩"], "fatigueCost": "medium" },
+          "z-nomatch": { "muscleContribution": { "胸": 1 }, "fatigueCost": "medium" }
+        }
+      }
+    },
+    {
+      "kind": "recommendExercises",
+      "label": "explicit empty library → [] (no fallback; {} is truthy in TS)",
+      "muscleId": "胸",
+      "context": { "exerciseLibrary": {} }
+    }
+  ]
+}
