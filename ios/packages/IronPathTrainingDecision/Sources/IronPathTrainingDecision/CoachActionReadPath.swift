@@ -37,8 +37,12 @@
 // sessionQuality / plateauResults / volumeAdaptation / recommendationConfidence / setAnomalies)
 // at their honest nil defaults rather than fabricating them; they light up when their own sources
 // are wired (a later slice). The dismiss action's "暂不处理" label is carried here; its persistence
-// is the CC-5 gated dismiss write the 今日 surface wires (read-side hiding of dismissed actions is
-// the later CC-6 read-filter, not this read path).
+// is the CC-5 gated dismiss write the 今日 surface wires, and CC-6 (this slice) wires the read-side
+// HIDING: after `buildCoachActions` this resolver runs the CC-3 `filterVisibleCoachActions` over the
+// gated clean view, so a 'today'-dismissed (or draft/history-resolved) action drops out of the
+// rendered list. The read-filter is now part of THIS read path (a faithful mirror of
+// `enginePipeline.ts:98-104`); it REUSES the CC-3 engine verbatim — it ports nothing and changes no
+// parity golden (additive read-path orchestration only).
 //
 // Honesty (master §15.4): the load outcomes map to honest states — `.missing` (no canonical file
 // yet / first launch / no live source) and a loaded-but-empty (no cleaned history) view →
@@ -137,7 +141,29 @@ public func resolveCoachActionState(
                 now: nowIso
             )
         )
-        return .ready(CoachActionSurfaceSummary(actions: actions))
+
+        // CC-6 §11 dismiss read-filter wiring — the FIRST read-side consumer of the CC-3
+        // `CoachActionDismissEngine` filter (until now it was ported + parity-pinned but UNWIRED).
+        // A faithful mirror of `enginePipeline.ts:98-104`: from the engine's freshly built actions,
+        // drop (a) the ones the user dismissed 'today' (same civil day) AND (b) the ones already
+        // resolved by a matching draft/history adjustment (an action survives a match ONLY when that
+        // match is 'rolled_back'). All FIVE inputs derive from the SAME gated clean view (§10/§11) —
+        // never a raw AppData blob — and this slice REUSES the CC-3 filter verbatim (it ports nothing
+        // and changes no parity). See the helpers below for each input's provenance.
+        let visibleActions = CoachActionDismissEngine.filterVisibleCoachActions(
+            actions,
+            coachActionProgramAdjustmentDrafts(cleanView),
+            coachActionProgramAdjustmentHistory(cleanView),
+            coachActionDismissedActions(cleanView),
+            // §11.2 ZERO-NEW-CLOCK: the civil `YYYY-MM-DD` day is the SAME injected `nowIso`'s leading
+            // 10 chars — NOT a fresh `Date()`/`Calendar`/`ISO8601` read. `nowIso` is the parity-format
+            // UTC ISO-8601 string built above from the injected instant, so its first 10 chars are the
+            // anchored civil date key `filterDismissedCoachActions` matches `dismissedAt` against: the
+            // `context.currentDateLocalKey` the PWA passes (enginePipeline.ts:103), on this read path's
+            // existing UTC-day convention (the `coachActionReferenceIso8601UTC` header).
+            String(nowIso.prefix(10))
+        )
+        return .ready(CoachActionSurfaceSummary(actions: visibleActions))
     }
 }
 
@@ -166,6 +192,57 @@ private func coachActionCleanDerivedAppData(_ cleanView: CleanAppDataView) -> Ap
 private func decodeCoachActionTemplates(_ cleanView: CleanAppDataView) -> [TrainingTemplate] {
     guard let array = cleanView.raw.root["templates"]?.arrayValue else { return [] }
     return array.compactMap { try? TrainingTemplate(decoding: $0) }
+}
+
+// MARK: - CC-6 dismiss read-filter inputs (all plucked from the gated clean view — §10/§11)
+
+/// The user's persisted dismiss intent, read by the SAME read-side priority CC-5 PERSISTS to and
+/// `enginePipeline.ts:102` reads: `root.dismissedCoachActions || settings.dismissedCoachActions ||
+/// []` — a present ARRAY (even empty) at `root` wins JS `||` truthiness, else `settings`, else
+/// empty. Each entry's three string fields → a `DismissedCoachAction` (the parity test's
+/// `decodeDismissed` shape); a non-object entry is skipped — it could never carry a `'today'`
+/// scope, so the filter result is identical. This is the user's INTENT, never an engine output
+/// (§11): the read-filter only HIDES, it never recomputes or writes.
+private func coachActionDismissedActions(
+    _ cleanView: CleanAppDataView
+) -> [CoachActionDismissEngine.DismissedCoachAction] {
+    let raw = coachActionTruthyArray(cleanView.raw.root["dismissedCoachActions"])
+        ?? coachActionTruthyArray(cleanView.raw.settings.dismissedCoachActions)
+        ?? []
+    return raw.compactMap { value in
+        guard let obj = value.objectValue else { return nil }
+        return CoachActionDismissEngine.DismissedCoachAction(
+            actionId: obj["actionId"]?.stringValue ?? "",
+            dismissedAt: obj["dismissedAt"]?.stringValue ?? "",
+            scope: obj["scope"]?.stringValue ?? ""
+        )
+    }
+}
+
+/// JS `||` truthiness for the read-priority chain (the CC-5 `truthyArray` mirror): a present ARRAY
+/// (even empty) is truthy → used; `null` / missing / a non-array is falsy → fall through to the
+/// next source. Returns the raw element list.
+private func coachActionTruthyArray(_ value: JSONValue?) -> [JSONValue]? {
+    guard let value, case .array(let arr) = value else { return nil }
+    return arr
+}
+
+/// The staged program-adjustment drafts — an open-bag PA slot plucked from the gated view's raw
+/// document (the `templates` precedent: config-shaped, NOT §11 session/history training data, so the
+/// DataHealth guards do not clean it, and no raw AppData blob reaches the engine). Decoded leniently:
+/// a garbled entry is skipped (`try?`), never crashes, never fabricates a draft (the
+/// `decodeCoachActionTemplates` paradigm). Mirrors `appData.programAdjustmentDrafts || []`
+/// (enginePipeline.ts:100).
+private func coachActionProgramAdjustmentDrafts(_ cleanView: CleanAppDataView) -> [ProgramAdjustmentDraft] {
+    guard let array = cleanView.raw.root["programAdjustmentDrafts"]?.arrayValue else { return [] }
+    return array.compactMap { try? ProgramAdjustmentDraft(decoding: $0) }
+}
+
+/// The applied / rolled-back program-adjustment history — same provenance + lenient decode as the
+/// drafts above. Mirrors `appData.programAdjustmentHistory || []` (enginePipeline.ts:101).
+private func coachActionProgramAdjustmentHistory(_ cleanView: CleanAppDataView) -> [ProgramAdjustmentHistoryItem] {
+    guard let array = cleanView.raw.root["programAdjustmentHistory"]?.arrayValue else { return [] }
+    return array.compactMap { try? ProgramAdjustmentHistoryItem(decoding: $0) }
 }
 
 /// UTC ISO-8601 with fractional seconds (matches the engines' parity-clock format, e.g.

@@ -8,7 +8,10 @@
 // supplied by the caller (the app layer), so this file stays a pure value transform with no
 // FileManager / disk / network / clock.
 //
-// FAITHFUL LINE-BY-LINE MIRROR of the PWA write `handleDismissCoachAction` (`src/App.tsx:1908-1928`):
+// FAITHFUL MIRROR of the PWA write `handleDismissCoachAction` (`src/App.tsx:1908-1928`) — steps
+// ①③④ are line-by-line; step ② (the DEDUP BASE) DELIBERATELY DIVERGES, more conservatively (the
+// honest correction is at the ② DEDUP-BASE note below — it is NOT a line-by-line copy of
+// App.tsx:1912). The numbered steps:
 //   ① `dismissedAt = todayKey()` — a civil calendar day `YYYY-MM-DD` (engineUtils.ts:30, the
 //      LOCAL-day key `local.toISOString().slice(0,10)`). It is the `today` ARGUMENT here: this
 //      Domain transform reads NO clock — the caller injects the civil date (§11.2 / red-line #4).
@@ -21,10 +24,16 @@
 //      typed slot (App.tsx:1922) — one value transform, so a later read-filter (CC-6) sees zero
 //      staleness whichever priority it reads, and a PWA-origin document (which double-writes the
 //      same way) stays consistent.
-// The DEDUP BASE is the "current effective list" read by the SAME priority the read side uses
-// (`root.dismissedCoachActions || settings.dismissedCoachActions || []`,
-// `src/engines/enginePipeline.ts:102`) — a present array (even empty) at `root` wins (JS `||`
-// truthiness), else `settings`, else empty.
+// ② DEDUP-BASE divergence (honest correction — this is NOT a line-by-line mirror of App.tsx:1912):
+// App.tsx:1912 dedups against `current.dismissedCoachActions` — ROOT-ONLY. This transform instead
+// reads the READ-SIDE priority `root.dismissedCoachActions || settings.dismissedCoachActions || []`
+// (`src/engines/enginePipeline.ts:102` — a present array, even empty, at `root` wins JS `||`, else
+// `settings`, else empty), the SAME priority the CC-6 read-filter at `enginePipeline.ts:98` reads.
+// WHY diverge: iOS persists a RAW canonical document the PWA sanitizer has not necessarily run over,
+// so taking the read-side priority keeps the write's dedup base ALIGNED with what CC-6 actually
+// reads. On a real root-vs-settings divergence this is strictly MORE CONSERVATIVE — it preserves the
+// user's dismiss intent rather than dropping it — and it still writes ONLY the user's input intent,
+// never an engine output (no behavioural cost; the audit confirmed the dedup result is correct).
 //
 // INPUT, NOT OUTPUT (§11): a `DismissedCoachAction` is the user's OWN intent — it carries ONLY
 // `{ actionId, dismissedAt, scope }` (a reference to the action the user dismissed + when + the
@@ -55,9 +64,10 @@ import Foundation
 extension AppData {
     /// A new `AppData` recording the user's intent to dismiss coach action `actionId` for the
     /// civil day `today` (`YYYY-MM-DD`). Pure value transform (Swift value semantics — the
-    /// receiver is untouched). Mirrors `handleDismissCoachAction` (App.tsx:1908-1928): dedup the
-    /// current effective dismissed list (read priority `root || settings`) by
-    /// scope+actionId+day, append `{ actionId, dismissedAt: today, scope: "today" }`, and
+    /// receiver is untouched). Mirrors `handleDismissCoachAction` (App.tsx:1908-1928) — with the
+    /// file-header ② DEDUP-BASE divergence: dedup the current effective dismissed list by the
+    /// READ-SIDE priority `root || settings` (NOT App.tsx's root-only — more conservative,
+    /// CC-6-aligned) on scope+actionId+day, append `{ actionId, dismissedAt: today, scope: "today" }`, and
     /// DOUBLE-WRITE the SAME resulting array into BOTH `root.dismissedCoachActions` and
     /// `settings.dismissedCoachActions` — in ONE transform, so a single gated save persists both
     /// halves and no second write is ever opened.
