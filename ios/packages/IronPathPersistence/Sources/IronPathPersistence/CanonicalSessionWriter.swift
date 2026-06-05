@@ -69,6 +69,15 @@
 //     engine recomputes the plan FROM it, so this write never touches an engine OUTPUT
 //     (§11). Rollback flows through this SAME entry (writing the restored snapshot) — it
 //     is a sanctioned MUTATION, NOT a §14 full restore.
+//   • `dismissCoachAction` — record the user's intent to dismiss ONE coach action for today
+//     ("暂不处理", CC-5) → `AppData.dismissedCoachActions` (root open-bag key) +
+//     `AppData.settings.dismissedCoachActions` (nested slot). A sanctioned MUTATION: it dedups
+//     the current effective dismissed list (read priority `root || settings`) by
+//     scope+actionId+day and double-writes the SAME `{ actionId, dismissedAt, scope }` array
+//     into both, open-bag/schema/timestamp preserving. A dismiss is the user's OWN intent — an
+//     ENGINE INPUT carrying only `{ actionId, dismissedAt, scope }`; it NEVER touches an engine
+//     OUTPUT (the coach-action engine results, the `mesocyclePlan` weeks blob, prescriptions,
+//     computed phase/readiness/e1RM). `dismissedAt` is the caller-INJECTED civil day — no clock.
 //
 // This is NOT a full AppData restore (§14): it appends/edits local data the user
 // just performed or changed — it never replaces/merges an external/backup document.
@@ -526,8 +535,49 @@ public struct CanonicalSessionWriter {
         )
     }
 
+    /// CC-5: record the user's intent to dismiss ONE coach action for today ("暂不处理")
+    /// in place inside `AppData.dismissedCoachActions` and persist — through the SAME
+    /// sanctioned, DataHealth-gated write path as every entry above (§8 rule 4: NOT a
+    /// second/parallel write path). The candidate builder is the pure open-bag
+    /// `AppData.withDismissedCoachAction` (CoachActionDismissalEdit): it dedups the current
+    /// effective dismissed list (read priority `root || settings`) by scope+actionId+day,
+    /// appends `{ actionId, dismissedAt: today, scope: "today" }`, and DOUBLE-WRITES the SAME
+    /// resulting array into BOTH the `dismissedCoachActions` root open-bag key AND the nested
+    /// `settings.dismissedCoachActions` slot — schema/timestamp/open-bag preserving — so an
+    /// edit is a sanctioned MUTATION, not a restore (§13/§14).
+    ///
+    /// A `DismissedCoachAction` is the user's OWN intent — it carries ONLY `{ actionId,
+    /// dismissedAt, scope }` (input, NOT output). This write NEVER touches a coach-action
+    /// engine result, the `mesocyclePlan` weeks blob, a prescription, or any computed
+    /// phase/readiness/e1RM (§11). `today` is INJECTED by the caller (a civil calendar day) —
+    /// this path reads NO clock; a bare `Date()` would be a contract break (§11.2). The caller
+    /// supplies the DataHealth gate (defensive `processIncomingAppData` → its clean view
+    /// re-validation before the write commits); a rejected candidate is NEVER written (no fake
+    /// success).
+    ///
+    /// - Parameters:
+    ///   - actionId: the `CoachAction.id` the user dismissed (a reference, never engine output).
+    ///   - today: the civil calendar day `YYYY-MM-DD` to stamp as `dismissedAt` (injected by the
+    ///     caller from its clock — this path never reads a wall clock).
+    ///   - baseIfMissing: the document to seed when no file exists yet.
+    ///   - validate: the DataHealth gate. Return `false` to reject the candidate.
+    /// - Returns: what happened (first write? backup taken?).
+    @discardableResult
+    public func dismissCoachAction(
+        actionId: String,
+        today: String,
+        baseIfMissing: AppData = .emptyCurrent(),
+        validate: (AppData) -> Bool
+    ) throws -> PerformedSessionWriteResult {
+        try performGatedMutation(
+            baseIfMissing: baseIfMissing,
+            buildCandidate: { $0.withDismissedCoachAction(actionId: actionId, today: today) },
+            validate: validate
+        )
+    }
+
     /// The single gated-MUTATION orchestration shared by every canonical write entry
-    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1 + SR-4 + PA-2). `buildCandidate` is the only
+    /// point above (append AND edit — EDIT-1/EDIT-2/EDIT-3/EDIT-4 + DEEP-EDIT-1 + SR-4 + PA-2 + CC-5 dismiss). `buildCandidate` is the only
     /// thing that varies (which open-bag transform produces the candidate); the load →
     /// gate → backup → atomic save → honest-throw contract is identical for all of
     /// them, so there is exactly ONE write path (§8.1). An EDIT is a sanctioned

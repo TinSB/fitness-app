@@ -116,11 +116,10 @@ final class CoachActionReadPathTests: XCTestCase {
         XCTAssertFalse(summary.actions.isEmpty, "a real next-workout signal yields a pending coach action")
         XCTAssertTrue(summary.actions.contains { $0.id.hasPrefix("next-workout-") },
                       "the next-workout coach action is surfaced")
-        // The honest read-only header + empty/deferral copy is always carried.
+        // The honest read-only header + empty copy is always carried.
         XCTAssertEqual(summary.title, "教练建议")
         XCTAssertEqual(summary.emptyText, "暂无需要处理的教练建议。")
-        XCTAssertTrue(summary.dismissDeferredNote.contains("CC-5"), "dismiss persistence is honestly deferred to CC-5")
-        // Each row carries the read-only dismiss/detail labels (DISPLAY-ONLY; never wired to a write).
+        // Each row carries the dismiss/detail labels; "暂不处理" is the CC-5 gated-dismiss button label.
         for row in summary.actions {
             XCTAssertEqual(row.secondaryLabel, "暂不处理")
             XCTAssertEqual(row.detailLabel, "查看详情")
