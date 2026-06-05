@@ -267,6 +267,13 @@ const FIXTURE_IDS = [
   'coach-action/build-actions-cases-v1',
   'coach-action/adjustment-draft-cases-v1',
   'coach-action/source-fingerprint-cases-v1',
+  // CC-3 coachActionDismissEngine — 1 ADDITIVE OUTPUT fixture (dispatch-by-kind: the 9
+  // dismiss/visibility exports — dismissCoachActionToday + filterDismissedCoachActions +
+  // draft/historyMatchesCoachAction + findExistingAdjustmentForCoachAction +
+  // filterVisibleCoachActions + the two filterResolved* aliases — function-level parity).
+  // PURE / clockless, no write path (the gated dismiss write is CC-4). Generated; never
+  // hand-edited (§22).
+  'coach-action-dismiss/dismiss-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
