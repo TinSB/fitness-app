@@ -1,0 +1,337 @@
+{
+  "parityMeta": {
+    "id": "coach-action-dismiss/dismiss-cases-v1",
+    "schemaVersion": 8,
+    "describes": "CC-3 coachActionDismissEngine — FUNCTION-LEVEL parity for the 9 exports of src/engines/coachActionDismissEngine.ts via a dispatch-by-kind `cases` array. kind 'dismissToday' pins dismissCoachActionToday (the { actionId, dismissedAt: now, scope: 'today' } value constructor — pure, no persistence). kind 'filterDismissed' pins filterDismissedCoachActions (status === 'pending' gate + dismissed-today set keyed on the ANCHORED-^ dateKey + the scope === 'today' filter + the dateKey '' fallback for empty/non-anchored input). kind 'draftMatches' / 'historyMatches' pin draftMatchesCoachAction / historyMatchesCoachAction across EVERY || clause (sourceCoachActionId, stored/explicit-fingerprint equality, sourceRecommendationId raw + coach-action-{id}, selectedRecommendationIds raw + coach-action-{id}, and the create_plan_adjustment_preview change-match by muscle/exercise(+replacement)/template), plus the draft.status === 'recommendation' early-out and the change-match guard. kind 'findExisting' pins findExistingAdjustmentForCoachAction's full resolution order (active→draft_ready, applied, dismissed, expired/stale→expired, rolled_back-iff-no-blocking, then history non-rolled-back→applied / rolled_back, else null) plus the draft-before-history precedence and the sourceFingerprint passthrough. kind 'filterVisible' pins filterVisibleCoachActions (dismiss-filter ∘ existing-adjustment hide, keeping no-existing OR rolled_back) AND asserts the two aliases filterResolvedCoachActions / filterResolvedPlanActions are byte-identical. The Swift CoachActionDismissEngine re-runs each export over the SAME echoed input and COMPUTE-ASSERTs equality (DismissedCoachAction canonical JSON · resultIds · boolean · {matched,state,draftId,historyItemId}), case-by-case.",
+    "privacy": "synthetic",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "f52d78679ad238c36e4f4e1a01b6fe87263a63e0",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "No clock — the dismiss engine is PURE (no new Date / Date.now / Math.random; every time value — now / currentDate / dismissedAt — is an explicit string argument). The dateKey 'new Date(value)' fallback is exercised ONLY with the empty-string input (NaN → '' on every JS engine, TZ-independent); no non-anchored-but-parseable date is used (that path is TZ-dependent in TS and outside the deterministic input domain). Synthetic ids + Chinese visible text. No email/token/userId/deviceLabel."
+  },
+  "cases": [
+    {
+      "kind": "dismissToday",
+      "label": "dismissCoachActionToday → { actionId, dismissedAt: now, scope: 'today' }",
+      "actionId": "ca-1",
+      "now": "2026-06-04T08:00:00.000Z"
+    },
+
+    {
+      "kind": "filterDismissed",
+      "label": "pending kept · non-pending dropped · dismissed-today dropped",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health", "source": "dataHealth" },
+        { "id": "ca-2", "status": "confirmed", "actionType": "open_data_health", "source": "dataHealth" },
+        { "id": "ca-3", "status": "pending", "actionType": "open_data_health", "source": "dataHealth" }
+      ],
+      "dismissedActions": [
+        { "actionId": "ca-3", "dismissedAt": "2026-06-04T09:00:00.000Z", "scope": "today" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterDismissed",
+      "label": "dismissed on a DIFFERENT day (dateKey 06-03 ≠ 06-04) → not filtered",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "dismissedActions": [
+        { "actionId": "ca-1", "dismissedAt": "2026-06-03T23:00:00.000Z", "scope": "today" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterDismissed",
+      "label": "scope !== 'today' → not counted",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "dismissedActions": [
+        { "actionId": "ca-1", "dismissedAt": "2026-06-04T01:00:00.000Z", "scope": "permanent" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterDismissed",
+      "label": "dateKey fallback — empty dismissedAt → '' ≠ today, not filtered",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "dismissedActions": [
+        { "actionId": "ca-1", "dismissedAt": "", "scope": "today" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterDismissed",
+      "label": "full-ISO datetime both sides → anchored dateKey 06-04 both → ca-1 filtered, ca-2 kept",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+        { "id": "ca-2", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "dismissedActions": [
+        { "actionId": "ca-1", "dismissedAt": "2026-06-04T23:59:59.999Z", "scope": "today" }
+      ],
+      "currentDate": "2026-06-04T00:00:01.000Z"
+    },
+    {
+      "kind": "filterDismissed",
+      "label": "empty actions → empty",
+      "actions": [],
+      "dismissedActions": [],
+      "currentDate": "2026-06-04"
+    },
+
+    {
+      "kind": "draftMatches",
+      "label": "draft.status === 'recommendation' → false (early-out despite sourceCoachActionId match)",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-rec", "status": "recommendation", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "sourceCoachActionId === action.id → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-1", "status": "ready_to_apply", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "stored fingerprint equality (action.sourceFingerprint == draft.sourceFingerprint, default param) → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health", "sourceFingerprint": "fp-shared-abc" },
+      "draft": { "id": "d-2", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "other", "sourceFingerprint": "fp-shared-abc" }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "EXPLICIT sourceFingerprint param equality → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-3", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "other", "sourceFingerprint": "fp-explicit-xyz" },
+      "sourceFingerprint": "fp-explicit-xyz"
+    },
+    {
+      "kind": "draftMatches",
+      "label": "sourceRecommendationId === action.id → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-4", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceRecommendationId": "ca-1" }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "sourceRecommendationId === coach-action-{id} → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-5", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceRecommendationId": "coach-action-ca-1" }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "selectedRecommendationIds includes action.id → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-6", "status": "applied", "sourceProgramTemplateId": "tpl-1", "selectedRecommendationIds": ["x", "ca-1"] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "selectedRecommendationIds includes coach-action-{id} → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "draft": { "id": "d-7", "status": "applied", "sourceProgramTemplateId": "tpl-1", "selectedRecommendationIds": ["coach-action-ca-1"] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "create_plan_adjustment_preview + change.muscleId === targetId → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "create_plan_adjustment_preview", "targetType": "muscle", "targetId": "chest" },
+      "draft": { "id": "d-8", "status": "applied", "sourceProgramTemplateId": "tpl-1", "changes": [ { "id": "ch-1", "type": "add_sets", "muscleId": "chest", "setsDelta": 2, "reason": "more chest" } ] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "preview + change.replacementExerciseId === targetId (exercise branch) → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "create_plan_adjustment_preview", "targetType": "exercise", "targetId": "bench" },
+      "draft": { "id": "d-9", "status": "applied", "sourceProgramTemplateId": "tpl-1", "changes": [ { "id": "ch-2", "type": "swap_exercise", "replacementExerciseId": "bench", "reason": "swap" } ] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "preview + template branch via draft.sourceProgramTemplateId === targetId → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "create_plan_adjustment_preview", "targetType": "template", "targetId": "tpl-1" },
+      "draft": { "id": "d-10", "status": "applied", "sourceProgramTemplateId": "tpl-1", "changes": [ { "id": "ch-3", "type": "add_sets", "reason": "x" } ] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "no clause matches → false",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health", "targetType": "plan", "targetId": "x" },
+      "draft": { "id": "d-11", "status": "applied", "sourceProgramTemplateId": "tpl-9", "sourceCoachActionId": "other", "sourceRecommendationId": "other", "selectedRecommendationIds": ["y"] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "change matches but actionType !== preview → false (change gate)",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health", "targetType": "muscle", "targetId": "chest" },
+      "draft": { "id": "d-12", "status": "applied", "sourceProgramTemplateId": "tpl-1", "changes": [ { "id": "ch-4", "type": "add_sets", "muscleId": "chest", "reason": "x" } ] }
+    },
+    {
+      "kind": "draftMatches",
+      "label": "preview but action.targetType missing → draftChangeMatchesAction guard false → false",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "create_plan_adjustment_preview", "targetId": "chest" },
+      "draft": { "id": "d-13", "status": "applied", "sourceProgramTemplateId": "tpl-1", "changes": [ { "id": "ch-5", "type": "add_sets", "muscleId": "chest", "reason": "x" } ] }
+    },
+
+    {
+      "kind": "historyMatches",
+      "label": "sourceCoachActionId === action.id → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "item": { "id": "h-1", "sourceProgramTemplateId": "tpl-2", "sourceCoachActionId": "ca-1", "selectedRecommendationIds": [] }
+    },
+    {
+      "kind": "historyMatches",
+      "label": "stored fingerprint equality → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health", "sourceFingerprint": "fp-hist-1" },
+      "item": { "id": "h-2", "sourceProgramTemplateId": "tpl-2", "sourceFingerprint": "fp-hist-1", "selectedRecommendationIds": [] }
+    },
+    {
+      "kind": "historyMatches",
+      "label": "selectedRecommendationIds includes action.id → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "item": { "id": "h-3", "sourceProgramTemplateId": "tpl-2", "selectedRecommendationIds": ["ca-1"] }
+    },
+    {
+      "kind": "historyMatches",
+      "label": "selectedRecommendationIds includes coach-action-{id} → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "item": { "id": "h-4", "sourceProgramTemplateId": "tpl-2", "selectedRecommendationIds": ["coach-action-ca-1"] }
+    },
+    {
+      "kind": "historyMatches",
+      "label": "preview + change.exerciseId === targetId → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "create_plan_adjustment_preview", "targetType": "exercise", "targetId": "bench" },
+      "item": { "id": "h-5", "sourceProgramTemplateId": "tpl-2", "selectedRecommendationIds": [], "changes": [ { "id": "ch-6", "type": "swap_exercise", "exerciseId": "bench", "reason": "x" } ] }
+    },
+    {
+      "kind": "historyMatches",
+      "label": "preview + template branch via item.sourceProgramTemplateId === targetId → true",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "create_plan_adjustment_preview", "targetType": "template", "targetId": "tpl-2" },
+      "item": { "id": "h-6", "sourceProgramTemplateId": "tpl-2", "selectedRecommendationIds": [], "changes": [ { "id": "ch-7", "type": "add_sets", "reason": "x" } ] }
+    },
+    {
+      "kind": "historyMatches",
+      "label": "no clause matches → false",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "item": { "id": "h-7", "sourceProgramTemplateId": "tpl-9", "sourceCoachActionId": "other", "selectedRecommendationIds": ["z"] }
+    },
+
+    {
+      "kind": "findExisting",
+      "label": "active draft (ready_to_apply) → draft_ready",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "d1", "status": "ready_to_apply", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "applied draft → applied",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "d2", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "dismissed draft → dismissed",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "d3", "status": "dismissed", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "stale draft → expired",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "d4", "status": "stale", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "rolled_back draft, no blocking → rolled_back",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "d5", "status": "rolled_back", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "draft rolled_back wins BEFORE history applied (draft-before-history precedence)",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "dr", "status": "rolled_back", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-1" } ],
+      "adjustmentHistory": [ { "id": "ha", "sourceProgramTemplateId": "tpl-2", "sourceCoachActionId": "ca-1", "status": "applied", "selectedRecommendationIds": [] } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "no draft match · history non-rolled-back → applied (historyItem)",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "adjustmentHistory": [ { "id": "h1", "sourceProgramTemplateId": "tpl-2", "sourceCoachActionId": "ca-1", "status": "applied", "selectedRecommendationIds": [] } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "history rolled_back via rolledBackAt → rolled_back",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "adjustmentHistory": [ { "id": "h2", "sourceProgramTemplateId": "tpl-2", "sourceCoachActionId": "ca-1", "rolledBackAt": "2026-06-01T00:00:00.000Z", "selectedRecommendationIds": [] } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "history rolled_back via status → rolled_back",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "adjustmentHistory": [ { "id": "h3", "sourceProgramTemplateId": "tpl-2", "sourceCoachActionId": "ca-1", "status": "rolled_back", "selectedRecommendationIds": [] } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "no match anywhere → null",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health", "targetType": "plan", "targetId": "x" },
+      "drafts": [ { "id": "dx", "status": "applied", "sourceProgramTemplateId": "tpl-9", "sourceCoachActionId": "other" } ],
+      "adjustmentHistory": [ { "id": "hx", "sourceProgramTemplateId": "tpl-9", "sourceCoachActionId": "other", "status": "applied", "selectedRecommendationIds": [] } ]
+    },
+    {
+      "kind": "findExisting",
+      "label": "EXPLICIT sourceFingerprint routes the draft match → applied",
+      "action": { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+      "drafts": [ { "id": "df", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceFingerprint": "fp-find-1" } ],
+      "sourceFingerprint": "fp-find-1"
+    },
+
+    {
+      "kind": "filterVisible",
+      "label": "no-existing visible · applied hidden · rolled_back visible",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+        { "id": "ca-2", "status": "pending", "actionType": "open_data_health" },
+        { "id": "ca-3", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "drafts": [
+        { "id": "d-ca2", "status": "applied", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-2" },
+        { "id": "d-ca3", "status": "rolled_back", "sourceProgramTemplateId": "tpl-1", "sourceCoachActionId": "ca-3" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterVisible",
+      "label": "dismissed-today hides even with no existing adjustment",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" },
+        { "id": "ca-2", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "dismissedActions": [
+        { "actionId": "ca-1", "dismissedAt": "2026-06-04T05:00:00.000Z", "scope": "today" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterVisible",
+      "label": "non-pending dropped by the dismiss filter",
+      "actions": [
+        { "id": "ca-1", "status": "confirmed", "actionType": "open_data_health" }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterVisible",
+      "label": "history applied hides the action",
+      "actions": [
+        { "id": "ca-1", "status": "pending", "actionType": "open_data_health" }
+      ],
+      "adjustmentHistory": [
+        { "id": "h", "sourceProgramTemplateId": "tpl-2", "sourceCoachActionId": "ca-1", "status": "applied", "selectedRecommendationIds": [] }
+      ],
+      "currentDate": "2026-06-04"
+    },
+    {
+      "kind": "filterVisible",
+      "label": "empty actions → empty",
+      "actions": [],
+      "currentDate": "2026-06-04"
+    }
+  ]
+}

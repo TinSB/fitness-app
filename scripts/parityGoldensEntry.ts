@@ -383,6 +383,25 @@ import {
   buildCoachActionAdjustmentDraftInput,
   buildCoachActionSourceFingerprint,
 } from '../src/engines/coachActionEngine';
+// CC-3 — coachActionDismissEngine port parity slice. Imports the REAL pure dismiss/
+// visibility exports so the coach-action-dismiss goldens are GENERATED from TS truth,
+// never hand-authored (§22). The engine is PURE / clockless — every time value (now /
+// currentDate / dismissedAt) is an explicit string argument, the dateKey 'new Date'
+// fallback is exercised only with '' (NaN → '', TZ-independent), and NOTHING persists
+// (the gated dismiss write is CC-4) → generatedAtPolicy 'none'. The Swift port
+// (CoachActionDismissEngine) re-runs the SAME exports over each case's echoed input and
+// COMPUTE-ASSERTs the result (DismissedCoachAction canonical-JSON · resultIds · boolean ·
+// {matched,state,draftId,historyItemId}), case-by-case.
+import {
+  dismissCoachActionToday,
+  filterDismissedCoachActions,
+  draftMatchesCoachAction,
+  historyMatchesCoachAction,
+  findExistingAdjustmentForCoachAction,
+  filterVisibleCoachActions,
+  filterResolvedCoachActions,
+  filterResolvedPlanActions,
+} from '../src/engines/coachActionDismissEngine';
 // PA-S0 — i18n/terms data port parity slice. Imports the REAL frozen label
 // tables (src/i18n/terms.ts) so the terms-snapshot golden is GENERATED from TS
 // truth, never hand-authored (§22). terms.ts is the one clean leaf of the PA
@@ -1024,6 +1043,15 @@ const FIXTURE_IDS = [
   'coach-action/build-actions-cases-v1',
   'coach-action/adjustment-draft-cases-v1',
   'coach-action/source-fingerprint-cases-v1',
+  // CC-3 coachActionDismissEngine — ONE OUTPUT fixture (a dispatch-by-kind `cases`
+  // array) FUNCTION-LEVEL pinning all 9 exports: dismissCoachActionToday /
+  // filterDismissedCoachActions / draftMatchesCoachAction / historyMatchesCoachAction /
+  // findExistingAdjustmentForCoachAction / filterVisibleCoachActions + the two aliases
+  // filterResolvedCoachActions / filterResolvedPlanActions. PURE / clockless — zero
+  // Date, NO write path (the gated dismiss write is CC-4) → generatedAtPolicy 'none'.
+  // The Swift CoachActionDismissEngine re-runs each export over the echoed input and
+  // COMPUTE-ASSERTs equality. Additive; generated, never hand-edited (§22).
+  'coach-action-dismiss/dismiss-cases-v1',
 ] as const;
 
 type FixtureId = (typeof FIXTURE_IDS)[number];
@@ -4185,6 +4213,99 @@ const generateCoachAction = (input: any, meta: ParityMeta) => {
   return { sourceFixtureId: meta.id, cases };
 };
 
+// ---------------------------------------------------------------------------
+// CC-3 — coachActionDismissEngine OUTPUT parity (coach-action track)
+//
+// Dispatch-by-kind generator. Each case echoes its engine input VERBATIM AND the REAL
+// TS output. PURE / clockless — every time value (now / currentDate / dismissedAt) is an
+// explicit string; NOTHING persists (the gated dismiss write is CC-4). `sourceFingerprint`
+// is forwarded verbatim: when the case omits the key it is `undefined`, which triggers the
+// TS default parameter (the per-draft/per-history computed fingerprint) — exactly mirrored
+// by the Swift `String? == nil` default. Generated, never hand-edited (§22).
+//   kind 'dismissToday'   → dismissCoachActionToday(actionId, now)                  → `result`
+//   kind 'filterDismissed'→ filterDismissedCoachActions(actions, dismissed, date)   → `resultIds`
+//   kind 'draftMatches'   → draftMatchesCoachAction(action, draft, sourceFp?)       → `result` (bool)
+//   kind 'historyMatches' → historyMatchesCoachAction(action, item, sourceFp?)      → `result` (bool)
+//   kind 'findExisting'   → findExistingAdjustmentForCoachAction(action, …, sourceFp?)
+//                              → `result` { matched, state, draftId, historyItemId }
+//   kind 'filterVisible'  → filterVisibleCoachActions(actions, drafts, history, dismissed, date)
+//                              → `resultIds` (+ asserts the two aliases are byte-identical)
+// ---------------------------------------------------------------------------
+
+const generateCoachActionDismiss = (input: any, meta: ParityMeta) => {
+  const ids = (xs: any[]) => xs.map((a) => a.id);
+  const cases = (Array.isArray(input.cases) ? input.cases : []).map((c: any) => {
+    const kind = c.kind as string;
+    const label = c.label ?? null;
+    if (kind === 'dismissToday') {
+      const result = dismissCoachActionToday(c.actionId, c.now);
+      return { label, kind, actionId: c.actionId, now: c.now, result };
+    }
+    if (kind === 'filterDismissed') {
+      const result = filterDismissedCoachActions(c.actions ?? [], c.dismissedActions ?? [], c.currentDate);
+      return {
+        label, kind,
+        actions: c.actions ?? [],
+        dismissedActions: c.dismissedActions ?? [],
+        currentDate: c.currentDate,
+        resultIds: ids(result),
+      };
+    }
+    if (kind === 'draftMatches') {
+      const result = draftMatchesCoachAction(c.action, c.draft, c.sourceFingerprint);
+      return { label, kind, action: c.action, draft: c.draft, sourceFingerprint: c.sourceFingerprint ?? null, result };
+    }
+    if (kind === 'historyMatches') {
+      const result = historyMatchesCoachAction(c.action, c.item, c.sourceFingerprint);
+      return { label, kind, action: c.action, item: c.item, sourceFingerprint: c.sourceFingerprint ?? null, result };
+    }
+    if (kind === 'findExisting') {
+      const existing = findExistingAdjustmentForCoachAction(
+        c.action, c.drafts ?? [], c.adjustmentHistory ?? [], c.sourceFingerprint,
+      );
+      return {
+        label, kind,
+        action: c.action,
+        drafts: c.drafts ?? [],
+        adjustmentHistory: c.adjustmentHistory ?? [],
+        sourceFingerprint: c.sourceFingerprint ?? null,
+        result: {
+          matched: existing !== null,
+          state: existing?.state ?? null,
+          draftId: existing?.draft?.id ?? null,
+          historyItemId: existing?.historyItem?.id ?? null,
+        },
+      };
+    }
+    if (kind === 'filterVisible') {
+      const args = [c.actions ?? [], c.drafts ?? [], c.adjustmentHistory ?? [], c.dismissedActions ?? [], c.currentDate] as const;
+      const result = filterVisibleCoachActions(...args);
+      // The two aliases ARE filterVisibleCoachActions — assert byte-identical here so the
+      // golden can pin all three with one resultIds array.
+      const resolvedCoach = filterResolvedCoachActions(...args);
+      const resolvedPlan = filterResolvedPlanActions(...args);
+      const visibleIds = ids(result);
+      if (
+        JSON.stringify(visibleIds) !== JSON.stringify(ids(resolvedCoach)) ||
+        JSON.stringify(visibleIds) !== JSON.stringify(ids(resolvedPlan))
+      ) {
+        throw new Error(`parityGoldensEntry: coach-action-dismiss alias divergence for '${String(label)}'`);
+      }
+      return {
+        label, kind,
+        actions: c.actions ?? [],
+        drafts: c.drafts ?? [],
+        adjustmentHistory: c.adjustmentHistory ?? [],
+        dismissedActions: c.dismissedActions ?? [],
+        currentDate: c.currentDate,
+        resultIds: visibleIds,
+      };
+    }
+    throw new Error(`parityGoldensEntry: coach-action-dismiss unknown case kind '${String(kind)}'`);
+  });
+  return { sourceFixtureId: meta.id, cases };
+};
+
 const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | Promise<unknown>> = {
   'app-data/snapshot-hash-stable-v1': generateSnapshotHash,
   'training-decision/normal-session-v1': generateTrainingDecision,
@@ -4334,6 +4455,8 @@ const GENERATORS: Record<FixtureId, (input: any, meta: ParityMeta) => unknown | 
   'coach-action/build-actions-cases-v1': generateCoachAction,
   'coach-action/adjustment-draft-cases-v1': generateCoachAction,
   'coach-action/source-fingerprint-cases-v1': generateCoachAction,
+  // CC-3 coachActionDismissEngine OUTPUT parity — single dispatch-by-kind generator.
+  'coach-action-dismiss/dismiss-cases-v1': generateCoachActionDismiss,
 };
 void TRAINING_DECISION_EXPANDED_IDS;
 
