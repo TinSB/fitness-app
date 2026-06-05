@@ -269,4 +269,46 @@ final class WeeklyCoachActionEngineParityTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - ② audit fix — e1RM confidence is faithful (no fabricated "medium" fallback)
+
+    /// Pins the ②/CC-4 audit fix at WeeklyCoachActionEngine.swift:`confidence: current.confidence`
+    /// (ts:340). The flattened `E1RMSignal` carries `currentE1rmKg` and `currentConfidence` as
+    /// SEPARATE optionals projected from the one `EstimatedOneRepMax current`; the engine's guard
+    /// (ts:328 `!profile.current`) only binds `currentE1rmKg`. On every faithful input the required
+    /// `current.confidence` rides along (so the goldens are unchanged), but the old `?? "medium"`
+    /// SILENTLY fabricated a confidence the TS never has whenever the projection lacked one. The fix
+    /// drops to `?? ""` → `EstimateConfidence(rawValue: "")` is nil → the key is OMITTED, exactly as
+    /// TS emits for an absent `confidence` (`undefined`). This test feeds the malformed projection
+    /// (currentE1rmKg present, currentConfidence nil) and asserts the recommendation OMITS confidence
+    /// — a regression to `?? "medium"` would surface here as `.medium`, not `nil`.
+    func testE1RMConfidenceIsFaithfulNoMediumFallback() {
+        // A NON-empty muscleVolumeDashboard is required so the engine does not short-circuit on the
+        // empty-dashboard adherence fallback (ts:255) and actually reaches the e1rmProfiles loop
+        // (ts:327). current(100) present + best(110) > current+5 then qualifies the ts:330-341 e1RM
+        // recovery recommendation; it is the ONLY rec with category "recovery" + targetId "bench-press",
+        // so we locate it directly (the neutral volume row may emit its own, unrelated, recs).
+        let neutralRow = Engine.MuscleVolumeRow(
+            muscleId: "chest", muscleName: "胸", status: "on_target",
+            targetSets: 10, completedSets: 0, effectiveSets: 0,
+            highConfidenceEffectiveSets: 0, weightedEffectiveSets: 0, remainingSets: 0
+        )
+        func e1rmRec(_ confidence: String?) -> WeeklyActionRecommendation? {
+            Engine.buildWeeklyActionRecommendations(Engine.WeeklyCoachActionInput(
+                muscleVolumeDashboard: [neutralRow],
+                e1rmProfiles: [Engine.E1RMSignal(
+                    exerciseId: "bench-press", currentE1rmKg: 100, currentConfidence: confidence, bestE1rmKg: 110
+                )]
+            )).first { $0.category == "recovery" && $0.targetId == "bench-press" }
+        }
+
+        // ②: a confidence-less current must OMIT confidence (the TS reads required `current.confidence`),
+        // NEVER fabricate .medium — a regression to `?? "medium"` surfaces here as `.medium`, not `nil`.
+        let missing = e1rmRec(nil)
+        XCTAssertNotNil(missing, "the e1RM profile yields a recovery recommendation")
+        XCTAssertNil(missing?.confidence, "②: a confidence-less current must OMIT confidence, never fabricate .medium")
+
+        // Control: a present confidence flows through verbatim (the golden path, asserted directly).
+        XCTAssertEqual(e1rmRec("low")?.confidence, .low, "ts:340: a present current.confidence flows through unchanged")
+    }
 }

@@ -285,6 +285,85 @@ final class NextWorkoutScheduleModel: ObservableObject {
     }
 }
 
+/// Thin @MainActor view-model for the 今日 surface's READ-ONLY 教练建议 (coach action) block (CC-4).
+/// Same shape + IO seam as `TrainingInsightsModel` / `NextWorkoutScheduleModel`: it opts the running
+/// app into the SAME sanctioned canonical store, loads it READ-ONLY, builds the DataHealth clean view
+/// (the §10 chokepoint), and delegates the clean-view → coach-action engine → `CoachActionSurfaceSummary`
+/// transform to the pure `resolveCoachActionState`. It NEVER touches FileManager directly, NEVER writes,
+/// and surfaces an honest state for every failure. Kept SEPARATE from the other read models so the
+/// coach-action block is a pure, isolated addition — the existing read paths are untouched. The dismiss
+/// control the surface renders is DISPLAY-ONLY: its persistence is the CC-5 write path, and this model
+/// never writes (read-only, like every other 今日 block).
+@MainActor
+final class CoachActionSurfaceModel: ObservableObject {
+    @Published private(set) var state: CoachActionSurfaceState
+
+    /// The sanctioned canonical store (the §8 source of truth), read-only. Optional so previews/tests
+    /// opt OUT of disk entirely; the running app injects it on appear.
+    private var store: AppDataStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()`).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the canonical store,
+    /// opted in on appear via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.now = now
+        self.isLive = true
+    }
+
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a preview renders a
+    /// chosen state without ever reading the real on-disk document.
+    init(previewState: CoachActionSurfaceState) {
+        self.state = previewState
+        self.store = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
+
+    /// True for the running app; false for pinned previews.
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the write path uses (Application
+    /// Support / `IronPathAppData`). Idempotent; `#if os(iOS)` + the live guard keep previews/tests off
+    /// disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view → coach-action engine → coach-action
+    /// summary (in `resolveCoachActionState`). NEVER writes, NEVER overwrites an unreadable document,
+    /// NEVER crashes — every failure → honest state. A SINGLE `instant` drives both the clean view's
+    /// guard clock and the engine's reference time (the §11.2 injected nowIso), so the read is internally
+    /// consistent.
+    func reload() {
+        guard isLive else { return }
+        let instant = now()
+        state = resolveCoachActionState(readOutcome(now: instant), now: instant)
+    }
+
+    /// The ONLY IO + the DataHealth clean-view construction (the §10 chokepoint the app layer performs,
+    /// mirroring `TrainingInsightsModel`). No write: a missing file (or no live source) → `.missing`; a
+    /// present-but-unreadable document → `.unreadable` (left untouched on disk, never overwritten — raw
+    /// AppData never reaches the engine).
+    private func readOutcome(now: Date) -> CoachActionAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
+    }
+}
+
 struct TodayRootView: View {
     @StateObject private var model: TodayRealDataModel
 
@@ -295,6 +374,10 @@ struct TodayRootView: View {
     /// READ-ONLY 下次训练/恢复 (SC-D). A third, isolated @StateObject so the scheduling block
     /// adds nothing to the existing readiness / insights paths.
     @StateObject private var schedule: NextWorkoutScheduleModel
+
+    /// READ-ONLY 教练建议 (CC-4). A fourth, isolated @StateObject so the coach-action block adds
+    /// nothing to the existing readiness / insights / scheduling paths.
+    @StateObject private var coach: CoachActionSurfaceModel
 
     @State private var showTrainingEntry = false
 
@@ -311,6 +394,7 @@ struct TodayRootView: View {
         _model = StateObject(wrappedValue: TodayRealDataModel())
         _insights = StateObject(wrappedValue: TrainingInsightsModel())
         _schedule = StateObject(wrappedValue: NextWorkoutScheduleModel())
+        _coach = StateObject(wrappedValue: CoachActionSurfaceModel())
     }
 
     /// Previews/tests inject a pinned readiness model (e.g.
@@ -321,6 +405,7 @@ struct TodayRootView: View {
         _model = StateObject(wrappedValue: model)
         _insights = StateObject(wrappedValue: TrainingInsightsModel(previewState: .empty))
         _schedule = StateObject(wrappedValue: NextWorkoutScheduleModel(previewState: .empty))
+        _coach = StateObject(wrappedValue: CoachActionSurfaceModel(previewState: .empty))
     }
 
     /// Previews/tests inject pinned readiness + insights models. The scheduling block
@@ -332,9 +417,12 @@ struct TodayRootView: View {
         _model = StateObject(wrappedValue: model)
         _insights = StateObject(wrappedValue: insights)
         _schedule = StateObject(wrappedValue: NextWorkoutScheduleModel(previewState: .empty))
+        _coach = StateObject(wrappedValue: CoachActionSurfaceModel(previewState: .empty))
     }
 
-    /// Previews/tests inject pinned readiness + insights + scheduling models (all off-disk).
+    /// Previews/tests inject pinned readiness + insights + scheduling models (all off-disk). The
+    /// coach-action block defaults to an honest pinned-empty; a coach-specific preview uses
+    /// `init(model:insights:schedule:coach:)` below.
     @MainActor init(
         model: TodayRealDataModel,
         insights: TrainingInsightsModel,
@@ -343,6 +431,20 @@ struct TodayRootView: View {
         _model = StateObject(wrappedValue: model)
         _insights = StateObject(wrappedValue: insights)
         _schedule = StateObject(wrappedValue: schedule)
+        _coach = StateObject(wrappedValue: CoachActionSurfaceModel(previewState: .empty))
+    }
+
+    /// Previews/tests inject pinned readiness + insights + scheduling + coach-action models (all off-disk).
+    @MainActor init(
+        model: TodayRealDataModel,
+        insights: TrainingInsightsModel,
+        schedule: NextWorkoutScheduleModel,
+        coach: CoachActionSurfaceModel
+    ) {
+        _model = StateObject(wrappedValue: model)
+        _insights = StateObject(wrappedValue: insights)
+        _schedule = StateObject(wrappedValue: schedule)
+        _coach = StateObject(wrappedValue: coach)
     }
 
     var body: some View {
@@ -352,6 +454,7 @@ struct TodayRootView: View {
                 content
                 scheduleSection
                 insightsSection
+                coachActionSection
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -377,6 +480,12 @@ struct TodayRootView: View {
             // own live flag, so previews/tests stay off disk.
             schedule.activateLiveSourceIfNeeded()
             schedule.reload()
+            // CC-4: the 教练建议 block reads the SAME canonical store read-only and computes its
+            // coach actions from the DataHealth clean view (§10/§11), injecting the §11.2 nowIso.
+            // Guarded by its own live flag, so previews/tests stay off disk. DISPLAY-ONLY — the
+            // dismiss control never writes (persistence is CC-5).
+            coach.activateLiveSourceIfNeeded()
+            coach.reload()
             // Previews/tests pin their state and never touch the live App Group sink.
             guard model.isLiveLoadEnabled else { return }
             // W-1/W-2: publish a DERIVED read-only readiness snapshot for the widget
@@ -705,6 +814,122 @@ struct TodayRootView: View {
         )
     }
 
+    // MARK: - CC-4 教练建议 (read-only coach-action surface)
+
+    /// The READ-ONLY 教练建议 block. Renders the `CoachActionEngine.buildCoachActions` output the pure
+    /// `resolveCoachActionState` produced from the DataHealth clean view (§10/§11), mirrored from the PWA
+    /// CoachActionCard / CoachActionList. On `.empty` / `.unavailable` it renders nothing — the readiness
+    /// `content` above already shows the honest no-data / degrade state for the same canonical store.
+    @ViewBuilder
+    private var coachActionSection: some View {
+        if case .ready(let summary) = coach.state {
+            coachActionContent(summary)
+        }
+    }
+
+    private func coachActionContent(_ summary: CoachActionSurfaceSummary) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(summary.title)
+                .font(.title3.weight(.semibold))
+            Text(summary.description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("基于你本机的真实训练记录（经 DataHealth 数据校验后只读派生），由教练动作引擎计算。本区只读展示，不修改任何已保存的数据或计划。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if summary.actions.isEmpty {
+                Text(summary.emptyText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.secondarySystemBackground))
+                    )
+            } else {
+                ForEach(summary.actions) { row in
+                    coachActionCard(row, deferredNote: summary.dismissDeferredNote)
+                }
+            }
+        }
+    }
+
+    /// A single read-only coach-action card mirroring the PWA `CoachActionCard`: title + source, the
+    /// priority/status badges, the description, the 需要确认/只查看 (+ 可撤销) line, an optional disabled
+    /// reason, the read-only primary entry label, and a DISABLED dismiss control (persistence deferred
+    /// to CC-5 — this surface never writes).
+    private func coachActionCard(_ row: CoachActionSurfaceSummary.ActionRow, deferredNote: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(row.title)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(row.sourceLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
+                coachTag(row.priorityLabel)
+                coachTag(row.statusLabel)
+            }
+            Text(row.description)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 8) {
+                coachTag(row.confirmationLabel)
+                if let reversible = row.reversibleLabel {
+                    coachTag(reversible)
+                }
+            }
+            if let disabled = row.disabledReason {
+                Text(disabled)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            // The primary entry is a read-only label (no cross-tab navigation in this slice); the
+            // dismiss control shows DISABLED — its persistence is the CC-5 write path.
+            HStack(spacing: 8) {
+                Text(row.primaryLabel)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(row.secondaryLabel)
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+            }
+            Text(deferredNote)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
+    /// A small read-only pill tag (mirrors the PWA StatusBadge; the read-only surface does not color
+    /// by tone — the label text carries the meaning).
+    private func coachTag(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(
+                Capsule().fill(Color(.tertiarySystemBackground))
+            )
+    }
+
     /// Shared label/value row stack (mirrors `card(rows:)`).
     private func rowStack(_ rows: [SurfaceRow]) -> some View {
         VStack(spacing: 6) {
@@ -906,4 +1131,66 @@ private enum TodaySchedulePreviewData {
         )
         return NextWorkoutScheduleSummary(recommendation: recommendation)
     }()
+}
+
+#Preview("含教练动作") {
+    TodayRootView(
+        model: TodayRealDataModel(previewState: .ready(
+            TodayReadinessSummary(
+                slice: FocusModePreviewData.sampleCoreSlice(for: .normal),
+                todayStatus: TodayStatus(
+                    date: FocusModePreviewData.referenceDateOnly,
+                    sleep: "一般",
+                    energy: "中",
+                    time: "60",
+                    soreness: ["无"]
+                )
+            )
+        )),
+        insights: TrainingInsightsModel(previewState: .empty),
+        schedule: NextWorkoutScheduleModel(previewState: .empty),
+        coach: CoachActionSurfaceModel(previewState: .ready(TodayCoachActionPreviewData.summary))
+    )
+}
+
+/// Deterministic preview-only sample for the 教练建议 block. NOT canonical AppData and never written to
+/// disk — it only feeds the SwiftUI preview so it renders without a device store. Built through the
+/// GENUINE public `CoachActionSurfaceSummary` init over sample coach actions (the same projection the
+/// live resolver uses), so the preview reflects the real presentation output — a pending next-workout
+/// entry plus a recovery adjustment that requires confirmation.
+private enum TodayCoachActionPreviewData {
+    static let summary = CoachActionSurfaceSummary(actions: [
+        CoachActionEngine.CoachAction(
+            id: "next-workout-push-a",
+            title: "查看下次训练：推力 A",
+            description: "打开下次训练建议详情，确认后再开始。",
+            source: "nextWorkout",
+            actionType: "open_next_workout",
+            priority: "low",
+            status: "pending",
+            requiresConfirmation: false,
+            reversible: false,
+            createdAt: "2026-06-03T10:00:00.000Z",
+            targetId: "push-a",
+            targetType: "template",
+            reason: "按计划轮转判断：已完成上一轮拉力日，下一日为推力 A。"
+        ),
+        CoachActionEngine.CoachAction(
+            id: "recovery-modified_train-pull-a",
+            title: "采用恢复保守版",
+            description: "肩部近期有轻微不适，建议优先安排拉力动作并降低推举类负荷。",
+            source: "recovery",
+            actionType: "apply_temporary_session_adjustment",
+            priority: "high",
+            status: "pending",
+            requiresConfirmation: true,
+            reversible: true,
+            createdAt: "2026-06-03T10:00:00.000Z",
+            targetId: "pull-a",
+            targetType: "template",
+            reason: "肩部近 3 天有不适记录，本次建议减量执行。",
+            confirmTitle: "采用本次保守训练？",
+            confirmDescription: "只影响本次训练，不会修改原模板。"
+        ),
+    ])
 }
