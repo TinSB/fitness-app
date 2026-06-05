@@ -913,6 +913,11 @@ public enum CoachActionEngine {
     public static func buildCoachActions(_ input: BuildCoachActionsInput) -> [CoachAction] {
         // const createdAt = now || new Date().toISOString() — wall-clock fallback NOT ported
         // (DERIVED-only seam; every fixture passes an explicit `now`, so "" is never reached).
+        // ③/CC-4 LIVE CONTRACT: the live read path (`resolveCoachActionState`, CoachActionReadPath)
+        // injects the decision pipeline's `nowIso` here and `precondition`-asserts it is non-empty
+        // BEFORE calling this builder, so the `""` branch is UNREACHABLE on the live path — the same
+        // §11.2 injected-clock pinning as iOS-17e-6a's `asOfDate`. Passing a defaulted/empty `now`
+        // from a live caller is a hard precondition failure, never a silent wall-clock fabrication.
         let createdAt = nonEmpty(input.now) ?? ""
         let templates = appDataTemplates(input.appData)                 // appData.templates || []
 

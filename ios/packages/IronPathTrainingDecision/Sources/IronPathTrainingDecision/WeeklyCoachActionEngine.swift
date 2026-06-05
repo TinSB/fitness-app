@@ -661,7 +661,17 @@ public enum WeeklyCoachActionEngine {
                 recommendation: "下周训练重量继续以当前 e1RM 为准，不追历史最高。",
                 reason: "当前估算 \(jsNumberString(current))kg，历史最佳 \(jsNumberString(best))kg；近期能力比历史峰值更能代表下周可用负荷。", // ts:338
                 evidenceRuleIds: ["progressive_overload"],
-                confidence: profile.currentConfidence ?? "medium" // ts:340 (current.confidence; current is present here)
+                // ts:340 `confidence: current.confidence`. `EstimatedOneRepMax.confidence` is a
+                // REQUIRED field (training-model.ts:1041), and the §11 flattened input projects
+                // `current.{e1rmKg,confidence}` together (the test decoder reads BOTH off the one
+                // `current` object), so `currentConfidence` is present whenever the `currentE1rmKg`
+                // guard (ts:328 `!profile.current`) passed — every CC-1 golden carries it, so the
+                // output stays byte-identical. The empty-string fallback (②, audit fix; CC-4) replaces
+                // the old silent `?? "medium"`: it only ever fires on a malformed projection, and
+                // `EstimateConfidence(rawValue: "")` → nil → the key is OMITTED, faithfully reproducing
+                // what TS emits for an absent confidence (`undefined`) instead of FABRICATING a
+                // "medium" the TS never has. Pinned by testE1RMConfidenceIsFaithfulNoMediumFallback.
+                confidence: profile.currentConfidence ?? ""
             ))
         }
 
