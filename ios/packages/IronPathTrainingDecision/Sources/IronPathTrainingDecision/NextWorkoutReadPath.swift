@@ -37,8 +37,12 @@
 // canonical file yet / first launch / no live source) and a loaded-but-empty (no cleaned
 // history) view → `.empty`; `.unreadable` (a present but unparseable document) →
 // `.unavailable` (degrade, never crash, never overwrite); a clean view WITH cleaned
-// history → `.ready(summary)`. Within a ready summary, an empty `templates` slot yields
-// the scheduler's own honest "暂无下次建议" branch (never a fabricated next workout).
+// history → `.ready(summary)`. Within a ready summary, an empty `templates` slot is
+// seeded with `DefaultTrainingData.initialTemplates` (FU-1: the native read chain now
+// reproduces the PWA load-layer `sanitizeTemplates` seed — appDataSanitize.ts:705 —
+// at decode time, read-only/never written), so a fresh user falls onto the default
+// program's day instead of the bare "暂无下次建议" branch; a non-empty templates slot is
+// used verbatim (the empty→default seed is the ONLY normalization here).
 
 import Foundation
 import IronPathDomain
@@ -100,7 +104,11 @@ public func resolveNextWorkoutScheduleState(
         // CONFIG slots plucked from the gated view's raw document (not history):
         //   * programTemplate — the promoted accessor (the `PlanDisplayProjection` precedent).
         //   * templates       — un-promoted; decoded from `root["templates"]` (the PWA's
-        //                        `data.templates`). Empty -> the scheduler's honest fallback.
+        //                        `data.templates`). Empty -> seeded with
+        //                        `DefaultTrainingData.initialTemplates`, reproducing the PWA
+        //                        load-layer `sanitizeTemplates` seed (appDataSanitize.ts:705)
+        //                        the native read chain previously omitted — read-only, never
+        //                        written back (FU-1). See `decodeTrainingTemplates`.
         //   * plannedTemplateId — the user's selected template id from settings (optional).
         let programTemplate = cleanView.raw.programTemplate
         let templates = decodeTrainingTemplates(cleanView)
@@ -129,13 +137,32 @@ public func resolveNextWorkoutScheduleState(
     }
 }
 
-/// Decode the user's training day templates out of the gated view's raw document. `templates`
-/// is not a promoted Domain field (it rides in `root`, mirroring the PWA `data.templates`), so
-/// it is read the same way the Domain `AppData.history` accessor reads `root["history"]`. A
-/// missing/garbled entry is skipped (`try?`) — never crashes, never fabricates a template.
-private func decodeTrainingTemplates(_ cleanView: CleanAppDataView) -> [TrainingTemplate] {
-    guard let array = cleanView.raw.root["templates"]?.arrayValue else { return [] }
-    return array.compactMap { try? TrainingTemplate(decoding: $0) }
+/// Decode the user's training day templates out of the gated view's raw document, with the
+/// FU-1 empty→default seed. `templates` is not a promoted Domain field (it rides in `root`,
+/// mirroring the PWA `data.templates`), so it is read the same way the Domain `AppData.history`
+/// accessor reads `root["history"]`. A missing/garbled entry is skipped (`try?`) — never
+/// crashes, never fabricates a template.
+///
+/// FU-1: when the decode yields NO usable templates (absent slot, empty array, or every entry
+/// garbled), the native read chain seeds `DefaultTrainingData.initialTemplates` — reproducing
+/// the PWA load-layer `sanitizeTemplates` seed (`appDataSanitize.ts:705`,
+/// `Array.isArray(source) && source.length ? source : INITIAL_TEMPLATES`) that the iOS read
+/// chain previously omitted (leaving fresh users with no "today's training"). This is the SAME
+/// empty→default pattern `ProgramAdjustmentEngineSelectDayDiff.swift:201` already uses
+/// (`context.templates?.isEmpty == false ? context.templates! : DefaultTrainingData.initialTemplates`).
+/// It is a READ-TIME projection only — nothing is written back to disk — and it ONLY fills the
+/// empty case: a non-empty (even malformed-but-decodable) set is returned verbatim, never the
+/// per-template hydrate/migrate/validate of the full `sanitizeTemplates` (that is a separate slice).
+/// Shared by the SC scheduling read path and the FU-1 Focus live read path
+/// (`resolveFocusTrainingState`) so both surfaces seed identically.
+func decodeTrainingTemplates(_ cleanView: CleanAppDataView) -> [TrainingTemplate] {
+    let decoded: [TrainingTemplate]
+    if let array = cleanView.raw.root["templates"]?.arrayValue {
+        decoded = array.compactMap { try? TrainingTemplate(decoding: $0) }
+    } else {
+        decoded = []
+    }
+    return decoded.isEmpty ? DefaultTrainingData.initialTemplates : decoded
 }
 
 /// UTC ISO-8601 with fractional seconds (matches the engines' parity-clock format, e.g.

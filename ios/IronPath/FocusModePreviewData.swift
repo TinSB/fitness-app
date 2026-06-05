@@ -17,10 +17,20 @@
 //                       so compounds do NOT all collapse to 1 set.
 //   .severeRest       — recent history (5d / 2d) + acutePainReported=true ->
 //                       severeRest intent. Conservative path; compounds may show 1 set.
+//
+// FU-1 also makes this file the Focus DATA-PROVIDER layer (NOT just the sample):
+// alongside the deterministic `FocusModePreviewData` sample it hosts `FocusModeLiveData`,
+// the thin @MainActor view-model that runs the SAME engine pipeline over the user's REAL
+// canonical AppData (read-only). The shell (FocusModeShellView) stays a pure presentation
+// surface free of any AppData / DataHealth / engine-clean-input token — exactly the
+// established Focus boundary (the engine pipeline is invoked HERE, in the data provider, the
+// shell only renders the resulting slice). `FocusModePreviewData` itself stays sample-only,
+// for previews/tests.
 
 import Foundation
 import IronPathDomain
 import IronPathDataHealth
+import IronPathPersistence
 import IronPathTrainingDecision
 
 enum FocusModeSampleScenario: String, CaseIterable, Identifiable {
@@ -173,5 +183,94 @@ enum FocusModePreviewData {
 
     static func sampleTemplateExercises() -> [TrainingDecisionTemplateExercise] {
         pushATemplateExercises()
+    }
+}
+
+/// FU-1: thin @MainActor view-model for the Focus surface's REAL canonical-AppData read.
+/// It owns ONLY the wiring + IO seam (master §5/§15), mirroring `TodayRealDataModel` /
+/// `NextWorkoutScheduleModel`: it opts the running app into the SAME sanctioned canonical store
+/// the completion write uses (`JSONFileAppDataStore.applicationSupport()`, §8), loads it
+/// READ-ONLY, builds the DataHealth clean view (the §10 chokepoint), and delegates the
+/// clean-view → today's-template → engine → slice transform to the pure
+/// `resolveFocusTrainingState`. It NEVER touches FileManager directly, NEVER writes (FU-1 is a
+/// read-time wiring only; the empty-templates seed is a read projection, never persisted), NEVER
+/// overwrites an unreadable document, and surfaces an honest state for every failure — no crash,
+/// no fabricated session.
+///
+/// It lives in the Focus DATA-PROVIDER file (alongside the `FocusModePreviewData` sample) rather
+/// than the shell so the presentation shell stays free of any AppData / DataHealth /
+/// engine-clean-input token — the established Focus boundary: the engine pipeline is invoked in
+/// the data provider, the shell only renders the resulting slice.
+@MainActor
+final class FocusModeLiveData: ObservableObject {
+    @Published private(set) var state: FocusTrainingState
+
+    /// The sanctioned canonical store (the §8 source of truth), read-only. Optional so
+    /// previews/tests opt OUT of disk entirely; the running app injects it on appear.
+    private var store: AppDataStore?
+    /// Injectable clock; only invoked on the live read path (never an inline `Date()` in
+    /// previews/tests).
+    private let now: () -> Date
+    /// True for the running app (live loading enabled); false for pinned previews.
+    private let isLive: Bool
+
+    /// Live initializer (the running app): honest `.empty` until `reload()` reads the canonical
+    /// store, opted in on appear via `activateLiveSourceIfNeeded()`.
+    init(now: @escaping () -> Date = { Date() }) {
+        self.state = .empty
+        self.store = nil
+        self.now = now
+        self.isLive = true
+    }
+
+    /// Preview/test initializer: pins a fixed state and disables live loading, so a preview
+    /// renders a chosen state (or drives the deterministic sample path) without ever reading the
+    /// real on-disk document.
+    init(previewState: FocusTrainingState) {
+        self.state = previewState
+        self.store = nil
+        self.now = { Date() }
+        self.isLive = false
+    }
+
+    /// True for the running app; false for pinned previews — the load-bearing flag the shell uses
+    /// to choose the LIVE plan vs. the deterministic sample, and to hide the live-irrelevant
+    /// scenario picker.
+    var isLiveLoadEnabled: Bool { isLive }
+
+    /// Opt the RUNNING app into the SAME sanctioned canonical store the completion write uses
+    /// (Application Support / `IronPathAppData`, §8). Idempotent; `#if os(iOS)` + the live guard
+    /// keep previews/tests off disk.
+    func activateLiveSourceIfNeeded() {
+        guard isLive else { return }
+        #if os(iOS)
+        if store == nil { store = JSONFileAppDataStore.applicationSupport() }
+        #endif
+    }
+
+    /// Read-only refresh: canonical AppData → DataHealth clean view → today's template → engine →
+    /// slice (in `resolveFocusTrainingState`). NEVER writes, NEVER overwrites an unreadable
+    /// document, NEVER crashes — every failure → honest state. A SINGLE `instant` drives both the
+    /// clean view's guard clock and the engine/scheduler reference time, so the read is internally
+    /// consistent.
+    func reload() {
+        guard isLive else { return }
+        let instant = now()
+        state = resolveFocusTrainingState(readOutcome(now: instant), now: instant)
+    }
+
+    /// The ONLY IO + the DataHealth clean-view construction (the §10 chokepoint the app layer
+    /// performs, mirroring `TodayRealDataModel`). No write: a missing file (or no live source) →
+    /// `.missing`; a present-but-unreadable document → `.unreadable` (left untouched on disk, never
+    /// overwritten — raw AppData never reaches the engine).
+    private func readOutcome(now: Date) -> NextWorkoutAppDataLoadOutcome {
+        guard let store, store.hasExistingFile else { return .missing }
+        let appData: AppData
+        do {
+            appData = try store.load()
+        } catch {
+            return .unreadable
+        }
+        return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
     }
 }
