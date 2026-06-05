@@ -89,11 +89,15 @@ public enum CoachActionSurfaceState: Equatable, Sendable {
 /// already passed through DataHealth (master §10); the resolver only feeds the already-ported
 /// coach-action engine a clean-derived input and reads its output (master §11). `now` is the
 /// injected instant — it MUST match the instant the loader used to build the clean view's guard
-/// clock, so the result is reproducible for a given (`outcome`, `now`). Mirrors
+/// clock, so the result is reproducible for a given (`outcome`, `now`). `timeZone` is the civil
+/// zone the dismiss read-filter's LOCAL day-key is derived in — `.current` on the live path (the
+/// SAME `.current` the CC-5 write-side `TodayRootView.civilDayKey` stamps `dismissedAt` in, so the
+/// read/write civil days line up); tests inject a fixed zone for determinism (§11.2). Mirrors
 /// `resolveNextWorkoutScheduleState`.
 public func resolveCoachActionState(
     _ outcome: CoachActionAppDataLoadOutcome,
-    now: Date
+    now: Date,
+    timeZone: TimeZone = .current
 ) -> CoachActionSurfaceState {
     switch outcome {
     case .missing:
@@ -155,13 +159,19 @@ public func resolveCoachActionState(
             coachActionProgramAdjustmentDrafts(cleanView),
             coachActionProgramAdjustmentHistory(cleanView),
             coachActionDismissedActions(cleanView),
-            // §11.2 ZERO-NEW-CLOCK: the civil `YYYY-MM-DD` day is the SAME injected `nowIso`'s leading
-            // 10 chars — NOT a fresh `Date()`/`Calendar`/`ISO8601` read. `nowIso` is the parity-format
-            // UTC ISO-8601 string built above from the injected instant, so its first 10 chars are the
-            // anchored civil date key `filterDismissedCoachActions` matches `dismissedAt` against: the
-            // `context.currentDateLocalKey` the PWA passes (enginePipeline.ts:103), on this read path's
-            // existing UTC-day convention (the `coachActionReferenceIso8601UTC` header).
-            String(nowIso.prefix(10))
+            // §11.2 LOCAL CIVIL DAY (the dismiss read-filter's `currentDateLocalKey`). The civil
+            // `YYYY-MM-DD` is the LOCAL civil day of the ALREADY-INJECTED `now` instant under `timeZone`
+            // (`.current` on the live path) — the in-package mirror of the CC-5 write-side
+            // `TodayRootView.civilDayKey` and the TS `toLocalDateKey()` (engineUtils.ts:30, the LOCAL-day
+            // `local.toISOString().slice(0,10)`) the PWA passes as `context.currentDateLocalKey`
+            // (enginePipeline.ts:103). It is derived BY TIMEZONE CONVERSION from the injected instant —
+            // NOT a fresh `Date()`/clock read, and NOT `nowIso`'s UTC prefix (the CC-6 P1 bug fixed here
+            // in CC-7): a UTC day key is wrong for every non-UTC user across the |UTC-offset| midnight
+            // window — the write stamps `dismissedAt` on the LOCAL day, so a UTC read day differs by one
+            // and the dismissed card fails to hide. A timezone conversion on an injected instant is
+            // REQUIRED & allowed (§11.2 civil-date discipline, the same as AN-1 / CC-5 `civilDayKey`),
+            // never a new clock read.
+            coachActionCivilDayKey(now, timeZone: timeZone)
         )
         return .ready(CoachActionSurfaceSummary(actions: visibleActions))
     }
@@ -247,13 +257,34 @@ private func coachActionProgramAdjustmentHistory(_ cleanView: CleanAppDataView) 
 
 /// UTC ISO-8601 with fractional seconds (matches the engines' parity-clock format, e.g.
 /// `2026-06-03T10:00:00.000Z`). `buildCoachActions` stamps `createdAt` from it and `tomorrowIso`
-/// reads it back; UTC keeps the whole pipeline on the codebase's existing UTC-day convention. Same
-/// helper shape as the Today / Insights / NextWorkout read paths.
+/// reads it back; UTC keeps these engine TIMESTAMPS on the codebase's parity-clock convention. NOTE:
+/// this is the `createdAt`/`tomorrowIso` instant ONLY — the dismiss read-filter's civil DAY-KEY is the
+/// LOCAL day (`coachActionCivilDayKey`, the CC-5 write-side mirror), NOT this UTC string's prefix (the
+/// CC-6→CC-7 fix). Same helper shape as the Today / Insights / NextWorkout read paths.
 private func coachActionReferenceIso8601UTC(_ date: Date) -> String {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     formatter.timeZone = TimeZone(identifier: "UTC")
     return formatter.string(from: date)
+}
+
+/// The LOCAL civil calendar day `YYYY-MM-DD` for `date` in `timeZone` — the in-package mirror of the
+/// CC-5 write-side `TodayRootView.civilDayKey` and the TS `todayKey()` / `toLocalDateKey()`
+/// (engineUtils.ts:30, the LOCAL-day `local.toISOString().slice(0,10)`). The read path lives in this
+/// package and cannot import the app-layer `civilDayKey`, so this is its byte-for-byte-equal twin
+/// (`.current` Gregorian calendar, take y/m/d). It is the dismiss read-filter's `currentDateLocalKey`.
+///
+/// §11.2 CLOCK DISCIPLINE: the day is derived BY TIMEZONE CONVERSION from the ALREADY-INJECTED `now`
+/// instant — it reads NO fresh `Date()`/current time. A timezone conversion (a `Calendar` over the
+/// injected instant) is REQUIRED to turn a UTC instant into a LOCAL civil day and is explicitly
+/// allowed (the same civil-date discipline as AN-1 and the CC-5 write side); it is NOT a "new clock
+/// read" and NOT the UTC-prefix shortcut CC-6 took. `timeZone` defaults to `.current` on the live
+/// path (matching CC-5's hard-coded `.current`); tests inject a fixed non-UTC zone for determinism.
+func coachActionCivilDayKey(_ date: Date, timeZone: TimeZone = .current) -> String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+    let c = calendar.dateComponents([.year, .month, .day], from: date)
+    return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
 }
 
 // MARK: - 教练建议 (coach action) presentation summary

@@ -39,6 +39,15 @@ final class CoachActionReadPathTests: XCTestCase {
         return f.string(from: fixedNow())
     }
 
+    /// Parse a fixed UTC ISO-8601 instant (for the injected-clock day-key tests). Deterministic — it
+    /// never reads the wall clock; the resolver's civil day-key derives from THIS instant + a zone.
+    private func instant(_ iso: String) -> Date {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.date(from: iso)!
+    }
+
     /// Two completed sessions (latest 2d ago, prior 9d ago) — a real baseline.
     private func sessionsWithBaseline() -> [TrainingSession] {
         [CoreSliceTestKit.session(id: "cc-late", gap: 2),
@@ -310,17 +319,20 @@ final class CoachActionReadPathTests: XCTestCase {
     }
 
     func test_dismissedToday_hidesExactlyThatCard() {
+        // TRIVIAL local==UTC control: under an injected UTC zone the resolver's LOCAL civil day equals
+        // the UTC prefix, so `dismissedAt` = `fixedNowIso().prefix(10)` lines up. Deterministic (a fixed
+        // injected zone — NOT the CI machine's `.current`). The LOCAL≠UTC proof is the CC-7 test below.
+        let utc = TimeZone(identifier: "UTC")!
         let ids = baselinePendingIds()
         XCTAssertFalse(ids.isEmpty, "baseline must surface a pending action to dismiss")
         let victim = ids[0]
-        // `dismissedAt` stamped on the SAME civil day the resolver derives from the injected nowIso.
         let today = String(fixedNowIso().prefix(10))
         let cleanView = cleanViewWithExtraRoot(
             sessions: sessionsWithBaseline(),
             templates: dismissTemplates(),
             extraRoot: [.init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: today)]))]
         )
-        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow(), timeZone: utc) else {
             return XCTFail("expected .ready")
         }
         XCTAssertFalse(summary.actions.contains { $0.id == victim }, "the 'today'-dismissed action is hidden")
@@ -328,12 +340,13 @@ final class CoachActionReadPathTests: XCTestCase {
     }
 
     func test_dismissedViaSettingsSlotOnly_alsoHides_readPriorityRootOrSettings() {
+        let utc = TimeZone(identifier: "UTC")!
         let ids = baselinePendingIds()
         let victim = ids[0]
         let today = String(fixedNowIso().prefix(10))
         // NO root `dismissedCoachActions`; only the nested `settings` slot carries it → the read-side
         // priority `root || settings` still finds it (a PWA-origin doc may carry only the settings half;
-        // the CC-5 write double-writes both).
+        // the CC-5 write double-writes both). Injected UTC zone keeps the local day == the UTC prefix.
         let settings = JSONValue.object(OrderedJSONObject(entries: [
             .init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: today)])),
         ]))
@@ -342,31 +355,89 @@ final class CoachActionReadPathTests: XCTestCase {
             templates: dismissTemplates(),
             extraRoot: [.init(key: "settings", value: settings)]
         )
-        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow(), timeZone: utc) else {
             return XCTFail("expected .ready")
         }
         XCTAssertFalse(summary.actions.contains { $0.id == victim }, "a settings-only dismiss still hides (root || settings)")
         XCTAssertEqual(summary.actions.count, ids.count - 1, "exactly the dismissed action drops out")
     }
 
-    func test_dismissedAnotherCivilDay_doesNotHide_currentDateLocalKeyFromInjectedNowIso() {
+    func test_dismissedAnotherCivilDay_doesNotHide_currentDateLocalKeyFromInjectedInstant() {
+        let utc = TimeZone(identifier: "UTC")!
         let ids = baselinePendingIds()
         let victim = ids[0]
         let otherDay = "1999-12-31"
-        XCTAssertNotEqual(otherDay, String(fixedNowIso().prefix(10)), "the fixture day must differ from nowIso's day")
+        XCTAssertNotEqual(otherDay, String(fixedNowIso().prefix(10)), "the fixture day must differ from the current civil day")
         let cleanView = cleanViewWithExtraRoot(
             sessions: sessionsWithBaseline(),
             templates: dismissTemplates(),
             extraRoot: [.init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: otherDay)]))]
         )
-        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow(), timeZone: utc) else {
             return XCTFail("expected .ready")
         }
         // A dismiss from a DIFFERENT civil day is not "dismissed today" → still visible. This pins
-        // currentDateLocalKey == String(nowIso.prefix(10)) (ZERO new clock): had the resolver read a
-        // different / empty date key, the today-match would not line up with the injected instant.
+        // currentDateLocalKey == the LOCAL civil day of the injected instant (here, under the injected
+        // UTC zone, == the UTC prefix): had the resolver read a different / empty date key, the
+        // today-match would not line up with the injected instant.
         XCTAssertTrue(summary.actions.contains { $0.id == victim }, "a cross-day dismiss recovers (visible today)")
         XCTAssertEqual(summary.actions.count, ids.count, "no action drops out for a cross-day dismiss")
+    }
+
+    func test_currentDateLocalKey_isLocalCivilDay_notUTC_acrossTimezoneMidnight() {
+        // CC-7 P1 regression (the fix for the CC-6 UTC-day bug). The dismiss read-filter's
+        // currentDateLocalKey MUST be the LOCAL civil day — the CC-5 write side stamps `dismissedAt`
+        // in the device-local `.current` zone — NOT the UTC day. Pick an instant whose UTC day and
+        // America/Los_Angeles day DIFFER: 2026-06-05T02:00Z is 2026-06-04 19:00 PDT (UTC-7). The zone
+        // is INJECTED + fixed, so the test never depends on the CI machine's `.current` TZ.
+        let la = TimeZone(identifier: "America/Los_Angeles")!
+        let now = instant("2026-06-05T02:00:00.000Z")
+        let localDay = "2026-06-04"   // LA civil day of `now`
+        let utcDay = "2026-06-05"     // the WRONG (UTC) day the CC-6 `nowIso.prefix(10)` bug produced
+
+        // (1) Direct: the in-package day-key derives the LOCAL civil day, never the UTC prefix.
+        XCTAssertEqual(coachActionCivilDayKey(now, timeZone: la), localDay,
+            "currentDateLocalKey must be the LA-local civil day derived from the injected instant")
+        XCTAssertNotEqual(coachActionCivilDayKey(now, timeZone: la), utcDay,
+            "a UTC-prefix day key (the CC-6 bug) would read 2026-06-05 and mis-hide across the midnight window")
+
+        // Baseline pending ids at THIS injected (now, tz) — robust to whatever the scheduler surfaces.
+        let baseView = cleanViewWithTemplates(sessions: sessionsWithBaseline(), templates: dismissTemplates())
+        guard case .ready(let base) = resolveCoachActionState(.loaded(baseView), now: now, timeZone: la) else {
+            return XCTFail("expected .ready baseline")
+        }
+        let ids = base.actions.map { $0.id }
+        XCTAssertFalse(ids.isEmpty, "baseline must surface a pending action to dismiss")
+        let victim = ids[0]
+
+        // (2) End-to-end: a dismiss stamped on the LOCAL civil day (exactly what CC-5 persists) HIDES
+        // the card. This assertion is RED on the CC-6 UTC-day bug (currentDate would be 2026-06-05, so
+        // the 2026-06-04 dismiss would not match) and GREEN on the CC-7 fix.
+        let localView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: localDay)]))]
+        )
+        guard case .ready(let localSummary) = resolveCoachActionState(.loaded(localView), now: now, timeZone: la) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertFalse(localSummary.actions.contains { $0.id == victim },
+            "a LOCAL-civil-day dismiss hides the card across the timezone midnight window")
+        XCTAssertEqual(localSummary.actions.count, ids.count - 1, "exactly the local-day-dismissed action drops out")
+
+        // (3) Control (the inverse): a dismiss stamped on the UTC day does NOT hide — proving the read
+        // day is LOCAL, not UTC. On the CC-6 bug this would be inverted (the UTC-day dismiss would hide).
+        let utcView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: utcDay)]))]
+        )
+        guard case .ready(let utcSummary) = resolveCoachActionState(.loaded(utcView), now: now, timeZone: la) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertTrue(utcSummary.actions.contains { $0.id == victim },
+            "a UTC-day dismiss does NOT match the LOCAL current day → the card stays visible")
+        XCTAssertEqual(utcSummary.actions.count, ids.count, "no action drops out for a UTC-day dismiss")
     }
 
     func test_matchingActiveDraft_hidesTheCard() {
