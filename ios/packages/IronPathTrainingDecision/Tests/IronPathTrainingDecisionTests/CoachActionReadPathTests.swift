@@ -264,4 +264,189 @@ final class CoachActionReadPathTests: XCTestCase {
         ])
         XCTAssertEqual(summary.actions.map { $0.id }, ["b", "a"], "urgent first, dismissed filtered out")
     }
+
+    // MARK: - CC-6 dismiss READ-FILTER wiring (the dismiss/draft/history hide is now part of THIS read path)
+
+    /// Build a clean view carrying templates + arbitrary extra root slots (`dismissedCoachActions` /
+    /// `programAdjustmentDrafts` / `programAdjustmentHistory` / `settings`), through the GENUINE
+    /// DataHealth ingress — exercising the CC-6 read-filter end-to-end over the gated clean view.
+    private func cleanViewWithExtraRoot(
+        sessions: [TrainingSession],
+        templates: [JSONValue],
+        extraRoot: [OrderedJSONObject.Entry]
+    ) -> CleanAppDataView {
+        var entries: [OrderedJSONObject.Entry] = [
+            .init(key: "schemaVersion", value: .number(.integer(Int64(SchemaVersion.current.rawValue)))),
+            .init(key: "history", value: .array(sessions.map { $0.encoded() })),
+            .init(key: "todayStatus", value: CoreSliceTestKit.todayStatusJSON()),
+            .init(key: "templates", value: .array(templates)),
+        ]
+        entries.append(contentsOf: extraRoot)
+        let appData = AppData(schemaVersion: .current, root: OrderedJSONObject(entries: entries))
+        return buildCleanAppDataView(appData, clock: CoreSliceTestKit.fixedClock)
+    }
+
+    private func dismissTemplates() -> [JSONValue] {
+        [templateJSON(id: "push-a", name: "推 A"), templateJSON(id: "pull-a", name: "拉 A")]
+    }
+
+    /// The pending action ids the read path surfaces for the baseline document (no dismiss / draft /
+    /// history) — the actions CC-6 then selectively hides. `selectedTemplateId` is nil throughout, so
+    /// the next-workout signal (hence the surfaced ids) is identical with or without the extra slots.
+    private func baselinePendingIds() -> [String] {
+        let cleanView = cleanViewWithTemplates(sessions: sessionsWithBaseline(), templates: dismissTemplates())
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return []
+        }
+        return summary.actions.map { $0.id }
+    }
+
+    private func dismissedEntry(actionId: String, day: String) -> JSONValue {
+        .object(OrderedJSONObject(entries: [
+            .init(key: "actionId", value: .string(actionId)),
+            .init(key: "dismissedAt", value: .string(day)),
+            .init(key: "scope", value: .string("today")),
+        ]))
+    }
+
+    func test_dismissedToday_hidesExactlyThatCard() {
+        let ids = baselinePendingIds()
+        XCTAssertFalse(ids.isEmpty, "baseline must surface a pending action to dismiss")
+        let victim = ids[0]
+        // `dismissedAt` stamped on the SAME civil day the resolver derives from the injected nowIso.
+        let today = String(fixedNowIso().prefix(10))
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: today)]))]
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertFalse(summary.actions.contains { $0.id == victim }, "the 'today'-dismissed action is hidden")
+        XCTAssertEqual(summary.actions.count, ids.count - 1, "exactly the dismissed action drops out")
+    }
+
+    func test_dismissedViaSettingsSlotOnly_alsoHides_readPriorityRootOrSettings() {
+        let ids = baselinePendingIds()
+        let victim = ids[0]
+        let today = String(fixedNowIso().prefix(10))
+        // NO root `dismissedCoachActions`; only the nested `settings` slot carries it → the read-side
+        // priority `root || settings` still finds it (a PWA-origin doc may carry only the settings half;
+        // the CC-5 write double-writes both).
+        let settings = JSONValue.object(OrderedJSONObject(entries: [
+            .init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: today)])),
+        ]))
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "settings", value: settings)]
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertFalse(summary.actions.contains { $0.id == victim }, "a settings-only dismiss still hides (root || settings)")
+        XCTAssertEqual(summary.actions.count, ids.count - 1, "exactly the dismissed action drops out")
+    }
+
+    func test_dismissedAnotherCivilDay_doesNotHide_currentDateLocalKeyFromInjectedNowIso() {
+        let ids = baselinePendingIds()
+        let victim = ids[0]
+        let otherDay = "1999-12-31"
+        XCTAssertNotEqual(otherDay, String(fixedNowIso().prefix(10)), "the fixture day must differ from nowIso's day")
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: otherDay)]))]
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        // A dismiss from a DIFFERENT civil day is not "dismissed today" → still visible. This pins
+        // currentDateLocalKey == String(nowIso.prefix(10)) (ZERO new clock): had the resolver read a
+        // different / empty date key, the today-match would not line up with the injected instant.
+        XCTAssertTrue(summary.actions.contains { $0.id == victim }, "a cross-day dismiss recovers (visible today)")
+        XCTAssertEqual(summary.actions.count, ids.count, "no action drops out for a cross-day dismiss")
+    }
+
+    func test_matchingActiveDraft_hidesTheCard() {
+        let ids = baselinePendingIds()
+        let victim = ids[0]
+        // A draft whose `sourceCoachActionId == action.id` (coachActionDismissEngine.ts:82) with an
+        // ACTIVE status → findExistingAdjustmentForCoachAction = draft_ready → filterVisible drops it.
+        let draft = JSONValue.object(OrderedJSONObject(entries: [
+            .init(key: "id", value: .string("cc6-draft-1")),
+            .init(key: "status", value: .string("draft_created")),
+            .init(key: "sourceCoachActionId", value: .string(victim)),
+        ]))
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "programAdjustmentDrafts", value: .array([draft]))]
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertFalse(summary.actions.contains { $0.id == victim }, "an action resolved by a matching active draft is hidden")
+        XCTAssertEqual(summary.actions.count, ids.count - 1, "exactly the resolved action drops out")
+    }
+
+    func test_matchingHistory_hidesTheCard() {
+        let ids = baselinePendingIds()
+        let victim = ids[0]
+        // A history item whose `sourceCoachActionId == action.id` (ts:100), non-rolled-back → state
+        // "applied" → filterVisible drops the action.
+        let item = JSONValue.object(OrderedJSONObject(entries: [
+            .init(key: "id", value: .string("cc6-hist-1")),
+            .init(key: "status", value: .string("applied")),
+            .init(key: "sourceCoachActionId", value: .string(victim)),
+        ]))
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "programAdjustmentHistory", value: .array([item]))]
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertFalse(summary.actions.contains { $0.id == victim }, "an action resolved by a matching history item is hidden")
+        XCTAssertEqual(summary.actions.count, ids.count - 1, "exactly the resolved action drops out")
+    }
+
+    func test_rolledBackDraft_doesNotHide() {
+        let ids = baselinePendingIds()
+        let victim = ids[0]
+        // A matching draft whose ONLY status is `rolled_back` (no blocking active/resolved draft) →
+        // findExistingAdjustment = rolled_back → filterVisible KEEPS the action (it is the one match
+        // state that survives, coachActionDismissEngine.ts:146).
+        let draft = JSONValue.object(OrderedJSONObject(entries: [
+            .init(key: "id", value: .string("cc6-draft-rb")),
+            .init(key: "status", value: .string("rolled_back")),
+            .init(key: "sourceCoachActionId", value: .string(victim)),
+        ]))
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: [.init(key: "programAdjustmentDrafts", value: .array([draft]))]
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertTrue(summary.actions.contains { $0.id == victim }, "a rolled_back match keeps the action visible")
+        XCTAssertEqual(summary.actions.count, ids.count, "no action drops out for a rolled_back match")
+    }
+
+    func test_noDismissOrAdjustment_leavesBaselineUnchanged() {
+        // Sanity: with no dismiss / draft / history, the read filter is a no-op — the baseline survives.
+        let ids = baselinePendingIds()
+        let cleanView = cleanViewWithExtraRoot(
+            sessions: sessionsWithBaseline(),
+            templates: dismissTemplates(),
+            extraRoot: []
+        )
+        guard case .ready(let summary) = resolveCoachActionState(.loaded(cleanView), now: fixedNow()) else {
+            return XCTFail("expected .ready")
+        }
+        XCTAssertEqual(summary.actions.map { $0.id }, ids, "no dismiss / adjustment → the read filter changes nothing")
+    }
 }
