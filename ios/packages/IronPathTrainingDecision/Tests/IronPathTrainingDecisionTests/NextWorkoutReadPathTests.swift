@@ -5,9 +5,11 @@
 // app-layer loader supplies the `NextWorkoutAppDataLoadOutcome` (already routed through the
 // GENUINE IronPathDataHealth clean view); this resolver maps it to an honest rendered state;
 // (2) the clean-view → scheduler wiring end-to-end — a document WITH `templates` decoded from
-// the gated view's raw bag yields a REAL next-workout + nested recovery recommendation, while
-// a document WITHOUT templates yields the scheduler's own honest "暂无下次建议" branch (never a
-// fabricated next workout); and (3) every internal presentation label helper branch (kindLabel
+// the gated view's raw bag yields a REAL next-workout + nested recovery recommendation, AND
+// (FU-1) a document WITHOUT templates is now SEEDED with DefaultTrainingData.initialTemplates
+// (reproducing the PWA load-layer `sanitizeTemplates` seed the native read chain previously
+// omitted), so it ALSO yields a real recommendation off the default program rather than the
+// bare "暂无下次建议" branch; and (3) every internal presentation label helper branch (kindLabel
 // / confidenceLabel / conflictLabel — the summary marks them `internal so tests can assert`).
 // Clean-view fixtures are built in memory via CoreSliceTestKit; the injected `now` matches the
 // parity clock so results are deterministic. Mirrors TrainingInsightsReadPathTests.
@@ -113,20 +115,27 @@ final class NextWorkoutReadPathTests: XCTestCase {
         XCTAssertFalse(summary.recovery?.conflictLabel.isEmpty ?? true)
     }
 
-    func test_loadedWithoutTemplates_resolvesToHonestNoSuggestionReady() {
-        // History present but NO templates in the document → the scheduler's own honest
-        // no-suggestion branch (never a fabricated next workout).
+    func test_loadedWithoutTemplates_resolvesToDefaultProgramRecommendation() {
+        // FU-1: history present but NO templates in the document. The read chain now SEEDS
+        // DefaultTrainingData.initialTemplates at decode time — reproducing the PWA load-layer
+        // `sanitizeTemplates` seed (appDataSanitize.ts:705) the native chain previously omitted.
+        // So instead of the bare "暂无下次建议" no-template branch, the scheduler produces a REAL
+        // recommendation off the default program (a faithful restoration of the PWA load-seed,
+        // never a fabricated next workout — the seed is the documented default templates).
         let cleanView = CoreSliceTestKit.cleanView(
             sessions: sessionsWithBaseline(),
             todayStatus: CoreSliceTestKit.todayStatusJSON()
         )
         guard case .ready(let summary) = resolveNextWorkoutScheduleState(.loaded(cleanView), now: fixedNow()) else {
-            return XCTFail("expected .ready (the honest no-suggestion recommendation is still a ready state)")
+            return XCTFail("expected .ready for a document with cleaned history (templates seeded)")
         }
-        XCTAssertEqual(summary.headline, "暂无下次建议")
-        XCTAssertEqual(summary.kindLabel, "主动恢复")  // activeRecovery fallback
-        XCTAssertFalse(summary.warnings.isEmpty, "the no-template branch warns to add a template")
-        XCTAssertNil(summary.recovery, "the no-template short-circuit carries no recovery section")
+        // A REAL next workout off the seeded default program — NOT the no-template fallback.
+        XCTAssertNotEqual(summary.headline, "暂无下次建议")
+        XCTAssertFalse(summary.headline.isEmpty)
+        XCTAssertEqual(summary.scheduleRows.first?.id, "next-template")
+        XCTAssertTrue(summary.scheduleRows.contains { $0.id == "next-confidence" })
+        // A real (non-short-circuit) recommendation carries a nested recovery section.
+        XCTAssertNotNil(summary.recovery, "a real recommendation carries a nested recovery section")
     }
 
     // MARK: - label helpers (deterministic, no engine)

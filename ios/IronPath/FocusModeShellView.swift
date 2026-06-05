@@ -33,16 +33,49 @@ struct FocusModeShellView: View {
     // intact. It owns the LOCAL notification scheduler via the IronPathNotifications
     // seam; previews/tests never opt into a live scheduler (status stays idle).
     @StateObject private var restReminder = RestReminderModel()
+    // FU-1: the REAL canonical-AppData read for today's training (the IO + clean-view seam
+    // lives in `FocusModeLiveData`, NOT in this presentation shell — the shell stays free of any
+    // AppData / DataHealth / engine-clean-input token, mirroring how the sample slice is supplied
+    // by `FocusModePreviewData`). The running app reads the live store; previews/tests pin a state
+    // and drive the deterministic sample path.
+    @StateObject private var live: FocusModeLiveData
 
+    /// The running app constructs the default live model. `@MainActor` so it can build the
+    /// main-actor-isolated view-model (SwiftUI always builds views on the main actor); `state`
+    /// and `restReminder` keep their inline defaults.
+    @MainActor init() {
+        _live = StateObject(wrappedValue: FocusModeLiveData())
+    }
+
+    /// Previews/tests inject a pinned live model (e.g. `FocusModeLiveData(previewState:)`). A
+    /// pinned-empty model (the default preview) keeps `isLiveLoadEnabled == false`, so the shell
+    /// drives the deterministic `FocusModePreviewData` sample + the scenario picker exactly as
+    /// before — no device store is read.
+    @MainActor init(live: FocusModeLiveData) {
+        _live = StateObject(wrappedValue: live)
+    }
+
+    /// FU-1: the resolved live training plan when the running app has REAL data; nil in
+    /// previews/tests (the deterministic sample path) AND for the live empty/unavailable states
+    /// (which the body renders as honest cards, so the sample fallback below is never reached live).
+    private var livePlan: FocusTrainingPlan? {
+        if case .ready(let plan) = live.state { return plan }
+        return nil
+    }
+
+    /// The slice the surface renders: the REAL resolved slice when live data is ready, else the
+    /// deterministic sample (previews/tests). In the running app, when there is no live plan the
+    /// body shows an honest empty/unavailable card and never reads this — so the sample is a
+    /// preview-only fallback, never live sample data leaking onto a real device.
     private var slice: TrainingDecisionCoreSlice {
-        FocusModePreviewData.sampleCoreSlice(for: state.selectedScenario)
+        if let plan = livePlan { return plan.slice }
+        return FocusModePreviewData.sampleCoreSlice(for: state.selectedScenario)
     }
 
     private var rows: [FocusModeExerciseRow] {
-        Self.buildRows(
-            slice: slice,
-            templates: FocusModePreviewData.sampleTemplateExercises()
-        )
+        // Live: the resolved today's-template exercises; preview/test: the deterministic sample.
+        let templates = livePlan?.templateExercises ?? FocusModePreviewData.sampleTemplateExercises()
+        return Self.buildRows(slice: slice, templates: templates)
     }
 
     private var totalTargetSets: Int {
@@ -75,14 +108,7 @@ struct FocusModeShellView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                switch state.stage {
-                case .plan:
-                    planBody
-                case .inSession:
-                    inSessionBody
-                case .completed:
-                    completedBody
-                }
+                stageContent
                 footer
             }
             .padding(16)
@@ -97,6 +123,12 @@ struct FocusModeShellView: View {
         // sessions are written to the real on-disk document; previews/tests leave
         // it unset and never touch the canonical store.
         .task {
+            // FU-1: opt the running app into the SAME sanctioned canonical store the
+            // completion write uses and read TODAY'S TRAINING from it (read-only). The
+            // slice + today list now come from the user's real data, not the sample.
+            // Previews/tests pin their state and never touch the on-disk document.
+            live.activateLiveSourceIfNeeded()
+            live.reload()
             state.useSystemClock()
             state.useApplicationSupportAppDataStore()
             state.loadSavedSessions()
@@ -105,6 +137,85 @@ struct FocusModeShellView: View {
             // by the RestReminderSection button — this only wires the live scheduler.
             restReminder.activateLiveSchedulerIfNeeded()
         }
+    }
+
+    /// FU-1: in the RUNNING app, when there is no live training plan (no canonical file →
+    /// `.empty`; a present-but-unreadable document → `.unavailable`) the surface shows an honest
+    /// card — never sample data, never a fabricated session. Otherwise — and ALWAYS in
+    /// previews/tests (`isLiveLoadEnabled == false`) — it drives the plan → in-session →
+    /// completed flow over the resolved (or deterministic sample) slice.
+    @ViewBuilder
+    private var stageContent: some View {
+        if live.isLiveLoadEnabled, livePlan == nil {
+            switch live.state {
+            case .unavailable:
+                unavailableCard
+            default:
+                emptyCard
+            }
+        } else {
+            switch state.stage {
+            case .plan:
+                planBody
+            case .inSession:
+                inSessionBody
+            case .completed:
+                completedBody
+            }
+        }
+    }
+
+    // MARK: - FU-1 honest live states (no canonical data / unreadable)
+
+    /// §15.4 empty state: no canonical training data yet. Honest "no data", never a fabricated
+    /// today's training. A retry re-reads the store (e.g. right after first-launch seeding).
+    private var emptyCard: some View {
+        infoCard(
+            title: "还没有训练数据",
+            message: "本机还没有可用的训练数据。设置好训练计划或完成首次训练后，这里会根据你本机的真实记录显示今日训练。",
+            actionTitle: "重试",
+            action: { live.reload() }
+        )
+    }
+
+    /// §15.4 degrade: a canonical document exists but is unreadable. The document is left
+    /// untouched (this surface never overwrites unreadable data) and the user can retry.
+    private var unavailableCard: some View {
+        infoCard(
+            title: "暂时无法读取数据",
+            message: "本机训练数据暂时无法读取。已保留原始数据未作任何改动，可稍后重试。",
+            actionTitle: "重试",
+            action: { live.reload() }
+        )
+    }
+
+    private func infoCard(
+        title: String,
+        message: String,
+        actionTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Button(action: action) {
+                Text(actionTitle)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.top, 2)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 
     // MARK: - Completed preview
@@ -194,7 +305,13 @@ struct FocusModeShellView: View {
         VStack(alignment: .leading, spacing: 16) {
             header
 
-            scenarioSelector
+            // FU-1: the deterministic-sample scenario picker is a previews/tests-only affordance.
+            // In the LIVE app the slice comes from the user's real data, so the picker is hidden
+            // (it would only swap sample inputs). The source is KEPT for previews/tests (and the
+            // static guard that pins the segmented FocusModeSampleScenario picker).
+            if !live.isLiveLoadEnabled {
+                scenarioSelector
+            }
 
             FocusModeStatusSurfaceView(slice: slice)
 
@@ -548,6 +665,10 @@ struct FocusModeShellView: View {
     }
 }
 
+// FU-1: the running app uses `FocusModeShellView()` (live canonical read). Previews inject a
+// pinned live model so `isLiveLoadEnabled == false` — the shell then drives the deterministic
+// `FocusModePreviewData` sample + the scenario picker (the original iOS-5/6 preview behavior),
+// with NO device store read.
 #Preview {
-    FocusModeShellView()
+    FocusModeShellView(live: FocusModeLiveData(previewState: .empty))
 }
