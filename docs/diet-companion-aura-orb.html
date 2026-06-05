@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IronPath — energy orb (calorie)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+.dp{--page:#0C0B08;--card:#1B1810;--ink:#F5F1E7;--ink2:#A8A091;--ink3:#7A7263;--sep:rgba(255,255,255,.08);--core:#08473760;--coreC:#094534;--mid:#1A9C73;--rim:#7FE7AD;--seat:rgba(3,34,25,.42);--glow:rgba(43,215,156,.5);--vegB:#2C331D;--veg:#9DC265;--sm:0 16px 40px rgba(0,0,0,.5)}
+.dp.lite{--page:#EEEAE2;--card:#FFFFFF;--ink:#16130C;--ink2:#655F50;--ink3:#9A9183;--sep:rgba(20,15,5,.08);--coreC:#073B2D;--mid:#138A65;--rim:#5BD098;--seat:rgba(2,32,23,.5);--glow:rgba(22,168,124,.4);--vegB:#E6ECD2;--veg:#4F7A22;--sm:0 18px 44px rgba(60,45,20,.15)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.head{max-width:1000px;margin:0 auto;padding:30px 26px 4px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.head h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:0 0 5px}.head p{font-size:14px;color:var(--ink2);margin:0;max-width:560px;line-height:1.5}
+.tgl{display:flex;background:var(--card);border:0.5px solid var(--sep);border-radius:999px;padding:4px}
+.tgl button{border:none;background:transparent;color:var(--ink2);font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tgl button.on{background:var(--ink);color:var(--page)}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 24px 44px;display:flex;flex-wrap:wrap;gap:36px;align-items:center;justify-content:center}
+.hero{background:var(--card);border:0.5px solid var(--sep);border-radius:30px;box-shadow:var(--sm);padding:38px 44px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.aura{position:relative;width:228px;height:228px;display:flex;align-items:center;justify-content:center}
+.halo{position:absolute;width:228px;height:228px;border-radius:50%;background:radial-gradient(circle, var(--glow) 30%, transparent 70%);filter:blur(20px);opacity:.65}
+.orb{position:absolute;width:202px;height:202px;border-radius:50%;
+  background:radial-gradient(circle at 40% 30%, rgba(255,255,255,.40), rgba(255,255,255,0) 38%),
+            radial-gradient(circle at 50% 50%, var(--coreC) 0%, var(--coreC) 38%, var(--mid) 74%, var(--rim) 98%);
+  box-shadow:0 26px 60px -16px var(--glow), inset 0 -18px 46px rgba(0,0,0,.40), inset 0 10px 26px rgba(255,255,255,.13)}
+.seat{position:absolute;width:158px;height:158px;border-radius:50%;background:radial-gradient(circle, var(--seat) 0%, transparent 62%);filter:blur(10px)}
+.cn{font-weight:800;letter-spacing:-1.6px;line-height:1;color:#fff;position:relative;text-shadow:0 1px 2px rgba(0,0,0,.3), 0 3px 22px rgba(1,30,21,.55)}
+.cl{font-size:11px;font-weight:700;letter-spacing:1.8px;color:rgba(255,255,255,.92);margin-top:6px;position:relative;text-shadow:0 1px 14px rgba(1,30,21,.5)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:999px;background:var(--vegB);color:var(--veg);margin-top:22px}
+.scale{display:flex;align-items:flex-end;gap:24px;margin-top:24px}
+.sc{text-align:center}.sc .lab{font-size:11px;color:var(--ink3);margin-top:8px;font-weight:600}
+.mini{position:relative;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;text-shadow:0 1px 10px rgba(1,30,21,.5);
+  background:radial-gradient(circle at 40% 30%, rgba(255,255,255,.45), rgba(255,255,255,0) 40%),radial-gradient(circle at 50% 50%, var(--coreC), var(--coreC) 40%, var(--mid) 76%, var(--rim) 99%);
+  box-shadow:0 8px 22px -6px var(--glow), inset 0 -8px 18px rgba(0,0,0,.36)}
+.note{width:300px}
+.note li{font-size:13px;color:var(--ink2);line-height:1.5;padding:9px 0;border-top:0.5px solid var(--sep);display:flex;gap:9px;list-style:none}
+.note li i{color:var(--veg);font-size:17px;flex:none;margin-top:1px}.note ul{margin:0;padding:0}.note h3{font-size:16px;font-weight:800;margin:0 0 4px}
+</style>
+</head>
+<body>
+<div class="dp" id="dp">
+<div class="head"><div><h1>Energy orb — calorie display (legibility fixed)</h1><p>Same orb. To read in the bright/light state: the core is deeper, a soft dark "seat" sits under the number, and the text carries a gentle shadow — all blended, so the orb stays continuous and glowing. Light + dark.</p></div>
+<div class="tgl"><button data-mode="light" class="on"><i class="ti ti-sun"></i> Light</button><button data-mode="dark"><i class="ti ti-moon"></i> Dark</button></div></div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="aura">
+      <div class="halo"></div>
+      <div class="orb"></div>
+      <div class="seat"></div>
+      <div style="position:relative;text-align:center"><div class="cn" style="font-size:50px">1,260</div><div class="cl">CAL LEFT</div></div>
+    </div>
+    <span class="pill"><i class="ti ti-circle-check"></i> Steady · on track</span>
+    <div class="scale">
+      <div class="sc"><div class="mini" style="width:64px;height:64px"><span style="font-size:14px">1,260</span></div><div class="lab">widget</div></div>
+      <div class="sc"><div style="width:98px;height:42px;border-radius:11px;background:linear-gradient(150deg,#1b2a3a,#0b1018);display:flex;align-items:center;justify-content:center;gap:8px;color:#fff"><div class="mini" style="width:26px;height:26px;box-shadow:none"></div><span style="font-size:14px;font-weight:800">1,260</span></div><div class="lab">lock screen</div></div>
+    </div>
+  </div>
+  <div class="note"><h3>What changed (legibility)</h3><ul>
+    <li><i class="ti ti-check"></i><span><b>Deeper core.</b> The center is darker so white text rests on a deep ground, not a bright midtone — fixed especially for light mode.</span></li>
+    <li><i class="ti ti-check"></i><span><b>Soft dark "seat".</b> A blurred dark halo under the number lifts contrast without a hard plate — stays fluid.</span></li>
+    <li><i class="ti ti-check"></i><span><b>Gentle text shadow.</b> A soft dark glow on the figures, invisible-feeling but ~7:1 readable on any part of the orb.</span></li>
+    <li><i class="ti ti-check"></i><span><b>Nothing else changed.</b> No outer bar; the glowing orb body is still the display; number kept.</span></li>
+  </ul></div>
+</div>
+</div>
+<script>
+(function(){var dp=document.getElementById('dp');document.querySelectorAll('.tgl button').forEach(function(b){b.addEventListener('click',function(){dp.classList.toggle('lite',b.dataset.mode==='light');document.querySelectorAll('.tgl button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');});});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IronPath Diet Companion — Premium visual direction</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+.dp{--page1:#100E0A;--page2:#1A1710;--bg1:#16130D;--bg2:#0F0D08;--card:#201C15;--cardhi:#262119;--ink:#F4EFE4;--ink2:#ABA191;--ink3:#7E7565;--sep:rgba(255,255,255,.07);--brand:#46C295;--brandA:#2BD79C;--brandB:#7BE6A2;--ring0:#2C2820;--accA:#FFB26B;--accB:#FF8A6B;--field:#272219;--tbbg:rgba(20,17,12,.62);--ss:0 2px 10px rgba(0,0,0,.4);--sm:0 12px 30px rgba(0,0,0,.5);--sl:0 24px 60px rgba(0,0,0,.6);--gbody:#C7CCC1;--pro1:#FF9166;--pro2:#F2643E;--car1:#F4C25A;--car2:#E0982E;--veg1:#8FD27A;--veg2:#54A547;--fru1:#7FC4E8;--fru2:#4E9BD0;--chip:#272219}
+.dp.lite{--page1:#FBF7EF;--page2:#F1EBDF;--bg1:#FFFFFF;--bg2:#FBF7EF;--card:#FFFFFF;--cardhi:#FFFFFF;--ink:#1B1813;--ink2:#6A6253;--ink3:#9A9183;--sep:rgba(20,15,5,.07);--brand:#128A66;--brandA:#16A87C;--brandB:#56C982;--ring0:#ECE5D6;--accA:#FF9D5C;--accB:#FF7A66;--field:#F4EEE3;--tbbg:rgba(255,253,248,.66);--ss:0 2px 10px rgba(60,45,20,.06);--sm:0 12px 30px rgba(60,45,20,.10);--sl:0 24px 60px rgba(60,45,20,.16);--gbody:#4C5046;--pro1:#FF8E63;--pro2:#EF5E37;--car1:#F0B84C;--car2:#D38C22;--veg1:#86CC6E;--veg2:#4E9C40;--fru1:#74BBE3;--fru2:#3E8DC6;--chip:#F4EEE3}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,var(--page1),var(--page2));min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.head{max-width:1100px;margin:0 auto;padding:30px 26px 6px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.head h1{font-size:25px;font-weight:800;letter-spacing:-.6px;margin:0 0 5px}
+.head p{font-size:14px;color:var(--ink2);margin:0;max-width:560px;line-height:1.5}
+.tgl{display:flex;background:var(--card);border:0.5px solid var(--sep);border-radius:999px;padding:4px;box-shadow:var(--ss)}
+.tgl button{border:none;background:transparent;color:var(--ink2);font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tgl button.on{background:linear-gradient(135deg,var(--brandA),var(--brandB));color:#fff;box-shadow:0 6px 16px rgba(18,138,102,.3)}
+.p2{max-width:1100px;margin:0 auto;padding:12px 18px 40px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center}
+.u2{width:300px}
+.cap{font-size:12.5px;color:var(--ink2);margin:0 4px 10px;font-weight:500}.cap b{color:var(--ink);font-weight:700}
+.f2{width:300px;border-radius:46px;padding:7px;background:linear-gradient(160deg,#2a2a2e,#0a0a0c);box-shadow:var(--sl)}
+.s2{position:relative;border-radius:39px;overflow:hidden;height:602px;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--ink);display:flex;flex-direction:column}
+.di{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:84px;height:23px;background:#000;border-radius:14px;z-index:9}
+.st{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 0;font-size:13px;font-weight:600;z-index:6}
+.si{display:flex;align-items:center;gap:5px}.bat{width:22px;height:11px;border:1px solid currentColor;border-radius:3px;position:relative;opacity:.9}.bat::after{content:"";position:absolute;inset:1.5px;width:78%;background:currentColor;border-radius:1px}
+.bd{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.fm{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex:none;box-shadow:0 7px 16px rgba(0,0,0,.16)}
+.pro{background:linear-gradient(140deg,var(--pro1),var(--pro2))}.car{background:linear-gradient(140deg,var(--car1),var(--car2))}.veg{background:linear-gradient(140deg,var(--veg1),var(--veg2))}.fru{background:linear-gradient(140deg,var(--fru1),var(--fru2))}
+.card{background:var(--card);border-radius:24px;box-shadow:var(--sm);border:0.5px solid var(--sep)}
+.gp{font-size:14.5px;font-weight:700;background:var(--field);color:var(--ink);padding:5px 12px;border-radius:11px;font-variant-numeric:tabular-nums}
+.bf{background:linear-gradient(135deg,var(--brandA),var(--brandB));color:#fff;border:none;border-radius:17px;padding:15px;font-size:15.5px;font-weight:700;width:100%;cursor:pointer;box-shadow:0 12px 26px rgba(18,138,102,.32)}
+.bo{background:transparent;color:var(--brand);border:1.5px solid var(--sep);border-radius:17px;padding:15px;font-size:15.5px;font-weight:700;width:100%;cursor:pointer}
+.lk{color:var(--brand);font-weight:700;font-size:13.5px}
+.tb{margin-top:auto;display:flex;justify-content:space-around;align-items:center;background:var(--tbbg);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border-top:0.5px solid var(--sep);padding:11px 8px 13px}
+.tb a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--ink3);text-decoration:none;font-weight:600}.tb a i{font-size:23px}
+.tb a.act{color:var(--brand)}
+.hd{font-size:11.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--ink3);margin:16px 22px 8px}
+.mrow{display:flex;align-items:center;gap:13px;padding:13px 16px}
+.seg{display:flex;background:var(--field);border-radius:14px;margin:0 18px;padding:4px}
+.seg b{flex:1;text-align:center;font-size:13px;font-weight:700;padding:9px;border-radius:11px;color:var(--ink2)}
+.seg b.sel{background:var(--card);color:var(--ink);box-shadow:var(--ss)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="dp lite" id="dp">
+<div class="head">
+  <div><h1>IronPath — premium direction</h1><p>A commercial-grade visual pass: brand gradients, a gradient vitality ring, glass tab bars, depth, and food medallions. Calm-by-design preserved — no red, no streaks. Light + dark.</p></div>
+  <div class="tgl"><button data-mode="light" class="on"><i class="ti ti-sun"></i> Light</button><button data-mode="dark"><i class="ti ti-moon"></i> Dark</button></div>
+</div>
+<div class="p2">
+
+  <div class="u2"><p class="cap"><b>Welcome</b> — branded hero, display type</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div style="height:340px;background:linear-gradient(150deg,var(--brandA),var(--brandB) 65%,var(--accA));position:relative;overflow:hidden">
+      <div class="st" style="color:#fff"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+      <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.16);top:60px;left:-40px"></div>
+      <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12);bottom:-20px;right:-10px"></div>
+      <div style="position:relative;display:flex;justify-content:center;gap:14px;margin-top:54px">
+        <div class="fm pro" style="width:62px;height:62px;border-radius:22px;font-size:28px;transform:rotate(-8deg)"><i class="ti ti-meat"></i></div>
+        <div class="fm veg" style="width:74px;height:74px;border-radius:26px;font-size:34px;margin-top:-10px"><i class="ti ti-salad"></i></div>
+        <div class="fm car" style="width:62px;height:62px;border-radius:22px;font-size:28px;transform:rotate(8deg)"><i class="ti ti-bowl"></i></div>
+      </div>
+    </div>
+    <div style="flex:1;background:var(--bg1);margin-top:-26px;border-radius:28px 28px 0 0;padding:28px 26px;text-align:center;position:relative">
+      <div style="font-size:27px;font-weight:800;letter-spacing:-.7px;line-height:1.15">Eat for your goals,<br>from your own kitchen.</div>
+      <div style="font-size:14.5px;color:var(--ink2);margin-top:12px;line-height:1.5">Daily targets from your body and goals — then meals built from what you already have.</div>
+    </div>
+    <div style="padding:0 22px 26px;background:var(--bg1)"><button class="bf">Get started</button><div style="text-align:center;margin-top:14px"><span class="lk">I already use IronPath</span></div></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Today</b> — gradient hero + vitality ring + glass</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div style="height:150px;background:linear-gradient(140deg,var(--brandA),var(--brandB));position:relative">
+      <div class="st" style="color:#fff"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 22px 0;color:#fff">
+        <div><div style="font-size:13px;opacity:.85;font-weight:600">Tuesday, June 2</div><div style="font-size:23px;font-weight:800;letter-spacing:-.4px">Good morning, Alex</div></div>
+        <div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.25);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-weight:700;border:1px solid rgba(255,255,255,.35)">A</div>
+      </div>
+    </div>
+    <div class="bd">
+      <div class="card" style="margin:-46px 16px 0;padding:18px;display:flex;align-items:center;gap:18px">
+        <div style="position:relative;width:108px;height:108px;flex:none">
+          <svg width="108" height="108" viewBox="0 0 120 120"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brandA)"/><stop offset="1" stop-color="var(--brandB)"/></linearGradient></defs><circle cx="60" cy="60" r="50" fill="none" stroke="var(--ring0)" stroke-width="14"/><circle cx="60" cy="60" r="50" fill="none" stroke="url(#rg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="184" transform="rotate(-90 60 60)"/></svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:26px;font-weight:800;letter-spacing:-.5px">1,260</span><span style="font-size:11px;color:var(--ink3);font-weight:600">cal left</span></div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:var(--ink3);font-weight:600">Daily target · 2,180</div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <div style="flex:1"><div style="font-size:11px;color:var(--ink3);font-weight:600">Protein</div><div style="height:5px;border-radius:3px;background:var(--ring0);margin-top:3px"><div style="height:100%;width:75%;border-radius:3px;background:linear-gradient(90deg,var(--pro1),var(--pro2))"></div></div></div>
+            <div style="flex:1"><div style="font-size:11px;color:var(--ink3);font-weight:600">Carbs</div><div style="height:5px;border-radius:3px;background:var(--ring0);margin-top:3px"><div style="height:100%;width:63%;border-radius:3px;background:linear-gradient(90deg,var(--fru1),var(--fru2))"></div></div></div>
+            <div style="flex:1"><div style="font-size:11px;color:var(--ink3);font-weight:600">Fat</div><div style="height:5px;border-radius:3px;background:var(--ring0);margin-top:3px"><div style="height:100%;width:61%;border-radius:3px;background:linear-gradient(90deg,var(--car1),var(--car2))"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin:14px 16px 0;border-radius:18px;padding:13px 15px;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(255,157,92,.16),rgba(255,122,102,.12));border:0.5px solid rgba(255,138,107,.3)">
+        <div class="fm" style="background:linear-gradient(140deg,var(--accA),var(--accB));width:38px;height:38px;border-radius:12px;font-size:18px"><i class="ti ti-bolt"></i></div>
+        <div><div style="font-size:14px;font-weight:700">Activity credit · +420 cal</div><div style="font-size:11.5px;color:var(--ink2)">A bonus, not a requirement.</div></div>
+      </div>
+      <div class="hd">Your meals</div>
+      <div style="margin:0 16px">
+        <div class="mrow card" style="margin-bottom:9px;padding:12px 14px"><div class="fm veg"><i class="ti ti-egg"></i></div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Breakfast</div><div style="font-size:12px;color:var(--ink3)">Logged · 480 cal</div></div><i class="ti ti-circle-check-filled" style="color:var(--brand);font-size:20px"></i></div>
+        <div class="mrow card" style="padding:12px 14px"><div class="fm pro"><i class="ti ti-meat"></i></div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Lunch</div><div style="font-size:12px;color:var(--ink3)">~640 cal · 3 picks ready</div></div><i class="ti ti-chevron-right" style="color:var(--ink3)"></i></div>
+      </div>
+    </div>
+    <div class="tb"><a class="act"><i class="ti ti-home-2"></i>Today</a><a><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a><i class="ti ti-chart-line"></i>Progress</a><a><i class="ti ti-settings"></i>Settings</a></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Today's picks</b> — food medallions, macro chips</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="padding:8px 20px 0;display:flex;align-items:center;gap:8px"><i class="ti ti-chevron-left" style="font-size:24px;color:var(--brand)"></i><div style="font-size:22px;font-weight:800;letter-spacing:-.4px">Lunch picks</div></div>
+    <div style="font-size:13px;color:var(--ink3);padding:4px 20px;font-weight:500">From what you already have</div>
+    <div class="bd" style="padding:8px 16px">
+      <div class="card mrow" style="margin-bottom:11px"><div class="fm pro"><i class="ti ti-meat"></i></div><div style="flex:1"><div style="font-weight:700;font-size:15px">Chicken breast</div><div style="font-size:12px;color:var(--ink3)">38g protein · 165 cal</div></div><span class="gp">140 g</span></div>
+      <div class="card mrow" style="margin-bottom:11px"><div class="fm car"><i class="ti ti-bowl"></i></div><div style="flex:1"><div style="font-weight:700;font-size:15px">Rice <span style="color:var(--ink3);font-weight:500">· raw</span></div><div style="font-size:12px;color:var(--ink3)">59g carbs · 270 cal</div></div><span class="gp">75 g</span></div>
+      <div class="card mrow" style="margin-bottom:11px"><div class="fm veg"><i class="ti ti-plant-2"></i></div><div style="flex:1"><div style="font-weight:700;font-size:15px">Spinach</div><div style="font-size:12px;color:var(--ink3)"><i class="ti ti-clock" style="color:var(--accB)"></i> Best eaten soon</div></div><span class="gp">90 g</span></div>
+      <div style="border:1.5px dashed var(--sep);border-radius:18px;padding:13px;text-align:center;color:var(--brand);font-weight:700;font-size:14px"><i class="ti ti-plus"></i> Add a fruit</div>
+      <div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:12px"><span class="pill" style="background:rgba(70,194,149,.14);color:var(--brand)"><i class="ti ti-circle-check"></i> Meets protein &amp; calories</span></div>
+    </div>
+    <div style="padding:10px 16px 18px;display:flex;gap:11px"><button class="bo" style="flex:1">Regenerate</button><button class="bf" style="flex:1.5">Use these</button></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Kitchen</b> — medallions + stock pills</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 20px 6px"><div style="font-size:28px;font-weight:800;letter-spacing:-.5px">Kitchen</div><div style="width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--brandA),var(--brandB));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 8px 18px rgba(18,138,102,.3)"><i class="ti ti-plus" style="font-size:20px"></i></div></div>
+    <div class="seg"><b class="sel">Fresh items</b><b>Staples</b></div>
+    <div class="bd" style="padding:4px 16px">
+      <div class="hd" style="margin-left:6px">Protein</div>
+      <div class="card mrow" style="margin-bottom:9px"><div class="fm pro"><i class="ti ti-meat"></i></div><span style="flex:1;font-weight:700;font-size:14.5px">Chicken breast</span><span class="pill" style="background:linear-gradient(135deg,#FBE3B0,#F4C766);color:#7A4F0E"><i class="ti ti-battery-2"></i> Low</span></div>
+      <div class="card mrow" style="margin-bottom:9px"><div class="fm veg"><i class="ti ti-egg"></i></div><span style="flex:1;font-weight:700;font-size:14.5px">Eggs</span><span class="pill" style="background:linear-gradient(135deg,#BEEAD2,#86D3A6);color:#0F6E45"><i class="ti ti-battery-4"></i> Plenty</span></div>
+      <div class="hd" style="margin-left:6px">Produce</div>
+      <div class="card mrow"><div class="fm veg"><i class="ti ti-plant-2"></i></div><span style="flex:1;font-weight:700;font-size:14.5px">Spinach</span><span class="pill" style="background:linear-gradient(135deg,#FBD3C0,#F2A484);color:#9A431F"><i class="ti ti-battery-1"></i> Almost out</span></div>
+    </div>
+    <div class="tb"><a><i class="ti ti-home-2"></i>Today</a><a class="act"><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a><i class="ti ti-chart-line"></i>Progress</a><a><i class="ti ti-settings"></i>Settings</a></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Progress</b> — gradient trend, calm stats</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="font-size:28px;font-weight:800;letter-spacing:-.5px;padding:8px 20px 0">Progress</div>
+    <div class="bd" style="padding:8px 16px">
+      <div class="card" style="padding:16px;overflow:hidden">
+        <div style="font-size:12.5px;color:var(--ink3);font-weight:600">Weight trend · 7-day average</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:4px 0 8px"><span style="font-size:26px;font-weight:800;letter-spacing:-.5px">163.4</span><span style="color:var(--ink3);font-size:13px">lb</span><span class="pill" style="background:rgba(70,194,149,.14);color:var(--brand);margin-left:auto"><i class="ti ti-trending-down"></i> steady</span></div>
+        <svg width="100%" height="78" viewBox="0 0 260 78" preserveAspectRatio="none"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--brandA)" stop-opacity=".35"/><stop offset="1" stop-color="var(--brandA)" stop-opacity="0"/></linearGradient></defs><path d="M0,52 C50,46 80,44 130,36 C180,28 210,24 260,18 L260,78 L0,78 Z" fill="url(#ag)"/><path d="M0,52 C50,46 80,44 130,36 C180,28 210,24 260,18" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <div style="display:flex;gap:11px;margin-top:13px">
+        <div class="card" style="flex:1;padding:15px"><div style="font-size:12px;color:var(--ink3);font-weight:600">Nutrition hit-rate</div><div style="font-size:24px;font-weight:800;margin-top:3px">82<span style="font-size:14px;color:var(--ink3)">%</span></div></div>
+        <div class="card" style="flex:1;padding:15px"><div style="font-size:12px;color:var(--ink3);font-weight:600">Target</div><div style="font-size:14px;font-weight:700;margin-top:7px;color:var(--brand)">Refining</div></div>
+      </div>
+      <div style="text-align:center;margin-top:16px"><span class="lk"><i class="ti ti-player-pause"></i> Tracking feeling like a lot? Take a break</span></div>
+    </div>
+    <div class="tb"><a><i class="ti ti-home-2"></i>Today</a><a><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a class="act"><i class="ti ti-chart-line"></i>Progress</a><a><i class="ti ti-settings"></i>Settings</a></div>
+  </div></div></div>
+
+</div>
+</div>
+<script>
+(function(){var dp=document.getElementById('dp');document.querySelectorAll('.tgl button').forEach(function(b){b.addEventListener('click',function(){dp.classList.toggle('lite',b.dataset.mode==='light');document.querySelectorAll('.tgl button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');});});})();
+</script>
+</body>
+</html>

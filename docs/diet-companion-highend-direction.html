@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IronPath — High-end visual direction (photography-led)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+.dp{--page:#0B0A07;--card:#15130E;--card2:#1C1A13;--ink:#F5F1E8;--ink2:#A8A192;--ink3:#796F5F;--sep:rgba(255,255,255,.08);--brand:#3FD39B;--brandA:#2BD79C;--brandB:#7BE6A2;--accent:#FF9264;--ring0:#262219;--glass:rgba(28,26,19,.5);--field:#221F18;--ss:0 2px 12px rgba(0,0,0,.45);--sm:0 16px 38px rgba(0,0,0,.55)}
+.dp.lite{--page:#F2EFE8;--card:#FFFFFF;--card2:#FBF8F2;--ink:#15120C;--ink2:#6A6254;--ink3:#9C9488;--sep:rgba(20,15,5,.08);--brand:#0E8C6B;--brandA:#16A87C;--brandB:#56C982;--accent:#EF6E3F;--ring0:#EBE4D5;--glass:rgba(255,255,255,.55);--field:#F1EDE4;--ss:0 2px 12px rgba(60,45,20,.07);--sm:0 18px 44px rgba(60,45,20,.16)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.head{max-width:1120px;margin:0 auto;padding:30px 26px 8px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.head h1{font-size:25px;font-weight:800;letter-spacing:-.6px;margin:0 0 5px}
+.head p{font-size:14px;color:var(--ink2);margin:0;max-width:580px;line-height:1.5}
+.tgl{display:flex;background:var(--card);border:0.5px solid var(--sep);border-radius:999px;padding:4px;box-shadow:var(--ss)}
+.tgl button{border:none;background:transparent;color:var(--ink2);font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tgl button.on{background:var(--ink);color:var(--page)}
+.p2{max-width:1120px;margin:0 auto;padding:14px 18px 44px;display:flex;flex-wrap:wrap;gap:30px;justify-content:center}
+.u2{width:300px}
+.cap{font-size:12.5px;color:var(--ink2);margin:0 4px 10px;font-weight:500}.cap b{color:var(--ink);font-weight:700}
+.f2{width:300px;border-radius:46px;padding:7px;background:linear-gradient(160deg,#2b2b2f,#0a0a0c);box-shadow:var(--sm)}
+.s2{position:relative;border-radius:39px;overflow:hidden;height:610px;background:var(--page);color:var(--ink);display:flex;flex-direction:column}
+.di{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:84px;height:23px;background:#000;border-radius:14px;z-index:9}
+.st{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 0;font-size:13px;font-weight:600;z-index:6}
+.si{display:flex;align-items:center;gap:5px}.bat{width:22px;height:11px;border:1px solid currentColor;border-radius:3px;position:relative;opacity:.85}.bat::after{content:"";position:absolute;inset:1.5px;width:78%;background:currentColor;border-radius:1px}
+.bd{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.tile{background:var(--card);border-radius:24px;border:0.5px solid var(--sep);box-shadow:var(--ss)}
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 16px}
+.thumb{border-radius:15px;background-size:cover;background-position:center;flex:none}
+.gp{font-size:14px;font-weight:800;background:var(--field);color:var(--ink);padding:5px 11px;border-radius:11px;font-variant-numeric:tabular-nums}
+.bf{background:var(--brand);color:var(--page);border:none;border-radius:17px;padding:15px;font-size:15.5px;font-weight:800;width:100%;cursor:pointer}
+.bo{background:var(--field);color:var(--ink);border:none;border-radius:17px;padding:15px;font-size:15.5px;font-weight:700;width:100%;cursor:pointer}
+.lk{color:var(--brand);font-weight:700;font-size:13.5px}
+.tb{margin-top:auto;display:flex;justify-content:space-around;align-items:center;background:var(--glass);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);border-top:0.5px solid var(--sep);padding:11px 8px 13px}
+.tb a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--ink3);font-weight:600}.tb a i{font-size:23px}.tb a.act{color:var(--ink)}
+.hd{font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3);margin:16px 22px 9px}
+.row{display:flex;align-items:center;gap:13px;padding:11px;background:var(--card);border-radius:20px;border:0.5px solid var(--sep);margin:0 16px 10px;box-shadow:var(--ss)}
+.seg{display:flex;background:var(--field);border-radius:13px;margin:0 18px;padding:4px}
+.seg b{flex:1;text-align:center;font-size:13px;font-weight:700;padding:8px;border-radius:10px;color:var(--ink2)}.seg b.sel{background:var(--card);color:var(--ink);box-shadow:var(--ss)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:999px}
+.scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.25) 55%,rgba(0,0,0,0) 100%)}
+</style>
+</head>
+<body>
+<div class="dp" id="dp">
+<div class="head">
+  <div><h1>IronPath — high-end direction</h1><p>Photography-led, like Cal AI / Lifesum: real food imagery, a bento dashboard, Liquid-Glass tab bars, and display typography. Calm-by-design kept. Best viewed by opening this file. Light + dark.</p></div>
+  <div class="tgl"><button data-mode="dark" class="on"><i class="ti ti-moon"></i> Dark</button><button data-mode="light"><i class="ti ti-sun"></i> Light</button></div>
+</div>
+<div class="p2">
+
+  <div class="u2"><p class="cap"><b>Welcome</b> — full-bleed food photography</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div style="position:absolute;inset:0;background-image:url('https://www.themealdb.com/images/media/meals/zry07j1763779321.jpg');background-size:cover;background-position:center"></div>
+    <div class="scrim"></div>
+    <div class="st" style="color:#fff;position:relative"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="margin-top:auto;position:relative;padding:26px;color:#fff">
+      <div style="font-size:32px;font-weight:800;letter-spacing:-.9px;line-height:1.08">Eat for your goals,<br>from your own<br>kitchen.</div>
+      <div style="font-size:14.5px;opacity:.85;margin-top:12px;line-height:1.5">Daily targets from your body and goals — then meals built from what you already have.</div>
+      <button class="bf" style="margin-top:20px;background:#fff;color:#111">Get started</button>
+      <div style="text-align:center;margin-top:13px"><span style="color:#fff;opacity:.9;font-weight:700;font-size:13.5px">I already use IronPath</span></div>
+    </div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Today</b> — bento dashboard + photo + glass</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 20px 10px">
+      <div><div style="font-size:12.5px;color:var(--ink3);font-weight:600">Tuesday, June 2</div><div style="font-size:24px;font-weight:800;letter-spacing:-.5px">Good morning, Alex</div></div>
+      <div class="thumb" style="width:40px;height:40px;border-radius:50%;background-image:url('https://www.themealdb.com/images/media/meals/1549542994.jpg')"></div>
+    </div>
+    <div class="bd">
+      <div class="bento">
+        <div class="tile" style="grid-row:span 2;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="position:relative;width:118px;height:118px"><svg width="118" height="118" viewBox="0 0 120 120"><defs><linearGradient id="r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brandA)"/><stop offset="1" stop-color="var(--brandB)"/></linearGradient></defs><circle cx="60" cy="60" r="50" fill="none" stroke="var(--ring0)" stroke-width="13"/><circle cx="60" cy="60" r="50" fill="none" stroke="url(#r)" stroke-width="13" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="184" transform="rotate(-90 60 60)"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:27px;font-weight:800;letter-spacing:-.5px">1,260</span><span style="font-size:11px;color:var(--ink3);font-weight:600">cal left</span></div></div>
+          <div style="font-size:12px;color:var(--ink3);font-weight:600;margin-top:8px">of 2,180 target</div>
+        </div>
+        <div class="tile" style="padding:13px 14px"><div style="font-size:11.5px;color:var(--ink3);font-weight:700">PROTEIN</div><div style="font-size:19px;font-weight:800;margin-top:2px">96<span style="font-size:12px;color:var(--ink3);font-weight:600"> / 128g</span></div><div style="height:4px;border-radius:3px;background:var(--ring0);margin-top:7px"><div style="height:100%;width:75%;border-radius:3px;background:var(--brand)"></div></div></div>
+        <div class="tile" style="padding:13px 14px;background:linear-gradient(140deg,rgba(255,146,100,.18),rgba(255,146,100,.06))"><div style="display:flex;align-items:center;gap:6px;color:var(--accent);font-weight:800;font-size:13px"><i class="ti ti-bolt"></i> +420</div><div style="font-size:11.5px;color:var(--ink2);margin-top:4px;line-height:1.35">Activity credit · a bonus, not a must</div></div>
+      </div>
+      <div style="position:relative;margin:13px 16px 0;height:128px;border-radius:22px;overflow:hidden;box-shadow:var(--ss)">
+        <div style="position:absolute;inset:0;background-image:url('https://www.themealdb.com/images/media/meals/lpd4wy1614347943.jpg');background-size:cover;background-position:center"></div>
+        <div class="scrim"></div>
+        <div style="position:absolute;left:16px;bottom:14px;right:16px;color:#fff;display:flex;align-items:flex-end;justify-content:space-between">
+          <div><div style="font-size:11px;opacity:.85;font-weight:700;letter-spacing:.4px">UP NEXT · LUNCH</div><div style="font-size:18px;font-weight:800">3 picks ready · ~640 cal</div></div>
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.4)"><i class="ti ti-arrow-right"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="tb"><a class="act"><i class="ti ti-home-2"></i>Today</a><a><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a><i class="ti ti-chart-line"></i>Progress</a><a><i class="ti ti-settings"></i>Settings</a></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Today's picks</b> — photographic meal cards</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="padding:8px 20px 0;display:flex;align-items:center;gap:8px"><i class="ti ti-chevron-left" style="font-size:24px"></i><div style="font-size:23px;font-weight:800;letter-spacing:-.5px">Lunch picks</div></div>
+    <div style="font-size:13px;color:var(--ink3);padding:3px 20px 8px;font-weight:500">From what you already have</div>
+    <div class="bd" style="overflow:hidden">
+      <div class="row"><div class="thumb" style="width:54px;height:54px;background-image:url('https://www.themealdb.com/images/media/meals/lpd4wy1614347943.jpg')"></div><div style="flex:1"><div style="font-weight:800;font-size:15px">Chicken breast</div><div style="font-size:12px;color:var(--ink3)">38g protein · 165 cal</div></div><span class="gp">140 g</span></div>
+      <div class="row"><div class="thumb" style="width:54px;height:54px;background-image:url('https://www.themealdb.com/images/media/meals/5r5rvx1763287943.jpg')"></div><div style="flex:1"><div style="font-weight:800;font-size:15px">Rice <span style="color:var(--ink3);font-weight:500">· raw</span></div><div style="font-size:12px;color:var(--ink3)">59g carbs · 270 cal</div></div><span class="gp">75 g</span></div>
+      <div class="row"><div class="thumb" style="width:54px;height:54px;background-image:url('https://www.themealdb.com/images/media/meals/zry07j1763779321.jpg')"></div><div style="flex:1"><div style="font-weight:800;font-size:15px">Spinach</div><div style="font-size:12px;color:var(--ink3)"><i class="ti ti-clock" style="color:var(--accent)"></i> Best eaten soon</div></div><span class="gp">90 g</span></div>
+      <div style="margin:0 16px;border:1.5px dashed var(--sep);border-radius:20px;padding:13px;text-align:center;color:var(--brand);font-weight:700;font-size:14px"><i class="ti ti-plus"></i> Add a fruit</div>
+      <div style="display:flex;justify-content:center;margin-top:13px"><span class="pill" style="background:var(--field);color:var(--brand)"><i class="ti ti-circle-check"></i> Meets protein &amp; calories</span></div>
+    </div>
+    <div style="padding:10px 16px 18px;display:flex;gap:11px"><button class="bo" style="flex:1">Regenerate</button><button class="bf" style="flex:1.5">Use these</button></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Kitchen</b> — photo thumbnails + stock</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 20px 8px"><div style="font-size:28px;font-weight:800;letter-spacing:-.6px">Kitchen</div><div style="width:38px;height:38px;border-radius:13px;background:var(--ink);color:var(--page);display:flex;align-items:center;justify-content:center"><i class="ti ti-plus" style="font-size:20px"></i></div></div>
+    <div class="seg"><b class="sel">Fresh items</b><b>Staples</b></div>
+    <div class="bd" style="padding-top:12px">
+      <div class="hd" style="margin:0 22px 9px">Protein</div>
+      <div class="row"><div class="thumb" style="width:48px;height:48px;background-image:url('https://www.themealdb.com/images/media/meals/lpd4wy1614347943.jpg')"></div><span style="flex:1;font-weight:800;font-size:14.5px">Chicken breast</span><span class="pill" style="background:rgba(240,184,76,.18);color:#C68A1E"><i class="ti ti-battery-2"></i> Low</span></div>
+      <div class="row"><div class="thumb" style="width:48px;height:48px;background-image:url('https://www.themealdb.com/images/media/meals/naqyel1608588563.jpg')"></div><span style="flex:1;font-weight:800;font-size:14.5px">Eggs</span><span class="pill" style="background:rgba(63,211,155,.16);color:var(--brand)"><i class="ti ti-battery-4"></i> Plenty</span></div>
+      <div class="hd" style="margin:6px 22px 9px">Produce</div>
+      <div class="row"><div class="thumb" style="width:48px;height:48px;background-image:url('https://www.themealdb.com/images/media/meals/zry07j1763779321.jpg')"></div><span style="flex:1;font-weight:800;font-size:14.5px">Spinach</span><span class="pill" style="background:rgba(255,146,100,.18);color:var(--accent)"><i class="ti ti-battery-1"></i> Almost out</span></div>
+    </div>
+    <div class="tb"><a><i class="ti ti-home-2"></i>Today</a><a class="act"><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a><i class="ti ti-chart-line"></i>Progress</a><a><i class="ti ti-settings"></i>Settings</a></div>
+  </div></div></div>
+
+  <div class="u2"><p class="cap"><b>Progress</b> — editorial stats, calm</p>
+  <div class="f2"><div class="s2">
+    <div class="di"></div>
+    <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+    <div style="font-size:28px;font-weight:800;letter-spacing:-.6px;padding:8px 20px 0">Progress</div>
+    <div class="bd" style="padding:10px 16px">
+      <div class="tile" style="padding:18px;overflow:hidden">
+        <div style="font-size:12px;color:var(--ink3);font-weight:700;letter-spacing:.3px">WEIGHT TREND · 7-DAY AVG</div>
+        <div style="display:flex;align-items:baseline;gap:7px;margin:6px 0 10px"><span style="font-size:30px;font-weight:800;letter-spacing:-.6px">163.4</span><span style="color:var(--ink3);font-size:13px;font-weight:600">lb</span><span class="pill" style="background:var(--field);color:var(--brand);margin-left:auto"><i class="ti ti-trending-down"></i> steady</span></div>
+        <svg width="100%" height="84" viewBox="0 0 260 84" preserveAspectRatio="none"><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--brand)" stop-opacity=".3"/><stop offset="1" stop-color="var(--brand)" stop-opacity="0"/></linearGradient></defs><path d="M0,56 C50,50 80,48 130,40 C180,32 210,26 260,18 L260,84 L0,84 Z" fill="url(#a)"/><path d="M0,56 C50,50 80,48 130,40 C180,32 210,26 260,18" fill="none" stroke="var(--brand)" stroke-width="3.5" stroke-linecap="round"/></svg>
+      </div>
+      <div style="display:flex;gap:11px;margin-top:12px">
+        <div class="tile" style="flex:1;padding:16px"><div style="font-size:11.5px;color:var(--ink3);font-weight:700">HIT-RATE</div><div style="font-size:26px;font-weight:800;margin-top:2px">82<span style="font-size:14px;color:var(--ink3)">%</span></div></div>
+        <div class="tile" style="flex:1;padding:16px"><div style="font-size:11.5px;color:var(--ink3);font-weight:700">TARGET</div><div style="font-size:15px;font-weight:800;margin-top:9px;color:var(--brand)">Refining</div></div>
+      </div>
+      <div style="text-align:center;margin-top:16px"><span class="lk"><i class="ti ti-player-pause"></i> Take a break</span></div>
+    </div>
+    <div class="tb"><a><i class="ti ti-home-2"></i>Today</a><a><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a class="act"><i class="ti ti-chart-line"></i>Progress</a><a><i class="ti ti-settings"></i>Settings</a></div>
+  </div></div></div>
+
+</div>
+</div>
+<script>
+(function(){var dp=document.getElementById('dp');document.querySelectorAll('.tgl button').forEach(function(b){b.addEventListener('click',function(){dp.classList.toggle('lite',b.dataset.mode==='light');document.querySelectorAll('.tgl button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');});});})();
+</script>
+</body>
+</html>

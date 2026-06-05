@@ -2,6 +2,14 @@
 
 All notable frontend governance and product-structure changes should be recorded here.
 
+## 2026-06-05
+
+- Established the **living-doc system**: added `docs/DOCS_MANIFEST.md` as the single constraint list of canonical living docs, and a binding "Doc Discipline" section in `AGENTS.md` (no new top-level `.md`, code change → sync docs, archive-or-delete instead of new "v2" files, throwaway artifacts to `_scratch/`).
+- Cleaned up 457 stale docs (legacy PWA design/audit docs + iOS-native-migration slices) via `git rm` (recoverable); kept only the manifest-registered canonical/reference docs. Migration directory `docs/ios-native-migration/` removed.
+- Ignored local scratch trees `_slices/` and `_scratch/` in `.gitignore`.
+- Fixed `ios/IronPathWidget/Info.plist` to declare the required `CFBundleExecutable` and `CFBundlePackageType` keys.
+- Docs-and-config only; no engine, source, `project.pbxproj`, or `package.json` changes.
+
 ## 2026-04-29
 
 - Added `PLAN_PAGE_CLEANUP.md` to audit current Plan page sections, identify duplicate schedule/recommendation/draft/rollback surfaces, and define the target structure: current plan, weekly schedule, pending recommendations, and adjustment drafts.

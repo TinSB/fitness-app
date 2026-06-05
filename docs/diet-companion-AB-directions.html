@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IronPath — A vs B direction (Today)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+.dp{--page:#0C0B08;--base:#100E0A;--card:#19160F;--card2:#211D15;--sunken:#0C0A07;--ink:#F5F1E7;--ink2:#A8A091;--ink3:#7A7263;--sep:rgba(255,255,255,.08);--brand:#46C295;--brandA:#2BD79C;--brandB:#7BE6A2;--ring0:#272219;--warn:#E4A14E;--glass:rgba(18,16,11,.55);--pro:#A99AE0;--proB:#2A2440;--car:#D9B25A;--carB:#37301C;--veg:#9DC265;--vegB:#2C331D;--wat:#6FB6D8;--watB:#1B3140;--ss:0 2px 12px rgba(0,0,0,.4);--sm:0 16px 40px rgba(0,0,0,.55)}
+.dp.lite{--page:#EEEAE2;--base:#FBF8F2;--card:#FFFFFF;--card2:#FBF7EF;--sunken:#F1ECE2;--ink:#16130C;--ink2:#655F50;--ink3:#9A9183;--sep:rgba(20,15,5,.08);--brand:#0F8A66;--brandA:#16A87C;--brandB:#56C982;--ring0:#EAE3D4;--warn:#9A6516;--glass:rgba(255,253,248,.62);--pro:#6B5BA8;--proB:#ECE6F4;--car:#A4781A;--carB:#F4ECD6;--veg:#4F7A22;--vegB:#E6ECD2;--wat:#2E7CA6;--watB:#E3EFF5;--ss:0 2px 12px rgba(60,45,20,.06);--sm:0 18px 44px rgba(60,45,20,.15)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.head{max-width:1080px;margin:0 auto;padding:30px 26px 4px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+.head h1{font-size:25px;font-weight:800;letter-spacing:-.6px;margin:0 0 5px}.head p{font-size:14px;color:var(--ink2);margin:0;max-width:560px;line-height:1.5}
+.tgl{display:flex;background:var(--card);border:0.5px solid var(--sep);border-radius:999px;padding:4px;box-shadow:var(--ss)}
+.tgl button{border:none;background:transparent;color:var(--ink2);font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tgl button.on{background:var(--ink);color:var(--page)}
+.p2{max-width:1080px;margin:0 auto;padding:16px 18px 44px;display:flex;flex-wrap:wrap;gap:40px;justify-content:center}
+.col{width:300px}
+.cap{margin:0 2px 12px}.cap b{font-size:16px;font-weight:800;letter-spacing:-.3px}.cap p{font-size:13px;color:var(--ink2);margin:4px 0 0;line-height:1.5}
+.f2{width:300px;border-radius:46px;padding:7px;background:linear-gradient(160deg,#2b2b2f,#0a0a0c);box-shadow:var(--sm)}
+.s2{position:relative;border-radius:39px;overflow:hidden;height:622px;background:var(--base);color:var(--ink);display:flex;flex-direction:column}
+.di{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:84px;height:23px;background:#000;border-radius:14px;z-index:9}
+.st{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 0;font-size:13px;font-weight:600;z-index:6}
+.si{display:flex;align-items:center;gap:5px}.bat{width:22px;height:11px;border:1px solid currentColor;border-radius:3px;position:relative;opacity:.85}.bat::after{content:"";position:absolute;inset:1.5px;width:78%;background:currentColor;border-radius:1px}
+.bd{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.fm{border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.pro{background:var(--proB);color:var(--pro)}.car{background:var(--carB);color:var(--car)}.veg{background:var(--vegB);color:var(--veg)}.wat{background:var(--watB);color:var(--wat)}
+.tile{background:var(--card);border-radius:20px;border:0.5px solid var(--sep);box-shadow:var(--ss)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px}
+.tb{margin-top:auto;display:flex;justify-content:space-around;align-items:center;background:var(--glass);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border-top:0.5px solid var(--sep);padding:11px 8px 13px}
+.tb a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--ink3);font-weight:600}.tb a i{font-size:23px}.tb a.act{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="dp lite" id="dp">
+<div class="head"><div><h1>A vs B — same "Today", two design languages</h1><p>A: refined native iOS dashboard (de-Material-ized Stitch). B: editorial, brand-led, calmer (Oura / Headspace lane). Both fix Stitch's "M3 web template" feel.</p></div>
+<div class="tgl"><button data-mode="light" class="on"><i class="ti ti-sun"></i> Light</button><button data-mode="dark"><i class="ti ti-moon"></i> Dark</button></div></div>
+<div class="p2">
+
+  <div class="col">
+    <div class="cap"><b>A · Native premium dashboard</b><p>SF type (no mono), SF-Symbol-style icons, warm food-category colors, real Liquid-Glass tab bar, gradient ring + tolerance band, informative.</p></div>
+    <div class="f2"><div class="s2">
+      <div class="di"></div>
+      <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 20px 2px">
+        <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-leaf" style="color:var(--brand);font-size:18px"></i><span style="font-weight:800;letter-spacing:-.3px;color:var(--brand)">IronPath</span></div>
+        <span class="pill" style="background:var(--sunken);color:var(--ink2)"><i class="ti ti-player-pause"></i> Take a break</span>
+      </div>
+      <div class="bd">
+        <div style="padding:8px 20px 2px"><div style="font-size:23px;font-weight:800;letter-spacing:-.5px">Good morning, Alex</div><div style="font-size:13px;color:var(--ink2);margin-top:2px">Energy looks steady. No rushing.</div></div>
+        <div class="tile" style="margin:12px 16px 0;padding:16px;display:flex;align-items:center;gap:16px">
+          <div style="position:relative;width:104px;height:104px;flex:none"><svg width="104" height="104" viewBox="0 0 120 120"><defs><linearGradient id="ra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brandA)"/><stop offset="1" stop-color="var(--brandB)"/></linearGradient></defs><circle cx="60" cy="60" r="50" fill="none" stroke="var(--ring0)" stroke-width="13"/><circle cx="60" cy="60" r="50" fill="none" stroke="var(--ring0)" stroke-width="13" stroke-dasharray="40 274" stroke-dashoffset="-150" transform="rotate(-90 60 60)" opacity=".5"/><circle cx="60" cy="60" r="50" fill="none" stroke="url(#ra)" stroke-width="13" stroke-linecap="round" stroke-dasharray="182 314" transform="rotate(-90 60 60)"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:25px;font-weight:800;letter-spacing:-.5px">1,260</span><span style="font-size:10px;color:var(--ink3);font-weight:600">cal left</span></div></div>
+          <div style="flex:1"><span class="pill" style="background:var(--vegB);color:var(--veg)"><i class="ti ti-circle-check"></i> On track</span><div style="font-size:12.5px;color:var(--ink2);margin-top:9px;line-height:1.45">Of 2,180 today. Tolerance band shown — a range, not a hard line.</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 0">
+          <div class="tile" style="padding:13px"><div style="display:flex;align-items:center;gap:8px"><div class="fm pro" style="width:30px;height:30px;font-size:15px"><i class="ti ti-meat"></i></div><span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.4px">PROTEIN</span></div><div style="font-size:20px;font-weight:800;margin-top:8px">96<span style="font-size:12px;color:var(--ink3);font-weight:600"> g</span></div></div>
+          <div class="tile" style="padding:13px"><div style="display:flex;align-items:center;gap:8px"><div class="fm car" style="width:30px;height:30px;font-size:15px"><i class="ti ti-bowl"></i></div><span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.4px">CARBS</span></div><div style="font-size:20px;font-weight:800;margin-top:8px">180<span style="font-size:12px;color:var(--ink3);font-weight:600"> g</span></div></div>
+          <div class="tile" style="padding:13px"><div style="display:flex;align-items:center;gap:8px"><div class="fm veg" style="width:30px;height:30px;font-size:15px"><i class="ti ti-plant-2"></i></div><span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.4px">VEG</span></div><div style="font-size:20px;font-weight:800;margin-top:8px">3<span style="font-size:12px;color:var(--ink3);font-weight:600"> srv</span></div></div>
+          <div class="tile" style="padding:13px"><div style="display:flex;align-items:center;gap:8px"><div class="fm wat" style="width:30px;height:30px;font-size:15px"><i class="ti ti-droplet"></i></div><span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.4px">WATER</span></div><div style="font-size:20px;font-weight:800;margin-top:8px">1.2<span style="font-size:12px;color:var(--ink3);font-weight:600"> L</span></div></div>
+        </div>
+        <div style="font-size:11.5px;font-weight:700;letter-spacing:.5px;color:var(--ink3);margin:16px 20px 8px">COMING UP</div>
+        <div class="tile" style="margin:0 16px;padding:12px 14px;display:flex;align-items:center;gap:12px"><div class="fm car" style="width:42px;height:42px;font-size:19px"><i class="ti ti-bowl"></i></div><div style="flex:1"><div style="font-weight:800;font-size:15px">Lunch</div><div style="font-size:12px;color:var(--ink3)">3 picks ready</div></div><span style="font-size:13px;color:var(--ink3);font-weight:600">12:30</span></div>
+      </div>
+      <div class="tb"><a class="act"><i class="ti ti-home-2"></i>Today</a><a><i class="ti ti-basket"></i>Kitchen</a><a><i class="ti ti-circle-plus" style="font-size:30px"></i></a><a><i class="ti ti-sparkles"></i>Picks</a><a><i class="ti ti-chart-line"></i>Progress</a></div>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <div class="cap"><b>B · Editorial, brand-led</b><p>Big display type, a signature "energy aura" instead of a clinical ring, minimal numbers (behind a tap), generous whitespace — calmest + most distinctive.</p></div>
+    <div class="f2"><div class="s2" style="background:radial-gradient(120% 70% at 50% 0%, var(--card2), var(--base) 60%)">
+      <div class="di"></div>
+      <div class="st"><span>9:41</span><span class="si"><i class="ti ti-wifi"></i><span class="bat"></span></span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 24px 0"><span style="font-weight:700;letter-spacing:2px;font-size:12px;color:var(--ink3)">IRONPATH</span><i class="ti ti-player-pause" style="color:var(--ink3);font-size:19px"></i></div>
+      <div class="bd" style="padding:0 24px">
+        <div style="margin-top:18px;font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.05">Good<br>morning,<br>Alex</div>
+        <div style="display:flex;flex-direction:column;align-items:center;margin-top:6px">
+          <div style="position:relative;width:188px;height:188px;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 38% 32%, var(--brandB), var(--brandA) 45%, transparent 72%);filter:blur(2px);opacity:.92"></div>
+            <div style="position:absolute;width:170px;height:170px;border-radius:50%;box-shadow:0 24px 60px -10px var(--brandA);opacity:.5"></div>
+            <svg width="188" height="188" viewBox="0 0 188 188" style="position:relative"><circle cx="94" cy="94" r="80" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="2"/></svg>
+            <div style="position:relative;text-align:center;color:#fff"><div style="font-size:12px;letter-spacing:1px;opacity:.85;font-weight:600">TODAY</div><div style="font-size:26px;font-weight:800;letter-spacing:-.4px;margin-top:1px">Steady</div></div>
+          </div>
+          <div style="font-size:15px;color:var(--ink2);text-align:center;margin-top:4px;line-height:1.5;max-width:230px">Your energy is balanced. Lunch is your next focus — no rushing.</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px">
+          <span style="font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--ink3)">TODAY'S BALANCE</span>
+          <span style="font-size:12px;color:var(--brand);font-weight:700">See numbers</span>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:11px">
+          <div style="flex:1.6"><div style="height:8px;border-radius:5px;background:linear-gradient(90deg,var(--pro),color-mix(in srgb,var(--pro) 55%, transparent))"></div><div style="font-size:10.5px;color:var(--ink3);margin-top:6px;font-weight:600">Protein</div></div>
+          <div style="flex:2.1"><div style="height:8px;border-radius:5px;background:linear-gradient(90deg,var(--car),color-mix(in srgb,var(--car) 55%, transparent))"></div><div style="font-size:10.5px;color:var(--ink3);margin-top:6px;font-weight:600">Carbs</div></div>
+          <div style="flex:1"><div style="height:8px;border-radius:5px;background:linear-gradient(90deg,var(--veg),color-mix(in srgb,var(--veg) 55%, transparent))"></div><div style="font-size:10.5px;color:var(--ink3);margin-top:6px;font-weight:600">Veg</div></div>
+          <div style="flex:.8"><div style="height:8px;border-radius:5px;background:linear-gradient(90deg,var(--wat),color-mix(in srgb,var(--wat) 55%, transparent))"></div><div style="font-size:10.5px;color:var(--ink3);margin-top:6px;font-weight:600">Water</div></div>
+        </div>
+        <div style="margin-top:22px;border-radius:22px;padding:16px 18px;background:linear-gradient(135deg,var(--card),var(--card2));border:0.5px solid var(--sep);box-shadow:var(--ss);display:flex;align-items:center;gap:14px">
+          <div class="fm car" style="width:46px;height:46px;font-size:21px"><i class="ti ti-bowl"></i></div>
+          <div style="flex:1"><div style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.4px">UP NEXT · 12:30</div><div style="font-size:18px;font-weight:800;letter-spacing:-.3px">Lunch</div></div>
+          <i class="ti ti-arrow-right" style="color:var(--brand);font-size:20px"></i>
+        </div>
+      </div>
+      <div class="tb" style="background:transparent;border:none;backdrop-filter:none"><a class="act"><i class="ti ti-circle-filled" style="font-size:9px"></i>Today</a><a><i class="ti ti-circle" style="font-size:9px"></i>Kitchen</a><a><i class="ti ti-circle" style="font-size:9px"></i>Picks</a><a><i class="ti ti-circle" style="font-size:9px"></i>You</a></div>
+    </div></div>
+  </div>
+
+</div>
+</div>
+<script>
+(function(){var dp=document.getElementById('dp');document.querySelectorAll('.tgl button').forEach(function(b){b.addEventListener('click',function(){dp.classList.toggle('lite',b.dataset.mode==='light');document.querySelectorAll('.tgl button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');});});})();
+</script>
+</body>
+</html>

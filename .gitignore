@@ -55,3 +55,7 @@ tests/fixtures/data-health/private-*.json
 **/DerivedData/
 **/.swiftpm/xcode/
 **/.build/
+
+# Local doc scratch / throwaway artifacts (living-doc system — never commit; see docs/DOCS_MANIFEST.md)
+_slices/
+_scratch/

@@ -1,0 +1,100 @@
+<meta charset="utf-8">
+<title>IronPath iOS — 决策回路图</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, "PingFang SC", "Segoe UI", system-ui, sans-serif;
+         margin: 0; padding: 28px 20px 60px; background: #fafafa; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark){ body{ background:#161616; color:#ededed; } .card{ background:#1e1e1e; border-color:#333; } h1,h2{ color:#fff; } .sub{ color:#aaa; } }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color:#666; font-size:13px; margin: 0 0 26px; }
+  h2 { font-size: 16px; margin: 30px 0 6px; }
+  .note { font-size:12.5px; color:#777; margin: 0 0 12px; line-height:1.5; }
+  .card { background:#fff; border:1px solid #e6e6e6; border-radius:12px; padding:14px 12px; overflow:auto; }
+  .legend { font-size:12px; color:#888; margin-top:8px; }
+  .mermaid { display:flex; justify-content:center; }
+</style>
+<div class="wrap">
+  <h1>IronPath iOS — 系统逻辑决策回路</h1>
+  <p class="sub">commit 4a1ead0 (#504) · 现状盘点 · 配套文档 IRONPATH_iOS_SYSTEM_LOGIC.md</p>
+
+  <h2>回路一 · 用户视角:"展示给用户" 往下逐层拆</h2>
+  <p class="note">用户看到的每一项,都来自决策产物 CoreSlice 的某个字段;CoreSlice 由一组决策逻辑算出;逻辑吃决策输入;输入由数据来源经"唯一 IO + DataHealth 清洗"喂上来。raw 数据永不跳层。</p>
+  <div class="card">
+    <pre class="mermaid">
+flowchart TB
+    subgraph L0["① 展示给用户 (UI)"]
+      U1["今日<br/>准备度·下次训练·教练建议·训练洞察"]
+      U2["训练 Focus<br/>今日动作 + 每个动作几组"]
+    end
+    subgraph L1["② 决策产物 TrainingDecisionCoreSlice"]
+      S["readinessLevel · volumeMode(trim/hold/expand) · finalVolumeMultiplier<br/>intensityMode · progressionMode · deload档位 · 处方 perExercise[组数]"]
+    end
+    subgraph L2["③ 核心决策逻辑"]
+      P["周期相 EffectivePhase<br/>gap状态机·默认 base/0.9"]
+      R["准备度 Readiness<br/>睡眠/精力/酸痛/疼痛 + 计划时间差"]
+      D["减载 Deload 评分<br/>表现↓/重复痛/恢复差/睡眠差/酸痛/纠偏"]
+      E["e1RM 趋势"]
+      P --> CLAMP["容量倍率 clamp<br/>→ finalVolumeMultiplier"]
+      D --> CLAMP
+      R --> CLAMP
+    end
+    subgraph L3["④ 决策输入 CleanTrainingDecisionInput"]
+      I["近期训练历史 · 酸痛/疼痛区域 · 今日状态(睡眠/精力/时间)<br/>筛查档案 · 周期计划 · 今日模板动作 · 注入时钟(无系统钟)"]
+    end
+    subgraph L4["⑤ 数据来源"]
+      DS1["canonical AppData<br/>本机磁盘"]
+      DS2["默认程序兜底<br/>硬编码·空程序时"]
+      DS3["Apple 健康导入<br/>派生·display-only·不进引擎"]
+    end
+    L0 --> L1 --> L2 --> L3 --> L4
+    DS1 -. "app readOutcome · §10 唯一IO+清洗" .-> I
+    DS2 -. "decodeTrainingTemplates 空→种子" .-> I
+    </pre>
+  </div>
+
+  <h2>回路二 · 数据流向:从磁盘到 UI 的完整管线</h2>
+  <p class="note">★ 标注:无 mesocyclePlan → 落 base 相 0.9 倍率 < 0.95 → volumeMode=trim。这是新用户/默认态的必然减量,不是因为状态差。</p>
+  <div class="card">
+    <pre class="mermaid">
+flowchart TD
+    Disk[("canonical AppData<br/>ironpath-appdata.json")]
+    Disk -->|"app readOutcome(now)<br/>§10 唯一 IO + 清洗"| Clean
+    Clean["buildCleanAppDataView<br/>清洗: lifecycle/duration/screening cap<br/>只标不删: stale todayStatus·health"]
+    Clean --> CV[/"CleanAppDataView<br/>raw·cleanedHistory·cleanedScreening·todayStatus"/]
+
+    CV --> DT["decodeTrainingTemplates<br/>空 [] → 默认程序种子"]
+    DT --> TS["TodayStateEngine"]
+    TS --> WC["WorkoutCycleScheduler<br/>推/拉/腿 周期位置"]
+    WC --> NW["NextWorkoutScheduler<br/>拍板 templateId"]
+    NW -->|"Focus 用 templateId 回选模板动作"| INP
+
+    CV --> INP[/"CleanTrainingDecisionInput<br/>history·screening·mesocyclePlan·todayStatus<br/>metadata: nowIso·templateExercises·痛/减量=nil"/]
+    INP --> CORE
+    subgraph CORE["层3 核心决策"]
+      PH["EffectivePhase<br/>默认 base/0.9 · reentry0.65 · restart0.5"]
+      RE["Readiness 82起分<br/>睡眠/精力/酸痛/疼痛/时间差<br/>→ &lt;50 low · &lt;75 medium · else high"]
+      DL["Deload 评分<br/>→ watch0.9/yellow0.75/red0.6"]
+      ET["e1rmTrendUp"]
+      PH --> CL["clampMultiplier → finalVolumeMultiplier"]
+      DL --> CL
+      CL --> VM["volumeMode<br/>mult&lt;0.95→trim · &gt;1.05→expand"]
+      RE --> IM["intensityMode<br/>conservative→cap"]
+      ET --> PM["progressionMode<br/>trendUp→progress"]
+      CL --> RX["处方 buildWorkingSetTargets<br/>模板组数 × mult → ceil → 保守再砍 → 地板"]
+    end
+    CORE --> SLICE[/"TrainingDecisionCoreSlice"/]
+    SLICE --> FOCUS["训练 Focus<br/>逐字段 + 每动作 targetSets"]
+
+    CV -. "分析旁路" .-> AN["层6 分析<br/>e1RM/plateau/volume/level/quality/confidence/痛/streak/balance"]
+    AN --> INTEL["TrainingIntelligenceSummary"] --> TUI["今日 · 训练洞察"]
+    SLICE -. "教练旁路" .-> CA["层5 CoachAction<br/>现仅 nextWorkout+recovery 两源"]
+    CA -->|"CC-3 dismiss 过滤"| TUI2["今日 · 教练建议卡"]
+    </pre>
+  </div>
+  <p class="legend">▭ 方框=处理/引擎　▱ 平行四边形=数据结构　⬭ 圆角=磁盘　实线=主数据流　虚线=旁路/IO 接缝</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: (matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'neutral', flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+</script>

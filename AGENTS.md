@@ -15,6 +15,15 @@ If a requested task **conflicts** with that document, **stop and require explici
 - Do **not** change `package.json`/lockfiles or `project.pbxproj` without explicit justification.
 - Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
 
+## ⚠️ Doc Discipline — Living-Doc System (binding)
+
+This repo follows a **small fixed set of living docs**, governed by [`docs/DOCS_MANIFEST.md`](docs/DOCS_MANIFEST.md). **New agents/sessions must read `DOCS_MANIFEST.md` first.**
+
+1. **Code change → sync the docs.** Any change must also update the affected canonical living doc (architecture / system-logic / decisions / roadmap / changelog). Docs out of sync with the code = the task is **not done**.
+2. **No new top-level `.md` files.** To add a doc, first register it in `DOCS_MANIFEST.md` (state its role + why no existing doc fits); otherwise the PR is rejected.
+3. **Superseded / stale content** is archived into the matching canonical doc or deleted — **never** spun off into a new "v2 / final / final-2" file.
+4. **Throwaway artifacts** (one-off analysis, audits, headless prompts, slices) go in `_scratch/` (gitignored) or outputs — **never** into the repo doc tree.
+
 ## Product Direction
 
 IronPath must feel like a polished, restrained, professional mobile training app, not an admin dashboard, engineering demo, or data-heavy panel.
