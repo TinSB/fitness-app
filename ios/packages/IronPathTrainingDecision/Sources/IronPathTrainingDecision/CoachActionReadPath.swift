@@ -36,8 +36,9 @@
 // workout + its nested SC-A recovery — and leaves the rest (dataHealthReport / dailyAdjustment /
 // sessionQuality / plateauResults / volumeAdaptation / recommendationConfidence / setAnomalies)
 // at their honest nil defaults rather than fabricating them; they light up when their own sources
-// are wired (a later slice). The dismiss action is DISPLAY-ONLY here — its persistence is the
-// CC-5 write path (the surface shows a disabled "暂不处理" with an honest deferral note).
+// are wired (a later slice). The dismiss action's "暂不处理" label is carried here; its persistence
+// is the CC-5 gated dismiss write the 今日 surface wires (read-side hiding of dismissed actions is
+// the later CC-6 read-filter, not this read path).
 //
 // Honesty (master §15.4): the load outcomes map to honest states — `.missing` (no canonical file
 // yet / first launch / no live source) and a loaded-but-empty (no cleaned history) view →
@@ -188,8 +189,8 @@ private func coachActionReferenceIso8601UTC(_ date: Date) -> String {
 ///
 /// Mirrors the PWA `buildCoachActionListViewModel(actions, { surface: 'today' })`: only `pending`
 /// actions are shown on the 今日 surface, sorted by priority DESC then title (zh-Hans-CN collation),
-/// each mapped through `buildCoachActionView`. The dismiss control is DISPLAY-ONLY (persistence is
-/// the CC-5 write path) — `secondaryLabel` is carried for the disabled button + `dismissDeferredNote`.
+/// each mapped through `buildCoachActionView`. `secondaryLabel` ("暂不处理") is the dismiss button
+/// label the 今日 surface wires to the CC-5 gated dismiss write.
 public struct CoachActionSurfaceSummary: Equatable, Sendable {
     /// The list header title (PWA `CoachActionList` default).
     public let title: String
@@ -197,9 +198,6 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
     public let description: String
     /// The honest empty-list text shown when there are no pending actions (PWA `emptyText` default).
     public let emptyText: String
-    /// The honest note that the dismiss control's persistence is deferred to CC-5 (this surface is
-    /// read-only; the disabled "暂不处理" button shows but does not write).
-    public let dismissDeferredNote: String
     /// The sorted, read-only projection of each pending coach action.
     public let actions: [ActionRow]
 
@@ -235,7 +233,6 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         self.title = "教练建议"
         self.description = "建议只会引导你查看现有页面或生成草案，不会自动修改数据。"
         self.emptyText = "暂无需要处理的教练建议。"
-        self.dismissDeferredNote = "「暂不处理」将在后续版本生效（持久化待 CC-5），本页只读不写。"
 
         // PWA `shouldShowOnSurface(action, 'today')` → status === 'pending'.
         let pending = actions.filter { $0.status == "pending" }

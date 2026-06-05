@@ -285,15 +285,28 @@ final class NextWorkoutScheduleModel: ObservableObject {
     }
 }
 
-/// Thin @MainActor view-model for the 今日 surface's READ-ONLY 教练建议 (coach action) block (CC-4).
-/// Same shape + IO seam as `TrainingInsightsModel` / `NextWorkoutScheduleModel`: it opts the running
-/// app into the SAME sanctioned canonical store, loads it READ-ONLY, builds the DataHealth clean view
-/// (the §10 chokepoint), and delegates the clean-view → coach-action engine → `CoachActionSurfaceSummary`
-/// transform to the pure `resolveCoachActionState`. It NEVER touches FileManager directly, NEVER writes,
-/// and surfaces an honest state for every failure. Kept SEPARATE from the other read models so the
-/// coach-action block is a pure, isolated addition — the existing read paths are untouched. The dismiss
-/// control the surface renders is DISPLAY-ONLY: its persistence is the CC-5 write path, and this model
-/// never writes (read-only, like every other 今日 block).
+/// The honest outcome of a CC-5 gated dismiss write (mirrors `FocusModeMvpState.LoggedSetEditOutcome`).
+enum CoachActionDismissOutcome: Equatable {
+    /// The dismiss intent was persisted through a real, gated, atomic write.
+    case dismissed
+    /// Canonical persistence was unavailable, or the write/validation failed — never a fake success.
+    case failed(String)
+}
+
+/// Thin @MainActor view-model for the 今日 surface's 教练建议 (coach action) block: CC-4 READ + CC-5
+/// dismiss WRITE. Same shape + IO seam as `TrainingInsightsModel` / `NextWorkoutScheduleModel`: it opts
+/// the running app into the SAME sanctioned canonical store, loads it READ-ONLY, builds the DataHealth
+/// clean view (the §10 chokepoint), and delegates the clean-view → coach-action engine →
+/// `CoachActionSurfaceSummary` transform to the pure `resolveCoachActionState`. It NEVER touches
+/// FileManager directly and surfaces an honest state for every failure. Kept SEPARATE from the other
+/// read models so the coach-action block is an isolated addition — the existing read paths are untouched.
+///
+/// CC-5 adds the coach-action capstone's ONE source-truth WRITE: `dismissCoachAction` records the user's
+/// intent to "暂不处理" through the SAME sanctioned `CanonicalSessionWriter` gated path the edits use (§8
+/// rule 4: NOT a second write path), with the SAME defensive `processIncomingAppData` → clean-view gate
+/// (never raw AppData, #448). It persists ONLY the user intent `{ actionId, dismissedAt, scope }` (input,
+/// NOT output, §11) — never an engine result; `dismissedAt` is the INJECTED civil day (no wall clock,
+/// §11.2). Read-side hiding of dismissed actions is the later CC-6 read-filter.
 @MainActor
 final class CoachActionSurfaceModel: ObservableObject {
     @Published private(set) var state: CoachActionSurfaceState
@@ -362,6 +375,101 @@ final class CoachActionSurfaceModel: ObservableObject {
         }
         return .loaded(buildCleanAppDataView(appData, clock: FixedRuntimeGuardClock(now)))
     }
+
+    // MARK: - CC-5 dismiss WRITE (coach-action capstone; same gated path as the edits)
+
+    /// CC-5: record the user's intent to dismiss coach action `actionId` for today ("暂不处理") and
+    /// persist it through the SAME sanctioned canonical-AppData write path the edits use (§8 rule 4:
+    /// NOT a second write path), via `CanonicalSessionWriter.dismissCoachAction`. The dismissed value
+    /// is the user's OWN intent `{ actionId, dismissedAt, scope }` (input, NOT output, §11) — this
+    /// never writes a coach-action engine result, the `mesocyclePlan` weeks blob, or any computed field.
+    ///
+    /// `today` is the LOCAL civil calendar day derived from the INJECTED clock (never a bare `Date()`)
+    /// — the mirror of `todayKey()` / `toLocalDateKey()` (engineUtils.ts:30). The write path itself
+    /// reads no clock; it receives the string (§11.2 / red-line #4).
+    ///
+    /// Honest result: `.failed(_)` when canonical persistence is not opted in (previews/tests) OR on any
+    /// thrown write/validation error (never a fake success); `.dismissed` only after a real, gated,
+    /// atomic write. The injected DataHealth gate re-validates — against the FRESHLY-LOADED on-disk
+    /// document, routed through the SAME read-only `processIncomingAppData` → clean view (never raw
+    /// AppData, #448) — that the dismissed intent landed in the effective dismissed list before the
+    /// write commits; a rejected candidate is never written. The on-disk document is left intact on
+    /// failure (backup-before-overwrite / atomic save).
+    func dismissCoachAction(actionId: String) -> CoachActionDismissOutcome {
+        guard isLive, let store else {
+            // Canonical persistence not opted in (previews/tests) — honest failure, never a fake success.
+            return .failed("没有可写入的本机存储")
+        }
+        // `today` injected from the model's clock (no bare `Date()`): the LOCAL civil day, mirroring
+        // engineUtils.ts todayKey() / toLocalDateKey() — `local.toISOString().slice(0,10)`.
+        let today = Self.civilDayKey(now())
+        let writer = CanonicalSessionWriter(store: store)
+        do {
+            try writer.dismissCoachAction(actionId: actionId, today: today) { candidate in
+                // Defensive DataHealth gate (§10): re-run the candidate through the SAME sanctioned,
+                // read-only DataHealth ingress the edits use (`processIncomingAppData` → its `cleanView`),
+                // never raw AppData (#448). Accept ONLY when the dismissed intent landed in the
+                // candidate's effective dismissed list (read priority root||settings). No fake success.
+                guard let result = try? processIncomingAppData(
+                    appData: candidate,
+                    source: .postSessionComplete,
+                    options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
+                ) else { return false }
+                return Self.dismissLanded(result.cleanView.raw, actionId: actionId, today: today)
+            }
+            // Re-read the persisted document so the surface reflects the write (read-side hiding of a
+            // dismissed action is the later CC-6 read-filter; this slice persists + confirms via toast).
+            reload()
+            return .dismissed
+        } catch {
+            return .failed(Self.dismissErrorMessage(error))
+        }
+    }
+
+    /// True when `raw`'s effective dismissed list (read priority `root || settings`,
+    /// enginePipeline.ts:102) contains an entry for `actionId` dismissed `'today'` on `today`'s civil
+    /// day. Reads `cleanView.raw` — which is the candidate VERBATIM (the clean view never mutates raw),
+    /// so this confirms exactly what the gated save will commit.
+    private static func dismissLanded(_ raw: AppData, actionId: String, today: String) -> Bool {
+        let effective: [JSONValue] =
+            raw.root["dismissedCoachActions"]?.arrayValue
+            ?? raw.settings.dismissedCoachActions?.arrayValue
+            ?? []
+        return effective.contains { item in
+            guard let obj = item.objectValue else { return false }
+            return obj["scope"]?.stringValue == "today"
+                && obj["actionId"]?.stringValue == actionId
+                && String((obj["dismissedAt"]?.stringValue ?? "").prefix(10)) == today
+        }
+    }
+
+    /// The LOCAL civil calendar day `YYYY-MM-DD` for `date` — the Swift mirror of `todayKey()` /
+    /// `toLocalDateKey()` (engineUtils.ts:30, `local.toISOString().slice(0,10)`). Derived from the
+    /// INJECTED clock; the write path itself reads no clock (§11.2 / red-line #4).
+    private static func civilDayKey(_ date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    /// Map a canonical write failure to an honest, user-facing Chinese message. Unknown errors fall
+    /// back to their `localizedDescription` — never a fabricated success.
+    private static func dismissErrorMessage(_ error: Error) -> String {
+        if let writeError = error as? CanonicalSessionWriteError {
+            switch writeError {
+            case .existingDocumentUnreadable:
+                return "本机数据无法读取，未改动（不会覆盖无法解析的数据）"
+            case .validationRejected:
+                return "操作未通过本机数据校验，未保存"
+            case .backupFailed:
+                return "备份失败，未保存（原数据保持不变）"
+            case .saveFailed:
+                return "写入失败，未保存（原数据保持不变）"
+            }
+        }
+        return error.localizedDescription
+    }
 }
 
 struct TodayRootView: View {
@@ -380,6 +488,10 @@ struct TodayRootView: View {
     @StateObject private var coach: CoachActionSurfaceModel
 
     @State private var showTrainingEntry = false
+
+    /// CC-5: the honest result of a gated dismiss write, surfaced as a confirmation/error notice
+    /// (the toast mirror of the PWA `showAppToast`). Non-nil drives the notice alert below.
+    @State private var dismissNoticeText: String?
 
     // W-1: publishes a small DERIVED read-only readiness snapshot to the App Group
     // for the home-screen widget. It just packs the already-computed `summary`
@@ -466,6 +578,18 @@ struct TodayRootView: View {
         } message: {
             Text("在底部导航栏点按「训练」即可进入专注训练。今日页为只读概览，不读写训练记录。")
         }
+        // CC-5: honest confirmation / failure of the gated dismiss write (the toast mirror).
+        .alert(
+            "教练建议",
+            isPresented: Binding(
+                get: { dismissNoticeText != nil },
+                set: { if !$0 { dismissNoticeText = nil } }
+            )
+        ) {
+            Button("好", role: .cancel) { dismissNoticeText = nil }
+        } message: {
+            Text(dismissNoticeText ?? "")
+        }
         .task {
             // Opt the running app into the real canonical store and read it (read-only).
             model.activateLiveSourceIfNeeded()
@@ -482,8 +606,8 @@ struct TodayRootView: View {
             schedule.reload()
             // CC-4: the 教练建议 block reads the SAME canonical store read-only and computes its
             // coach actions from the DataHealth clean view (§10/§11), injecting the §11.2 nowIso.
-            // Guarded by its own live flag, so previews/tests stay off disk. DISPLAY-ONLY — the
-            // dismiss control never writes (persistence is CC-5).
+            // Guarded by its own live flag, so previews/tests stay off disk. CC-5: the same model
+            // also opts into the SAME store for the gated dismiss WRITE (user taps "暂不处理").
             coach.activateLiveSourceIfNeeded()
             coach.reload()
             // Previews/tests pin their state and never touch the live App Group sink.
@@ -853,17 +977,17 @@ struct TodayRootView: View {
                     )
             } else {
                 ForEach(summary.actions) { row in
-                    coachActionCard(row, deferredNote: summary.dismissDeferredNote)
+                    coachActionCard(row)
                 }
             }
         }
     }
 
-    /// A single read-only coach-action card mirroring the PWA `CoachActionCard`: title + source, the
+    /// A single coach-action card mirroring the PWA `CoachActionCard`: title + source, the
     /// priority/status badges, the description, the 需要确认/只查看 (+ 可撤销) line, an optional disabled
-    /// reason, the read-only primary entry label, and a DISABLED dismiss control (persistence deferred
-    /// to CC-5 — this surface never writes).
-    private func coachActionCard(_ row: CoachActionSurfaceSummary.ActionRow, deferredNote: String) -> some View {
+    /// reason, the read-only primary entry label, and the "暂不处理" dismiss button — CC-5 wires it to
+    /// the SAME sanctioned gated dismiss write, surfacing the honest result via `dismissNoticeText`.
+    private func coachActionCard(_ row: CoachActionSurfaceSummary.ActionRow) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(row.title)
@@ -894,20 +1018,24 @@ struct TodayRootView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             // The primary entry is a read-only label (no cross-tab navigation in this slice); the
-            // dismiss control shows DISABLED — its persistence is the CC-5 write path.
+            // "暂不处理" control is now an ACTIVE button — CC-5 persists the dismiss through the
+            // sanctioned gated write and surfaces the honest result (success toast or failure).
             HStack(spacing: 8) {
                 Text(row.primaryLabel)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(row.secondaryLabel)
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                Button(row.secondaryLabel) {
+                    switch coach.dismissCoachAction(actionId: row.id) {
+                    case .dismissed:
+                        dismissNoticeText = "已暂不处理，今天不再提醒。"
+                    case .failed(let message):
+                        dismissNoticeText = message
+                    }
+                }
+                .font(.subheadline.weight(.medium))
+                .buttonStyle(.borderless)
             }
-            Text(deferredNote)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
