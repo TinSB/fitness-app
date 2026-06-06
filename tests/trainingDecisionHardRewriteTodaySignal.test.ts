@@ -1,7 +1,7 @@
 // Signal-only contract for todayTrainingReadinessDecisionEngine.
 // The only remaining exports must be enums + numerics; no title / summary /
 // userMessage / suggestedActions text fields.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §2.2.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTodayTrainingReadinessDecision } from '../src/engines/todayTrainingReadinessDecisionEngine';

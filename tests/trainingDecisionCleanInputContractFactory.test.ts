@@ -1,5 +1,5 @@
 // Behavioral tests for the CleanTrainingDecisionInput factory + wrapper.
-// See docs/TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

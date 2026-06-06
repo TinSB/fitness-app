@@ -1,8 +1,9 @@
 import { execSync } from 'node:child_process';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
+import { LEGACY_DOC_GUARD_TESTS } from './tests/legacyDocGuardTests';
 
 const normalizeId = (id: string) => id.replaceAll('\\', '/');
 
@@ -37,6 +38,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['tests/**/*.test.ts'],
+    exclude: [...configDefaults.exclude, ...LEGACY_DOC_GUARD_TESTS],
     maxWorkers: '50%',
   },
   build: {

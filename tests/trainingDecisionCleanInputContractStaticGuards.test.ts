@@ -1,7 +1,7 @@
 // Static guards for TrainingDecision Clean Input Contract Lock V1.
 // File-system level scans that fail CI when a future change introduces a raw
-// AppData → TrainingDecision call path. See
-// docs/TRAININGDECISION_CLEAN_INPUT_CONTRACT_LOCK_V1.md.
+// AppData → TrainingDecision call path. See docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md
+// and docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { resolve, join, relative } from 'node:path';

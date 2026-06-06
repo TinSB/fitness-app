@@ -1,6 +1,6 @@
 // AR-6 (≤ 1 risk badge per surface) + AR-7 (headline ≤ 60, oneLineAdvice ≤ 80)
 // + AR-9 (one headline + one oneLineAdvice per surface).
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §10.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTrainingDecision } from '../src/engines/trainingDecisionEngine';

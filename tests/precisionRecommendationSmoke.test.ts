@@ -9,7 +9,7 @@ import type { TrainingSession } from '../src/models/training-model';
 // SMOKE TEST: Simulates 3 user archetypes × distinct progression rates and
 // asserts the recommendation engine's weight output tracks the user's
 // actual improvement. The matrix is documented in
-// docs/PRECISION_RECOMMENDATION_PLAN.md.
+// docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 //
 // Setup: every "week" in the synthetic history is two bench-press sessions
 // 3 days apart (mirrors a typical push-A frequency), where the user hit

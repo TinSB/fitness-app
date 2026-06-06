@@ -1,5 +1,5 @@
 // RGR-1 + RGR-2 + AR-2 + AR-3 + AR-4: reentry productive dose + no double penalty.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §10.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTrainingDecision } from '../src/engines/trainingDecisionEngine';

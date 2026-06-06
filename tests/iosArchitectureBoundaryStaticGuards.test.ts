@@ -31,9 +31,8 @@ import { describe, expect, it } from 'vitest';
 //      package.json / package-lock.json byte-identical to the merge base.
 //      These properties are currently asserted in ~86 scattered iOS guard
 //      files; this central copy is the authoritative one. The scattered
-//      copies are documented as future-cleanup candidates in
-//      docs/TEST_SUITE_TIERING_AND_REDUNDANCY_REDUCTION_V1.md and are NOT
-//      deleted in this PR.
+//      copies are documented as future-cleanup candidates in the living
+//      architecture docs and are NOT deleted in this PR.
 //
 // Nothing in this file changes runtime behavior; it only reads source.
 // ---------------------------------------------------------------------------

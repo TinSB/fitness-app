@@ -1,5 +1,5 @@
 // Engine-shape contract for TrainingDecision V2.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §10.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTrainingDecision } from '../src/engines/trainingDecisionEngine';

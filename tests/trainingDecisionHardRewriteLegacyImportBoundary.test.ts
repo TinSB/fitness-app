@@ -1,7 +1,7 @@
 // Static source scan: deleted-legacy modules cannot be re-imported by any UI
 // or feature file. The list grows as more legacy modules are deleted in
 // subsequent commits — these three are the ones removed in V2.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §11.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';

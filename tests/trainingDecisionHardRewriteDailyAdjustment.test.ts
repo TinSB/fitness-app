@@ -1,7 +1,7 @@
 // Signal-only contract for dailyTrainingAdjustmentEngine. No title/summary
 // text on the result; reasons are structured codes; suggestedChanges carry
 // only type + code, never user-facing reason text.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §2.2.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildDailyTrainingAdjustment } from '../src/engines/dailyTrainingAdjustmentEngine';

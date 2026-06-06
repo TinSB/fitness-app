@@ -7,10 +7,9 @@ Native Migration program.
 
 See also:
 
-- `docs/IOS_NATIVE_MIGRATION_ENTRY_GATE_V1.md` — strategy + stop conditions
-- `docs/IOS_NATIVE_MIGRATION_TASKS_V1.md` — iOS-0..iOS-10 roadmap
-- `docs/IOS_NATIVE_MIGRATION_CONTRACT_FREEZE_V1.md` — 11 frozen contracts
-- `docs/ios-native-migration/IOS_0_CONTRACT_FIXTURE_EXPORT_V1.md` — full design
+- `docs/DOCS_MANIFEST.md` — living-doc registry and doc ownership rules
+- `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` — native iOS source-of-truth boundaries
+- `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` — current native logic map and parity contract context
 
 ## Purpose
 

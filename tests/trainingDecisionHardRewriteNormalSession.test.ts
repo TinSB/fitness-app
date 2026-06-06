@@ -1,6 +1,6 @@
 // RGR-4: a normal 4-day/week routine should never be permanently labelled
 // 保守 unless the signal actually warrants it; never emits 控制风险.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §15.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTrainingDecision } from '../src/engines/trainingDecisionEngine';

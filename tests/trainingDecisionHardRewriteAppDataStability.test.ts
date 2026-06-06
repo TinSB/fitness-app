@@ -1,5 +1,5 @@
 // trainingDecisionEngine purity + AppData stability.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §16.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';

@@ -1,6 +1,6 @@
 // Determinism + diff-signature stability across identical and minor-perturbed
 // inputs. Asserts the TrainingDecision and recommendation signature contracts.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §15.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTrainingDecision } from '../src/engines/trainingDecisionEngine';

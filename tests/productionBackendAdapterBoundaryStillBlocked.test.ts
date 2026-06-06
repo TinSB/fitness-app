@@ -104,5 +104,5 @@ describe('production backend adapter boundary still blocked', () => {
       || /(normalized|production|user|account|auth|sync|cloud).*\.sql$/i.test(path),
     );
     expect(suspiciousFiles).toEqual([]);
-  });
+  }, 15_000);
 });

@@ -1,6 +1,6 @@
 // planAdviceAggregator is a pure formatter: given the same coach actions +
 // volume report + drafts, it returns a deterministic ranked AggregatedPlanAdvice[].
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §2.2.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { aggregatePlanAdvice } from '../src/presenters/planAdviceAggregator';

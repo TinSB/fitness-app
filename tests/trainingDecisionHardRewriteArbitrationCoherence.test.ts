@@ -1,6 +1,6 @@
 // RGR-3 + AR-5: strength-up + fatigue-high → controlled-reload single
 // coherent direction; no triplet substring in any surface.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §10/§15.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { buildTrainingDecision } from '../src/engines/trainingDecisionEngine';

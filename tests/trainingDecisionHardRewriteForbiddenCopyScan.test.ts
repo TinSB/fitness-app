@@ -1,7 +1,7 @@
 // Static source scan: forbid legacy contradictory copy patterns in any UI
 // or feature file. The triplet co-occurrence (`力量有进步` AND
 // `恢复压力偏高` AND `下次建议保持重量`) is explicitly forbidden in the same file.
-// See docs/TRAINING_RECOMMENDATION_HARD_REWRITE_PLAN_V2.md §11.
+// See docs/IRONPATH_iOS_SYSTEM_LOGIC.md.
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
