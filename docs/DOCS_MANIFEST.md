@@ -17,7 +17,7 @@
 ## 二、参考文档(留存 · 非每次更新)
 - `docs/IRONPATH_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
 - `docs/US_MARKET_CONSUMER_ANALYSIS.md` — 美国市场消费者研究
-- **饮食子项目**:`docs/DIET_COMPANION_*.md` + `docs/diet-companion-*.html` + `docs/larder-*.html` + `docs/LARDER_ICON_EXPRESSION_GUIDE.md` + `docs/BLENDER_CLAY_*.md`(Blender 黏土图标构建简报;成型后另立自己的 manifest)
+- **饮食子项目**:`docs/DIET_COMPANION_*.md` + `docs/diet-companion-*.html` + `docs/larder-*.html` + `docs/LARDER_ICON_EXPRESSION_GUIDE.md` + `docs/BLENDER_CLAY_*.md`(Blender 黏土图标构建简报) + `docs/competitor-food-visual-spectrum.html`(竞品食物视觉光谱分析)(成型后另立自己的 manifest)
 
 ## 三、仓库元(标准,不在约束内)
 `README.md` · `AGENTS.md` · `CONTRIBUTING.md` · `SECURITY.md`
