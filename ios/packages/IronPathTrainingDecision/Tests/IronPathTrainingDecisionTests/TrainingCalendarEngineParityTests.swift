@@ -6,8 +6,8 @@
 // compare `String == result`; `buildTrainingCalendarMonthRange` compares the decoded
 // `TrainingCalendarMonthRange` struct.
 //
-// The golden is GENERATED from the REAL TS trainingCalendarEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero `: Date`;
+// The golden is GENERATED from the retired legacy trainingCalendarEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero `: Date`;
 // the injected `nowMonth` / `nowIso` seams below are NEVER the load-bearing path (every fixture
 // passes valid months / explicit dates), so their fixed values are irrelevant to the assertion.
 // The aggregator `buildTrainingCalendar` is DEFERRED (its real prerequisite is the COMPLETE
@@ -34,7 +34,7 @@ final class TrainingCalendarEngineParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/calendar-helpers/helper-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/calendar-helpers/helper-cases-v1.json", isDirectory: false
         )
     }
 

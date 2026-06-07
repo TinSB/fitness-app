@@ -8,8 +8,8 @@
 // ordered `muscles` list muscleId+decision+setsDelta+title+reason+confidence+ordered
 // suggestedActions AND `summary`).
 //
-// The golden is GENERATED from the REAL TS volumeAdaptationEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy volumeAdaptationEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (the engine consumes only opaque summaries and reads no clock), no IO beyond reading
 // the committed golden. The fixture covers every decision (insufficient_data / hold / decrease /
 // increase / maintain) + the confidence bands + formatMuscleName (mapped / unmapped→未标注肌群 /
@@ -35,7 +35,7 @@ final class VolumeAdaptationEngineParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func root(_ id: String) throws -> OrderedJSONObject {

@@ -3,12 +3,12 @@
 // (A) PARITY: reconstructs the id→{displayName,englishName,equipmentTags,aliases}
 //     snapshot from the ported `ExerciseLibrary` tables and asserts it equals the
 //     GENERATED `exercise-library/library-snapshot-v1` golden item-by-item — the
-//     same committed golden the TS parity generator produces (read via a #filePath
+//     same committed golden the legacy web schema parity generator produces (read via a #filePath
 //     walk-up; no copies, no drift). This mechanically catches ANY dropped or
 //     altered entry: the id universe, every per-field value, the equipment-tag
 //     order, the alias order, and the EXERCISE_KNOWLEDGE_OVERRIDES key set.
 // (B) PARSE: representative-input unit tests pinning the ported pure functions to
-//     TS behaviour (hit / alias / english-value / case / parenthetical / unknown /
+//     legacy web schema behaviour (hit / alias / english-value / case / parenthetical / unknown /
 //     collision / object-input).
 //
 // No engine logic is exercised (the replacement engine is SR-2/SR-3).
@@ -18,7 +18,7 @@ import IronPathDomain
 @testable import IronPathTrainingDecision
 
 /// Golden-fixture loader for the SR-1 library snapshot. Reads the canonical repo
-/// golden under tests/fixtures/parity/golden/exercise-library/ via a #filePath
+/// golden under ios/ParityFixtures/parity/golden/exercise-library/ via a #filePath
 /// walk-up. Mirrors `SmartReplacementGoldens`.
 enum ExerciseLibraryGolden {
     static let fixtureId = "exercise-library/library-snapshot-v1"
@@ -37,7 +37,7 @@ enum ExerciseLibraryGolden {
     }
 
     static var goldenURL: URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(fixtureId).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(fixtureId).json", isDirectory: false)
     }
 
     /// One decoded `exercises[id]` record. A field is `nil` exactly when the golden
@@ -156,7 +156,7 @@ final class ExerciseLibraryParityTests: XCTestCase {
     }
 
     // (4) Every equipment tag string in the golden resolves to a typed enum case —
-    //     catches a new TS tag the Swift `ExerciseEquipmentTag` enum would miss.
+    //     catches a new legacy web schema tag the Swift `ExerciseEquipmentTag` enum would miss.
     func testEveryEquipmentTagResolvesToEnum() throws {
         let g = try ExerciseLibraryGolden.decode()
         for (id, entry) in g.exercises {
@@ -203,7 +203,7 @@ final class ExerciseLibraryParityTests: XCTestCase {
         XCTAssertEqual(ExerciseLibrary.aliasEntries.count, ExerciseLibrary.aliases.count)
     }
 
-    // MARK: - (B) Parse functions vs TS behaviour
+    // MARK: - (B) Parse functions vs legacy web schema behaviour
 
     // getExerciseNameEntry (exerciseLibrary.ts:317)
     func testGetExerciseNameEntry() {
@@ -252,7 +252,7 @@ final class ExerciseLibraryParityTests: XCTestCase {
         XCTAssertEqual(ExerciseLibrary.resolveExerciseReferenceToId("深蹲"), "squat")
         // parenthetical stripped, matches display label
         XCTAssertEqual(ExerciseLibrary.resolveExerciseReferenceToId("平板卧推（Barbell Bench Press）"), "bench-press")
-        // collision: both face-pull & face_pull normalize to 面拉 — TS insertion
+        // collision: both face-pull & face_pull normalize to 面拉 — legacy web schema insertion
         // order returns the FIRST (face-pull). Pins the ordered-iteration contract.
         XCTAssertEqual(ExerciseLibrary.resolveExerciseReferenceToId("面拉"), "face-pull")
         // unknown / empty / whitespace

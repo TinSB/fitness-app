@@ -11,8 +11,8 @@
 //                    {...spread, status:'rolled_back', rollbackAvailable:false,
 //                    rolledBackAt:<injected now>} override + open-bag passthrough).
 //
-// The goldens are GENERATED from the REAL TS programAdjustmentEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only —
+// The goldens are GENERATED from the retired legacy programAdjustmentEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only —
 // zero `: Date`; the only time input is the INJECTED `now` decoded from each rollback
 // case (no wall clock), no IO beyond reading the committed goldens.
 
@@ -36,7 +36,7 @@ final class ProgramAdjustmentEngineParityTests: XCTestCase {
 
     private static func goldenURL(_ name: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/program-adjust/\(name).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/program-adjust/\(name).json", isDirectory: false
         )
     }
 
@@ -117,7 +117,7 @@ final class ProgramAdjustmentEngineParityTests: XCTestCase {
     /// Pins the S7 fidelity fix: for keys EQUAL once lowercased, stableStringify's
     /// localeCompare case tie-break sorts lower-before-upper (the SAME direction §9
     /// canonicalKeyOrder uses as of FIX-B, which corrected its old code-point
-    /// tie-break). The golden is the REAL TS hash; a regressed keyOrderLess
+    /// tie-break). The golden is the retired legacy hash; a regressed keyOrderLess
     /// (code-point `<`) would byte-drift the serialization.
     func testHashFoldCasesParity() throws {
         let fixtureId = "program-adjust/hash-fold-cases-v1"
@@ -156,7 +156,7 @@ final class ProgramAdjustmentEngineParityTests: XCTestCase {
             let label = c.optionalString("label") ?? "(unlabeled)"
             XCTAssertEqual(c.optionalString("kind"), "rollback", "\(label): kind")
             let item = try ProgramAdjustmentHistoryItem(decoding: try XCTUnwrap(c.rawValue("item"), "\(label): item"))
-            // The injected clock — REQUIRED; the TS `new Date()` is never read by the port.
+            // The injected clock — REQUIRED; the legacy web schema `new Date()` is never read by the port.
             let now = try XCTUnwrap(c.optionalString("now"), "\(label): now (injected clock required)")
             let result = Engine.rollbackAdjustment(item, nowIso: now)
 

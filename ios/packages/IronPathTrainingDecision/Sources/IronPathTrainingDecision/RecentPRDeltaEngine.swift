@@ -1,7 +1,7 @@
 // RecentPRDeltaEngine — AN-1 leaf-analytics port (2/3).
 //
 // Faithful line-by-line Swift port of the PURE `computeRecentPRDeltas` from
-// `src/engines/recentPRDeltaEngine.ts:98` + its private helpers (`exerciseKey`
+// `retired web reference` + its private helpers (`exerciseKey`
 // ts:38 / `bestSet` ts:40 / `collectObservations` ts:64 / `pickBest` ts:88) and the
 // shared `safeDate` / `isAnalyticsSession` (in `AnalyticsSupport`). **Reuses (does
 // NOT re-port) the already-ported `E1RMEngine.isCompletedSet` / `setWeightKg`
@@ -20,7 +20,7 @@ import IronPathDomain
 public enum RecentPRDeltaEngine {
 
     /// `RecentPRDeltaEntry` (recentPRDeltaEngine.ts:4). Optional fields follow the
-    /// TS `canonicalStringify` drop-undefined rule. `direction` ∈ up/flat/down/new.
+    /// legacy web schema `canonicalStringify` drop-undefined rule. `direction` ∈ up/flat/down/new.
     public struct RecentPRDeltaEntry: Equatable, Sendable {
         public let exerciseId: String
         public let exerciseName: String
@@ -91,7 +91,7 @@ public enum RecentPRDeltaEngine {
 
     /// `collectObservations` (ts:64). The returned (orderedKeys, map) preserves JS
     /// `Map` first-encounter insertion order so the later `forEach` + stable sort
-    /// reproduce TS tie order.
+    /// reproduce legacy web schema tie order.
     private static func collectObservations(
         _ history: [TrainingSession]
     ) -> (order: [String], map: [String: [ExerciseObservation]]) {
@@ -194,7 +194,7 @@ public enum RecentPRDeltaEngine {
         return Array(results.prefix(limit))
     }
 
-    /// Stable strict-weak-ordering reproduction of the TS sort comparator.
+    /// Stable strict-weak-ordering reproduction of the legacy web schema sort comparator.
     private static func stableSorted(_ entries: [RecentPRDeltaEntry]) -> [RecentPRDeltaEntry] {
         entries.sorted { left, right in
             let leftNew = left.direction == "new"

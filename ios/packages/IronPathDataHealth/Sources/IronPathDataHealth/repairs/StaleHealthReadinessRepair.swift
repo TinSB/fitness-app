@@ -1,6 +1,6 @@
 // StaleHealthReadinessRepair — iOS-3B safe repair recipe (safe_auto).
 //
-// Swift port of `src/dataHealth/repairs/staleHealthReadinessGuardV1.ts`.
+// Swift port of `retired web reference`.
 // Marks `settings.dataHealthRuntimeFlags.healthDataStaleSince` when
 // `applyHealthDataGuard` reports stale HealthKit samples. Does NOT
 // delete any sample, workout, or `raw` opaque payload.

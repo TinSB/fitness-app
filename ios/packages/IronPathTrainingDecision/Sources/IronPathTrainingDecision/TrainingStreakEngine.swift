@@ -1,7 +1,7 @@
 // TrainingStreakEngine — AN-1 leaf-analytics port (1/3).
 //
 // Faithful line-by-line Swift port of the PURE `computeTrainingStreak` from
-// `src/engines/trainingStreakEngine.ts:93` + its private helpers
+// `retired web reference` + its private helpers
 // (`computeRunLength` ts:44 / `prevWeekKey` ts:77 / `prevMonthKey` ts:82) and the
 // shared `safeDate` / `isAnalyticsSession` / `weekKey` / `monthKey` /
 // `startOfWeekUtc` (centralised in `AnalyticsSupport`). Zero engine dependencies —
@@ -9,7 +9,7 @@
 //
 // PURE / READ-ONLY: counts analytics sessions into UTC week/month buckets and
 // derives current/longest streaks. Zero `: Date` — "今天" is the injected
-// `options.nowIso`, never the wall clock (the TS `|| new Date()` / `?? Date.now()`
+// `options.nowIso`, never the wall clock (the legacy web schema `|| new Date()` / `?? Date.now()`
 // wall-clock fallbacks are intentionally NOT reproduced; the §11 clean input always
 // supplies `nowIso`). No IO, no randomness, no write path. NOT wired into any UI
 // (that is AN-6); this slice only adds the function and parity-pins it.
@@ -20,7 +20,7 @@ import IronPathDomain
 public enum TrainingStreakEngine {
 
     /// `TrainingStreakResult` (trainingStreakEngine.ts:3). `lastActiveWeekKey`
-    /// follows the TS `canonicalStringify` drop-undefined rule (omitted when no
+    /// follows the legacy web schema `canonicalStringify` drop-undefined rule (omitted when no
     /// analytics session has a valid timestamp).
     public struct TrainingStreakResult: Equatable, Sendable {
         public let currentWeekStreak: Int
@@ -47,7 +47,7 @@ public enum TrainingStreakEngine {
     // MARK: - computeRunLength (trainingStreakEngine.ts:44)
 
     /// Returns (current streak walking back from `currentKey`, longest consecutive
-    /// run in `sortedKeys`). The TS `lastActiveKey` field is computed but unused by
+    /// run in `sortedKeys`). The legacy web schema `lastActiveKey` field is computed but unused by
     /// the caller, so it is omitted here.
     private static func computeRunLength(
         _ currentKey: String,

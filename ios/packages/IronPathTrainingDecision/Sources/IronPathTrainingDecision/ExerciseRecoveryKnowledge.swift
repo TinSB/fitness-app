@@ -18,13 +18,13 @@
 // TEMPLATE, never the override (0 overrides define a top-level `muscle`), so it is not a
 // field here.
 //
-// Entries are in EXACT TS source order (exerciseLibrary.ts:486-1497), the same order as
+// Entries are in EXACT legacy web schema source order (exerciseLibrary.ts:486-1497), the same order as
 // SmartReplacementKnowledge.overrideEntries — the parity test asserts the id universe of
 // the two tables is identical (one 63-id override universe, not two). EVERY override
 // defines both fields (the golden counts withSecondaryMuscles == withMuscleContribution ==
 // 63); `secondaryMuscles` may be an empty array (a DEFINED `[]`, e.g. cable-fly). Values
 // transcribed verbatim from the GENERATED `exercise-recovery/knowledge-snapshot-v1` golden
-// (produced from the REAL src/data/exerciseLibrary.ts via scripts/parityGoldensEntry.ts,
+// (produced from the REAL retired-web-reference via retired fixture generator,
 // never hand-authored — §22); the `ExerciseRecoveryKnowledgeParityTests` compute-assert
 // reconciles every entry item-by-item, so no value can drift in transcription. No IO, no
 // clock, zero `: Date`, deterministic.
@@ -34,7 +34,7 @@ import Foundation
 /// The recovery-engine-used ADDITIONAL slice of one EXERCISE_KNOWLEDGE_OVERRIDES value
 /// (the two muscle-metadata fields SR-2/SR-3 left out). Both fields are present on every
 /// override (`secondaryMuscles` may be empty); `muscleContribution` is keyed by the
-/// single-char muscle labels (胸/背/腿/肩/手臂) the TS data carries verbatim.
+/// single-char muscle labels (胸/背/腿/肩/手臂) the legacy web schema data carries verbatim.
 struct RecoveryOverride: Equatable, Sendable {
     let secondaryMuscles: [String]
     let muscleContribution: [String: Double]
@@ -46,7 +46,7 @@ struct RecoveryOverride: Equatable, Sendable {
 enum ExerciseRecoveryKnowledge {
     // MARK: - EXERCISE_KNOWLEDGE_OVERRIDES recovery fields (exerciseLibrary.ts:485-1498)
     //
-    // 63 ids, EXACT TS source order (== SmartReplacementKnowledge.overrideEntries order).
+    // 63 ids, EXACT legacy web schema source order (== SmartReplacementKnowledge.overrideEntries order).
     static let overrideEntries: KeyValuePairs<String, RecoveryOverride> = [
         "bench-press": RecoveryOverride(secondaryMuscles: ["肩", "手臂"], muscleContribution: ["胸": 1, "手臂": 0.5, "肩": 0.4]),
         "incline-db-press": RecoveryOverride(secondaryMuscles: ["肩", "手臂"], muscleContribution: ["胸": 1, "肩": 0.5, "手臂": 0.4]),
@@ -122,7 +122,7 @@ enum ExerciseRecoveryKnowledge {
         return dict
     }()
 
-    /// The override id universe in EXACT TS `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`
+    /// The override id universe in EXACT legacy web schema `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`
     /// source order — identical to SmartReplacementKnowledge.overrideIds (asserted by the
     /// parity test: one override universe, not two).
     static let overrideIds: [String] = overrideEntries.map { $0.key }

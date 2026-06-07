@@ -40,7 +40,7 @@ final class TrainingDecisionReadinessParityTests: XCTestCase {
     }
 
     func test_nil_or_unknown_sleep_energy_uses_plus4_branch() {
-        // Mirrors TS sleepMap[undefined] -> else (+4) branch.
+        // Mirrors legacy web schema sleepMap[undefined] -> else (+4) branch.
         XCTAssertEqual(readiness(sleep: nil, energy: nil).score, 90)
     }
 

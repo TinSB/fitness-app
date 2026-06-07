@@ -1,9 +1,9 @@
 // SessionLifecycleResidueRepair — iOS-3B safe repair recipe (safe_auto).
 //
-// Swift port of `src/dataHealth/repairs/sessionLifecycleResidueV1.ts`
-// — with one DELIBERATE iOS-3B safety divergence from the TS source:
+// Swift port of `retired web reference`
+// — with one DELIBERATE iOS-3B safety divergence from the legacy web schema source:
 //
-//   * `focusActualSetDrafts` is NEVER cleared by `apply()`. The TS
+//   * `focusActualSetDrafts` is NEVER cleared by `apply()`. The legacy web schema
 //     implementation (and iOS-3A's `applySessionLifecycleGuard` that
 //     CleanAppDataView uses in-memory) blanks the array to `[]`. The
 //     drafts however are user-entered Focus Mode data, and we cannot

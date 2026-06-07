@@ -1,7 +1,7 @@
 // ScreeningProfile — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `ScreeningProfile` interface at
-// `src/models/training-model.ts:208`. `adaptiveState` carries the
+// Mirrors the legacy web implementation `ScreeningProfile` interface at
+// `retired web reference`. `adaptiveState` carries the
 // open issueScores map and is preserved verbatim as JSONValue.
 
 import Foundation

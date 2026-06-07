@@ -7,9 +7,8 @@
 // flags / reasons), EffectiveVolumeSummary (counts / effectiveScore / byMuscle / reasons, EXACT
 // Double `==`), countEffectiveSets, and getMuscleContribution.
 //
-// The goldens are GENERATED from the REAL TS effectiveSetEngine (scripts/generate-parity-
-// goldens.mjs), never hand-edited (§22). PURE / read-only — zero `: Date`, no IO beyond reading
-// the committed golden.
+// The goldens are frozen legacy fixtures, never hand-edited (§22). PURE / read-only —
+// zero `: Date`, no IO beyond reading the committed golden.
 
 import XCTest
 import IronPathDomain
@@ -28,7 +27,7 @@ final class EffectiveSetEngineParityTests: XCTestCase {
     }
 
     private func goldenRoot(_ id: String) throws -> OrderedJSONObject {
-        let url = Self.repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        let url = Self.repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "missing golden \(id)")
         return try JSONValue(decoding: try Data(contentsOf: url)).requireObject(id)
     }

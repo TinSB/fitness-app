@@ -7,7 +7,7 @@
 // lastOccurredAt / suggestedAction — full struct `==`, so the severityAvg-desc/frequency-desc
 // sort order is pinned too).
 //
-// The goldens are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs),
+// The goldens are GENERATED from the retired legacy engine (frozen legacy fixture generator),
 // never hand-edited (§22). PURE / read-only — zero `: Date`, no IO beyond reading the
 // committed golden.
 
@@ -28,7 +28,7 @@ final class PainPatternEngineParityTests: XCTestCase {
     }
 
     private func goldenRoot(_ id: String) throws -> OrderedJSONObject {
-        let url = Self.repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        let url = Self.repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "missing golden \(id)")
         return try JSONValue(decoding: try Data(contentsOf: url)).requireObject(id)
     }

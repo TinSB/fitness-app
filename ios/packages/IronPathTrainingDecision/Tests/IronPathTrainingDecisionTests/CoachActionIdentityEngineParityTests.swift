@@ -7,8 +7,8 @@
 // fingerprint is a deterministic FNV-1a string), or — for dedupe cases — assert the
 // surviving-draft ordered `id` list equals the golden `dedupedIds`.
 //
-// The goldens are GENERATED from the REAL TS coachActionIdentityEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only —
+// The goldens are GENERATED from the retired legacy coachActionIdentityEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only —
 // zero `: Date` (the engine carries no clock), no IO beyond reading the committed goldens.
 
 import XCTest
@@ -31,7 +31,7 @@ final class CoachActionIdentityEngineParityTests: XCTestCase {
 
     private static func goldenURL(_ name: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/coach-action-identity/\(name).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/coach-action-identity/\(name).json", isDirectory: false
         )
     }
 

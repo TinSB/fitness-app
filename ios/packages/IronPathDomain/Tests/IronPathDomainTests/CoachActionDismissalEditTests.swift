@@ -2,8 +2,8 @@
 //
 // REAL unit tests for `AppData.withDismissedCoachAction(actionId:today:)`
 // (CoachActionDismissalEdit) — the Domain half of the coach-action capstone's ONLY source-truth
-// WRITE (§8.3), a faithful line-by-line mirror of the PWA `handleDismissCoachAction`
-// (src/App.tsx:1908-1928). These tests pin every CC-5 hard red-line that lives in the value
+// WRITE (§8.3), a faithful line-by-line mirror of the legacy web app `handleDismissCoachAction`
+// (retired-web-reference). These tests pin every CC-5 hard red-line that lives in the value
 // transform:
 //   * INPUT, NOT OUTPUT — the appended dismiss value carries ONLY `{ actionId, dismissedAt,
 //     scope }`; never an engine output / mesocycle / prescription / readiness / e1RM field.

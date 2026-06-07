@@ -3,7 +3,7 @@
 // Pure, IO-free open-bag transform that appends ONE externally-imported
 // `ImportedWorkoutSample` to canonical `AppData.importedWorkoutSamples` — the home
 // the AppData model already reserves for Apple-Health-origin workout summaries
-// (TS `src/models/training-model.ts:1380`). This is the "candidate construction"
+// (legacy web schema `retired web reference`). This is the "candidate construction"
 // half of HK-2; the gated IO half (load → gate → backup → atomic save) reuses the
 // iOS-17A / HK-1 paradigm in
 // `IronPathPersistence.CanonicalSessionWriter.appendImportedWorkoutSample`, and the
@@ -15,7 +15,7 @@
 //   record and NEVER feed the `IronPathTrainingDecision` engine (readiness / e1RM).
 //   `history[]` is the canonical native-session bag that the engine consumes;
 //   `importedWorkoutSamples[]` is a separate display-only bag. Keeping the two
-//   apart is exactly what makes the import non-canonical (§8). The TS source of
+//   apart is exactly what makes the import non-canonical (§8). The legacy web schema source of
 //   truth models the same split (`AppData.importedWorkoutSamples` is distinct from
 //   `AppData.history`).
 //
@@ -44,8 +44,8 @@ extension AppData {
     ///
     /// Idempotent by content id: when `sample.id` is non-nil and a sample with the
     /// same `id` is already present, the receiver is returned UNCHANGED — so
-    /// re-importing the same workout never creates a duplicate. (Mirrors the TS
-    /// importer's dedup-by-content-key in `src/engines/healthImportEngine.ts`,
+    /// re-importing the same workout never creates a duplicate. (Mirrors the legacy web schema
+    /// importer's dedup-by-content-key in `retired web reference`,
     /// where the workout id is content-addressed.)
     public func appendingImportedWorkoutSample(_ sample: ImportedWorkoutSample) -> AppData {
         let existing = root["importedWorkoutSamples"]?.arrayValue ?? []

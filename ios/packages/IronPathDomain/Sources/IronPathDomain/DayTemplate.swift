@@ -1,7 +1,7 @@
 // DayTemplate — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `DayTemplate` interface at
-// `src/models/training-model.ts:218`. One training day inside a rich
+// Mirrors the legacy web implementation `DayTemplate` interface at
+// `retired web reference`. One training day inside a rich
 // `ProgramTemplate` — the muscle focus + the correction / main /
 // functional exercise-id blocks the PA engines reorder and re-dose.
 //
@@ -10,10 +10,10 @@
 // every documented key carried losslessly, an `_unknown` open bag for
 // any field not promoted to a typed property, canonical round-trip.
 // All properties are `Optional` (the `ProgramTemplate`/`MesocyclePlan`
-// convention) so a partially-formed document still decodes; the TS
+// convention) so a partially-formed document still decodes; the legacy web schema
 // requiredness of each field is noted in-line.
 //
-// `focusMuscles` is the TS `MuscleGroup[]` union — carried as `[String]`
+// `focusMuscles` is the legacy web schema `MuscleGroup[]` union — carried as `[String]`
 // (the `ProgramTemplate.primaryGoal` precedent for union-typed fields:
 // String preserves an unknown future member losslessly).
 //
@@ -22,13 +22,13 @@
 import Foundation
 
 public struct DayTemplate: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let id: String?                     // TS: `id: string` (required)
-    public let name: String?                   // TS: `name: string` (required)
-    public let focusMuscles: [String]?         // TS: `focusMuscles: MuscleGroup[]`
-    public let correctionBlockIds: [String]?   // TS: `correctionBlockIds: string[]`
-    public let mainExerciseIds: [String]?      // TS: `mainExerciseIds: string[]`
-    public let functionalBlockIds: [String]?   // TS: `functionalBlockIds: string[]`
-    public let estimatedDurationMin: NumberRepr? // TS: `estimatedDurationMin: number`
+    public let id: String?                     // legacy web schema: `id: string` (required)
+    public let name: String?                   // legacy web schema: `name: string` (required)
+    public let focusMuscles: [String]?         // legacy web schema: `focusMuscles: MuscleGroup[]`
+    public let correctionBlockIds: [String]?   // legacy web schema: `correctionBlockIds: string[]`
+    public let mainExerciseIds: [String]?      // legacy web schema: `mainExerciseIds: string[]`
+    public let functionalBlockIds: [String]?   // legacy web schema: `functionalBlockIds: string[]`
+    public let estimatedDurationMin: NumberRepr? // legacy web schema: `estimatedDurationMin: number`
 
     public let _unknown: OrderedJSONObject
 

@@ -8,10 +8,10 @@
 // struct `==` over the entire aggregate: sessionQuality? + the ordered recommendationConfidence[] +
 // plateauResults[] + the volumeAdaptation report + keyInsights + recommendedActions.
 //
-// The golden is GENERATED from the REAL TS trainingIntelligenceSummaryEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). This is the INTEGRATION pin that
+// The golden is GENERATED from the retired legacy trainingIntelligenceSummaryEngine
+// (frozen legacy fixture generator), never hand-edited (§22). This is the INTEGRATION pin that
 // closes the analysis engine layer: it proves the ported top aggregator + its already-pinned AN-1~5
-// leaves reproduce the TS pipeline end-to-end. PURE / read-only — zero `: Date` (the only date reads
+// leaves reproduce the legacy web schema pipeline end-to-end. PURE / read-only — zero `: Date` (the only date reads
 // are inside the reused E1RMEngine.filterAnalyticsHistory, over each session's OWN date strings), no
 // IO beyond reading the committed golden.
 
@@ -34,7 +34,7 @@ final class TrainingIntelligenceSummaryEngineParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func root(_ id: String) throws -> OrderedJSONObject {

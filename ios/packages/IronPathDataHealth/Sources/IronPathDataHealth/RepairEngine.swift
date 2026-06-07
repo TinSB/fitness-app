@@ -1,11 +1,11 @@
 // RepairEngine — iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1.
 //
-// Swift port of `src/dataHealth/appDataRepairEngine.ts:runRepair` +
+// Swift port of `retired web reference` +
 // `appendDataRepairLog`. iOS-3A shipped the type skeleton; this file
 // lands the engine that drives a single repair execution and appends
 // its receipt to `settings.dataRepairLogs`.
 //
-// Cap policy: 500 dataRepairLogs entries (FIFO) — matches TS
+// Cap policy: 500 dataRepairLogs entries (FIFO) — matches legacy web schema
 // `MAX_DATA_REPAIR_LOG_ENTRIES` exactly.
 
 import Foundation
@@ -20,7 +20,7 @@ public enum RepairEngineError: Error, Equatable, Sendable {
 
 /// Runs a single repair by ID against the given AppData. Returns
 /// either `applied`, `no_op`, `skipped`, or `failed` per the recipe's
-/// behaviour. Matches TS `runRepair`:
+/// behaviour. Matches legacy web schema `runRepair`:
 ///   * audit-only (layer == audit_only OR supportsApply == false) →
 ///     skipped without calling apply
 ///   * else: detect first; if not detected, return no_op
@@ -93,7 +93,7 @@ public func runRepair(
 }
 
 /// Appends `receipt` to `settings.dataRepairLogs`, FIFO-truncated to
-/// `dataRepairLogsMaxEntries`. Mirrors TS `appendDataRepairLog`.
+/// `dataRepairLogsMaxEntries`. Mirrors legacy web schema `appendDataRepairLog`.
 public func appendDataRepairLog(_ appData: AppData, receipt: JSONValue) -> AppData {
     var existing: [JSONValue] = appData.settings.dataRepairLogs?.arrayValue ?? []
     existing.append(receipt)

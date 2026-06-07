@@ -1,18 +1,18 @@
 // WorkoutCycleScheduler — SC-1 scheduling-track leaf port (1/1 of this slice).
 //
 // Faithful line-by-line Swift port of the PURE `buildWorkoutCycleState` from
-// `src/engines/workoutCycleScheduler.ts:85` + its private helpers
+// `retired web reference` + its private helpers
 // (`uniqueTemplateIds` ts:19 / `dateKey` ts:29 / `sessionSortKey` ts:35 /
 // `dayNumber` ts:38 / `daysBetween` ts:45 / `isNormalCompletedSession` ts:52 /
 // `resolveSessionTemplateId` ts:61 / `templateLabel` ts:66 / `templateListLabel`
-// ts:78 / `completedSetFrom` ts:80). The TS engine imports ONLY the
+// ts:78 / `completedSetFrom` ts:80). The legacy web schema engine imports ONLY the
 // `TrainingSession` type (workoutCycleScheduler.ts:1) — it is genuinely
 // self-contained: no `./engines` import, no data table, no formatter, no clock.
 //
 // PURE / READ-ONLY: derives the push/pull/legs (or any ordered template) cycle
 // position from completed-session history + the explicitly-injected `currentDate`.
 // Zero `: Date` — "今天" is the caller-supplied `currentDate` string, never the wall
-// clock; all date math is integer civil-calendar arithmetic. The TS `dayNumber`'s
+// clock; all date math is integer civil-calendar arithmetic. The legacy web schema `dayNumber`'s
 // `Date.UTC(y, m-1, d) / 86400000` is exactly the day-number underlying
 // `AnalyticsSupport.daysFromCivil(y, m, d)` (days since 1970-01-01), reused verbatim.
 // No IO, no randomness, no write path. NOT wired into any UI (that is SC-4); this
@@ -28,7 +28,7 @@ import IronPathDomain
 public enum WorkoutCycleScheduler {
 
     /// `WorkoutCycleState` (workoutCycleScheduler.ts:3). `lastCompletedTemplateId` /
-    /// `nextTemplateId` follow the TS `canonicalStringify` drop-undefined rule
+    /// `nextTemplateId` follow the legacy web schema `canonicalStringify` drop-undefined rule
     /// (omitted from the golden when the engine returns `undefined`).
     public struct WorkoutCycleState: Equatable, Sendable {
         public let orderedTemplateIds: [String]
@@ -70,7 +70,7 @@ public enum WorkoutCycleScheduler {
     // MARK: - uniqueTemplateIds (workoutCycleScheduler.ts:19)
 
     /// `uniqueTemplateIds` (ts:19): dedupe by the TRIMMED id, dropping empties, but
-    /// KEEP the ORIGINAL (untrimmed) id of the first occurrence — exactly the TS
+    /// KEEP the ORIGINAL (untrimmed) id of the first occurrence — exactly the legacy web schema
     /// `ids.filter(...)` (the dedup key is `String(id||'').trim()`, the kept value is
     /// the original `id`).
     private static func uniqueTemplateIds(_ ids: [String]) -> [String] {
@@ -163,7 +163,7 @@ public enum WorkoutCycleScheduler {
     /// `resolveSessionTemplateId` (ts:61): the FIRST of
     /// `[sourceProgramTemplateId, programTemplateId, templateId]` (truthy, in that
     /// precedence) that is a member of `orderedSet`. All three ride in the open bag
-    /// (none are documented `TrainingSession` keys). The TS `.filter(Boolean).map(String)`
+    /// (none are documented `TrainingSession` keys). The legacy web schema `.filter(Boolean).map(String)`
     /// reduces, for the §11 clean string-id domain, to "non-empty string id".
     private static func resolveSessionTemplateId(_ session: TrainingSession, _ orderedSet: Set<String>) -> String? {
         let candidates = [
@@ -290,7 +290,7 @@ public enum WorkoutCycleScheduler {
 
         let reason: String
         if isCycleComplete {
-            // ts:144 — NOTE: the TS reason hardcodes "推、拉、腿" regardless of the actual
+            // ts:144 — NOTE: the legacy web schema reason hardcodes "推、拉、腿" regardless of the actual
             // ordered ids; reproduced verbatim.
             reason = "上一轮推、拉、腿已完成；下次进入新一轮，建议从\(templateLabel(ordered[0]))开始。"
         } else if !completedInCurrentCycle.isEmpty {

@@ -1,7 +1,7 @@
 // SR-2 — Replacement Engine (pure logic port).
 //
 // Faithful, line-by-line Swift transcription of the THREE replacement-engine
-// functions in src/engines/replacementEngine.ts that SR-2 ports, plus every
+// functions in retired-web-reference that SR-2 ports, plus every
 // private helper they transitively need:
 //
 //   replacementEngine.ts:120  isSyntheticReplacementExerciseId
@@ -10,17 +10,17 @@
 //
 // It consumes the SR-1 library (ExerciseLibrary) + the SR-2 knowledge tables
 // (ReplacementEngineKnowledge). It is PURE: no IO, no clock, no `: Date`, no
-// randomness. The TS module's session-mutating functions
+// randomness. The legacy web schema module's session-mutating functions
 // (applyExerciseReplacement / restoreOriginalExercise — replacementEngine.ts:355,
 // 413) are the WRITE PATH and are intentionally NOT ported here, nor is the
 // top-level smartReplacement engine (that is SR-3).
 //
 // Output is reconciled against generated parity goldens
-// (replacement-engine/*; ReplacementEngineParityTests): the TS generator runs
+// (replacement-engine/*; ReplacementEngineParityTests): the legacy web schema generator runs
 // the REAL engine over committed fixtures, and the Swift port must reproduce the
 // SAME ReplacementOption[] / validate / isSynthetic results item-by-item.
 //
-// FAITHFULNESS NOTES (verified byte-for-byte against the TS source):
+// FAITHFULNESS NOTES (verified byte-for-byte against the legacy web schema source):
 //   • normalizeName() (replacementEngine.ts:166) uses the regex
 //     /[（）()\\s-]/g — a DOUBLE backslash in a regex literal, i.e. the char
 //     class { （ ） ( ) \ s - }. It strips a literal backslash and the literal
@@ -35,8 +35,8 @@ import Foundation
 
 // MARK: - Public output types
 
-/// `ReplacementRank` — mirrors the TS union (replacementEngine.ts:15). Raw values
-/// match the TS string literals; the three `_fallback`/`_reduction` cases are the
+/// `ReplacementRank` — mirrors the legacy web schema union (replacementEngine.ts:15). Raw values
+/// match the legacy web schema string literals; the three `_fallback`/`_reduction` cases are the
 /// only non-1:1 Swift case names.
 public enum ReplacementRank: String, Equatable, Sendable, CaseIterable {
     case priority
@@ -48,7 +48,7 @@ public enum ReplacementRank: String, Equatable, Sendable, CaseIterable {
     case compoundFallback = "compound_fallback"
 }
 
-/// `ReplacementOption` — mirrors the TS interface (replacementEngine.ts:18-27).
+/// `ReplacementOption` — mirrors the legacy web schema interface (replacementEngine.ts:18-27).
 public struct ReplacementOption: Equatable, Sendable {
     public let id: String
     public let name: String
@@ -88,7 +88,7 @@ public struct ReplacementOption: Equatable, Sendable {
     }
 }
 
-/// `ReplacementContext` — mirrors the TS interface (replacementEngine.ts:29-31).
+/// `ReplacementContext` — mirrors the legacy web schema interface (replacementEngine.ts:29-31).
 public struct ReplacementContext: Equatable, Sendable {
     public var unavailableEquipment: [ExerciseEquipmentTag]
     public init(unavailableEquipment: [ExerciseEquipmentTag] = []) {
@@ -98,7 +98,7 @@ public struct ReplacementContext: Equatable, Sendable {
 
 /// The slice of `ExercisePrescription` (training-model.ts) that buildReplacementOptions
 /// reads: the identity id fields + the per-exercise explicit-alternatives fallback.
-/// `id` is required (TS `ExercisePrescription.id: string`); the rest are optional.
+/// `id` is required (legacy web schema `ExercisePrescription.id: string`); the rest are optional.
 public struct ReplacementExerciseInput: Equatable, Sendable {
     public var id: String
     public var baseId: String?
@@ -184,7 +184,7 @@ public enum ReplacementEngine {
         }
     }
 
-    // MARK: i18n formatters (src/i18n/formatters.ts)
+    // MARK: i18n formatters (retired-web-reference)
 
     /// LEVEL_LABELS (formatters.ts:171-176).
     static let levelLabels: [String: String] = [
@@ -221,7 +221,7 @@ public enum ReplacementEngine {
 
     /// `lookupLabel` (formatters.ts:35-60), string path only — the replacement
     /// engine only ever passes plain strings (a fatigueCost / a rank rawValue), so
-    /// the TS object-handling branch is unreachable here and omitted.
+    /// the legacy web schema object-handling branch is unreachable here and omitted.
     private static func lookupLabel(_ value: String, _ labels: [String: String], empty: String = "未知状态") -> String {
         if value.isEmpty { return empty }
         let normalized = normalizeDisplayKey(value)

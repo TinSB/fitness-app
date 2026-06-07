@@ -1,9 +1,9 @@
 // RepairTypesTests — iOS-3A Data Health Runtime Foundation V1.
 //
-// Locks the enum rawValue contract (TS string-union parity) and the
+// Locks the enum rawValue contract (legacy web schema string-union parity) and the
 // 8 DataHealthConstants values. The iOS-3B repair recipes encode
 // these rawValues into the persisted ledger and into DataRepairLog
-// receipts — string changes would break parity with TS receipts.
+// receipts — string changes would break parity with legacy web schema receipts.
 
 import XCTest
 @testable import IronPathDataHealth

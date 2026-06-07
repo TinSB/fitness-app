@@ -1,7 +1,7 @@
 // ProgramAdjustmentEngine — PA-S7 (PA-1a) programAdjustmentEngine minimal port.
 //
 // Faithful line-by-line Swift port of the TWO dependency-minimal exports of the
-// PURE / read-only `src/engines/programAdjustmentEngine.ts`:
+// PURE / read-only `retired web reference`:
 //   * hashProgramTemplate  (programAdjustmentEngine.ts:92)  + its INLINE
 //     stableStringify helper (ts:82-90)
 //   * rollbackAdjustment    (programAdjustmentEngine.ts:921)
@@ -17,10 +17,10 @@
 // REUSES (never re-ports) the already-ported building blocks:
 //   * PA-S1 IronPathDomain types verbatim — TrainingTemplate / ProgramTemplate /
 //     ProgramAdjustmentHistoryItem (+ NumberRepr / JSONValue / OrderedJSONObject);
-//   * the S2 deep-clone `EngineValueUtils.clone` (= TS `clone` =
+//   * the S2 deep-clone `EngineValueUtils.clone` (= legacy web schema `clone` =
 //     `JSON.parse(JSON.stringify())`, engineUtils.ts:28) for `cloneProgram`.
 //
-// stableStringify FIDELITY (the precision core): the inline TS stableStringify is
+// stableStringify FIDELITY (the precision core): the inline legacy web schema stableStringify is
 // a DISTINCT serializer from the repo's §9 `JSONValue.canonicalJSONString()`. They
 // agree on the case-insensitive *primary* key order AND — as of FIX-B — on the
 // case tie-break too: both break ties lower-before-upper (the JS
@@ -28,11 +28,11 @@
 // from its old code-point upper-before-lower tie-break in FIX-B). This port still
 // keeps its OWN `localeCompare`-equivalent comparator (`keyOrderLess`) rather than
 // routing through §9 — the engine reimplements stableStringify over `JSONValue`
-// self-contained (line-by-line with the TS inline stableStringify); that locality
+// self-contained (line-by-line with the legacy web schema inline stableStringify); that locality
 // is intentional and no longer reflects a tie-break divergence. The program-adjust
-// goldens (generated from the REAL TS engine) are the byte-level judge.
+// goldens (generated from the retired legacy engine) are the byte-level judge.
 //
-// TIME INJECTION (§11): TS `rollbackAdjustment` reads the wall clock once
+// TIME INJECTION (§11): legacy web schema `rollbackAdjustment` reads the wall clock once
 // (`rolledBackAt: new Date().toISOString()`, ts:934). The Swift port DOES NOT call
 // any system clock — `nowIso` is a REQUIRED injected ISO string (the iOS-17e / AN
 // deterministic-clock contract). Given identical (historyItem, nowIso) it returns
@@ -42,7 +42,7 @@
 //
 // PURE / READ-ONLY: only string + number + array transforms over value types. Zero
 // `: Date`, zero Calendar, zero IO, zero randomness, NO write path. Goldens are
-// GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs), never
+// GENERATED from the retired legacy engine (frozen legacy fixture generator), never
 // hand-edited (§22).
 
 import Foundation
@@ -107,7 +107,7 @@ public enum ProgramAdjustmentEngine {
         case .object(let obj):
             // `.filter(([, entry]) => entry !== undefined)` (ts:86): `JSONValue` cannot
             // represent `undefined`, and the PA-S1 `encoded()` projection omits nil
-            // typed fields entirely (equivalent to TS dropping `undefined` keys), so no
+            // typed fields entirely (equivalent to legacy web schema dropping `undefined` keys), so no
             // entry needs filtering here; explicit `null` (≠ undefined in JS) is kept.
             let sorted = obj.entries.sorted { keyOrderLess($0.key, $1.key) }  // ts:87 (localeCompare)
             let parts = sorted.map { entry in
@@ -119,10 +119,10 @@ public enum ProgramAdjustmentEngine {
 
     // MARK: - rollbackAdjustment (programAdjustmentEngine.ts:921-936)
 
-    /// The TS `rollbackAdjustment` return shape (ts:923-926).
+    /// The legacy web schema `rollbackAdjustment` return shape (ts:923-926).
     public struct RollbackResult: Equatable, Sendable {
         /// `restoredTemplateId: historyItem.sourceProgramTemplateId` (ts:928, required
-        /// in TS — `String?` here only because the PA-S1 type is all-optional).
+        /// in legacy web schema — `String?` here only because the PA-S1 type is all-optional).
         public let restoredTemplateId: String?
         /// `restoredProgramTemplate?` — the cloned snapshot, or nil (ts:925/929).
         public let restoredProgramTemplate: ProgramTemplate?
@@ -143,7 +143,7 @@ public enum ProgramAdjustmentEngine {
     /// `rollbackAdjustment(historyItem)` (programAdjustmentEngine.ts:921-936).
     ///
     /// PURE: returns the restore result ONLY — never persists. `nowIso` is the
-    /// REQUIRED injected clock replacing TS `new Date().toISOString()` (ts:934).
+    /// REQUIRED injected clock replacing legacy web schema `new Date().toISOString()` (ts:934).
     public static func rollbackAdjustment(
         _ historyItem: ProgramAdjustmentHistoryItem,
         nowIso: String
@@ -263,7 +263,7 @@ public enum ProgramAdjustmentEngine {
     /// is intentional, see the file header), not because of a tie-break divergence.
     /// For ASCII keys equal when lowercased, lower-before-upper is precisely raw `>`
     /// (lowercase letters carry the higher code points). The case-folding hash golden
-    /// pins it; the goldens (generated from the REAL TS engine) are the final
+    /// pins it; the goldens (generated from the retired legacy engine) are the final
     /// byte-level judge.
     private static func keyOrderLess(_ a: String, _ b: String) -> Bool {
         let al = a.lowercased()

@@ -1,7 +1,7 @@
 // PA-S4 — i18n/formatters PA-subset port.
 //
 // Faithful Swift mirror of the THREE display formatters that
-// `src/engines/programAdjustmentEngine.ts` imports from `src/i18n/formatters`
+// `retired web reference` imports from `retired web reference`
 // (engine import段, programAdjustmentEngine.ts:11-14) plus their private
 // dependencies:
 //   - formatProgramTemplateName (formatters.ts:484-486) → delegates to
@@ -15,12 +15,12 @@
 //     SAME formatTemplateName chain (reused here, not re-implemented)
 //   - formatAdjustmentChangeLabel (formatters.ts:496-507) — an independent inline
 //     7-entry record map with `?? '计划调整'` fallback, keyed by the RAW value
-//     (TS `value as string`, NO normalizeDisplayKey)
+//     (legacy web schema `value as string`, NO normalizeDisplayKey)
 //
-// Each Swift declaration cites its mirrored TS source line; every table is
+// Each Swift declaration cites its mirrored legacy web schema source line; every table is
 // transcribed entry-by-entry (key + Chinese value verbatim). The GENERATED
 // `i18n/formatters-pa-snapshot-v1` parity golden (produced by running the REAL
-// TS formatters through scripts/parityGoldensEntry.ts, never hand-authored —
+// legacy web schema formatters through retired fixture generator, never hand-authored —
 // §22) mechanically reconciles both tables AND a branch-covering probe set, so
 // no map entry, branch, regex, or fallback string can drift in transcription.
 //
@@ -36,7 +36,7 @@
 //   * Terms (S0, IronPathL10n.Terms) + the PA-S1 domain types are REUSED, not re-ported.
 //
 // ── `value: unknown` modelling (zero-dependency rationale) ────────────────────
-//   The TS formatters accept `unknown`; in this repo's Swift the analogous carrier
+//   The legacy web schema formatters accept `unknown`; in this repo's Swift the analogous carrier
 //   is `IronPathDomain.JSONValue`. IronPathL10n, however, is a ZERO-dependency
 //   leaf package (Package.swift: "No remote dependencies"; same contract that
 //   keeps S0 Terms standalone). Importing JSONValue would require adding an
@@ -58,22 +58,22 @@ import Foundation
 public enum Formatters {
     // MARK: - `value: unknown` carrier
 
-    /// Faithful local stand-in for the TS `value: unknown` accepted by
-    /// `formatTemplateName` (formatters.ts:187). The TS only ever reads a
+    /// Faithful local stand-in for the legacy web schema `value: unknown` accepted by
+    /// `formatTemplateName` (formatters.ts:187). The legacy web schema only ever reads a
     /// primitive string, or — when `typeof value === 'object'` — the object's
     /// `id`, `nameZh`, `name`, `label` fields (formatters.ts:189-197). Modelled
     /// locally (NOT `IronPathDomain.JSONValue`) to keep IronPathL10n
     /// zero-dependency — see the file header for the full rationale.
     public enum NameValue: Equatable, Sendable {
-        /// TS `undefined` / `null`.
+        /// legacy web schema `undefined` / `null`.
         case null
-        /// TS primitive string.
+        /// legacy web schema primitive string.
         case string(String)
-        /// TS object; only these four fields are read by formatTemplateName.
+        /// legacy web schema object; only these four fields are read by formatTemplateName.
         case object(id: String? = nil, nameZh: String? = nil, name: String? = nil, label: String? = nil)
     }
 
-    // MARK: - Frozen tables (mirrored verbatim from TS truth)
+    // MARK: - Frozen tables (mirrored verbatim from legacy web schema truth)
 
     /// `TEMPLATE_NAME_MAP` (formatters.ts:62-83). 20 entries, key + Chinese
     /// value verbatim. `internal` (not `private`) so the @testable parity test
@@ -130,9 +130,9 @@ public enum Formatters {
     }
 
     /// `formatAdjustmentChangeLabel` (formatters.ts:496-507) =
-    /// `({...})[value as string] ?? '计划调整'`. The TS keys by the RAW value
+    /// `({...})[value as string] ?? '计划调整'`. The legacy web schema keys by the RAW value
     /// (cast to string), with NO normalizeDisplayKey — mirrored faithfully here:
-    /// the dictionary is looked up with the raw string. TS `value: unknown` is,
+    /// the dictionary is looked up with the raw string. legacy web schema `value: unknown` is,
     /// in this engine, always `change.type` (a string) or `null`/`undefined`
     /// (→ JS `obj['null']`/`obj['undefined']` → undefined → fallback), so the
     /// faithful Swift carrier is `String?` (nil = the null/undefined case).
@@ -219,7 +219,7 @@ public enum Formatters {
     }
 
     /// `/[㐀-鿿]/.test(value)` (formatters.ts:203) — true iff the string carries any
-    /// CJK scalar in U+3400…U+9FFF, the exact range the TS regex matches.
+    /// CJK scalar in U+3400…U+9FFF, the exact range the legacy web schema regex matches.
     private static func containsCjk(_ value: String) -> Bool {
         for scalar in value.unicodeScalars where scalar.value >= 0x3400 && scalar.value <= 0x9FFF {
             return true

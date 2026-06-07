@@ -10,15 +10,15 @@
 // gate is supplied by the caller (the app layer), so this file stays a pure value
 // transform with no FileManager / disk / network / clock.
 //
-// PWA SOURCE (the link this mirrors): `src/App.tsx`
+// legacy web app SOURCE (the link this mirrors): `retired web reference`
 //   * apply    — `applyProgramAdjustmentDraft` writes `programTemplate: updatedProgramTemplate`
 //     (App.tsx:1205), where `updatedProgramTemplate` is the engine output of
-//     `applyAdjustmentDraft` (src/engines/programAdjustmentEngine.ts:809-919).
+//     `applyAdjustmentDraft` (retired-web-reference).
 //   * rollback — `rollbackProgramAdjustment` writes `programTemplate: restoredProgramTemplate`
 //     (App.tsx:1238), the cloned snapshot from `rollbackAdjustment`
 //     (programAdjustmentEngine.ts:921-936).
 // Both rewrite EXACTLY the same one key — `programTemplate` — so the Domain half is a
-// single open-bag helper. The PWA ALSO updates bookkeeping keys (`templates` /
+// single open-bag helper. The legacy web app ALSO updates bookkeeping keys (`templates` /
 // `programAdjustmentHistory` / `programAdjustmentDrafts` / `activeProgramTemplateId`);
 // those are a SEPARATE read/display surface (their iOS read accessors are not ported —
 // a later PA read slice) and are deliberately OUT of this write slice. This slice writes
@@ -26,7 +26,7 @@
 //
 // INPUT-not-OUTPUT (§11): `programTemplate` is an ENGINE INPUT — the engine recomputes
 // `mesocyclePlan` weeks / prescriptions / phase / readiness / e1RM FROM it
-// (src/engines/trainingDecisionContext.ts:190/208, enginePipeline.ts). Writing the new
+// (retired-web-reference, enginePipeline.ts). Writing the new
 // editable `programTemplate` (with its `dayTemplates` / `weeklyMuscleTargets` /
 // `correctionStrategy` / `functionalStrategy`) and letting the engine recompute the
 // outputs is the EXPECTED behaviour — exactly like the scalar/set edits. This helper

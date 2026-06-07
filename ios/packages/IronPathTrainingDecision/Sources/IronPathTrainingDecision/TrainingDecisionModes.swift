@@ -1,6 +1,6 @@
 // iOS-4B4 Deload + Clamp + Modes V1 — volume clamp + the three output modes.
 //
-// Swift port of the arbitration primitives in src/engines/trainingDecisionEngine.ts:
+// Swift port of the arbitration primitives in retired-web-reference
 //   * clampMultiplier      (line 163) -> finalVolumeMultiplier
 //   * volumeModeFor        (line 212)
 //   * intensityModeFor     (line 221)
@@ -110,7 +110,7 @@ enum TrainingDecisionModes {
 
     /// `Number.toFixed(2)` for the AR-2-reentry-clamp-deload reason string. This trace
     /// code is never exercised by a golden (no fixture triggers the reentry/restart
-    /// deload-clamp), but the format mirrors the TS `.toFixed(2)` exactly.
+    /// deload-clamp), but the format mirrors the legacy web schema `.toFixed(2)` exactly.
     private static func fmt2(_ value: Double) -> String {
         String(format: "%.2f", value)
     }

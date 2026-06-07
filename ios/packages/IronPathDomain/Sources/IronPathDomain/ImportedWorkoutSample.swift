@@ -1,7 +1,7 @@
 // ImportedWorkoutSample — HK-2 HealthKit Workout-History Import V1.
 //
-// Mirrors the TypeScript `ImportedWorkoutSample` type at
-// `src/models/training-model.ts:685`, the modeled home for Apple-Health-origin
+// Mirrors the legacy web implementation `ImportedWorkoutSample` type at
+// `retired web reference`, the modeled home for Apple-Health-origin
 // *workout* summaries (`AppData.importedWorkoutSamples`, training-model.ts:1380).
 //
 // This is DERIVED / EXTERNAL data, NOT a canonical native `TrainingSession`:

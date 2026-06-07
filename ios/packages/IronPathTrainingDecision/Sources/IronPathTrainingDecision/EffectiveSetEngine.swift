@@ -1,7 +1,7 @@
 // EffectiveSetEngine — AN-3 effectiveSetEngine port (the analytics-consumed subset).
 //
 // Faithful line-by-line Swift port of the PURE effective-set functions in
-// `src/engines/effectiveSetEngine.ts` that `analytics.ts` (AN-3) and the wider
+// `retired web reference` that `analytics.ts` (AN-3) and the wider
 // analytics/insights track CALL:
 //   - evaluateEffectiveSet       (effectiveSetEngine.ts:7)
 //   - countEffectiveSets         (effectiveSetEngine.ts:104)
@@ -63,7 +63,7 @@ public enum EffectiveSetEngine {
         }
     }
 
-    /// One ordered `byMuscle` entry. The TS `byMuscle` is a plain object whose key
+    /// One ordered `byMuscle` entry. The legacy web schema `byMuscle` is a plain object whose key
     /// ORDER (first-encounter) is read by `buildMuscleVolumeDashboard`
     /// (analytics.ts:120 `Object.keys(...).forEach`), so the order is preserved here
     /// rather than collapsed into an (unordered) Swift Dictionary.
@@ -245,7 +245,7 @@ public enum EffectiveSetEngine {
 
     // MARK: - getMuscleContribution (effectiveSetEngine.ts:116)
 
-    /// Returns the muscle→contribution pairs in first-encounter order (mirrors the TS
+    /// Returns the muscle→contribution pairs in first-encounter order (mirrors the legacy web schema
     /// plain-object key order, which `buildEffectiveVolumeSummary` iterates).
     public static func getMuscleContribution(_ exercise: ExercisePrescription) -> [(muscle: String, contribution: Double)] {
         // if (exercise.muscleContribution && Object.keys(exercise.muscleContribution).length) return it

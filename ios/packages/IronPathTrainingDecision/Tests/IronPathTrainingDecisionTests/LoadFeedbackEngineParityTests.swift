@@ -12,8 +12,8 @@
 //   - upsertedLoadFeedback(session, ...)     == upsertProbe.resultLoadFeedback
 // Every field is a String / Int, so equality is plain struct `==` (no float tolerance).
 //
-// The goldens are GENERATED from the REAL TS loadFeedbackEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). This is the 17e-4 slice
+// The goldens are GENERATED from the retired legacy loadFeedbackEngine
+// (frozen legacy fixture generator), never hand-edited (§22). This is the 17e-4 slice
 // of the load-feedback-cluster parity; it does NOT touch the decision output / existing
 // decision goldens (that wiring is 17e-5). Zero `: Date`, no IO beyond reading the
 // committed golden files.
@@ -45,7 +45,7 @@ final class LoadFeedbackEngineParityTests: XCTestCase {
 
         static func goldenURL(_ shortId: String) -> URL {
             repoRoot.appendingPathComponent(
-                "tests/fixtures/parity/golden/load-feedback/\(shortId).json", isDirectory: false
+                "ios/ParityFixtures/parity/golden/load-feedback/\(shortId).json", isDirectory: false
             )
         }
 

@@ -7,7 +7,7 @@
 // per-status union fields the golden omits (e.g. `not_started` has no `activeSessionId`) decode to
 // nil — matching what the corresponding branch leaves nil.
 //
-// The golden is GENERATED from the REAL TS todayStateEngine (scripts/generate-parity-goldens.mjs),
+// The golden is GENERATED from the retired legacy todayStateEngine (frozen legacy fixture generator),
 // never hand-edited (§22). PURE / read-only — zero `: Date`; the injected `nowIso` seam below is
 // NEVER the load-bearing path (every fixture passes selectedDate or currentLocalDate), so its fixed
 // value is irrelevant to the assertion.
@@ -33,7 +33,7 @@ final class TodayStateEngineParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/today-state/today-state-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/today-state/today-state-cases-v1.json", isDirectory: false
         )
     }
 

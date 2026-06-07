@@ -103,7 +103,7 @@ final class NativeSetCaptureSupportTests: XCTestCase {
     }
 
     func testWholeKilogramWeightCanonicalEmitsWithoutTrailingDecimal() throws {
-        // A whole kg weight must canonical-emit as "60", not "60.0" (TS parity).
+        // A whole kg weight must canonical-emit as "60", not "60.0" (legacy web schema parity).
         let draft = ActualSetDraftFactory.capturedDraft(
             priorCompletedCount: 0, weightKg: 60, reps: nil, rir: nil,
             exerciseId: "bench", source: "s", completedAtIso: "t"

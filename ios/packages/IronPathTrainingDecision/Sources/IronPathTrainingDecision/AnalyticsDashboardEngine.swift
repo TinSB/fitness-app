@@ -1,7 +1,7 @@
 // AnalyticsDashboardEngine — AN-3 analytics.ts dashboard port (the in-scope exports).
 //
 // Faithful line-by-line Swift port of the PURE analytics dashboard functions in
-// `src/engines/analytics.ts` (the AN-3 boundary set — every export the analytics /
+// `retired web reference` (the AN-3 boundary set — every export the analytics /
 // insights track CALLs):
 //   - buildMuscleVolumeDashboard (analytics.ts:112)
 //   - buildExerciseTrend         (analytics.ts:152)
@@ -465,7 +465,7 @@ public enum AnalyticsDashboardEngine {
     /// generator passes deterministicClockIso); the live UI's `new Date()` is NOT reproduced.
     /// The 7-day window mirrors `new Date(now) ; setDate(getDate()-7)` as exact UTC ms
     /// arithmetic — `start = new Date(now.getTime() - 7 * 86_400_000)` — over the SAME
-    /// `new Date(value)` parse the TS injected-clock path uses (E1RMEngine.safeDateMs).
+    /// `new Date(value)` parse the legacy web schema injected-clock path uses (E1RMEngine.safeDateMs).
     public static func buildWeeklyReport(_ rawHistory: [TrainingSession], _ bodyWeights: [BodyWeight], asOfDate: String) -> String {
         let history = analyticsHistory(rawHistory)
         let nowMs = E1RMEngine.safeDateMs(asOfDate) ?? 0
@@ -741,7 +741,7 @@ public enum AnalyticsDashboardEngine {
     /// `formatExerciseDisplayName(exercise, { fallback: '未命名动作' })` over the FULL
     /// exercise object (id / name / nameZh / actual/replacement/canonical ids). The decoded
     /// `ExercisePrescription` is re-encoded to its `JSONValue` so the SR-1 ported
-    /// `ExerciseLibrary.formatExerciseDisplayName` reads the SAME field set TS sees.
+    /// `ExerciseLibrary.formatExerciseDisplayName` reads the SAME field set legacy web schema sees.
     static func formatExerciseName(_ exercise: ExercisePrescription) -> String {
         ExerciseLibrary.formatExerciseDisplayName(exercise.encoded(), bilingual: false, fallback: "未命名动作")
     }

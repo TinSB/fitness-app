@@ -1,32 +1,32 @@
 // TrainingTemplate — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `TrainingTemplate` interface at
-// `src/models/training-model.ts:513`. The experiment-able session
+// Mirrors the legacy web implementation `TrainingTemplate` interface at
+// `retired web reference`. The experiment-able session
 // template the PA engines clone, adjust and re-apply — its `exercises`
 // are typed `ExerciseTemplate`s.
 //
 // Same paradigm as the existing Domain types: `init(decoding:)` /
 // `encoded()` over `JSONValue`, every documented key carried losslessly,
 // an `_unknown` open bag, canonical round-trip. All properties optional
-// (the `ProgramTemplate` convention); TS requiredness noted in-line.
+// (the `ProgramTemplate` convention); legacy web schema requiredness noted in-line.
 //
 // Pure type: no runtime logic, no write path, no `: Date`.
 
 import Foundation
 
 public struct TrainingTemplate: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let id: String?                      // TS: `id: string` (required)
-    public let name: String?                    // TS: `name: string` (required)
-    public let focus: String?                   // TS: `focus: string` (required)
-    public let duration: NumberRepr?            // TS: `duration: number` (required)
-    public let note: String?                    // TS: `note: string` (required)
-    public let exercises: [ExerciseTemplate]?   // TS: `exercises: ExerciseTemplate[]` (required)
-    public let updatedAt: String?               // TS: `updatedAt?: string`
-    public let sourceTemplateId: String?        // TS: `sourceTemplateId?: string`
-    public let sourceTemplateName: String?      // TS: `sourceTemplateName?: string`
-    public let isExperimentalTemplate: Bool?    // TS: `isExperimentalTemplate?: boolean`
-    public let appliedAt: String?               // TS: `appliedAt?: string`
-    public let adjustmentSummary: String?       // TS: `adjustmentSummary?: string`
+    public let id: String?                      // legacy web schema: `id: string` (required)
+    public let name: String?                    // legacy web schema: `name: string` (required)
+    public let focus: String?                   // legacy web schema: `focus: string` (required)
+    public let duration: NumberRepr?            // legacy web schema: `duration: number` (required)
+    public let note: String?                    // legacy web schema: `note: string` (required)
+    public let exercises: [ExerciseTemplate]?   // legacy web schema: `exercises: ExerciseTemplate[]` (required)
+    public let updatedAt: String?               // legacy web schema: `updatedAt?: string`
+    public let sourceTemplateId: String?        // legacy web schema: `sourceTemplateId?: string`
+    public let sourceTemplateName: String?      // legacy web schema: `sourceTemplateName?: string`
+    public let isExperimentalTemplate: Bool?    // legacy web schema: `isExperimentalTemplate?: boolean`
+    public let appliedAt: String?               // legacy web schema: `appliedAt?: string`
+    public let adjustmentSummary: String?       // legacy web schema: `adjustmentSummary?: string`
 
     public let _unknown: OrderedJSONObject
 

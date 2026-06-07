@@ -11,8 +11,8 @@
 //                                                  weight+reps+summary; + probes)
 //   - golden.fineTuneNeutrality.fallbackReason == "insufficient_history"    (asserts the
 //                                                  DEFERRED fineTune is golden-neutral)
-// The goldens are GENERATED from the REAL TS progressionRulesEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). This is the 17e-3 slice
+// The goldens are GENERATED from the retired legacy progressionRulesEngine
+// (frozen legacy fixture generator), never hand-edited (§22). This is the 17e-3 slice
 // of the progression-cluster parity; it does NOT touch the decision output / existing
 // decision goldens (that wiring is 17e-5). Zero `: Date`, no IO beyond reading the
 // committed golden files.
@@ -47,7 +47,7 @@ final class ProgressionRulesEngineParityTests: XCTestCase {
 
         static func goldenURL(_ shortId: String) -> URL {
             repoRoot.appendingPathComponent(
-                "tests/fixtures/parity/golden/progression-suggestion/\(shortId).json", isDirectory: false
+                "ios/ParityFixtures/parity/golden/progression-suggestion/\(shortId).json", isDirectory: false
             )
         }
 

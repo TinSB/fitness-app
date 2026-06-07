@@ -1,7 +1,7 @@
 // TrainingCalendarEngine — SC-B scheduling-track self-contained calendar subset port.
 //
 // Faithful line-by-line Swift port of the PURE, self-contained subset of
-// `src/engines/trainingCalendarEngine.ts`: the 10 date/month helpers
+// `retired web reference`: the 10 date/month helpers
 // (`toLocalDateKey` ts:58 / `getSessionCalendarDate` ts:67 /
 // `normalizeCalendarMonth` ts:69 / `addCalendarMonths` ts:74 /
 // `buildTrainingCalendarMonthRange` ts:83 / `clampCalendarMonth` ts:100 /
@@ -9,7 +9,7 @@
 // `getDefaultCalendarDateForMonth` ts:122 / `resolveCalendarSelectedDate` ts:130)
 // plus the 4 calendar contract types (`TrainingCalendarDay` ts:5 /
 // `TrainingCalendarData` ts:36 / `TrainingCalendarOptions` ts:45 /
-// `TrainingCalendarMonthRange` ts:52). The 10 helpers depend ONLY on the TS
+// `TrainingCalendarMonthRange` ts:52). The 10 helpers depend ONLY on the legacy web schema
 // `engineUtils.monthKey/number` defaults + the Domain `TrainingSession` type —
 // no other engine, no data table.
 //
@@ -29,7 +29,7 @@
 // helper and thus parity-pinned.
 //
 // PURE / READ-ONLY: zero `: Date` — "今天" never comes from the wall clock. The
-// TS `monthKey()` / `new Date().toISOString()` DEFAULTS are wall-clock seams; this
+// legacy web schema `monthKey()` / `new Date().toISOString()` DEFAULTS are wall-clock seams; this
 // port threads them as INJECTED `nowMonth` parameters (the established AN-1
 // injected-clock contract), and every parity fixture passes an explicit value so
 // the seam is never the load-bearing path. All date math is integer
@@ -62,7 +62,7 @@ public enum TrainingCalendarEngine {
 
     /// `TrainingCalendarDay` (trainingCalendarEngine.ts:5). SHAPE-ONLY contract type of the
     /// DEFERRED `buildTrainingCalendar`; not produced by any ported helper, so not golden-pinned.
-    /// `dataFlag` mirrors the TS `SessionDataFlag` union (`'normal' | 'test' | 'excluded'`),
+    /// `dataFlag` mirrors the legacy web schema `SessionDataFlag` union (`'normal' | 'test' | 'excluded'`),
     /// modeled as `String` per the existing open-bag `dataFlag` convention.
     public struct TrainingCalendarDay: Equatable, Sendable {
         public struct SessionRow: Equatable, Sendable {
@@ -111,7 +111,7 @@ public enum TrainingCalendarEngine {
 
     /// `TrainingCalendarOptions` (trainingCalendarEngine.ts:45). SHAPE-ONLY contract type of the
     /// DEFERRED `buildTrainingCalendar`; not golden-pinned. `includeDataFlags` /
-    /// `includeExternalDataFlags` mirror the TS `Array<SessionDataFlag | 'unset'> | 'all'` union
+    /// `includeExternalDataFlags` mirror the legacy web schema `Array<SessionDataFlag | 'unset'> | 'all'` union
     /// (modeled as `[String]?` + an `all` flag); `importedWorkouts` reuses the native
     /// `IronPathDomain.ImportedWorkoutSample`.
     public struct TrainingCalendarOptions: Equatable, Sendable {
@@ -188,7 +188,7 @@ public enum TrainingCalendarEngine {
     /// offset (EST 300 / EDT 240). Per the AN-1 civil degradation this port subtracts the
     /// FIXED EST western offset (`nyStandardOffsetMin = 300`); every parity fixture timestamp
     /// is UTC-hour ≥ 06:00, so the resulting NY-local calendar date is invariant to the
-    /// EST/EDT 1-hour DST difference (verified vs TS under `TZ=America/New_York`). Zero `: Date`.
+    /// EST/EDT 1-hour DST difference (verified vs legacy web schema under `TZ=America/New_York`). Zero `: Date`.
     public static func toLocalDateKey(_ value: String?) -> String {
         // ts:59 — `if (!value) return ''`
         guard let value, !value.isEmpty else { return "" }
@@ -254,7 +254,7 @@ public enum TrainingCalendarEngine {
 
     /// `normalizeCalendarMonth` (ts:69-72):
     /// `const candidate = String(month || '').slice(0, 7); return /^\d{4}-\d{2}$/.test(candidate) ? candidate : fallback`.
-    /// `fallback` is the INJECTED `monthKey()` seam (TS default `= monthKey()`); the parity
+    /// `fallback` is the INJECTED `monthKey()` seam (legacy web schema default `= monthKey()`); the parity
     /// fixtures pass it explicitly so the wall clock never decides the output.
     public static func normalizeCalendarMonth(_ month: String?, _ fallback: String) -> String {
         let candidate = String((truthy(month) ?? "").prefix(7)) // String(month || '').slice(0, 7)
@@ -289,7 +289,7 @@ public enum TrainingCalendarEngine {
     // MARK: - buildTrainingCalendarMonthRange (trainingCalendarEngine.ts:83)
 
     /// `buildTrainingCalendarMonthRange` (ts:83-98). `currentMonth` is the injected
-    /// `monthKey()` seam (TS default), passed explicitly by every fixture. The TS default
+    /// `monthKey()` seam (legacy web schema default), passed explicitly by every fixture. The legacy web schema default
     /// `.sort()` is lexicographic over the `YYYY-MM` ASCII keys (code-point order).
     public static func buildTrainingCalendarMonthRange(
         _ history: [TrainingSession],
@@ -355,7 +355,7 @@ public enum TrainingCalendarEngine {
     /// const latestTrainingDate = getLatestTrainingDateKey(history);
     /// return latestTrainingDate ? latestTrainingDate.slice(0, 7) : currentMonth;
     /// ```
-    /// `currentMonth` is the injected `monthKey()` seam (TS default), passed explicitly.
+    /// `currentMonth` is the injected `monthKey()` seam (legacy web schema default), passed explicitly.
     public static func getInitialCalendarMonth(
         _ history: [TrainingSession],
         selectedDate: String?,

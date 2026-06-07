@@ -1,8 +1,8 @@
 // CleanAppDataViewBuilder — iOS-3A Data Health Runtime Foundation V1.
 //
 // Single entry point for building a CleanAppDataView from an
-// `AppData` plus an injectable clock. Mirrors the TS function
-// `buildCleanAppDataView` in `src/dataHealth/cleanAppDataView.ts`.
+// `AppData` plus an injectable clock. Mirrors the legacy web schema function
+// `buildCleanAppDataView` in `retired web reference`.
 //
 // The builder is pure: identical (AppData, clock.now()) inputs always
 // produce an identical CleanAppDataView. No file IO, no network, no

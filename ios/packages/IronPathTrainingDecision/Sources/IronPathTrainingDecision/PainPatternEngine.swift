@@ -1,7 +1,7 @@
 // PainPatternEngine — AN-5 painPattern (trainingLevel-consumed subset) port.
 //
 // Faithful line-by-line Swift port of the PURE pain-pattern aggregation function
-// from `src/engines/painPatternEngine.ts` — ONLY the subset CALLed by
+// from `retired web reference` — ONLY the subset CALLed by
 // trainingLevelEngine (`buildPainPatterns(history)`) plus every private helper it
 // reads:
 //   - buildPainPatterns        (painPatternEngine.ts:58)
@@ -35,7 +35,7 @@ public enum PainPatternEngine {
 
     // MARK: - Output / input types
 
-    /// `PainSuggestedAction` (training-model.ts:151). RawValue strings mirror the TS
+    /// `PainSuggestedAction` (training-model.ts:151). RawValue strings mirror the legacy web schema
     /// string-literal union so the golden's `suggestedAction` decodes/compares verbatim.
     public enum PainSuggestedAction: String, Equatable, Sendable {
         case watch = "watch"

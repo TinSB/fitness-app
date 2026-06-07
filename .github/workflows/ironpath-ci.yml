@@ -10,9 +10,9 @@ on:
 
 jobs:
   validate:
-    name: IronPath Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    name: Swift Validation
+    runs-on: macos-latest
+    timeout-minutes: 60
     env:
       TZ: America/New_York
 
@@ -20,39 +20,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+      - name: List Xcode project
+        run: xcodebuild -list -project ios/IronPath.xcodeproj
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Dev API
-        run: npm run api:dev:build
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
-      - name: Dist token scan
+      - name: Swift package tests
         shell: bash
         run: |
-          if [ -d dist ]; then
-            ! grep -R -F \
-              -e "node:http" \
-              -e "node:sqlite" \
-              -e "devLauncher" \
-              -e "httpRuntimeAdapter" \
-              -e "serverAdapter" \
-              -e "sqliteRepository" \
-              -e "devApiRunner" \
-              -e "devDbRecovery" \
-              dist
-          fi
+          set -euo pipefail
+          for package in ios/packages/*; do
+            if [ -f "$package/Package.swift" ]; then
+              echo "== swift test: $package =="
+              (cd "$package" && swift test)
+            fi
+          done
+
+      - name: Build iOS app
+        run: |
+          xcodebuild \
+            -project ios/IronPath.xcodeproj \
+            -scheme IronPath \
+            -destination 'generic/platform=iOS Simulator' \
+            build

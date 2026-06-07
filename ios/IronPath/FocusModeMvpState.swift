@@ -685,7 +685,7 @@ final class FocusModeMvpState: ObservableObject {
            let loaded = try? store.load(),
            let result = try? processIncomingAppData(
                appData: loaded,
-               source: .localStorageLoad,
+               source: .localFileLoad,
                options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
            ) {
             canonicalHistory = result.cleanView.cleanedHistory
@@ -726,7 +726,7 @@ final class FocusModeMvpState: ObservableObject {
               let loaded = try? store.load(),
               let result = try? processIncomingAppData(
                   appData: loaded,
-                  source: .localStorageLoad,
+                  source: .localFileLoad,
                   options: AppDataIngressOptions(allowMutation: false, allowAutoRepair: false)
               )
         else { return nil }
@@ -752,7 +752,7 @@ final class FocusModeMvpState: ObservableObject {
               })
         else { return [] }
         // Effective current id: the recorded actual (override) wins, else the original
-        // planned/logged identity — mirroring the PWA resolution precedence.
+        // planned/logged identity — mirroring the legacy web app resolution precedence.
         guard let currentId = Self.firstNonEmpty([
             exercise.actualExerciseId, exercise.recordExerciseId,
             exercise.displayExerciseId, exercise.exerciseId, exercise.id
@@ -850,7 +850,7 @@ final class FocusModeMvpState: ObservableObject {
             // Key by the SAME id the LocalSnapshot detail row uses (exerciseId → id).
             guard let key = Self.firstNonEmpty([ex.exerciseId, ex.id]) else { continue }
             let plannedId = Self.firstNonEmpty([ex.exerciseId, ex.id])
-            // The effective record/display id (override wins, mirroring PWA precedence).
+            // The effective record/display id (override wins, mirroring legacy web app precedence).
             let actualId = Self.firstNonEmpty([
                 ex.actualExerciseId, ex.recordExerciseId, ex.displayExerciseId,
                 ex.exerciseId, ex.id

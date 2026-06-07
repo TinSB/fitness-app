@@ -1,7 +1,7 @@
 // PlanAdjustmentIdentityEngine — PA-S6 plan-adjustment identity port.
 //
 // Faithful line-by-line Swift port of the PURE / read-only identity engine
-// `src/engines/planAdjustmentIdentityEngine.ts` (316 lines): EVERY export —
+// `retired web reference` (316 lines): EVERY export —
 //   buildPlanAdjustmentFingerprint                  (ts:57)
 //   buildPlanAdjustmentFingerprintFromCoachAction   (ts:81)
 //   buildPlanAdjustmentFingerprintFromDraft         (ts:86)
@@ -23,7 +23,7 @@
 // and `dedupePlanAdjustmentDraftsByFingerprint` is a thin alias of the S5
 // `dedupeProgramAdjustmentDraftsByFingerprint`. The FNV-1a fingerprint algorithm is
 // NOT re-implemented here — only the engine's OWN private `stableHash`/`stableIdPart`
-// slug helpers (ts:102-118, a distinct id-slug FNV that the TS file duplicates) are
+// slug helpers (ts:102-118, a distinct id-slug FNV that the legacy web schema file duplicates) are
 // ported. The CoachAction model is NOT ported: `buildPlanAdjustmentFingerprintFromCoachAction`
 // takes the same 7-field `FingerprintAction` Pick the S5 engine exposes plus the one
 // extra field it reads (`sourceFingerprint`) as a separate parameter.
@@ -35,16 +35,16 @@
 // through the JSONValue accessors, then bridged to the S5 `SuggestedChange` value.
 //
 // TIME INJECTION (§11): `buildRegeneratedPlanAdjustmentDraft` is the ONLY function the
-// TS file reads a wall clock in (`const now = options.now || new Date().toISOString()`,
+// legacy web schema file reads a wall clock in (`const now = options.now || new Date().toISOString()`,
 // ts:286). The Swift port DOES NOT replicate the wall-clock fallback: `now` is a
 // REQUIRED injected `String` (the asOfDate / injected-clock contract, cf. iOS-17e-6a).
 // LIVE callers MUST pass a non-empty injected `nowIso`; the `nil`/wall-clock branch is
-// TS-only behaviour that the native port intentionally does not carry.
+// legacy web schema-only behaviour that the native port intentionally does not carry.
 //
 // PURE / READ-ONLY: only string + number + array transforms. Zero `: Date`, zero
 // Calendar, zero IO, zero randomness, NO write path, NO CanonicalSessionWriter — §11
 // DERIVED-only. Every returned `drafts` list is a pure value, never persisted. Goldens
-// are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs), never
+// are GENERATED from the retired legacy engine (frozen legacy fixture generator), never
 // hand-edited (§22).
 
 import Foundation
@@ -61,7 +61,7 @@ public enum PlanAdjustmentIdentityEngine {
 
     /// The fingerprint input shape (ts:16-34). `actionType`/`source` are the
     /// `CoachActionType|string` / `CoachActionSource|string` unions → `String?`
-    /// (the lossless union→String precedent). `suggestedChange` mirrors the TS
+    /// (the lossless union→String precedent). `suggestedChange` mirrors the legacy web schema
     /// `WeeklyActionRecommendation['suggestedChange']` as raw `JSONValue?`.
     public struct PlanAdjustmentFingerprintInput: Equatable, Sendable {
         public let sourceCoachActionId: String?
@@ -224,7 +224,7 @@ public enum PlanAdjustmentIdentityEngine {
     // MARK: - buildPlanAdjustmentFingerprintFromCoachAction (planAdjustmentIdentityEngine.ts:81-84)
 
     /// `action.sourceFingerprint || buildCoachActionFingerprint(action, context)`.
-    /// The TS `action` is a full `CoachAction`; the only field it reads beyond the
+    /// The legacy web schema `action` is a full `CoachAction`; the only field it reads beyond the
     /// 7-field `FingerprintAction` Pick is `sourceFingerprint`, taken here as a
     /// separate parameter so the full CoachAction model stays unported.
     public static func buildPlanAdjustmentFingerprintFromCoachAction(
@@ -285,7 +285,7 @@ public enum PlanAdjustmentIdentityEngine {
     // MARK: - stableHash / stableIdPart (planAdjustmentIdentityEngine.ts:102-118)
 
     /// `stableHash` (ts:102-109) — FNV-1a over UTF-16 code units. The engine's OWN
-    /// id-slug hash (the TS file duplicates the S5 stableHash verbatim; the S5 copy
+    /// id-slug hash (the legacy web schema file duplicates the S5 stableHash verbatim; the S5 copy
     /// is private so we port this one locally). UInt32 wrapping arithmetic is
     /// bit-for-bit equal to the signed `Math.imul`/`^=`/`>>> 0` chain; `charCodeAt`
     /// reads UTF-16 code units so we iterate `String.utf16`. `(hash>>>0).toString(16)`
@@ -325,7 +325,7 @@ public enum PlanAdjustmentIdentityEngine {
 
     // MARK: - buildPlanAdjustmentDraftInstanceId (planAdjustmentIdentityEngine.ts:120-128)
 
-    /// `now`-free, deterministic. `revision` mirrors the TS `revision = 1` default
+    /// `now`-free, deterministic. `revision` mirrors the legacy web schema `revision = 1` default
     /// and the `Math.max(1, Math.round(revision))` clamp. `Math.round` is half-up
     /// toward +∞ — `floor(revision + 0.5)` reproduces it for negatives too (e.g.
     /// round(-0.5) = -0 → 0 → max(1,0) = 1). `parentDraftId` is sliced to 24 UTF-16
@@ -577,7 +577,7 @@ public enum PlanAdjustmentIdentityEngine {
         }
     }
 
-    /// `now` is a REQUIRED injected ISO string — the TS `options.now || new Date()`
+    /// `now` is a REQUIRED injected ISO string — the legacy web schema `options.now || new Date()`
     /// wall-clock fallback (ts:286) is intentionally NOT replicated (§11). LIVE
     /// callers MUST pass a non-empty `nowIso`.
     public static func buildRegeneratedPlanAdjustmentDraft(
@@ -625,7 +625,7 @@ public enum PlanAdjustmentIdentityEngine {
 
     // MARK: - buildPlanAdjustmentFingerprintFromChange (planAdjustmentIdentityEngine.ts:303-315)
 
-    /// `input` mirrors the TS `Pick<…, 'source'|'sourceCoachActionId'|'sourceTemplateId'|
+    /// `input` mirrors the legacy web schema `Pick<…, 'source'|'sourceCoachActionId'|'sourceTemplateId'|
     /// 'sourceProgramTemplateId'|'weekId'|'cycleId'>` — only those 6 fields are read.
     public static func buildPlanAdjustmentFingerprintFromChange(
         _ change: AdjustmentChange,

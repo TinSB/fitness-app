@@ -1,7 +1,7 @@
 // TodayStatus — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `TodayStatus` interface at
-// `src/models/training-model.ts:505`. iOS-3 stale-readiness guard
+// Mirrors the legacy web implementation `TodayStatus` interface at
+// `retired web reference`. iOS-3 stale-readiness guard
 // reads `date`; iOS-4 today-readiness engine reads `sleep`/`energy`/
 // `soreness`/`time`.
 

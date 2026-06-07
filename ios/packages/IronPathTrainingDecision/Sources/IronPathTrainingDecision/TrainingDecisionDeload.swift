@@ -1,7 +1,7 @@
 // iOS-4B4 Deload + Clamp + Modes V1 — adaptive deload decision (subset).
 //
 // Swift port of the SCORING SUBSET of buildAdaptiveDeloadDecision
-// (src/engines/adaptiveFeedbackEngine.ts:472-574). Produces the level / triggered /
+// (retired-web-reference). Produces the level / triggered /
 // volumeMultiplier / strategy that clampMultiplier (TrainingDecisionModes) consumes.
 // PURE — reads history + todayStatus + the cleaned screening's adaptiveState; no
 // clock, no AppData mutation.

@@ -2,8 +2,8 @@
 //
 // Reconstructs the `default-program-data/snapshot-v1` snapshot from the ported
 // Swift constants (DefaultTrainingData / SupportModules) and asserts it equals
-// the GENERATED golden — the SAME committed golden the TS parity generator
-// produces from src/data/* (read via a #filePath walk-up; no copies, no drift).
+// the GENERATED golden — the SAME committed golden the legacy web schema parity generator
+// produces from retired-web-reference* (read via a #filePath walk-up; no copies, no drift).
 //
 // Comparison is by CANONICAL JSON (both sides run through Swift's
 // `JSONValue.canonicalJSONData()` — sorted keys, deterministic number emission),
@@ -40,7 +40,7 @@ enum DefaultProgramDataGolden {
     }
 
     static var goldenURL: URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(fixtureId).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(fixtureId).json", isDirectory: false)
     }
 
     static func decodeRoot() throws -> OrderedJSONObject {

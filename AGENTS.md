@@ -1,6 +1,6 @@
 # IronPath Agent Instructions
 
-You are working on IronPath, a mobile-first personal training PWA built with React, Vite, and TypeScript, now migrating toward native iOS SwiftUI.
+You are working on IronPath, a native iOS SwiftUI personal training app. The former PWA, Node/Vite runtime, TypeScript source, browser tests, Supabase/Vercel implementation candidates, and cloud-sync scaffolding have been removed. Treat `ios/` and the living docs as the active product surface. iOS-native account/cloud/sync/CRDT decisions remain in the living docs; they are not current runtime code.
 
 ## ⚠️ Read First — Master Technical Architecture (binding)
 
@@ -11,8 +11,8 @@ If a requested task **conflicts** with that document, **stop and require explici
 - Native iOS stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
 - **Draft restore is an in-memory draft, not a full AppData restore** (full restore is gated behind DataHealth `buildCleanAppDataView`).
 - **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `IronPathLocalSnapshot` history store must never touch canonical AppData.
-- Do **not** introduce CloudKit/iCloud/Supabase/URLSession/WebView/auth/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, into native iOS without an approved architecture task that amends the master doc.
-- Do **not** change `package.json`/lockfiles or `project.pbxproj` without explicit justification.
+- Do **not** introduce CloudKit/iCloud/Supabase runtime clients/URLSession/WebView/auth runtime/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, without an approved architecture task that amends the master doc.
+- Do **not** change `project.pbxproj` or package manifests without explicit justification.
 - Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
 
 ## ⚠️ Doc Discipline — Living-Doc System (binding)
@@ -42,7 +42,7 @@ Each page has a strict responsibility:
 - 进展 answers: did training work, what changed, and is the data trustworthy?
 - 计划 answers: how will I train in the future, and what changes are proposed?
 
-Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, account/sync controls, backup/export, and subscription surfaces. Current iOS implementation still contains a `我的` tab; target work should migrate that responsibility out of bottom navigation.
+Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, backup/export, and subscription surfaces. Account or sync controls require a future architecture amendment; they do not exist in the current Swift codebase. Current iOS implementation still contains a `我的` tab; target work should migrate that responsibility out of bottom navigation.
 
 ## Design Principles
 
@@ -92,7 +92,7 @@ Never dump all exercise metadata into the main UI.
 - Prefer refactoring UI structure over changing business logic.
 - Keep components reusable.
 - Do not introduce large new dependencies without justification.
-- After changes, run available typecheck, lint, and build commands if present.
+- After changes, run relevant Swift package tests and Xcode build commands if present.
 - If unsure about existing code behavior, inspect the relevant files before editing.
 
 ## Agent skills

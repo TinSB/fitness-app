@@ -7,7 +7,7 @@
 // (2) the clean-view → scheduler wiring end-to-end — a document WITH `templates` decoded from
 // the gated view's raw bag yields a REAL next-workout + nested recovery recommendation, AND
 // (FU-1) a document WITHOUT templates is now SEEDED with DefaultTrainingData.initialTemplates
-// (reproducing the PWA load-layer `sanitizeTemplates` seed the native read chain previously
+// (reproducing the legacy web app load-layer `sanitizeTemplates` seed the native read chain previously
 // omitted), so it ALSO yields a real recommendation off the default program rather than the
 // bare "暂无下次建议" branch; and (3) every internal presentation label helper branch (kindLabel
 // / confidenceLabel / conflictLabel — the summary marks them `internal so tests can assert`).
@@ -37,7 +37,7 @@ final class NextWorkoutReadPathTests: XCTestCase {
     }
 
     /// A raw `templates[]` entry (the un-promoted document slot the read path decodes from
-    /// `root["templates"]`, mirroring the PWA `data.templates`).
+    /// `root["templates"]`, mirroring the legacy web app `data.templates`).
     private func templateJSON(id: String, name: String) -> JSONValue {
         .object(OrderedJSONObject(entries: [
             .init(key: "id", value: .string(id)),
@@ -117,10 +117,10 @@ final class NextWorkoutReadPathTests: XCTestCase {
 
     func test_loadedWithoutTemplates_resolvesToDefaultProgramRecommendation() {
         // FU-1: history present but NO templates in the document. The read chain now SEEDS
-        // DefaultTrainingData.initialTemplates at decode time — reproducing the PWA load-layer
+        // DefaultTrainingData.initialTemplates at decode time — reproducing the legacy web app load-layer
         // `sanitizeTemplates` seed (appDataSanitize.ts:705) the native chain previously omitted.
         // So instead of the bare "暂无下次建议" no-template branch, the scheduler produces a REAL
-        // recommendation off the default program (a faithful restoration of the PWA load-seed,
+        // recommendation off the default program (a faithful restoration of the legacy web app load-seed,
         // never a fabricated next workout — the seed is the documented default templates).
         let cleanView = CoreSliceTestKit.cleanView(
             sessions: sessionsWithBaseline(),

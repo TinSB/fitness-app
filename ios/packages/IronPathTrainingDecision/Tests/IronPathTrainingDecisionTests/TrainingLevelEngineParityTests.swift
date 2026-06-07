@@ -9,7 +9,7 @@
 //   - buildTechniqueQualitySummary(history) == golden `techniqueQualitySummaryProbe`
 //   - formatAutoTrainingLevel(level) == golden `levelLabelProbe`
 //
-// The goldens are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs),
+// The goldens are GENERATED from the retired legacy engine (frozen legacy fixture generator),
 // never hand-edited (§22). PURE / read-only — zero `: Date` (the frequency week-bucketing
 // uses AN-1 civil math), no IO beyond reading the committed golden.
 
@@ -30,7 +30,7 @@ final class TrainingLevelEngineParityTests: XCTestCase {
     }
 
     private func goldenRoot(_ id: String) throws -> OrderedJSONObject {
-        let url = Self.repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        let url = Self.repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "missing golden \(id)")
         return try JSONValue(decoding: try Data(contentsOf: url)).requireObject(id)
     }

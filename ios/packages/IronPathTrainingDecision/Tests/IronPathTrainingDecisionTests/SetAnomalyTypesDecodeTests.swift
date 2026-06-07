@@ -2,7 +2,7 @@
 //
 // TYPE-ONLY port has no runtime logic to compute-assert, so this anchors the
 // SHAPE two ways (per the CC-0 "decode 锚定" plan):
-//   1. `SetAnomalySeverity` raw values match the TS string union VERBATIM and in
+//   1. `SetAnomalySeverity` raw values match the legacy web schema string union VERBATIM and in
 //      source order (setAnomalyEngine.ts:5) — note it is a DISTINCT union from
 //      DataHealthSeverity (tops out at `critical`, not `error`).
 //   2. a representative JSON object round-trips through `init(decoding:)` with

@@ -1,6 +1,6 @@
 // DataHealthRuntimeGuard — iOS-3A Data Health Runtime Foundation V1.
 //
-// Pure, side-effect-free port of `src/dataHealth/dataHealthRuntimeGuard.ts`.
+// Pure, side-effect-free port of `retired web reference`.
 // Each guard takes an immutable input (TrainingSession, AppData, or
 // ScreeningProfile) plus an injectable clock and returns an outcome
 // value. None of these functions mutate their inputs; they return
@@ -12,7 +12,7 @@
 //   * Date persisted fields on inputs
 //   * any kind of repair-apply side effect (iOS-3B owns that)
 //
-// The TS file lives at src/dataHealth/dataHealthRuntimeGuard.ts.
+// The legacy web schema file lives at retired-web-reference
 // Behavior parity is asserted by the Swift tests in
 // DataHealthRuntimeGuardTests and by CleanAppDataViewRealExportTests.
 
@@ -661,7 +661,7 @@ public func readRuntimeFlags(_ appData: AppData) -> OrderedJSONObject {
 /// `AppData` value whose `settings.dataHealthRuntimeFlags` is `next`.
 /// Original AppData is untouched (Swift value semantics). iOS-3B
 /// staleness repairs use this to record "we already noticed this
-/// state" stamps without mutating any other settings key. TS
+/// state" stamps without mutating any other settings key. legacy web schema
 /// counterpart: `writeRuntimeFlags` in `dataHealthRuntimeGuard.ts:331`.
 public func writeRuntimeFlags(
     _ appData: AppData,

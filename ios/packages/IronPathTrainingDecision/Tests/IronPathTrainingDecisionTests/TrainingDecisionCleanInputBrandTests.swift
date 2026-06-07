@@ -3,7 +3,7 @@
 // The branded CleanTrainingDecisionInput is constructible ONLY via
 // createCleanTrainingDecisionInput(cleanView:metadata:) (its memberwise init is
 // fileprivate). That "no raw construction" property is a COMPILE-TIME guarantee
-// verified by the iosTrainingDecisionSwiftEngineStaticGuards TS grep; here we
+// verified by the iosTrainingDecisionSwiftEngineStaticGuards legacy web schema grep; here we
 // prove the runtime behaviour: the factory requires a CleanAppDataView, the engine
 // accepts the branded value, history is sourced from the CLEANED projection, and
 // the deferred (carried-but-unused) fields do not affect the 4B2 output.

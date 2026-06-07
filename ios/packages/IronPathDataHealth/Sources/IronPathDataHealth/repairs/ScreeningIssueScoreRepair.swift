@@ -1,6 +1,6 @@
 // ScreeningIssueScoreRepair — iOS-3C safe_auto recipe (screening_decay).
 //
-// Swift port of `src/dataHealth/repairs/screeningIssueScoreRepairV1.ts`.
+// Swift port of `retired web reference`.
 // Persists `applyIssueScoreCap` deltas to
 // `screeningProfile.adaptiveState.issueScores` ONLY when all three
 // safety predicates pass:

@@ -1,7 +1,7 @@
 // SR-3 — Smart Replacement Engine (pure logic port).
 //
 // Faithful, line-by-line Swift transcription of the TOP-LEVEL smart-replacement
-// engine in src/engines/smartReplacementEngine.ts — `buildSmartReplacementRecommendations`
+// engine in retired-web-reference — `buildSmartReplacementRecommendations`
 // (smartReplacementEngine.ts:470-525) and every private helper it transitively
 // needs (smartReplacementEngine.ts:62-468).
 //
@@ -9,7 +9,7 @@
 //   • SR-1 ExerciseLibrary       — EXERCISE_DISPLAY_NAMES (displayNames) +
 //     formatExerciseDisplayName (the engine of formatExerciseName, which is just
 //     `formatExerciseDisplayName(value, { fallback })` — formatters.ts:492-494,
-//     re-exported through src/data/trainingData.ts).
+//     re-exported through retired-web-reference).
 //   • SR-2 ReplacementEngine     — buildReplacementOptions / validateReplacementExerciseId
 //     / isSyntheticReplacementExerciseId.
 //   • SR-2 ReplacementEngineKnowledge — EXERCISE_EQUIVALENCE_CHAINS (id+members) +
@@ -23,7 +23,7 @@
 // session-mutating functions, SR-4 integration).
 //
 // Output is reconciled against the generated smart-replacement parity goldens
-// (smart-replacement/*; SmartReplacementEngineParityTests): the TS generator runs
+// (smart-replacement/*; SmartReplacementEngineParityTests): the legacy web schema generator runs
 // the REAL engine over each fixture's `params` and the Swift port must reproduce
 // the SAME SmartReplacementRecommendation[] item-by-item + in order.
 //
@@ -322,7 +322,7 @@ public enum SmartReplacementEngine {
     // MARK: Identity + merge helpers (smartReplacementEngine.ts:90-137)
 
     /// `getExerciseId` (smartReplacementEngine.ts:90-101). `||`-truthy chain: an
-    /// empty string is falsy and falls through, exactly as in TS.
+    /// empty string is falsy and falls through, exactly as in legacy web schema.
     fileprivate static func getExerciseId(_ ref: SmartReplacementExerciseRef?) -> String {
         guard let ref else { return "" }
         switch ref {
@@ -368,7 +368,7 @@ public enum SmartReplacementEngine {
     }
 
     /// `buildLibraryMap` (smartReplacementEngine.ts:117-137). Seeds from the override
-    /// id universe (TS `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`), then layers the
+    /// id universe (legacy web schema `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`), then layers the
     /// `exerciseLibrary` param (array or record). `InsertionOrderedMap.set` keeps a
     /// key's slot on update, mirroring `Map.set`.
     fileprivate static func buildLibraryMap(_ exerciseLibrary: SmartReplacementLibraryInput?) -> InsertionOrderedMap<SmartReplacementExercise> {
@@ -501,7 +501,7 @@ public enum SmartReplacementEngine {
         switch loadFeedback {
         case .value(let v):
             if v == "too_light" || v == "good" || v == "too_heavy" { return [v] }
-            // A non-LoadFeedbackValue string falls through to the object branch in TS,
+            // A non-LoadFeedbackValue string falls through to the object branch in legacy web schema,
             // where dominantFeedback/feedback/adjustment are all undefined → [].
             return []
         case .list(let items):
@@ -589,7 +589,7 @@ public enum SmartReplacementEngine {
         }
 
         // Object.entries(priorityMap) — preserve the alternativePriorities insertion
-        // order (the TS Record literal's key order, captured by alternativePrioritiesOrder).
+        // order (the legacy web schema Record literal's key order, captured by alternativePrioritiesOrder).
         for (id, priority) in priorityMapEntries(currentMetadata) {
             let mappedPriority = mapExplicitPriority(priority)
             if mappedPriority != .avoid || id == currentId || ReplacementEngine.isSyntheticReplacementExerciseId(id) || !ReplacementEngine.validateReplacementExerciseId(id) { continue }
@@ -889,7 +889,7 @@ public enum SmartReplacementEngine {
     }
 
     /// `Object.entries(currentMetadata.alternativePriorities || {})` order. Swift
-    /// dictionaries are unordered; the TS Record iterates in literal insertion order.
+    /// dictionaries are unordered; the legacy web schema Record iterates in literal insertion order.
     /// The only avoid candidates this branch can add that are not already present
     /// from the explicit-alternativeIds pass would be priorityMap keys absent from
     /// alternativeIds — but in the committed data every alternativePriorities key is
@@ -986,7 +986,7 @@ fileprivate struct InsertionOrderedMap<Value> {
 
 extension SmartReplacementRecommendation {
     /// Build a recommendation from typed engine values (priority / fatigueCost are
-    /// stored as their TS raw-value strings, matching `init(decoding:)`).
+    /// stored as their legacy web schema raw-value strings, matching `init(decoding:)`).
     init(
         exerciseId: String,
         exerciseName: String,

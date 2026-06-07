@@ -1,6 +1,6 @@
 // iOS-4B3 Readiness + e1RM Slice V1 — e1RM trend.
 //
-// Swift port of isE1rmTrendUp (src/engines/trainingDecisionEngine.ts:258). This is
+// Swift port of isE1rmTrendUp (retired-web-reference). This is
 // the OTHER input (besides recoveryHigh) the controlled-reload sessionIntent branch
 // needs. PURE — reads only history exercise set weights. No clock, no AppData.
 //

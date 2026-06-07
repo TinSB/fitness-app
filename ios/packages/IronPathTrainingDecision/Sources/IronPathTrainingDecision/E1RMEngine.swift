@@ -1,7 +1,7 @@
 // E1RMEngine — iOS-17e-1 per-exercise e1RM port.
 //
 // Faithful line-by-line Swift port of the PURE per-exercise estimated-one-rep-max
-// functions from `src/engines/e1rmEngine.ts`:
+// functions from `retired web reference`:
 //   - getExerciseRecordPoolId      (e1rmEngine.ts:29)  — by-exercise record pool id
 //   - estimateOneRepMaxForExercise (e1rmEngine.ts:166)
 //   - buildE1RMProfile             (e1rmEngine.ts:171)
@@ -31,7 +31,7 @@ public enum E1RMEngine {
     // compare the ported output against the generated golden item-by-item.
 
     /// `EstimatedOneRepMax.sourceSet` (training-model.ts:1042). Optional fields
-    /// follow the TS `canonicalStringify` drop-undefined rule on the golden side.
+    /// follow the legacy web schema `canonicalStringify` drop-undefined rule on the golden side.
     public struct SourceSet: Equatable, Sendable {
         public let sessionId: String
         public let date: String
@@ -69,7 +69,7 @@ public enum E1RMEngine {
     /// is `NaN → 0`.
     static func number(_ value: NumberRepr?) -> Double { value?.doubleValue ?? 0 }
 
-    /// `Number(value)` over a free-form JSON value, mirroring TS `number`
+    /// `Number(value)` over a free-form JSON value, mirroring legacy web schema `number`
     /// (engineUtils.ts:38). Only used by `parseRir` (rir may be number or string).
     static func number(_ value: JSONValue?) -> Double {
         guard let value else { return 0 }
@@ -85,7 +85,7 @@ public enum E1RMEngine {
 
     /// `Math.round(value * 2) / 2` (e1rmEngine.ts:16). JS `Math.round` is
     /// `floor(x + 0.5)` (half rounds toward +∞), reproduced here so .5 boundaries
-    /// match TS exactly rather than Swift's round-half-away-from-zero.
+    /// match legacy web schema exactly rather than Swift's round-half-away-from-zero.
     static func roundToHalfKg(_ value: Double) -> Double {
         (value * 2 + 0.5).rounded(.down) / 2
     }
@@ -318,7 +318,7 @@ public enum E1RMEngine {
         return sorted.count % 2 == 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
     }
 
-    /// `nearestCandidate` (e1rmEngine.ts:69). Stable sort (Swift ≥5) keeps TS tie order.
+    /// `nearestCandidate` (e1rmEngine.ts:69). Stable sort (Swift ≥5) keeps legacy web schema tie order.
     private static func nearestCandidate(_ candidates: [SourceCandidate], _ targetValue: Double) -> SourceCandidate? {
         candidates.sorted { abs($0.e1rmKg - targetValue) < abs($1.e1rmKg - targetValue) }.first
     }
@@ -351,7 +351,7 @@ public enum E1RMEngine {
 
     public static func getE1RMConfidence(_ sourceSet: ConfidenceSourceSet, _ recentSets: [ConfidenceRecentSet]) -> String {
         // `sourceSet.reps` / `set.weightKg` are already `number()`-ed Doubles, so
-        // TS's defensive `number(...)` re-coercion is the identity here.
+        // legacy web schema's defensive `number(...)` re-coercion is the identity here.
         var hasLow = false
         if sourceSet.techniqueQuality == "poor" { hasLow = true }
         if sourceSet.painFlag == true { hasLow = true }

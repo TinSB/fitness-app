@@ -22,7 +22,7 @@ final class AppDataIngressPipelineRealExportTests: XCTestCase {
             .deletingLastPathComponent()  // packages/
             .deletingLastPathComponent()  // ios/
             .deletingLastPathComponent()  // repo root
-            .appendingPathComponent("tests/fixtures/data-health/ironpath-2026-05-27-redacted.json")
+            .appendingPathComponent("ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json")
     }
 
     private func loadRealExport() throws -> AppData {

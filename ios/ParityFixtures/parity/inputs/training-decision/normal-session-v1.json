@@ -1,0 +1,22 @@
+{
+  "parityMeta": {
+    "id": "training-decision/normal-session-v1",
+    "schemaVersion": 8,
+    "describes": "TrainingDecision V2 normal-session parity — drives the approved Clean Input Contract pipeline (buildCleanAppDataView -> createCleanTrainingDecisionInput -> buildTrainingDecision) against the existing redacted real export to lock decisionVersion='v2', userFacing.{today,plan,training,focus,progress,record,explanation} and hiddenDebugSignals.arbitrationTrace.",
+    "privacy": "redacted-pointer",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "Uses the existing redacted real export so the parity bar reflects a representative AppData. The decisionMetadata.templateId selects a stable template from the fixture (push-a). No raw private data is duplicated into the parity tree — only the pointer is committed."
+  },
+  "pointer": {
+    "kind": "appData-from-redacted-real-export",
+    "path": "ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json",
+    "note": "Loaded by the generator with JSON.parse; the same path must be loadable by the Swift parity runner."
+  },
+  "decisionMetadata": {
+    "templateId": "push-a",
+    "trainingMode": "hybrid"
+  }
+}

@@ -8,14 +8,14 @@
 // iOS-3B ships:
 //   * `AutoRepairBackupAdapter` protocol
 //   * `AutoRepairBackupRecord` value type
-//   * `InMemoryAutoRepairBackupAdapter` default impl (matches TS
+//   * `InMemoryAutoRepairBackupAdapter` default impl (matches legacy web schema
 //     `getDefaultAutoRepairBackupAdapter` fallback)
 //
 // iOS-3C/iOS-3D will wire a JSONFile-backed adapter through
 // `IronPathPersistence.JSONFileAppDataStore`. This iOS-3B PR
 // intentionally does NOT depend on Persistence for the default.
 //
-// TS counterpart: `src/dataHealth/autoRepairBackupAdapter.ts`.
+// legacy web schema counterpart: `retired web reference`.
 
 import Foundation
 import IronPathDomain

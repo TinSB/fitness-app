@@ -7,7 +7,7 @@
 // end-to-end — a document WITH `templates` decoded from the gated view's raw bag yields a REAL
 // pending coach action (the SC-C next-workout signal); (3) the ③/CC-4 §11.2 injected-clock contract —
 // the live path threads a NON-EMPTY `nowIso` into `buildCoachActions`, which becomes every action's
-// `createdAt`, so the engine's `nonEmpty(now) ?? ""` fallback is never reached; and (4) the PWA
+// `createdAt`, so the engine's `nonEmpty(now) ?? ""` fallback is never reached; and (4) the legacy web app
 // presenter mirror (label maps / fallbacks / primaryLabel / cleanText). Clean-view fixtures are built
 // in memory via CoreSliceTestKit; the injected `now` matches the parity clock so results are
 // deterministic. Mirrors NextWorkoutReadPathTests / TrainingInsightsReadPathTests.
@@ -55,7 +55,7 @@ final class CoachActionReadPathTests: XCTestCase {
     }
 
     /// A raw `templates[]` entry (the un-promoted document slot the read path decodes from
-    /// `root["templates"]`, mirroring the PWA `data.templates`).
+    /// `root["templates"]`, mirroring the legacy web app `data.templates`).
     private func templateJSON(id: String, name: String) -> JSONValue {
         .object(OrderedJSONObject(entries: [
             .init(key: "id", value: .string(id)),
@@ -176,7 +176,7 @@ final class CoachActionReadPathTests: XCTestCase {
         }
     }
 
-    // MARK: - PWA presenter mirror (label maps / fallbacks / primaryLabel / cleanText)
+    // MARK: - legacy web app presenter mirror (label maps / fallbacks / primaryLabel / cleanText)
 
     private func action(
         id: String = "x",
@@ -345,7 +345,7 @@ final class CoachActionReadPathTests: XCTestCase {
         let victim = ids[0]
         let today = String(fixedNowIso().prefix(10))
         // NO root `dismissedCoachActions`; only the nested `settings` slot carries it → the read-side
-        // priority `root || settings` still finds it (a PWA-origin doc may carry only the settings half;
+        // priority `root || settings` still finds it (a legacy-web-origin doc may carry only the settings half;
         // the CC-5 write double-writes both). Injected UTC zone keeps the local day == the UTC prefix.
         let settings = JSONValue.object(OrderedJSONObject(entries: [
             .init(key: "dismissedCoachActions", value: .array([dismissedEntry(actionId: victim, day: today)])),

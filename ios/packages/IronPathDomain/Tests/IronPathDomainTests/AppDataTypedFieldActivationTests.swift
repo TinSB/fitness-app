@@ -275,7 +275,7 @@ final class AppDataTypedFieldActivationTests: XCTestCase {
 
     func testNumberPrecisionForCommonGymWeights() throws {
         // The set of weights iOS-3 / iOS-4 will see most often. All
-        // must canonical-emit byte-identically to their TS counterparts.
+        // must canonical-emit byte-identically to their legacy web schema counterparts.
         let cases: [(String, String)] = [
             ("80", "80"),
             ("72.5", "72.5"),

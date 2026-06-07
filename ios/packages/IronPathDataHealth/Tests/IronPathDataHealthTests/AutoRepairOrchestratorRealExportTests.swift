@@ -1,7 +1,7 @@
 // AutoRepairOrchestratorRealExportTests — iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1.
 //
 // End-to-end orchestrator integration against the redacted real
-// export at `tests/fixtures/data-health/ironpath-2026-05-27-redacted.json`.
+// export at `ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json`.
 // Asserts:
 //
 //   * Orchestrator returns successfully under a fixed clock anchored
@@ -30,7 +30,7 @@ final class AutoRepairOrchestratorRealExportTests: XCTestCase {
             .deletingLastPathComponent()  // packages/
             .deletingLastPathComponent()  // ios/
             .deletingLastPathComponent()  // repo root
-            .appendingPathComponent("tests/fixtures/data-health/ironpath-2026-05-27-redacted.json")
+            .appendingPathComponent("ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json")
     }
 
     private func loadRealExport() throws -> AppData {

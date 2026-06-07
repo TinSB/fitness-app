@@ -2,7 +2,7 @@
 // (Iteration 7: local stats summary).
 //
 // Small, derived-only summary computed from the locally-saved snapshots. This
-// is NOT an analytics engine and NOT a TypeScript-engine port — it is a handful
+// is NOT an analytics engine and NOT a legacy web implementation-engine port — it is a handful
 // of sums over the `[LocalCompletedSessionSnapshot]` the store already returns.
 //
 // 100% pure value logic — NO FileManager, NO disk, NO network, NO cloud, NO

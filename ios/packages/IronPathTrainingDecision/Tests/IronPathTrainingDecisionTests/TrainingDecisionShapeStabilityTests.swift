@@ -71,7 +71,7 @@ final class TrainingDecisionShapeStabilityTests: XCTestCase {
 
     // (15) No algorithm/decision-computing entry point exists on the type — the
     //      public surface is decode/encode + value accessors only. This test
-    //      documents that contract; the TS static guards enforce it across files.
+    //      documents that contract; the legacy web schema static guards enforce it across files.
     func testTypesExposeNoDecisionComputation() throws {
         let d = try TrainingDecisionGoldens.decode("controlled-reload-v1")
         // The only way to obtain a TrainingDecision is to DECODE one — there is

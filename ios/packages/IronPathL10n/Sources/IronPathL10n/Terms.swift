@@ -1,11 +1,11 @@
 // PA-S0 — i18n/terms data port.
 //
 // Faithful Swift mirror of the eleven frozen label tables + `term()` from
-// `src/i18n/terms.ts` (the one clean leaf of the PA track: zero imports, zero
+// `retired web reference` (the one clean leaf of the PA track: zero imports, zero
 // runtime logic — pure `as const` label data). Each table is transcribed
-// entry-by-entry, key + Chinese value verbatim, with the mirrored TS source
+// entry-by-entry, key + Chinese value verbatim, with the mirrored legacy web schema source
 // line cited; the `i18n/terms-snapshot-v1` parity golden (GENERATED from the
-// same TS truth, never hand-authored — §22) mechanically reconciles every
+// same legacy web schema truth, never hand-authored — §22) mechanically reconciles every
 // entry, so no label can be dropped or altered in transcription.
 //
 // PURE DATA — no logic beyond a dictionary subscript, no clock, zero `: Date`,
@@ -13,7 +13,7 @@
 //
 // Muscle-label note (de-dup contract): `muscleLabels` below mirrors
 // terms.ts:95-101 `MUSCLE_LABELS` (5: chest/back/legs/shoulders/arms →
-// 胸/背/腿/肩/手臂). This is a DISTINCT TS constant from formatters.ts:102-122
+// 胸/背/腿/肩/手臂). This is a DISTINCT legacy web schema constant from formatters.ts:102-122
 // `MUSCLE_LABELS` (18 entries) — the latter is already ported into
 // `IronPathTrainingDecision.VolumeAdaptationEngine.muscleLabels`. The two share
 // these 5 Chinese values but have different key universes and live in different
@@ -134,7 +134,7 @@ public enum Terms {
         "arms": "手臂",    // terms.ts:100
     ]
 
-    /// `term` (terms.ts:103) = `TERMS[key]`. In TS the parameter is typed
+    /// `term` (terms.ts:103) = `TERMS[key]`. In legacy web schema the parameter is typed
     /// `keyof typeof TERMS`, so an unknown key is a compile-time error and the
     /// result is always a `string`. The faithful Swift equivalent returns
     /// `String?` — `nil` exactly for a key absent from `TERMS`.

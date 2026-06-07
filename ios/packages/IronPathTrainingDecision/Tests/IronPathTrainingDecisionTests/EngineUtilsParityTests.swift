@@ -5,8 +5,8 @@
 // decode each echoed engineInput exercise, run the PORTED `EngineUtils.buildExerciseMetadata`
 // / `enrichExercise` over the EMPTY seam (override = [:], equivalence = nil — this slice's
 // pinned branch), and reconcile the produced `metadata` / `enriched` against the golden by
-// CANONICAL JSON (byte-level, field-by-field). The golden is GENERATED from the REAL TS
-// enrichExercise (scripts/generate-parity-goldens.mjs), never hand-edited (§22). The synthetic
+// CANONICAL JSON (byte-level, field-by-field). The golden is GENERATED from the REAL legacy web schema
+// enrichExercise (frozen legacy fixture generator), never hand-edited (§22). The synthetic
 // ids guarantee the golden pins the default branches only; the override DATA tables are PA-S3.
 // Pure: no `: Date`, no IO beyond reading the committed golden.
 
@@ -32,7 +32,7 @@ final class EngineUtilsParityTests: XCTestCase {
 
     private static func root() throws -> OrderedJSONObject {
         let url = repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/\(fixtureId).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/\(fixtureId).json", isDirectory: false
         )
         return try JSONValue(decoding: Data(contentsOf: url)).requireObject(fixtureId)
     }
@@ -92,9 +92,9 @@ final class EngineUtilsParityTests: XCTestCase {
         XCTAssertEqual(actual, Optional(expected), message, file: file, line: line)
     }
 
-    // MARK: - (3) derived-branch spot checks against the golden (real TS truth)
+    // MARK: - (3) derived-branch spot checks against the golden (real legacy web schema truth)
 
-    /// Asserts the EXACT default-branch values the real TS engine produced, keyed by label —
+    /// Asserts the EXACT default-branch values the real legacy web schema engine produced, keyed by label —
     /// pins the hand-verified expectations (not just Swift==golden). Reads the GOLDEN metadata.
     func testDerivedDefaultBranchValues() throws {
         var byLabel: [String: OrderedJSONObject] = [:]

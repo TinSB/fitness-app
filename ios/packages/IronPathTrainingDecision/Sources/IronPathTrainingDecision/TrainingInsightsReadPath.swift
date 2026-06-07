@@ -21,8 +21,8 @@
 //
 // HISTORY ORDER BRIDGE. Canonical `AppData.history` is OLDEST-FIRST (the canonical
 // writer appends to the end — `AppData.appendingHistorySession`), so `cleanedHistory`
-// is oldest-first too. The AN-1…6 analytics engines, however, mirror the PWA
-// (`src/engines/analytics.ts`) convention of a NEWEST-FIRST history (`history.slice(0,
+// is oldest-first too. The AN-1…6 analytics engines, however, mirror the legacy web app
+// (`retired web reference`) convention of a NEWEST-FIRST history (`history.slice(0,
 // 8).reverse()` for the weekly report; `trendStatus` reads `trend.slice(0, 2)` as the
 // RECENT points; `selectExerciseIds` reads the first 3 as the recent sessions). So the
 // resolver REVERSES the cleaned history to newest-first before feeding the engines,

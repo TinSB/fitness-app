@@ -1,6 +1,6 @@
 // iOS-4B3/4B4 Readiness — readiness engine (subjective + time-gap + health delta).
 //
-// Swift port of src/engines/readinessEngine.ts (buildReadinessResult /
+// Swift port of retired-web-reference (buildReadinessResult /
 // mapTodayStatusToReadinessInput / buildTodayReadiness / collectPainAreasFromHistory).
 // PURE — reads only todayStatus + history + the caller-supplied template duration /
 // health summary; no clock, no AppData mutation.
@@ -22,7 +22,7 @@
 //     `healthSummary: nil`; the delta is exercised only by unit tests.
 //   * `Math.round` of the score (readinessEngine.ts:102) via `jsRound`. Every score
 //     delta is an integer literal so the round is a structural no-op today, but the
-//     TS source rounds, so the port rounds (and a unit test pins the half-up rule).
+//     legacy web schema source rounds, so the port rounds (and a unit test pins the half-up rule).
 //
 // Level/sessionIntent/riskLevel from iOS-4B3 are unchanged by the -4: 64 stays
 // medium, 40 stays low, with >=14 points of headroom to the <50 cutoff.
@@ -109,7 +109,7 @@ public struct HealthSummary: Equatable, Sendable {
 
 enum TrainingDecisionReadiness {
     // sleepMap / energyMap (readinessEngine.ts:5-15). Unmapped/nil falls through to
-    // the "good"/"high" (+4) branch in buildReadinessResult, mirroring the TS
+    // the "good"/"high" (+4) branch in buildReadinessResult, mirroring the legacy web schema
     // `sleepMap[status.sleep]` -> undefined -> else-branch behaviour.
     static func mappedSleep(_ raw: String?) -> String? {
         switch raw {
@@ -150,7 +150,7 @@ enum TrainingDecisionReadiness {
 
     /// JS `Math.round` semantics: round half toward +Infinity == `floor(x + 0.5)`
     /// (readinessEngine.ts:102). For the integer-valued readiness score this is a
-    /// structural no-op, but the TS source rounds, so the port rounds.
+    /// structural no-op, but the legacy web schema source rounds, so the port rounds.
     static func jsRound(_ x: Double) -> Int { Int((x + 0.5).rounded(.down)) }
 
     /// buildReadinessResult (readinessEngine.ts:30). Subjective deltas + the
@@ -168,7 +168,7 @@ enum TrainingDecisionReadiness {
         healthSummary: HealthSummary? = nil,
         useHealthDataForReadiness: Bool?
     ) -> ReadinessResult {
-        // Accumulate as Double to mirror the TS `number` + the trailing Math.round.
+        // Accumulate as Double to mirror the legacy web schema `number` + the trailing Math.round.
         var score = 82.0
         var reasons: [String] = []
 

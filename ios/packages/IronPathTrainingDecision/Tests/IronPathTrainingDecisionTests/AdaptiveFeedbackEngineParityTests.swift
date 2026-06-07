@@ -8,8 +8,8 @@
 //   - findPreviousPerformance(history, id, skip)    == golden.previousProbes[].snapshot
 //   - findRecentPerformances(history, id, limit)    == golden.recentProbes[].snapshots
 //   - buildAdaptiveState(history, seed, today)      == golden.adaptiveState
-// The goldens are GENERATED from the REAL TS adaptiveFeedbackEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). This is the 17e-2
+// The goldens are GENERATED from the retired legacy adaptiveFeedbackEngine
+// (frozen legacy fixture generator), never hand-edited (§22). This is the 17e-2
 // slice of the progression-cluster parity; it does NOT touch the decision output /
 // existing decision goldens (that wiring is 17e-5). Zero `: Date` (the buildAdaptiveState
 // `lastUpdated` clock is INJECTED via `today` = the golden's deterministicClockIso date),
@@ -43,7 +43,7 @@ final class AdaptiveFeedbackEngineParityTests: XCTestCase {
 
         static func goldenURL(_ shortId: String) -> URL {
             repoRoot.appendingPathComponent(
-                "tests/fixtures/parity/golden/adaptive-feedback/\(shortId).json", isDirectory: false
+                "ios/ParityFixtures/parity/golden/adaptive-feedback/\(shortId).json", isDirectory: false
             )
         }
 
@@ -157,7 +157,7 @@ final class AdaptiveFeedbackEngineParityTests: XCTestCase {
         decodeDoubleMap(root.optionalObject("engineInput")?.optionalObject("seedIssueScores"))
     }
 
-    /// `today` = the golden's deterministicClockIso date-only (replaces the TS wall-clock stamp).
+    /// `today` = the golden's deterministicClockIso date-only (replaces the legacy web schema wall-clock stamp).
     private func decodeToday(_ root: OrderedJSONObject) -> String {
         let iso = root.optionalObject("parityGolden")?.optionalString("deterministicClockIso") ?? ""
         return String(iso.prefix(10))

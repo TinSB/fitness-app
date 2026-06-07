@@ -65,7 +65,7 @@ final class AppDataUnitFieldPreservationTests: XCTestCase {
     }
 
     func testWeightUnitEnumRawValuesAreLowercaseAlphas() {
-        // The enum rawValue MUST match the TypeScript wire token
+        // The enum rawValue MUST match the legacy web implementation wire token
         // exactly. Any case-change would break round-trip.
         XCTAssertEqual(WeightUnit.kg.rawValue, "kg")
         XCTAssertEqual(WeightUnit.lb.rawValue, "lb")

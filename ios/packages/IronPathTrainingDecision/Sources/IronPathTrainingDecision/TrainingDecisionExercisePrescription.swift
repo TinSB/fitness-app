@@ -17,7 +17,7 @@
 // time=60, no mature fineTune data; documented golden-neutral): time<=30 (416),
 // poorSleep+time<=30 (449), poorSleepDays>=2 (459), recovery (469), painPattern (519),
 // statusHitsMuscle (562), adaptiveCalibration bias (571), fineTune trust override (628).
-// applyDeloadStrategy is SKIPPED (TS passes suppressInternalDeloadStrategy:true) — but
+// applyDeloadStrategy is SKIPPED (legacy web schema passes suppressInternalDeloadStrategy:true) — but
 // deload.level is still consumed by the adaptive conservativeLevel. PURE; no clock.
 
 import Foundation

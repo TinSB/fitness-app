@@ -1,9 +1,9 @@
 // AppSettings — iOS-2C AppData Typed Field Activation V1.
 //
-// AppSettings is the canonical open-bag site (TS index signature
-// `[key: string]: unknown` at `src/models/training-model.ts:1342`).
+// AppSettings is the canonical open-bag site (legacy web schema index signature
+// `[key: string]: unknown` at `retired web reference`).
 // iOS-2C promotes the iOS-3 / Data Health unblock subset; everything
-// else flows through `_unknown` so future PWA writes are preserved.
+// else flows through `_unknown` so future legacy web app writes are preserved.
 
 import Foundation
 

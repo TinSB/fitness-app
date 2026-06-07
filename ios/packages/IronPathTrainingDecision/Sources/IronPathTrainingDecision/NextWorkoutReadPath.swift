@@ -20,13 +20,13 @@
 // view's `raw` document (exactly the precedent `createCleanTrainingDecisionInput` /
 // `PlanDisplayProjection` set — the data-health guards do not clean those config slots,
 // and no raw AppData value escapes into the engines). `templates` rides un-promoted in
-// the document (the PWA reads `data.templates`, enginePipeline.ts:61), so it is decoded
+// the document (the legacy web app reads `data.templates`, enginePipeline.ts:61), so it is decoded
 // from `raw.root["templates"]` — config, not history. Determinism is preserved (§11.2):
 // the instant is INJECTED (`now`) — `todayState`'s `nowIso` derives from it (and the
 // loader builds the clean view's guard clock from the SAME instant), never an ambient
 // `Date()` here.
 //
-// SCOPE HONESTY (master §15.4, the `TodayRealReadiness` precedent): the full PWA
+// SCOPE HONESTY (master §15.4, the `TodayRealReadiness` precedent): the full legacy web app
 // `trainingDecisionContext` (which would source `painPatterns` / `readinessResult` /
 // `weeklyVolumeSummary` / `trainingMode`) is NOT ported, so those optional scheduler
 // inputs are left at their honest defaults rather than fabricated — an honest V1 scope.
@@ -39,7 +39,7 @@
 // `.unavailable` (degrade, never crash, never overwrite); a clean view WITH cleaned
 // history → `.ready(summary)`. Within a ready summary, an empty `templates` slot is
 // seeded with `DefaultTrainingData.initialTemplates` (FU-1: the native read chain now
-// reproduces the PWA load-layer `sanitizeTemplates` seed — appDataSanitize.ts:705 —
+// reproduces the legacy web app load-layer `sanitizeTemplates` seed — appDataSanitize.ts:705 —
 // at decode time, read-only/never written), so a fresh user falls onto the default
 // program's day instead of the bare "暂无下次建议" branch; a non-empty templates slot is
 // used verbatim (the empty→default seed is the ONLY normalization here).
@@ -103,9 +103,9 @@ public func resolveNextWorkoutScheduleState(
         let nowIso = nextWorkoutReferenceIso8601UTC(now)
         // CONFIG slots plucked from the gated view's raw document (not history):
         //   * programTemplate — the promoted accessor (the `PlanDisplayProjection` precedent).
-        //   * templates       — un-promoted; decoded from `root["templates"]` (the PWA's
+        //   * templates       — un-promoted; decoded from `root["templates"]` (the legacy web app's
         //                        `data.templates`). Empty -> seeded with
-        //                        `DefaultTrainingData.initialTemplates`, reproducing the PWA
+        //                        `DefaultTrainingData.initialTemplates`, reproducing the legacy web app
         //                        load-layer `sanitizeTemplates` seed (appDataSanitize.ts:705)
         //                        the native read chain previously omitted — read-only, never
         //                        written back (FU-1). See `decodeTrainingTemplates`.
@@ -139,13 +139,13 @@ public func resolveNextWorkoutScheduleState(
 
 /// Decode the user's training day templates out of the gated view's raw document, with the
 /// FU-1 empty→default seed. `templates` is not a promoted Domain field (it rides in `root`,
-/// mirroring the PWA `data.templates`), so it is read the same way the Domain `AppData.history`
+/// mirroring the legacy web app `data.templates`), so it is read the same way the Domain `AppData.history`
 /// accessor reads `root["history"]`. A missing/garbled entry is skipped (`try?`) — never
 /// crashes, never fabricates a template.
 ///
 /// FU-1: when the decode yields NO usable templates (absent slot, empty array, or every entry
 /// garbled), the native read chain seeds `DefaultTrainingData.initialTemplates` — reproducing
-/// the PWA load-layer `sanitizeTemplates` seed (`appDataSanitize.ts:705`,
+/// the legacy web app load-layer `sanitizeTemplates` seed (`appDataSanitize.ts:705`,
 /// `Array.isArray(source) && source.length ? source : INITIAL_TEMPLATES`) that the iOS read
 /// chain previously omitted (leaving fresh users with no "today's training"). This is the SAME
 /// empty→default pattern `ProgramAdjustmentEngineSelectDayDiff.swift:201` already uses

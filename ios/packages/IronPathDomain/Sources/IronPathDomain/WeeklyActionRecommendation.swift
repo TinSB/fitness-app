@@ -1,35 +1,35 @@
 // WeeklyActionRecommendation — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `WeeklyActionRecommendation` interface at
-// `src/models/training-model.ts:1077`. One weekly coaching recommendation
+// Mirrors the legacy web implementation `WeeklyActionRecommendation` interface at
+// `retired web reference`. One weekly coaching recommendation
 // the PA engines surface (volume / recovery / exercise-selection / …).
 //
-// `priority` / `category` / `targetType` are small TS string-unions; they
+// `priority` / `category` / `targetType` are small legacy web schema string-unions; they
 // are carried as `String?` (the `ProgramTemplate.primaryGoal` precedent —
 // String preserves an unknown future member losslessly). `confidence` is
 // the closed `EstimateConfidence` enum, decoded with the lossless
-// "extracted-set" rule. `suggestedChange` is a TS anonymous object,
+// "extracted-set" rule. `suggestedChange` is a legacy web schema anonymous object,
 // carried verbatim as raw `JSONValue?` (the `MesocyclePlan.weeks`
 // precedent). Same paradigm as the existing Domain types. All properties
-// optional (the `ProgramTemplate` convention); TS requiredness noted.
+// optional (the `ProgramTemplate` convention); legacy web schema requiredness noted.
 //
 // Pure type: no runtime logic, no write path, no `: Date`.
 
 import Foundation
 
 public struct WeeklyActionRecommendation: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let id: String?                 // TS: `id: string` (required)
-    public let priority: String?           // TS: `priority: WeeklyActionPriority` ('high'|'medium'|'low', required)
-    public let category: String?           // TS: `category: 'volume'|'recovery'|...` (required)
-    public let targetType: String?         // TS: `targetType: 'muscle'|'exercise'|'session'|'program'` (required)
-    public let targetId: String?           // TS: `targetId?: string`
-    public let targetLabel: String?        // TS: `targetLabel: string` (required)
-    public let issue: String?              // TS: `issue: string` (required)
-    public let recommendation: String?     // TS: `recommendation: string` (required)
-    public let reason: String?             // TS: `reason: string` (required)
-    public let suggestedChange: JSONValue? // TS: `suggestedChange?: { muscleId?; setsDelta?; ... }`
-    public let evidenceRuleIds: [String]?  // TS: `evidenceRuleIds?: string[]`
-    public let confidence: EstimateConfidence? // TS: `confidence: EstimateConfidence` (required)
+    public let id: String?                 // legacy web schema: `id: string` (required)
+    public let priority: String?           // legacy web schema: `priority: WeeklyActionPriority` ('high'|'medium'|'low', required)
+    public let category: String?           // legacy web schema: `category: 'volume'|'recovery'|...` (required)
+    public let targetType: String?         // legacy web schema: `targetType: 'muscle'|'exercise'|'session'|'program'` (required)
+    public let targetId: String?           // legacy web schema: `targetId?: string`
+    public let targetLabel: String?        // legacy web schema: `targetLabel: string` (required)
+    public let issue: String?              // legacy web schema: `issue: string` (required)
+    public let recommendation: String?     // legacy web schema: `recommendation: string` (required)
+    public let reason: String?             // legacy web schema: `reason: string` (required)
+    public let suggestedChange: JSONValue? // legacy web schema: `suggestedChange?: { muscleId?; setsDelta?; ... }`
+    public let evidenceRuleIds: [String]?  // legacy web schema: `evidenceRuleIds?: string[]`
+    public let confidence: EstimateConfidence? // legacy web schema: `confidence: EstimateConfidence` (required)
 
     public let _unknown: OrderedJSONObject
 

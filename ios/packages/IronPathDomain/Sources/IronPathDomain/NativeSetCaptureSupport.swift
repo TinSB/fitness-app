@@ -78,7 +78,7 @@ public enum ActualSetDraftFactory {
     }
 
     /// Represent a kg weight as the `NumberRepr` case that canonical-emits like
-    /// TS `JSON.stringify`: a whole value collapses to `.integer` ("60", not
+    /// legacy web schema `JSON.stringify`: a whole value collapses to `.integer` ("60", not
     /// "60.0"); a fractional value stays `.double` ("62.5"). Mirrors how
     /// `JSONValue(fromFoundation:)` ingests parsed numbers, so a captured weight
     /// round-trips byte-identically to one decoded from JSON.

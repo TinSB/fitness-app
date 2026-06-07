@@ -1,17 +1,16 @@
 // PA-S3 — DEFAULT_PROGRAM_TEMPLATE data port (pure data, read-only).
 //
-// Faithful 1:1 Swift transcription of `src/data/defaults.ts:83
-// DEFAULT_PROGRAM_TEMPLATE` and the THREE private helpers it reads:
-//   src/data/defaults.ts:4   unique                  -> DefaultTrainingData.uniqueStable
-//   src/data/defaults.ts:6   focusMusclesForTemplate -> DefaultTrainingData.focusMusclesForTemplate
-//   src/data/defaults.ts:9   defaultCorrectionBlocks -> DefaultTrainingData.defaultCorrectionBlocks
-//   src/data/defaults.ts:16  defaultFunctionalBlocks -> DefaultTrainingData.defaultFunctionalBlocks
+// Faithful 1:1 Swift transcription of `retired web reference` and the THREE private helpers it reads:
+//   retired-web-reference   unique                  -> DefaultTrainingData.uniqueStable
+//   retired-web-reference   focusMusclesForTemplate -> DefaultTrainingData.focusMusclesForTemplate
+//   retired-web-reference   defaultCorrectionBlocks -> DefaultTrainingData.defaultCorrectionBlocks
+//   retired-web-reference  defaultFunctionalBlocks -> DefaultTrainingData.defaultFunctionalBlocks
 //
-// The TS `ProgramTemplate` is RICH; the Swift `ProgramTemplate` (PA-S1) is the
+// The legacy web schema `ProgramTemplate` is RICH; the Swift `ProgramTemplate` (PA-S1) is the
 // THIN persisted struct whose rich fields (`weeklyMuscleTargets` / `dayTemplates`)
 // ride the `_unknown` open bag and are read back via the `ProgramTemplate+PARich`
 // projections. So this constant sets the seven thin typed scalars and carries the
-// two rich fields through `_unknown` — byte-faithful to the rich TS JSON shape
+// two rich fields through `_unknown` — byte-faithful to the rich legacy web schema JSON shape
 // (the parity golden reconciles the full projection).
 //
 // `DEFAULT_MESOCYCLE_PLAN` (defaults.ts:114) is OUT OF SCOPE — it carries
@@ -85,7 +84,7 @@ extension DefaultTrainingData {
     }
 
     /// `defaultCorrectionBlocks` (defaults.ts:9-14). Branch ORDER is load-bearing
-    /// (first match returns) — mirror the TS if-chain verbatim.
+    /// (first match returns) — mirror the legacy web schema if-chain verbatim.
     static func defaultCorrectionBlocks(_ templateId: String) -> [String] {
         if templateId.contains("push") || templateId.contains("upper") {
             return ["corr_upper_crossed_01", "corr_scapular_control_01"]

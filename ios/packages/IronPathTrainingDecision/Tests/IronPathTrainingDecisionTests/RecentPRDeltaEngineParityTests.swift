@@ -8,8 +8,8 @@
 // EXACT `==` (the fixtures use non-tie decimals so the ported `roundToFixed` matches JS
 // `toFixed` bit-for-bit).
 //
-// The golden is GENERATED from the REAL TS recentPRDeltaEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy recentPRDeltaEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (the injected `options.nowIso` is the only clock), no IO beyond reading the
 // committed golden.
 
@@ -31,7 +31,7 @@ final class RecentPRDeltaEngineParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/recent-pr-delta/delta-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/recent-pr-delta/delta-cases-v1.json", isDirectory: false
         )
     }
 
@@ -102,7 +102,7 @@ final class RecentPRDeltaEngineParityTests: XCTestCase {
 
     private static var boundaryGoldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/recent-pr-delta/delta-boundary-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/recent-pr-delta/delta-boundary-cases-v1.json", isDirectory: false
         )
     }
 

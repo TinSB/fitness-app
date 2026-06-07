@@ -2,12 +2,12 @@
 //
 // Swift port of the persisted-phase resolution the effectivePhase engine needs:
 // getCurrentMesocycleWeek / getMesocycleWeekIndex / clampWeekIndex
-// (src/engines/mesocycleEngine.ts) plus the DEFAULT_MESOCYCLE_PLAN weeks
-// (src/data/defaults.ts:114). Engine-LOCAL: the Swift Domain MesocyclePlan is a
+// (retired-web-reference) plus the DEFAULT_MESOCYCLE_PLAN weeks
+// (retired-web-reference). Engine-LOCAL: the Swift Domain MesocyclePlan is a
 // thin decode type (id/startDate/phase/weeks:JSONValue?), so the weeks array is
 // hand-parsed here rather than promoting a typed model into IronPathDomain.
 //
-// DETERMINISM: NO system clock is read anywhere. The TS DEFAULT_MESOCYCLE_PLAN
+// DETERMINISM: NO system clock is read anywhere. The legacy web schema DEFAULT_MESOCYCLE_PLAN
 // pins startDate to the generation-time `new Date()`, and its week index clamps
 // to 0 ('base') for the deterministic parity clock. We reproduce that observed
 // 'base' deterministically by pinning the no-plan default's startDate to the
@@ -20,7 +20,7 @@
 import Foundation
 import IronPathDomain
 
-/// Two distinct date conventions, ported verbatim from the TS engine:
+/// Two distinct date conventions, ported verbatim from the legacy web schema engine:
 ///   * gap days   → `parseDateMillis` noon-anchors a date-only PREFIX to
 ///                  `T12:00:00.000Z`, then `Math.round` the day diff.
 ///   * week index → `getMesocycleWeekIndex` uses `new Date()` (UTC midnight),
@@ -109,7 +109,7 @@ struct ResolvedMesocycleWeek: Equatable, Sendable {
 }
 
 enum MesocycleWeekResolver {
-    /// DEFAULT_MESOCYCLE_PLAN weeks (src/data/defaults.ts:114-126).
+    /// DEFAULT_MESOCYCLE_PLAN weeks (retired-web-reference).
     static func defaultWeeks() -> [ResolvedMesocycleWeek] {
         [
             ResolvedMesocycleWeek(phase: .base, volumeMultiplier: 0.9, intensityBias: "normal"),

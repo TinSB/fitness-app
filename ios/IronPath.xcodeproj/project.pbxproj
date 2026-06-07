@@ -18,16 +18,12 @@
 		81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */; };
 		81ACFD532FC95B10000989A7 /* FocusSessionCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */; };
 		81ACFD552FC95B20000989A7 /* FocusSavedSessionPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */; };
-		C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */; };
-		CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */; };
-		CC00000000000000000000D2 /* IronPathLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000000D1 /* IronPathLocalSnapshot */; };
 		AA00000000000000000000E2 /* IronPathApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* IronPathApp.swift */; };
 		AA00000000000000000000E4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E3 /* ContentView.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
 		AA0000000000000000000111 /* IronPathDomain in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000101 /* IronPathDomain */; };
 		AA0000000000000000000112 /* IronPathDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000102 /* IronPathDataHealth */; };
 		AA0000000000000000000113 /* IronPathPersistence in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000103 /* IronPathPersistence */; };
-		AA0000000000000000000114 /* IronPathCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000104 /* IronPathCloudSync */; };
 		AA0000000000000000000115 /* IronPathHealthKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000105 /* IronPathHealthKit */; };
 		AA0000000000000000000116 /* IronPathBackup in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000106 /* IronPathBackup */; };
 		AA0000000000000000000117 /* IronPathL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* IronPathL10n */; };
@@ -39,52 +35,29 @@
 		B500000000000000000000E2 /* ProfileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000E1 /* ProfileRootView.swift */; };
 		B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */; };
 		B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */; };
-		DD00000000000000000000D2 /* IronPathNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000D1 /* IronPathNotifications */; };
+		C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */; };
+		CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */; };
+		CC00000000000000000000D2 /* IronPathLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000000D1 /* IronPathLocalSnapshot */; };
 		DD00000000000000000000A2 /* RestReminderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000A1 /* RestReminderModel.swift */; };
 		DD00000000000000000000B2 /* RestReminderSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000B1 /* RestReminderSection.swift */; };
-		EE00000000000000000000D2 /* IronPathWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D1 /* IronPathWidgetShared */; };
-		EE00000000000000000000D4 /* IronPathWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D3 /* IronPathWidgetShared */; };
+		DD00000000000000000000D2 /* IronPathNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000D1 /* IronPathNotifications */; };
 		EE00000000000000000000A2 /* WidgetSnapshotWriterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */; };
 		EE00000000000000000000A4 /* IronPathWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* IronPathWidgetBundle.swift */; };
 		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
 		EE00000000000000000000B3 /* IronPathWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* IronPathWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EE00000000000000000000D2 /* IronPathWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D1 /* IronPathWidgetShared */; };
+		EE00000000000000000000D4 /* IronPathWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D3 /* IronPathWidgetShared */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXFileReference section */
-		81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreviewData.swift; sourceTree = "<group>"; };
-		81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeExerciseCard.swift; sourceTree = "<group>"; };
-		81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDecisionSummaryView.swift; sourceTree = "<group>"; };
-		81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeShellView.swift; sourceTree = "<group>"; };
-		81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeMvpState.swift; sourceTree = "<group>"; };
-		81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeStatusSurfaceView.swift; sourceTree = "<group>"; };
-		81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionProgressView.swift; sourceTree = "<group>"; };
-		81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSetChecklistView.swift; sourceTree = "<group>"; };
-		81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCompletionView.swift; sourceTree = "<group>"; };
-		81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionPreviewView.swift; sourceTree = "<group>"; };
-		C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionHistoryView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionDetailView.swift; sourceTree = "<group>"; };
-		AA00000000000000000000B2 /* IronPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA00000000000000000000E1 /* IronPathApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronPathApp.swift; sourceTree = "<group>"; };
-		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B500000000000000000000A1 /* TodayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000B1 /* TrainingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000C1 /* HistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000D1 /* PlanRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000E1 /* ProfileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportModel.swift; sourceTree = "<group>"; };
-		B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportSection.swift; sourceTree = "<group>"; };
-		B500000000000000000000F5 /* IronPath.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IronPath.entitlements; sourceTree = "<group>"; };
-		DD00000000000000000000A1 /* RestReminderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderModel.swift; sourceTree = "<group>"; };
-		DD00000000000000000000B1 /* RestReminderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderSection.swift; sourceTree = "<group>"; };
-		EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriterModel.swift; sourceTree = "<group>"; };
-		EE00000000000000000000A3 /* IronPathWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronPathWidgetBundle.swift; sourceTree = "<group>"; };
-		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
-		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		EE00000000000000000000A8 /* IronPathWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IronPathWidget.entitlements; sourceTree = "<group>"; };
-		EE00000000000000000000B2 /* IronPathWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = IronPathWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
+/* Begin PBXContainerItemProxy section */
+		EE00000000000000000000E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000000A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE00000000000000000000B1;
+			remoteInfo = IronPathWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		EE00000000000000000000D8 /* Embed App Extensions */ = {
@@ -100,23 +73,41 @@
 		};
 /* End PBXCopyFilesBuildPhase section */
 
-/* Begin PBXContainerItemProxy section */
-		EE00000000000000000000E2 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AA00000000000000000000A1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EE00000000000000000000B1;
-			remoteInfo = IronPathWidgetExtension;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		EE00000000000000000000E1 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EE00000000000000000000B1 /* IronPathWidgetExtension */;
-			targetProxy = EE00000000000000000000E2 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
+/* Begin PBXFileReference section */
+		81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreviewData.swift; sourceTree = "<group>"; };
+		81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeExerciseCard.swift; sourceTree = "<group>"; };
+		81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDecisionSummaryView.swift; sourceTree = "<group>"; };
+		81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeShellView.swift; sourceTree = "<group>"; };
+		81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeMvpState.swift; sourceTree = "<group>"; };
+		81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeStatusSurfaceView.swift; sourceTree = "<group>"; };
+		81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionProgressView.swift; sourceTree = "<group>"; };
+		81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSetChecklistView.swift; sourceTree = "<group>"; };
+		81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCompletionView.swift; sourceTree = "<group>"; };
+		81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionPreviewView.swift; sourceTree = "<group>"; };
+		AA00000000000000000000B2 /* IronPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IronPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000000E1 /* IronPathApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronPathApp.swift; sourceTree = "<group>"; };
+		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B500000000000000000000A1 /* TodayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000B1 /* TrainingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000C1 /* HistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000D1 /* PlanRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000E1 /* ProfileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportModel.swift; sourceTree = "<group>"; };
+		B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportSection.swift; sourceTree = "<group>"; };
+		B500000000000000000000F5 /* IronPath.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IronPath.entitlements; sourceTree = "<group>"; };
+		C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionHistoryView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionDetailView.swift; sourceTree = "<group>"; };
+		DD00000000000000000000A1 /* RestReminderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderModel.swift; sourceTree = "<group>"; };
+		DD00000000000000000000B1 /* RestReminderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderSection.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriterModel.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A3 /* IronPathWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IronPathWidgetBundle.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		EE00000000000000000000A8 /* IronPathWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IronPathWidget.entitlements; sourceTree = "<group>"; };
+		EE00000000000000000000B2 /* IronPathWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = IronPathWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AA00000000000000000000D2 /* Frameworks */ = {
@@ -127,7 +118,6 @@
 				81ACFD492FC935D0000989A7 /* IronPathTrainingDecision in Frameworks */,
 				AA0000000000000000000112 /* IronPathDataHealth in Frameworks */,
 				AA0000000000000000000113 /* IronPathPersistence in Frameworks */,
-				AA0000000000000000000114 /* IronPathCloudSync in Frameworks */,
 				AA0000000000000000000115 /* IronPathHealthKit in Frameworks */,
 				AA0000000000000000000116 /* IronPathBackup in Frameworks */,
 				AA0000000000000000000117 /* IronPathL10n in Frameworks */,
@@ -234,7 +224,6 @@
 				AA0000000000000000000101 /* IronPathDomain */,
 				AA0000000000000000000102 /* IronPathDataHealth */,
 				AA0000000000000000000103 /* IronPathPersistence */,
-				AA0000000000000000000104 /* IronPathCloudSync */,
 				AA0000000000000000000105 /* IronPathHealthKit */,
 				AA0000000000000000000106 /* IronPathBackup */,
 				AA0000000000000000000107 /* IronPathL10n */,
@@ -296,7 +285,6 @@
 				AA00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathDomain" */,
 				AA00000000000000000000F2 /* XCLocalSwiftPackageReference "packages/IronPathDataHealth" */,
 				AA00000000000000000000F3 /* XCLocalSwiftPackageReference "packages/IronPathPersistence" */,
-				AA00000000000000000000F4 /* XCLocalSwiftPackageReference "packages/IronPathCloudSync" */,
 				AA00000000000000000000F5 /* XCLocalSwiftPackageReference "packages/IronPathHealthKit" */,
 				AA00000000000000000000F6 /* XCLocalSwiftPackageReference "packages/IronPathBackup" */,
 				AA00000000000000000000F7 /* XCLocalSwiftPackageReference "packages/IronPathL10n" */,
@@ -376,6 +364,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EE00000000000000000000E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE00000000000000000000B1 /* IronPathWidgetExtension */;
+			targetProxy = EE00000000000000000000E2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AA00000000000000000000C3 /* Debug */ = {
@@ -507,6 +503,7 @@
 				CODE_SIGN_ENTITLEMENTS = IronPath/IronPath.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = IronPath/Info.plist;
@@ -534,6 +531,7 @@
 				CODE_SIGN_ENTITLEMENTS = IronPath/IronPath.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = IronPath/Info.plist;
@@ -559,6 +557,7 @@
 				CODE_SIGN_ENTITLEMENTS = IronPathWidget/IronPathWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = IronPathWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -571,11 +570,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ironpath.app.ios.IronPathWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
@@ -585,6 +584,7 @@
 				CODE_SIGN_ENTITLEMENTS = IronPathWidget/IronPathWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = IronPathWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -597,10 +597,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ironpath.app.ios.IronPathWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
-				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
@@ -641,10 +641,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathTrainingDecision;
 		};
-		CC00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathLocalSnapshot" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = packages/IronPathLocalSnapshot;
-		};
 		AA00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathDomain" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathDomain;
@@ -656,10 +652,6 @@
 		AA00000000000000000000F3 /* XCLocalSwiftPackageReference "packages/IronPathPersistence" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathPersistence;
-		};
-		AA00000000000000000000F4 /* XCLocalSwiftPackageReference "packages/IronPathCloudSync" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = packages/IronPathCloudSync;
 		};
 		AA00000000000000000000F5 /* XCLocalSwiftPackageReference "packages/IronPathHealthKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -677,7 +669,11 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathUIKit;
 		};
-DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotifications" */ = {
+		CC00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathLocalSnapshot" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/IronPathLocalSnapshot;
+		};
+		DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotifications" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathNotifications;
 		};
@@ -685,16 +681,12 @@ DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotif
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/IronPathWidgetShared;
 		};
-		/* End XCLocalSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		81ACFD482FC935D0000989A7 /* IronPathTrainingDecision */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathTrainingDecision;
-		};
-		CC00000000000000000000D1 /* IronPathLocalSnapshot */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = IronPathLocalSnapshot;
 		};
 		AA0000000000000000000101 /* IronPathDomain */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -707,10 +699,6 @@ DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotif
 		AA0000000000000000000103 /* IronPathPersistence */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathPersistence;
-		};
-		AA0000000000000000000104 /* IronPathCloudSync */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = IronPathCloudSync;
 		};
 		AA0000000000000000000105 /* IronPathHealthKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -728,7 +716,11 @@ DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/IronPathNotif
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathUIKit;
 		};
-DD00000000000000000000D1 /* IronPathNotifications */ = {
+		CC00000000000000000000D1 /* IronPathLocalSnapshot */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IronPathLocalSnapshot;
+		};
+		DD00000000000000000000D1 /* IronPathNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathNotifications;
 		};
@@ -740,7 +732,7 @@ DD00000000000000000000D1 /* IronPathNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronPathWidgetShared;
 		};
-		/* End XCSwiftPackageProductDependency section */
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA00000000000000000000A1 /* Project object */;
 }

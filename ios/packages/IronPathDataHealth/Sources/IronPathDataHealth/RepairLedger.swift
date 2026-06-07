@@ -1,6 +1,6 @@
 // RepairLedger — iOS-3A Data Health Runtime Foundation V1.
 //
-// Pure-value port of `src/dataHealth/appDataRepairLedger.ts`. Provides
+// Pure-value port of `retired web reference`. Provides
 // read/write/append for the `dataHealthRepairLedger` array that lives
 // at `appData.settings.dataHealthRepairLedger`, plus the idempotency
 // check and 24-hour summary helper.
@@ -39,7 +39,7 @@ extension DataHealthRepairLedgerEntry {
     }
 
     /// Returns nil if any required field is missing or the wrong shape.
-    /// Unknown trigger / status values yield nil — matches the TS
+    /// Unknown trigger / status values yield nil — matches the legacy web schema
     /// expectation that ledger rows be exactly schema-compliant.
     public init?(decoding value: JSONValue) {
         guard case .object(let obj) = value else { return nil }
@@ -92,7 +92,7 @@ fileprivate extension OrderedJSONObject {
 // MARK: - Read / write / append
 
 /// Returns the parsed ledger entries. Rows that fail to decode are
-/// dropped silently — matches the TS contract of returning only well-
+/// dropped silently — matches the legacy web schema contract of returning only well-
 /// formed entries.
 public func readLedger(_ appData: AppData) -> [DataHealthRepairLedgerEntry] {
     guard let array = appData.settings.dataHealthRepairLedger?.arrayValue else { return [] }
@@ -200,7 +200,7 @@ public struct BuildLedgerEntryParams {
     }
 }
 
-/// Mirrors TS `buildLedgerEntry`. `ledgerId` is composed as
+/// Mirrors legacy web schema `buildLedgerEntry`. `ledgerId` is composed as
 /// `"{repairId}-{appliedAt}-{idempotencyKey[0..<8]}"`.
 public func buildLedgerEntry(_ p: BuildLedgerEntryParams) -> DataHealthRepairLedgerEntry {
     let prefix = String(p.idempotencyKey.prefix(8))

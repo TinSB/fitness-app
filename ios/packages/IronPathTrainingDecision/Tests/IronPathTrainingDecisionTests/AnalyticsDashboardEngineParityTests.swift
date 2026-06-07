@@ -7,7 +7,7 @@
 // field-by-field — MuscleVolumeDashboardRow[] / ExerciseTrendPoint[] + trendStatus / PrItem[] /
 // the joined weekly-report string / AdherenceReport — with EXACT Double `==`.
 //
-// The goldens are GENERATED from the REAL TS analytics.ts (scripts/generate-parity-goldens.mjs),
+// The goldens are GENERATED from the retired legacy analytics.ts (frozen legacy fixture generator),
 // never hand-edited (§22). PURE / read-only — buildWeeklyReport injects asOfDate (zero `: Date`);
 // no IO beyond reading the committed golden.
 
@@ -24,7 +24,7 @@ final class AnalyticsDashboardEngineParityTests: XCTestCase {
     }
 
     private func goldenRoot(_ id: String) throws -> OrderedJSONObject {
-        let url = Self.repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        let url = Self.repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "missing golden \(id)")
         return try JSONValue(decoding: try Data(contentsOf: url)).requireObject(id)
     }
@@ -240,7 +240,7 @@ final class AnalyticsDashboardEngineParityTests: XCTestCase {
     /// JS-stable insertion order is pinned through the slice(0,5) cut. `stableSorted`'s
     /// original-index tiebreak makes that insertion-order intent explicit; Swift's
     /// `sort(by:)` is itself contractually stable since Swift 5.8 (SE-0372), so a plain
-    /// `.sorted` would also hold the order. Generated from the REAL TS engine, never
+    /// `.sorted` would also hold the order. Generated from the retired legacy engine, never
     /// hand-edited (§22).
     func testBuildAdherenceReportTieCaseParity() throws {
         let root = try goldenRoot("analytics/adherence-report-tie-cases-v1")

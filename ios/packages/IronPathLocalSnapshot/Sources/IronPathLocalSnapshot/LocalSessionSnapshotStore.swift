@@ -12,7 +12,7 @@
 //     focus-session-latest.json.bak      ← backup taken BEFORE each overwrite
 //
 // Hard local-only boundary (enforced by iosLocalJsonPersistenceStaticGuards):
-//   • NO iCloud / CloudKit / ubiquity container, NO IronPathCloudSync.
+//   • NO iCloud / CloudKit / ubiquity container, NO active cloud-sync package.
 //   • NO HealthKit, NO Supabase, NO URLSession / network, NO WebKit.
 //   • NO UserDefaults, NO SQLite / CoreData / SwiftData.
 //   • NO IronPathDomain AppData read/write — this never touches the canonical

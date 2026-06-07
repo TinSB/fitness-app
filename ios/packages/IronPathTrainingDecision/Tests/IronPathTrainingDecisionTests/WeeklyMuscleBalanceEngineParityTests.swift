@@ -9,8 +9,8 @@
 // balanceScore, headline). The rounded `effectiveSets` / `share` / `totalEffectiveSets`
 // Doubles are compared with EXACT `==`.
 //
-// The golden is GENERATED from the REAL TS weeklyMuscleBalanceEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy weeklyMuscleBalanceEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (the injected `options.nowIso` is the only clock), no IO beyond reading the
 // committed golden.
 
@@ -32,7 +32,7 @@ final class WeeklyMuscleBalanceEngineParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/weekly-muscle-balance/balance-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/weekly-muscle-balance/balance-cases-v1.json", isDirectory: false
         )
     }
 
@@ -105,7 +105,7 @@ final class WeeklyMuscleBalanceEngineParityTests: XCTestCase {
 
     private static var boundaryGoldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/weekly-muscle-balance/balance-boundary-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/weekly-muscle-balance/balance-boundary-cases-v1.json", isDirectory: false
         )
     }
 

@@ -2,7 +2,7 @@
 //
 // Asserts that unknown / future JSON keys survive decode + canonical
 // re-emit. iOS-2A plan §7 documents the open-bag contract; Agent 1
-// §3 enumerates 37 documented sites where the TypeScript schema
+// §3 enumerates 37 documented sites where the legacy web implementation schema
 // marks `additionalProperties: true`. iOS-2B's AppData carrier holds
 // the entire top-level object in `root`, so every nested unknown key
 // (regardless of which schema slot it inhabits) survives by virtue
@@ -64,7 +64,7 @@ final class AppDataOpenBagPreservationTests: XCTestCase {
         // The unknown key chain must survive the full round-trip.
         XCTAssertTrue(canonical.contains("iosOpenBagField"))
         XCTAssertTrue(canonical.contains("iosOnlyHint"))
-        XCTAssertTrue(canonical.contains("preserve me across PWA<->iOS round trip"))
+        XCTAssertTrue(canonical.contains("preserve me across legacy web app<->iOS round trip"))
         XCTAssertTrue(canonical.contains("knownField"))
     }
 

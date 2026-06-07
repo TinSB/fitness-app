@@ -490,7 +490,7 @@ struct TodayRootView: View {
     @State private var showTrainingEntry = false
 
     /// CC-5: the honest result of a gated dismiss write, surfaced as a confirmation/error notice
-    /// (the toast mirror of the PWA `showAppToast`). Non-nil drives the notice alert below.
+    /// (the toast mirror of the legacy web app `showAppToast`). Non-nil drives the notice alert below.
     @State private var dismissNoticeText: String?
 
     // W-1: publishes a small DERIVED read-only readiness snapshot to the App Group
@@ -941,7 +941,7 @@ struct TodayRootView: View {
     // MARK: - CC-4 教练建议 (read-only coach-action surface)
 
     /// The READ-ONLY 教练建议 block. Renders the `CoachActionEngine.buildCoachActions` output the pure
-    /// `resolveCoachActionState` produced from the DataHealth clean view (§10/§11), mirrored from the PWA
+    /// `resolveCoachActionState` produced from the DataHealth clean view (§10/§11), mirrored from the legacy web app
     /// CoachActionCard / CoachActionList. On `.empty` / `.unavailable` it renders nothing — the readiness
     /// `content` above already shows the honest no-data / degrade state for the same canonical store.
     @ViewBuilder
@@ -983,7 +983,7 @@ struct TodayRootView: View {
         }
     }
 
-    /// A single coach-action card mirroring the PWA `CoachActionCard`: title + source, the
+    /// A single coach-action card mirroring the legacy web app `CoachActionCard`: title + source, the
     /// priority/status badges, the description, the 需要确认/只查看 (+ 可撤销) line, an optional disabled
     /// reason, the read-only primary entry label, and the "暂不处理" dismiss button — CC-5 wires it to
     /// the SAME sanctioned gated dismiss write, surfacing the honest result via `dismissNoticeText`.
@@ -1045,7 +1045,7 @@ struct TodayRootView: View {
         )
     }
 
-    /// A small read-only pill tag (mirrors the PWA StatusBadge; the read-only surface does not color
+    /// A small read-only pill tag (mirrors the legacy web app StatusBadge; the read-only surface does not color
     /// by tone — the label text carries the meaning).
     private func coachTag(_ text: String) -> some View {
         Text(text)

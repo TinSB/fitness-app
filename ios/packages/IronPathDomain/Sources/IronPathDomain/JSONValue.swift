@@ -11,16 +11,16 @@
 //      `JSONSerialization` and recursively maps each Foundation type
 //      to the corresponding `JSONValue` case.
 //   2. `JSONValue.canonicalJSONData()` re-emits with lexicographically
-//      sorted keys, no whitespace, matching the TypeScript
+//      sorted keys, no whitespace, matching the legacy web implementation
 //      `stableStringify` rules at
-//      `src/cloudProduction/accountBoundaryLocalInventory.ts:116`.
+//      `retired web reference`.
 //   3. Decode order is NOT preserved on the object case — keys are
 //      stored in alphabetic order. The parity tests compare via
 //      canonical emit on both sides, so order is irrelevant.
 //
 // Number representation:
 //   `NumberRepr.integer(Int64)` for whole numbers that fit Int64;
-//   `NumberRepr.decimal(Decimal)` for everything else. Matches the TS
+//   `NumberRepr.decimal(Decimal)` for everything else. Matches the legacy web schema
 //   `JSON.stringify` collapse where `42.0` re-emits as `"42"`. The
 //   V2 escalation to `originalText(String)` is gated on a failing
 //   `AppDataSnapshotHashParityTests` row whose diff is purely number
@@ -36,10 +36,10 @@ public enum JSONValueError: Error, Sendable, Equatable {
 }
 
 public enum NumberRepr: Equatable, Hashable, Sendable {
-    /// Integer-valued numbers, matches TS `JSON.stringify(42)` → `"42"`.
+    /// Integer-valued numbers, matches legacy web schema `JSON.stringify(42)` → `"42"`.
     case integer(Int64)
     /// Non-integer numbers parsed from JSON. V1 default — matches the
-    /// IEEE-754 Double-text round-trip semantics of TS `JSON.stringify`,
+    /// IEEE-754 Double-text round-trip semantics of legacy web schema `JSON.stringify`,
     /// avoiding `Decimal`'s expansion of `72.6` → `72.59999999999999`.
     case double(Double)
     /// Hand-built high-precision numbers (e.g. tests asserting that
@@ -115,8 +115,8 @@ public struct OrderedJSONObject: Equatable, Hashable, Sendable {
     /// Returns a new `OrderedJSONObject` whose entries are sorted
     /// using the canonical-emit key order (case-insensitive primary,
     /// localeCompare tertiary tie-break — lower-before-upper). Mirrors
-    /// TypeScript's `localeCompare` default-locale behaviour at
-    /// `src/cloudProduction/accountBoundaryLocalInventory.ts:116`.
+    /// legacy web implementation's `localeCompare` default-locale behaviour at
+    /// `retired web reference`.
     public func canonicalized() -> OrderedJSONObject {
         OrderedJSONObject(entries: entries.sorted {
             canonicalKeyOrder($0.key, $1.key)
@@ -124,8 +124,8 @@ public struct OrderedJSONObject: Equatable, Hashable, Sendable {
     }
 }
 
-/// Canonical-emit key comparator. TS-side `stableStringify`
-/// (`src/cloudProduction/accountBoundaryLocalInventory.ts:116`) sorts keys by
+/// Canonical-emit key comparator. legacy web schema-side `stableStringify`
+/// (`retired web reference`) sorts keys by
 /// `String.prototype.localeCompare()`, which in Node default-locale performs a
 /// case-INSENSITIVE primary comparison (letters/digits in natural order — so it
 /// sorts `"prescription"` before `"prIndependent"`, which Swift's raw `String.<`
@@ -137,8 +137,8 @@ public struct OrderedJSONObject: Equatable, Hashable, Sendable {
 /// letter carries the HIGHER code point, so `>` IS lower-before-upper.
 ///
 /// FIX-B fidelity fix: this tie-break previously used raw `<` (upper-before-lower,
-/// the EXACT inverse of TS `localeCompare`). No fixture carried two sibling keys
-/// equal when lowercased, so `canonicalJSONData()` byte-diverged from the TS
+/// the EXACT inverse of legacy web schema `localeCompare`). No fixture carried two sibling keys
+/// equal when lowercased, so `canonicalJSONData()` byte-diverged from the legacy web schema
 /// canonical form ONLY on such keys — a latent cross-end parity debt (Swift stayed
 /// internally consistent, so round-trip/snapshot-hash were green). The golden
 /// `app-data/canonical-keyorder-fold-v1` (generated from the REAL canonical-
@@ -195,7 +195,7 @@ extension JSONValue {
             }
             // Heuristic: if the number is integral and fits Int64,
             // use the integer case; otherwise fall back to Decimal.
-            // This matches the TS `JSON.stringify` behaviour of
+            // This matches the legacy web schema `JSON.stringify` behaviour of
             // collapsing whole-number floats to integer text.
             if "qQilsLISCBcijklmnopuv".contains(cType) {
                 self = .number(.integer(n.int64Value))
@@ -213,7 +213,7 @@ extension JSONValue {
                 return
             }
             // JSON-parsed floats land in `.double` so canonical emit
-            // matches TS `JSON.stringify` (`72.6` → `"72.6"`, not the
+            // matches legacy web schema `JSON.stringify` (`72.6` → `"72.6"`, not the
             // Decimal binary expansion `72.59999999999999`).
             self = .number(.double(d))
             return
@@ -306,7 +306,7 @@ extension JSONValue {
 }
 
 /// Lexically escapes a JSON string per RFC-8259, matching the
-/// TypeScript `JSON.stringify` behaviour for the subset of characters
+/// legacy web implementation `JSON.stringify` behaviour for the subset of characters
 /// IronPath actually uses (no control characters expected; UTF-8 is
 /// emitted verbatim).
 private func canonicalEscapedString(_ s: String) -> String {
@@ -335,7 +335,7 @@ private func canonicalEscapedString(_ s: String) -> String {
 }
 
 /// Emits a `Double` in the shortest textual form that round-trips
-/// through TypeScript's `JSON.stringify`. Swift's `String(Double)`
+/// through legacy web implementation's `JSON.stringify`. Swift's `String(Double)`
 /// uses the IEEE-754 short-round-trip algorithm, matching Node /
 /// V8's `Number.prototype.toString` output exactly.
 private func canonicalDoubleString(_ d: Double) -> String {
@@ -343,7 +343,7 @@ private func canonicalDoubleString(_ d: Double) -> String {
     if d.isFinite, d.truncatingRemainder(dividingBy: 1) == 0,
        d >= Double(Int64.min), d <= Double(Int64.max) {
         // Defensive: integer-valued doubles collapse to integer text,
-        // matching TS's collapse `42.0 → "42"`.
+        // matching legacy web schema's collapse `42.0 → "42"`.
         return String(Int64(d))
     }
     return String(d)

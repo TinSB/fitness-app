@@ -1,19 +1,19 @@
 // TodayStateEngine — SC-B scheduling-track self-contained today-state port.
 //
-// Faithful line-by-line Swift port of the ENTIRE `src/engines/todayStateEngine.ts`:
+// Faithful line-by-line Swift port of the ENTIRE `retired web reference`:
 // `buildTodayTrainingState` (ts:40) + its private helpers `sessionDateKey` (ts:35)
-// and `recentTimestamp` (ts:37). The TS engine imports ONLY the
+// and `recentTimestamp` (ts:37). The legacy web schema engine imports ONLY the
 // `ProgramTemplate`/`TrainingSession`/`TrainingTemplate` types + `toLocalDateKey`
 // (the SC-B `TrainingCalendarEngine.toLocalDateKey`, ported in THIS slice) — it is
 // genuinely self-contained: no other engine, no data table.
 //
 // PURE / READ-ONLY: classifies the day as not_started / in_progress / completed from
 // an active session + completed-session history + an injected `selectedDate` /
-// `currentLocalDate`. Zero `: Date` — the TS `new Date().toISOString()` final
+// `currentLocalDate`. Zero `: Date` — the legacy web schema `new Date().toISOString()` final
 // fallback (todayStateEngine.ts:47) is the ONE wall-clock seam; this port threads it
 // as an INJECTED `nowIso` parameter (the AN-1 injected-clock contract), and every
 // parity fixture supplies `selectedDate` or `currentLocalDate` so the `||` chain
-// short-circuits before `nowIso` (the TS `new Date()` fallback cannot be pinned
+// short-circuits before `nowIso` (the legacy web schema `new Date()` fallback cannot be pinned
 // deterministically — exactly why the EngineUtils `todayKey`/`monthKey` wall-clock
 // tools were left injected, not ported). The destructure at todayStateEngine.ts:40-46
 // drops `templates` / `programTemplate` (unused in the body) — so this port omits them
@@ -24,7 +24,7 @@ import IronPathDomain
 
 public enum TodayStateEngine {
 
-    /// `TodayTrainingState` (todayStateEngine.ts:4-23) — the TS discriminated union, modeled as
+    /// `TodayTrainingState` (todayStateEngine.ts:4-23) — the legacy web schema discriminated union, modeled as
     /// one struct whose per-status fields are Optional. The canonical golden drops the fields a
     /// given `status` does not carry (e.g. `not_started` omits `activeSessionId`), which decode
     /// to nil — matching what the corresponding branch leaves nil here.

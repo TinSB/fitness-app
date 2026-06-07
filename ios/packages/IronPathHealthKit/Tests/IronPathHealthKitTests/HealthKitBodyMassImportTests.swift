@@ -42,7 +42,7 @@ final class HealthKitBodyMassImportTests: XCTestCase {
         let r1 = BodyMassReading(startDate: epoch0, kilograms: 70)
         let a = HealthKitBodyMassMapper.sample(from: r1, importedAt: epoch0)
         // Same reading → same id, even with a DIFFERENT importedAt (the dedup key
-        // is the reading content, not the import time — matches the TS key).
+        // is the reading content, not the import time — matches the legacy web schema key).
         let b = HealthKitBodyMassMapper.sample(from: r1, importedAt: later)
         XCTAssertEqual(a.id, b.id, "same reading must hash to the same content id")
         // A genuinely different reading → different id.

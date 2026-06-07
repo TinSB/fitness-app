@@ -1,6 +1,6 @@
 // ScreeningIssueScoreRuntimeGuardRepair — iOS-3C runtime_guard recipe.
 //
-// Swift port of `src/dataHealth/repairs/screeningIssueScoreRuntimeGuardV1.ts`.
+// Swift port of `retired web reference`.
 // Runtime guard only — `apply` returns `.skipped` with the AppData
 // untouched. The actual cap protection lives upstream in
 // `CleanAppDataView.cleanedScreening`.

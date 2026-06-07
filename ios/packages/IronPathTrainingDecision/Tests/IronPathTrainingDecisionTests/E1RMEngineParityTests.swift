@@ -8,7 +8,7 @@
 //   - estimateOneRepMaxForExercise(history, exerciseId)== golden.estimate (or nil)
 //   - getExerciseRecordPoolId(probe.exercise)          == golden.poolIdProbes[].poolId
 //   - getE1RMConfidence(sourceSet, recentSets)         == golden.confidenceProbes[].confidence
-// The goldens are GENERATED from the REAL TS e1rmEngine (scripts/generate-parity-goldens.mjs),
+// The goldens are GENERATED from the retired legacy e1rmEngine (frozen legacy fixture generator),
 // never hand-edited (§22). This is the 17e-1 slice of the progression-cluster
 // parity (17e-0 was decode-only); it does NOT touch the decision output / existing
 // decision goldens (that wiring is 17e-5). Zero `: Date`, no IO beyond reading the
@@ -43,7 +43,7 @@ final class E1RMEngineParityTests: XCTestCase {
 
         static func goldenURL(_ shortId: String) -> URL {
             repoRoot.appendingPathComponent(
-                "tests/fixtures/parity/golden/e1rm-engine/\(shortId).json", isDirectory: false
+                "ios/ParityFixtures/parity/golden/e1rm-engine/\(shortId).json", isDirectory: false
             )
         }
 

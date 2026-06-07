@@ -2,7 +2,7 @@
 // sessionQuality-consumed subset).
 //
 // Faithful line-by-line Swift port of the TWO pure functions in
-// `src/engines/sessionDetailSummaryEngine.ts` that `sessionQualityEngine.ts`
+// `retired web reference` that `sessionQualityEngine.ts`
 // (AN-4) CALLs:
 //   - groupSessionSetsByType   (sessionDetailSummaryEngine.ts:154)
 //   - buildWorkingOnlySession  (sessionDetailSummaryEngine.ts:218)
@@ -66,7 +66,7 @@ public enum SessionDetailSummaryEngine {
     }
 
     /// `GroupedSessionSets` (sessionDetailSummaryEngine.ts:29). `supportSets` are the
-    /// raw `session.supportExerciseLogs` objects (the TS `SupportExerciseLog[]` is a
+    /// raw `session.supportExerciseLogs` objects (the legacy web schema `SupportExerciseLog[]` is a
     /// plain pass-through here — the consumer reads `plannedSets`/`completedSets` off
     /// each), kept as raw JSON objects rather than a typed model.
     public struct GroupedSessionSets: Equatable, Sendable {
@@ -172,11 +172,11 @@ public enum SessionDetailSummaryEngine {
         return (.uncategorized, false)
     }
 
-    // MARK: - open-bag mutation helpers (TS object-spread `{ ...set, type }`)
+    // MARK: - open-bag mutation helpers (legacy web schema object-spread `{ ...set, type }`)
 
     /// Returns `obj` with `key` set to `value` (replace-or-append). The
     /// canonical-emit / read-by-key consumers are order-independent, so appending
-    /// is faithful to the TS spread (which also overwrites the key in place).
+    /// is faithful to the legacy web schema spread (which also overwrites the key in place).
     private static func setting(_ obj: OrderedJSONObject, _ key: String, _ value: JSONValue) -> OrderedJSONObject {
         var entries = obj.entries.filter { $0.key != key }
         entries.append(.init(key: key, value: value))
@@ -184,7 +184,7 @@ public enum SessionDetailSummaryEngine {
     }
 
     /// `{ ...set, type }` — reconstructs the set with its open-bag `type` replaced.
-    /// Operating on the full encoded JSON shape mirrors the TS object spread exactly.
+    /// Operating on the full encoded JSON shape mirrors the legacy web schema object spread exactly.
     private static func withType(_ set: TrainingSetLog, _ type: String) -> TrainingSetLog {
         guard case .object(let obj) = set.encoded() else { return set }
         let updated = setting(obj, "type", .string(type))
@@ -300,7 +300,7 @@ public enum SessionDetailSummaryEngine {
 
     /// `{ ...exercise, sets: <newSets> }` — copies every typed field + open bag, replacing
     /// the typed `sets`. A number-form `sets` (lives in `_unknown`) is dropped, matching
-    /// the TS spread overwriting `sets` with the working array.
+    /// the legacy web schema spread overwriting `sets` with the working array.
     private static func reconstructExercise(_ exercise: ExercisePrescription, sets newSets: [TrainingSetLog]) -> ExercisePrescription {
         ExercisePrescription(
             id: exercise.id,

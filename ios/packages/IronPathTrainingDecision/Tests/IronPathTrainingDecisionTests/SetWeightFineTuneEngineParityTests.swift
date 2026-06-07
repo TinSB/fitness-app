@@ -6,11 +6,11 @@
 // assert the produced `SetWeightFineTuneResult` equals the golden value item-by-item
 // (suggestedWeightKg + basis.samplesUsed/windowWeeks/currentE1rmKg/projectedE1rmKg/
 // weeklySlopeKg/fallbackReason). Equality is EXACT Double `==`: every golden number is a
-// JSON round-trip of the IEEE-754 double the TS engine produced, and the Swift port runs
+// JSON round-trip of the IEEE-754 double the legacy web schema engine produced, and the Swift port runs
 // the identical elementary ops, so the bits match (e.g. currentE1rmKg 74.39999999999999).
 //
-// The goldens are GENERATED from the REAL TS setWeightFineTuneEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). This is the 17e-4 slice
+// The goldens are GENERATED from the retired legacy setWeightFineTuneEngine
+// (frozen legacy fixture generator), never hand-edited (§22). This is the 17e-4 slice
 // of the fine-tune-cluster parity; it does NOT touch the decision output / existing
 // decision goldens (that wiring is 17e-5). Zero `: Date`, no IO beyond reading the
 // committed golden files.
@@ -43,7 +43,7 @@ final class SetWeightFineTuneEngineParityTests: XCTestCase {
 
         static func goldenURL(_ shortId: String) -> URL {
             repoRoot.appendingPathComponent(
-                "tests/fixtures/parity/golden/set-weight-fine-tune/\(shortId).json", isDirectory: false
+                "ios/ParityFixtures/parity/golden/set-weight-fine-tune/\(shortId).json", isDirectory: false
             )
         }
 

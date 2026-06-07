@@ -8,8 +8,8 @@
 // String / [String] / enum-string, so equality is plain struct `==` — the float scoring is
 // internal to the engine and never surfaces in the golden.
 //
-// The golden is GENERATED from the REAL TS exerciseRecoveryConflictEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy exerciseRecoveryConflictEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date`, no IO beyond reading the committed golden. The real-id cases (bench-press / squat /
 // leg-press) drive the EXERCISE_KNOWLEDGE_OVERRIDES merge end-to-end, reconciling the reused
 // SR-3 / SR-2 / SC-0 override slices through the engine.
@@ -32,7 +32,7 @@ final class ExerciseRecoveryConflictEngineParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/exercise-recovery-conflict/conflict-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/exercise-recovery-conflict/conflict-cases-v1.json", isDirectory: false
         )
     }
 

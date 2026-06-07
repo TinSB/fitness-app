@@ -8,8 +8,8 @@
 // (knowledgeOverrideIds / withSecondaryMuscles / withMuscleContribution) all equal the
 // ported entry count, so no id or field can silently drop in transcription.
 //
-// The golden is GENERATED from the REAL TS EXERCISE_KNOWLEDGE_OVERRIDES
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — no
+// The golden is GENERATED from the retired legacy EXERCISE_KNOWLEDGE_OVERRIDES
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — no
 // clock, zero `: Date`, no IO beyond reading the committed golden.
 
 import XCTest
@@ -30,7 +30,7 @@ final class ExerciseRecoveryKnowledgeParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/exercise-recovery/knowledge-snapshot-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/exercise-recovery/knowledge-snapshot-v1.json", isDirectory: false
         )
     }
 

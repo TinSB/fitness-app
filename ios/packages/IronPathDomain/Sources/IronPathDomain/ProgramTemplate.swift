@@ -1,7 +1,7 @@
 // ProgramTemplate — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `ProgramTemplate` interface at
-// `src/models/training-model.ts:228`.
+// Mirrors the legacy web implementation `ProgramTemplate` interface at
+// `retired web reference`.
 
 import Foundation
 

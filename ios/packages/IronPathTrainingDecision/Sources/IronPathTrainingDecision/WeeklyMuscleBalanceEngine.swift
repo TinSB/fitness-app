@@ -1,7 +1,7 @@
 // WeeklyMuscleBalanceEngine — AN-1 leaf-analytics port (3/3).
 //
 // Faithful line-by-line Swift port of the PURE `computeWeeklyMuscleBalance` from
-// `src/engines/weeklyMuscleBalanceEngine.ts:56` + the shared `safeDate` /
+// `retired web reference` + the shared `safeDate` /
 // `isAnalyticsSession` / `startOfWeekUtc` / `weekKey` and `getPrimaryMuscles` /
 // `setVolume` (in `AnalyticsSupport`). **Reuses (does NOT re-port) the already-ported
 // `E1RMEngine.completedSets` / `number`** so completed-set + numeric semantics stay

@@ -1,7 +1,6 @@
 // PA-S3 — DEFAULT_SCREENING_PROFILE data port (pure data, read-only).
 //
-// Faithful 1:1 Swift transcription of `src/data/defaults.ts:47
-// DEFAULT_SCREENING_PROFILE`. Built on the PA-S1 `ScreeningProfile` Domain type;
+// Faithful 1:1 Swift transcription of `retired web reference`. Built on the PA-S1 `ScreeningProfile` Domain type;
 // `postureFlags` / `movementFlags` / `adaptiveState` are carried as raw JSONValue
 // objects exactly as the Domain type models them.
 //

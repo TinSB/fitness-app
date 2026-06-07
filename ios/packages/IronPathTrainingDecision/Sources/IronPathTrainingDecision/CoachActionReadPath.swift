@@ -4,7 +4,7 @@
 // WeeklyCoachActionEngine / CoachActionIdentityEngine / CoachActionDismissEngine were ported +
 // parity-pinned but "NOT wired into any UI"). This file adds the pure, testable orchestration
 // that turns an already-cleaned canonical view into a READ-ONLY `CoachActionSurfaceSummary` the
-// 今日 surface renders — the coach-action cards mirrored from the PWA CoachActionCard /
+// 今日 surface renders — the coach-action cards mirrored from the legacy web app CoachActionCard /
 // CoachActionList / coachActionPresenter. It does NOT write, does NOT change any engine, and
 // touches no parity golden (additive presentation/orchestration — master §19.2, the same shape
 // as `resolveNextWorkoutScheduleState` / `resolveTrainingInsightsState`).
@@ -162,8 +162,8 @@ public func resolveCoachActionState(
             // §11.2 LOCAL CIVIL DAY (the dismiss read-filter's `currentDateLocalKey`). The civil
             // `YYYY-MM-DD` is the LOCAL civil day of the ALREADY-INJECTED `now` instant under `timeZone`
             // (`.current` on the live path) — the in-package mirror of the CC-5 write-side
-            // `TodayRootView.civilDayKey` and the TS `toLocalDateKey()` (engineUtils.ts:30, the LOCAL-day
-            // `local.toISOString().slice(0,10)`) the PWA passes as `context.currentDateLocalKey`
+            // `TodayRootView.civilDayKey` and the legacy web schema `toLocalDateKey()` (engineUtils.ts:30, the LOCAL-day
+            // `local.toISOString().slice(0,10)`) the legacy web app passes as `context.currentDateLocalKey`
             // (enginePipeline.ts:103). It is derived BY TIMEZONE CONVERSION from the injected instant —
             // NOT a fresh `Date()`/clock read, and NOT `nowIso`'s UTC prefix (the CC-6 P1 bug fixed here
             // in CC-7): a UTC day key is wrong for every non-UTC user across the |UTC-offset| midnight
@@ -196,7 +196,7 @@ private func coachActionCleanDerivedAppData(_ cleanView: CleanAppDataView) -> Ap
 }
 
 /// Decode the user's training day templates out of the gated view's raw document. `templates` is
-/// not a promoted Domain field (it rides in `root`, mirroring the PWA `data.templates`), so it is
+/// not a promoted Domain field (it rides in `root`, mirroring the legacy web app `data.templates`), so it is
 /// read the same way `NextWorkoutReadPath` reads it. A missing/garbled entry is skipped (`try?`) —
 /// never crashes, never fabricates a template.
 private func decodeCoachActionTemplates(_ cleanView: CleanAppDataView) -> [TrainingTemplate] {
@@ -269,7 +269,7 @@ private func coachActionReferenceIso8601UTC(_ date: Date) -> String {
 }
 
 /// The LOCAL civil calendar day `YYYY-MM-DD` for `date` in `timeZone` — the in-package mirror of the
-/// CC-5 write-side `TodayRootView.civilDayKey` and the TS `todayKey()` / `toLocalDateKey()`
+/// CC-5 write-side `TodayRootView.civilDayKey` and the legacy web schema `todayKey()` / `toLocalDateKey()`
 /// (engineUtils.ts:30, the LOCAL-day `local.toISOString().slice(0,10)`). The read path lives in this
 /// package and cannot import the app-layer `civilDayKey`, so this is its byte-for-byte-equal twin
 /// (`.current` Gregorian calendar, take y/m/d). It is the dismiss read-filter's `currentDateLocalKey`.
@@ -290,61 +290,61 @@ func coachActionCivilDayKey(_ date: Date, timeZone: TimeZone = .current) -> Stri
 // MARK: - 教练建议 (coach action) presentation summary
 
 /// Read-only organization of the `CoachActionEngine.buildCoachActions` output into the 今日 surface's
-/// coach-action cards — a faithful Swift mirror of the PWA `coachActionPresenter` / `CoachActionList`
+/// coach-action cards — a faithful Swift mirror of the legacy web app `coachActionPresenter` / `CoachActionList`
 /// / `CoachActionCard` read paths. Pure projection — it reads the already-ported engine's output (it
 /// never recomputes or changes it) and never touches any parity golden. Adding this additive
 /// presentation type is a §19.2 extension of an active package (master §11/§18).
 ///
-/// Mirrors the PWA `buildCoachActionListViewModel(actions, { surface: 'today' })`: only `pending`
+/// Mirrors the legacy web app `buildCoachActionListViewModel(actions, { surface: 'today' })`: only `pending`
 /// actions are shown on the 今日 surface, sorted by priority DESC then title (zh-Hans-CN collation),
 /// each mapped through `buildCoachActionView`. `secondaryLabel` ("暂不处理") is the dismiss button
 /// label the 今日 surface wires to the CC-5 gated dismiss write.
 public struct CoachActionSurfaceSummary: Equatable, Sendable {
-    /// The list header title (PWA `CoachActionList` default).
+    /// The list header title (legacy web app `CoachActionList` default).
     public let title: String
-    /// The list header description (PWA `CoachActionList` default) — reiterates the read-only promise.
+    /// The list header description (legacy web app `CoachActionList` default) — reiterates the read-only promise.
     public let description: String
-    /// The honest empty-list text shown when there are no pending actions (PWA `emptyText` default).
+    /// The honest empty-list text shown when there are no pending actions (legacy web app `emptyText` default).
     public let emptyText: String
     /// The sorted, read-only projection of each pending coach action.
     public let actions: [ActionRow]
 
-    /// The read-only projection of one coach action — the fields the card renders (PWA
+    /// The read-only projection of one coach action — the fields the card renders (legacy web app
     /// `CoachActionView`, minus the click handlers / variant the read-only surface does not need).
     public struct ActionRow: Equatable, Sendable, Identifiable {
         public let id: String
         public let title: String
         public let description: String
-        /// PWA `sourceLabel` (always slate-toned in the PWA): 今日调整 / 下次训练 / 数据健康 / …
+        /// legacy web app `sourceLabel` (always slate-toned in the legacy web app): 今日调整 / 下次训练 / 数据健康 / …
         public let sourceLabel: String
-        /// PWA `priorityLabel`: 优先处理 / 重要 / 建议查看 / 可稍后看.
+        /// legacy web app `priorityLabel`: 优先处理 / 重要 / 建议查看 / 可稍后看.
         public let priorityLabel: String
-        /// PWA `statusLabel`: 待处理 / 已采用 / 已忽略 / 已过期 / 未完成.
+        /// legacy web app `statusLabel`: 待处理 / 已采用 / 已忽略 / 已过期 / 未完成.
         public let statusLabel: String
-        /// PWA card line: 需要确认 (requiresConfirmation) vs 只查看.
+        /// legacy web app card line: 需要确认 (requiresConfirmation) vs 只查看.
         public let confirmationLabel: String
-        /// PWA card line: 可撤销 when reversible, else nil (not rendered).
+        /// legacy web app card line: 可撤销 when reversible, else nil (not rendered).
         public let reversibleLabel: String?
-        /// PWA `primaryLabel` — the read-only "view" entry text (`getCoachActionPrimaryLabel`).
+        /// legacy web app `primaryLabel` — the read-only "view" entry text (`getCoachActionPrimaryLabel`).
         public let primaryLabel: String
-        /// PWA `secondaryLabel` — fixed "暂不处理" (rendered DISABLED; persistence deferred to CC-5).
+        /// legacy web app `secondaryLabel` — fixed "暂不处理" (rendered DISABLED; persistence deferred to CC-5).
         public let secondaryLabel: String
-        /// PWA `detailLabel` — fixed "查看详情".
+        /// legacy web app `detailLabel` — fixed "查看详情".
         public let detailLabel: String
-        /// PWA `disabledReason` — present only when a draft action lacks a usable target.
+        /// legacy web app `disabledReason` — present only when a draft action lacks a usable target.
         public let disabledReason: String?
     }
 
-    /// Build the summary from the engine's coach actions. Pure projection — mirrors the PWA
+    /// Build the summary from the engine's coach actions. Pure projection — mirrors the legacy web app
     /// `buildCoachActionListViewModel(actions, { surface: 'today' })` (pending-only) + `sortActionViews`.
     public init(actions: [CoachActionEngine.CoachAction]) {
         self.title = "教练建议"
         self.description = "建议只会引导你查看现有页面或生成草案，不会自动修改数据。"
         self.emptyText = "暂无需要处理的教练建议。"
 
-        // PWA `shouldShowOnSurface(action, 'today')` → status === 'pending'.
+        // legacy web app `shouldShowOnSurface(action, 'today')` → status === 'pending'.
         let pending = actions.filter { $0.status == "pending" }
-        // PWA `sortActionViews`: priorityRank DESC, then title.localeCompare(zh-Hans-CN). Build the
+        // legacy web app `sortActionViews`: priorityRank DESC, then title.localeCompare(zh-Hans-CN). Build the
         // row first so the title (already engine-cleaned + presenter-cleaned) drives the tie-break.
         let rows = pending.map { (action: $0, row: Self.makeRow($0)) }
         let sorted = Self.stableSorted(rows) { left, right in
@@ -355,7 +355,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         self.actions = sorted.map { $0.row }
     }
 
-    /// One action → its read-only row (PWA `buildCoachActionView`).
+    /// One action → its read-only row (legacy web app `buildCoachActionView`).
     static func makeRow(_ action: CoachActionEngine.CoachAction) -> ActionRow {
         ActionRow(
             id: action.id.isEmpty ? "coach-action" : action.id,
@@ -375,7 +375,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
 
     // MARK: - Label maps (verbatim from coachActionPresenter.ts)
 
-    /// PWA `sourceLabels` (coachActionPresenter.ts:41).
+    /// legacy web app `sourceLabels` (coachActionPresenter.ts:41).
     static let sourceLabels: [String: String] = [
         "dailyAdjustment": "今日调整",
         "nextWorkout": "下次训练",
@@ -388,7 +388,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         "recommendationConfidence": "推荐可信度",
     ]
 
-    /// PWA `statusLabels` (coachActionPresenter.ts:53).
+    /// legacy web app `statusLabels` (coachActionPresenter.ts:53).
     static let statusLabels: [String: String] = [
         "pending": "待处理",
         "applied": "已采用",
@@ -397,7 +397,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         "failed": "未完成",
     ]
 
-    /// PWA `priorityLabels` (coachActionPresenter.ts:61).
+    /// legacy web app `priorityLabels` (coachActionPresenter.ts:61).
     static let priorityLabels: [String: String] = [
         "urgent": "优先处理",
         "high": "重要",
@@ -405,7 +405,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         "low": "可稍后看",
     ]
 
-    /// PWA `priorityRank` (coachActionPresenter.ts:68) — urgent 4 > high 3 > medium 2 > low 1.
+    /// legacy web app `priorityRank` (coachActionPresenter.ts:68) — urgent 4 > high 3 > medium 2 > low 1.
     static func priorityRank(_ priority: String) -> Int {
         switch priority {
         case "urgent": return 4
@@ -418,7 +418,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
 
     // MARK: - Fallback titles / descriptions (coachActionPresenter.ts:104 / 117)
 
-    /// PWA `fallbackTitle` (coachActionPresenter.ts:104).
+    /// legacy web app `fallbackTitle` (coachActionPresenter.ts:104).
     static func fallbackTitle(_ action: CoachActionEngine.CoachAction) -> String {
         switch action.source {
         case "dataHealth": return "检查数据健康"
@@ -436,7 +436,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         }
     }
 
-    /// PWA `fallbackDescription` (coachActionPresenter.ts:117).
+    /// legacy web app `fallbackDescription` (coachActionPresenter.ts:117).
     static func fallbackDescription(_ action: CoachActionEngine.CoachAction) -> String {
         if action.source == "dataHealth" { return "有数据问题建议先查看；本操作只会打开相关页面，不会修改数据。" }
         if action.actionType == "create_plan_adjustment_preview" { return "可以查看调整草案入口，正式应用仍需要你确认。" }
@@ -448,14 +448,14 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
 
     // MARK: - Primary label / draft eligibility (coachActionPresenter.ts:126 / 130 / 153)
 
-    /// PWA `canCreateAdjustmentDraft` (coachActionPresenter.ts:126).
+    /// legacy web app `canCreateAdjustmentDraft` (coachActionPresenter.ts:126).
     static func canCreateAdjustmentDraft(_ action: CoachActionEngine.CoachAction) -> Bool {
         action.actionType == "create_plan_adjustment_preview"
             && (action.targetId.map { !$0.isEmpty } ?? false)
             && (action.targetType == "muscle" || action.targetType == "exercise")
     }
 
-    /// PWA `getCoachActionPrimaryLabel` (coachActionPresenter.ts:130).
+    /// legacy web app `getCoachActionPrimaryLabel` (coachActionPresenter.ts:130).
     static func getCoachActionPrimaryLabel(_ action: CoachActionEngine.CoachAction) -> String {
         if action.status == "applied" && action.actionType == "create_plan_adjustment_preview" { return "查看实验模板" }
         if action.status == "dismissed" || action.status == "expired" { return "查看原因" }
@@ -472,7 +472,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         }
     }
 
-    /// PWA `disabledReasonForAction` (coachActionPresenter.ts:153).
+    /// legacy web app `disabledReasonForAction` (coachActionPresenter.ts:153).
     static func disabledReasonForAction(_ action: CoachActionEngine.CoachAction) -> String? {
         if action.actionType == "create_plan_adjustment_preview" && !canCreateAdjustmentDraft(action) {
             return "当前建议缺少可生成草案的目标信息，只能先查看原因。"
@@ -482,7 +482,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
 
     // MARK: - Text scrubbing (coachActionPresenter.ts:90 — rawTokenPattern + mojibake → fallback)
 
-    /// PWA `cleanText` (coachActionPresenter.ts:95): strip the raw token set, collapse whitespace,
+    /// legacy web app `cleanText` (coachActionPresenter.ts:95): strip the raw token set, collapse whitespace,
     /// trim; an empty result OR a mojibake hit → the fallback. The engine already scrubbed its own
     /// visible-token set in `makeAction`, so on engine output this is mostly the fallback guard.
     static func cleanText(_ value: String, fallback: String) -> String {
@@ -497,13 +497,13 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         return text
     }
 
-    /// PWA `mojibakePattern` (coachActionPresenter.ts:93).
+    /// legacy web app `mojibakePattern` (coachActionPresenter.ts:93).
     static func hasMojibake(_ text: String) -> Bool {
         for scalar in "锛銆鏁璁绋惧褰浠涓寤妫鍋淇湪啋槸璇伅€" where text.contains(scalar) { return true }
         return false
     }
 
-    /// PWA `rawTokenPattern` (coachActionPresenter.ts:90) — `\b(...tokens...)\b`, case-insensitive.
+    /// legacy web app `rawTokenPattern` (coachActionPresenter.ts:90) — `\b(...tokens...)\b`, case-insensitive.
     static let rawTokenRegex: NSRegularExpression = {
         let tokens = [
             "undefined", "null", "dailyAdjustment", "nextWorkout", "dataHealth", "plateau",
@@ -517,7 +517,7 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
         return try! NSRegularExpression(pattern: "\\b(\(tokens))\\b", options: [.caseInsensitive])
     }()
 
-    /// `\s+` whitespace collapse (PWA `.replace(/\s+/g, ' ')`).
+    /// `\s+` whitespace collapse (legacy web app `.replace(/\s+/g, ' ')`).
     static let whitespaceRegex: NSRegularExpression = {
         // swiftlint:disable:next force_try
         return try! NSRegularExpression(pattern: "\\s+", options: [])
@@ -525,13 +525,13 @@ public struct CoachActionSurfaceSummary: Equatable, Sendable {
 
     // MARK: - Sort helpers (presentation only; no parity golden)
 
-    /// `left || right` truthiness for the description source (PWA `action.description || action.reason`).
+    /// `left || right` truthiness for the description source (legacy web app `action.description || action.reason`).
     static func nonEmptyOr(_ primary: String, _ fallback: String) -> String {
         primary.isEmpty ? fallback : primary
     }
 
     /// `a.localeCompare(b, 'zh-Hans-CN')` via Foundation's ICU collation, returning -1/0/1. Same
-    /// paradigm as the engine's `localeCompareZhCN`, with the PWA presenter's `zh-Hans-CN` locale.
+    /// paradigm as the engine's `localeCompareZhCN`, with the legacy web app presenter's `zh-Hans-CN` locale.
     static func localeCompareZhHansCN(_ a: String, _ b: String) -> Int {
         switch a.compare(b, options: [], range: nil, locale: Locale(identifier: "zh-Hans-CN")) {
         case .orderedAscending: return -1

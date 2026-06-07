@@ -1,7 +1,7 @@
 // SetWeightFineTuneEngine — iOS-17e-4 set-weight fine-tune port.
 //
 // Faithful line-by-line Swift port of the PURE set-weight fine-tune function from
-// `src/engines/setWeightFineTuneEngine.ts`:
+// `retired web reference`:
 //   - buildSetWeightFineTune  (setWeightFineTuneEngine.ts:94)
 // + every private helper it reads (epley / roundToPlate / parseRir / matchesExercise /
 //   isWorkSet / linearSlope / dateToWeekIndex, setWeightFineTuneEngine.ts:14-92) and
@@ -14,7 +14,7 @@
 //     (setWeightFineTuneEngine.ts:21) is byte-identical to e1rmEngine's, so it is shared
 //     verbatim rather than duplicated.
 //
-// `zero : Date` — the ONE intentional gap. The TS reads the wall clock when no
+// `zero : Date` — the ONE intentional gap. The legacy web schema reads the wall clock when no
 // `asOfDate` is supplied (`input.asOfDate ? new Date(input.asOfDate) : new Date()`,
 // setWeightFineTuneEngine.ts:119), so it is NOT pure on that branch. The §11 clean
 // input always carries an as-of date (the same `nowIso` the decision pipeline threads
@@ -302,7 +302,7 @@ public enum SetWeightFineTuneEngine {
 
         // `samples.sort((a, b) => a.weekIndex - b.weekIndex)` — stable ascending. The
         // explicit index tiebreak reproduces V8's stable-sort guarantee for ties so the
-        // `effective.last` "current" sample matches TS.
+        // `effective.last` "current" sample matches legacy web schema.
         let sorted = samples.enumerated()
             .sorted { a, b in
                 if a.element.weekIndex != b.element.weekIndex { return a.element.weekIndex < b.element.weekIndex }

@@ -10,7 +10,6 @@ import SwiftUI
 import IronPathDomain
 import IronPathDataHealth
 import IronPathPersistence
-import IronPathCloudSync
 import IronPathHealthKit
 import IronPathBackup
 import IronPathL10n
@@ -33,7 +32,6 @@ enum IronPathLinkedPackages {
         IronPathDomainVersion.value,
         IronPathDataHealthVersion.value,
         IronPathPersistenceVersion.value,
-        IronPathCloudSyncVersion.value,
         IronPathHealthKitVersion.value,
         IronPathBackupVersion.value,
         IronPathL10nVersion.value,

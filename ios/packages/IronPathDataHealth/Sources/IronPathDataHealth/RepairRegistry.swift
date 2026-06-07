@@ -1,6 +1,6 @@
 // RepairRegistry — iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1.
 //
-// Swift port of `src/dataHealth/appDataRepairEngine.ts:buildRegistry`
+// Swift port of `retired web reference`
 // + the V1_REPAIRS list in `appDataRepairRegistry.ts`. iOS-3B ships
 // the 5 safe recipes; iOS-3C will extend the registry to cover the
 // remaining 4 (screening issue score x2, set index renumber,

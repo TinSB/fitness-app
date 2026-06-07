@@ -1,7 +1,7 @@
 // LoadFeedbackEngine — iOS-17e-4 load-feedback port.
 //
 // Faithful line-by-line Swift port of the PURE per-exercise load-feedback
-// functions from `src/engines/loadFeedbackEngine.ts`:
+// functions from `retired web reference`:
 //   - collectLoadFeedback        (loadFeedbackEngine.ts:49)
 //   - upsertLoadFeedback         (loadFeedbackEngine.ts:27)
 //   - buildLoadFeedbackSummary   (loadFeedbackEngine.ts:57)
@@ -12,12 +12,12 @@
 //
 // Domain shape note: neither `session.loadFeedback` nor `session.dataFlag` is a
 // documented typed field on the Swift `TrainingSession` (they ride in the
-// `_unknown` open bag, exactly like the PWA's free-form session keys). The port
+// `_unknown` open bag, exactly like the legacy web app's free-form session keys). The port
 // reads them out of `_unknown` and `upsertLoadFeedback` writes the updated array
-// back into `_unknown`, mirroring the TS object spread `{...session, loadFeedback}`.
+// back into `_unknown`, mirroring the legacy web schema object spread `{...session, loadFeedback}`.
 //
 // `feedback` is kept as a raw `String` (LoadFeedbackValue) rather than a closed
-// enum because the TS functions read whatever string the history carries without
+// enum because the legacy web schema functions read whatever string the history carries without
 // validating it; the three canonical values ('too_light' / 'good' / 'too_heavy')
 // are the only ones the §11 clean input ever produces.
 //
@@ -45,7 +45,7 @@ public enum LoadFeedbackEngine {
     public static let tooHeavy: LoadFeedbackValue = "too_heavy"
 
     /// `LoadFeedback` (training-model.ts:540). `note` is optional (absent when the
-    /// PWA stored none — JSON `undefined`/missing).
+    /// legacy web app stored none — JSON `undefined`/missing).
     public struct LoadFeedback: Equatable, Sendable {
         public let exerciseId: String
         public let sessionId: String
@@ -103,7 +103,7 @@ public enum LoadFeedbackEngine {
     private static func normalizePoolId(_ exerciseId: String) -> String { exerciseId }
 
     /// Decode one `loadFeedback` array item out of the `_unknown` bag. Mirrors the
-    /// PWA object shape `{ exerciseId, sessionId, date, feedback, note? }`. Missing
+    /// legacy web app object shape `{ exerciseId, sessionId, date, feedback, note? }`. Missing
     /// strings decode to "" so the JS `item.exerciseId === ...` comparisons line up
     /// (JS reads `undefined`, which only ever matches an explicit `undefined` filter
     /// — never one of the canonical id strings the fixtures use).

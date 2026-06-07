@@ -1,8 +1,8 @@
 // iOS-4B1 — shared golden-fixture loader for the decode tests.
 //
 // Reads the canonical repo goldens under
-// tests/fixtures/parity/golden/training-decision/ via a #filePath walk-up, so
-// the package test consumes the SAME committed goldens the TS parity generator
+// ios/ParityFixtures/parity/golden/training-decision/ via a #filePath walk-up, so
+// the package test consumes the SAME committed goldens the legacy web schema parity generator
 // produces — no copies, no drift.
 
 import Foundation
@@ -56,7 +56,7 @@ enum TrainingDecisionGoldens {
 
     static var goldenDir: URL {
         repoRoot
-            .appendingPathComponent("tests/fixtures/parity/golden/training-decision", isDirectory: true)
+            .appendingPathComponent("ios/ParityFixtures/parity/golden/training-decision", isDirectory: true)
     }
 
     static func goldenURL(_ id: String) -> URL {

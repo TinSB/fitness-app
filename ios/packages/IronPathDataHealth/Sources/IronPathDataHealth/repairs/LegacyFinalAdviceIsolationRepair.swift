@@ -1,7 +1,7 @@
 // LegacyFinalAdviceIsolationRepair — iOS-3B repair recipe
 // (runtime_guard, audit-only — does NOT mutate AppData).
 //
-// Swift port of `src/dataHealth/repairs/legacyFinalAdviceIsolationGuardV1.ts`.
+// Swift port of `retired web reference`.
 // Documents the historical legacy advice fields (suggestion/adjustment/
 // warning + prescription.weeklyAdjustment + session.explanations +
 // session.deloadDecision). The actual isolation is enforced upstream

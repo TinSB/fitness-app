@@ -1,7 +1,7 @@
 // AdaptiveCalibrationState — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `AdaptiveCalibrationState` interface at
-// `src/models/training-model.ts:618`. Inner `AdaptiveCalibrationEntry`
+// Mirrors the legacy web implementation `AdaptiveCalibrationState` interface at
+// `retired web reference`. Inner `AdaptiveCalibrationEntry`
 // records carry the per-exercise `loadBias: number` field flagged
 // by Agent 1 §7 as a HIGH float-precision risk. iOS-2C exposes the
 // `entries` array as `[JSONValue]` so iOS-4 can iterate; promoting

@@ -9,8 +9,8 @@
 // plain struct `==`. The golden's drop-undefined `lastCompletedTemplateId` / `nextTemplateId`
 // decode to nil, which the port also returns for the empty-ordered branch.
 //
-// The golden is GENERATED from the REAL TS workoutCycleScheduler
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy workoutCycleScheduler
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (currentDate is an explicit input, the only "clock"), no IO beyond reading the
 // committed golden.
 
@@ -32,7 +32,7 @@ final class WorkoutCycleSchedulerParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/workout-cycle/cycle-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/workout-cycle/cycle-cases-v1.json", isDirectory: false
         )
     }
 

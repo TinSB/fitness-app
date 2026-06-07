@@ -11,7 +11,7 @@
 //     every null short-circuit).
 //   • source-fingerprint → buildCoachActionSourceFingerprint → exact fingerprint string.
 //
-// The goldens are GENERATED from the REAL TS coachActionEngine (scripts/generate-parity-goldens.mjs),
+// The goldens are GENERATED from the retired legacy coachActionEngine (frozen legacy fixture generator),
 // never hand-edited (§22). PURE / read-only — the only clock is the INJECTED `now` (no `: Date`
 // on the engine path; tomorrowIso is integer civil arithmetic), no IO beyond the committed goldens.
 
@@ -35,7 +35,7 @@ final class CoachActionEngineParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func root(_ id: String) throws -> OrderedJSONObject {

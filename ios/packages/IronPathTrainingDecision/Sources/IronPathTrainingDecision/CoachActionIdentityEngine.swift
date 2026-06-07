@@ -1,7 +1,7 @@
 // CoachActionIdentityEngine — PA-S5 coach-action fingerprint port.
 //
 // Faithful line-by-line Swift port of the PURE FNV-1a string-fingerprint
-// engine `src/engines/coachActionIdentityEngine.ts` (187 lines): its 5 exports
+// engine `retired web reference` (187 lines): its 5 exports
 // (`buildCoachActionFingerprint` ts:71 / `buildProgramAdjustmentDraftFingerprint`
 // ts:111 / `buildProgramAdjustmentHistoryFingerprint` ts:135 /
 // `dedupeProgramAdjustmentDraftsByFingerprint` ts:170 + the `CoachActionFingerprintContext`
@@ -10,12 +10,12 @@
 // `targetIdFromContext` ts:62 / `firstChange` ts:93 / `sourceFromRecommendationId` ts:96 /
 // `targetFromChange` ts:104 / `draftStatusRank` ts:159 / `draftTime` ts:168).
 //
-// KEY SCOPE BYPASS (PA-S5): the TS input is a 7-field `Pick<CoachAction, …>`
+// KEY SCOPE BYPASS (PA-S5): the legacy web schema input is a 7-field `Pick<CoachAction, …>`
 // (ts:4-7). We mirror ONLY that 7-field projection as a local `FingerprintAction`
 // value type (all `String?`), so this slice does NOT pull in the 653-line
 // `coachActionEngine.ts` / `buildCoachActions` / the full `CoachAction` lifecycle.
 // The 7 fields are `CoachActionSource` / `CoachActionType` / small unions / `string`
-// in TS; all are carried as `String?` (the `ProgramTemplate.primaryGoal` precedent —
+// in legacy web schema; all are carried as `String?` (the `ProgramTemplate.primaryGoal` precedent —
 // String losslessly preserves any union member, and the fingerprint only ever does
 // `String(value ?? '')` over them, so no enum is needed). Likewise the context's
 // `suggestedChange` mirrors ONLY the 5 fields the fingerprint reads
@@ -24,12 +24,12 @@
 //
 // REUSES (never re-ports) the PA-S1 IronPathDomain types: `ProgramAdjustmentDraft`
 // / `ProgramAdjustmentHistoryItem` / `AdjustmentChange` (+ its `AdjustmentChangeType`
-// enum) / `NumberRepr`. `change?.type` is the raw union string in TS; on the Swift
-// side that is `change.type?.rawValue` (rawValue `add_sets` … equals the TS token).
+// enum) / `NumberRepr`. `change?.type` is the raw union string in legacy web schema; on the Swift
+// side that is `change.type?.rawValue` (rawValue `add_sets` … equals the legacy web schema token).
 //
 // PURE / READ-ONLY: only string + number transforms. Zero `: Date`, zero Calendar,
 // zero IO, zero randomness, no write path, no CanonicalSessionWriter — §11 DERIVED-only.
-// Goldens are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs),
+// Goldens are GENERATED from the retired legacy engine (frozen legacy fixture generator),
 // never hand-edited (§22).
 
 import Foundation
@@ -136,7 +136,7 @@ public enum CoachActionIdentityEngine {
     /// the LAST operand verbatim (which may be nil or "" — JS `||` returns the last
     /// operand even when it is falsy). The downstream consumers re-apply `||` or
     /// normalize, so "" vs undefined never changes the fingerprint, but this mirrors
-    /// the TS exactly.
+    /// the legacy web schema exactly.
     private static func jsOrLast(_ candidates: [String?]) -> String? {
         for c in candidates where !(c ?? "").isEmpty { return c }
         return candidates.last ?? nil
@@ -178,7 +178,7 @@ public enum CoachActionIdentityEngine {
     }
 
     /// `stableHash` (coachActionIdentityEngine.ts:35-42) — FNV-1a over UTF-16 code
-    /// units. TS: `let hash = 2166136261; hash ^= charCodeAt(i); hash = Math.imul(hash, 16777619)`
+    /// units. legacy web schema: `let hash = 2166136261; hash ^= charCodeAt(i); hash = Math.imul(hash, 16777619)`
     /// then `(hash >>> 0).toString(16)`. The signed `Math.imul`/`^=`/`>>> 0` chain is
     /// bit-for-bit equal to UInt32 wrapping arithmetic: the offset basis `2166136261`
     /// has the same 32-bit pattern (0x811C9DC5) as its ToInt32 form, `^` is bitwise,
@@ -226,7 +226,7 @@ public enum CoachActionIdentityEngine {
         return jsOr([action.targetType], "none")                    // action.targetType || 'none'
     }
 
-    /// `targetIdFromContext` (ts:62-69) — the `||` short-circuit chain in TS order.
+    /// `targetIdFromContext` (ts:62-69) — the `||` short-circuit chain in legacy web schema order.
     private static func targetIdFromContext(_ action: FingerprintAction, _ context: CoachActionFingerprintContext) -> String {
         jsOr([
             context.muscleId,

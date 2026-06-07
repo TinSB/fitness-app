@@ -214,7 +214,7 @@ public struct CompletedTrainingTimeline: Equatable, Sendable {
     }
 
     /// A session counts as completed training when it is flagged complete (the
-    /// native builder sets both; a PWA-origin session sets `completed`).
+    /// native builder sets both; a legacy-web-origin session sets `completed`).
     public static func isCompleted(_ session: TrainingSession) -> Bool {
         (session.completed ?? false) || (session.focusSessionComplete ?? false)
     }

@@ -15,7 +15,7 @@
 // HARD BOUNDARIES (still enforced): no network/cloud/account; the App Group file is a
 // DERIVED, on-device, read-only-for-the-widget share — the widget NEVER writes
 // canonical AppData and the share is NEVER read back as a source of truth (§8/§12).
-// The static guard `tests/iosReadinessWidgetStaticGuards.test.ts` locks this boundary.
+// `IronPathWidgetSharedTests` lock the codec/store/presentation boundary in Swift.
 
 /// Retained for the iOS-1 bootstrap parity-probe convention every package follows
 /// (`Sources/<Pkg>/<Pkg>.swift` exports only this version constant). The real W-1

@@ -16,7 +16,7 @@
 //   `SessionLifecycleResidueRepair` would strip it from disk on the next boot
 //   ingest — i.e. storing performed sets there would be silently LOST on reload.
 //   The permanent home for a finished session's per-set log is
-//   `ExercisePrescription.sets: [TrainingSetLog]` (TS `SessionExercise.sets`),
+//   `ExercisePrescription.sets: [TrainingSetLog]` (legacy web schema `SessionExercise.sets`),
 //   which the lifecycle guard and `SetIndexRenumberRepair` (completed sessions
 //   are "historical and left untouched") never mutate. So a completed session
 //   written this way is STABLE through the clean view + auto-repair: no data loss.

@@ -8,7 +8,7 @@
 // supplied by the caller (the app layer), so this file stays a pure value transform with no
 // FileManager / disk / network / clock.
 //
-// FAITHFUL MIRROR of the PWA write `handleDismissCoachAction` (`src/App.tsx:1908-1928`) — steps
+// FAITHFUL MIRROR of the legacy web app write `handleDismissCoachAction` (`retired web reference`) — steps
 // ①③④ are line-by-line; step ② (the DEDUP BASE) DELIBERATELY DIVERGES, more conservatively (the
 // honest correction is at the ② DEDUP-BASE note below — it is NOT a line-by-line copy of
 // App.tsx:1912). The numbered steps:
@@ -22,14 +22,14 @@
 //   ④ DOUBLE-WRITE the SAME `nextDismissed` array into BOTH the top-level open-bag key
 //      `root.dismissedCoachActions` (App.tsx:1919) AND the nested `settings.dismissedCoachActions`
 //      typed slot (App.tsx:1922) — one value transform, so a later read-filter (CC-6) sees zero
-//      staleness whichever priority it reads, and a PWA-origin document (which double-writes the
+//      staleness whichever priority it reads, and a legacy-web-origin document (which double-writes the
 //      same way) stays consistent.
 // ② DEDUP-BASE divergence (honest correction — this is NOT a line-by-line mirror of App.tsx:1912):
 // App.tsx:1912 dedups against `current.dismissedCoachActions` — ROOT-ONLY. This transform instead
 // reads the READ-SIDE priority `root.dismissedCoachActions || settings.dismissedCoachActions || []`
-// (`src/engines/enginePipeline.ts:102` — a present array, even empty, at `root` wins JS `||`, else
+// (`retired web reference` — a present array, even empty, at `root` wins JS `||`, else
 // `settings`, else empty), the SAME priority the CC-6 read-filter at `enginePipeline.ts:98` reads.
-// WHY diverge: iOS persists a RAW canonical document the PWA sanitizer has not necessarily run over,
+// WHY diverge: iOS persists a RAW canonical document the legacy web app sanitizer has not necessarily run over,
 // so taking the read-side priority keeps the write's dedup base ALIGNED with what CC-6 actually
 // reads. On a real root-vs-settings divergence this is strictly MORE CONSERVATIVE — it preserves the
 // user's dismiss intent rather than dropping it — and it still writes ONLY the user's input intent,

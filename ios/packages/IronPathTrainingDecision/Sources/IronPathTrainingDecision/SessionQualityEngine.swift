@@ -1,7 +1,7 @@
 // SessionQualityEngine — AN-4 sessionQualityEngine port + function-level parity.
 //
 // Faithful line-by-line Swift port of `buildSessionQualityResult`
-// (`src/engines/sessionQualityEngine.ts:122`) + every private helper it reads
+// (`retired web reference`) + every private helper it reads
 // (`clamp` / `roundScore` / `isRecordedCompletedSet` / `hasRecordedRir` /
 // `levelLabel` / `dataFlagLabel` / `isLoadFeedbackSummary` / `normalizeLoadFeedback` /
 // `makeSignal` / `unique`, ts:52-120) + the output/input types
@@ -57,7 +57,7 @@ public enum SessionQualityEngine {
 
     /// `BuildSessionQualityParams` (sessionQualityEngine.ts:44). `effectiveSetSummary`
     /// (`Partial<EffectiveVolumeSummary> | null`) + `loadFeedback` (`LoadFeedbackInput`
-    /// union) are kept as raw `JSONValue` so the TS runtime duck-typing is reproduced
+    /// union) are kept as raw `JSONValue` so the legacy web schema runtime duck-typing is reproduced
     /// exactly; `painPatterns` is the raw `PainPattern[]`. `unitSettings` is UNUSED by
     /// `buildSessionQualityResult` (it never reads it) and is intentionally omitted.
     public struct Params: Sendable {
@@ -96,7 +96,7 @@ public enum SessionQualityEngine {
     }
 
     /// `hasRecordedRir` (ts:57): `set.rir !== undefined && set.rir !== ''`. A JSON `null`
-    /// rir decodes to `.some(.null)` (not nil), so it counts as recorded — matching TS
+    /// rir decodes to `.some(.null)` (not nil), so it counts as recorded — matching legacy web schema
     /// (`null !== undefined && null !== ''`).
     private static func hasRecordedRir(_ set: TrainingSetLog) -> Bool {
         guard let rir = set.rir else { return false }            // !== undefined
@@ -162,7 +162,7 @@ public enum SessionQualityEngine {
 
     private struct FeedbackCounts { var tooHeavy = 0; var tooLight = 0; var good = 0 }
 
-    /// `normalizeLoadFeedback` (ts:75). Reproduces the TS runtime union dispatch
+    /// `normalizeLoadFeedback` (ts:75). Reproduces the legacy web schema runtime union dispatch
     /// (`session.loadFeedback` always folded in; then array / single-summary /
     /// record-of-values branches).
     private static func normalizeLoadFeedback(_ input: JSONValue?, _ session: TrainingSession) -> FeedbackCounts {

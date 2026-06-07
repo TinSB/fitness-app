@@ -1,7 +1,7 @@
 // MesocyclePlan — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `MesocyclePlan` interface at
-// `src/models/training-model.ts:1313`. The inner weekly structures
+// Mirrors the legacy web implementation `MesocyclePlan` interface at
+// `retired web reference`. The inner weekly structures
 // stay as `JSONValue` until iOS-4 TrainingDecision needs typed
 // access; iOS-2C only needs id / startDate / weeks to enable
 // iOS-3 / iOS-4 dispatch.

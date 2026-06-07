@@ -15,8 +15,8 @@
 //   the carrier never collapses unknown nested objects into typed
 //   model values in iOS-2B.
 // * `canonicalJSONData()` re-emits via the canonical-stringify path
-//   in JSONValue.swift, matching the TS `stableStringify` rules at
-//   `src/cloudProduction/accountBoundaryLocalInventory.ts:116`.
+//   in JSONValue.swift, matching the legacy web schema `stableStringify` rules at
+//   `retired web reference`.
 //
 // What iOS-2B does NOT do:
 //
@@ -61,9 +61,9 @@ public struct AppData: Equatable, Hashable, Sendable {
     }
 
     /// Emits the canonical-stringified bytes of this AppData, with
-    /// every object key lexically sorted. Matches the TS
+    /// every object key lexically sorted. Matches the legacy web schema
     /// `stableStringify` contract used to compute the FNV-1a snapshot
-    /// hash at `src/cloudProduction/accountBoundaryLocalInventory.ts:156`.
+    /// hash at `retired web reference`.
     public func canonicalJSONData() throws -> Data {
         try JSONValue.object(root).canonicalJSONData()
     }

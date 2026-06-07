@@ -1,7 +1,7 @@
 // AdaptiveFeedbackEngine — iOS-17e-2 performance-lookup port.
 //
 // Faithful line-by-line Swift port of the PURE performance-lookup functions from
-// `src/engines/adaptiveFeedbackEngine.ts`:
+// `retired web reference`:
 //   - findLastPerformance      (adaptiveFeedbackEngine.ts:118)
 //   - findPreviousPerformance  (adaptiveFeedbackEngine.ts:130)
 //   - findRecentPerformances   (adaptiveFeedbackEngine.ts:154)
@@ -28,7 +28,7 @@
 // PURE: consumes `history: [TrainingSession]` (already a §11 clean input) + the
 // caller's `screening.adaptiveState?.issueScores` seed (the ONLY screening field
 // `buildAdaptiveState` reads, adaptiveFeedbackEngine.ts:172). No IO, no randomness,
-// `zero : Date` — TS `buildAdaptiveState` stamps `lastUpdated: new Date()…` from the
+// `zero : Date` — legacy web schema `buildAdaptiveState` stamps `lastUpdated: new Date()…` from the
 // wall clock (adaptiveFeedbackEngine.ts:224); here the date is INJECTED via `today`
 // (the parity generator substitutes parityMeta.deterministicClockIso, mirroring how
 // every other clocked generator injects `now`). It is NOT wired into the decision
@@ -227,7 +227,7 @@ public enum AdaptiveFeedbackEngine {
 
     /// `buildAdaptiveState(history, screening = DEFAULT_SCREENING_PROFILE)`.
     /// `seedIssueScores` is `screening.adaptiveState?.issueScores ?? {}` — the only
-    /// screening field this function reads (line 172). `today` replaces the TS
+    /// screening field this function reads (line 172). `today` replaces the legacy web schema
     /// `new Date().toISOString().slice(0, 10)` wall-clock stamp (line 224).
     public static func buildAdaptiveState(
         _ history: [TrainingSession],

@@ -1,8 +1,8 @@
 // AutoRepairOrchestrator — iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1.
 //
-// Swift port of `src/dataHealth/autoRepairOrchestrator.ts:runAutoRepairOrchestrator`.
+// Swift port of `retired web reference`.
 //
-// Flow (matches TS reference):
+// Flow (matches legacy web schema reference):
 //   1. Compute appDataHashBefore.
 //   2. Detect across safe_auto definitions; collect repairs to apply.
 //   3. Detect across audit_only definitions; collect audit findings.
@@ -157,9 +157,9 @@ public func runAutoRepairOrchestrator(
 
     // 4. Backup-first. On failure → return UNCHANGED AppData.
     //
-    // iOS-3B safety divergence from TS source: on backup failure we
+    // iOS-3B safety divergence from legacy web schema source: on backup failure we
     // do NOT persist anything to AppData — no ledger entries, no
-    // summary write, no receipt. The TS implementation appends
+    // summary write, no receipt. The legacy web schema implementation appends
     // `backup_failed` ledger rows and a summary blob to
     // `settings.dataHealthRepairLedger` / `.dataHealthAutoRepairSummary`
     // so the next run can see "we tried last time"; the user's safety

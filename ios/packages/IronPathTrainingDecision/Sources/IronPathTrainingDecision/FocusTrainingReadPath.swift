@@ -102,7 +102,7 @@ public func resolveFocusTrainingState(
         let nowIso = focusReferenceIso8601UTC(now)
 
         // CONFIG slots from the gated view's raw document (not history), exactly as the SC read
-        // path reads them; `templates` rides un-promoted in `root["templates"]` (the PWA's
+        // path reads them; `templates` rides un-promoted in `root["templates"]` (the legacy web app's
         // `data.templates`) and is FU-1-seeded (empty → DefaultTrainingData.initialTemplates) by
         // the shared `decodeTrainingTemplates`, so a fresh user gets the default program.
         let templates = decodeTrainingTemplates(cleanView)

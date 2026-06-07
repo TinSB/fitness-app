@@ -1,7 +1,7 @@
 // CleanAppDataViewRealExportTests — iOS-3A Data Health Runtime Foundation V1.
 //
 // Loads the canonical redacted real export
-// `tests/fixtures/data-health/ironpath-2026-05-27-redacted.json`
+// `ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json`
 // via `#filePath`-rooted resolution, builds a CleanAppDataView, and
 // asserts:
 //
@@ -30,7 +30,7 @@ final class CleanAppDataViewRealExportTests: XCTestCase {
             .deletingLastPathComponent()  // packages/
             .deletingLastPathComponent()  // ios/
             .deletingLastPathComponent()  // repo root
-            .appendingPathComponent("tests/fixtures/data-health/ironpath-2026-05-27-redacted.json")
+            .appendingPathComponent("ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json")
     }
 
     func testRealExportFixtureExists() {

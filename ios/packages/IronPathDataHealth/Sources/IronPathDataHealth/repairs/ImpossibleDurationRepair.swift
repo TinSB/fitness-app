@@ -1,6 +1,6 @@
 // ImpossibleDurationRepair — iOS-3B safe repair recipe (safe_auto).
 //
-// Swift port of `src/dataHealth/repairs/impossibleDurationV1.ts`.
+// Swift port of `retired web reference`.
 // Rewrites `history[].durationMin` when it exceeds 240 minutes (or
 // the start→finish span exceeds 360 minutes). Uses the rounded span
 // when sane; otherwise marks `durationInvalid = true` (in `_unknown`)

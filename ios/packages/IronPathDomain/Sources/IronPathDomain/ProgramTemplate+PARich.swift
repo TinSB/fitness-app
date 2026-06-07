@@ -2,7 +2,7 @@
 //
 // ADDITIVE enrichment of the existing thin persistence `ProgramTemplate`
 // (`ProgramTemplate.swift`) so it can ALSO carry the rich PA (Plan-Adaptive)
-// program shape the TypeScript `ProgramTemplate` (`src/models/training-model.ts:228`)
+// program shape the legacy web implementation `ProgramTemplate` (`retired web reference`)
 // declares — `dayTemplates: DayTemplate[]` (`:237`) and
 // `weeklyMuscleTargets: Record<string, number>` (`:236`) — WITHOUT touching
 // the thin struct's stored shape.
@@ -34,7 +34,7 @@ import Foundation
 
 extension ProgramTemplate {
     /// The rich `DayTemplate[]` plan, decoded on demand from the open bag
-    /// (TS `ProgramTemplate.dayTemplates`, `src/models/training-model.ts:237`).
+    /// (legacy web schema `ProgramTemplate.dayTemplates`, `retired web reference`).
     /// `nil` when the program carries no `dayTemplates` key or its value is
     /// not a clean array of day-template objects — in which case the raw
     /// value (if any) still round-trips verbatim through `_unknown`.
@@ -44,8 +44,8 @@ extension ProgramTemplate {
     }
 
     /// The rich `Record<string, number>` weekly muscle-set targets, decoded
-    /// on demand from the open bag (TS `ProgramTemplate.weeklyMuscleTargets`,
-    /// `src/models/training-model.ts:236`). `nil` when the key is absent or
+    /// on demand from the open bag (legacy web schema `ProgramTemplate.weeklyMuscleTargets`,
+    /// `retired web reference`). `nil` when the key is absent or
     /// any value is non-numeric; the raw value still round-trips through
     /// `_unknown`.
     public var weeklyMuscleTargets: [String: NumberRepr]? {

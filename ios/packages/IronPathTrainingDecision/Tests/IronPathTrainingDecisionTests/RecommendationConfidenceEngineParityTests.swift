@@ -8,8 +8,8 @@
 // case's `result` — full struct `==` (level / score / title / summary AND the ordered `reasons`
 // list id+label+effect+reason AND `missingData`).
 //
-// The golden is GENERATED from the REAL TS recommendationConfidenceEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy recommendationConfidenceEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (the engine never reads the wall clock; every date comparison is over the session's
 // OWN date strings), no IO beyond reading the committed golden. The fixture covers the level
 // bands (forced-low ≤1 session / high / medium-plain) + every reason / missingData branch + the
@@ -35,7 +35,7 @@ final class RecommendationConfidenceEngineParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func root(_ id: String) throws -> OrderedJSONObject {

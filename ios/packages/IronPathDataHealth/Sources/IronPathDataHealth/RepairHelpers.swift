@@ -1,6 +1,6 @@
 // RepairHelpers — iOS-3B AutoRepairOrchestrator + Safe Repair Recipes V1.
 //
-// Pure-value Swift ports of `src/dataHealth/repairs/repairHelpers.ts`:
+// Pure-value Swift ports of `retired web reference`:
 //   * `hashIdempotencyKey(repairId:, affectedIds:)` — FNV-1a-style
 //     32-bit JS-overflow hash used by every repair's dryRun to derive
 //     a stable idempotency key.
@@ -20,7 +20,7 @@ import IronPathDomain
 
 // MARK: - Idempotency key
 
-/// JS-bit-overflow hash to mirror the TS reference. The TS
+/// JS-bit-overflow hash to mirror the legacy web schema reference. The legacy web schema
 /// implementation uses signed-32 wrap on every iteration and a
 /// `>>> 0` cast at the end; Swift reproduces that with `Int32` +
 /// `&<<` / `&-` / `&+` overflow operators and `UInt32(bitPattern:)`.
@@ -41,7 +41,7 @@ public func hashIdempotencyKey(repairId: String, affectedIds: [String]) -> Strin
 /// Coarse hash of an AppData. The shape is intentionally narrow —
 /// not a full canonical hash — so a repair that touches one
 /// session's lifecycle fields changes the hash even though the
-/// canonical JSON differs in many more bytes. Mirrors TS
+/// canonical JSON differs in many more bytes. Mirrors legacy web schema
 /// `computeAppDataHash` shape exactly:
 ///   {schemaVersion, historyLength, historyIds[], todayStatusDate,
 ///    issueScoresKeys[], issueScoresSum, healthLatest}
@@ -76,7 +76,7 @@ public func computeAppDataHash(_ appData: AppData) -> String {
     }
 
     // Re-emit through OrderedJSONObject so canonical key order matches
-    // a TS `JSON.stringify` of the equivalent object literal.
+    // a legacy web schema `JSON.stringify` of the equivalent object literal.
     var entries: [OrderedJSONObject.Entry] = []
     entries.append(.init(key: "schemaVersion", value: .number(.integer(Int64(appData.schemaVersion.rawValue)))))
     entries.append(.init(key: "historyLength", value: .number(.integer(Int64(history.count)))))
@@ -87,9 +87,9 @@ public func computeAppDataHash(_ appData: AppData) -> String {
         entries.append(.init(key: "todayStatusDate", value: .null))
     }
     entries.append(.init(key: "issueScoresKeys", value: .array(issueScoresKeys.map { .string($0) })))
-    // TS `Object.values(...).reduce((sum, value) => ...)` skips
+    // legacy web schema `Object.values(...).reduce((sum, value) => ...)` skips
     // non-number entries. We already filtered above; emit as integer
-    // when whole, double otherwise (matches TS sum semantics).
+    // when whole, double otherwise (matches legacy web schema sum semantics).
     if issueScoresSum.truncatingRemainder(dividingBy: 1) == 0 {
         entries.append(.init(key: "issueScoresSum", value: .number(.integer(Int64(issueScoresSum)))))
     } else {

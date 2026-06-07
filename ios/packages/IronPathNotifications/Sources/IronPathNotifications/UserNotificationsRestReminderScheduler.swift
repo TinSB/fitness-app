@@ -25,12 +25,9 @@
 // notification service extension, or uses a push entitlement. Local scheduling
 // needs no entitlement.
 //
-// The static guard `tests/iosBootstrapForbiddenImports.test.ts` exempts THIS one
-// file path from the local UserNotifications-token bans (incl. the N-2
-// `UNCalendarNotificationTrigger`); every other Swift file under ios/ stays
-// UserNotifications-free, and the remote-push tokens are banned everywhere
-// including here. `tests/iosTrainingReminderNotificationStaticGuards.test.ts`
-// locks the N-2 repeating-trigger boundary.
+// `IronPathNotificationsTests` lock the local-notification boundary; every other
+// Swift package stays UserNotifications-free, and remote-push behavior is banned
+// everywhere including here.
 
 #if os(iOS)
 import Foundation

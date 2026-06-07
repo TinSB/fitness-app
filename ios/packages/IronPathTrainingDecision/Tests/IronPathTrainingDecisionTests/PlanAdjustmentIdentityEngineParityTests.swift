@@ -12,8 +12,8 @@
 //   regenerate-cases   → foundId / existingDraftId / sourceFingerprint, and canonical-
 //                        equality of the regenerated draft.
 //
-// The goldens are GENERATED from the REAL TS planAdjustmentIdentityEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only —
+// The goldens are GENERATED from the retired legacy planAdjustmentIdentityEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only —
 // zero `: Date`; the only time input is the INJECTED `now` decoded from each
 // regenerate case (no wall clock), no IO beyond reading the committed goldens.
 
@@ -37,7 +37,7 @@ final class PlanAdjustmentIdentityEngineParityTests: XCTestCase {
 
     private static func goldenURL(_ name: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/plan-adjustment-identity/\(name).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/plan-adjustment-identity/\(name).json", isDirectory: false
         )
     }
 
@@ -207,7 +207,7 @@ final class PlanAdjustmentIdentityEngineParityTests: XCTestCase {
             let label = c.optionalString("label") ?? "(unlabeled)"
             XCTAssertEqual(c.optionalString("kind"), "instanceId", "\(label): kind")
             let fp = try XCTUnwrap(c.optionalString("sourceFingerprint"), "\(label): sourceFingerprint")
-            // revision omitted (null) → the engine default of 1, mirroring the TS `revision = 1`.
+            // revision omitted (null) → the engine default of 1, mirroring the legacy web schema `revision = 1`.
             let revision = c.optionalDouble("revision") ?? 1
             let parent = c.optionalString("parentDraftId")
             let actual = Engine.buildPlanAdjustmentDraftInstanceId(fp, revision, parent)

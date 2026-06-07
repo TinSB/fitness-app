@@ -11,8 +11,8 @@ import IronPathDomain
 @testable import IronPathTrainingDecision
 
 /// Shared golden-fixture loader. Reads the canonical repo goldens under
-/// tests/fixtures/parity/golden/smart-replacement/ via a #filePath walk-up, so
-/// the package test consumes the SAME committed goldens the TS parity generator
+/// ios/ParityFixtures/parity/golden/smart-replacement/ via a #filePath walk-up, so
+/// the package test consumes the SAME committed goldens the legacy web schema parity generator
 /// produces — no copies, no drift. Mirrors `TrainingDecisionGoldens`.
 enum SmartReplacementGoldens {
     /// The 4 smart-replacement golden fixture ids (without the `.json` suffix).
@@ -40,7 +40,7 @@ enum SmartReplacementGoldens {
 
     static var goldenDir: URL {
         repoRoot
-            .appendingPathComponent("tests/fixtures/parity/golden/smart-replacement", isDirectory: true)
+            .appendingPathComponent("ios/ParityFixtures/parity/golden/smart-replacement", isDirectory: true)
     }
 
     static func goldenURL(_ id: String) -> URL {

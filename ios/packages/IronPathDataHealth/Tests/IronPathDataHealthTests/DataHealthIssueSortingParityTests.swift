@@ -8,8 +8,8 @@
 // severity / category / title / message / affectedIds / canAutoFix /
 // suggestedAction).
 //
-// The golden is GENERATED from the REAL TS `sortDataHealthIssues`
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE /
+// The golden is GENERATED from the REAL legacy web schema `sortDataHealthIssues`
+// (frozen legacy fixture generator), never hand-edited (§22). PURE /
 // read-only — zero `: Date`, no IO beyond reading the committed golden.
 
 import XCTest
@@ -30,7 +30,7 @@ final class DataHealthIssueSortingParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/data-health/sort-issues-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/data-health/sort-issues-cases-v1.json", isDirectory: false
         )
     }
 

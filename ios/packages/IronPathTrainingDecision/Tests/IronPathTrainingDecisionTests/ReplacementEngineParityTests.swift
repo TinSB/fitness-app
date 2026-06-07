@@ -5,7 +5,7 @@
 //     and assert the produced ReplacementOption[] equals the golden options
 //     item-by-item + in order — then assert validateReplacementExerciseId /
 //     isSyntheticReplacementExerciseId reproduce every probe verdict. This drives
-//     the REAL ported engine and pins it to the TS engine's generated output.
+//     the REAL ported engine and pins it to the legacy web schema engine's generated output.
 // (B) KNOWLEDGE PARITY: reconstruct the engine-used EXERCISE_EQUIVALENCE_CHAINS +
 //     EXERCISE_KNOWLEDGE_OVERRIDES subset from the ported ReplacementEngineKnowledge
 //     tables and assert it equals the generated knowledge-snapshot golden
@@ -17,7 +17,7 @@
 //     isSynthetic regex boundaries.
 //
 // All goldens are read from the canonical repo path via a #filePath walk-up — the
-// SAME committed goldens the TS generator produces (no copies, no drift). Mirrors
+// SAME committed goldens the legacy web schema generator produces (no copies, no drift). Mirrors
 // SmartReplacementGoldenDecodeTests / ExerciseLibraryParityTests.
 
 import XCTest
@@ -51,7 +51,7 @@ enum ReplacementEngineGoldens {
 
     static func goldenURL(_ shortId: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/replacement-engine/\(shortId).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/replacement-engine/\(shortId).json", isDirectory: false
         )
     }
 
@@ -261,7 +261,7 @@ final class ReplacementEngineParityTests: XCTestCase {
             }
             XCTAssertEqual(sEntry.alternativePriorities, goldenPriorities, "alternativePriorities \(id)")
 
-            // No TS override carries equipmentTags, so it must be absent on both sides.
+            // No legacy web schema override carries equipmentTags, so it must be absent on both sides.
             XCTAssertNil(gEntry.optionalStringArray("equipmentTags"), "golden equipmentTags should be absent for \(id)")
             XCTAssertNil(sEntry.equipmentTags, "ported equipmentTags should be nil for \(id)")
         }

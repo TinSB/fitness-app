@@ -19,8 +19,8 @@
 //                        and the historyItem assembly (injected nowIso / makeId seed).
 // Plus a direct makeId assertion (the injected-seed pure concat).
 //
-// The goldens are GENERATED from the REAL TS programAdjustmentEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / ZERO WRITE — the
+// The goldens are GENERATED from the retired legacy programAdjustmentEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / ZERO WRITE — the
 // port computes on clones and returns the result; no IO beyond reading the committed goldens.
 
 import XCTest
@@ -43,7 +43,7 @@ final class ProgramAdjustmentEngineCreateApplyParityTests: XCTestCase {
 
     private static func goldenURL(_ name: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/program-adjust/\(name).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/program-adjust/\(name).json", isDirectory: false
         )
     }
 
@@ -116,7 +116,7 @@ final class ProgramAdjustmentEngineCreateApplyParityTests: XCTestCase {
             let draft = try ProgramAdjustmentDraft(decoding: try XCTUnwrap(c.rawValue("draft"), "\(label): draft"))
             let source = try TrainingTemplate(decoding: try XCTUnwrap(c.rawValue("sourceProgramTemplate"), "\(label): sourceProgramTemplate"))
 
-            // Omitted (null) currentProgramTemplate / templates ⇒ the TS default params
+            // Omitted (null) currentProgramTemplate / templates ⇒ the legacy web schema default params
             // (DEFAULT_PROGRAM_TEMPLATE / [sourceProgramTemplate]); pass nil so the Swift port
             // substitutes the same defaults.
             let programValue = c.rawValue("currentProgramTemplate")
@@ -147,7 +147,7 @@ final class ProgramAdjustmentEngineCreateApplyParityTests: XCTestCase {
     /// `updatedProgramTemplate.dayTemplates` (the value the §8.3 write boundary persists),
     /// and the lossless WDay open-bag mirror must carry each day's UNKNOWN/future keys +
     /// keep an ABSENT optional block omitted (not materialised as []). The golden is the
-    /// REAL TS result (cloneProgram + in-place mutation); the pre-fix lossy WDay (7 fields,
+    /// retired legacy result (cloneProgram + in-place mutation); the pre-fix lossy WDay (7 fields,
     /// no `_unknown`, `?? []`) would drop the unknown keys and emit empty arrays → mismatch.
     /// Same shape as `testApplyDraftCasesParity`, over the additive opaque fixture.
     func testApplyDraftOpaqueCasesParity() throws {

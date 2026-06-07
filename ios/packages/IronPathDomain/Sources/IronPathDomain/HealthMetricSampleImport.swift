@@ -10,11 +10,11 @@
 // DataHealth gate is supplied by the caller.
 //
 // WHY `healthMetricSamples` and NOT `userProfile.weightKg`:
-//   The TypeScript source of truth this model mirrors imports Apple-Health body
+//   The legacy web implementation source of truth this model mirrors imports Apple-Health body
 //   weight as a `HealthMetricSample { metricType: "body_weight", unit: "kg" }`
-//   (`src/engines/healthImportEngine.ts` / `appleHealthTypeMap.ts`). The
+//   (`retired web reference` / `appleHealthTypeMap.ts`). The
 //   "current body weight" is then DERIVED at read time as the latest such
-//   sample (`src/engines/healthSummaryEngine.ts` → `latestBodyWeightKg`). The
+//   sample (`retired web reference` → `latestBodyWeightKg`). The
 //   import NEVER writes `userProfile.weightKg` — that is the user's self-entered
 //   profile field. HK-1 stays faithful to that contract: imported readings land
 //   in the time-series, and the latest is derived, not overwritten into profile.
@@ -37,7 +37,7 @@ extension AppData {
     /// Idempotent by content id: when `sample.id` is non-nil and a sample with the
     /// same `id` is already present, the receiver is returned UNCHANGED — so
     /// re-importing the same "latest" reading never creates a duplicate. (Mirrors
-    /// the TS importer's dedup-by-content-key in `src/engines/healthImportEngine.ts`,
+    /// the legacy web schema importer's dedup-by-content-key in `retired web reference`,
     /// where the sample id is content-addressed.)
     public func appendingHealthMetricSample(_ sample: HealthMetricSample) -> AppData {
         let existing = root["healthMetricSamples"]?.arrayValue ?? []

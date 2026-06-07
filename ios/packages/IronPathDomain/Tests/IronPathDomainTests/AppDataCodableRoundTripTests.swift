@@ -5,8 +5,8 @@
 //
 //   1. Re-encoded canonical JSON matches the iOS-0 canonical form.
 //   2. The FNV-1a hash matches the iOS-0 golden
-//      `phase19b-611afec7` (locked at
-//      `tests/fixtures/parity/golden/app-data/snapshot-hash-stable-v1.json`).
+//      `phase19b-5ce77819` (locked at
+//      `ios/ParityFixtures/parity/golden/app-data/snapshot-hash-stable-v1.json`).
 //   3. `AppData.init(decoding:)` accepts the payload and yields
 //      `schemaVersion == SchemaVersion.current`.
 //
@@ -75,22 +75,22 @@ final class AppDataCodableRoundTripTests: XCTestCase {
 
     func testFnv1aSnapshotHashMatchesIos0Golden() throws {
         // The iOS-0 golden lives at
-        // `tests/fixtures/parity/golden/app-data/snapshot-hash-stable-v1.json`
-        // (`"snapshotHash": "phase19b-611afec7"`). This test re-derives
+        // `ios/ParityFixtures/parity/golden/app-data/snapshot-hash-stable-v1.json`
+        // (`"snapshotHash": "phase19b-5ce77819"`). This test re-derives
         // the same hash from the Swift canonical-stringify output and
         // asserts equality.
         let payload = try loadFixturePayload()
         let canonical = try payload.canonicalJSONString()
         let hash = fnv1aPhase19b(canonical)
-        XCTAssertEqual(hash, "phase19b-611afec7",
+        XCTAssertEqual(hash, "phase19b-5ce77819",
                        "Swift FNV-1a over canonical-stringify must match the iOS-0 golden")
     }
 }
 
-// Mirrors the TypeScript implementation at
-// `src/cloudProduction/accountBoundaryLocalInventory.ts:127–134`:
+// Mirrors the legacy web implementation implementation at
+// `retired web reference`:
 // 32-bit FNV-1a, seed 2166136261, prime 16777619, output
-// `phase19b-<8-hex>`. The TS implementation iterates JavaScript
+// `phase19b-<8-hex>`. The legacy web schema implementation iterates JavaScript
 // `String.charCodeAt(index)` which returns UTF-16 code units — we
 // mirror that with Swift's `String.utf16` view.
 private func fnv1aPhase19b(_ text: String) -> String {

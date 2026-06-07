@@ -1,7 +1,7 @@
 // DataHealthIssueSorting — CC-0 coach-action capstone foundation (1/3).
 //
 // Faithful line-by-line Swift port of the PURE `sortDataHealthIssues` from
-// `src/engines/dataHealthEngine.ts:41` plus the three type families it reads:
+// `retired web reference` plus the three type families it reads:
 // `DataHealthSeverity` (ts:8), `DataHealthIssue` (ts:10), `DataHealthReport`
 // (ts:29) and the private `dataHealthSeverityRank` map (ts:35). These are the
 // `coachActionEngine` foundation deps (`import { sortDataHealthIssues, type
@@ -37,7 +37,7 @@ public enum DataHealthSeverity: String, Equatable, Hashable, Sendable, CaseItera
 }
 
 /// The closed `category` union on `DataHealthIssue` (dataHealthEngine.ts:13-21).
-/// Raw values mirror the TS string literals VERBATIM (note `healthData`
+/// Raw values mirror the legacy web schema string literals VERBATIM (note `healthData`
 /// camelCase among otherwise lower-case tokens).
 public enum DataHealthCategory: String, Equatable, Hashable, Sendable, CaseIterable {
     case replacement
@@ -51,7 +51,7 @@ public enum DataHealthCategory: String, Equatable, Hashable, Sendable, CaseItera
 }
 
 /// `DataHealthIssue` (dataHealthEngine.ts:10). `affectedIds` / `suggestedAction`
-/// are the only optional fields (TS `?`); everything else is required.
+/// are the only optional fields (legacy web schema `?`); everything else is required.
 public struct DataHealthIssue: Equatable, Hashable, Sendable {
     public let id: String
     public let severity: DataHealthSeverity

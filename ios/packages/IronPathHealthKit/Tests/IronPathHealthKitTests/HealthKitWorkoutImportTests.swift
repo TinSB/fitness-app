@@ -112,7 +112,7 @@ final class HealthKitWorkoutImportTests: XCTestCase {
         let r = reading()
         let a = HealthKitWorkoutMapper.sample(from: r, importedAt: importedAt)
         // Same workout → same id, even with a DIFFERENT importedAt (the dedup key is
-        // the workout content, not the import time — matches the TS key).
+        // the workout content, not the import time — matches the legacy web schema key).
         let b = HealthKitWorkoutMapper.sample(from: r, importedAt: laterImport)
         XCTAssertEqual(a.id, b.id, "same workout must hash to the same content id")
         // A genuinely different workout (different type) → different id.
@@ -136,7 +136,7 @@ final class HealthKitWorkoutImportTests: XCTestCase {
         XCTAssertEqual(HealthKitWorkoutMapper.displayLabel(forWorkoutType: "TraditionalStrengthTraining"), "传统力量训练")
         XCTAssertEqual(HealthKitWorkoutMapper.displayLabel(forWorkoutType: "Running"), "跑步")
         XCTAssertEqual(HealthKitWorkoutMapper.displayLabel(forWorkoutType: "Other"), "其他运动")
-        // Unknown identifier → the raw identifier (TS `labels[raw] || raw`).
+        // Unknown identifier → the raw identifier (legacy web schema `labels[raw] || raw`).
         XCTAssertEqual(HealthKitWorkoutMapper.displayLabel(forWorkoutType: "Rowing"), "Rowing")
         // Empty / nil → the generic fallback.
         XCTAssertEqual(HealthKitWorkoutMapper.displayLabel(forWorkoutType: ""), "外部活动")

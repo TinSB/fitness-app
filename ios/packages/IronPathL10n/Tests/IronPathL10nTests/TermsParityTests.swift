@@ -2,7 +2,7 @@
 //
 // Reconstructs the eleven-table label snapshot from the ported `Terms` namespace
 // and asserts it equals the GENERATED `i18n/terms-snapshot-v1` golden
-// entry-by-entry — the same committed golden the TS parity generator produces
+// entry-by-entry — the same committed golden the legacy web schema parity generator produces
 // (read via a #filePath walk-up to the canonical repo golden; no copy, no
 // drift). This mechanically catches ANY dropped or altered label: the table
 // universe, every key, every Chinese value, the per-table counts, and the
@@ -14,12 +14,12 @@ import XCTest
 @testable import IronPathL10n
 
 /// Golden-fixture loader for the PA-S0 terms snapshot. Reads the canonical repo
-/// golden under tests/fixtures/parity/golden/i18n/ via a #filePath walk-up.
+/// golden under ios/ParityFixtures/parity/golden/i18n/ via a #filePath walk-up.
 /// Mirrors `ExerciseLibraryGolden` / `SmartReplacementGoldens`.
 enum TermsGolden {
     static let fixtureId = "i18n/terms-snapshot-v1"
 
-    /// The eleven ported tables, keyed by their TS export name (the same keys the
+    /// The eleven ported tables, keyed by their legacy web schema export name (the same keys the
     /// generator dumps under `tables`).
     static let swiftTables: [String: [String: String]] = [
         "TERMS": Terms.terms,
@@ -48,7 +48,7 @@ enum TermsGolden {
     }
 
     static var goldenURL: URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(fixtureId).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(fixtureId).json", isDirectory: false)
     }
 
     struct Decoded {
@@ -166,7 +166,7 @@ final class TermsParityTests: XCTestCase {
     }
 
     // (6) `term()` behaviour: a known key returns its label; an unknown key → nil
-    //     (the faithful Swift equivalent of TS `keyof typeof TERMS` totality).
+    //     (the faithful Swift equivalent of legacy web schema `keyof typeof TERMS` totality).
     func testTermLookupBehaviour() {
         XCTAssertEqual(Terms.term("readinessScore"), "准备度评分")
         XCTAssertEqual(Terms.term("RIR"), "RIR")

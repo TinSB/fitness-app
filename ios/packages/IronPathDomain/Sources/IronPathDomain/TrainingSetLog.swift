@@ -2,8 +2,8 @@
 //
 // Per-set log row. iOS-3 Data Health repairs will read kg-stored
 // `weight`, `actualWeightKg`, identity fields, and completion status
-// directly through these typed accessors. The TS interface lives at
-// `src/models/training-model.ts:255`; the iOS-2C documented set is
+// directly through these typed accessors. The legacy web schema interface lives at
+// `retired web reference`; the iOS-2C documented set is
 // the subset needed by the iOS-3 / iOS-4 / iOS-5 unblock list.
 
 import Foundation
@@ -14,7 +14,7 @@ public struct TrainingSetLog: Equatable, Hashable, Sendable {
     public let exerciseId: String?
     public let originalExerciseId: String?
     public let actualExerciseId: String?
-    /// kg-stored planned / displayed weight (TS field name: `weight`).
+    /// kg-stored planned / displayed weight (legacy web schema field name: `weight`).
     public let weight: NumberRepr?
     /// kg-stored actual weight when different from `weight`.
     public let actualWeightKg: NumberRepr?

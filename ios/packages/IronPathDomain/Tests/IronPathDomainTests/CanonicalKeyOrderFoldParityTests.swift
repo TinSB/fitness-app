@@ -1,11 +1,11 @@
 // CanonicalKeyOrderFoldParityTests — FIX-B (§9 canonicalKeyOrder fidelity).
 //
-// Pins the §9 canonical key order against the REAL TS canonical-stringify for
+// Pins the §9 canonical key order against the retired legacy canonical-stringify for
 // objects whose sibling keys are EQUAL once lowercased ("Foo"/"foo", "AB"/"ab"/…).
 // Before FIX-B, `canonicalKeyOrder`'s tie-break was raw code-point order
-// (upper-before-lower) — the EXACT inverse of the TS `localeCompare` tertiary
+// (upper-before-lower) — the EXACT inverse of the legacy web schema `localeCompare` tertiary
 // case tie-break (lower-before-upper) — so `canonicalJSONData()` byte-diverged
-// from the TS canonical form on case-folded sibling keys. No fixture carried such
+// from the legacy web schema canonical form on case-folded sibling keys. No fixture carried such
 // keys, so the debt stayed latent (Swift was internally consistent → round-trip /
 // snapshot-hash green). This LOAD-BEARING cross-validation loads the
 // `app-data/canonical-keyorder-fold-v1` golden — generated from the REAL
@@ -39,7 +39,7 @@ final class CanonicalKeyOrderFoldParityTests: XCTestCase {
             .deletingLastPathComponent()  // packages/
             .deletingLastPathComponent()  // ios/
             .deletingLastPathComponent()  // repo root
-            .appendingPathComponent("tests/fixtures/parity/golden/app-data/canonical-keyorder-fold-v1.json")
+            .appendingPathComponent("ios/ParityFixtures/parity/golden/app-data/canonical-keyorder-fold-v1.json")
     }
 
     func testCaseFoldGoldenExists() throws {
@@ -49,8 +49,8 @@ final class CanonicalKeyOrderFoldParityTests: XCTestCase {
         )
     }
 
-    /// LOAD-BEARING: every case's Swift canonical string == the TS-generated
-    /// `canonicalJson` byte-for-byte AND its FNV-1a == the TS `snapshotHash`.
+    /// LOAD-BEARING: every case's Swift canonical string == the legacy web schema-generated
+    /// `canonicalJson` byte-for-byte AND its FNV-1a == the legacy web schema `snapshotHash`.
     func testCanonicalKeyOrderMatchesTsGoldenByteForByte() throws {
         let data = try Data(contentsOf: goldenURL())
         let golden = try JSONValue(decoding: data)
@@ -75,14 +75,14 @@ final class CanonicalKeyOrderFoldParityTests: XCTestCase {
             }
             let label = caseObj["label"]?.stringValue ?? "case \(index)"
 
-            // §9 canonical byte form — must equal the TS canonical-stringify output.
+            // §9 canonical byte form — must equal the legacy web schema canonical-stringify output.
             let actualCanonical = try payload.canonicalJSONString()
             XCTAssertEqual(actualCanonical, expectedCanonical,
-                           "canonicalJSONString must byte-match the TS canonical-stringify golden — \(label)")
+                           "canonicalJSONString must byte-match the legacy web schema canonical-stringify golden — \(label)")
 
             // Cross-end snapshot-hash anchor — FNV-1a over the same canonical string.
             XCTAssertEqual(fnv1aPhase19b(actualCanonical), expectedHash,
-                           "FNV-1a over the canonical string must match the TS snapshotHash — \(label)")
+                           "FNV-1a over the canonical string must match the legacy web schema snapshotHash — \(label)")
         }
     }
 

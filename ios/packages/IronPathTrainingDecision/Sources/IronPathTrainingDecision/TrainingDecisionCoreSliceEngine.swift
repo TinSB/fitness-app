@@ -1,11 +1,11 @@
 // iOS-4B2 TrainingDecision Core Rule Skeleton V1 — engine entry + clean input.
 //
 // The FIRST TrainingDecision engine slice. Ports:
-//   * the Clean Input Contract (src/engines/trainingDecisionCleanInput.ts):
+//   * the Clean Input Contract (retired-web-reference):
 //     CleanTrainingDecisionInput + createCleanTrainingDecisionInput, which takes
 //     a CleanAppDataView (IronPathDataHealth) so RAW AppData can never reach the
 //     engine. The brand is a compile-time guarantee (fileprivate init) — strictly
-//     stronger than the TS runtime `Symbol.for(...)` throw.
+//     stronger than the legacy web schema runtime `Symbol.for(...)` throw.
 //   * buildTrainingDecisionFromCleanInput (trainingDecisionCleanInput.ts:232).
 //   * sessionIntentFor (trainingDecisionEngine.ts:196) — full 5-branch order, but
 //     with e1rmTrendUp / recoveryHigh hard-wired false (readiness + e1RM trend are
@@ -21,7 +21,7 @@
 //
 // iOS-17e-5 wires the history-driven weekly progression projection: the weeklyAdjustment
 // object (direction/magnitudePct/blockedBy/appliesFromIsoDate) is now produced from the
-// recorded performed sets via the SAME branch order as TS (e1rmTrendUp -> increase),
+// recorded performed sets via the SAME branch order as legacy web schema (e1rmTrendUp -> increase),
 // closing the loop the 17e-0 history goldens pinned. See TrainingDecisionModes.buildWeeklyAdjustment.
 //
 // OUT OF SCOPE (iOS-4B6+ / deferred): the support plan object, userFacing text, and the
@@ -45,7 +45,7 @@ public struct TrainingDecisionSurfaceInputs: Sendable {
 // MARK: - Clean Input metadata
 
 /// The non-AppData metadata the clean-input factory needs. Mirrors
-/// CleanTrainingDecisionInputMetadata (trainingDecisionCleanInput.ts:82). The TS
+/// CleanTrainingDecisionInputMetadata (trainingDecisionCleanInput.ts:82). The legacy web schema
 /// metadata carries the full `template`; iOS-4B4 needs only `template.duration` (for
 /// the readiness time-gap penalty), so `templateDurationMin` is carried — the full
 /// template arrives with the prescription slice (iOS-4B5).
@@ -94,7 +94,7 @@ public struct CleanTrainingDecisionInputMetadata: Sendable {
 /// Construction is LOCKED: the memberwise initializer is `fileprivate`, so the
 /// only way any other module (app surface, cloud, test) can mint one is the
 /// `createCleanTrainingDecisionInput(cleanView:metadata:)` factory below, which
-/// requires a CleanAppDataView. This is the Swift analogue of the TS
+/// requires a CleanAppDataView. This is the Swift analogue of the legacy web schema
 /// `Symbol.for('ironpath.trainingDecision.cleanInput.v1')` brand — but enforced
 /// at COMPILE TIME, not by a runtime throw. Deliberately NOT Codable: a
 /// synthesized `init(from:)` would re-open raw construction from arbitrary JSON
@@ -157,7 +157,7 @@ public struct CleanTrainingDecisionInput: Sendable {
 /// screening from `cleanView.cleanedScreening`; mesocyclePlan + todayStatus come
 /// from `cleanView.raw` (the data-health guards do not clean those, and the 4B2
 /// slice never reads todayStatus). An absent/empty plan maps to nil so the engine
-/// falls back to the default week-0 'base' (mirrors TS `cleaned.mesocyclePlan ??
+/// falls back to the default week-0 'base' (mirrors legacy web schema `cleaned.mesocyclePlan ??
 /// null`). No raw AppData value escapes into the engine — only these fields.
 public func createCleanTrainingDecisionInput(
     cleanView: CleanAppDataView,
@@ -165,7 +165,7 @@ public func createCleanTrainingDecisionInput(
 ) -> CleanTrainingDecisionInput {
     let rawPlan = cleanView.raw.mesocyclePlan
     let plan: MesocyclePlan? = (rawPlan.startDate == nil && rawPlan.weeks == nil) ? nil : rawPlan
-    // Resolve useHealthDataForReadiness mirroring TS resolveUseHealthDataForReadiness
+    // Resolve useHealthDataForReadiness mirroring legacy web schema resolveUseHealthDataForReadiness
     // (trainingDecisionCleanInput.ts:147): an explicit metadata override wins;
     // otherwise a stale-for-readiness health signal forces false (e.g.
     // stale-health-data-v1's 30-day-old sample > 14d threshold), else the clean
@@ -217,7 +217,7 @@ public struct TrainingDecisionCoreSlice: Equatable, Sendable {
     public let progressionMode: ProgressionMode
     /// iOS-17e-5: the history-driven weekly progression projection
     /// (trainingDecisionEngine.ts:2079-2087). direction/magnitudePct/blockedBy/
-    /// appliesFromIsoDate are produced by the SAME branch order as TS — a rising
+    /// appliesFromIsoDate are produced by the SAME branch order as legacy web schema — a rising
     /// e1RM trend over performed sets yields direction='increase', a flat/too-short
     /// history holds. Golden-parity-asserted (closed loop: engine now consumes the
     /// recorded sets to adapt the weekly recommendation).

@@ -1,7 +1,7 @@
 // SchemaVersion — iOS-2B AppData Swift Models V1.
 //
 // The current AppData schema version is 8, matching
-// `src/data/appConfig.ts:4` (`STORAGE_VERSION = 8`). Swift refuses
+// `retired web reference` (`STORAGE_VERSION = 8`). Swift refuses
 // to decode payloads whose `schemaVersion` differs from the current,
 // rather than silently downgrading or upgrading. iOS-3 owns the
 // storage adapter and decides whether a refusal triggers a UI prompt.

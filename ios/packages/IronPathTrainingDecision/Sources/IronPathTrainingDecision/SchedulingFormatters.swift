@@ -1,7 +1,7 @@
 // SC-0 — scheduling-track i18n formatter foundation.
 //
-// Faithful Swift mirror of `formatTrainingMode` (src/i18n/formatters.ts:213-214) — the
-// ONE display formatter the recovery/scheduler engines import from src/i18n/formatters
+// Faithful Swift mirror of `formatTrainingMode` (retired-web-reference) — the
+// ONE display formatter the recovery/scheduler engines import from retired-web-reference
 // that was not yet native:
 //   nextWorkoutScheduler.ts:1   import { formatMuscleName, formatTemplateName, formatTrainingMode }
 //   nextWorkoutScheduler.ts:409 `const modeLabel = trainingMode ? formatTrainingMode(trainingMode) : ''`
@@ -21,8 +21,8 @@
 // console.warn (formatters.ts:15-19/58) is a no-op side effect and not ported.
 //
 // PURE / display-only: no clock, zero `: Date`, no IO, no write path. The
-// `i18n/training-mode-cases-v1` golden (GENERATED from the REAL TS formatter via
-// scripts/parityGoldensEntry.ts, never hand-authored — §22) reconciles the table + every
+// `i18n/training-mode-cases-v1` golden (GENERATED from the retired legacy formatter via
+// retired fixture generator, never hand-authored — §22) reconciles the table + every
 // branch so no entry, normalization step, or fallback string can drift in transcription.
 
 import Foundation

@@ -1,7 +1,7 @@
 // PADomainTypesParityTests — PA-S1 PA Domain Types V1.
 //
 // REAL unit tests for the PA (Plan-Adaptive) domain type family ported in
-// PA-S1. Each type is exercised with a representative TS-shaped JSON
+// PA-S1. Each type is exercised with a representative legacy web schema-shaped JSON
 // fixture (inline, the `ScreeningProfileEditTests` precedent — no new
 // golden file, so the parity-fixture-count guards are untouched) and
 // asserts the three faithfulness invariants the slice promises:

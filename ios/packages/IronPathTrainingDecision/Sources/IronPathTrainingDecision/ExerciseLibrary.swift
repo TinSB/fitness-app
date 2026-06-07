@@ -1,7 +1,7 @@
 // SR-1 — Exercise Library data port (data + pure resolve/format functions).
 //
 // Faithful Swift transcription of the FOUR frozen library tables and the pure
-// parsing functions in src/data/exerciseLibrary.ts. This is DATA + PURE
+// parsing functions in retired-web-reference This is DATA + PURE
 // FUNCTIONS only — it ports NO replacement-engine logic (EXERCISE_EQUIVALENCE_CHAINS
 // / EXERCISE_KNOWLEDGE_OVERRIDES values / buildSmartReplacementRecommendations are
 // SR-2/SR-3). No IO, no clock, no `: Date`, deterministic.
@@ -25,8 +25,8 @@
 import Foundation
 import IronPathDomain
 
-/// `ExerciseEquipmentTag` — mirrors the TS string-literal union
-/// (exerciseLibrary.ts:9-18). Raw values match the TS literals; `plate-loaded`
+/// `ExerciseEquipmentTag` — mirrors the legacy web schema string-literal union
+/// (exerciseLibrary.ts:9-18). Raw values match the legacy web schema literals; `plate-loaded`
 /// is the only non-1:1 Swift case name.
 public enum ExerciseEquipmentTag: String, Equatable, Sendable, CaseIterable {
     case dumbbell
@@ -40,7 +40,7 @@ public enum ExerciseEquipmentTag: String, Equatable, Sendable, CaseIterable {
     case plateLoaded = "plate-loaded"
 }
 
-/// `ExerciseName` — mirrors the TS type (exerciseLibrary.ts:3-7).
+/// `ExerciseName` — mirrors the legacy web schema type (exerciseLibrary.ts:3-7).
 public struct ExerciseName: Equatable, Sendable {
     public let zh: String
     public let en: String?
@@ -56,10 +56,10 @@ public struct ExerciseName: Equatable, Sendable {
 /// The exercise library: the four frozen lookup tables + the pure resolve/format
 /// helpers. A namespace enum (no instances); all members are `static`.
 public enum ExerciseLibrary {
-    // MARK: - Tables (ORDERED — TS insertion order preserved)
+    // MARK: - Tables (ORDERED — legacy web schema insertion order preserved)
     //
     // `resolveExerciseReferenceToId` returns the FIRST id whose normalized id /
-    // label / alias matches, iterating in declaration order — and the TS data has
+    // label / alias matches, iterating in declaration order — and the legacy web schema data has
     // genuine collisions (e.g. `face-pull` & `face_pull` both normalize to
     // `facepull`/`面拉`; `landmine-press` & `landmine_press` both to
     // `landminepress`/`地雷管推举`). A Swift `Dictionary` is unordered, so the
@@ -367,8 +367,8 @@ public enum ExerciseLibrary {
     /// VALUES are the engine knowledge base (orderPriority / contraindications /
     /// alternativeIds / …) — NOT ported here; that is SR-2/SR-3. 63 ids (every one
     /// is also an EXERCISE_DISPLAY_NAMES key, so this term is currently redundant,
-    /// but it is transcribed verbatim to keep resolve() byte-faithful to TS and to
-    /// fail the parity test if a future TS override id ever stops being a display id).
+    /// but it is transcribed verbatim to keep resolve() byte-faithful to legacy web schema and to
+    /// fail the parity test if a future legacy web schema override id ever stops being a display id).
     public static let knowledgeOverrideIds: Set<String> = [
         "assisted-dip", "assisted-pull-up", "barbell-row", "belt-squat", "bench-press",
         "cable-curl", "cable-fly", "cable-lateral-raise", "cable-rear-delt-fly", "calf-raise",
@@ -418,7 +418,7 @@ public enum ExerciseLibrary {
         return value.unicodeScalars.contains { $0.value >= 0x3400 && $0.value <= 0x9fff }
     }
 
-    /// `formatExerciseDisplayName` (exerciseLibrary.ts:323-372). `value` mirrors TS
+    /// `formatExerciseDisplayName` (exerciseLibrary.ts:323-372). `value` mirrors legacy web schema
     /// `unknown`: a `.string` (an id or an already-Chinese label) or a `.object`
     /// carrying id / name / alias fields. `warnMissingChineseName` is a DEV-only
     /// `console.warn` (exerciseLibrary.ts:311) with no functional output — a no-op here.
@@ -512,7 +512,7 @@ public enum ExerciseLibrary {
 
     /// `resolveExerciseReferenceToId` (exerciseLibrary.ts:381-396). Returns the
     /// canonical id for a raw reference (id / display / english / alias), or `nil`.
-    /// Iterates in TS declaration order so the FIRST match wins exactly as TS does.
+    /// Iterates in legacy web schema declaration order so the FIRST match wins exactly as legacy web schema does.
     public static func resolveExerciseReferenceToId(_ value: String) -> String? {
         let raw = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty { return nil }
@@ -559,7 +559,7 @@ public enum ExerciseLibrary {
     // MARK: - Private helpers
 
     /// First field (in the given key order) whose value is a non-empty String —
-    /// mirrors the TS `a || b || c || '' ` truthy-chain over string id fields.
+    /// mirrors the legacy web schema `a || b || c || '' ` truthy-chain over string id fields.
     private static func firstNonEmptyString(_ obj: OrderedJSONObject, _ keys: [String]) -> String {
         for key in keys {
             if let s = obj.rawValue(key)?.stringValue, !s.isEmpty { return s }
@@ -567,7 +567,7 @@ public enum ExerciseLibrary {
         return ""
     }
 
-    /// Replace every match of `pattern` in `input` with `replacement` (mirrors a TS
+    /// Replace every match of `pattern` in `input` with `replacement` (mirrors a legacy web schema
     /// `String.replace(/.../g, …)`).
     private static func regexReplaceAll(_ input: String, pattern: String, with replacement: String) -> String {
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return input }

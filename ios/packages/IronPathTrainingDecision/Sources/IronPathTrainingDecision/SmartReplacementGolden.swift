@@ -1,11 +1,11 @@
 // SR-0 — Smart Replacement parity golden output type skeleton.
 //
 // `SmartReplacementGolden.init(decoding:)` decodes a smart-replacement parity
-// golden file (tests/fixtures/parity/golden/smart-replacement/*.json) produced
-// by the TypeScript generator (scripts/parityGoldensEntry.ts →
-// generateSmartReplacement). It mirrors the TS engine OUTPUT shape:
+// golden file (ios/ParityFixtures/parity/golden/smart-replacement/*.json) produced
+// by the legacy web implementation generator (retired fixture generator →
+// generateSmartReplacement). It mirrors the legacy web schema engine OUTPUT shape:
 //
-//   src/engines/smartReplacementEngine.ts:22-31
+//   retired-web-reference
 //     export type SmartReplacementPriority =
 //       'primary' | 'secondary' | 'angle_variation' | 'avoid';
 //     export type SmartReplacementRecommendation = {
@@ -26,8 +26,8 @@
 import Foundation
 import IronPathDomain
 
-/// `priority` — mirrors TS `SmartReplacementPriority`
-/// (smartReplacementEngine.ts:22). Raw values match the TS string literals;
+/// `priority` — mirrors legacy web schema `SmartReplacementPriority`
+/// (smartReplacementEngine.ts:22). Raw values match the legacy web schema string literals;
 /// `angle_variation` is the only non-1:1 Swift case name.
 public enum SmartReplacementPriority: String, Equatable, Sendable, CaseIterable {
     case primary
@@ -36,7 +36,7 @@ public enum SmartReplacementPriority: String, Equatable, Sendable, CaseIterable 
     case avoid
 }
 
-/// `fatigueCost` — mirrors the TS `'low' | 'medium' | 'high'` union
+/// `fatigueCost` — mirrors the legacy web schema `'low' | 'medium' | 'high'` union
 /// (smartReplacementEngine.ts:28 + getFatigueCost at :139).
 public enum SmartReplacementFatigueCost: String, Equatable, Sendable, CaseIterable {
     case low
@@ -44,7 +44,7 @@ public enum SmartReplacementFatigueCost: String, Equatable, Sendable, CaseIterab
     case high
 }
 
-/// One `recommendations[i]` entry — mirrors TS `SmartReplacementRecommendation`
+/// One `recommendations[i]` entry — mirrors legacy web schema `SmartReplacementRecommendation`
 /// (smartReplacementEngine.ts:24-31). Decode-only; carries the raw `priority` /
 /// `fatigueCost` strings verbatim plus non-failing typed enum accessors.
 public struct SmartReplacementRecommendation: Equatable, Sendable {
@@ -81,7 +81,7 @@ public struct SmartReplacementRecommendation: Equatable, Sendable {
 
 /// The full smart-replacement golden file. Wraps the ordered
 /// `recommendations` array with the generator's `recommendationCount` +
-/// `priorityCounts` summary (see scripts/parityGoldensEntry.ts:generateSmartReplacement)
+/// `priorityCounts` summary (see retired fixture generator:generateSmartReplacement)
 /// and the shared `parityGolden` envelope. Decode-only.
 public struct SmartReplacementGolden: Equatable, Sendable {
     public let sourceFixtureId: String

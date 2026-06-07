@@ -4,7 +4,7 @@
 // layer must NOT declare any property of type `Date`, `Date?`, or
 // `[Date]`. iOS-2A plan §8 + Agent 5 §3.3 + Agent 2 §7 all forbid
 // `Date` for persisted timestamps because Swift's
-// `ISO8601DateFormatter` does not round-trip TypeScript's
+// `ISO8601DateFormatter` does not round-trip legacy web implementation's
 // `.SSSZ`-precision strings (the iOS-3 (Entry Gate) data-loss risk
 // #1). Strings end-to-end is the only safe answer.
 //

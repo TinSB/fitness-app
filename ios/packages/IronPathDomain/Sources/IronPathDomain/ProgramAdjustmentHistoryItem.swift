@@ -1,7 +1,7 @@
 // ProgramAdjustmentHistoryItem — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `ProgramAdjustmentHistoryItem` interface at
-// `src/models/training-model.ts:1200`. An applied program adjustment in
+// Mirrors the legacy web implementation `ProgramAdjustmentHistoryItem` interface at
+// `retired web reference`. An applied program adjustment in
 // the PA history, with its typed `changes` (`[AdjustmentChange]`) and the
 // `sourceProgramSnapshot` it was applied over.
 //
@@ -14,30 +14,30 @@
 // (`:1234`, NOT in the PA-S1 scope) — carried verbatim as raw `JSONValue?`
 // (the `MesocyclePlan.weeks` precedent for a not-yet-typed nested struct,
 // lossless). Same paradigm as the existing Domain types. All properties
-// optional (the `ProgramTemplate` convention); TS requiredness noted.
+// optional (the `ProgramTemplate` convention); legacy web schema requiredness noted.
 //
 // Pure type: no runtime logic, no write path, no `: Date`.
 
 import Foundation
 
 public struct ProgramAdjustmentHistoryItem: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let id: String?                              // TS: `id: string` (required)
-    public let appliedAt: String?                       // TS: `appliedAt: string` (required)
-    public let sourceProgramTemplateId: String?         // TS: `sourceProgramTemplateId: string` (required)
-    public let experimentalProgramTemplateId: String?   // TS: `experimentalProgramTemplateId: string` (required)
-    public let sourceCoachActionId: String?             // TS: `sourceCoachActionId?: string`
-    public let sourceFingerprint: String?               // TS: `sourceFingerprint?: string`
-    public let sourceProgramTemplateName: String?       // TS: `sourceProgramTemplateName?: string`
-    public let experimentalProgramTemplateName: String? // TS: `experimentalProgramTemplateName?: string`
-    public let mainChangeSummary: String?               // TS: `mainChangeSummary?: string`
-    public let selectedRecommendationIds: [String]?     // TS: `selectedRecommendationIds: string[]` (required)
-    public let changes: [AdjustmentChange]?             // TS: `changes: AdjustmentChange[]` (required)
-    public let status: String?                          // TS: `status?: PlanAdjustmentDraftStatus`
-    public let explanation: String?                     // TS: `explanation?: string`
-    public let rollbackAvailable: Bool?                 // TS: `rollbackAvailable: boolean` (required)
-    public let rolledBackAt: String?                    // TS: `rolledBackAt?: string`
-    public let sourceProgramSnapshot: ProgramTemplate?  // TS: `sourceProgramSnapshot?: ProgramTemplate`
-    public let effectReview: JSONValue?                 // TS: `effectReview?: AdjustmentEffectReview`
+    public let id: String?                              // legacy web schema: `id: string` (required)
+    public let appliedAt: String?                       // legacy web schema: `appliedAt: string` (required)
+    public let sourceProgramTemplateId: String?         // legacy web schema: `sourceProgramTemplateId: string` (required)
+    public let experimentalProgramTemplateId: String?   // legacy web schema: `experimentalProgramTemplateId: string` (required)
+    public let sourceCoachActionId: String?             // legacy web schema: `sourceCoachActionId?: string`
+    public let sourceFingerprint: String?               // legacy web schema: `sourceFingerprint?: string`
+    public let sourceProgramTemplateName: String?       // legacy web schema: `sourceProgramTemplateName?: string`
+    public let experimentalProgramTemplateName: String? // legacy web schema: `experimentalProgramTemplateName?: string`
+    public let mainChangeSummary: String?               // legacy web schema: `mainChangeSummary?: string`
+    public let selectedRecommendationIds: [String]?     // legacy web schema: `selectedRecommendationIds: string[]` (required)
+    public let changes: [AdjustmentChange]?             // legacy web schema: `changes: AdjustmentChange[]` (required)
+    public let status: String?                          // legacy web schema: `status?: PlanAdjustmentDraftStatus`
+    public let explanation: String?                     // legacy web schema: `explanation?: string`
+    public let rollbackAvailable: Bool?                 // legacy web schema: `rollbackAvailable: boolean` (required)
+    public let rolledBackAt: String?                    // legacy web schema: `rolledBackAt?: string`
+    public let sourceProgramSnapshot: ProgramTemplate?  // legacy web schema: `sourceProgramSnapshot?: ProgramTemplate`
+    public let effectReview: JSONValue?                 // legacy web schema: `effectReview?: AdjustmentEffectReview`
 
     public let _unknown: OrderedJSONObject
 

@@ -17,8 +17,8 @@
 // THREE user-override identity fields ONLY — `actualExerciseId` / `displayExerciseId`
 // / `recordExerciseId` — to the replacement id (a RESTORE clears all three back to
 // nil, so the record falls back to the untouched original `id` / `exerciseId`, mirror-
-// ing the PWA `actualExerciseId || replacementExerciseId || originalExerciseId ||
-// plannedId` resolution in `src/engines/currentExerciseSelector.ts`).
+// ing the legacy web app `actualExerciseId || replacementExerciseId || originalExerciseId ||
+// plannedId` resolution in `retired web reference`).
 //
 // It NEVER touches:
 //   * `originalExerciseId` — opened by the engine/plan; it is an engine OUTPUT, not a
@@ -116,7 +116,7 @@ extension AppData {
     /// APPLY sets all THREE user-override identity fields (`actualExerciseId` /
     /// `displayExerciseId` / `recordExerciseId`) to `replacementExerciseId`; RESTORE
     /// (nil) clears all three, so the record falls back to the untouched original
-    /// `id` / `exerciseId` (mirroring the PWA fallback chain). It writes ONLY identity
+    /// `id` / `exerciseId` (mirroring the legacy web app fallback chain). It writes ONLY identity
     /// strings — never `originalExerciseId`, the prescription body, the `sets`, the
     /// `mesocyclePlan` weeks blob, or any computed phase/readiness/e1RM (§11): those are
     /// engine OUTPUTS recomputed FROM this (clean) record on the engine's next run.

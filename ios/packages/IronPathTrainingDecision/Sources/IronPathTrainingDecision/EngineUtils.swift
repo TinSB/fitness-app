@@ -1,7 +1,7 @@
 // EngineUtils — PA-S2 engineUtils engine-tool subset V1.
 //
 // Faithful Swift port of the PURE/read-only engine tools from
-// `src/engines/engineUtils.ts` that the PA (Plan-Adaptive) engine cluster
+// `retired web reference` that the PA (Plan-Adaptive) engine cluster
 // (programAdjustmentEngine / exercisePrescriptionEngine / systemConsistencyEngine,
 // ported S3+) consumes, scoped to this slice:
 //
@@ -21,7 +21,7 @@
 // the Domain helper `EngineValueUtils.clone`.
 //
 // ── OVERRIDE-DATA SEAM (the PA-S2 boundary, do NOT cross) ───────────────────────
-// `buildExerciseMetadata` in TS reads TWO id-keyed knowledge tables:
+// `buildExerciseMetadata` in legacy web schema reads TWO id-keyed knowledge tables:
 //   * `EXERCISE_KNOWLEDGE_OVERRIDES[exercise.id] || {}`  (engineUtils.ts:136)
 //     — `exerciseLibrary.ts:485`, a ~1000-line value table;
 //   * `EXERCISE_EQUIVALENCE_CHAINS[exercise.id]`          (engineUtils.ts:137)
@@ -94,7 +94,7 @@ enum EngineUtils {
 
     /// `buildExerciseMetadata` (engineUtils.ts:135-193) — LOGIC + DEFAULT branches over the
     /// injected `override` / `equivalence` seams (PA-S3 supplies the real tables; default empty).
-    /// Returns the metadata as an `OrderedJSONObject` (the exact shape the TS `ExerciseMetadata`
+    /// Returns the metadata as an `OrderedJSONObject` (the exact shape the legacy web schema `ExerciseMetadata`
     /// object literal produces), so `enrichExercise` can spread it and the OUTPUT-parity test can
     /// reconcile it field-by-field.
     static func buildExerciseMetadata(
@@ -102,8 +102,8 @@ enum EngineUtils {
         override: OrderedJSONObject = OrderedJSONObject(),
         equivalence: JSONValue? = nil
     ) -> OrderedJSONObject {
-        let exId = exercise.id ?? ""        // TS `exercise.id` (required)
-        let mus = exercise.muscle ?? ""     // TS `exercise.muscle` (required)
+        let exId = exercise.id ?? ""        // legacy web schema `exercise.id` (required)
+        let mus = exercise.muscle ?? ""     // legacy web schema `exercise.muscle` (required)
 
         // const bigMuscle = ['胸', '背', '腿'].includes(exercise.muscle)  (:138)
         let bigMuscle = ["胸", "背", "腿"].contains(mus)

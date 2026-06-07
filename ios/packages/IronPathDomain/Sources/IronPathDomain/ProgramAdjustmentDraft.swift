@@ -1,7 +1,7 @@
 // ProgramAdjustmentDraft — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `ProgramAdjustmentDraft` interface at
-// `src/models/training-model.ts:1172`. The PA engine's staged, not-yet-
+// Mirrors the legacy web implementation `ProgramAdjustmentDraft` interface at
+// `retired web reference`. The PA engine's staged, not-yet-
 // applied program adjustment — its typed `changes` (`[AdjustmentChange]`)
 // and `diffPreview` (`ProgramAdjustmentDiff`).
 //
@@ -11,38 +11,38 @@
 // enum (lossless "extracted-set" rule). Same paradigm as the existing
 // Domain types: `init(decoding:)` / `encoded()`, `_unknown` open bag,
 // canonical round-trip. All properties optional (the `ProgramTemplate`
-// convention); TS requiredness noted in-line.
+// convention); legacy web schema requiredness noted in-line.
 //
 // Pure type: no runtime logic, no write path, no `: Date`.
 
 import Foundation
 
 public struct ProgramAdjustmentDraft: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let id: String?                          // TS: `id: string` (required)
-    public let parentDraftId: String?               // TS: `parentDraftId?: string`
-    public let draftRevision: NumberRepr?           // TS: `draftRevision?: number`
-    public let createdAt: String?                   // TS: `createdAt: string` (required)
-    public let status: String?                      // TS: `status: AdjustmentApplicationStatus` (required)
-    public let sourceProgramTemplateId: String?     // TS: `sourceProgramTemplateId: string` (required)
-    public let sourceTemplateId: String?            // TS: `sourceTemplateId?: string`
-    public let sourceCoachActionId: String?         // TS: `sourceCoachActionId?: string`
-    public let sourceRecommendationId: String?      // TS: `sourceRecommendationId?: string`
-    public let sourceFingerprint: String?           // TS: `sourceFingerprint?: string`
-    public let experimentalProgramTemplateId: String? // TS: `experimentalProgramTemplateId?: string`
-    public let experimentalTemplateName: String?    // TS: `experimentalTemplateName?: string`
-    public let appliedAt: String?                   // TS: `appliedAt?: string`
-    public let rolledBackAt: String?                // TS: `rolledBackAt?: string`
-    public let sourceTemplateSnapshotHash: String?  // TS: `sourceTemplateSnapshotHash?: string`
-    public let sourceTemplateUpdatedAt: String?     // TS: `sourceTemplateUpdatedAt?: string`
-    public let title: String?                       // TS: `title: string` (required)
-    public let summary: String?                     // TS: `summary: string` (required)
-    public let selectedRecommendationIds: [String]? // TS: `selectedRecommendationIds: string[]` (required)
-    public let changes: [AdjustmentChange]?         // TS: `changes: AdjustmentChange[]` (required)
-    public let confidence: EstimateConfidence?      // TS: `confidence: EstimateConfidence` (required)
-    public let riskLevel: String?                   // TS: `riskLevel?: 'low'|'medium'|'high'`
-    public let explanation: String?                 // TS: `explanation?: string`
-    public let diffPreview: ProgramAdjustmentDiff?  // TS: `diffPreview?: ProgramAdjustmentDiff`
-    public let notes: [String]?                     // TS: `notes: string[]` (required)
+    public let id: String?                          // legacy web schema: `id: string` (required)
+    public let parentDraftId: String?               // legacy web schema: `parentDraftId?: string`
+    public let draftRevision: NumberRepr?           // legacy web schema: `draftRevision?: number`
+    public let createdAt: String?                   // legacy web schema: `createdAt: string` (required)
+    public let status: String?                      // legacy web schema: `status: AdjustmentApplicationStatus` (required)
+    public let sourceProgramTemplateId: String?     // legacy web schema: `sourceProgramTemplateId: string` (required)
+    public let sourceTemplateId: String?            // legacy web schema: `sourceTemplateId?: string`
+    public let sourceCoachActionId: String?         // legacy web schema: `sourceCoachActionId?: string`
+    public let sourceRecommendationId: String?      // legacy web schema: `sourceRecommendationId?: string`
+    public let sourceFingerprint: String?           // legacy web schema: `sourceFingerprint?: string`
+    public let experimentalProgramTemplateId: String? // legacy web schema: `experimentalProgramTemplateId?: string`
+    public let experimentalTemplateName: String?    // legacy web schema: `experimentalTemplateName?: string`
+    public let appliedAt: String?                   // legacy web schema: `appliedAt?: string`
+    public let rolledBackAt: String?                // legacy web schema: `rolledBackAt?: string`
+    public let sourceTemplateSnapshotHash: String?  // legacy web schema: `sourceTemplateSnapshotHash?: string`
+    public let sourceTemplateUpdatedAt: String?     // legacy web schema: `sourceTemplateUpdatedAt?: string`
+    public let title: String?                       // legacy web schema: `title: string` (required)
+    public let summary: String?                     // legacy web schema: `summary: string` (required)
+    public let selectedRecommendationIds: [String]? // legacy web schema: `selectedRecommendationIds: string[]` (required)
+    public let changes: [AdjustmentChange]?         // legacy web schema: `changes: AdjustmentChange[]` (required)
+    public let confidence: EstimateConfidence?      // legacy web schema: `confidence: EstimateConfidence` (required)
+    public let riskLevel: String?                   // legacy web schema: `riskLevel?: 'low'|'medium'|'high'`
+    public let explanation: String?                 // legacy web schema: `explanation?: string`
+    public let diffPreview: ProgramAdjustmentDiff?  // legacy web schema: `diffPreview?: ProgramAdjustmentDiff`
+    public let notes: [String]?                     // legacy web schema: `notes: string[]` (required)
 
     public let _unknown: OrderedJSONObject
 

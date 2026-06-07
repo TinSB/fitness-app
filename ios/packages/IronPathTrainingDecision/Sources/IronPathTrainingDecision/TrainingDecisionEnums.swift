@@ -1,6 +1,6 @@
-// iOS-4B1 — stable TrainingDecision enums. These mirror the locked TS string
+// iOS-4B1 — stable TrainingDecision enums. These mirror the locked legacy web schema string
 // unions for typed inspection. The decoded `TrainingDecision` stores these as
-// raw `String` fields (so a future TS-added enum value never breaks decode)
+// raw `String` fields (so a future legacy web schema-added enum value never breaks decode)
 // and exposes computed enum accessors for callers/tests that want the typed
 // form. No engine logic — these are pure value enums.
 
@@ -11,7 +11,7 @@ public enum DecisionVersion: String, CaseIterable, Equatable, Sendable {
     case v2
 }
 
-/// `sessionIntent` — the 5 locked TS intents.
+/// `sessionIntent` — the 5 locked legacy web schema intents.
 public enum SessionIntent: String, CaseIterable, Equatable, Sendable {
     case normalSession = "normal-session"
     case reentryProductive = "reentry-productive"
@@ -20,7 +20,7 @@ public enum SessionIntent: String, CaseIterable, Equatable, Sendable {
     case severeRest = "severe-rest"
 }
 
-/// `activePhase` — the 6 locked TS effective phases.
+/// `activePhase` — the 6 locked legacy web schema effective phases.
 public enum ActivePhase: String, CaseIterable, Equatable, Sendable {
     case base
     case build
@@ -30,7 +30,7 @@ public enum ActivePhase: String, CaseIterable, Equatable, Sendable {
     case restart
 }
 
-/// `riskLevel` — the 5 locked TS risk levels.
+/// `riskLevel` — the 5 locked legacy web schema risk levels.
 public enum RiskLevel: String, CaseIterable, Equatable, Sendable {
     case none
     case low
@@ -39,7 +39,7 @@ public enum RiskLevel: String, CaseIterable, Equatable, Sendable {
     case severe
 }
 
-/// `volumeMode` — the 5 locked TS volume modes.
+/// `volumeMode` — the 5 locked legacy web schema volume modes.
 public enum VolumeMode: String, CaseIterable, Equatable, Sendable {
     case expand
     case hold
@@ -48,7 +48,7 @@ public enum VolumeMode: String, CaseIterable, Equatable, Sendable {
     case severeCut = "severe-cut"
 }
 
-/// `intensityMode` — the locked TS intensity modes.
+/// `intensityMode` — the locked legacy web schema intensity modes.
 public enum IntensityMode: String, CaseIterable, Equatable, Sendable {
     case expand
     case hold
@@ -56,7 +56,7 @@ public enum IntensityMode: String, CaseIterable, Equatable, Sendable {
     case cut
 }
 
-/// `progressionMode` — the locked TS progression modes.
+/// `progressionMode` — the locked legacy web schema progression modes.
 public enum ProgressionMode: String, CaseIterable, Equatable, Sendable {
     case progress
     case hold

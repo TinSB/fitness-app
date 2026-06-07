@@ -27,11 +27,8 @@
 // Apple-Health data back out is structurally impossible — export maps only native
 // `IronPathDomain.TrainingSession`s (see the pure `HealthKitWorkoutExporter`).
 //
-// The static guards (`tests/iosBootstrapForbiddenImports.test.ts` +
-// `tests/iosHealthKitWorkoutExportStaticGuards.test.ts`) exempt THIS one file from the
-// HealthKit-token bans (body-mass AND workout tokens), pin that the ONLY writable type
-// is the workout type, and assert no other Apple-Health write; every other Swift file
-// under ios/ stays HealthKit-free.
+// `IronPathHealthKitTests` pin that the ONLY writable type is the workout type and
+// assert no other Apple-Health write; every other Swift package stays HealthKit-free.
 
 #if os(iOS)
 import Foundation
@@ -219,7 +216,7 @@ public struct HealthKitWorkoutSource: WorkoutSampleSource {
         }
     }
 
-    /// Stable identifier for the labeled activity types (mirrors the TS keys used by
+    /// Stable identifier for the labeled activity types (mirrors the legacy web schema keys used by
     /// `formatAppleWorkoutType`); every other type maps to "Other". Compile-checked
     /// against the SDK enum, so a renamed/removed case fails the build rather than
     /// silently producing a wrong label. The pure `HealthKitWorkoutMapper` turns

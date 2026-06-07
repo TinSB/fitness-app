@@ -3,8 +3,8 @@
 // PURE mapping: one `BodyMassReading` → one canonical
 // `IronPathDomain.HealthMetricSample`. No HealthKit import, no IO, no clock
 // (timestamps are injected), so `swift test` exercises every rule with sample
-// readings. Mirrors the TypeScript importer at `src/engines/healthImportEngine.ts`
-// + `src/engines/appleHealthTypeMap.ts`: body mass → metricType "body_weight",
+// readings. Mirrors the legacy web implementation importer at `retired web reference`
+// + `retired web reference`: body mass → metricType "body_weight",
 // unit "kg", value clamped at >= 0, source "apple_health_export", a
 // content-addressed id for idempotent re-import, and dataFlag "normal".
 
@@ -12,12 +12,12 @@ import Foundation
 import IronPathDomain
 
 public enum HealthKitBodyMassMapper {
-    /// Domain metric type for body weight (TS `HealthMetricType` = "body_weight";
+    /// Domain metric type for body weight (legacy web schema `HealthMetricType` = "body_weight";
     /// `HKQuantityTypeIdentifierBodyMass` maps here in `appleHealthTypeMap.ts`).
     public static let metricType = "body_weight"
 
     /// HealthKit-origin samples normalize to the contract's `apple_health_export`
-    /// `HealthDataSource` (TS `normalizeHealthDataSource('healthkit')`).
+    /// `HealthDataSource` (legacy web schema `normalizeHealthDataSource('healthkit')`).
     public static let source = "apple_health_export"
 
     /// Storage unit is always kilograms (UnitSettings contract).
@@ -36,7 +36,7 @@ public enum HealthKitBodyMassMapper {
 
     /// Map one body-mass reading into a canonical `HealthMetricSample`.
     ///
-    /// - `value` is `max(0, kilograms)` (parity with the TS importer's
+    /// - `value` is `max(0, kilograms)` (parity with the legacy web schema importer's
     ///   `Math.max(0, value)`), carried in kg with `unit == "kg"`.
     /// - `id` is content-addressed (`health-<hash>` over source/metric/start/value/unit)
     ///   so re-importing the same reading dedups in
@@ -66,10 +66,10 @@ public enum HealthKitBodyMassMapper {
         )
     }
 
-    /// Deterministic content hash for the dedup id. Mirrors the TS importer's
+    /// Deterministic content hash for the dedup id. Mirrors the legacy web schema importer's
     /// `hashText` (UTF-16 code unit, 31-multiplier rolling hash, uint32 wraparound,
-    /// base-36) at `src/engines/healthImportEngine.ts`. Native AppData never leaves
-    /// the device, so exact PWA byte-parity is not a contract requirement — the
+    /// base-36) at `retired web reference`. Native AppData never leaves
+    /// the device, so exact legacy web app byte-parity is not a contract requirement — the
     /// id's job is intra-device idempotency, and it is stable for a given reading.
     static func stableHash(_ text: String) -> String {
         var hash: UInt32 = 0

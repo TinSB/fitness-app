@@ -8,8 +8,8 @@
 // (status / title / summary / confidence) AND the ordered `signals` list (id / label /
 // reason / severity, in the engine's emit order after the id-dedup) AND `suggestedActions`.
 //
-// The golden is GENERATED from the REAL TS plateauDetectionEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy plateauDetectionEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (the engine never reads the wall clock; every date comparison is over the
 // session's OWN date strings), no IO beyond reading the committed golden. The two fixtures
 // jointly cover all eight PlateauStatus values + the branch/boundary debt (count<4 sets &
@@ -36,7 +36,7 @@ final class PlateauDetectionEngineParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func root(_ id: String) throws -> OrderedJSONObject {

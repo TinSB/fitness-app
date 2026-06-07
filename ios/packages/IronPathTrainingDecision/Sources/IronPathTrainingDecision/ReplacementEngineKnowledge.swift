@@ -1,10 +1,10 @@
 // SR-2 — Replacement Engine knowledge (pure data port).
 //
 // Faithful Swift transcription of the TWO "engine knowledge" tables that
-// src/engines/replacementEngine.ts actually reads:
+// retired-web-reference actually reads:
 //
-//   src/data/exerciseLibrary.ts:420  EXERCISE_EQUIVALENCE_CHAINS   -> equivalenceChainEntries
-//   src/data/exerciseLibrary.ts:485  EXERCISE_KNOWLEDGE_OVERRIDES  -> knowledge (engine-used fields only)
+//   retired-web-reference  EXERCISE_EQUIVALENCE_CHAINS   -> equivalenceChainEntries
+//   retired-web-reference  EXERCISE_KNOWLEDGE_OVERRIDES  -> knowledge (engine-used fields only)
 //
 // SCOPE — this ports ONLY the fields replacementEngine consumes; nothing else.
 //   • From each equivalence chain, only `id` + `members` are read by
@@ -23,7 +23,7 @@
 //
 // No override currently carries `equipmentTags`, so equipmentTagsFor() always
 // falls through to ExerciseLibrary.equipmentTags — but the field is modelled
-// (always nil) so the Swift equipmentTagsFor() is a 1:1 mirror of the TS
+// (always nil) so the Swift equipmentTagsFor() is a 1:1 mirror of the legacy web schema
 // `EXERCISE_KNOWLEDGE_OVERRIDES[id]?.equipmentTags ?? EXERCISE_EQUIPMENT_TAGS[id]`.
 //
 // Every entry is reconciled item-by-item against the generated
@@ -41,7 +41,7 @@ struct ReplacementEquivalenceChain: Equatable, Sendable {
 }
 
 /// The replacement-engine-used subset of one EXERCISE_KNOWLEDGE_OVERRIDES value.
-/// A field is `nil` exactly when the TS override omits it.
+/// A field is `nil` exactly when the legacy web schema override omits it.
 struct ReplacementKnowledgeEntry: Equatable, Sendable {
     let fatigueCost: String?
     let equivalenceChainId: String?
@@ -74,7 +74,7 @@ struct ReplacementKnowledgeEntry: Equatable, Sendable {
 enum ReplacementEngineKnowledge {
     // MARK: - EXERCISE_EQUIVALENCE_CHAINS (exerciseLibrary.ts:420-481)
     //
-    // ORDERED — TS `Record` insertion order preserved verbatim (60 keys). The
+    // ORDERED — legacy web schema `Record` insertion order preserved verbatim (60 keys). The
     // engine does `Object.values(EXERCISE_EQUIVALENCE_CHAINS).find(...)`
     // (replacementEngine.ts:309), which iterates VALUES in insertion order and
     // returns the FIRST match; `equivalenceChainEntries` is iterated the same way
@@ -148,8 +148,8 @@ enum ReplacementEngineKnowledge {
     //
     // 63 ids; only the replacement-engine-used fields per id (see file header).
     // Insertion order is irrelevant — the engine looks up by id and the snapshot
-    // reconciles as an unordered map — but entries are kept in TS source order for
-    // diffability. `fatigueCost` is present on every TS override.
+    // reconciles as an unordered map — but entries are kept in legacy web schema source order for
+    // diffability. `fatigueCost` is present on every legacy web schema override.
     static let knowledge: [String: ReplacementKnowledgeEntry] = [
         "bench-press": ReplacementKnowledgeEntry(
             fatigueCost: "high",
@@ -422,7 +422,7 @@ enum ReplacementEngineKnowledge {
             equivalenceChainId: "hinge-pattern",
             regressionIds: ["db-rdl"]
         ),
-        // leg-extension carries NO equivalenceChainId in TS (exerciseLibrary.ts:1474).
+        // leg-extension carries NO equivalenceChainId in legacy web schema (exerciseLibrary.ts:1474).
         "leg-extension": ReplacementKnowledgeEntry(fatigueCost: "low"),
         "landmine-press": ReplacementKnowledgeEntry(
             fatigueCost: "medium",

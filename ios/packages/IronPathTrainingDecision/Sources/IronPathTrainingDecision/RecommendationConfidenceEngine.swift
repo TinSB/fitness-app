@@ -1,7 +1,7 @@
 // RecommendationConfidenceEngine — AN-5b recommendation-confidence port.
 //
 // Faithful line-by-line Swift port of the PURE recommendation-confidence function from
-// `src/engines/recommendationConfidenceEngine.ts`:
+// `retired web reference`:
 //   - buildRecommendationConfidence   (recommendationConfidenceEngine.ts:220)
 // + every private helper it reads (clampScore / reason / getExerciseIds / exerciseMatches /
 //   relevantSessions / relevantSets / buildTechniqueSummaryFromSets / isLoadFeedbackSummary /
@@ -10,7 +10,7 @@
 //   types (RecommendationConfidenceLevel / RecommendationConfidenceReason /
 //   RecommendationConfidenceResult / BuildRecommendationConfidenceParams).
 //
-// `completedTrainingSets` (recommendationConfidenceEngine.ts:70) is defined in the TS module
+// `completedTrainingSets` (recommendationConfidenceEngine.ts:70) is defined in the legacy web schema module
 // but NEVER reached from `buildRecommendationConfidence` (dead helper) — it is intentionally
 // not ported (the function-level parity pin covers only the exported function + its reachable
 // helpers, the same precedent as the PlateauDetectionEngine port).
@@ -21,15 +21,15 @@
 //     `E1RMEngine.filterAnalyticsHistory`, plus the `LoadFeedbackEngine.LoadFeedbackValue`
 //     canonical value constants. These are the engine's only real function calls.
 //   * REUSES the already-ported consumed-input types `PlateauDetectionEngine.TechniqueQualitySummary`
-//     (the TS imports `TechniqueQualitySummary` from trainingLevelEngine; the Swift port lives
+//     (the legacy web schema imports `TechniqueQualitySummary` from trainingLevelEngine; the Swift port lives
 //     in PlateauDetectionEngine with a TrainingLevelEngine typealias), the consumed subset
-//     `PlateauDetectionEngine.EffectiveVolumeSummary` (the TS param is `Partial<EffectiveVolumeSummary>`
+//     `PlateauDetectionEngine.EffectiveVolumeSummary` (the legacy web schema param is `Partial<EffectiveVolumeSummary>`
 //     and reads the SAME three fields the plateau engine does), and the canonical
 //     `PainPatternEngine.PainPattern` (the precedent set by TrainingLevelEngine.Params).
 //   * The optional external inputs `e1rmProfile` (`E1RMProfile | EstimatedOneRepMax | null`) /
-//     `loadFeedback` (`LoadFeedbackInput`) / `recentEdits` (`RecentEditInput`) are genuine TS
+//     `loadFeedback` (`LoadFeedbackInput`) / `recentEdits` (`RecentEditInput`) are genuine legacy web schema
 //     runtime unions consumed by DUCK-TYPING. The faithful port keeps them as raw `JSONValue?`
-//     and reproduces the SAME structural discrimination — never forcing a static type the TS
+//     and reproduces the SAME structural discrimination — never forcing a static type the legacy web schema
 //     does not assert.
 //   * `trainingLevel` (`AutoTrainingLevel | string | null`) is only ever `=== 'unknown'` /
 //     `=== 'beginner'` compared, so it is kept as a raw `String?` (the rawValue).
@@ -47,7 +47,7 @@ public enum RecommendationConfidenceEngine {
     // MARK: - Output types (recommendationConfidenceEngine.ts:16-32)
 
     /// `RecommendationConfidenceLevel` (recommendationConfidenceEngine.ts:16). RawValue
-    /// strings mirror the TS string-literal union so the golden's `level` decodes verbatim.
+    /// strings mirror the legacy web schema string-literal union so the golden's `level` decodes verbatim.
     public enum RecommendationConfidenceLevel: String, Equatable, Sendable {
         case low = "low"
         case medium = "medium"
@@ -235,7 +235,7 @@ public enum RecommendationConfidenceEngine {
 
     /// `relevantSessions` (recommendationConfidenceEngine.ts:93). `localeCompare`-descending
     /// over ASCII ISO date keys is reproduced with `>` (the plateau-port precedent); Swift's
-    /// stable sort keeps TS tie order.
+    /// stable sort keeps legacy web schema tie order.
     private static func relevantSessions(_ history: [TrainingSession], _ exerciseId: String?) -> [TrainingSession] {
         E1RMEngine.filterAnalyticsHistory(history)
             .filter { session in (session.exercises ?? []).contains { exerciseMatches($0, exerciseId) } }
@@ -286,7 +286,7 @@ public enum RecommendationConfidenceEngine {
         return object["counts"] != nil && object["adjustment"] != nil
     }
 
-    /// `normalizeLoadFeedback` (recommendationConfidenceEngine.ts:125). Reproduces the TS
+    /// `normalizeLoadFeedback` (recommendationConfidenceEngine.ts:125). Reproduces the legacy web schema
     /// duck-typed dispatch over the `LoadFeedbackInput` union + the session-history
     /// `loadFeedback` (which rides in `_unknown`). Returns `{ total, counts, stable, volatile }`.
     private static func normalizeLoadFeedback(_ input: JSONValue?, _ sessions: [TrainingSession], _ exerciseId: String?) -> NormalizedLoadFeedback {

@@ -1,12 +1,12 @@
 // AppDataIngressPipeline — iOS-3C ingress pipeline.
 //
-// Swift port of `src/dataHealth/appDataIngressPipeline.ts`. Wraps
+// Swift port of `retired web reference`. Wraps
 // the iOS-3A CleanAppDataView + iOS-3B AutoRepairOrchestrator into a
 // single entry-point that boot / import / cloud-restore / etc. flows
 // can call with `AppData` + `AppDataIngressSource`.
 //
 // iOS-3C explicitly DOES NOT port the cloud-upload-eligibility check
-// from `src/dataHealth/uploadEligibility.ts` — that lands in iOS-7
+// from `retired web reference` — that lands in iOS-7
 // when CloudKit / Supabase wiring arrives. Until then, the result
 // struct exposes only the runtime-guard + repair surface.
 
@@ -17,7 +17,7 @@ import IronPathDomain
 
 public enum AppDataIngressSource: String, Equatable, Hashable, Sendable, CaseIterable {
     case boot
-    case localStorageLoad   = "localStorage-load"
+    case localFileLoad      = "local-file-load"
     case importRestore      = "import-restore"
     case backupRestore      = "backup-restore"
     case cloudRestore       = "cloud-restore"
@@ -74,7 +74,7 @@ public func ingressSourceDefaults(_ source: AppDataIngressSource) -> AppDataIngr
     switch source {
     case .boot:
         return .init(allowMutation: true, allowAutoRepair: true, requireBackup: true, repairTrigger: .boot)
-    case .localStorageLoad:
+    case .localFileLoad:
         return .init(allowMutation: true, allowAutoRepair: true, requireBackup: true, repairTrigger: .boot)
     case .importRestore:
         return .init(allowMutation: true, allowAutoRepair: true, requireBackup: true, repairTrigger: .importing)

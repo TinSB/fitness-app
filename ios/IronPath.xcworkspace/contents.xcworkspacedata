@@ -14,9 +14,6 @@
       location = "group:packages/IronPathPersistence">
    </FileRef>
    <FileRef
-      location = "group:packages/IronPathCloudSync">
-   </FileRef>
-   <FileRef
       location = "group:packages/IronPathHealthKit">
    </FileRef>
    <FileRef

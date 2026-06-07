@@ -7,8 +7,8 @@
 // golden's `expected` (map hit / lowercase-normalize / already-CJK as-is / CJK non-label
 // fallback / unknown non-CJK → 未知状态 / '' → 未知状态).
 //
-// The golden is GENERATED from the REAL TS formatTrainingMode
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — no
+// The golden is GENERATED from the retired legacy formatTrainingMode
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — no
 // clock, zero `: Date`, no IO beyond reading the committed golden.
 
 import XCTest
@@ -29,7 +29,7 @@ final class SchedulingFormattersParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/i18n/training-mode-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/i18n/training-mode-cases-v1.json", isDirectory: false
         )
     }
 

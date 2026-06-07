@@ -1,7 +1,7 @@
 // UserProfile — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `UserProfile` interface at
-// `src/models/training-model.ts:191`.
+// Mirrors the legacy web implementation `UserProfile` interface at
+// `retired web reference`.
 
 import Foundation
 

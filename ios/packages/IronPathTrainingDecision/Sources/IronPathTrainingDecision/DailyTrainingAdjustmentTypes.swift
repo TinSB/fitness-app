@@ -1,7 +1,7 @@
 // DailyTrainingAdjustmentTypes — CC-0 coach-action capstone foundation (2/3).
 //
 // Faithful Swift port of the `DailyTrainingAdjustment` TYPE FAMILY from
-// `src/engines/dailyTrainingAdjustmentEngine.ts`:
+// `retired web reference`:
 //   • `DailyTrainingAdjustmentType`       (ts:15) — 7-case signal class union.
 //   • `DailyTrainingAdjustmentChangeType` (ts:24) — 6-case change union.
 //   • `DailyTrainingAdjustmentChange`     (ts:32) — { type, targetId?, code }.
@@ -50,7 +50,7 @@ public enum DailyTrainingAdjustmentConfidence: String, Equatable, Hashable, Send
 }
 
 /// `DailyTrainingAdjustmentChange` (dailyTrainingAdjustmentEngine.ts:32).
-/// `targetId` is the only optional field (TS `?`); `code` is a structured reason
+/// `targetId` is the only optional field (legacy web schema `?`); `code` is a structured reason
 /// code, never user-facing text.
 public struct DailyTrainingAdjustmentChange: Equatable, Hashable, Sendable {
     public let type: DailyTrainingAdjustmentChangeType

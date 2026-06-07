@@ -6,7 +6,7 @@ description: 多 Agent 独立审计：Root Cause / Architecture / UI / Data Safe
 # Skill: multi-agent-audit
 
 ## 何时使用（命中以下任一项 → 强制使用）
-- 训练 / 推荐 / 云同步 / 存储 / AppData / Settings / Focus Mode / PWA。
+- 训练 / 推荐 / 未来云同步 / 存储 / AppData / Settings / Focus Mode / iOS UI。
 - 单文件补丁可能不够，需要多视角并行审计。
 - `/global-scan` 发现 source-of-truth 冲突时必须升级到本命令。
 

@@ -1,6 +1,6 @@
 // SetIndexRenumberRepair — iOS-3C safe_auto recipe (set_index_renumber).
 //
-// Swift port of `src/dataHealth/repairs/setIndexRenumberV1.ts`.
+// Swift port of `retired web reference`.
 // Renumbers `history[].exercises[].sets[].setIndex` to 0..n-1 when
 // the original index is either ALL zeros or contains duplicates.
 // Preserves every other set field: id, weight, actualWeightKg, reps,

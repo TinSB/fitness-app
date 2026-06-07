@@ -1,6 +1,6 @@
 // NextWorkoutScheduler — SC-C scheduling-track port (1/1 of this slice).
 //
-// Faithful line-by-line Swift port of `src/engines/nextWorkoutScheduler.ts` — the
+// Faithful line-by-line Swift port of `retired web reference` — the
 // "what should I train next" recommender. Three exports are ported verbatim
 // (`getOrderedProgramDayTemplates` ts:143 / `getOrderedTrainingTemplates` ts:149 /
 // `buildNextWorkoutRecommendation` ts:346) together with EVERY private helper
@@ -30,7 +30,7 @@
 // `todayState.date` string passed straight into `buildWorkoutCycleState`; no wall clock,
 // no IO, no randomness, no write path. NOT wired into any UI (that is a later slice);
 // this slice only adds the functions and parity-pins them (§19.2). The session open-bag
-// keys the TS engine reads off `TrainingSession` (`templateId` / `templateName` /
+// keys the legacy web schema engine reads off `TrainingSession` (`templateId` / `templateName` /
 // `programTemplateId` / `dataFlag`) and `ProgramTemplate` (`dayTemplates`) are not
 // promoted Domain fields — they ride in the `_unknown` carrier (same precedent as the
 // SC-1 WorkoutCycleScheduler `sourceProgramTemplateId` reads).

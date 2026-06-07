@@ -6,7 +6,7 @@
 // golden case's `result` field-by-field (struct `==`). Every output is String / [String] /
 // number / enum-string / nested SC-1b Conflict, so equality is plain struct equality.
 //
-// The goldens are GENERATED from the REAL TS recoveryAwareScheduler (scripts/parityGoldensEntry.ts),
+// The goldens are GENERATED from the retired legacy recoveryAwareScheduler (retired fixture generator),
 // never hand-edited (§22). PURE / read-only — zero `: Date`, no IO beyond reading the committed
 // goldens. The real-id (bench-press) and external-library cases drive the EXERCISE_KNOWLEDGE_OVERRIDES
 // merge; the template-conflict / recommendation cases drive the consumed SC-1b engine end-to-end.
@@ -30,7 +30,7 @@ final class RecoveryAwareSchedulerParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func cases(_ id: String) throws -> [OrderedJSONObject] {

@@ -1,6 +1,6 @@
 // iOS-4B5 Exercise Prescription + Volume Floor V1 — BOUNDED exercise knowledge.
 //
-// The TS prescription chain enriches each raw template exercise via
+// The legacy web schema prescription chain enriches each raw template exercise via
 // buildExerciseMetadata (engineUtils.ts:135-193) reading EXERCISE_KNOWLEDGE_OVERRIDES
 // (exerciseLibrary.ts:485, ~1000-line knowledge base) for orderPriority +
 // contraindications, and issuesForExercise (adaptiveFeedbackEngine.ts:90) reading
@@ -10,7 +10,7 @@
 // buildExerciseMetadata defaults below + TrainingDecisionExercisePrescription); the
 // DATA is scoped to the 6 push-a exercises the 9 goldens actually exercise. The rest
 // of the knowledge base + pattern rules are DEFERRED (no other golden touches them).
-// Each entry was extracted by running the real TS enrich path (verified by the
+// Each entry was extracted by running the real legacy web schema enrich path (verified by the
 // iOS-4B5 scoped scan). If a template exercise is not in the map the defaults apply.
 
 import Foundation

@@ -1,7 +1,7 @@
 // PlateauDetectionEngine — AN-2 per-exercise plateau-detection port.
 //
 // Faithful line-by-line Swift port of the PURE per-exercise plateau-detection
-// function from `src/engines/plateauDetectionEngine.ts`:
+// function from `retired web reference`:
 //   - detectExercisePlateau   (plateauDetectionEngine.ts:299)
 // + every private helper it reads (signal / unique / exerciseIds / exerciseMatches /
 //   sessionDateKey / relevantSessions / relevantExerciseSets / firstExerciseName /
@@ -16,11 +16,11 @@
 //     `E1RMEngine.number` / `setWeightKg` / `completedSets` and the analytics filter
 //     `E1RMEngine.filterAnalyticsHistory` (the engine's only real function call), plus
 //     the `LoadFeedbackEngine.LoadFeedbackValue` canonical value constants.
-//   * The optional external inputs `e1rmProfile` / `loadFeedback` are genuine TS
+//   * The optional external inputs `e1rmProfile` / `loadFeedback` are genuine legacy web schema
 //     runtime unions consumed by DUCK-TYPING (`'recentValues' in profile`,
 //     `'counts' in value && 'adjustment' in value`, `Array.isArray`, `typeof === 'string'`).
 //     The faithful port keeps them as raw `JSONValue?` and reproduces the SAME
-//     structural discrimination — never forcing a static type the TS does not assert.
+//     structural discrimination — never forcing a static type the legacy web schema does not assert.
 //   * `TechniqueQualitySummary` (trainingLevelEngine.ts:41) / `EffectiveVolumeSummary`
 //     (training-model.ts:1258, consumed as `Partial<…>`) / `PainPattern`
 //     (training-model.ts:1028) are ported here as the consumed TYPE SUBSET ONLY (the
@@ -43,7 +43,7 @@ public enum PlateauDetectionEngine {
     // MARK: - Output types (plateauDetectionEngine.ts:16-41)
 
     /// `PlateauStatus` (plateauDetectionEngine.ts:16). RawValue strings mirror the
-    /// TS string-literal union so the golden's `status` decodes/compares verbatim.
+    /// legacy web schema string-literal union so the golden's `status` decodes/compares verbatim.
     public enum PlateauStatus: String, Equatable, Sendable {
         case none = "none"
         case possiblePlateau = "possible_plateau"
@@ -104,7 +104,7 @@ public enum PlateauDetectionEngine {
 
     /// `TechniqueQualitySummary` (trainingLevelEngine.ts:41) — FULL shape (the plateau
     /// engine builds it via `buildTechniqueSummaryFromSets` AND accepts it as an
-    /// optional param). All numeric fields are `Double` (TS `number`), matching the
+    /// optional param). All numeric fields are `Double` (legacy web schema `number`), matching the
     /// `(good + acceptable) / totalSets` rate arithmetic.
     public struct TechniqueQualitySummary: Equatable, Sendable {
         public let totalSets: Double
@@ -135,7 +135,7 @@ public enum PlateauDetectionEngine {
 
     /// `Partial<EffectiveVolumeSummary>` (training-model.ts:1258) — only the three
     /// fields the plateau engine reads (`completedSets` / `effectiveSets` /
-    /// `highConfidenceEffectiveSets`), each OPTIONAL because the TS param is a
+    /// `highConfidenceEffectiveSets`), each OPTIONAL because the legacy web schema param is a
     /// `Partial`. NO effectiveSetEngine logic is ported (AN-5 owns that).
     public struct EffectiveVolumeSummary: Equatable, Sendable {
         public let completedSets: Double?
@@ -268,7 +268,7 @@ public enum PlateauDetectionEngine {
 
     /// `relevantSessions` (plateauDetectionEngine.ts:100). `localeCompare`-descending over
     /// ASCII ISO date keys is reproduced with `>` (the same precedent as
-    /// `E1RMEngine.collectCandidates`); Swift's stable sort keeps TS tie order.
+    /// `E1RMEngine.collectCandidates`); Swift's stable sort keeps legacy web schema tie order.
     private static func relevantSessions(_ history: [TrainingSession], _ exerciseId: String) -> [TrainingSession] {
         E1RMEngine.filterAnalyticsHistory(history)
             .filter { session in (session.exercises ?? []).contains { exerciseMatches($0, exerciseId) } }
@@ -340,7 +340,7 @@ public enum PlateauDetectionEngine {
         let tooHeavyRate: Double
     }
 
-    /// `normalizeLoadFeedback` (plateauDetectionEngine.ts:141). Reproduces the TS
+    /// `normalizeLoadFeedback` (plateauDetectionEngine.ts:141). Reproduces the legacy web schema
     /// duck-typed dispatch over the `LoadFeedbackInput` union + the session-history
     /// `loadFeedback` (which rides in `_unknown`).
     private static func normalizeLoadFeedback(_ input: JSONValue?, _ sessions: [TrainingSession], _ exerciseId: String) -> NormalizedLoadFeedback {
@@ -348,7 +348,7 @@ public enum PlateauDetectionEngine {
 
         // `addValue` (plateauDetectionEngine.ts:143): only the 3 canonical values, pushed
         // `count` times. `count` is `number(...)` (a Double) compared `index < count`,
-        // matching the TS `for (let index = 0; index < count; index += 1)`.
+        // matching the legacy web schema `for (let index = 0; index < count; index += 1)`.
         func addValue(_ value: String?, _ count: Double = 1) {
             guard value == LoadFeedbackEngine.tooHeavy
                 || value == LoadFeedbackEngine.tooLight

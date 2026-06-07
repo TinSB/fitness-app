@@ -1,6 +1,6 @@
 // ReplacementEquivalenceAuditRepair — iOS-3C audit_only recipe.
 //
-// Swift port of `src/dataHealth/repairs/replacementEquivalenceAuditV1.ts`.
+// Swift port of `retired web reference`.
 // Detects vertical-pull exercises mapped to horizontal-pull
 // equivalence chains, and vertical-push exercises mapped to fly
 // equivalence chains. Audit-only: `supportsApply = true` (so

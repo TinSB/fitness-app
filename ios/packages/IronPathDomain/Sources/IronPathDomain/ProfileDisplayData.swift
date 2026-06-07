@@ -16,11 +16,11 @@
 // HK-1 stores Apple-Health body weight as a `HealthMetricSample
 // { metricType: "body_weight", unit: "kg" }` in `AppData.healthMetricSamples`; the
 // import NEVER writes `userProfile.weightKg` (the user's self-entered field). The
-// PWA derives "current body weight" as the latest such sample
-// (`src/engines/healthSummaryEngine.ts` → `latestBodyWeightKg`). The native engine
+// legacy web app derives "current body weight" as the latest such sample
+// (`retired web reference` → `latestBodyWeightKg`). The native engine
 // does NOT port `healthSummaryEngine`, so — as scoped for this read-only slice —
 // the latest sample is selected DIRECTLY here for display (not via the unported
-// engine). The selection mirrors the TS rule: among `body_weight` samples that are
+// engine). The selection mirrors the legacy web schema rule: among `body_weight` samples that are
 // not `dataFlag == "excluded"`, take the one with the greatest ISO-8601 `startDate`
 // and normalize its value to kg (a `lb`-unit reading is converted via the single
 // `WeightConversion` home; `kg`/absent is taken as-is — HK-1 always writes kg).
@@ -100,7 +100,7 @@ public struct ProfileDisplayData: Equatable, Sendable {
     // MARK: - Latest body weight (pure derivation)
 
     /// The metric-type token for Apple-Health body weight (mirrors
-    /// `IronPathHealthKit.HealthKitBodyMassMapper.metricType` + TS
+    /// `IronPathHealthKit.HealthKitBodyMassMapper.metricType` + legacy web schema
     /// `appleHealthTypeMap.ts`). Duplicated here as a plain constant so this pure
     /// Domain logic needs no `IronPathHealthKit` edge (Domain stays the leaf, §6.3).
     public static let bodyWeightMetricType = "body_weight"
@@ -114,7 +114,7 @@ public struct ProfileDisplayData: Equatable, Sendable {
                 && sample.startDate != nil
                 && sample.value != nil
         }
-        // Greatest ISO-8601 startDate == most recent (mirrors the TS descending
+        // Greatest ISO-8601 startDate == most recent (mirrors the legacy web schema descending
         // `startDate.localeCompare` sort + `[0]`); ties keep the first in order.
         guard let latest = candidates.max(by: { ($0.startDate ?? "") < ($1.startDate ?? "") }),
               let value = latest.value?.doubleValue

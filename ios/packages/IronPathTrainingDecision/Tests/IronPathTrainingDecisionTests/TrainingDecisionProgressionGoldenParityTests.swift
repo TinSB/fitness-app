@@ -11,7 +11,7 @@
 //
 // This file is the closed-loop payoff: it reconstructs each fixture's engine INPUT in
 // memory (rising / flat / too-short weighted history — the SAME deterministic clock and
-// push-a template the TS generator used), runs the REAL Swift engine, and asserts the
+// push-a template the legacy web schema generator used), runs the REAL Swift engine, and asserts the
 // COMPUTED {progressionMode, weeklyAdjustment, perExercise} (plus the full decision
 // frame: sessionIntent / activePhase / effectivePhase / riskLevel / finalVolumeMultiplier)
 // EQUAL the recorded goldens — field by field. The expected side is the literal golden;
@@ -38,7 +38,7 @@ final class TrainingDecisionProgressionGoldenParityTests: XCTestCase {
     // MARK: - Per-fixture engine INPUT (declared independently of the golden)
 
     /// Each session logs the push-a main compound at the spec'd top weight, spaced 3
-    /// days, mirroring the TS synthetic spec (single exercise per session; only the top
+    /// days, mirroring the legacy web schema synthetic spec (single exercise per session; only the top
     /// weight drives isE1rmTrendUp). Default readiness (一般/中) keeps recoveryHigh=false,
     /// isolating the pure progression signal (vs controlled-reload's low readiness).
     private static func weighted(_ pairs: [(gap: Int, weight: Double)], _ prefix: String) -> [TrainingSession] {

@@ -1,7 +1,7 @@
 // ProfileDisplayDataTests — Profile real-AppData read path V1.
 //
 // Pins the PURE profile read-model: the derived "latest body weight" selection
-// (mirroring the TS `healthSummaryEngine` rule) and the honest empty-state signal
+// (mirroring the legacy web schema `healthSummaryEngine` rule) and the honest empty-state signal
 // (`hasAnyContent`). No IO, no clock — every input is an in-memory value.
 
 import XCTest

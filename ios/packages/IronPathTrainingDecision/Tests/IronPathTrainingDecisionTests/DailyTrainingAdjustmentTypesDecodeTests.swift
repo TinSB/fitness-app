@@ -2,7 +2,7 @@
 //
 // TYPE-ONLY port has no runtime logic to compute-assert, so this anchors the
 // SHAPE two ways (per the CC-0 "decode 锚定" plan):
-//   1. enum raw values match the TS string unions VERBATIM and in source order
+//   1. enum raw values match the legacy web schema string unions VERBATIM and in source order
 //      (dailyTrainingAdjustmentEngine.ts:15 / :24 / :43) — guards a typo'd token
 //      or a dropped/added case.
 //   2. a representative JSON object round-trips through `init(decoding:)` into the

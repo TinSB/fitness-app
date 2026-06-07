@@ -1,6 +1,6 @@
 // SR-3 — Smart Replacement Engine knowledge (pure data port).
 //
-// The top-level smart-replacement engine (src/engines/smartReplacementEngine.ts)
+// The top-level smart-replacement engine (retired-web-reference)
 // builds its candidate library from `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`
 // (smartReplacementEngine.ts:120) and reads, off every merged exercise, a WIDER
 // slice of EXERCISE_KNOWLEDGE_OVERRIDES than the replacement engine does.
@@ -25,10 +25,10 @@
 // progressionIds / targetRir / recommendedLoadRange) are NOT read by the smart
 // engine after the merge (getExerciseId only ever runs on the raw param, never on
 // a merged library exercise — smartReplacementEngine.ts:481, 126), so they are
-// intentionally NOT ported. A field is `nil` exactly when the TS override omits it
+// intentionally NOT ported. A field is `nil` exactly when the legacy web schema override omits it
 // (e.g. `kind` is absent on the free-weight barbell/dumbbell entries).
 //
-// Entries are kept in EXACT TS source order (exerciseLibrary.ts:486-1497). The
+// Entries are kept in EXACT legacy web schema source order (exerciseLibrary.ts:486-1497). The
 // engine's library scan iterates `Object.keys(...)` in that order
 // (smartReplacementEngine.ts:120, :296) — the order is reproduced verbatim even
 // though the final recommendation list is re-sorted by (priority, fatigue, name),
@@ -39,7 +39,7 @@ import Foundation
 
 /// The smart-replacement-engine-used ADDITIONAL slice of one
 /// EXERCISE_KNOWLEDGE_OVERRIDES value (the fields SR-2 did not port). A field is
-/// `nil` exactly when the TS override omits it.
+/// `nil` exactly when the legacy web schema override omits it.
 struct SmartReplacementOverride: Equatable, Sendable {
     let movementPattern: String?
     let primaryMuscles: [String]?
@@ -69,8 +69,8 @@ struct SmartReplacementOverride: Equatable, Sendable {
 enum SmartReplacementKnowledge {
     // MARK: - EXERCISE_KNOWLEDGE_OVERRIDES additional fields (exerciseLibrary.ts:485-1498)
     //
-    // 63 ids, EXACT TS source order. `primaryMuscles` values are the single-char
-    // muscle labels (胸/背/腿/肩/手臂) the TS data carries verbatim.
+    // 63 ids, EXACT legacy web schema source order. `primaryMuscles` values are the single-char
+    // muscle labels (胸/背/腿/肩/手臂) the legacy web schema data carries verbatim.
     static let overrideEntries: KeyValuePairs<String, SmartReplacementOverride> = [
         "bench-press": SmartReplacementOverride(movementPattern: "水平推", primaryMuscles: ["胸"], skillDemand: "high", contraindications: ["upper_crossed", "scapular_control", "breathing_ribcage"]),
         "incline-db-press": SmartReplacementOverride(movementPattern: "上斜推", primaryMuscles: ["胸"], skillDemand: "medium", contraindications: ["upper_crossed", "scapular_control"]),
@@ -146,7 +146,7 @@ enum SmartReplacementKnowledge {
         return dict
     }()
 
-    /// The override id universe in EXACT TS `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`
+    /// The override id universe in EXACT legacy web schema `Object.keys(EXERCISE_KNOWLEDGE_OVERRIDES)`
     /// source order — the seed for buildLibraryMap (smartReplacementEngine.ts:120).
     static let overrideIds: [String] = overrideEntries.map { $0.key }
 }

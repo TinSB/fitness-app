@@ -2,7 +2,7 @@
 // function-level parity.
 //
 // Faithful line-by-line Swift port of the PURE top-level aggregation function from
-// `src/engines/trainingIntelligenceSummaryEngine.ts`:
+// `retired web reference`:
 //   - buildTrainingIntelligenceSummary   (trainingIntelligenceSummaryEngine.ts:204)
 // + every private helper it reads (unique / isNormalSession / getExerciseIds /
 //   exerciseLabelFromHistory / selectExerciseIds / plateauIsImportant / plateauInsight /
@@ -25,13 +25,13 @@
 //     { fallback })`, and `ExerciseLibrary.formatExerciseDisplayName` already defaults its
 //     fallback to "未命名动作" — formatters.ts:492)
 //
-// Opaque-input fidelity: TS holds the optional external inputs (`effectiveSetSummary` /
+// Opaque-input fidelity: legacy web schema holds the optional external inputs (`effectiveSetSummary` /
 // `loadFeedback` / `painPatterns` / `e1rmProfiles` / `weeklyVolumeSummary`) as runtime
 // duck-typed values and hands the SAME reference to each sub-engine, which read DIFFERENT
 // field subsets off them. The port mirrors this exactly: the Params carry the raw
 // `JSONValue` / `[JSONValue]` and this engine converts to the precise typed subset each
 // sub-engine's Swift Params demands at the call site (the SAME conversion the sub-engines'
-// own parity tests use), never closing a static type the TS does not assert.
+// own parity tests use), never closing a static type the legacy web schema does not assert.
 //
 // PURE: consumes `history: [TrainingSession]` (a §11 clean input) + an optional latest
 // session + optional external summaries; no IO, no clock (`zero : Date` — the only date
@@ -46,7 +46,7 @@ public enum TrainingIntelligenceSummaryEngine {
     // MARK: - Output types (trainingIntelligenceSummaryEngine.ts:27-66)
 
     /// `TrainingIntelligenceSummary['recommendedActions'][number]` (ts:33-44). `actionType`
-    /// is kept as a raw String (the TS string-literal union: 'review_session' |
+    /// is kept as a raw String (the legacy web schema string-literal union: 'review_session' |
     /// 'review_exercise' | 'review_volume' | 'create_adjustment_preview' | 'keep_observing')
     /// — the engine only ever assigns those five literals and the golden round-trips the
     /// string verbatim (the SessionQualityResult.level precedent).
@@ -68,7 +68,7 @@ public enum TrainingIntelligenceSummaryEngine {
     /// `TrainingIntelligenceSummary` (ts:27). `sessionQuality` is omitted when the latest
     /// session is absent/non-normal (canonicalStringify then drops the key); the other three
     /// sub-results are always emitted (the return statement always assigns them, even when
-    /// empty) — they are typed optional to mirror the TS interface.
+    /// empty) — they are typed optional to mirror the legacy web schema interface.
     public struct TrainingIntelligenceSummary: Equatable, Sendable {
         public let sessionQuality: SessionQualityEngine.SessionQualityResult?
         public let recommendationConfidence: [RecommendationConfidenceEngine.RecommendationConfidenceResult]?
@@ -389,7 +389,7 @@ public enum TrainingIntelligenceSummaryEngine {
             sessionQuality = nil
         }
 
-        // The typed subsets the duck-typing sub-engines demand (the SAME object TS hands each).
+        // The typed subsets the duck-typing sub-engines demand (the SAME object legacy web schema hands each).
         let effectiveTyped = effectiveVolumeSummary(params.effectiveSetSummary)
         let plateauPain = plateauPainPatterns(params.painPatterns)
         let fullPain = fullPainPatterns(params.painPatterns)
@@ -457,13 +457,13 @@ public enum TrainingIntelligenceSummaryEngine {
         }
 
         // `forEach((result, index) => exerciseIds[index] || '')` — `index` is the position in
-        // the FILTERED+SLICED array (so always 0 here), matching the TS exactly.
+        // the FILTERED+SLICED array (so always 0 here), matching the legacy web schema exactly.
         for (index, result) in recommendationConfidence.filter({ $0.level != .high }).prefix(1).enumerated() {
             let exerciseId = index < exerciseIds.count ? exerciseIds[index] : ""
             insightCandidates.append(confidenceInsight(result, exerciseLabelFromHistory(exerciseId, normalLatestSession, analyticsHistory)))
         }
 
-        // `unique(...)` already drops empty strings, so the TS's extra `.filter(Boolean)` is a no-op.
+        // `unique(...)` already drops empty strings, so the legacy web schema's extra `.filter(Boolean)` is a no-op.
         let keyInsights = Array(unique(insightCandidates).prefix(4))
         let finalInsights = keyInsights.isEmpty
             ? ["当前训练智能数据还在积累中，继续记录训练、余力（RIR）和动作质量后会更稳定。"]

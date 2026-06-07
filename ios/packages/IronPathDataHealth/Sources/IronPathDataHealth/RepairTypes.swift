@@ -1,6 +1,6 @@
 // RepairTypes — iOS-3A Data Health Runtime Foundation V1.
 //
-// Type-only skeleton mirroring `src/dataHealth/appDataRepairTypes.ts`.
+// Type-only skeleton mirroring `retired web reference`.
 // iOS-3A defines the protocol shape, enums, and ledger-entry struct
 // so iOS-3B (repair recipes + AutoRepairOrchestrator) can implement
 // concrete repairs against a stable contract. No concrete
@@ -144,7 +144,7 @@ public struct RepairApplyResult: Equatable, Sendable {
     public let status: RepairApplyStatus
     public let repairedData: AppData
     /// `DataRepairLogEntry`-shaped receipt; preserved as JSONValue
-    /// because the canonical typed shape lives in TS-land for now.
+    /// because the canonical typed shape lives in legacy web schema-land for now.
     public let receipt: JSONValue
     public let warnings: [String]
     public let appDataHashBefore: String?

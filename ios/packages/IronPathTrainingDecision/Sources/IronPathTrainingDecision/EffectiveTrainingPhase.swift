@@ -1,6 +1,6 @@
 // iOS-4B2 TrainingDecision Core Rule Skeleton V1 — effectivePhase engine.
 //
-// Swift port of src/engines/effectiveTrainingPhaseEngine.ts (the Training Cycle
+// Swift port of retired-web-reference (the Training Cycle
 // Gap Auto Re-entry State Machine): getDaysSinceLastTraining + deriveDecision +
 // getEffectiveTrainingPhase. PURE — the clock is injected via `referenceDate`
 // (never `Date()`), and it reads ONLY history + mesocyclePlan. No readiness,

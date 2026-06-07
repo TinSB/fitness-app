@@ -1,7 +1,7 @@
 // EngineValueUtils — PA-S2 engineUtils value-type helper subset V1.
 //
 // Faithful Swift port of the PURE value-type helper from
-// `src/engines/engineUtils.ts` that the PA (Plan-Adaptive) engine cluster
+// `retired web reference` that the PA (Plan-Adaptive) engine cluster
 // (programAdjustmentEngine / exercisePrescriptionEngine / systemConsistencyEngine,
 // ported S3+) consumes:
 //
@@ -25,7 +25,7 @@ public enum EngineValueUtils {
 
     /// `clone` (engineUtils.ts:28): `JSON.parse(JSON.stringify(value))`.
     ///
-    /// In TypeScript this is a structural deep copy whose ONLY observable
+    /// In legacy web implementation this is a structural deep copy whose ONLY observable
     /// transforms (beyond duplicating the reference graph) come from the JSON
     /// round-trip itself:
     ///   1. `undefined` values / functions are dropped from objects, and become

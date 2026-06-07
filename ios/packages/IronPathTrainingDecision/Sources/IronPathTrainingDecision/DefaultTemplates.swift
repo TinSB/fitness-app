@@ -1,8 +1,8 @@
 // PA-S3 — default training templates + makeExercise data port (pure data, read-only).
 //
 // Faithful 1:1 Swift transcription of:
-//   src/data/exerciseLibrary.ts:1500  makeExercise  -> DefaultTrainingData.makeExercise
-//   src/data/defaultTemplates.ts:9     INITIAL_TEMPLATES -> DefaultTrainingData.initialTemplates
+//   retired-web-reference  makeExercise  -> DefaultTrainingData.makeExercise
+//   retired-web-reference     INITIAL_TEMPLATES -> DefaultTrainingData.initialTemplates
 //
 // `makeExercise` REUSES the already-ported knowledge entries — it does NOT
 // re-port the override / legacy-mapping tables:
@@ -13,7 +13,7 @@
 //     already-ported `ExerciseLibrary.mapLegacyAlternativeLabelsToIds` (SR-1).
 //   • The `Array.from(new Set([...override, ...legacy])).filter(!= id)` dedup is
 //     reproduced by an ORDER-PRESERVING manual unique (first occurrence wins) +
-//     a self-id filter — NOT an unordered Set (which would lose TS order).
+//     a self-id filter — NOT an unordered Set (which would lose legacy web schema order).
 //
 // `ACTIVE_DEFAULT_TEMPLATE_SCHEMA_VERSION` (defaultTemplates.ts:7) is NOT ported:
 // it reads `STORAGE_VERSION` (appConfig.ts) and is consumed by neither
@@ -35,7 +35,7 @@ public enum DefaultTrainingData {
 
     /// Builds one `ExerciseTemplate` from the template-author shorthand,
     /// deriving `alternativeIds` / `alternativePriorities` from the already-ported
-    /// knowledge tables. Mirrors the TS `makeExercise` algorithm exactly.
+    /// knowledge tables. Mirrors the legacy web schema `makeExercise` algorithm exactly.
     ///
     /// `startWeight` is taken as `Double` and collapsed to an integer NumberRepr
     /// when whole — reproducing JS's single number type, where `JSON.stringify(60)`

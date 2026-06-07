@@ -2,9 +2,9 @@
 //
 // PURE mapping: one `WorkoutReading` → one `IronPathDomain.ImportedWorkoutSample`.
 // No HealthKit import, no IO, no clock (timestamps are injected), so `swift test`
-// exercises every rule with sample readings. Mirrors the TypeScript importer at
-// `src/engines/healthImportEngine.ts` (`buildWorkout`) + the display label map at
-// `src/engines/appleHealthTypeMap.ts` (`formatAppleWorkoutType`).
+// exercises every rule with sample readings. Mirrors the legacy web implementation importer at
+// `retired web reference` (`buildWorkout`) + the display label map at
+// `retired web reference` (`formatAppleWorkoutType`).
 //
 // DERIVED / NON-CANONICAL: the produced sample lands in
 // `AppData.importedWorkoutSamples` (a bag SEPARATE from `history`) and is
@@ -42,7 +42,7 @@ public enum HealthKitWorkoutMapper {
     ///   nil (never a fabricated 0).
     /// - `id` is content-addressed (`workout-<hash>` over
     ///   source/workoutType/start/end/durationMin) so re-importing the same workout
-    ///   dedups in `AppData.appendingImportedWorkoutSample` (mirrors the TS key).
+    ///   dedups in `AppData.appendingImportedWorkoutSample` (mirrors the legacy web schema key).
     /// - `source`, `dataFlag` are fixed per the contract; provenance names are
     ///   preserved when the reading carries them.
     public static func sample(
@@ -73,7 +73,7 @@ public enum HealthKitWorkoutMapper {
         )
     }
 
-    /// Friendly display label for a workout-type identifier, mirroring the TS
+    /// Friendly display label for a workout-type identifier, mirroring the legacy web schema
     /// `formatAppleWorkoutType` (known type → Chinese label; otherwise the raw
     /// identifier; empty → "外部活动"). Pure presentation helper for the UI.
     public static func displayLabel(forWorkoutType identifier: String?) -> String {
@@ -101,10 +101,10 @@ public enum HealthKitWorkoutMapper {
     /// Round to 1 decimal place, deterministically (storage + dedup-key stable).
     static func round1(_ value: Double) -> Double { (value * 10).rounded() / 10 }
 
-    /// Deterministic content hash for the dedup id. Mirrors the TS importer's
+    /// Deterministic content hash for the dedup id. Mirrors the legacy web schema importer's
     /// `hashText` (UTF-16 code unit, 31-multiplier rolling hash, uint32 wraparound,
-    /// base-36) at `src/engines/healthImportEngine.ts`. Native AppData never leaves
-    /// the device, so exact PWA byte-parity is not a contract requirement — the id's
+    /// base-36) at `retired web reference`. Native AppData never leaves
+    /// the device, so exact legacy web app byte-parity is not a contract requirement — the id's
     /// job is intra-device idempotency, and it is stable for a given workout.
     static func stableHash(_ text: String) -> String {
         var hash: UInt32 = 0

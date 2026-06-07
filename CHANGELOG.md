@@ -2,8 +2,22 @@
 
 All notable frontend governance and product-structure changes should be recorded here.
 
+## 2026-06-07
+
+- Retired the former Web/PWA implementation surface from the active repository: removed the Node/Vite runtime, TypeScript source/tests/scripts, browser assets, Supabase/Vercel implementation candidates, dev API, `IronPathCloudSync` stub package, and package/lockfile tooling.
+- Rebased the active project guidance to Swift/iOS: CI now runs Swift package tests and Xcode build, PWA validation routes are no longer current, and Swift test fixtures live under `ios/ParityFixtures`.
+- Preserved the iOS-native account/cloud/sync/CRDT decision docs as canonical future architecture input; only the old implementation candidates were removed.
+- Rewrote repository meta docs (`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`, `docs/agents/domain.md`) to stop instructing agents or contributors to use npm, Vite, browser tests, or old PWA routes.
+- Added `docs/IRONPATH_PRODUCT_COPY_BASELINE.md` as the canonical product-copy baseline for IronPath, then tightened it from a string inventory into a brand-language baseline: core line, voice model, signature sentence patterns, commercial copy posture, v0 generation rules, and health/privacy/AI-risk guardrails.
+- Registered the product-copy baseline in `docs/DOCS_MANIFEST.md` so future user-facing copy, locale, onboarding, paywall, App Store, and prototype-generation copy changes have a single living reference.
+- Added `docs/IRONPATH_PRODUCT_DESIGN_LANGUAGE.md` as the canonical product design-language baseline: replaced the AI-coach / command-center direction with a stronger decision-led `Forged Graphite + Emberline` brand system, four-tab IA guardrails, signature visual components, v0 generation prompt, and design QA checklist.
+- Added the Share / Growth System direction to the iOS system logic and commercialization roadmap: local privacy-safe share cards first, muscle-level and PR growth assets, plan/routine sharing later, and account/cloud/feed/attribution behind explicit architecture gates.
+- Expanded the Muscle Level Estimator into an engineering-ready contract: package boundary, clean input contract, output types, scoring pipeline, personal calibration, confidence, decision integration, share projection, implementation slices, and Swift test matrix.
+- Folded the legacy beginner/intermediate/advanced training-level model into the Muscle Level Estimator target: `overallTier` replaces the parallel user-facing level, self-reported training level becomes only a cold-start prior, and recognized strength milestones such as bench 100kg / 225lb become level/tier breakthrough inputs.
+
 ## 2026-06-06
 
+- Added an isolated `/site` marketing surface for P0 commercialization validation: bilingual IronPath + Larder positioning, product-path split, early-access/TestFlight intent form, and transparent founder-beta/price-intent smoke-test UI. The default PWA route and training business logic remain unchanged; the form and pricing actions are local prototypes with no backend charge path.
 - Reconciled the iOS system-logic living spec with the master architecture contract: `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` now separates current implementation, target product direction, and architecture-gated work.
 - Clarified that Supabase, CRDT sync, watchOS, WatchConnectivity, full restore, and source-of-truth changes are target directions only until `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is explicitly amended.
 - Updated `AGENTS.md` product direction from the legacy five-tab shell to the commercial four-tab target (`今日 / 训练 / 进展 / 计划`) with Profile / Settings as a low-frequency entry.

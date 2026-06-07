@@ -1,13 +1,13 @@
 // PA-S3 — Support-module carrier types (pure data carrier value types).
 //
-// Faithful Swift mirror of the FOUR TypeScript support-module types that the
+// Faithful Swift mirror of the FOUR legacy web implementation support-module types that the
 // CORRECTION_MODULES / FUNCTIONAL_ADDONS data constants (SupportModules.swift)
 // are typed with:
 //
-//   src/models/training-model.ts:440  CorrectionExercise -> CorrectionExercise
-//   src/models/training-model.ts:451  FunctionalExercise -> FunctionalExercise
-//   src/models/training-model.ts:464  CorrectionModule   -> CorrectionModule
-//   src/models/training-model.ts:479  FunctionalAddon    -> FunctionalAddon
+//   retired-web-reference  CorrectionExercise -> CorrectionExercise
+//   retired-web-reference  FunctionalExercise -> FunctionalExercise
+//   retired-web-reference  CorrectionModule   -> CorrectionModule
+//   retired-web-reference  FunctionalAddon    -> FunctionalAddon
 //
 // WHY HERE (IronPathTrainingDecision), NOT IronPathDomain (the PA-S3 D-gap
 // judgement — see the PR body):
@@ -16,9 +16,9 @@
 //     / ExerciseTemplate / TrainingTemplate / the programAdjustment cluster —
 //     none of which reference these). They were not "missed"; they are simply
 //     out of that slice's scope.
-//   • Every TS consumer of CorrectionModule / FunctionalAddon is an ENGINE
+//   • Every legacy web schema consumer of CorrectionModule / FunctionalAddon is an ENGINE
 //     (supportPlanEngine.ts, programAdjustmentEngine.ts — both TrainingDecision-
-//     layer when ported) or React UI (out of scope). NONE is in IronPathDomain,
+//     layer when ported) or legacy web UI (out of scope). NONE is in IronPathDomain,
 //     so they are not shared-vocabulary domain types.
 //   • They are the MINIMAL DIRECT CARRIER of this slice's CORRECTION_MODULES /
 //     FUNCTIONAL_ADDONS data, which (hard constraint) lands in
@@ -33,9 +33,9 @@
 //     FunctionalInsertionRule) -> `String` (lossless for an unknown future
 //     member — the `ProgramTemplate.primaryGoal` precedent).
 //   • number -> `Int` (every numeric field in the data is integer-valued;
-//     emitted as NumberRepr.integer so JSON matches the TS JSON.stringify).
+//     emitted as NumberRepr.integer so JSON matches the legacy web schema JSON.stringify).
 //   • `encoded()` omits any nil/absent optional field, exactly reproducing the
-//     TS object-literal key presence (an `undefined` field is dropped by
+//     legacy web schema object-literal key presence (an `undefined` field is dropped by
 //     JSON.stringify).
 //
 // Pure value types: no runtime logic, no write path, no `: Date`, no clock.
@@ -44,16 +44,16 @@ import Foundation
 import IronPathDomain
 
 /// One element of a `CorrectionModule.exercises` array.
-/// Mirrors the anonymous TS type at `src/models/training-model.ts:440`.
+/// Mirrors the anonymous legacy web schema type at `retired web reference`.
 public struct CorrectionExercise: Equatable, Sendable {
-    public let exerciseId: String      // TS: `exerciseId: string` (required)
-    public let name: String?           // TS: `name?: string`
-    public let sets: Int               // TS: `sets: number` (required)
-    public let repMin: Int             // TS: `repMin: number` (required)
-    public let repMax: Int             // TS: `repMax: number` (required)
-    public let holdSec: Int?           // TS: `holdSec?: number`
-    public let restSec: Int?           // TS: `restSec?: number`
-    public let cue: String?            // TS: `cue?: string`
+    public let exerciseId: String      // legacy web schema: `exerciseId: string` (required)
+    public let name: String?           // legacy web schema: `name?: string`
+    public let sets: Int               // legacy web schema: `sets: number` (required)
+    public let repMin: Int             // legacy web schema: `repMin: number` (required)
+    public let repMax: Int             // legacy web schema: `repMax: number` (required)
+    public let holdSec: Int?           // legacy web schema: `holdSec?: number`
+    public let restSec: Int?           // legacy web schema: `restSec?: number`
+    public let cue: String?            // legacy web schema: `cue?: string`
 
     public init(
         exerciseId: String,
@@ -90,18 +90,18 @@ public struct CorrectionExercise: Equatable, Sendable {
 }
 
 /// One element of a `FunctionalAddon.exercises` array.
-/// Mirrors the anonymous TS type at `src/models/training-model.ts:451`.
+/// Mirrors the anonymous legacy web schema type at `retired web reference`.
 public struct FunctionalExercise: Equatable, Sendable {
-    public let exerciseId: String      // TS: `exerciseId: string` (required)
-    public let name: String?           // TS: `name?: string`
-    public let sets: Int               // TS: `sets: number` (required)
-    public let repMin: Int?            // TS: `repMin?: number`
-    public let repMax: Int?            // TS: `repMax?: number`
-    public let distanceM: Int?         // TS: `distanceM?: number`
-    public let timeSec: Int?           // TS: `timeSec?: number`
-    public let holdSec: Int?           // TS: `holdSec?: number`
-    public let restSec: Int?           // TS: `restSec?: number`
-    public let cue: String?            // TS: `cue?: string`
+    public let exerciseId: String      // legacy web schema: `exerciseId: string` (required)
+    public let name: String?           // legacy web schema: `name?: string`
+    public let sets: Int               // legacy web schema: `sets: number` (required)
+    public let repMin: Int?            // legacy web schema: `repMin?: number`
+    public let repMax: Int?            // legacy web schema: `repMax?: number`
+    public let distanceM: Int?         // legacy web schema: `distanceM?: number`
+    public let timeSec: Int?           // legacy web schema: `timeSec?: number`
+    public let holdSec: Int?           // legacy web schema: `holdSec?: number`
+    public let restSec: Int?           // legacy web schema: `restSec?: number`
+    public let cue: String?            // legacy web schema: `cue?: string`
 
     public init(
         exerciseId: String,
@@ -144,20 +144,20 @@ public struct FunctionalExercise: Equatable, Sendable {
 }
 
 /// A correction (postural / mobility) support module.
-/// Mirrors the TS `CorrectionModule` interface at `src/models/training-model.ts:464`.
+/// Mirrors the legacy web schema `CorrectionModule` interface at `retired web reference`.
 public struct CorrectionModule: Equatable, Sendable {
-    public let id: String                  // TS: `id: string` (required)
-    public let name: String                // TS: `name: string` (required)
-    public let targetIssue: String         // TS: `targetIssue: CorrectionIssue` (required)
-    public let stage: String               // TS: `stage: CorrectionStage` (required)
-    public let insertionStage: String?     // TS: `insertionStage?: CorrectionStage`
-    public let durationMin: Int            // TS: `durationMin: number` (required)
-    public let dose: String?               // TS: `dose?: CorrectionDoseLevel`
-    public let doseStrategy: String?       // TS: `doseStrategy?: SupportDoseStrategy`
-    public let taperRules: [String]?       // TS: `taperRules?: string[]`
-    public let minimumEffectiveDose: Int?  // TS: `minimumEffectiveDose?: number`
-    public let maxRecommendedDose: Int?    // TS: `maxRecommendedDose?: number`
-    public let exercises: [CorrectionExercise] // TS: `exercises: CorrectionExercise[]` (required)
+    public let id: String                  // legacy web schema: `id: string` (required)
+    public let name: String                // legacy web schema: `name: string` (required)
+    public let targetIssue: String         // legacy web schema: `targetIssue: CorrectionIssue` (required)
+    public let stage: String               // legacy web schema: `stage: CorrectionStage` (required)
+    public let insertionStage: String?     // legacy web schema: `insertionStage?: CorrectionStage`
+    public let durationMin: Int            // legacy web schema: `durationMin: number` (required)
+    public let dose: String?               // legacy web schema: `dose?: CorrectionDoseLevel`
+    public let doseStrategy: String?       // legacy web schema: `doseStrategy?: SupportDoseStrategy`
+    public let taperRules: [String]?       // legacy web schema: `taperRules?: string[]`
+    public let minimumEffectiveDose: Int?  // legacy web schema: `minimumEffectiveDose?: number`
+    public let maxRecommendedDose: Int?    // legacy web schema: `maxRecommendedDose?: number`
+    public let exercises: [CorrectionExercise] // legacy web schema: `exercises: CorrectionExercise[]` (required)
 
     public init(
         id: String,
@@ -206,20 +206,20 @@ public struct CorrectionModule: Equatable, Sendable {
 }
 
 /// A functional (capacity / stability) support add-on.
-/// Mirrors the TS `FunctionalAddon` interface at `src/models/training-model.ts:479`.
+/// Mirrors the legacy web schema `FunctionalAddon` interface at `retired web reference`.
 public struct FunctionalAddon: Equatable, Sendable {
-    public let id: String                  // TS: `id: string` (required)
-    public let name: String                // TS: `name: string` (required)
-    public let targetAbility: String       // TS: `targetAbility: FunctionalAbility` (required)
-    public let insertionRule: String       // TS: `insertionRule: FunctionalInsertionRule` (required)
-    public let insertionStage: String?     // TS: `insertionStage?: 'warmup' | 'after_main' | 'finisher'`
-    public let durationMin: Int            // TS: `durationMin: number` (required)
-    public let dose: String?               // TS: `dose?: CorrectionDoseLevel`
-    public let doseStrategy: String?       // TS: `doseStrategy?: SupportDoseStrategy`
-    public let taperRules: [String]?       // TS: `taperRules?: string[]`
-    public let minimumEffectiveDose: Int?  // TS: `minimumEffectiveDose?: number`
-    public let maxRecommendedDose: Int?    // TS: `maxRecommendedDose?: number`
-    public let exercises: [FunctionalExercise] // TS: `exercises: FunctionalExercise[]` (required)
+    public let id: String                  // legacy web schema: `id: string` (required)
+    public let name: String                // legacy web schema: `name: string` (required)
+    public let targetAbility: String       // legacy web schema: `targetAbility: FunctionalAbility` (required)
+    public let insertionRule: String       // legacy web schema: `insertionRule: FunctionalInsertionRule` (required)
+    public let insertionStage: String?     // legacy web schema: `insertionStage?: 'warmup' | 'after_main' | 'finisher'`
+    public let durationMin: Int            // legacy web schema: `durationMin: number` (required)
+    public let dose: String?               // legacy web schema: `dose?: CorrectionDoseLevel`
+    public let doseStrategy: String?       // legacy web schema: `doseStrategy?: SupportDoseStrategy`
+    public let taperRules: [String]?       // legacy web schema: `taperRules?: string[]`
+    public let minimumEffectiveDose: Int?  // legacy web schema: `minimumEffectiveDose?: number`
+    public let maxRecommendedDose: Int?    // legacy web schema: `maxRecommendedDose?: number`
+    public let exercises: [FunctionalExercise] // legacy web schema: `exercises: FunctionalExercise[]` (required)
 
     public init(
         id: String,

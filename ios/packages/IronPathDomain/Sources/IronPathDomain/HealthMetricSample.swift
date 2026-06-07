@@ -1,7 +1,7 @@
 // HealthMetricSample — iOS-2C AppData Typed Field Activation V1.
 //
-// Mirrors the TypeScript `HealthMetricSample` type at
-// `src/models/training-model.ts:669`. `raw: unknown` is the most
+// Mirrors the legacy web implementation `HealthMetricSample` type at
+// `retired web reference`. `raw: unknown` is the most
 // permissive open-bag in the entire model (Agent 1 §3 row 16); iOS-2C
 // exposes it verbatim as `JSONValue?` so iOS-8 HealthKit can read the
 // payload without losing precision.

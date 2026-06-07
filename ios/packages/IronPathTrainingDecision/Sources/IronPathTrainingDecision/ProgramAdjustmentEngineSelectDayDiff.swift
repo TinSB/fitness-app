@@ -1,7 +1,7 @@
 // ProgramAdjustmentEngine — PA-S8 (PA-1b) selectBestDayForNewExercise + buildAdjustmentDiff port.
 //
 // Faithful line-by-line Swift port of the TWO data-dense PURE / read-only exports of
-// `src/engines/programAdjustmentEngine.ts` plus EVERY private helper they reach:
+// `retired web reference` plus EVERY private helper they reach:
 //   * selectBestDayForNewExercise (programAdjustmentEngine.ts:259-326)
 //   * buildAdjustmentDiff         (programAdjustmentEngine.ts:709-789)
 //   helpers: buildExerciseSeed(:190) / findExerciseSeed(:187) / exerciseKindFromId(:181)
@@ -40,8 +40,8 @@
 //     data port; the ONLY override-derived field these two functions can observe is
 //     `seeded.fatigueCost` (→ selectBestDay's `highFatigue`), and the parity fixtures use
 //     compound / synthetic ids so the empty-override fatigueCost is output-equivalent;
-//   * S2 deep-clone EngineValueUtils.clone (= TS `clone` = JSON.parse(JSON.stringify));
-//   * S2/E1RMEngine.number (= TS `number`); S3 data tables (DefaultTrainingData.* /
+//   * S2 deep-clone EngineValueUtils.clone (= legacy web schema `clone` = JSON.parse(JSON.stringify));
+//   * S2/E1RMEngine.number (= legacy web schema `number`); S3 data tables (DefaultTrainingData.* /
 //     SupportModules.* / ExerciseLibrary.displayNames); S4 formatters — formatExerciseName
 //     via the in-package ExerciseLibrary.formatExerciseDisplayName.
 //
@@ -54,11 +54,11 @@
 // that contract in four places. So this slice mirrors the narrow `formatTemplateName`
 // chain LOCALLY below (formatters.ts:187-208 / TEMPLATE_NAME_MAP ts:62-83 /
 // normalizeDisplayKey ts:27-33 / localizeTemplateNameText ts:178-185), entry-by-entry
-// faithful to the SAME TS source the L10n copy mirrors. The build-diff goldens
+// faithful to the SAME legacy web schema source the L10n copy mirrors. The build-diff goldens
 // mechanically reconcile this transcription (the support / add_new cases run both
 // formatters), so no map entry, regex, or fallback string can drift.
 //
-// Goldens are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs),
+// Goldens are GENERATED from the retired legacy engine (frozen legacy fixture generator),
 // never hand-edited (§22); the function-level compute-assert is the byte-level judge.
 
 import Foundation
@@ -68,7 +68,7 @@ extension ProgramAdjustmentEngine {
 
     // MARK: - Input / result types (programAdjustmentEngine.ts:37-55)
 
-    /// The TS `exercise: string | ExerciseTemplate` first parameter of
+    /// The legacy web schema `exercise: string | ExerciseTemplate` first parameter of
     /// `selectBestDayForNewExercise` (ts:260).
     public enum ExerciseRef: Equatable, Sendable {
         case id(String)
@@ -76,7 +76,7 @@ extension ProgramAdjustmentEngine {
     }
 
     /// The single PainPattern shape `hasPainRestriction` (ts:238-244) reads: only
-    /// `exerciseId` + `suggestedAction` are consulted (the TS `PainPattern` carries
+    /// `exerciseId` + `suggestedAction` are consulted (the legacy web schema `PainPattern` carries
     /// more fields, but this slice's diff/select path reads exactly these two — a
     /// bounded per-consumer projection, like PlateauDetectionEngine.PainPattern).
     public struct DraftPainPattern: Equatable, Sendable {
@@ -251,7 +251,7 @@ extension ProgramAdjustmentEngine {
         guard let best = ranked.first else {
             // if (!best) { ... }  (ts:300-305). Unreachable when INITIAL_TEMPLATES is
             // non-empty (templates is never empty, so dayTemplates is never empty); ported
-            // for faithfulness — the generator cannot reach it from real TS either.
+            // for faithfulness — the generator cannot reach it from real legacy web schema either.
             return DaySelectionResult(
                 confidence: .low,
                 note: "没有找到可安全插入新动作的训练日，请手动选择训练日。"
@@ -827,7 +827,7 @@ extension ProgramAdjustmentEngine {
 
     /// `formatExerciseName(value, '未命名动作')` (formatters.ts:492-494) =
     /// `formatExerciseDisplayName(value, { fallback: '未命名动作' })` — reuses the in-package
-    /// `ExerciseLibrary.formatExerciseDisplayName` (the canonical Swift port). TS
+    /// `ExerciseLibrary.formatExerciseDisplayName` (the canonical Swift port). legacy web schema
     /// `string | ExerciseTemplate` is carried as a `JSONValue` here.
     private static func formatExerciseName(_ ref: ExerciseRef) -> String {
         switch ref {
@@ -861,7 +861,7 @@ extension ProgramAdjustmentEngine {
     // MARK: - Local formatTemplateName mirror (formatters.ts:187-208) — see file header
     //
     // Faithful local transcription of the L10n `Formatters.formatTemplateName` chain
-    // (which itself mirrors src/i18n/formatters.ts). Lives here, not behind an
+    // (which itself mirrors retired-web-reference). Lives here, not behind an
     // IPTD -> IronPathL10n edge, to respect the package-graph dependency contract. The
     // build-diff goldens (support + add_new cases) reconcile every entry / regex / branch.
 
@@ -1065,11 +1065,11 @@ private struct MutObj {
 /// materialise an ABSENT optional block as `[]`. It therefore follows the PA-S1 `DayTemplate`
 /// open-bag paradigm exactly: the documented block fields are `Optional` (nil = the key is
 /// absent, NOT an empty array), and `unknown` is the open bag carrying every non-typed key
-/// verbatim. `encoded()` re-emits ONLY present typed fields + the bag — so TS `{...base}`
+/// verbatim. `encoded()` re-emits ONLY present typed fields + the bag — so legacy web schema `{...base}`
 /// (preserves every key of an existing day) and `cloneProgram` (preserves untouched days
 /// verbatim) are reproduced faithfully. A fresh `dayTemplateFromTrainingTemplate` day still
-/// materialises `correctionBlockIds: []` / `functionalBlockIds: []` because the TS literal
-/// (ts:145/147) does — the distinction is "absent ⇒ omit" vs "TS wrote [] ⇒ keep []".
+/// materialises `correctionBlockIds: []` / `functionalBlockIds: []` because the legacy web schema literal
+/// (ts:145/147) does — the distinction is "absent ⇒ omit" vs "legacy web schema wrote [] ⇒ keep []".
 private final class WDay {
     var id: String?
     var name: String?
@@ -1167,7 +1167,7 @@ private struct WTemplate {
 // (the final cluster of programAdjustmentEngine, completing PA-1).
 //
 // Faithful line-by-line Swift port of the LAST two PURE exports of
-// `src/engines/programAdjustmentEngine.ts` plus the helpers private to them:
+// `retired web reference` plus the helpers private to them:
 //   * createAdjustmentDraftFromRecommendations (ts:471-519)
 //   * applyAdjustmentDraft                      (ts:809-919)
 //   helpers (new this slice): makeId(:80) / highestConfidence(:135) + confidenceRank(:66)
@@ -1195,14 +1195,14 @@ private struct WTemplate {
 // JSONFileAppDataStore / any §8 write boundary (applying to source-of-truth is the later
 // PA write slice S10).
 //
-// TIME / ID INJECTION (§11, zero `: Date`, zero randomness): TS reads
+// TIME / ID INJECTION (§11, zero `: Date`, zero randomness): legacy web schema reads
 // `new Date().toISOString()` (ts:489/496 createDraft; ts:829 applyDraft) and
 // `makeId = Date.now()+Math.random()` (ts:80, via ts:889). The Swift port reads NEITHER
 // clock NOR randomness: `nowIso` is a REQUIRED injected ISO string and `historyIdSeed`
 // the REQUIRED injected `makeId` seed (the iOS-17e-6a / identity injected-clock contract).
 // Given identical inputs the result is identical; the goldens substitute these with
 // parityMeta.deterministicClockIso / a fixed seed and the Swift compute-assert injects the
-// same values. Goldens are GENERATED from the REAL TS engine, never hand-edited (§22).
+// same values. Goldens are GENERATED from the retired legacy engine, never hand-edited (§22).
 
 extension ProgramAdjustmentEngine {
 
@@ -1481,7 +1481,7 @@ extension ProgramAdjustmentEngine {
 
     /// `createAdjustmentDraftFromRecommendations(recommendations, sourceProgramTemplate, context)`
     /// (ts:471). PURE / zero-write. `nowIso` is the REQUIRED injected clock replacing the
-    /// TS `new Date().toISOString()` (ts:489 createdAt / ts:496 sourceTemplateUpdatedAt
+    /// legacy web schema `new Date().toISOString()` (ts:489 createdAt / ts:496 sourceTemplateUpdatedAt
     /// fallback). Reuses S6 fingerprint/instanceId, S7 hash, S8 buildAdjustmentDiff.
     public static func createAdjustmentDraftFromRecommendations(
         _ recommendations: [WeeklyActionRecommendation],
@@ -1611,7 +1611,7 @@ extension ProgramAdjustmentEngine {
 
     // MARK: - ApplyAdjustmentDraftResult (programAdjustmentEngine.ts:57-64)
 
-    /// The TS `ApplyAdjustmentDraftResult` return shape (ts:57-64). `experimentalTemplate`
+    /// The legacy web schema `ApplyAdjustmentDraftResult` return shape (ts:57-64). `experimentalTemplate`
     /// / `updatedProgramTemplate` are carried as lossless raw `JSONValue` (the mutated full
     /// template / program objects); `draft` / `historyItem` as the typed PA-S1 values.
     public struct ApplyAdjustmentDraftResult: Equatable, Sendable {
@@ -1653,7 +1653,7 @@ extension ProgramAdjustmentEngine {
 
     /// `applyAdjustmentDraft(draft, sourceProgramTemplate, currentProgramTemplate, templates)`
     /// (ts:809). PURE / ZERO WRITE — returns the result, NEVER persists (source-of-truth
-    /// write is the later S10 slice). `nowIso` replaces the TS `new Date()` (ts:829) and
+    /// write is the later S10 slice). `nowIso` replaces the legacy web schema `new Date()` (ts:829) and
     /// `historyIdSeed` the `makeId('adjustment-history')` random suffix (ts:889). Reuses S7
     /// hash, S8 applySupportChange / applyExerciseChange / ensureProgramDayTemplate, S6 fingerprint.
     public static func applyAdjustmentDraft(
@@ -1664,7 +1664,7 @@ extension ProgramAdjustmentEngine {
         nowIso: String,
         historyIdSeed: String
     ) -> ApplyAdjustmentDraftResult {
-        _ = templates  // present in the TS signature (ts:813) but unused by the body.
+        _ = templates  // present in the legacy web schema signature (ts:813) but unused by the body.
         let currentProgram = currentProgramTemplate ?? DefaultTrainingData.defaultProgramTemplate  // ts:812 default
 
         // const currentHash = hashProgramTemplate(sourceProgramTemplate);  (ts:815)
@@ -1766,7 +1766,7 @@ extension ProgramAdjustmentEngine {
         if let fs = wProgram.functionalStrategy { updatedFull["functionalStrategy"] = .string(fs) }
         // Lossless re-projection of the (possibly support-mutated) days: WDay.encoded() carries each
         // day's open bag + omits absent optional blocks, so untouched days survive verbatim and the
-        // touched day keeps its unknown keys — matching TS cloneProgram + in-place mutation (data safety).
+        // touched day keeps its unknown keys — matching legacy web schema cloneProgram + in-place mutation (data safety).
         updatedFull["dayTemplates"] = .array(wProgram.dayTemplates.map { $0.encoded() })
 
         // historyItem (ts:888-904). sourceFingerprint = draft.sourceFingerprint || build…(draft) (ts:894).

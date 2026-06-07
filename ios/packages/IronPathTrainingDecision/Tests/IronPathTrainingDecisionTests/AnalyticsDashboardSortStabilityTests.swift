@@ -10,7 +10,7 @@
 // because the stdlib sort is unstable. These tests prove that tiebreak is LOAD-BEARING:
 // the output order on a genuine tie is decided by the insertion-order rule (not the
 // comparator), matching the committed golden `analytics/adherence-report-tie-cases-v1`
-// case `skip-count-tie-stable-insertion-order` (generated from the REAL TS engine). Pure
+// case `skip-count-tie-stable-insertion-order` (generated from the retired legacy engine). Pure
 // / read-only; no IO.
 //
 // SCOPE NOTE: because both the JS and Swift sorts are stable here, a fixture where a BARE
@@ -79,7 +79,7 @@ final class AnalyticsDashboardSortStabilityTests: XCTestCase {
         // tie; only insertion order (the Map first-seen order) can resolve it. Ids are in
         // reverse-alphabetical INSERTION order so the result is visibly insertion-ordered,
         // not id-sorted. Mirrors golden analytics/adherence-report-tie-cases-v1 case
-        // `skip-count-tie-stable-insertion-order` (generated from the real TS engine).
+        // `skip-count-tie-stable-insertion-order` (generated from the real legacy web schema engine).
         let ids = ["skip-zulu", "skip-yankee", "skip-xray", "skip-whiskey", "skip-victor", "skip-uniform"]
         let exercises = ids.map {
             ExercisePrescription(id: $0, sets: [TrainingSetLog(weight: .double(60), reps: .integer(8), done: false)])

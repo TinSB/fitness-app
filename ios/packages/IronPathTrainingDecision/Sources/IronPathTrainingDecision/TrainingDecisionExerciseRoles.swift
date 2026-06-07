@@ -1,6 +1,6 @@
 // iOS-4B5 Exercise Prescription + Volume Floor V1 — exercise role classification.
 //
-// Swift port of roleOf (src/engines/trainingDecisionEngine.ts:109). PURE.
+// Swift port of roleOf (retired-web-reference). PURE.
 //
 // IMPORTANT (verified against the goldens): roleOf runs its English-token regex on
 // the LOWERCASED display NAME. The seed templates' names are Chinese (e.g. 平板卧推),

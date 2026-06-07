@@ -1,7 +1,7 @@
 // ProgressionRulesEngine — iOS-17e-3 progressive-suggestion port.
 //
 // Faithful line-by-line Swift port of the PURE progressive-suggestion functions from
-// `src/engines/progressionRulesEngine.ts`:
+// `retired web reference`:
 //   - makeSuggestion        (progressionRulesEngine.ts:139)
 //   - shouldUseTopBackoff   (progressionRulesEngine.ts:271)
 //   - buildSetPrescription  (progressionRulesEngine.ts:274)
@@ -22,11 +22,11 @@
 //   makeSuggestion now calls the already-ported `SetWeightFineTuneEngine.buildSetWeightFineTune`
 //   (17e-4) for real, threading an injected `asOfDate` (§11.2 clock). The pure port REQUIRES
 //   a non-nil asOfDate to compute a projection: a `nil` asOfDate hits the SAME
-//   `insufficient_history` fallback the TS wall-clock branch lands on for out-of-window
+//   `insufficient_history` fallback the legacy web schema wall-clock branch lands on for out-of-window
 //   history (SetWeightFineTuneEngine.swift:255-257), so passing `nil` reproduces the OLD
 //   golden-neutral behaviour EXACTLY — the existing 6 `progression-suggestion/*` goldens
 //   (deterministicClockIso anchored in 2020, history out of any plausible wall-clock window,
-//   so the TS generator's wall-clock fineTune is also insufficient) stay byte-identical and
+//   so the legacy web schema generator's wall-clock fineTune is also insufficient) stay byte-identical and
 //   `applyFineTuneIfDataRich` is a no-op → legacy decision-tree baseline.
 //   ⚠️ asOfDate CONTRACT: `nil` SILENTLY degrades to the legacy path. Any LIVE decision
 //   wiring (the iOS-17e-6b per-exercise frame, deferred) MUST pass the injected `nowIso`
@@ -51,8 +51,8 @@ public enum ProgressionRulesEngine {
 
     /// `ExerciseForProgression` (progressionRulesEngine.ts:9). Numeric fields are decoded
     /// as `Double?` so `number(x)` (finite-or-0) and the raw `${x}` interpolation behave
-    /// like the TS values. `sets` is a NUMBER for every template the engine consumes (the
-    /// `TrainingSetLog[]` arm of the TS union is never reached by these three functions).
+    /// like the legacy web schema values. `sets` is a NUMBER for every template the engine consumes (the
+    /// `TrainingSetLog[]` arm of the legacy web schema union is never reached by these three functions).
     public struct ExerciseForProgression: Equatable, Sendable {
         public var id: String
         public var baseId: String?

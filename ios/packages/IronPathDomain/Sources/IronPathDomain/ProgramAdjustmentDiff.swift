@@ -1,27 +1,27 @@
 // ProgramAdjustmentDiff — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `ProgramAdjustmentDiff` interface at
-// `src/models/training-model.ts:1220`. The human-readable before/after
+// Mirrors the legacy web implementation `ProgramAdjustmentDiff` interface at
+// `retired web reference`. The human-readable before/after
 // diff a `ProgramAdjustmentDraft` carries for preview.
 //
-// `changes` is the TS anonymous-object array
+// `changes` is the legacy web schema anonymous-object array
 // `Array<{ changeId; type; label; before; after; reason; riskLevel }>`;
-// it has no named TS type, so it is carried verbatim as raw `JSONValue?`
+// it has no named legacy web schema type, so it is carried verbatim as raw `JSONValue?`
 // (the `ProgramTemplate.correctionStrategy` / `MesocyclePlan.weeks`
 // precedent for not-yet-typed nested structures — lossless round-trip).
 //
 // Same paradigm as the existing Domain types: `init(decoding:)` /
 // `encoded()`, `_unknown` open bag, canonical round-trip. All properties
-// optional (the `ProgramTemplate` convention); TS requiredness noted.
+// optional (the `ProgramTemplate` convention); legacy web schema requiredness noted.
 //
 // Pure type: no runtime logic, no write path, no `: Date`.
 
 import Foundation
 
 public struct ProgramAdjustmentDiff: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let title: String?     // TS: `title: string` (required)
-    public let summary: String?   // TS: `summary: string` (required)
-    public let changes: JSONValue? // TS: `changes: Array<{ changeId; type; label; before; after; reason; riskLevel }>` (required)
+    public let title: String?     // legacy web schema: `title: string` (required)
+    public let summary: String?   // legacy web schema: `summary: string` (required)
+    public let changes: JSONValue? // legacy web schema: `changes: Array<{ changeId; type; label; before; after; reason; riskLevel }>` (required)
 
     public let _unknown: OrderedJSONObject
 

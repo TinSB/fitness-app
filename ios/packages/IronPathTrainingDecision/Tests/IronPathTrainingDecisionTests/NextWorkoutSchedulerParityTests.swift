@@ -8,7 +8,7 @@
 // tests use. The ordering exports only reorder (never transform) elements, so the ordered id
 // sequence (+ usedProgramOrder) is the faithful pin.
 //
-// The goldens are GENERATED from the REAL TS nextWorkoutScheduler (scripts/parityGoldensEntry.ts),
+// The goldens are GENERATED from the retired legacy nextWorkoutScheduler (retired fixture generator),
 // never hand-edited (§22). PURE / read-only — zero `: Date` (todayState.date is the only "today",
 // an explicit input), no IO beyond reading the committed goldens.
 
@@ -31,7 +31,7 @@ final class NextWorkoutSchedulerParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private func cases(_ id: String) throws -> [OrderedJSONObject] {

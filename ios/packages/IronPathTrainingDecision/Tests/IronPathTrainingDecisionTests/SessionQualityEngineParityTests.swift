@@ -12,7 +12,7 @@
 //   - SessionDetailSummaryEngine.buildWorkingOnlySession == golden `workingOnly` probe (dataFlag
 //     forced to normal / focusWarmup cleared / per-exercise set-type defaulting to straight).
 //
-// The goldens are GENERATED from the REAL TS engines (scripts/generate-parity-goldens.mjs),
+// The goldens are GENERATED from the retired legacy engines (frozen legacy fixture generator),
 // never hand-edited (§22). PURE / read-only — zero `: Date`, no IO beyond reading the committed
 // golden.
 
@@ -33,7 +33,7 @@ final class SessionQualityEngineParityTests: XCTestCase {
     }
 
     private func goldenRoot(_ id: String) throws -> OrderedJSONObject {
-        let url = Self.repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        let url = Self.repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "missing golden \(id)")
         return try JSONValue(decoding: try Data(contentsOf: url)).requireObject(id)
     }

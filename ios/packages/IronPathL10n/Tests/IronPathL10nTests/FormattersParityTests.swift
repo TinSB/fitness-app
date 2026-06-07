@@ -5,7 +5,7 @@
 // canonical repo golden — no copy, no drift). Two layers:
 //   (A) PARITY — reconstructs the two tables from `Formatters` + re-runs every
 //       branch-covering probe input through the Swift formatters, asserting each
-//       equals the golden (the same committed golden the TS parity generator
+//       equals the golden (the same committed golden the legacy web schema parity generator
 //       produces by running the REAL formatters). This mechanically catches any
 //       dropped/altered map entry, branch, regex, normalization step, or fallback.
 //   (B) PARSE — direct representative assertions on each formatter (map hit /
@@ -38,7 +38,7 @@ enum FormattersGolden {
     }
 
     static var goldenURL: URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(fixtureId).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(fixtureId).json", isDirectory: false)
     }
 
     /// One golden probe: the echoed input (raw JSON value) + the expected output.
@@ -218,7 +218,7 @@ final class FormattersParityTests: XCTestCase {
     // (no space/dash). JS `\b` is ASCII-word-only and DOES see a boundary between the
     // English token and the CJK char; an unfixed NSRegularExpression (ICU) `\b` treats
     // CJK as a word char and would see NONE — leaking the raw glued string instead of
-    // the localized/fallback result. The expected values are the REAL TS outputs.
+    // the localized/fallback result. The expected values are the retired legacy outputs.
     func testAsciiWordBoundaryGluedToCjk() {
         // residual-English-word guard fires (boundary before 训) → fallback.
         XCTAssertEqual(Formatters.formatProgramTemplateName(.string("Push训练")), "未知模板")
@@ -266,7 +266,7 @@ final class FormattersParityTests: XCTestCase {
         XCTAssertEqual(Formatters.formatAdjustmentChangeLabel(nil), "计划调整")
     }
 
-    // The optional fallbackLabel argument is honoured (mirrors the TS optional arg).
+    // The optional fallbackLabel argument is honoured (mirrors the legacy web schema optional arg).
     func testCustomFallbackLabel() {
         XCTAssertEqual(Formatters.formatProgramTemplateName(.null, fallbackLabel: "X"), "X")
         XCTAssertEqual(Formatters.formatDayTemplateName(.string(""), fallbackLabel: "Y"), "Y")

@@ -7,8 +7,8 @@
 // lastActiveWeekKey, reason). Every field is Int / String / optional-String, so equality is
 // plain struct `==`.
 //
-// The golden is GENERATED from the REAL TS trainingStreakEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy trainingStreakEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` (the injected `options.nowIso` is the only clock), no IO beyond reading the
 // committed golden.
 
@@ -30,7 +30,7 @@ final class TrainingStreakEngineParityTests: XCTestCase {
 
     private static var goldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/training-streak/streak-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/training-streak/streak-cases-v1.json", isDirectory: false
         )
     }
 
@@ -91,7 +91,7 @@ final class TrainingStreakEngineParityTests: XCTestCase {
 
     private static var boundaryGoldenURL: URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/training-streak/streak-boundary-cases-v1.json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/training-streak/streak-boundary-cases-v1.json", isDirectory: false
         )
     }
 

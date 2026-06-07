@@ -1,8 +1,8 @@
 // SC-1b — exerciseRecoveryConflictEngine port (scheduling-track, recoveryAware hard
 // prerequisite). Faithful, line-by-line Swift mirror of
-// src/engines/exerciseRecoveryConflictEngine.ts (232 lines).
+// retired-web-reference (232 lines).
 //
-// The TS engine imports exactly three things, all already native:
+// The legacy web schema engine imports exactly three things, all already native:
 //   1. EXERCISE_DISPLAY_NAMES / EXERCISE_KNOWLEDGE_OVERRIDES  (../data/exerciseLibrary)
 //   2. formatExerciseName                                     (../i18n/formatters)
 //   3. ExerciseMetadata / ExerciseTemplate (types)            (../models/training-model)
@@ -20,8 +20,8 @@
 // reuses the SR-1 `ExerciseLibrary.formatExerciseDisplayName` (formatters.ts:492 → exerciseLibrary.ts:323).
 //
 // PURE / read-only: zero `: Date`, no IO, no write path, no decision-output wiring. The
-// `exercise-recovery-conflict/conflict-cases-v1` golden is GENERATED from the REAL TS engine
-// (scripts/parityGoldensEntry.ts, never hand-authored — §22); `ExerciseRecoveryConflictEngineParityTests`
+// `exercise-recovery-conflict/conflict-cases-v1` golden is GENERATED from the retired legacy engine
+// (retired fixture generator, never hand-authored — §22); `ExerciseRecoveryConflictEngineParityTests`
 // compute-asserts each case == golden. Every output field is String / [String] / enum-string,
 // so the float scoring is internal-only — no number-formatting surface in the golden.
 

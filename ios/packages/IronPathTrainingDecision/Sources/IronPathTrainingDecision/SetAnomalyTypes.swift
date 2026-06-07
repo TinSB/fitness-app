@@ -1,7 +1,7 @@
 // SetAnomalyTypes — CC-0 coach-action capstone foundation (3/3).
 //
 // Faithful Swift port of the `SetAnomaly` TYPE FAMILY from
-// `src/engines/setAnomalyEngine.ts`:
+// `retired web reference`:
 //   • `SetAnomalySeverity` (ts:5) — 3-case severity union (info/warning/critical).
 //   • `SetAnomaly`         (ts:7) — { id, severity, title, message,
 //                                     suggestedAction?, requiresConfirmation }.
@@ -26,7 +26,7 @@ public enum SetAnomalySeverity: String, Equatable, Hashable, Sendable, CaseItera
 }
 
 /// `SetAnomaly` (setAnomalyEngine.ts:7). `suggestedAction` is the only optional
-/// field (TS `?`); everything else is required.
+/// field (legacy web schema `?`); everything else is required.
 public struct SetAnomaly: Equatable, Hashable, Sendable {
     public let id: String
     public let severity: SetAnomalySeverity

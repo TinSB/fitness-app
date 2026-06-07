@@ -13,8 +13,8 @@
 //   • filterVisible   → filterVisibleCoachActions AND the two aliases
 //     (filterResolvedCoachActions / filterResolvedPlanActions), each → the SAME surviving ids.
 //
-// The golden is GENERATED from the REAL TS coachActionDismissEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only — zero
+// The golden is GENERATED from the retired legacy coachActionDismissEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only — zero
 // `: Date` on the engine path; NO write path (the gated dismiss write is CC-4); no IO beyond
 // the committed golden.
 
@@ -37,7 +37,7 @@ final class CoachActionDismissEngineParityTests: XCTestCase {
     }
 
     private static func goldenURL(_ id: String) -> URL {
-        repoRoot.appendingPathComponent("tests/fixtures/parity/golden/\(id).json", isDirectory: false)
+        repoRoot.appendingPathComponent("ios/ParityFixtures/parity/golden/\(id).json", isDirectory: false)
     }
 
     private static let fixtureId = "coach-action-dismiss/dismiss-cases-v1"

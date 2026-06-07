@@ -21,8 +21,8 @@
 //                      the previewNote→high path, the riskLevel tiers, and the default
 //                      programTemplate / templates params (omitted ⇒ DEFAULT_*).
 //
-// The goldens are GENERATED from the REAL TS programAdjustmentEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only —
+// The goldens are GENERATED from the retired legacy programAdjustmentEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only —
 // zero `: Date`, zero clock, no IO beyond reading the committed goldens.
 
 import XCTest
@@ -45,7 +45,7 @@ final class ProgramAdjustmentEngineSelectDayDiffParityTests: XCTestCase {
 
     private static func goldenURL(_ name: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/program-adjust/\(name).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/program-adjust/\(name).json", isDirectory: false
         )
     }
 
@@ -113,7 +113,7 @@ final class ProgramAdjustmentEngineSelectDayDiffParityTests: XCTestCase {
             let draft = try ProgramAdjustmentDraft(decoding: try XCTUnwrap(c.rawValue("draft"), "\(label): draft"))
             let source = try TrainingTemplate(decoding: try XCTUnwrap(c.rawValue("sourceProgramTemplate"), "\(label): sourceProgramTemplate"))
 
-            // Omitted (null) programTemplate / templates ⇒ the TS default params
+            // Omitted (null) programTemplate / templates ⇒ the legacy web schema default params
             // (DEFAULT_PROGRAM_TEMPLATE / [sourceProgramTemplate]); pass nil so the Swift
             // port substitutes the same defaults.
             let programValue = c.rawValue("programTemplate")
@@ -171,7 +171,7 @@ final class ProgramAdjustmentEngineSelectDayDiffParityTests: XCTestCase {
 
     // MARK: - decoders
 
-    /// The TS `exercise: string | ExerciseTemplate` first param.
+    /// The legacy web schema `exercise: string | ExerciseTemplate` first param.
     private func decodeExercise(_ value: JSONValue) throws -> Engine.ExerciseRef {
         if case .string(let s) = value { return .id(s) }
         return .template(try ExerciseTemplate(decoding: value))

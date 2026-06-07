@@ -1,6 +1,6 @@
 // StaleTodayStatusRepair — iOS-3B safe repair recipe (safe_auto).
 //
-// Swift port of `src/dataHealth/repairs/staleTodayStatusV1.ts`.
+// Swift port of `retired web reference`.
 // Marks `settings.dataHealthRuntimeFlags.todayStatusIgnoredAt` when
 // `applyTodayStatusGuard` says today status is stale. The user's
 // sleep/energy/soreness/time/date payload is preserved exactly as-is.

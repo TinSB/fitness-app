@@ -1,7 +1,7 @@
 // AppDataRealExportParityTests — iOS-2C real export end-to-end parity.
 //
 // Loads the canonical redacted real export
-// `tests/fixtures/data-health/ironpath-2026-05-27-redacted.json`
+// `ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json`
 // directly via `#filePath`-rooted resolution (no Bundle.module copy
 // because the file is ~805 KB and Agent 4 §10 rejected duplication).
 // Asserts:
@@ -16,7 +16,7 @@
 //   * The canonical re-emit byte-equals the canonical re-emit of the
 //     original JSON — round-trip preservation.
 //   * The Swift FNV-1a hash matches the iOS-0 golden hash from
-//     `tests/fixtures/parity/golden/real-export/redacted-2026-05-27.json`
+//     `ios/ParityFixtures/parity/golden/real-export/redacted-2026-05-27.json`
 //     (`parityGolden.snapshotHash`).
 //
 // If the FNV-1a comparison fails AND the diff is purely number
@@ -41,7 +41,7 @@ final class AppDataRealExportParityTests: XCTestCase {
             .deletingLastPathComponent()  // packages/
             .deletingLastPathComponent()  // ios/
             .deletingLastPathComponent()  // repo root
-            .appendingPathComponent("tests/fixtures/data-health/ironpath-2026-05-27-redacted.json")
+            .appendingPathComponent("ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json")
     }
 
     /// Walks to the iOS-0 golden file for the real export.
@@ -53,7 +53,7 @@ final class AppDataRealExportParityTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("tests/fixtures/parity/golden/real-export/redacted-2026-05-27.json")
+            .appendingPathComponent("ios/ParityFixtures/parity/golden/real-export/redacted-2026-05-27.json")
     }
 
     func testRealExportFileExists() throws {

@@ -10,7 +10,9 @@
 |---|---|---|---|
 | **架构契约** | `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` | 铁律 · 包结构 · §-章节 · §27 里程碑日志 | 任何架构 / 写路径 / 包边界改动 |
 | **系统逻辑** | `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` | 全部功能 + 决策回路 + 当前实况 / 目标基线 / 缺口状态 | 任何引擎 / 决策逻辑 / 功能改动 |
-| **决策日志** | `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` · `docs/CLOUD_DECISIONS_ARCHIVE.md` | 重做铁律 + 云/账号/同步已定决策 | 任何架构 / 产品决策拍板 |
+| **决策日志** | `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` · `docs/CLOUD_DECISIONS_ARCHIVE.md` | iOS 原生重做铁律 + 云/账号/同步/CRDT 已定决策 | 任何架构 / 产品决策拍板 |
+| **产品文案** | `docs/IRONPATH_PRODUCT_COPY_BASELINE.md` | 产品定位 · 双语 voice/tone · UI / paywall / App Store / v0 文案基底 · 风险禁区 | 任何用户可见文案 / 双语 locale / onboarding / paywall / App Store 素材 / 原型生成文案变更 |
+| **产品设计语言** | `docs/IRONPATH_PRODUCT_DESIGN_LANGUAGE.md` | 视觉品牌 · 色彩 / 字体 / 形状 / 动效 · 核心组件隐喻 · App / landing / widget / v0 视觉生成基底；文案文档只管语言,视觉系统单独成文 | 任何用户可见 UI 视觉方向 / 原型生成 / App Store 截图 / landing page / widget 设计变更 |
 | **路线图** | `COMMERCIALIZATION_ROADMAP.md` | 商业化 + 重做路线 + 待办优先级 | 任何阶段 / 优先级变化 |
 | **变更日志** | `CHANGELOG.md` | 逐次改动记录 | 每次 PR |
 
@@ -31,4 +33,4 @@
 5. 任何"现状盘点 / 系统逻辑"类描述,只允许更新到「系统逻辑」那份,不另写。
 
 ## 五、为什么有这份
-本仓库曾累积 520+ 散乱 .md(PWA 死文档 + 迁移切片 + 一次性审计),边迭代边长草、互相过时、无法根治。本 manifest 把文档收敛成上面这一小撮活规格 + 硬规则,从根上挡住再次散乱。**新会话 / 新 agent 进来,先读本 manifest。**
+本仓库曾累积大量散乱 .md(旧 Web 文档 + 迁移切片 + 一次性审计),边迭代边长草、互相过时、无法根治。本 manifest 把文档收敛成上面这一小撮活规格 + 硬规则,从根上挡住再次散乱。**新会话 / 新 agent 进来,先读本 manifest。**

@@ -1,7 +1,7 @@
 // VolumeAdaptationEngine — AN-5b per-muscle volume-adaptation port.
 //
 // Faithful line-by-line Swift port of the PURE per-muscle volume-adaptation function from
-// `src/engines/volumeAdaptationEngine.ts`:
+// `retired web reference`:
 //   - buildVolumeAdaptationReport   (volumeAdaptationEngine.ts:268)
 // + every private helper it reads (clamp / roundOne / normalizeText / decisionLabel /
 //   normalizeWeeklyRows / isLoadFeedbackSummary / normalizeLoadFeedback / hasPainRisk /
@@ -24,8 +24,8 @@
 //   * The optional external inputs `weeklyVolumeSummary` (`WeeklyVolumeItem[] | { muscles }`),
 //     `effectiveSetSummary` (`Partial<EffectiveVolumeSummary>`, read as `byMuscle?.[muscleId]`),
 //     `adherenceReport` (`Partial<AdherenceReport>`) and `loadFeedback` (`LoadFeedbackInput`) are
-//     genuine TS runtime unions consumed by DUCK-TYPING; kept as raw `JSONValue?` and discriminated
-//     structurally — never forcing a static type the TS does not assert.
+//     genuine legacy web schema runtime unions consumed by DUCK-TYPING; kept as raw `JSONValue?` and discriminated
+//     structurally — never forcing a static type the legacy web schema does not assert.
 //   * `trainingLevel` (`AutoTrainingLevel | string | null`) is only ever `!trainingLevel` /
 //     `=== 'unknown'` compared → kept as a raw `String?`.
 //   * `formatMuscleName`'s `normalizeDisplayKey` + `regexReplaceAll` are ported PRIVATE here, the
@@ -44,7 +44,7 @@ public enum VolumeAdaptationEngine {
     // MARK: - Output types (volumeAdaptationEngine.ts:16-36)
 
     /// `VolumeAdaptationDecision` (volumeAdaptationEngine.ts:16). RawValue strings mirror the
-    /// TS string-literal union so the golden's `decision` decodes/compares verbatim.
+    /// legacy web schema string-literal union so the golden's `decision` decodes/compares verbatim.
     public enum VolumeAdaptationDecision: String, Equatable, Sendable {
         case increase = "increase"
         case maintain = "maintain"
@@ -583,7 +583,7 @@ public enum VolumeAdaptationEngine {
         )
     }
 
-    // MARK: - formatMuscleName (src/i18n/formatters.ts:219)
+    // MARK: - formatMuscleName (retired-web-reference)
 
     /// `MUSCLE_LABELS` (formatters.ts:102-122) — verbatim.
     private static let muscleLabels: [String: String] = [

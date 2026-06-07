@@ -1,7 +1,7 @@
 // AdjustmentChange — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `AdjustmentChange` interface at
-// `src/models/training-model.ts:1148`. One concrete change row inside a
+// Mirrors the legacy web implementation `AdjustmentChange` interface at
+// `retired web reference`. One concrete change row inside a
 // `ProgramAdjustmentDraft` / `ProgramAdjustmentHistoryItem` — the PA
 // engine's typed instruction to add/remove sets, swap an exercise, or
 // re-dose support.
@@ -10,7 +10,7 @@
 // lossless "extracted-set" rule (an unknown future token stays in the
 // open bag). Same paradigm as the existing Domain types: `init(decoding:)`
 // / `encoded()`, `_unknown` open bag, canonical round-trip. All
-// properties optional (the `ProgramTemplate` convention); TS requiredness
+// properties optional (the `ProgramTemplate` convention); legacy web schema requiredness
 // noted in-line.
 //
 // Pure type: no runtime logic, no write path, no `: Date`.
@@ -18,27 +18,27 @@
 import Foundation
 
 public struct AdjustmentChange: Equatable, Hashable, Sendable, PAJSONCodable {
-    public let id: String?                       // TS: `id: string` (required)
-    public let type: AdjustmentChangeType?       // TS: `type: AdjustmentChangeType` (required)
-    public let dayTemplateId: String?            // TS: `dayTemplateId?: string`
-    public let dayTemplateName: String?          // TS: `dayTemplateName?: string`
-    public let exerciseId: String?               // TS: `exerciseId?: string`
-    public let exerciseName: String?             // TS: `exerciseName?: string`
-    public let replacementExerciseId: String?    // TS: `replacementExerciseId?: string`
-    public let replacementExerciseName: String?  // TS: `replacementExerciseName?: string`
-    public let muscleId: String?                 // TS: `muscleId?: string`
-    public let setsDelta: NumberRepr?            // TS: `setsDelta?: number`
-    public let sets: NumberRepr?                 // TS: `sets?: number`
-    public let repMin: NumberRepr?               // TS: `repMin?: number`
-    public let repMax: NumberRepr?               // TS: `repMax?: number`
-    public let restSec: NumberRepr?              // TS: `restSec?: number`
-    public let insertAfterExerciseId: String?    // TS: `insertAfterExerciseId?: string`
-    public let insertPositionLabel: String?      // TS: `insertPositionLabel?: string`
-    public let previewNote: String?              // TS: `previewNote?: string`
-    public let skipped: Bool?                    // TS: `skipped?: boolean`
-    public let skipReason: String?               // TS: `skipReason?: string`
-    public let reason: String?                   // TS: `reason: string` (required)
-    public let sourceRecommendationId: String?   // TS: `sourceRecommendationId?: string`
+    public let id: String?                       // legacy web schema: `id: string` (required)
+    public let type: AdjustmentChangeType?       // legacy web schema: `type: AdjustmentChangeType` (required)
+    public let dayTemplateId: String?            // legacy web schema: `dayTemplateId?: string`
+    public let dayTemplateName: String?          // legacy web schema: `dayTemplateName?: string`
+    public let exerciseId: String?               // legacy web schema: `exerciseId?: string`
+    public let exerciseName: String?             // legacy web schema: `exerciseName?: string`
+    public let replacementExerciseId: String?    // legacy web schema: `replacementExerciseId?: string`
+    public let replacementExerciseName: String?  // legacy web schema: `replacementExerciseName?: string`
+    public let muscleId: String?                 // legacy web schema: `muscleId?: string`
+    public let setsDelta: NumberRepr?            // legacy web schema: `setsDelta?: number`
+    public let sets: NumberRepr?                 // legacy web schema: `sets?: number`
+    public let repMin: NumberRepr?               // legacy web schema: `repMin?: number`
+    public let repMax: NumberRepr?               // legacy web schema: `repMax?: number`
+    public let restSec: NumberRepr?              // legacy web schema: `restSec?: number`
+    public let insertAfterExerciseId: String?    // legacy web schema: `insertAfterExerciseId?: string`
+    public let insertPositionLabel: String?      // legacy web schema: `insertPositionLabel?: string`
+    public let previewNote: String?              // legacy web schema: `previewNote?: string`
+    public let skipped: Bool?                    // legacy web schema: `skipped?: boolean`
+    public let skipReason: String?               // legacy web schema: `skipReason?: string`
+    public let reason: String?                   // legacy web schema: `reason: string` (required)
+    public let sourceRecommendationId: String?   // legacy web schema: `sourceRecommendationId?: string`
 
     public let _unknown: OrderedJSONObject
 

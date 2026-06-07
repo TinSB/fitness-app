@@ -1,7 +1,7 @@
 // EstimateConfidence — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `EstimateConfidence` union at
-// `src/models/training-model.ts:153` (`'low' | 'medium' | 'high'`).
+// Mirrors the legacy web implementation `EstimateConfidence` union at
+// `retired web reference` (`'low' | 'medium' | 'high'`).
 // A frozen, closed three-value confidence band shared by the PA
 // (Plan-Adaptive) recommendation / draft / preview types.
 //

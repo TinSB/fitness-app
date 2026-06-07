@@ -1,6 +1,6 @@
 // CoachActionEngine — CC-2 coach-action track top-level aggregator.
 //
-// Faithful line-by-line Swift port of the PURE `src/engines/coachActionEngine.ts`
+// Faithful line-by-line Swift port of the PURE `retired web reference`
 // (652 lines) — its three exported builders + every private helper + the public
 // type family:
 //   • buildCoachActionSourceFingerprint        (ts:138)
@@ -27,7 +27,7 @@
 //   • enrichExercise / getPrimaryMuscles      → reuse `EngineUtils.*` (PA-S2). enrichExercise
 //     runs the EMPTY override seam (PA-S2 boundary); every fixture template exercise uses an
 //     id NOT in EXERCISE_KNOWLEDGE_OVERRIDES so `enrichExercise` lands on its default branch
-//     (primaryMuscles=[muscle], secondaryMuscles=[]) — bit-identical to the TS default,
+//     (primaryMuscles=[muscle], secondaryMuscles=[]) — bit-identical to the legacy web schema default,
 //     keeping the muscle-match parity exact (the CC-1 explicit-library deferral paradigm).
 //   • sortDataHealthIssues + DataHealthIssue/Report → reuse `DataHealthEngine.*` /
 //     `DataHealthIssue` / `DataHealthReport` (CC-0, IronPathDataHealth).
@@ -44,10 +44,10 @@
 //     VolumeAdaptationEngine.VolumeAdaptationReport / .MuscleVolumeAdaptation (AN-5b).
 //   • Civil-calendar math → reuse `AnalyticsSupport.daysFromCivil / civilFromDays` (AN-1).
 //
-// `uniqueStrings` (ts:111) is DEAD in the TS source (defined, never called) — omitted
+// `uniqueStrings` (ts:111) is DEAD in the legacy web schema source (defined, never called) — omitted
 // (an unused const has no observable behaviour; the CC-1 `roundOne` precedent).
 //
-// Goldens are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs),
+// Goldens are GENERATED from the retired legacy engine (frozen legacy fixture generator),
 // never hand-edited (§22). The Swift CoachActionEngineParityTests re-run the SAME builders
 // over each case's echoed input and COMPUTE-ASSERT the result == golden, case-by-case.
 
@@ -63,7 +63,7 @@ public enum CoachActionEngine {
     /// (`source` / `actionType` / `priority` / `status` / `targetType`) are carried as
     /// `String` (the `CoachActionIdentityEngine.FingerprintAction` precedent — String
     /// preserves any union member losslessly and the engine only string-compares them).
-    /// `encoded()` mirrors the TS object literal: the optional fields
+    /// `encoded()` mirrors the legacy web schema object literal: the optional fields
     /// (`expiresAt` / `targetId` / `targetType` / `confirmTitle` / `confirmDescription`)
     /// are OMITTED when nil exactly as `JSON.stringify` drops `undefined` keys;
     /// `sourceFingerprint` is always set by `makeAction` (ts:287) so it is always emitted.
@@ -113,7 +113,7 @@ public enum CoachActionEngine {
             self.sourceFingerprint = sourceFingerprint
         }
 
-        /// Canonical JSON shape of the TS `CoachAction` object literal (undefined keys dropped).
+        /// Canonical JSON shape of the legacy web schema `CoachAction` object literal (undefined keys dropped).
         public func encoded() -> JSONValue {
             var e: [OrderedJSONObject.Entry] = []
             e.append(.init(key: "id", value: .string(id)))
@@ -282,7 +282,7 @@ public enum CoachActionEngine {
     /// (a constant EST/EDT offset, DST-invariant fixtures): under a constant offset, "+1 local
     /// day" preserving local time-of-day is exactly +86_400_000 ms UTC (the offset cancels on
     /// the round-trip). So this PURE port parses the instant, adds one UTC day, and re-emits
-    /// `toISOString()` — zero `: Date`, zero Calendar. NaN parse → nil (TS `undefined`).
+    /// `toISOString()` — zero `: Date`, zero Calendar. NaN parse → nil (legacy web schema `undefined`).
     private static func tomorrowIso(_ createdAt: String) -> String? {
         guard let ms = parseIsoMs(createdAt) else { return nil } // new Date NaN → undefined
         return isoStringFromMs(ms + 86_400_000)
@@ -293,7 +293,7 @@ public enum CoachActionEngine {
     /// `Boolean(appData.activeSession && appData.activeSession.completed !== true)`.
     /// Read straight off the `AppData.root` open bag (the typed `appData.activeSession`
     /// accessor would `try? TrainingSession(decoding:)` and could drop a malformed-but-truthy
-    /// object — the TS reads the raw value's truthiness, never decoding it).
+    /// object — the legacy web schema reads the raw value's truthiness, never decoding it).
     private static func activeSessionInProgress(_ appData: AppData) -> Bool {
         guard let value = appData.root["activeSession"], jsTruthy(value) else { return false }
         // `.completed !== true` — anything other than the boolean literal `true` passes.
@@ -325,7 +325,7 @@ public enum CoachActionEngine {
 
     // MARK: - buildCoachActionSourceFingerprint (coachActionEngine.ts:138-151)
 
-    /// Public re-export wrapper. The TS param is a structural `Pick<CoachAction, …> &
+    /// Public re-export wrapper. The legacy web schema param is a structural `Pick<CoachAction, …> &
     /// Partial<…>`; a full `CoachAction` is a superset, so it is accepted here. Builds the
     /// 7-field `FingerprintAction` with the `title || '' / description || '' / reason || ''`
     /// empty-string fallbacks (ts:144-148) and delegates to the PA-S5 fingerprint.
@@ -965,7 +965,7 @@ public enum CoachActionEngine {
     // MARK: - suggestedChange JSONValue builder (training-model.ts:1087)
 
     /// Builds the `suggestedChange` anonymous-object subtree as a raw `JSONValue`, emitting
-    /// only the keys the caller passes (matching the TS object literals). `setsDelta` is an
+    /// only the keys the caller passes (matching the legacy web schema object literals). `setsDelta` is an
     /// integer.
     private static func suggestedChangeValue(
         muscleId: String? = nil,

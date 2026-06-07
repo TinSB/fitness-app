@@ -1,5 +1,5 @@
 // SC-A — recoveryAwareScheduler port (scheduling-track). Faithful, line-by-line Swift
-// mirror of `src/engines/recoveryAwareScheduler.ts` (581 lines). The TS engine imports
+// mirror of `retired web reference` (581 lines). The legacy web schema engine imports
 // exactly five things, all already native (REUSED, never re-ported):
 //   1. EXERCISE_KNOWLEDGE_OVERRIDES (../data/exerciseLibrary)  — the override slice the
 //      body-part path reads (movementPattern / primaryMuscles ← SmartReplacementKnowledge
@@ -15,7 +15,7 @@
 //   5. buildExerciseRecoveryConflict + ExerciseRecoveryConflict[Level] (./exerciseRecoveryConflictEngine)
 //      — the SC-1b port (consumed, never re-ported).
 //
-// `formatMuscleName` is imported by the TS file (formatters.ts:2) but NEVER referenced — a
+// `formatMuscleName` is imported by the legacy web schema file (formatters.ts:2) but NEVER referenced — a
 // leftover import; intentionally not ported.
 //
 // formatTemplateName REUSE BOUNDARY: the Swift formatTemplateName lives in IronPathL10n
@@ -23,7 +23,7 @@
 // (it would break the acyclic package graph and require a Package.swift edit — forbidden).
 // So formatTemplateName is transcribed LOCALLY here, exactly the precedent
 // `ProgramAdjustmentEngineSelectDayDiff.swift` set (its own local formatTemplateName mirror,
-// :861-958). Both copies mirror the SAME TS source (formatters.ts:187-208); the recovery-aware
+// :861-958). Both copies mirror the SAME legacy web schema source (formatters.ts:187-208); the recovery-aware
 // goldens reconcile it indirectly (every summary / title / reason embeds a template name).
 //
 // The engine has TWO independent computation paths, both EXPORTED and both parity-pinned:
@@ -35,8 +35,8 @@
 //
 // PURE / READ-ONLY: zero `: Date` (the engine carries no clock — readiness/availableTime are
 // caller-supplied), no IO, no randomness, no write path, no UI wiring (that is a later slice).
-// The three `recovery-aware/*-cases-v1` goldens are GENERATED from the REAL TS engine
-// (scripts/parityGoldensEntry.ts, never hand-authored — §22); RecoveryAwareSchedulerParityTests
+// The three `recovery-aware/*-cases-v1` goldens are GENERATED from the retired legacy engine
+// (retired fixture generator, never hand-authored — §22); RecoveryAwareSchedulerParityTests
 // compute-asserts each case == golden field-by-field.
 
 import Foundation
@@ -177,7 +177,7 @@ public enum RecoveryAwareScheduler {
     }
 
     /// `TemplateRecoveryConflict` (ts:51-64). `conflictingExercises` / `safeExercises` are the
-    /// SC-1b `ExerciseRecoveryConflictEngine.Conflict` (== TS `ExerciseRecoveryConflict`).
+    /// SC-1b `ExerciseRecoveryConflictEngine.Conflict` (== legacy web schema `ExerciseRecoveryConflict`).
     public struct TemplateRecoveryConflict: Equatable, Sendable {
         public let templateId: String
         public let templateName: String
@@ -260,7 +260,7 @@ public enum RecoveryAwareScheduler {
     }
 
     /// The `metaForExercise` (ts:147-157) return shape, limited to the fields scoreExerciseForArea
-    /// reads. (`muscle` is `String?` — Domain optional; the TS field is a required string.)
+    /// reads. (`muscle` is `String?` — Domain optional; the legacy web schema field is a required string.)
     struct ResolvedMeta {
         let id: String
         let muscle: String?
@@ -356,7 +356,7 @@ public enum RecoveryAwareScheduler {
     /// knowledge tables (SR-3 movementPattern/primaryMuscles; SC-0 secondaryMuscles/muscleContribution).
     /// `name` is not read by scoreExerciseForArea (the reason string uses the RAW exercise id/name),
     /// so it is omitted from ResolvedMeta. Each `??` rung models JS spread key-presence precedence:
-    /// a knowledge/external value is non-nil exactly when the TS object defines that key.
+    /// a knowledge/external value is non-nil exactly when the legacy web schema object defines that key.
     static func metaForExercise(_ exercise: ExerciseTemplate, _ exerciseLibrary: [String: ExerciseMetaInput]?) -> ResolvedMeta {
         let id = exercise.id ?? ""  // id: exercise.id (forced)
         let smr = SmartReplacementKnowledge.overrides[id]   // movementPattern / primaryMuscles
@@ -516,7 +516,7 @@ public enum RecoveryAwareScheduler {
         }
     }
 
-    /// `conflictRank` (ts:251-256) keyed by THIS engine's `RecoveryConflictLevel` — TS indexes the
+    /// `conflictRank` (ts:251-256) keyed by THIS engine's `RecoveryConflictLevel` — legacy web schema indexes the
     /// SAME `conflictRank` map with a RecoveryConflictLevel value (structurally identical string
     /// union) in findLowerConflictTemplate (ts:413); modelled as an overload.
     static func conflictRank(_ level: RecoveryConflictLevel) -> Int {
@@ -684,9 +684,9 @@ public enum RecoveryAwareScheduler {
         )
     }
 
-    // MARK: - Dead-in-TS helpers (recoveryAwareScheduler.ts:384-398)
+    // MARK: - Dead-in-legacy web schema helpers (recoveryAwareScheduler.ts:384-398)
     //
-    // `conflictLabel` (ts:384-390) + `baseReasons` (ts:392-398) are defined in the TS engine but
+    // `conflictLabel` (ts:384-390) + `baseReasons` (ts:392-398) are defined in the legacy web schema engine but
     // NEVER called (verified: zero references repo-wide outside their own definitions — baseReasons
     // is never invoked, and conflictLabel is only invoked by baseReasons). They are mirrored here
     // faithfully for completeness; being unreachable from any export, no golden can pin them.
@@ -701,7 +701,7 @@ public enum RecoveryAwareScheduler {
         }
     }
 
-    /// `baseReasons` (ts:392-398) — DEAD in TS (never called); mirrored for completeness.
+    /// `baseReasons` (ts:392-398) — DEAD in legacy web schema (never called); mirrored for completeness.
     static func baseReasons(_ templateName: String, _ conflict: TemplateBodyPartConflict) -> [String] {
         if conflict.level == .none {
             return ["\(templateName) 与今天标记的酸痛部位没有明显重叠。"]
@@ -949,7 +949,7 @@ public enum RecoveryAwareScheduler {
     }
 
     /// `ExerciseTemplate` (Domain) → `ExerciseRecoveryConflictEngine.ExerciseInput`. The SC-1b
-    /// engine receives the FULL template object in TS and reads these nine fields; the
+    /// engine receives the FULL template object in legacy web schema and reads these nine fields; the
     /// muscleContribution Record is decoded to `[String: Double]` (the ExerciseInput carrier).
     static func toExerciseInput(_ exercise: ExerciseTemplate) -> ExerciseRecoveryConflictEngine.ExerciseInput {
         ExerciseRecoveryConflictEngine.ExerciseInput(
@@ -993,7 +993,7 @@ public enum RecoveryAwareScheduler {
     // MARK: - Local formatTemplateName mirror (formatters.ts:187-208) — see file header
     //
     // Faithful local transcription of the L10n `Formatters.formatTemplateName` chain (which itself
-    // mirrors src/i18n/formatters.ts), kept off an IPTD → IronPathL10n edge to respect the package
+    // mirrors retired-web-reference), kept off an IPTD → IronPathL10n edge to respect the package
     // graph — exactly the ProgramAdjustmentEngineSelectDayDiff precedent. The recovery-aware
     // goldens reconcile every entry / regex / branch (template names ride in every summary/title).
 

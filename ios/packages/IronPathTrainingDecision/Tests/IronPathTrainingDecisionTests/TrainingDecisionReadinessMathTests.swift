@@ -1,6 +1,6 @@
 // iOS-4B4 — readiness math completion: time-gap penalty + health-summary delta +
 // Math.round (jsRound). Drives buildReadinessResult directly via @testable. These
-// pin the exact TS bucket behaviour the iOS-4B4 intensityMode parity relies on.
+// pin the exact legacy web schema bucket behaviour the iOS-4B4 intensityMode parity relies on.
 
 import XCTest
 import IronPathDomain
@@ -50,7 +50,7 @@ final class TrainingDecisionReadinessMathTests: XCTestCase {
         XCTAssertEqual(score(available: 80, planned: 70).score, 68)  // available > planned
         XCTAssertEqual(score(available: 60, planned: nil).score, 68) // no planned -> truthy check fails
         XCTAssertEqual(score(available: nil, planned: 70).score, 68) // no available (NaN) -> no penalty
-        XCTAssertEqual(score(available: 60, planned: 0).score, 68)   // planned 0 is falsy in TS
+        XCTAssertEqual(score(available: 60, planned: 0).score, 68)   // planned 0 is falsy in legacy web schema
     }
 
     func test_timeGap_flips_trainingAdjustment_to_conservative() {

@@ -4,7 +4,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 
 # /multi-agent-audit — 多 Agent 独立审计
 
-目的：对高风险改动（训练 / 推荐 / 云同步 / 存储 / AppData / Settings / Focus Mode / PWA）执行**多 Agent 独立审计**：每个 Agent 独立做一次 pass，互不偷看，全部报告完成后才允许进入实施。
+目的：对高风险改动（训练 / 推荐 / 未来云同步 / 存储 / AppData / Settings / Focus Mode / iOS UI）执行**多 Agent 独立审计**：每个 Agent 独立做一次 pass，互不偷看，全部报告完成后才允许进入实施。
 
 ## 共享 IronPath 规则（每个命令都遵守）
 
@@ -13,26 +13,25 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 - 如果 worktree 有未提交改动，**先停止并报告**，不要把本次任务和无关清理混在一起（除非任务本身就是清理）。
 - 假设环境：MacBook / macOS。
 - 不要使用 `--admin`，不要绕过分支保护。
-- 不允许 `package.json` / `package-lock.json` / `yarn.lock` 出现非预期改动。
-- `pnpm-lock.yaml` **必须保持不存在**。
+- 不允许重新引入 `package.json`、Node/npm/Vite 配置或任何 Web lockfile；如果扫描到，先停下说明原因。
+- `package-lock.json`、`yarn.lock`、`pnpm-lock.yaml` 必须保持不存在。
 - 永远不要泄露 token、env 值、service-role key、API key、cookie、原始 AppData 或任何用户隐私数据。
-- 永远不要删除 localStorage、训练历史或云端数据，除非用户明确批准。
-- 永远不要静默覆盖云端数据。
+- 永远不要删除本机 JSON/AppData、训练历史、HealthKit 派生数据或未来云端数据，除非用户明确批准。
+- 永远不要静默覆盖本机 canonical AppData 或未来云端数据。
 - 不要在没有明确批准的情况下修改 AppData 或 TrainingSession schema。
 - 代码改动后的标准验证流程：
   ```bash
-  npm run api:dev:build
-  npm run typecheck
-  npm test
-  npm run build
-  node scripts/scan-production-dist-safety.mjs
-  git diff -- package.json package-lock.json yarn.lock pnpm-lock.yaml
-  test ! -e pnpm-lock.yaml
+  for package in ios/packages/*; do
+    if [ -f "$package/Package.swift" ]; then
+      (cd "$package" && swift test) || exit 1
+    fi
+  done
+  xcodebuild -project ios/IronPath.xcodeproj -scheme IronPath -destination 'generic/platform=iOS Simulator' build
   git diff --check
   ```
-- 合并后若影响生产行为：`npx vercel --prod`
-- 涉及 mobile / PWA：必要时做真机 iPhone 或镜像 iPhone 冒烟。
-- 训练逻辑、推荐逻辑、云同步、存储、AppData、Settings、Focus Mode、PWA 改动 → 必须做全仓搜索 + 多 Agent 复审。
+- 合并后若影响发布行为：走 TestFlight/App Store 发布清单；禁止从此仓触发 Vercel 发布。
+- 涉及 iOS UI/运行时：必要时做 iPhone 模拟器或真机冒烟。
+- 训练逻辑、推荐逻辑、未来云同步、存储、AppData、Settings、Focus Mode、iOS UI 改动 → 必须做全仓搜索；高风险时再做多 Agent 复审。
 - 不要用单文件窄补丁解决复杂 bug。
 
 ## Agent 列表与职责（独立 pass，互不偷看）
@@ -49,10 +48,10 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 
 3. **UI Integration Agent**
    - 任务：枚举所有受影响的 UI surface（含中英文文案）。
-   - 输出：哪些 surface 会变、哪些不应该变但有风险、是否需要 a11y / 真机 PWA 冒烟。
+   - 输出：哪些 surface 会变、哪些不应该变但有风险、是否需要 a11y / iPhone 模拟器或真机冒烟。
 
 4. **Data Safety Agent**
-   - 任务：检查 localStorage / AppData / IndexedDB / cloud / 训练历史 / TrainingSession schema 是否被触碰。
+   - 任务：检查 local JSON store / AppData / App Group snapshot / future cloud / 训练历史 / TrainingSession schema 是否被触碰。
    - 输出：是否有删除 / 覆盖 / 跨账户污染风险；是否需要明确用户批准。
 
 5. **Recommendation/Domain Agent**（任务涉及训练 / 推荐时必上）
@@ -60,7 +59,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
    - 输出：是否存在多个 recommendation source；是否需要先合并为单一 source-of-truth 再改 UI。
 
 6. **Regression Agent**
-   - 任务：识别历史上踩过的坑（参考最近 PR、CHANGELOG、docs/、tests/regression*），评估本次会不会撞回去。
+   - 任务：识别历史上踩过的坑（参考最近 PR、CHANGELOG、docs/、Swift tests），评估本次会不会撞回去。
    - 输出：历史回归点清单、本次需要的 regression test 矩阵。
 
 7. **Implementation Agent**（必须最后才上）
@@ -80,7 +79,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 - **non-impacted modules verified**：检查过但确认无关的模块（证明你看过）。
 - **risks**：数据 / UI / 架构 / 部署风险。
 - **proposed fix**：该 Agent 视角下的修复建议。
-- **test matrix**：建议的测试组合（unit / integration / smoke / iPhone PWA / regression）。
+- **test matrix**：建议的测试组合（unit / package / Xcode build / simulator or device smoke / regression）。
 - **post-implementation re-review**：实施完后需要重做哪些验证。
 
 ## IronPath 推荐系统特别规则

@@ -17,10 +17,8 @@
 //
 // HARD BOUNDARIES (still enforced): no network/cloud/account; REMOTE / push
 // notifications remain forbidden (they need a server → §17); nothing leaves the
-// device. The static guard `tests/iosBootstrapForbiddenImports.test.ts` confines
-// the local UserNotifications tokens to the single adapter file and bans the
-// remote-push tokens everywhere; `tests/iosLocalRestTimerNotificationStaticGuards.test.ts`
-// locks the broader N-1 boundary.
+// device. `IronPathNotificationsTests` confine the local UserNotifications behavior
+// to the adapter surface and keep remote-push behavior out of the package boundary.
 
 /// Retained for the iOS-1 bootstrap parity-probe convention every package
 /// follows (`Sources/<Pkg>/<Pkg>.swift` exports only this version constant). The

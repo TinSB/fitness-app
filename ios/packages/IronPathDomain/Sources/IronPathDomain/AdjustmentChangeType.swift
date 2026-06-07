@@ -1,7 +1,7 @@
 // AdjustmentChangeType — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `AdjustmentChangeType` union at
-// `src/models/training-model.ts:1139`. The closed set of program-
+// Mirrors the legacy web implementation `AdjustmentChangeType` union at
+// `retired web reference`. The closed set of program-
 // adjustment change kinds the PA (Plan-Adaptive) engines emit on an
 // `AdjustmentChange` / `ProgramAdjustmentDiff` row.
 //

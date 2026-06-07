@@ -16,7 +16,7 @@
 // Focus Mode) read from CleanAppDataView and never touch raw.history
 // directly.
 //
-// Mirrors `src/dataHealth/cleanAppDataView.ts`.
+// Mirrors `retired web reference`.
 
 import Foundation
 import IronPathDomain
@@ -69,8 +69,8 @@ public struct CleanAppDataView: Equatable, Sendable {
     public let cleanedScreening: ScreeningProfile
 
     /// Per-session DurationGuardOutcome keyed by `session.id`. Sessions
-    /// without an id are not represented here (matches the TS behaviour
-    /// — TS keys by `session.id` directly).
+    /// without an id are not represented here (matches the legacy web schema behaviour
+    /// — legacy web schema keys by `session.id` directly).
     public let durations: [String: DurationGuardOutcome]
 
     public let todayStatus: TodayStatusGuardOutcome

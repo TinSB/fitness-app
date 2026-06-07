@@ -1,14 +1,14 @@
 // PA-S3 — supportModules data port (pure data, read-only).
 //
 // Faithful 1:1 Swift transcription of the two frozen support-module data
-// constants in `src/data/supportModules.ts`:
+// constants in `retired web reference`:
 //
-//   src/data/supportModules.ts:3    CORRECTION_MODULES -> correctionModules
-//   src/data/supportModules.ts:185  FUNCTIONAL_ADDONS  -> functionalAddons
+//   retired-web-reference    CORRECTION_MODULES -> correctionModules
+//   retired-web-reference  FUNCTIONAL_ADDONS  -> functionalAddons
 //
-// Array order = TS source order (load-bearing — supportPlanEngine selection is
+// Array order = legacy web schema source order (load-bearing — supportPlanEngine selection is
 // order-sensitive). Every module/addon field + nested exercise field is mirrored
-// verbatim; an absent optional field is OMITTED (the TS object literal does not
+// verbatim; an absent optional field is OMITTED (the legacy web schema object literal does not
 // write it). Reconciled item-by-item against the generated
 // `default-program-data/snapshot-v1` parity golden (DefaultProgramDataParityTests)
 // + count guards.

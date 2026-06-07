@@ -34,7 +34,7 @@ public struct TrainingSession: Equatable, Hashable, Sendable {
     public let exercises: [ExercisePrescription]?
 
     /// Every JSON key not in `documentedKeys`. Preserves forward
-    /// compatibility — future PWA writes that add a new top-level
+    /// compatibility — future legacy web app writes that add a new top-level
     /// session key are preserved verbatim.
     public let _unknown: OrderedJSONObject
 

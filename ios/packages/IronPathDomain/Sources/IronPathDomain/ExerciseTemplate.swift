@@ -1,17 +1,17 @@
 // ExerciseTemplate — PA-S1 PA Domain Types V1.
 //
-// Mirrors the TypeScript `ExerciseTemplate` interface at
-// `src/models/training-model.ts:345`, which `extends ExerciseMetadata`
+// Mirrors the legacy web implementation `ExerciseTemplate` interface at
+// `retired web reference`, which `extends ExerciseMetadata`
 // (`:313`). Swift structs have no inheritance, so the inherited
 // `ExerciseMetadata` fields are FLATTENED onto this struct — exactly the
-// flat JSON shape the TS `extends` produces. (`ExerciseMetadata` is not
+// flat JSON shape the legacy web schema `extends` produces. (`ExerciseMetadata` is not
 // yet a standalone Swift type — SR/AN have not ported it — so there is
 // no existing type to reuse/extend here; it is mirrored inline.)
 //
 // Same paradigm as the existing Domain types: `init(decoding:)` /
 // `encoded()` over `JSONValue`, every documented key carried losslessly,
 // an `_unknown` open bag for anything not promoted, canonical round-trip.
-// All properties are `Optional` (the `ProgramTemplate` convention); TS
+// All properties are `Optional` (the `ProgramTemplate` convention); legacy web schema
 // requiredness is noted in-line.
 //
 // Field-type rules (the `ProgramTemplate`/`MesocyclePlan` precedent):
@@ -31,53 +31,53 @@ import Foundation
 public struct ExerciseTemplate: Equatable, Hashable, Sendable, PAJSONCodable {
 
     // MARK: ExerciseTemplate own fields (`:345`)
-    public let id: String?                  // TS: `id: string` (required)
-    public let name: String?                // TS: `name: string` (required)
-    public let alias: String?               // TS: `alias?: string`
-    public let muscle: String?              // TS: `muscle: string` (required)
-    public let kind: String?                // TS: `kind: ExerciseKind | string` (required)
-    public let sets: NumberRepr?            // TS: `sets: number` (required)
-    public let repMin: NumberRepr?          // TS: `repMin: number` (required)
-    public let repMax: NumberRepr?          // TS: `repMax: number` (required)
-    public let rest: NumberRepr?            // TS: `rest: number` (required)
-    public let startWeight: NumberRepr?     // TS: `startWeight: number` (required)
-    public let alternatives: [String]?      // TS: `alternatives?: string[]`
-    public let adjustment: String?          // TS: `adjustment?: string`
-    public let warning: String?             // TS: `warning?: string`
-    public let warningSource: String?       // TS: `warningSource?: ExerciseWarningSource`
-    public let warningType: String?         // TS: `warningType?: ExerciseWarningType`
-    public let warningSignals: JSONValue?   // TS: `warningSignals?: ExerciseWarningSignal[]`
+    public let id: String?                  // legacy web schema: `id: string` (required)
+    public let name: String?                // legacy web schema: `name: string` (required)
+    public let alias: String?               // legacy web schema: `alias?: string`
+    public let muscle: String?              // legacy web schema: `muscle: string` (required)
+    public let kind: String?                // legacy web schema: `kind: ExerciseKind | string` (required)
+    public let sets: NumberRepr?            // legacy web schema: `sets: number` (required)
+    public let repMin: NumberRepr?          // legacy web schema: `repMin: number` (required)
+    public let repMax: NumberRepr?          // legacy web schema: `repMax: number` (required)
+    public let rest: NumberRepr?            // legacy web schema: `rest: number` (required)
+    public let startWeight: NumberRepr?     // legacy web schema: `startWeight: number` (required)
+    public let alternatives: [String]?      // legacy web schema: `alternatives?: string[]`
+    public let adjustment: String?          // legacy web schema: `adjustment?: string`
+    public let warning: String?             // legacy web schema: `warning?: string`
+    public let warningSource: String?       // legacy web schema: `warningSource?: ExerciseWarningSource`
+    public let warningType: String?         // legacy web schema: `warningType?: ExerciseWarningType`
+    public let warningSignals: JSONValue?   // legacy web schema: `warningSignals?: ExerciseWarningSignal[]`
 
     // MARK: Inherited ExerciseMetadata fields (`:313`)
-    public let movementPattern: String?         // TS: `movementPattern?: string`
-    public let primaryMuscles: [String]?        // TS: `primaryMuscles?: string[]`
-    public let secondaryMuscles: [String]?      // TS: `secondaryMuscles?: string[]`
-    public let muscleContribution: JSONValue?   // TS: `muscleContribution?: Record<string, number>`
-    public let goalBias: [String]?              // TS: `goalBias?: string[]`
-    public let equivalenceChainId: String?      // TS: `equivalenceChainId?: string`
-    public let canonicalExerciseId: String?     // TS: `canonicalExerciseId?: string`
-    public let baseId: String?                  // TS: `baseId?: string`
-    public let fatigueCost: String?             // TS: `fatigueCost?: ExerciseFatigueCost | string`
-    public let skillDemand: String?             // TS: `skillDemand?: ExerciseSkillDemand | string`
-    public let romPriority: String?             // TS: `romPriority?: string`
-    public let progressionUnit: String?         // TS: `progressionUnit?: string`
-    public let progressionUnitKg: NumberRepr?   // TS: `progressionUnitKg?: number`
-    public let progressionPercent: JSONValue?   // TS: `progressionPercent?: [number, number]`
-    public let targetRir: JSONValue?            // TS: `targetRir?: [number, number]`
-    public let recommendedLoadRange: String?    // TS: `recommendedLoadRange?: string`
-    public let recommendedRepRange: JSONValue?  // TS: `recommendedRepRange?: [number, number]`
-    public let recommendedRestSec: JSONValue?   // TS: `recommendedRestSec?: [number, number]`
-    public let orderPriority: NumberRepr?       // TS: `orderPriority?: number`
-    public let highFrequencyOk: Bool?           // TS: `highFrequencyOk?: boolean`
-    public let evidenceTags: [String]?          // TS: `evidenceTags?: readonly string[]`
-    public let techniqueStandard: JSONValue?    // TS: `techniqueStandard?: TechniqueStandard`
-    public let equivalence: JSONValue?          // TS: `equivalence?: ExerciseEquivalenceChain`
-    public let alternativeIds: [String]?        // TS: `alternativeIds?: string[]`
-    public let alternativePriorities: JSONValue? // TS: `alternativePriorities?: Record<string, ...>`
-    public let regressionIds: [String]?         // TS: `regressionIds?: string[]`
-    public let progressionIds: [String]?        // TS: `progressionIds?: string[]`
-    public let contraindications: [String]?     // TS: `contraindications?: string[]`
-    public let warmupPreference: String?        // TS: `warmupPreference?: ExerciseWarmupPreference`
+    public let movementPattern: String?         // legacy web schema: `movementPattern?: string`
+    public let primaryMuscles: [String]?        // legacy web schema: `primaryMuscles?: string[]`
+    public let secondaryMuscles: [String]?      // legacy web schema: `secondaryMuscles?: string[]`
+    public let muscleContribution: JSONValue?   // legacy web schema: `muscleContribution?: Record<string, number>`
+    public let goalBias: [String]?              // legacy web schema: `goalBias?: string[]`
+    public let equivalenceChainId: String?      // legacy web schema: `equivalenceChainId?: string`
+    public let canonicalExerciseId: String?     // legacy web schema: `canonicalExerciseId?: string`
+    public let baseId: String?                  // legacy web schema: `baseId?: string`
+    public let fatigueCost: String?             // legacy web schema: `fatigueCost?: ExerciseFatigueCost | string`
+    public let skillDemand: String?             // legacy web schema: `skillDemand?: ExerciseSkillDemand | string`
+    public let romPriority: String?             // legacy web schema: `romPriority?: string`
+    public let progressionUnit: String?         // legacy web schema: `progressionUnit?: string`
+    public let progressionUnitKg: NumberRepr?   // legacy web schema: `progressionUnitKg?: number`
+    public let progressionPercent: JSONValue?   // legacy web schema: `progressionPercent?: [number, number]`
+    public let targetRir: JSONValue?            // legacy web schema: `targetRir?: [number, number]`
+    public let recommendedLoadRange: String?    // legacy web schema: `recommendedLoadRange?: string`
+    public let recommendedRepRange: JSONValue?  // legacy web schema: `recommendedRepRange?: [number, number]`
+    public let recommendedRestSec: JSONValue?   // legacy web schema: `recommendedRestSec?: [number, number]`
+    public let orderPriority: NumberRepr?       // legacy web schema: `orderPriority?: number`
+    public let highFrequencyOk: Bool?           // legacy web schema: `highFrequencyOk?: boolean`
+    public let evidenceTags: [String]?          // legacy web schema: `evidenceTags?: readonly string[]`
+    public let techniqueStandard: JSONValue?    // legacy web schema: `techniqueStandard?: TechniqueStandard`
+    public let equivalence: JSONValue?          // legacy web schema: `equivalence?: ExerciseEquivalenceChain`
+    public let alternativeIds: [String]?        // legacy web schema: `alternativeIds?: string[]`
+    public let alternativePriorities: JSONValue? // legacy web schema: `alternativePriorities?: Record<string, ...>`
+    public let regressionIds: [String]?         // legacy web schema: `regressionIds?: string[]`
+    public let progressionIds: [String]?        // legacy web schema: `progressionIds?: string[]`
+    public let contraindications: [String]?     // legacy web schema: `contraindications?: string[]`
+    public let warmupPreference: String?        // legacy web schema: `warmupPreference?: ExerciseWarmupPreference`
 
     public let _unknown: OrderedJSONObject
 

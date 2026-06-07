@@ -1,6 +1,6 @@
 // WeeklyCoachActionEngine — CC-1 coach-action track.
 //
-// Faithful line-by-line Swift port of the PURE `src/engines/weeklyCoachActionEngine.ts`
+// Faithful line-by-line Swift port of the PURE `retired web reference`
 // (the THREE exported builders + every private helper):
 //   • recommendExercisesForMuscleGap  (ts:77)
 //   • buildWeeklyActionRecommendations (ts:252)
@@ -35,7 +35,7 @@
 //   `defaultExerciseLibrary()` is ported as an empty table so the seam is faithful in
 //   shape; it is pinned by NO golden and lights up when the override values land.
 //
-// `roundOne` (ts:47) is DEAD in the TS source (defined, never called) — omitted (an
+// `roundOne` (ts:47) is DEAD in the legacy web schema source (defined, never called) — omitted (an
 // unused const has no observable behaviour).
 // `WeeklyCoachActionInput.history` (ts:34, `history?: TrainingSession[]`) is declared
 // but the engine body NEVER reads it — omitted here so the port does not pull in the
@@ -48,7 +48,7 @@ public enum WeeklyCoachActionEngine {
 
     // MARK: - Input projections (NARROW — only the fields the engine reads)
 
-    /// One exercise-library entry — the read subset of the TS
+    /// One exercise-library entry — the read subset of the legacy web schema
     /// `Partial<ExerciseTemplate> & Record<string, unknown>` (ts:20). The engine
     /// reads `alias` / `name` (label), `muscle` / `primaryMuscles` /
     /// `secondaryMuscles` / `muscleContribution` (contribution) and `fatigueCost`.
@@ -82,7 +82,7 @@ public enum WeeklyCoachActionEngine {
 
     /// The ordered library map — `Record<string, entry>` (`Object.entries` order
     /// matters for the stable tie-break). Iterated in the order supplied (the CC-1
-    /// fixtures author keys in ascending code-point order so the TS `Object.entries`
+    /// fixtures author keys in ascending code-point order so the legacy web schema `Object.entries`
     /// iteration matches the Swift JSON-decode order, which sorts keys on ingest).
     public typealias Library = [(id: String, entry: ExerciseLibraryEntry)]
 
@@ -186,7 +186,7 @@ public enum WeeklyCoachActionEngine {
         public init(phase: String? = nil) { self.phase = phase }
     }
 
-    /// `WeeklyCoachActionInput` (ts:24). `history` is omitted (declared in TS but
+    /// `WeeklyCoachActionInput` (ts:24). `history` is omitted (declared in legacy web schema but
     /// never read by the engine body — see file header).
     public struct WeeklyCoachActionInput {
         public let muscleVolumeDashboard: [MuscleVolumeRow]
@@ -249,7 +249,7 @@ public enum WeeklyCoachActionEngine {
 
     /// `ExerciseRecommendation` (training-model.ts:1099). `contribution` is the
     /// internal sort key (ts:21 `ExerciseRecommendationCandidate`) and is dropped
-    /// from the output (ts:129), exactly as in TS.
+    /// from the output (ts:129), exactly as in legacy web schema.
     public struct ExerciseRecommendation: Equatable, Sendable {
         public let exerciseId: String
         public let label: String
@@ -341,7 +341,7 @@ public enum WeeklyCoachActionEngine {
 
     // MARK: - recommendExercisesForMuscleGap (ts:77)
 
-    /// One internal candidate — the TS `ExerciseRecommendationCandidate` (ts:21),
+    /// One internal candidate — the legacy web schema `ExerciseRecommendationCandidate` (ts:21),
     /// carrying the `contribution` sort key dropped from the output.
     private struct Candidate {
         let exerciseId: String
@@ -669,8 +669,8 @@ public enum WeeklyCoachActionEngine {
                 // output stays byte-identical. The empty-string fallback (②, audit fix; CC-4) replaces
                 // the old silent `?? "medium"`: it only ever fires on a malformed projection, and
                 // `EstimateConfidence(rawValue: "")` → nil → the key is OMITTED, faithfully reproducing
-                // what TS emits for an absent confidence (`undefined`) instead of FABRICATING a
-                // "medium" the TS never has. Pinned by testE1RMConfidenceIsFaithfulNoMediumFallback.
+                // what legacy web schema emits for an absent confidence (`undefined`) instead of FABRICATING a
+                // "medium" the legacy web schema never has. Pinned by testE1RMConfidenceIsFaithfulNoMediumFallback.
                 confidence: profile.currentConfidence ?? ""
             ))
         }
@@ -772,8 +772,8 @@ public enum WeeklyCoachActionEngine {
     // MARK: - suggestedChange JSONValue builder
 
     /// Builds the `suggestedChange` anonymous-object subtree (training-model.ts:1087)
-    /// as a raw `JSONValue`, mirroring the TS object-literal keys. Only the keys the
-    /// caller passes are emitted (matching the TS literals, which omit `undefined`
+    /// as a raw `JSONValue`, mirroring the legacy web schema object-literal keys. Only the keys the
+    /// caller passes are emitted (matching the legacy web schema literals, which omit `undefined`
     /// fields). Integer fields (`setsDelta`) use `.integer`; `volumeMultiplier` is a
     /// fractional `.double` — both canonicalise identically to the JSON-decoded golden.
     private static func suggestedChangeValue(

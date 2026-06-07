@@ -1,7 +1,7 @@
 // CoachActionDismissEngine — CC-3 coach-action dismiss/visibility port.
 //
 // Faithful line-by-line Swift port of the PURE dismiss/visibility engine
-// `src/engines/coachActionDismissEngine.ts` (159 lines): its 9 exports
+// `retired web reference` (159 lines): its 9 exports
 // (`DismissedCoachAction` type ts:11 / `dismissCoachActionToday` ts:25 /
 // `filterDismissedCoachActions` ts:33 / `draftMatchesCoachAction` ts:73 /
 // `historyMatchesCoachAction` ts:92 / `findExistingAdjustmentForCoachAction` ts:108 /
@@ -37,12 +37,12 @@
 // the ONLY deterministic, timezone-independent outcome of `new Date(value)` for
 // a non-anchored value is the Invalid-Date (`NaN`) → `''` case (e.g. `''`,
 // `'garbage'`); a non-anchored BUT parseable value (`'2026/06/04'`) is
-// TZ-dependent in TS itself, so it is OUTSIDE the §11 deterministic input domain
+// TZ-dependent in legacy web schema itself, so it is OUTSIDE the §11 deterministic input domain
 // and never appears in the goldens. We therefore return `''` for every
 // non-anchored value — faithful for the contractual ISO input domain, and the
 // only stable parity pin.
 //
-// Goldens are GENERATED from the REAL TS engine (scripts/generate-parity-goldens.mjs),
+// Goldens are GENERATED from the retired legacy engine (frozen legacy fixture generator),
 // never hand-edited (§22).
 
 import Foundation
@@ -57,7 +57,7 @@ public enum CoachActionDismissEngine {
     // MARK: - DismissedCoachAction (coachActionDismissEngine.ts:11-15)
 
     /// `DismissedCoachAction` (ts:11-15) — `{ actionId; dismissedAt; scope: 'today' }`.
-    /// `scope` is the TS string-literal `'today'`; carried as `String` (the
+    /// `scope` is the legacy web schema string-literal `'today'`; carried as `String` (the
     /// `FingerprintAction` precedent — String preserves the literal AND lets a
     /// fixture pass a non-`'today'` scope to exercise the `scope === 'today'`
     /// filter's false branch). `dismissCoachActionToday` always sets `"today"`.
@@ -71,7 +71,7 @@ public enum CoachActionDismissEngine {
             self.scope = scope
         }
 
-        /// Canonical JSON shape of the TS object literal (ts:26-30).
+        /// Canonical JSON shape of the legacy web schema object literal (ts:26-30).
         public func encoded() -> JSONValue {
             .object(OrderedJSONObject(entries: [
                 .init(key: "actionId", value: .string(actionId)),
@@ -82,7 +82,7 @@ public enum CoachActionDismissEngine {
     }
 
     /// `findExistingAdjustmentForCoachAction`'s return object (ts:113):
-    /// `{ draft?; historyItem?; state? } | null`. `nil` mirrors the TS `null`.
+    /// `{ draft?; historyItem?; state? } | null`. `nil` mirrors the legacy web schema `null`.
     /// `state` is the `'draft_ready' | 'applied' | 'rolled_back' | 'dismissed' |
     /// 'expired'` union, carried as `String?`.
     public struct ExistingAdjustment: Equatable, Sendable {
@@ -235,8 +235,8 @@ public enum CoachActionDismissEngine {
     // MARK: - draftMatchesCoachAction (coachActionDismissEngine.ts:73-90)
 
     /// `draftMatchesCoachAction` (ts:73). `sourceFingerprint == nil` reproduces
-    /// the TS default-parameter (`undefined` → the per-draft default, ts:76); an
-    /// explicit value (incl. `""`) is used verbatim. The TS default is a PURE
+    /// the legacy web schema default-parameter (`undefined` → the per-draft default, ts:76); an
+    /// explicit value (incl. `""`) is used verbatim. The legacy web schema default is a PURE
     /// computation, so evaluating it lazily AFTER the `'recommendation'`
     /// early-return changes nothing observable. The `||` chain returns true on
     /// the first matching clause (ts:82-88).
@@ -288,7 +288,7 @@ public enum CoachActionDismissEngine {
     /// (non-rolled-back → applied; else rolled_back). `String(draft.status)`
     /// membership is reproduced by `status ?? ""` — neither `"undefined"` nor
     /// `""` is in either status set, so the membership result is identical.
-    /// Returns `nil` for the TS `null`.
+    /// Returns `nil` for the legacy web schema `null`.
     public static func findExistingAdjustmentForCoachAction(
         _ action: CoachAction,
         _ drafts: [ProgramAdjustmentDraft] = [],

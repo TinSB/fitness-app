@@ -11,8 +11,8 @@
 //   • program-adjustment-preview → buildProgramAdjustmentPreview → ordered previews, each
 //     field + the nested changes (type/muscleId/exerciseId/setsDelta/reason) EXACT.
 //
-// The goldens are GENERATED from the REAL TS weeklyCoachActionEngine
-// (scripts/generate-parity-goldens.mjs), never hand-edited (§22). PURE / read-only —
+// The goldens are GENERATED from the retired legacy weeklyCoachActionEngine
+// (frozen legacy fixture generator), never hand-edited (§22). PURE / read-only —
 // zero `: Date` (the engine carries no clock), no IO beyond reading the committed goldens.
 
 import XCTest
@@ -35,7 +35,7 @@ final class WeeklyCoachActionEngineParityTests: XCTestCase {
 
     private static func goldenURL(_ name: String) -> URL {
         repoRoot.appendingPathComponent(
-            "tests/fixtures/parity/golden/weekly-coach/\(name).json", isDirectory: false
+            "ios/ParityFixtures/parity/golden/weekly-coach/\(name).json", isDirectory: false
         )
     }
 
@@ -277,9 +277,9 @@ final class WeeklyCoachActionEngineParityTests: XCTestCase {
     /// SEPARATE optionals projected from the one `EstimatedOneRepMax current`; the engine's guard
     /// (ts:328 `!profile.current`) only binds `currentE1rmKg`. On every faithful input the required
     /// `current.confidence` rides along (so the goldens are unchanged), but the old `?? "medium"`
-    /// SILENTLY fabricated a confidence the TS never has whenever the projection lacked one. The fix
+    /// SILENTLY fabricated a confidence the legacy web schema never has whenever the projection lacked one. The fix
     /// drops to `?? ""` → `EstimateConfidence(rawValue: "")` is nil → the key is OMITTED, exactly as
-    /// TS emits for an absent `confidence` (`undefined`). This test feeds the malformed projection
+    /// legacy web schema emits for an absent `confidence` (`undefined`). This test feeds the malformed projection
     /// (currentE1rmKg present, currentConfidence nil) and asserts the recommendation OMITS confidence
     /// — a regression to `?? "medium"` would surface here as `.medium`, not `nil`.
     func testE1RMConfidenceIsFaithfulNoMediumFallback() {
@@ -302,7 +302,7 @@ final class WeeklyCoachActionEngineParityTests: XCTestCase {
             )).first { $0.category == "recovery" && $0.targetId == "bench-press" }
         }
 
-        // ②: a confidence-less current must OMIT confidence (the TS reads required `current.confidence`),
+        // ②: a confidence-less current must OMIT confidence (the legacy web schema reads required `current.confidence`),
         // NEVER fabricate .medium — a regression to `?? "medium"` surfaces here as `.medium`, not `nil`.
         let missing = e1rmRec(nil)
         XCTAssertNotNil(missing, "the e1RM profile yields a recovery recommendation")

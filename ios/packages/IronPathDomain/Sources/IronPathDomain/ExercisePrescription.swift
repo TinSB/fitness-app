@@ -3,8 +3,8 @@
 // The prescribed exercise inside a TrainingSession. iOS-5 Focus Mode
 // reads `sets` and `warmupSets`; iOS-3 Data Health reads identity
 // (`id`, `actualExerciseId`, `originalExerciseId`) for the
-// `legacyReplacementIdentityPollution` repair recipe. The TS
-// interface lives at `src/models/training-model.ts:378`.
+// `legacyReplacementIdentityPollution` repair recipe. The legacy web schema
+// interface lives at `retired web reference`.
 
 import Foundation
 

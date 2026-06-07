@@ -1,7 +1,7 @@
 // TrainingLevelEngine — AN-5 auto training-level assessment port.
 //
 // Faithful line-by-line Swift port of the PURE training-level functions from
-// `src/engines/trainingLevelEngine.ts`:
+// `retired web reference`:
 //   - buildTrainingLevelAssessment   (trainingLevelEngine.ts:150)
 //   - buildTechniqueQualitySummary   (trainingLevelEngine.ts:94)
 //   - formatAutoTrainingLevel        (trainingLevelEngine.ts:78)
@@ -22,7 +22,7 @@
 //     and REUSES the AN-2 `PlateauDetectionEngine.TechniqueQualitySummary` TYPE
 //     (trainingLevelEngine.ts:41 — identical shape) rather than redefining it.
 //   * `e1rmConfidenceScore` (trainingLevelEngine.ts:119) and `getExercisePainPattern`
-//     are NOT ported — `e1rmConfidenceScore` is DEAD in the TS source (defined but
+//     are NOT ported — `e1rmConfidenceScore` is DEAD in the legacy web schema source (defined but
 //     never CALLed; it is the sole reader of `EstimateConfidence`, so neither is
 //     ported), and only the trainingLevel-consumed pain subset lands.
 //   * `TrainingCalendarData` is modelled TYPE-ONLY (the single `weeklyFrequency[].
@@ -46,7 +46,7 @@ public enum TrainingLevelEngine {
 
     // MARK: - Output types (trainingLevelEngine.ts:18-39)
 
-    /// `AutoTrainingLevel` (trainingLevelEngine.ts:18). RawValues mirror the TS string
+    /// `AutoTrainingLevel` (trainingLevelEngine.ts:18). RawValues mirror the legacy web schema string
     /// union so the golden's `level` decodes/compares verbatim.
     public enum AutoTrainingLevel: String, Equatable, Sendable {
         case unknown = "unknown"

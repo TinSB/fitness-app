@@ -3,7 +3,7 @@
 // This UPGRADES the SR-0 smart-replacement goldens from decode-only
 // (SmartReplacementGoldenDecodeTests) to COMPUTE-AND-ASSERT: for each of the 4
 // committed smart-replacement fixtures it decodes the fixture's `params`
-// (tests/fixtures/parity/inputs/smart-replacement/*.json — the SAME input the TS
+// (ios/ParityFixtures/parity/inputs/smart-replacement/*.json — the SAME input the legacy web schema
 // generator's generateSmartReplacement feeds buildSmartReplacementRecommendations),
 // runs the PORTED SmartReplacementEngine.buildSmartReplacementRecommendations on
 // it, and asserts the produced SmartReplacementRecommendation[] equals the golden
@@ -25,7 +25,7 @@ import IronPathDomain
 enum SmartReplacementInputs {
     static var inputDir: URL {
         SmartReplacementGoldens.repoRoot
-            .appendingPathComponent("tests/fixtures/parity/inputs/smart-replacement", isDirectory: true)
+            .appendingPathComponent("ios/ParityFixtures/parity/inputs/smart-replacement", isDirectory: true)
     }
 
     static func inputURL(_ id: String) -> URL {

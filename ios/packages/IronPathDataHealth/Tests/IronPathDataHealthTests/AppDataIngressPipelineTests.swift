@@ -87,7 +87,7 @@ final class AppDataIngressPipelineTests: XCTestCase {
     }
 
     func testForbiddenSourceAcceptsAutoRepairWithExplicitMutation() throws {
-        // The TS contract: allowAutoRepair=true on a forbidden source
+        // The legacy web schema contract: allowAutoRepair=true on a forbidden source
         // is allowed ONLY when the caller also explicitly sets
         // allowMutation=true.
         let appData = try makeAppDataWithStaleTodayStatus()

@@ -2,14 +2,14 @@
 //
 // The three AN-1 analytics engines (TrainingStreakEngine / RecentPRDeltaEngine /
 // WeeklyMuscleBalanceEngine) each duplicate the SAME byte-identical local helpers
-// in their TS sources (`src/engines/trainingStreakEngine.ts`,
+// in their legacy web schema sources (`retired web reference`,
 // `recentPRDeltaEngine.ts`, `weeklyMuscleBalanceEngine.ts`):
 //   - `safeDate`            (NOON-UTC normalization of any date-prefixed string)
 //   - `isAnalyticsSession`  (completed !== false && dataFlag not test/excluded)
 //   - `startOfWeekUtc` / `weekKey` / `monthKey`  (UTC calendar bucketing)
 // plus the muscle-balance-only `getPrimaryMuscles` / `setVolume`. They are
 // centralised here ONCE (one faithful copy referenced by all three) rather than
-// re-transcribed per engine — the TS copies are byte-identical, so a single Swift
+// re-transcribed per engine — the legacy web schema copies are byte-identical, so a single Swift
 // copy is faithful AND avoids divergence.
 //
 // `safeDate` and `isAnalyticsSession` here are DELIBERATELY DISTINCT from the
@@ -237,7 +237,7 @@ enum AnalyticsSupport {
     }
 
     /// JS `Math.round(value)` = `floor(value + 0.5)` (half rounds toward +∞),
-    /// reproduced so `.5` boundaries match TS rather than Swift's round-half-away.
+    /// reproduced so `.5` boundaries match legacy web schema rather than Swift's round-half-away.
     static func jsMathRound(_ value: Double) -> Int {
         Int((value + 0.5).rounded(.down))
     }
