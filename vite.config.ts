@@ -34,6 +34,12 @@ export default defineConfig({
     __IRONPATH_BUILD_SHA__: JSON.stringify(buildIdentifier.sha),
     __IRONPATH_BUILD_ISO__: JSON.stringify(buildIdentifier.iso),
   },
+  server: {
+    allowedHosts: ['sb-23nrnao5tnr.vercel.run', '.vercel.run'],
+  },
+  preview: {
+    allowedHosts: ['sb-23nrnao5tnr.vercel.run', '.vercel.run'],
+  },
   test: {
     environment: 'node',
     globals: true,
