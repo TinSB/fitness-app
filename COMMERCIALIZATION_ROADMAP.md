@@ -7,7 +7,7 @@
 
 ## 0. 一句话判断（Thesis）
 
-把话说在前面：你选的这条路（native iOS + 英文出海 + subscription）天花板最高，但**在赚到第一块钱之前，要同时铺四块全新地盘**——账号+云同步、订阅基础设施、全套专业英文内容、iOS 上架就绪——其中三块在仓库里基本是 0。在一个 Hevy / Fitbod / Strong 已经占位的拥挤市场里，最大的风险不是"做不出来"，而是**埋头做 5 个月，上线才发现英文用户不买账，或定价错了**。
+把话说在前面：你选的这条路（native iOS + 英文出海 + subscription）天花板最高，但**在赚到第一块钱之前，要先铺三块商业地基**——订阅收费闭环、专业英文内容、iOS 上架就绪。账号和云同步是重要的信任基础设施,但不是首个收费闭环的前置硬依赖;它们必须保持 local-first + opt-in,并在 Master Architecture 批准后进入实现。在一个 Hevy / Fitbod / Strong 已经占位的拥挤市场里，最大的风险不是"做不出来"，而是**埋头做 5 个月，上线才发现英文用户不买账，或定价错了**。
 
 所以这份 Roadmap 的主干**不是**"大爆炸式开发然后上线"，而是：
 
@@ -21,15 +21,15 @@
 
 | Workstream | 仓库现状 | 距离 / 难度 |
 |---|---|---|
-| iOS 原生 | 273 个 Swift 文件；核心训练闭环（FocusMode / 记录 / 计划 / Profile / 引擎 Swift 包）已迁移 | **完成度高**，但属 native local MVP。差账号、云同步、订阅、合规与最后打磨——"最后 20%" 通常最难 |
-| 账号 + Auth | 仅 `authBoundary.ts` / `authProviderTypes.ts` 桩 | **近 greenfield**。是订阅的**硬依赖**：跨设备/重装后权益必须可恢复，没有账号就没有订阅 |
-| 云同步 | 仅 1 张 Supabase 表（appdata snapshot）；DOCTRINE-1 / ADR-0002 只有方向 | 未实现。还要解决 offline-first **冲突合并**，是最贵、最容易返工的一块 |
-| 订阅基础设施 | 0 | StoreKit 2 / 收据校验 / 权益门禁 / paywall / 试用 / 恢复购买全部从零。**建议用 RevenueCat** 省 2–3 周自研 |
+| iOS 原生 | 273 个 Swift 文件；核心训练闭环（FocusMode / 记录 / 计划 / Profile / 引擎 Swift 包）已迁移 | **完成度高**，但属 native local MVP。差订阅、合规、英文化、可见备份/导出、最后打磨;账号/云同步另走 opt-in gate |
+| 账号 + Auth | 仅 `authBoundary.ts` / `authProviderTypes.ts` 桩 | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
+| 云同步 | 仅 1 张 Supabase 表（appdata snapshot）；DOCTRINE-1 / ADR-0002 只有方向 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
+| 订阅基础设施 | 0 | StoreKit 2 / RevenueCat / 权益门禁 / paywall / 试用 / 恢复购买全部从零。App Store entitlement 可以先与一方账号解耦;账号只增强跨设备和支持体验。任何 StoreKit/RevenueCat/收据校验/权益持久化实现前都要先同步 Master Architecture |
 | 英文化 | 文案集中在 `terms.ts` 等，但全中文硬编码，无 en locale、无切换机制 | **被低估的大头**。难点不在 UI 标签，在**证据/教练解释文案**——你的差异化所在，必须专业英文重写（非机翻），且 web + Swift 两套都要做 |
 | 合规 | README 已坚持"训练决策支持，非医疗诊断" | 隐私政策 / ToS / 隐私营养标签 / 医疗免责 / GDPR·CCPA / 第三方 AI 数据披露 待补。**务必守住 "fitness 不是 medical" 定位**，否则触发 Apple Guideline 1.4.1 的监管证明要求 |
 | 获客 / 增长 / 数据 | 无（现有 RELEASE/DEPLOYMENT checklist 全是工程 QA） | 定位、ASO、冷启动渠道、漏斗埋点全空白 |
 
-**结论**：真正的关键路径是 **账号 → 云同步 → 订阅权益 → 英文内容 → iOS 上架就绪 → 合规**，这是 4–6 个月的地基工程，**才轮到增长**。这正是为什么要先验证。
+**结论**：真正的首发关键路径是 **付费意愿验证 → 订阅权益 → 英文核心内容 → iOS 上架就绪 → 合规 → 基础备份/导出信任**。账号和云同步是后续 Trust Infra / Paid Coach 增强项,不能抢在收费闭环和产品价值验证之前消耗最大工程成本。
 
 ---
 
@@ -77,7 +77,7 @@
 | 阶段 | 周期 | 目标 | 出口 Gate |
 |---|---|---|---|
 | **P0 定位与验证** | W0–W5 | 锁定英文定位/差异化、定价假设、付费意愿信号 | 有可量化的需求 + 付费意愿信号 |
-| **P1 商业化地基** | W4–W14 | 账号+云同步+订阅+埋点 | 能收费 + 不丢数据 + 能测漏斗 |
+| **P1 商业化地基** | W4–W14 | 订阅+权益+埋点+基础备份/导出;账号/云同步完成 gate 设计 | 能收费 + 本地数据可带走 + 能测漏斗 |
 | **P2 英文化与内容** | W4–W16 | 全栈专业英文 + ASO 素材 | 价值面英文达母语级 |
 | **P3 iOS 上架就绪** | W12–W20 | parity + HealthKit + 合规 + 过审 | 拿到 App Store 批准 build |
 | **P4 软启动+冷启动** | W18–W26 | 小英文区软启动、跑通漏斗、起量 | 健康的 trial→paid 与 D30 |
@@ -94,12 +94,13 @@
 
 ### P1 商业化地基（W4–W14）— 关键路径
 
-- **账号 + Auth**（Supabase Auth）：邮箱 + Apple Sign-in（健康类强烈建议 Apple 登录）。
-- **云同步**：offline-first 即时缓存 + 云端权威真相，复用既有 DataHealth 门禁/备份先于覆盖；**最小可用冲突策略先行**（last-write-wins + 备份），别一上来做完美 CRDT。
-- **订阅基础设施**：StoreKit 2 + **RevenueCat**（权益、收据校验、跨平台、试用、恢复购买）+ paywall + 门禁。
+- **订阅基础设施**：StoreKit 2 + **RevenueCat**（权益、收据校验、试用、恢复购买）+ paywall + 门禁。首版可以使用 App Store entitlement 作为付费真相,不要求一方账号先落地;真正接 StoreKit / RevenueCat SDK / 远程收据校验 / 权益持久化前,必须先通过 Master Architecture gate,不得直接改依赖或引入网络。
+- **可见备份 / 导出**：先让用户确认本地数据能带走,避免 local-first 被误解为"丢了就没了"。
+- **账号 + Auth gate**：设计 Sign in with Apple / Supabase Auth 的用户生命周期、删号、恢复购买关联和隐私边界;通过 Master Architecture 后再实现。
+- **云同步 gate**：设计 local-first + opt-in 同步、source-of-truth、冲突合并、备份先于覆盖和 CRDT/记录粒度;通过 Master Architecture 后再实现,不得在 P1 偷跑网络或云端权威真相。
 - **埋点**：激活、留存、trial-start、trial-convert、churn 全链路。**上线即埋点，没有数据不谈增长。**
-- **Gate**：能收费 + 重装后权益与数据可恢复 + 漏斗可观测。
-- *Claude Code brief*：①Supabase schema（users / entitlements / sync snapshot / 冲突日志）+ RLS；②同步引擎（含冲突与备份不变量、验收用例）；③RevenueCat 接入与 paywall 门禁；④分析事件字典与埋点。
+- **Gate**：能收费 + 权益可恢复 + 本地数据可导出/备份 + 漏斗可观测;账号/云同步只完成 architecture gate 和切片计划,不作为首个付费闭环阻塞项。
+- *Claude Code brief*：①StoreKit / RevenueCat entitlement architecture gate 与 paywall 门禁设计,通过后再实现；②备份/导出用户可见路径；③分析事件字典与埋点；④账号/云同步 architecture gate 文档与验收切片。
 
 ### P2 英文化与内容（W4–W16）— 与 P1 并行
 
@@ -113,12 +114,12 @@
 ### P3 iOS 上架就绪（W12–W20）— 关键路径
 
 - 完成 native parity 最后打磨。
-- **HealthKit 集成**（native 才能做）——喂 readiness，是相对 web 的**实打实差异化**。
+- **HealthKit 权限 / 观测事实 / HealthContext gate**（native 才能做）——先服务 Progress / dataQuality 解释;影响 readiness 或 Scheduler 前必须有 Master-approved engine-input slice。
 - App Store Connect 配置、**隐私营养标签**、健康/医疗**免责**（守住 fitness 定位）、订阅产品配置。
 - 合规：隐私政策、ToS、GDPR/CCPA、（若用第三方 AI 处理用户数据需**显式披露+同意**）。
 - TestFlight 公测 → 修 → 提审 → 过审。
 - **Gate**：拿到 App Store 批准 build。
-- *Claude Code brief*：①HealthKit 读权限 + readiness 接入；②App Store Connect 元数据/隐私标签清单；③订阅产品与 paywall 联调。
+- *Claude Code brief*：①HealthKit authorization / HealthObservation / HealthContext gate 设计；②App Store Connect 元数据/隐私标签清单；③订阅产品与 paywall 联调 gate。
 
 ### P4 软启动 + 冷启动获客（W18–W26）
 
@@ -137,7 +138,9 @@
 
 ## 4. 定价与打包建议（基于竞品调研）
 
-### 竞品价格地图（2025–2026，USD）
+### 竞品价格地图（定价 Gate 前必须刷新，USD）
+
+下表是用于定位和价格锚的研究快照,不是永久价格真相。进入 paywall / 订阅产品配置前,必须重新核验竞品价格、Apple 费率、外链支付政策和 App Store Review Guidelines。
 
 | App | 定位 | 月 | 年 | 备注 |
 |---|---|---|---|---|
@@ -153,7 +156,7 @@
 - **定位**：在 Hevy（$24/yr 的 logger+轻 trainer）**之上**，对标/超越 Fitbod（$96/yr 黑箱 AI），卖点 = **"会解释自己的循证教练"**。
 - **推荐**：年订 **$59.99–$69.99**、月订 **$9.99–$11.99**、**14 天试用**（向"17–32 天试用转化最高=45.7%"的高转化带靠拢，可 A/B 14 vs 30）。**主推年订**（57% 用户偏好年付，年付 LTV/留存更高）。
 - **免费/付费分界**：核心记录免费可用（够 ASO 排名/留存）；**教练引擎整体进订阅**（readiness、自动计划调整、每周引证行动、e1RM 置信度、云同步、HealthKit）——它才是差异化与值得付费的东西。镜像 Hevy（记录免费 / Trainer 付费），但付费侧深得多。
-- **苹果经济学**：你符合 **Small Business Program**，**15% 从第一天起**（不是 30%）。外链支付（美区）法律仍在拉锯（2025-04 判 → 2025-12 上诉改判 Apple 可收"合理佣金" → 2026 仍在上诉/最高法院），**别现在指望靠外链绕抽成**；先用 StoreKit IAP 15% 把信任与合规做稳，外链作为后期优化项再评估。
+- **苹果经济学**：首发默认走 StoreKit IAP 和 App Store 合规 paywall。Small Business Program 资格、Apple 费率、外链支付政策和地区差异必须在订阅产品配置前按 Apple 当前规则和法律意见刷新;不要把外链绕抽成当作首发策略。
 
 ---
 
@@ -169,10 +172,10 @@
 
 - **不要**把产品定位成 medical（触发 Apple 监管证明要求）——继续守 "训练决策支持，非医疗诊断"。
 - **不要**机翻证据/教练内容（直接毁掉差异化护城河）。
-- **不要**在验证前就建完整云同步冲突合并（最贵、最易返工）——P1 先 last-write-wins + 备份。
+- **不要**在验证前就建完整云同步冲突合并（最贵、最易返工）——首个收费闭环先用 local-first + 导出/备份;云同步另过 architecture gate。
 - **不要**美区冷启动首发（CAC 最高、最不容错）——先小英文区软启动。
 - **不要**把"免费"当默认锚（D 方案的坑：后加墙易反弹）。
-- **依赖警示**：订阅强依赖账号+云同步；英文化要 web/Swift 双做；三者都在关键路径上，排期别低估。
+- **依赖警示**：订阅、英文化、合规和 App Store 上架在首发关键路径上;账号+云同步是高价值后续地基,但不得被误写成订阅硬依赖。
 
 ---
 
@@ -183,7 +186,7 @@
 3. 上线英文落地页 + 邮件 waitlist + **烟雾测试 paywall**（真实价格按钮量转化）。
 4. 在 r/weightroom、r/naturalhypertrophy、r/Fitness 及健身 Discord 招募 20–50 名英文 beta lifter。
 5. 起草英文隐私政策 / ToS / 医疗免责骨架。
-6. 注册 Apple Developer Program（$99/yr）并申请 **Small Business Program**（拿 15% 抽成）。
+6. 注册 Apple Developer Program,并在订阅产品配置前核验 **Small Business Program** 资格、当期费率和外链支付规则。
 
 ---
 

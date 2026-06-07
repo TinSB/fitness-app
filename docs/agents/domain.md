@@ -1,6 +1,6 @@
 # Domain Docs
 
-IronPath is a single-context React, Vite, and TypeScript personal training PWA.
+IronPath contains the original React / Vite / TypeScript Web/PWA plus the native iOS SwiftUI migration. For native iOS work, `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is the architecture contract and `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` is the system-logic baseline.
 
 ## Layout
 
@@ -17,8 +17,8 @@ Use IronPath's existing product language:
 
 - Today owns the daily training decision.
 - Focus owns the active set action.
-- History owns calendar and completed-session review.
-- Progress owns strength, PR, e1RM, and training trend explanations.
-- Settings owns preferences, backup, diagnostics, safety, and equipment profile details.
+- Progress owns completed-session review, calendar continuity, strength, PR, e1RM, training trends, and data-quality explanations.
+- Plan owns future schedule, program structure, proposed adjustments, and rollback/review of accepted plan changes.
+- Profile / Settings owns preferences, backup, diagnostics, safety, account/sync controls, subscription surfaces, and equipment profile details.
 
 When a new architecture decision is needed, create a focused ADR under `docs/adr/` only after the decision is approved or clearly requested.

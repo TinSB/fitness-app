@@ -16,7 +16,7 @@
 </style>
 <div class="wrap">
   <h1>IronPath iOS — 系统逻辑决策回路</h1>
-  <p class="sub">commit 4a1ead0 (#504) · 现状盘点 · 配套文档 IRONPATH_iOS_SYSTEM_LOGIC.md</p>
+  <p class="sub">视觉参考 · 完整系统逻辑以 docs/IRONPATH_iOS_SYSTEM_LOGIC.md 为准 · 架构授权以 docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md 为准</p>
 
   <h2>回路一 · 用户视角:"展示给用户" 往下逐层拆</h2>
   <p class="note">用户看到的每一项,都来自决策产物 CoreSlice 的某个字段;CoreSlice 由一组决策逻辑算出;逻辑吃决策输入;输入由数据来源经"唯一 IO + DataHealth 清洗"喂上来。raw 数据永不跳层。</p>

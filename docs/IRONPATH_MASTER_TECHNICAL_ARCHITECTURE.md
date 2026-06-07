@@ -4,10 +4,11 @@
 > Every human and every AI agent (Claude, Codex, or otherwise) **must read this document before making changes** and **must obey it**. If a requested task conflicts with this document, **stop and require explicit architecture approval before writing any code.**
 
 - **Status:** Authoritative / binding
-- **Version:** 1.1
-- **Last updated:** 2026-06-01
+- **Version:** 1.2
+- **Last updated:** 2026-06-06
 - **Baseline commit:** `0ecc39c` — *EDIT-4 计划配置编辑 (program template scalar config) V1 (#444)*
 - **v1.1 amendment (iOS-17A):** activates the **first native canonical-AppData write path** (performed-set logging). Amends §2, §8, §9, §12, §27.
+- **v1.2 amendment (DOC-SYNC-2026-06-06):** clarifies that system-logic targets for Supabase, CRDT, watchOS, and WatchConnectivity are gated until this document is amended; removes stale "No HealthKit" wording now that HK-1/HK-2/HK-3 are approved; adds explicit CRDT/watchOS deferred-system gates.
 - **Subsequent amendments (baseline now current through #444):** the first capability ungatings + read/edit paths, all catalogued in §27 — HK-1 body-weight import (#428), N-1 rest-timer + N-2 weekly-training local notifications (#430/#432), W-1 readiness widget (#431), HK-2/HK-2b workout-history import (#433/#434), HK-3 workout export + HK-3b `HKWorkoutBuilder` migration (#435/#436), the Today/Profile/History/Plan canonical **read-for-display** paths (#437–#440), and the EDIT-1…EDIT-4 canonical **edit-write** paths (#441–#444). The binding rules in §1–§26 are unchanged by these.
 - **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
 - **Supersedes (for day-to-day task scoping):** the scattered planning/strategy docs under `docs/` and the root `*.md` plans. Those remain historical context; **this document wins on any conflict about boundaries, ownership, or workflow.**
@@ -41,13 +42,13 @@ Candidate topics were scored 1–5 against a weighted model (scope-creep prevent
 
 ## 2. Current Project State
 
-| Aspect | State as of baseline `6df0149` (2026-05-30) |
+| Aspect | Current state (v1.2, 2026-06-06; baseline `0ecc39c`, amendments current through #444 / §27) |
 | --- | --- |
 | PWA | Mature product surface. React 19 + Vite + TypeScript. The live runtime users rely on. |
 | Native iOS | Migrating. Thin SwiftUI shell + a WidgetKit extension over **12 local Swift packages**. Local-first only. |
-| iOS migration progress | Completed **through iOS-16**, plus **iOS-17b** (in-RAM per-set capture, no persistence) and the **iOS-17S five-tab navigation shell** (今日/训练/记录/计划/我的; Focus relocated under 训练 unchanged, the other four tabs placeholder). Native local training history, on-device JSON snapshot store, saved-session detail, history search/filter + coarse **and custom from/to** date ranges, summary stats, **per-exercise recovery insight**, and **non-destructive draft recovery** are shipped. Set-logging (iOS-17) is an **approved epic, in progress** (capture slice 17b shipped, in-RAM only; canonical write path 17c not yet built). |
+| iOS migration progress | Current native implementation is the iOS-17S five-tab shell (今日/训练/记录/计划/我的; not the commercial target IA). Subsequent §27 amendments have shipped real canonical read-for-display/edit-write surfaces across Today / Training / History / Plan / Profile, plus the first canonical performed-set write path through `CanonicalSessionWriter`. Remaining product IA target is four bottom tabs (今日/训练/进展/计划) with Profile / Settings outside bottom navigation; remaining engine gaps are tracked in the system-logic doc and gated here when they change source of truth or platform scope. |
 | Native data model | `IronPathDomain.AppData` — pure `Codable` value type, parity-pinned to the PWA export. |
-| Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12), **both now active**: the Focus-history snapshot store and — as of iOS-17A — the canonical-AppData store (`JSONFileAppDataStore`, written via `CanonicalSessionWriter`, §8). **No** iCloud/CloudKit/HealthKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. |
+| Native persistence | **Local on-device JSON files via Foundation `FileManager` only** (atomic write + backup-before-overwrite). Two sanctioned stores (§12), **both now active**: the Focus-history snapshot store and — as of iOS-17A — the canonical-AppData store (`JSONFileAppDataStore`, written via `CanonicalSessionWriter`, §8). **No** iCloud/CloudKit/Supabase/network/UserDefaults/SQLite/CoreData/SwiftData. HealthKit is allowed only inside the already-approved HK-1/HK-2/HK-3 adapters described below. |
 | Restore (iOS-14 UI) | **In-memory local draft re-hydration only** (`LocalDraftRestorePlanner.reconcile`). Not a full AppData restore. |
 | Full AppData restore | **Deferred**, gated behind DataHealth `buildCleanAppDataView` + the repair-apply pipeline. |
 | `iOS-4B6` (userFacing / full arbitrationTrace) | **Deferred.** |
@@ -106,8 +107,9 @@ IronPath is a mobile-first personal training app with two front-ends over one sh
 ios/
 ├── IronPath/                       ← THIN SwiftUI app layer (.swift + assets/plist)
 │   ├── IronPathApp.swift           ← @main; Version probe links the original bootstrap packages (later packages link via real use)
-│   ├── ContentView.swift           ← trivial root: five-tab TabView shell (今日/训练/记录/计划/我的, AppTab enum — iOS-17S)
-│   ├── {Today,Training,History,Plan,Profile}RootView.swift  ← per-tab mount points (iOS-17S); 训练 hosts FocusModeShellView unchanged, the other four are placeholder empty states
+│   ├── ContentView.swift           ← current iOS-17S implementation: five-tab TabView shell (今日/训练/记录/计划/我的, AppTab enum);
+│   │                                  not the commercial target IA (target = 今日/训练/进展/计划 + Profile/Settings outside bottom tabs)
+│   ├── {Today,Training,History,Plan,Profile}RootView.swift  ← current per-tab mount points (iOS-17S); 训练 hosts FocusModeShellView unchanged, the other four are placeholder empty states
 │   ├── FocusModeShellView.swift     ← THE 专注训练 (Focus Mode) shell: .plan/.inSession/.completed;
 │   │                                  .task does the real-clock opt-in + loadSavedSessions; restoredDraftBanner
 │   ├── FocusModeMvpState.swift       ← @MainActor view-model: in-RAM UI state; deterministic default clock;
@@ -130,7 +132,7 @@ ios/
 
 **Deterministic clock:** `FocusModeMvpState.clock` defaults to a **deterministic** reference date so package tests/previews are reproducible. `static let systemClock = { Date() }`; `useSystemClock()` is called exactly once, from `FocusModeShellView.task`, to opt into wall-clock time at launch. **Do not make the system clock the default.**
 
-**Local-first only:** native iOS has **no** network, cloud, auth, HealthKit, or WebView. On-device durability is **local JSON files only** (§12), guarded statically (§22).
+**Local-first only:** native iOS has **no** network, cloud, auth, or WebView. On-device durability is **local JSON files only** (§12), guarded statically (§22). HealthKit exists only as the bounded HK-1/HK-2/HK-3 local adapter; it is not a general platform expansion and imported workouts remain derived/display-only.
 
 ---
 
@@ -402,7 +404,7 @@ Until then: **the iOS UI restore stays an in-memory draft (§13).** The `IronPat
 1. **Native iOS must remain local-first** until a future approved architecture task (this document amended) explicitly changes it.
 2. On-device durability = **local JSON files via Foundation only** (the two sanctioned stores, §12). Everything else is in-RAM value types.
 3. The PWA is also local-first; its cloud-production scaffolding is gated (§4, §17).
-4. **No native data leaves the device.** No telemetry, no sync, no remote calls.
+4. **No native data leaves the device for remote services.** No telemetry, no sync, no remote calls. The approved HealthKit read/export adapters interact only with Apple Health on device and do not authorize network/cloud behavior.
 5. **Local notifications are allowed** (N-1 rest-timer + N-2 training): on-device `UNUserNotificationCenter` scheduling only — one-shot (`UNTimeIntervalNotificationTrigger`) and repeating weekly (`UNCalendarNotificationTrigger`, the user picks weekdays + time and iOS persists it), confined to the single `#if os(iOS)` adapter (§6.1/§18), user-authorized, nothing leaves the device. **Remote / push notifications stay forbidden** (they require a server → §17).
 
 ---
@@ -417,6 +419,8 @@ These systems are **named but not designed here.** Each is *gated*: it requires 
 | Cloud sync / CloudKit | Stub (`IronPathCloudSync`); `IronPathPersistence` comments name a CloudKit-backed store for **iOS-7** | Approved task; source-of-truth + offline-merge design |
 | Supabase / backend (production) | PWA `src/cloudProduction/*` scaffolding present, **gated**; `apps/api` is dev-only | Auth + account + hosting architecture gate |
 | Auth / accounts | PWA scaffolding gated; native none | `AUTH_USER_ACCOUNT_LIFECYCLE_ARCHITECTURE_GATE` resolved + amended here |
+| CRDT document / op log / record-level merge | Target direction selected in the system-logic doc, **not implemented** | Approved task; source-of-truth amendment, op/record granularity, schema evolution, conflict/rollback guards |
+| watchOS / WatchConnectivity / active-session co-editing | Target direction selected in the system-logic doc, **not implemented**; no watchOS target | Approved task; target topology, shared-core compile boundary, WatchConnectivity transport, active-session merge semantics |
 | HealthKit — read-only body weight (HK-1) + workout history (HK-2; distance + avg/max heart rate HK-2b) | **UNGATED (HK-1 + HK-2 + HK-2b) — active.** `IronPathHealthKit` is an approved read-only Apple-Health adapter; latest body mass → `AppData.healthMetricSamples` (kg); recent workouts → `AppData.importedWorkoutSamples` (DERIVED, display-only, never engine input), each carrying type / start–end / duration / energy + (HK-2b) per-workout distance + avg/max heart rate read read-only over the workout window — all via the §8.2 gated path. | *Met by HK-1 + HK-2 + HK-2b: privacy + permission design shipped (§6.1/§8.2/§18); read-only, on-device.* |
 | HealthKit — workout EXPORT / write-back (HK-3) | **UNGATED (HK-3) — active.** User-triggered, idempotent, native-only EXPORT of native completed sessions (`AppData.history`) to Apple Health as `HKWorkout`s (session-id metadata idempotency; export shares ONLY the workout type; device-local; never re-exports imports; never writes AppData). | *Met by HK-3: write-authorization + privacy design shipped (§6.2/§8.2/§16/§18); guarded by `iosHealthKitWorkoutExportStaticGuards`.* |
 | HealthKit — standalone / other-type write-back | Deferred. Standalone metric sampling (a first-class `healthMetricSamples` type) + writing any OTHER Apple-Health type back (body weight / heart rate / …). | Approved task per slice; needs its own privacy review |
@@ -426,7 +430,7 @@ These systems are **named but not designed here.** Each is *gated*: it requires 
 | `iOS-4B6` userFacing / full arbitrationTrace | Deferred | Approved task |
 | Backup/export, shared UIKit | Stubs (`IronPathBackup`, `IronPathUIKit`) | Approved task |
 
-> Existing `docs/*` and `src/cloudProduction/*` about auth/account/backend/cloud are **strategy/candidate/gated** work, not approvals. **Do not read them as "build it now."**
+> Existing `docs/*`, `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`, and `src/cloudProduction/*` may define product direction or target architecture for auth/account/backend/cloud/CRDT/watchOS, but they are **strategy/candidate/gated** work until this document is amended. **Do not read them as "build it now."**
 
 ---
 
@@ -435,9 +439,10 @@ These systems are **named but not designed here.** Each is *gated*: it requires 
 A change is **forbidden** (stop and escalate) if it does any of the following without an approved architecture task that amends this document:
 
 **Platform / persistence / network (native iOS especially):**
-- Introduces **CloudKit, iCloud, Supabase, URLSession/networking, WebView, auth, UserDefaults, SQLite, CoreData, or SwiftData** into native iOS. (On-device durability stays local JSON via Foundation.) **HealthKit** is permitted ONLY as the HK-1 body-weight + HK-2 workout-history READ adapters **plus the HK-3 workout-EXPORT adapter** (§6.2/§8.2), confined to the single `#if os(iOS)` `HealthKitBodyMassSource` file (which hosts both read sources and the HK-3 export) and guarded by `iosBootstrapForbiddenImports` (+ `iosHealthKitWorkoutExportStaticGuards`); imported workouts are **derived/display-only** (`importedWorkoutSamples`, never canonical `history`, never engine input — guarded by `iosHealthKitWorkoutImportStaticGuards`), and may carry **workout-attached sub-fields read read-only as part of that same import — distance + avg/max heart rate (HK-2b)** — which stay derived/display-only `ImportedWorkoutSample` fields (never a standalone `HealthMetricSample`, never canonical, never engine input; heart rate adds only the `heartRate` quantity to the read set and reuses the already-exempted `HKQuantityType` token — no new banned symbol). **Write-back to Apple Health (HK-3), standalone metric sampling (heart rate or others as first-class `healthMetricSamples`), and any other HealthKit metric, remain forbidden** without a new approved, contract-amending slice.
+- Introduces **CloudKit, iCloud, Supabase, URLSession/networking, WebView, auth, UserDefaults, SQLite, CoreData, or SwiftData** into native iOS. (On-device durability stays local JSON via Foundation.) **HealthKit** is permitted ONLY as the HK-1 body-weight + HK-2 workout-history READ adapters **plus the HK-3 workout-EXPORT adapter** (§6.2/§8.2), confined to the single `#if os(iOS)` `HealthKitBodyMassSource` file (which hosts both read sources and the HK-3 export) and guarded by `iosBootstrapForbiddenImports` (+ `iosHealthKitWorkoutExportStaticGuards`); imported workouts are **derived/display-only** (`importedWorkoutSamples`, never canonical `history`, never engine input — guarded by `iosHealthKitWorkoutImportStaticGuards`), and may carry **workout-attached sub-fields read read-only as part of that same import — distance + avg/max heart rate (HK-2b)** — which stay derived/display-only `ImportedWorkoutSample` fields (never a standalone `HealthMetricSample`, never canonical, never engine input; heart rate adds only the `heartRate` quantity to the read set and reuses the already-exempted `HKQuantityType` token — no new banned symbol). **Any write-back beyond HK-3, standalone metric sampling (heart rate or others as first-class `healthMetricSamples`), and any other HealthKit metric, remain forbidden** without a new approved, contract-amending slice.
 - Introduces **remote / push notifications** (APNs, the `aps-environment` entitlement, `registerForRemoteNotifications`, a `UNNotificationServiceExtension`, or PushKit) — these need a server and stay gated (§17). **`UserNotifications` is permitted ONLY as the N-1 / N-2 LOCAL reminder adapters** (`IronPathNotifications`, §6.1/§16), confined to the single `#if os(iOS)` `UserNotificationsRestReminderScheduler` file — a local one-shot `UNTimeIntervalNotificationTrigger` (N-1 rest) plus a repeating weekly `UNCalendarNotificationTrigger` (N-2 training; iOS persists it, the app stores no schedule) — and guarded by `iosBootstrapForbiddenImports`.
 - Lets the **home-screen widget write canonical AppData / become a source of truth**, or moves the **App Group** share off its derived/read-only role. The W-1 widget (`IronPathWidgetExtension`) is READ-ONLY: the app writes a derived readiness snapshot to the App Group (`group.com.ironpath.app.ios`, §12) and the widget only reads it (`IronPathWidgetShared`, §6.1). WidgetKit is confined to the widget target + the single `#if os(iOS)` reloader; the widget has **no network/cloud/remote push**. A native target beyond this one widget extension, or any non-local widget data source, needs a new approved, contract-amending slice.
+- Introduces watchOS, WatchConnectivity, CRDT document/op-log storage, or active-session multi-device co-editing before a dedicated architecture amendment defines source of truth, merge semantics, rollback, schema evolution, and validation guards.
 - Adds real implementation to a **stub package** (`IronPathCloudSync`/`IronPathBackup`/`IronPathUIKit`). (`IronPathHealthKit` was **activated** by HK-1 into a read-only adapter — §6.1; its read-only boundary is itself guarded. `IronPathNotifications` is a **new** N-1 package — §6.1 — not one of these stubs. The other three stay inert.)
 - Couples `IronPathLocalSnapshot` to `IronPathDomain`/AppData, or makes it the source of truth.
 - Moves native iOS off **local-first**, or promotes PWA cloud-production from gated to default.

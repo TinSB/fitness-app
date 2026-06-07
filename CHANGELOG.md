@@ -2,6 +2,17 @@
 
 All notable frontend governance and product-structure changes should be recorded here.
 
+## 2026-06-06
+
+- Reconciled the iOS system-logic living spec with the master architecture contract: `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` now separates current implementation, target product direction, and architecture-gated work.
+- Clarified that Supabase, CRDT sync, watchOS, WatchConnectivity, full restore, and source-of-truth changes are target directions only until `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is explicitly amended.
+- Updated `AGENTS.md` product direction from the legacy five-tab shell to the commercial four-tab target (`今日 / 训练 / 进展 / 计划`) with Profile / Settings as a low-frequency entry.
+- Extended the system-logic baseline with exercise catalog/equipment authority, gym equipment packs, load calibration, in-session set-shape learning, and warm-up execution boundaries.
+- Tightened repo-facing guidance in `docs/DOCS_MANIFEST.md`, `README.md`, `docs/agents/domain.md`, and `docs/IRONPATH_iOS_DECISION_CIRCUIT.html` so future agents do not treat the legacy five-tab shell or visual HTML as the target source of truth.
+- Aligned `COMMERCIALIZATION_ROADMAP.md` with the local-first system contract: App Store subscription can ship before first-party account/cloud sync, while auth and cloud sync remain opt-in gated infrastructure.
+- Rewrote `README.md` as a GitHub-facing native iOS project overview and removed the old Web/PWA operating guide.
+- This changelog entry covers only the documentation files intentionally edited in this pass. Any existing `project.pbxproj`, source, or package/lockfile diffs in the working tree are outside this entry and require separate justification before inclusion.
+
 ## 2026-06-05
 
 - Established the **living-doc system**: added `docs/DOCS_MANIFEST.md` as the single constraint list of canonical living docs, and a binding "Doc Discipline" section in `AGENTS.md` (no new top-level `.md`, code change → sync docs, archive-or-delete instead of new "v2" files, throwaway artifacts to `_scratch/`).

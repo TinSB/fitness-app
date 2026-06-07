@@ -11,7 +11,7 @@ If a requested task **conflicts** with that document, **stop and require explici
 - Native iOS stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
 - **Draft restore is an in-memory draft, not a full AppData restore** (full restore is gated behind DataHealth `buildCleanAppDataView`).
 - **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `IronPathLocalSnapshot` history store must never touch canonical AppData.
-- Do **not** introduce CloudKit/iCloud/Supabase/HealthKit/URLSession/WebView/auth/UserDefaults/SQLite/CoreData/SwiftData into native iOS without an approved architecture task that amends the master doc.
+- Do **not** introduce CloudKit/iCloud/Supabase/URLSession/WebView/auth/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, into native iOS without an approved architecture task that amends the master doc.
 - Do **not** change `package.json`/lockfiles or `project.pbxproj` without explicit justification.
 - Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
 
@@ -28,21 +28,21 @@ This repo follows a **small fixed set of living docs**, governed by [`docs/DOCS_
 
 IronPath must feel like a polished, restrained, professional mobile training app, not an admin dashboard, engineering demo, or data-heavy panel.
 
-The app has five main navigation entries:
+The commercial target has four bottom navigation entries:
 
 1. 今日
 2. 训练
-3. 记录
+3. 进展
 4. 计划
-5. 我的
 
 Each page has a strict responsibility:
 
 - 今日 answers: should I train today, what should I train, where do I start?
 - 训练 answers: how do I record the workout now?
-- 记录 answers: what did I train before?
-- 计划 answers: how will I train in the future?
-- 我的 answers: where are my settings, screening, data, units, and backup?
+- 进展 answers: did training work, what changed, and is the data trustworthy?
+- 计划 answers: how will I train in the future, and what changes are proposed?
+
+Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, account/sync controls, backup/export, and subscription surfaces. Current iOS implementation still contains a `我的` tab; target work should migrate that responsibility out of bottom navigation.
 
 ## Design Principles
 

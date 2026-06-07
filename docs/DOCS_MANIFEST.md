@@ -9,7 +9,7 @@
 | 角色 | 文件 | 职责 | 何时必须更新 |
 |---|---|---|---|
 | **架构契约** | `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` | 铁律 · 包结构 · §-章节 · §27 里程碑日志 | 任何架构 / 写路径 / 包边界改动 |
-| **系统逻辑** | `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` + `IRONPATH_iOS_DECISION_CIRCUIT.html` | 全部功能 + 决策回路 + 现状真相 | 任何引擎 / 决策逻辑 / 功能改动 |
+| **系统逻辑** | `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` | 全部功能 + 决策回路 + 当前实况 / 目标基线 / 缺口状态 | 任何引擎 / 决策逻辑 / 功能改动 |
 | **决策日志** | `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` · `docs/CLOUD_DECISIONS_ARCHIVE.md` | 重做铁律 + 云/账号/同步已定决策 | 任何架构 / 产品决策拍板 |
 | **路线图** | `COMMERCIALIZATION_ROADMAP.md` | 商业化 + 重做路线 + 待办优先级 | 任何阶段 / 优先级变化 |
 | **变更日志** | `CHANGELOG.md` | 逐次改动记录 | 每次 PR |
@@ -17,6 +17,7 @@
 ## 二、参考文档(留存 · 非每次更新)
 - `docs/IRONPATH_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
 - `docs/US_MARKET_CONSUMER_ANALYSIS.md` — 美国市场消费者研究
+- `docs/IRONPATH_iOS_DECISION_CIRCUIT.html` — 系统回路视觉参考,不得覆盖 `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` 或 Master Architecture
 - **饮食子项目**:`docs/DIET_COMPANION_*.md` + `docs/diet-companion-*.html` + `docs/larder-*.html` + `docs/LARDER_ICON_EXPRESSION_GUIDE.md` + `docs/BLENDER_CLAY_*.md`(Blender 黏土图标构建简报) + `docs/competitor-food-visual-spectrum.html`(竞品食物视觉光谱分析)(成型后另立自己的 manifest)
 
 ## 三、仓库元(标准,不在约束内)
