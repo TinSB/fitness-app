@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* ============================================================
+   IronPath landing — Forged Graphite + Emberline
+   Isolated from the product app styles (index.css).
+   ============================================================ */
+
+@theme {
+  --color-graphite-900: #111312;
+  --color-graphite-800: #1b1e20;
+  --color-steel-600: #66707a;
+  --color-steel-300: #c8cdd2;
+  --color-chalk-50: #f6f7f5;
+  --color-paper-0: #ffffff;
+  --color-ember-500: #e85d2a;
+  --color-ember-300: #f28a5c;
+
+  --color-background: var(--color-graphite-900);
+  --color-foreground: var(--color-chalk-50);
+  --color-card: var(--color-graphite-800);
+  --color-border: rgba(200, 205, 210, 0.1);
+  --color-muted: var(--color-steel-600);
+  --color-accent: var(--color-ember-500);
+
+  --radius: 8px;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--color-graphite-900);
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-graphite-900);
+  color: var(--color-chalk-50);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+
+/* Tabular numbers for all weights / prices / loads */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* The thin ember path marker */
+.ember-line {
+  background: linear-gradient(
+    to bottom,
+    rgba(232, 93, 42, 0) 0%,
+    var(--color-ember-500) 18%,
+    var(--color-ember-500) 82%,
+    rgba(232, 93, 42, 0) 100%
+  );
+}
+
+::selection {
+  background: rgba(232, 93, 42, 0.28);
+  color: var(--color-chalk-50);
+}

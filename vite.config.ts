@@ -46,6 +46,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         prototype: resolve(__dirname, 'prototype.html'),
+        landing: resolve(__dirname, 'landing.html'),
       },
     },
     rolldownOptions: {
