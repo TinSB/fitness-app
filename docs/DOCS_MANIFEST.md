@@ -14,6 +14,7 @@
 | **产品文案** | `docs/REDE_PRODUCT_COPY_BASELINE.md` | 产品定位 · 双语 voice/tone · UI / paywall / App Store / v0 文案基底 · 风险禁区 | 任何用户可见文案 / 双语 locale / onboarding / paywall / App Store 素材 / 原型生成文案变更 |
 | **产品设计语言** | `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` | 视觉品牌 · 色彩 / 字体 / 形状 / 动效 · 核心组件隐喻 · App / landing / widget / v0 视觉生成基底；文案文档只管语言,视觉系统单独成文 | 任何用户可见 UI 视觉方向 / 原型生成 / App Store 截图 / landing page / widget 设计变更 |
 | **路线图** | `COMMERCIALIZATION_ROADMAP.md` | 商业化 + 外部付费意向验证 + 干净重写路线 + 待办优先级 | 任何阶段 / 优先级变化 |
+| **产品需求 PRD** | `docs/REDE_PRD.md` | 产品需求真源:给谁做/解决什么/功能需求(FR 编号+用户故事+验收)/优先级(MVP·FF·LATER·GATE)/NFR/指标/发布映射。引擎合同以系统逻辑为准,架构以 Master 为准,商业节奏以 Roadmap 为准 | 任何产品范围 / 功能优先级 / 验收标准 / 发布映射变化 |
 | **MVP 实现** | `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP 最小训练闭环的实现执行层:范围 IN/OUT · slice 队列 · 验收 · TestFlight 上线 gate · 进度追踪。是 Roadmap P1 的执行清单,不凌驾架构/系统逻辑。**有界活文档:MVP 经用户确认全部完成后,按其 §11 终局流程留痕→回收→解除登记→删除,不长期留存;接棒 = PRD + 基于 PRD 与 MVP 完成度的开发规划(届时另登记)** | 任何 slice 状态 / MVP 范围 / 上线形态 / 里程碑顺序变化;MVP 确认达成 → 执行 §11 终局自清洁 |
 | **变更日志** | `CHANGELOG.md` | 逐次改动记录 | 每次 PR |
 
