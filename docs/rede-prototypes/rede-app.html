@@ -1,0 +1,463 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Strength Coach (interactive prototype)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{
+ --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
+ /* P0-3 对比度：--t4 提亮到 AA（在 surface 上 ~4.9:1）；--rec2 绿提一档 */
+ --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
+ --ember:#E1652B;--ember2:#F0875A;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
+ /* D-A：次级控件改钢色（去 ember） */
+ --steel:#8C8A86;--neu:#4A453B;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+html,body{height:100%}
+body{background:#0A0908;font-family:var(--sans);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;color:var(--t1)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--ember2);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- type scale（hero↔body 档 ≥1.3×；小档按 iOS Text Styles；11px 为下限） ---------- */
+.display{font-size:54px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.title{font-size:29px;font-weight:700;line-height:1;letter-spacing:-.01em}
+.headline{font-size:22px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.subhead{font-size:16px;font-weight:600;line-height:1.25}
+.body{font-size:14px;font-weight:450;line-height:1.45}
+.callout{font-size:13px;font-weight:400;line-height:1.4}
+.caption{font-size:12px;font-weight:400}
+.ov{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t4)}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.t2{color:var(--t2)}.t3{color:var(--t3)}.t4{color:var(--t4)}.em{color:var(--ember2)}
+.clamp2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.clamp3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+
+/* phone */
+.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
+.frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:var(--base)}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#050403;border-radius:0 0 15px 15px;z-index:50}
+.sb{height:46px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 6px;font-size:13px;font-weight:600;color:var(--t2);z-index:30}
+.sb .r{display:flex;gap:6px;align-items:center}
+
+.screens{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:78px}
+.screen.on{display:block}
+.screen::-webkit-scrollbar{display:none}
+
+/* 8pt 间距：页边距 20 / 区块间 24 / 卡内 16 / 组内 ≤8 */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 20px 0}
+.iconbtn{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;color:var(--t4)}
+.gear{font-size:20px}
+.ghost{min-height:44px;display:inline-flex;align-items:center;padding:0 12px;color:var(--t3);font-size:13px}
+.sect{padding:0 20px;margin-top:24px}                 /* 区块之间 = 24 */
+
+/* D-A：主操作 = 锻面按钮（bg #211E18 + 左缘 2px ember、左锚、非全宽、≥44pt）。ember 退出填充，只作"下一步"口音 */
+.emb{background:var(--btn);color:var(--t1);font-weight:600;font-size:15px;padding:0 18px;min-height:44px;border-radius:10px;border-left:2px solid var(--ember);display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.emb:active{background:#2A261D}
+/* D-A：次级控件 = 钢色（去 ember） */
+.btn2{color:var(--t2);border:1px solid var(--steel);border-radius:8px;padding:0 13px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;white-space:nowrap}
+.btn2:active{background:rgba(140,138,134,.12)}
+.btn2.on{color:var(--t1);background:rgba(140,138,134,.16)}
+.rule{height:1px;background:var(--hair2);margin:24px 20px}
+
+/* 锻面 hero 卡：顶缘高光 + 颗粒 + 角标 registration */
+.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,0.09);overflow:hidden}
+.forged::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
+.reg{position:absolute;width:11px;height:11px;pointer-events:none}
+.embar{position:absolute;left:0;width:2px;border-radius:2px;background:var(--ember)}
+/* P2-2：扁平描环代替 glow */
+.ring{box-shadow:0 0 0 2px rgba(225,101,43,.5)}
+
+/* tab bar */
+.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#100E0B;border-top:1px solid var(--hair2);display:flex;align-items:stretch;padding-bottom:6px;z-index:20}
+.tb a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:500;color:var(--t4);min-height:44px;text-decoration:none}
+.tb a i{font-size:22px}
+.tb a[aria-selected="true"]{color:var(--ember)}
+
+.trow{display:flex;padding:9px 0;border-bottom:1px solid var(--hair2)}
+
+/* overlay */
+.ovl{position:absolute;inset:0;background:rgba(8,7,5,.74);z-index:60;display:none;align-items:flex-end}
+.ovl.on{display:flex}
+.sheet{width:100%;background:var(--base);border-radius:22px 22px 0 0;border-top:1px solid var(--hair);max-height:92%;overflow-y:auto;padding-bottom:22px}
+.seg{display:flex;background:#1A1712;border-radius:9px;padding:3px;margin:16px 20px 0}
+.seg button{flex:1;text-align:center;font-size:12px;font-weight:500;color:var(--t3);min-height:44px;border-radius:7px}
+.seg button[aria-selected="true"]{background:var(--hair);color:var(--t1)}
+.lvrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--hair2)}
+/* D-A：开关去 ember 改钢色；P1-1：≥44pt 命中区 */
+.tgwrap{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tg{width:40px;height:24px;border-radius:12px;position:relative;background:var(--hair);transition:background .15s}
+.tg.on{background:var(--steel)}
+.tg b{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--base);transition:left .15s}
+.tg.on b{left:18px}
+.discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
+.ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
+/* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
+.hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
+.hstate.out{opacity:0;transform:scale(.98);pointer-events:none}
+.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
+.hint b{color:#857c6c}
+</style></head>
+<body>
+<div class="phone">
+ <div class="notch"></div>
+ <div class="frame">
+  <div class="sb"><span class="num">9:41</span><span class="r"><i class="ti ti-wifi" style="font-size:15px"></i><i class="ti ti-battery-3" style="font-size:17px"></i></span></div>
+  <div class="screens">
+
+   <!-- ===================== TODAY ===================== -->
+   <section class="screen on" id="s-today" role="tabpanel" aria-label="Today">
+     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Sat · Jun 8 · Week 3</div></div><button class="iconbtn" aria-label="Settings"><i class="ti ti-settings gear"></i></button></div>
+
+     <!-- HERO = 判断块（D-B：判断句独占 hero；185 降到 ~20px 作次级预览） -->
+     <div class="forged sect" style="padding:18px 16px;margin-top:20px">
+       <span class="embar" style="top:18px;bottom:18px"></span>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M11 0 L11 0 M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <div style="padding-left:13px">
+         <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">Ready to train</span></div>
+         <!-- P0/D-B 判断句：headline 22/600，该屏唯一最大元素 -->
+         <div class="headline clamp3" style="margin-top:11px">Train today. Push A stays, pressing volume capped.</div>
+
+         <!-- P1 起始读数：Load Plate（D-B 降到 20px，弱于判断句） -->
+         <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:24px;padding-top:14px;border-top:1px solid var(--hair)">
+           <div>
+             <div class="ov em">Start here</div>
+             <div class="subhead" style="margin-top:7px">Bench press</div>
+             <div style="display:flex;align-items:flex-end;gap:6px;margin-top:5px"><span class="num" style="font-size:20px;font-weight:600">185</span><span class="callout num t3" style="padding-bottom:3px">lb · ×5 · RIR 2</span></div>
+           </div>
+           <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+             <span class="caption num t3">then Incline DB</span>
+             <span style="display:flex;align-items:center;gap:5px" class="caption num t3"><span style="width:16px;height:2px;background:var(--neu)"></span>then Cable fly</span>
+           </div>
+         </div>
+         <button class="emb" style="margin-top:16px" onclick="go('train')"><i class="ti ti-player-play" style="font-size:16px"></i>Start training</button>
+       </div>
+     </div>
+
+     <!-- P2 Receipt：渐进披露（P1-2 "Why this call" ≥44pt 行） -->
+     <div class="sect">
+       <div style="display:flex;justify-content:space-between;align-items:center"><span class="ov">Rede training receipt</span><span class="ov num">Today</span></div>
+       <div class="body" style="margin-top:8px">Pressing volume is capped this week.</div>
+       <button id="reasonRow" class="discl" aria-expanded="false" aria-controls="reason" onclick="toggleReason()"><span id="reasonLbl">Why this call</span> <i class="ti ti-chevron-down" id="reasonChev" style="font-size:15px"></i></button>
+       <div id="reason" style="max-height:0;overflow:hidden;transition:max-height .25s">
+         <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;padding-top:6px">
+           <div class="ov" style="padding-top:3px">Signal</div><div class="callout t2">Last overhead felt heavy · sleep <span class="num">6.2h</span></div>
+           <div class="ov" style="padding-top:3px">Change</div><div class="callout t2">Overhead <span class="num">95→85</span> lb · bench holds</div>
+           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:7px"><button class="ctrlchip">Apply</button><button class="ctrlchip">Hold</button><button class="ctrlchip">Swap</button></div>
+         </div>
+       </div>
+     </div>
+
+     <div class="rule"></div>
+     <!-- P3 Progress Rail：数据条级 -->
+     <div class="sect" style="margin-top:0">
+       <div class="ov" style="margin-bottom:14px">Bench · last to next</div>
+       <div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative">
+         <div style="position:absolute;left:8%;right:8%;top:7px;height:2px;background:var(--hair)"></div>
+         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:var(--t4)"></span><span class="callout num t3">180×5</span><span class="ov">Jun 5</span></div>
+         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span class="ring" style="width:14px;height:14px;border-radius:50%;background:var(--ember)"></span><span class="callout num" style="color:var(--t1)">185×5</span><span class="ov em">Today</span></div>
+         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid #3A352B"></span><span class="callout num t3">190×5</span><span class="ov">Next</span></div>
+       </div>
+     </div>
+   </section>
+
+   <!-- ===================== TRAIN ===================== -->
+   <section class="screen" id="s-train" role="tabpanel" aria-label="Train">
+     <div class="hdr"><div><div class="headline">Push A</div><div class="ov num" style="margin-top:6px">Exercise 1 of 6 · Set 3 of 4</div></div><button class="ghost" onclick="confirmFinish()">Finish</button></div>
+     <div style="height:3px;background:#1B1813;margin:14px 20px 0;border-radius:2px"><div style="height:3px;width:42%;background:var(--neu);border-radius:2px"></div></div>
+
+     <!-- HERO = 仪表读数（P2-1：固定 frame，Set⇄Rest 原地 morph） -->
+     <div class="forged sect" id="hero" style="padding:0;margin-top:24px;min-height:245px">
+       <span class="embar" id="heroBar" style="top:18px;bottom:18px;background:var(--ember)"></span>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <div id="setState" class="hstate">
+         <div class="subhead">Bench press</div>
+         <div style="display:flex;align-items:flex-end;gap:9px;margin-top:8px"><span class="display num" id="setW">180</span><span class="body num t3" style="padding-bottom:8px">lb · × <span id="setReps">5</span> · RIR <span id="setRir">2</span></span></div>
+         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:13px;border-top:1px solid var(--hair)">
+           <span id="whyText" class="caption t3 clamp2" style="line-height:1.45;max-width:60%">Eased from <span class="num">185</span> after a slow set 2</span>
+           <button id="holdBtn" class="btn2" onclick="toggleHold()">Hold 185</button>
+         </div>
+         <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
+           <button class="emb" onclick="logSet()"><i class="ti ti-check" style="font-size:16px"></i>Log set</button>
+           <span class="callout t3" style="display:flex;align-items:center;gap:5px;border:1px solid #3A352B;border-radius:10px;padding:0 15px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
+         </div>
+       </div>
+       <div id="restState" class="hstate out" style="display:flex;flex-direction:column;justify-content:center;text-align:center;padding-left:13px">
+         <div class="ov" style="color:var(--rec2)">Rest</div>
+         <div class="display num" id="restClock" style="margin:10px 0 2px">2:00</div>
+         <div style="height:3px;background:#231F19;border-radius:2px;margin:6px 8px 0"><div id="restMeter" style="height:3px;width:100%;background:var(--neu);border-radius:2px;transition:width 1s linear"></div></div>
+         <div class="callout t3" style="margin:12px 0 16px">Next · Set <span id="nextNo" class="num">4</span> · <span class="num">180 lb × 5</span></div>
+         <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+           <button class="btn2" onclick="addRest()">+30s</button>
+           <button class="btn2" id="pauseBtn" onclick="pauseRest()">Pause</button>
+           <button class="emb" onclick="endRest()"><i class="ti ti-player-skip-forward" style="font-size:15px"></i>Next set</button>
+         </div>
+       </div>
+     </div>
+
+     <div class="sect">
+       <div class="num ov" style="display:flex;padding:0 0 8px"><span style="width:34px">Set</span><span style="flex:1">Weight</span><span style="width:44px;text-align:center">Reps</span><span style="width:34px;text-align:center">RIR</span><span style="width:16px"></span></div>
+       <div id="settable"></div>
+       <div class="caption t3" style="margin-top:14px">Next · Incline DB press · 3 × 8</div>
+     </div>
+   </section>
+
+   <!-- ===================== PROGRESS ===================== -->
+   <section class="screen" id="s-progress" role="tabpanel" aria-label="Progress">
+     <div class="hdr"><div class="headline">Progress</div><button class="iconbtn" aria-label="Calendar stats"><i class="ti ti-calendar-stats gear"></i></button></div>
+     <div class="seg" role="tablist" aria-label="Time scale"><button role="tab" aria-selected="false" onclick="seg('Session')">Session</button><button role="tab" aria-selected="true" onclick="seg('Week')">Week</button><button role="tab" aria-selected="false" onclick="seg('Cycle')">Cycle</button></div>
+     <!-- HERO = 判断句（P0，靠字号不靠 ember） -->
+     <div class="sect"><div class="headline clamp2" id="pvVerdict">Strong week. Back is lagging.</div><div class="body t3 clamp3" id="pvSub" style="margin-top:8px">Pulling volume +18%, but back still trails chest. One pull set added next week.</div></div>
+
+     <!-- P1-3：图随尺度重读；P1-4：单色肌群图只点背部 ember -->
+     <div class="sect">
+       <div class="ov" id="pvChartTitle" style="margin-bottom:14px">Weekly volume · by muscle</div>
+       <div style="display:flex;gap:14px;align-items:flex-end">
+         <div id="pvChart" style="flex:1"></div>
+         <div id="pvMap" style="flex:0 0 auto"></div>
+       </div>
+       <div class="caption t3" id="pvCaption" style="margin-top:12px;display:flex;align-items:center;gap:6px"><span style="width:11px;height:2px;background:var(--ember)"></span>Back is the one to fix — single ember marks the conclusion.</div>
+     </div>
+     <div class="rule"></div>
+     <div class="sect" style="margin-top:0">
+       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span class="ov">Development</span><span class="caption num t3">Intermediate · balance 76</span></div>
+       <div class="lvrow body t2"><span>Legs</span><span class="num">Lv.15</span></div>
+       <div class="lvrow body t2"><span>Arms</span><span class="num">Lv.11</span></div>
+       <div class="lvrow body t2"><span>Chest</span><span class="num">Lv.10</span></div>
+       <div class="lvrow body" style="color:var(--t1);border-bottom:none"><span>Back</span><span class="num">Lv.8 → Lv.9 <i class="ti ti-arrow-up-right" style="font-size:12px;color:var(--ember)"></i></span></div>
+     </div>
+   </section>
+
+   <!-- ===================== PLAN ===================== -->
+   <section class="screen" id="s-plan" role="tabpanel" aria-label="Plan">
+     <div class="hdr"><div><div class="headline">Plan</div><div class="ov num" style="margin-top:6px">Hypertrophy · Week 3 of 5</div></div><button class="iconbtn" aria-label="Adjust plan"><i class="ti ti-adjustments gear"></i></button></div>
+     <div style="display:flex;gap:5px;padding:16px 20px 0"><span style="flex:1;height:4px;border-radius:2px;background:var(--ember)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--ember)"></span><span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span><span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span><span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span></div>
+
+     <div style="margin-top:20px">
+       <!-- 已完成（P2，降级暗色） -->
+       <div style="display:flex;gap:14px;padding:0 20px"><div style="flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;flex:1;background:transparent"></span><span style="width:13px;height:13px;border-radius:50%;background:var(--t4);margin:2px 0"></span><span style="width:2px;flex:1;background:var(--ember)"></span></div><div style="flex:1;padding-bottom:18px"><div class="ov">Mon · done</div><div class="body" style="font-weight:600;color:var(--t3);margin-top:3px">Push A</div><div class="caption num t3">14.2k lb · 1 PR</div></div></div>
+       <div style="display:flex;gap:14px;padding:0 20px"><div style="flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;flex:1;background:var(--ember)"></span><span style="width:13px;height:13px;border-radius:50%;background:var(--t4);margin:2px 0"></span><span style="width:2px;flex:1;background:var(--ember)"></span></div><div style="flex:1;padding-bottom:18px"><div class="ov">Wed · done</div><div class="body" style="font-weight:600;color:var(--t3);margin-top:3px">Pull A</div><div class="caption num t3">11.8k lb</div></div></div>
+
+       <!-- 今天（P0，内嵌状态块 = 该屏重心；P2-4 标题提到 19px） -->
+       <div style="display:flex;gap:14px;padding:0 20px"><div style="flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;flex:1;background:var(--ember)"></span><span class="ring" style="width:14px;height:14px;border-radius:50%;background:var(--ember);margin:2px 0"></span><span style="width:2px;flex:1;background:var(--hair)"></span></div>
+         <div style="flex:1"><div class="ov em">Fri · today</div>
+           <div class="forged" style="padding:14px;margin-top:8px"><span class="embar" style="top:14px;bottom:14px"></span><div style="padding-left:11px"><div class="subhead" style="font-size:19px">Push B</div><div class="caption t3" style="margin-top:4px">Overhead eased · 6 lifts · Bench 185 next</div><button class="emb" style="margin-top:12px;font-size:13px" onclick="go('train')"><i class="ti ti-player-play" style="font-size:14px"></i>Start training</button></div></div>
+         </div></div>
+
+       <div style="display:flex;gap:14px;padding:0 20px"><div style="flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;flex:1;background:var(--hair)"></span><span style="width:13px;height:13px;border-radius:50%;background:var(--base);border:2px solid #3A352B;margin:2px 0"></span><span style="width:2px;flex:1;background:transparent"></span></div><div style="flex:1;padding-bottom:6px"><div class="ov">Sun · next</div><div class="body t2" style="font-weight:600;margin-top:3px">Legs</div><div class="caption t3">Squat · RDL · Calf · 5 lifts</div></div></div>
+     </div>
+
+     <div class="rule"></div>
+     <div class="sect" style="margin-top:0">
+       <div class="ov" style="margin-bottom:6px">Your controls</div>
+       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--hair2)"><div><div class="body">Hold the plan</div><div class="caption t3" style="margin-top:2px">Stop auto-adjusting this week</div></div><button class="tgwrap" role="switch" aria-checked="false" aria-label="Hold the plan" onclick="tog(this)"><span class="tg"><b></b></span></button></div>
+       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><div><div class="body">Lock bench <span class="num">+5</span>/week</div><div class="caption t3" style="margin-top:2px">Drive one lift on a fixed climb</div></div><button class="tgwrap" role="switch" aria-checked="true" aria-label="Lock bench +5 per week" onclick="tog(this)"><span class="tg on"><b></b></span></button></div>
+     </div>
+   </section>
+
+  </div>
+
+  <nav class="tb" role="tablist" aria-label="Sections">
+   <a role="tab" aria-selected="true" data-s="today" onclick="go('today')" tabindex="0"><i class="ti ti-home"></i>Today</a>
+   <a role="tab" aria-selected="false" data-s="train" onclick="go('train')" tabindex="0"><i class="ti ti-barbell"></i>Train</a>
+   <a role="tab" aria-selected="false" data-s="progress" onclick="go('progress')" tabindex="0"><i class="ti ti-trending-up"></i>Progress</a>
+   <a role="tab" aria-selected="false" data-s="plan" onclick="go('plan')" tabindex="0"><i class="ti ti-calendar"></i>Plan</a>
+  </nav>
+
+  <!-- P0-1：Finish 二次确认 -->
+  <div class="ovl" id="ovl-confirm" onclick="if(event.target===this)closeConfirm()"><div class="sheet">
+    <div style="padding:24px 20px 8px"><div class="ov">End workout?</div><div class="headline" style="margin-top:10px">5 exercises left</div><div class="caption t3" style="margin-top:6px">Set 3 of 4 · your logged sets are kept.</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:8px 20px 0">
+      <button class="emb" style="border-left-color:var(--risk)" onclick="openSummary()">End workout</button>
+      <button class="body t2" style="border:1px solid #3A352B;padding:13px;border-radius:10px;min-height:44px" onclick="closeConfirm()">Keep training</button>
+    </div>
+  </div></div>
+
+  <div class="ovl" id="ovl-summary" onclick="if(event.target===this)closeOvl()"><div class="sheet">
+    <div style="text-align:center;padding:28px 20px 8px"><div class="ov">Session complete</div><div class="headline" id="sumLift" style="margin-top:12px">Push A</div><div class="caption num t3" id="sumMeta" style="margin-top:4px">47 min · well done</div></div>
+    <div style="display:flex;justify-content:space-around;padding:8px 24px 20px;text-align:center">
+      <div><div class="title num" id="sumVol">14.2k</div><div class="caption t3" style="margin-top:3px">lb</div></div>
+      <div><div class="title num" id="sumSets">18</div><div class="caption t3" style="margin-top:3px">sets</div></div>
+      <div><div class="title num" id="sumPR" style="color:var(--ember)">1</div><div class="caption t3" style="margin-top:3px">PR</div></div>
+    </div>
+    <div class="forged" id="sumPRcard" style="margin:0 20px 12px;padding:14px;display:flex;align-items:center;gap:11px"><i class="ti ti-trophy" style="font-size:21px;color:var(--ember)"></i><div><div class="body">New bench PR</div><div class="caption num t3" id="sumPRline" style="margin-top:1px">195 × 3 · +5 lb</div></div></div>
+    <div style="padding:6px 20px 0;display:flex;flex-direction:column;align-items:flex-start;gap:10px"><button class="emb" onclick="share()"><i class="ti ti-share-2" style="font-size:16px"></i>Share session</button><button class="body t3" style="min-height:44px;padding:0 4px" onclick="closeOvl()">Done</button></div>
+  </div></div>
+
+  <div class="ovl" id="ovl-share" onclick="if(event.target===this)closeOvl()"><div class="sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px"><button class="iconbtn" aria-label="Back" onclick="shareBack()"><i class="ti ti-chevron-left" style="font-size:21px;color:var(--t3)"></i></button><div class="subhead">Share</div><button class="iconbtn" aria-label="Close" onclick="closeOvl()"><i class="ti ti-x" style="font-size:21px;color:var(--t4)"></i></button></div>
+    <div class="forged" style="margin:4px auto 16px;width:190px;height:178px;padding:16px;position:relative">
+      <svg class="reg" style="left:10px;top:10px" viewBox="0 0 11 11"><path d="M0 9 L0 0 L9 0" stroke="#5F594C" fill="none"/></svg>
+      <svg class="reg" style="right:10px;bottom:34px" viewBox="0 0 11 11"><path d="M0 11 L11 11 L11 2" stroke="#5F594C" fill="none"/></svg>
+      <div class="ov">Personal record</div>
+      <div class="caption t3" style="margin-top:16px">Bench press</div>
+      <div style="display:flex;align-items:flex-end;gap:5px;margin-top:4px"><span class="title num" id="shareW">195</span><span class="subhead num" style="color:var(--ember);padding-bottom:3px" id="shareReps">× 3</span></div>
+      <div class="caption num t3" id="shareSub" style="margin-top:10px">+5 lb · est 1RM 214</div>
+      <div style="position:absolute;left:16px;right:16px;bottom:13px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--hair);padding-top:9px"><span class="ov" style="letter-spacing:.14em;color:var(--t1)">Rede</span><span class="caption num t3">rede.fit</span></div>
+    </div>
+    <div style="display:flex;justify-content:space-around;text-align:center;color:var(--t2);padding:0 16px 22px">
+      <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-message-2" style="font-size:25px"></i>Messages</button>
+      <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-brand-instagram" style="font-size:25px"></i>Stories</button>
+      <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-link" style="font-size:25px"></i>Copy link</button>
+      <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-dots" style="font-size:25px"></i>More</button>
+    </div>
+  </div></div>
+
+ </div>
+</div>
+<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
+
+<script>
+ const SCREENS=['today','train','progress','plan'];
+ function go(s){
+   resetTrain();
+   document.querySelectorAll('.screen').forEach(e=>{const on=e.id==='s-'+s;e.classList.toggle('on',on);e.scrollTop=0;});
+   document.querySelectorAll('.tb a').forEach(t=>t.setAttribute('aria-selected',t.dataset.s===s));
+ }
+ function toggleReason(){
+   const r=document.getElementById('reason'), c=document.getElementById('reasonChev'), row=document.getElementById('reasonRow'), lbl=document.getElementById('reasonLbl');
+   const open=r.style.maxHeight&&r.style.maxHeight!=='0px';
+   r.style.maxHeight=open?'0px':(r.scrollHeight+24)+'px'; c.style.transform=open?'':'rotate(180deg)';
+   row.setAttribute('aria-expanded',String(!open));
+   lbl.textContent=open?'Why this call':'Hide reason';
+ }
+
+ /* ---------- Train: set / rest / hold ---------- */
+ let sets,active,held,restT,restRemain,restPaused;
+ function seedSets(){ sets=[{w:185,r:5,rir:2,done:true},{w:185,r:4,rir:0,done:true},{w:180,r:5,rir:2,done:false},{w:180,r:5,rir:2,done:false}]; active=2; held=false; }
+ seedSets();
+
+ function buildTable(){
+   const t=document.getElementById('settable'); t.innerHTML='';
+   sets.forEach((s,i)=>{
+     const c=s.done?'<i class="ti ti-check" style="font-size:14px;color:var(--t4)" aria-label="done"></i>':(i===active?'<span style="color:var(--ember)" aria-label="current">●</span>':'');
+     const col=s.done?'var(--t2)':(i===active?'var(--t1)':'var(--t4)');
+     const extra=i===active?'border-left:2px solid var(--ember);padding-left:8px;margin-left:-10px':'';
+     t.insertAdjacentHTML('beforeend',
+       '<div class="num trow callout" style="color:'+col+';'+extra+'"><span style="width:34px">'+(i+1)+'</span><span style="flex:1">'+s.w+' lb</span><span style="width:44px;text-align:center">'+s.r+'</span><span style="width:34px;text-align:center">'+(s.rir===null?'—':s.rir)+'</span><span style="width:16px;text-align:right">'+c+'</span></div>');
+   });
+ }
+ function renderActive(){
+   document.getElementById('setW').textContent=sets[active].w;
+   document.getElementById('setReps').textContent=sets[active].r;
+   document.getElementById('setRir').textContent=sets[active].rir;
+ }
+ function showSet(){ document.getElementById('restState').classList.add('out'); document.getElementById('setState').classList.remove('out'); document.getElementById('heroBar').style.background='var(--ember)'; }
+ function showRest(){ document.getElementById('setState').classList.add('out'); document.getElementById('restState').classList.remove('out'); document.getElementById('heroBar').style.background='var(--rec)'; }
+
+ function toggleHold(){
+   held=!held; const b=document.getElementById('holdBtn');
+   sets[active].w=held?185:180;                       // P1-7: model 与 view 同步
+   if(held){ b.textContent='Holding 185'; b.classList.add('on'); document.getElementById('whyText').innerHTML='Held at <span class="num">185</span> — engine paused'; }
+   else{ b.textContent='Hold 185'; b.classList.remove('on'); document.getElementById('whyText').innerHTML='Eased from <span class="num">185</span> after a slow set 2'; }
+   renderActive(); buildTable();
+ }
+
+ function logSet(){
+   sets[active].done=true;                            // 记录当前显示的目标值（不再写死与种子矛盾）
+   buildTable();
+   if(active>=sets.length-1){ openSummary(); return; }
+   document.getElementById('nextNo').textContent=(active+2);
+   showRest(); startRest();
+ }
+ function startRest(){ restRemain=120; restPaused=false; document.getElementById('pauseBtn').textContent='Pause'; document.getElementById('pauseBtn').classList.remove('on'); tickShow(); runRest(); }
+ function runRest(){ clearInterval(restT); restT=setInterval(()=>{ if(restPaused)return; restRemain--; tickShow(); if(restRemain<=0)endRest(); },1000); }
+ function tickShow(){ const v=Math.max(restRemain,0); document.getElementById('restClock').textContent=Math.floor(v/60)+':'+String(v%60).padStart(2,'0'); document.getElementById('restMeter').style.width=(v/120*100)+'%'; }
+ function addRest(){ restRemain+=30; tickShow(); }   // P0-2
+ function pauseRest(){ restPaused=!restPaused; const b=document.getElementById('pauseBtn'); b.textContent=restPaused?'Resume':'Pause'; b.classList.toggle('on',restPaused); }
+ function endRest(){
+   clearInterval(restT); active++;
+   if(held){ sets[active].w=185; document.getElementById('whyText').innerHTML='Holding <span class="num">185</span> — engine paused'; }
+   else{ document.getElementById('whyText').innerHTML='Same load — set '+active+' looked strong'; }
+   renderActive(); buildTable(); showSet();
+ }
+ function resetTrain(){                                // P1-7: 离开/进入 Train 清计时与瞬态
+   clearInterval(restT); seedSets(); renderActive(); buildTable(); showSet();
+   const b=document.getElementById('holdBtn'); b.textContent='Hold 185'; b.classList.remove('on');
+   document.getElementById('whyText').innerHTML='Eased from <span class="num">185</span> after a slow set 2';
+ }
+
+ /* ---------- Progress: 分段全接（图随尺度重读 + 单色肌群图） ---------- */
+ const PV={
+   Session:{v:'Solid session. New bench PR.',s:'195 × 3 top set · est 1RM 214, +6 lb on the block.',title:'Session · by lift',
+     bars:[['Bench',96,'PR'],['OHP',54],['Incline',72],['Triceps',46],['Lateral',60]],cap:'Bench is the lift that moved — single ember marks the PR.'},
+   Week:{v:'Strong week. Back is lagging.',s:'Pulling volume +18%, but back still trails chest. One pull set added next week.',title:'Weekly volume · by muscle',
+     bars:[['Chest',82],['Back',48,'−12%'],['Shldr',70],['Legs',96],['Arms',58]],cap:'Back is the one to fix — single ember marks the conclusion.',map:true},
+   Cycle:{v:'Block on track. Deload due.',s:'+9% e1RM across the block — week 5 is a planned deload.',title:'Cycle · e1RM trend',
+     trend:[40,56,72,90],deload:54,cap:'Week 5 is a planned deload — single ember marks it.'}
+ };
+ function bodyMap(h){            // 单色背视身体，背阔肌点 ember（P1-4 / D2 单色）
+   const n='#4A453B', e='#E1652B';
+   return '<svg viewBox="0 0 70 150" width="'+(h*0.46)+'" height="'+h+'" fill="none" aria-label="Back focus">'
+     +'<circle cx="35" cy="12" r="9" fill="'+n+'"/>'
+     +'<path d="M25 21 L45 21 L49 33 L21 33 Z" fill="'+n+'"/>'
+     +'<rect x="9" y="30" width="9" height="42" rx="4.5" fill="'+n+'"/><rect x="52" y="30" width="9" height="42" rx="4.5" fill="'+n+'"/>'
+     +'<path d="M21 33 L49 33 L45 71 L25 71 Z" fill="'+e+'"/>'
+     +'<path d="M27 71 L43 71 L41 86 L29 86 Z" fill="'+n+'"/>'
+     +'<path d="M27 86 L43 86 L44 99 L26 99 Z" fill="'+n+'"/>'
+     +'<rect x="27" y="99" width="7.6" height="45" rx="4" fill="'+n+'"/><rect x="35.4" y="99" width="7.6" height="45" rx="4" fill="'+n+'"/>'
+     +'</svg>';
+ }
+ function seg(scale){
+   document.querySelectorAll('#s-progress .seg button').forEach(b=>b.setAttribute('aria-selected',String(b.textContent.trim()===scale)));
+   const d=PV[scale];
+   document.getElementById('pvVerdict').textContent=d.v;
+   document.getElementById('pvSub').textContent=d.s;
+   document.getElementById('pvChartTitle').textContent=d.title;
+   document.getElementById('pvCaption').querySelector('span:last-child')?null:0;
+   document.getElementById('pvCaption').innerHTML='<span style="width:11px;height:2px;background:var(--ember);flex:0 0 auto"></span>'+d.cap;
+   const chart=document.getElementById('pvChart'), map=document.getElementById('pvMap');
+   map.innerHTML = d.map?bodyMap(110):'';
+   if(d.bars){
+     chart.innerHTML='<div style="display:flex;align-items:flex-end;justify-content:space-between;height:120px;gap:11px">'+
+       d.bars.map(b=>{const lab=b[0],h=b[1],tag=b[2];const on=!!tag;
+         return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative">'+
+           (tag?'<span class="caption num em" style="position:absolute;top:-19px">'+tag+'</span>':'')+
+           '<div style="width:100%;height:'+h+'px;background:'+(on?'var(--ember)':'var(--neu)')+';border-radius:3px 3px 0 0"></div>'+
+           '<span class="ov'+(on?' em':'')+'">'+lab+'</span></div>';}).join('')+'</div>';
+   } else {
+     const pts=d.trend, W=200, H=120, n=pts.length+1, all=pts.concat([d.deload]);
+     const xs=i=>12+i*(W-24)/(n-1), ys=val=>H-8-(val/100*(H-24));
+     let poly=pts.map((p,i)=>xs(i)+','+ys(p)).join(' ');
+     const di=pts.length, dx=xs(di), dy=ys(d.deload);
+     chart.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="120" fill="none">'+
+       '<polyline points="'+poly+'" stroke="var(--neu)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+       '<line x1="'+xs(di-1)+'" y1="'+ys(pts[di-1])+'" x2="'+dx+'" y2="'+dy+'" stroke="var(--ember)" stroke-width="2.5" stroke-dasharray="3 3"/>'+
+       '<circle cx="'+dx+'" cy="'+dy+'" r="4.5" fill="var(--ember)"/>'+
+       '<text x="'+dx+'" y="'+(dy-10)+'" fill="var(--ember2)" font-size="11" text-anchor="middle" font-family="var(--sans)">Deload</text>'+
+       '</svg>';
+   }
+ }
+
+ /* ---------- toggles / overlays / summary ---------- */
+ function tog(el){ const tg=el.querySelector('.tg'); const on=tg.classList.toggle('on'); el.setAttribute('aria-checked',String(on)); }
+ function confirmFinish(){ document.getElementById('ovl-confirm').classList.add('on'); }
+ function closeConfirm(){ document.getElementById('ovl-confirm').classList.remove('on'); }   // 取消 = 留在 Train，不重置
+ function openSummary(){
+   const done=sets.filter(s=>s.done);
+   const vol=done.reduce((a,s)=>a+s.w*s.r,0);
+   const top=done.slice().sort((a,b)=>b.w-a.w||b.r-a.r)[0];
+   const isPR=top&&top.w>=185;                          // 185 > 之前最好 180 → PR
+   document.getElementById('sumVol').textContent=vol>=1000?(vol/1000).toFixed(1)+'k':vol;
+   document.getElementById('sumSets').textContent=done.length;
+   document.getElementById('sumPR').textContent=isPR?1:0;
+   const card=document.getElementById('sumPRcard');
+   if(top){
+     const e1=Math.round(top.w*(1+top.r/30));
+     card.style.display=isPR?'flex':'none';
+     document.getElementById('sumPRline').textContent=top.w+' × '+top.r+' · +5 lb';
+     document.getElementById('shareW').textContent=top.w;
+     document.getElementById('shareReps').textContent='× '+top.r;
+     document.getElementById('shareSub').textContent='+5 lb · est 1RM '+e1;
+   }
+   document.getElementById('ovl-confirm').classList.remove('on');
+   document.getElementById('ovl-summary').classList.add('on');
+ }
+ function share(){ document.getElementById('ovl-summary').classList.remove('on'); document.getElementById('ovl-share').classList.add('on'); }
+ function shareBack(){ document.getElementById('ovl-share').classList.remove('on'); document.getElementById('ovl-summary').classList.add('on'); }   // P2-7: 退回小结
+ function closeOvl(){ document.querySelectorAll('.ovl').forEach(o=>o.classList.remove('on')); resetTrain(); go('today'); }
+
+ buildTable(); seg('Week');
+</script>
+</body></html>
