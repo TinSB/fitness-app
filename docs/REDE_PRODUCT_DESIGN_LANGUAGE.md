@@ -3,13 +3,13 @@
 > **状态:** Canonical / living design-language baseline
 > **最后更新:** 2026-06-08（视觉执行决定见 §11：dark 为主 + 暖锻铁 locked tokens；结构 / IA / 组件 / 文案不变）
 > **适用范围:** 产品视觉品牌、App UI 方向、landing page、widget、App Store 截图、v0 / 原型生成、设计 QA
-> **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/IRONPATH_PRODUCT_COPY_BASELINE.md` 为准。
+> **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/REDE_PRODUCT_COPY_BASELINE.md` 为准。
 
 ---
 
 ## 品牌 (Brand) — 名称 · Wordmark · 命名体系
 
-> **新增 2026-06-08:** 产品正式定名 **Rede**（原 IronPath，因商标/域名占用更名）。视觉装置（Forged Graphite + Emberline + Engrave + Instrument numerals）与名字**无关**，全部承接，不因改名重做。
+> **新增 2026-06-08:** 产品正式定名 **Rede**（原 Rede，因商标/域名占用更名）。视觉装置（Forged Graphite + Emberline + Engrave + Instrument numerals）与名字**无关**，全部承接，不因改名重做。
 
 | 项 | 定 |
 |---|---|
@@ -551,7 +551,7 @@ Core copy:
 7. Progress 页证明训练效果,但不像数据后台。
 8. Plan 页能看见调整原因和撤销控制。
 9. Profile / Settings 不在底部 tab。
-10. 文案像 `docs/IRONPATH_PRODUCT_COPY_BASELINE.md`,不是机翻或营销套话。
+10. 文案像 `docs/REDE_PRODUCT_COPY_BASELINE.md`,不是机翻或营销套话。
 
 如果一个设计看起来"更炫",但用户更难知道下一组怎么做,它就不是 Rede。
 
@@ -559,7 +559,7 @@ Core copy:
 
 ## 11. 视觉执行决定 (2026-06-08 · owner review)
 
-创始人审完整套设计稿后拍板的视觉执行决定。**与前文冲突处以本节为准**；IA、命名组件、页面语言、文案、禁区均不变。详细品质层 / 构建规格另见 `.ai-tmp/2026-06-08-claude-design-system-review/IRONPATH_CRAFT_LAYER_AND_SPEC.md`（成型后按 DOCS_MANIFEST 另立登记）。
+创始人审完整套设计稿后拍板的视觉执行决定。**与前文冲突处以本节为准**；IA、命名组件、页面语言、文案、禁区均不变。详细品质层 / 构建规格另见 `.ai-tmp/2026-06-08-claude-design-system-review/REDE_CRAFT_LAYER_AND_SPEC.md`（成型后按 DOCS_MANIFEST 另立登记）。
 
 ### 11.1 主模式 ＝ 深色暖锻铁
 App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，token 双模备好。
@@ -585,7 +585,7 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 ### 11.4 确认项（与文档一致，重申）
 - 底部 **4 tab：Today / Train / Progress / Plan**；Settings 顶部入口、非 tab。
 - 命名组件 Load Plate / Decision Receipt（Call·Signal·Change·Control）/ Progress Rail / Steel Cards 必用。
-- 肌群等级 `Lv.1–20` + 均衡度 + 趋势为 Progress 核心。**置信度 / 数据可信度仅引擎内部、不作 UI 读数显示（见 `IRONPATH_PRODUCT_COPY_BASELINE.md` §3.4）。**
+- 肌群等级 `Lv.1–20` + 均衡度 + 趋势为 Progress 核心。**置信度 / 数据可信度仅引擎内部、不作 UI 读数显示（见 `REDE_PRODUCT_COPY_BASELINE.md` §3.4）。**
 - 文案四锚点与禁区不变。
 - 像素基准：**Today 像素终稿（2026-06-08）是其余屏的对齐基准。**
 

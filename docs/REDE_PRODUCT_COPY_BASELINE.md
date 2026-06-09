@@ -3,7 +3,7 @@
 > **状态:** Canonical / living copy baseline
 > **最后更新:** 2026-06-07
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
-> **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/IRONPATH_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` 为准。
+> **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
 ---
 

@@ -1,16 +1,16 @@
-# IronPath Agent Instructions
+# Rede Agent Instructions
 
-You are working on IronPath, a native iOS SwiftUI personal training product under a clean rewrite baseline. The former PWA, Node/Vite runtime, TypeScript source, browser tests, Supabase/Vercel implementation candidates, and cloud-sync scaffolding have been removed. Treat the living docs as the active product and engineering truth. Existing `ios/` code is legacy/reference inventory only; use it for evidence, naming, and tests only when a rewrite slice explicitly approves reuse. iOS-native account/cloud/sync/CRDT decisions remain in the living docs; they are not first-version runtime code.
+You are working on Rede, a native iOS SwiftUI personal training product under a clean rewrite baseline. The former PWA, Node/Vite runtime, TypeScript source, browser tests, Supabase/Vercel implementation candidates, and cloud-sync scaffolding have been removed. Treat the living docs as the active product and engineering truth. Existing `ios/` code is legacy/reference inventory only; use it for evidence, naming, and tests only when a rewrite slice explicitly approves reuse. iOS-native account/cloud/sync/CRDT decisions remain in the living docs; they are not first-version runtime code.
 
 ## ⚠️ Read First — Master Technical Architecture (binding)
 
-**Before making any change, read and obey [`docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md`](docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md).** It is the canonical, highest-level engineering contract and outranks every other doc (including this one and `ARCHITECTURE.md`) on architecture, source-of-truth boundaries, forbidden changes, validation, and the branch/PR workflow.
+**Before making any change, read and obey [`docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md`](docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md).** It is the canonical, highest-level engineering contract and outranks every other doc (including this one and `ARCHITECTURE.md`) on architecture, source-of-truth boundaries, forbidden changes, validation, and the branch/PR workflow.
 
 If a requested task **conflicts** with that document, **stop and require explicit architecture approval before writing any code.** Do not silently introduce new persistence, network, cloud, auth, or platform dependencies, or any source-of-truth change. In particular (see the master doc for the full, authoritative list):
 
 - The clean native iOS runtime stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
 - **Draft restore is an in-memory draft, not a full AppData restore** (full restore is gated behind DataHealth `buildCleanAppDataView`).
-- **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `IronPathLocalSnapshot` history store must never touch canonical AppData.
+- **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `RedeLocalSnapshot` history store must never touch canonical AppData.
 - Do **not** introduce CloudKit/iCloud/Supabase runtime clients/URLSession/WebView/auth runtime/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, without an approved architecture task that amends the master doc.
 - Do **not** change `project.pbxproj` or package manifests without explicit justification.
 - Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
@@ -26,7 +26,7 @@ This repo follows a **small fixed set of living docs**, governed by [`docs/DOCS_
 
 ## Product Direction
 
-IronPath must feel like a polished, restrained, professional mobile training app, not an admin dashboard, engineering demo, or data-heavy panel.
+Rede must feel like a polished, restrained, professional mobile training app, not an admin dashboard, engineering demo, or data-heavy panel.
 
 The commercial target has four bottom navigation entries:
 
@@ -99,7 +99,7 @@ Never dump all exercise metadata into the main UI.
 
 ### Issue tracker
 
-IronPath tracks product and engineering work in GitHub Issues for `TinSB/fitness-app`. See `docs/agents/issue-tracker.md`.
+Rede tracks product and engineering work in GitHub Issues for `TinSB/fitness-app`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -107,4 +107,4 @@ Use existing GitHub labels where available and document missing suggested workfl
 
 ### Domain docs
 
-IronPath uses a single-context docs layout with `docs/` for product and engineering documents and `docs/adr/` reserved for ADRs when needed. See `docs/agents/domain.md`.
+Rede uses a single-context docs layout with `docs/` for product and engineering documents and `docs/adr/` reserved for ADRs when needed. See `docs/agents/domain.md`.

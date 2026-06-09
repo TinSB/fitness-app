@@ -6,7 +6,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 
 目的：对高风险改动（训练 / 推荐 / 未来云同步 / 存储 / AppData / Settings / Focus Mode / iOS UI）执行**多 Agent 独立审计**：每个 Agent 独立做一次 pass，互不偷看，全部报告完成后才允许进入实施。
 
-## 共享 IronPath 规则（每个命令都遵守）
+## 共享 Rede 规则（每个命令都遵守）
 
 - 仓库路径：`~/Developer/ironpath`
 - 默认从最新 `main` 开始，除非用户明确指示其他分支。
@@ -32,7 +32,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
       (cd "$package" && swift test) || exit 1
     fi
   done
-  xcodebuild -project ios/IronPath.xcodeproj -scheme IronPath -destination 'generic/platform=iOS Simulator' build
+  xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build
   git diff --check
   ```
 - 合并后若影响发布行为：走 TestFlight/App Store 发布清单；禁止从此仓触发 Vercel 发布。
@@ -88,7 +88,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 - **test matrix**：建议的测试组合（unit / package / Xcode build / simulator or device smoke / regression）。
 - **post-implementation re-review**：实施完后需要重做哪些验证。
 
-## IronPath 推荐系统特别规则
+## Rede 推荐系统特别规则
 
 对训练 / 推荐相关任务，**强制**：
 
@@ -105,7 +105,7 @@ description: 严格的多 Agent 独立审计流程，覆盖根因 / 架构 / UI 
 - Implementation Agent 必须最后跑——前 6 个 Agent 任一缺席，**禁止实施**。
 - 任一 Agent 提出 blocking risk（数据丢失、跨账户污染、schema 不兼容）→ 必须先解决，不允许靠后续 PR 补救。
 - 报告中只写“可能没问题”一律打回。
-- 不允许跳过 non-impacted modules verified（这是 IronPath 多次踩过坑的位置）。
+- 不允许跳过 non-impacted modules verified（这是 Rede 多次踩过坑的位置）。
 
 ## 输出结构
 

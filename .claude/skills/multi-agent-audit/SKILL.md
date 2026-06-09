@@ -40,7 +40,7 @@ description: 多 Agent 独立审计：Root Cause / Architecture / UI / Data Safe
 - test matrix
 - post-implementation re-review
 
-## IronPath 推荐系统特别规则
+## Rede 推荐系统特别规则
 - 不允许打补丁式只改一个组件。
 - 必须先用 `/global-scan` 做 inventory。
 - 多个 recommendation source 给出冲突结论时 → **先合并为单一 source-of-truth，再动 UI**。

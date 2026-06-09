@@ -2,7 +2,7 @@
 
 ## Project Surface
 
-IronPath is a local-first native iOS SwiftUI product under a clean rewrite baseline. The approved first-version runtime has no web runtime, browser storage, Node API, remote networking, account runtime, or cloud-sync runtime. Existing `ios/` code is legacy/reference inventory and must be audited before reuse.
+Rede is a local-first native iOS SwiftUI product under a clean rewrite baseline. The approved first-version runtime has no web runtime, browser storage, Node API, remote networking, account runtime, or cloud-sync runtime. Existing `ios/` code is legacy/reference inventory and must be audited before reuse.
 
 Target sensitive surfaces:
 
@@ -33,7 +33,7 @@ git diff --check
 Runtime package slices:
 
 ```bash
-cd ios/packages/IronPathTrainingDecision
+cd ios/packages/RedeTrainingDecision
 swift test
 ```
 
@@ -47,8 +47,8 @@ done
 
 ```bash
 xcodebuild \
-  -project ios/IronPath.xcodeproj \
-  -scheme IronPath \
+  -project ios/Rede.xcodeproj \
+  -scheme Rede \
   -destination 'generic/platform=iOS Simulator' \
   build
 ```
@@ -63,6 +63,6 @@ If you believe you found an issue that affects user data, do not publish exploit
 
 ## Accepted Tradeoffs
 
-- Local files are not encrypted by the first-version IronPath target. Device security and iOS sandboxing are the default user trust boundary.
+- Local files are not encrypted by the first-version Rede target. Device security and iOS sandboxing are the default user trust boundary.
 - The first-version runtime has no account lock, two-factor authentication, or server-side revocation because account runtime is not implemented.
 - Third-party imported health or workout data is treated as user-provided data; it must pass the approved clean/validation path before affecting trusted views.

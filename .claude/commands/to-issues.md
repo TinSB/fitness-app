@@ -6,7 +6,7 @@ description: 把审计结论拆成一批独立可执行的实施任务。
 
 目的：把诊断 / 拉远 / 多 Agent 审计的发现，拆成**互相独立、可单独 PR、可单独验收**的任务列表。**本命令只产出任务清单，不实现。**
 
-## 共享 IronPath 规则（每个命令都遵守）
+## 共享 Rede 规则（每个命令都遵守）
 
 - 仓库路径：`~/Developer/ironpath`
 - 默认从最新 `main` 开始，除非用户明确指示其他分支。
@@ -32,7 +32,7 @@ description: 把审计结论拆成一批独立可执行的实施任务。
       (cd "$package" && swift test) || exit 1
     fi
   done
-  xcodebuild -project ios/IronPath.xcodeproj -scheme IronPath -destination 'generic/platform=iOS Simulator' build
+  xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build
   git diff --check
   ```
 - 合并后若影响发布行为：走 TestFlight/App Store 发布清单；禁止从此仓触发 Vercel 发布。
@@ -79,7 +79,7 @@ description: 把审计结论拆成一批独立可执行的实施任务。
 
 - **本命令不实现任何代码**。
 - 不允许把多个不相关 bug 塞进一个任务。
-- 不允许漏掉 data safety boundaries 字段（IronPath 的高危项）。
+- 不允许漏掉 data safety boundaries 字段（Rede 的高危项）。
 - 不允许把 schema 变更和 UI tweak 放在同一个任务。
 - 没有 acceptance criteria 的任务一律打回。
 

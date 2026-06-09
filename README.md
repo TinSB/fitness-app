@@ -1,6 +1,6 @@
-# IronPath
+# Rede
 
-IronPath is a native iOS personal training product for strength and hypertrophy training.
+Rede is a native iOS personal training product for strength and hypertrophy training.
 
 The repository is now governed by a clean iOS rewrite baseline. Future runtime work starts from the living docs, not from the legacy Swift implementation. The former React/Vite PWA, Node dev API, Supabase/Vercel implementation candidates, TypeScript tests, and browser runtime have been removed and must not be restored as this repo's product runtime.
 
@@ -18,7 +18,7 @@ Target information architecture:
 | Plan | Understand future training, program structure, proposed changes, and rollbackable plan decisions. |
 | Profile / Settings | Low-frequency settings: profile, units, screening, HealthKit permissions, data export, subscriptions, and data controls. This is not a bottom tab. |
 
-The commercial target is defined in `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` and `AGENTS.md`. Legacy iOS screens may contain transitional names such as History/Profile; the clean rewrite must implement the target structure directly.
+The commercial target is defined in `docs/REDE_iOS_SYSTEM_LOGIC.md` and `AGENTS.md`. Legacy iOS screens may contain transitional names such as History/Profile; the clean rewrite must implement the target structure directly.
 
 ## Repository Status
 
@@ -39,22 +39,22 @@ Those systems require a new approved architecture amendment and a fresh Swift-na
 
 ## Target Architecture
 
-IronPath keeps the iOS app layer thin. SwiftUI views should render state and connect IO seams; business logic belongs in local Swift packages. Existing package names below are target boundaries or reference names, not proof that the clean runtime is complete.
+Rede keeps the iOS app layer thin. SwiftUI views should render state and connect IO seams; business logic belongs in local Swift packages. Existing package names below are target boundaries or reference names, not proof that the clean runtime is complete.
 
 Important package groups:
 
 | Package | Role |
 |---|---|
-| `IronPathDomain` | Codable AppData model and shared domain types. |
-| `IronPathDataHealth` | Clean AppData projection, repair logic, and data-health guards. |
-| `IronPathTrainingDecision` | Training decision, scheduling, readiness, insights, and coach-action engines. |
-| `IronPathPersistence` | Local JSON persistence and canonical write infrastructure. |
-| `IronPathLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
-| `IronPathHealthKit` | Approved HealthKit adapters only. |
-| `IronPathNotifications` | Local notification adapters only. |
-| `IronPathWidgetShared` | Read-only widget snapshot model. |
-| `IronPathL10n` | Terms and formatting support. |
-| `IronPathBackup`, `IronPathUIKit` | Placeholder packages; not approval to build backup/export or shared UI systems. |
+| `RedeDomain` | Codable AppData model and shared domain types. |
+| `RedeDataHealth` | Clean AppData projection, repair logic, and data-health guards. |
+| `RedeTrainingDecision` | Training decision, scheduling, readiness, insights, and coach-action engines. |
+| `RedePersistence` | Local JSON persistence and canonical write infrastructure. |
+| `RedeLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
+| `RedeHealthKit` | Approved HealthKit adapters only. |
+| `RedeNotifications` | Local notification adapters only. |
+| `RedeWidgetShared` | Read-only widget snapshot model. |
+| `RedeL10n` | Terms and formatting support. |
+| `RedeBackup`, `RedeUIKit` | Placeholder packages; not approval to build backup/export or shared UI systems. |
 
 Core data rules:
 
@@ -68,8 +68,8 @@ Core data rules:
 
 Start by reading:
 
-- `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md`
-- `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`
+- `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md`
+- `docs/REDE_iOS_SYSTEM_LOGIC.md`
 - `docs/DOCS_MANIFEST.md`
 - `COMMERCIALIZATION_ROADMAP.md`
 
@@ -78,21 +78,21 @@ The existing Xcode project may be inspected or built only as a legacy reference.
 Optional legacy reference inspection:
 
 ```bash
-open ios/IronPath.xcodeproj
+open ios/Rede.xcodeproj
 ```
 
 To inspect available legacy schemes from the command line:
 
 ```bash
-xcodebuild -list -project ios/IronPath.xcodeproj
+xcodebuild -list -project ios/Rede.xcodeproj
 ```
 
 To build the legacy reference from the command line:
 
 ```bash
 xcodebuild \
-  -project ios/IronPath.xcodeproj \
-  -scheme IronPath \
+  -project ios/Rede.xcodeproj \
+  -scheme Rede \
   -destination 'generic/platform=iOS Simulator' \
   build
 ```
@@ -108,7 +108,7 @@ git diff --check
 When clean runtime code exists, run the smallest real validation for the touched slice. Package tests should be run from the relevant package directory:
 
 ```bash
-cd ios/packages/IronPathTrainingDecision
+cd ios/packages/RedeTrainingDecision
 swift test
 ```
 
@@ -130,9 +130,9 @@ Read these before changing behavior:
 
 | Document | Purpose |
 |---|---|
-| `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` | Highest-level architecture contract. This wins on boundaries, source of truth, platform scope, and forbidden changes. |
-| `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` | Clean rewrite system logic, product target, decision loop, data model gaps, and reference inventory. |
-| `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md`, `docs/CLOUD_DECISIONS_ARCHIVE.md` | Approved iOS-native account/cloud/sync/CRDT direction. Not first-version runtime code. |
+| `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` | Highest-level architecture contract. This wins on boundaries, source of truth, platform scope, and forbidden changes. |
+| `docs/REDE_iOS_SYSTEM_LOGIC.md` | Clean rewrite system logic, product target, decision loop, data model gaps, and reference inventory. |
+| `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md`, `docs/CLOUD_DECISIONS_ARCHIVE.md` | Approved iOS-native account/cloud/sync/CRDT direction. Not first-version runtime code. |
 | `docs/DOCS_MANIFEST.md` | Living-doc rules and canonical document registry. |
 | `COMMERCIALIZATION_ROADMAP.md` | Commercialization roadmap and gated business infrastructure decisions. |
 | `AGENTS.md` | Practical instructions for coding agents and future contributors. |
@@ -155,4 +155,4 @@ New top-level Markdown files are not allowed unless first registered in `docs/DO
 
 ## Training And Health Disclaimer
 
-IronPath uses training heuristics and evidence-informed rules to support strength-training decisions. e1RM, readiness, effective sets, fatigue, recovery, and data-quality scores are estimates. Pain or discomfort guidance is conservative training guidance only. Persistent pain, numbness, radiating symptoms, or functional limitation should be evaluated by a qualified professional.
+Rede uses training heuristics and evidence-informed rules to support strength-training decisions. e1RM, readiness, effective sets, fatigue, recovery, and data-quality scores are estimates. Pain or discomfort guidance is conservative training guidance only. Persistent pain, numbness, radiating symptoms, or functional limitation should be evaluated by a qualified professional.

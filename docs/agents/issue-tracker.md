@@ -1,6 +1,6 @@
 # Issue Tracker
 
-IronPath uses GitHub Issues in `TinSB/fitness-app` for issue and PRD tracking.
+Rede uses GitHub Issues in `TinSB/fitness-app` for issue and PRD tracking.
 
 Use the GitHub CLI from the repository root so it infers the correct remote:
 

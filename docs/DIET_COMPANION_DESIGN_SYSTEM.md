@@ -1,4 +1,4 @@
-# IronPath Diet Companion — 设计系统 (Design Language v1.0)
+# Rede Diet Companion — 设计系统 (Design Language v1.0)
 
 > 2026-06-03 · 产品设计团队 + 前端 UI 工程师联合定义
 > 理论根基：Apple HIG / iOS 26 Liquid Glass · Material Design 3（语义颜色 + tonal elevation）· Stripe / Linear / Airbnb 的 token 思维
@@ -110,4 +110,4 @@ Elevation：`0 内容底` / `1 卡片(raised+极轻暖阴影)` / `2 浮层(raise
 2. 暖近黑/暖米白在低光 + AX5 下是否仍稳过 4.5:1（需真机校 primitive 梯度）。
 3. 容差带在小组件/锁屏小尺寸会否糊（需"小尺寸隐藏容差带"降级）。
 4. Tier 2 插画投入边界（做多少个、内部还是外部、长尾跳变如何不突兀）。
-5. 与 IronPath 主 App 的设计连续性（共享 primitive/语义层还是仅共享品牌色，是否抽共享设计系统）。
+5. 与 Rede 主 App 的设计连续性（共享 primitive/语义层还是仅共享品牌色，是否抽共享设计系统）。

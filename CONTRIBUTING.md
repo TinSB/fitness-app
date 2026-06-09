@@ -1,12 +1,12 @@
 # Contributing
 
-IronPath is a local-first native iOS SwiftUI training product under a clean rewrite baseline. The active truth is the manifest-registered living docs. Existing `ios/` code is legacy/reference inventory until a rewrite slice explicitly approves reuse.
+Rede is a local-first native iOS SwiftUI training product under a clean rewrite baseline. The active truth is the manifest-registered living docs. Existing `ios/` code is legacy/reference inventory until a rewrite slice explicitly approves reuse.
 
 Before changing behavior, read:
 
 - `docs/DOCS_MANIFEST.md`
-- `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md`
-- `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`
+- `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md`
+- `docs/REDE_iOS_SYSTEM_LOGIC.md`
 - `AGENTS.md`
 
 ## Clean Rewrite Workflow
@@ -20,21 +20,21 @@ git diff --check
 When a clean runtime slice exists, run the smallest real verification for that slice. The existing Xcode project may still be inspected as legacy reference:
 
 ```bash
-open ios/IronPath.xcodeproj
+open ios/Rede.xcodeproj
 ```
 
 List legacy schemes:
 
 ```bash
-xcodebuild -list -project ios/IronPath.xcodeproj
+xcodebuild -list -project ios/Rede.xcodeproj
 ```
 
 Build the legacy reference:
 
 ```bash
 xcodebuild \
-  -project ios/IronPath.xcodeproj \
-  -scheme IronPath \
+  -project ios/Rede.xcodeproj \
+  -scheme Rede \
   -destination 'generic/platform=iOS Simulator' \
   build
 ```
@@ -42,7 +42,7 @@ xcodebuild \
 Run package tests when a runtime slice touches a package:
 
 ```bash
-cd ios/packages/IronPathTrainingDecision
+cd ios/packages/RedeTrainingDecision
 swift test
 ```
 
@@ -74,9 +74,9 @@ The living-doc registry is `docs/DOCS_MANIFEST.md`. Do not add new top-level Mar
 
 Use:
 
-- `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` for architecture contracts.
-- `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` for clean rewrite system logic and product surface responsibilities.
-- `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md` for approved iOS-native account/cloud/sync/CRDT direction.
+- `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` for architecture contracts.
+- `docs/REDE_iOS_SYSTEM_LOGIC.md` for clean rewrite system logic and product surface responsibilities.
+- `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md` for approved iOS-native account/cloud/sync/CRDT direction.
 - `COMMERCIALIZATION_ROADMAP.md` for business sequencing.
 - `CHANGELOG.md` for PR-level change records.
 

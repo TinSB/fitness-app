@@ -2,7 +2,7 @@
 
 The `mattpocock/skills` triage roles map to the current GitHub label vocabulary as follows.
 
-| Skill role | IronPath label | Status |
+| Skill role | Rede label | Status |
 | --- | --- | --- |
 | `needs-triage` | `needs-triage` | Suggested; not currently present in GitHub labels |
 | `needs-info` | `question` | Existing GitHub label |

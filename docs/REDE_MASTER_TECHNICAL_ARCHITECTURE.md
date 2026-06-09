@@ -1,19 +1,19 @@
-# IronPath Master Technical Architecture
+# Rede Master Technical Architecture
 
-> **This is the canonical, highest-level engineering contract for IronPath.**
+> **This is the canonical, highest-level engineering contract for Rede.**
 > Every human and every AI agent must read this document before making changes and must obey it. If a requested task conflicts with this document, stop and require explicit architecture approval before writing code.
 
 - **Status:** Authoritative / binding
 - **Version:** 3.0
 - **Last updated:** 2026-06-07
 - **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
-- **v3.0 amendment:** establishes a clean code rewrite baseline. The existing Swift/iOS code in this repository is reference material only and is not the active implementation baseline. The product, system logic, architecture boundaries, and future implementation contract live in the manifest-registered living docs, especially `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`. New runtime code must be written cleanly against these docs instead of extending or porting the polluted legacy implementation by default.
+- **v3.0 amendment:** establishes a clean code rewrite baseline. The existing Swift/iOS code in this repository is reference material only and is not the active implementation baseline. The product, system logic, architecture boundaries, and future implementation contract live in the manifest-registered living docs, especially `docs/REDE_iOS_SYSTEM_LOGIC.md`. New runtime code must be written cleanly against these docs instead of extending or porting the polluted legacy implementation by default.
 
 ---
 
 ## 1. Authority
 
-This document is the single source of architectural truth for IronPath. It outranks every other repo document on:
+This document is the single source of architectural truth for Rede. It outranks every other repo document on:
 
 - source-of-truth boundaries
 - package boundaries
@@ -30,7 +30,7 @@ It does not outrank explicit, in-the-moment human approval that knowingly amends
 
 | Area | Baseline |
 |---|---|
-| Product truth | `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` plus the other manifest-registered living docs. |
+| Product truth | `docs/REDE_iOS_SYSTEM_LOGIC.md` plus the other manifest-registered living docs. |
 | Code status | Existing iOS code may be inspected for lessons, fixtures, or terminology, but it is legacy/reference-only and not the implementation source of truth. |
 | Target runtime | A clean native iOS SwiftUI app with local Swift packages and local-first persistence. |
 | Target source of truth | A single canonical local AppData model, persisted through a gated write path. |
@@ -44,7 +44,7 @@ Removed implementation surfaces:
 - Node/Vite build and dev API.
 - TypeScript source, contracts, scripts, and Vitest tests.
 - Supabase/Vercel implementation candidates, browser sync, account/auth runtime code, and cloud candidate code.
-- `IronPathCloudSync` Swift package stub.
+- `RedeCloudSync` Swift package stub.
 
 Legacy/reference implementation surfaces:
 
@@ -56,7 +56,7 @@ Legacy/reference implementation surfaces:
 
 ## 3. Product Architecture
 
-IronPath is a local-first native iOS training app. The app should feel like a polished, restrained, professional mobile training coach, not an admin dashboard or data-heavy engineering panel.
+Rede is a local-first native iOS training app. The app should feel like a polished, restrained, professional mobile training coach, not an admin dashboard or data-heavy engineering panel.
 
 Target commercial information architecture:
 
@@ -76,10 +76,10 @@ The clean rewrite must implement this target directly. Transitional names or beh
 
 ```
 ios/
-├── IronPath/                 SwiftUI app layer
-├── IronPathWidget/           WidgetKit readiness extension
-├── IronPath.xcodeproj        App + widget project
-├── IronPath.xcworkspace      Workspace
+├── Rede/                 SwiftUI app layer
+├── RedeWidget/           WidgetKit readiness extension
+├── Rede.xcodeproj        App + widget project
+├── Rede.xcworkspace      Workspace
 ├── ParityFixtures/           Frozen iOS test fixtures
 └── packages/                 Local Swift packages
 ```
@@ -108,29 +108,29 @@ The app layer must not:
 
 | Package | Responsibility | Depends on |
 |---|---|---|
-| `IronPathDomain` | Codable AppData model and domain values. | Foundation only |
-| `IronPathDataHealth` | Clean AppData projection, repair logic, and runtime guards. | `IronPathDomain` |
-| `IronPathTrainingDecision` | Training decision, readiness, scheduling, progression, insights, muscle level, support allocation, session prescription, and coach-action engines. | `IronPathDomain`, `IronPathDataHealth` |
-| `IronPathPersistence` | AppData store protocol, JSON file store, and canonical write orchestration. | `IronPathDomain` |
-| `IronPathLocalSnapshot` | Derived Focus/session history snapshots. Never canonical AppData. | Foundation only |
-| `IronPathHealthKit` | Approved HealthKit adapters and pure mapping seams. | `IronPathDomain` |
-| `IronPathNotifications` | Local notification policies and adapters. | Foundation only |
-| `IronPathWidgetShared` | Read-only widget snapshot model and App Group snapshot store. | Foundation only |
-| `IronPathL10n` | Terms and formatting support. | Foundation only |
+| `RedeDomain` | Codable AppData model and domain values. | Foundation only |
+| `RedeDataHealth` | Clean AppData projection, repair logic, and runtime guards. | `RedeDomain` |
+| `RedeTrainingDecision` | Training decision, readiness, scheduling, progression, insights, muscle level, support allocation, session prescription, and coach-action engines. | `RedeDomain`, `RedeDataHealth` |
+| `RedePersistence` | AppData store protocol, JSON file store, and canonical write orchestration. | `RedeDomain` |
+| `RedeLocalSnapshot` | Derived Focus/session history snapshots. Never canonical AppData. | Foundation only |
+| `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | `RedeDomain` |
+| `RedeNotifications` | Local notification policies and adapters. | Foundation only |
+| `RedeWidgetShared` | Read-only widget snapshot model and App Group snapshot store. | Foundation only |
+| `RedeL10n` | Terms and formatting support. | Foundation only |
 
 ### Placeholder Packages
 
 | Package | Status |
 |---|---|
-| `IronPathBackup` | Placeholder. It does not authorize backup/export implementation. |
-| `IronPathUIKit` | Placeholder. It does not authorize a shared UI framework migration. |
+| `RedeBackup` | Placeholder. It does not authorize backup/export implementation. |
+| `RedeUIKit` | Placeholder. It does not authorize a shared UI framework migration. |
 
-There is no approved cloud/sync runtime in the clean rewrite baseline. Future iOS-native account/cloud/sync work must follow `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`, then land through an explicit Master-approved implementation slice.
+There is no approved cloud/sync runtime in the clean rewrite baseline. Future iOS-native account/cloud/sync work must follow `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`, then land through an explicit Master-approved implementation slice.
 
 ### Package Rules
 
-1. `IronPathDomain` is the dependency leaf.
-2. `IronPathLocalSnapshot` must stay decoupled from `IronPathDomain` and canonical AppData.
+1. `RedeDomain` is the dependency leaf.
+2. `RedeLocalSnapshot` must stay decoupled from `RedeDomain` and canonical AppData.
 3. The import graph must remain a DAG.
 4. Packages never depend on the app target.
 5. Placeholder packages stay inert until explicitly approved.
@@ -143,13 +143,13 @@ The target source of truth for the clean rewrite is canonical AppData.
 
 | Surface | Source of truth | Derived records |
 |---|---|---|
-| Native iOS target | `IronPathDomain.AppData`, persisted through `IronPathPersistence.JSONFileAppDataStore` | Local snapshots, widget snapshots, HealthKit exports, UI view models |
+| Native iOS target | `RedeDomain.AppData`, persisted through `RedePersistence.JSONFileAppDataStore` | Local snapshots, widget snapshots, HealthKit exports, UI view models |
 | Tests | Swift packages + versioned fixtures under `ios/ParityFixtures` or their clean-rewrite replacement | Test-only decoded views |
 
 Hard rules:
 
 1. There is exactly one canonical AppData document per local app install.
-2. `IronPathLocalSnapshot` must never read or write canonical AppData.
+2. `RedeLocalSnapshot` must never read or write canonical AppData.
 3. No task may change where canonical AppData lives without amending this document.
 4. Canonical AppData writes must go through `CanonicalSessionWriter`.
 5. Full AppData restore is deferred behind DataHealth clean-view and repair-apply gates.
@@ -207,9 +207,9 @@ HealthKit imports, widget snapshots, local snapshots, UI receipts, and future pl
 Allowed platform integrations:
 
 - `FileManager` for local JSON persistence and sanctioned backups.
-- HealthKit only inside `IronPathHealthKit`.
-- UserNotifications only inside `IronPathNotifications`.
-- WidgetKit only inside the widget target and `IronPathWidgetShared` adapter.
+- HealthKit only inside `RedeHealthKit`.
+- UserNotifications only inside `RedeNotifications`.
+- WidgetKit only inside the widget target and `RedeWidgetShared` adapter.
 - App Groups only for the read-only widget snapshot handoff.
 
 Forbidden without amendment:
@@ -234,7 +234,7 @@ Forbidden without amendment:
 Every change must run the smallest relevant real verification. For documentation-only rewrite planning, `git diff --check` plus targeted consistency scans are sufficient. When clean runtime code exists, typical commands are:
 
 ```bash
-cd ios/packages/IronPathTrainingDecision
+cd ios/packages/RedeTrainingDecision
 swift test
 ```
 
@@ -248,8 +248,8 @@ done
 
 ```bash
 xcodebuild \
-  -project ios/IronPath.xcodeproj \
-  -scheme IronPath \
+  -project ios/Rede.xcodeproj \
+  -scheme Rede \
   -destination 'generic/platform=iOS Simulator' \
   build
 ```

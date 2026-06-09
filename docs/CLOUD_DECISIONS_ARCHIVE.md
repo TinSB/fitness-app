@@ -1,6 +1,6 @@
 # Cloud / Account Decision Archive
 
-> **状态:** 账号、云、同步和跨产品联动的决策归档。本文保留已拍板的未来方向和被取代输入,不授权第一版干净 runtime 引入网络、账号、云或 CRDT。实现权威仍以 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 的批准版本为准。
+> **状态:** 账号、云、同步和跨产品联动的决策归档。本文保留已拍板的未来方向和被取代输入,不授权第一版干净 runtime 引入网络、账号、云或 CRDT。实现权威仍以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 的批准版本为准。
 
 ## 1. 当前保留决策
 
@@ -59,13 +59,13 @@
 - remote write 前后都要能解释是否真正成功。
 - health / training data 不用于广告定向或未披露 analytics。
 
-## 5. IronPath ↔ Diet Companion
+## 5. Rede ↔ Diet Companion
 
 跨产品联动需要账号,但账号只是桥,不是任一产品的使用门槛。
 
 目标方向:
 
-- IronPath 到饮食是解耦只读输入:训练目标、身材目标、训练消耗摘要。
+- Rede 到饮食是解耦只读输入:训练目标、身材目标、训练消耗摘要。
 - 饮食产品保留自己的营养数据和用户选择优先级。
 - 两产品的数据隔离、RLS、删除、导出、订阅权益和隐私标签必须在统一架构切片里定义。
 

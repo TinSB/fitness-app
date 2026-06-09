@@ -1,6 +1,6 @@
 # Domain Docs
 
-IronPath is a native iOS SwiftUI product under a clean rewrite baseline. The former Web/PWA implementation, Node runtime, browser tests, and cloud-sync runtime candidates have been removed. The living docs are the active truth; existing `ios/` code is legacy/reference inventory unless an approved rewrite slice says otherwise. `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is the architecture contract and `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` is the clean rewrite system-logic baseline.
+Rede is a native iOS SwiftUI product under a clean rewrite baseline. The former Web/PWA implementation, Node runtime, browser tests, and cloud-sync runtime candidates have been removed. The living docs are the active truth; existing `ios/` code is legacy/reference inventory unless an approved rewrite slice says otherwise. `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` is the architecture contract and `docs/REDE_iOS_SYSTEM_LOGIC.md` is the clean rewrite system-logic baseline.
 
 ## Layout
 
@@ -13,7 +13,7 @@ IronPath is a native iOS SwiftUI product under a clean rewrite baseline. The for
 
 Before using `/grill-with-docs`, `/to-prd`, `/to-issues`, `/tdd`, `/diagnose`, `/improve-codebase-architecture`, or `/zoom-out`, read the relevant docs under `docs/` for the task area.
 
-Use IronPath's existing product language:
+Use Rede's existing product language:
 
 - Today owns the daily training decision.
 - Focus owns the active set action.

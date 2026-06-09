@@ -22,7 +22,7 @@
 | Workstream | 重写基线 | 距离 / 难度 |
 |---|---|---|
 | iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;现有 `ios/` 代码仅作 legacy/reference inventory | **需要 clean rewrite**。不能把旧实现当 beta 基础;先用外部网站验证付费意向,过线后按 rewrite slices 建最小训练闭环 |
-| 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
+| 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
 | 云同步 | 无 first-version runtime；已拍板方向是 local-first + opt-in + CRDT 记录级合并 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
 | 订阅基础设施 | 0 | StoreKit 2 / RevenueCat / 权益门禁 / paywall / 试用 / 恢复购买全部从零。App Store entitlement 可以先与一方账号解耦;账号只增强跨设备和支持体验。任何 StoreKit/RevenueCat/收据校验/权益持久化实现前都要先同步 Master Architecture |
 | 英文化 | 产品文案方向已定义;clean runtime 尚未建立 en locale、切换机制和英文教练解释文案 | **被低估的大头**。难点不在 UI 标签，在**证据/教练解释文案**——你的差异化所在,必须专业英文重写（非机翻） |
@@ -97,7 +97,7 @@
 
 ### P1 Clean iOS Rewrite SPEC + 最小训练闭环（W4–W14）— 关键路径
 
-- 把 `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` 拆成 rewrite parity slices:四 tab、专注训练、DataHealth、TrainingDecision、write path、fixtures、UI验收。
+- 把 `docs/REDE_iOS_SYSTEM_LOGIC.md` 拆成 rewrite parity slices:四 tab、专注训练、DataHealth、TrainingDecision、write path、fixtures、UI验收。
 - 只实现最小可卖/可验证闭环:Today 决策入口、专注训练记录、下一组建议、训练完成写入、Progress 可信反馈、Plan 只读未来安排。
 - 动作库、TemplateGenerator、器械校准、SessionPrescription、Warm-up、SupportAllocation、MuscleLevelEstimator 和 ShareSnapshot 按系统逻辑合同逐片建立 fixtures 和 Swift tests。
 - 旧 `ios/` 代码只能作为 reference inventory;任何复用必须经过 slice review,不得整包搬运。

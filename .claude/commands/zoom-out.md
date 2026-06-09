@@ -6,7 +6,7 @@ description: 在改代码前先画出更大的系统图，防止隧道视野。
 
 目的：阻止只盯着一个文件改 bug。先把整条数据流和所有 surface 画清楚，再判断这到底是局部 bug 还是架构问题。
 
-## 共享 IronPath 规则（每个命令都遵守）
+## 共享 Rede 规则（每个命令都遵守）
 
 - 仓库路径：`~/Developer/ironpath`
 - 默认从最新 `main` 开始，除非用户明确指示其他分支。
@@ -32,7 +32,7 @@ description: 在改代码前先画出更大的系统图，防止隧道视野。
       (cd "$package" && swift test) || exit 1
     fi
   done
-  xcodebuild -project ios/IronPath.xcodeproj -scheme IronPath -destination 'generic/platform=iOS Simulator' build
+  xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build
   git diff --check
   ```
 - 合并后若影响发布行为：走 TestFlight/App Store 发布清单；禁止从此仓触发 Vercel 发布。

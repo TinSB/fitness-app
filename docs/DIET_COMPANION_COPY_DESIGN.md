@@ -1,4 +1,4 @@
-# IronPath Diet Companion — 双语 UX 文案规范 (Bilingual Copy Spec)
+# Rede Diet Companion — 双语 UX 文案规范 (Bilingual Copy Spec)
 
 > 版本 v1.2（去 AI 腔 · 专业精简版）· 2026-06-03 · 状态：P0/P1 已修订
 > 适用：iOS 原生「饮食记录 + 食材推荐」App · 英文为主 (en-US)，中文 (zh-Hans) 为次选 locale
@@ -43,7 +43,7 @@
 | 欢迎标题 | **Build meals from what's in your kitchen.** | 用你厨房里的食材搭配三餐。 | v1.2：弃宣传册腔 "Eat for your goals" |
 | 欢迎副标题 | Set your goals and we'll turn them into daily targets, then plan meals around what you already have. | 设好目标，我们据此定出每日目标，再用你已有的食材安排三餐。 | v1.2：拆并从句、去破折号 |
 | 主 CTA | Get started | 开始 | — |
-| 次 CTA | I already use IronPath | 我已经在用 IronPath | — |
+| 次 CTA | I already use Rede | 我已经在用 Rede | — |
 | 单位制问题 | Which units do you prefer? | 你更习惯哪种单位？ | — |
 | 选项 | Imperial (lb, ft, oz) / Metric (kg, cm, g) | 美制 / 公制 | 美区默认美制 |
 | 单位脚注 | You can change this anytime in Settings. | 随时可在设置中更改。 | — |
@@ -57,10 +57,10 @@
 | 保持 | **Maintain** — keep things steady | 保持——维持现状 | — |
 | 增肌 | **Build muscle** — eat slightly above your target | 增肌——略高于目标进食 | v1.2：与减脂平行、去 "to grow" |
 | 目标脚注 | You can switch goals later. Progress carries over. | 之后可以切换目标，进度会延续。 | — |
-| 同步卡 | Sync from IronPath? | 从 IronPath 同步？ | — |
+| 同步卡 | Sync from Rede? | 从 Rede 同步？ | — |
 | 同步说明 | We can bring over your goal and workout calories. Nothing changes without your OK. | 我们可以同步你的目标和运动消耗。未经你同意不会更改任何设置。 | v1.2：删 "You stay in control" 空泛安抚 |
-| 冲突提示 | IronPath says "Build muscle," but you picked "Maintain." Which should we use? | IronPath 显示"增肌"，而你选了"保持"。用哪个？ | — |
-| 冲突选项 | Use IronPath / Keep my choice | 用 IronPath / 保留我的选择 | — |
+| 冲突提示 | Rede says "Build muscle," but you picked "Maintain." Which should we use? | Rede 显示"增肌"，而你选了"保持"。用哪个？ | — |
+| 冲突选项 | Use Rede / Keep my choice | 用 Rede / 保留我的选择 | — |
 
 ### 2.3 准入门控（未成年 / 孕期哺乳 / 异常低体重）
 
@@ -196,7 +196,7 @@
 | 错误-重试 | Try again | 重试 |
 | 离线横幅 | You're offline — core features still work | 当前离线——核心功能仍可用 |
 | 离线-条码 | Scanning new products needs a connection. Enter it by hand for now. | 扫描新商品需要联网。先手动输入。 |
-| 离线-同步 | We'll sync with IronPath once you're back online. | 联网后我们会与 IronPath 同步。 |
+| 离线-同步 | We'll sync with Rede once you're back online. | 联网后我们会与 Rede 同步。 |
 | 无数据食材 / 选项 | We don't have nutrition data for this one yet · Pick a similar food · Enter it myself | 我们暂时没有这个食材的营养数据 · 选一个相近的 · 自己填 |
 
 ---
@@ -218,7 +218,7 @@
 
 ## 10. 设置项关键文案
 
-Units（单位）· Goal（目标）· 切目标提示「After switching, it takes about 2–3 weeks for your plan to re-tune to the new goal. / 切换后约 2–3 周计划会重新校准到新目标。」· Meals per day（每日餐数）· Day starts at（一天的起点，默认 4:00 AM）· IronPath sync · Apple Health & activity · 健康数据用途「We use your activity to adjust calories. We never use health data for ads. / 我们用你的活动量来调整热量。绝不将健康数据用于广告。」· Take a break from tracking（暂停记录）· Your data & privacy · Delete my data · About & disclaimer。
+Units（单位）· Goal（目标）· 切目标提示「After switching, it takes about 2–3 weeks for your plan to re-tune to the new goal. / 切换后约 2–3 周计划会重新校准到新目标。」· Meals per day（每日餐数）· Day starts at（一天的起点，默认 4:00 AM）· Rede sync · Apple Health & activity · 健康数据用途「We use your activity to adjust calories. We never use health data for ads. / 我们用你的活动量来调整热量。绝不将健康数据用于广告。」· Take a break from tracking（暂停记录）· Your data & privacy · Delete my data · About & disclaimer。
 
 ---
 

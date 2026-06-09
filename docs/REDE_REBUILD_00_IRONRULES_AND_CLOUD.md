@@ -1,10 +1,10 @@
-# IronPath 原生账号 / 云同步 / watchOS 决策记录
+# Rede 原生账号 / 云同步 / watchOS 决策记录
 
-> **状态:** 已拍板的未来原生架构输入。本文不授权第一版干净 runtime 引入账号、网络、云、CRDT 或 watchOS。任何实现必须先修改并通过 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 的 architecture gate。
+> **状态:** 已拍板的未来原生架构输入。本文不授权第一版干净 runtime 引入账号、网络、云、CRDT 或 watchOS。任何实现必须先修改并通过 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 的 architecture gate。
 
 ## 1. 保留决策
 
-IronPath 的目标实现仍是 native iOS local-first app:本地 JSON AppData 是唯一 canonical source of truth,SwiftUI app 层保持薄,业务逻辑在 Swift packages,raw AppData 不直接进入训练引擎。现有 Swift/iOS 代码只是 reference inventory,不是云/账号实现基线。
+Rede 的目标实现仍是 native iOS local-first app:本地 JSON AppData 是唯一 canonical source of truth,SwiftUI app 层保持薄,业务逻辑在 Swift packages,raw AppData 不直接进入训练引擎。现有 Swift/iOS 代码只是 reference inventory,不是云/账号实现基线。
 
 未来账号 / 云同步 / watchOS 的产品方向已经确定:
 
