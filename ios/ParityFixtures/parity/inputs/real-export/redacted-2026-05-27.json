@@ -1,0 +1,20 @@
+{
+  "parityMeta": {
+    "id": "real-export/redacted-2026-05-27",
+    "schemaVersion": 8,
+    "describes": "Real export redacted reference — pointer wrapper around the existing redacted real export. Drives the full pipeline (privacy guard pass, Data Health scan, CleanAppDataView build, TrainingDecision run) so the Swift port can prove end-to-end behaviour against a non-synthetic AppData without iOS-0 duplicating any real-user payload.",
+    "privacy": "redacted-pointer",
+    "generatedFrom": "scripts/generate-parity-goldens.mjs",
+    "tsCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatedAtPolicy": "deterministic-clock",
+    "deterministicClockIso": "2026-05-27T10:00:00.000Z",
+    "sourceNotes": "The pointer is intentional. The redacted file is large (~805 KB) and already lives under ios/ParityFixtures/data-health/ — duplicating it into the parity tree would double the diff cost on every PR. The Swift parity runner loads the same path."
+  },
+  "pointer": {
+    "kind": "appData-from-redacted-real-export",
+    "path": "ios/ParityFixtures/data-health/ironpath-2026-05-27-redacted.json",
+    "expectedSchemaVersion": 8,
+    "approximateSize": "823809 bytes",
+    "privacyProvenance": "Already redacted by the original fixture authoring; iOS-0 does not introduce additional copies. The privacy guard re-validates the pointer wrapper for any residual PII fields."
+  }
+}

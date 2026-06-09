@@ -5,8 +5,13 @@ description: 多 Agent 独立审计：Root Cause / Architecture / UI / Data Safe
 
 # Skill: multi-agent-audit
 
+## Clean rewrite guard
+- Audit for conflicts between living docs, clean rewrite target, and legacy/reference inventory.
+- Treat legacy `ios/` code as evidence, not product truth.
+- Flag any attempt to restore PWA/Web runtime or use website validation as repo runtime.
+
 ## 何时使用（命中以下任一项 → 强制使用）
-- 训练 / 推荐 / 云同步 / 存储 / AppData / Settings / Focus Mode / PWA。
+- 训练 / 推荐 / 未来云同步 / 存储 / AppData / Settings / Focus Mode / iOS UI。
 - 单文件补丁可能不够，需要多视角并行审计。
 - `/global-scan` 发现 source-of-truth 冲突时必须升级到本命令。
 
@@ -35,7 +40,7 @@ description: 多 Agent 独立审计：Root Cause / Architecture / UI / Data Safe
 - test matrix
 - post-implementation re-review
 
-## IronPath 推荐系统特别规则
+## Rede 推荐系统特别规则
 - 不允许打补丁式只改一个组件。
 - 必须先用 `/global-scan` 做 inventory。
 - 多个 recommendation source 给出冲突结论时 → **先合并为单一 source-of-truth，再动 UI**。

@@ -1,32 +1,32 @@
-# IronPath Agent Instructions
+# Rede Agent Instructions
 
-You are working on IronPath, a mobile-first personal training PWA built with React, Vite, and TypeScript, now migrating toward native iOS SwiftUI.
+You are working on Rede, a native iOS SwiftUI personal training product under a clean rewrite baseline. The former PWA, Node/Vite runtime, TypeScript source, browser tests, Supabase/Vercel implementation candidates, and cloud-sync scaffolding have been removed. Treat the living docs as the active product and engineering truth. Existing `ios/` code is legacy/reference inventory only; use it for evidence, naming, and tests only when a rewrite slice explicitly approves reuse. iOS-native account/cloud/sync/CRDT decisions remain in the living docs; they are not first-version runtime code.
 
 ## ⚠️ Read First — Master Technical Architecture (binding)
 
-**Before making any change, read and obey [`docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md`](docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md).** It is the canonical, highest-level engineering contract and outranks every other doc (including this one and `ARCHITECTURE.md`) on architecture, source-of-truth boundaries, forbidden changes, validation, and the branch/PR workflow.
+**Before making any change, read and obey [`docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md`](docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md).** It is the canonical, highest-level engineering contract and outranks every other doc (including this one and `ARCHITECTURE.md`) on architecture, source-of-truth boundaries, forbidden changes, validation, and the branch/PR workflow.
 
 If a requested task **conflicts** with that document, **stop and require explicit architecture approval before writing any code.** Do not silently introduce new persistence, network, cloud, auth, or platform dependencies, or any source-of-truth change. In particular (see the master doc for the full, authoritative list):
 
-- Native iOS stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
+- The clean native iOS runtime stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
 - **Draft restore is an in-memory draft, not a full AppData restore** (full restore is gated behind DataHealth `buildCleanAppDataView`).
-- **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `IronPathLocalSnapshot` history store must never touch canonical AppData.
-- Do **not** introduce CloudKit/iCloud/Supabase/URLSession/WebView/auth/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, into native iOS without an approved architecture task that amends the master doc.
-- Do **not** change `package.json`/lockfiles or `project.pbxproj` without explicit justification.
+- **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `RedeLocalSnapshot` history store must never touch canonical AppData.
+- Do **not** introduce CloudKit/iCloud/Supabase runtime clients/URLSession/WebView/auth runtime/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, without an approved architecture task that amends the master doc.
+- Do **not** change `project.pbxproj` or package manifests without explicit justification.
 - Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
 
 ## ⚠️ Doc Discipline — Living-Doc System (binding)
 
 This repo follows a **small fixed set of living docs**, governed by [`docs/DOCS_MANIFEST.md`](docs/DOCS_MANIFEST.md). **New agents/sessions must read `DOCS_MANIFEST.md` first.**
 
-1. **Code change → sync the docs.** Any change must also update the affected canonical living doc (architecture / system-logic / decisions / roadmap / changelog). Docs out of sync with the code = the task is **not done**.
+1. **Code change → sync the docs.** Any change must also update the affected canonical living doc (architecture / system-logic / decisions / roadmap / changelog). During the clean rewrite phase, living docs define the target truth; legacy code drift does not override them. Docs out of sync with approved runtime changes = the task is **not done**.
 2. **No new top-level `.md` files.** To add a doc, first register it in `DOCS_MANIFEST.md` (state its role + why no existing doc fits); otherwise the PR is rejected.
 3. **Superseded / stale content** is archived into the matching canonical doc or deleted — **never** spun off into a new "v2 / final / final-2" file.
-4. **Throwaway artifacts** (one-off analysis, audits, headless prompts, slices) go in `_scratch/` (gitignored) or outputs — **never** into the repo doc tree.
+4. **Throwaway artifacts** (one-off analysis, audits, headless prompts, slices) go in `_scratch/`, `.ai-tmp/` (local gitignored scratch), or outputs — **never** into the repo doc tree.
 
 ## Product Direction
 
-IronPath must feel like a polished, restrained, professional mobile training app, not an admin dashboard, engineering demo, or data-heavy panel.
+Rede must feel like a polished, restrained, professional mobile training app, not an admin dashboard, engineering demo, or data-heavy panel.
 
 The commercial target has four bottom navigation entries:
 
@@ -42,7 +42,7 @@ Each page has a strict responsibility:
 - 进展 answers: did training work, what changed, and is the data trustworthy?
 - 计划 answers: how will I train in the future, and what changes are proposed?
 
-Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, account/sync controls, backup/export, and subscription surfaces. Current iOS implementation still contains a `我的` tab; target work should migrate that responsibility out of bottom navigation.
+Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, backup/export, and subscription surfaces. Account or sync controls require a future architecture amendment and are not part of the first clean runtime. Legacy iOS code may contain a `我的` tab; target work must implement the commercial navigation directly.
 
 ## Design Principles
 
@@ -88,18 +88,18 @@ Never dump all exercise metadata into the main UI.
 
 ## Implementation Rules
 
-- Preserve existing training logic unless explicitly asked.
-- Prefer refactoring UI structure over changing business logic.
+- Preserve approved product/system logic unless the living docs are explicitly amended.
+- Do not preserve legacy runtime behavior by default. Inspect old code only as reference and only reuse it through an approved rewrite slice.
 - Keep components reusable.
 - Do not introduce large new dependencies without justification.
-- After changes, run available typecheck, lint, and build commands if present.
+- After docs-only changes, run `git diff --check`; after runtime slices, run relevant Swift package tests and Xcode build commands if present.
 - If unsure about existing code behavior, inspect the relevant files before editing.
 
 ## Agent skills
 
 ### Issue tracker
 
-IronPath tracks product and engineering work in GitHub Issues for `TinSB/fitness-app`. See `docs/agents/issue-tracker.md`.
+Rede tracks product and engineering work in GitHub Issues for `TinSB/fitness-app`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -107,4 +107,4 @@ Use existing GitHub labels where available and document missing suggested workfl
 
 ### Domain docs
 
-IronPath uses a single-context docs layout with `docs/` for product and engineering documents and `docs/adr/` reserved for ADRs when needed. See `docs/agents/domain.md`.
+Rede uses a single-context docs layout with `docs/` for product and engineering documents and `docs/adr/` reserved for ADRs when needed. See `docs/agents/domain.md`.

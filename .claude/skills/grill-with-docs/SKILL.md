@@ -5,6 +5,11 @@ description: 用 docs / tests / 架构 / 安全契约严格拷问一个提议的
 
 # Skill: grill-with-docs
 
+## Clean rewrite guard
+- Grill against the living docs as target truth, not against polluted legacy runtime behavior.
+- If a plan depends on old `ios/` code, require an explicit rewrite slice and reuse review.
+- Website paid-intent validation must stay separate from repo runtime.
+
 ## 何时使用
 - 已经有一个修复方案，但还没实施。
 - 怀疑“看起来合理”的方案其实违反了某条契约 / 测试 / 架构原则。

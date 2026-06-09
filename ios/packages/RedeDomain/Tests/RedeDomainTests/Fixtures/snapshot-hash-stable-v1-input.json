@@ -1,0 +1,31 @@
+{
+  "parityMeta": {
+    "id": "app-data/snapshot-hash-stable-v1",
+    "schemaVersion": 8,
+    "describes": "AppData snapshot hash stability — locks buildAppDataSnapshotHash + stableStringify (FNV-1a) against a tiny, synthetic AppData-shaped payload that exercises kg/lb fields and an unknown open-bag settings field. The Swift port must reproduce the same `phase19b-xxxxxxxx` hash byte-for-byte.",
+    "privacy": "synthetic",
+    "generatedFrom": "frozen legacy fixture generator",
+    "tsCommit": "e542ffabb1fb7e8982582f2f0bc2363f83f59b15",
+    "generatedAtPolicy": "none",
+    "sourceNotes": "Hand-authored minimal payload. Includes a known unitSettings.weightUnit (kg) and a future-unknown iosOpenBagField under settings to prove the open-bag preservation contract."
+  },
+  "payload": {
+    "schemaVersion": 8,
+    "selectedTemplateId": "push-a",
+    "trainingMode": "hybrid",
+    "templates": [],
+    "history": [],
+    "bodyWeights": [],
+    "activeSession": null,
+    "unitSettings": {
+      "weightUnit": "kg",
+      "displayUnit": "kg"
+    },
+    "settings": {
+      "knownField": "value",
+      "iosOpenBagField": {
+        "iosOnlyHint": "preserve me across legacy web app<->iOS round trip"
+      }
+    }
+  }
+}

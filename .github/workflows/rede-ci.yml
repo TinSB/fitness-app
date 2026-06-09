@@ -1,0 +1,43 @@
+name: Rede CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Swift Validation
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      TZ: America/New_York
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List Xcode project
+        run: xcodebuild -list -project ios/Rede.xcodeproj
+
+      - name: Swift package tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in ios/packages/*; do
+            if [ -f "$package/Package.swift" ]; then
+              echo "== swift test: $package =="
+              (cd "$package" && swift test)
+            fi
+          done
+
+      - name: Build iOS app
+        run: |
+          xcodebuild \
+            -project ios/Rede.xcodeproj \
+            -scheme Rede \
+            -destination 'generic/platform=iOS Simulator' \
+            build
