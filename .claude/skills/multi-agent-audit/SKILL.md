@@ -5,6 +5,11 @@ description: 多 Agent 独立审计：Root Cause / Architecture / UI / Data Safe
 
 # Skill: multi-agent-audit
 
+## Clean rewrite guard
+- Audit for conflicts between living docs, clean rewrite target, and legacy/reference inventory.
+- Treat legacy `ios/` code as evidence, not product truth.
+- Flag any attempt to restore PWA/Web runtime or use website validation as repo runtime.
+
 ## 何时使用（命中以下任一项 → 强制使用）
 - 训练 / 推荐 / 未来云同步 / 存储 / AppData / Settings / Focus Mode / iOS UI。
 - 单文件补丁可能不够，需要多视角并行审计。

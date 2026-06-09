@@ -5,6 +5,11 @@ description: 在改代码前先画出更大的系统图，防止隧道视野。�
 
 # Skill: zoom-out
 
+## Clean rewrite guard
+- Summaries must distinguish target living-doc truth from legacy/reference code.
+- Do not call old `ios/` behavior the current product baseline.
+- Keep website validation outside repo runtime.
+
 ## 何时使用
 - 怀疑只盯着一个文件改 bug 会漏掉副作用。
 - 不确定问题是 local bug 还是 architecture / state / storage / sync / iOS runtime 层面的问题。

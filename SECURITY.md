@@ -2,20 +2,20 @@
 
 ## Project Surface
 
-IronPath is a local-first native iOS SwiftUI app. The current repository has no web runtime, browser storage, Node API, remote networking, account runtime, or cloud-sync runtime.
+IronPath is a local-first native iOS SwiftUI product under a clean rewrite baseline. The approved first-version runtime has no web runtime, browser storage, Node API, remote networking, account runtime, or cloud-sync runtime. Existing `ios/` code is legacy/reference inventory and must be audited before reuse.
 
-Current sensitive surfaces:
+Target sensitive surfaces:
 
-- Local canonical `AppData` JSON files written through `IronPathPersistence`.
+- Local canonical `AppData` JSON files written through the approved persistence boundary.
 - DataHealth cleaning and repair before engine consumption.
 - HealthKit adapters for approved body-weight import, workout-history import, and native workout export.
 - WidgetKit read-only readiness snapshots.
 - Local notifications for rest and weekly-training reminders.
-- Future account/cloud/sync/CRDT work, which is decisioned in the living docs but not implemented in runtime code.
+- Future account/cloud/sync/CRDT work, which is decisioned in the living docs but not implemented in first-version runtime code.
 
 ## Security Boundaries
 
-- Canonical writes must go through `CanonicalSessionWriter`.
+- Canonical writes must go through a gated writer with validation, backup, atomic save, and honest failure. Old `CanonicalSessionWriter` is a reference contract, not proof of implementation.
 - Raw `AppData` must not enter training engines.
 - Derived stores, widgets, HealthKit exports, UI view models, and local snapshots are not sources of truth.
 - Secrets must not be committed. `.env*` and local tool state are ignored.
@@ -24,7 +24,13 @@ Current sensitive surfaces:
 
 ## Verification
 
-Use the smallest relevant real verification for the touched surface:
+Use the smallest relevant real verification for the touched surface. Docs/security-policy changes:
+
+```bash
+git diff --check
+```
+
+Runtime package slices:
 
 ```bash
 cd ios/packages/IronPathTrainingDecision
@@ -57,6 +63,6 @@ If you believe you found an issue that affects user data, do not publish exploit
 
 ## Accepted Tradeoffs
 
-- Local files are not encrypted by IronPath. Device security and iOS sandboxing are currently the user trust boundary.
-- Current runtime has no account lock, two-factor authentication, or server-side revocation because account runtime is not implemented.
+- Local files are not encrypted by the first-version IronPath target. Device security and iOS sandboxing are the default user trust boundary.
+- The first-version runtime has no account lock, two-factor authentication, or server-side revocation because account runtime is not implemented.
 - Third-party imported health or workout data is treated as user-provided data; it must pass the approved clean/validation path before affecting trusted views.

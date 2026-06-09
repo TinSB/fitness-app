@@ -1,6 +1,6 @@
 # Domain Docs
 
-IronPath is a native iOS SwiftUI codebase. The former Web/PWA implementation, Node runtime, browser tests, and cloud-sync runtime candidates have been removed. `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is the architecture contract and `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` is the system-logic baseline.
+IronPath is a native iOS SwiftUI product under a clean rewrite baseline. The former Web/PWA implementation, Node runtime, browser tests, and cloud-sync runtime candidates have been removed. The living docs are the active truth; existing `ios/` code is legacy/reference inventory unless an approved rewrite slice says otherwise. `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is the architecture contract and `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` is the clean rewrite system-logic baseline.
 
 ## Layout
 

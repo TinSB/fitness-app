@@ -4,10 +4,10 @@
 > Every human and every AI agent must read this document before making changes and must obey it. If a requested task conflicts with this document, stop and require explicit architecture approval before writing code.
 
 - **Status:** Authoritative / binding
-- **Version:** 2.0
+- **Version:** 3.0
 - **Last updated:** 2026-06-07
 - **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
-- **v2.0 amendment:** retires and removes the former Web/PWA, Node/Vite, browser-test, Supabase/Vercel implementation candidates, and `IronPathCloudSync` stub package. The active product and engineering baseline is native iOS SwiftUI plus local Swift packages. iOS-native account/cloud/sync/CRDT decisions remain canonical in `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`; they are not current implementation.
+- **v3.0 amendment:** establishes a clean code rewrite baseline. The existing Swift/iOS code in this repository is reference material only and is not the active implementation baseline. The product, system logic, architecture boundaries, and future implementation contract live in the manifest-registered living docs, especially `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`. New runtime code must be written cleanly against these docs instead of extending or porting the polluted legacy implementation by default.
 
 ---
 
@@ -26,22 +26,17 @@ It does not outrank explicit, in-the-moment human approval that knowingly amends
 
 ---
 
-## 2. Current Project State
+## 2. Clean Rewrite Baseline
 
-| Area | Current state |
+| Area | Baseline |
 |---|---|
-| Product surface | Native iOS SwiftUI app in `ios/IronPath` plus a WidgetKit extension in `ios/IronPathWidget`. |
-| Business logic | Local Swift packages under `ios/packages`. |
-| Package count | 11 local Swift packages. No active sync/cloud package exists. |
-| Data model | `IronPathDomain.AppData`, a pure `Codable` value model. |
-| Persistence | Local on-device JSON files via Foundation `FileManager` only. |
-| Canonical writes | One gated path through `IronPathPersistence.CanonicalSessionWriter`. |
-| Derived stores | `IronPathLocalSnapshot` Focus/history snapshots, widget snapshots, HealthKit exports, and UI projections are not sources of truth. |
-| HealthKit | Approved adapters only: body-weight import, workout-history import, and user-triggered native workout export. |
-| Notifications | Local-only rest and weekly-training reminders. |
-| Widget | Read-only readiness widget backed by a derived App Group snapshot. |
-| Test fixtures | Frozen iOS fixtures live under `ios/ParityFixtures`. They are test assets, not a live generator or alternate source of truth. |
-| Account/cloud/sync decisions | Canonical future iOS-native direction is preserved in `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`. No runtime code is present. |
+| Product truth | `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` plus the other manifest-registered living docs. |
+| Code status | Existing iOS code may be inspected for lessons, fixtures, or terminology, but it is legacy/reference-only and not the implementation source of truth. |
+| Target runtime | A clean native iOS SwiftUI app with local Swift packages and local-first persistence. |
+| Target source of truth | A single canonical local AppData model, persisted through a gated write path. |
+| Target engine boundary | Raw AppData never enters training engines; engines consume clean typed inputs. |
+| Target platform scope | Foundation JSON persistence, approved HealthKit adapters, local notifications, WidgetKit/App Group read-only handoff. |
+| Deferred systems | Account, cloud sync, CRDT, watchOS, subscription entitlement infrastructure, remote networking, remote analytics, and referral attribution require explicit architecture amendments. |
 
 Removed implementation surfaces:
 
@@ -50,6 +45,12 @@ Removed implementation surfaces:
 - TypeScript source, contracts, scripts, and Vitest tests.
 - Supabase/Vercel implementation candidates, browser sync, account/auth runtime code, and cloud candidate code.
 - `IronPathCloudSync` Swift package stub.
+
+Legacy/reference implementation surfaces:
+
+- Existing `ios/` SwiftUI app, widget, local packages, fixtures, and project files remain in the repository only as reference material until they are replaced or explicitly removed.
+- Do not treat legacy runtime behavior as a contract when it conflicts with the living docs.
+- Do not port legacy code wholesale into the clean rewrite without a review slice that proves the behavior is still desired and unpolluted.
 
 ---
 
@@ -67,11 +68,11 @@ Target commercial information architecture:
 | 计划 | How will I train in the future, and what changes are proposed? |
 | Profile / Settings | Low-frequency settings, data controls, units, screening, HealthKit permissions, export/backup, and subscriptions. Not a bottom tab. |
 
-The current iOS app still contains transitional surface names such as `History` and `Profile`. Product target changes must be tracked in `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`.
+The clean rewrite must implement this target directly. Transitional names or behaviors in the legacy iOS code are not product requirements.
 
 ---
 
-## 4. Native iOS Architecture
+## 4. Target Native iOS Architecture
 
 ```
 ios/
@@ -82,6 +83,8 @@ ios/
 ├── ParityFixtures/           Frozen iOS test fixtures
 └── packages/                 Local Swift packages
 ```
+
+This is the target shape for the clean rewrite. Existing folders may not yet match the target quality bar and must not be treated as proof that the target has already been implemented.
 
 The app layer is a thin renderer and IO seam. It may:
 
@@ -99,15 +102,15 @@ The app layer must not:
 
 ---
 
-## 5. Swift Package Boundaries
+## 5. Target Swift Package Boundaries
 
-### Active Packages
+### Target Packages
 
 | Package | Responsibility | Depends on |
 |---|---|---|
 | `IronPathDomain` | Codable AppData model and domain values. | Foundation only |
 | `IronPathDataHealth` | Clean AppData projection, repair logic, and runtime guards. | `IronPathDomain` |
-| `IronPathTrainingDecision` | Training decision, readiness, scheduling, progression, insights, and coach-action engines. | `IronPathDomain`, `IronPathDataHealth` |
+| `IronPathTrainingDecision` | Training decision, readiness, scheduling, progression, insights, muscle level, support allocation, session prescription, and coach-action engines. | `IronPathDomain`, `IronPathDataHealth` |
 | `IronPathPersistence` | AppData store protocol, JSON file store, and canonical write orchestration. | `IronPathDomain` |
 | `IronPathLocalSnapshot` | Derived Focus/session history snapshots. Never canonical AppData. | Foundation only |
 | `IronPathHealthKit` | Approved HealthKit adapters and pure mapping seams. | `IronPathDomain` |
@@ -122,7 +125,7 @@ The app layer must not:
 | `IronPathBackup` | Placeholder. It does not authorize backup/export implementation. |
 | `IronPathUIKit` | Placeholder. It does not authorize a shared UI framework migration. |
 
-There is no active cloud/sync package. Future iOS-native account/cloud/sync work must follow `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`, then land through an explicit Master-approved implementation slice.
+There is no approved cloud/sync runtime in the clean rewrite baseline. Future iOS-native account/cloud/sync work must follow `docs/IRONPATH_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`, then land through an explicit Master-approved implementation slice.
 
 ### Package Rules
 
@@ -136,12 +139,12 @@ There is no active cloud/sync package. Future iOS-native account/cloud/sync work
 
 ## 6. Source Of Truth
 
-The source of truth is canonical AppData.
+The target source of truth for the clean rewrite is canonical AppData.
 
 | Surface | Source of truth | Derived records |
 |---|---|---|
-| Native iOS | `IronPathDomain.AppData`, persisted through `IronPathPersistence.JSONFileAppDataStore` | Local snapshots, widget snapshots, HealthKit exports, UI view models |
-| Tests | Swift packages + frozen fixtures under `ios/ParityFixtures` | Test-only decoded views |
+| Native iOS target | `IronPathDomain.AppData`, persisted through `IronPathPersistence.JSONFileAppDataStore` | Local snapshots, widget snapshots, HealthKit exports, UI view models |
+| Tests | Swift packages + versioned fixtures under `ios/ParityFixtures` or their clean-rewrite replacement | Test-only decoded views |
 
 Hard rules:
 
@@ -164,7 +167,7 @@ Hard rules:
 - atomic save
 - honest failure propagation
 
-Approved current mutation classes include:
+Approved target mutation classes include:
 
 - completed-session append
 - HealthKit body-weight sample append
@@ -228,7 +231,7 @@ Forbidden without amendment:
 
 ## 10. Validation
 
-Every change must run the smallest relevant real verification. Typical commands:
+Every change must run the smallest relevant real verification. For documentation-only rewrite planning, `git diff --check` plus targeted consistency scans are sufficient. When clean runtime code exists, typical commands are:
 
 ```bash
 cd ios/packages/IronPathTrainingDecision

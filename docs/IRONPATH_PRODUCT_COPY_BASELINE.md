@@ -1,19 +1,19 @@
-# IronPath Product Copy Baseline — 产品文案基底
+# Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
 > **最后更新:** 2026-06-07
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
-> **权威边界:** 本文定义 IronPath 如何说话,视觉品牌与原型画面方向以 `docs/IRONPATH_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` 为准。
+> **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/IRONPATH_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` 为准。
 
 ---
 
 ## 0. 这份文档要解决什么
 
-IronPath 的文案不能只是"正确标签"。它必须让用户一眼明白:这个 App 不是又一个训练日志,也不是黑箱 AI 私教,而是一个把训练判断说清楚的力量训练系统。
+Rede 的文案不能只是"正确标签"。它必须让用户一眼明白:这个 App 不是又一个训练日志,也不是黑箱 AI 私教,而是一个把训练判断说清楚的力量训练系统。
 
-因此,本文不是字符串字典。它定义 IronPath 的产品声音、语言资产、商业表达边界和双语写作方式。以后写 v0 prompt、App Store 文案、onboarding、paywall、UI 文案或英文 locale,先按本文判断一句话是否像 IronPath,再决定具体字符串。
+因此,本文不是字符串字典。它定义 Rede 的产品声音、语言资产、商业表达边界和双语写作方式。以后写 v0 prompt、App Store 文案、onboarding、paywall、UI 文案或英文 locale,先按本文判断一句话是否像 Rede,再决定具体字符串。
 
-IronPath 的声音:
+Rede 的声音:
 
 > 像一个冷静、懂训练的人站在旁边:先给判断,再给理由;训练中不废话,只说下一步。
 
@@ -26,13 +26,13 @@ IronPath 的声音:
 | 用途 | 中文 | English |
 |---|---|---|
 | 主标语 | **先判断,再带练。** | **Plan the lift. Show the reason.** |
-| 解释句 | 不是训练日志,也不是黑箱教练。IronPath 给出今天的动作、重量和理由。 | Not another logbook. Not a black-box coach. IronPath gives you the lift, the load, and the reason. |
+| 解释句 | 不是训练日志,也不是黑箱教练。Rede 给出今天的动作、重量和理由。 | Not another logbook. Not a black-box coach. Rede gives you the lift, the load, and the reason. |
 | 产品一句话 | 打开就知道今天练什么、上多少、为什么这么安排。 | Open the app and know what to lift, how much, and why it changed. |
 | 商业化一句话 | Pro 不是多几张图表,而是每次建议背后的判断依据。 | Pro is not more charts. It is the reasoning behind each training call. |
 
 ### 1.2 语言锚点
 
-IronPath 每个关键文案都应落在四个锚点之一:
+Rede 每个关键文案都应落在四个锚点之一:
 
 1. **判断**:今天练不练,练什么,是否需要调整。
 2. **带练**:下一组做什么,用多少重量,休多久。
@@ -45,7 +45,7 @@ IronPath 每个关键文案都应落在四个锚点之一:
 
 ## 2. 不是声音指南,是产品性格
 
-### 2.1 IronPath 的性格
+### 2.1 Rede 的性格
 
 | 特质 | 写法 | 不写成 |
 |---|---|---|
@@ -53,7 +53,7 @@ IronPath 每个关键文案都应落在四个锚点之一:
 | 有判断 | 这周卧推动作还在进步,不用换计划。 | 根据智能分析,系统为你优化了计划。 |
 | 可解释 | 肩部不适出现 2 次,今天避开高风险推举。 | AI 判断今天不适合高强度。 |
 | 尊重用户 | 采纳 / 暂不处理 / 换动作 | 系统已为你安排最佳方案。 |
-| 商业化但克制 | Pro 展示建议依据、计划调整和进步置信度。 | 解锁你的全部潜能。 |
+| 商业化但克制 | Pro 展示建议依据、计划调整和数据质量提醒。 | 解锁你的全部潜能。 |
 
 ### 2.2 一句话原则
 
@@ -149,9 +149,15 @@ Avoid:
 - `ultimate workout tracker`
 - `seamless experience`
 
+### 3.4 UI 微文案规约 (2026-06-08)
+
+- **无句号:** UI 标签 / 标题 / 状态短语 / 按钮不收句号（对标 Apple / Things）。如 `今天可以练` / `Train today` / `查看依据` / `See why` / `开始训练`。短语态 UI 文案一律去句号；中文内部顿号 / 逗号按需保留，但不以句号收尾。
+- **双语原生（重申 §3.1，落到 UI）:** 中英各按本语言习惯写、不互译。中文不加字距、不用 `您` 类敬语；英文可用大写 + letterspacing 的仪表标签（overline）。同一意图、两种母语表达。
+- **置信度不显示（决定）:** 数据可信度 / 置信度是**引擎内部量，不作 UI 读数显示**（取消「置信度高 / 中等」一类标签）。它通过**行为**表达：低可信 → 判断更保守、计划改动更小、新用户走「正在校准」；可落地的数据缺口（如缺 RIR）折进**它发生的地方**（训练时提示补记），不在 Progress 挂置信度标签。Pro 相关价值改述为「在坏数据带偏计划前提醒你」，不出现「置信度」字样。
+
 ---
 
-## 4. IronPath 的四种句型
+## 4. Rede 的四种句型
 
 ### 4.1 判断句
 
@@ -182,7 +188,7 @@ English:
 
 ### 4.2 理由句
 
-理由句回答"为什么"。它是 IronPath 的差异化资产,但不能写成长解释。
+理由句回答"为什么"。它是 Rede 的差异化资产,但不能写成长解释。
 
 结构:
 
@@ -316,21 +322,19 @@ Train 是最克制的页面。用户在器械旁,手上可能有汗,注意力在
 
 ### 5.3 Progress: 训练成果的证据页
 
-Progress 不是庆功墙,也不是 BI。它要告诉用户训练是否有效、数据是否可信。
+Progress 不是庆功墙,也不是 BI。它要告诉用户训练是否有效。**数据可信度由系统内部把关,不作 UI 读数显示（见 §3.4）。**
 
 示例:
 
 中文:
 
 > 卧推趋势仍在上升。过去 4 次训练里,估算 1RM 提高 5 lb。
->
-> 置信度中等:有 2 组缺少 RIR。
 
 English:
 
 > Bench is still trending up. Estimated 1RM is up 5 lb over the last 4 sessions.
->
-> Medium confidence: 2 sets are missing RIR.
+
+> 缺 RIR 等数据缺口折进 Train（记录时提示补记），不在 Progress 挂「置信度」标签；可信度只通过判断保守度与「正在校准」态表达。
 
 Progress 禁止:
 
@@ -382,7 +386,7 @@ English:
 
 ### 6.1 付费价值的表达
 
-IronPath Pro 的核心不是"更多功能",而是"更少猜测,更多依据"。
+Rede Pro 的核心不是"更多功能",而是"更少猜测,更多依据"。
 
 可用表达:
 
@@ -405,7 +409,7 @@ Paywall 必须具体,不要煽动。
 推荐结构:
 
 1. 一句价值:看到训练判断背后的理由。
-2. 三个权益:readiness explanation / plan adjustment / progress confidence。
+2. 三个权益:readiness explanation / plan adjustment / data-quality flag（不写 confidence）。
 3. 价格和试用说明:按 App Store 规则清楚写。
 4. 恢复购买。
 
@@ -431,6 +435,23 @@ English:
 - `最聪明的训练 App`
 - `guaranteed progress`
 - `unlock your full potential`
+
+### 6.3 Website Paid-Intent Validation Copy
+
+外部官网 / landing page 可以先验证价格和付费意向,但它不是仓库 runtime,也不是 App Store 购买页。验证文案必须透明:
+
+- 可以展示真实价格假设和 plan options。
+- CTA 可以测 `Start founder beta`、`Join the waitlist`、`Reserve early access`、`Notify me at this price`。
+- 必须清楚说明 `not a purchase` / `no charge today` / `founder beta`。
+- 只能承诺本文和系统逻辑中定义的目标价值,不得写成已经上线的能力。
+
+English examples:
+
+> Join the founder beta. No charge today.
+
+> Tell us which plan you would choose. This is a price-intent test, not a purchase.
+
+> Rede is being rebuilt as a clean native iOS app. Early users will be invited when the focused training loop is ready.
 
 ---
 
@@ -517,7 +538,7 @@ English:
 给 v0 或其它 UI 生成工具时,附上这段:
 
 ```text
-Use IronPath’s product-copy baseline.
+Use Rede’s product-copy baseline.
 
 Brand voice:
 - Calm, specific, explainable strength coaching.
@@ -547,7 +568,7 @@ Do not use: AI-powered personal trainer, fitness journey, unlock your potential,
 写完一句文案后,用这 8 个问题判断:
 
 1. 它是否回答了用户此刻最关心的训练问题?
-2. 它是否有 IronPath 的四个锚点之一:判断、带练、证据、控制权?
+2. 它是否有 Rede 的四个锚点之一:判断、带练、证据、控制权?
 3. 它是否能删掉"智能、专业、个性化"还不损失意义?
 4. 它是否像一个懂训练的人在说话,而不是营销页或 AI 助手?
 5. 英文是否是美国力量训练用户会说的词,不是中式英语?
@@ -566,8 +587,8 @@ Do not use: AI-powered personal trainer, fitness journey, unlock your potential,
 本文基于 2026-06-07 的只读调研与量化判断:
 
 - 美国力量训练用户更接受"know what to do / log fast / see progress / stay in control",反感 bloat、AI hype、trophy systems、强制社交和 paywall 干扰训练。
-- 竞品文案大多落在 logging、program library 或 AI personalization。IronPath 的空位是 explainable coaching: why this today, what changed, what to do next。
-- Health & Fitness 订阅价值需要在首会话被看见,但 IronPath 不应开屏硬推黑箱 AI。更合适的是 Free Core 记录 + contextual Paid Coach。
+- 竞品文案大多落在 logging、program library 或 AI personalization。Rede 的空位是 explainable coaching: why this today, what changed, what to do next。
+- Health & Fitness 订阅价值需要在首会话被看见,但 Rede 不应开屏硬推黑箱 AI。更合适的是 Free Core 记录 + contextual Paid Coach。
 - FTC / Apple 对健康声称、HealthKit 数据、隐私和误导性营销有明确要求;文案必须保持 general fitness guidance,不碰 diagnosis / treatment / guarantee。
 - 双语文案应按 locale 原生重写,共享意图而不是逐句翻译。
 

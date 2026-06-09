@@ -1,95 +1,110 @@
-# 重做 · 0 号:铁律审查 + 云架构方案
+# IronPath 原生账号 / 云同步 / watchOS 决策记录
 
-> 范围:只审查 + 给方案,**不碰任何代码**。基于 `IRONPATH_iOS_SYSTEM_LOGIC.md`(现状)+ docs/ 里已定的云/账号/后端规划 digest + 商业化决策(`SESSION_HANDOFF_AND_CLOUD_DECISIONS_V1.md`)。
+> **状态:** 已拍板的未来原生架构输入。本文不授权第一版干净 runtime 引入账号、网络、云、CRDT 或 watchOS。任何实现必须先修改并通过 `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` 的 architecture gate。
 
----
+## 1. 保留决策
 
-## 第一部分 · 铁律审查(开发团队视角)
+IronPath 的目标实现仍是 native iOS local-first app:本地 JSON AppData 是唯一 canonical source of truth,SwiftUI app 层保持薄,业务逻辑在 Swift packages,raw AppData 不直接进入训练引擎。现有 Swift/iOS 代码只是 reference inventory,不是云/账号实现基线。
 
-文档本身是**忠实盘点,准确**。但"铁律"要分清:哪些是真该守的原则,哪些是增量堆叠留下的临时约束。逐条 verdict:
+未来账号 / 云同步 / watchOS 的产品方向已经确定:
 
-| # | 铁律 | 判定 | 理由 |
-|---|---|---|---|
-| 1 | app 层不直接碰 FileManager/HealthKit/UserNotifications/WidgetKit(seam 隔离) | ✅ **留** | 纯核心 + 平台在边缘 = 可测、可移植。但别教条:原则是"核心纯净",不是"为隔离而隔离"。重做沿用。 |
-| 2 | raw AppData 永不进引擎(DataHealth chokepoint) | ✅ **留但优化** | 防脏数据是对的。但现在**每次读都重建 clean view**(重)。重做可改成"**写时归一**"(数据进来就清洗成规范态)而非"读时清洗",上云后净化点还要和云写对齐。 |
-| 3 | 写必经 gated 单写路径 + backup→atomic→honest-fail | ✅✅ **留,皇冠** | 这是整个系统最值钱的东西。**唯一写入口 = 唯一可拦截点 = 唯一可同步点**——正因为有它,上云才安全。重做要把它升级成"本地写 + 云同步"的**统一闸**,而不是绕开它。 |
-| 4 | 三个本地 store 互不串(canonical / Focus 快照 / widget) | ⚠️ **重思** | 这是**增量生长的症状**,不是原则。LocalSnapshot 是"Focus 完成写不进 canonical"的 workaround;widget 快照是派生副本。重做应收敛成**一个权威本地源 + 若干派生视图**,别留三套各写各的。 |
-| 5 | **全本机:无云、无账号、无网络** | ❌ **推翻** | 这不是设计原则,是临时状态。改成 **local-first + 显式 opt-in 云同步**(见第二部分)。 |
+| 决策 | 口径 |
+|---|---|
+| 本地优先 | 本地数据永远可练、可写、可导出;云失败不得阻断本地训练。 |
+| 账号 | 可选、late、显式触发;不挡训练、不挡订阅、不静默上传本地数据。 |
+| 云同步 | 用户明确 opt-in 后才启用;云是备份和多设备中继,不是默认主真相。 |
+| 合并模型 | 同步模型采用记录级 CRDT 自动合并,优先服务 active session 和训练日志。 |
+| watchOS | 训练中 Apple Watch 可作为同一 active session 的并发操控端。 |
+| 写入闸 | 未来每个 CRDT op 仍必须经过 gated write path 的验证、应用和 honest failure 语义。 |
+| 服务端权威 | 不采用 server-primary 训练真相;cloud-primary 只有未来另开架构闸才可讨论。 |
 
-**逻辑清晰度**:文档讲的逻辑**是清晰的**(因为整条决策链是 PWA 的 1:1 忠实端口,结构一致)。但"清晰"≠"对/权威"——盘点暴露的 8 条真问题(§8)才是重做要修的:数据全硬编码非权威、新用户默认被 trim、决策不透明、HealthKit 没进决策、教练动作只点亮 2/9 源、PA 未通电、云/备份/UIKit/L10n 是桩、roleOf 正则对中文模板永不匹配。**这些是"逻辑内容"的问题,不是"逻辑表达"的问题。**
+## 2. 不变工程铁律
 
-> 一句话:铁律 1-3 是真资产(尤其 3),铁律 4 要收敛,铁律 5 要推翻。文档准确,但它盘出的系统在"数据权威性"上有系统性欠债——这正是重做的核心目标。
+这些规则从目标 iOS 架构延伸到未来同步架构:
 
----
+1. 核心纯净:平台 IO 在边缘,训练逻辑在 Swift packages。
+2. 数据必净化:raw AppData 不进入 TrainingDecision、Progress、PlanAdjustment 或 MuscleLevelEstimator。
+3. 唯一写闸:canonical 写入必须有校验、backup/rollback 语义、atomic save 和 honest failure。
+4. 派生视图不是真相:LocalSnapshot、Widget、HealthKit export、UI projection、分享卡和未来 sync receipts 都不得成为训练真相。
+5. 不假成功:本地写失败、云写失败、owner mismatch、schema mismatch、merge failure 都必须显式失败或进入本地可用模式。
+6. 不删本地:登录、登出、同步失败、云端删除和账号删除不得静默删除本机训练数据。
 
-## 第二部分 · 云架构方案(推翻"全本机")
+## 3. CRDT 与 snapshot 的边界
 
-### 2.1 已定地基(所有方案都继承,不再讨论)
-这些在 PWA 切片与 iOS 商业化拍板之间**完全一致**,是稳固共识,直接当地基:
-- **后端栈**:Supabase(Postgres + Auth + RLS)。纯服务端,与客户端是 Web/iOS 无关。
-- **本地永远是 source of truth**;云 = 备份 + 多设备中继,**不是替换**。离线始终可练可写。
-- **显式 opt-in 同步**:绝不自动/后台/轮询。用户确认才同步。
-- **安全不变量(铁律级)**:不删本地、不覆盖云、不接受假成功、owner mismatch 一律 fail-closed、service role key 绝不进客户端、云失败绝不阻断本地用 App。
-- **账号 = late / 可选**:不强制注册、不挡练、不挡订阅。订阅走 App Store(无需账号);账号只用于**同步 + 跨产品(IronPath↔饮食)联动**,当价值卖不当门槛。
-- **数据落库 = document-first 整树 snapshot**(不拆表):与 iOS 本机 open-bag `AppData` 整树天然契合。
-- **饮食联动**:账号是 IronPath↔饮食的共享身份桥;IronPath→饮食单向只读同步目标/身材/训练消耗。
-- **freemium 红线**:永不锁"你自己的数据"、取消订阅不锁数据、随时可导出。
-- **合规**:Sign in with Apple、应用内删号(连云备份可删)、Apple 隐私标签、健康数据不喂广告/分析 SDK、FTC HBNR / 华盛顿 MHMDA / 加州 CCPA-CPRA。
+未来同步不能用整树 AppData blob 作为冲突合并真相。整树 snapshot 仍有价值,但职责不同:
 
-### 2.2 唯一的真岔口:同步 / 合并模型
-PWA 定的是"**整树 snapshot + 手动冲突评审**(fail-closed,不 LWW)";iOS 商业化拍板要"**CRDT 自动合并**(永不冲突丢数据)"。两者是不同范式,且与"整树 snapshot 存储"有张力——CRDT 要数据**按记录可合并**(set/session 级),而非整树 blob diff。**这是你要拍板的地方。** 三个方案:
+| 数据形态 | 职责 |
+|---|---|
+| 记录级 CRDT / operation journal | active session、completed set、session event、训练历史追加、训练中手机/手表并发编辑。 |
+| Typed config record | profile scalar、unit setting、screening、program config、template confirmation 等低频配置;需要明确 owner、schemaVersion 和 conflict policy。 |
+| AppData snapshot | 备份、导出、恢复锚点、schema migration check、灾难恢复;不是训练日志并发合并算法。 |
+| Derived projection | DataHealth、analytics、e1RM、muscle level、share snapshot;可重算,不作为云端 source of truth。 |
 
----
+实现时必须先定义 record 粒度,再定义 snapshot 如何从 records 重建或验证。不能把“存一棵树”误写成“用整树覆盖解决同步”。
 
-#### 方案 A · 整树 Snapshot 同步(最省、最快上线)
-- **模型**:云存一份版本化的整树 `AppData` snapshot(就是本机那棵树 + 元数据)。同步 = push/pull 整树;两端都改了 → **检测冲突 → 用户手动选**(本地/云/合并),fail-closed 绝不 LWW 自动覆盖。
-- **复用**:几乎直接套已定的 PWA 决策 + 本机现有的 gated 单写路径(写成功后顺手 push snapshot)。
-- **优点**:实现最小、最快有"多设备备份恢复";与现有架构阻抗几乎为零;config 类数据(模板/设置)天然适合整树。
-- **缺点**:**跨设备并发编辑会频繁撞冲突**(整树粒度,改了任何一处都算"云变了");无自动合并 → 用户要手动评审,体验割裂。**违背了 iOS 拍板的"CRDT 永不冲突"。**
-- **适合**:如果多设备是"一台为主、偶尔换设备",而非"真并发编辑"。
+## 4. watchOS 并发要求
 
-#### 方案 B · 全量 CRDT 记录级合并(iOS 拍板的纯形态)
-- **模型**:把训练数据建模成 **CRDT 记录**(每个 set / session / 编辑都是可合并的记录,近乎只追加)。两端离线改,联网**自动按记录合并,永不冲突丢数据**。
-- **复用**:继承账号/RLS/安全不变量;但**数据模型要从"整树 blob"重构成"可合并记录集"**。
-- **优点**:多设备并发编辑无感、离线友好、永不丢用户日志;训练日志(只追加为主)是 CRDT 的理想场景;商业化体验最好。
-- **缺点**:**改动最大**——要选 CRDT 方案(Automerge / Yjs / 自研)、定合并粒度、重构数据模型;schema 演进 + 跨 CRDT 的版本迁移更难;open-bag 整树 `AppData` 不能直接映射 CRDT(要拆成记录)。config 类低频数据用 CRDT 是杀鸡用牛刀。
-- **适合**:把"多设备无缝"当核心卖点、愿意为它付重构成本。
+watchOS 的核心场景是训练中手机和手表同时编辑同一个 active session:
 
-#### 方案 C · 混合:CRDT 合并层 + 整树 Snapshot 锚(推荐)
-- **模型**:**按数据特性分治**——
-  - **高频、近只追加的**(训练历史 / 完成 session / 逐组日志 / active session)→ **CRDT 记录级合并**(拿到 B 的"永不冲突")。
-  - **低频 config**(程序模板 / 设置 / 筛查档案)→ **整树 snapshot + 简单 last-write + 冲突提示**(拿到 A 的简单)。
-  - 定期把全量落一份**整树 snapshot 当备份/恢复锚 + source-of-truth 校验点**(满足"本地永远权威 + 可恢复")。
-- **优点**:在"会并发编辑"的地方(训练日志)拿自动合并,在"很少并发"的地方(config)保持简单;整树 snapshot 仍是可信备份/恢复底。**最贴合 iOS 拍板的 CRDT 方向,又不必把所有东西都 CRDT 化。**
-- **缺点**:两套机制要维护;**CRDT/snapshot 的边界要划清**(哪些数据归哪边),这是设计要点。
-- **适合**:既要商业化级多设备体验、又要控制重构面 —— 多数情况的最优。
+- 手表完成一组,手机修改下一组目标。
+- 手机替换动作,手表继续显示可执行的下一步。
+- 任一端离线短暂断连后恢复,两端记录必须自动合并。
+- 冲突不得靠用户在训练中手动评审整树差异。
 
-#### (方案 D · 服务端权威 API —— 列出但不推荐)
-- 薄客户端把 typed mutation 发给后端,**后端持有权威状态 + 合并**。最接近 PWA 的 API-route,但服务器变 source-of-truth。
-- **不推荐**:直接违背"本地永远 source-of-truth + 离线可用"这条所有文档一致的铁律;强在线依赖;已定决策一路推迟 cloud-primary。仅在"未来要做教练/多人协作"时才重提。
+因此 active session 必须是一等并发对象。WatchConnectivity 是手机和手表的近实时传输层;云同步是跨设备/备份传输层。二者共享同一 record/CRDT 语义,不能各自发明一套真相。
 
----
+## 5. 账号、云和合规规则
 
-### 2.3 我的推荐 + 待你拍板
-- **推荐方案 C(混合)**:它唯一同时满足"iOS 拍的 CRDT 永不冲突"+"已定的整树 snapshot/本地权威/可恢复",且把重构面控制在"训练日志记录化"这一块,config 不动。
-- **拍板前还要定的两件小事**(C 落地才需要,现在先知道):① CRDT 选型(Automerge-swift / Yjs / 自研记录合并)② CRDT 与整树 snapshot 的边界线(哪些域记录化)。
-- **统一架构的空白**:digest 发现"IronPath↔饮食两产品**统一架构**本身还没文档"(饮食文档已齐、是输入)。云方案定了之后,下一份就是这个统一架构立项——账号桥怎么跨两产品分区数据、RLS 怎么跨产品、freemium 限历史怎么在数据层实现。
+账号只服务用户明确理解的价值:
 
-> 本文只到"选哪个同步范式 + 守哪些地基"。选定后再出该范式的详细架构(数据模型/同步协议/冲突 UI/迁移路径),那是下一份,不是这份。
+- 多设备同步。
+- 换机恢复。
+- 跨产品联动。
+- 用户支持和数据可带走。
 
----
+账号不得成为:
 
-## 决定(已拍板 · 2026-06-05)
+- 开始训练的门槛。
+- 订阅购买的强制前置。
+- 本地数据上传的默认授权。
+- 分享系统 MVP 的依赖。
 
-- **同步模型 = 方案 B(全量 CRDT 记录级合并)。** 理由:同步要做到"特别好、不出问题"。
-- **新增平台需求:watchOS** —— 训练中用 Apple Watch 做操控/记录。
-- **watchOS 反而印证 B 是对的**:训练中手表 + 手机**并发编辑同一个 active session**(手表记一组、手机记一组,都要无缝合并)= CRDT 的标准场景,且要求近实时。整树 snapshot / 手动冲突在这个场景下不可行。
+合规规则:
 
-**B + watchOS 对架构的连带要求(下一份详设要解决,这里先锚定):**
-1. **共享核心跨平台**:domain + 决策引擎 + CRDT 数据层做成 iOS / watchOS 都能编译的 Swift 包,手表 app 是同一核心的薄 UI(铁律 1"平台在边缘"正好支撑)。
-2. **两条同步传输**:① **WatchConnectivity**(手机↔手表,训练中近实时合并)② **Supabase 云**(跨设备,显式 opt-in)。CRDT 统一两者——每设备一份副本,任何一次连接即合并。
-3. **active session = 一等并发对象**:训练中手表+手机同时记组是最热的并发点,CRDT 必须近实时无冲突——"flawless"主要就指这里。
-4. **gated 单写路径(铁律 3)升级**:每个改动 = 一个 CRDT op 经 gated 路径校验+应用 → 合并 → 本地真相 → opt-in 推云。皇冠仍在。
+- Sign in with Apple。
+- 应用内删号。
+- 删除前导出。
+- 健康/训练数据不用于广告定向。
+- owner mismatch fail-closed。
+- service role key 绝不进入客户端。
+- 隐私标签、FTC HBNR、Washington MHMDA、CCPA/CPRA 等要求在云实现前刷新。
 
-**B 落地前要定的子项(留给下一份"1 号"):** CRDT 选型(Automerge-swift 最贴 Swift / Yjs / 自研)· AppData 整树怎么拆成可合并记录(粒度)· 两条传输怎么编排 · CRDT 下的 schema 演进。
+## 6. 实现前必须补齐的工程切片
 
+任何 runtime 实现前必须先有 Master-approved implementation slice:
+
+1. CRDT 选型和 Swift package 边界。
+2. AppData 到 records 的 domain mapping。
+3. active session record model。
+4. operation journal、idempotency 和 schema migration。
+5. WatchConnectivity transport。
+6. Supabase Auth/Postgres/RLS transport。
+7. owner scope 和 account binding。
+8. local backup/export/restore gate。
+9. sync failure UI 和 recovery path。
+10. privacy/security acceptance tests。
+
+## 7. 非目标
+
+第一轮实现不做:
+
+- server-primary 训练真相。
+- 自动后台上传。
+- 默认创建账号。
+- 公开 feed、排行榜、好友关系。
+- 教练/学员多租户。
+- 云端 DataHealth repair 直接覆盖本地。
+- HealthKit 原始数据云同步。
+- 分享卡外部归因或 referral 链接。
+
+这些能力需要新的商业、隐私、合规和架构 gate。

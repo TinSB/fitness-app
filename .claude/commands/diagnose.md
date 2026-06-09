@@ -19,7 +19,13 @@ description: 在动手改代码之前找到真正的根因（不是症状）。
 - 永远不要删除本机 JSON/AppData、训练历史、HealthKit 派生数据或未来云端数据，除非用户明确批准。
 - 永远不要静默覆盖本机 canonical AppData 或未来云端数据。
 - 不要在没有明确批准的情况下修改 AppData 或 TrainingSession schema。
-- 代码改动后的标准验证流程：
+- Clean rewrite 阶段：living docs 是目标真源；旧 `ios/` 实现是 legacy/reference inventory。旧实现任务默认只读审计，除非有明确 rewrite slice 批准复用。
+- 外部官网 / 付费意向验证在仓库 runtime 之外；不得恢复 PWA/Web runtime。
+- 验证流程按变更类型选择：
+  ```bash
+  git diff --check
+  ```
+  runtime slice 代码改动后再跑：
   ```bash
   for package in ios/packages/*; do
     if [ -f "$package/Package.swift" ]; then

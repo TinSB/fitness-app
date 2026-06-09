@@ -29,7 +29,13 @@ Thumbs.db
 
 # Local Codex task prompts/logs
 .codex-tasks/
+.codex-tools/
+.codegraph/
+.ai-tmp/
 
 # Local doc scratch / throwaway artifacts
 _slices/
 _scratch/
+
+# Local tool launchers
+.claude/launch.json

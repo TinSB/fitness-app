@@ -1,6 +1,6 @@
 # IronPath Changelog
 
-All notable frontend governance and product-structure changes should be recorded here.
+All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
 ## 2026-06-07
 
@@ -14,11 +14,14 @@ All notable frontend governance and product-structure changes should be recorded
 - Added the Share / Growth System direction to the iOS system logic and commercialization roadmap: local privacy-safe share cards first, muscle-level and PR growth assets, plan/routine sharing later, and account/cloud/feed/attribution behind explicit architecture gates.
 - Expanded the Muscle Level Estimator into an engineering-ready contract: package boundary, clean input contract, output types, scoring pipeline, personal calibration, confidence, decision integration, share projection, implementation slices, and Swift test matrix.
 - Folded the legacy beginner/intermediate/advanced training-level model into the Muscle Level Estimator target: `overallTier` replaces the parallel user-facing level, self-reported training level becomes only a cold-start prior, and recognized strength milestones such as bench 100kg / 225lb become level/tier breakthrough inputs.
+- Re-audited the living docs with separate architecture, product, and doc-governance review lanes, then resolved P1/P2 conflicts in place: upstream exercise/template/equipment/set-shape/warm-up/support contracts now live in `docs/IRONPATH_iOS_SYSTEM_LOGIC.md`; cloud/CRDT archives are rewritten as clean future-decision records; HealthKit, paid packaging, share metrics, and diet-market evidence are scoped to their approved boundaries.
+- Removed the tracked `.codex-tools` pnpm bundle from the repository and ignored local tool/scratch directories so the repo no longer contradicts the Swift/iOS-only no-Node contract.
+- Reframed the repository around a clean iOS rewrite baseline: living docs are now the target truth, existing `ios/` code is legacy/reference inventory, P0 paid-intent validation happens through an external website/mock/demo path, and `.claude` agent commands now guard against patching the polluted old runtime by default.
 
 ## 2026-06-06
 
-- Added an isolated `/site` marketing surface for P0 commercialization validation: bilingual IronPath + Larder positioning, product-path split, early-access/TestFlight intent form, and transparent founder-beta/price-intent smoke-test UI. The default PWA route and training business logic remain unchanged; the form and pricing actions are local prototypes with no backend charge path.
-- Reconciled the iOS system-logic living spec with the master architecture contract: `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` now separates current implementation, target product direction, and architecture-gated work.
+- Added an isolated `/site` marketing surface for P0 commercialization validation: bilingual IronPath + Larder positioning, product-path split, early-access/TestFlight intent form, and transparent founder-beta/price-intent smoke-test UI. Historical note: this `/site` surface was later removed with the Web/PWA cleanup on 2026-06-07.
+- Reconciled the iOS system-logic living spec with the master architecture contract: `docs/IRONPATH_iOS_SYSTEM_LOGIC.md` then separated implementation inventory, target product direction, and architecture-gated work.
 - Clarified that Supabase, CRDT sync, watchOS, WatchConnectivity, full restore, and source-of-truth changes are target directions only until `docs/IRONPATH_MASTER_TECHNICAL_ARCHITECTURE.md` is explicitly amended.
 - Updated `AGENTS.md` product direction from the legacy five-tab shell to the commercial four-tab target (`今日 / 训练 / 进展 / 计划`) with Profile / Settings as a low-frequency entry.
 - Extended the system-logic baseline with exercise catalog/equipment authority, gym equipment packs, load calibration, in-session set-shape learning, and warm-up execution boundaries.
