@@ -11,7 +11,7 @@ import Foundation
 public enum WidgetSharedConfig {
     /// The App Group both the app and the widget extension declare in their
     /// entitlements. The shared snapshot file lives in this group's container.
-    public static let appGroupIdentifier = "group.com.ironpath.app.ios"
+    public static let appGroupIdentifier = "group.com.rede.app.ios"
     /// The derived snapshot filename inside the App Group container.
     public static let snapshotFilename = "readiness-widget-snapshot.json"
 }

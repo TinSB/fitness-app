@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:Rede.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedeDomain">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedeDataHealth">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedePersistence">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedeHealthKit">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedeBackup">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedeL10n">
+   </FileRef>
+   <FileRef
+      location = "group:packages/RedeUIKit">
+   </FileRef>
+</Workspace>

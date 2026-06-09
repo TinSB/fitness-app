@@ -1,0 +1,738 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */; };
+		81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */; };
+		81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */; };
+		81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */; };
+		81ACFD492FC935D0000989A7 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 81ACFD482FC935D0000989A7 /* RedeTrainingDecision */; };
+		81ACFD4B2FC959E3000989A7 /* FocusModeMvpState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */; };
+		81ACFD4D2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */; };
+		81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */; };
+		81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */; };
+		81ACFD532FC95B10000989A7 /* FocusSessionCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */; };
+		81ACFD552FC95B20000989A7 /* FocusSavedSessionPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */; };
+		AA00000000000000000000E2 /* RedeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* RedeApp.swift */; };
+		AA00000000000000000000E4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E3 /* ContentView.swift */; };
+		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
+		AA0000000000000000000111 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000101 /* RedeDomain */; };
+		AA0000000000000000000112 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000102 /* RedeDataHealth */; };
+		AA0000000000000000000113 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000103 /* RedePersistence */; };
+		AA0000000000000000000115 /* RedeHealthKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000105 /* RedeHealthKit */; };
+		AA0000000000000000000116 /* RedeBackup in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000106 /* RedeBackup */; };
+		AA0000000000000000000117 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* RedeL10n */; };
+		AA0000000000000000000118 /* RedeUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000108 /* RedeUIKit */; };
+		B500000000000000000000A2 /* TodayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000A1 /* TodayRootView.swift */; };
+		B500000000000000000000B2 /* TrainingRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000B1 /* TrainingRootView.swift */; };
+		B500000000000000000000C2 /* HistoryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000C1 /* HistoryRootView.swift */; };
+		B500000000000000000000D2 /* PlanRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000D1 /* PlanRootView.swift */; };
+		B500000000000000000000E2 /* ProfileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000E1 /* ProfileRootView.swift */; };
+		B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */; };
+		B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */; };
+		C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */; };
+		CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */; };
+		CC00000000000000000000D2 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000000D1 /* RedeLocalSnapshot */; };
+		DD00000000000000000000A2 /* RestReminderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000A1 /* RestReminderModel.swift */; };
+		DD00000000000000000000B2 /* RestReminderSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000B1 /* RestReminderSection.swift */; };
+		DD00000000000000000000D2 /* RedeNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000D1 /* RedeNotifications */; };
+		EE00000000000000000000A2 /* WidgetSnapshotWriterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */; };
+		EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* RedeWidgetBundle.swift */; };
+		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
+		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D1 /* RedeWidgetShared */; };
+		EE00000000000000000000D4 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D3 /* RedeWidgetShared */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		EE00000000000000000000E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000000A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE00000000000000000000B1;
+			remoteInfo = RedeWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		EE00000000000000000000D8 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreviewData.swift; sourceTree = "<group>"; };
+		81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeExerciseCard.swift; sourceTree = "<group>"; };
+		81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDecisionSummaryView.swift; sourceTree = "<group>"; };
+		81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeShellView.swift; sourceTree = "<group>"; };
+		81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeMvpState.swift; sourceTree = "<group>"; };
+		81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeStatusSurfaceView.swift; sourceTree = "<group>"; };
+		81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionProgressView.swift; sourceTree = "<group>"; };
+		81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSetChecklistView.swift; sourceTree = "<group>"; };
+		81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCompletionView.swift; sourceTree = "<group>"; };
+		81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionPreviewView.swift; sourceTree = "<group>"; };
+		AA00000000000000000000B2 /* Rede.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rede.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
+		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B500000000000000000000A1 /* TodayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000B1 /* TrainingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000C1 /* HistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000D1 /* PlanRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000E1 /* ProfileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRootView.swift; sourceTree = "<group>"; };
+		B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportModel.swift; sourceTree = "<group>"; };
+		B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportSection.swift; sourceTree = "<group>"; };
+		B500000000000000000000F5 /* Rede.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rede.entitlements; sourceTree = "<group>"; };
+		C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionHistoryView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionDetailView.swift; sourceTree = "<group>"; };
+		DD00000000000000000000A1 /* RestReminderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderModel.swift; sourceTree = "<group>"; };
+		DD00000000000000000000B1 /* RestReminderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderSection.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriterModel.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A3 /* RedeWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWidgetBundle.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		EE00000000000000000000A8 /* RedeWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RedeWidget.entitlements; sourceTree = "<group>"; };
+		EE00000000000000000000B2 /* RedeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RedeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA00000000000000000000D2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000000111 /* RedeDomain in Frameworks */,
+				81ACFD492FC935D0000989A7 /* RedeTrainingDecision in Frameworks */,
+				AA0000000000000000000112 /* RedeDataHealth in Frameworks */,
+				AA0000000000000000000113 /* RedePersistence in Frameworks */,
+				AA0000000000000000000115 /* RedeHealthKit in Frameworks */,
+				AA0000000000000000000116 /* RedeBackup in Frameworks */,
+				AA0000000000000000000117 /* RedeL10n in Frameworks */,
+				AA0000000000000000000118 /* RedeUIKit in Frameworks */,
+				CC00000000000000000000D2 /* RedeLocalSnapshot in Frameworks */,
+				DD00000000000000000000D2 /* RedeNotifications in Frameworks */,
+				EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE00000000000000000000D6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE00000000000000000000D4 /* RedeWidgetShared in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA00000000000000000000A2 = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000000A4 /* Rede */,
+				EE00000000000000000000B4 /* RedeWidget */,
+				AA00000000000000000000A3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA00000000000000000000A3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000000B2 /* Rede.app */,
+				EE00000000000000000000B2 /* RedeWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000000A4 /* Rede */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000000E1 /* RedeApp.swift */,
+				AA00000000000000000000E3 /* ContentView.swift */,
+				AA00000000000000000000E6 /* Assets.xcassets */,
+				AA00000000000000000000E5 /* Info.plist */,
+				81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */,
+				81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */,
+				81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */,
+				81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */,
+				81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */,
+				81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */,
+				81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */,
+				81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */,
+				81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */,
+				81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */,
+				C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */,
+				CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */,
+				B500000000000000000000A1 /* TodayRootView.swift */,
+				B500000000000000000000B1 /* TrainingRootView.swift */,
+				B500000000000000000000C1 /* HistoryRootView.swift */,
+				B500000000000000000000D1 /* PlanRootView.swift */,
+				B500000000000000000000E1 /* ProfileRootView.swift */,
+				B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */,
+				B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */,
+				B500000000000000000000F5 /* Rede.entitlements */,
+				DD00000000000000000000A1 /* RestReminderModel.swift */,
+				DD00000000000000000000B1 /* RestReminderSection.swift */,
+				EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */,
+			);
+			path = Rede;
+			sourceTree = "<group>";
+		};
+		EE00000000000000000000B4 /* RedeWidget */ = {
+			isa = PBXGroup;
+			children = (
+				EE00000000000000000000A3 /* RedeWidgetBundle.swift */,
+				EE00000000000000000000A5 /* ReadinessWidget.swift */,
+				EE00000000000000000000A7 /* Info.plist */,
+				EE00000000000000000000A8 /* RedeWidget.entitlements */,
+			);
+			path = RedeWidget;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA00000000000000000000B1 /* Rede */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000000C2 /* Build configuration list for PBXNativeTarget "Rede" */;
+			buildPhases = (
+				AA00000000000000000000D1 /* Sources */,
+				AA00000000000000000000D2 /* Frameworks */,
+				AA00000000000000000000D3 /* Resources */,
+				EE00000000000000000000D8 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE00000000000000000000E1 /* PBXTargetDependency */,
+			);
+			name = Rede;
+			packageProductDependencies = (
+				AA0000000000000000000101 /* RedeDomain */,
+				AA0000000000000000000102 /* RedeDataHealth */,
+				AA0000000000000000000103 /* RedePersistence */,
+				AA0000000000000000000105 /* RedeHealthKit */,
+				AA0000000000000000000106 /* RedeBackup */,
+				AA0000000000000000000107 /* RedeL10n */,
+				AA0000000000000000000108 /* RedeUIKit */,
+				81ACFD482FC935D0000989A7 /* RedeTrainingDecision */,
+				CC00000000000000000000D1 /* RedeLocalSnapshot */,
+				DD00000000000000000000D1 /* RedeNotifications */,
+				EE00000000000000000000D1 /* RedeWidgetShared */,
+			);
+			productName = Rede;
+			productReference = AA00000000000000000000B2 /* Rede.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EE00000000000000000000B1 /* RedeWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE00000000000000000000C2 /* Build configuration list for PBXNativeTarget "RedeWidgetExtension" */;
+			buildPhases = (
+				EE00000000000000000000D5 /* Sources */,
+				EE00000000000000000000D6 /* Frameworks */,
+				EE00000000000000000000D7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RedeWidgetExtension;
+			packageProductDependencies = (
+				EE00000000000000000000D3 /* RedeWidgetShared */,
+			);
+			productName = RedeWidgetExtension;
+			productReference = EE00000000000000000000B2 /* RedeWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA00000000000000000000A1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					AA00000000000000000000B1 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = AA00000000000000000000C1 /* Build configuration list for PBXProject "Rede" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA00000000000000000000A2;
+			packageReferences = (
+				AA00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeDomain" */,
+				AA00000000000000000000F2 /* XCLocalSwiftPackageReference "packages/RedeDataHealth" */,
+				AA00000000000000000000F3 /* XCLocalSwiftPackageReference "packages/RedePersistence" */,
+				AA00000000000000000000F5 /* XCLocalSwiftPackageReference "packages/RedeHealthKit" */,
+				AA00000000000000000000F6 /* XCLocalSwiftPackageReference "packages/RedeBackup" */,
+				AA00000000000000000000F7 /* XCLocalSwiftPackageReference "packages/RedeL10n" */,
+				AA00000000000000000000F8 /* XCLocalSwiftPackageReference "packages/RedeUIKit" */,
+				81ACFD472FC935D0000989A7 /* XCLocalSwiftPackageReference "packages/RedeTrainingDecision" */,
+				CC00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeLocalSnapshot" */,
+				DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeNotifications" */,
+				EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */,
+			);
+			productRefGroup = AA00000000000000000000A3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA00000000000000000000B1 /* Rede */,
+				EE00000000000000000000B1 /* RedeWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA00000000000000000000D3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000000E7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE00000000000000000000D7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA00000000000000000000D1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81ACFD4D2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift in Sources */,
+				AA00000000000000000000E2 /* RedeApp.swift in Sources */,
+				81ACFD4B2FC959E3000989A7 /* FocusModeMvpState.swift in Sources */,
+				81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */,
+				81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */,
+				81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */,
+				81ACFD532FC95B10000989A7 /* FocusSessionCompletionView.swift in Sources */,
+				81ACFD552FC95B20000989A7 /* FocusSavedSessionPreviewView.swift in Sources */,
+				C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */,
+				CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */,
+				81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */,
+				81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */,
+				AA00000000000000000000E4 /* ContentView.swift in Sources */,
+				81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */,
+				B500000000000000000000A2 /* TodayRootView.swift in Sources */,
+				B500000000000000000000B2 /* TrainingRootView.swift in Sources */,
+				B500000000000000000000C2 /* HistoryRootView.swift in Sources */,
+				B500000000000000000000D2 /* PlanRootView.swift in Sources */,
+				B500000000000000000000E2 /* ProfileRootView.swift in Sources */,
+				B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */,
+				B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */,
+				DD00000000000000000000A2 /* RestReminderModel.swift in Sources */,
+				DD00000000000000000000B2 /* RestReminderSection.swift in Sources */,
+				EE00000000000000000000A2 /* WidgetSnapshotWriterModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE00000000000000000000D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */,
+				EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EE00000000000000000000E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE00000000000000000000B1 /* RedeWidgetExtension */;
+			targetProxy = EE00000000000000000000E2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AA00000000000000000000C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA00000000000000000000C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AA00000000000000000000C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Rede/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rede.app.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AA00000000000000000000C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Rede/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rede.app.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		EE00000000000000000000C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RedeWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rede.app.ios.RedeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		EE00000000000000000000C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RedeWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rede.app.ios.RedeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA00000000000000000000C1 /* Build configuration list for PBXProject "Rede" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000000000000000000C3 /* Debug */,
+				AA00000000000000000000C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000000C2 /* Build configuration list for PBXNativeTarget "Rede" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000000000000000000C5 /* Debug */,
+				AA00000000000000000000C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE00000000000000000000C2 /* Build configuration list for PBXNativeTarget "RedeWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE00000000000000000000C5 /* Debug */,
+				EE00000000000000000000C6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		81ACFD472FC935D0000989A7 /* XCLocalSwiftPackageReference "packages/RedeTrainingDecision" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeTrainingDecision;
+		};
+		AA00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeDomain" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeDomain;
+		};
+		AA00000000000000000000F2 /* XCLocalSwiftPackageReference "packages/RedeDataHealth" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeDataHealth;
+		};
+		AA00000000000000000000F3 /* XCLocalSwiftPackageReference "packages/RedePersistence" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedePersistence;
+		};
+		AA00000000000000000000F5 /* XCLocalSwiftPackageReference "packages/RedeHealthKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeHealthKit;
+		};
+		AA00000000000000000000F6 /* XCLocalSwiftPackageReference "packages/RedeBackup" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeBackup;
+		};
+		AA00000000000000000000F7 /* XCLocalSwiftPackageReference "packages/RedeL10n" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeL10n;
+		};
+		AA00000000000000000000F8 /* XCLocalSwiftPackageReference "packages/RedeUIKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeUIKit;
+		};
+		CC00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeLocalSnapshot" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeLocalSnapshot;
+		};
+		DD00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeNotifications" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeNotifications;
+		};
+		EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeWidgetShared;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		81ACFD482FC935D0000989A7 /* RedeTrainingDecision */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeTrainingDecision;
+		};
+		AA0000000000000000000101 /* RedeDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeDomain;
+		};
+		AA0000000000000000000102 /* RedeDataHealth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeDataHealth;
+		};
+		AA0000000000000000000103 /* RedePersistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedePersistence;
+		};
+		AA0000000000000000000105 /* RedeHealthKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeHealthKit;
+		};
+		AA0000000000000000000106 /* RedeBackup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeBackup;
+		};
+		AA0000000000000000000107 /* RedeL10n */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeL10n;
+		};
+		AA0000000000000000000108 /* RedeUIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeUIKit;
+		};
+		CC00000000000000000000D1 /* RedeLocalSnapshot */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeLocalSnapshot;
+		};
+		DD00000000000000000000D1 /* RedeNotifications */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeNotifications;
+		};
+		EE00000000000000000000D1 /* RedeWidgetShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWidgetShared;
+		};
+		EE00000000000000000000D3 /* RedeWidgetShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWidgetShared;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AA00000000000000000000A1 /* Project object */;
+}

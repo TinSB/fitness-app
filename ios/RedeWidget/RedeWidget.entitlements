@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- W-1: the widget extension shares ONE App Group with the app. The app WRITES
+	     a small derived read-only readiness snapshot here; this widget READS it. The
+	     App Group is the only shared surface — a derived presentation share (§12),
+	     never canonical AppData, never a source of truth, on-device only. NO iCloud,
+	     NO network, NO remote push. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.rede.app.ios</string>
+	</array>
+</dict>
+</plist>
