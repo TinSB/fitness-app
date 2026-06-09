@@ -8,23 +8,44 @@ enum RootTab: Hashable {
 }
 
 struct RootTabView: View {
-    @State private var selection: RootTab = .today
+    @State private var selection: RootTab
+
+    // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan
+    init() {
+        let args = ProcessInfo.processInfo.arguments
+        var initial: RootTab = .today
+        if let idx = args.firstIndex(of: "-initialTab"), args.indices.contains(idx + 1) {
+            switch args[idx + 1] {
+            case "train": initial = .train
+            case "progress": initial = .progress
+            case "plan": initial = .plan
+            default: break
+            }
+        }
+        _selection = State(initialValue: initial)
+    }
 
     var body: some View {
-        TabView(selection: $selection) {
-            TodayTabView()
-                .tabItem { Label("今日", systemImage: "sun.max.fill") }
-                .tag(RootTab.today)
-            TrainTabView()
-                .tabItem { Label("训练", systemImage: "figure.strengthtraining.traditional") }
-                .tag(RootTab.train)
-            ProgressTabView()
-                .tabItem { Label("进展", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(RootTab.progress)
-            PlanTabView(onGoToToday: { selection = .today })
-                .tabItem { Label("计划", systemImage: "calendar") }
-                .tag(RootTab.plan)
+        ZStack(alignment: .bottom) {
+            Group {
+                switch selection {
+                case .today:
+                    TodayTabView(onStartTraining: { selection = .train })
+                case .train:
+                    TrainTabView()
+                case .progress:
+                    ProgressTabView()
+                case .plan:
+                    PlanTabView(onStartTraining: { selection = .train })
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            RedeTabBar(selection: $selection)
+                .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
         }
+        .background(Color.redeBase.ignoresSafeArea())
+        .preferredColorScheme(.dark)
     }
 }
 
