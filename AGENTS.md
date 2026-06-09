@@ -23,6 +23,7 @@ This repo follows a **small fixed set of living docs**, governed by [`docs/DOCS_
 2. **No new top-level `.md` files.** To add a doc, first register it in `DOCS_MANIFEST.md` (state its role + why no existing doc fits); otherwise the PR is rejected.
 3. **Superseded / stale content** is archived into the matching canonical doc or deleted — **never** spun off into a new "v2 / final / final-2" file.
 4. **Throwaway artifacts** (one-off analysis, audits, headless prompts, slices) go in `_scratch/`, `.ai-tmp/` (local gitignored scratch), or outputs — **never** into the repo doc tree.
+5. **Developer log.** Every effective slice/PR also appends a user-readable entry to `DEV_LOG.md` (plain Chinese: goal, what changed, user-visible impact, evidence paths, risks, next step). Registered in the manifest; `CHANGELOG.md` stays the engineering record — both are required for runtime slices.
 
 ## Product Direction
 

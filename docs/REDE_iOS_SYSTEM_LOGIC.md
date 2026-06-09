@@ -17,7 +17,11 @@ iOS 原生账号、云同步、CRDT/watchOS 的已拍板方向保留在 `docs/RE
 - `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`
 - `COMMERCIALIZATION_ROADMAP.md`
 
-旧 `ios/Rede`、`ios/RedeWidget`、`ios/packages`、`ios/ParityFixtures` 是 legacy/reference inventory。它们可以帮助理解曾经的命名、测试和局部算法,但不得作为“已完成实现”的证明,也不得被整包搬运。任何复用都必须进入明确 rewrite slice,先审查输入输出、source-of-truth 和测试合同。
+legacy/reference inventory 处置状态(2026-06-09 M1-0 起):
+
+- **已退役**:9 个旧 IronPath/PWA 时代 Swift 包(`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeHealthKit`、`RedeTrainingDecision`、`RedeBackup`、`RedeUIKit`、`RedeLocalSnapshot`、`RedeNotifications`)已整体移出工作区与编译面,参考走 git 历史(tag `legacy-parity-final`)。其 PWA parity golden 测试随包退役;仍然有效的合同语义(open-bag preserving、schema 守卫、编辑语义)由对应 rewrite slice 以新测试重生(M1-1 起)。
+- **仍在树内的 legacy/参考材料**:`ios/packages/RedeL10n` 内的 legacy Terms/Formatters parity 文件(与 M0-3 新代码并存,待后续 slice 清退)、`ios/RedeWidget`(旧 widget,仅参考)、`ios/ParityFixtures`(冻结参考输入;RedeL10n parity 测试仍在消费,并保留为未来老数据迁移的验收素材——是否做迁移为待定产品决策,新模型按开门设计:open-bag + 沿用 legacy 字段词汇表)。`ios/Rede` 自 M0-1 起已是 clean shell,不再属于 legacy。
+- **通用规则不变**:legacy 材料可以帮助理解曾经的命名、测试和局部算法,但不得作为“已完成实现”的证明,也不得被整包搬运。任何复用都必须进入明确 rewrite slice,先审查输入输出、source-of-truth 和测试合同。
 
 ## 1. 铁律
 
@@ -848,7 +852,7 @@ Level Up Card 触发条件:
 - imbalanced milestone: 卧推 100kg 但背/腿长期不足时,水平推可进 milestone,overallTier 不得强行 advanced。
 - share privacy: `MuscleLevelShareProjection` 不含禁用字段。
 
-验证命令:
+验证命令(`RedeTrainingDecision` 已随 M1-0 退役,待对应 rewrite slice 重建后运行):
 
 ```bash
 cd ios/packages/RedeTrainingDecision
@@ -1098,14 +1102,10 @@ cd ios/packages/<PackageName>
 swift test
 ```
 
-全 package 回归：
+全 package 回归（与 `.github/workflows/rede-ci.yml` 的显式包清单保持同步）：
 
 ```bash
-for package in ios/packages/*; do
-  if [ -f "$package/Package.swift" ]; then
-    (cd "$package" && swift test) || exit 1
-  fi
-done
+bash .claude/quality-gate.cmd
 ```
 
 iOS app build:
