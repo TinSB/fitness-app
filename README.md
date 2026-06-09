@@ -139,6 +139,7 @@ Read these before changing behavior:
 | `COMMERCIALIZATION_ROADMAP.md` | Commercialization roadmap and gated business infrastructure decisions. |
 | `docs/REDE_PRD.md` | Product requirements: target users, numbered functional requirements with acceptance criteria, priorities (MVP/FF/LATER+GATE), NFRs, success metrics, and release mapping. |
 | `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP minimal training-loop implementation plan: scope, slice queue, acceptance, TestFlight launch gate, and progress tracking. Execution layer for roadmap P1. |
+| `DEV_LOG.md` | Developer log for the non-coding product owner: per-slice plain-language (Chinese) record of goals, user-visible impact, evidence, risks, and next steps. `CHANGELOG.md` remains the engineering change record. |
 | `AGENTS.md` | Practical instructions for coding agents and future contributors. |
 
 ## Contribution Boundaries

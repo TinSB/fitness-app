@@ -27,11 +27,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in ios/packages/*; do
-            if [ -f "$package/Package.swift" ]; then
-              echo "== swift test: $package =="
-              (cd "$package" && swift test)
-            fi
+          # Explicit test surface: a package silently vanishing must fail CI,
+          # and a new package must be registered here before it counts as tested.
+          EXPECTED_PACKAGES="RedeL10n RedeWidgetShared"
+          for name in $EXPECTED_PACKAGES; do
+            echo "== swift test: ios/packages/$name =="
+            (cd "ios/packages/$name" && swift test)
+          done
+          for package in ios/packages/*/; do
+            [ -d "$package" ] || continue
+            name="$(basename "$package")"
+            case " $EXPECTED_PACKAGES " in
+              *" $name "*) ;;
+              *) echo "::error::ios/packages/$name is not in EXPECTED_PACKAGES — register it in this workflow"; exit 1 ;;
+            esac
           done
 
       - name: Build iOS app

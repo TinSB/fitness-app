@@ -17,6 +17,7 @@
 | **产品需求 PRD** | `docs/REDE_PRD.md` | 产品需求真源:给谁做/解决什么/功能需求(FR 编号+用户故事+验收)/优先级(MVP·FF·LATER·GATE)/NFR/指标/发布映射。引擎合同以系统逻辑为准,架构以 Master 为准,商业节奏以 Roadmap 为准 | 任何产品范围 / 功能优先级 / 验收标准 / 发布映射变化 |
 | **MVP 实现** | `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP 最小训练闭环的实现执行层:范围 IN/OUT · slice 队列 · 验收 · TestFlight 上线 gate · 进度追踪。是 Roadmap P1 的执行清单,不凌驾架构/系统逻辑。**有界活文档:MVP 经用户确认全部完成后,按其 §11 终局流程留痕→回收→解除登记→删除,不长期留存;接棒 = PRD + 基于 PRD 与 MVP 完成度的开发规划(届时另登记)** | 任何 slice 状态 / MVP 范围 / 上线形态 / 里程碑顺序变化;MVP 确认达成 → 执行 §11 终局自清洁 |
 | **变更日志** | `CHANGELOG.md` | 逐次改动记录 | 每次 PR |
+| **开发者日志** | `DEV_LOG.md` | 给不读代码的产品所有者的中文活日志:每条记录目标、做了什么、用户可见影响、证据路径、风险与下一步;服务营销素材、审查与复盘。与 `CHANGELOG.md` 分工:CHANGELOG 记 per-PR 工程事实(英文),DEV_LOG 讲用户视角叙事——现有文档不承载此职责,故单独登记 | 每个 slice / 每次有效操作的 PR |
 
 ## 二、参考文档(留存 · 非每次更新)
 - `docs/REDE_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
