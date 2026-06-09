@@ -7,19 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */; };
-		81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */; };
-		81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */; };
-		81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */; };
+		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
+		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
+		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
+		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
+		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		81ACFD492FC935D0000989A7 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 81ACFD482FC935D0000989A7 /* RedeTrainingDecision */; };
-		81ACFD4B2FC959E3000989A7 /* FocusModeMvpState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */; };
-		81ACFD4D2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */; };
-		81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */; };
-		81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */; };
-		81ACFD532FC95B10000989A7 /* FocusSessionCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */; };
-		81ACFD552FC95B20000989A7 /* FocusSavedSessionPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */; };
 		AA00000000000000000000E2 /* RedeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* RedeApp.swift */; };
-		AA00000000000000000000E4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E3 /* ContentView.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
 		AA0000000000000000000111 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000101 /* RedeDomain */; };
 		AA0000000000000000000112 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000102 /* RedeDataHealth */; };
@@ -28,20 +22,8 @@
 		AA0000000000000000000116 /* RedeBackup in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000106 /* RedeBackup */; };
 		AA0000000000000000000117 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* RedeL10n */; };
 		AA0000000000000000000118 /* RedeUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000108 /* RedeUIKit */; };
-		B500000000000000000000A2 /* TodayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000A1 /* TodayRootView.swift */; };
-		B500000000000000000000B2 /* TrainingRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000B1 /* TrainingRootView.swift */; };
-		B500000000000000000000C2 /* HistoryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000C1 /* HistoryRootView.swift */; };
-		B500000000000000000000D2 /* PlanRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000D1 /* PlanRootView.swift */; };
-		B500000000000000000000E2 /* ProfileRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000E1 /* ProfileRootView.swift */; };
-		B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */; };
-		B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */; };
-		C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */; };
-		CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */; };
 		CC00000000000000000000D2 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000000D1 /* RedeLocalSnapshot */; };
-		DD00000000000000000000A2 /* RestReminderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000A1 /* RestReminderModel.swift */; };
-		DD00000000000000000000B2 /* RestReminderSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000000000000B1 /* RestReminderSection.swift */; };
 		DD00000000000000000000D2 /* RedeNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000D1 /* RedeNotifications */; };
-		EE00000000000000000000A2 /* WidgetSnapshotWriterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */; };
 		EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* RedeWidgetBundle.swift */; };
 		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
 		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -74,34 +56,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreviewData.swift; sourceTree = "<group>"; };
-		81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeExerciseCard.swift; sourceTree = "<group>"; };
-		81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingDecisionSummaryView.swift; sourceTree = "<group>"; };
-		81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeShellView.swift; sourceTree = "<group>"; };
-		81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeMvpState.swift; sourceTree = "<group>"; };
-		81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeStatusSurfaceView.swift; sourceTree = "<group>"; };
-		81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionProgressView.swift; sourceTree = "<group>"; };
-		81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSetChecklistView.swift; sourceTree = "<group>"; };
-		81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCompletionView.swift; sourceTree = "<group>"; };
-		81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionPreviewView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B2 /* Rede.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rede.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
-		AA00000000000000000000E3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B500000000000000000000A1 /* TodayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000B1 /* TrainingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000C1 /* HistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000D1 /* PlanRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000E1 /* ProfileRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRootView.swift; sourceTree = "<group>"; };
-		B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportModel.swift; sourceTree = "<group>"; };
-		B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitBodyWeightImportSection.swift; sourceTree = "<group>"; };
 		B500000000000000000000F5 /* Rede.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rede.entitlements; sourceTree = "<group>"; };
-		C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionHistoryView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSavedSessionDetailView.swift; sourceTree = "<group>"; };
-		DD00000000000000000000A1 /* RestReminderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderModel.swift; sourceTree = "<group>"; };
-		DD00000000000000000000B1 /* RestReminderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestReminderSection.swift; sourceTree = "<group>"; };
-		EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriterModel.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A3 /* RedeWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWidgetBundle.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -161,32 +125,14 @@
 			isa = PBXGroup;
 			children = (
 				AA00000000000000000000E1 /* RedeApp.swift */,
-				AA00000000000000000000E3 /* ContentView.swift */,
+				CA00000000000000000000A1 /* RootTabView.swift */,
+				CA00000000000000000000A2 /* TodayTabView.swift */,
+				CA00000000000000000000A3 /* TrainTabView.swift */,
+				CA00000000000000000000A4 /* ProgressTabView.swift */,
+				CA00000000000000000000A5 /* PlanTabView.swift */,
 				AA00000000000000000000E6 /* Assets.xcassets */,
 				AA00000000000000000000E5 /* Info.plist */,
-				81ACFD3F2FC93571000989A7 /* FocusModePreviewData.swift */,
-				81ACFD412FC9357F000989A7 /* FocusModeExerciseCard.swift */,
-				81ACFD432FC9358B000989A7 /* TrainingDecisionSummaryView.swift */,
-				81ACFD452FC9359C000989A7 /* FocusModeShellView.swift */,
-				81ACFD4A2FC959E3000989A7 /* FocusModeMvpState.swift */,
-				81ACFD4C2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift */,
-				81ACFD4E2FC959FB000989A7 /* FocusSessionProgressView.swift */,
-				81ACFD502FC95A08000989A7 /* FocusSetChecklistView.swift */,
-				81ACFD522FC95B10000989A7 /* FocusSessionCompletionView.swift */,
-				81ACFD542FC95B20000989A7 /* FocusSavedSessionPreviewView.swift */,
-				C900000000000000000000C1 /* FocusSavedSessionHistoryView.swift */,
-				CA00000000000000000000C1 /* FocusSavedSessionDetailView.swift */,
-				B500000000000000000000A1 /* TodayRootView.swift */,
-				B500000000000000000000B1 /* TrainingRootView.swift */,
-				B500000000000000000000C1 /* HistoryRootView.swift */,
-				B500000000000000000000D1 /* PlanRootView.swift */,
-				B500000000000000000000E1 /* ProfileRootView.swift */,
-				B500000000000000000000F1 /* HealthKitBodyWeightImportModel.swift */,
-				B500000000000000000000F3 /* HealthKitBodyWeightImportSection.swift */,
 				B500000000000000000000F5 /* Rede.entitlements */,
-				DD00000000000000000000A1 /* RestReminderModel.swift */,
-				DD00000000000000000000B1 /* RestReminderSection.swift */,
-				EE00000000000000000000A1 /* WidgetSnapshotWriterModel.swift */,
 			);
 			path = Rede;
 			sourceTree = "<group>";
@@ -327,30 +273,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81ACFD4D2FC959F2000989A7 /* FocusModeStatusSurfaceView.swift in Sources */,
 				AA00000000000000000000E2 /* RedeApp.swift in Sources */,
-				81ACFD4B2FC959E3000989A7 /* FocusModeMvpState.swift in Sources */,
-				81ACFD462FC9359C000989A7 /* FocusModeShellView.swift in Sources */,
-				81ACFD442FC9358B000989A7 /* TrainingDecisionSummaryView.swift in Sources */,
-				81ACFD512FC95A08000989A7 /* FocusSetChecklistView.swift in Sources */,
-				81ACFD532FC95B10000989A7 /* FocusSessionCompletionView.swift in Sources */,
-				81ACFD552FC95B20000989A7 /* FocusSavedSessionPreviewView.swift in Sources */,
-				C900000000000000000000C2 /* FocusSavedSessionHistoryView.swift in Sources */,
-				CA00000000000000000000C2 /* FocusSavedSessionDetailView.swift in Sources */,
-				81ACFD422FC9357F000989A7 /* FocusModeExerciseCard.swift in Sources */,
-				81ACFD4F2FC959FB000989A7 /* FocusSessionProgressView.swift in Sources */,
-				AA00000000000000000000E4 /* ContentView.swift in Sources */,
-				81ACFD402FC93571000989A7 /* FocusModePreviewData.swift in Sources */,
-				B500000000000000000000A2 /* TodayRootView.swift in Sources */,
-				B500000000000000000000B2 /* TrainingRootView.swift in Sources */,
-				B500000000000000000000C2 /* HistoryRootView.swift in Sources */,
-				B500000000000000000000D2 /* PlanRootView.swift in Sources */,
-				B500000000000000000000E2 /* ProfileRootView.swift in Sources */,
-				B500000000000000000000F2 /* HealthKitBodyWeightImportModel.swift in Sources */,
-				B500000000000000000000F4 /* HealthKitBodyWeightImportSection.swift in Sources */,
-				DD00000000000000000000A2 /* RestReminderModel.swift in Sources */,
-				DD00000000000000000000B2 /* RestReminderSection.swift in Sources */,
-				EE00000000000000000000A2 /* WidgetSnapshotWriterModel.swift in Sources */,
+				CA00000000000000000000B1 /* RootTabView.swift in Sources */,
+				CA00000000000000000000B2 /* TodayTabView.swift in Sources */,
+				CA00000000000000000000B3 /* TrainTabView.swift in Sources */,
+				CA00000000000000000000B4 /* ProgressTabView.swift in Sources */,
+				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
