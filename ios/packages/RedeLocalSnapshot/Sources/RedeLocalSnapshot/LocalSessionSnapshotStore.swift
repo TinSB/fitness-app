@@ -5,7 +5,7 @@
 // app-local JSON store for completed Focus sessions. Everything it does stays
 // inside one directory under the app sandbox's Application Support:
 //
-//   <Application Support>/RedeLocalSnapshots/
+//   <Application Support>/IronPathLocalSnapshots/
 //     focus-session-0001-normal.json   ← append-only history entries
 //     focus-session-0002-deloadWeek.json
 //     focus-session-latest.json         ← rolling "latest" pointer (overwritten)
@@ -134,7 +134,7 @@ public struct LocalSessionSnapshotStore {
 
     // MARK: - Naming policy (all derived from this single prefix)
 
-    static let directoryName = "RedeLocalSnapshots"
+    static let directoryName = "IronPathLocalSnapshots"
     /// Every file this store owns starts with this prefix. clear() and the
     /// history listing are both scoped by it.
     static let filePrefix = "focus-session-"
