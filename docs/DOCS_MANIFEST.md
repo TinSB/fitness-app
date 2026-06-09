@@ -14,13 +14,14 @@
 | **产品文案** | `docs/REDE_PRODUCT_COPY_BASELINE.md` | 产品定位 · 双语 voice/tone · UI / paywall / App Store / v0 文案基底 · 风险禁区 | 任何用户可见文案 / 双语 locale / onboarding / paywall / App Store 素材 / 原型生成文案变更 |
 | **产品设计语言** | `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` | 视觉品牌 · 色彩 / 字体 / 形状 / 动效 · 核心组件隐喻 · App / landing / widget / v0 视觉生成基底；文案文档只管语言,视觉系统单独成文 | 任何用户可见 UI 视觉方向 / 原型生成 / App Store 截图 / landing page / widget 设计变更 |
 | **路线图** | `COMMERCIALIZATION_ROADMAP.md` | 商业化 + 外部付费意向验证 + 干净重写路线 + 待办优先级 | 任何阶段 / 优先级变化 |
-| **MVP 实现** | `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP 最小训练闭环的实现执行层:范围 IN/OUT · slice 队列 · 验收 · TestFlight 上线 gate · 进度追踪。是 Roadmap P1 的执行清单,不凌驾架构/系统逻辑 | 任何 slice 状态 / MVP 范围 / 上线形态 / 里程碑顺序变化 |
+| **MVP 实现** | `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP 最小训练闭环的实现执行层:范围 IN/OUT · slice 队列 · 验收 · TestFlight 上线 gate · 进度追踪。是 Roadmap P1 的执行清单,不凌驾架构/系统逻辑。**有界活文档:MVP 经用户确认全部完成后,按其 §11 终局流程留痕→回收→解除登记→删除,不长期留存;接棒 = PRD + 基于 PRD 与 MVP 完成度的开发规划(届时另登记)** | 任何 slice 状态 / MVP 范围 / 上线形态 / 里程碑顺序变化;MVP 确认达成 → 执行 §11 终局自清洁 |
 | **变更日志** | `CHANGELOG.md` | 逐次改动记录 | 每次 PR |
 
 ## 二、参考文档(留存 · 非每次更新)
 - `docs/REDE_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
 - `docs/US_MARKET_CONSUMER_ANALYSIS.md` — Diet Companion / Larder 饮食市场消费者研究;不是 Rede strength-training 的功能、定价或 GTM 证据
 - `docs/REDE_iOS_DECISION_CIRCUIT.html` — 系统回路视觉参考,不得覆盖 `docs/REDE_iOS_SYSTEM_LOGIC.md` 或 Master Architecture
+- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + rede-app 整合稿 + rede-landing-mocks)— MVP 核心页/推送/widget/分享卡/落地页的 v0 HTML 实现参照;视觉真源仍是 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`,不得覆盖系统逻辑/架构/MVP 实现文档
 - **饮食子项目**:`docs/DIET_COMPANION_*.md` + `docs/diet-companion-*.html` + `docs/larder-*.html` + `docs/LARDER_ICON_EXPRESSION_GUIDE.md` + `docs/BLENDER_CLAY_*.md`(Blender 黏土图标构建简报) + `docs/competitor-food-visual-spectrum.html`(竞品食物视觉光谱分析)(成型后另立自己的 manifest)
 - **Agent 支撑文档**:`docs/agents/domain.md` · `docs/agents/issue-tracker.md` · `docs/agents/triage-labels.md` — 只服务 agent 工作流和 issue triage,不覆盖产品/架构真源
 
