@@ -1,18 +1,23 @@
 import SwiftUI
+import RedeL10n
 
 // Plan — 按 rede-app.html #s-plan 复原。
 // 时间线:done 降级暗色,today 内嵌锻面卡为该屏重心,next 空心点;controls 钢色开关。
+// 文案走 RedeL10n 双语 key(M0-3)。
 
 struct PlanTabView: View {
     let onStartTraining: () -> Void
 
+    @Environment(LocaleStore.self) private var localeStore
     @State private var holdPlan = false
     @State private var lockBench = true
+
+    private var s: RedeStrings { localeStore.strings }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(title: "Plan", subtitle: "Hypertrophy · Week 3 of 5", trailingIcon: "slider.horizontal.3")
+                ScreenHeader(title: s.planTitle, subtitle: s.planPhaseLine, trailingIcon: "slider.horizontal.3")
 
                 // 周期点条: 5 周,前 2 ember
                 HStack(spacing: 5) {
@@ -44,11 +49,11 @@ struct PlanTabView: View {
             // Mon · done
             timelineRow(topLine: .clear, dot: AnyView(Circle().fill(Color.redeT4).frame(width: 13, height: 13)), bottomLine: .redeEmber) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Overline(text: "Mon · done")
-                    Text("Push A")
+                    Overline(text: s.planMonDone)
+                    Text(s.planPushA)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.redeT3)
-                    Text("14.2k lb · 1 PR")
+                    Text(s.planPushAMeta)
                         .font(.redeCaption)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT3)
@@ -59,11 +64,11 @@ struct PlanTabView: View {
             // Wed · done
             timelineRow(topLine: .redeEmber, dot: AnyView(Circle().fill(Color.redeT4).frame(width: 13, height: 13)), bottomLine: .redeEmber) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Overline(text: "Wed · done")
-                    Text("Pull A")
+                    Overline(text: s.planWedDone)
+                    Text(s.planPullA)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.redeT3)
-                    Text("11.8k lb")
+                    Text(s.planPullAMeta)
                         .font(.redeCaption)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT3)
@@ -74,18 +79,18 @@ struct PlanTabView: View {
             // Fri · today(内嵌锻面卡 = 该屏重心)
             timelineRow(topLine: .redeEmber, dot: AnyView(RingDot()), bottomLine: .redeHair) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Overline(text: "Fri · today", color: .redeEmber2)
+                    Overline(text: s.planFriToday, color: .redeEmber2)
                     ForgedCard(emberBarInset: 14) {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("Push B")
+                            Text(s.planPushB)
                                 .font(.system(size: 19, weight: .semibold))
                                 .foregroundStyle(Color.redeT1)
-                            Text("Overhead eased · 6 lifts · Bench 185 next")
+                            Text(s.planTodayMeta)
                                 .font(.redeCaption)
                                 .monospacedDigit()
                                 .foregroundStyle(Color.redeT3)
                                 .padding(.top, 4)
-                            EmbButton(icon: "play.fill", title: "Start training", iconSize: 14, fontSize: 13, action: onStartTraining)
+                            EmbButton(icon: "play.fill", title: s.startTraining, iconSize: 14, fontSize: 13, action: onStartTraining)
                                 .padding(.top, 12)
                         }
                         .padding(.leading, 11)
@@ -102,11 +107,11 @@ struct PlanTabView: View {
                     .overlay(Circle().stroke(Color.redeNextDot, lineWidth: 2))
             ), bottomLine: .clear) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Overline(text: "Sun · next")
-                    Text("Legs")
+                    Overline(text: s.planSunNext)
+                    Text(s.planLegs)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.redeT2)
-                    Text("Squat · RDL · Calf · 5 lifts")
+                    Text(s.planLegsMeta)
                         .font(.redeCaption)
                         .foregroundStyle(Color.redeT3)
                 }
@@ -132,15 +137,15 @@ struct PlanTabView: View {
 
     private var controlsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Overline(text: "Your controls")
+            Overline(text: s.planControlsTitle)
                 .padding(.bottom, 6)
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Hold the plan")
+                    Text(s.planHoldTitle)
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT1)
-                    Text("Stop auto-adjusting this week")
+                    Text(s.planHoldSub)
                         .font(.redeCaption)
                         .foregroundStyle(Color.redeT3)
                 }
@@ -154,11 +159,11 @@ struct PlanTabView: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Lock bench +5/week")
+                    Text(s.planLockTitle)
                         .font(.redeBody)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
-                    Text("Drive one lift on a fixed climb")
+                    Text(s.planLockSub)
                         .font(.redeCaption)
                         .foregroundStyle(Color.redeT3)
                 }
@@ -172,6 +177,7 @@ struct PlanTabView: View {
 
 #Preview {
     PlanTabView(onStartTraining: {})
+        .environment(LocaleStore())
         .background(Color.redeBase)
         .preferredColorScheme(.dark)
 }

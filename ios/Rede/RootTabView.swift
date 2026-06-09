@@ -1,4 +1,5 @@
 import SwiftUI
+import RedeL10n
 
 enum RootTab: Hashable {
     case today
@@ -9,8 +10,9 @@ enum RootTab: Hashable {
 
 struct RootTabView: View {
     @State private var selection: RootTab
+    @State private var localeStore: LocaleStore
 
-    // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan
+    // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan [-locale zh|en]
     init() {
         let args = ProcessInfo.processInfo.arguments
         var initial: RootTab = .today
@@ -23,6 +25,13 @@ struct RootTabView: View {
             }
         }
         _selection = State(initialValue: initial)
+
+        let store = LocaleStore()
+        if let idx = args.firstIndex(of: "-locale"), args.indices.contains(idx + 1),
+           let forced = RedeLocale(rawValue: args[idx + 1]) {
+            store.locale = forced
+        }
+        _localeStore = State(initialValue: store)
     }
 
     var body: some View {
@@ -45,6 +54,7 @@ struct RootTabView: View {
                 .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
         }
         .background(Color.redeBase.ignoresSafeArea())
+        .environment(localeStore)
         .preferredColorScheme(.dark)
     }
 }

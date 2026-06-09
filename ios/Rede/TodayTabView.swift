@@ -1,17 +1,28 @@
 import SwiftUI
+import RedeL10n
 
 // Today — 按 rede-app.html #s-today 复原。
 // 静态展示数据(D-B:判断句独占 hero,Load Plate 降为 20px 次级预览);M2 接引擎真数据,视觉不变。
+// 文案走 RedeL10n 双语 key(M0-3),中英原生稿。
 
 struct TodayTabView: View {
     let onStartTraining: () -> Void
 
+    @Environment(LocaleStore.self) private var localeStore
     @State private var reasonExpanded = false
+    @State private var showSettings = false
+
+    private var s: RedeStrings { localeStore.strings }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(title: "Today", subtitle: "Sat · Jun 8 · Week 3", trailingIcon: "gearshape")
+                ScreenHeader(
+                    title: s.todayTitle,
+                    subtitle: s.todayDateLine,
+                    trailingIcon: "gearshape",
+                    onTrailingTap: { showSettings = true }
+                )
 
                 heroCard
                     .padding(.horizontal, RedeSpace.page)
@@ -29,6 +40,10 @@ struct TodayTabView: View {
             .padding(.bottom, 78)
         }
         .background(Color.redeBase)
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet(store: localeStore)
+                .presentationDetents([.medium])
+        }
     }
 
     // HERO = 判断块(判断句唯一最大元素 + ember 左缘唯一口音)
@@ -37,10 +52,10 @@ struct TodayTabView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 7) {
                     Circle().fill(Color.redeRec).frame(width: 7, height: 7)
-                    Overline(text: "Ready to train", color: .redeRec2)
+                    Overline(text: s.todayReadyStatus, color: .redeRec2)
                 }
 
-                Text("Train today. Push A stays, pressing volume capped.")
+                Text(s.todayVerdict)
                     .font(.redeHeadline)
                     .tracking(RedeTracking.headline)
                     .lineSpacing(22 * 0.3)
@@ -51,8 +66,8 @@ struct TodayTabView: View {
                 // Load Plate(20px 次级读数)
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Overline(text: "Start here", color: .redeEmber2)
-                        Text("Bench press")
+                        Overline(text: s.todayStartHere, color: .redeEmber2)
+                        Text(s.exerciseBenchPress)
                             .font(.redeSubhead)
                             .foregroundStyle(Color.redeT1)
                             .padding(.top, 7)
@@ -61,7 +76,7 @@ struct TodayTabView: View {
                                 .font(.system(size: 20, weight: .semibold))
                                 .monospacedDigit()
                                 .foregroundStyle(Color.redeT1)
-                            Text("lb · ×5 · RIR 2")
+                            Text(s.todayLoadDetail)
                                 .font(.redeCallout)
                                 .monospacedDigit()
                                 .foregroundStyle(Color.redeT3)
@@ -71,13 +86,13 @@ struct TodayTabView: View {
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 8) {
-                        Text("then Incline DB")
+                        Text(s.todayThenIncline)
                             .font(.redeCaption)
                             .monospacedDigit()
                             .foregroundStyle(Color.redeT3)
                         HStack(spacing: 5) {
                             Rectangle().fill(Color.redeNeu).frame(width: 16, height: 2)
-                            Text("then Cable fly")
+                            Text(s.todayThenCable)
                                 .font(.redeCaption)
                                 .monospacedDigit()
                                 .foregroundStyle(Color.redeT3)
@@ -90,7 +105,7 @@ struct TodayTabView: View {
                         .padding(.top, 10)
                 }
 
-                EmbButton(icon: "play.fill", title: "Start training", action: onStartTraining)
+                EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
                     .padding(.top, 16)
             }
             .padding(.leading, 13)
@@ -103,12 +118,12 @@ struct TodayTabView: View {
     private var receiptSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Overline(text: "Rede training receipt")
+                Overline(text: s.todayReceiptTitle)
                 Spacer()
-                Overline(text: "Today").monospacedDigit()
+                Overline(text: s.todayReceiptTag).monospacedDigit()
             }
 
-            Text("Pressing volume is capped this week.")
+            Text(s.todayReceiptLine)
                 .font(.redeBody)
                 .lineSpacing(14 * 0.45)
                 .foregroundStyle(Color.redeT1)
@@ -118,7 +133,7 @@ struct TodayTabView: View {
                 withAnimation(.easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
             } label: {
                 HStack(spacing: 6) {
-                    Text(reasonExpanded ? "Hide reason" : "Why this call")
+                    Text(reasonExpanded ? s.todayHideReason : s.todayWhyThisCall)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 15))
                         .rotationEffect(.degrees(reasonExpanded ? 180 : 0))
@@ -132,23 +147,23 @@ struct TodayTabView: View {
             if reasonExpanded {
                 Grid(alignment: .topLeading, horizontalSpacing: 14, verticalSpacing: 8) {
                     GridRow {
-                        Overline(text: "Signal").padding(.top, 3)
-                        Text("Last overhead felt heavy · sleep 6.2h")
+                        Overline(text: s.receiptSignal).padding(.top, 3)
+                        Text(s.todaySignalLine)
                             .font(.redeCallout).monospacedDigit()
                             .foregroundStyle(Color.redeT2)
                     }
                     GridRow {
-                        Overline(text: "Change").padding(.top, 3)
-                        Text("Overhead 95→85 lb · bench holds")
+                        Overline(text: s.receiptChange).padding(.top, 3)
+                        Text(s.todayChangeLine)
                             .font(.redeCallout).monospacedDigit()
                             .foregroundStyle(Color.redeT2)
                     }
                     GridRow {
-                        Overline(text: "Control").padding(.top, 3)
+                        Overline(text: s.receiptControl).padding(.top, 3)
                         HStack(spacing: 7) {
-                            controlChip("Apply")
-                            controlChip("Hold")
-                            controlChip("Swap")
+                            controlChip(s.controlApply)
+                            controlChip(s.controlHold)
+                            controlChip(s.controlSwap)
                         }
                     }
                 }
@@ -171,7 +186,7 @@ struct TodayTabView: View {
     // Progress Rail: last → today → next
     private var progressRail: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Overline(text: "Bench · last to next")
+            Overline(text: s.todayRailTitle)
             ZStack(alignment: .top) {
                 GeometryReader { geo in
                     Rectangle()
@@ -184,16 +199,16 @@ struct TodayTabView: View {
                 HStack(alignment: .top, spacing: 0) {
                     railNode(dot: AnyView(Circle().fill(Color.redeT4).frame(width: 14, height: 14)),
                              value: "180×5", valueColor: .redeT3,
-                             label: "Jun 5", labelColor: .redeT4)
+                             label: s.railLastDate, labelColor: .redeT4)
                     railNode(dot: AnyView(RingDot()),
                              value: "185×5", valueColor: .redeT1,
-                             label: "Today", labelColor: .redeEmber2)
+                             label: s.railToday, labelColor: .redeEmber2)
                     railNode(dot: AnyView(
                         Circle().fill(Color.redeSurface)
                             .frame(width: 14, height: 14)
                             .overlay(Circle().stroke(Color.redeNextDot, lineWidth: 2))),
                              value: "190×5", valueColor: .redeT3,
-                             label: "Next", labelColor: .redeT4)
+                             label: s.railNext, labelColor: .redeT4)
                 }
             }
         }
@@ -214,6 +229,7 @@ struct TodayTabView: View {
 
 #Preview {
     TodayTabView(onStartTraining: {})
+        .environment(LocaleStore())
         .background(Color.redeBase)
         .preferredColorScheme(.dark)
 }

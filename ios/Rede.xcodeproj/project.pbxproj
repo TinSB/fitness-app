@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CC00000000000000000000B1 /* LocaleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A1 /* LocaleStore.swift */; };
+		CC00000000000000000000B2 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A2 /* SettingsSheet.swift */; };
 		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
 		CB00000000000000000000B2 /* RedeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A2 /* RedeComponents.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
@@ -58,6 +60,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CC00000000000000000000A1 /* LocaleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleStore.swift; sourceTree = "<group>"; };
+		CC00000000000000000000A2 /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A2 /* RedeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeComponents.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
@@ -129,6 +133,8 @@
 			isa = PBXGroup;
 			children = (
 				AA00000000000000000000E1 /* RedeApp.swift */,
+				CC00000000000000000000A1 /* LocaleStore.swift */,
+				CC00000000000000000000A2 /* SettingsSheet.swift */,
 				CB00000000000000000000A1 /* RedeTheme.swift */,
 				CB00000000000000000000A2 /* RedeComponents.swift */,
 				CA00000000000000000000A1 /* RootTabView.swift */,
@@ -280,6 +286,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000000E2 /* RedeApp.swift in Sources */,
+				CC00000000000000000000B1 /* LocaleStore.swift in Sources */,
+				CC00000000000000000000B2 /* SettingsSheet.swift in Sources */,
 				CB00000000000000000000B1 /* RedeTheme.swift in Sources */,
 				CB00000000000000000000B2 /* RedeComponents.swift in Sources */,
 				CA00000000000000000000B1 /* RootTabView.swift in Sources */,

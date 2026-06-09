@@ -1,7 +1,9 @@
 import SwiftUI
+import RedeL10n
 
 // Progress — 按 rede-app.html #s-progress 复原(Session/Week/Cycle 三段,默认 Week)。
 // 判断句靠字号不靠 ember;图表单色,唯一 ember 标记结论。M4 接引擎真数据,视觉不变。
+// 文案走 RedeL10n 双语 key(M0-3)。
 
 private struct ProgressScale {
     let verdict: String
@@ -14,47 +16,76 @@ private struct ProgressScale {
     let showMap: Bool
 }
 
-private let scales: [String: ProgressScale] = [
-    "Session": ProgressScale(
-        verdict: "Solid session. New bench PR.",
-        sub: "195 × 3 top set · est 1RM 214, +6 lb on the block.",
-        chartTitle: "Session · by lift",
-        bars: [("Bench", 96, "PR"), ("OHP", 54, nil), ("Incline", 72, nil), ("Triceps", 46, nil), ("Lateral", 60, nil)],
-        trend: nil, deload: nil,
-        caption: "Bench is the lift that moved — single ember marks the PR.",
-        showMap: false
-    ),
-    "Week": ProgressScale(
-        verdict: "Strong week. Back is lagging.",
-        sub: "Pulling volume +18%, but back still trails chest. One pull set added next week.",
-        chartTitle: "Weekly volume · by muscle",
-        bars: [("Chest", 82, nil), ("Back", 48, "−12%"), ("Shldr", 70, nil), ("Legs", 96, nil), ("Arms", 58, nil)],
-        trend: nil, deload: nil,
-        caption: "Back is the one to fix — single ember marks the conclusion.",
-        showMap: true
-    ),
-    "Cycle": ProgressScale(
-        verdict: "Block on track. Deload due.",
-        sub: "+9% e1RM across the block — week 5 is a planned deload.",
-        chartTitle: "Cycle · e1RM trend",
-        bars: nil,
-        trend: [40, 56, 72, 90], deload: 54,
-        caption: "Week 5 is a planned deload — single ember marks it.",
-        showMap: false
-    ),
-]
+private enum ScaleKind: Hashable {
+    case session, week, cycle
+}
 
 struct ProgressTabView: View {
-    @State private var scale = "Week"
+    @Environment(LocaleStore.self) private var localeStore
+    @State private var scale: ScaleKind = .week
 
-    private var data: ProgressScale { scales[scale]! }
+    private var s: RedeStrings { localeStore.strings }
+
+    private var data: ProgressScale {
+        switch scale {
+        case .session:
+            return ProgressScale(
+                verdict: s.sessionVerdict,
+                sub: s.sessionSub,
+                chartTitle: s.sessionChartTitle,
+                bars: [(s.liftBench, 96, "PR"), (s.liftOhp, 54, nil), (s.liftIncline, 72, nil), (s.liftTriceps, 46, nil), (s.liftLateral, 60, nil)],
+                trend: nil, deload: nil,
+                caption: s.sessionCaption,
+                showMap: false
+            )
+        case .week:
+            return ProgressScale(
+                verdict: s.weekVerdict,
+                sub: s.weekSub,
+                chartTitle: s.weekChartTitle,
+                bars: [(s.muscleChest, 82, nil), (s.muscleBack, 48, "−12%"), (s.muscleShoulders, 70, nil), (s.muscleLegs, 96, nil), (s.muscleArms, 58, nil)],
+                trend: nil, deload: nil,
+                caption: s.weekCaption,
+                showMap: true
+            )
+        case .cycle:
+            return ProgressScale(
+                verdict: s.cycleVerdict,
+                sub: s.cycleSub,
+                chartTitle: s.cycleChartTitle,
+                bars: nil,
+                trend: [40, 56, 72, 90], deload: 54,
+                caption: s.cycleCaption,
+                showMap: false
+            )
+        }
+    }
+
+    private var segOptions: [String] { [s.scaleSession, s.scaleWeek, s.scaleCycle] }
+
+    private var segSelection: Binding<String> {
+        Binding(
+            get: {
+                switch scale {
+                case .session: return s.scaleSession
+                case .week: return s.scaleWeek
+                case .cycle: return s.scaleCycle
+                }
+            },
+            set: { newValue in
+                if newValue == s.scaleSession { scale = .session }
+                else if newValue == s.scaleWeek { scale = .week }
+                else { scale = .cycle }
+            }
+        )
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(title: "Progress", trailingIcon: "calendar.badge.clock")
+                ScreenHeader(title: s.progressTitle, trailingIcon: "calendar.badge.clock")
 
-                SegControl(options: ["Session", "Week", "Cycle"], selection: $scale)
+                SegControl(options: segOptions, selection: segSelection)
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 16)
 
@@ -96,7 +127,7 @@ struct ProgressTabView: View {
                 if let bars = data.bars {
                     barChart(bars)
                 } else if let trend = data.trend, let deload = data.deload {
-                    TrendChart(points: trend, deload: deload)
+                    TrendChart(points: trend, deload: deload, deloadLabel: s.cycleDeload)
                         .frame(height: 120)
                         .frame(maxWidth: .infinity)
                 }
@@ -145,21 +176,21 @@ struct ProgressTabView: View {
     private var developmentSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Overline(text: "Development")
+                Overline(text: s.developmentTitle)
                 Spacer()
-                Text("Intermediate · balance 76")
+                Text(s.developmentSummary)
                     .font(.redeCaption)
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT3)
             }
             .padding(.bottom, 8)
 
-            levelRow("Legs", "Lv.15", divider: true)
-            levelRow("Arms", "Lv.11", divider: true)
-            levelRow("Chest", "Lv.10", divider: true)
+            levelRow(s.muscleLegs, "Lv.15", divider: true)
+            levelRow(s.muscleArms, "Lv.11", divider: true)
+            levelRow(s.muscleChest, "Lv.10", divider: true)
 
             HStack {
-                Text("Back").font(.redeBody).foregroundStyle(Color.redeT1)
+                Text(s.muscleBack).font(.redeBody).foregroundStyle(Color.redeT1)
                 Spacer()
                 HStack(spacing: 4) {
                     Text("Lv.8 → Lv.9").font(.redeBody).monospacedDigit()
@@ -199,32 +230,25 @@ private struct BodyMap: View {
 
             func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * sx, y: y * sy) }
 
-            // 头
             context.fill(Path(ellipseIn: CGRect(x: 26 * sx, y: 3 * sy, width: 18 * sx, height: 18 * sy)), with: .color(neu))
-            // 肩
             var shoulders = Path()
             shoulders.move(to: pt(25, 21)); shoulders.addLine(to: pt(45, 21))
             shoulders.addLine(to: pt(49, 33)); shoulders.addLine(to: pt(21, 33)); shoulders.closeSubpath()
             context.fill(shoulders, with: .color(neu))
-            // 手臂
             context.fill(Path(roundedRect: CGRect(x: 9 * sx, y: 30 * sy, width: 9 * sx, height: 42 * sy), cornerRadius: 4.5 * sx), with: .color(neu))
             context.fill(Path(roundedRect: CGRect(x: 52 * sx, y: 30 * sy, width: 9 * sx, height: 42 * sy), cornerRadius: 4.5 * sx), with: .color(neu))
-            // 背阔肌 = 唯一 ember
             var lats = Path()
             lats.move(to: pt(21, 33)); lats.addLine(to: pt(49, 33))
             lats.addLine(to: pt(45, 71)); lats.addLine(to: pt(25, 71)); lats.closeSubpath()
             context.fill(lats, with: .color(ember))
-            // 腰
             var waist = Path()
             waist.move(to: pt(27, 71)); waist.addLine(to: pt(43, 71))
             waist.addLine(to: pt(41, 86)); waist.addLine(to: pt(29, 86)); waist.closeSubpath()
             context.fill(waist, with: .color(neu))
-            // 臀
             var hips = Path()
             hips.move(to: pt(27, 86)); hips.addLine(to: pt(43, 86))
             hips.addLine(to: pt(44, 99)); hips.addLine(to: pt(26, 99)); hips.closeSubpath()
             context.fill(hips, with: .color(neu))
-            // 腿
             context.fill(Path(roundedRect: CGRect(x: 27 * sx, y: 99 * sy, width: 7.6 * sx, height: 45 * sy), cornerRadius: 4 * sx), with: .color(neu))
             context.fill(Path(roundedRect: CGRect(x: 35.4 * sx, y: 99 * sy, width: 7.6 * sx, height: 45 * sy), cornerRadius: 4 * sx), with: .color(neu))
         }
@@ -235,6 +259,7 @@ private struct BodyMap: View {
 private struct TrendChart: View {
     let points: [CGFloat]
     let deload: CGFloat
+    let deloadLabel: String
 
     var body: some View {
         Canvas { context, size in
@@ -261,7 +286,7 @@ private struct TrendChart: View {
             context.fill(Path(ellipseIn: CGRect(x: dx - 4.5, y: dy - 4.5, width: 9, height: 9)), with: .color(.redeEmber))
 
             context.draw(
-                Text("Deload").font(.system(size: 11)).foregroundColor(.redeEmber2),
+                Text(deloadLabel).font(.system(size: 11)).foregroundColor(.redeEmber2),
                 at: CGPoint(x: dx, y: dy - 16)
             )
         }
@@ -270,6 +295,7 @@ private struct TrendChart: View {
 
 #Preview {
     ProgressTabView()
+        .environment(LocaleStore())
         .background(Color.redeBase)
         .preferredColorScheme(.dark)
 }

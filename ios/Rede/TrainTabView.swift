@@ -1,7 +1,9 @@
 import SwiftUI
+import RedeL10n
 
 // Train — 按 rede-app.html #s-train 复原(静态 set 态)。
 // Rest morph、Hold 交互、Finish confirm/summary/share overlay 属 M3 训练流;M3 接入时视觉不变。
+// 文案走 RedeL10n 双语 key(M0-3)。
 
 private struct SetRow: Identifiable {
     let id: Int
@@ -13,6 +15,10 @@ private struct SetRow: Identifiable {
 }
 
 struct TrainTabView: View {
+    @Environment(LocaleStore.self) private var localeStore
+
+    private var s: RedeStrings { localeStore.strings }
+
     private let sets: [SetRow] = [
         SetRow(id: 1, weight: 185, reps: 5, rir: 2, done: true, active: false),
         SetRow(id: 2, weight: 185, reps: 4, rir: 0, done: true, active: false),
@@ -54,14 +60,14 @@ struct TrainTabView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Push A")
+                Text(s.trainDayTitle)
                     .font(.redeHeadline)
                     .tracking(RedeTracking.headline)
                     .foregroundStyle(Color.redeT1)
-                Overline(text: "Exercise 1 of 6 · Set 3 of 4").monospacedDigit()
+                Overline(text: s.trainProgressLine).monospacedDigit()
             }
             Spacer()
-            Text("Finish")
+            Text(s.trainFinish)
                 .font(.system(size: 13))
                 .foregroundStyle(Color.redeT3)
                 .padding(.horizontal, 12)
@@ -75,7 +81,7 @@ struct TrainTabView: View {
     private var heroCard: some View {
         ForgedCard(emberBarInset: 18, showReg: true) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Bench press")
+                Text(s.exerciseBenchPress)
                     .font(.redeSubhead)
                     .foregroundStyle(Color.redeT1)
 
@@ -94,14 +100,14 @@ struct TrainTabView: View {
                 .padding(.top, 8)
 
                 HStack {
-                    Text("Eased from 185 after a slow set 2")
+                    Text(s.trainWhyLine)
                         .font(.redeCaption)
                         .monospacedDigit()
                         .lineSpacing(12 * 0.45)
                         .foregroundStyle(Color.redeT3)
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    SteelButton(title: "Hold 185", action: {})
+                    SteelButton(title: s.trainHold185, action: {})
                 }
                 .padding(.top, 16)
                 .overlay(alignment: .top) {
@@ -110,7 +116,7 @@ struct TrainTabView: View {
                 }
 
                 HStack(spacing: 8) {
-                    EmbButton(icon: "checkmark", title: "Log set", action: {})
+                    EmbButton(icon: "checkmark", title: s.trainLogSet, action: {})
                     HStack(spacing: 5) {
                         Image(systemName: "clock").font(.system(size: 15))
                         Text("2:00").monospacedDigit()
@@ -136,10 +142,10 @@ struct TrainTabView: View {
     private var setTable: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 0) {
-                Overline(text: "Set").frame(width: 34, alignment: .leading)
-                Overline(text: "Weight").frame(maxWidth: .infinity, alignment: .leading)
-                Overline(text: "Reps").frame(width: 44)
-                Overline(text: "RIR").frame(width: 34)
+                Overline(text: s.trainColSet).frame(width: 34, alignment: .leading)
+                Overline(text: s.trainColWeight).frame(maxWidth: .infinity, alignment: .leading)
+                Overline(text: s.trainColReps).frame(width: 44)
+                Overline(text: s.trainColRir).frame(width: 34)
                 Spacer().frame(width: 16)
             }
             .padding(.bottom, 8)
@@ -148,7 +154,7 @@ struct TrainTabView: View {
                 setRowView(row)
             }
 
-            Text("Next · Incline DB press · 3 × 8")
+            Text(s.trainNextUp)
                 .font(.redeCaption)
                 .monospacedDigit()
                 .foregroundStyle(Color.redeT3)
@@ -195,6 +201,7 @@ struct TrainTabView: View {
 
 #Preview {
     TrainTabView()
+        .environment(LocaleStore())
         .background(Color.redeBase)
         .preferredColorScheme(.dark)
 }

@@ -263,13 +263,17 @@ struct SteelToggle: View {
 
 struct RedeTabBar: View {
     @Binding var selection: RootTab
+    @Environment(LocaleStore.self) private var localeStore
 
-    private let items: [(tab: RootTab, icon: String, label: String)] = [
-        (.today, "house", "Today"),
-        (.train, "dumbbell", "Train"),
-        (.progress, "chart.line.uptrend.xyaxis", "Progress"),
-        (.plan, "calendar", "Plan"),
-    ]
+    private var items: [(tab: RootTab, icon: String, label: String)] {
+        let s = localeStore.strings
+        return [
+            (.today, "house", s.tabToday),
+            (.train, "dumbbell", s.tabTrain),
+            (.progress, "chart.line.uptrend.xyaxis", s.tabProgress),
+            (.plan, "calendar", s.tabPlan),
+        ]
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -302,6 +306,7 @@ struct ScreenHeader: View {
     let title: String
     var subtitle: String? = nil
     var trailingIcon: String? = nil
+    var onTrailingTap: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .top) {
@@ -317,10 +322,16 @@ struct ScreenHeader: View {
             }
             Spacer()
             if let trailingIcon {
-                Image(systemName: trailingIcon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color.redeT4)
-                    .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
+                Button {
+                    onTrailingTap?()
+                } label: {
+                    Image(systemName: trailingIcon)
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.redeT4)
+                        .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
+                }
+                .buttonStyle(.plain)
+                .disabled(onTrailingTap == nil)
             }
         }
         .padding(.horizontal, RedeSpace.page)
