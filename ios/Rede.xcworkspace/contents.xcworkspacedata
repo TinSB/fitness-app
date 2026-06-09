@@ -8,21 +8,9 @@
       location = "group:packages/RedeDomain">
    </FileRef>
    <FileRef
-      location = "group:packages/RedeDataHealth">
-   </FileRef>
-   <FileRef
-      location = "group:packages/RedePersistence">
-   </FileRef>
-   <FileRef
-      location = "group:packages/RedeHealthKit">
-   </FileRef>
-   <FileRef
-      location = "group:packages/RedeBackup">
-   </FileRef>
-   <FileRef
       location = "group:packages/RedeL10n">
    </FileRef>
    <FileRef
-      location = "group:packages/RedeUIKit">
+      location = "group:packages/RedeWidgetShared">
    </FileRef>
 </Workspace>

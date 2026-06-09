@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 8,
+  "futureTopLevelKey": { "nested": [1, 2.5, "three", null, true] },
+  "activeSession": null,
+  "templates": [{ "id": "tpl-1", "unpromotedTemplateKey": "kept" }],
+  "userProfile": {
+    "id": "user-1",
+    "name": "样例用户",
+    "sex": "M",
+    "age": 30,
+    "heightCm": 178,
+    "weightKg": 74.5,
+    "trainingLevel": "intermediate",
+    "primaryGoal": "hypertrophy",
+    "weeklyTrainingDays": 4,
+    "sessionDurationMin": 75,
+    "injuryFlags": ["knee"],
+    "futureProfileKey": "kept-verbatim"
+  },
+  "programTemplate": {
+    "id": "prog-1",
+    "primaryGoal": "hypertrophy",
+    "splitType": "upper-lower",
+    "daysPerWeek": 4,
+    "correctionStrategy": { "opaque": true },
+    "futureProgramKey": 42
+  },
+  "history": [
+    {
+      "id": "session-1",
+      "date": "2026-06-01",
+      "startedAt": "2026-06-01T10:00:00.000Z",
+      "finishedAt": "2026-06-01T11:05:00.000Z",
+      "durationMin": 65,
+      "completed": true,
+      "futureSessionKey": { "deep": "kept" },
+      "exercises": [
+        {
+          "id": "ex-1",
+          "exerciseId": "barbell-bench-press",
+          "name": "杠铃卧推",
+          "futureExerciseKey": [true, false],
+          "sets": [
+            {
+              "id": "set-1",
+              "setIndex": 0,
+              "exerciseId": "barbell-bench-press",
+              "weight": 80,
+              "reps": 8,
+              "rir": 2,
+              "completedAt": "2026-06-01T10:12:00.000Z",
+              "done": true,
+              "completionStatus": "completed",
+              "futureSetKey": "kept-at-set-level"
+            },
+            {
+              "id": "set-2",
+              "setIndex": 1,
+              "weight": 82.5,
+              "reps": 6,
+              "rir": "legacy-string-rir",
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    "history-array-keeps-non-object-elements-verbatim"
+  ]
+}
