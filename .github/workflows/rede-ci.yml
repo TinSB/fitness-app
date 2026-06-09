@@ -1,4 +1,4 @@
-name: IronPath CI
+name: Rede CI
 
 on:
   pull_request:
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: List Xcode project
-        run: xcodebuild -list -project ios/IronPath.xcodeproj
+        run: xcodebuild -list -project ios/Rede.xcodeproj
 
       - name: Swift package tests
         shell: bash
@@ -37,7 +37,7 @@ jobs:
       - name: Build iOS app
         run: |
           xcodebuild \
-            -project ios/IronPath.xcodeproj \
-            -scheme IronPath \
+            -project ios/Rede.xcodeproj \
+            -scheme Rede \
             -destination 'generic/platform=iOS Simulator' \
             build

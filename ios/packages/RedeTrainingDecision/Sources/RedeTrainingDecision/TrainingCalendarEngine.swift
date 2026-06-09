@@ -184,7 +184,7 @@ public enum TrainingCalendarEngine {
     /// ```
     /// Branch 4 (`getTimezoneOffset`) is the only timezone-coupled path. The goldens are
     /// generated/checked under `TZ=America/New_York` (the app's fixed western civil zone —
-    /// see `.github/workflows/ironpath-ci.yml`), so `getTimezoneOffset()` returns the NY
+    /// see `.github/workflows/rede-ci.yml`), so `getTimezoneOffset()` returns the NY
     /// offset (EST 300 / EDT 240). Per the AN-1 civil degradation this port subtracts the
     /// FIXED EST western offset (`nyStandardOffsetMin = 300`); every parity fixture timestamp
     /// is UTC-hour ≥ 06:00, so the resulting NY-local calendar date is invariant to the
