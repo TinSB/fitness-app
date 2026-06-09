@@ -1,0 +1,112 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Plan · week / cycle</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{--color-background-secondary:#0c0b08;--color-text-primary:#ECE6D8;--color-text-secondary:#9C9484;--color-text-tertiary:#6B6457;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}
+body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}
+.stage{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.cap{font-size:12px;color:var(--color-text-secondary);text-align:center;margin-bottom:9px}
+.ph{width:320px;height:712px;border-radius:32px;overflow:hidden;position:relative;background:#15130F;box-sizing:border-box}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 4px;font-size:12px;color:#9C9484}
+.ov{font-size:11px;letter-spacing:2.2px;color:#6B6457}
+.tb{position:absolute;left:0;right:0;bottom:0;height:58px;background:#100E0B;border-top:1px solid #221F1B;display:flex;justify-content:space-around;align-items:center;padding-bottom:6px}
+.tb a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457}
+.tb i{font-size:21px}
+/* path-led hero：贯穿的 Emberline 路径 */
+.row{display:flex;gap:14px;padding:0 20px;position:relative}
+.node{flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center;position:relative}
+.line{width:2px;flex:1;background:#2A261F}
+.line.done{background:#E1652B}
+.dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;margin:2px 0}
+.dot.done{background:#6B6457}
+.dot.now{background:#E1652B;box-shadow:0 0 0 4px rgba(225,101,43,.16)}
+.dot.future{background:#15130F;border:2px solid #3A352B}
+.body{flex:1;padding-bottom:16px}
+.day{font-size:10px;letter-spacing:1.4px;color:#6B6457}
+.sess{font-size:15px;font-weight:600;color:#ECE6D8;margin-top:2px}
+.meta{font-size:12px;color:#6B6457;margin-top:2px}
+.lockrow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #221F1B}
+.tg{width:38px;height:22px;border-radius:11px;position:relative;flex:0 0 auto}
+.tg i{position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#15130F}
+</style></head><body>
+<div class="stage">
+
+  <div>
+    <div class="cap">Plan · 周/周期（path-led Emberline 路径 + 内嵌"下一次"状态块）</div>
+    <div class="ph">
+      <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 18px 4px">
+        <div><div style="font-size:22px;font-weight:600;color:#ECE6D8">Plan</div><div class="num" style="font-size:11px;letter-spacing:1.4px;color:#6B6457;margin-top:4px">HYPERTROPHY · WEEK 3 OF 5</div></div>
+        <i class="ti ti-adjustments" style="font-size:19px;color:#6B6457"></i>
+      </div>
+
+      <!-- 周进度刻度 -->
+      <div style="display:flex;gap:5px;padding:12px 20px 16px">
+        <span style="flex:1;height:4px;border-radius:2px;background:#E1652B"></span>
+        <span style="flex:1;height:4px;border-radius:2px;background:#E1652B"></span>
+        <span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span>
+        <span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span>
+        <span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span>
+      </div>
+
+      <!-- HERO = 路径（贯穿 ember 从已完成 → 今天 → 未来；全屏唯一 ember 路线） -->
+      <div class="row"><div class="node"><span class="line done" style="background:transparent"></span><span class="dot done"></span><span class="line done"></span></div>
+        <div class="body"><div class="day">MON · DONE</div><div class="sess" style="color:#9C9484">Push A</div><div class="meta num">14.2k lb · 1 PR</div></div></div>
+
+      <div class="row"><div class="node"><span class="line done"></span><span class="dot done"></span><span class="line done"></span></div>
+        <div class="body"><div class="day">WED · DONE</div><div class="sess" style="color:#9C9484">Pull A</div><div class="meta num">11.8k lb</div></div></div>
+
+      <!-- 今天：内嵌"下一次"状态块（复用 Today 式块） -->
+      <div class="row"><div class="node"><span class="line done"></span><span class="dot now"></span><span class="line"></span></div>
+        <div class="body">
+          <div class="day" style="color:#F0875A">FRI · TODAY</div>
+          <div style="background:#1F1C17;border-top:1px solid rgba(236,230,216,0.10);border-radius:12px;padding:13px 13px;margin-top:7px;position:relative">
+            <div style="position:absolute;left:0;top:13px;bottom:13px;width:2px;background:#E1652B;border-radius:2px"></div>
+            <div style="padding-left:10px">
+              <div style="font-size:15px;font-weight:600;color:#ECE6D8">Push B</div>
+              <div style="font-size:12px;color:#9C9484;margin-top:3px">Overhead eased · 6 lifts · Bench 185 next</div>
+              <div class="num" style="margin-top:11px;background:#E1652B;color:#15130F;font-size:13px;font-weight:600;padding:9px;border-radius:9px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-player-play" style="font-size:14px"></i>Start training</div>
+            </div>
+          </div>
+        </div></div>
+
+      <div class="row"><div class="node"><span class="line"></span><span class="dot future"></span><span class="line" style="background:transparent"></span></div>
+        <div class="body" style="padding-bottom:6px"><div class="day">SUN · NEXT</div><div class="sess" style="color:#C9C2B4">Legs</div><div class="meta">Squat · RDL · Calf · 5 lifts</div></div></div>
+
+      <div style="height:1px;background:#221F1B;margin:4px 20px 12px"></div>
+
+      <!-- 控制权：hold / lock（恒在，破 Fitbod 失控） -->
+      <div style="padding:0 20px">
+        <div class="ov" style="margin-bottom:6px">YOUR CONTROLS</div>
+        <div class="lockrow">
+          <div><div style="font-size:14px;color:#ECE6D8">Hold the plan</div><div style="font-size:11px;color:#6B6457;margin-top:1px">Stop auto-adjusting this week</div></div>
+          <div class="tg" style="background:#2A261F"><i style="left:2px"></i></div>
+        </div>
+        <div class="lockrow" style="border-bottom:none">
+          <div><div style="font-size:14px;color:#ECE6D8">Lock bench <span class="num">+5</span>/week</div><div style="font-size:11px;color:#6B6457;margin-top:1px">Drive one lift on a fixed climb</div></div>
+          <div class="tg" style="background:#E1652B"><i style="right:2px"></i></div>
+        </div>
+      </div>
+
+      <div class="tb"><a><i class="ti ti-home"></i>Today</a><a><i class="ti ti-barbell"></i>Train</a><a><i class="ti ti-trending-up"></i>Progress</a><a style="color:#E1652B"><i class="ti ti-calendar"></i>Plan</a></div>
+    </div>
+  </div>
+
+  <div style="width:250px;padding-top:34px">
+    <div style="font-size:13px;color:var(--color-text-primary);font-weight:500;margin-bottom:10px">Plan 周期屏（craft spec Part D3 / H2）</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.95">
+      <div>· hero = <strong style="color:var(--color-text-primary);font-weight:500">路径型</strong>：一条贯穿的 Emberline 从已完成 → 今天 → 未来，<strong style="color:var(--color-text-primary);font-weight:500">全屏仍唯一一条 ember</strong></div>
+      <div>· 节点态：已完成<strong style="color:var(--color-text-primary);font-weight:500">实心暗</strong> / 今天 <strong style="color:#F0875A;font-weight:500">ember</strong> / 未来<strong style="color:var(--color-text-primary);font-weight:500">空心</strong></div>
+      <div>· 路径<strong style="color:var(--color-text-primary);font-weight:500">不 morph</strong>；把"今天/下一次"那个节点做成<strong style="color:var(--color-text-primary);font-weight:500">内嵌 Today 式状态块</strong>（块复用、屏不强套，H2）</div>
+      <div>· <strong style="color:var(--color-text-primary);font-weight:500">控制权恒在</strong>：Hold the plan + Lock +5/周——破 Fitbod"老变、失控"</div>
+      <div style="margin-top:10px;color:var(--color-text-tertiary)">概览屏该静就让它静，只复用状态块、不强套整屏 morph。</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:14px;font-size:12px;color:var(--color-text-secondary);line-height:1.6">Plan 是稳定概览：一条 ember 路径标"进行到哪"，今天的节点内嵌一个可直接 Start 的状态块。Hold/Lock 把控制权显性化——你始终能让引擎停手或锁定某个动作的渐进。</div>
+</body></html>

@@ -37,5 +37,8 @@ Thumbs.db
 _slices/
 _scratch/
 
+# Local design assets (clay renders etc. — 100MB+ binaries, not for git history)
+assets/
+
 # Local tool launchers
 .claude/launch.json

@@ -135,6 +135,7 @@ Read these before changing behavior:
 | `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md`, `docs/CLOUD_DECISIONS_ARCHIVE.md` | Approved iOS-native account/cloud/sync/CRDT direction. Not first-version runtime code. |
 | `docs/DOCS_MANIFEST.md` | Living-doc rules and canonical document registry. |
 | `COMMERCIALIZATION_ROADMAP.md` | Commercialization roadmap and gated business infrastructure decisions. |
+| `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP minimal training-loop implementation plan: scope, slice queue, acceptance, TestFlight launch gate, and progress tracking. Execution layer for roadmap P1. |
 | `AGENTS.md` | Practical instructions for coding agents and future contributors. |
 
 ## Contribution Boundaries

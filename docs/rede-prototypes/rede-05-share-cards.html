@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Share cards</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>:root{--color-background-secondary:#0c0b08;--color-text-primary:#ECE6D8;--color-text-secondary:#9C9484;--color-text-tertiary:#6B6457;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}</style>
+</head><body>
+<style>
+.stage{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cell{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:12px;color:var(--color-text-secondary);text-align:center}
+.card{width:100%;aspect-ratio:4/5;border-radius:14px;position:relative;overflow:hidden;background:#15130F;box-sizing:border-box;padding:18px}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.ov{font-size:11px;letter-spacing:2.4px;color:#6B6457}
+.foot{position:absolute;left:18px;right:18px;bottom:16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #2A261F;padding-top:11px}
+.wm{display:flex;align-items:center;gap:8px}
+.wmt{font-size:12px;letter-spacing:2px;color:#ECE6D8;font-weight:600}
+.lk{font-size:11px;color:#6B6457}
+</style>
+
+<div class="stage">
+
+  <div class="cell">
+    <div class="lbl">PR 卡</div>
+    <div class="card">
+      <svg width="100%" height="100%" viewBox="0 0 254 318" preserveAspectRatio="none" style="position:absolute;inset:0;pointer-events:none"><line x1="0" y1="0.5" x2="254" y2="0.5" stroke="#ECE6D8" stroke-opacity="0.12"/></svg>
+      <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute;left:14px;top:14px;pointer-events:none"><path d="M0 12 L0 0 L12 0" stroke="#5F594C" fill="none"/></svg>
+      <div class="ov" style="position:relative">PERSONAL RECORD</div>
+      <div style="margin-top:34px"><div style="font-size:15px;color:#9C9484">Bench press</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;margin-top:6px"><span class="num" style="font-size:52px;font-weight:700;color:#ECE6D8;line-height:.85">195</span><span class="num" style="font-size:24px;color:#E1652B;padding-bottom:6px">× 3</span></div>
+      </div>
+      <div class="num" style="font-size:13px;color:#9C9484;margin-top:18px;line-height:1.6">New top set · +5 lb<br>Estimated 1RM 214 lb</div>
+      <div class="foot"><div class="wm"><div style="width:2px;height:15px;background:#E1652B"></div><span class="wmt">REDE</span></div><span class="lk num">rede.fit</span></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Level Up 卡</div>
+    <div class="card">
+      <svg width="100%" height="100%" viewBox="0 0 254 318" preserveAspectRatio="none" style="position:absolute;inset:0;pointer-events:none"><line x1="0" y1="0.5" x2="254" y2="0.5" stroke="#ECE6D8" stroke-opacity="0.12"/></svg>
+      <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute;left:14px;top:14px;pointer-events:none"><path d="M0 12 L0 0 L12 0" stroke="#5F594C" fill="none"/></svg>
+      <div class="ov" style="position:relative;color:#3E8F68">LEVEL UP</div>
+      <div style="margin-top:34px"><div style="font-size:15px;color:#9C9484">Back</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px"><span class="num" style="font-size:34px;font-weight:700;color:#6B6457">Lv.8</span><i class="ti ti-arrow-right" style="font-size:22px;color:#E1652B"></i><span class="num" style="font-size:46px;font-weight:700;color:#ECE6D8;line-height:.9">Lv.9</span></div>
+      </div>
+      <div class="num" style="font-size:13px;color:#9C9484;margin-top:20px;line-height:1.6">3 weeks of work<br>+18% pulling volume</div>
+      <div class="foot"><div class="wm"><div style="width:2px;height:15px;background:#E1652B"></div><span class="wmt">REDE</span></div><span class="lk num">rede.fit</span></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Muscle Level 卡</div>
+    <div class="card">
+      <svg width="100%" height="100%" viewBox="0 0 254 318" preserveAspectRatio="none" style="position:absolute;inset:0;pointer-events:none"><line x1="0" y1="0.5" x2="254" y2="0.5" stroke="#ECE6D8" stroke-opacity="0.12"/></svg>
+      <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute;left:14px;top:14px;pointer-events:none"><path d="M0 12 L0 0 L12 0" stroke="#5F594C" fill="none"/></svg>
+      <div class="ov" style="position:relative">DEVELOPMENT</div>
+      <div style="margin-top:26px;display:flex;align-items:baseline;gap:10px"><span style="font-size:24px;font-weight:700;color:#ECE6D8">Intermediate</span></div>
+      <div class="num" style="font-size:13px;color:#6B6457;margin-top:2px">Overall balance 76</div>
+      <div style="margin-top:16px">
+        <div class="num" style="display:flex;justify-content:space-between;font-size:13px;color:#C9C2B4;padding:5px 0;border-bottom:1px solid #221F1B"><span style="font-family:var(--font-sans)">Legs</span><span>Lv.15</span></div>
+        <div class="num" style="display:flex;justify-content:space-between;font-size:13px;color:#C9C2B4;padding:5px 0;border-bottom:1px solid #221F1B"><span style="font-family:var(--font-sans)">Arms</span><span>Lv.11</span></div>
+        <div class="num" style="display:flex;justify-content:space-between;font-size:13px;color:#C9C2B4;padding:5px 0;border-bottom:1px solid #221F1B"><span style="font-family:var(--font-sans)">Chest</span><span>Lv.10</span></div>
+        <div class="num" style="display:flex;justify-content:space-between;font-size:13px;color:#ECE6D8;padding:5px 0"><span style="font-family:var(--font-sans)">Back</span><span>Lv.9 <i class="ti ti-arrow-up-right" style="font-size:11px;color:#E1652B"></i></span></div>
+      </div>
+      <div class="foot"><div class="wm"><div style="width:2px;height:15px;background:#E1652B"></div><span class="wmt">REDE</span></div><span class="lk num">rede.fit</span></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Workout Summary 卡</div>
+    <div class="card">
+      <svg width="100%" height="100%" viewBox="0 0 254 318" preserveAspectRatio="none" style="position:absolute;inset:0;pointer-events:none"><line x1="0" y1="0.5" x2="254" y2="0.5" stroke="#ECE6D8" stroke-opacity="0.12"/></svg>
+      <svg width="40" height="40" viewBox="0 0 40 40" style="position:absolute;left:14px;top:14px;pointer-events:none"><path d="M0 12 L0 0 L12 0" stroke="#5F594C" fill="none"/></svg>
+      <div class="ov" style="position:relative">PUSH A · JUN 8</div>
+      <div style="margin-top:30px"><div style="display:flex;align-items:flex-end;gap:8px"><span class="num" style="font-size:46px;font-weight:700;color:#ECE6D8;line-height:.85">14,200</span><span class="num" style="font-size:16px;color:#6B6457;padding-bottom:5px">lb</span></div><div class="num" style="font-size:12px;color:#6B6457;margin-top:4px">total volume</div></div>
+      <div style="display:flex;gap:22px;margin-top:20px">
+        <div><div class="num" style="font-size:22px;font-weight:700;color:#ECE6D8">18</div><div style="font-size:11px;color:#6B6457">sets</div></div>
+        <div><div class="num" style="font-size:22px;font-weight:700;color:#ECE6D8">47</div><div style="font-size:11px;color:#6B6457">min</div></div>
+        <div><div class="num" style="font-size:22px;font-weight:700;color:#E1652B">1</div><div style="font-size:11px;color:#6B6457">PR</div></div>
+      </div>
+      <div class="foot"><div class="wm"><div style="width:2px;height:15px;background:#E1652B"></div><span class="wmt">REDE</span></div><span class="lk num">rede.fit</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:14px;font-size:12px;color:var(--color-text-secondary);line-height:1.6">4 张卡一套锻铁仪表模板:晒的是硬数据 + 一行证据(不是奖杯),锻面颗粒 + 顶缘高光 + 角标,每卡带 REDE 品牌 + rede.fit 下载链。隐私安全(只有成就数据、可选名字,无账号/位置/原始健康数据)。基础卡免费。
+</body></html>

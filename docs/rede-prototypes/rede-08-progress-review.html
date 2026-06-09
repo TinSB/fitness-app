@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Progress · review</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{--color-background-secondary:#0c0b08;--color-text-primary:#ECE6D8;--color-text-secondary:#9C9484;--color-text-tertiary:#6B6457;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}
+body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}
+.stage{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.cap{font-size:12px;color:var(--color-text-secondary);text-align:center;margin-bottom:9px}
+.ph{width:320px;height:712px;border-radius:32px;overflow:hidden;position:relative;background:#15130F;box-sizing:border-box}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 4px;font-size:12px;color:#9C9484}
+.ov{font-size:11px;letter-spacing:2.2px;color:#6B6457}
+.tb{position:absolute;left:0;right:0;bottom:0;height:58px;background:#100E0B;border-top:1px solid #221F1B;display:flex;justify-content:space-around;align-items:center;padding-bottom:6px}
+.tb a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457}
+.tb i{font-size:21px}
+.seg{display:flex;background:#1A1712;border-radius:9px;padding:3px;margin:0 18px 14px}
+.seg span{flex:1;text-align:center;font-size:12px;color:#9C9484;padding:7px 0;border-radius:7px}
+.seg span.on{background:#2A261F;color:#ECE6D8}
+.lvrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #221F1B;font-size:14px}
+</style></head><body>
+<div class="stage">
+
+  <div>
+    <div class="cap">Progress · 复盘（判断先行 + 单色图唯一 ember 标记 + 肌群等级）</div>
+    <div class="ph">
+      <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 18px 12px">
+        <div style="font-size:22px;font-weight:600;color:#ECE6D8">Progress</div>
+        <i class="ti ti-calendar-stats" style="font-size:19px;color:#6B6457"></i>
+      </div>
+
+      <!-- 尺度分段控件（选中用 raised tone，不点 ember） -->
+      <div class="seg"><span>Session</span><span class="on">Week</span><span>Cycle</span></div>
+
+      <!-- HERO = 判断块（靠字号突出，不靠 ember；ember 留给图里那一处） -->
+      <div style="padding:0 20px 14px">
+        <div style="font-size:20px;font-weight:600;color:#ECE6D8;line-height:1.3">Strong week. Back is lagging.</div>
+        <div style="font-size:13px;color:#9C9484;margin-top:6px;line-height:1.45">Pulling volume +18%, but back still trails chest. One pull set added next week.</div>
+      </div>
+
+      <!-- 单色肌群容量图，唯一 ember 标记 = 结论点（背部） -->
+      <div style="padding:0 20px">
+        <div class="ov" style="margin-bottom:12px">WEEKLY VOLUME · BY MUSCLE</div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:118px;gap:10px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:100%;height:82px;background:#4A453B;border-radius:3px 3px 0 0"></div><span class="ov" style="font-size:9px">CHEST</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative">
+            <span class="num" style="position:absolute;top:-18px;font-size:10px;color:#F0875A">−12%</span>
+            <div style="width:100%;height:48px;background:#E1652B;border-radius:3px 3px 0 0"></div><span class="ov" style="font-size:9px;color:#F0875A">BACK</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:100%;height:70px;background:#4A453B;border-radius:3px 3px 0 0"></div><span class="ov" style="font-size:9px">SHLDR</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:100%;height:96px;background:#4A453B;border-radius:3px 3px 0 0"></div><span class="ov" style="font-size:9px">LEGS</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:100%;height:58px;background:#4A453B;border-radius:3px 3px 0 0"></div><span class="ov" style="font-size:9px">ARMS</span></div>
+        </div>
+        <div style="font-size:12px;color:#9C9484;margin-top:10px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:2px;background:#E1652B"></span>Back is the one to fix — single ember marks the conclusion.</div>
+      </div>
+
+      <div style="height:1px;background:#221F1B;margin:16px 20px"></div>
+
+      <!-- 肌群发展等级（J6）：均衡度可显示，confidence 不显示 -->
+      <div style="padding:0 20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <span class="ov">DEVELOPMENT</span>
+          <span class="num" style="font-size:12px;color:#9C9484">Intermediate · balance 76</span>
+        </div>
+        <div class="lvrow" style="color:#C9C2B4"><span>Legs</span><span class="num">Lv.15</span></div>
+        <div class="lvrow" style="color:#C9C2B4"><span>Arms</span><span class="num">Lv.11</span></div>
+        <div class="lvrow" style="color:#C9C2B4"><span>Chest</span><span class="num">Lv.10</span></div>
+        <div class="lvrow" style="color:#ECE6D8;border-bottom:none"><span>Back</span><span class="num">Lv.8 → Lv.9 <i class="ti ti-arrow-up-right" style="font-size:11px;color:#E1652B"></i></span></div>
+      </div>
+
+      <div class="tb"><a><i class="ti ti-home"></i>Today</a><a><i class="ti ti-barbell"></i>Train</a><a style="color:#E1652B"><i class="ti ti-trending-up"></i>Progress</a><a><i class="ti ti-calendar"></i>Plan</a></div>
+    </div>
+  </div>
+
+  <div style="width:250px;padding-top:34px">
+    <div style="font-size:13px;color:var(--color-text-primary);font-weight:500;margin-bottom:10px">Progress 复盘屏（craft spec Part D2 / J6）</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.95">
+      <div>· <strong style="color:var(--color-text-primary);font-weight:500">判断先于数据</strong>：数据最多的页也先给 "Strong week. Back lagging."，把图表墙压成一个结论</div>
+      <div>· <strong style="color:var(--color-text-primary);font-weight:500">单色数据</strong>：容量图全是 bone 灰，<strong style="color:var(--color-text-primary);font-weight:500">只有"背部"一根 ember</strong> = 本周唯一要修的事，呼应判断句</div>
+      <div>· 分段控件 <strong style="color:var(--color-text-primary);font-weight:500">Session/Week/Cycle</strong> 选中用色调填充、<strong style="color:var(--color-text-primary);font-weight:500">不点 ember</strong>（口音留给内容区）</div>
+      <div>· <strong style="color:var(--color-text-primary);font-weight:500">肌群等级系统</strong>：均衡度 76 可显示；<strong style="color:var(--color-text-primary);font-weight:500">confidence 不显示</strong>（§11.4）</div>
+      <div style="margin-top:10px;color:var(--color-text-tertiary)">hero 靠字号突出不靠 ember（守 F2）；无彩虹图；趋势只做值平移、无奖励动效。</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:14px;font-size:12px;color:var(--color-text-secondary);line-height:1.6">复盘最容易堆成彩虹图墙——这里反过来：先判断（Back lagging），单色图只用一处 ember 标结论，肌群等级给"在涨什么"。证明效果，但不像后台 dashboard。</div>
+</body></html>
