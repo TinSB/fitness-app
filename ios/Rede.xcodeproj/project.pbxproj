@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
+		CB00000000000000000000B2 /* RedeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A2 /* RedeComponents.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
 		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
@@ -56,6 +58,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
+		CB00000000000000000000A2 /* RedeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeComponents.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
@@ -125,6 +129,8 @@
 			isa = PBXGroup;
 			children = (
 				AA00000000000000000000E1 /* RedeApp.swift */,
+				CB00000000000000000000A1 /* RedeTheme.swift */,
+				CB00000000000000000000A2 /* RedeComponents.swift */,
 				CA00000000000000000000A1 /* RootTabView.swift */,
 				CA00000000000000000000A2 /* TodayTabView.swift */,
 				CA00000000000000000000A3 /* TrainTabView.swift */,
@@ -274,6 +280,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000000E2 /* RedeApp.swift in Sources */,
+				CB00000000000000000000B1 /* RedeTheme.swift in Sources */,
+				CB00000000000000000000B2 /* RedeComponents.swift in Sources */,
 				CA00000000000000000000B1 /* RootTabView.swift in Sources */,
 				CA00000000000000000000B2 /* TodayTabView.swift in Sources */,
 				CA00000000000000000000B3 /* TrainTabView.swift in Sources */,
