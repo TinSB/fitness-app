@@ -97,6 +97,8 @@
 
 ### P1 Clean iOS Rewrite SPEC + 最小训练闭环（W4–W14）— 关键路径
 
+> **P1 的 slice 级实现执行清单见 [`docs/REDE_MVP_IMPLEMENTATION_PLAN.md`](docs/REDE_MVP_IMPLEMENTATION_PLAN.md)**（已锁定决策基线:TestFlight 免费先行 + 纯核心训练闭环 + 中英双语）。本节是战略节奏,具体实现、slice 顺序、验收与上线 gate 以该文档为准并双向同步。
+
 - 把 `docs/REDE_iOS_SYSTEM_LOGIC.md` 拆成 rewrite parity slices:四 tab、专注训练、DataHealth、TrainingDecision、write path、fixtures、UI验收。
 - 只实现最小可卖/可验证闭环:Today 决策入口、专注训练记录、下一组建议、训练完成写入、Progress 可信反馈、Plan 只读未来安排。
 - 动作库、TemplateGenerator、器械校准、SessionPrescription、Warm-up、SupportAllocation、MuscleLevelEstimator 和 ShareSnapshot 按系统逻辑合同逐片建立 fixtures 和 Swift tests。

@@ -44,6 +44,8 @@ Each page has a strict responsibility:
 
 Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, backup/export, and subscription surfaces. Account or sync controls require a future architecture amendment and are not part of the first clean runtime. Legacy iOS code may contain a `我的` tab; target work must implement the commercial navigation directly.
 
+**MVP execution entry.** The first shippable version's scope, slice queue (M0–M6), per-slice acceptance, and TestFlight launch gate live in [`docs/REDE_MVP_IMPLEMENTATION_PLAN.md`](docs/REDE_MVP_IMPLEMENTATION_PLAN.md) — the execution layer for roadmap P1 (locked baseline: TestFlight free-first, core training-loop only, bilingual zh/en UI). During MVP the `计划` tab is an honest empty-state placeholder; the core loop is 今日 / 训练 / 进展. This doc does not outrank the master architecture or system-logic docs.
+
 ## Design Principles
 
 - Mobile first.

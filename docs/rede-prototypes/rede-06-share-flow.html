@@ -1,0 +1,114 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Share trigger flow</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>:root{--color-background-secondary:#0c0b08;--color-text-primary:#ECE6D8;--color-text-secondary:#9C9484;--color-text-tertiary:#6B6457;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}</style>
+</head><body>
+<style>
+.stage{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:9px;width:300px}
+.cap{font-size:12px;color:var(--color-text-secondary);text-align:center}
+.ph{width:300px;height:646px;border-radius:30px;overflow:hidden;position:relative;background:#15130F;box-sizing:border-box}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:9px 18px 4px;font-size:12px;color:#9C9484}
+.ov{font-size:11px;letter-spacing:2.2px;color:#6B6457}
+.card{background:#1F1C17;border-top:1px solid rgba(236,230,216,0.08);border-radius:12px;margin:0 16px 11px;padding:14px}
+.emb{background:#E1652B;color:#15130F;font-size:14px;font-weight:600;padding:12px;border-radius:10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.ghost{border:1px solid #3A352B;color:#C9C2B4;font-size:14px;font-weight:500;padding:12px;border-radius:10px;text-align:center}
+</style>
+
+<div class="stage">
+
+  <div class="col">
+    <div class="cap">① 练后小结（T2 触发点）</div>
+    <div class="ph">
+      <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
+      <div style="text-align:center;padding:30px 18px 10px">
+        <div class="ov">SESSION COMPLETE</div>
+        <div style="font-size:24px;font-weight:600;color:#ECE6D8;margin-top:10px">Push A</div>
+        <div class="num" style="font-size:12px;color:#6B6457;margin-top:3px">47 min · well done</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-around;padding:6px 24px 18px;text-align:center">
+        <div><div class="num" style="font-size:24px;font-weight:700;color:#ECE6D8">14.2k</div><div style="font-size:11px;color:#6B6457;margin-top:2px">lb</div></div>
+        <div><div class="num" style="font-size:24px;font-weight:700;color:#ECE6D8">18</div><div style="font-size:11px;color:#6B6457;margin-top:2px">sets</div></div>
+        <div><div class="num" style="font-size:24px;font-weight:700;color:#E1652B">1</div><div style="font-size:11px;color:#6B6457;margin-top:2px">PR</div></div>
+      </div>
+
+      <div class="card" style="display:flex;align-items:center;gap:11px"><i class="ti ti-trophy" style="font-size:20px;color:#E1652B"></i><div><div style="font-size:14px;color:#ECE6D8">New bench PR</div><div class="num" style="font-size:12px;color:#9C9484;margin-top:1px">195 × 3 · +5 lb</div></div></div>
+      <div class="card" style="display:flex;align-items:center;gap:11px"><i class="ti ti-arrow-up-right" style="font-size:20px;color:#3E8F68"></i><div><div style="font-size:14px;color:#ECE6D8">Back leveled up</div><div class="num" style="font-size:12px;color:#9C9484;margin-top:1px">Lv.8 → Lv.9</div></div></div>
+
+      <div style="position:absolute;left:16px;right:16px;bottom:26px">
+        <div class="emb" style="margin-bottom:10px"><i class="ti ti-share-2" style="font-size:15px"></i>Share session</div>
+        <div class="ghost">Done</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="cap">② 卡片预览 + 系统分享 sheet</div>
+    <div class="ph">
+      <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 8px"><span style="width:20px"></span><div style="font-size:16px;font-weight:600;color:#ECE6D8">Share</div><i class="ti ti-x" style="font-size:20px;color:#6B6457"></i></div>
+
+      <div style="display:flex;gap:8px;justify-content:center;padding:4px 0 14px">
+        <span style="font-size:12px;border:1px solid #E1652B;color:#F0875A;border-radius:20px;padding:5px 13px">PR</span>
+        <span style="font-size:12px;border:1px solid #3A352B;color:#9C9484;border-radius:20px;padding:5px 13px">Session</span>
+        <span style="font-size:12px;border:1px solid #3A352B;color:#9C9484;border-radius:20px;padding:5px 13px">Level up</span>
+      </div>
+
+      <div style="margin:0 auto;width:184px;height:230px;border-radius:12px;background:#15130F;border:1px solid #2A261F;border-top:1px solid rgba(236,230,216,0.10);position:relative;padding:15px;box-sizing:border-box">
+        <svg width="20" height="20" viewBox="0 0 20 20" style="position:absolute;left:9px;top:9px"><path d="M0 8 L0 0 L8 0" stroke="#5F594C" fill="none"/></svg>
+        <div class="ov" style="font-size:9px;letter-spacing:1.6px">PERSONAL RECORD</div>
+        <div style="font-size:12px;color:#9C9484;margin-top:18px">Bench press</div>
+        <div style="display:flex;align-items:flex-end;gap:5px;margin-top:3px"><span class="num" style="font-size:38px;font-weight:700;color:#ECE6D8;line-height:.85">195</span><span class="num" style="font-size:17px;color:#E1652B;padding-bottom:4px">× 3</span></div>
+        <div class="num" style="font-size:10px;color:#9C9484;margin-top:10px">+5 lb · est 1RM 214</div>
+        <div style="position:absolute;left:15px;right:15px;bottom:12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #2A261F;padding-top:8px"><span style="font-size:9px;letter-spacing:1.5px;color:#ECE6D8;font-weight:600">REDE</span><span class="num" style="font-size:9px;color:#6B6457">rede.fit</span></div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#6B6457;margin-top:10px">Every card links back to rede.fit · no account, no location</div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;background:#100E0B;border-top:1px solid #221F1B;padding:16px 18px 22px">
+        <div style="display:flex;justify-content:space-around;text-align:center;color:#C9C2B4">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px"><i class="ti ti-message-2" style="font-size:24px"></i>Messages</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px"><i class="ti ti-brand-instagram" style="font-size:24px"></i>Stories</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px"><i class="ti ti-link" style="font-size:24px"></i>Copy link</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px"><i class="ti ti-dots" style="font-size:24px"></i>More</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="cap">③ 里程碑轻提示（T4 · 在 Today，不打扰训练）</div>
+    <div class="ph">
+      <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 16px 12px"><div><div style="font-size:22px;font-weight:600;color:#ECE6D8">Today</div><div class="num" style="font-size:11px;letter-spacing:1.4px;color:#6B6457;margin-top:4px">TUE, JUN 9</div></div><i class="ti ti-settings" style="font-size:20px;color:#6B6457"></i></div>
+
+      <div style="margin:0 16px 12px;background:#19211C;border:1px solid #2C4536;border-radius:12px;padding:13px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px"><i class="ti ti-arrow-up-right" style="font-size:19px;color:#3E8F68"></i><div><div style="font-size:14px;color:#ECE6D8">Back reached Lv.9</div><div class="num" style="font-size:11px;color:#7FAE93;margin-top:1px">from yesterday</div></div></div>
+        <span style="font-size:12px;color:#3E8F68;border:1px solid #2C4536;border-radius:20px;padding:5px 12px">Share</span>
+      </div>
+
+      <div class="card" style="padding:15px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><span style="width:7px;height:7px;border-radius:50%;background:#2F7D5B"></span><span class="ov" style="color:#3E8F68">READY TO TRAIN</span></div>
+        <div style="font-size:19px;font-weight:600;color:#ECE6D8">Train today</div>
+        <div style="font-size:14px;color:#9C9484;margin-top:6px">Pull B — add one back set</div>
+        <div style="font-size:13px;color:#6B6457;margin-top:13px;display:flex;align-items:center;gap:4px">See why <i class="ti ti-chevron-right" style="font-size:14px"></i></div>
+      </div>
+      <div style="margin:2px 16px"><div class="emb"><i class="ti ti-player-play" style="font-size:15px"></i>Start training</div></div>
+
+      <div style="position:absolute;left:18px;right:18px;bottom:74px;font-size:12px;color:#6B6457;line-height:1.6;text-align:center">里程碑只在练后 / Today 轻提示<br>训练进行中绝不弹分享</div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;height:56px;background:#100E0B;border-top:1px solid #221F1B;display:flex;justify-content:space-around;align-items:center;padding-bottom:5px">
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#E1652B"><i class="ti ti-home" style="font-size:20px"></i>Today</a>
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457"><i class="ti ti-barbell" style="font-size:20px"></i>Train</a>
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457"><i class="ti ti-trending-up" style="font-size:20px"></i>Progress</a>
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457"><i class="ti ti-calendar" style="font-size:20px"></i>Plan</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:14px;font-size:12px;color:var(--color-text-secondary);line-height:1.6">流程闭环:练完 → 小结自动给"可晒的高光"(PR/升级) + Share(T2)→ 选卡 + 预览 + 系统分享 sheet(每卡带 rede.fit)→ 里程碑还会在 Today 轻提示(T4)。**训练进行中永远不弹**,守住 Train 零打扰红线。
+</body></html>

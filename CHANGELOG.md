@@ -2,6 +2,12 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
+## 2026-06-09
+
+- Added `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` as the canonical MVP implementation-execution living doc: locked decision baseline (TestFlight free-first, core training-loop only, bilingual zh/en UI), IN/OUT scope, an M0–M6 slice queue with per-slice acceptance and validation commands, a TestFlight launch-readiness checklist, an acquisition/validation section that reconciles the roadmap's "validate-first" stance via App-as-validation, and a per-slice progress tracker (all slices start ⬜).
+- Registered the new doc in `docs/DOCS_MANIFEST.md` (canonical living-doc set) and cross-linked it from `README.md` (documentation table), `AGENTS.md` (MVP execution entry), and `COMMERCIALIZATION_ROADMAP.md` (P1 now points to the slice-level execution doc). Reaffirmed it does not outrank the master architecture or system-logic docs.
+- Doc-only change: no engine, source, `project.pbxproj`, or package changes. Honest status — the clean runtime remains near-zero; existing `ios/` code stays legacy/reference inventory and is not MVP progress.
+
 ## 2026-06-07
 
 - Retired the former Web/PWA implementation surface from the active repository: removed the Node/Vite runtime, TypeScript source/tests/scripts, browser assets, Supabase/Vercel implementation candidates, dev API, `RedeCloudSync` stub package, and package/lockfile tooling.

@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Strength prototype set</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+body{margin:0;background:#15130F;color:#ECE6D8;font-family:var(--font-sans);padding:40px 24px 60px}
+.wrap{max-width:880px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:10px}
+.wm{font-size:26px;font-weight:700;letter-spacing:1px}
+.desc{font-size:13px;color:#9C9484;letter-spacing:.06em}
+.tag{font-size:13px;color:#6B6457;margin-top:8px;line-height:1.6}
+.sec{font-size:11px;letter-spacing:2.2px;color:#6B6457;margin:34px 0 12px;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+a.card{display:block;text-decoration:none;background:#1F1C17;border-top:1px solid rgba(236,230,216,0.08);border-radius:12px;padding:15px 16px;position:relative;color:inherit;transition:background .15s}
+a.card:hover{background:#262219}
+a.card::before{content:"";position:absolute;left:0;top:15px;bottom:15px;width:2px;background:#E1652B;border-radius:2px;opacity:.0}
+a.card:hover::before{opacity:1}
+.ttl{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.ttl i{color:#E1652B;font-size:17px}
+.sub{font-size:12px;color:#9C9484;margin-top:5px;line-height:1.5}
+.foot{margin-top:36px;font-size:12px;color:#6B6457;line-height:1.7;border-top:1px solid #2A261F;padding-top:16px}
+</style></head><body>
+<div class="wrap">
+  <div class="brand"><span class="wm">REDE</span><span class="desc">STRENGTH COACH</span></div>
+  <div class="tag">力量 App 原型集 · 深色暖锻铁 + 仪表 · 每屏一块独立注解板。点开任意一张在浏览器查看（图标走 Tabler CDN，需联网）。</div>
+
+  <div class="sec">App 主屏（4-tab）</div>
+  <div class="grid">
+    <a class="card" href="rede-07-today-verdict.html"><div class="ttl"><i class="ti ti-home"></i>Today · 判断屏</div><div class="sub">Decision Receipt + Load Plate + Progress Rail · 5 秒看懂今天练不练</div></a>
+    <a class="card" href="rede-01-train-engine-led.html"><div class="ttl"><i class="ti ti-barbell"></i>Train · 引擎主导 + 一键 hold</div><div class="sub">默认听引擎 180，一键 Hold 185 · 已收摩擦版</div></a>
+    <a class="card" href="rede-02-train-exercise-detail.html"><div class="ttl"><i class="ti ti-barbell"></i>Train + 动作详情</div><div class="sub">planned vs suggested + 锁定渐进 · 8 周 top-set 曲线（破 Fitbod 雷）</div></a>
+    <a class="card" href="rede-08-progress-review.html"><div class="ttl"><i class="ti ti-trending-up"></i>Progress · 复盘</div><div class="sub">判断先行 + 单色图唯一 ember 标记 + 肌群等级</div></a>
+    <a class="card" href="rede-09-plan-cycle.html"><div class="ttl"><i class="ti ti-calendar"></i>Plan · 周/周期</div><div class="sub">path-led Emberline 路径 + 内嵌"下一次"块 + hold/lock</div></a>
+  </div>
+
+  <div class="sec">通知与留存</div>
+  <div class="grid">
+    <a class="card" href="rede-03-push-today-nudge.html"><div class="ttl"><i class="ti ti-bell"></i>Push + Today 提示</div><div class="sub">价值先行 · 禁连胜/羞辱 · 中性进度不施压</div></a>
+    <a class="card" href="rede-04-widgets.html"><div class="ttl"><i class="ti ti-layout-grid"></i>Widget 家族</div><div class="sub">锁屏 + 主屏 small/medium · 只答"今天该不该练"</div></a>
+  </div>
+
+  <div class="sec">增长 / 分享</div>
+  <div class="grid">
+    <a class="card" href="rede-05-share-cards.html"><div class="ttl"><i class="ti ti-cards"></i>分享卡系统</div><div class="sub">PR / 升级 / 肌群 / 总结 4 卡 · 锻铁仪表模板 · 带 rede.fit</div></a>
+    <a class="card" href="rede-06-share-flow.html"><div class="ttl"><i class="ti ti-share-2"></i>分享触发流</div><div class="sub">练后小结 → 选卡预览 → Today 里程碑 · 训练中绝不弹</div></a>
+  </div>
+
+  <div class="foot">
+    01–06 = 你提供的真原型（已改 Rede / rede.fit，保持独立，未改设计）。07–09 = 按完全相同的 token/签名件补的缺失屏（Today / Progress / Plan）。<br>
+    视觉真源：<code>docs/REDE_PRODUCT_DESIGN_LANGUAGE.md</code> §11 + <code>REDE_CRAFT_LAYER_AND_SPEC.md</code>。
+  </div>
+</div>
+</body></html>
