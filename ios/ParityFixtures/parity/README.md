@@ -27,7 +27,7 @@ ios/ParityFixtures/parity/
 Run the Swift package tests that consume the touched fixture:
 
 ```bash
-cd ios/packages/IronPathTrainingDecision
+cd ios/packages/RedeTrainingDecision
 swift test
 ```
 
