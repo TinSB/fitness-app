@@ -10,6 +10,8 @@ import Foundation
 extension RedeStrings {
     /// e1RM 展示口径：取整到 0.5 kg（legacy roundToHalfKg 同口径）再走 formatKg。
     /// Epley 原始浮点（如 69.666…）绝不直出 UI。
+    /// lb 模式双重量化（0.5kg → 0.5lb）为有意取舍（审查留痕 2026-06-10）：
+    /// 1RM 是估算值，接受 ≤±0.8 lb 显示偏差，换取换算逻辑单点不分叉。
     public func formatE1Rm(_ value: Double) -> String {
         formatKg((value * 2).rounded() / 2)
     }
@@ -36,8 +38,8 @@ extension RedeStrings {
     /// "顶组 卧推 62.5 kg × 6 · 估算 1RM 75 kg"
     public func sessionSubTopSet(lift: String, kg: String, reps: Int, e1rmKg: String) -> String {
         locale == .zh
-            ? "顶组 \(lift) \(kg) kg × \(reps) · 估算 1RM \(e1rmKg) kg"
-            : "Top set \(lift) \(kg) kg × \(reps) · est 1RM \(e1rmKg) kg"
+            ? "顶组 \(lift) \(kg) \(unitLabel) × \(reps) · 估算 1RM \(e1rmKg) \(unitLabel)"
+            : "Top set \(lift) \(kg) \(unitLabel) × \(reps) · est 1RM \(e1rmKg) \(unitLabel)"
     }
     public func sessionCaptionPR(_ liftName: String) -> String {
         locale == .zh
@@ -65,18 +67,18 @@ extension RedeStrings {
         let sign = deltaPercent >= 0 ? "+" : "−"
         let magnitude = abs(deltaPercent)
         return locale == .zh
-            ? "训练量较上周 \(sign)\(magnitude)% · \(sets) 组 · \(volumeKg) kg"
-            : "Volume \(sign)\(magnitude)% vs last week · \(sets) sets · \(volumeKg) kg"
+            ? "训练量较上周 \(sign)\(magnitude)% · \(sets) 组 · \(volumeKg) \(unitLabel)"
+            : "Volume \(sign)\(magnitude)% vs last week · \(sets) sets · \(volumeKg) \(unitLabel)"
     }
     public func weekSubFirstWeek(sets: Int, volumeKg: String) -> String {
         locale == .zh
-            ? "本周 \(sets) 组 · \(volumeKg) kg——连续训练后这里会出现对比。"
-            : "\(sets) sets · \(volumeKg) kg this week — comparisons appear as weeks stack up."
+            ? "本周 \(sets) 组 · \(volumeKg) \(unitLabel)——连续训练后这里会出现对比。"
+            : "\(sets) sets · \(volumeKg) \(unitLabel) this week — comparisons appear as weeks stack up."
     }
     public func weekSubGapWeek(sets: Int, volumeKg: String) -> String {
         locale == .zh
-            ? "本周 \(sets) 组 · \(volumeKg) kg——上周没有训练，暂无对比。"
-            : "\(sets) sets · \(volumeKg) kg this week — no sessions last week to compare."
+            ? "本周 \(sets) 组 · \(volumeKg) \(unitLabel)——上周没有训练，暂无对比。"
+            : "\(sets) sets · \(volumeKg) \(unitLabel) this week — no sessions last week to compare."
     }
     public var weekChartTitleByWeek: String {
         locale == .zh ? "周训练量" : "Weekly volume"
@@ -102,12 +104,12 @@ extension RedeStrings {
         switch call {
         case "up":
             return locale == .zh
-                ? "过去 \(sessions) 次训练里，估算 1RM 提高 \(deltaKg) kg。"
-                : "Estimated 1RM is up \(deltaKg) kg over the last \(sessions) sessions."
+                ? "过去 \(sessions) 次训练里，估算 1RM 提高 \(deltaKg) \(unitLabel)。"
+                : "Estimated 1RM is up \(deltaKg) \(unitLabel) over the last \(sessions) sessions."
         case "down":
             return locale == .zh
-                ? "过去 \(sessions) 次训练里，估算 1RM 回落 \(deltaKg) kg。"
-                : "Estimated 1RM is down \(deltaKg) kg over the last \(sessions) sessions."
+                ? "过去 \(sessions) 次训练里，估算 1RM 回落 \(deltaKg) \(unitLabel)。"
+                : "Estimated 1RM is down \(deltaKg) \(unitLabel) over the last \(sessions) sessions."
         case "flat":
             return locale == .zh
                 ? "过去 \(sessions) 次训练里，估算 1RM 基本持平。"
@@ -130,12 +132,12 @@ extension RedeStrings {
     public var historyTitle: String { locale == .zh ? "历史" : "History" }
     /// "18 组 · 5,500 kg"
     public func historyRowMeta(sets: Int, volumeKg: String) -> String {
-        locale == .zh ? "\(sets) 组 · \(volumeKg) kg" : "\(sets) sets · \(volumeKg) kg"
+        locale == .zh ? "\(sets) 组 · \(volumeKg) \(unitLabel)" : "\(sets) sets · \(volumeKg) \(unitLabel)"
     }
     public var historyPRBadge: String { "PR" }
     public var historyDetailSets: String { locale == .zh ? "逐组明细" : "Set by set" }
     /// 明细行 "60 kg × 6"
-    public func historySetLine(kg: String, reps: Int) -> String { "\(kg) kg × \(reps)" }
+    public func historySetLine(kg: String, reps: Int) -> String { "\(kg) \(unitLabel) × \(reps)" }
 
     // MARK: - 数据质量（FR-PR4，行为化、零置信标签）
 
@@ -144,8 +146,8 @@ extension RedeStrings {
     public func suspectWeightLine(dateISO: String, lift: String, setIndex: Int, kg: String) -> String {
         let date = shortDate(fromISO: dateISO)
         return locale == .zh
-            ? "\(date) \(lift)第 \(setIndex) 组 \(kg) kg——可能记错了"
-            : "\(date) \(lift) set \(setIndex) at \(kg) kg — probably a typo"
+            ? "\(date) \(lift)第 \(setIndex) 组 \(kg) \(unitLabel)——可能记错了"
+            : "\(date) \(lift) set \(setIndex) at \(kg) \(unitLabel) — probably a typo"
     }
     public func suspectRepsLine(dateISO: String, lift: String, setIndex: Int, reps: Int) -> String {
         let date = shortDate(fromISO: dateISO)

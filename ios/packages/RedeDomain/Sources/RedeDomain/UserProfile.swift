@@ -18,4 +18,9 @@ public struct UserProfile: Equatable, Sendable {
     public var weeklyTrainingDays: Int? { storage["weeklyTrainingDays"]?.asInt }
     public var sessionDurationMin: Double? { storage["sessionDurationMin"]?.asDouble }
     public var injuryFlags: [String]? { storage["injuryFlags"]?.asStringArray }
+    /// M5-2 偏好（FR-SE1 单位 / FR-SE3 语言持久化）："kg"/"lb"、"zh"/"en"；缺失由渲染层回退默认。
+    public var unitSystem: String? { storage["unitSystem"]?.asString }
+    public var locale: String? { storage["locale"]?.asString }
+    /// 引导落档的器械场景（FR-EQ1 欠账：引擎暂不消费）。
+    public var equipmentScenario: String? { storage["equipmentScenario"]?.asString }
 }

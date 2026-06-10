@@ -91,6 +91,17 @@ struct RootTabView: View {
             } else {
                 showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
             }
+            // M5-2：启动读取持久化偏好（单位/语言）；-locale/-unit 启动参数优先（截图钩子）。
+            // -locale 已在 init() 注入 store——此处传 nil 表示「不再用磁盘值覆盖」（顺序依赖，勿移）。
+            let prefs = await Task.detached { SessionStore.loadPreferences() }.value
+            let unitForced = args.firstIndex(of: "-unit").flatMap { idx -> String? in
+                args.indices.contains(idx + 1) ? args[idx + 1] : nil
+            }
+            let localePreApplied = args.contains("-locale")
+            localeStore.applyPersisted(
+                unitRaw: unitForced ?? prefs.unit,
+                localeRaw: localePreApplied ? nil : prefs.locale
+            )
         }
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；

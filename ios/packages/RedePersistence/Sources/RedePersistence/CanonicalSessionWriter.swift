@@ -56,6 +56,11 @@ public enum OnboardingWriteError: Error, Equatable {
     case invalidWeeklyDays(Int)
 }
 
+public enum PreferencesWriteError: Error, Equatable {
+    case unknownUnit(String)
+    case unknownLocale(String)
+}
+
 public struct CanonicalSessionWriter {
     private let store: AppDataStore
     private let gate: AppDataWriteGate
@@ -110,6 +115,26 @@ public struct CanonicalSessionWriter {
             template["primaryGoal"] = .string(onboarding.primaryGoal)
             storage["programTemplate"] = .object(template)
 
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：单位/语言偏好 scalar edit（M5-2 FR-SE1/SE3 持久化）。
+    /// nil = 不改动该项；open-bag 合并 userProfile，其余键原样保留。
+    @discardableResult
+    public func applyPreferences(unitSystem: String?, locale: String?) throws -> AppData {
+        if let unitSystem, !["kg", "lb"].contains(unitSystem) {
+            throw PreferencesWriteError.unknownUnit(unitSystem)
+        }
+        if let locale, !["zh", "en"].contains(locale) {
+            throw PreferencesWriteError.unknownLocale(locale)
+        }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var profile = storage["userProfile"]?.asObject ?? [:]
+            if let unitSystem { profile["unitSystem"] = .string(unitSystem) }
+            if let locale { profile["locale"] = .string(locale) }
+            storage["userProfile"] = .object(profile)
             return try AppData(decoding: .object(storage))
         }
     }
