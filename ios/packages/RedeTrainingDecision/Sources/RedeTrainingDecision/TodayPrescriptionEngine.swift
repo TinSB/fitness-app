@@ -172,7 +172,13 @@ public enum TodayPrescriptionEngine {
                 reason = .holdProgressing
             }
         } else {
-            baseWeight = entry.startWeightKg
+            // M5-1 首练定档：自报背景只作冷启动先验，缩放仅作用于 firstExposure；
+            // 一旦有真实记录（上面分支），实际执行即基线，先验不再参与。
+            // 与裁决调制（light ×0.9 / deload ×0.8）叠乘是有意设计（拍板 2026-06-10）：
+            // 先验定起点基线、调制定当日急性状态，两者正交；下限 2.5 兜底。
+            baseWeight = ColdStartPrior.scaledStartKg(
+                entry.startWeightKg, trainingLevel: input.profile.trainingLevel
+            )
             targetReps = slot.repMin
             change = .start
             reason = .firstExposure

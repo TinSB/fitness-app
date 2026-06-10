@@ -23,6 +23,39 @@ public enum CanonicalWriteError: Error, Equatable {
     case duplicateSessionId(String)
 }
 
+// MARK: - M5-1 引导写入（FR-ON1：4 问落档 + 首版模板初始化）
+
+/// 引导答案的持久化形态。splitType 由 RedeTrainingDecision.OnboardingPlanInit
+/// 映射后传入（本层不做训练决策，保持分层）。
+/// 调用约定：weeklyTrainingDays 必须取 OnboardingPlanInit.template(for:).daysPerWeek
+/// （钳制后的值），不要直接传 UI 原始输入——否则 splitType 与天数可能不一致。
+/// 重复调用（用户改答案重跑引导）= 覆盖写已知字段；日序列轮转基于历史条数、
+/// 改 splitType 后不重置（已知行为，重置语义归后续 slice）。
+/// FR-EQ1 欠账：equipmentScenario 只落档不消费——CleanProfile/引擎接入归后续 slice。
+public struct OnboardingWrite: Equatable, Sendable {
+    public let trainingLevel: String
+    public let primaryGoal: String
+    public let weeklyTrainingDays: Int
+    public let equipmentScenario: String
+    public let splitType: String
+
+    public init(
+        trainingLevel: String, primaryGoal: String, weeklyTrainingDays: Int,
+        equipmentScenario: String, splitType: String
+    ) {
+        self.trainingLevel = trainingLevel
+        self.primaryGoal = primaryGoal
+        self.weeklyTrainingDays = weeklyTrainingDays
+        self.equipmentScenario = equipmentScenario
+        self.splitType = splitType
+    }
+}
+
+public enum OnboardingWriteError: Error, Equatable {
+    case unknownTrainingLevel(String)
+    case invalidWeeklyDays(Int)
+}
+
 public struct CanonicalSessionWriter {
     private let store: AppDataStore
     private let gate: AppDataWriteGate
@@ -46,6 +79,37 @@ public struct CanonicalSessionWriter {
             var history = storage["history"]?.asArray ?? []
             history.append(.object(session.storage))
             storage["history"] = .array(history)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：引导答案 + 首版模板（M5-1）。
+    /// open-bag 合并：只写本类别字段，userProfile/programTemplate 其余键原样保留。
+    @discardableResult
+    public func applyOnboarding(_ onboarding: OnboardingWrite) throws -> AppData {
+        let knownLevels: Set<String> = ["beginner", "intermediate", "advanced"]
+        guard knownLevels.contains(onboarding.trainingLevel) else {
+            throw OnboardingWriteError.unknownTrainingLevel(onboarding.trainingLevel)
+        }
+        guard (2...6).contains(onboarding.weeklyTrainingDays) else {
+            throw OnboardingWriteError.invalidWeeklyDays(onboarding.weeklyTrainingDays)
+        }
+        return try performGatedMutation { current in
+            var storage = current.storage
+
+            var profile = storage["userProfile"]?.asObject ?? [:]
+            profile["trainingLevel"] = .string(onboarding.trainingLevel)
+            profile["primaryGoal"] = .string(onboarding.primaryGoal)
+            profile["weeklyTrainingDays"] = .int(Int64(onboarding.weeklyTrainingDays))
+            profile["equipmentScenario"] = .string(onboarding.equipmentScenario)
+            storage["userProfile"] = .object(profile)
+
+            var template = storage["programTemplate"]?.asObject ?? [:]
+            template["splitType"] = .string(onboarding.splitType)
+            template["daysPerWeek"] = .int(Int64(onboarding.weeklyTrainingDays))
+            template["primaryGoal"] = .string(onboarding.primaryGoal)
+            storage["programTemplate"] = .object(template)
+
             return try AppData(decoding: .object(storage))
         }
     }
