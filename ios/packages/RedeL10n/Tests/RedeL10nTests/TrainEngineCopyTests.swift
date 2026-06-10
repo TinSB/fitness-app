@@ -59,6 +59,36 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.endWorkoutRemaining(exercisesLeft: 5), "还剩 5 个动作")
     }
 
+    // M5-3 刻度轨：档位标签与预演文案锚句（审查 MINOR-2 补测）
+    func testAdjustOptionLabelsCoverAllRoles() {
+        XCTAssertEqual(zh.adjustOptionLabel("follow"), "跟随")
+        XCTAssertEqual(en.adjustOptionLabel("follow"), "Follow")
+        XCTAssertEqual(zh.adjustOptionLabel("last"), "上组")
+        XCTAssertEqual(en.adjustOptionLabel("last"), "Last")
+        XCTAssertEqual(zh.adjustOptionLabel("plan"), "计划")
+        XCTAssertEqual(en.adjustOptionLabel("plan"), "Plan")
+        XCTAssertEqual(zh.adjustOptionLabel("lighter"), "轻一档")
+        XCTAssertEqual(en.adjustOptionLabel("lighter"), "Lighter")
+        XCTAssertEqual(zh.adjustOptionLabel("heavier"), "重一档")
+        XCTAssertEqual(en.adjustOptionLabel("heavier"), "Heavier")
+        // 未知 code 原样回显（不猜）
+        XCTAssertEqual(zh.adjustOptionLabel("unknown"), "unknown")
+    }
+
+    func testAdjustPreviewAnchors() {
+        XCTAssertEqual(zh.adjustPreviewNext(kg: "52.5"), "打勾后 · 下一组 52.5 kg")
+        XCTAssertEqual(en.adjustPreviewNext(kg: "52.5"), "After log · next 52.5 kg")
+        XCTAssertNotNil(zh.adjustPreviewNote(reasonCode: "lastSetNearFailure"))
+        XCTAssertNotNil(en.adjustPreviewNote(reasonCode: "belowRepFloor"))
+        XCTAssertNotNil(zh.adjustPreviewNote(reasonCode: "painReported"))
+        XCTAssertNil(zh.adjustPreviewNote(reasonCode: "onPlan"))   // 按计划延续不加注
+        XCTAssertNil(en.adjustPreviewNote(reasonCode: "unknown"))
+        XCTAssertEqual(zh.adjustPreviewComplete, "打勾后 · 本动作完成")
+        XCTAssertEqual(en.adjustRirSkip, "—")
+        // RIR 可空后缀
+        XCTAssertEqual(zh.trainLoadSuffix(targetReps: 6, targetRir: nil as Double?), "kg · × 6 · RIR —")
+    }
+
     func testForbiddenWordsAcrossTrainCopy() {
         let samples: [String] = [
             zh.nextSetWhy(reasonCode: "lastSetNearFailure", fromKg: "60"),
@@ -69,6 +99,12 @@ final class TrainEngineCopyTests: XCTestCase {
             zh.painRegistered, en.painRegistered,
             zh.summaryTitle, en.summaryTitle,
             zh.trainRestDayNote, en.trainRestDayNote,
+            zh.adjustOptionLabel("follow"), en.adjustOptionLabel("lighter"),
+            zh.adjustPreviewNext(kg: "50"), en.adjustPreviewNext(kg: "50"),
+            zh.adjustPreviewNote(reasonCode: "lastSetNearFailure") ?? "",
+            en.adjustPreviewNote(reasonCode: "lastSetNearFailure") ?? "",
+            zh.adjustPreviewComplete, en.adjustPreviewComplete,
+            zh.adjustExact, en.adjustExact,
         ]
         for text in samples {
             for banned in ["AI", "算法", "系统认为", "最佳", "algorithm", "model", "best"] {

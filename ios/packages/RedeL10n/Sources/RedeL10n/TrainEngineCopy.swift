@@ -27,6 +27,11 @@ extension RedeStrings {
         "kg · × \(targetReps) · RIR \(formatRir(targetRir))"
     }
 
+    /// 大数字后缀（RIR 可空：快改面选「不记」时显示 "RIR —"）。
+    public func trainLoadSuffix(targetReps: Int, targetRir: Double?) -> String {
+        "kg · × \(targetReps) · RIR \(targetRir.map(formatRir) ?? "—")"
+    }
+
     /// 下一组建议的 why 行（NextSetReason code → 句子）。
     public func nextSetWhy(reasonCode: String, fromKg: String?) -> String {
         switch reasonCode {
@@ -88,12 +93,53 @@ extension RedeStrings {
         locale == .zh ? "接下来 · \(name)" : "Up next · \(name)"
     }
 
-    // MARK: - 快改（FR-TR2）
+    // MARK: - 快改（FR-TR2；M5-3 刻度轨：语义档位 + 预演）
 
     public var adjustTitle: String { locale == .zh ? "调整本组" : "Adjust this set" }
     public var adjustWeight: String { locale == .zh ? "重量" : "Weight" }
     public var adjustReps: String { locale == .zh ? "次数" : "Reps" }
     public var adjustRir: String { "RIR" }
+
+    /// 档位角色标签（AdjustOption.Role code → 双语短标签；引擎零文案）。
+    public func adjustOptionLabel(_ roleCode: String) -> String {
+        switch roleCode {
+        case "follow": return locale == .zh ? "跟随" : "Follow"
+        case "last": return locale == .zh ? "上组" : "Last"
+        case "plan": return locale == .zh ? "计划" : "Plan"
+        case "lighter": return locale == .zh ? "轻一档" : "Lighter"
+        case "heavier": return locale == .zh ? "重一档" : "Heavier"
+        default: return roleCode
+        }
+    }
+
+    public var adjustExact: String { locale == .zh ? "精确" : "Exact" }
+
+    /// RIR 直选带「不记」档（选中则不记 RIR，引擎不猜、不触发力竭规则）。
+    public var adjustRirSkip: String { "—" }
+
+    /// 后果预演行："打勾后 · 下一组 52.5 kg"。
+    public func adjustPreviewNext(kg: String) -> String {
+        locale == .zh ? "打勾后 · 下一组 \(kg) kg" : "After log · next \(kg) kg"
+    }
+
+    /// 预演短注（NextSetReason code → 短语；onPlan 不加注）。
+    public func adjustPreviewNote(reasonCode: String) -> String? {
+        switch reasonCode {
+        case "lastSetNearFailure":
+            return locale == .zh ? "接近力竭，先回一档" : "easing after near failure"
+        case "belowRepFloor":
+            return locale == .zh ? "次数掉出区间，先回一档" : "reps fell short, easing"
+        case "painReported":
+            return locale == .zh ? "已登记不适，先回一档" : "discomfort noted, easing"
+        default:
+            return nil
+        }
+    }
+
+    /// 最后一组的预演（打勾后动作结束）。
+    public var adjustPreviewComplete: String {
+        locale == .zh ? "打勾后 · 本动作完成" : "After log · exercise complete"
+    }
 
     // MARK: - 跳过 / 替换 / 疼痛（FR-TR5/6/7）
 

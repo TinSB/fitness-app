@@ -4,8 +4,9 @@ import RedeTrainingDecision
 
 // Train — 按 rede-app.html #s-train 复原（M0-2 静态稿 → M3-2 全交互）。
 // 视觉合同沿用静态稿；状态转移全在 TrainFlowState（包内有测试），本层只渲染 +
-// 跑休息计时器。重量 kg 口径（FR-SE1 前不硬编码 lb）。无原型依据的新增控件
-//（快改行、登记不适/更多按钮、空态卡）取最保守样式，已在 DEV_LOG 留痕待设计确认。
+// 跑休息计时器。重量 kg 口径（FR-SE1 前不硬编码 lb）。快改面板按 #533 拍板的
+//「刻度轨」原型实现（语义档位 + 预演；档位逻辑在包内 AdjustOptionsBuilder）；
+// 登记不适/更多按钮、空态卡仍为保守样式待设计确认。
 // 完成落盘归 M3-3；本页到小结为止（FR-TR8 前半）。
 
 struct TrainTabView: View {
@@ -19,10 +20,18 @@ struct TrainTabView: View {
     @State private var showAdjust = false
     @State private var adjustWeight: Double = 0
     @State private var adjustReps = 0
-    @State private var adjustRir = 2
+    /// nil = 不记 RIR（引擎不猜；仅快改面可选，默认行为不变）。
+    @State private var adjustRir: Int? = 2
     /// 重量直接输入（精细调节；提交时解析并钳制）。
     @State private var adjustWeightText = ""
+    @State private var showExactField = false
+    /// 触感词汇表（拍板 2026-06-10）：选档 selection / 撞钳制 error / 打勾 success。
+    /// selectionPulse 只在用户主动选档时递增——面板打开初始化赋值不触发（审查 MINOR-3）。
+    @State private var selectionPulse = 0
+    @State private var clampPulse = 0
+    @State private var logPulse = 0
     @FocusState private var weightFieldFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 快改入口一次性提示（用过即永久消失）。
     @AppStorage("hasUsedQuickAdjust") private var hasUsedQuickAdjust = false
     @State private var showMoreSheet = false
@@ -63,6 +72,7 @@ struct TrainTabView: View {
             .padding(.bottom, 78)
         }
         .background(Color.redeBase)
+        .sensoryFeedback(.success, trigger: logPulse)
         .task(id: restTaskKey) { await runRestTimer() }
         .sheet(isPresented: $showMoreSheet) { moreSheet }
         .sheet(isPresented: $showSwapSheet) { swapSheet }
@@ -152,9 +162,12 @@ struct TrainTabView: View {
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
+                        .contentTransition(.numericText(value: showAdjust ? adjustWeight : targetKg))
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.2),
+                                   value: showAdjust ? adjustWeight : targetKg)
                     Text(s.trainLoadSuffix(
                         targetReps: showAdjust ? adjustReps : (recommendation?.targetReps ?? 0),
-                        targetRir: showAdjust ? Double(adjustRir) : (recommendation?.targetRir ?? 2)
+                        targetRir: showAdjust ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
                     ))
                     .font(.redeCallout)
                     .monospacedDigit()
@@ -178,8 +191,9 @@ struct TrainTabView: View {
             }
 
             if showAdjust {
-                adjustRow
+                adjustPanel(flow)
                     .padding(.top, 8)
+                    .transition(reduceMotion ? .identity : .opacity)
             }
 
             Text(flow.isHolding
@@ -255,55 +269,190 @@ struct TrainTabView: View {
         return s.restNextPreview(setNumber: rec.setIndex, kg: s.formatKg(rec.targetWeightKg), reps: rec.targetReps)
     }
 
-    // MARK: - 快改（FR-TR2：两次点击内改重量/次数/RIR）
+    // MARK: - 快改刻度轨（FR-TR2 两击内；M5-3 拍板设计 = rede-app.html #533）
+    // 档位由 AdjustOptionsBuilder（包内纯函数）生成；预演 = 落盘同规则（AdjustPreview）。
+    // ember 口音纪律：面板内唯一 ember = 指针；预演 tick 用中性色。
 
-    private var adjustRow: some View {
-        HStack(spacing: 14) {
-            // 重量：±2.5 快捷 + 数字框直接输入（任意精度，提交时钳制 ≥0）
-            VStack(spacing: 5) {
-                Overline(text: s.adjustWeight)
-                HStack(spacing: 7) {
-                    SteelButton(title: "−", action: {
-                        adjustWeight = max(0, adjustWeight - 2.5)
-                        adjustWeightText = s.formatKg(adjustWeight)
-                    })
-                    TextField("", text: $adjustWeightText)
-                        .keyboardType(.decimalPad)
-                        .focused($weightFieldFocused)
-                        .font(.redeBody)
-                        .monospacedDigit()
-                        .foregroundStyle(Color.redeT1)
-                        .multilineTextAlignment(.center)
-                        .frame(width: 56)
-                        .padding(.vertical, 4)
-                        .background(Color.redeHair.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .onChange(of: weightFieldFocused) { _, focused in
-                            if !focused { commitWeightText() }
+    private func adjustPanel(_ flow: TrainFlowState) -> some View {
+        let options = adjustOptions(flow)
+        return VStack(alignment: .leading, spacing: 0) {
+            railHeader
+                .modifier(CascadeIn(index: 0, enabled: !reduceMotion))
+            railZone(options)
+                .frame(height: 74)
+                .padding(.top, 2)
+                .modifier(CascadeIn(index: 1, enabled: !reduceMotion))
+            if showExactField {
+                exactField
+                    .padding(.top, 4)
+            }
+            Overline(text: s.adjustReps)
+                .padding(.top, 14)
+                .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
+            repsStrip(flow)
+                .padding(.top, 2)
+                .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
+            Overline(text: s.adjustRir)
+                .padding(.top, 12)
+                .modifier(CascadeIn(index: 3, enabled: !reduceMotion))
+            rirStrip
+                .padding(.top, 2)
+                .modifier(CascadeIn(index: 3, enabled: !reduceMotion))
+            previewLine(flow)
+                .padding(.top, 12)
+                .modifier(CascadeIn(index: 4, enabled: !reduceMotion))
+        }
+        .sensoryFeedback(.selection, trigger: selectionPulse)
+        .sensoryFeedback(.error, trigger: clampPulse)
+    }
+
+    private func adjustOptions(_ flow: TrainFlowState) -> [AdjustOption] {
+        AdjustOptionsBuilder.options(
+            followKg: flow.currentTargetWeightKg ?? 0,
+            lastActualKg: flow.completedInCurrentExercise.last?.weightKg,
+            plannedKg: plannedWeight(flow)
+        )
+    }
+
+    /// 头行：重量标签 + 弱化文字级微调（−/＋ 一档、精确输入），不与档位竞争视觉。
+    private var railHeader: some View {
+        HStack(spacing: 0) {
+            Overline(text: s.adjustWeight)
+            Spacer()
+            railOp("−") { stepAdjustWeight(-AdjustOptionsBuilder.stepKg) }
+            railDivider
+            railOp("＋") { stepAdjustWeight(AdjustOptionsBuilder.stepKg) }
+            railDivider
+            Button(action: {
+                showExactField.toggle()
+                if showExactField { weightFieldFocused = true }
+            }) {
+                Overline(text: s.adjustExact, color: showExactField ? .redeT1 : .redeT4)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func railOp(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.redeBody)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT3)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var railDivider: some View {
+        Rectangle().fill(Color.redeHair).frame(width: 1, height: 9)
+    }
+
+    private func stepAdjustWeight(_ delta: Double) {
+        let next = adjustWeight + delta
+        if next < 0 {
+            clampPulse += 1
+            adjustWeight = 0
+        } else {
+            adjustWeight = next
+            selectionPulse += 1
+        }
+        adjustWeightText = s.formatKg(adjustWeight)
+    }
+
+    /// 刻度轨：2.5kg 细刻 / 整 10kg 主刻；站点按真实比例落位（最小间距保护）；
+    /// ember 指针滑到选中值——选中站点对齐站点，离格值（精确输入）按真实比例。
+    private func railZone(_ options: [AdjustOption]) -> some View {
+        GeometryReader { geo in
+            let layout = RailLayout(values: options.map(\.weightKg), staged: adjustWeight, width: geo.size.width)
+            ZStack(alignment: .topLeading) {
+                Canvas { ctx, _ in
+                    let tickTop: CGFloat = 48
+                    var base = Path()
+                    base.move(to: CGPoint(x: 0, y: tickTop))
+                    base.addLine(to: CGPoint(x: geo.size.width, y: tickTop))
+                    ctx.stroke(base, with: .color(Color.redeHair2), lineWidth: 1)
+                    var v = (layout.lo / 2.5).rounded(.up) * 2.5
+                    while v <= layout.hi {
+                        let x = layout.trueX(v)
+                        let major = v.truncatingRemainder(dividingBy: 10) == 0
+                        var tick = Path()
+                        tick.move(to: CGPoint(x: x, y: tickTop))
+                        tick.addLine(to: CGPoint(x: x, y: tickTop + (major ? 10 : 6)))
+                        ctx.stroke(tick, with: .color(Color.redeHair), lineWidth: 1)
+                        v += 2.5
+                    }
+                }
+                .accessibilityHidden(true)
+
+                ForEach(Array(options.enumerated()), id: \.element.weightKg) { index, option in
+                    let selected = adjustWeight == option.weightKg
+                    Button(action: { selectStation(option) }) {
+                        VStack(spacing: 2) {
+                            Overline(text: s.adjustOptionLabel(option.role.rawValue),
+                                     color: selected ? .redeT3 : .redeT4)
+                                .lineLimit(1)
+                                .fixedSize()   // 标签不截断（可视超出命中框，命中区不变）
+                            Text(s.formatKg(option.weightKg))
+                                .font(.system(size: 17, weight: .semibold))
+                                .monospacedDigit()
+                                .foregroundStyle(selected ? Color.redeT1 : Color.redeT3)
                         }
-                        .toolbar {
-                            // decimal 键盘无回车键：给一个明确的提交路径
-                            ToolbarItemGroup(placement: .keyboard) {
-                                Spacer()
-                                Button(s.adjustDone) {
-                                    commitWeightText()
-                                    weightFieldFocused = false
-                                }
-                            }
-                        }
-                    SteelButton(title: "＋", action: {
-                        adjustWeight += 2.5
-                        adjustWeightText = s.formatKg(adjustWeight)
-                    })
+                        .frame(width: 56, height: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .position(x: layout.stationX[index], y: 22)
+                    .accessibilityLabel("\(s.adjustOptionLabel(option.role.rawValue)) \(s.formatKg(option.weightKg)) kg")
+                }
+
+                // ember 指针（面板唯一口音）
+                VStack(spacing: 0) {
+                    RailCaretTriangle().fill(Color.redeEmber).frame(width: 7, height: 5)
+                    Rectangle().fill(Color.redeEmber).frame(width: 2, height: 10)
+                }
+                .position(x: layout.caretX, y: 67)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: layout.caretX)
+                .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private func selectStation(_ option: AdjustOption) {
+        adjustWeight = option.weightKg
+        adjustWeightText = s.formatKg(option.weightKg)
+        selectionPulse += 1
+    }
+
+    /// 任意精度输入兜底（M4-4 全套保障原样：逗号转点、乱输不收不猜、Done + 失焦 + 打勾强制提交）。
+    private var exactField: some View {
+        TextField("", text: $adjustWeightText)
+            .keyboardType(.decimalPad)
+            .focused($weightFieldFocused)
+            .font(.redeBody)
+            .monospacedDigit()
+            .foregroundStyle(Color.redeT1)
+            .multilineTextAlignment(.center)
+            .frame(width: 76)
+            .padding(.vertical, 4)
+            .background(Color.redeHair.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .onChange(of: weightFieldFocused) { _, focused in
+                if !focused { commitWeightText() }
+            }
+            .toolbar {
+                // decimal 键盘无回车键：给一个明确的提交路径
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(s.adjustDone) {
+                        commitWeightText()
+                        weightFieldFocused = false
+                    }
                 }
             }
-            adjustCell(label: s.adjustReps, value: "\(adjustReps)",
-                       minus: { adjustReps = max(1, adjustReps - 1) },
-                       plus: { adjustReps += 1 })
-            adjustCell(label: s.adjustRir, value: "\(adjustRir)",
-                       minus: { adjustRir = max(0, adjustRir - 1) },
-                       plus: { adjustRir = min(5, adjustRir + 1) })
-        }
     }
 
     /// 文本 → 重量：可解析则钳制 ≥0 收下；不可解析则回显当前值（不猜）。
@@ -314,15 +463,84 @@ struct TrainTabView: View {
         adjustWeightText = s.formatKg(adjustWeight)
     }
 
-    private func adjustCell(label: String, value: String, minus: @escaping () -> Void, plus: @escaping () -> Void) -> some View {
-        VStack(spacing: 5) {
-            Overline(text: label)
-            HStack(spacing: 7) {
-                SteelButton(title: "−", action: minus)
-                Text(value).font(.redeBody).monospacedDigit().foregroundStyle(Color.redeT1)
-                SteelButton(title: "＋", action: plus)
+    /// 次数直选带：以当前值自重心 ±2 一屏五格；计划目标格底部 neu 刻标。
+    private func repsStrip(_ flow: TrainFlowState) -> some View {
+        let lo = max(1, adjustReps - 2)
+        let target = flow.currentRecommendation?.targetReps
+        return HStack(spacing: 0) {
+            ForEach(lo..<(lo + 5), id: \.self) { n in
+                if n > lo { stripDivider }
+                Button(action: { adjustReps = n; selectionPulse += 1 }) {
+                    Text("\(n)")
+                        .font(.redeBody)
+                        .monospacedDigit()
+                        .foregroundStyle(n == adjustReps ? Color.redeT1 : Color.redeT4)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .overlay(alignment: .bottom) {
+                            if n == target {
+                                Rectangle().fill(Color.redeNeu).frame(width: 14, height: 2)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    /// RIR 直选带：「—」= 不记（引擎不猜）；0/1 = 力竭回退区 caution 微标。
+    private var rirStrip: some View {
+        let cells: [Int?] = [nil, 0, 1, 2, 3, 4, 5]
+        return HStack(spacing: 0) {
+            ForEach(Array(cells.enumerated()), id: \.offset) { index, value in
+                if index > 0 { stripDivider }
+                Button(action: { adjustRir = value; selectionPulse += 1 }) {
+                    Text(value.map(String.init) ?? s.adjustRirSkip)
+                        .font(.redeBody)
+                        .monospacedDigit()
+                        .foregroundStyle(value == adjustRir ? Color.redeT1 : Color.redeT4)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .overlay(alignment: .bottom) {
+                            if let value, value <= 1 {
+                                Rectangle().fill(Color.redeCaution.opacity(0.5)).frame(width: 14, height: 2)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(value.map { "RIR \($0)" } ?? "RIR —")
+            }
+        }
+    }
+
+    private var stripDivider: some View {
+        Rectangle().fill(Color.redeHair2).frame(width: 1, height: 8)
+    }
+
+    /// 后果预演：与落盘同一引擎函数求值，预演说什么打勾后就发生什么（合同测试钉死）。
+    private func previewLine(_ flow: TrainFlowState) -> some View {
+        let staged = CompletedSetObservation(
+            weightKg: adjustWeight,
+            reps: adjustReps,
+            rir: adjustRir.map(Double.init),
+            painReported: flow.painReportedForCurrentSet
+        )
+        let projection = flow.currentExercise.flatMap {
+            AdjustPreview.project(plan: $0, completed: flow.completedInCurrentExercise, staged: staged)
+        }
+        let text: String
+        if let projection {
+            let note = s.adjustPreviewNote(reasonCode: projection.reason.code)
+            text = s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg))
+                + (note.map { " — \($0)" } ?? "")
+        } else {
+            text = s.adjustPreviewComplete
+        }
+        return HStack(spacing: 6) {
+            Rectangle().fill(Color.redeNeu).frame(width: 11, height: 2)
+            Text(text).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT3)
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: text)
     }
 
     // MARK: - 组表（沿用 M0-2 行渲染）
@@ -639,8 +857,11 @@ struct TrainTabView: View {
             adjustWeightText = s.formatKg(targetKg)
             adjustReps = max(1, recommendation?.targetReps ?? 1)
             adjustRir = Int(recommendation?.targetRir ?? 2)
+            showExactField = false
         }
-        showAdjust.toggle()
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            showAdjust.toggle()
+        }
     }
 
     private func logCurrentSet() {
@@ -656,10 +877,12 @@ struct TrainTabView: View {
         let observation = CompletedSetObservation(
             weightKg: showAdjust ? adjustWeight : target,
             reps: showAdjust ? adjustReps : (recommendation?.targetReps ?? 0),
-            rir: Double(showAdjust ? adjustRir : Int(recommendation?.targetRir ?? 2)),
+            // 快改面选「不记」→ nil 落盘（引擎不猜）；未开快改维持现状（默认目标 RIR）
+            rir: showAdjust ? adjustRir.map(Double.init) : Double(Int(recommendation?.targetRir ?? 2)),
             painReported: flow.painReportedForCurrentSet
         )
         sessionStore.apply(.logSet(observation))
+        logPulse += 1
         showAdjust = false
         painToastVisible = false
         if sessionStore.flow?.phase == .resting {
@@ -716,6 +939,94 @@ struct TrainTabView: View {
                 break
             }
         }
+    }
+}
+
+// MARK: - 刻度轨辅助（纯渲染几何，无状态）
+
+/// 站点落位：真实比例 + 最小间距保护（命中区不重叠；刻度本身保持线性）。
+private struct RailLayout {
+    let lo: Double
+    let hi: Double
+    let width: CGFloat
+    let stationX: [CGFloat]
+    let caretX: CGFloat
+
+    private static let minGap: CGFloat = 66   // 英文长标签（LIGHTER/HEAVIER）不截断所需的站距
+    private static let edgeInset: CGFloat = 34
+
+    init(values: [Double], staged: Double, width: CGFloat) {
+        let loV = Swift.min(values.min() ?? staged, staged) - 5
+        let hiV = Swift.max(Swift.max(values.max() ?? staged, staged) + 5, loV + 0.001)
+        self.lo = loV
+        self.hi = hiV
+        self.width = width
+
+        var xs = values.map { Self.proportionalX($0, lo: loV, hi: hiV, width: width) }
+        if xs.count > 1 {
+            for i in 1..<xs.count { xs[i] = Swift.max(xs[i], xs[i - 1] + Self.minGap) }
+            if let last = xs.last, last > width - Self.edgeInset {
+                xs[xs.count - 1] = width - Self.edgeInset
+                for i in stride(from: xs.count - 2, through: 0, by: -1) {
+                    xs[i] = Swift.min(xs[i], xs[i + 1] - Self.minGap)
+                }
+            }
+        }
+        xs = xs.map { Swift.min(Swift.max($0, Self.edgeInset), width - Self.edgeInset) }
+        if xs.count > 1 {
+            // 左缘钳制可能再次破坏最小间距（审查 MINOR-1）：末跑一次正向 pass 恢复保证；
+            // 极窄轨道下右端可超出 inset（视觉贴边），命中区仍互不重叠
+            for i in 1..<xs.count { xs[i] = Swift.max(xs[i], xs[i - 1] + Self.minGap) }
+        }
+        self.stationX = xs
+
+        // 指针：选中站点对齐站点（含间距修正）；离格值（精确输入）按真实比例
+        if let index = values.firstIndex(of: staged) {
+            self.caretX = xs[index]
+        } else {
+            self.caretX = Swift.min(Swift.max(Self.proportionalX(staged, lo: loV, hi: hiV, width: width), 2), width - 2)
+        }
+    }
+
+    func trueX(_ value: Double) -> CGFloat {
+        Self.proportionalX(value, lo: lo, hi: hi, width: width)
+    }
+
+    private static func proportionalX(_ value: Double, lo: Double, hi: Double, width: CGFloat) -> CGFloat {
+        CGFloat((value - lo) / (hi - lo)) * width
+    }
+}
+
+private struct RailCaretTriangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// 面板展开时的 35ms 级联入场（拍板动效；reduced-motion 下直接显示）。
+private struct CascadeIn: ViewModifier {
+    let index: Int
+    let enabled: Bool
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 4)
+            .onAppear {
+                guard enabled else {
+                    shown = true
+                    return
+                }
+                withAnimation(.easeOut(duration: 0.22).delay(Double(index) * 0.035)) {
+                    shown = true
+                }
+            }
     }
 }
 
