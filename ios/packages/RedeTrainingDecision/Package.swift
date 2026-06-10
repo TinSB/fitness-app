@@ -13,9 +13,11 @@ let package = Package(
     dependencies: [
         .package(path: "../RedeDomain"),
         .package(path: "../RedeDataHealth"),
+        // 仅测试依赖：端到端写读闭环（生产代码不依赖 Persistence）
+        .package(path: "../RedePersistence"),
     ],
     targets: [
         .target(name: "RedeTrainingDecision", dependencies: ["RedeDomain", "RedeDataHealth"]),
-        .testTarget(name: "RedeTrainingDecisionTests", dependencies: ["RedeTrainingDecision"]),
+        .testTarget(name: "RedeTrainingDecisionTests", dependencies: ["RedeTrainingDecision", "RedePersistence"]),
     ]
 )

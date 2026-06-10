@@ -1,5 +1,6 @@
 import SwiftUI
 import RedeL10n
+import RedeTrainingDecision
 
 enum RootTab: Hashable {
     case today
@@ -65,11 +66,36 @@ struct RootTabView: View {
                 .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
         }
         .background(Color.redeBase.ignoresSafeArea())
-        // 截图/UI 验证钩子: -autoStartSession 直接载入今日并开训（仅测试脚手架）
+        // 截图/UI 验证钩子（仅测试脚手架）:
+        // -autoStartSession 直接载入今日并开训；
+        // -autoCompleteSession 自动按建议打满全部组并落盘（验证杀进程重开记录还在）。
         .task {
-            if ProcessInfo.processInfo.arguments.contains("-autoStartSession") {
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-autoStartSession") || args.contains("-autoCompleteSession") {
                 await sessionStore.loadToday()
                 sessionStore.startSession()
+            }
+            if args.contains("-autoCompleteSession") {
+                var guardCounter = 0 // 防御：异常状态下不空转（计划为空等）
+                while let flow = sessionStore.flow, flow.phase != .summary, guardCounter < 500 {
+                    guardCounter += 1
+                    switch flow.phase {
+                    case .activeSet:
+                        let rec = flow.currentRecommendation
+                        sessionStore.flow?.logSet(CompletedSetObservation(
+                            weightKg: rec?.targetWeightKg ?? 0,
+                            reps: rec?.targetReps ?? 1,
+                            rir: rec?.targetRir ?? 2,
+                            painReported: false
+                        ))
+                    case .resting:
+                        sessionStore.flow?.restFinished()
+                    default:
+                        break
+                    }
+                }
+                _ = await sessionStore.completeAndPersistSession()
+                selection = .today
             }
         }
         .environment(localeStore)
