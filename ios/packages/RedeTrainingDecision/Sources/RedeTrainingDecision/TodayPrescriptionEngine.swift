@@ -198,6 +198,8 @@ public enum TodayPrescriptionEngine {
             targetWeightKg: weight,
             targetRir: targetRir,
             previousWeightKg: last?.topWeightKg,
+            previousTopReps: last?.repsAtTop,
+            nextProjectedWeightKg: roundToIncrement(weight + incrementKg),
             change: change,
             reason: reason
         )
@@ -213,6 +215,8 @@ public enum TodayPrescriptionEngine {
 
     private struct LastPerformance {
         let topWeightKg: Double
+        /// 顶组（最重一组）的次数。
+        let repsAtTop: Int
         let minReps: Int
         let maxReps: Int
         /// min 口径：最差一组的 RIR（安全优先，见文件头拍板说明）。
@@ -234,8 +238,10 @@ public enum TodayPrescriptionEngine {
 
         let reps = latest.sets.map(\.reps)
         let rirs = latest.sets.compactMap(\.rir)
+        let topSet = latest.sets.max { $0.weight < $1.weight }
         return LastPerformance(
-            topWeightKg: latest.sets.map(\.weight).max() ?? 0,
+            topWeightKg: topSet?.weight ?? 0,
+            repsAtTop: topSet?.reps ?? 0,
             minReps: reps.min() ?? 0,
             maxReps: reps.max() ?? 0,
             minRir: rirs.min()

@@ -146,7 +146,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **入口合同**：吃 `CleanTrainingDecisionInput` + M2-1 的 `TodayVerdict`（处方不重复判断练不练）；rest 裁决 → 无处方。纯函数、无 clock/IO、输出永不写回 AppData。
 
-**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(=2 MVP 常量), previousWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；lb 换算归渲染层（FR-SE1）。previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。
+**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(=2 MVP 常量), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；lb 换算归渲染层（FR-SE1）。previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。
 
 **生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × 最小 catalog（`ExerciseCatalog.minimal`，24 动作，开放决策 #1 已拍板）按目录顺序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位的组数/次数区间沿 legacy 模板口径。轮转 = 完成 session 数对 split 序列取模（ppl→push-a/pull-a/legs-a；其余→upper/lower）——MVP 简化，program 日结构促升后改为真轮转。槽位无法匹配时记 `slotUnfilled` 留痕，不静默。
 

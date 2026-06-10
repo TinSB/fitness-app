@@ -82,6 +82,8 @@ final class TodayPrescriptionEngineTests: XCTestCase {
         XCTAssertEqual(bench.change, .increase)
         XCTAssertEqual(bench.reason, .repCeilingReached)
         XCTAssertEqual(bench.previousWeightKg, 30)
+        XCTAssertEqual(bench.previousTopReps, 10)          // Rail「上次」节点
+        XCTAssertEqual(bench.nextProjectedWeightKg, 35)    // Rail「下次」节点 = 32.5 + 2.5
     }
 
     // 上次力竭（mean RIR ≤ 0.5）→ −2.5kg 回退
