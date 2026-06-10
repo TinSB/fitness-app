@@ -5,7 +5,7 @@
 // 结构化满足）。previous→target→change 三元组同时喂 Receipt Change 行、
 // 训练页 why 行与 Rail next 三个槽位。输出是纯派生，永不写回 AppData。
 
-public enum ChangeDirection: String, Equatable, Sendable {
+public enum ChangeDirection: String, Equatable, Sendable, Codable {
     case start
     case increase
     case hold
@@ -13,7 +13,7 @@ public enum ChangeDirection: String, Equatable, Sendable {
 }
 
 /// 单动作处方理由（渐进决策的那条分支）。
-public enum PrescriptionReason: Equatable, Sendable {
+public enum PrescriptionReason: Equatable, Sendable, Codable {
     case firstExposure
     case repCeilingReached
     case nearFailureLastTime
@@ -32,7 +32,7 @@ public enum PrescriptionReason: Equatable, Sendable {
 }
 
 /// 日级处方理由（裁决调制与生成限制）。
-public enum DayPrescriptionReason: Equatable, Sendable {
+public enum DayPrescriptionReason: Equatable, Sendable, Codable {
     case verdictLightReduced
     case verdictDeloadReduced
     case slotUnfilled(pattern: String)
@@ -46,7 +46,7 @@ public enum DayPrescriptionReason: Equatable, Sendable {
     }
 }
 
-public struct ExercisePrescriptionPlan: Equatable, Sendable {
+public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     public let exerciseId: String
     public let sets: Int
     /// 组间休息秒数（slot 生成参数，沿 legacy 模板口径）。
@@ -89,7 +89,7 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable {
     }
 }
 
-public struct TodayPrescription: Equatable, Sendable {
+public struct TodayPrescription: Equatable, Sendable, Codable {
     /// 训练日 code（push-a / upper …）——RedeL10n TEMPLATE_NAME_MAP 渲染双语名。
     public let dayCode: String
     /// 有序动作清单（顺序 = 槽位顺序，稳定）。

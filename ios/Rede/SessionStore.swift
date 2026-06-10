@@ -17,11 +17,38 @@ private struct DataHealthGate: AppDataWriteGate {
 // 这里只是 @Observable 包装 + 时钟注入点。进行中会话仅存内存
 //（FR-TR9 跨进程恢复未排片，已在 MVP 计划留痕）；完成落盘归 M3-3。
 
+/// draft 文件存取（独立于 canonical，不经写闸；best-effort——draft 丢失不阻塞训练）。
+private enum DraftFile {
+    static var url: URL {
+        TodayModel.canonicalFileURL().deletingLastPathComponent()
+            .appendingPathComponent("active-session-draft.json", isDirectory: false)
+    }
+
+    static func load() -> TrainSessionDraft? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(TrainSessionDraft.self, from: data)
+    }
+
+    static func save(_ draft: TrainSessionDraft) {
+        guard let data = try? JSONEncoder().encode(draft) else { return }
+        try? FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        try? data.write(to: url, options: [.atomic])
+    }
+
+    static func clear() {
+        try? FileManager.default.removeItem(at: url)
+    }
+}
+
 @Observable
 final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
     var flow: TrainFlowState?
     var sessionStartedAt: Date?
+    /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
+    var pendingDraft: TrainSessionDraft?
     /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。
     var saveErrorText: String?
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
@@ -34,13 +61,80 @@ final class SessionStore {
 
     func loadToday() async {
         todayOutcome = await TodayModel.loadOutcomeAsync()
+        checkForRestorableDraft()
+    }
+
+    /// 当日 draft → 恢复提示；跨天/无效 → 静默清除。
+    private func checkForRestorableDraft() {
+        guard flow == nil, pendingDraft == nil, let draft = DraftFile.load() else { return }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        if draft.isRestorable(todayISO: formatter.string(from: Date())) {
+            pendingDraft = draft
+        } else {
+            DraftFile.clear()
+        }
+    }
+
+    func restorePendingDraft() {
+        guard let draft = pendingDraft else { return }
+        pendingDraft = nil
+        guard let restored = draft.restoreFlow() else {
+            // 重放失败（如 catalog 漂移）：宁可不恢复，清掉过期 draft
+            DraftFile.clear()
+            return
+        }
+        flow = restored
+        sessionStartedAt = draft.startedAt
+    }
+
+    func discardPendingDraft() {
+        pendingDraft = nil
+        DraftFile.clear()
+    }
+
+    /// 事件包装：转移 + 即时 draft 留存（每个动作后都可恢复）。
+    func apply(_ event: TrainFlowEvent) {
+        guard flow != nil else { return }
+        switch event {
+        case .logSet(let obs): flow?.logSet(obs)
+        case .restFinished: flow?.restFinished()
+        case .skipSet(let reason): flow?.skipSet(reason: reason)
+        case .skipExercise(let reason): flow?.skipExercise(reason: reason)
+        case .replaceExercise(let id): flow?.replaceCurrentExercise(with: id)
+        case .reportPain: flow?.reportPain()
+        case .toggleHold: flow?.toggleHold()
+        case .requestFinish: flow?.requestFinish()
+        case .keepTraining: flow?.keepTraining()
+        case .confirmEnd(let reason): flow?.confirmEnd(reason: reason)
+        }
+        persistDraft()
+    }
+
+    private func persistDraft() {
+        guard let flow, flow.phase != .summary else { return }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let draft = TrainSessionDraft(
+            dateISO: formatter.string(from: sessionStartedAt ?? Date()),
+            startedAt: sessionStartedAt ?? Date(),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        Task.detached(priority: .utility) { DraftFile.save(draft) }
     }
 
     /// 从今日处方开启训练（无处方/休息日则不开）。
     func startSession(now: Date = Date()) {
         guard flow == nil, let prescription = todayModel?.prescription else { return }
+        pendingDraft = nil // 显式清提示（不依赖 alert binding 的隐式 dismiss）
         flow = TrainFlowState(prescription: prescription)
         sessionStartedAt = now
+        persistDraft()
     }
 
     /// 今日尚未加载时先加载再开训（Plan tab 直接开训路径）。
@@ -53,6 +147,7 @@ final class SessionStore {
         flow = nil
         sessionStartedAt = nil
         saveErrorText = nil
+        DraftFile.clear()
     }
 
     /// 完成写入（M3-3）：构建 canonical session → 真 DataHealth gate → 唯一写闸。

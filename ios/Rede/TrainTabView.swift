@@ -81,7 +81,7 @@ struct TrainTabView: View {
                 ))
             }
             Spacer()
-            Button(action: { sessionStore.flow?.requestFinish() }) {
+            Button(action: { sessionStore.apply(.requestFinish) }) {
                 Text(s.trainFinish)
                     .font(.redeBody)
                     .foregroundStyle(Color.redeT3)
@@ -180,7 +180,7 @@ struct TrainTabView: View {
                 SteelButton(
                     title: s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding),
                     isOn: flow.isHolding,
-                    action: { sessionStore.flow?.toggleHold() }
+                    action: { sessionStore.apply(.toggleHold) }
                 )
                 SteelButton(title: s.painAction, action: registerPain)
                 SteelButton(title: s.moreActions, action: { showMoreSheet = true })
@@ -457,7 +457,7 @@ struct TrainTabView: View {
             if let candidates = flow?.replacementCandidates, !candidates.isEmpty {
                 ForEach(candidates, id: \.self) { id in
                     SteelButton(title: s.exerciseName(id), action: {
-                        sessionStore.flow?.replaceCurrentExercise(with: id)
+                        sessionStore.apply(.replaceExercise(id))
                         showSwapSheet = false
                     })
                 }
@@ -474,7 +474,7 @@ struct TrainTabView: View {
     private var confirmBinding: Binding<Bool> {
         Binding(
             get: { sessionStore.flow?.phase == .confirmEnd },
-            set: { if !$0 { sessionStore.flow?.keepTraining() } }
+            set: { if !$0 { sessionStore.apply(.keepTraining) } }
         )
     }
 
@@ -487,9 +487,9 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT1)
             Text(s.endWorkoutKeptNote).font(.redeCallout).foregroundStyle(Color.redeT3)
             EmbButton(icon: nil, title: s.endWorkoutConfirm, action: {
-                sessionStore.flow?.confirmEnd(reason: .timeUp)
+                sessionStore.apply(.confirmEnd(.timeUp))
             })
-            SteelButton(title: s.keepTraining, action: { sessionStore.flow?.keepTraining() })
+            SteelButton(title: s.keepTraining, action: { sessionStore.apply(.keepTraining) })
             Spacer()
         }
         .padding(20)
@@ -590,7 +590,7 @@ struct TrainTabView: View {
             rir: Double(showAdjust ? adjustRir : Int(recommendation?.targetRir ?? 2)),
             painReported: flow.painReportedForCurrentSet
         )
-        sessionStore.flow?.logSet(observation)
+        sessionStore.apply(.logSet(observation))
         showAdjust = false
         painToastVisible = false
         if sessionStore.flow?.phase == .resting {
@@ -600,7 +600,7 @@ struct TrainTabView: View {
     }
 
     private func registerPain() {
-        sessionStore.flow?.reportPain()
+        sessionStore.apply(.reportPain)
         painToastVisible = true
     }
 
@@ -608,18 +608,18 @@ struct TrainTabView: View {
         showMoreSheet = false
         painToastVisible = false
         guard let reason = SetSkipReason(rawValue: code) else { return }
-        sessionStore.flow?.skipSet(reason: reason)
+        sessionStore.apply(.skipSet(reason))
     }
 
     private func skipExercise() {
         showMoreSheet = false
         painToastVisible = false
-        sessionStore.flow?.skipExercise(reason: .other)
+        sessionStore.apply(.skipExercise(.other))
     }
 
     private func finishRest() {
         restRemaining = 0
-        sessionStore.flow?.restFinished()
+        sessionStore.apply(.restFinished)
     }
 
     private var formattedRest: String {

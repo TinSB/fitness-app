@@ -145,6 +145,15 @@ extension RedeStrings {
         locale == .zh ? "保存失败——你的记录还在本页，可重试。" : "Save failed — your sets are still here. Try again."
     }
 
+    // MARK: - 恢复进行中训练（FR-TR9）
+
+    public var resumeSessionTitle: String { locale == .zh ? "继续进行中的训练？" : "Resume your session?" }
+    public var resumeSessionMessage: String {
+        locale == .zh ? "上次训练没有完成，已完成的组都还在。" : "Your last session wasn't finished — your logged sets are still here."
+    }
+    public var resumeSessionContinue: String { locale == .zh ? "继续训练" : "Resume" }
+    public var resumeSessionDiscard: String { locale == .zh ? "放弃" : "Discard" }
+
     /// 训练 tab 无进行中会话时的空态。
     public var trainEmptyTitle: String { locale == .zh ? "今天还没开始训练" : "No session in progress" }
     public var trainEmptyAction: String { locale == .zh ? "去今日页开始" : "Start from Today" }

@@ -4,7 +4,7 @@
 // 跳过/替换是引擎输入事实（写入合同 §5 的 saved-session replacement 在
 // M3-3 经唯一写闸落盘）；替换候选 = catalog 同替代族（FR-TR6）。
 
-public enum SetSkipReason: String, CaseIterable, Equatable, Sendable {
+public enum SetSkipReason: String, CaseIterable, Equatable, Sendable, Codable {
     case equipmentBusy
     case painDiscomfort
     case fatigue
@@ -12,7 +12,7 @@ public enum SetSkipReason: String, CaseIterable, Equatable, Sendable {
     case other
 }
 
-public enum SessionEndReason: String, CaseIterable, Equatable, Sendable {
+public enum SessionEndReason: String, CaseIterable, Equatable, Sendable, Codable {
     case completedAll
     case timeUp
     case fatigue
