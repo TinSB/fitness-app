@@ -20,7 +20,7 @@ enum SnapshotDayMath {
         // 1970-01-01（z=0）是周四，周一比周四早 3 天 → mondayOffset = (z+3) mod 7
         //（floor 取模处理负 z），即该日距本周周一的天数。
         let mondayOffset = ((z + 3) % 7 + 7) % 7
-        return civilString(fromDayNumber: z - mondayOffset)
+        return isoString(fromDayNumber: z - mondayOffset)
     }
 
     // MARK: - Hinnant 算法
@@ -47,8 +47,8 @@ enum SnapshotDayMath {
         return era * 146_097 + doe - 719_468
     }
 
-    /// civil_from_days 反推 yyyy-MM-dd。
-    private static func civilString(fromDayNumber z0: Int) -> String {
+    /// civil_from_days 反推 yyyy-MM-dd（周对比等相邻周推算也用它）。
+    static func isoString(fromDayNumber z0: Int) -> String {
         var z = z0 + 719_468
         let era = (z >= 0 ? z : z - 146_096) / 146_097
         z -= era * 146_097

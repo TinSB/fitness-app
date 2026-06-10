@@ -24,15 +24,7 @@ final class RedeStringsTests: XCTestCase {
             ("trainColSet", s.trainColSet), ("trainColWeight", s.trainColWeight), ("trainColReps", s.trainColReps), ("trainColRir", s.trainColRir),
             ("trainNextUp", s.trainNextUp),
             ("progressTitle", s.progressTitle), ("scaleSession", s.scaleSession), ("scaleWeek", s.scaleWeek), ("scaleCycle", s.scaleCycle),
-            ("weekVerdict", s.weekVerdict), ("weekSub", s.weekSub), ("weekChartTitle", s.weekChartTitle), ("weekCaption", s.weekCaption),
-            ("sessionVerdict", s.sessionVerdict), ("sessionSub", s.sessionSub), ("sessionChartTitle", s.sessionChartTitle), ("sessionCaption", s.sessionCaption),
-            ("cycleVerdict", s.cycleVerdict), ("cycleSub", s.cycleSub), ("cycleChartTitle", s.cycleChartTitle), ("cycleCaption", s.cycleCaption),
-            ("cycleDeload", s.cycleDeload),
-            ("muscleChest", s.muscleChest), ("muscleBack", s.muscleBack), ("muscleShoulders", s.muscleShoulders),
-            ("muscleLegs", s.muscleLegs), ("muscleArms", s.muscleArms),
-            ("liftBench", s.liftBench), ("liftOhp", s.liftOhp), ("liftIncline", s.liftIncline),
-            ("liftTriceps", s.liftTriceps), ("liftLateral", s.liftLateral),
-            ("developmentTitle", s.developmentTitle), ("developmentSummary", s.developmentSummary),
+            ("sessionChartTitle", s.sessionChartTitle),
             ("planTitle", s.planTitle), ("planPhaseLine", s.planPhaseLine),
             ("planMonDone", s.planMonDone), ("planWedDone", s.planWedDone), ("planFriToday", s.planFriToday), ("planSunNext", s.planSunNext),
             ("planPushA", s.planPushA), ("planPullA", s.planPullA), ("planPushB", s.planPushB), ("planLegs", s.planLegs),
@@ -81,7 +73,7 @@ final class RedeStringsTests: XCTestCase {
         // 抽样:双语不是同一份表(允许 lb/RIR 等术语两边一致)
         XCTAssertNotEqual(zh.todayVerdict, en.todayVerdict)
         XCTAssertNotEqual(zh.trainLogSet, en.trainLogSet)
-        XCTAssertNotEqual(zh.weekVerdict, en.weekVerdict)
+        XCTAssertNotEqual(zh.progressEmptyTitle, en.progressEmptyTitle)
         XCTAssertNotEqual(zh.planControlsTitle, en.planControlsTitle)
     }
 
