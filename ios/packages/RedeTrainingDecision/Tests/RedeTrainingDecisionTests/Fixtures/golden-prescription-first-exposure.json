@@ -1,0 +1,11 @@
+{
+  "today": "2026-06-09",
+  "expected": {
+    "dayCode": "upper",
+    "firstExerciseId": "db-bench-press",
+    "firstWeightKg": 30,
+    "firstChange": "start",
+    "exerciseCount": 7
+  },
+  "appData": { "schemaVersion": 8 }
+}

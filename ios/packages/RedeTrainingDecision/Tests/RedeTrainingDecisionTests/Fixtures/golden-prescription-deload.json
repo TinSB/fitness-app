@@ -1,0 +1,37 @@
+{
+  "today": "2026-06-09",
+  "expected": {
+    "dayCode": "lower",
+    "firstExerciseId": "hack-squat",
+    "firstWeightKg": 65,
+    "firstChange": "hold",
+    "exerciseCount": 5,
+    "dayReasonCodes": ["verdictDeloadReduced"]
+  },
+  "appData": {
+    "schemaVersion": 8,
+    "programTemplate": { "splitType": "upper-lower", "daysPerWeek": 6 },
+    "history": [
+      { "id": "d01", "date": "2026-05-20", "completed": true, "exercises": [] },
+      { "id": "d02", "date": "2026-05-21", "completed": true, "exercises": [] },
+      { "id": "d03", "date": "2026-05-22", "completed": true, "exercises": [] },
+      { "id": "d04", "date": "2026-05-23", "completed": true, "exercises": [] },
+      { "id": "d05", "date": "2026-05-24", "completed": true, "exercises": [] },
+      { "id": "d06", "date": "2026-05-25", "completed": true, "exercises": [] },
+      { "id": "d07", "date": "2026-05-26", "completed": true, "exercises": [] },
+      { "id": "d08", "date": "2026-05-27", "completed": true, "exercises": [] },
+      { "id": "d09", "date": "2026-05-28", "completed": true, "exercises": [] },
+      { "id": "d10", "date": "2026-05-29", "completed": true, "exercises": [] },
+      { "id": "d11", "date": "2026-05-30", "completed": true, "exercises": [] },
+      { "id": "d12", "date": "2026-05-31", "completed": true, "exercises": [] },
+      { "id": "d13", "date": "2026-06-01", "completed": true, "exercises": [] },
+      { "id": "d14", "date": "2026-06-02", "completed": true, "exercises": [] },
+      { "id": "d15", "date": "2026-06-03", "completed": true, "exercises": [] },
+      { "id": "d16", "date": "2026-06-04", "completed": true, "exercises": [] },
+      { "id": "d17", "date": "2026-06-05", "completed": true, "exercises": [] },
+      { "id": "d18", "date": "2026-06-06", "completed": true, "exercises": [] },
+      { "id": "d19", "date": "2026-06-07", "completed": true,
+        "exercises": [{ "exerciseId": "hack-squat", "sets": [{ "weight": 80, "reps": 8, "rir": 2 }] }] }
+    ]
+  }
+}
