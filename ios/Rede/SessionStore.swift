@@ -64,6 +64,67 @@ final class SessionStore {
         checkForRestorableDraft()
     }
 
+    // MARK: - M5-2 偏好与档案（FR-SE1/SE2/SE3）
+
+    /// 启动时读取持久化偏好（只读，不经写闸）；unreadable/缺失 → nil（渲染层默认兜底）。
+    static func loadPreferences() -> (unit: String?, locale: String?) {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return (nil, nil) }
+        return (appData.userProfile.unitSystem, appData.userProfile.locale)
+    }
+
+    /// 设置页展示用的档案快照（引导四答）。
+    struct ProfileSnapshot {
+        let primaryGoal: String?
+        let weeklyTrainingDays: Int?
+        let equipmentScenario: String?
+        let trainingLevel: String?
+    }
+
+    static func loadProfileSnapshot() -> ProfileSnapshot? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let profile = appData.userProfile
+        return ProfileSnapshot(
+            primaryGoal: profile.primaryGoal,
+            weeklyTrainingDays: profile.weeklyTrainingDays,
+            equipmentScenario: profile.equipmentScenario,
+            trainingLevel: profile.trainingLevel
+        )
+    }
+
+    /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
+    /// isSaving 互斥沿写闸单调用方合同（审查 MAJOR-1：防快速连点并发 load-modify-write 丢更新）。
+    @discardableResult
+    func savePreferences(unitSystem: String?, locale: String?) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyPreferences(unitSystem: unitSystem, locale: locale)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
     // MARK: - M5-1b 引导（FR-ON1/3）
 
     /// 是否需要首启引导。铁律：unreadable ≠ 新用户——文件在但读不懂时绝不进引导

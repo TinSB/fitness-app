@@ -58,14 +58,19 @@ extension RedeStrings {
 
     // MARK: - 数值格式
 
-    /// kg 数值：整数去尾零（62.5 → "62.5"，60.0 → "60"）。
+    /// 重量显示（输入恒为 canonical kg，整数去尾零）。kg：原值；
+    /// lb（M5-2 FR-SE1）：×2.2046226218 后取 0.5 lb 步进——显示精度，不做配片量化。
     public func formatKg(_ value: Double) -> String {
-        value == value.rounded() ? String(Int(value)) : String(value)
+        let display = unit == .lb ? ((value * 2.204_622_621_8 * 2).rounded() / 2) : value
+        return display == display.rounded() ? String(Int(display)) : String(display)
     }
+
+    /// 当前重量单位标签（"kg"/"lb"）——所有带单位文案统一从这里取。
+    public var unitLabel: String { unit.rawValue }
 
     /// Load Plate 后缀："kg · ×6 · RIR 2"。
     public func loadDetail(targetReps: Int, targetRir: Int) -> String {
-        "kg · ×\(targetReps) · RIR \(targetRir)"
+        "\(unitLabel) · ×\(targetReps) · RIR \(targetRir)"
     }
 
     /// "接 {动作}" / "then {exercise}"。
@@ -197,15 +202,15 @@ extension RedeStrings {
     public func changeLine(exerciseName: String, change: String, fromKg: String?, toKg: String) -> String {
         switch change {
         case "start":
-            return t2("\(exerciseName) 首次定档 \(toKg) kg", "\(exerciseName) starts at \(toKg) kg")
+            return t2("\(exerciseName) 首次定档 \(toKg) \(unitLabel)", "\(exerciseName) starts at \(toKg) \(unitLabel)")
         case "increase":
             let from = fromKg ?? "—"
-            return t2("\(exerciseName) \(from)→\(toKg) kg · 进阶", "\(exerciseName) \(from)→\(toKg) kg · moving up")
+            return t2("\(exerciseName) \(from)→\(toKg) \(unitLabel) · 进阶", "\(exerciseName) \(from)→\(toKg) \(unitLabel) · moving up")
         case "ease":
             let from = fromKg ?? "—"
-            return t2("\(exerciseName) \(from)→\(toKg) kg · 回调", "\(exerciseName) eased \(from)→\(toKg) kg")
+            return t2("\(exerciseName) \(from)→\(toKg) \(unitLabel) · 回调", "\(exerciseName) eased \(from)→\(toKg) \(unitLabel)")
         default:
-            return t2("\(exerciseName) 保持 \(toKg) kg", "\(exerciseName) holds \(toKg) kg")
+            return t2("\(exerciseName) 保持 \(toKg) \(unitLabel)", "\(exerciseName) holds \(toKg) \(unitLabel)")
         }
     }
 

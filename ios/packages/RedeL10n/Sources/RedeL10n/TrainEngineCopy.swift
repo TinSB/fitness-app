@@ -24,12 +24,12 @@ extension RedeStrings {
 
     /// "kg · × 6 · RIR 2"（大数字后缀）。
     public func trainLoadSuffix(targetReps: Int, targetRir: Double) -> String {
-        "kg · × \(targetReps) · RIR \(formatRir(targetRir))"
+        "\(unitLabel) · × \(targetReps) · RIR \(formatRir(targetRir))"
     }
 
     /// 大数字后缀（RIR 可空：快改面选「不记」时显示 "RIR —"）。
     public func trainLoadSuffix(targetReps: Int, targetRir: Double?) -> String {
-        "kg · × \(targetReps) · RIR \(targetRir.map(formatRir) ?? "—")"
+        "\(unitLabel) · × \(targetReps) · RIR \(targetRir.map(formatRir) ?? "—")"
     }
 
     /// 下一组建议的 why 行（NextSetReason code → 句子）。
@@ -84,8 +84,8 @@ extension RedeStrings {
     /// "下一组 · 第 2 组 · 60 kg × 6"。
     public func restNextPreview(setNumber: Int, kg: String, reps: Int) -> String {
         locale == .zh
-            ? "下一组 · 第 \(setNumber) 组 · \(kg) kg × \(reps)"
-            : "Next · Set \(setNumber) · \(kg) kg × \(reps)"
+            ? "下一组 · 第 \(setNumber) 组 · \(kg) \(unitLabel) × \(reps)"
+            : "Next · Set \(setNumber) · \(kg) \(unitLabel) × \(reps)"
     }
 
     /// 动作间休息预告："接下来 · 高位下拉"。
@@ -119,7 +119,7 @@ extension RedeStrings {
 
     /// 后果预演行："打勾后 · 下一组 52.5 kg"。
     public func adjustPreviewNext(kg: String) -> String {
-        locale == .zh ? "打勾后 · 下一组 \(kg) kg" : "After log · next \(kg) kg"
+        locale == .zh ? "打勾后 · 下一组 \(kg) \(unitLabel)" : "After log · next \(kg) \(unitLabel)"
     }
 
     /// 预演短注（NextSetReason code → 短语；onPlan 不加注）。
@@ -185,11 +185,11 @@ extension RedeStrings {
     public func summaryMeta(minutes: Int) -> String {
         locale == .zh ? "\(minutes) 分钟 · 干得漂亮" : "\(minutes) min · well done"
     }
-    public var summaryVolume: String { locale == .zh ? "总量 kg" : "Volume kg" }
+    public var summaryVolume: String { locale == .zh ? "总量 \(unitLabel)" : "Volume \(unitLabel)" }
     public var summarySets: String { locale == .zh ? "组数" : "Sets" }
     public var summaryPr: String { "PR" }
     public func summaryTopSet(name: String, kg: String, reps: Int) -> String {
-        locale == .zh ? "顶组 · \(name) \(kg) kg × \(reps)" : "Top set · \(name) \(kg) kg × \(reps)"
+        locale == .zh ? "顶组 · \(name) \(kg) \(unitLabel) × \(reps)" : "Top set · \(name) \(kg) \(unitLabel) × \(reps)"
     }
     public var summaryDone: String { locale == .zh ? "完成" : "Done" }
     public var summarySaveAndFinish: String { locale == .zh ? "保存并完成" : "Save & finish" }

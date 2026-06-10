@@ -24,11 +24,26 @@ public enum RedeLocale: String, CaseIterable, Sendable {
     }
 }
 
+/// 重量显示单位（M5-2 FR-SE1）。存储/引擎恒为 kg（canonical），lb 仅渲染层换算（系统逻辑 §149）。
+public enum RedeUnit: String, CaseIterable, Sendable {
+    case kg
+    case lb
+
+    /// 持久化值 → 单位；未知/缺失回退 kg（不猜）。
+    public static func resolve(_ raw: String?) -> RedeUnit {
+        raw.flatMap(RedeUnit.init(rawValue:)) ?? .kg
+    }
+
+    public var displayName: String { rawValue }
+}
+
 public struct RedeStrings: Sendable {
     public let locale: RedeLocale
+    public let unit: RedeUnit
 
-    public init(locale: RedeLocale) {
+    public init(locale: RedeLocale, unit: RedeUnit = .kg) {
         self.locale = locale
+        self.unit = unit
     }
 
     private func t(_ zh: String, _ en: String) -> String {
@@ -116,12 +131,31 @@ public struct RedeStrings: Sendable {
     public var planLockTitle: String { t("锁定卧推每周 +5", "Lock bench +5/week") }
     public var planLockSub: String { t("让一个动作按固定爬坡走", "Drive one lift on a fixed climb") }
 
-    // MARK: - Settings(M0-3 临时 sheet;M5-2 完整接管)
+    // MARK: - Settings(M5-2 完整接管：单位/语言/背景/数据/免责/反馈)
 
     public var settingsTitle: String { t("设置", "Settings") }
     public var settingsLanguage: String { t("语言", "Language") }
-    public var settingsComingSoon: String { t("单位、资料与数据控制稍后上线", "Units, profile, and data controls are coming soon") }
     public var settingsDone: String { t("完成", "Done") }
+    public var settingsUnit: String { t("单位", "Units") }
+    public var settingsBackground: String { t("训练背景", "Training background") }
+    public var settingsEditAnswers: String { t("修改回答", "Edit answers") }
+    /// 每周天数行值："每周 4 天" / "4 days a week"。
+    public func settingsDaysValue(_ days: Int) -> String {
+        t("每周 \(days) 天", "\(days) days a week")
+    }
+    public var settingsData: String { t("数据", "Data") }
+    /// FR-SE6 导出占位：数据在本机的事实陈述，不许诺时间表措辞外的能力。
+    public var settingsExportNote: String {
+        t("所有训练记录都保存在这台设备本地。一键导出在后续版本提供。",
+          "All training records live on this device. One-tap export ships in a later version.")
+    }
+    public var settingsAbout: String { t("关于", "About") }
+    /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。
+    public var settingsDisclaimer: String {
+        t("Rede 提供健身训练参考，不构成医疗建议。如有伤病或健康疑虑，训练前请咨询专业人士。",
+          "Rede offers fitness guidance, not medical advice. If you have injuries or health concerns, talk to a professional before training.")
+    }
+    public var settingsFeedback: String { t("发送反馈", "Send feedback") }
 
     // MARK: - 展示数据(静态;M2-M4 由 catalog/engine localized 值接管)
 

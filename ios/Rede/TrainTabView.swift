@@ -414,7 +414,7 @@ struct TrainTabView: View {
                     }
                     .buttonStyle(.plain)
                     .position(x: layout.stationX[index], y: 22)
-                    .accessibilityLabel("\(s.adjustOptionLabel(option.role.rawValue)) \(s.formatKg(option.weightKg)) kg")
+                    .accessibilityLabel("\(s.adjustOptionLabel(option.role.rawValue)) \(s.formatKg(option.weightKg)) \(s.unitLabel)")
                 }
 
                 // ember 指针（面板唯一口音）
@@ -465,9 +465,12 @@ struct TrainTabView: View {
     }
 
     /// 文本 → 重量：可解析则钳制 ≥0 收下；不可解析则回显当前值（不猜）。
+    /// M5-2 FR-SE1：输入按当前显示单位理解（lb 输入 → 换算回 canonical kg 存）；
+    /// 文本未改动时不重解析——防 lb 往返换算漂移（显示取 0.5 lb 步进，反解会偏移原 kg 值）。
     private func commitWeightText() {
+        guard adjustWeightText != s.formatKg(adjustWeight) else { return }
         if let parsed = Double(adjustWeightText.replacingOccurrences(of: ",", with: ".")), parsed >= 0 {
-            adjustWeight = parsed
+            adjustWeight = s.unit == .lb ? parsed / 2.204_622_621_8 : parsed
             hasAdjustment = true
         }
         adjustWeightText = s.formatKg(adjustWeight)
@@ -654,7 +657,7 @@ struct TrainTabView: View {
         let isActive = marker == .active
         return HStack {
             Text("\(number)").frame(width: 44, alignment: .leading)
-            Text("\(weight) kg").frame(maxWidth: .infinity, alignment: .leading)
+            Text("\(weight) \(s.unitLabel)").frame(maxWidth: .infinity, alignment: .leading)
             Text(reps).frame(width: 60, alignment: .leading)
             Text(rir).frame(width: 44, alignment: .leading)
             Group {

@@ -32,7 +32,11 @@ final class RedeStringsTests: XCTestCase {
             ("planControlsTitle", s.planControlsTitle), ("planHoldTitle", s.planHoldTitle), ("planHoldSub", s.planHoldSub),
             ("planLockTitle", s.planLockTitle), ("planLockSub", s.planLockSub),
             ("settingsTitle", s.settingsTitle), ("settingsLanguage", s.settingsLanguage),
-            ("settingsComingSoon", s.settingsComingSoon), ("settingsDone", s.settingsDone),
+            ("settingsDone", s.settingsDone), ("settingsUnit", s.settingsUnit),
+            ("settingsBackground", s.settingsBackground), ("settingsEditAnswers", s.settingsEditAnswers),
+            ("settingsDaysValue", s.settingsDaysValue(4)), ("settingsData", s.settingsData),
+            ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
+            ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("exerciseBenchPress", s.exerciseBenchPress),
         ]
     }
