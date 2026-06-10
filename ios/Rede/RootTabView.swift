@@ -43,7 +43,10 @@ struct RootTabView: View {
                 case .today:
                     TodayTabView(onStartTraining: {
                         Task {
-                            await sessionStore.startSessionLoadingIfNeeded()
+                            // 已有会话（含刚恢复的 draft）直接进训练页，不重开
+                            if sessionStore.flow == nil {
+                                await sessionStore.startSessionLoadingIfNeeded()
+                            }
                             selection = .train
                         }
                     })
@@ -68,12 +71,22 @@ struct RootTabView: View {
         .background(Color.redeBase.ignoresSafeArea())
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；
-        // -autoCompleteSession 自动按建议打满全部组并落盘（验证杀进程重开记录还在）。
+        // -autoCompleteSession 自动按建议打满全部组并落盘（验证杀进程重开记录还在）；
+        // -autoPartialSession 开训并只打 1 组（draft 留存，验证恢复提示）。
         .task {
             let args = ProcessInfo.processInfo.arguments
-            if args.contains("-autoStartSession") || args.contains("-autoCompleteSession") {
+            if args.contains("-autoStartSession") || args.contains("-autoCompleteSession") || args.contains("-autoPartialSession") {
                 await sessionStore.loadToday()
                 sessionStore.startSession()
+            }
+            if args.contains("-autoPartialSession") {
+                let rec = sessionStore.flow?.currentRecommendation
+                sessionStore.apply(.logSet(CompletedSetObservation(
+                    weightKg: rec?.targetWeightKg ?? 0,
+                    reps: rec?.targetReps ?? 1,
+                    rir: rec?.targetRir ?? 2,
+                    painReported: false
+                )))
             }
             if args.contains("-autoCompleteSession") {
                 var guardCounter = 0 // 防御：异常状态下不空转（计划为空等）
@@ -82,14 +95,14 @@ struct RootTabView: View {
                     switch flow.phase {
                     case .activeSet:
                         let rec = flow.currentRecommendation
-                        sessionStore.flow?.logSet(CompletedSetObservation(
+                        sessionStore.apply(.logSet(CompletedSetObservation(
                             weightKg: rec?.targetWeightKg ?? 0,
                             reps: rec?.targetReps ?? 1,
                             rir: rec?.targetRir ?? 2,
                             painReported: false
-                        ))
+                        )))
                     case .resting:
-                        sessionStore.flow?.restFinished()
+                        sessionStore.apply(.restFinished)
                     default:
                         break
                     }

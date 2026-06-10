@@ -5,7 +5,7 @@
 // 安全瀑布：疼痛 > 力竭 > 次数掉底 > 延续。无 RIR 数据不猜。
 // 组形学习/历史掉速模型/器械校准明示后置。引擎零文案。
 
-public struct CompletedSetObservation: Equatable, Sendable {
+public struct CompletedSetObservation: Equatable, Sendable, Codable {
     public let weightKg: Double
     public let reps: Int
     public let rir: Double?

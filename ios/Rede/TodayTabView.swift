@@ -50,6 +50,21 @@ struct TodayTabView: View {
         }
         .background(Color.redeBase)
         .task { if sessionStore.todayOutcome == nil { await sessionStore.loadToday() } }
+        .alert(s.resumeSessionTitle, isPresented: Binding(
+            get: { sessionStore.pendingDraft != nil },
+            // 系统 Cancel/滑走 = 稍后再说：清提示但保留 draft 文件，下次启动再问
+            set: { if !$0 { sessionStore.pendingDraft = nil } }
+        )) {
+            Button(s.resumeSessionContinue) {
+                sessionStore.restorePendingDraft()
+                onStartTraining()
+            }
+            Button(s.resumeSessionDiscard, role: .destructive) {
+                sessionStore.discardPendingDraft()
+            }
+        } message: {
+            Text(s.resumeSessionMessage)
+        }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(store: localeStore)
                 .presentationDetents([.medium])

@@ -6,6 +6,20 @@
 // 跳过/替换/疼痛是 typed 留痕事实，M3-3 随完成写入经唯一写闸落盘。
 // 无 IO/clock：休息倒计时的「时间流逝」由 app 层驱动，这里只存计划秒数。
 
+/// 训练流事件（draft = 处方 + 事件日志；恢复 = 重放，M3-4/FR-TR9）。
+public enum TrainFlowEvent: Equatable, Sendable, Codable {
+    case logSet(CompletedSetObservation)
+    case restFinished
+    case skipSet(SetSkipReason)
+    case skipExercise(SetSkipReason)
+    case replaceExercise(String)
+    case reportPain
+    case toggleHold
+    case requestFinish
+    case keepTraining
+    case confirmEnd(SessionEndReason)
+}
+
 public struct TrainFlowState: Equatable, Sendable {
     public enum Phase: Equatable, Sendable {
         case activeSet
@@ -54,6 +68,8 @@ public struct TrainFlowState: Equatable, Sendable {
     public private(set) var painReportedForCurrentSet: Bool = false
     /// 当前动作内被跳过的组数（指针 = 完成数 + 跳过数）。
     public private(set) var skippedInCurrentExercise: Int = 0
+    /// 被接受的事件日志（draft 持久化用；被 guard 拒绝的事件不记录）。
+    public private(set) var events: [TrainFlowEvent] = []
 
     private var phaseBeforeConfirm: Phase = .activeSet
     private let catalog: ExerciseCatalog
@@ -128,6 +144,7 @@ public struct TrainFlowState: Equatable, Sendable {
 
     public mutating func logSet(_ observation: CompletedSetObservation) {
         guard phase == .activeSet, let exercise = currentExercise else { return }
+        events.append(.logSet(observation))
         let merged = painReportedForCurrentSet
             ? CompletedSetObservation(
                 weightKg: observation.weightKg, reps: observation.reps,
@@ -151,6 +168,7 @@ public struct TrainFlowState: Equatable, Sendable {
 
     public mutating func restFinished() {
         guard phase == .resting else { return }
+        events.append(.restFinished)
         if currentExerciseIsDone {
             advanceExercise()
         }
@@ -159,6 +177,7 @@ public struct TrainFlowState: Equatable, Sendable {
 
     public mutating func skipSet(reason: SetSkipReason) {
         guard phase == .activeSet, let exercise = currentExercise else { return }
+        events.append(.skipSet(reason))
         let setIndex = completedInCurrentExercise.count + skippedInCurrentExercise + 1
         skippedSets.append(SkippedSet(exerciseId: exercise.exerciseId, setIndex: setIndex, reason: reason))
         skippedInCurrentExercise += 1
@@ -174,6 +193,7 @@ public struct TrainFlowState: Equatable, Sendable {
 
     public mutating func skipExercise(reason: SetSkipReason) {
         guard phase == .activeSet, let exercise = currentExercise else { return }
+        events.append(.skipExercise(reason))
         skippedExercises.append(SkippedExercise(exerciseId: exercise.exerciseId, reason: reason))
         if exerciseIndex >= plan.exercises.count - 1 {
             finishSession(reason: .completedAll)
@@ -185,6 +205,7 @@ public struct TrainFlowState: Equatable, Sendable {
     public mutating func replaceCurrentExercise(with newExerciseId: String) {
         guard phase == .activeSet, let exercise = currentExercise,
               replacementCandidates.contains(newExerciseId) else { return }
+        events.append(.replaceExercise(newExerciseId))
         replacements.append(Replacement(originalExerciseId: exercise.exerciseId, actualExerciseId: newExerciseId))
         var exercises = plan.exercises
         exercises[exerciseIndex] = ExerciseSetPlan(
@@ -199,28 +220,60 @@ public struct TrainFlowState: Equatable, Sendable {
 
     public mutating func toggleHold() {
         guard phase == .activeSet || phase == .resting else { return }
+        events.append(.toggleHold)
         isHolding.toggle()
     }
 
     public mutating func reportPain() {
         guard phase == .activeSet else { return }
+        events.append(.reportPain)
         painReportedForCurrentSet = true
     }
 
     public mutating func requestFinish() {
         guard phase == .activeSet || phase == .resting else { return }
+        events.append(.requestFinish)
         phaseBeforeConfirm = phase
         phase = .confirmEnd
     }
 
     public mutating func keepTraining() {
         guard phase == .confirmEnd else { return }
+        events.append(.keepTraining)
         phase = phaseBeforeConfirm
     }
 
     public mutating func confirmEnd(reason: SessionEndReason) {
         guard phase == .confirmEnd else { return }
+        events.append(.confirmEnd(reason))
         finishSession(reason: reason)
+    }
+
+    /// 恢复（M3-4）：同处方重放事件——reducer 确定性保证恢复态 ≡ 中断态。
+    /// 防御：任何事件在重放中被 guard 拒绝（如 catalog 改版致替换候选变化）
+    /// 即返回 nil——宁可不恢复，绝不恢复到错误状态。
+    public static func restore(
+        prescription: TodayPrescription,
+        events: [TrainFlowEvent],
+        catalog: ExerciseCatalog = .minimal
+    ) -> TrainFlowState? {
+        var state = TrainFlowState(prescription: prescription, catalog: catalog)
+        for event in events {
+            switch event {
+            case .logSet(let observation): state.logSet(observation)
+            case .restFinished: state.restFinished()
+            case .skipSet(let reason): state.skipSet(reason: reason)
+            case .skipExercise(let reason): state.skipExercise(reason: reason)
+            case .replaceExercise(let id): state.replaceCurrentExercise(with: id)
+            case .reportPain: state.reportPain()
+            case .toggleHold: state.toggleHold()
+            case .requestFinish: state.requestFinish()
+            case .keepTraining: state.keepTraining()
+            case .confirmEnd(let reason): state.confirmEnd(reason: reason)
+            }
+        }
+        guard state.events == events else { return nil }
+        return state
     }
 
     // MARK: - 私有
