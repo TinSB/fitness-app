@@ -1,0 +1,381 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Onboarding A · 判断式对话流 (interactive prototype)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+/* tokens —— 与 docs/rede-prototypes/rede-app.html 完全一致（K1 locked） */
+:root{
+ --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
+ --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
+ --ember:#E1652B;--ember2:#F0875A;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
+ --steel:#8C8A86;--neu:#4A453B;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+html,body{height:100%}
+body{background:#0A0908;font-family:var(--sans);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;color:var(--t1)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--ember2);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* type scale（同 rede-app.html / Part F 字阶） */
+.headline{font-size:22px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.subhead{font-size:16px;font-weight:600;line-height:1.25}
+.body{font-size:14px;font-weight:450;line-height:1.45}
+.callout{font-size:13px;font-weight:400;line-height:1.4}
+.caption{font-size:12px;font-weight:400}
+.ov{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t4)}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.t2{color:var(--t2)}.t3{color:var(--t3)}.t4{color:var(--t4)}.em{color:var(--ember2)}
+.clamp2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.clamp3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+
+/* phone（同 rede-app.html，384px 框） */
+.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
+.frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:var(--base)}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#050403;border-radius:0 0 15px 15px;z-index:50}
+.sb{height:46px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 6px;font-size:13px;font-weight:600;color:var(--t2);z-index:30}
+.sb .r{display:flex;gap:6px;align-items:center}
+.screens{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:78px}
+.screen.on{display:block}
+.screen::-webkit-scrollbar{display:none}
+
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 20px 0}
+.iconbtn{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;color:var(--t4)}
+.gear{font-size:20px}
+.sect{padding:0 20px;margin-top:24px}
+.rule{height:1px;background:var(--hair2);margin:24px 20px}
+
+/* 主操作（D-A：锻面 + ember 左缘，左锚非全宽）/ 次级钢色 / 控制 chip */
+.emb{background:var(--btn);color:var(--t1);font-weight:600;font-size:15px;padding:0 18px;min-height:44px;border-radius:10px;border-left:2px solid var(--ember);display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.emb:active{background:#2A261D}
+.ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
+.discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
+
+/* 锻面卡（颗粒 + 顶缘高光 + registration）+ embar 结构件 */
+.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,0.09);overflow:hidden}
+.forged::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
+.reg{position:absolute;width:11px;height:11px;pointer-events:none}
+.embar{position:absolute;left:0;width:2px;border-radius:2px;background:var(--ember)}
+
+/* tab bar（落地 Today 后才出现） */
+.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#100E0B;border-top:1px solid var(--hair2);display:flex;align-items:stretch;padding-bottom:6px;z-index:20}
+.tb a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:500;color:var(--t4);min-height:44px;text-decoration:none;cursor:pointer}
+.tb a i{font-size:22px}
+.tb a[aria-selected="true"]{color:var(--ember)}
+
+/* ---------- 方向 A：判断式对话流（首启引导，FR-ON1~3） ----------
+   像教练第一次见面问话：单页垂直流，每题 = 判断块（overline 字段标签 + 问题句 + 锻面选项胶囊）。
+   答一题下一题原地级联显现；页底「Plan forming」收据逐行长出（答一题多一行）。
+   无步进条、无进度点 —— 进度感 = 收据行数。
+   ember 唯一口音 = 当前未答题左缘 embar（指向「下一步」，S1 指针模），随作答下移；
+   四题答完 → embar 移交「Plan ready」hero（canonical Today hero 同构：embar + ov em + ember 左缘 CTA 为一个口音簇）。
+   已答题降级：问题句 t1→t3、未选项亮度回落，选中项保留可读 —— 单页四题同屏不打架。 */
+#s-onboard{padding-bottom:40px}
+.qb{display:none;position:relative;padding:0 20px 0 33px;margin-top:30px}  /* 组间 30 松；左 33 = 20 页边 + 13 embar 让位（常量缩进，embar 移动不回流） */
+.qb.show{display:block;animation:riseIn .24s ease-out}
+.qb .embar{left:20px;top:3px;bottom:3px;display:none}
+.qb.active .embar{display:block}
+.qq{margin-top:6px;transition:color .2s}                                   /* 组内紧：标签→问题 6 */
+.optrow{display:flex;gap:8px;margin-top:12px}                              /* 问题→选项 12，胶囊间 8 */
+.optcol{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.opt{min-height:44px;flex:1;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;border:1px solid var(--hair);border-radius:999px;background:var(--surface);color:var(--t2);font-size:14px;font-weight:500;white-space:nowrap;transition:color .15s,background .15s,border-color .15s}
+.opt:active{background:var(--raised)}
+.opt[aria-checked="true"]{border-color:var(--steel);background:rgba(140,138,134,.15);color:var(--t1);font-weight:600}  /* 选中 = 钢色调性抬升，不用 ember（口音守恒） */
+.optw{border-radius:10px;justify-content:space-between;padding:0 14px;min-height:48px}
+.optw .cap{font-size:12px;color:var(--t4);font-weight:400;transition:color .15s}
+.optw[aria-checked="true"] .cap{color:var(--t3)}
+.opt.dn{font-size:16px;font-weight:600}                                    /* 天数 = 仪表数字胶囊 */
+.qb.done .qq{color:var(--t3)}                                              /* 已答降级：亮度回落 */
+.qb.done .opt{color:var(--t4);border-color:var(--hair2);background:transparent}
+.qb.done .opt[aria-checked="true"]{color:var(--t2);border-color:#4A463E;background:rgba(140,138,134,.07);font-weight:600}
+.qnote{display:none;margin-top:14px;align-items:flex-start;gap:6px}        /* FR-ON2 背景先验说明：克制一句，不承诺不吹捧 */
+.qnote.show{display:flex;animation:receiptIn .22s ease-out}
+.qnote .ptick{margin-top:7px}
+.ptick{width:11px;height:2px;background:var(--neu);flex:0 0 auto}          /* 收据 tick 一律中性（ember 不下放） */
+
+/* 页底收据：答一题印一行；改答案原地重印 */
+#receipt{display:none}
+#receipt.show{display:block}
+.rline{display:none;align-items:flex-start;gap:8px;color:var(--t2)}
+.rline.show{display:flex;animation:receiptIn .22s ease-out}
+.rline .ptick{margin-top:8px}
+.rline.reprint{animation:receiptIn .22s ease-out}
+
+#final{display:none}
+#final.show{display:block;animation:riseIn .26s ease-out}
+@keyframes riseIn{from{transform:translateY(5px);opacity:0}}
+@keyframes receiptIn{from{transform:translateY(5px);opacity:0}}
+
+#toast{position:absolute;left:50%;transform:translateX(-50%) translateY(4px);bottom:84px;background:var(--raised);border:1px solid var(--hair);color:var(--t2);padding:10px 14px;border-radius:10px;font-size:12px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:70;width:max-content;max-width:300px;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
+.hint b{color:#857c6c}
+</style></head>
+<body>
+<div class="phone">
+ <div class="notch"></div>
+ <div class="frame">
+  <div class="sb"><span class="num">9:41</span><span class="r"><i class="ti ti-wifi" style="font-size:15px"></i><i class="ti ti-battery-3" style="font-size:17px"></i></span></div>
+  <div class="screens">
+
+   <!-- ===================== ONBOARDING（首启，无 tab bar） ===================== -->
+   <section class="screen on" id="s-onboard" role="tabpanel" aria-label="First setup">
+     <div class="hdr"><div><div class="headline">Your first plan</div><div class="ov num" style="margin-top:6px">4 answers · about a minute</div></div></div>
+     <div class="sect" style="margin-top:12px"><div class="body t3">Rede builds a starting plan from four answers, then follows your real logs.</div></div>
+
+     <!-- Q1 目标 -->
+     <div class="qb show active" id="q-goal">
+       <span class="embar" aria-hidden="true"></span>
+       <div class="ov">Goal</div>
+       <div class="qq subhead">What are you training for?</div>
+       <div class="optrow" role="radiogroup" aria-label="Training goal">
+         <button class="opt" role="radio" aria-checked="false" data-v="muscle" onclick="pick('goal','muscle')">Muscle</button>
+         <button class="opt" role="radio" aria-checked="false" data-v="strength" onclick="pick('goal','strength')">Strength</button>
+         <button class="opt" role="radio" aria-checked="false" data-v="balanced" onclick="pick('goal','balanced')">Balanced</button>
+       </div>
+     </div>
+
+     <!-- Q2 每周天数（仪表数字胶囊） -->
+     <div class="qb" id="q-days">
+       <span class="embar" aria-hidden="true"></span>
+       <div class="ov">Days / week</div>
+       <div class="qq subhead">How many days can you actually train?</div>
+       <div class="optrow" role="radiogroup" aria-label="Training days per week">
+         <button class="opt dn num" role="radio" aria-checked="false" data-v="2" onclick="pick('days',2)">2</button>
+         <button class="opt dn num" role="radio" aria-checked="false" data-v="3" onclick="pick('days',3)">3</button>
+         <button class="opt dn num" role="radio" aria-checked="false" data-v="4" onclick="pick('days',4)">4</button>
+         <button class="opt dn num" role="radio" aria-checked="false" data-v="5" onclick="pick('days',5)">5</button>
+         <button class="opt dn num" role="radio" aria-checked="false" data-v="6" onclick="pick('days',6)">6</button>
+       </div>
+     </div>
+
+     <!-- Q3 器械场景 -->
+     <div class="qb" id="q-equip">
+       <span class="embar" aria-hidden="true"></span>
+       <div class="ov">Equipment</div>
+       <div class="qq subhead">Where will you train?</div>
+       <div class="optcol" role="radiogroup" aria-label="Equipment">
+         <button class="opt optw" role="radio" aria-checked="false" data-v="gym" onclick="pick('equip','gym')"><span>Commercial gym</span><span class="cap">barbell · machines · cables</span></button>
+         <button class="opt optw" role="radio" aria-checked="false" data-v="home" onclick="pick('equip','home')"><span>Home dumbbells</span><span class="cap">DBs · a bench</span></button>
+         <button class="opt optw" role="radio" aria-checked="false" data-v="min" onclick="pick('equip','min')"><span>Minimal kit</span><span class="cap">bands · a few DBs</span></button>
+       </div>
+     </div>
+
+     <!-- Q4 训练背景 + 先验说明（FR-ON2） -->
+     <div class="qb" id="q-bg">
+       <span class="embar" aria-hidden="true"></span>
+       <div class="ov">Background</div>
+       <div class="qq subhead">How much lifting have you done?</div>
+       <div class="optrow" role="radiogroup" aria-label="Training background">
+         <button class="opt" role="radio" aria-checked="false" data-v="new" onclick="pick('bg','new')">New</button>
+         <button class="opt" role="radio" aria-checked="false" data-v="base" onclick="pick('bg','base')">Some base</button>
+         <button class="opt" role="radio" aria-checked="false" data-v="pro" onclick="pick('bg','pro')">Seasoned</button>
+       </div>
+       <div class="qnote caption" id="bgNote"><span class="ptick"></span><span id="bgNoteTxt" class="t3"></span></div>
+     </div>
+
+     <!-- 页底收据：你的计划正在成形（答一题多一行） -->
+     <div class="rule" id="rcptRule" style="display:none;margin-top:30px"></div>
+     <div class="sect" id="receipt" style="margin-top:0">
+       <div class="ov" id="rcptHead">Plan forming</div>
+       <div class="callout num" style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+         <div class="rline" id="rl-goal"><span class="ptick"></span><span></span></div>
+         <div class="rline" id="rl-days"><span class="ptick"></span><span></span></div>
+         <div class="rline" id="rl-equip"><span class="ptick"></span><span></span></div>
+         <div class="rline" id="rl-bg"><span class="ptick"></span><span></span></div>
+       </div>
+     </div>
+
+     <!-- 结尾判断块（FR-ON3）：判断句 + 首练预览 + 主操作 —— canonical Today hero 同构 -->
+     <div class="sect" id="final" style="margin-top:24px">
+       <div class="forged" style="padding:18px 16px">
+         <span class="embar" style="top:18px;bottom:18px"></span>
+         <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+         <div style="padding-left:13px">
+           <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">First plan</span></div>
+           <div class="headline clamp3" id="fVerdict" style="margin-top:11px"></div>
+           <div class="caption t3" id="fSub" style="margin-top:8px"></div>
+           <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--hair)">
+             <div class="ov em" style="white-space:nowrap">First session · <span id="fSess"></span></div>
+             <div style="display:flex;align-items:flex-end;justify-content:space-between">
+               <div>
+                 <div class="subhead" id="fLift" style="margin-top:7px"></div>
+                 <div style="display:flex;align-items:flex-end;gap:6px;margin-top:5px"><span class="num" id="fW" style="font-size:20px;font-weight:600"></span><span class="callout num t3" id="fMeta" style="padding-bottom:3px"></span></div>
+               </div>
+               <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                 <span class="caption num t3" id="fThen1" style="white-space:nowrap"></span>
+                 <span style="display:flex;align-items:center;gap:5px;white-space:nowrap" class="caption num t3"><span style="width:16px;height:2px;background:var(--neu)"></span><span id="fThen2"></span></span>
+               </div>
+             </div>
+           </div>
+           <button class="emb" style="margin-top:16px" onclick="enterToday()">Go to Today<i class="ti ti-arrow-right" style="font-size:16px"></i></button>
+         </div>
+       </div>
+     </div>
+   </section>
+
+   <!-- ===================== TODAY（模拟落地，四 tab 出现；内容由引导答案生成） ===================== -->
+   <section class="screen" id="s-today" role="tabpanel" aria-label="Today">
+     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Mon · Jun 10 · Week 1</div></div><button class="iconbtn" aria-label="Settings"><i class="ti ti-settings gear"></i></button></div>
+     <div class="forged sect" style="padding:18px 16px;margin-top:20px">
+       <span class="embar" style="top:18px;bottom:18px"></span>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <div style="padding-left:13px">
+         <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">Ready to train</span></div>
+         <div class="headline clamp3" id="tVerdict" style="margin-top:11px"></div>
+         <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:24px;padding-top:14px;border-top:1px solid var(--hair)">
+           <div>
+             <div class="ov em">Start here</div>
+             <div class="subhead" id="tLift" style="margin-top:7px"></div>
+             <div style="display:flex;align-items:flex-end;gap:6px;margin-top:5px"><span class="num" id="tW" style="font-size:20px;font-weight:600"></span><span class="callout num t3" id="tMeta" style="padding-bottom:3px"></span></div>
+           </div>
+           <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+             <span class="caption num t3" id="tThen1" style="white-space:nowrap"></span>
+             <span style="display:flex;align-items:center;gap:5px;white-space:nowrap" class="caption num t3"><span style="width:16px;height:2px;background:var(--neu)"></span><span id="tThen2"></span></span>
+           </div>
+         </div>
+         <button class="emb" style="margin-top:16px" onclick="toast('Training flow lives in rede-app.html — this demo ends at Today')"><i class="ti ti-player-play" style="font-size:16px"></i>Start training</button>
+       </div>
+     </div>
+
+     <!-- 收据 + Why this call（控制权：Edit setup 回引导，FR-SE2 雏形） -->
+     <div class="sect">
+       <div style="display:flex;justify-content:space-between;align-items:center"><span class="ov">Rede training receipt</span><span class="ov num">Week 1</span></div>
+       <div class="body" style="margin-top:8px">First plan in place — built from your setup, no history yet.</div>
+       <button id="tReasonRow" class="discl" aria-expanded="false" aria-controls="tReason" onclick="toggleReason()"><span id="tReasonLbl">Why this call</span> <i class="ti ti-chevron-down" id="tReasonChev" style="font-size:15px"></i></button>
+       <div id="tReason" style="max-height:0;overflow:hidden;transition:max-height .25s">
+         <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;padding-top:6px">
+           <div class="ov" style="padding-top:3px">Signal</div><div class="callout t2 num" id="tSignal"></div>
+           <div class="ov" style="padding-top:3px">Change</div><div class="callout t2 num" id="tChange"></div>
+           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:7px"><button class="ctrlchip" onclick="backToSetup()">Edit setup</button></div>
+         </div>
+       </div>
+     </div>
+   </section>
+
+  </div>
+
+  <nav class="tb" id="tabbar" role="tablist" aria-label="Sections" style="display:none">
+   <a role="tab" aria-selected="true" tabindex="0"><i class="ti ti-home"></i>Today</a>
+   <a role="tab" aria-selected="false" tabindex="0" onclick="toast('Demo ends at Today — Train / Progress / Plan live in rede-app.html')"><i class="ti ti-barbell"></i>Train</a>
+   <a role="tab" aria-selected="false" tabindex="0" onclick="toast('Demo ends at Today — Train / Progress / Plan live in rede-app.html')"><i class="ti ti-trending-up"></i>Progress</a>
+   <a role="tab" aria-selected="false" tabindex="0" onclick="toast('Demo ends at Today — Train / Progress / Plan live in rede-app.html')"><i class="ti ti-calendar"></i>Plan</a>
+  </nav>
+
+  <div id="toast" role="status"></div>
+ </div>
+</div>
+<div class="hint">Answer <b>Goal → Days → Equipment → Background</b> — questions cascade in, the bottom receipt grows per answer · change any answer anytime, preview reprints · <b>Go to Today</b> lands in the app · <b>Why this call → Edit setup</b> returns here</div>
+
+<script>
+ /* ---------- 引导状态与映射（FR-ON3 最小演示版：目录起始重量 × 背景系数，取 2.5 整） ---------- */
+ const S={goal:null,days:null,equip:null,bg:null};
+ const GOAL={
+   muscle:  {reps:10,label:'Muscle',  block:'Hypertrophy block · sets of 10 · RIR 2',phrase:'built for size'},
+   strength:{reps:5, label:'Strength',block:'Strength block · sets of 5 · RIR 2',    phrase:'built for strength'},
+   balanced:{reps:8, label:'Balanced',block:'Mixed block · sets of 8 · RIR 2',       phrase:'built for both'}};
+ const EQUIP={
+   gym: {lift:'Bench press',   w:60,cat:'Barbell-first catalog', then:['Barbell row','Leg press'],label:'commercial gym',lifts:6},
+   home:{lift:'DB bench press',w:20,cat:'Dumbbell-first catalog',then:['DB row','Split squat'],   label:'home dumbbells',lifts:5},
+   min: {lift:'Goblet squat',  w:20,cat:'Minimal-kit catalog',   then:['Push-up','Band row'],     label:'minimal kit',   lifts:5}};
+ const BG={  /* 背景只作先验：定档系数（萌新 .5 / 有基础 .75 / 熟练 1.0），真实判断随记录覆盖 */
+   new: {m:0.5, note:'Starting light while you learn the lifts — the plan follows your real logs', vp:'loads start light while you learn'},
+   base:{m:0.75,note:'Starting conservative for your background — the plan follows your real logs',vp:'loads start conservative'},
+   pro: {m:1,   note:'Starting at catalog baseline — your first logged sets calibrate the rest',   vp:'loads start at catalog baseline, calibrating'}};
+ const ORDER=['goal','days','equip','bg'];
+ const QID={goal:'q-goal',days:'q-days',equip:'q-equip',bg:'q-bg'};
+ const fmt=v=>(Math.round(v*100)/100).toString();
+ const startW=()=>Math.round(EQUIP[S.equip].w*BG[S.bg].m/2.5)*2.5;
+ const vSplit=()=>S.days<=3?'Full body':S.days===4?'Upper / Lower':'Push / Pull / Legs';
+ const vSess =()=>S.days<=3?'Full body A':S.days===4?'Upper A':'Push A';
+ const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ const setTxt=(id,t)=>{document.getElementById(id).textContent=t;};
+
+ function pick(k,v){ const first=S[k]===null; S[k]=v; render(first?k:null); }
+
+ function line(id,txt){          /* 收据行：首印入场，值变化原地重印 */
+   const el=document.getElementById(id);
+   if(!txt){ el.classList.remove('show'); el.dataset.t=''; return; }
+   if(el.dataset.t!==txt){
+     el.lastElementChild.textContent=txt;
+     const was=el.classList.contains('show'); el.dataset.t=txt;
+     if(was){ el.classList.remove('reprint'); void el.offsetWidth; el.classList.add('reprint'); }
+   }
+   el.classList.add('show');
+ }
+
+ function render(revealFrom){
+   /* 1 · 选项选中态 */
+   ORDER.forEach(k=>{
+     document.querySelectorAll('#'+QID[k]+' [role="radio"]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.v===String(S[k]))));
+   });
+   /* 2 · 级联显现 + 已答降级 + embar 指向第一道未答题（每屏唯一 ember） */
+   let firstOpen=null;
+   ORDER.forEach((k,i)=>{
+     const el=document.getElementById(QID[k]);
+     const show=i===0||S[ORDER[i-1]]!==null;
+     el.classList.toggle('show',show);
+     el.classList.toggle('done',S[k]!==null);
+     if(show&&S[k]===null&&firstOpen===null)firstOpen=k;
+   });
+   ORDER.forEach(k=>document.getElementById(QID[k]).classList.toggle('active',k===firstOpen));
+   /* 3 · 背景先验说明（FR-ON2，克制一句） */
+   const note=document.getElementById('bgNote');
+   if(S.bg){ note.classList.add('show'); setTxt('bgNoteTxt',BG[S.bg].note); } else note.classList.remove('show');
+   /* 4 · 页底收据逐行长出 */
+   const any=ORDER.some(k=>S[k]!==null);
+   document.getElementById('rcptRule').style.display=any?'':'none';
+   document.getElementById('receipt').classList.toggle('show',any);
+   line('rl-goal', S.goal &&GOAL[S.goal].block);
+   line('rl-days', S.days &&S.days+' days / week · '+vSplit());
+   line('rl-equip',S.equip&&EQUIP[S.equip].cat);
+   line('rl-bg',  S.bg   &&'Start loads ×'+BG[S.bg].m+' of catalog');
+   const all=ORDER.every(k=>S[k]!==null);
+   setTxt('rcptHead',all?'Built from your answers':'Plan forming');
+   /* 5 · 结尾判断块（计划已就绪 + 首练预览，随答案真实变化） */
+   document.getElementById('final').classList.toggle('show',all);
+   if(all){
+     const g=GOAL[S.goal], e=EQUIP[S.equip];
+     setTxt('fVerdict','Plan ready. '+vSplit()+', '+S.days+' days — '+g.phrase+'.');
+     setTxt('fSub',e.lifts+' lifts a session, all swappable — every load stays adjustable in training');
+     setTxt('fSess',vSess()); setTxt('fLift',e.lift); setTxt('fW',fmt(startW()));
+     setTxt('fMeta','kg · ×'+g.reps+' · RIR 2');
+     setTxt('fThen1','then '+e.then[0]); setTxt('fThen2','then '+e.then[1]);
+   }
+   /* 6 · 新揭示内容滚入视野（reduced-motion 即时） */
+   if(revealFrom){
+     const t=revealFrom==='bg'?document.getElementById('final'):document.getElementById(QID[ORDER[ORDER.indexOf(revealFrom)+1]]);
+     if(t&&(revealFrom!=='bg'||all))setTimeout(()=>t.scrollIntoView({behavior:reduce?'auto':'smooth',block:revealFrom==='bg'?'end':'center'}),60);
+   }
+ }
+
+ /* ---------- 模拟落地 Today：内容由引导答案生成 ---------- */
+ function enterToday(){
+   const g=GOAL[S.goal], e=EQUIP[S.equip], b=BG[S.bg];
+   setTxt('tVerdict','Train today. '+vSess()+' — '+b.vp+'.');
+   setTxt('tLift',e.lift); setTxt('tW',fmt(startW())); setTxt('tMeta','kg · ×'+g.reps+' · RIR 2');
+   setTxt('tThen1','then '+e.then[0]); setTxt('tThen2','then '+e.then[1]);
+   setTxt('tSignal',g.label+' · '+S.days+' d/wk · '+e.label);
+   setTxt('tChange','Start loads ×'+b.m+' of catalog — recalibrates as you log');
+   document.getElementById('tabbar').style.display='flex';
+   go('today');
+ }
+ function backToSetup(){ document.getElementById('tabbar').style.display='none'; go('onboard'); }
+ function go(s){ document.querySelectorAll('.screen').forEach(e=>{const on=e.id==='s-'+s;e.classList.toggle('on',on);e.scrollTop=0;}); }
+
+ function toggleReason(){
+   const r=document.getElementById('tReason'), c=document.getElementById('tReasonChev'), row=document.getElementById('tReasonRow'), lbl=document.getElementById('tReasonLbl');
+   const open=r.style.maxHeight&&r.style.maxHeight!=='0px';
+   r.style.maxHeight=open?'0px':(r.scrollHeight+24)+'px'; c.style.transform=open?'':'rotate(180deg)';
+   row.setAttribute('aria-expanded',String(!open));
+   lbl.textContent=open?'Why this call':'Hide reason';
+ }
+
+ let toastT;
+ function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+
+ render(null);
+</script>
+</body></html>

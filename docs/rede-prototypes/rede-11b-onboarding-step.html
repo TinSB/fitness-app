@@ -1,0 +1,351 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede — Onboarding · 11b Step Cards (interactive prototype)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{
+ --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
+ --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
+ --ember:#E1652B;--ember2:#F0875A;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
+ --steel:#8C8A86;--neu:#4A453B;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+html,body{height:100%}
+body{background:#0A0908;font-family:var(--sans);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;color:var(--t1)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--ember2);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- type scale（同 rede-app：hero↔body 档 ≥1.3×） ---------- */
+.display{font-size:54px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.title{font-size:29px;font-weight:700;line-height:1;letter-spacing:-.01em}
+.headline{font-size:22px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.subhead{font-size:16px;font-weight:600;line-height:1.25}
+.body{font-size:14px;font-weight:450;line-height:1.45}
+.callout{font-size:13px;font-weight:400;line-height:1.4}
+.caption{font-size:12px;font-weight:400}
+.ov{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t4)}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.t2{color:var(--t2)}.t3{color:var(--t3)}.t4{color:var(--t4)}.em{color:var(--ember2)}
+.clamp2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.clamp3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+
+/* phone */
+.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
+.frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:var(--base)}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#050403;border-radius:0 0 15px 15px;z-index:50}
+.sb{height:46px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 6px;font-size:13px;font-weight:600;color:var(--t2);z-index:30}
+.sb .r{display:flex;gap:6px;align-items:center}
+.screens{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:78px}
+.screen.on{display:block}
+.screen::-webkit-scrollbar{display:none}
+
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 20px 0}
+.iconbtn{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;color:var(--t4)}
+.gear{font-size:20px}
+.ghost{min-height:44px;display:inline-flex;align-items:center;padding:0 12px;color:var(--t3);font-size:13px}
+.sect{padding:0 20px;margin-top:24px}
+.emb{background:var(--btn);color:var(--t1);font-weight:600;font-size:15px;padding:0 18px;min-height:44px;border-radius:10px;border-left:2px solid var(--ember);display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.emb:active{background:#2A261D}
+.btn2{color:var(--t2);border:1px solid var(--steel);border-radius:8px;padding:0 13px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;white-space:nowrap}
+.btn2:active{background:rgba(140,138,134,.12)}
+.rule{height:1px;background:var(--hair2);margin:24px 20px}
+.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,0.09);overflow:hidden}
+.forged::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
+.reg{position:absolute;width:11px;height:11px;pointer-events:none}
+.embar{position:absolute;left:0;width:2px;border-radius:2px;background:var(--ember)}
+.ring{box-shadow:0 0 0 2px rgba(225,101,43,.5)}
+.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#100E0B;border-top:1px solid var(--hair2);display:none;align-items:stretch;padding-bottom:6px;z-index:20}
+.tb a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:500;color:var(--t4);min-height:44px;text-decoration:none;cursor:pointer}
+.tb a i{font-size:22px}
+.tb a[aria-selected="true"]{color:var(--ember)}
+.discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
+.ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
+.ptick{width:11px;height:2px;background:var(--neu);flex:0 0 auto}
+@keyframes riseIn{from{transform:translateY(4px);opacity:0}}
+
+/* ---------- 11b 引导：仪表卡步进 ----------
+   一题一屏：四张全屏锻面卡顺序步进。顶部四格刻线进度（S2 语义，当前格 ember、可点回跳）。
+   选项 = 大命中区直选（选中态走钢色——ember 只留给「下一步」：刻线当前格 + 结果卡主操作）。
+   选完 380ms 确认拍 → 200ms 原地形变推进（不横滑）；reduced-motion 全程瞬切。 */
+.obtop{display:flex;justify-content:space-between;align-items:center;padding:12px 20px 0;min-height:32px}
+.obticks{display:flex;gap:7px;padding:0 20px}
+.obtick{flex:1;min-height:44px;display:flex;align-items:center;padding:0;cursor:pointer}
+.obtick[disabled]{cursor:default}
+.obtick i{display:block;width:100%;height:3px;border-radius:2px;background:var(--hair2);transition:background .2s ease-out}
+.obtick.done i{background:var(--neu)}
+.obtick.cur i{background:var(--ember)}
+.obcard{margin:6px 20px 0;padding:20px 18px;height:472px}
+.obbody{position:relative;height:100%;display:flex;flex-direction:column;padding-left:13px;transition:opacity .18s ease,transform .18s ease}
+.obbody.swap{opacity:0;transform:translateY(4px) scale(.99)}
+.obbody.in .cas{animation:riseIn .22s ease-out backwards}
+.opts{margin-top:18px;display:flex;flex-direction:column}
+.opt{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:64px;text-align:left;padding:8px 12px;margin-left:-14px;border-left:2px solid transparent;border-radius:0 8px 8px 0;transition:background .15s ease-out,border-color .15s ease-out;position:relative}
+.opt::after{content:"";position:absolute;left:14px;right:0;bottom:0;height:1px;background:var(--hair2)}
+.opt:last-child::after{display:none}
+.opt .ot{font-size:16px;font-weight:600;line-height:1.25;color:var(--t1)}
+.opt .oc{font-size:12px;color:var(--t4);transition:color .15s ease-out}
+.opt.sel{background:rgba(140,138,134,.13);border-left-color:var(--steel)}
+.opt.sel .oc{color:var(--t3)}
+/* 天数 = 仪表直选带：大 tabular 数字 + 刻线分隔（S2/S3），选中 = 提亮 + 钢色下划 tick */
+.dstrip{display:flex;margin:14px -6px 0}
+.dcell{flex:1;min-height:76px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:26px;font-weight:600;color:var(--t3)}
+.dcell+.dcell::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:1px;height:10px;background:#2E2A22}
+.dcell i{display:block;width:12px;height:2px;border-radius:1px;background:transparent;transition:background .15s ease-out}
+.dcell.sel{color:var(--t1)}
+.dcell.sel i{background:var(--steel)}
+#toast{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;background:var(--raised);border:1px solid var(--hair);padding:9px 14px;border-radius:9px;color:var(--t2);opacity:0;transition:opacity .25s;pointer-events:none;z-index:40;white-space:nowrap}
+.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:380px}
+.hint b{color:#857c6c}
+</style></head>
+<body>
+<div class="phone">
+ <div class="notch"></div>
+ <div class="frame">
+  <div class="sb"><span class="num">9:41</span><span class="r"><i class="ti ti-wifi" style="font-size:15px"></i><i class="ti ti-battery-3" style="font-size:17px"></i></span></div>
+  <div class="screens">
+
+   <!-- ===================== ONBOARDING（无 tab：入 app 前的专注态） ===================== -->
+   <section class="screen on" id="s-ob" role="tabpanel" aria-label="First plan setup" style="padding-bottom:24px">
+     <div class="obtop"><span class="ov" style="letter-spacing:.14em;color:var(--t1)">Rede</span><span class="ov">First plan</span></div>
+     <div class="obticks" id="obTicks" role="group" aria-label="Setup progress"></div>
+     <div class="forged obcard">
+       <span class="embar" style="top:20px;bottom:20px"></span>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <svg class="reg" style="left:11px;bottom:11px" viewBox="0 0 11 11"><path d="M0 2 L0 11 L9 11" stroke="#5F594C" fill="none"/></svg>
+       <div class="obbody in" id="obBody" aria-live="polite"></div>
+     </div>
+     <div class="caption" id="obMeta" style="color:var(--t4);padding:14px 22px 0">Four answers — about a minute</div>
+   </section>
+
+   <!-- ===================== TODAY（落地：四 tab 结构，数据来自引导答案） ===================== -->
+   <section class="screen" id="s-today" role="tabpanel" aria-label="Today">
+     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Wed · Jun 10 · Day 1</div></div><button class="iconbtn" aria-label="Settings" onclick="toast()"><i class="ti ti-settings gear"></i></button></div>
+     <div class="forged sect" style="padding:18px 16px;margin-top:20px">
+       <span class="embar" style="top:18px;bottom:18px"></span>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <div style="padding-left:13px">
+         <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">Ready to train</span></div>
+         <div class="headline clamp3" id="tdVerdict" style="margin-top:11px"></div>
+         <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:24px;padding-top:14px;border-top:1px solid var(--hair)">
+           <div>
+             <div class="ov em">Start here</div>
+             <div class="subhead" id="tdEx" style="margin-top:7px"></div>
+             <div style="display:flex;align-items:flex-end;gap:6px;margin-top:5px"><span class="num" id="tdW" style="font-size:20px;font-weight:600"></span><span class="callout num t3" id="tdMeta" style="padding-bottom:3px"></span></div>
+           </div>
+           <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+             <span class="caption num t3" id="tdThen"></span>
+             <span style="display:flex;align-items:center;gap:5px" class="caption num t3"><span style="width:16px;height:2px;background:var(--neu)"></span><span id="tdMore"></span></span>
+           </div>
+         </div>
+         <button class="emb" style="margin-top:16px" onclick="toast()"><i class="ti ti-player-play" style="font-size:16px"></i>Start training</button>
+       </div>
+     </div>
+
+     <div class="sect">
+       <div style="display:flex;justify-content:space-between;align-items:center"><span class="ov">Rede training receipt</span><span class="ov num">Day 1</span></div>
+       <div class="body" style="margin-top:8px">First plan, built from your four answers</div>
+       <button id="planRow" class="discl" aria-expanded="false" aria-controls="planWhy" onclick="toggleWhy()"><span id="planLbl">Why this plan</span> <i class="ti ti-chevron-down" id="planChev" style="font-size:15px"></i></button>
+       <div id="planWhy" style="max-height:0;overflow:hidden;transition:max-height .25s">
+         <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;padding-top:6px">
+           <div class="ov" style="padding-top:3px">Signal</div><div class="callout t2" id="rcSignal"></div>
+           <div class="ov" style="padding-top:3px">Change</div><div class="callout t2" id="rcChange"></div>
+           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:7px"><button class="ctrlchip" onclick="backToOb()">Edit answers</button></div>
+         </div>
+       </div>
+     </div>
+
+     <div class="rule"></div>
+     <div class="sect" style="margin-top:0">
+       <div class="ov" style="margin-bottom:14px">First week</div>
+       <div id="wkRail" style="display:flex;align-items:flex-start;justify-content:space-between;position:relative"></div>
+     </div>
+   </section>
+
+  </div>
+
+  <nav class="tb" id="tb" role="tablist" aria-label="Sections">
+   <a role="tab" aria-selected="true" tabindex="0"><i class="ti ti-home"></i>Today</a>
+   <a role="tab" aria-selected="false" tabindex="0" onclick="toast()"><i class="ti ti-barbell"></i>Train</a>
+   <a role="tab" aria-selected="false" tabindex="0" onclick="toast()"><i class="ti ti-trending-up"></i>Progress</a>
+   <a role="tab" aria-selected="false" tabindex="0" onclick="toast()"><i class="ti ti-calendar"></i>Plan</a>
+  </nav>
+  <div id="toast" class="caption">Not in this prototype — training flow lives in rede-app.html</div>
+
+ </div>
+</div>
+<div class="hint">Onboarding 11b · tap an answer → auto-advance · top tick rail jumps back · result varies by goal / days / equipment / background · <b>Open Today</b> lands in the app · <b style="cursor:pointer" onclick="resetAll()">Replay</b></div>
+
+<script>
+ const el=id=>document.getElementById(id);
+ const fmt=v=>(Math.round(v*100)/100).toString();
+ const RM=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+ /* ---------- FR-ON1：只问 4 件事 ---------- */
+ const ORDER=['goal','days','equip','bg'];
+ const TICKNAME={goal:'Goal',days:'Schedule',equip:'Equipment',bg:'Background'};
+ let ans={goal:null,days:null,equip:null,bg:null}, cur='goal', busy=false;
+
+ const QD={
+  goal:{ov:'Goal',h:'What are you training for?',opts:[
+    {v:'muscle',t:'Build muscle',c:'Volume leads, loads climb steadily'},
+    {v:'strength',t:'Get stronger',c:'Heavy main lifts, lower reps'},
+    {v:'balanced',t:'Both, balanced',c:'Strength and size in one plan'}]},
+  days:{ov:'Schedule',h:'How many days can you train?',strip:[2,3,4,5,6]},
+  equip:{ov:'Equipment',h:'Where will you train?',opts:[
+    {v:'gym',t:'Commercial gym',c:'Barbells, machines, a full rack'},
+    {v:'db',t:'Home dumbbells',c:'Adjustable dumbbells and a bench'},
+    {v:'min',t:'Minimal kit',c:'A few weights and floor space'}]},
+  bg:{ov:'Background',h:'Where are you starting from?',cap:'Sets your starting loads only — your logs take over from there',opts:[
+    {v:'new',t:'New to lifting',c:'First structured program'},
+    {v:'mid',t:'Trained before',c:'Know the lifts, coming back'},
+    {v:'exp',t:'Experienced',c:'Years of consistent training'}]}
+ };
+
+ /* ---------- FR-ON3 映射：答案 → 首版计划（演示用纯函数；iOS 走模板生成合同） ----------
+    背景定档：萌新 ×0.5 / 有基础 ×0.75 / 熟练 ×1.0 乘目录起始重量，取 2.5 整 */
+ const BGF={new:.5,mid:.75,exp:1};
+ const CAT={gym:{ex:'Bench press',base:60},db:{ex:'DB bench press',base:20},min:{ex:'Goblet squat',base:22.5}};
+ function calc(){
+  const f=BGF[ans.bg], cat=CAT[ans.equip];
+  const split=ans.days<=3?'full':ans.days===4?'ul':'ppl';
+  const w=Math.round(cat.base*f/2.5)*2.5;
+  return {
+   w, wTxt:fmt(w), f,
+   reps:{muscle:8,strength:5,balanced:6}[ans.goal],
+   rir:ans.bg==='exp'?2:3,
+   ex:cat.ex,
+   ex2:split==='ppl'?(ans.equip==='min'?'Push-up':'Incline DB press'):(ans.equip==='gym'?'Barbell row':'DB row'),
+   lifts:split==='full'?5:6,
+   session:{full:'Full body A',ul:'Upper A',ppl:'Push A'}[split],
+   splitName:{full:'Full body',ul:'Upper/lower',ppl:'Push/pull/legs'}[split],
+   week:{full:['Full body A','Full body B','Full body A'],ul:['Upper A','Lower A','Upper B'],ppl:['Push A','Pull A','Legs A']}[split],
+   goalPhrase:{muscle:'built for muscle',strength:'built for strength',balanced:'strength and size in balance'}[ans.goal],
+   goalShort:{muscle:'Muscle',strength:'Strength',balanced:'Balanced'}[ans.goal],
+   equipLine:{gym:'Built from the full gym catalog',db:'Every lift works with dumbbells and a bench',min:'Built around a minimal kit — light weights and bodyweight'}[ans.equip],
+   equipShort:{gym:'Gym',db:'Dumbbells',min:'Minimal kit'}[ans.equip],
+   /* FR-ON2：背景只作先验——克制说明，不承诺不吹捧 */
+   bgLine:{new:'Conservative start for your background — from here the plan follows what you log',
+           mid:'Moderate start for your background — from here the plan follows what you log',
+           exp:'Starting at catalog level — your first logged sessions fine-tune it'}[ans.bg],
+   bgWord:{new:'light',mid:'moderate',exp:'at level'}[ans.bg]
+  };
+ }
+
+ /* ---------- 渲染 ---------- */
+ const allAnswered=()=>ORDER.every(k=>ans[k]!==null);
+ const nextState=()=>{ const k=ORDER.find(k=>ans[k]===null); return k||'result'; };
+
+ function renderTicks(){
+  el('obTicks').innerHTML=ORDER.map(k=>{
+   const answered=ans[k]!==null, curq=cur===k;
+   const dis=!answered&&!curq;
+   return '<button class="obtick'+(curq?' cur':answered?' done':'')+'"'+(dis?' disabled aria-disabled="true"':'')
+    +' aria-label="'+TICKNAME[k]+(answered?' — answered':'')+(curq?' — current':'')+'" onclick="jump(\''+k+'\')"><i></i></button>';
+  }).join('');
+ }
+
+ function qHTML(k){
+  const q=QD[k];
+  let h='<div class="ov cas" style="animation-delay:.02s">'+q.ov+'</div>'
+   +'<div class="headline cas" style="margin-top:10px;animation-delay:.05s">'+q.h+'</div>'
+   +(q.cap?'<div class="caption cas" style="color:var(--t4);margin-top:7px;animation-delay:.08s">'+q.cap+'</div>':'');
+  if(q.strip){
+   h+='<div class="dstrip num cas" role="group" aria-label="Days a week" style="animation-delay:.12s">'
+    +q.strip.map(n=>'<button class="dcell num'+(ans[k]===n?' sel':'')+'" aria-pressed="'+(ans[k]===n)+'" aria-label="'+n+' days" onclick="pick(\'days\','+n+')">'+n+'<i></i></button>').join('')+'</div>';
+  }else{
+   h+='<div class="opts">'+q.opts.map((o,i)=>
+    '<button class="opt cas" style="animation-delay:'+(120+i*45)+'ms" aria-pressed="'+(ans[k]===o.v)+'"'+(ans[k]===o.v?' data-sel="1"':'')
+    +' onclick="pick(\''+k+'\',\''+o.v+'\')"><span class="ot">'+o.t+'</span><span class="oc">'+o.c+'</span></button>').join('')+'</div>';
+  }
+  if(allAnswered()) h+='<button class="ghost cas" style="margin-top:auto;align-self:flex-start;padding:0 2px;animation-delay:.2s" onclick="toResult()"><i class="ti ti-arrow-left" style="font-size:14px;margin-right:6px"></i>Back to plan</button>';
+  return h;
+ }
+
+ function resultHTML(){
+  const c=calc();
+  return '<div class="cas" style="display:flex;align-items:center;gap:7px;animation-delay:.02s"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">Plan ready</span></div>'
+   +'<div class="headline clamp3 cas" style="margin-top:11px;animation-delay:.05s">'+c.splitName+', '+ans.days+' days a week — '+c.goalPhrase+'.</div>'
+   +'<div class="body t3 cas" style="margin-top:8px;animation-delay:.09s">'+c.equipLine+'</div>'
+   +'<div class="cas" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--hair);animation-delay:.13s">'
+     +'<div class="ov">First session</div>'
+     +'<div class="subhead" style="margin-top:8px">'+c.session+' · '+c.ex+'</div>'
+     +'<div style="display:flex;align-items:flex-end;gap:6px;margin-top:5px"><span class="num" style="font-size:20px;font-weight:600">'+c.wTxt+'</span><span class="callout num t3" style="padding-bottom:3px">kg · ×'+c.reps+' · 3 sets</span></div>'
+   +'</div>'
+   +'<div class="caption t3 cas" style="margin-top:14px;display:flex;gap:6px;align-items:flex-start;line-height:1.45;animation-delay:.17s"><span class="ptick" style="margin-top:6px"></span><span>'+c.bgLine+'</span></div>'
+   +'<button class="emb cas" style="margin-top:18px;align-self:flex-start;animation-delay:.21s" onclick="enterApp()"><i class="ti ti-arrow-right" style="font-size:16px"></i>Open Today</button>';
+ }
+
+ function paint(){
+  renderTicks();
+  const b=el('obBody');
+  b.innerHTML=cur==='result'?resultHTML():qHTML(cur);
+  if(cur!=='result') b.querySelectorAll('.opt[data-sel]').forEach(o=>o.classList.add('sel'));
+  el('obMeta').style.visibility=cur==='result'?'hidden':'visible';
+  b.classList.remove('in'); void b.offsetWidth; b.classList.add('in');
+ }
+
+ /* ---------- 步进：确认拍 → 原地形变（200ms，不横滑）；reduced-motion 瞬切 ---------- */
+ function morphTo(s){
+  if(RM()){ cur=s; paint(); busy=false; return; }
+  const b=el('obBody'); b.classList.add('swap');
+  setTimeout(()=>{ cur=s; paint(); b.classList.remove('swap'); busy=false; },180);
+ }
+ function pick(k,v){
+  if(busy) return; busy=true; ans[k]=v;
+  const b=el('obBody');                                  // 先原地亮出选中态（钢色），再推进
+  b.innerHTML=qHTML(k);
+  b.querySelectorAll('.opt[data-sel]').forEach(o=>o.classList.add('sel'));
+  renderTicks();
+  setTimeout(()=>morphTo(nextState()), RM()?40:380);
+ }
+ function jump(k){                                       // 刻线格回跳（仅已答或当前）
+  if(busy||cur===k) return;
+  if(ans[k]===null&&k!==nextState()) return;
+  busy=true; morphTo(k);
+ }
+ function toResult(){ if(busy) return; busy=true; morphTo('result'); }
+
+ /* ---------- 落地 Today（模拟跳转，四 tab 出现） ---------- */
+ function show(s){
+  el('s-ob').classList.toggle('on',s==='ob');
+  el('s-today').classList.toggle('on',s==='today');
+  el('tb').style.display=s==='today'?'flex':'none';
+  el('s-today').scrollTop=0;
+ }
+ function enterApp(){
+  const c=calc();
+  el('tdVerdict').textContent='Train today. '+c.session+' opens your plan — loads start '+c.bgWord+'.';
+  el('tdEx').textContent=c.ex;
+  el('tdW').textContent=c.wTxt;
+  el('tdMeta').textContent='kg · ×'+c.reps+' · RIR '+c.rir;
+  el('tdThen').textContent='then '+c.ex2;
+  el('tdMore').textContent='+'+(c.lifts-2)+' more lifts';
+  el('rcSignal').textContent=c.goalShort+' · '+ans.days+' days a week · '+c.equipShort;
+  el('rcChange').textContent='First loads ×'+(c.f===1?'1.0':c.f)+' of catalog start, rounded to 2.5 kg';
+  el('wkRail').innerHTML='<div style="position:absolute;left:8%;right:8%;top:7px;height:2px;background:var(--hair)"></div>'
+   +c.week.map((name,i)=>'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2">'
+     +(i===0?'<span class="ring" style="width:14px;height:14px;border-radius:50%;background:var(--ember)"></span>'
+            :'<span style="width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid #3A352B"></span>')
+     +'<span class="callout num" style="color:'+(i===0?'var(--t1)':'var(--t3)')+'">'+name+'</span>'
+     +'<span class="ov'+(i===0?' em':'')+'">'+(i===0?'Today':i===1?'Next':'Later')+'</span></div>').join('');
+  show('today');
+ }
+ function backToOb(){ cur='goal'; busy=false; paint(); show('ob'); }   // 答案保留，可逐题改
+ function resetAll(){ ans={goal:null,days:null,equip:null,bg:null}; cur='goal'; busy=false; paint(); show('ob'); }
+
+ function toggleWhy(){
+  const r=el('planWhy'), c=el('planChev'), row=el('planRow'), lbl=el('planLbl');
+  const open=r.style.maxHeight&&r.style.maxHeight!=='0px';
+  r.style.maxHeight=open?'0px':(r.scrollHeight+24)+'px'; c.style.transform=open?'':'rotate(180deg)';
+  row.setAttribute('aria-expanded',String(!open));
+  lbl.textContent=open?'Why this plan':'Hide reason';
+ }
+ let toastT;
+ function toast(){ const t=el('toast'); t.style.opacity=1; clearTimeout(toastT); toastT=setTimeout(()=>t.style.opacity=0,1800); }
+
+ paint();
+</script>
+</body></html>

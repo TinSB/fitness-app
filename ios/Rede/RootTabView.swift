@@ -13,6 +13,8 @@ struct RootTabView: View {
     @State private var selection: RootTab
     @State private var localeStore: LocaleStore
     @State private var sessionStore = SessionStore()
+    /// M5-1b 首启引导：nil = 未检查（避免首帧闪烁误判）。
+    @State private var showOnboarding: Bool?
 
     // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan [-locale zh|en]
     init() {
@@ -67,8 +69,29 @@ struct RootTabView: View {
 
             RedeTabBar(selection: $selection)
                 .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
+
+            // M5-1b 首启引导（FR-ON1）：合法空文档才出现；unreadable 绝不进引导。
+            if showOnboarding == true {
+                OnboardingView(onFinish: {
+                    showOnboarding = false
+                    selection = .today
+                })
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.redeBase.ignoresSafeArea())
+            }
         }
         .background(Color.redeBase.ignoresSafeArea())
+        .task {
+            // 截图钩子 -forceOnboarding；-skipOnboarding 供既有自动化钩子绕过
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-forceOnboarding") {
+                showOnboarding = true
+            } else if args.contains("-skipOnboarding") {
+                showOnboarding = false
+            } else {
+                showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
+            }
+        }
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；
         // -autoCompleteSession 自动按建议打满全部组并落盘（验证杀进程重开记录还在）；

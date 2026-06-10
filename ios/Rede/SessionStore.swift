@@ -64,6 +64,67 @@ final class SessionStore {
         checkForRestorableDraft()
     }
 
+    // MARK: - M5-1b 引导（FR-ON1/3）
+
+    /// 是否需要首启引导。铁律：unreadable ≠ 新用户——文件在但读不懂时绝不进引导
+    /// （引导完成会写盘，可能覆盖既有记录）。仅当合法空文档（文件缺失或
+    /// 无模板、无历史、无背景）时为 true。
+    static func needsOnboarding() -> Bool {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        do {
+            guard let existing = try store.load() else { return true } // 文件缺失 = 合法首启
+            return existing.history.isEmpty
+                && existing.programTemplate.splitType == nil
+                && existing.userProfile.trainingLevel == nil
+        } catch {
+            return false // unreadable：如实降级到 Today 的 unreadable 态
+        }
+    }
+
+    /// 引导完成：4 问 → 模板映射（包内纯函数）→ 写闸落盘 → 重载今日。
+    /// 返回 false 时 saveErrorText 已置（如实呈现，可重试）。
+    @discardableResult
+    func completeOnboarding(_ answers: OnboardingAnswers) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+
+        let template = OnboardingPlanInit.template(for: answers)
+        let write = OnboardingWrite(
+            trainingLevel: answers.trainingLevel,
+            primaryGoal: answers.primaryGoal,
+            weeklyTrainingDays: template.daysPerWeek, // 调用约定：取钳制后的值
+            equipmentScenario: answers.equipmentScenario,
+            splitType: template.splitType
+        )
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyOnboarding(write)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+
+        switch result {
+        case .success:
+            saveErrorText = nil
+            await loadToday() // 结果卡直接读真实首练处方（FR-ON3）
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
     /// 当日 draft → 恢复提示；跨天/无效 → 静默清除。
     private func checkForRestorableDraft() {
         guard flow == nil, pendingDraft == nil, let draft = DraftFile.load() else { return }
