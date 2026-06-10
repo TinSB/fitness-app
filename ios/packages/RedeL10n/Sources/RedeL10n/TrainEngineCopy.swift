@@ -60,6 +60,14 @@ extension RedeStrings {
         locale == .zh ? "按计划重量保持，微调已暂停" : "Held at plan — auto-adjust paused"
     }
 
+    /// 键盘工具条提交键（decimal 键盘无回车）。
+    public var adjustDone: String { locale == .zh ? "完成" : "Done" }
+
+    /// 快改入口的一次性提示（FR-TR2 可见性；用过即不再显示）。
+    public var adjustDiscoverHint: String {
+        locale == .zh ? "点重量可调整——之后的建议会跟着你" : "Tap the weight to adjust — suggestions follow your change"
+    }
+
     // MARK: - 休息态
 
     public var restLabel: String { locale == .zh ? "休息" : "Rest" }

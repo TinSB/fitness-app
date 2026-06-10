@@ -20,6 +20,11 @@ struct TrainTabView: View {
     @State private var adjustWeight: Double = 0
     @State private var adjustReps = 0
     @State private var adjustRir = 2
+    /// 重量直接输入（精细调节；提交时解析并钳制）。
+    @State private var adjustWeightText = ""
+    @FocusState private var weightFieldFocused: Bool
+    /// 快改入口一次性提示（用过即永久消失）。
+    @AppStorage("hasUsedQuickAdjust") private var hasUsedQuickAdjust = false
     @State private var showMoreSheet = false
     @State private var showSwapSheet = false
     @State private var painToastVisible = false
@@ -155,9 +160,22 @@ struct TrainTabView: View {
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT3)
                     .padding(.bottom, 8)
+                    // 可调暗示（FR-TR2 可见性：数字必须看起来能点）
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.redeT4)
+                        .padding(.bottom, 10)
                 }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            if !hasUsedQuickAdjust && !showAdjust {
+                Text(s.adjustDiscoverHint)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .padding(.top, 2)
+            }
 
             if showAdjust {
                 adjustRow
@@ -241,9 +259,44 @@ struct TrainTabView: View {
 
     private var adjustRow: some View {
         HStack(spacing: 14) {
-            adjustCell(label: s.adjustWeight, value: s.formatKg(adjustWeight),
-                       minus: { adjustWeight = max(2.5, adjustWeight - 2.5) },
-                       plus: { adjustWeight += 2.5 })
+            // 重量：±2.5 快捷 + 数字框直接输入（任意精度，提交时钳制 ≥0）
+            VStack(spacing: 5) {
+                Overline(text: s.adjustWeight)
+                HStack(spacing: 7) {
+                    SteelButton(title: "−", action: {
+                        adjustWeight = max(0, adjustWeight - 2.5)
+                        adjustWeightText = s.formatKg(adjustWeight)
+                    })
+                    TextField("", text: $adjustWeightText)
+                        .keyboardType(.decimalPad)
+                        .focused($weightFieldFocused)
+                        .font(.redeBody)
+                        .monospacedDigit()
+                        .foregroundStyle(Color.redeT1)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 56)
+                        .padding(.vertical, 4)
+                        .background(Color.redeHair.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .onChange(of: weightFieldFocused) { _, focused in
+                            if !focused { commitWeightText() }
+                        }
+                        .toolbar {
+                            // decimal 键盘无回车键：给一个明确的提交路径
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button(s.adjustDone) {
+                                    commitWeightText()
+                                    weightFieldFocused = false
+                                }
+                            }
+                        }
+                    SteelButton(title: "＋", action: {
+                        adjustWeight += 2.5
+                        adjustWeightText = s.formatKg(adjustWeight)
+                    })
+                }
+            }
             adjustCell(label: s.adjustReps, value: "\(adjustReps)",
                        minus: { adjustReps = max(1, adjustReps - 1) },
                        plus: { adjustReps += 1 })
@@ -251,6 +304,14 @@ struct TrainTabView: View {
                        minus: { adjustRir = max(0, adjustRir - 1) },
                        plus: { adjustRir = min(5, adjustRir + 1) })
         }
+    }
+
+    /// 文本 → 重量：可解析则钳制 ≥0 收下；不可解析则回显当前值（不猜）。
+    private func commitWeightText() {
+        if let parsed = Double(adjustWeightText.replacingOccurrences(of: ",", with: ".")), parsed >= 0 {
+            adjustWeight = parsed
+        }
+        adjustWeightText = s.formatKg(adjustWeight)
     }
 
     private func adjustCell(label: String, value: String, minus: @escaping () -> Void, plus: @escaping () -> Void) -> some View {
@@ -572,8 +633,10 @@ struct TrainTabView: View {
     }
 
     private func startAdjust(targetKg: Double, recommendation: NextSetRecommendation?) {
+        hasUsedQuickAdjust = true // 提示服务「入口发现」：打开过即达成，与是否真改无关（拍板留痕）
         if !showAdjust {
             adjustWeight = targetKg
+            adjustWeightText = s.formatKg(targetKg)
             adjustReps = max(1, recommendation?.targetReps ?? 1)
             adjustRir = Int(recommendation?.targetRir ?? 2)
         }
@@ -582,6 +645,12 @@ struct TrainTabView: View {
 
     private func logCurrentSet() {
         guard let flow else { return }
+        // 打勾前先收下文本框最新内容（decimal 键盘无回车，失焦时序不可靠——
+        // 不提交会静默记旧值，审查 MAJOR）
+        if showAdjust {
+            commitWeightText()
+            weightFieldFocused = false
+        }
         let target = flow.currentTargetWeightKg ?? 0
         let recommendation = flow.currentRecommendation
         let observation = CompletedSetObservation(

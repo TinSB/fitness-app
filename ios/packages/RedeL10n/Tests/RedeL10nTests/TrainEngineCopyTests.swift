@@ -5,6 +5,13 @@ import XCTest
 @testable import RedeL10n
 
 final class TrainEngineCopyTests: XCTestCase {
+    func testAdjustHintAndDoneAreNonEmptyBothLocales() {
+        for t in [RedeStrings(locale: .zh), RedeStrings(locale: .en)] {
+            XCTAssertFalse(t.adjustDiscoverHint.isEmpty)
+            XCTAssertFalse(t.adjustDone.isEmpty)
+        }
+    }
+
     private let zh = RedeStrings(locale: .zh)
     private let en = RedeStrings(locale: .en)
 
@@ -58,6 +65,7 @@ final class TrainEngineCopyTests: XCTestCase {
             en.nextSetWhy(reasonCode: "belowRepFloor", fromKg: "60"),
             zh.nextSetWhy(reasonCode: "painReported", fromKg: nil),
             en.holdWhyLine, zh.holdWhyLine,
+            en.adjustDiscoverHint, zh.adjustDiscoverHint, en.adjustDone, zh.adjustDone,
             zh.painRegistered, en.painRegistered,
             zh.summaryTitle, en.summaryTitle,
             zh.trainRestDayNote, en.trainRestDayNote,
