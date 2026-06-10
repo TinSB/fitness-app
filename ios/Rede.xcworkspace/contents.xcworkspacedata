@@ -5,6 +5,9 @@
       location = "group:Rede.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:packages/RedeDataHealth">
+   </FileRef>
+   <FileRef
       location = "group:packages/RedeDomain">
    </FileRef>
    <FileRef
