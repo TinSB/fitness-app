@@ -617,17 +617,23 @@ struct TrainTabView: View {
                         marker: .skipped
                     )
                 case .active:
+                    // 活动行与 hero 卡同源（用户真机反馈 2026-06-10：不能卡片跟随了表里还是计划值）：
+                    // 暂存调整 > 引擎建议 > 计划值
+                    let staging = showAdjust || hasAdjustment
+                    let rec = flow.currentRecommendation
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(plannedSet.targetWeightKg),
-                        reps: "\(plannedSet.targetReps)",
+                        weight: s.formatKg(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg)),
+                        reps: "\(staging ? adjustReps : (rec?.targetReps ?? plannedSet.targetReps))",
                         rir: "—",
                         marker: .active
                     )
                 case .pending:
+                    // 未来行 = 引擎默认轨迹（执行事实是基线：按当前目标延续；不含未打勾的暂存——
+                    // 暂存只在打勾后才会改变轨迹，回流合同口径）
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(plannedSet.targetWeightKg),
+                        weight: s.formatKg(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
                         marker: .pending
