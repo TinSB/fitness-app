@@ -49,6 +49,8 @@ public enum DayPrescriptionReason: Equatable, Sendable {
 public struct ExercisePrescriptionPlan: Equatable, Sendable {
     public let exerciseId: String
     public let sets: Int
+    /// 组间休息秒数（slot 生成参数，沿 legacy 模板口径）。
+    public let restSeconds: Int
     public let repLowerBound: Int
     public let repUpperBound: Int
     /// 本次的次数目标：加重/回退/首练 → repLowerBound；持平 → repUpperBound（双重渐进）。
@@ -66,13 +68,14 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable {
     public let reason: PrescriptionReason
 
     public init(
-        exerciseId: String, sets: Int, repLowerBound: Int, repUpperBound: Int,
+        exerciseId: String, sets: Int, restSeconds: Int, repLowerBound: Int, repUpperBound: Int,
         targetReps: Int, targetWeightKg: Double, targetRir: Double,
         previousWeightKg: Double?, previousTopReps: Int?, nextProjectedWeightKg: Double,
         change: ChangeDirection, reason: PrescriptionReason
     ) {
         self.exerciseId = exerciseId
         self.sets = sets
+        self.restSeconds = restSeconds
         self.repLowerBound = repLowerBound
         self.repUpperBound = repUpperBound
         self.targetReps = targetReps

@@ -37,6 +37,7 @@ public enum TodayPrescriptionEngine {
         let sets: Int
         let repMin: Int
         let repMax: Int
+        let rest: Int
     }
 
     static func daySequence(splitType: String?) -> [String] {
@@ -51,47 +52,47 @@ public enum TodayPrescriptionEngine {
         switch dayCode {
         case "push-a":
             return [
-                Slot(pattern: "horizontal-press", kind: "compound", sets: 3, repMin: 6, repMax: 8),
-                Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 10),
-                Slot(pattern: "horizontal-press", kind: "machine", sets: 2, repMin: 8, repMax: 12),
-                Slot(pattern: "fly", sets: 2, repMin: 12, repMax: 15),
-                Slot(pattern: "lateral-raise", sets: 4, repMin: 12, repMax: 20),
-                Slot(pattern: "triceps-extension", sets: 3, repMin: 10, repMax: 15),
+                Slot(pattern: "horizontal-press", kind: "compound", sets: 3, repMin: 6, repMax: 8, rest: 180),
+                Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 10, rest: 120),
+                Slot(pattern: "horizontal-press", kind: "machine", sets: 2, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "fly", sets: 2, repMin: 12, repMax: 15, rest: 75),
+                Slot(pattern: "lateral-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "triceps-extension", sets: 3, repMin: 10, repMax: 15, rest: 75),
             ]
         case "pull-a":
             return [
-                Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10),
-                Slot(pattern: "horizontal-pull", equipment: "cable", sets: 3, repMin: 8, repMax: 12),
-                Slot(pattern: "horizontal-pull", equipment: "barbell", sets: 3, repMin: 6, repMax: 10),
-                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20),
-                Slot(pattern: "curl", sets: 3, repMin: 8, repMax: 12),
-                Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15),
+                Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
+                Slot(pattern: "horizontal-pull", equipment: "cable", sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "horizontal-pull", equipment: "barbell", sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "curl", sets: 3, repMin: 8, repMax: 12, rest: 75),
+                Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 75),
             ]
         case "legs-a":
             return [
-                Slot(pattern: "squat-pattern", kind: "compound", equipment: "barbell", sets: 4, repMin: 5, repMax: 8),
-                Slot(pattern: "hinge", equipment: "barbell", sets: 3, repMin: 6, repMax: 10),
-                Slot(pattern: "squat-pattern", kind: "machine", sets: 3, repMin: 10, repMax: 15),
-                Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15),
-                Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20),
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: "barbell", sets: 4, repMin: 5, repMax: 8, rest: 210),
+                Slot(pattern: "hinge", equipment: "barbell", sets: 3, repMin: 6, repMax: 10, rest: 180),
+                Slot(pattern: "squat-pattern", kind: "machine", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
+                Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 60),
             ]
         case "lower":
             return [
-                Slot(pattern: "squat-pattern", kind: "compound", equipment: "machine", sets: 3, repMin: 6, repMax: 10),
-                Slot(pattern: "hinge", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12),
-                Slot(pattern: "squat-pattern", kind: "machine", sets: 3, repMin: 10, repMax: 15),
-                Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15),
-                Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20),
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: "machine", sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "hinge", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "squat-pattern", kind: "machine", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
+                Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
             ]
         default: // "upper"
             return [
-                Slot(pattern: "horizontal-press", equipment: "dumbbell", sets: 3, repMin: 6, repMax: 10),
-                Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10),
-                Slot(pattern: "vertical-press", sets: 3, repMin: 6, repMax: 10),
-                Slot(pattern: "horizontal-pull", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12),
-                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20),
-                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15),
-                Slot(pattern: "curl", equipment: "dumbbell", sets: 2, repMin: 10, repMax: 15),
+                Slot(pattern: "horizontal-press", equipment: "dumbbell", sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
+                Slot(pattern: "vertical-press", sets: 3, repMin: 6, repMax: 10, rest: 120),
+                Slot(pattern: "horizontal-pull", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12, rest: 90),
+                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "curl", equipment: "dumbbell", sets: 2, repMin: 10, repMax: 15, rest: 60),
             ]
         }
     }
@@ -192,6 +193,7 @@ public enum TodayPrescriptionEngine {
         return ExercisePrescriptionPlan(
             exerciseId: entry.id,
             sets: sets,
+            restSeconds: slot.rest,
             repLowerBound: slot.repMin,
             repUpperBound: slot.repMax,
             targetReps: targetReps,
