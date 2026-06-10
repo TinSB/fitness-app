@@ -225,6 +225,7 @@ struct SegControl: View {
                         .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
                         .background(selection == option ? Color.redeHair : .clear)
                         .clipShape(RoundedRectangle(cornerRadius: 7))
+                        .contentShape(Rectangle()) // 透明区域也可点中（.plain 默认只命中不透明像素）
                 }
                 .buttonStyle(.plain)
             }
