@@ -18,6 +18,10 @@ struct TrainTabView: View {
     @State private var restRemaining = 0
     @State private var restPaused = false
     @State private var showAdjust = false
+    /// 用户在本组是否做过有效调整（用户真机反馈修复 2026-06-10）：
+    /// 关面板 = 收起控件，不丢弃决定——暂存值随本组保留直到打勾/跳过/换动作。
+    /// 撤销路径是「跟随」站点（回引擎默认），不由关面板承担。
+    @State private var hasAdjustment = false
     @State private var adjustWeight: Double = 0
     @State private var adjustReps = 0
     /// nil = 不记 RIR（引擎不猜；仅快改面可选，默认行为不变）。
@@ -73,6 +77,8 @@ struct TrainTabView: View {
         }
         .background(Color.redeBase)
         .sensoryFeedback(.success, trigger: logPulse)
+        // 会话边界：换场（结束/新开训练）后旧暂存绝不滞留到新会话首组
+        .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
         .sheet(isPresented: $showMoreSheet) { moreSheet }
         .sheet(isPresented: $showSwapSheet) { swapSheet }
@@ -157,26 +163,27 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT2)
 
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
+                let staging = showAdjust || hasAdjustment
                 HStack(alignment: .bottom, spacing: 8) {
-                    Text(s.formatKg(showAdjust ? adjustWeight : targetKg))
+                    Text(s.formatKg(staging ? adjustWeight : targetKg))
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
-                        .contentTransition(.numericText(value: showAdjust ? adjustWeight : targetKg))
+                        .contentTransition(.numericText(value: staging ? adjustWeight : targetKg))
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.2),
-                                   value: showAdjust ? adjustWeight : targetKg)
+                                   value: staging ? adjustWeight : targetKg)
                     Text(s.trainLoadSuffix(
-                        targetReps: showAdjust ? adjustReps : (recommendation?.targetReps ?? 0),
-                        targetRir: showAdjust ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
+                        targetReps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
+                        targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
                     ))
                     .font(.redeCallout)
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT3)
                     .padding(.bottom, 8)
-                    // 可调暗示（FR-TR2 可见性：数字必须看起来能点）
+                    // 可调暗示（FR-TR2 可见性）；已调整且收起 = ember（「被采纳的调整」合法口音）
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.redeT4)
+                        .foregroundStyle(hasAdjustment && !showAdjust ? Color.redeEmber : Color.redeT4)
                         .padding(.bottom, 10)
                 }
                 .contentShape(Rectangle())
@@ -360,6 +367,7 @@ struct TrainTabView: View {
             adjustWeight = next
             selectionPulse += 1
         }
+        hasAdjustment = true
         adjustWeightText = s.formatKg(adjustWeight)
     }
 
@@ -424,6 +432,7 @@ struct TrainTabView: View {
     private func selectStation(_ option: AdjustOption) {
         adjustWeight = option.weightKg
         adjustWeightText = s.formatKg(option.weightKg)
+        hasAdjustment = true
         selectionPulse += 1
     }
 
@@ -459,6 +468,7 @@ struct TrainTabView: View {
     private func commitWeightText() {
         if let parsed = Double(adjustWeightText.replacingOccurrences(of: ",", with: ".")), parsed >= 0 {
             adjustWeight = parsed
+            hasAdjustment = true
         }
         adjustWeightText = s.formatKg(adjustWeight)
     }
@@ -470,7 +480,7 @@ struct TrainTabView: View {
         return HStack(spacing: 0) {
             ForEach(lo..<(lo + 5), id: \.self) { n in
                 if n > lo { stripDivider }
-                Button(action: { adjustReps = n; selectionPulse += 1 }) {
+                Button(action: { adjustReps = n; hasAdjustment = true; selectionPulse += 1 }) {
                     Text("\(n)")
                         .font(.redeBody)
                         .monospacedDigit()
@@ -494,7 +504,7 @@ struct TrainTabView: View {
         return HStack(spacing: 0) {
             ForEach(Array(cells.enumerated()), id: \.offset) { index, value in
                 if index > 0 { stripDivider }
-                Button(action: { adjustRir = value; selectionPulse += 1 }) {
+                Button(action: { adjustRir = value; hasAdjustment = true; selectionPulse += 1 }) {
                     Text(value.map(String.init) ?? s.adjustRirSkip)
                         .font(.redeBody)
                         .monospacedDigit()
@@ -736,6 +746,7 @@ struct TrainTabView: View {
             if let candidates = flow?.replacementCandidates, !candidates.isEmpty {
                 ForEach(candidates, id: \.self) { id in
                     SteelButton(title: s.exerciseName(id), action: {
+                        clearAdjustment() // 换动作 = 新目标，旧暂存作废
                         sessionStore.apply(.replaceExercise(id))
                         showSwapSheet = false
                     })
@@ -852,7 +863,7 @@ struct TrainTabView: View {
 
     private func startAdjust(targetKg: Double, recommendation: NextSetRecommendation?) {
         hasUsedQuickAdjust = true // 提示服务「入口发现」：打开过即达成，与是否真改无关（拍板留痕）
-        if !showAdjust {
+        if !showAdjust, !hasAdjustment { // 已有有效调整时重开面板不重置（保留用户决定）
             adjustWeight = targetKg
             adjustWeightText = s.formatKg(targetKg)
             adjustReps = max(1, recommendation?.targetReps ?? 1)
@@ -862,6 +873,13 @@ struct TrainTabView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
             showAdjust.toggle()
         }
+    }
+
+    /// 暂存生命周期终点：打勾 / 跳过 / 换动作——指针换组后旧暂存绝不能滞留。
+    private func clearAdjustment() {
+        showAdjust = false
+        hasAdjustment = false
+        showExactField = false
     }
 
     private func logCurrentSet() {
@@ -874,16 +892,17 @@ struct TrainTabView: View {
         }
         let target = flow.currentTargetWeightKg ?? 0
         let recommendation = flow.currentRecommendation
+        let staging = showAdjust || hasAdjustment // 调整后关面板 = 决定保留（用户真机反馈修复）
         let observation = CompletedSetObservation(
-            weightKg: showAdjust ? adjustWeight : target,
-            reps: showAdjust ? adjustReps : (recommendation?.targetReps ?? 0),
-            // 快改面选「不记」→ nil 落盘（引擎不猜）；未开快改维持现状（默认目标 RIR）
-            rir: showAdjust ? adjustRir.map(Double.init) : Double(Int(recommendation?.targetRir ?? 2)),
+            weightKg: staging ? adjustWeight : target,
+            reps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
+            // 快改面选「不记」→ nil 落盘（引擎不猜）；本组从未调整维持现状（默认目标 RIR）
+            rir: staging ? adjustRir.map(Double.init) : Double(Int(recommendation?.targetRir ?? 2)),
             painReported: flow.painReportedForCurrentSet
         )
         sessionStore.apply(.logSet(observation))
         logPulse += 1
-        showAdjust = false
+        clearAdjustment()
         painToastVisible = false
         if sessionStore.flow?.phase == .resting {
             restRemaining = sessionStore.flow?.restSecondsPlanned ?? 0
@@ -900,12 +919,14 @@ struct TrainTabView: View {
         showMoreSheet = false
         painToastVisible = false
         guard let reason = SetSkipReason(rawValue: code) else { return }
+        clearAdjustment() // 指针换组，旧暂存不得滞留到下一组
         sessionStore.apply(.skipSet(reason))
     }
 
     private func skipExercise() {
         showMoreSheet = false
         painToastVisible = false
+        clearAdjustment()
         sessionStore.apply(.skipExercise(.other))
     }
 
