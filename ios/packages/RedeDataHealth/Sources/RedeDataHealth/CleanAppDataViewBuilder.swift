@@ -35,6 +35,10 @@ public enum CleanAppDataViewBuilder {
                 issues.append(.sessionDropped(id: id, reason: .missingDate))
                 continue
             }
+            guard isValidTrainingDate(date) else {
+                issues.append(.sessionDropped(id: id, reason: .invalidDateFormat))
+                continue
+            }
             guard seenSessionIds.insert(id).inserted else {
                 issues.append(.sessionDropped(id: id, reason: .duplicateId))
                 continue
@@ -44,7 +48,45 @@ public enum CleanAppDataViewBuilder {
         }
 
         let profile = cleanProfile(appData.userProfile, issues: &issues)
-        return CleanAppDataView(raw: appData, sessions: sessions, profile: profile, issues: issues)
+        let program = cleanProgram(appData.programTemplate, issues: &issues)
+        return CleanAppDataView(raw: appData, sessions: sessions, profile: profile, program: program, issues: issues)
+    }
+
+    private static func cleanProgram(
+        _ program: ProgramTemplate,
+        issues: inout [DataHealthIssue]
+    ) -> CleanProgram {
+        var daysPerWeek = program.daysPerWeek
+        if let value = daysPerWeek, !(1...14).contains(value) {
+            issues.append(.programFieldIgnored(field: "daysPerWeek"))
+            daysPerWeek = nil
+        }
+        return CleanProgram(
+            daysPerWeek: daysPerWeek,
+            splitType: program.splitType,
+            primaryGoal: program.primaryGoal
+        )
+    }
+
+    /// 严格校验 "yyyy-MM-dd"（更长 ISO 串取前 10 位）：零填充、月 1-12、日按月/闰年。
+    /// 下游引擎按天序号计算 recency，格式非法必须在本层留痕拦截，不许静默蒸发。
+    private static func isValidTrainingDate(_ date: String) -> Bool {
+        let s = String(date.prefix(10))
+        let parts = s.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
+              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
+              (1...12).contains(month)
+        else { return false }
+        let daysInMonth: Int
+        switch month {
+        case 1, 3, 5, 7, 8, 10, 12: daysInMonth = 31
+        case 4, 6, 9, 11: daysInMonth = 30
+        default:
+            let isLeap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+            daysInMonth = isLeap ? 29 : 28
+        }
+        return (1...daysInMonth).contains(day)
     }
 
     private static func cleanExercises(

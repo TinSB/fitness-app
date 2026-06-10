@@ -119,6 +119,29 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 第一版 HealthKit 数据只用于展示、Progress/data quality 和本地导入/导出边界。若未来要影响 Today/Scheduler 的建议,必须新增 Master-approved engine-input slice。
 
+### 6.0 今日裁决引擎（TodayVerdict · M2-1 已实现）
+
+**入口合同**：引擎唯一入口是 `CleanTrainingDecisionInput`（init 私有,只能经 `make(from: CleanAppDataView, todayISO:)` 铸造——raw AppData 在类型系统上进不了引擎）；「今天」由调用方注入,引擎无 clock、无 IO、输出永不写回 AppData。输入面按 PRD 开放决策 #2 拍板（2026-06-09）：仅已记录训练历史（负荷/间隔/上次表现）+ 计划结构；主观自报（酸痛/疲劳/睡眠）放 FF。
+
+**输出合同**：四态 `TodayCall`（train 练 / light 轻 / rest 休 / deload 减载）+ typed 主理由 `VerdictReason` + 可观察事实 `VerdictSignal`。引擎不产任何用户文案——理由是结构化 code,由 UI 层经 RedeL10n 双语模板渲染成「信号 + 影响 + 决策」句（FR-T3 禁词约束因此结构化成立）。
+
+**瀑布仲裁（先命中先裁决,顺序即合同）**：
+
+| 序 | 条件 | 裁决 | 产品理由 |
+|---|---|---|---|
+| 1 | 今天已有完成训练 | rest | 不重复消耗 |
+| 2 | 零训练历史 | train | 校准期,不伪造 readiness 分数 |
+| 3 | 距上次训练 ≥14 天 | light | 回归保底,先轻后重 |
+| 4 | 21 天窗口训练日 ≥3×周计划频次且最长间隔 ≤2 天 | deload | 结构性超量;**优先级高于规则 5**——连练数周需要的是减载周,不只是歇一天 |
+| 5 | 连续 ≥3 天训练 | rest | 短窗口恢复 |
+| 6 | 近 7 天训练日 ≥ 周计划频次 | light | 本周量已到 |
+| 7 | 昨日（gap≤1）训练 RIR 均值 ≤0.5 | light | 上次练到力竭,降一档 |
+| 8 | 兜底 | train | 常规推进 |
+
+周计划频次取值链：`program.daysPerWeek` → `profile.weeklyTrainingDays` → 默认 6（宽松,避免无计划时规则 6 误触发）。无 RIR 数据时规则 7 不触发（不猜）。未来日期/非法格式的 session 不参与 recency 计算。
+
+**阈值地位**：14 天/21 天/连续 3 天/RIR 0.5/默认 6 是 MVP 起步值,非经验校准结果;由 RedeTrainingDecision 的 goldens 锁定——调阈值 = 调产品行为,必须显式改 golden 留痕,待 TestFlight 真实反馈后校准。
+
 ### 6.1 动作库、模板生成与动作事实权威
 
 训练计划不能依赖一组锁死的默认模板。Rede 的训练内容必须拆成三层:

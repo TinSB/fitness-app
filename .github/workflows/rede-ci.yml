@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           # Explicit test surface: a package silently vanishing must fail CI,
           # and a new package must be registered here before it counts as tested.
-          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeL10n RedePersistence RedeWidgetShared"
+          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeL10n RedePersistence RedeTrainingDecision RedeWidgetShared"
           for name in $EXPECTED_PACKAGES; do
             echo "== swift test: ios/packages/$name =="
             (cd "ios/packages/$name" && swift test)
