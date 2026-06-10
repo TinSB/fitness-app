@@ -944,6 +944,13 @@ Progress：
 - HealthKit/imported workout 的 display-only 证据。
 - 从 Progress 派生的隐私安全分享卡入口。
 
+### 8.0 进展派生投影（ProgressSnapshot · M4-1 已实现）
+
+- **包边界**：`RedeLocalSnapshot` 重生为 Foundation-only 独立包（Master §5：与 `RedeDomain`/canonical AppData 强制解耦，永不读写真相）。输入是包内自有值类型 `SnapshotSessionRecord`（id + 本地日 dateISO + 动作/组 + 时长），由 app 组合层把 DataHealth clean view 映射进来（M4-3 接线）。
+- **输出**：`ProgressSnapshotBuilder.build(sessions:)` 纯函数 → 历史（新→旧：volume/组数/顶组/PR 动作/时长）+ 每动作 e1RM 趋势（旧→新点列 + latest/best）+ 周训练量（ISO 周·周一起始，吨位/组数/场次）。
+- **口径锁定**（与已落盘实现对齐，改动须过架构门）：e1RM = Epley `w×(1+r/30)` 取每场顶组（重量优先、同重比次数，同 `SessionSummary`）；PR = 顶组重量**严格大于**全部更早历史同动作顶组，首练不发奖（M3 保守口径）；volume = Σ 重量×次数；周键由纯整数日期数学（Hinnant civil-days）从 dateISO 推导，无 Calendar/时区依赖——固定输入产出固定结果。
+- **防御**：非法日期条目整体跳过（上游 clean view 已保证合法）；legacy 的 median-e1RM/置信度门控不在本合同（置信度属数据质量层，且 §3.4 禁做 UI 读数）。
+
 Plan：
 
 - 未来几周训练结构。

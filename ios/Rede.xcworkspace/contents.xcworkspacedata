@@ -14,6 +14,9 @@
       location = "group:packages/RedeL10n">
    </FileRef>
    <FileRef
+      location = "group:packages/RedeLocalSnapshot">
+   </FileRef>
+   <FileRef
       location = "group:packages/RedePersistence">
    </FileRef>
    <FileRef
