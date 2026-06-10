@@ -425,8 +425,14 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      const c=s.done?'<i class="ti ti-check" style="font-size:14px;color:var(--t4)" aria-label="done"></i>':(i===active?'<span style="color:var(--ember)" aria-label="current">●</span>':'');
      const col=s.done?'var(--t2)':(i===active?'var(--t1)':'var(--t4)');
      const extra=i===active?'border-left:2px solid var(--ember);padding-left:8px;margin-left:-10px':'';
+     // 组表与 hero 同源（真机反馈 2026-06-10）：活动行 = 暂存>引擎；未来行 = 当前目标延续（轨迹默认）
+     let w=s.w;
+     if(!s.done){
+       if(i===active&&(adj.open||adj.dirty)) w=adj.w;
+       else if(i>active) w=sets[active].w;
+     }
      t.insertAdjacentHTML('beforeend',
-       '<div class="num trow callout" style="color:'+col+';'+extra+'"><span style="width:34px">'+(i+1)+'</span><span style="flex:1">'+s.w+' lb</span><span style="width:44px;text-align:center">'+s.r+'</span><span style="width:34px;text-align:center">'+(s.rir===null?'—':s.rir)+'</span><span style="width:16px;text-align:right">'+c+'</span></div>');
+       '<div class="num trow callout" style="color:'+col+';'+extra+'"><span style="width:34px">'+(i+1)+'</span><span style="flex:1">'+fmt(w)+' lb</span><span style="width:44px;text-align:center">'+s.r+'</span><span style="width:34px;text-align:center">'+(s.rir===null?'—':s.rir)+'</span><span style="width:16px;text-align:right">'+c+'</span></div>');
    });
  }
  const fmt=v=>(Math.round(v*100)/100).toString();      // 去尾零（60.0→60, 62.5→62.5）
@@ -474,7 +480,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      panelJustOpened=true; renderAdjust(); panelJustOpened=false; }
    else{ document.getElementById('exactIn').style.display='none';
      document.getElementById('hero').classList.remove('exon');
-     if(adj.dirty){ renderStaged(); } else { renderActive(); } }   // 关面板：决定保留，不回拉默认
+     if(adj.dirty){ renderStaged(); } else { renderActive(); }
+     buildTable(); }                                               // 关面板：决定保留，不回拉默认；组表同步
    syncAdjIcon();
    document.getElementById('adjPanel').classList.toggle('on',adj.open);
    document.getElementById('hero').classList.toggle('adjon',adj.open);
@@ -560,6 +567,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  function renderAdjust(){
    if(!adj.open) return;
    ensureRail(); updateRail(); renderStrips(); renderPreview(); updateReadout();
+   buildTable(); // 活动行与 hero 同源实时联动（真机反馈 2026-06-10）
  }
 
  function projectNext(w,r,rir,t){                       // 与预演同一套规则：预演说什么，打勾后就发生什么
