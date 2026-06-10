@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Rede — Strength Coach (interactive prototype)</title>
+<title>Rede — Quick Adjust · B Instrument Readout (craft prototype)</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 :root{
@@ -93,75 +93,63 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .tg.on b{left:18px}
 .discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
 .ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
-/* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
-.hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
+/* P2-1：Set⇄Rest 原地 morph（交叉淡入 scale .98）。M5-B：setState 改为在流内撑高度 → 卡片随面板自然生长，无死空白 */
+.hstate{transition:opacity .22s ease,transform .22s ease}
 .hstate.out{opacity:0;transform:scale(.98);pointer-events:none}
-/* M5 快改（拍板 2026-06-10）：语义档位（Lighter/Follow/Last/Plan）+ 次数/RIR 直选 + 后果预演——逻辑不变。
-   方向 A「刻度轨」（2026-06-10 工艺重做）：S2 刻线升为面板骨架——
-   档位不再是盒子，而是真实刻度轨上的站点（按数值比例落位，无框，靠字阶/亮度分层）；
-   选中 = 站点数字亮起 + ember 指针滑到该值（指针 = 本面板唯一 ember 口音；卡片左缘 embar 为既有结构件）；
-   次数/RIR 降为轨下方两条紧凑数据条（刻线分隔）；预演行像收据一样重印。 */
-#hero{min-height:245px;transition:min-height .25s ease}   /* min-height 从行内移入：让 .adjon 能生效 */
-#hero.adjon{min-height:568px}
-#hero.adjon.exon{min-height:622px}                        /* Exact 输入展开时多让一行 */
+#setState{position:relative;padding:18px 16px 18px 29px}
+#restState{position:absolute;inset:18px 16px}
+#hero{min-height:245px}
+/* ---------- M5-B 方向B：仪表读数（Instrument Readout）----------
+   去盒化：档位 = 纯排版仪表读数（9px 刻字标签 + 23px tabular 数值），零边框零底色；
+   选中 = 亮度跃迁 + 2px ember 短下划线 draw-on（面板唯一 ember 口音）；
+   预演 = Emberline 微缩「形」（线 + 三角节点）但取钢色——口音已让给被采纳的档位；
+   分隔一律 S2 刻线（#2E2A22 短竖线 / 刻线横规），不用整框描边 */
 .adjwrap{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease,opacity .22s ease}
-.adjwrap.on{max-height:420px;opacity:1}
-/* 大数字滚动（方向感：加重上滚、减重下滚）；reduced-motion 下 animation:none → 瞬切 */
-#setW{display:inline-block}
-@keyframes rollUp{from{transform:translateY(.38em);opacity:0}}
-@keyframes rollDn{from{transform:translateY(-.38em);opacity:0}}
-.roll-up{animation:rollUp .2s ease-out}
-.roll-dn{animation:rollDn .2s ease-out}
-/* 轨头：WEIGHT 标签 + 末端弱化文字级操作（−5 / +5 / Exact） */
-.railhead{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-.railops{display:flex;align-items:center}
-.rop{min-height:44px;min-width:44px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--t3)}
-.rop:active{color:var(--t1)}
-.ropx{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
-.ropdiv{width:1px;height:9px;background:#2E2A22}
-/* 刻度轨：hairline 基线 + 短竖刻线（2.5lb 一格、5lb 加高、端点收边）——S2 规格 */
-.railzone{position:relative;height:80px}
-.railliner{position:absolute;left:0;right:0;bottom:0;height:38px;pointer-events:none}
-.railbase{position:absolute;left:0;right:0;bottom:22px;height:1px;background:var(--hair)}
-.rtick{position:absolute;bottom:22px;width:1px;height:6px;background:#2A261F}
-.rtick.maj{height:9px;background:#2E2A22}
-.rtick.end{height:13px;background:#2E2A22}
-/* 站点：无框，小标签(11 caps ls) + 仪表数字(17/600，亮于标签 ≥2 档)；命中区 56×52 ≥44pt */
-.rstation{position:absolute;bottom:26px;width:56px;height:52px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding-bottom:7px}
-.rlab{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t4);white-space:nowrap;transition:color .15s ease-out}
-.rnum{font-size:17px;font-weight:600;color:var(--t2);transition:color .15s ease-out}
-.rstation.on .rnum{color:var(--t1)}
-.rstation.on .rlab{color:var(--t3)}
-/* ember 指针（本面板唯一口音）：2px 针 + 实心三角，滑动 200ms ease-out */
-.railcaret{position:absolute;bottom:8px;width:12px;height:24px;transform:translateX(-50%);transition:left .2s ease-out;pointer-events:none}
-.cstem{position:absolute;left:5px;bottom:5px;width:2px;height:19px;background:var(--ember);border-radius:1px}
-.ctri{position:absolute;left:2px;bottom:0;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid var(--ember)}
-/* 次数/RIR 数据条：行内直选数字，无框，格间 8px 刻线分隔；密度明显紧于重量轨 */
-.striplab{margin-top:10px}
-.strip{display:flex;margin:0 -6px}
-.scell{flex:1;min-height:44px;position:relative;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--t3);font-variant-numeric:tabular-nums}
-.scell+.scell::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:1px;height:8px;background:#2E2A22}
-.scell.on{color:var(--t1);font-weight:600}
-.scell.tgt::after,.scell.cau::after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:6px;height:2px;border-radius:1px}
-.scell.tgt::after{width:12px;background:var(--neu)}              /* 目标次数：中性下划 tick */
-.scell.cau::after{width:8px;background:rgba(199,154,58,.45)}     /* RIR 0/1：caution 微标（语义色，仅判断时） */
-/* 收据式预演：中性 tick（ember 已给指针，预演不抢口音） */
-#adjPreview{margin-top:10px;display:flex;align-items:center;gap:6px}
-.ptick{width:11px;height:2px;background:var(--neu);flex:0 0 auto}
-/* 展开编排：轨头 → 轨 draw-on → 站点级联(35ms 步) → 两条数据条 → 收据；全家 ease-out ≤300ms */
-@keyframes riseIn{from{transform:translateY(4px);opacity:0}}
-@keyframes drawRail{from{clip-path:inset(0 100% 0 0)}}
-@keyframes caretIn{from{opacity:0;transform:translateX(-50%) translateY(3px)}}
-@keyframes receiptIn{from{transform:translateY(5px);opacity:0}}
-.adjwrap.on .cas{animation:riseIn .24s ease-out backwards}
-.adjwrap.on .c1{animation-delay:.02s}
-.adjwrap.on .c3{animation-delay:.18s}
-.adjwrap.on .c4{animation-delay:.22s}
-.adjwrap.on .c5{animation-delay:.28s}
-.adjwrap.on .railliner{animation:drawRail .26s ease-out backwards;animation-delay:.06s}
-.adjwrap.on .rstation{animation:riseIn .22s ease-out backwards}  /* 各自 inline delay 级联 */
-.adjwrap.on .railcaret{animation:caretIn .18s ease-out backwards;animation-delay:.3s}
-.adjwrap.on .receipt{animation:receiptIn .22s ease-out}          /* 值变化时收据重印（覆盖 c5 入场） */
+.adjwrap.on{max-height:360px;opacity:1}
+.glab{font-size:9px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#6B6457;line-height:1}
+.gearrow{display:flex;align-items:flex-end;flex-wrap:wrap;row-gap:2px;margin-top:14px}
+.gear{display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:48px;min-width:44px;padding:2px 0 0;justify-content:flex-end}
+.gear .gnum{position:relative;font-size:23px;font-weight:600;line-height:1;color:var(--t3);padding-bottom:7px;letter-spacing:-.01em}
+.gear.on .glab{color:var(--t3)}
+.gear.on .gnum{color:var(--t1)}
+.gear .gul{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ember);transform-origin:left;animation:drawX .22s ease-out}
+.gear.exact .gnum{font-size:16px;padding-bottom:9px}
+.gtick{width:1px;height:9px;background:#2E2A22;margin:0 5px 9px;align-self:flex-end;flex:0 0 auto}
+.fineops{display:inline-flex;align-items:flex-end;margin-left:auto}
+.fineop{min-width:44px;min-height:44px;display:inline-flex;flex-direction:column;align-items:center;justify-content:flex-end;color:var(--t4);font-size:15px;font-weight:500;padding-bottom:8px}
+.fineop .glab{color:var(--t4)}
+.fineop:active,.gear:active{opacity:.7}
+.erule{position:relative;height:7px;margin:16px 0 12px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='7'><rect width='1' height='7' fill='%232E2A22'/></svg>") repeat-x left bottom}
+.erule::before,.erule::after{content:"";position:absolute;bottom:0;width:1px;height:10px;background:#2E2A22}
+.erule::before{left:0}.erule::after{right:0}
+.iband{display:flex;align-items:stretch;margin-top:3px}
+.iband button{flex:1;min-height:44px;position:relative;text-align:left;padding-left:2px;font-size:14px;font-weight:500;color:var(--t3)}
+.iband button.on{color:var(--t1);font-weight:600}
+.iband .mark{position:absolute;left:2px;bottom:8px;width:7px;height:2px;background:var(--neu)}
+.iband .mark.cz{background:rgba(199,154,58,.5)}
+.iband .vtick{flex:0 0 1px;background:#2E2A22;margin:14px 6px 14px 0}
+.pvrow{display:flex;align-items:center;gap:8px;margin-top:14px;min-height:16px}
+.pvline{position:relative;width:16px;height:2px;background:#5F594C;flex:0 0 auto}
+.pvline::after{content:"";position:absolute;right:-4px;top:-2.5px;border-left:5px solid #5F594C;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent}
+/* 编排：展开时三区块 30ms 级联淡入上移；预演线最后 draw-on（Reduce Motion 下全部瞬切） */
+.adjwrap.on .csc{animation:riseIn .22s ease-out both}
+.adjwrap.on #subRow{animation-delay:.03s}
+.adjwrap.on #pvRow{animation-delay:.06s}
+.adjwrap.on .pvline{transform-origin:left;animation:drawX .25s ease-out .09s both}
+@keyframes riseIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes drawX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+/* 数字滚动（仪表翻牌）：旧值滑出 + 新值滑入，方向随增减 */
+.roll{position:relative;display:inline-flex;overflow:hidden;vertical-align:bottom}
+.roll .rv{display:inline-block}
+.roll .rou{position:absolute;left:0;top:0;animation:rOu .2s ease-out forwards}
+.roll .rod{position:absolute;left:0;top:0;animation:rOd .2s ease-out forwards}
+.roll .riu{animation:rIu .2s ease-out}
+.roll .rid{animation:rId .2s ease-out}
+@keyframes rOu{to{transform:translateY(-105%);opacity:0}}
+@keyframes rIu{from{transform:translateY(105%);opacity:0}to{transform:none;opacity:1}}
+@keyframes rOd{to{transform:translateY(105%);opacity:0}}
+@keyframes rId{from{transform:translateY(-105%);opacity:0}to{transform:none;opacity:1}}
+#exactIn::-webkit-outer-spin-button,#exactIn::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
 .hint b{color:#857c6c}
 </style></head>
@@ -241,29 +229,29 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          <div class="subhead">Bench press</div>
          <!-- M5 快改入口：大数字可点（M4-4 可供性沿用）→ 原地展开档位面板 -->
          <button id="adjEntry" style="display:flex;align-items:flex-end;gap:9px;margin-top:8px;text-align:left" aria-expanded="false" aria-controls="adjPanel" onclick="toggleAdjust()">
-           <span class="display num" id="setW">180</span>
+           <span class="display num roll" id="setW"><span class="rv">180</span></span>
            <span class="body num t3" style="padding-bottom:8px">lb · × <span id="setReps">5</span> · RIR <span id="setRir">2</span></span>
            <i class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--t4);padding-bottom:10px" aria-hidden="true"></i>
          </button>
          <div class="caption t4" id="adjHint" style="margin-top:2px">Tap the weight — the plan follows what you log</div>
          <div class="adjwrap" id="adjPanel">
-           <div class="railhead cas c1">
-             <span class="ov">Weight</span>
-             <span class="railops num">
-               <button class="rop num" aria-label="Lighter by 5" onclick="setAdjW(adj.w-STEP)">−5</button><i class="ropdiv"></i><button class="rop num" aria-label="Heavier by 5" onclick="setAdjW(adj.w+STEP)">+5</button><i class="ropdiv"></i><button class="rop ropx" onclick="exactAdjust()">Exact<span id="exactVal" class="num" style="margin-left:5px;letter-spacing:0;color:var(--t1)"></span></button>
-             </span>
+           <div class="csc" id="wRow" style="position:relative">
+             <div class="gearrow num" id="gearRow"></div>
+             <input id="exactIn" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Exact weight"
+                    style="display:none;position:absolute;right:0;bottom:2px;width:92px;min-height:44px;background:var(--surface);border:none;border-bottom:1px solid var(--steel);border-radius:0;color:var(--t1);font:inherit;font-size:16px;font-variant-numeric:tabular-nums;padding:0 6px;text-align:right"
+                    onkeydown="if(event.key==='Enter')this.blur()" onblur="commitExact(this)">
            </div>
-           <div class="railzone" id="railZone" role="group" aria-label="Weight rail">
-             <div class="railliner"><i class="railbase"></i><span id="railTicks"></span></div>
-             <span id="railStations" class="num"></span>
-             <span class="railcaret" id="railCaret" aria-hidden="true"><i class="cstem"></i><i class="ctri"></i></span>
+           <div class="csc" id="subRow">
+             <div class="erule" aria-hidden="true"></div>
+             <div class="glab">Reps</div>
+             <div class="iband num" id="repBand"></div>
+             <div class="glab" style="margin-top:10px">RIR</div>
+             <div class="iband num" id="rirBand"></div>
            </div>
-           <input id="exactIn" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Exact weight"
-                  style="display:none;width:96px;min-height:44px;background:#1A1712;border:1px solid var(--steel);border-radius:9px;color:var(--t1);font:inherit;padding:0 10px;margin-top:2px"
-                  onkeydown="if(event.key==='Enter')this.blur()" onblur="commitExact(this)">
-           <div class="cas c3"><div class="ov striplab">Reps</div><div class="strip num" id="repBand"></div></div>
-           <div class="cas c4"><div class="ov striplab">RIR</div><div class="strip num" id="rirBand"></div></div>
-           <div class="caption t3 cas c5" id="adjPreview"></div>
+           <div class="csc pvrow" id="pvRow">
+             <span class="pvline" aria-hidden="true"></span>
+             <span class="caption num t3" id="adjPreview"></span>
+           </div>
          </div>
          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:13px;border-top:1px solid var(--hair)">
            <span id="whyText" class="caption t3 clamp2" style="line-height:1.45;max-width:60%">Eased from <span class="num">185</span> after a slow set 2</span>
@@ -397,7 +385,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
  </div>
 </div>
-<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train tap <b>180</b> → rail stops <b>Lighter/Follow/Last</b> (ember pointer slides) + reps/RIR strips (<b>—</b> = skip) → receipt preview → <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
+<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train tap <b>180</b> → anchors <b>Lighter/Follow/Last</b> + reps/RIR bands (<b>—</b> = skip) → preview → <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
 
 <script>
  const SCREENS=['today','train','progress','plan'];
@@ -430,8 +418,20 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    });
  }
  const fmt=v=>(Math.round(v*100)/100).toString();      // 去尾零（60.0→60, 62.5→62.5）
+ /* M5-B 数字滚动：主读数翻牌（增→上滚 / 减→下滚）；Reduce Motion 或非交互更新走瞬切 */
+ const RM=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+ function setRoll(el,txt){ el.innerHTML='<span class="rv">'+txt+'</span>'; }
+ function rollNum(el,txt,up){
+   const cur=el.lastElementChild;
+   if(!cur||RM()){ setRoll(el,txt); return; }
+   if(cur.textContent===txt) return;
+   cur.className='rv '+(up?'rou':'rod');
+   const nv=document.createElement('span'); nv.className='rv '+(up?'riu':'rid'); nv.textContent=txt;
+   el.appendChild(nv);
+   setTimeout(()=>{ cur.remove(); if(nv.className.indexOf('ro')<0) nv.className='rv'; },220);
+ }
  function renderActive(){
-   document.getElementById('setW').textContent=fmt(sets[active].w);
+   setRoll(document.getElementById('setW'),fmt(sets[active].w));
    document.getElementById('setReps').textContent=sets[active].r;
    document.getElementById('setRir').textContent=sets[active].rir===null?'—':sets[active].rir;
  }
@@ -451,7 +451,10 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     把「算数字」变成「做决定」：档位由引擎事实生成（跟随/上组/计划/轻重一档），
     按值去重（固定优先级 跟随>上组>计划>轻重档）后升序；打勾前一切免费可换。
     iOS 实现注记：量子 = 2.5kg（原型为 lb 故用 5）；档位生成器 = 包内纯函数 AdjustOptionsBuilder；
-    触感：选档 .selection / 撞钳制 .error / 打勾 .success（原型无法演示） */
+    触感：选档 .selection / 撞钳制 .error / 打勾 .success（原型无法演示）
+    M5-B 渲染层（本稿）：交互合同原封不动（anchors 去重 / projectNext 预演=落盘 / 回流 / Exact 兜底 / 钳制 / 两击口径 / Hold 联动），
+    只重写呈现：档位 = 去盒化仪表读数（S3 推到极致），选中 = 亮度跃迁 + ember 短下划线 draw-on（面板唯一口音），
+    分隔 = S2 刻线；±/Exact 文字级；展开 30ms 级联；主读数 54px 数字翻牌滚动 */
  let adj={open:false,w:0,r:0,rir:2}, adjUsed=false, lastAdjusted=false;
  const PLAN_W=185, STEP=5;
  function anchors(){
@@ -466,86 +469,63 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    adj.open=!adj.open;
    if(adj.open){ adj.w=sets[active].w; adj.r=sets[active].r; adj.rir=sets[active].rir; adjUsed=true;
      document.getElementById('adjHint').style.display='none';
-     document.getElementById('adjPreview').classList.remove('receipt'); lastPrev='';   // 开面板走级联入场，不走收据重印
-     panelJustOpened=true; renderAdjust(); panelJustOpened=false; }
-   else{ document.getElementById('exactIn').style.display='none';
-     document.getElementById('hero').classList.remove('exon'); renderActive(); }
+     pvSnap={w:NaN,r:NaN,rir:undefined,key:null};          // 强制全量重建（级联入场由 .on 类重播）
+     renderAdjust(); }
+   else{ document.getElementById('exactIn').style.display='none'; renderActive(); }
    document.getElementById('adjPanel').classList.toggle('on',adj.open);
-   document.getElementById('hero').classList.toggle('adjon',adj.open);
    document.getElementById('adjEntry').setAttribute('aria-expanded',String(adj.open));
  }
  function setAdjW(v){ adj.w=Math.max(0,v); renderAdjust(); }       // 钳制 ≥0
  function setAdjR(v){ adj.r=Math.max(1,v); renderAdjust(); }       // 钳制 ≥1
  function setAdjRir(v){ adj.rir=v; renderAdjust(); }               // null = 不记（引擎不猜）
- function exactAdjust(){ const i=document.getElementById('exactIn'); document.getElementById('hero').classList.add('exon');
-   i.style.display='inline-block'; i.value=fmt(adj.w); i.focus(); }
+ function exactAdjust(){ const i=document.getElementById('exactIn'); i.style.display='inline-block'; i.value=fmt(adj.w); i.focus(); }
  function commitExact(i){ const v=parseFloat(i.value); if(!isNaN(v)&&v>=0) adj.w=v;   // 乱输不收、不猜
-   i.style.display='none'; document.getElementById('hero').classList.remove('exon'); renderAdjust(); }
-
- /* ---- 方向 A 渲染层：刻度轨（合同函数 anchors/projectNext/钳制 原封不动，只换渲染） ---- */
- let railSig='', railLo=0, railHi=10, railW=320, railStations=[], panelJustOpened=false, lastPrev='';
- const RAIL_PAD=34, MIN_GAP=58, SUB=STEP/2;            // 端距 / 站点最小间距(>44pt 命中) / 子刻度 2.5
- function railXraw(v){ return RAIL_PAD+(v-railLo)/(railHi-railLo)*(railW-RAIL_PAD*2); }
- function ensureRail(){                                 // 站点集变了才重建（选档只动指针，不重排 DOM）
-   const st=anchors(), sig=st.map(c=>c.k+':'+c.v).join('|');
-   railW=document.getElementById('railZone').clientWidth||320;
-   if(sig===railSig) return;
-   railSig=sig; railLo=st[0].v-STEP; railHi=st[st.length-1].v+STEP;
-   let ticks='';
-   for(let v=railLo;v<=railHi+0.01;v+=SUB){
-     const maj=Math.round((v-railLo)*100)%(STEP*100)===0;
-     const end=v===railLo||v+SUB>railHi+0.01;
-     ticks+='<i class="rtick'+(maj?' maj':'')+(end?' end':'')+'" style="left:'+railXraw(v).toFixed(1)+'px"></i>';
-   }
-   document.getElementById('railTicks').innerHTML=ticks;
-   const xs=st.map(c=>railXraw(c.v));                   // 比例落位 + 最小间距保护（轨是视觉，命中区恒 ≥44pt）
-   for(let i=1;i<xs.length;i++) xs[i]=Math.max(xs[i],xs[i-1]+MIN_GAP);
-   for(let i=xs.length-1;i>=0;i--) xs[i]=Math.min(xs[i],i===xs.length-1?railW-RAIL_PAD:xs[i+1]-MIN_GAP);
-   xs[0]=Math.max(xs[0],RAIL_PAD);
-   st.forEach((c,i)=>c.x=xs[i]); railStations=st;
-   document.getElementById('railStations').innerHTML=st.map((c,i)=>
-     '<button class="rstation" style="left:'+c.x.toFixed(1)+'px;animation-delay:'+(120+i*35)+'ms" data-v="'+c.v+'" aria-label="'+c.k+' '+fmt(c.v)+' lb" onclick="setAdjW('+c.v+')"><span class="rlab">'+c.k+'</span><span class="num rnum">'+fmt(c.v)+'</span></button>').join('');
+   i.style.display='none'; renderAdjust(); }
+ /* M5-B 渲染拆分 + 差量重绘：只有变化的区块才重建 —— 让 ember 下划线 draw-on 只在「选择真的变了」时播放 */
+ let pvSnap={w:NaN,r:NaN,rir:undefined,key:null};
+ function gearBtn(c){
+   const on=c.v===adj.w;
+   return '<button class="gear'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="setAdjW('+c.v+')">'
+     +'<span class="glab">'+c.k+'</span>'
+     +'<span class="gnum num">'+fmt(c.v)+(on?'<i class="gul" aria-hidden="true"></i>':'')+'</span></button>';
  }
- function caretX(v){                                    // 指针：站点对齐优先，离格走真实比例并钳在轨内
-   const hit=railStations.find(c=>c.v===v);
-   return hit?hit.x:Math.max(RAIL_PAD,Math.min(railW-RAIL_PAD,railXraw(v)));
+ function renderGears(){                                           // 主读数区 = 语义档位仪表行（去盒化）
+   const A=anchors(), onGrid=A.some(c=>c.v===adj.w);
+   document.getElementById('gearRow').innerHTML=
+     A.map(gearBtn).join('<i class="gtick" aria-hidden="true"></i>')
+     +'<span class="fineops">'                                     // ±/Exact 降为最弱文字级，藏在读数行右端
+     +'<button class="fineop num" aria-label="Lighter by 5" onclick="setAdjW(adj.w-STEP)">−</button>'
+     +'<button class="fineop num" aria-label="Heavier by 5" onclick="setAdjW(adj.w+STEP)">＋</button>'
+     +(onGrid
+       ?'<button class="fineop" aria-label="Exact weight" onclick="exactAdjust()"><span class="glab">Exact</span></button>'
+       :'<button class="gear on exact" aria-label="Exact weight" aria-pressed="true" onclick="exactAdjust()"><span class="glab">Exact</span><span class="gnum num">'+fmt(adj.w)+'<i class="gul" aria-hidden="true"></i></span></button>')
+     +'</span>';
  }
- function updateRail(){
-   document.querySelectorAll('#railStations .rstation').forEach(b=>{
-     const on=parseFloat(b.dataset.v)===adj.w;
-     b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on));
-   });
-   document.getElementById('railCaret').style.left=caretX(adj.w).toFixed(1)+'px';
-   document.getElementById('exactVal').textContent=railStations.some(c=>c.v===adj.w)?'':fmt(adj.w);  // 离格时 Exact 旁亮出当前值
- }
- function renderStrips(){
-   const t=sets[active].r, lo=Math.max(1,adj.r-2);      // 直选带以当前值自重心，±2 一屏五格（逻辑不变）
+ function renderSub(){                                             // 副读数区 = 次数/RIR 紧凑仪表带（行内直选、亮度分层）
+   const t=sets[active].r, lo=Math.max(1,adj.r-2);                 // 直选带以当前值自重心，±2 一屏五格
    document.getElementById('repBand').innerHTML=[lo,lo+1,lo+2,lo+3,lo+4].map(n=>
-     '<button class="scell'+(n===adj.r?' on':'')+(n===t?' tgt':'')+'" aria-pressed="'+(n===adj.r)+'" onclick="setAdjR('+n+')">'+n+'</button>').join('');
-   document.getElementById('rirBand').innerHTML=[null,0,1,2,3,4,5].map(v=>
-     '<button class="scell'+(v===adj.rir?' on':'')+((v===0||v===1)?' cau':'')+'" aria-pressed="'+(v===adj.rir)+'" onclick="setAdjRir('+v+')">'+(v===null?'—':v)+'</button>').join('');
+     '<button class="'+(n===adj.r?'on':'')+'" aria-pressed="'+(n===adj.r)+'" onclick="setAdjR('+n+')">'+n+(n===t?'<i class="mark" aria-hidden="true"></i>':'')+'</button>').join('');
+   const rb=[null,0,1,2,3,4,5].map(v=>
+     '<button class="'+(v===adj.rir?'on':'')+'" aria-pressed="'+(v===adj.rir)+'" onclick="setAdjRir('+v+')">'+(v===null?'—':v)+((v===0||v===1)?'<i class="mark cz" aria-hidden="true"></i>':'')+'</button>');
+   document.getElementById('rirBand').innerHTML=rb[0]+'<i class="vtick" aria-hidden="true"></i>'+rb.slice(1).join('');
  }
  function renderPreview(){
    const proj=projectNext(adj.w,adj.r,adj.rir,sets[active].r);     // 纯函数后果预演（iOS 用 NextSetEngine.recommend）
-   const el=document.getElementById('adjPreview');
-   const html='<span class="ptick"></span>After log · next <span class="num" style="color:var(--t2)">'+fmt(proj.w)+' lb</span> — '+proj.why;
-   if(html===lastPrev) return;
-   el.innerHTML=html; lastPrev=html;
-   if(!panelJustOpened){ el.classList.remove('receipt'); void el.offsetWidth; el.classList.add('receipt'); }  // 收据重印
- }
- function updateReadout(){                              // 大数字实时回显暂存值（带方向滚动）
-   const w=document.getElementById('setW'), nv=fmt(adj.w);
-   if(w.textContent!==nv){
-     const up=parseFloat(nv)>parseFloat(w.textContent);
-     w.textContent=nv;
-     if(!panelJustOpened){ w.classList.remove('roll-up','roll-dn'); void w.offsetWidth; w.classList.add(up?'roll-up':'roll-dn'); }
-   }
-   document.getElementById('setReps').textContent=adj.r;
-   document.getElementById('setRir').textContent=adj.rir===null?'—':adj.rir;
+   document.getElementById('adjPreview').innerHTML=
+     'After log · next <span class="num" style="color:var(--t2)">'+fmt(proj.w)+' lb</span> — '+proj.why;
  }
  function renderAdjust(){
    if(!adj.open) return;
-   ensureRail(); updateRail(); renderStrips(); renderPreview(); updateReadout();
+   const key=anchors().map(c=>c.k+':'+c.v).join('|');
+   if(key!==pvSnap.key||adj.w!==pvSnap.w) renderGears();
+   if(adj.r!==pvSnap.r||adj.rir!==pvSnap.rir||pvSnap.key===null) renderSub();
+   renderPreview();
+   const W=document.getElementById('setW');                        // 大数字实时回显暂存值（翻牌滚动，方向随增减）
+   if(isNaN(pvSnap.w)) setRoll(W,fmt(adj.w));
+   else if(adj.w!==pvSnap.w) rollNum(W,fmt(adj.w),adj.w>pvSnap.w);
+   document.getElementById('setReps').textContent=adj.r;
+   document.getElementById('setRir').textContent=adj.rir===null?'—':adj.rir;
+   pvSnap={w:adj.w,r:adj.r,rir:adj.rir,key:key};
  }
 
  function projectNext(w,r,rir,t){                       // 与预演同一套规则：预演说什么，打勾后就发生什么
@@ -581,10 +561,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  function resetTrain(){                                // P1-7: 离开/进入 Train 清计时与瞬态
    clearInterval(restT); seedSets(); lastAdjusted=false;
-   adj.open=false; railSig='';                         // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）；轨缓存随 sets 重置
+   adj.open=false;                                     // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）
    document.getElementById('adjPanel').classList.remove('on');
-   document.getElementById('hero').classList.remove('adjon');
-   document.getElementById('hero').classList.remove('exon');
    document.getElementById('adjEntry').setAttribute('aria-expanded','false');
    document.getElementById('exactIn').style.display='none';
    document.getElementById('adjHint').style.display=adjUsed?'none':'';
