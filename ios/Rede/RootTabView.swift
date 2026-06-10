@@ -11,6 +11,7 @@ enum RootTab: Hashable {
 struct RootTabView: View {
     @State private var selection: RootTab
     @State private var localeStore: LocaleStore
+    @State private var sessionStore = SessionStore()
 
     // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan [-locale zh|en]
     init() {
@@ -39,13 +40,23 @@ struct RootTabView: View {
             Group {
                 switch selection {
                 case .today:
-                    TodayTabView(onStartTraining: { selection = .train })
+                    TodayTabView(onStartTraining: {
+                        Task {
+                            await sessionStore.startSessionLoadingIfNeeded()
+                            selection = .train
+                        }
+                    })
                 case .train:
-                    TrainTabView()
+                    TrainTabView(onGoToday: { selection = .today })
                 case .progress:
                     ProgressTabView()
                 case .plan:
-                    PlanTabView(onStartTraining: { selection = .train })
+                    PlanTabView(onStartTraining: {
+                        Task {
+                            await sessionStore.startSessionLoadingIfNeeded()
+                            selection = .train
+                        }
+                    })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -54,7 +65,15 @@ struct RootTabView: View {
                 .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
         }
         .background(Color.redeBase.ignoresSafeArea())
+        // 截图/UI 验证钩子: -autoStartSession 直接载入今日并开训（仅测试脚手架）
+        .task {
+            if ProcessInfo.processInfo.arguments.contains("-autoStartSession") {
+                await sessionStore.loadToday()
+                sessionStore.startSession()
+            }
+        }
         .environment(localeStore)
+        .environment(sessionStore)
         .preferredColorScheme(.dark)
     }
 }

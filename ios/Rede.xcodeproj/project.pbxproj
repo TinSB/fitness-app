@@ -14,6 +14,7 @@
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
+		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
 		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
@@ -63,6 +64,7 @@
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
 		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
@@ -132,6 +134,7 @@
 				CA00000000000000000000A1 /* RootTabView.swift */,
 				CA00000000000000000000A2 /* TodayTabView.swift */,
 				BB00000000000000000001D2 /* TodayModel.swift */,
+				BB00000000000000000001E2 /* SessionStore.swift */,
 				CA00000000000000000000A3 /* TrainTabView.swift */,
 				CA00000000000000000000A4 /* ProgressTabView.swift */,
 				CA00000000000000000000A5 /* PlanTabView.swift */,
@@ -276,6 +279,7 @@
 				CA00000000000000000000B1 /* RootTabView.swift in Sources */,
 				CA00000000000000000000B2 /* TodayTabView.swift in Sources */,
 				BB00000000000000000001D1 /* TodayModel.swift in Sources */,
+				BB00000000000000000001E1 /* SessionStore.swift in Sources */,
 				CA00000000000000000000B3 /* TrainTabView.swift in Sources */,
 				CA00000000000000000000B4 /* ProgressTabView.swift in Sources */,
 				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,

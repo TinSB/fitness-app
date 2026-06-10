@@ -10,17 +10,14 @@ struct TodayTabView: View {
     let onStartTraining: () -> Void
 
     @Environment(LocaleStore.self) private var localeStore
+    @Environment(SessionStore.self) private var sessionStore
     @State private var reasonExpanded = false
     @State private var showSettings = false
-    @State private var outcome: TodayModel.LoadOutcome?
 
-    private var model: TodayModel? {
-        if case .ready(let model)? = outcome { return model }
-        return nil
-    }
+    private var model: TodayModel? { sessionStore.todayModel }
 
     private var isUnreadable: Bool {
-        if case .unreadable? = outcome { return true }
+        if case .unreadable? = sessionStore.todayOutcome { return true }
         return false
     }
 
@@ -52,7 +49,7 @@ struct TodayTabView: View {
             .padding(.bottom, 78)
         }
         .background(Color.redeBase)
-        .task { outcome = await TodayModel.loadOutcomeAsync() }
+        .task { if sessionStore.todayOutcome == nil { await sessionStore.loadToday() } }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(store: localeStore)
                 .presentationDetents([.medium])
