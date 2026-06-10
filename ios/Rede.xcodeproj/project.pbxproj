@@ -15,6 +15,7 @@
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
 		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
+		CC00000000000000000001A1 /* ProgressModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001A2 /* ProgressModel.swift */; };
 		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
 		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
@@ -25,6 +26,7 @@
 		BB00000000000000000001A2 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B2 /* RedeDataHealth */; };
 		BB00000000000000000001A3 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B3 /* RedePersistence */; };
 		BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B4 /* RedeTrainingDecision */; };
+		CC00000000000000000001B1 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000001B2 /* RedeLocalSnapshot */; };
 		EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* RedeWidgetBundle.swift */; };
 		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
 		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -65,6 +67,7 @@
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
 		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
 		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		CC00000000000000000001A2 /* ProgressModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressModel.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
@@ -90,6 +93,7 @@
 				BB00000000000000000001A2 /* RedeDataHealth in Frameworks */,
 				BB00000000000000000001A3 /* RedePersistence in Frameworks */,
 				BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */,
+				CC00000000000000000001B1 /* RedeLocalSnapshot in Frameworks */,
 				EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -135,6 +139,7 @@
 				CA00000000000000000000A2 /* TodayTabView.swift */,
 				BB00000000000000000001D2 /* TodayModel.swift */,
 				BB00000000000000000001E2 /* SessionStore.swift */,
+				CC00000000000000000001A2 /* ProgressModel.swift */,
 				CA00000000000000000000A3 /* TrainTabView.swift */,
 				CA00000000000000000000A4 /* ProgressTabView.swift */,
 				CA00000000000000000000A5 /* PlanTabView.swift */,
@@ -180,6 +185,7 @@
 				BB00000000000000000001B2 /* RedeDataHealth */,
 				BB00000000000000000001B3 /* RedePersistence */,
 				BB00000000000000000001B4 /* RedeTrainingDecision */,
+				CC00000000000000000001B2 /* RedeLocalSnapshot */,
 				EE00000000000000000000D1 /* RedeWidgetShared */,
 			);
 			productName = Rede;
@@ -236,6 +242,7 @@
 				BB00000000000000000001C2 /* XCLocalSwiftPackageReference "packages/RedeDataHealth" */,
 				BB00000000000000000001C3 /* XCLocalSwiftPackageReference "packages/RedePersistence" */,
 				BB00000000000000000001C4 /* XCLocalSwiftPackageReference "packages/RedeTrainingDecision" */,
+				CC00000000000000000001B3 /* XCLocalSwiftPackageReference "packages/RedeLocalSnapshot" */,
 				EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */,
 			);
 			productRefGroup = AA00000000000000000000A3 /* Products */;
@@ -280,6 +287,7 @@
 				CA00000000000000000000B2 /* TodayTabView.swift in Sources */,
 				BB00000000000000000001D1 /* TodayModel.swift in Sources */,
 				BB00000000000000000001E1 /* SessionStore.swift in Sources */,
+				CC00000000000000000001A1 /* ProgressModel.swift in Sources */,
 				CA00000000000000000000B3 /* TrainTabView.swift in Sources */,
 				CA00000000000000000000B4 /* ProgressTabView.swift in Sources */,
 				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,
@@ -593,6 +601,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeTrainingDecision;
 		};
+		CC00000000000000000001B3 /* XCLocalSwiftPackageReference "packages/RedeLocalSnapshot" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeLocalSnapshot;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -623,6 +635,10 @@
 		BB00000000000000000001B4 /* RedeTrainingDecision */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeTrainingDecision;
+		};
+		CC00000000000000000001B2 /* RedeLocalSnapshot */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeLocalSnapshot;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

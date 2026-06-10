@@ -92,36 +92,7 @@ public struct RedeStrings: Sendable {
     public var scaleWeek: String { t("本周", "Week") }
     public var scaleCycle: String { t("周期", "Cycle") }
 
-    public var weekVerdict: String { t("这周练得扎实。背部落后了。", "Strong week. Back is lagging.") }
-    public var weekSub: String { t("拉类训练量 +18%，但背部仍落后于胸。下周加一组拉力。", "Pulling volume +18%, but back still trails chest. One pull set added next week.") }
-    public var weekChartTitle: String { t("周训练量 · 按肌群", "Weekly volume · by muscle") }
-    public var weekCaption: String { t("要补的是背部——唯一的铁火线标出结论。", "Back is the one to fix — single ember marks the conclusion.") }
-
-    public var sessionVerdict: String { t("这次练得不错。卧推新 PR。", "Solid session. New bench PR.") }
-    public var sessionSub: String { t("顶组 195 × 3 · 估算 1RM 214，本周期 +6 lb。", "195 × 3 top set · est 1RM 214, +6 lb on the block.") }
     public var sessionChartTitle: String { t("单次 · 按动作", "Session · by lift") }
-    public var sessionCaption: String { t("动的是卧推——唯一的铁火线标出 PR。", "Bench is the lift that moved — single ember marks the PR.") }
-
-    public var cycleVerdict: String { t("周期在轨。该减载了。", "Block on track. Deload due.") }
-    public var cycleSub: String { t("本周期 e1RM +9%——第 5 周是计划减载。", "+9% e1RM across the block — week 5 is a planned deload.") }
-    public var cycleChartTitle: String { t("周期 · e1RM 趋势", "Cycle · e1RM trend") }
-    public var cycleCaption: String { t("第 5 周是计划减载——唯一的铁火线标出它。", "Week 5 is a planned deload — single ember marks it.") }
-    public var cycleDeload: String { t("减载", "Deload") }
-
-    public var muscleChest: String { t("胸", "Chest") }
-    public var muscleBack: String { t("背", "Back") }
-    public var muscleShoulders: String { t("肩", "Shldr") }
-    public var muscleLegs: String { t("腿", "Legs") }
-    public var muscleArms: String { t("臂", "Arms") }
-
-    public var liftBench: String { t("卧推", "Bench") }
-    public var liftOhp: String { t("肩推", "OHP") }
-    public var liftIncline: String { t("上斜", "Incline") }
-    public var liftTriceps: String { t("三头", "Triceps") }
-    public var liftLateral: String { t("侧平举", "Lateral") }
-
-    public var developmentTitle: String { t("发展等级", "Development") }
-    public var developmentSummary: String { t("中级 · 均衡度 76", "Intermediate · balance 76") }
 
     // MARK: - Plan
 
