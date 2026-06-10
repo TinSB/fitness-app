@@ -93,6 +93,19 @@ final class SessionStore {
         )
     }
 
+    /// 计划页模板事实（FR-PL1：只展示真数据——来自引导的分化与天数）。
+    struct TemplateFacts {
+        let splitType: String?
+        let daysPerWeek: Int?
+    }
+
+    static func loadTemplateFacts() -> TemplateFacts? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let template = appData.programTemplate
+        return TemplateFacts(splitType: template.splitType, daysPerWeek: template.daysPerWeek)
+    }
+
     /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
     /// isSaving 互斥沿写闸单调用方合同（审查 MAJOR-1：防快速连点并发 load-modify-write 丢更新）。
     @discardableResult
