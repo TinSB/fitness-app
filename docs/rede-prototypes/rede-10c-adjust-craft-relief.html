@@ -1,10 +1,12 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Rede — Strength Coach (interactive prototype)</title>
+<title>Rede — Train Adjust 10c · Forged Relief (interactive prototype)</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 :root{
  --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
+ /* M5-10c 锻面浮雕：sunken 井 / 选中再抬一档 / 刻线分隔 —— S5 色调家族内的台阶，零渐变零阴影 */
+ --sunken:#100E0B;--raised2:#2A251D;--engrave:#2E2A22;
  /* P0-3 对比度：--t4 提亮到 AA（在 surface 上 ~4.9:1）；--rec2 绿提一档 */
  --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
  --ember:#E1652B;--ember2:#F0875A;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
@@ -96,72 +98,61 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 /* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
 .hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
 .hstate.out{opacity:0;transform:scale(.98);pointer-events:none}
-/* M5 快改（拍板 2026-06-10）：语义档位（Lighter/Follow/Last/Plan）+ 次数/RIR 直选 + 后果预演——逻辑不变。
-   方向 A「刻度轨」（2026-06-10 工艺重做）：S2 刻线升为面板骨架——
-   档位不再是盒子，而是真实刻度轨上的站点（按数值比例落位，无框，靠字阶/亮度分层）；
-   选中 = 站点数字亮起 + ember 指针滑到该值（指针 = 本面板唯一 ember 口音；卡片左缘 embar 为既有结构件）；
-   次数/RIR 降为轨下方两条紧凑数据条（刻线分隔）；预演行像收据一样重印。 */
-#hero{min-height:245px;transition:min-height .25s ease}   /* min-height 从行内移入：让 .adjon 能生效 */
-#hero.adjon{min-height:568px}
-#hero.adjon.exon{min-height:622px}                        /* Exact 输入展开时多让一行 */
-.adjwrap{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease,opacity .22s ease}
-.adjwrap.on{max-height:420px;opacity:1}
-/* 大数字滚动（方向感：加重上滚、减重下滚）；reduced-motion 下 animation:none → 瞬切 */
-#setW{display:inline-block}
-@keyframes rollUp{from{transform:translateY(.38em);opacity:0}}
-@keyframes rollDn{from{transform:translateY(-.38em);opacity:0}}
-.roll-up{animation:rollUp .2s ease-out}
-.roll-dn{animation:rollDn .2s ease-out}
-/* 轨头：WEIGHT 标签 + 末端弱化文字级操作（−5 / +5 / Exact） */
-.railhead{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-.railops{display:flex;align-items:center}
-.rop{min-height:44px;min-width:44px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--t3)}
-.rop:active{color:var(--t1)}
-.ropx{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
-.ropdiv{width:1px;height:9px;background:#2E2A22}
-/* 刻度轨：hairline 基线 + 短竖刻线（2.5lb 一格、5lb 加高、端点收边）——S2 规格 */
-.railzone{position:relative;height:80px}
-.railliner{position:absolute;left:0;right:0;bottom:0;height:38px;pointer-events:none}
-.railbase{position:absolute;left:0;right:0;bottom:22px;height:1px;background:var(--hair)}
-.rtick{position:absolute;bottom:22px;width:1px;height:6px;background:#2A261F}
-.rtick.maj{height:9px;background:#2E2A22}
-.rtick.end{height:13px;background:#2E2A22}
-/* 站点：无框，小标签(11 caps ls) + 仪表数字(17/600，亮于标签 ≥2 档)；命中区 56×52 ≥44pt */
-.rstation{position:absolute;bottom:26px;width:56px;height:52px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding-bottom:7px}
-.rlab{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t4);white-space:nowrap;transition:color .15s ease-out}
-.rnum{font-size:17px;font-weight:600;color:var(--t2);transition:color .15s ease-out}
-.rstation.on .rnum{color:var(--t1)}
-.rstation.on .rlab{color:var(--t3)}
-/* ember 指针（本面板唯一口音）：2px 针 + 实心三角，滑动 200ms ease-out */
-.railcaret{position:absolute;bottom:8px;width:12px;height:24px;transform:translateX(-50%);transition:left .2s ease-out;pointer-events:none}
-.cstem{position:absolute;left:5px;bottom:5px;width:2px;height:19px;background:var(--ember);border-radius:1px}
-.ctri{position:absolute;left:2px;bottom:0;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid var(--ember)}
-/* 次数/RIR 数据条：行内直选数字，无框，格间 8px 刻线分隔；密度明显紧于重量轨 */
-.striplab{margin-top:10px}
-.strip{display:flex;margin:0 -6px}
-.scell{flex:1;min-height:44px;position:relative;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--t3);font-variant-numeric:tabular-nums}
-.scell+.scell::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:1px;height:8px;background:#2E2A22}
-.scell.on{color:var(--t1);font-weight:600}
-.scell.tgt::after,.scell.cau::after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:6px;height:2px;border-radius:1px}
-.scell.tgt::after{width:12px;background:var(--neu)}              /* 目标次数：中性下划 tick */
-.scell.cau::after{width:8px;background:rgba(199,154,58,.45)}     /* RIR 0/1：caution 微标（语义色，仅判断时） */
-/* 收据式预演：中性 tick（ember 已给指针，预演不抢口音） */
-#adjPreview{margin-top:10px;display:flex;align-items:center;gap:6px}
-.ptick{width:11px;height:2px;background:var(--neu);flex:0 0 auto}
-/* 展开编排：轨头 → 轨 draw-on → 站点级联(35ms 步) → 两条数据条 → 收据；全家 ease-out ≤300ms */
-@keyframes riseIn{from{transform:translateY(4px);opacity:0}}
-@keyframes drawRail{from{clip-path:inset(0 100% 0 0)}}
-@keyframes caretIn{from{opacity:0;transform:translateX(-50%) translateY(3px)}}
-@keyframes receiptIn{from{transform:translateY(5px);opacity:0}}
-.adjwrap.on .cas{animation:riseIn .24s ease-out backwards}
-.adjwrap.on .c1{animation-delay:.02s}
-.adjwrap.on .c3{animation-delay:.18s}
-.adjwrap.on .c4{animation-delay:.22s}
-.adjwrap.on .c5{animation-delay:.28s}
-.adjwrap.on .railliner{animation:drawRail .26s ease-out backwards;animation-delay:.06s}
-.adjwrap.on .rstation{animation:riseIn .22s ease-out backwards}  /* 各自 inline delay 级联 */
-.adjwrap.on .railcaret{animation:caretIn .18s ease-out backwards;animation-delay:.3s}
-.adjwrap.on .receipt{animation:receiptIn .22s ease-out}          /* 值变化时收据重印（覆盖 c5 入场） */
+/* M5 快改（拍板 2026-06-10）：语义档位条 = 引擎事实直选（Lighter/Follow/Last/Plan）+ 次数/RIR 直选带 + 后果预演。
+   方向 10c「锻面浮雕 Forged Relief」：交互合同原封不动，只换渲染层——
+   · 档位 = 浮雕块（S5 色调抬升：raised 底 + 顶缘 1px 高光，无描边，宽随内容）
+   · 选中 = 色调再抬一档 + 数字变亮 + 底部 2px ember 刻线从中心 draw-on（面板唯一口音）
+   · 次数/RIR = 无框数据条（S2 刻线分隔、行内直选、字阶低两档）——重量是主角，其余降级
+   · 展开 = 卡片原地长高（实测高度）+ 元素 35ms 级联浮现；数字滚动；reduce-motion 全部瞬切 */
+#hero{min-height:245px;transition:min-height .25s ease-out}   /* 展开高度由 JS 实测写入行内 */
+.adjwrap{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease-out,opacity .22s ease-out}
+.adjwrap.on{opacity:1}
+.adjwrap.on .arow,.adjwrap.on .relief{animation:riseIn .22s ease-out backwards;animation-delay:var(--d,0ms)}
+@keyframes riseIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes drawOn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+/* 浮雕档位块：按压微沉（100ms）再回弹（带轻微过冲）＝锻铁手感 */
+.relief{position:relative;background:var(--btn);border-top:1px solid rgba(236,230,216,.08);border-radius:12px;
+ padding:9px 14px 11px;min-height:48px;min-width:62px;display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;
+ transition:background .18s ease-out,transform .25s cubic-bezier(.3,1.45,.55,1)}
+.relief:active{transform:translateY(1px) scale(.97);background:#1A1712;transition-duration:.1s,.1s}
+.relief .rnum{font-size:18px;font-weight:600;line-height:1;color:var(--t3);transition:color .18s ease-out}
+.relief .rlab{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;line-height:1;color:var(--t4);transition:color .18s ease-out}
+.relief.on{background:var(--raised2)}
+.relief.on .rnum{color:var(--t1)}
+.relief.on .rlab{color:var(--t3)}
+.rline{position:absolute;left:12px;right:12px;bottom:0;height:2px;border-radius:1px;background:var(--ember);transform:scaleX(0)}
+.relief.on .rline{transform:scaleX(1);animation:drawOn .24s ease-out backwards;animation-delay:var(--ld,0ms)}
+/* 微调井：sunken 色调下挖的工具位，与浮雕块形成材质反差 */
+.rstep{width:44px;min-height:44px;border-radius:10px;background:var(--sunken);color:var(--t2);font-size:17px;
+ display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease-out,transform .25s cubic-bezier(.3,1.45,.55,1)}
+.rstep:active{transform:translateY(1px) scale(.95);background:#1A1712}
+.rexact{min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:0 6px}
+.rexact .exv{font-size:13px;font-weight:600;color:var(--t3);min-width:20px;text-align:left;padding:3px 2px;
+ border-bottom:2px solid var(--engrave);transition:color .18s ease-out,border-color .18s ease-out}
+.rexact.on .exv{color:var(--t1);border-bottom-color:var(--ember)}
+#exactIn{display:none;width:86px;min-height:44px;background:var(--sunken);border:1px solid var(--hair);border-radius:9px;
+ color:var(--t1);font:inherit;font-size:14px;font-variant-numeric:tabular-nums;padding:0 10px}
+/* 数据条：无框行内直选，1px 刻线分隔；选中＝变亮变重，不加盒子 */
+.strip{display:flex;align-items:center;min-height:44px}
+.slab{flex:0 0 44px}
+.stick{width:1px;height:7px;background:var(--engrave);flex:0 0 auto;align-self:center}
+.sopt{position:relative;flex:1;min-height:44px;font-size:13px;font-weight:500;color:var(--t3);transition:color .15s ease-out,font-size .15s ease-out}
+.sopt::after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:6px;width:12px;height:2px;border-radius:1px}
+.sopt.mk-t::after{background:var(--neu)}
+.sopt.mk-c::after{background:rgba(199,154,58,.45)}
+.sopt.on{color:var(--t1);font-weight:600;font-size:15px}
+.sopt:active{color:var(--t2)}
+/* 刻线分隔（S2）：预演行的上界；两端略长收边 */
+.knurl{position:relative;line-height:0}
+.kend{position:absolute;top:0;width:1px;height:9px;background:var(--engrave)}
+.pvw{display:flex;align-items:center;gap:7px;animation:riseIn .2s ease-out}
+.pvtick{width:11px;height:2px;border-radius:1px;background:var(--neu);flex:0 0 auto}
+/* 仪表数字滚动：增量自下滚入、减量自上滚入 */
+#setW,#setReps,#setRir{display:inline-block}
+.rollup{animation:rollU .2s ease-out}
+.rolldn{animation:rollD .2s ease-out}
+@keyframes rollU{from{transform:translateY(.32em);opacity:0}to{transform:none;opacity:1}}
+@keyframes rollD{from{transform:translateY(-.32em);opacity:0}to{transform:none;opacity:1}}
 .hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
 .hint b{color:#857c6c}
 </style></head>
@@ -247,23 +238,25 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          </button>
          <div class="caption t4" id="adjHint" style="margin-top:2px">Tap the weight — the plan follows what you log</div>
          <div class="adjwrap" id="adjPanel">
-           <div class="railhead cas c1">
-             <span class="ov">Weight</span>
-             <span class="railops num">
-               <button class="rop num" aria-label="Lighter by 5" onclick="setAdjW(adj.w-STEP)">−5</button><i class="ropdiv"></i><button class="rop num" aria-label="Heavier by 5" onclick="setAdjW(adj.w+STEP)">+5</button><i class="ropdiv"></i><button class="rop ropx" onclick="exactAdjust()">Exact<span id="exactVal" class="num" style="margin-left:5px;letter-spacing:0;color:var(--t1)"></span></button>
-             </span>
+           <!-- 决策区：重量＝主角（浮雕块 + sunken 微调井），密度紧 -->
+           <div class="arow ov" style="--d:0ms;margin-top:12px">Weight</div>
+           <div class="arow" id="anchRow" style="--d:0ms;display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-top:8px"></div>
+           <div class="arow" id="fineRow" style="--d:150ms;display:flex;gap:10px;margin-top:10px;align-items:center">
+             <button class="rstep num" aria-label="Lighter by 5" onclick="setAdjW(adj.w-STEP)">−</button>
+             <button class="rstep num" aria-label="Heavier by 5" onclick="setAdjW(adj.w+STEP)">＋</button>
+             <span class="stick" style="height:9px"></span>
+             <button class="rexact" id="exactBtn" onclick="exactAdjust()"><span class="rlab" style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--t4)">Exact</span><span class="exv num" id="exactVal">…</span></button>
+             <input id="exactIn" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Exact weight"
+                    onkeydown="if(event.key==='Enter')this.blur()" onblur="commitExact(this)">
            </div>
-           <div class="railzone" id="railZone" role="group" aria-label="Weight rail">
-             <div class="railliner"><i class="railbase"></i><span id="railTicks"></span></div>
-             <span id="railStations" class="num"></span>
-             <span class="railcaret" id="railCaret" aria-hidden="true"><i class="cstem"></i><i class="ctri"></i></span>
+           <!-- 数据区：次数/RIR 降为无框数据条（行内直选、刻线分隔），与决策区拉开间距 -->
+           <div class="arow strip num" id="repBand" style="--d:195ms;margin-top:18px"></div>
+           <div class="arow strip num" id="rirBand" style="--d:230ms;margin-top:2px"></div>
+           <div class="arow knurl" style="--d:265ms;margin-top:12px" aria-hidden="true">
+             <svg width="100%" height="9"><defs><pattern id="kn" width="20" height="9" patternUnits="userSpaceOnUse"><rect x="0" y="1" width="1" height="7" fill="var(--engrave)"/></pattern></defs><rect width="100%" height="9" fill="url(#kn)"/></svg>
+             <span class="kend" style="left:0"></span><span class="kend" style="right:0"></span>
            </div>
-           <input id="exactIn" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Exact weight"
-                  style="display:none;width:96px;min-height:44px;background:#1A1712;border:1px solid var(--steel);border-radius:9px;color:var(--t1);font:inherit;padding:0 10px;margin-top:2px"
-                  onkeydown="if(event.key==='Enter')this.blur()" onblur="commitExact(this)">
-           <div class="cas c3"><div class="ov striplab">Reps</div><div class="strip num" id="repBand"></div></div>
-           <div class="cas c4"><div class="ov striplab">RIR</div><div class="strip num" id="rirBand"></div></div>
-           <div class="caption t3 cas c5" id="adjPreview"></div>
+           <div class="arow caption t3" id="adjPreview" style="--d:300ms;margin-top:10px"></div>
          </div>
          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:13px;border-top:1px solid var(--hair)">
            <span id="whyText" class="caption t3 clamp2" style="line-height:1.45;max-width:60%">Eased from <span class="num">185</span> after a slow set 2</span>
@@ -397,7 +390,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
  </div>
 </div>
-<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train tap <b>180</b> → rail stops <b>Lighter/Follow/Last</b> (ember pointer slides) + reps/RIR strips (<b>—</b> = skip) → receipt preview → <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
+<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train tap <b>180</b> → anchors <b>Lighter/Follow/Last</b> + reps/RIR bands (<b>—</b> = skip) → preview → <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
 
 <script>
  const SCREENS=['today','train','progress','plan'];
@@ -431,9 +424,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  const fmt=v=>(Math.round(v*100)/100).toString();      // 去尾零（60.0→60, 62.5→62.5）
  function renderActive(){
-   document.getElementById('setW').textContent=fmt(sets[active].w);
-   document.getElementById('setReps').textContent=sets[active].r;
-   document.getElementById('setRir').textContent=sets[active].rir===null?'—':sets[active].rir;
+   rollTo('setW',fmt(sets[active].w));                  // 10c：仪表数字滚动而非瞬跳
+   rollTo('setReps',String(sets[active].r));
+   rollTo('setRir',sets[active].rir===null?'—':String(sets[active].rir));
  }
  function showSet(){ document.getElementById('restState').classList.add('out'); document.getElementById('setState').classList.remove('out'); document.getElementById('heroBar').style.background='var(--ember)'; }
  function showRest(){ document.getElementById('setState').classList.add('out'); document.getElementById('restState').classList.remove('out'); document.getElementById('heroBar').style.background='var(--rec)'; }
@@ -462,90 +455,70 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    const m={}; cand.forEach(c=>{ if(!m[c.v]||c.p<m[c.v].p) m[c.v]=c; });
    return Object.values(m).sort((a,b)=>a.v-b.v);
  }
+ /* —— 10c 渲染层：合同函数（anchors/projectNext/钳制/Exact 兜底）原样，只换画法 —— */
+ let adjCache, adjEntering=false, adjBase=0;
+ function resetAdjCache(){ adjCache={anch:'',rep:'',rir:'',pv:''}; }
+ resetAdjCache();
  function toggleAdjust(){
    adj.open=!adj.open;
+   const p=document.getElementById('adjPanel'), hero=document.getElementById('hero');
    if(adj.open){ adj.w=sets[active].w; adj.r=sets[active].r; adj.rir=sets[active].rir; adjUsed=true;
      document.getElementById('adjHint').style.display='none';
-     document.getElementById('adjPreview').classList.remove('receipt'); lastPrev='';   // 开面板走级联入场，不走收据重印
-     panelJustOpened=true; renderAdjust(); panelJustOpened=false; }
-   else{ document.getElementById('exactIn').style.display='none';
-     document.getElementById('hero').classList.remove('exon'); renderActive(); }
-   document.getElementById('adjPanel').classList.toggle('on',adj.open);
-   document.getElementById('hero').classList.toggle('adjon',adj.open);
+     resetAdjCache(); adjEntering=true; renderAdjust(); adjEntering=false; }
+   else{ closeExact(); p.style.maxHeight=''; hero.style.minHeight=''; renderActive(); }
+   p.classList.toggle('on',adj.open);
+   hero.classList.toggle('adjon',adj.open);
    document.getElementById('adjEntry').setAttribute('aria-expanded',String(adj.open));
  }
  function setAdjW(v){ adj.w=Math.max(0,v); renderAdjust(); }       // 钳制 ≥0
  function setAdjR(v){ adj.r=Math.max(1,v); renderAdjust(); }       // 钳制 ≥1
  function setAdjRir(v){ adj.rir=v; renderAdjust(); }               // null = 不记（引擎不猜）
- function exactAdjust(){ const i=document.getElementById('exactIn'); document.getElementById('hero').classList.add('exon');
+ function exactAdjust(){ const i=document.getElementById('exactIn'); document.getElementById('exactBtn').style.display='none';
    i.style.display='inline-block'; i.value=fmt(adj.w); i.focus(); }
  function commitExact(i){ const v=parseFloat(i.value); if(!isNaN(v)&&v>=0) adj.w=v;   // 乱输不收、不猜
-   i.style.display='none'; document.getElementById('hero').classList.remove('exon'); renderAdjust(); }
-
- /* ---- 方向 A 渲染层：刻度轨（合同函数 anchors/projectNext/钳制 原封不动，只换渲染） ---- */
- let railSig='', railLo=0, railHi=10, railW=320, railStations=[], panelJustOpened=false, lastPrev='';
- const RAIL_PAD=34, MIN_GAP=58, SUB=STEP/2;            // 端距 / 站点最小间距(>44pt 命中) / 子刻度 2.5
- function railXraw(v){ return RAIL_PAD+(v-railLo)/(railHi-railLo)*(railW-RAIL_PAD*2); }
- function ensureRail(){                                 // 站点集变了才重建（选档只动指针，不重排 DOM）
-   const st=anchors(), sig=st.map(c=>c.k+':'+c.v).join('|');
-   railW=document.getElementById('railZone').clientWidth||320;
-   if(sig===railSig) return;
-   railSig=sig; railLo=st[0].v-STEP; railHi=st[st.length-1].v+STEP;
-   let ticks='';
-   for(let v=railLo;v<=railHi+0.01;v+=SUB){
-     const maj=Math.round((v-railLo)*100)%(STEP*100)===0;
-     const end=v===railLo||v+SUB>railHi+0.01;
-     ticks+='<i class="rtick'+(maj?' maj':'')+(end?' end':'')+'" style="left:'+railXraw(v).toFixed(1)+'px"></i>';
-   }
-   document.getElementById('railTicks').innerHTML=ticks;
-   const xs=st.map(c=>railXraw(c.v));                   // 比例落位 + 最小间距保护（轨是视觉，命中区恒 ≥44pt）
-   for(let i=1;i<xs.length;i++) xs[i]=Math.max(xs[i],xs[i-1]+MIN_GAP);
-   for(let i=xs.length-1;i>=0;i--) xs[i]=Math.min(xs[i],i===xs.length-1?railW-RAIL_PAD:xs[i+1]-MIN_GAP);
-   xs[0]=Math.max(xs[0],RAIL_PAD);
-   st.forEach((c,i)=>c.x=xs[i]); railStations=st;
-   document.getElementById('railStations').innerHTML=st.map((c,i)=>
-     '<button class="rstation" style="left:'+c.x.toFixed(1)+'px;animation-delay:'+(120+i*35)+'ms" data-v="'+c.v+'" aria-label="'+c.k+' '+fmt(c.v)+' lb" onclick="setAdjW('+c.v+')"><span class="rlab">'+c.k+'</span><span class="num rnum">'+fmt(c.v)+'</span></button>').join('');
- }
- function caretX(v){                                    // 指针：站点对齐优先，离格走真实比例并钳在轨内
-   const hit=railStations.find(c=>c.v===v);
-   return hit?hit.x:Math.max(RAIL_PAD,Math.min(railW-RAIL_PAD,railXraw(v)));
- }
- function updateRail(){
-   document.querySelectorAll('#railStations .rstation').forEach(b=>{
-     const on=parseFloat(b.dataset.v)===adj.w;
-     b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on));
-   });
-   document.getElementById('railCaret').style.left=caretX(adj.w).toFixed(1)+'px';
-   document.getElementById('exactVal').textContent=railStations.some(c=>c.v===adj.w)?'':fmt(adj.w);  // 离格时 Exact 旁亮出当前值
- }
- function renderStrips(){
-   const t=sets[active].r, lo=Math.max(1,adj.r-2);      // 直选带以当前值自重心，±2 一屏五格（逻辑不变）
-   document.getElementById('repBand').innerHTML=[lo,lo+1,lo+2,lo+3,lo+4].map(n=>
-     '<button class="scell'+(n===adj.r?' on':'')+(n===t?' tgt':'')+'" aria-pressed="'+(n===adj.r)+'" onclick="setAdjR('+n+')">'+n+'</button>').join('');
-   document.getElementById('rirBand').innerHTML=[null,0,1,2,3,4,5].map(v=>
-     '<button class="scell'+(v===adj.rir?' on':'')+((v===0||v===1)?' cau':'')+'" aria-pressed="'+(v===adj.rir)+'" onclick="setAdjRir('+v+')">'+(v===null?'—':v)+'</button>').join('');
- }
- function renderPreview(){
-   const proj=projectNext(adj.w,adj.r,adj.rir,sets[active].r);     // 纯函数后果预演（iOS 用 NextSetEngine.recommend）
-   const el=document.getElementById('adjPreview');
-   const html='<span class="ptick"></span>After log · next <span class="num" style="color:var(--t2)">'+fmt(proj.w)+' lb</span> — '+proj.why;
-   if(html===lastPrev) return;
-   el.innerHTML=html; lastPrev=html;
-   if(!panelJustOpened){ el.classList.remove('receipt'); void el.offsetWidth; el.classList.add('receipt'); }  // 收据重印
- }
- function updateReadout(){                              // 大数字实时回显暂存值（带方向滚动）
-   const w=document.getElementById('setW'), nv=fmt(adj.w);
-   if(w.textContent!==nv){
-     const up=parseFloat(nv)>parseFloat(w.textContent);
-     w.textContent=nv;
-     if(!panelJustOpened){ w.classList.remove('roll-up','roll-dn'); void w.offsetWidth; w.classList.add(up?'roll-up':'roll-dn'); }
-   }
-   document.getElementById('setReps').textContent=adj.r;
-   document.getElementById('setRir').textContent=adj.rir===null?'—':adj.rir;
+   closeExact(); renderAdjust(); }
+ function closeExact(){ document.getElementById('exactIn').style.display='none'; document.getElementById('exactBtn').style.display=''; }
+ function rollTo(id,txt){                                          // 仪表数字滚动（reduce-motion 下瞬切）
+   const el=document.getElementById(id); if(el.textContent===txt) return;
+   const up=isNaN(parseFloat(el.textContent))||parseFloat(txt)>=parseFloat(el.textContent);
+   el.textContent=txt; el.classList.remove('rollup','rolldn'); void el.offsetWidth;
+   el.classList.add(up?'rollup':'rolldn');
  }
  function renderAdjust(){
    if(!adj.open) return;
-   ensureRail(); updateRail(); renderStrips(); renderPreview(); updateReadout();
+   const A=anchors(), onGrid=A.some(c=>c.v===adj.w), row=document.getElementById('anchRow');
+   const key=A.map(c=>c.k+':'+c.v).join('|');
+   if(adjCache.anch!==key){                                        // 档位集只在开面板 / Hold 重建时重画
+     row.innerHTML=A.map((c,i)=>{
+       const on=c.v===adj.w, d=adjEntering?('--d:'+(35+i*35)+'ms'+(on?';--ld:'+(125+i*35)+'ms':'')):'';
+       return '<button class="relief'+(on?' on':'')+'" data-v="'+c.v+'" style="'+d+'" aria-pressed="'+on+'" onclick="setAdjW('+c.v+')">'
+         +'<span class="rnum num">'+fmt(c.v)+'</span><span class="rlab">'+c.k+'</span><span class="rline"></span></button>';
+     }).join('');
+     adjCache.anch=key;
+   } else row.querySelectorAll('.relief').forEach(b=>{             // 选档＝类切换：保住按压回弹 + ember 刻线 draw-on
+     const on=parseFloat(b.dataset.v)===adj.w;
+     if(!on) b.style.removeProperty('--ld');                       // 入场编排的延迟只用一次
+     b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on));
+   });
+   document.getElementById('exactBtn').classList.toggle('on',!onGrid);  // 离格＝口音移到 Exact（仍只一处）
+   document.getElementById('exactVal').textContent=onGrid?'…':fmt(adj.w);
+   const t=sets[active].r, lo=Math.max(1,adj.r-2);                 // 直选带以当前值自重心，±2 一屏五格
+   const rep='<span class="slab ov">Reps</span>'+[lo,lo+1,lo+2,lo+3,lo+4].map((n,i)=>
+     (i?'<span class="stick"></span>':'')+'<button class="sopt num'+(n===adj.r?' on':'')+(n===t?' mk-t':'')+'" aria-pressed="'+(n===adj.r)+'" onclick="setAdjR('+n+')">'+n+'</button>').join('');
+   if(adjCache.rep!==rep){ document.getElementById('repBand').innerHTML=rep; adjCache.rep=rep; }
+   const rir='<span class="slab ov">RIR</span>'+[null,0,1,2,3,4,5].map((v,i)=>
+     (i?'<span class="stick"></span>':'')+'<button class="sopt num'+(v===adj.rir?' on':'')+((v===0||v===1)?' mk-c':'')+'" aria-pressed="'+(v===adj.rir)+'" onclick="setAdjRir('+v+')">'+(v===null?'—':v)+'</button>').join('');
+   if(adjCache.rir!==rir){ document.getElementById('rirBand').innerHTML=rir; adjCache.rir=rir; }
+   const proj=projectNext(adj.w,adj.r,adj.rir,t);                  // 纯函数后果预演（iOS 用 NextSetEngine.recommend）
+   const pv='<span class="pvw"><span class="pvtick"></span><span>After log · next <span class="num" style="color:var(--t2);font-weight:600">'+fmt(proj.w)+' lb</span> — '+proj.why+'</span></span>';
+   if(adjCache.pv!==pv){ document.getElementById('adjPreview').innerHTML=pv; adjCache.pv=pv; }
+   rollTo('setW',fmt(adj.w));                                      // 大数字实时回显暂存值（滚动）
+   rollTo('setReps',String(adj.r));
+   rollTo('setRir',adj.rir===null?'—':String(adj.rir));
+   const p=document.getElementById('adjPanel');                    // 原地长高：面板实测高度 → 卡片跟随
+   if(adjEntering) adjBase=document.getElementById('setState').scrollHeight+38;
+   p.style.maxHeight=p.scrollHeight+'px';
+   document.getElementById('hero').style.minHeight=(adjBase+p.scrollHeight)+'px';
  }
 
  function projectNext(w,r,rir,t){                       // 与预演同一套规则：预演说什么，打勾后就发生什么
@@ -581,12 +554,13 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  function resetTrain(){                                // P1-7: 离开/进入 Train 清计时与瞬态
    clearInterval(restT); seedSets(); lastAdjusted=false;
-   adj.open=false; railSig='';                         // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）；轨缓存随 sets 重置
+   adj.open=false;                                     // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）
    document.getElementById('adjPanel').classList.remove('on');
+   document.getElementById('adjPanel').style.maxHeight='';          // 10c：清实测行内高度
    document.getElementById('hero').classList.remove('adjon');
-   document.getElementById('hero').classList.remove('exon');
+   document.getElementById('hero').style.minHeight='';
    document.getElementById('adjEntry').setAttribute('aria-expanded','false');
-   document.getElementById('exactIn').style.display='none';
+   closeExact();
    document.getElementById('adjHint').style.display=adjUsed?'none':'';
    renderActive(); buildTable(); showSet();
    const b=document.getElementById('holdBtn'); b.textContent='Hold 185'; b.classList.remove('on');
