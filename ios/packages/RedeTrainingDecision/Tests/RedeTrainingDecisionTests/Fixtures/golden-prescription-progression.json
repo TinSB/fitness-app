@@ -1,0 +1,23 @@
+{
+  "today": "2026-06-09",
+  "expected": {
+    "dayCode": "push-a",
+    "firstExerciseId": "bench-press",
+    "firstWeightKg": 62.5,
+    "firstChange": "increase",
+    "exerciseCount": 6
+  },
+  "appData": {
+    "schemaVersion": 8,
+    "programTemplate": { "splitType": "push-pull-legs", "daysPerWeek": 4 },
+    "history": [
+      { "id": "p1", "date": "2026-06-03", "completed": true,
+        "exercises": [{ "exerciseId": "bench-press", "sets": [
+          { "weight": 60, "reps": 8, "rir": 2 },
+          { "weight": 60, "reps": 8, "rir": 2 },
+          { "weight": 60, "reps": 8, "rir": 1 } ] }] },
+      { "id": "p2", "date": "2026-06-05", "completed": true, "exercises": [] },
+      { "id": "p3", "date": "2026-06-07", "completed": true, "exercises": [] }
+    ]
+  }
+}

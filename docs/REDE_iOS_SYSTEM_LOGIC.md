@@ -142,6 +142,18 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **阈值地位**：14 天/21 天/连续 3 天/RIR 0.5/默认 6 是 MVP 起步值,非经验校准结果;由 RedeTrainingDecision 的 goldens 锁定——调阈值 = 调产品行为,必须显式改 golden 留痕,待 TestFlight 真实反馈后校准。
 
+### 6.0.1 今日处方引擎（TodayPrescription · M2-2 已实现）
+
+**入口合同**：吃 `CleanTrainingDecisionInput` + M2-1 的 `TodayVerdict`（处方不重复判断练不练）；rest 裁决 → 无处方。纯函数、无 clock/IO、输出永不写回 AppData。
+
+**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(=2 MVP 常量), previousWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；lb 换算归渲染层（FR-SE1）。previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。
+
+**生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × 最小 catalog（`ExerciseCatalog.minimal`，24 动作，开放决策 #1 已拍板）按目录顺序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位的组数/次数区间沿 legacy 模板口径。轮转 = 完成 session 数对 split 序列取模（ppl→push-a/pull-a/legs-a；其余→upper/lower）——MVP 简化，program 日结构促升后改为真轮转。槽位无法匹配时记 `slotUnfilled` 留痕，不静默。
+
+**最小渐进（goldens 锁定）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）——全组打满 repMax 且 min RIR ≥1.0(含 1.0；无 RIR 数据视为有余力) → +2.5kg、次数重置 repMin；上次力竭(min RIR≤0.5) 或最高组未到 repMin → −2.5kg；否则持平冲 repMax。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)。重量一律 2.5kg 取整、下限 2.5kg；**调制后若取整弹回原重量且原重量 >2.5，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；cable/machine = 配重片读数——渲染层据此标注。
+
+**catalog limitation（§6.1 红线如实声明）**：MVP catalog 缺肌群贡献权重与禁忌提示——肌群级高置信分析（肌群等级/瓶颈识别）在补齐前不得基于本 catalog 产出；双语展示名归 RedeL10n。组形（top/backoff）归 M3-1；restSeconds 归 M3。
+
 ### 6.1 动作库、模板生成与动作事实权威
 
 训练计划不能依赖一组锁死的默认模板。Rede 的训练内容必须拆成三层:
