@@ -109,27 +109,22 @@ public struct RedeStrings: Sendable {
 
     public var sessionChartTitle: String { t("单次 · 按动作", "Session · by lift") }
 
-    // MARK: - Plan
+    // MARK: - Plan（FR-PL1 MVP 诚实占位：无任何假数据；完整计划视图 FR-PL2~5 = FF）
+    // M0-2 静态稿的假时间线/假开关文案已删（用户真机反馈 2026-06-10：假开关不持久化——
+    // 正解是按 FR-PL1 不展示未实现的控件，而非给假开关做持久化）。
 
     public var planTitle: String { t("计划", "Plan") }
-    public var planPhaseLine: String { t("增肌期 · 第 3/5 周", "Hypertrophy · Week 3 of 5") }
-    public var planMonDone: String { t("周一 · 已完成", "Mon · done") }
-    public var planWedDone: String { t("周三 · 已完成", "Wed · done") }
-    public var planFriToday: String { t("周五 · 今天", "Fri · today") }
-    public var planSunNext: String { t("周日 · 下次", "Sun · next") }
-    public var planPushA: String { t("推力 A", "Push A") }
-    public var planPullA: String { t("拉力 A", "Pull A") }
-    public var planPushB: String { t("推力 B", "Push B") }
-    public var planLegs: String { t("腿", "Legs") }
-    public var planPushAMeta: String { t("14.2k lb · 1 个 PR", "14.2k lb · 1 PR") }
-    public var planPullAMeta: String { t("11.8k lb", "11.8k lb") }
-    public var planTodayMeta: String { t("肩推回调 · 6 个动作 · 下个卧推 185", "Overhead eased · 6 lifts · Bench 185 next") }
-    public var planLegsMeta: String { t("深蹲 · 罗马尼亚硬拉 · 提踵 · 5 个动作", "Squat · RDL · Calf · 5 lifts") }
-    public var planControlsTitle: String { t("你的控制", "Your controls") }
-    public var planHoldTitle: String { t("锁住计划", "Hold the plan") }
-    public var planHoldSub: String { t("本周停止自动调整", "Stop auto-adjusting this week") }
-    public var planLockTitle: String { t("锁定卧推每周 +5", "Lock bench +5/week") }
-    public var planLockSub: String { t("让一个动作按固定爬坡走", "Drive one lift on a fixed climb") }
+    /// 模板事实行（来自引导，真数据）："上下分化 · 每周 4 天"。
+    public func planTemplateLine(splitName: String, days: Int) -> String {
+        t("\(splitName) · 每周 \(days) 天", "\(splitName) · \(days) days a week")
+    }
+    public var planEmptyHeadline: String {
+        t("计划视图还在路上。", "The plan view is on its way.")
+    }
+    public var planEmptyNote: String {
+        t("周期结构、调整建议和回滚会在后续版本出现在这里。现在每天的安排由今日页给出。",
+          "Cycle structure, adjustment previews, and rollback will live here in a later version. For now, Today carries each day's call.")
+    }
 
     // MARK: - Settings(M5-2 完整接管：单位/语言/背景/数据/免责/反馈)
 

@@ -1,182 +1,60 @@
 import SwiftUI
 import RedeL10n
 
-// Plan — 按 rede-app.html #s-plan 复原。
-// 时间线:done 降级暗色,today 内嵌锻面卡为该屏重心,next 空心点;controls 钢色开关。
-// 文案走 RedeL10n 双语 key(M0-3)。
+// Plan — FR-PL1 MVP 诚实占位（用户真机反馈 2026-06-10 修订）。
+// PRD 原文：计划功能未上时不要假装有——空状态 = 标题 + 一句解释 + 回今日动作，
+// 无任何假数据。M0-2 静态稿的假时间线与假开关（不持久化、无引擎效果）整体下线；
+// 完整计划视图（周期 FR-PL2 / 调整建议 FR-PL3 / 回滚 FR-PL4）为 FF，
+// 设计目标保留在 rede-app.html #s-plan。
+// 页面只展示真数据：来自引导的模板事实行（分化 × 每周天数）。
 
 struct PlanTabView: View {
-    let onStartTraining: () -> Void
+    let onGoToday: () -> Void
 
     @Environment(LocaleStore.self) private var localeStore
-    @State private var holdPlan = false
-    @State private var lockBench = true
+    @State private var template: SessionStore.TemplateFacts?
 
     private var s: RedeStrings { localeStore.strings }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(title: s.planTitle, subtitle: s.planPhaseLine, trailingIcon: "slider.horizontal.3")
-
-                // 周期点条: 5 周,前 2 ember
-                HStack(spacing: 5) {
-                    ForEach(0..<5, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(i < 2 ? Color.redeEmber : Color.redeNextDot)
-                            .frame(height: 4)
-                            .frame(maxWidth: .infinity)
+                ScreenHeader(
+                    title: s.planTitle,
+                    subtitle: template.flatMap { facts in
+                        facts.splitType.map {
+                            s.planTemplateLine(splitName: s.onbSplitName($0), days: facts.daysPerWeek ?? 0)
+                        }
                     }
+                )
+
+                ForgedCard(emberBarInset: 18) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(s.planEmptyHeadline)
+                            .font(.redeHeadline)
+                            .tracking(RedeTracking.headline)
+                            .foregroundStyle(Color.redeT1)
+                        Text(s.planEmptyNote)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeT3)
+                        EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                    }
+                    .padding(.leading, 13)
+                    .padding(.vertical, 18)
+                    .padding(.horizontal, RedeSpace.card)
                 }
                 .padding(.horizontal, RedeSpace.page)
-                .padding(.top, 16)
-
-                timeline
-                    .padding(.top, 20)
-
-                RuleDivider()
-
-                controlsSection
-                    .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 20)
             }
             .padding(.bottom, 78)
         }
         .background(Color.redeBase)
-    }
-
-    private var timeline: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Mon · done
-            timelineRow(topLine: .clear, dot: AnyView(Circle().fill(Color.redeT4).frame(width: 13, height: 13)), bottomLine: .redeEmber) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Overline(text: s.planMonDone)
-                    Text(s.planPushA)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.redeT3)
-                    Text(s.planPushAMeta)
-                        .font(.redeCaption)
-                        .monospacedDigit()
-                        .foregroundStyle(Color.redeT3)
-                }
-                .padding(.bottom, 18)
-            }
-
-            // Wed · done
-            timelineRow(topLine: .redeEmber, dot: AnyView(Circle().fill(Color.redeT4).frame(width: 13, height: 13)), bottomLine: .redeEmber) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Overline(text: s.planWedDone)
-                    Text(s.planPullA)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.redeT3)
-                    Text(s.planPullAMeta)
-                        .font(.redeCaption)
-                        .monospacedDigit()
-                        .foregroundStyle(Color.redeT3)
-                }
-                .padding(.bottom, 18)
-            }
-
-            // Fri · today(内嵌锻面卡 = 该屏重心)
-            timelineRow(topLine: .redeEmber, dot: AnyView(RingDot()), bottomLine: .redeHair) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Overline(text: s.planFriToday, color: .redeEmber2)
-                    ForgedCard(emberBarInset: 14) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(s.planPushB)
-                                .font(.system(size: 19, weight: .semibold))
-                                .foregroundStyle(Color.redeT1)
-                            Text(s.planTodayMeta)
-                                .font(.redeCaption)
-                                .monospacedDigit()
-                                .foregroundStyle(Color.redeT3)
-                                .padding(.top, 4)
-                            EmbButton(icon: "play.fill", title: s.startTraining, iconSize: 14, fontSize: 13, action: onStartTraining)
-                                .padding(.top, 12)
-                        }
-                        .padding(.leading, 11)
-                        .padding(14)
-                    }
-                }
-                .padding(.bottom, 18)
-            }
-
-            // Sun · next
-            timelineRow(topLine: .redeHair, dot: AnyView(
-                Circle().fill(Color.redeBase)
-                    .frame(width: 13, height: 13)
-                    .overlay(Circle().stroke(Color.redeNextDot, lineWidth: 2))
-            ), bottomLine: .clear) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Overline(text: s.planSunNext)
-                    Text(s.planLegs)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.redeT2)
-                    Text(s.planLegsMeta)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT3)
-                }
-                .padding(.bottom, 6)
-            }
-        }
-    }
-
-    private func timelineRow(topLine: Color, dot: AnyView, bottomLine: Color, @ViewBuilder content: () -> some View) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(spacing: 0) {
-                Rectangle().fill(topLine).frame(width: 2).frame(minHeight: 8)
-                dot.padding(.vertical, 2)
-                Rectangle().fill(bottomLine).frame(width: 2).frame(maxHeight: .infinity)
-            }
-            .frame(width: 16)
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, RedeSpace.page)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var controlsSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Overline(text: s.planControlsTitle)
-                .padding(.bottom, 6)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(s.planHoldTitle)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT1)
-                    Text(s.planHoldSub)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT3)
-                }
-                Spacer()
-                SteelToggle(isOn: $holdPlan)
-            }
-            .padding(.vertical, 6)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(Color.redeHair2).frame(height: 1)
-            }
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(s.planLockTitle)
-                        .font(.redeBody)
-                        .monospacedDigit()
-                        .foregroundStyle(Color.redeT1)
-                    Text(s.planLockSub)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT3)
-                }
-                Spacer()
-                SteelToggle(isOn: $lockBench)
-            }
-            .padding(.vertical, 6)
-        }
+        .task { template = await Task.detached { SessionStore.loadTemplateFacts() }.value }
     }
 }
 
 #Preview {
-    PlanTabView(onStartTraining: {})
+    PlanTabView(onGoToday: {})
         .environment(LocaleStore())
         .background(Color.redeBase)
         .preferredColorScheme(.dark)

@@ -57,12 +57,8 @@ struct RootTabView: View {
                 case .progress:
                     ProgressTabView()
                 case .plan:
-                    PlanTabView(onStartTraining: {
-                        Task {
-                            await sessionStore.startSessionLoadingIfNeeded()
-                            selection = .train
-                        }
-                    })
+                    // FR-PL1：占位页动作 = 回今日（每天的安排由今日页给出）
+                    PlanTabView(onGoToday: { selection = .today })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

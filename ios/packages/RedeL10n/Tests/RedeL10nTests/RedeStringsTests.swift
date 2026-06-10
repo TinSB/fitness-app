@@ -25,12 +25,9 @@ final class RedeStringsTests: XCTestCase {
             ("trainNextUp", s.trainNextUp),
             ("progressTitle", s.progressTitle), ("scaleSession", s.scaleSession), ("scaleWeek", s.scaleWeek), ("scaleCycle", s.scaleCycle),
             ("sessionChartTitle", s.sessionChartTitle),
-            ("planTitle", s.planTitle), ("planPhaseLine", s.planPhaseLine),
-            ("planMonDone", s.planMonDone), ("planWedDone", s.planWedDone), ("planFriToday", s.planFriToday), ("planSunNext", s.planSunNext),
-            ("planPushA", s.planPushA), ("planPullA", s.planPullA), ("planPushB", s.planPushB), ("planLegs", s.planLegs),
-            ("planPushAMeta", s.planPushAMeta), ("planPullAMeta", s.planPullAMeta), ("planTodayMeta", s.planTodayMeta), ("planLegsMeta", s.planLegsMeta),
-            ("planControlsTitle", s.planControlsTitle), ("planHoldTitle", s.planHoldTitle), ("planHoldSub", s.planHoldSub),
-            ("planLockTitle", s.planLockTitle), ("planLockSub", s.planLockSub),
+            ("planTitle", s.planTitle), ("planEmptyHeadline", s.planEmptyHeadline),
+            ("planEmptyNote", s.planEmptyNote),
+            ("planTemplateLine", s.planTemplateLine(splitName: s.onbSplitName("upper-lower"), days: 4)),
             ("settingsTitle", s.settingsTitle), ("settingsLanguage", s.settingsLanguage),
             ("settingsDone", s.settingsDone), ("settingsUnit", s.settingsUnit),
             ("settingsBackground", s.settingsBackground), ("settingsEditAnswers", s.settingsEditAnswers),
@@ -78,7 +75,7 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertNotEqual(zh.todayVerdict, en.todayVerdict)
         XCTAssertNotEqual(zh.trainLogSet, en.trainLogSet)
         XCTAssertNotEqual(zh.progressEmptyTitle, en.progressEmptyTitle)
-        XCTAssertNotEqual(zh.planControlsTitle, en.planControlsTitle)
+        XCTAssertNotEqual(zh.planEmptyNote, en.planEmptyNote)
     }
 
     func testUiShortPhrasesHaveNoTrailingPeriod() {
