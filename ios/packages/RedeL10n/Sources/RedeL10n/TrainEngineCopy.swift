@@ -138,6 +138,12 @@ extension RedeStrings {
         locale == .zh ? "顶组 · \(name) \(kg) kg × \(reps)" : "Top set · \(name) \(kg) kg × \(reps)"
     }
     public var summaryDone: String { locale == .zh ? "完成" : "Done" }
+    public var summarySaveAndFinish: String { locale == .zh ? "保存并完成" : "Save & finish" }
+    public var summaryRetrySave: String { locale == .zh ? "重试保存" : "Retry save" }
+    /// 写入失败如实呈现（FR-TR8：绝不假装成功）。
+    public var saveFailedLine: String {
+        locale == .zh ? "保存失败——你的记录还在本页，可重试。" : "Save failed — your sets are still here. Try again."
+    }
 
     /// 训练 tab 无进行中会话时的空态。
     public var trainEmptyTitle: String { locale == .zh ? "今天还没开始训练" : "No session in progress" }

@@ -530,10 +530,24 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT2)
             }
 
-            EmbButton(icon: nil, title: s.summaryDone, action: {
-                sessionStore.endSession()
-                onGoToday()
+            if let errorText = sessionStore.saveErrorText {
+                Text(s.saveFailedLine)
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeRisk)
+                Text(errorText)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .lineLimit(2)
+            }
+            EmbButton(icon: nil, title: sessionStore.saveErrorText == nil ? s.summarySaveAndFinish : s.summaryRetrySave, action: {
+                Task {
+                    if await sessionStore.completeAndPersistSession() {
+                        onGoToday()
+                    }
+                }
             })
+            .disabled(sessionStore.isSaving)
+            .opacity(sessionStore.isSaving ? 0.5 : 1)
             Spacer()
         }
         .padding(20)

@@ -160,7 +160,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **下一组建议**：`NextSetEngine.recommend(plan, completed[]) → NextSetRecommendation?`。原则 = 尊重 session 内执行事实：上一组实际重量是下一组基线（用户第一组完成 85 → 第二组建议继续 85；完全按计划执行 → 保持计划形状）。安全瀑布（先命中先裁决）：疼痛上报 → safety flag + −2.5kg；上组 RIR ≤0.5 → −2.5kg；上组次数 < 区间下限 → −2.5kg；否则延续基线。减重下限 2.5kg；无 RIR 数据不猜不触发力竭规则；全部计划组完成 → nil。输出全 typed（reason/safety code），文案归 RedeL10n。
 
-**跳过/替换/收尾模型**：`SetSkipReason`（equipmentBusy/painDiscomfort/fatigue/timeShort/other）、`SessionEndReason`（completedAll/timeUp/fatigue/pain/other）——rawValue 即留痕 code；`ExerciseReplacementEngine.candidates(for:)` = catalog 同替代族按声明顺序排除自身（FR-TR6 地基）。这些是引擎输入事实，M3-3 经唯一写闸落盘。
+**跳过/替换/收尾模型**：`SetSkipReason`（equipmentBusy/painDiscomfort/fatigue/timeShort/other）、`SessionEndReason`（completedAll/timeUp/fatigue/pain/other）——rawValue 即留痕 code；`ExerciseReplacementEngine.candidates(for:)` = catalog 同替代族按声明顺序排除自身（FR-TR6 地基）。这些是引擎输入事实，M3-3 已经唯一写闸落盘：`CompletedSessionBuilder` 只记录用户事实（实际组/跳过/替换审计/收尾原因，engine 输出不落盘），写前 gate 的真实现为 `RedeDataHealth.CanonicalWriteValidation`（clean 视图不丢 session + 新 session 必须通过净化）。
 
 ### 6.1 动作库、模板生成与动作事实权威
 
