@@ -58,13 +58,18 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable {
     public let targetRir: Double
     /// 上次同动作的工作重量（Receipt Change 行素材）；首练为 nil。
     public let previousWeightKg: Double?
+    /// 上次顶组（最重一组）的次数——Rail「上次」节点素材；首练为 nil。
+    public let previousTopReps: Int?
+    /// 下次投影（target + 2.5 取整）——Rail「下次」节点素材。
+    public let nextProjectedWeightKg: Double
     public let change: ChangeDirection
     public let reason: PrescriptionReason
 
     public init(
         exerciseId: String, sets: Int, repLowerBound: Int, repUpperBound: Int,
         targetReps: Int, targetWeightKg: Double, targetRir: Double,
-        previousWeightKg: Double?, change: ChangeDirection, reason: PrescriptionReason
+        previousWeightKg: Double?, previousTopReps: Int?, nextProjectedWeightKg: Double,
+        change: ChangeDirection, reason: PrescriptionReason
     ) {
         self.exerciseId = exerciseId
         self.sets = sets
@@ -74,6 +79,8 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable {
         self.targetWeightKg = targetWeightKg
         self.targetRir = targetRir
         self.previousWeightKg = previousWeightKg
+        self.previousTopReps = previousTopReps
+        self.nextProjectedWeightKg = nextProjectedWeightKg
         self.change = change
         self.reason = reason
     }
