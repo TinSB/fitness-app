@@ -96,6 +96,18 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 /* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
 .hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
 .hstate.out{opacity:0;transform:scale(.98);pointer-events:none}
+/* M5 快改（拍板 2026-06-10）：语义档位条 = 引擎事实直选（Lighter/Follow/Last/Plan）+ 次数/RIR 直选带 + 后果预演。
+   选中档位 = ember 左缘（「被采纳的调整」合法用途）；面板沿用原地形变，不弹 sheet */
+#hero{min-height:245px;transition:min-height .25s ease}   /* min-height 从行内移入：让 .adjon 能生效 */
+#hero.adjon{min-height:575px}
+.adjwrap{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease,opacity .22s ease}
+.adjwrap.on{max-height:380px;opacity:1}
+.anch{min-height:44px;padding:4px 11px 5px;border:1px solid var(--steel);border-left-width:2px;border-radius:9px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;color:var(--t3)}
+.anch.on{color:var(--t1);border-left-color:var(--ember);background:rgba(140,138,134,.10)}
+.anch .ov{letter-spacing:.12em}
+.band{display:flex;gap:5px;margin-top:6px}
+.band button{flex:1;min-height:44px;border:1px solid var(--hair);border-radius:8px;font-size:13px;font-weight:500;color:var(--t3)}
+.band button.on{color:var(--t1);border-color:var(--steel);background:rgba(140,138,134,.14)}
 .hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
 .hint b{color:#857c6c}
 </style></head>
@@ -168,12 +180,31 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      <div style="height:3px;background:#1B1813;margin:14px 20px 0;border-radius:2px"><div style="height:3px;width:42%;background:var(--neu);border-radius:2px"></div></div>
 
      <!-- HERO = 仪表读数（P2-1：固定 frame，Set⇄Rest 原地 morph） -->
-     <div class="forged sect" id="hero" style="padding:0;margin-top:24px;min-height:245px">
+     <div class="forged sect" id="hero" style="padding:0;margin-top:24px">
        <span class="embar" id="heroBar" style="top:18px;bottom:18px;background:var(--ember)"></span>
        <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
        <div id="setState" class="hstate">
          <div class="subhead">Bench press</div>
-         <div style="display:flex;align-items:flex-end;gap:9px;margin-top:8px"><span class="display num" id="setW">180</span><span class="body num t3" style="padding-bottom:8px">lb · × <span id="setReps">5</span> · RIR <span id="setRir">2</span></span></div>
+         <!-- M5 快改入口：大数字可点（M4-4 可供性沿用）→ 原地展开档位面板 -->
+         <button id="adjEntry" style="display:flex;align-items:flex-end;gap:9px;margin-top:8px;text-align:left" aria-expanded="false" aria-controls="adjPanel" onclick="toggleAdjust()">
+           <span class="display num" id="setW">180</span>
+           <span class="body num t3" style="padding-bottom:8px">lb · × <span id="setReps">5</span> · RIR <span id="setRir">2</span></span>
+           <i class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--t4);padding-bottom:10px" aria-hidden="true"></i>
+         </button>
+         <div class="caption t4" id="adjHint" style="margin-top:2px">Tap the weight — the plan follows what you log</div>
+         <div class="adjwrap" id="adjPanel">
+           <div class="ov" style="margin-top:10px">Weight</div>
+           <div id="anchRow" style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px"></div>
+           <div id="fineRow" style="display:flex;gap:7px;margin-top:7px;align-items:center"></div>
+           <input id="exactIn" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Exact weight"
+                  style="display:none;width:96px;min-height:44px;background:#1A1712;border:1px solid var(--steel);border-radius:9px;color:var(--t1);font:inherit;padding:0 10px;margin-top:7px"
+                  onkeydown="if(event.key==='Enter')this.blur()" onblur="commitExact(this)">
+           <div class="ov" style="margin-top:12px">Reps</div>
+           <div class="band num" id="repBand"></div>
+           <div class="ov" style="margin-top:12px">RIR</div>
+           <div class="band num" id="rirBand"></div>
+           <div class="caption t3" id="adjPreview" style="margin-top:12px;display:flex;align-items:center;gap:6px"></div>
+         </div>
          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:13px;border-top:1px solid var(--hair)">
            <span id="whyText" class="caption t3 clamp2" style="line-height:1.45;max-width:60%">Eased from <span class="num">185</span> after a slow set 2</span>
            <button id="holdBtn" class="btn2" onclick="toggleHold()">Hold 185</button>
@@ -187,7 +218,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          <div class="ov" style="color:var(--rec2)">Rest</div>
          <div class="display num" id="restClock" style="margin:10px 0 2px">2:00</div>
          <div style="height:3px;background:#231F19;border-radius:2px;margin:6px 8px 0"><div id="restMeter" style="height:3px;width:100%;background:var(--neu);border-radius:2px;transition:width 1s linear"></div></div>
-         <div class="callout t3" style="margin:12px 0 16px">Next · Set <span id="nextNo" class="num">4</span> · <span class="num">180 lb × 5</span></div>
+         <div class="callout t3" style="margin:12px 0 16px">Next · Set <span id="nextNo" class="num">4</span> · <span class="num" id="nextLoad">180 lb × 5</span></div>
          <div style="display:flex;gap:8px;justify-content:center;align-items:center">
            <button class="btn2" onclick="addRest()">+30s</button>
            <button class="btn2" id="pauseBtn" onclick="pauseRest()">Pause</button>
@@ -306,7 +337,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
  </div>
 </div>
-<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
+<div class="hint">Tabs · Today <b>Why this call</b> / <b>Start</b> · Train tap <b>180</b> → anchors <b>Lighter/Follow/Last</b> + reps/RIR bands (<b>—</b> = skip) → preview → <b>Log set</b> → Rest (<b>+30s</b>/<b>Pause</b>/<b>Next</b>) · <b>Hold 185</b> · <b>Finish</b> → confirm → share</div>
 
 <script>
  const SCREENS=['today','train','progress','plan'];
@@ -338,10 +369,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
        '<div class="num trow callout" style="color:'+col+';'+extra+'"><span style="width:34px">'+(i+1)+'</span><span style="flex:1">'+s.w+' lb</span><span style="width:44px;text-align:center">'+s.r+'</span><span style="width:34px;text-align:center">'+(s.rir===null?'—':s.rir)+'</span><span style="width:16px;text-align:right">'+c+'</span></div>');
    });
  }
+ const fmt=v=>(Math.round(v*100)/100).toString();      // 去尾零（60.0→60, 62.5→62.5）
  function renderActive(){
-   document.getElementById('setW').textContent=sets[active].w;
+   document.getElementById('setW').textContent=fmt(sets[active].w);
    document.getElementById('setReps').textContent=sets[active].r;
-   document.getElementById('setRir').textContent=sets[active].rir;
+   document.getElementById('setRir').textContent=sets[active].rir===null?'—':sets[active].rir;
  }
  function showSet(){ document.getElementById('restState').classList.add('out'); document.getElementById('setState').classList.remove('out'); document.getElementById('heroBar').style.background='var(--ember)'; }
  function showRest(){ document.getElementById('setState').classList.add('out'); document.getElementById('restState').classList.remove('out'); document.getElementById('heroBar').style.background='var(--rec)'; }
@@ -352,13 +384,78 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    if(held){ b.textContent='Holding 185'; b.classList.add('on'); document.getElementById('whyText').innerHTML='Held at <span class="num">185</span> — engine paused'; }
    else{ b.textContent='Hold 185'; b.classList.remove('on'); document.getElementById('whyText').innerHTML='Eased from <span class="num">185</span> after a slow set 2'; }
    renderActive(); buildTable();
+   if(adj.open){ adj.w=sets[active].w; renderAdjust(); } // Hold 改变「跟随」来源 → 档位即时重建（值重合自动去重）
  }
 
+ /* ---------- M5 快改：语义档位条（拍板 2026-06-10）----------
+    把「算数字」变成「做决定」：档位由引擎事实生成（跟随/上组/计划/轻重一档），
+    按值去重（固定优先级 跟随>上组>计划>轻重档）后升序；打勾前一切免费可换。
+    iOS 实现注记：量子 = 2.5kg（原型为 lb 故用 5）；档位生成器 = 包内纯函数 AdjustOptionsBuilder；
+    触感：选档 .selection / 撞钳制 .error / 打勾 .success（原型无法演示） */
+ let adj={open:false,w:0,r:0,rir:2}, adjUsed=false, lastAdjusted=false;
+ const PLAN_W=185, STEP=5;
+ function anchors(){
+   const follow=sets[active].w;
+   const last=active>0&&sets[active-1].done?sets[active-1].w:null;
+   const cand=[{k:'Follow',v:follow,p:1},{k:'Last',v:last,p:2},{k:'Plan',v:PLAN_W,p:3},
+               {k:'Lighter',v:follow-STEP,p:4},{k:'Heavier',v:follow+STEP,p:4}].filter(c=>c.v!==null&&c.v>0);
+   const m={}; cand.forEach(c=>{ if(!m[c.v]||c.p<m[c.v].p) m[c.v]=c; });
+   return Object.values(m).sort((a,b)=>a.v-b.v);
+ }
+ function toggleAdjust(){
+   adj.open=!adj.open;
+   if(adj.open){ adj.w=sets[active].w; adj.r=sets[active].r; adj.rir=sets[active].rir; adjUsed=true;
+     document.getElementById('adjHint').style.display='none'; renderAdjust(); }
+   else{ document.getElementById('exactIn').style.display='none'; renderActive(); }
+   document.getElementById('adjPanel').classList.toggle('on',adj.open);
+   document.getElementById('hero').classList.toggle('adjon',adj.open);
+   document.getElementById('adjEntry').setAttribute('aria-expanded',String(adj.open));
+ }
+ function setAdjW(v){ adj.w=Math.max(0,v); renderAdjust(); }       // 钳制 ≥0
+ function setAdjR(v){ adj.r=Math.max(1,v); renderAdjust(); }       // 钳制 ≥1
+ function setAdjRir(v){ adj.rir=v; renderAdjust(); }               // null = 不记（引擎不猜）
+ function exactAdjust(){ const i=document.getElementById('exactIn'); i.style.display='inline-block'; i.value=fmt(adj.w); i.focus(); }
+ function commitExact(i){ const v=parseFloat(i.value); if(!isNaN(v)&&v>=0) adj.w=v;   // 乱输不收、不猜
+   i.style.display='none'; renderAdjust(); }
+ function renderAdjust(){
+   if(!adj.open) return;
+   const onGrid=anchors().some(c=>c.v===adj.w);
+   document.getElementById('anchRow').innerHTML=                    // 第一行 = 决策（语义档位）
+     anchors().map(c=>'<button class="anch'+(c.v===adj.w?' on':'')+'" onclick="setAdjW('+c.v+')"><span class="ov">'+c.k+'</span><span class="num" style="font-size:14px;font-weight:600">'+fmt(c.v)+'</span></button>').join('');
+   document.getElementById('fineRow').innerHTML=                    // 第二行 = 微调（±一档 / 任意精度兜底）
+     '<button class="btn2" style="min-width:52px;padding:0" aria-label="Lighter by 5" onclick="setAdjW(adj.w-STEP)">−</button>'
+     +'<button class="btn2" style="min-width:52px;padding:0" aria-label="Heavier by 5" onclick="setAdjW(adj.w+STEP)">＋</button>'
+     +'<button class="anch'+(onGrid?'':' on')+'" style="min-height:40px;padding:3px 11px 4px" onclick="exactAdjust()"><span class="ov">Exact</span><span class="num" style="font-size:13px;font-weight:600">'+(onGrid?'…':fmt(adj.w))+'</span></button>';
+   const t=sets[active].r, lo=Math.max(1,adj.r-2);                  // 直选带以当前值自重心，±2 一屏五格
+   document.getElementById('repBand').innerHTML=[lo,lo+1,lo+2,lo+3,lo+4].map(n=>
+     '<button class="'+(n===adj.r?'on':'')+'" onclick="setAdjR('+n+')"'+(n===t?' style="border-bottom:2px solid var(--neu)"':'')+'>'+n+'</button>').join('');
+   document.getElementById('rirBand').innerHTML=[null,0,1,2,3,4,5].map(v=>
+     '<button class="'+(v===adj.rir?'on':'')+'" onclick="setAdjRir('+v+')"'+((v===0||v===1)?' style="border-bottom:2px solid rgba(199,154,58,.5)"':'')+'>'+(v===null?'—':v)+'</button>').join('');
+   const proj=projectNext(adj.w,adj.r,adj.rir,t);                   // 纯函数后果预演（iOS 用 NextSetEngine.recommend）
+   document.getElementById('adjPreview').innerHTML=
+     '<span style="width:11px;height:2px;background:var(--ember);flex:0 0 auto"></span>After log · next <span class="num" style="color:var(--t2)">'+fmt(proj.w)+' lb</span> — '+proj.why;
+   document.getElementById('setW').textContent=fmt(adj.w);          // 大数字实时回显暂存值
+   document.getElementById('setReps').textContent=adj.r;
+   document.getElementById('setRir').textContent=adj.rir===null?'—':adj.rir;
+ }
+
+ function projectNext(w,r,rir,t){                       // 与预演同一套规则：预演说什么，打勾后就发生什么
+   if(rir!==null&&rir<=0) return {w:Math.max(0,w-STEP),why:'easing after near failure'};
+   if(r<=t-2) return {w:Math.max(0,w-STEP),why:'reps under floor'};
+   return {w:w,why:'next set follows your log'};
+ }
  function logSet(){
-   sets[active].done=true;                            // 记录当前显示的目标值（不再写死与种子矛盾）
+   lastAdjusted=adj.open&&(adj.w!==sets[active].w||adj.r!==sets[active].r||adj.rir!==sets[active].rir);
+   const t=sets[active].r;
+   if(adj.open){ sets[active].w=adj.w; sets[active].r=adj.r; sets[active].rir=adj.rir; }  // 暂存值此刻才落盘
+   sets[active].done=true;
+   if(active<sets.length-1&&!held)                      // 回流合同：下一组建议跟随实际（含安全降档），不回拉计划值
+     sets[active+1].w=projectNext(sets[active].w,sets[active].r,sets[active].rir,t).w;
+   if(adj.open) toggleAdjust();
    buildTable();
    if(active>=sets.length-1){ openSummary(); return; }
    document.getElementById('nextNo').textContent=(active+2);
+   document.getElementById('nextLoad').textContent=fmt(sets[active+1].w)+' lb × '+sets[active+1].r;
    showRest(); startRest();
  }
  function startRest(){ restRemain=120; restPaused=false; document.getElementById('pauseBtn').textContent='Pause'; document.getElementById('pauseBtn').classList.remove('on'); tickShow(); runRest(); }
@@ -369,11 +466,19 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  function endRest(){
    clearInterval(restT); active++;
    if(held){ sets[active].w=185; document.getElementById('whyText').innerHTML='Holding <span class="num">185</span> — engine paused'; }
+   else if(lastAdjusted){ document.getElementById('whyText').innerHTML='Following your set '+active+' — <span class="num">'+fmt(sets[active].w)+'</span>'; }
    else{ document.getElementById('whyText').innerHTML='Same load — set '+active+' looked strong'; }
    renderActive(); buildTable(); showSet();
  }
  function resetTrain(){                                // P1-7: 离开/进入 Train 清计时与瞬态
-   clearInterval(restT); seedSets(); renderActive(); buildTable(); showSet();
+   clearInterval(restT); seedSets(); lastAdjusted=false;
+   adj.open=false;                                     // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）
+   document.getElementById('adjPanel').classList.remove('on');
+   document.getElementById('hero').classList.remove('adjon');
+   document.getElementById('adjEntry').setAttribute('aria-expanded','false');
+   document.getElementById('exactIn').style.display='none';
+   document.getElementById('adjHint').style.display=adjUsed?'none':'';
+   renderActive(); buildTable(); showSet();
    const b=document.getElementById('holdBtn'); b.textContent='Hold 185'; b.classList.remove('on');
    document.getElementById('whyText').innerHTML='Eased from <span class="num">185</span> after a slow set 2';
  }
