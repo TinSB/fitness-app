@@ -80,6 +80,18 @@ final class CleanSessionProjectionTests: XCTestCase {
         XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", reason: .missingDate)])
     }
 
+    func testSessionWithInvalidDateFormatIsDropped() throws {
+        let view = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "date": "2026-6-9", "completed": true}]}"#)
+        XCTAssertTrue(view.sessions.isEmpty)
+        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", reason: .invalidDateFormat)])
+    }
+
+    func testIsoDatetimeDatePassesFormatGuard() throws {
+        let view = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "date": "2026-06-09T10:00:00.000Z", "completed": true}]}"#)
+        XCTAssertEqual(view.sessions.count, 1)
+        XCTAssertTrue(view.issues.isEmpty)
+    }
+
     func testDuplicateSessionIdKeepsFirstDropsRest() throws {
         let view = try makeView(#"""
         {"schemaVersion": 8, "history": [

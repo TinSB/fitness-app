@@ -70,19 +70,40 @@ public struct CleanProfile: Equatable, Sendable {
     }
 }
 
+/// 计划结构的净化投影（M2-1 裁决引擎的「计划」输入面）。
+public struct CleanProgram: Equatable, Sendable {
+    public let daysPerWeek: Int?
+    public let splitType: String?
+    public let primaryGoal: String?
+
+    public init(daysPerWeek: Int? = nil, splitType: String? = nil, primaryGoal: String? = nil) {
+        self.daysPerWeek = daysPerWeek
+        self.splitType = splitType
+        self.primaryGoal = primaryGoal
+    }
+}
+
 public struct CleanAppDataView: Equatable, Sendable {
     /// 原始 AppData，verbatim 携带、永不改写。
     public let raw: AppData
     public let sessions: [CleanTrainingSession]
     public let profile: CleanProfile
+    public let program: CleanProgram
     public let issues: [DataHealthIssue]
 
     public var hasDirtyData: Bool { !issues.isEmpty }
 
-    public init(raw: AppData, sessions: [CleanTrainingSession], profile: CleanProfile, issues: [DataHealthIssue]) {
+    public init(
+        raw: AppData,
+        sessions: [CleanTrainingSession],
+        profile: CleanProfile,
+        program: CleanProgram,
+        issues: [DataHealthIssue]
+    ) {
         self.raw = raw
         self.sessions = sessions
         self.profile = profile
+        self.program = program
         self.issues = issues
     }
 }

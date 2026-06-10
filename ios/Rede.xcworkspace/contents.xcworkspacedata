@@ -17,6 +17,9 @@
       location = "group:packages/RedePersistence">
    </FileRef>
    <FileRef
+      location = "group:packages/RedeTrainingDecision">
+   </FileRef>
+   <FileRef
       location = "group:packages/RedeWidgetShared">
    </FileRef>
 </Workspace>

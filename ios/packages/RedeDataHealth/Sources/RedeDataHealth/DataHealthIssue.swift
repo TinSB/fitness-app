@@ -6,6 +6,7 @@ public enum DataHealthIssue: Equatable, Hashable, Sendable {
         case notAnObject
         case missingId
         case missingDate
+        case invalidDateFormat
         /// 含 completed 字段缺失——与显式 false 刻意同义合并：M1-2 写闸保证
         /// 新数据必带 completed=true，缺失只可能来自 legacy/手工数据，对
         /// 「这条记录不可作为完成训练统计」这一下游语义二者无差别。
@@ -27,4 +28,5 @@ public enum DataHealthIssue: Equatable, Hashable, Sendable {
     case setDropped(sessionId: String, exerciseId: String, reason: SetDropReason)
     case setFieldIgnored(sessionId: String, exerciseId: String, field: String)
     case profileFieldIgnored(field: String)
+    case programFieldIgnored(field: String)
 }

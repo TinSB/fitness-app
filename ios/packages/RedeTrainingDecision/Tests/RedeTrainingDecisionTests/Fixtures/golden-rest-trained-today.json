@@ -1,0 +1,11 @@
+{
+  "today": "2026-06-09",
+  "expected": { "call": "rest", "reasonCode": "alreadyTrainedToday" },
+  "appData": {
+    "schemaVersion": 8,
+    "history": [
+      { "id": "g1", "date": "2026-06-09", "completed": true,
+        "exercises": [{ "exerciseId": "deadlift", "sets": [{ "weight": 140, "reps": 3, "rir": 2 }] }] }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "today": "2026-06-09",
+  "expected": { "call": "train", "reasonCode": "normalProgression" },
+  "appData": {
+    "schemaVersion": 8,
+    "futureUnknownKey": "must-not-affect-verdict",
+    "userProfile": { "trainingLevel": "intermediate", "weeklyTrainingDays": 4 },
+    "programTemplate": { "daysPerWeek": 4, "splitType": "upper-lower" },
+    "history": [
+      { "id": "g1", "date": "2026-06-04", "completed": true,
+        "exercises": [{ "exerciseId": "bench-press", "sets": [
+          { "weight": 80, "reps": 8, "rir": 2 }, { "weight": 82.5, "reps": 6, "rir": 1.5 } ] }] },
+      { "id": "g2", "date": "2026-06-07", "completed": true,
+        "exercises": [{ "exerciseId": "squat", "sets": [
+          { "weight": 120, "reps": 5, "rir": 2 } ] }] }
+    ]
+  }
+}

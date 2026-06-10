@@ -1,0 +1,30 @@
+{
+  "today": "2026-06-09",
+  "expected": { "call": "deload", "reasonCode": "sustainedLoadDeload" },
+  "appData": {
+    "schemaVersion": 8,
+    "programTemplate": { "daysPerWeek": 6 },
+    "history": [
+      { "id": "d01", "date": "2026-05-20", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] },
+      { "id": "d02", "date": "2026-05-21", "completed": true, "exercises": [{ "exerciseId": "bench-press", "sets": [{ "weight": 80, "reps": 8, "rir": 2 }] }] },
+      { "id": "d03", "date": "2026-05-22", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 100, "reps": 5, "rir": 2 }] }] },
+      { "id": "d04", "date": "2026-05-23", "completed": true, "exercises": [{ "exerciseId": "row", "sets": [{ "weight": 70, "reps": 10, "rir": 2 }] }] },
+      { "id": "d05", "date": "2026-05-24", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 102.5, "reps": 5, "rir": 2 }] }] },
+      { "id": "d06", "date": "2026-05-25", "completed": true, "exercises": [{ "exerciseId": "press", "sets": [{ "weight": 50, "reps": 6, "rir": 2 }] }] },
+      { "id": "d07", "date": "2026-05-26", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 102.5, "reps": 5, "rir": 2 }] }] },
+      { "id": "d08", "date": "2026-05-27", "completed": true, "exercises": [{ "exerciseId": "bench-press", "sets": [{ "weight": 82.5, "reps": 8, "rir": 2 }] }] },
+      { "id": "d09", "date": "2026-05-28", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 105, "reps": 5, "rir": 2 }] }] },
+      { "id": "d10", "date": "2026-05-29", "completed": true, "exercises": [{ "exerciseId": "row", "sets": [{ "weight": 72.5, "reps": 10, "rir": 2 }] }] },
+      { "id": "d11", "date": "2026-05-30", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 105, "reps": 5, "rir": 2 }] }] },
+      { "id": "d12", "date": "2026-05-31", "completed": true, "exercises": [{ "exerciseId": "press", "sets": [{ "weight": 52.5, "reps": 6, "rir": 2 }] }] },
+      { "id": "d13", "date": "2026-06-01", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 107.5, "reps": 5, "rir": 2 }] }] },
+      { "id": "d14", "date": "2026-06-02", "completed": true, "exercises": [{ "exerciseId": "bench-press", "sets": [{ "weight": 85, "reps": 8, "rir": 2 }] }] },
+      { "id": "d15", "date": "2026-06-03", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 107.5, "reps": 5, "rir": 2 }] }] },
+      { "id": "d16", "date": "2026-06-04", "completed": true, "exercises": [{ "exerciseId": "row", "sets": [{ "weight": 75, "reps": 10, "rir": 2 }] }] },
+      { "id": "d17", "date": "2026-06-05", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 110, "reps": 5, "rir": 2 }] }] },
+      { "id": "d18", "date": "2026-06-06", "completed": true, "exercises": [{ "exerciseId": "press", "sets": [{ "weight": 55, "reps": 6, "rir": 2 }] }] },
+      { "id": "d19", "date": "2026-06-07", "completed": true, "exercises": [{ "exerciseId": "squat", "sets": [{ "weight": 110, "reps": 5, "rir": 2 }] }] },
+      { "id": "d20", "date": "2026-06-08", "completed": true, "exercises": [{ "exerciseId": "bench-press", "sets": [{ "weight": 85, "reps": 8, "rir": 2 }] }] }
+    ]
+  }
+}
