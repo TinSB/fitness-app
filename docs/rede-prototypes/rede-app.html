@@ -243,7 +243,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          <button id="adjEntry" style="display:flex;align-items:flex-end;gap:9px;margin-top:8px;text-align:left" aria-expanded="false" aria-controls="adjPanel" onclick="toggleAdjust()">
            <span class="display num" id="setW">180</span>
            <span class="body num t3" style="padding-bottom:8px">lb · × <span id="setReps">5</span> · RIR <span id="setRir">2</span></span>
-           <i class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--t4);padding-bottom:10px" aria-hidden="true"></i>
+           <i id="adjIcon" class="ti ti-adjustments-horizontal" style="font-size:14px;color:var(--t4);padding-bottom:10px" aria-hidden="true"></i>
          </button>
          <div class="caption t4" id="adjHint" style="margin-top:2px">Tap the weight — the plan follows what you log</div>
          <div class="adjwrap" id="adjPanel">
@@ -450,9 +450,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  /* ---------- M5 快改：语义档位条（拍板 2026-06-10）----------
     把「算数字」变成「做决定」：档位由引擎事实生成（跟随/上组/计划/轻重一档），
     按值去重（固定优先级 跟随>上组>计划>轻重档）后升序；打勾前一切免费可换。
+    暂存语义（用户真机反馈修订 2026-06-10）：关面板 = 收起控件，不丢弃决定——
+    调整随本组保留（图标转 ember），打勾才落盘；撤销走「跟随」站点，不由关面板承担。
     iOS 实现注记：量子 = 2.5kg（原型为 lb 故用 5）；档位生成器 = 包内纯函数 AdjustOptionsBuilder；
     触感：选档 .selection / 撞钳制 .error / 打勾 .success（原型无法演示） */
- let adj={open:false,w:0,r:0,rir:2}, adjUsed=false, lastAdjusted=false;
+ let adj={open:false,dirty:false,w:0,r:0,rir:2}, adjUsed=false, lastAdjusted=false;
  const PLAN_W=185, STEP=5;
  function anchors(){
    const follow=sets[active].w;
@@ -464,22 +466,34 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  function toggleAdjust(){
    adj.open=!adj.open;
-   if(adj.open){ adj.w=sets[active].w; adj.r=sets[active].r; adj.rir=sets[active].rir; adjUsed=true;
+   if(adj.open){
+     if(!adj.dirty){ adj.w=sets[active].w; adj.r=sets[active].r; adj.rir=sets[active].rir; } // 有调整时重开不重置
+     adjUsed=true;
      document.getElementById('adjHint').style.display='none';
      document.getElementById('adjPreview').classList.remove('receipt'); lastPrev='';   // 开面板走级联入场，不走收据重印
      panelJustOpened=true; renderAdjust(); panelJustOpened=false; }
    else{ document.getElementById('exactIn').style.display='none';
-     document.getElementById('hero').classList.remove('exon'); renderActive(); }
+     document.getElementById('hero').classList.remove('exon');
+     if(adj.dirty){ renderStaged(); } else { renderActive(); } }   // 关面板：决定保留，不回拉默认
+   syncAdjIcon();
    document.getElementById('adjPanel').classList.toggle('on',adj.open);
    document.getElementById('hero').classList.toggle('adjon',adj.open);
    document.getElementById('adjEntry').setAttribute('aria-expanded',String(adj.open));
  }
- function setAdjW(v){ adj.w=Math.max(0,v); renderAdjust(); }       // 钳制 ≥0
- function setAdjR(v){ adj.r=Math.max(1,v); renderAdjust(); }       // 钳制 ≥1
- function setAdjRir(v){ adj.rir=v; renderAdjust(); }               // null = 不记（引擎不猜）
+ /// 已调整且收起：大数字显示暂存值（关面板≠撤销）。
+ function renderStaged(){
+   document.getElementById('setW').textContent=fmt(adj.w);
+   document.getElementById('setReps').textContent=adj.r;
+   document.getElementById('setRir').textContent=adj.rir===null?'—':adj.rir;
+ }
+ function syncAdjIcon(){ const ic=document.getElementById('adjIcon');
+   if(ic) ic.style.color=(adj.dirty&&!adj.open)?'var(--ember)':'var(--t4)'; }   // 收起后 ember=「被采纳的调整」
+ function setAdjW(v){ adj.w=Math.max(0,v); adj.dirty=true; renderAdjust(); }       // 钳制 ≥0
+ function setAdjR(v){ adj.r=Math.max(1,v); adj.dirty=true; renderAdjust(); }       // 钳制 ≥1
+ function setAdjRir(v){ adj.rir=v; adj.dirty=true; renderAdjust(); }               // null = 不记（引擎不猜）
  function exactAdjust(){ const i=document.getElementById('exactIn'); document.getElementById('hero').classList.add('exon');
    i.style.display='inline-block'; i.value=fmt(adj.w); i.focus(); }
- function commitExact(i){ const v=parseFloat(i.value); if(!isNaN(v)&&v>=0) adj.w=v;   // 乱输不收、不猜
+ function commitExact(i){ const v=parseFloat(i.value); if(!isNaN(v)&&v>=0){ adj.w=v; adj.dirty=true; }   // 乱输不收、不猜
    i.style.display='none'; document.getElementById('hero').classList.remove('exon'); renderAdjust(); }
 
  /* ---- 方向 A 渲染层：刻度轨（合同函数 anchors/projectNext/钳制 原封不动，只换渲染） ---- */
@@ -554,13 +568,15 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    return {w:w,why:'next set follows your log'};
  }
  function logSet(){
-   lastAdjusted=adj.open&&(adj.w!==sets[active].w||adj.r!==sets[active].r||adj.rir!==sets[active].rir);
+   const staging=adj.open||adj.dirty;                   // 关面板后调整仍然算数（真机反馈修订）
+   lastAdjusted=staging&&(adj.w!==sets[active].w||adj.r!==sets[active].r||adj.rir!==sets[active].rir);
    const t=sets[active].r;
-   if(adj.open){ sets[active].w=adj.w; sets[active].r=adj.r; sets[active].rir=adj.rir; }  // 暂存值此刻才落盘
+   if(staging){ sets[active].w=adj.w; sets[active].r=adj.r; sets[active].rir=adj.rir; }  // 暂存值此刻才落盘
    sets[active].done=true;
    if(active<sets.length-1&&!held)                      // 回流合同：下一组建议跟随实际（含安全降档），不回拉计划值
      sets[active+1].w=projectNext(sets[active].w,sets[active].r,sets[active].rir,t).w;
-   if(adj.open) toggleAdjust();
+   adj.dirty=false;                                     // 暂存生命周期终点：打勾
+   if(adj.open) toggleAdjust(); else syncAdjIcon();
    buildTable();
    if(active>=sets.length-1){ openSummary(); return; }
    document.getElementById('nextNo').textContent=(active+2);
@@ -581,7 +597,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  function resetTrain(){                                // P1-7: 离开/进入 Train 清计时与瞬态
    clearInterval(restT); seedSets(); lastAdjusted=false;
-   adj.open=false; railSig='';                         // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）；轨缓存随 sets 重置
+   adj.open=false; adj.dirty=false; railSig='';        // M5: 清快改暂存（adjUsed 保留 = 一次性提示用过即永久消失）；轨缓存随 sets 重置
+   syncAdjIcon();
    document.getElementById('adjPanel').classList.remove('on');
    document.getElementById('hero').classList.remove('adjon');
    document.getElementById('hero').classList.remove('exon');
