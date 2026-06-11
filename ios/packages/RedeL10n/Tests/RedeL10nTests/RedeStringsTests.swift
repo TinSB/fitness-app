@@ -33,6 +33,7 @@ final class RedeStringsTests: XCTestCase {
             ("settingsBackground", s.settingsBackground), ("settingsEditAnswers", s.settingsEditAnswers),
             ("settingsDaysValue", s.settingsDaysValue(4)), ("settingsData", s.settingsData),
             ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
+            ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("exerciseBenchPress", s.exerciseBenchPress),
         ]
@@ -76,6 +77,18 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertNotEqual(zh.trainLogSet, en.trainLogSet)
         XCTAssertNotEqual(zh.progressEmptyTitle, en.progressEmptyTitle)
         XCTAssertNotEqual(zh.planEmptyNote, en.planEmptyNote)
+    }
+
+    func testPrivacyNoteHonestWording() {
+        // 文案基线 §7.4 合同：隐私只说「默认保存在本机」事实，禁绝对化承诺
+        for strings in [zh, en] {
+            let note = strings.settingsPrivacyNote.lowercased()
+            XCTAssertTrue(note.contains("本机") || note.contains("this device"),
+                          "隐私文案必须落在「本机」事实陈述上")
+            for banned in ["永不", "100%", "匿名", "私密", "never leave", "anonymous", "hipaa", "private"] {
+                XCTAssertFalse(note.contains(banned), "隐私文案含绝对化措辞: \(banned)")
+            }
+        }
     }
 
     func testUiShortPhrasesHaveNoTrailingPeriod() {
