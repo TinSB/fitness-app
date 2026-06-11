@@ -158,6 +158,19 @@ public struct RedeStrings: Sendable {
           "Rede offers fitness guidance, not medical advice. If you have injuries or health concerns, talk to a professional before training.")
     }
     public var settingsFeedback: String { t("发送反馈", "Send feedback") }
+    /// M6-3 正式反馈渠道（owner 确认 2026-06-10）。邮件主题带版本号便于分流。
+    public func feedbackSubject(version: String) -> String {
+        t("Rede 反馈（v\(version)）", "Rede feedback (v\(version))")
+    }
+    /// 邮件正文引导句；上下文行（版本/系统/机型/语言/单位）由 app 层拼接，
+    /// 用户发送前可见可删——透明，不偷带。
+    public var feedbackBodyPrompt: String {
+        t("（写下你的反馈——哪里不顺手、哪里不对、想要什么）", "(What felt off, what broke, what you wish it did)")
+    }
+    /// mailto 打不开（设备没配邮件 app）时的兜底：如实给地址让用户自行发送。
+    public func feedbackFallback(address: String) -> String {
+        t("这台设备没有配置邮件 App。可手动发邮件到 \(address)", "No mail app is set up on this device. You can email \(address) directly.")
+    }
 
     // MARK: - 展示数据(静态;M2-M4 由 catalog/engine localized 值接管)
 

@@ -35,6 +35,9 @@ final class RedeStringsTests: XCTestCase {
             ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
             ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
+            ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
+            ("feedbackBodyPrompt", s.feedbackBodyPrompt),
+            ("feedbackFallback", s.feedbackFallback(address: "a@b.c")),
             ("exerciseBenchPress", s.exerciseBenchPress),
         ]
     }
@@ -77,6 +80,14 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertNotEqual(zh.trainLogSet, en.trainLogSet)
         XCTAssertNotEqual(zh.progressEmptyTitle, en.progressEmptyTitle)
         XCTAssertNotEqual(zh.planEmptyNote, en.planEmptyNote)
+    }
+
+    func testFeedbackMailAnchors() {
+        XCTAssertEqual(zh.feedbackSubject(version: "0.1.0"), "Rede 反馈（v0.1.0）")
+        XCTAssertEqual(en.feedbackSubject(version: "0.1.0"), "Rede feedback (v0.1.0)")
+        // 兜底句必须把地址原样给出，用户才能手动发送
+        XCTAssertTrue(zh.feedbackFallback(address: "x@y.z").contains("x@y.z"))
+        XCTAssertTrue(en.feedbackFallback(address: "x@y.z").contains("x@y.z"))
     }
 
     func testPrivacyNoteHonestWording() {
