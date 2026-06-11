@@ -429,13 +429,22 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <div class="st-prow"><span class="body t2">Language</span><div class="st-seg" data-stseg><button aria-selected="false">中文</button><button aria-selected="true">English</button></div></div>
     <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="ov" style="margin:18px 20px 0">Background</div>
+    <!-- 行内单题编辑（方向 A 拍板 2026-06-10）：改哪题点哪行，整流重跑退役；
+         Days 行接通可交互示例（编辑卡：预填 + dirty 才可保存 + 变更收据） -->
     <div class="forged st-plate"><svg class="reg" style="right:8px;top:8px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
-      <div class="st-srow"><span class="ov">Goal</span><b>Muscle</b></div>
-      <div class="st-srow"><span class="ov">Days</span><b class="num">5 / week</b></div>
-      <div class="st-srow"><span class="ov">Equipment</span><b>Commercial gym</b></div>
-      <div class="st-srow"><span class="ov">Background</span><b>New to lifting</b></div>
+      <button class="st-srow" style="width:100%"><span class="ov">Goal</span><b style="margin-left:auto">Muscle</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+      <button class="st-srow" style="width:100%" onclick="stEditDays()"><span class="ov">Days</span><b class="num" style="margin-left:auto" id="stDaysVal">5 / week</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+      <button class="st-srow" style="width:100%"><span class="ov">Equipment</span><b style="margin-left:auto">Commercial gym</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+      <button class="st-srow" style="width:100%"><span class="ov">Background</span><b style="margin-left:auto">New to lifting</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
     </div>
-    <div class="st-edit"><span class="caption t4">Re-answer the 4 setup questions</span><button class="btn2">Edit answers</button></div>
+    <div class="st-edit"><span class="caption t4" id="stHint">Tap any row to change it</span></div>
+    <div class="forged" id="stEditCard" style="margin:10px 20px 0;padding:16px;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ov">Schedule</div><button class="ghost" style="min-height:24px;padding:0" onclick="stEditClose()">Cancel</button></div>
+      <div class="headline" style="margin-top:6px;font-size:18px">How many days can you actually train?</div>
+      <div class="caption t4" style="margin-top:4px">Pick the week you can hold, not the ideal one</div>
+      <div style="display:flex;margin-top:12px" id="stDaysBand"></div>
+      <button class="emb" id="stSave" style="margin-top:14px;opacity:.45" disabled onclick="stEditSave()"><i class="ti ti-check" style="font-size:15px"></i>Save changes</button>
+    </div>
     <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="st-info">
       <button class="discl" aria-expanded="false" onclick="dTog(this)">Data<i class="ti ti-chevron-down"></i></button>
@@ -726,7 +735,32 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  /* ---------- toggles / overlays / summary ---------- */
  function tog(el){ const tg=el.querySelector('.tg'); const on=tg.classList.toggle('on'); el.setAttribute('aria-checked',String(on)); }
  function openSettings(){ document.getElementById('ovl-settings').classList.add('on'); }
- function closeSettings(){ document.getElementById('ovl-settings').classList.remove('on'); }
+ function closeSettings(){ document.getElementById('ovl-settings').classList.remove('on'); stEditClose(); }
+ /* 行内单题编辑（Days 示例）：预填 + dirty 才可保存 + 变更收据 */
+ let stDays=5, stPick=5;
+ function stRenderBand(){
+   const band=document.getElementById('stDaysBand');
+   band.innerHTML='';
+   for(let n=2;n<=6;n++){
+     const b=document.createElement('button');
+     b.style.cssText='flex:1;min-height:64px;font-size:24px;font-weight:600;color:'+(n===stPick?'var(--t1)':'var(--t3)');
+     b.innerHTML=n+'<div style="width:12px;height:2px;margin:8px auto 0;background:'+(n===stPick?'var(--steel)':'transparent')+'"></div>';
+     b.onclick=()=>{ stPick=n; stRenderBand(); };
+     band.appendChild(b);
+   }
+   const sv=document.getElementById('stSave'); const dirty=stPick!==stDays;
+   sv.disabled=!dirty; sv.style.opacity=dirty?'1':'.45';
+ }
+ function stEditDays(){ stPick=stDays; stRenderBand(); document.getElementById('stEditCard').style.display='block'; }
+ function stEditClose(){ const c=document.getElementById('stEditCard'); if(c) c.style.display='none'; }
+ function stEditSave(){
+   const old=stDays; stDays=stPick;
+   document.getElementById('stDaysVal').textContent=stDays+' / week';
+   const oldSplit=old>=5?'Push / Pull / Legs':'Upper / Lower', newSplit=stDays>=5?'Push / Pull / Legs':'Upper / Lower';
+   document.getElementById('stHint').textContent='Days '+old+' → '+stDays+(oldSplit!==newSplit?' · '+oldSplit+' → '+newSplit:'');
+   document.getElementById('stHint').style.color='var(--t3)';
+   stEditClose();
+ }
  function dTog(b){ b.setAttribute('aria-expanded', b.getAttribute('aria-expanded')==='true'?'false':'true'); }
  document.querySelectorAll('[data-stseg]').forEach(seg=>seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
    seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected','false'));

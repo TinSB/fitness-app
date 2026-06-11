@@ -1,5 +1,6 @@
 import SwiftUI
 import RedeL10n
+import RedeTrainingDecision
 
 // 设置（M5-2 功能壳 → 2026-06-10 工艺重做，owner 拍板方向 B「信号键」，
 // 设计真相 rede-app.html #ovl-settings，方向稿 rede-12-settings-instrument.html）。
@@ -18,7 +19,10 @@ struct SettingsSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var profile: SessionStore.ProfileSnapshot?
-    @State private var showEditAnswers = false
+    /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
+    @State private var editing: PlateQuestion?
+    /// 最近一次保存的变更收据（铭牌下方替换提示行）。
+    @State private var editReceipt: String?
     @State private var feedbackFallbackText: String?
     /// 背板折叠态（J5 渐进披露：默认全收起）。
     @State private var expandedInfo: Set<String> = []
@@ -30,6 +34,25 @@ struct SettingsSheet: View {
     private var s: RedeStrings { store.strings }
 
     var body: some View {
+        NavigationStack {
+            sheetContent
+                .navigationDestination(item: $editing) { question in
+                    PlateQuestionEditView(
+                        question: question,
+                        snapshot: profile,
+                        onSaved: { receipt, newSnapshot in
+                            editReceipt = receipt
+                            profile = newSnapshot
+                        }
+                    )
+                    .environment(store)
+                    .environment(sessionStore)
+                    .toolbar(.hidden, for: .navigationBar)
+                }
+        }
+    }
+
+    private var sheetContent: some View {
         VStack(spacing: 0) {
             header
             if let errorText = sessionStore.saveErrorText {
@@ -63,13 +86,6 @@ struct SettingsSheet: View {
             // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误。
             sessionStore.saveErrorText = nil
             profile = await Task.detached { SessionStore.loadProfileSnapshot() }.value
-        }
-        .fullScreenCover(isPresented: $showEditAnswers, onDismiss: {
-            Task { profile = await Task.detached { SessionStore.loadProfileSnapshot() }.value }
-        }) {
-            OnboardingView(onFinish: { showEditAnswers = false })
-                .environment(store)
-                .environment(sessionStore)
         }
     }
 
@@ -142,43 +158,60 @@ struct SettingsSheet: View {
                 .padding(.top, 18)
             ForgedCard(showReg: true) {
                 VStack(spacing: 0) {
-                    plateRow(s.onbGoalLabel, profile?.primaryGoal.map { s.onbGoalOption($0).title })
+                    plateRow(s.onbGoalLabel, profile?.primaryGoal.map { s.onbGoalOption($0).title }, question: .goal)
                     plateDivider
-                    plateRow(s.onbDaysLabel, profile?.weeklyTrainingDays.map { s.settingsDaysValue($0) })
+                    plateRow(s.onbDaysLabel, profile?.weeklyTrainingDays.map { s.settingsDaysValue($0) }, question: .days)
                     plateDivider
-                    plateRow(s.onbEquipLabel, profile?.equipmentScenario.map { s.onbEquipOption($0).title })
+                    plateRow(s.onbEquipLabel, profile?.equipmentScenario.map { s.onbEquipOption($0).title }, question: .equipment)
                     plateDivider
-                    plateRow(s.onbLevelLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title })
+                    plateRow(s.onbLevelLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title }, question: .level)
                 }
                 .padding(.vertical, 5)
                 .padding(.horizontal, 16)
             }
             .padding(.top, 9)
-            HStack {
-                Text(s.settingsEditAnswersNote)
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                Spacer()
-                SteelButton(title: s.settingsEditAnswers) { showEditAnswers = true }
-            }
-            .padding(.top, 10)
+            // 变更收据（保存后）或可点提示（默认）
+            Text(editReceipt ?? s.settingsPlateHint)
+                .font(.redeCaption)
+                .foregroundStyle(editReceipt != nil ? Color.redeT3 : Color.redeT4)
+                .padding(.top, 10)
         }
+    }
+
+    /// 四答齐全才允许行内编辑（异常档案保持只读铭牌，不进编辑流）。
+    private var profileComplete: Bool {
+        profile?.primaryGoal != nil && profile?.weeklyTrainingDays != nil
+            && profile?.equipmentScenario != nil && profile?.trainingLevel != nil
     }
 
     private var plateDivider: some View {
         Rectangle().fill(Color.redeHair2).frame(height: 1)
     }
 
-    private func plateRow(_ label: String, _ value: String??) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Overline(text: label)
-            Spacer()
-            Text((value ?? nil) ?? "—")
-                .font(.system(size: 15, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(Color.redeT1)
+    private func plateRow(_ label: String, _ value: String??, question: PlateQuestion) -> some View {
+        Button {
+            guard profileComplete else { return }
+            editing = question
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Overline(text: label)
+                Spacer()
+                Text((value ?? nil) ?? "—")
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.redeT1)
+                // 审查 NIT-1：档案不完整时铭牌只读，不显示「能点」的暗示
+                if profileComplete {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                }
+            }
+            .padding(.vertical, 9)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 9)
+        .buttonStyle(.plain)
+        .accessibilityHint(profileComplete ? s.settingsPlateHint : "")
     }
 
     // MARK: - 背板蚀刻：数据/隐私/关于 渐进披露（默认收起）
@@ -270,6 +303,202 @@ struct SettingsSheet: View {
         return withUnsafePointer(to: &sys.machine) { ptr in
             ptr.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) { String(cString: $0) }
         }
+    }
+}
+
+// MARK: - 行内单题编辑（方向 A 拍板 2026-06-10）
+
+enum PlateQuestion: String, Identifiable, Hashable {
+    case goal, days, equipment, level
+    var id: String { rawValue }
+}
+
+/// 单题编辑：预填当前答案；显式保存（dirty 才可点）/ 取消（任何状态可退，
+/// 含保存失败——修复旧编辑流「写失败被困死」）；保存成功回传变更收据。
+/// 整屏唯一 ember = 保存键（S1）。
+struct PlateQuestionEditView: View {
+    @Environment(LocaleStore.self) private var localeStore
+    @Environment(SessionStore.self) private var sessionStore
+    @Environment(\.dismiss) private var dismiss
+
+    let question: PlateQuestion
+    let snapshot: SessionStore.ProfileSnapshot?
+    let onSaved: (String, SessionStore.ProfileSnapshot?) -> Void
+
+    @State private var goal: String?
+    @State private var days: Int?
+    @State private var equipment: String?
+    @State private var level: String?
+    @State private var saving = false
+    @State private var failed = false
+    @State private var selectionPulse = 0
+
+    init(question: PlateQuestion, snapshot: SessionStore.ProfileSnapshot?,
+         onSaved: @escaping (String, SessionStore.ProfileSnapshot?) -> Void) {
+        self.question = question
+        self.snapshot = snapshot
+        self.onSaved = onSaved
+        _goal = State(initialValue: snapshot?.primaryGoal)
+        _days = State(initialValue: snapshot?.weeklyTrainingDays)
+        _equipment = State(initialValue: snapshot?.equipmentScenario)
+        _level = State(initialValue: snapshot?.trainingLevel)
+    }
+
+    private var s: RedeStrings { localeStore.strings }
+
+    private var dirty: Bool {
+        goal != snapshot?.primaryGoal || days != snapshot?.weeklyTrainingDays
+            || equipment != snapshot?.equipmentScenario || level != snapshot?.trainingLevel
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Overline(text: s.settingsBackground)
+                    Text(questionLabel)
+                        .font(.redeHeadline)
+                        .tracking(RedeTracking.headline)
+                        .foregroundStyle(Color.redeT1)
+                }
+                Spacer()
+                Button(s.onbEditCancel) { dismiss() }
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.redeT2)
+                    .frame(minWidth: 44, minHeight: 44, alignment: .bottomTrailing)
+                    .buttonStyle(.plain)
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 12)
+            .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForgedCard {
+                        VStack(alignment: .leading, spacing: 0) {
+                            questionBody
+                        }
+                        .padding(.vertical, 18)
+                        .padding(.horizontal, RedeSpace.card)
+                    }
+                    .padding(.top, 16)
+
+                    if failed {
+                        Text(s.onbWriteFailed)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeRisk)
+                            .padding(.top, 12)
+                        if let detail = sessionStore.saveErrorText {
+                            Text(detail)
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeT4)
+                                .lineLimit(2)
+                                .padding(.top, 2)
+                        }
+                    }
+
+                    EmbButton(icon: "checkmark", title: s.onbEditSave) { save() }
+                        .disabled(!dirty || saving)
+                        .opacity((!dirty || saving) ? 0.45 : 1)
+                        .padding(.top, 16)
+                }
+                .padding(.bottom, 24)
+            }
+        }
+        .padding(.horizontal, RedeSpace.page)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.redeBase)
+        .sensoryFeedback(.selection, trigger: selectionPulse)
+    }
+
+    private var questionLabel: String {
+        switch question {
+        case .goal: s.onbGoalLabel
+        case .days: s.onbDaysLabel
+        case .equipment: s.onbEquipLabel
+        case .level: s.onbLevelLabel
+        }
+    }
+
+    @ViewBuilder private var questionBody: some View {
+        switch question {
+        case .goal:
+            editTitle(s.onbGoalQuestion)
+            OnbOptionRows(codes: ["hypertrophy", "strength", "general"],
+                          selected: goal, option: s.onbGoalOption) { goal = $0; selectionPulse += 1 }
+        case .days:
+            editTitle(s.onbDaysQuestion)
+            Text(s.onbDaysNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .padding(.top, 4)
+            OnbDaysBand(selected: days, daysLabel: s.settingsDaysValue) { days = $0; selectionPulse += 1 }
+        case .equipment:
+            editTitle(s.onbEquipQuestion)
+            OnbOptionRows(codes: ["commercial-gym", "home-dumbbell", "minimal"],
+                          selected: equipment, option: s.onbEquipOption) { equipment = $0; selectionPulse += 1 }
+        case .level:
+            editTitle(s.onbLevelQuestion)
+            Text(s.onbLevelNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .padding(.top, 4)
+            OnbOptionRows(codes: ["beginner", "intermediate", "advanced"],
+                          selected: level, option: s.onbLevelOption) { level = $0; selectionPulse += 1 }
+        }
+    }
+
+    private func editTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.redeHeadline)
+            .foregroundStyle(Color.redeT1)
+    }
+
+    private func save() {
+        guard !saving, let goal, let days, let equipment, let level else { return }
+        saving = true
+        failed = false
+        Task {
+            let ok = await sessionStore.completeOnboarding(OnboardingAnswers(
+                primaryGoal: goal, weeklyDays: days, equipmentScenario: equipment, trainingLevel: level
+            ))
+            saving = false
+            if ok {
+                let receipt = receiptLine()
+                let fresh = await Task.detached { SessionStore.loadProfileSnapshot() }.value
+                onSaved(receipt, fresh)
+                dismiss()
+            } else {
+                failed = true
+            }
+        }
+    }
+
+    /// 变更收据：「频率 每周 5 天 → 每周 6 天」；分化随之变化时追加「上下分化 → 推拉腿」。
+    private func receiptLine() -> String {
+        var parts: [String] = []
+        func add(_ label: String, _ oldValue: String?, _ newValue: String?) {
+            if oldValue != newValue, let newValue {
+                parts.append("\(label) \(oldValue ?? "—") → \(newValue)")
+            }
+        }
+        add(s.onbGoalLabel, snapshot?.primaryGoal.map { s.onbGoalOption($0).title }, goal.map { s.onbGoalOption($0).title })
+        add(s.onbDaysLabel, snapshot?.weeklyTrainingDays.map { s.settingsDaysValue($0) }, days.map { s.settingsDaysValue($0) })
+        add(s.onbEquipLabel, snapshot?.equipmentScenario.map { s.onbEquipOption($0).title }, equipment.map { s.onbEquipOption($0).title })
+        add(s.onbLevelLabel, snapshot?.trainingLevel.map { s.onbLevelOption($0).title }, level.map { s.onbLevelOption($0).title })
+        // 模板分化对比（OnboardingPlanInit 纯函数，无 IO）
+        if let goal, let days, let equipment, let level,
+           let og = snapshot?.primaryGoal, let od = snapshot?.weeklyTrainingDays,
+           let oe = snapshot?.equipmentScenario, let ol = snapshot?.trainingLevel {
+            let newTemplate = OnboardingPlanInit.template(for: OnboardingAnswers(
+                primaryGoal: goal, weeklyDays: days, equipmentScenario: equipment, trainingLevel: level))
+            let oldTemplate = OnboardingPlanInit.template(for: OnboardingAnswers(
+                primaryGoal: og, weeklyDays: od, equipmentScenario: oe, trainingLevel: ol))
+            if newTemplate.splitType != oldTemplate.splitType {
+                parts.append("\(s.onbSplitName(oldTemplate.splitType)) → \(s.onbSplitName(newTemplate.splitType))")
+            }
+        }
+        return parts.joined(separator: " · ")
     }
 }
 

@@ -8,8 +8,9 @@ extension RedeStrings {
     // MARK: - 头部
 
     public var onbHeaderTag: String { locale == .zh ? "首份计划" : "First plan" }
+    /// 信任铺垫三件套：问几个 / 多久 / 数据去哪（2026-06-10 打磨调研补「本机」句）。
     public var onbFooterNote: String {
-        locale == .zh ? "四个回答——一分钟左右" : "Four answers — about a minute"
+        locale == .zh ? "四个回答——一分钟左右 · 记录只存在本机" : "Four answers — about a minute · stays on this device"
     }
 
     // MARK: - 问题 1 · 目标
@@ -36,8 +37,14 @@ extension RedeStrings {
 
     // MARK: - 问题 2 · 天数
 
-    public var onbDaysLabel: String { locale == .zh ? "频率" : "Days / week" }
+    public var onbDaysLabel: String { locale == .zh ? "频率" : "Schedule" }
     public var onbDaysQuestion: String { locale == .zh ? "每周实际能练几天？" : "How many days can you actually train?" }
+    /// 防高估副注（打磨调研 2026-06-10：2-6 直选带无文字对冲高频自选偏差）。
+    public var onbDaysNote: String {
+        locale == .zh
+            ? "按能稳住的选，不选理想周——之后可在设置里改"
+            : "Pick the week you can hold, not the ideal one — you can change it later"
+    }
 
     // MARK: - 问题 3 · 器械
 
@@ -46,18 +53,19 @@ extension RedeStrings {
 
     public func onbEquipOption(_ code: String) -> (title: String, caption: String) {
         switch code {
+        // 副注对齐 11b 拍板稿（打磨审计 2026-06-10：旧稿沿用了 11a 小写碎片）
         case "commercial-gym":
             return locale == .zh
-                ? ("商业健身房", "杠铃 · 器械 · 龙门架")
-                : ("Commercial gym", "barbell · machines · cables")
+                ? ("商业健身房", "杠铃、器械、深蹲架齐全")
+                : ("Commercial gym", "Barbells, machines, a full rack")
         case "home-dumbbell":
             return locale == .zh
-                ? ("家庭哑铃", "哑铃 · 一张凳")
-                : ("Home dumbbells", "DBs · a bench")
+                ? ("家庭哑铃", "可调哑铃加一张凳")
+                : ("Home dumbbells", "Adjustable dumbbells and a bench")
         default: // minimal
             return locale == .zh
-                ? ("最小器械", "弹力带 · 少量哑铃")
-                : ("Minimal kit", "bands · a few DBs")
+                ? ("最小器械", "少量负重，有块空地就行")
+                : ("Minimal kit", "A few weights and floor space")
         }
     }
 
@@ -77,13 +85,14 @@ extension RedeStrings {
             return locale == .zh
                 ? ("刚接触力量", "第一份系统计划")
                 : ("New to lifting", "First structured program")
+        // 副注打磨 2026-06-10：中档同时接住回归者与自学者；高档消除中文同义反复
         case "intermediate":
             return locale == .zh
-                ? ("练过一阵", "懂动作，正回归")
-                : ("Trained before", "Know the lifts, coming back")
+                ? ("练过一阵", "懂基本动作，想练得更系统")
+                : ("Trained before", "Know the lifts, want more structure")
         default: // advanced
             return locale == .zh
-                ? ("训练多年", "多年持续训练")
+                ? ("训练多年", "清楚自己的工作重量")
                 : ("Experienced", "Years of consistent training")
         }
     }
@@ -116,6 +125,18 @@ extension RedeStrings {
 
     public var onbFirstSession: String { locale == .zh ? "首次训练" : "First session" }
 
+    /// 器械回声行（11b 结果卡 equipLine，打磨调研补齐——四答里唯一没被回读的回答）。
+    public func onbEquipEcho(_ code: String) -> String {
+        switch code {
+        case "commercial-gym":
+            return locale == .zh ? "按完整器械目录排出" : "Built from the full gym catalog"
+        case "home-dumbbell":
+            return locale == .zh ? "每个动作都能用哑铃和凳完成" : "Every lift works with dumbbells and a bench"
+        default:
+            return locale == .zh ? "围绕最小器械排——轻负重加自重" : "Built around a minimal kit — light weights and bodyweight"
+        }
+    }
+
     /// FR-ON2 先验说明（按背景三档；不承诺不吹捧）。
     public func onbPriorNote(_ levelCode: String) -> String {
         switch levelCode {
@@ -124,8 +145,9 @@ extension RedeStrings {
                 ? "学动作阶段从轻起步——之后计划跟着你的记录走"
                 : "Light start while you learn the lifts — from here the plan follows what you log"
         case "intermediate":
+            // 打磨 2026-06-10：中文梯度恢复单调（从轻→适中→目录基线；原「保守」比「从轻」更怯）
             return locale == .zh
-                ? "按你的背景保守起步——之后计划跟着你的记录走"
+                ? "按你的背景适中起步——之后计划跟着你的记录走"
                 : "Moderate start for your background — from here the plan follows what you log"
         default:
             return locale == .zh
@@ -138,5 +160,19 @@ extension RedeStrings {
     public var onbWriteFailed: String {
         locale == .zh ? "保存失败——你的回答还在，可重试。" : "Save failed — your answers are still here. Try again."
     }
-    public var onbRetry: String { locale == .zh ? "重试保存" : "Retry save" }
+    public var onbRetry: String { locale == .zh ? "重试" : "Try again" }
+
+    // MARK: - 设置内单题编辑（方向 A「行内单题」拍板 2026-06-10）
+
+    public var onbEditSave: String { locale == .zh ? "保存修改" : "Save changes" }
+    public var onbEditCancel: String { locale == .zh ? "取消" : "Cancel" }
+    /// 铭牌可点提示（替代退役的「修改回答」按钮）。
+    public var settingsPlateHint: String {
+        locale == .zh ? "点任意一行修改" : "Tap any row to change it"
+    }
+
+    // MARK: - VoiceOver（刻线进度格状态）
+
+    public var onbA11yAnswered: String { locale == .zh ? "已回答" : "answered" }
+    public var onbA11yCurrent: String { locale == .zh ? "当前" : "current" }
 }

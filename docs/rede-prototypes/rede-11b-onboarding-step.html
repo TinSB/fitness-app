@@ -117,7 +117,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
        <svg class="reg" style="left:11px;bottom:11px" viewBox="0 0 11 11"><path d="M0 2 L0 11 L9 11" stroke="#5F594C" fill="none"/></svg>
        <div class="obbody in" id="obBody" aria-live="polite"></div>
      </div>
-     <div class="caption" id="obMeta" style="color:var(--t4);padding:14px 22px 0">Four answers — about a minute</div>
+     <!-- 打磨 2026-06-10：信任铺垫补「数据去哪」 -->
+     <div class="caption" id="obMeta" style="color:var(--t4);padding:14px 22px 0">Four answers — about a minute · stays on this device</div>
    </section>
 
    <!-- ===================== TODAY（落地：四 tab 结构，数据来自引导答案） ===================== -->
@@ -193,7 +194,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     {v:'muscle',t:'Build muscle',c:'Volume leads, loads climb steadily'},
     {v:'strength',t:'Get stronger',c:'Heavy main lifts, lower reps'},
     {v:'balanced',t:'Both, balanced',c:'Strength and size in one plan'}]},
-  days:{ov:'Schedule',h:'How many days can you train?',strip:[2,3,4,5,6]},
+  /* 打磨 2026-06-10：补防高估副注（note 渲染与 bg 题 note 同位） */
+  days:{ov:'Schedule',h:'How many days can you train?',cap:'Pick the week you can hold, not the ideal one — you can change it later',strip:[2,3,4,5,6]},
   equip:{ov:'Equipment',h:'Where will you train?',opts:[
     {v:'gym',t:'Commercial gym',c:'Barbells, machines, a full rack'},
     {v:'db',t:'Home dumbbells',c:'Adjustable dumbbells and a bench'},

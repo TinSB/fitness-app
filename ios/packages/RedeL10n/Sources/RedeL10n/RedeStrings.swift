@@ -133,7 +133,6 @@ public struct RedeStrings: Sendable {
     public var settingsDone: String { t("完成", "Done") }
     public var settingsUnit: String { t("单位", "Units") }
     public var settingsBackground: String { t("训练背景", "Training background") }
-    public var settingsEditAnswers: String { t("修改回答", "Edit answers") }
     /// 每周天数行值："每周 4 天" / "4 days a week"。
     public func settingsDaysValue(_ days: Int) -> String {
         t("每周 \(days) 天", "\(days) days a week")
@@ -146,10 +145,6 @@ public struct RedeStrings: Sendable {
     }
     /// 设置面板铭牌头型号行（工艺重做 2026-06-10，Overline 渲染为全大写）。
     public var settingsPanelOverline: String { t("Rede · 调校", "Rede · Tuning") }
-    /// 「修改回答」后果说明（点击前可见，重操作不做盲按钮）。
-    public var settingsEditAnswersNote: String {
-        t("重新回答 4 个引导问题", "Re-answer the 4 setup questions")
-    }
     public var settingsPrivacy: String { t("隐私", "Privacy") }
     /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实——
     /// 「默认保存在本机」；禁绝对化（永不/100%/anonymous）。Apple 健康未上线不提。
