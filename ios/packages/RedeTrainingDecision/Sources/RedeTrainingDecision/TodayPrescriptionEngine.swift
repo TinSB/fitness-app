@@ -34,7 +34,9 @@ public enum TodayPrescriptionEngine {
     struct Slot {
         let pattern: String
         var kind: String?
-        var equipment: String?
+        /// 槽位器械偏好（类集合）：单器械槽 = 单元素集；「固定器械」槽 =
+        /// EquipmentRegistry.machineClasses（machine 拆分后不再有 "machine" 字面量）。
+        var equipment: Set<String>?
         let sets: Int
         let repMin: Int
         let repMax: Int
@@ -63,37 +65,37 @@ public enum TodayPrescriptionEngine {
         case "pull-a":
             return [
                 Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
-                Slot(pattern: "horizontal-pull", equipment: "cable", sets: 3, repMin: 8, repMax: 12, rest: 120),
-                Slot(pattern: "horizontal-pull", equipment: "barbell", sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "horizontal-pull", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "curl", sets: 3, repMin: 8, repMax: 12, rest: 75),
                 Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 75),
             ]
         case "legs-a":
             return [
-                Slot(pattern: "squat-pattern", kind: "compound", equipment: "barbell", sets: 4, repMin: 5, repMax: 8, rest: 210),
-                Slot(pattern: "hinge", equipment: "barbell", sets: 3, repMin: 6, repMax: 10, rest: 180),
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: ["barbell"], sets: 4, repMin: 5, repMax: 8, rest: 210),
+                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180),
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 60),
             ]
         case "lower":
             return [
-                Slot(pattern: "squat-pattern", kind: "compound", equipment: "machine", sets: 3, repMin: 6, repMax: 10, rest: 150),
-                Slot(pattern: "hinge", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "hinge", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
             ]
         default: // "upper"
             return [
-                Slot(pattern: "horizontal-press", equipment: "dumbbell", sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "horizontal-press", equipment: ["dumbbell"], sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
                 Slot(pattern: "vertical-press", sets: 3, repMin: 6, repMax: 10, rest: 120),
-                Slot(pattern: "horizontal-pull", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12, rest: 90),
+                Slot(pattern: "horizontal-pull", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 90),
                 Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
-                Slot(pattern: "curl", equipment: "dumbbell", sets: 2, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "curl", equipment: ["dumbbell"], sets: 2, repMin: 10, repMax: 15, rest: 60),
             ]
         }
     }
@@ -117,8 +119,12 @@ public enum TodayPrescriptionEngine {
         var exercises: [ExercisePrescriptionPlan] = []
 
         for slot in slots(dayCode: dayCode) {
-            let slotEquipment = slot.equipment.flatMap { pref in
-                (allowed == nil || allowed!.contains(pref)) ? pref : nil
+            // 槽位器械偏好按类集合匹配；与白名单求交，交集空 = 偏好软化
+            //（单元素集行为与旧单值严格等价）
+            let slotEquipment: Set<String>? = slot.equipment.flatMap { pref in
+                guard let allowed else { return pref }
+                let usable = pref.intersection(allowed)
+                return usable.isEmpty ? nil : usable
             }
             // kind 只软化 "accessory"（辅助容量槽默认住在固定器械上）；
             // "compound" 永不软化——动作性质约束（如深蹲主槽必须复合）与器械
@@ -138,7 +144,7 @@ public enum TodayPrescriptionEngine {
                         && EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType)
                         && entry.movementPattern == slot.pattern
                         && (slotKind == nil || entry.kind == slotKind)
-                        && (slotEquipment == nil || entry.equipment == slotEquipment)
+                        && (slotEquipment == nil || slotEquipment!.contains(entry.equipment))
                         && (allowed == nil || allowed!.contains(entry.equipment))
                         && !usedIds.contains(entry.id)
                 })

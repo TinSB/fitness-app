@@ -30,7 +30,7 @@
 | `nameZh` / `nameEn` | ✓ | 本地化展示名是**动作事实**（规格原文），不再住 L10n 字典 |
 | `movementPattern` | ✓ | 必须 ∈ pattern 注册表 |
 | `primaryMuscle` / `secondaryMuscles` | ✓ / 可空 | 必须 ∈ 肌群注册表 |
-| `equipment` | ✓ | 必须 ∈ 器械注册表（9 类：barbell · dumbbell · cable · plate-loaded · selectorized · bodyweight · assisted · band · kettlebell；MVP 期 `machine` 为 plate-loaded/selectorized 合并档，P1 拆分） |
+| `equipment` | ✓ | 必须 ∈ 器械注册表（9 类：barbell · dumbbell · cable · plate-loaded · selectorized · bodyweight · assisted · band · kettlebell）。**machine 合并档已拆分（2026-06-11，原 id 原地改值）**：plate-loaded=挂片式（步长 2.5）、selectorized=插销配重栈（类默认步长 5；既有 3 条仍 2.5 系真机校准欠账，见 DEV_LOG）；后四类待对应 loadType 闸放行 |
 | `kind` | ✓ | 训练学角色：compound（主项）/ accessory（辅助容量）/ isolation（孤立）——原 `machine` 档改名（schema PR 2026-06-11），器械语义剥离给 `isGuided` |
 | `substitutionGroups` | ✓ | 替代族数组（§6.2 落地 2026-06-11）：**首元素=主族**，引擎现仅消费主族（与单值时代行为等价）；副族留给替换候选扩展，填数据须 owner 审定 |
 | `startWeightKg` | ✓ | 目录起步值；口径=系统逻辑 §153（哑铃单只/杠铃总重/配重片读数）；新批次默认带「待真机校准」标签 |
@@ -72,7 +72,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ 后续 wave 往 ~100 推；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）；bodyweight/band/kettlebell 类各有前置闸
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）

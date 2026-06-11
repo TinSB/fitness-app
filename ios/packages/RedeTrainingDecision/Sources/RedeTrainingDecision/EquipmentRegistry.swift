@@ -10,15 +10,21 @@
 // + 目录数据 + 覆盖矩阵 golden，三者同 PR。
 
 public enum EquipmentRegistry {
-    /// 器械类封闭集合（MVP 四类；`machine` 为 plate-loaded/selectorized 合并档）。
-    public static let allClasses: Set<String> = ["barbell", "dumbbell", "cable", "machine"]
+    /// 器械类封闭集合（machine 拆分落地 2026-06-11：plate-loaded 挂片式 /
+    /// selectorized 插销配重栈——原 id 原地改值，§6.1 铁律）。
+    public static let allClasses: Set<String> = [
+        "barbell", "dumbbell", "cable", "plate-loaded", "selectorized",
+    ]
 
-    /// 「固定器械」类成员（FR-EQ1 accessory 槽软化键）：场景白名单与本集合
-    /// 不相交 = 该场景无固定器械 → accessory 偏好软化。P1 machine 拆分后
-    /// 此集合变 {plate-loaded, selectorized}，软化逻辑零改动。
-    public static let machineClasses: Set<String> = ["machine"]
+    /// 「固定器械」类成员（FR-EQ1 accessory 槽软化键 + 器械槽位匹配键）：
+    /// 场景白名单与本集合不相交 = 该场景无固定器械 → accessory 偏好软化。
+    /// 内容前置条件（审查 M2 留痕）：目录暂无 selectorized 复合深蹲条目——
+    /// 未来新增 selectorized-only 场景前必须先补该类条目，否则 lower 日主槽
+    /// 将如实 slotUnfilled（覆盖矩阵 golden 会红，按 §3 流程登记或补内容）。
+    public static let machineClasses: Set<String> = ["plate-loaded", "selectorized"]
 
-    /// 场景 → 可用器械类；不在表内（commercial-gym / 缺失 / 未知）= 不过滤。
+    /// 场景 → 可用器械类。commercial-gym **故意不入表** = nil（全器械可用）；
+    /// 缺失/未知场景同样退化 nil（DataHealth 投影层已把未知值滤成 nil）。
     /// 现状边界（如实）：目录暂无自重/弹力带条目，home-dumbbell 与 minimal
     /// 都收敛为 dumbbell-only——minimal 的「自重」覆盖等 P1 bodyweight wave
     /// 落地时与本矩阵同 PR 放开。

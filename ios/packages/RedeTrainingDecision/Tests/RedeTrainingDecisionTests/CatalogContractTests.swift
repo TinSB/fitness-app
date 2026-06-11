@@ -31,7 +31,7 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-2")
+        XCTAssertEqual(catalog.catalogVersion, "wave-2.1")
         XCTAssertEqual(catalog.entries.count, 49)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
         XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 49, "id 重复")
@@ -68,6 +68,13 @@ final class CatalogContractTests: XCTestCase {
             XCTAssertTrue((1.0...2.0).contains(entry.loadFactor), "吨位系数越界: \(entry.id) → \(entry.loadFactor)")
             if let key = entry.progressionKey {
                 XCTAssertNotNil(catalog.entry(id: key), "progressionKey 指向不存在的 id: \(entry.id) → \(key)")
+            }
+            // machine 拆分（2026-06-11）：合并档 "machine" 退役，guided 事实
+            // 必须与器械类成员资格自洽（guided ⇒ 固定器械类）
+            XCTAssertNotEqual(entry.equipment, "machine", "合并档已拆分: \(entry.id)")
+            if entry.isGuided {
+                XCTAssertTrue(EquipmentRegistry.machineClasses.contains(entry.equipment),
+                              "guided 条目必须属固定器械类: \(entry.id) → \(entry.equipment)")
             }
             if let successor = entry.replacedBy {
                 XCTAssertNotNil(catalog.entry(id: successor), "replacedBy 指向不存在的 id: \(entry.id) → \(successor)")

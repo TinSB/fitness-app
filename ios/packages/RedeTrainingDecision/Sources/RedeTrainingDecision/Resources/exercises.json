@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-2",
+  "catalogVersion": "wave-2.1",
   "exercises": [
     {
       "id": "bench-press",
@@ -74,7 +74,7 @@
       "secondaryMuscles": [
         "triceps"
       ],
-      "equipment": "machine",
+      "equipment": "selectorized",
       "kind": "accessory",
       "substitutionGroups": [
         "chest-press"
@@ -382,7 +382,7 @@
       "secondaryMuscles": [
         "glutes"
       ],
-      "equipment": "machine",
+      "equipment": "plate-loaded",
       "kind": "compound",
       "substitutionGroups": [
         "squat"
@@ -403,7 +403,7 @@
       "secondaryMuscles": [
         "glutes"
       ],
-      "equipment": "machine",
+      "equipment": "plate-loaded",
       "kind": "accessory",
       "substitutionGroups": [
         "squat"
@@ -465,7 +465,7 @@
       "movementPattern": "knee-flexion",
       "primaryMuscle": "hamstrings",
       "secondaryMuscles": [],
-      "equipment": "machine",
+      "equipment": "selectorized",
       "kind": "isolation",
       "substitutionGroups": [
         "hamstring-curl"
@@ -484,7 +484,7 @@
       "movementPattern": "calf-raise",
       "primaryMuscle": "calves",
       "secondaryMuscles": [],
-      "equipment": "machine",
+      "equipment": "selectorized",
       "kind": "isolation",
       "substitutionGroups": [
         "calves"
@@ -936,7 +936,7 @@
       "movementPattern": "fly",
       "primaryMuscle": "chest",
       "secondaryMuscles": [],
-      "equipment": "machine",
+      "equipment": "selectorized",
       "kind": "isolation",
       "substitutionGroups": [
         "chest-fly"
@@ -957,7 +957,7 @@
       "secondaryMuscles": [
         "triceps"
       ],
-      "equipment": "machine",
+      "equipment": "selectorized",
       "kind": "accessory",
       "substitutionGroups": [
         "shoulder-press"
@@ -979,7 +979,7 @@
         "biceps",
         "rear-delt"
       ],
-      "equipment": "machine",
+      "equipment": "selectorized",
       "kind": "accessory",
       "substitutionGroups": [
         "row"
@@ -998,7 +998,7 @@
       "movementPattern": "calf-raise",
       "primaryMuscle": "calves",
       "secondaryMuscles": [],
-      "equipment": "machine",
+      "equipment": "plate-loaded",
       "kind": "isolation",
       "substitutionGroups": [
         "calves"
@@ -1007,7 +1007,7 @@
       "nameZh": "坐姿提踵",
       "nameEn": "Seated calf raise",
       "loadType": "external",
-      "progressionStepKg": 5.0,
+      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 480
