@@ -72,7 +72,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地 2026-06-11**）→ ~~wave-1 清缺口批~~（**已入库 2026-06-11，3 条，流水线首跑**）→ 批量填到 ~100（9 类器械核心动作）；substitutionGroups 一等公民；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）；§6.2 Should 第二批逐项拍板
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ 后续 wave 往 ~100 推；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）；bodyweight/band/kettlebell 类各有前置闸
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）

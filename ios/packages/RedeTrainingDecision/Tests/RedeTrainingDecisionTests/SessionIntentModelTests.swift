@@ -17,14 +17,14 @@ final class SessionIntentModelTests: XCTestCase {
 
     func testReplacementCandidatesComeFromSameSubstitutionGroup() {
         let candidates = ExerciseReplacementEngine.candidates(for: "bench-press")
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press"]) // wave-1 入族
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press", "incline-barbell-press"]) // wave-1/2 入族（rank 尾部追加）
     }
 
     func testReplacementExcludesSelfAndKeepsCatalogOrder() {
         let candidates = ExerciseReplacementEngine.candidates(for: "hack-squat")
         XCTAssertFalse(candidates.contains("hack-squat"))
-        // FR-EQ1 目录扩充（2026-06-11）：squat 族尾部新增哑铃选项，目录序保持
-        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge"])
+        // FR-EQ1/wave-2 目录扩充：squat 族尾部追加，rank 序保持
+        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge", "front-squat", "bulgarian-split-squat"])
     }
 
     func testUnknownExerciseYieldsNoCandidates() {
@@ -32,11 +32,22 @@ final class SessionIntentModelTests: XCTestCase {
     }
 
     func testSubstitutionGroupSoleMemberAndPairedCounts() {   // 审查 L-2 改名：同时锁单成员族与配对族
-        // wave-1 后 hamstring-curl 族获得 db-leg-curl；现存单成员族 =
-        // shoulder-press / side-delt（lateral-raise）——锁后者
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), [])
-        // leg-curl 族不再单成员（wave-1 配对入族）
+        // wave-2 后目录无单成员族——单成员语义改用构造目录锁定（族里只有自己 → 零候选）
+        let solo = ExerciseCatalog(catalogVersion: "test", entries: [
+            ExerciseCatalogEntry(
+                id: "solo-move", movementPattern: "curl", primaryMuscle: "biceps",
+                equipment: "dumbbell", kind: "isolation", substitutionGroups: ["solo-group"],
+                startWeightKg: 10, rank: 0
+            ),
+        ])
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "solo-move", catalog: solo), [])
+        // 配对族：wave-1/2 入族后的真实目录
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl"])
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), ["cable-lateral-raise"]) // wave-2 入族
+        // 审查 M-1/Mi-2（wave-2）：直臂下压系孤立动作，不得混入复合垂直拉族——
+        // 独立 lat-isolation 族（单成员）；vertical-pull 族列表显式锁定
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover"])
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "straight-arm-pulldown"), [])
     }
 
     // 排除当日已排动作（M3-3 接线合同：push-a 已含 machine-chest-press）
@@ -45,6 +56,6 @@ final class SessionIntentModelTests: XCTestCase {
             for: "bench-press",
             excluding: ["machine-chest-press"]
         )
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press"]) // wave-1 入族
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press", "incline-barbell-press"]) // wave-1/2 入族
     }
 }
