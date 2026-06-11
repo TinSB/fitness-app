@@ -62,8 +62,11 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     public let previousWeightKg: Double?
     /// 上次顶组（最重一组）的次数——Rail「上次」节点素材；首练为 nil。
     public let previousTopReps: Int?
-    /// 下次投影（target + 2.5 取整）——Rail「下次」节点素材。
+    /// 下次投影（target + 一档取整）——Rail「下次」节点素材。
     public let nextProjectedWeightKg: Double
+    /// 渐进一档（kg）= 该动作目录 progressionStepKg；快改档位/刻度轨/组内
+    /// 安全瀑布同源消费（§6.1：2.5 全局常量退役）。
+    public let progressionStepKg: Double
     public let change: ChangeDirection
     public let reason: PrescriptionReason
 
@@ -71,6 +74,7 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         exerciseId: String, sets: Int, restSeconds: Int, repLowerBound: Int, repUpperBound: Int,
         targetReps: Int, targetWeightKg: Double, targetRir: Double,
         previousWeightKg: Double?, previousTopReps: Int?, nextProjectedWeightKg: Double,
+        progressionStepKg: Double,   // 无默认值：忘传=编译错（同 rank 的 M2 教训）；decode 缺省仅为旧 draft 兼容
         change: ChangeDirection, reason: PrescriptionReason
     ) {
         self.exerciseId = exerciseId
@@ -84,8 +88,35 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         self.previousWeightKg = previousWeightKg
         self.previousTopReps = previousTopReps
         self.nextProjectedWeightKg = nextProjectedWeightKg
+        self.progressionStepKg = progressionStepKg
         self.change = change
         self.reason = reason
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case exerciseId, sets, restSeconds, repLowerBound, repUpperBound
+        case targetReps, targetWeightKg, targetRir, previousWeightKg, previousTopReps
+        case nextProjectedWeightKg, progressionStepKg, change, reason
+    }
+
+    /// 自定义解码仅为 progressionStepKg 缺省 2.5：当日旧 draft（升级前落盘）
+    /// 仍可恢复，不因新字段整场作废。
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        exerciseId = try c.decode(String.self, forKey: .exerciseId)
+        sets = try c.decode(Int.self, forKey: .sets)
+        restSeconds = try c.decode(Int.self, forKey: .restSeconds)
+        repLowerBound = try c.decode(Int.self, forKey: .repLowerBound)
+        repUpperBound = try c.decode(Int.self, forKey: .repUpperBound)
+        targetReps = try c.decode(Int.self, forKey: .targetReps)
+        targetWeightKg = try c.decode(Double.self, forKey: .targetWeightKg)
+        targetRir = try c.decode(Double.self, forKey: .targetRir)
+        previousWeightKg = try c.decodeIfPresent(Double.self, forKey: .previousWeightKg)
+        previousTopReps = try c.decodeIfPresent(Int.self, forKey: .previousTopReps)
+        nextProjectedWeightKg = try c.decode(Double.self, forKey: .nextProjectedWeightKg)
+        progressionStepKg = try c.decodeIfPresent(Double.self, forKey: .progressionStepKg) ?? 2.5
+        change = try c.decode(ChangeDirection.self, forKey: .change)
+        reason = try c.decode(PrescriptionReason.self, forKey: .reason)
     }
 }
 

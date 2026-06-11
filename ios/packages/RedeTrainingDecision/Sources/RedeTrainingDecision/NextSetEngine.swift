@@ -64,7 +64,6 @@ public struct NextSetRecommendation: Equatable, Sendable {
 }
 
 public enum NextSetEngine {
-    private static let easeStepKg = 2.5
     private static let nearFailureRir = 0.5
 
     /// 全部计划组完成 → nil（动作结束）。
@@ -88,8 +87,10 @@ public enum NextSetEngine {
         }
 
         // 执行事实是基线：用户实际重量延续到下一组。
+        // 回退一档 = 该动作步长（随计划自目录透传，§6.1）：侧平举不再被
+        // 全局 2.5 一刀切成 −33%。
         let base = last.weightKg
-        let eased = max(easeStepKg, base - easeStepKg)
+        let eased = max(plan.stepKg, base - plan.stepKg)
 
         let weight: Double
         let reason: NextSetReason

@@ -313,11 +313,17 @@ struct TrainTabView: View {
         .sensoryFeedback(.error, trigger: clampPulse)
     }
 
+    /// 当前动作的渐进一档（目录步长随计划透传；无会话时回退引擎默认）。
+    private var currentStepKg: Double {
+        flow?.currentExercise?.stepKg ?? AdjustOptionsBuilder.stepKg
+    }
+
     private func adjustOptions(_ flow: TrainFlowState) -> [AdjustOption] {
         AdjustOptionsBuilder.options(
             followKg: flow.currentTargetWeightKg ?? 0,
             lastActualKg: flow.completedInCurrentExercise.last?.weightKg,
-            plannedKg: plannedWeight(flow)
+            plannedKg: plannedWeight(flow),
+            stepKg: flow.currentExercise?.stepKg ?? AdjustOptionsBuilder.stepKg
         )
     }
 
@@ -326,9 +332,9 @@ struct TrainTabView: View {
         HStack(spacing: 0) {
             Overline(text: s.adjustWeight)
             Spacer()
-            railOp("−") { stepAdjustWeight(-AdjustOptionsBuilder.stepKg) }
+            railOp("−") { stepAdjustWeight(-currentStepKg) }
             railDivider
-            railOp("＋") { stepAdjustWeight(AdjustOptionsBuilder.stepKg) }
+            railOp("＋") { stepAdjustWeight(currentStepKg) }
             railDivider
             Button(action: {
                 showExactField.toggle()
@@ -371,7 +377,7 @@ struct TrainTabView: View {
         adjustWeightText = s.formatKg(adjustWeight)
     }
 
-    /// 刻度轨：2.5kg 细刻 / 整 10kg 主刻；站点按真实比例落位（最小间距保护）；
+    /// 刻度轨：一档细刻（动作步长）/ 整 10kg 主刻；站点按真实比例落位（最小间距保护）；
     /// ember 指针滑到选中值——选中站点对齐站点，离格值（精确输入）按真实比例。
     private func railZone(_ options: [AdjustOption]) -> some View {
         GeometryReader { geo in
@@ -383,7 +389,8 @@ struct TrainTabView: View {
                     base.move(to: CGPoint(x: 0, y: tickTop))
                     base.addLine(to: CGPoint(x: geo.size.width, y: tickTop))
                     ctx.stroke(base, with: .color(Color.redeHair2), lineWidth: 1)
-                    var v = (layout.lo / 2.5).rounded(.up) * 2.5
+                    let fine = currentStepKg
+                    var v = (layout.lo / fine).rounded(.up) * fine
                     while v <= layout.hi {
                         let x = layout.trueX(v)
                         let major = v.truncatingRemainder(dividingBy: 10) == 0
@@ -391,7 +398,7 @@ struct TrainTabView: View {
                         tick.move(to: CGPoint(x: x, y: tickTop))
                         tick.addLine(to: CGPoint(x: x, y: tickTop + (major ? 10 : 6)))
                         ctx.stroke(tick, with: .color(Color.redeHair), lineWidth: 1)
-                        v += 2.5
+                        v += fine
                     }
                 }
                 .accessibilityHidden(true)

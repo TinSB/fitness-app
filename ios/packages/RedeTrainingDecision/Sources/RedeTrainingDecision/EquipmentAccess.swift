@@ -4,17 +4,13 @@
 // 白名单过滤。nil = 不过滤（commercial-gym / 缺失 / 未知场景），保证既有
 // golden 行为与无档案用户不受影响。
 //
-// 现状边界（如实）：目录暂无自重/弹力带条目，home-dumbbell 与 minimal 都
-// 收敛为 dumbbell-only——minimal 的「自重」覆盖归目录扩充（§6.3 三层内容）。
+// Blocker schema PR（2026-06-11）：场景矩阵收口进 EquipmentRegistry——
+// 本类型只是查询入口，不再自带硬编码表。
 
 public enum EquipmentAccess {
     /// 场景 → 可用器械白名单；nil = 全部可用（不过滤）。
     public static func allowed(for scenario: String?) -> Set<String>? {
-        switch scenario {
-        case "home-dumbbell", "minimal":
-            return ["dumbbell"]
-        default:
-            return nil
-        }
+        guard let scenario else { return nil }
+        return EquipmentRegistry.scenarioAccess[scenario]
     }
 }

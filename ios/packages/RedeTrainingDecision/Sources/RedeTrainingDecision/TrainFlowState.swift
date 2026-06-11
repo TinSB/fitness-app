@@ -103,6 +103,7 @@ public struct TrainFlowState: Equatable, Sendable {
             restSeconds: exercise.restSeconds,
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
+            stepKg: exercise.stepKg,
             sets: Array(exercise.sets.dropFirst(skippedInCurrentExercise))
         )
     }
@@ -217,6 +218,8 @@ public struct TrainFlowState: Equatable, Sendable {
             restSeconds: exercise.restSeconds,
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
+            // 步长跟动作走：换入动作用它自己的目录步长（查不到=保守沿用原值）
+            stepKg: catalog.entry(id: newExerciseId)?.progressionStepKg ?? exercise.stepKg,
             sets: exercise.sets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)

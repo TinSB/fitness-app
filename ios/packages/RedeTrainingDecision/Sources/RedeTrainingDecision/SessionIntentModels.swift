@@ -35,6 +35,8 @@ public enum ExerciseReplacementEngine {
         return catalog.entries
             .filter {
                 !$0.deprecated
+                    // §6.1：非 external 负重语义未获引擎支持，禁入替换候选
+                    && EquipmentRegistry.prescribableLoadTypes.contains($0.loadType)
                     && $0.substitutionGroup == entry.substitutionGroup
                     && $0.id != exerciseId
                     && !alreadyScheduledIds.contains($0.id)

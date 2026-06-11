@@ -24,23 +24,46 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     public let movementPattern: String
     public let primaryMuscle: String
     public let secondaryMuscles: [String]
-    /// 器械注册表内取值（MVP：barbell / dumbbell / cable / machine）。
+    /// 器械注册表内取值（EquipmentRegistry.allClasses；MVP `machine` 为
+    /// plate-loaded/selectorized 合并档，P1 拆分=原 id 原地改值，禁止换 id）。
     public let equipment: String
-    /// compound / machine / isolation（训练学角色，沿 legacy 词汇）
+    /// 训练学角色：compound（主项复合）/ accessory（辅助容量）/ isolation（孤立）。
+    /// Blocker schema PR（2026-06-11）：原第三档 "machine" 改名 accessory——
+    /// 它承载的是角色语义（leg-press=辅助 vs hack-squat=主项），不是器械；
+    /// 器械轨道稳定性独立成 isGuided。
     public let kind: String
     public let substitutionGroup: String
     public let startWeightKg: Double
+    /// 负重语义（§6.1 Blocker）：external / bodyweight / bodyweight-plus /
+    /// assisted / band。非 external 条目在对应引擎支持落地前禁止进处方/替换
+    /// （匹配与候选层硬过滤）——assisted 数字=辅助量、越大越轻，直接走现有
+    /// 渐进/疼痛瀑布会方向反转（安全红线）。
+    public let loadType: String
+    /// 渐进步长（kg，per-entry）：渐进三分支/疼痛回退/快改档位/取整量子的
+    /// 唯一来源——2.5 全局常量退役（侧平举 +2.5=+33% vs 深蹲 +3% 的修正挂点）。
+    public let progressionStepKg: Double
+    /// 器械轨道稳定（固定轨迹）；目录事实，引擎暂不消费（P1 校准/展示挂点）。
+    public let isGuided: Bool
     /// 匹配优先级（升序）；匹配 = filter → (rank, id) 排序，与文件顺序无关。
     public let rank: Int
     /// 弃用不删除（id 永生合同）。
     public let deprecated: Bool
+    /// 真弃用时的继任指针（渐进历史延续挂点，P1 占位）。
+    public let replacedBy: String?
+    /// 禁忌提示 / 证据置信标签（规格要求字段；P1 wave 填充落数据）。
+    public let contraindicationHint: String?
+    public let evidenceTag: String?
 
     public init(
         id: String, nameZh: String = "", nameEn: String = "",
         movementPattern: String, primaryMuscle: String,
         secondaryMuscles: [String] = [], equipment: String, kind: String,
         substitutionGroup: String, startWeightKg: Double,
-        rank: Int, deprecated: Bool = false   // rank 无默认值：忘传=编译错（审查 M2）
+        loadType: String = "external", progressionStepKg: Double = 2.5,
+        isGuided: Bool = false,
+        rank: Int, deprecated: Bool = false,   // rank 无默认值：忘传=编译错（审查 M2）
+        replacedBy: String? = nil,
+        contraindicationHint: String? = nil, evidenceTag: String? = nil
     ) {
         self.id = id
         self.nameZh = nameZh
@@ -52,13 +75,21 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         self.kind = kind
         self.substitutionGroup = substitutionGroup
         self.startWeightKg = startWeightKg
+        self.loadType = loadType
+        self.progressionStepKg = progressionStepKg
+        self.isGuided = isGuided
         self.rank = rank
         self.deprecated = deprecated
+        self.replacedBy = replacedBy
+        self.contraindicationHint = contraindicationHint
+        self.evidenceTag = evidenceTag
     }
 
     enum CodingKeys: String, CodingKey {
         case id, nameZh, nameEn, movementPattern, primaryMuscle, secondaryMuscles
         case equipment, kind, substitutionGroup, startWeightKg, rank, deprecated
+        case loadType, progressionStepKg, isGuided, replacedBy
+        case contraindicationHint, evidenceTag
     }
 
     public init(from decoder: Decoder) throws {
@@ -73,8 +104,16 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         kind = try c.decode(String.self, forKey: .kind)
         substitutionGroup = try c.decode(String.self, forKey: .substitutionGroup)
         startWeightKg = try c.decode(Double.self, forKey: .startWeightKg)
+        // loadType / progressionStepKg 强制显式（内容事实不许靠默认值溜进目录，
+        // 同 rank 无默认值的 M2 教训）；isGuided/replacedBy/禁忌/证据可缺省。
+        loadType = try c.decode(String.self, forKey: .loadType)
+        progressionStepKg = try c.decode(Double.self, forKey: .progressionStepKg)
+        isGuided = try c.decodeIfPresent(Bool.self, forKey: .isGuided) ?? false
         rank = try c.decode(Int.self, forKey: .rank)
         deprecated = try c.decodeIfPresent(Bool.self, forKey: .deprecated) ?? false
+        replacedBy = try c.decodeIfPresent(String.self, forKey: .replacedBy)
+        contraindicationHint = try c.decodeIfPresent(String.self, forKey: .contraindicationHint)
+        evidenceTag = try c.decodeIfPresent(String.self, forKey: .evidenceTag)
     }
 }
 

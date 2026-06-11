@@ -109,6 +109,38 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.replacements.first?.actualExerciseId, "db-bench-press")
     }
 
+    // §6.1 审查 M1：换动作后步长必须切到新动作的目录步长，
+    // 且组内疼痛回退立即按新步长走（P0 全 2.5 时 golden 看不住这条路径）
+    func testReplaceExerciseSwitchesStepToNewEntry() throws {
+        let amendedEntries = ExerciseCatalog.minimal.entries.map { entry -> ExerciseCatalogEntry in
+            guard entry.id == "db-bench-press" else { return entry }
+            return ExerciseCatalogEntry(
+                id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
+                movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
+                secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
+                kind: entry.kind, substitutionGroup: entry.substitutionGroup,
+                startWeightKg: entry.startWeightKg, loadType: entry.loadType,
+                progressionStepKg: 1.25, isGuided: entry.isGuided,
+                rank: entry.rank, deprecated: entry.deprecated
+            )
+        }
+        let amended = ExerciseCatalog(catalogVersion: "test", entries: amendedEntries)
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict, catalog: amended))
+        var state = TrainFlowState(prescription: prescription, catalog: amended)
+        XCTAssertEqual(state.currentExercise?.stepKg, 2.5) // bench-press 原步长
+
+        state.replaceCurrentExercise(with: "db-bench-press")
+        XCTAssertEqual(state.currentExercise?.stepKg, 1.25, "步长必须跟换入动作走")
+        state.logSet(obs(30, 6, rir: 2, pain: true))
+        state.restFinished()
+        XCTAssertEqual(state.currentRecommendation?.targetWeightKg, 28.75, "疼痛回退一档 = 新动作步长 1.25")
+    }
+
     // 疼痛登记：当前组事实留痕 + 下一组建议自动保守（引擎安全瀑布）
     func testPainReportFlowsIntoNextRecommendation() throws {
         var state = try makeState()

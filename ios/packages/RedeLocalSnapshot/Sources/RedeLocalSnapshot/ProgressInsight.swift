@@ -22,6 +22,8 @@ public struct TrendAssessment: Equatable, Sendable {
 
 public enum TrendInsight {
     private static let windowSize = 4
+    /// 内容系统 §6.2 Should 待修：绝对带宽对小重量动作永远 flat，
+    /// 改相对值（per-entry 步长已就绪，随 wave 校准一起拍）。非漏改的全局常量。
     private static let flatBandKg = 2.5
 
     public static func assess(_ trend: ProgressSnapshot.ExerciseTrend) -> TrendAssessment {

@@ -24,8 +24,8 @@ public struct AdjustOption: Equatable, Sendable {
 }
 
 public enum AdjustOptionsBuilder {
-    /// 引擎处方量子（与 NextSetEngine 的安全瀑布一档同源；
-    /// §6.3 SetExecutionProfile.loadAdjustmentStep 落地时由调用方传个人化步长）。
+    /// UI 无会话态的防御 fallback（非处方链路）：有会话时调用方必须传
+    /// 当前动作计划步长（ExerciseSetPlan.stepKg，随目录透传，§6.1）。
     public static let stepKg = 2.5
 
     public static func options(

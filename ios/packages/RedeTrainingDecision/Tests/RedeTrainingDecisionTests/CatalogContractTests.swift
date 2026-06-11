@@ -17,9 +17,11 @@ final class CatalogContractTests: XCTestCase {
         "rear-delt", "vertical-press", "lateral-raise", "curl", "triceps-extension",
         "squat-pattern", "hinge", "knee-flexion", "calf-raise",
     ]
-    /// MVP 四类（machine = plate-loaded/selectorized 合并档，P1 拆分为规格 9 类）。
-    private let knownEquipment: Set<String> = ["barbell", "dumbbell", "cable", "machine"]
-    private let knownKinds: Set<String> = ["compound", "isolation", "machine"]
+    /// 器械类注册表已升运行时单一真源（EquipmentRegistry，§6.1）——测试直接引用，
+    /// 不再各抄一份字面量。
+    private let knownEquipment = EquipmentRegistry.allClasses
+    /// 训练学角色（Blocker schema PR：machine 改名 accessory，器械语义剥离给 isGuided）。
+    private let knownKinds: Set<String> = ["compound", "isolation", "accessory"]
     private let knownMuscles: Set<String> = [
         "chest", "back", "shoulder", "front-delt", "side-delt", "rear-delt", "upper-back",
         "biceps", "triceps", "forearm", "quads", "hamstrings", "glutes", "calves",
@@ -29,7 +31,7 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "mvp-1")
+        XCTAssertEqual(catalog.catalogVersion, "mvp-2")
         XCTAssertEqual(catalog.entries.count, 31)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
         XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 31, "id 重复")
@@ -51,7 +53,101 @@ final class CatalogContractTests: XCTestCase {
             }
             XCTAssertGreaterThan(entry.startWeightKg, 0, "起步重量非法: \(entry.id)")
             XCTAssertFalse(entry.substitutionGroup.isEmpty, "替代族缺失: \(entry.id)")
+            // §6.1 Blocker 字段合同
+            XCTAssertTrue(EquipmentRegistry.loadTypes.contains(entry.loadType), "未知负重语义: \(entry.id) → \(entry.loadType)")
+            XCTAssertGreaterThan(entry.progressionStepKg, 0, "渐进步长非法: \(entry.id)")
+            if let successor = entry.replacedBy {
+                XCTAssertNotNil(catalog.entry(id: successor), "replacedBy 指向不存在的 id: \(entry.id) → \(successor)")
+                XCTAssertTrue(entry.deprecated, "未弃用条目不得有继任指针: \(entry.id)")
+            }
         }
+    }
+
+    /// 场景矩阵合同：键必须是 DataHealth 已知场景（跨包字面量合同，builder 同步改）；
+    /// 值必须是注册表内器械类——「填了动作却被白名单滤掉」从此编译期外的第一道闸。
+    func testScenarioAccessMatrixIsWellFormed() {
+        let knownScenarios: Set<String> = ["commercial-gym", "home-dumbbell", "minimal"]
+        for (scenario, classes) in EquipmentRegistry.scenarioAccess {
+            XCTAssertTrue(knownScenarios.contains(scenario), "未知场景: \(scenario)")
+            XCTAssertFalse(classes.isEmpty, "场景白名单空集 = 用户无任何可练动作: \(scenario)")
+            XCTAssertTrue(classes.isSubset(of: EquipmentRegistry.allClasses), "白名单含未注册器械类: \(scenario)")
+        }
+        XCTAssertTrue(EquipmentRegistry.machineClasses.isSubset(of: EquipmentRegistry.allClasses))
+        XCTAssertTrue(EquipmentRegistry.prescribableLoadTypes.isSubset(of: EquipmentRegistry.loadTypes))
+        // EquipmentAccess 必须从注册表派生（不许再长出第二份硬编码表）
+        XCTAssertEqual(EquipmentAccess.allowed(for: "home-dumbbell"), EquipmentRegistry.scenarioAccess["home-dumbbell"])
+        XCTAssertEqual(EquipmentAccess.allowed(for: "minimal"), EquipmentRegistry.scenarioAccess["minimal"])
+        XCTAssertNil(EquipmentAccess.allowed(for: "commercial-gym"))
+        XCTAssertNil(EquipmentAccess.allowed(for: nil))
+    }
+
+    // MARK: - §6.1 行为合同：步长真被消费、loadType 真挡门
+
+    /// 把 lateral-raise 步长改 1.25：渐进 +一档必须是 +1.25 而不是全局 2.5。
+    func testPerEntryStepDrivesProgression() throws {
+        let entries = catalog.entries.map { entry -> ExerciseCatalogEntry in
+            guard entry.id == "lateral-raise" else { return entry }
+            return amendedCopy(entry, progressionStepKg: 1.25)
+        }
+        let amended = ExerciseCatalog(catalogVersion: "test", entries: entries)
+        // 3 场历史（隔天，DataHealth 要求 id + completed）→ 今天轮回 push-a
+        // （含 lateral-raise）；上次 7.5kg 全组打满 repMax(20)、RIR 充足 → +一档
+        let sessions = ["2026-06-04", "2026-06-06", "2026-06-08"].enumerated().map { index, date in
+            #"{"id": "s\#(index)", "date": "\#(date)", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}, {"weight": 7.5, "reps": 20, "rir": 2}]}]}"#
+        }
+        let appDataJSON = #"{"schemaVersion": 8, "history": [\#(sessions.joined(separator: ","))], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
+        let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
+        let lateral = plan?.exercises.first { $0.exerciseId == "lateral-raise" }
+        XCTAssertEqual(lateral?.targetWeightKg, 8.75, "步长 1.25 的加重必须是 7.5+1.25")
+        XCTAssertEqual(lateral?.progressionStepKg, 1.25, "步长必须随处方透传")
+        // 对照：步长 2.5 的原目录加到 10
+        let baseline = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: catalog)
+        XCTAssertEqual(baseline?.exercises.first { $0.exerciseId == "lateral-raise" }?.targetWeightKg, 10)
+    }
+
+    /// 组内安全瀑布的回退一档同样吃计划步长（疼痛上报 → −1.25 不是 −2.5）。
+    func testNextSetEaseUsesPlanStep() {
+        let plan = ExerciseSetPlan(
+            exerciseId: "lateral-raise", restSeconds: 60, repLowerBound: 12, repUpperBound: 20,
+            stepKg: 1.25,
+            sets: (1...3).map { PlannedSet(index: $0, targetWeightKg: 7.5, targetReps: 15, targetRir: 2) }
+        )
+        let done = [CompletedSetObservation(weightKg: 7.5, reps: 15, rir: 2, painReported: true)]
+        let rec = NextSetEngine.recommend(plan: plan, completed: done)
+        XCTAssertEqual(rec?.targetWeightKg, 6.25, "疼痛回退一档 = 计划步长 1.25")
+    }
+
+    /// 非 external 负重语义（自重/辅助/弹力带）在引擎支持落地前禁入处方与替换：
+    /// 注入一个 rank 必胜的 bodyweight 条目，它必须被挡在门外。
+    func testNonExternalLoadTypeBlockedFromPrescriptionAndCandidates() throws {
+        let pushUp = ExerciseCatalogEntry(
+            id: "push-up", nameZh: "俯卧撑", nameEn: "Push-up",
+            movementPattern: "horizontal-press", primaryMuscle: "chest",
+            equipment: "dumbbell",   // 故意给白名单内器械：必须死在 loadType 闸而非器械闸
+            kind: "compound", substitutionGroup: "chest-press", startWeightKg: 2.5,
+            loadType: "bodyweight", rank: -10
+        )
+        let amended = ExerciseCatalog(catalogVersion: "test", entries: [pushUp] + catalog.entries)
+        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
+        let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
+        XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("push-up") ?? true,
+                       "bodyweight 条目在 loadType 支持前不得进处方（rank -10 本应必胜）")
+        XCTAssertFalse(ExerciseReplacementEngine.candidates(for: "bench-press", catalog: amended).contains("push-up"),
+                       "bodyweight 条目不得进替换候选")
+    }
+
+    private func amendedCopy(_ entry: ExerciseCatalogEntry, progressionStepKg: Double) -> ExerciseCatalogEntry {
+        ExerciseCatalogEntry(
+            id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
+            movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
+            secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
+            kind: entry.kind, substitutionGroup: entry.substitutionGroup,
+            startWeightKg: entry.startWeightKg, loadType: entry.loadType,
+            progressionStepKg: progressionStepKg, isGuided: entry.isGuided,
+            rank: entry.rank, deprecated: entry.deprecated
+        )
     }
 
     func testEveryEntryHasBothNames() {

@@ -53,9 +53,12 @@ public enum ColdStartPrior {
         }
     }
 
-    /// 首练起始重量：×先验 → 2.5 取整 → 下限 2.5（处方重量口径）。
-    public static func scaledStartKg(_ startWeightKg: Double, trainingLevel: String?) -> Double {
+    /// 首练起始重量：×先验 → 按该动作步长取整 → 下限一档（处方重量口径）。
+    /// §6.1 Blocker：取整量子从全局 2.5 改 per-entry——小重量动作的先验不再
+    /// 被粗量子扭曲（侧平举 7.5×0.5 在 2.5 量子下取整成 5 = 实际 67% 非 50%；
+    /// 步长 1.25 时可落 3.75）。P0 目录全 2.5 → 行为零变化。
+    public static func scaledStartKg(_ startWeightKg: Double, trainingLevel: String?, stepKg: Double = 2.5) -> Double {
         let scaled = startWeightKg * multiplier(trainingLevel: trainingLevel)
-        return max(2.5, (scaled / 2.5).rounded() * 2.5)
+        return max(stepKg, (scaled / stepKg).rounded() * stepKg)
     }
 }

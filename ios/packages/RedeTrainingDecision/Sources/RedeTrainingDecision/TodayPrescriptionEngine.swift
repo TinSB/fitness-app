@@ -8,12 +8,14 @@
 // 最小渐进 = 双重渐进三分支（goldens 锁定阈值）。RIR 一律取 min 口径
 // （最差一组）：任何一组打到力竭就不该加重——安全优先于抗噪，这是显式
 // 产品拍板（2026-06-09 审查后），改口径必须连 §6.0.1 与 goldens 一起改：
-//   全组打满 repMax 且 min RIR ≥ 1.0(含 1.0；无 RIR 数据视为有余力) → +2.5kg，次数重置 repMin；
-//   上次力竭(min RIR ≤ 0.5) 或 最高组未到 repMin → −2.5kg；
+//   全组打满 repMax 且 min RIR ≥ 1.0(含 1.0；无 RIR 数据视为有余力) → +一档，次数重置 repMin；
+//   上次力竭(min RIR ≤ 0.5) 或 最高组未到 repMin → −一档；
 //   否则持平，次数目标 repMax（区间内推进）。
 // 加重无上限（精英重量合法递增，有意为之）。
+// 「一档」= 该动作目录 progressionStepKg（§6.1 Blocker：2.5 全局常量退役，
+// 取整量子/下限同步 per-entry；P0 目录全 2.5 → goldens 零变化是迁移铁证）。
 // 裁决调制在渐进之后：light ×0.9；deload ×0.8 且组数 −1(下限 2)；rest → 无处方。
-// 重量一律 2.5kg 取整、下限 2.5kg；调制后若取整弹回原重量且原重量 > 2.5，
+// 重量一律按步长取整、下限一档；调制后若取整弹回原重量且原重量 > 一档，
 // 强制下调一格——轻练/减载必须真减，小重量动作不得被取整吃掉。
 // 组形（top/backoff 拆分）归 M3-1。
 
@@ -21,7 +23,6 @@ import Foundation
 import RedeDataHealth
 
 public enum TodayPrescriptionEngine {
-    private static let incrementKg = 2.5
     private static let nearFailureMeanRir = 0.5
     private static let progressMinMeanRir = 1.0
     private static let lightMultiplier = 0.9
@@ -54,7 +55,7 @@ public enum TodayPrescriptionEngine {
             return [
                 Slot(pattern: "horizontal-press", kind: "compound", sets: 3, repMin: 6, repMax: 8, rest: 180),
                 Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 10, rest: 120),
-                Slot(pattern: "horizontal-press", kind: "machine", sets: 2, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "horizontal-press", kind: "accessory", sets: 2, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "fly", sets: 2, repMin: 12, repMax: 15, rest: 75),
                 Slot(pattern: "lateral-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "triceps-extension", sets: 3, repMin: 10, repMax: 15, rest: 75),
@@ -72,7 +73,7 @@ public enum TodayPrescriptionEngine {
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: "barbell", sets: 4, repMin: 5, repMax: 8, rest: 210),
                 Slot(pattern: "hinge", equipment: "barbell", sets: 3, repMin: 6, repMax: 10, rest: 180),
-                Slot(pattern: "squat-pattern", kind: "machine", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 60),
             ]
@@ -80,7 +81,7 @@ public enum TodayPrescriptionEngine {
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: "machine", sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "hinge", equipment: "dumbbell", sets: 3, repMin: 8, repMax: 12, rest: 120),
-                Slot(pattern: "squat-pattern", kind: "machine", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
             ]
@@ -119,16 +120,22 @@ public enum TodayPrescriptionEngine {
             let slotEquipment = slot.equipment.flatMap { pref in
                 (allowed == nil || allowed!.contains(pref)) ? pref : nil
             }
-            // kind 只软化 "machine"（器械耦合）；"compound" 永不软化——
-            // 它是动作性质约束（如深蹲主槽必须复合），与器械可得性无关
+            // kind 只软化 "accessory"（辅助容量槽默认住在固定器械上）；
+            // "compound" 永不软化——动作性质约束（如深蹲主槽必须复合）与器械
+            // 可得性无关。软化键 = 白名单 ∩ 注册表 machine 类（不再拴字符串
+            // "machine"——P1 拆 plate-loaded/selectorized 后零改动）。
             let slotKind = slot.kind.flatMap { kind in
-                (kind == "machine" && allowed != nil && !allowed!.contains("machine")) ? nil : kind
+                (kind == "accessory" && allowed != nil
+                    && allowed!.isDisjoint(with: EquipmentRegistry.machineClasses)) ? nil : kind
             }
             // 内容系统 P0（2026-06-11）：匹配去顺序化——(rank, id) 升序取首，
             // 文件顺序不再是合同；deprecated 条目不参与匹配（id 永生只为历史解析）
             guard let entry = catalog.entries
                 .filter({ entry in
                     !entry.deprecated
+                        // §6.1：非 external 负重语义未获引擎支持，禁入处方
+                        //（assisted 直接走现瀑布会方向反转——安全红线）
+                        && EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType)
                         && entry.movementPattern == slot.pattern
                         && (slotKind == nil || entry.kind == slotKind)
                         && (slotEquipment == nil || entry.equipment == slotEquipment)
@@ -162,6 +169,7 @@ public enum TodayPrescriptionEngine {
         verdict: TodayVerdict
     ) -> ExercisePrescriptionPlan {
         let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
+        let step = entry.progressionStepKg   // §6.1：渐进一档 = 目录 per-entry 步长
 
         let baseWeight: Double
         let targetReps: Int
@@ -169,18 +177,18 @@ public enum TodayPrescriptionEngine {
         let reason: PrescriptionReason
         if let last {
             if let minRir = last.minRir, minRir <= nearFailureMeanRir {
-                baseWeight = max(incrementKg, last.topWeightKg - incrementKg)
+                baseWeight = max(step, last.topWeightKg - step)
                 targetReps = slot.repMin
                 change = .ease
                 reason = .nearFailureLastTime
             } else if last.maxReps < slot.repMin {
-                baseWeight = max(incrementKg, last.topWeightKg - incrementKg)
+                baseWeight = max(step, last.topWeightKg - step)
                 targetReps = slot.repMin
                 change = .ease
                 reason = .belowRepFloor
             } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
-                // 无上限：精英重量的 +2.5kg 是合法递增，有意不设 cap。
-                baseWeight = last.topWeightKg + incrementKg
+                // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
+                baseWeight = last.topWeightKg + step
                 targetReps = slot.repMin
                 change = .increase
                 reason = .repCeilingReached
@@ -194,22 +202,22 @@ public enum TodayPrescriptionEngine {
             // M5-1 首练定档：自报背景只作冷启动先验，缩放仅作用于 firstExposure；
             // 一旦有真实记录（上面分支），实际执行即基线，先验不再参与。
             // 与裁决调制（light ×0.9 / deload ×0.8）叠乘是有意设计（拍板 2026-06-10）：
-            // 先验定起点基线、调制定当日急性状态，两者正交；下限 2.5 兜底。
+            // 先验定起点基线、调制定当日急性状态，两者正交；下限一档（per-entry 步长）兜底。
             baseWeight = ColdStartPrior.scaledStartKg(
-                entry.startWeightKg, trainingLevel: input.profile.trainingLevel
+                entry.startWeightKg, trainingLevel: input.profile.trainingLevel, stepKg: step
             )
             targetReps = slot.repMin
             change = .start
             reason = .firstExposure
         }
 
-        var weight = roundToIncrement(baseWeight)
+        var weight = roundToIncrement(baseWeight, step: step)
         var sets = slot.sets
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: lightMultiplier)
+            weight = modulated(base: weight, multiplier: lightMultiplier, step: step)
         case .deload:
-            weight = modulated(base: weight, multiplier: deloadMultiplier)
+            weight = modulated(base: weight, multiplier: deloadMultiplier, step: step)
             sets = max(2, sets - 1)
         case .train, .rest:
             break
@@ -226,18 +234,19 @@ public enum TodayPrescriptionEngine {
             targetRir: targetRir,
             previousWeightKg: last?.topWeightKg,
             previousTopReps: last?.repsAtTop,
-            nextProjectedWeightKg: roundToIncrement(weight + incrementKg),
+            nextProjectedWeightKg: roundToIncrement(weight + step, step: step),
+            progressionStepKg: step,
             change: change,
             reason: reason
         )
     }
 
-    /// 轻练/减载的实际负重：×乘数后 2.5 取整；若弹回原值且仍有下调空间，
+    /// 轻练/减载的实际负重：×乘数后按步长取整；若弹回原值且仍有下调空间，
     /// 强制下调一格（调制必须真减，小重量不得被取整吃掉）。
-    private static func modulated(base: Double, multiplier: Double) -> Double {
-        let rounded = roundToIncrement(base * multiplier)
-        guard rounded >= base, base > incrementKg else { return rounded }
-        return max(incrementKg, base - incrementKg)
+    private static func modulated(base: Double, multiplier: Double, step: Double) -> Double {
+        let rounded = roundToIncrement(base * multiplier, step: step)
+        guard rounded >= base, base > step else { return rounded }
+        return max(step, base - step)
     }
 
     private struct LastPerformance {
@@ -275,7 +284,7 @@ public enum TodayPrescriptionEngine {
         )
     }
 
-    private static func roundToIncrement(_ weightKg: Double) -> Double {
-        max(incrementKg, (weightKg / incrementKg).rounded() * incrementKg)
+    private static func roundToIncrement(_ weightKg: Double, step: Double) -> Double {
+        max(step, (weightKg / step).rounded() * step)
     }
 }

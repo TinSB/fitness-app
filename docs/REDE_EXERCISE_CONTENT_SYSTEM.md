@@ -31,14 +31,18 @@
 | `movementPattern` | ✓ | 必须 ∈ pattern 注册表 |
 | `primaryMuscle` / `secondaryMuscles` | ✓ / 可空 | 必须 ∈ 肌群注册表 |
 | `equipment` | ✓ | 必须 ∈ 器械注册表（9 类：barbell · dumbbell · cable · plate-loaded · selectorized · bodyweight · assisted · band · kettlebell；MVP 期 `machine` 为 plate-loaded/selectorized 合并档，P1 拆分） |
-| `kind` | ✓ | compound / isolation / machine |
+| `kind` | ✓ | 训练学角色：compound（主项）/ accessory（辅助容量）/ isolation（孤立）——原 `machine` 档改名（schema PR 2026-06-11），器械语义剥离给 `isGuided` |
 | `substitutionGroup` | ✓ | 替代族；P1 升一等公民列表（规格 `ExerciseSubstitutionGroup`） |
 | `startWeightKg` | ✓ | 目录起步值；口径=系统逻辑 §153（哑铃单只/杠铃总重/配重片读数）；新批次默认带「待真机校准」标签 |
+| `loadType` | ✓ | 负重语义注册表内取值：external / bodyweight / bodyweight-plus / assisted / band；**非 external 在引擎支持落地前禁入处方与替换**（匹配层硬过滤，测试看守） |
+| `progressionStepKg` | ✓ | 渐进一档（kg）：渐进三分支/疼痛回退/快改档位/取整量子唯一来源（2.5 全局常量已退役）；按器械类给默认，小肌群孤立可 1.25 |
+| `isGuided` | 默认 false | 器械轨道稳定（固定轨迹）；目录事实，引擎暂不消费（P1 校准/展示挂点） |
+| `replacedBy` | 可空 | 真弃用时的继任指针（历史延续挂点，P1 占位）；仅 deprecated 条目可填，必须指向存在的 id（测试看守） |
 | `rank` | ✓ | 匹配优先级（升序）；**匹配 = filter → (rank, id) 排序**，与文件顺序无关 |
 | `deprecated` | 默认 false | 弃用不删除 |
-| `contraindicationHint` / `evidenceTag` | P1 启用 | 禁忌提示 / 证据置信标签（规格要求字段，P0 预留） |
+| `contraindicationHint` / `evidenceTag` | 可空 | 禁忌提示 / 证据置信标签——schema 已落 Swift 真字段（2026-06-11），P1 wave 填数据 |
 
-**注册表**（pattern / 器械 / 肌群）是封闭集合；P0 现实：住合同测试（CatalogContractTests），写错即红。P1 升引擎运行时单一真源（§6.1 场景×器械类矩阵的前提）。
+**注册表**：器械类 / 场景×器械类矩阵 / 负重语义已升**引擎运行时单一真源**（`EquipmentRegistry`，schema PR 2026-06-11）——EquipmentAccess 白名单、FR-EQ1 软化键、合同测试同源引用，加器械类只改注册表+目录+covered golden 一处 PR。pattern / 肌群注册表仍住合同测试（写错即红），P1 按需升运行时。
 
 ## 3. 不可破的行为锁
 
@@ -63,7 +67,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：**先过 §6.1 Blocker schema PR**，再批量填到 ~100（9 类器械核心动作）；substitutionGroups 一等公民；contraindication/evidence 启用；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地 2026-06-11**）→ 批量填到 ~100（9 类器械核心动作）；substitutionGroups 一等公民；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）；§6.2 Should 第二批逐项拍板
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）
@@ -73,7 +77,12 @@
 > bodyweight / assisted / band 三类上整体破产**——以下 Blocker 不先落地，
 > 第一个含这三类的 wave 就是 100 条重审 + 安全事故。
 
-### 6.1 Blocker（先于任何 wave，一个 schema PR 拍掉）
+### 6.1 Blocker（先于任何 wave，一个 schema PR 拍掉）——**已落地 2026-06-11（catalogVersion mvp-2）**
+
+> 落地形态备注：kind 第三档实测承载「主项 vs 辅助容量」真实角色语义
+> （hack-squat=compound vs leg-press=accessory），故采用**值改名 machine→accessory**
+> 而非二审原案的二分收敛；轨道稳定性独立为 `isGuided`。软化键照原案改拴
+> `EquipmentRegistry.machineClasses`。行为零变化由全量 golden 未改全绿证明。
 
 | 修订 | 为什么是 Blocker |
 |---|---|
@@ -91,7 +100,7 @@
 - **解释全在引擎按 loadType 翻转**：进步=辅助下降、疼痛/力竭=辅助增加、PR=辅助新低、趋势方向反读、不进吨位裸加与 e1RM（如实 limitation）
 - **显示带「辅助」前缀**（"辅助 20kg"），渐进文案同语义（"辅助 20→17.5 · 进阶"）
 - **毕业=换动作不换数轴**：辅助引体→自重引体→负重引体 = 三条目（assisted/bodyweight/bodyweight-plus）同替代族，单条目数轴永远单调不跨零
-- 待拍板小项：assisted 首练定档规则（新手先验=加多少辅助）随 Blocker schema PR 一起定
+- 待拍板小项：assisted 首练定档规则（新手先验=加多少辅助）——schema PR 已落地，此项随 assisted 首个 wave 拍（loadType 闸保证此前零运行时影响）
 
 ### 6.2 Should（随 P1 修订案第二批，逐项拍板）
 
@@ -101,7 +110,7 @@
 - **进展层注入目录只读事实**（kind/equipment 窄投影）：关键动作现=点数最多，100 条目录下趋势主角会被孤立动作抢走；趋势 flat 带宽 2.5kg 绝对值对小动作永远 flat（改相对值）
 - **+`plausibleMaxKg` 或器械类系数**：可疑组判定基准 <30kg 不触发——半个目录只剩 400kg 兜底，「侧平举 100kg」永不被标；bodyweight 高 rep 合法场景会被 reps>50 误标
 - **+`progressionKey` 预留**（默认=id）：力学等价变体（哑铃/壶铃高脚杯蹲）各自冷启动、趋势分裂——填充准入标准同步写进 §4：等价且口径相同的变体不另立条目
-- **prior 取整失真**：7.5×0.5 取整成 5（实际 67% 非 50%）——取整量子改用该动作 progressionStepKg
+- **prior 取整失真**：7.5×0.5 取整成 5（实际 67% 非 50%）——机制已随 schema PR 落地（取整量子=per-entry 步长）；失真实际消除要等小肌群条目把步长校准成 1.25（wave 填充项）
 - **draft 落盘附 catalogVersion**（恢复失败可区分目录漂移 vs 数据损坏，nice 可后置）
 
 ### 6.3 二审确认够用（不动）
