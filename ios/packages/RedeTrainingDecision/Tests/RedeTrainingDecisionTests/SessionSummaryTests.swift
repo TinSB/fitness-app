@@ -33,7 +33,8 @@ final class SessionSummaryTests: XCTestCase {
             durationSeconds: 2_820
         )
         XCTAssertEqual(summary.completedSetCount, 3)
-        let expectedVolume: Double = 300 + 260 + 495 // 30×10 + 32.5×8 + 55×9
+        // §6.2 owner 拍板 B 案：吨位×loadFactor——双哑铃卧推 ×2，绳索下拉 ×1
+        let expectedVolume: Double = (300 + 260) * 2 + 495 // (30×10 + 32.5×8)×2 + 55×9×1
         XCTAssertEqual(summary.totalVolumeKg, expectedVolume)
         XCTAssertEqual(summary.topSet?.exerciseId, "lat-pulldown")
         XCTAssertEqual(summary.topSet?.weightKg, 55)
@@ -81,5 +82,27 @@ final class SessionSummaryTests: XCTestCase {
         XCTAssertEqual(summary.totalVolumeKg, 0)
         XCTAssertNil(summary.topSet)
         XCTAssertFalse(summary.isPersonalRecord)
+    }
+
+    // §6.2 修复：换入动作的 PR 只和它自己的历史比（调用方注入 overrides）
+    func testPrAfterReplacementUsesOwnHistoryViaOverrides() throws {
+        let (prescription, _) = try makePrescriptionAndObservations()
+        // 换入 db-floor-press（不在处方），注入其自身历史 20 → 顶组 22.5 = PR
+        let withHistory = SessionSummaryBuilder.build(
+            prescription: prescription,
+            observations: ["db-floor-press": [obs(22.5, 8)]],
+            durationSeconds: 600,
+            previousWeightOverrides: ["db-floor-press": 20]
+        )
+        XCTAssertTrue(withHistory.isPersonalRecord)
+        // 无注入（该动作无历史）→ 保守不发奖（与首练同口径），不再静默恒 false 暗规则
+        let noHistory = SessionSummaryBuilder.build(
+            prescription: prescription,
+            observations: ["db-floor-press": [obs(22.5, 8)]],
+            durationSeconds: 600
+        )
+        XCTAssertFalse(noHistory.isPersonalRecord)
+        // 绝不拿被换走动作的历史比：处方里 db-bench-press previous 存在也不参与
+        XCTAssertFalse(prescription.exercises.contains { $0.exerciseId == "db-floor-press" })
     }
 }

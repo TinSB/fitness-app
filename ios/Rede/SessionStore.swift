@@ -258,7 +258,8 @@ final class SessionStore {
             dateISO: formatter.string(from: sessionStartedAt ?? Date()),
             startedAt: sessionStartedAt ?? Date(),
             prescription: flow.prescription,
-            events: flow.events
+            events: flow.events,
+            catalogVersion: ExerciseCatalog.minimal.catalogVersion
         )
         Task.detached(priority: .utility) { DraftFile.save(draft) }
     }
@@ -347,10 +348,22 @@ final class SessionStore {
     var sessionSummary: SessionSummary? {
         guard let flow, flow.phase == .summary else { return nil }
         let duration = sessionStartedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        // §6.2：换入动作的 PR 参考 = 它自己的历史（处方只携带原动作的）——
+        // 无历史则不发奖（与首练同口径）。契约假设（审查 N2）：cleanView.sessions
+        // 只含已落盘历史、不含进行中 session——若改动该边界须同步本处口径
+        var overrides: [String: Double] = [:]
+        if let sessions = todayModel?.cleanView.sessions {
+            for id in Set(flow.replacements.map(\.actualExerciseId)) {
+                if let last = TodayPrescriptionEngine.lastTopWeightKg(exerciseId: id, sessions: sessions) {
+                    overrides[id] = last
+                }
+            }
+        }
         return SessionSummaryBuilder.build(
             prescription: flow.prescription,
             observations: flow.observationsByExercise,
-            durationSeconds: max(0, duration)
+            durationSeconds: max(0, duration),
+            previousWeightOverrides: overrides
         )
     }
 }

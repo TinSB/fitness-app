@@ -3,7 +3,9 @@
 // 口径锁定（与已落盘实现对齐，改动须过架构门）：
 // · e1RM = Epley w×(1+r/30)，取每场每动作顶组（重量优先、同重比次数）——同 SessionSummary；
 // · PR = 顶组重量严格大于全部更早历史同动作顶组；首练不发奖（M3 保守口径）；
-// · volume = Σ 重量×次数；周聚合 = ISO 周（周一起始），纯日期数学；
+// · volume = Σ 重量×次数×loadFactor（§6.2 owner 拍板 B 案：目录系数修正
+//   哑铃单只口径低估；facts 缺省 = 系数 1，与旧口径一致）；
+//   周聚合 = ISO 周（周一起始），纯日期数学；
 // · 非法日期条目整体跳过（上游 clean view 已保证合法，这里只是防御）。
 // 纯函数、无 clock/IO；输出是派生展示对象，永不写回 canonical（Master §6 L152）。
 
@@ -56,8 +58,24 @@ public struct ProgressSnapshot: Equatable, Sendable {
     public let weeklyVolume: [WeeklyVolume]
 }
 
+/// 目录只读事实窄投影（§6.2：进展层不依赖决策包，由 app 层注入）。
+public struct ExerciseStatsFacts: Equatable, Sendable {
+    /// 吨位换算系数（双哑铃=2 等）。
+    public let loadFactor: Double
+    /// 训练学主项复合（关键动作挑选优先级）。
+    public let isCompound: Bool
+
+    public init(loadFactor: Double = 1.0, isCompound: Bool = false) {
+        self.loadFactor = loadFactor
+        self.isCompound = isCompound
+    }
+}
+
 public enum ProgressSnapshotBuilder {
-    public static func build(sessions: [SnapshotSessionRecord]) -> ProgressSnapshot {
+    public static func build(
+        sessions: [SnapshotSessionRecord],
+        facts: [String: ExerciseStatsFacts] = [:]
+    ) -> ProgressSnapshot {
         // 时序基准：日期升序、同日保输入序（稳定排序）；PR 按此运行最大值判定。
         let chronological = sessions
             .compactMap { record -> (record: SnapshotSessionRecord, day: Int)? in
@@ -86,8 +104,9 @@ public enum ProgressSnapshotBuilder {
             for exercise in record.exercises {
                 if setsByExercise[exercise.exerciseId] == nil { orderedIds.append(exercise.exerciseId) }
                 setsByExercise[exercise.exerciseId, default: []].append(contentsOf: exercise.sets)
+                let factor = facts[exercise.exerciseId]?.loadFactor ?? 1.0
                 for set in exercise.sets {
-                    volume += set.weightKg * Double(set.reps)
+                    volume += set.weightKg * Double(set.reps) * factor
                     setCount += 1
                 }
             }

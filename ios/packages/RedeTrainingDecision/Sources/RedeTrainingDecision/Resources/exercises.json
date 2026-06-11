@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-1",
+  "catalogVersion": "wave-1.1",
   "exercises": [
     {
       "id": "bench-press",
@@ -11,12 +11,15 @@
       ],
       "equipment": "barbell",
       "kind": "compound",
-      "substitutionGroup": "chest-press",
+      "substitutionGroups": [
+        "chest-press"
+      ],
       "startWeightKg": 60.0,
       "nameZh": "平板卧推",
       "nameEn": "Bench press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 0
     },
@@ -30,12 +33,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "chest-press",
+      "substitutionGroups": [
+        "chest-press"
+      ],
       "startWeightKg": 22.5,
       "nameZh": "上斜哑铃卧推",
       "nameEn": "Incline DB press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 10
     },
@@ -49,12 +55,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "chest-press",
+      "substitutionGroups": [
+        "chest-press"
+      ],
       "startWeightKg": 30.0,
       "nameZh": "哑铃卧推",
       "nameEn": "DB bench press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 20
     },
@@ -67,12 +76,15 @@
       ],
       "equipment": "machine",
       "kind": "accessory",
-      "substitutionGroup": "chest-press",
+      "substitutionGroups": [
+        "chest-press"
+      ],
       "startWeightKg": 55.0,
       "nameZh": "器械推胸",
       "nameEn": "Machine chest press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": true,
       "rank": 30
     },
@@ -83,12 +95,15 @@
       "secondaryMuscles": [],
       "equipment": "cable",
       "kind": "isolation",
-      "substitutionGroup": "chest-fly",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
       "startWeightKg": 17.5,
       "nameZh": "绳索夹胸",
       "nameEn": "Cable fly",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 40
     },
@@ -101,12 +116,15 @@
       ],
       "equipment": "cable",
       "kind": "compound",
-      "substitutionGroup": "vertical-pull",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
       "startWeightKg": 55.0,
       "nameZh": "高位下拉",
       "nameEn": "Lat pulldown",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 50
     },
@@ -120,12 +138,15 @@
       ],
       "equipment": "cable",
       "kind": "compound",
-      "substitutionGroup": "row",
+      "substitutionGroups": [
+        "row"
+      ],
       "startWeightKg": 50.0,
       "nameZh": "坐姿划船",
       "nameEn": "Seated row",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 60
     },
@@ -139,12 +160,15 @@
       ],
       "equipment": "barbell",
       "kind": "compound",
-      "substitutionGroup": "row",
+      "substitutionGroups": [
+        "row"
+      ],
       "startWeightKg": 50.0,
       "nameZh": "杠铃划船",
       "nameEn": "Barbell row",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 70
     },
@@ -157,12 +181,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "row",
+      "substitutionGroups": [
+        "row"
+      ],
       "startWeightKg": 25.0,
       "nameZh": "单臂哑铃划船",
       "nameEn": "One-arm DB row",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 80
     },
@@ -175,12 +202,15 @@
       ],
       "equipment": "cable",
       "kind": "isolation",
-      "substitutionGroup": "rear-delt",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
       "startWeightKg": 20.0,
       "nameZh": "面拉",
       "nameEn": "Face pull",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 90
     },
@@ -193,12 +223,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "shoulder-press",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
       "startWeightKg": 20.0,
       "nameZh": "哑铃肩推",
       "nameEn": "Shoulder press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 100
     },
@@ -209,12 +242,15 @@
       "secondaryMuscles": [],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "side-delt",
+      "substitutionGroups": [
+        "side-delt"
+      ],
       "startWeightKg": 7.5,
       "nameZh": "哑铃侧平举",
       "nameEn": "Lateral raise",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 110
     },
@@ -225,12 +261,15 @@
       "secondaryMuscles": [],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "biceps-curl",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
       "startWeightKg": 12.5,
       "nameZh": "哑铃弯举",
       "nameEn": "DB curl",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 120
     },
@@ -243,12 +282,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "biceps-curl",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
       "startWeightKg": 12.5,
       "nameZh": "锤式弯举",
       "nameEn": "Hammer curl",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 130
     },
@@ -259,12 +301,15 @@
       "secondaryMuscles": [],
       "equipment": "barbell",
       "kind": "isolation",
-      "substitutionGroup": "biceps-curl",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
       "startWeightKg": 25.0,
       "nameZh": "牧师凳弯举",
       "nameEn": "Preacher curl",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 140
     },
@@ -275,12 +320,15 @@
       "secondaryMuscles": [],
       "equipment": "cable",
       "kind": "isolation",
-      "substitutionGroup": "triceps",
+      "substitutionGroups": [
+        "triceps"
+      ],
       "startWeightKg": 25.0,
       "nameZh": "绳索下压",
       "nameEn": "Triceps pushdown",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 150
     },
@@ -293,12 +341,15 @@
       ],
       "equipment": "barbell",
       "kind": "compound",
-      "substitutionGroup": "triceps",
+      "substitutionGroups": [
+        "triceps"
+      ],
       "startWeightKg": 50.0,
       "nameZh": "窄握卧推",
       "nameEn": "Close-grip bench",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 160
     },
@@ -312,12 +363,15 @@
       ],
       "equipment": "barbell",
       "kind": "compound",
-      "substitutionGroup": "squat",
+      "substitutionGroups": [
+        "squat"
+      ],
       "startWeightKg": 80.0,
       "nameZh": "深蹲",
       "nameEn": "Squat",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 170
     },
@@ -330,12 +384,15 @@
       ],
       "equipment": "machine",
       "kind": "compound",
-      "substitutionGroup": "squat",
+      "substitutionGroups": [
+        "squat"
+      ],
       "startWeightKg": 80.0,
       "nameZh": "哈克深蹲",
       "nameEn": "Hack squat",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": true,
       "rank": 180
     },
@@ -348,12 +405,15 @@
       ],
       "equipment": "machine",
       "kind": "accessory",
-      "substitutionGroup": "squat",
+      "substitutionGroups": [
+        "squat"
+      ],
       "startWeightKg": 140.0,
       "nameZh": "腿举",
       "nameEn": "Leg press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": true,
       "rank": 190
     },
@@ -367,12 +427,15 @@
       ],
       "equipment": "barbell",
       "kind": "compound",
-      "substitutionGroup": "hinge",
+      "substitutionGroups": [
+        "hinge"
+      ],
       "startWeightKg": 70.0,
       "nameZh": "罗马尼亚硬拉",
       "nameEn": "Romanian deadlift",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 200
     },
@@ -385,12 +448,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "hinge",
+      "substitutionGroups": [
+        "hinge"
+      ],
       "startWeightKg": 30.0,
       "nameZh": "哑铃罗马尼亚硬拉",
       "nameEn": "DB RDL",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 210
     },
@@ -401,12 +467,15 @@
       "secondaryMuscles": [],
       "equipment": "machine",
       "kind": "isolation",
-      "substitutionGroup": "hamstring-curl",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
       "startWeightKg": 40.0,
       "nameZh": "腿弯举",
       "nameEn": "Leg curl",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": true,
       "rank": 220
     },
@@ -417,12 +486,15 @@
       "secondaryMuscles": [],
       "equipment": "machine",
       "kind": "isolation",
-      "substitutionGroup": "calves",
+      "substitutionGroups": [
+        "calves"
+      ],
       "startWeightKg": 50.0,
       "nameZh": "提踵",
       "nameEn": "Calf raise",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": true,
       "rank": 230
     },
@@ -436,12 +508,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "squat",
+      "substitutionGroups": [
+        "squat"
+      ],
       "startWeightKg": 17.5,
       "nameZh": "高脚杯深蹲",
       "nameEn": "Goblet squat",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 240
     },
@@ -454,12 +529,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "squat",
+      "substitutionGroups": [
+        "squat"
+      ],
       "startWeightKg": 12.5,
       "nameZh": "哑铃箭步蹲",
       "nameEn": "DB lunge",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 250
     },
@@ -470,12 +548,15 @@
       "secondaryMuscles": [],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "chest-fly",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
       "startWeightKg": 10.0,
       "nameZh": "哑铃飞鸟",
       "nameEn": "DB fly",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 260
     },
@@ -488,12 +569,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "vertical-pull",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
       "startWeightKg": 15.0,
       "nameZh": "哑铃仰卧上拉",
       "nameEn": "DB pullover",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 270
     },
@@ -506,12 +590,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "rear-delt",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
       "startWeightKg": 7.5,
       "nameZh": "俯身反向飞鸟",
       "nameEn": "Rear-delt fly",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 280
     },
@@ -522,12 +609,15 @@
       "secondaryMuscles": [],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "triceps",
+      "substitutionGroups": [
+        "triceps"
+      ],
       "startWeightKg": 10.0,
       "nameZh": "哑铃颈后臂屈伸",
       "nameEn": "Overhead triceps extension",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 290
     },
@@ -538,12 +628,15 @@
       "secondaryMuscles": [],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "calves",
+      "substitutionGroups": [
+        "calves"
+      ],
       "startWeightKg": 17.5,
       "nameZh": "哑铃提踵",
       "nameEn": "DB calf raise",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 300
     },
@@ -557,12 +650,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "chest-press",
+      "substitutionGroups": [
+        "chest-press"
+      ],
       "startWeightKg": 25.0,
       "nameZh": "哑铃地板卧推",
       "nameEn": "DB floor press",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 310
     },
@@ -576,12 +672,15 @@
       ],
       "equipment": "dumbbell",
       "kind": "compound",
-      "substitutionGroup": "row",
+      "substitutionGroups": [
+        "row"
+      ],
       "startWeightKg": 17.5,
       "nameZh": "上斜凳哑铃划船",
       "nameEn": "Chest-supported DB row",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 2.0,
       "isGuided": false,
       "rank": 320
     },
@@ -592,12 +691,15 @@
       "secondaryMuscles": [],
       "equipment": "dumbbell",
       "kind": "isolation",
-      "substitutionGroup": "hamstring-curl",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
       "startWeightKg": 10.0,
       "nameZh": "哑铃腿弯举",
       "nameEn": "DB leg curl",
       "loadType": "external",
       "progressionStepKg": 2.5,
+      "loadFactor": 1.0,
       "isGuided": false,
       "rank": 330
     }

@@ -126,4 +126,40 @@ final class ProgressInsightTests: XCTestCase {
         ])
         XCTAssertEqual(comparison, .previousWeekMissing)
     }
+
+    // MARK: - §6.2 相对带宽 + 关键动作复合优先（2026-06-11）
+
+    func testSmallLiftTrendIsNoLongerAlwaysFlat() {
+        // 侧平举量级：e1RM 10 → 带宽 max(1.25, 0.3) = 1.25；+1.5 必须判 up
+        // （旧绝对带宽 2.5 会把 ±25% 全部吃成 flat）
+        let assessment = TrendInsight.assess(trend("lateral-raise", [
+            point("s1", "2026-06-01", 10), point("s2", "2026-06-08", 11.5),
+        ]))
+        XCTAssertEqual(assessment.call, .up)
+    }
+
+    func testBigLiftBandScalesRelative() {
+        // e1RM 100 → 带宽 3.0：+2.6（旧口径已判 up）现在如实 flat——3% 内是噪声
+        let assessment = TrendInsight.assess(trend("squat", [
+            point("s1", "2026-06-01", 100), point("s2", "2026-06-08", 102.6),
+        ]))
+        XCTAssertEqual(assessment.call, .flat)
+    }
+
+    func testKeyExercisePrefersCompoundOverPointCount() {
+        let snapshot = ProgressSnapshot(
+            history: [],
+            exerciseTrends: [
+                trend("lateral-raise", [point("s1", "2026-06-01", 10), point("s2", "2026-06-03", 10),
+                                        point("s3", "2026-06-05", 10), point("s4", "2026-06-08", 10)]),
+                trend("squat", [point("s1", "2026-06-01", 100), point("s2", "2026-06-08", 102)]),
+            ],
+            weeklyVolume: []
+        )
+        let facts = ["squat": ExerciseStatsFacts(loadFactor: 1.0, isCompound: true)]
+        // 复合优先：深蹲 2 点也压过侧平举 4 点
+        XCTAssertEqual(TrendInsight.keyExercise(of: snapshot, facts: facts)?.exerciseId, "squat")
+        // facts 缺省 → 退化为旧「点数最多」口径
+        XCTAssertEqual(TrendInsight.keyExercise(of: snapshot)?.exerciseId, "lateral-raise")
+    }
 }

@@ -31,7 +31,7 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-1")
+        XCTAssertEqual(catalog.catalogVersion, "wave-1.1")
         XCTAssertEqual(catalog.entries.count, 34)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
         XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 34, "id 重复")
@@ -39,6 +39,12 @@ final class CatalogContractTests: XCTestCase {
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
+        // 吨位系数锚点（owner 拍板 B 案 + 终审 2026-06-11）：杠铃=1、双哑铃=2、
+        // 单哑铃双手持=1、单侧动作=1（owner 惯例「一组=单边」）
+        XCTAssertEqual(catalog.entry(id: "bench-press")?.loadFactor, 1.0)
+        XCTAssertEqual(catalog.entry(id: "db-bench-press")?.loadFactor, 2.0)
+        XCTAssertEqual(catalog.entry(id: "goblet-squat")?.loadFactor, 1.0)
+        XCTAssertEqual(catalog.entry(id: "one-arm-db-row")?.loadFactor, 1.0)
         XCTAssertNotNil(catalog.entry(id: "db-calf-raise"))
     }
 
@@ -56,6 +62,13 @@ final class CatalogContractTests: XCTestCase {
             // §6.1 Blocker 字段合同
             XCTAssertTrue(EquipmentRegistry.loadTypes.contains(entry.loadType), "未知负重语义: \(entry.id) → \(entry.loadType)")
             XCTAssertGreaterThan(entry.progressionStepKg, 0, "渐进步长非法: \(entry.id)")
+            // §6.2：替代族数组首元素=主族；吨位系数 ∈ [1,2]（双哑铃=2，其余=1）
+            XCTAssertFalse(entry.substitutionGroups.isEmpty, "替代族数组空: \(entry.id)")
+            XCTAssertFalse(entry.substitutionGroups[0].isEmpty, "主族空串: \(entry.id)")
+            XCTAssertTrue((1.0...2.0).contains(entry.loadFactor), "吨位系数越界: \(entry.id) → \(entry.loadFactor)")
+            if let key = entry.progressionKey {
+                XCTAssertNotNil(catalog.entry(id: key), "progressionKey 指向不存在的 id: \(entry.id) → \(key)")
+            }
             if let successor = entry.replacedBy {
                 XCTAssertNotNil(catalog.entry(id: successor), "replacedBy 指向不存在的 id: \(entry.id) → \(successor)")
                 XCTAssertTrue(entry.deprecated, "未弃用条目不得有继任指针: \(entry.id)")
@@ -125,7 +138,7 @@ final class CatalogContractTests: XCTestCase {
             id: "push-up", nameZh: "俯卧撑", nameEn: "Push-up",
             movementPattern: "horizontal-press", primaryMuscle: "chest",
             equipment: "dumbbell",   // 故意给白名单内器械：必须死在 loadType 闸而非器械闸
-            kind: "compound", substitutionGroup: "chest-press", startWeightKg: 2.5,
+            kind: "compound", substitutionGroups: ["chest-press"], startWeightKg: 2.5,
             loadType: "bodyweight", rank: -10
         )
         let amended = ExerciseCatalog(catalogVersion: "test", entries: [pushUp] + catalog.entries)
@@ -143,9 +156,11 @@ final class CatalogContractTests: XCTestCase {
             id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
             movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
             secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
-            kind: entry.kind, substitutionGroup: entry.substitutionGroup,
+            kind: entry.kind, substitutionGroups: entry.substitutionGroups,
             startWeightKg: entry.startWeightKg, loadType: entry.loadType,
-            progressionStepKg: progressionStepKg, isGuided: entry.isGuided,
+            progressionStepKg: progressionStepKg,
+            loadFactor: entry.loadFactor, progressionKey: entry.progressionKey,   // 审查 N1：复制语义完整
+            isGuided: entry.isGuided,
             rank: entry.rank, deprecated: entry.deprecated
         )
     }
@@ -188,7 +203,7 @@ final class CatalogContractTests: XCTestCase {
                 id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
                 movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
                 secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
-                kind: entry.kind, substitutionGroup: entry.substitutionGroup,
+                kind: entry.kind, substitutionGroups: entry.substitutionGroups,
                 startWeightKg: entry.startWeightKg, rank: entry.rank, deprecated: true
             )
         }

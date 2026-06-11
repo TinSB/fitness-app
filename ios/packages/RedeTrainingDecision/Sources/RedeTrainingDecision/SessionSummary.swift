@@ -1,8 +1,11 @@
 // SessionSummary — 完成流小结数据（M3-2）。纯函数：时长由调用方注入。
 //
-// PR 口径（保守）：顶组重量 > 该动作处方携带的上次工作重量（previousWeightKg）；
-// 首练（无历史参考）不判 PR——校准期不发奖。e1RM = Epley w×(1+r/30)，
-// 仅作展示口径；正式 e1RM 趋势归 M4 进展层。
+// PR 口径（保守）：顶组重量 > 该动作的上次工作重量——处方携带的
+// previousWeightKg，或（换动作场景，§6.2 修复 2026-06-11）调用方注入的
+// 该动作自身历史（previousWeightOverrides）。换入动作只和它自己的历史比，
+// 绝不和被换走动作的历史比；无历史参考不判 PR——校准期不发奖。
+// 吨位（owner 拍板 B 案 2026-06-11）：Σ 重量×次数×loadFactor（目录系数，
+// 双哑铃=2 修正单只口径低估）；e1RM = Epley w×(1+r/30)，仅作展示口径。
 
 public struct SessionSummary: Equatable, Sendable {
     public struct TopSet: Equatable, Sendable {
@@ -28,14 +31,17 @@ public enum SessionSummaryBuilder {
     public static func build(
         prescription: TodayPrescription,
         observations: [String: [CompletedSetObservation]],
-        durationSeconds: Int
+        durationSeconds: Int,
+        catalog: ExerciseCatalog = .minimal,
+        previousWeightOverrides: [String: Double] = [:]
     ) -> SessionSummary {
         var volume = 0.0
         var count = 0
         var top: SessionSummary.TopSet?
         for (exerciseId, sets) in observations {
+            let factor = catalog.entry(id: exerciseId)?.loadFactor ?? 1.0
             for set in sets {
-                volume += set.weightKg * Double(set.reps)
+                volume += set.weightKg * Double(set.reps) * factor
                 count += 1
                 if top == nil || set.weightKg > top!.weightKg
                     || (set.weightKg == top!.weightKg && set.reps > top!.reps) {
@@ -45,9 +51,12 @@ public enum SessionSummaryBuilder {
         }
 
         var isPR = false
-        if let top, let previous = prescription.exercises
-            .first(where: { $0.exerciseId == top.exerciseId })?.previousWeightKg {
-            isPR = top.weightKg > previous
+        if let top {
+            // 换入动作的 observation id 不在处方里——用注入的自身历史兜底（§6.2）
+            let previous = prescription.exercises
+                .first(where: { $0.exerciseId == top.exerciseId })?.previousWeightKg
+                ?? previousWeightOverrides[top.exerciseId]
+            if let previous { isPR = top.weightKg > previous }
         }
 
         return SessionSummary(

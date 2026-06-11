@@ -32,10 +32,12 @@
 | `primaryMuscle` / `secondaryMuscles` | ✓ / 可空 | 必须 ∈ 肌群注册表 |
 | `equipment` | ✓ | 必须 ∈ 器械注册表（9 类：barbell · dumbbell · cable · plate-loaded · selectorized · bodyweight · assisted · band · kettlebell；MVP 期 `machine` 为 plate-loaded/selectorized 合并档，P1 拆分） |
 | `kind` | ✓ | 训练学角色：compound（主项）/ accessory（辅助容量）/ isolation（孤立）——原 `machine` 档改名（schema PR 2026-06-11），器械语义剥离给 `isGuided` |
-| `substitutionGroup` | ✓ | 替代族；P1 升一等公民列表（规格 `ExerciseSubstitutionGroup`） |
+| `substitutionGroups` | ✓ | 替代族数组（§6.2 落地 2026-06-11）：**首元素=主族**，引擎现仅消费主族（与单值时代行为等价）；副族留给替换候选扩展，填数据须 owner 审定 |
 | `startWeightKg` | ✓ | 目录起步值；口径=系统逻辑 §153（哑铃单只/杠铃总重/配重片读数）；新批次默认带「待真机校准」标签 |
 | `loadType` | ✓ | 负重语义注册表内取值：external / bodyweight / bodyweight-plus / assisted / band；**非 external 在引擎支持落地前禁入处方与替换**（匹配层硬过滤，测试看守） |
 | `progressionStepKg` | ✓ | 渐进一档（kg）：渐进三分支/疼痛回退/快改档位/取整量子唯一来源（2.5 全局常量已退役）；按器械类给默认，小肌群孤立可 1.25 |
+| `loadFactor` | ✓ | 吨位换算系数（owner 拍板 B 案 2026-06-11）：吨位=重量×次数×系数；双哑铃（口径记单只）=2，杠铃/绳索/器械（记总阻力）与单哑铃双手持=1。**只作用于吨位统计——处方/渐进/PR/e1RM 永不乘它** |
+| `progressionKey` | 可空 | 力学等价变体共享渐进档案指针（§6.2 占位，默认 nil=各自渐进）；引擎暂不消费 |
 | `isGuided` | 默认 false | 器械轨道稳定（固定轨迹）；目录事实，引擎暂不消费（P1 校准/展示挂点） |
 | `replacedBy` | 可空 | 真弃用时的继任指针（历史延续挂点，P1 占位）；仅 deprecated 条目可填，必须指向存在的 id（测试看守） |
 | `rank` | ✓ | 匹配优先级（升序）；**匹配 = filter → (rank, id) 排序**，与文件顺序无关 |
@@ -60,8 +62,9 @@
 
 ## 4. 填充流水线（P1 起每个 wave 照此走）
 
+0. **准入标准**（§6.2 定案）：力学等价且负重口径相同的变体**不另立条目**（防渐进档案分裂）；确需分立的等价变体填 `progressionKey` 指向共享档案。新条目键序照既有模板（id→…→substitutionGroups→…→loadFactor→isGuided→rank），可选字段（deprecated 等）不显式写默认值。**loadFactor 惯例（owner 终审 2026-06-11）**：双哑铃=2；杠铃/绳索/器械/单哑铃双手持=1；**单侧动作=1**（一组=单边记录）
 1. LLM 生成候选清单（动作 + 字段草稿）——**LLM 不得是动作事实最终来源**（规格红线）
-2. owner / 教练身份逐条审定（名称、归类、起步重量、替代族）
+2. owner / 教练身份逐条审定（名称、归类、起步重量、替代族、**吨位系数**）
 3. 校验套件全绿（注册表 / 覆盖矩阵 / 名字 / golden）
 4. 按器械类分批入库，**每 wave 一个 PR**，附「重量待真机校准」标签
 5. TestFlight 真实反馈回写校准
@@ -104,16 +107,16 @@
 - **毕业=换动作不换数轴**：辅助引体→自重引体→负重引体 = 三条目（assisted/bodyweight/bodyweight-plus）同替代族，单条目数轴永远单调不跨零
 - 待拍板小项：assisted 首练定档规则（新手先验=加多少辅助）——schema PR 已落地，此项随 assisted 首个 wave 拍（loadType 闸保证此前零运行时影响）
 
-### 6.2 Should（随 P1 修订案第二批，逐项拍板）
+### 6.2 Should 第二批——**已落地 2026-06-11（catalogVersion wave-1.1）**
 
-- **吨位口径**：哑铃单只 vs 杠铃总重混加（单臂划船 250 vs 杠铃划船 500 ≈ 等量工作差一倍）——三选一：按器械类分组展示 / +`loadFactor` / 保留裸加但 UI 标注「记录吨位」；小结与进展页同根因一起修
-- **substitutionGroup 多隶属**：单值已示弱（窄握卧推锁死肱三族，不能当胸推替补）——升一等公民时定为 `[String]`（首元素=主族，P1 引擎仍只消费主族）
-- **换动作后 PR 静默失效**（现行小 bug）：换入动作的 observation id 与处方 id 对不上 → isPR 恒 false——补 replacement 映射 + 测试
-- **进展层注入目录只读事实**（kind/equipment 窄投影）：关键动作现=点数最多，100 条目录下趋势主角会被孤立动作抢走；趋势 flat 带宽 2.5kg 绝对值对小动作永远 flat（改相对值）
-- **+`plausibleMaxKg` 或器械类系数**：可疑组判定基准 <30kg 不触发——半个目录只剩 400kg 兜底，「侧平举 100kg」永不被标；bodyweight 高 rep 合法场景会被 reps>50 误标
-- **+`progressionKey` 预留**（默认=id）：力学等价变体（哑铃/壶铃高脚杯蹲）各自冷启动、趋势分裂——填充准入标准同步写进 §4：等价且口径相同的变体不另立条目
-- **prior 取整失真**：7.5×0.5 取整成 5（实际 67% 非 50%）——机制已随 schema PR 落地（取整量子=per-entry 步长）；失真实际消除要等小肌群条目把步长校准成 1.25（wave 填充项）
-- **draft 落盘附 catalogVersion**（恢复失败可区分目录漂移 vs 数据损坏，nice 可后置）
+- ~~吨位口径~~：**owner 拍板 B 案 = +`loadFactor`，系数表终审通过（2026-06-11）**。小结与进展页同步乘系数（同根因一起修 ✓）；PR/e1RM/处方永不乘。终审口径：双哑铃=2（12 条）、杠铃/绳索/器械=1、单哑铃双手持=1、**单侧动作=1（owner 惯例：一组=单边记录）**
+- ~~substitutionGroup 多隶属~~：`substitutionGroups: [String]` 落地，首元素=主族、引擎仅消费主族（行为等价，golden 未动）；副族填数据留给后续 wave（owner 审定）
+- ~~换动作后 PR 静默失效~~：修复——换入动作只和**它自己的历史**比（SessionStore 注入 overrides；无历史=保守不发奖，与首练同口径）；绝不和被换走动作的历史比
+- ~~进展层注入目录只读事实~~：`ExerciseStatsFacts` 窄投影（loadFactor/isCompound，app 层注入，进展包不依赖决策包）；关键动作复合优先（深蹲 2 点压过侧平举 4 点）；趋势带宽改相对值 max(1.25, 首点 e1RM×3%)
+- ~~plausibleMax~~：动作级合理上限落地（投影=起步值×6、下限 60、全局 400 兜底——待校准启发值）；「侧平举 100kg」现在会被标；reps 阈值分档留给 bodyweight wave
+- ~~progressionKey 预留~~：字段占位落地 + §4 准入标准（等价变体不另立条目）
+- **prior 取整失真**：机制已随 schema PR 落地（取整量子=per-entry 步长）；失真实际消除要等小肌群条目把步长校准成 1.25（wave 填充项）
+- ~~draft 落盘附 catalogVersion~~：落地（旧 draft 解码兼容，恢复失败可区分目录漂移 vs 数据损坏）
 
 ### 6.3 二审确认够用（不动）
 

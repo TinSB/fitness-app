@@ -32,7 +32,11 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     /// 它承载的是角色语义（leg-press=辅助 vs hack-squat=主项），不是器械；
     /// 器械轨道稳定性独立成 isGuided。
     public let kind: String
-    public let substitutionGroup: String
+    /// 替代族（§6.2 升一等公民 2026-06-11）：首元素 = 主族（引擎 P1 仅消费主族，
+    /// 行为与单值时代等价）；副族留给替换候选扩展（填数据须 owner 审定）。
+    public let substitutionGroups: [String]
+    /// 兼容访问器：主族。
+    public var substitutionGroup: String { substitutionGroups.first ?? "" }
     public let startWeightKg: Double
     /// 负重语义（§6.1 Blocker）：external / bodyweight / bodyweight-plus /
     /// assisted / band。非 external 条目在对应引擎支持落地前禁止进处方/替换
@@ -42,6 +46,12 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     /// 渐进步长（kg，per-entry）：渐进三分支/疼痛回退/快改档位/取整量子的
     /// 唯一来源——2.5 全局常量退役（侧平举 +2.5=+33% vs 深蹲 +3% 的修正挂点）。
     public let progressionStepKg: Double
+    /// 吨位换算系数（owner 拍板 B 案 2026-06-11）：吨位 = 重量×次数×loadFactor。
+    /// 双哑铃动作（口径记单只）= 2；杠铃/绳索/器械（记总阻力）与单哑铃双手持 = 1。
+    /// 仅作用于统计展示（小结/进展吨位）——处方/渐进重量永不乘它。
+    public let loadFactor: Double
+    /// 力学等价变体的共享渐进档案指针（§6.2 占位，默认 nil = 各自渐进）；引擎暂不消费。
+    public let progressionKey: String?
     /// 器械轨道稳定（固定轨迹）；目录事实，引擎暂不消费（P1 校准/展示挂点）。
     public let isGuided: Bool
     /// 匹配优先级（升序）；匹配 = filter → (rank, id) 排序，与文件顺序无关。
@@ -58,8 +68,9 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         id: String, nameZh: String = "", nameEn: String = "",
         movementPattern: String, primaryMuscle: String,
         secondaryMuscles: [String] = [], equipment: String, kind: String,
-        substitutionGroup: String, startWeightKg: Double,
+        substitutionGroups: [String], startWeightKg: Double,
         loadType: String = "external", progressionStepKg: Double = 2.5,
+        loadFactor: Double = 1.0, progressionKey: String? = nil,
         isGuided: Bool = false,
         rank: Int, deprecated: Bool = false,   // rank 无默认值：忘传=编译错（审查 M2）
         replacedBy: String? = nil,
@@ -73,10 +84,12 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         self.secondaryMuscles = secondaryMuscles
         self.equipment = equipment
         self.kind = kind
-        self.substitutionGroup = substitutionGroup
+        self.substitutionGroups = substitutionGroups
         self.startWeightKg = startWeightKg
         self.loadType = loadType
         self.progressionStepKg = progressionStepKg
+        self.loadFactor = loadFactor
+        self.progressionKey = progressionKey
         self.isGuided = isGuided
         self.rank = rank
         self.deprecated = deprecated
@@ -87,8 +100,8 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, nameZh, nameEn, movementPattern, primaryMuscle, secondaryMuscles
-        case equipment, kind, substitutionGroup, startWeightKg, rank, deprecated
-        case loadType, progressionStepKg, isGuided, replacedBy
+        case equipment, kind, substitutionGroups, startWeightKg, rank, deprecated
+        case loadType, progressionStepKg, loadFactor, progressionKey, isGuided, replacedBy
         case contraindicationHint, evidenceTag
     }
 
@@ -102,12 +115,16 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         secondaryMuscles = try c.decodeIfPresent([String].self, forKey: .secondaryMuscles) ?? []
         equipment = try c.decode(String.self, forKey: .equipment)
         kind = try c.decode(String.self, forKey: .kind)
-        substitutionGroup = try c.decode(String.self, forKey: .substitutionGroup)
+        substitutionGroups = try c.decode([String].self, forKey: .substitutionGroups)
         startWeightKg = try c.decode(Double.self, forKey: .startWeightKg)
-        // loadType / progressionStepKg 强制显式（内容事实不许靠默认值溜进目录，
-        // 同 rank 无默认值的 M2 教训）；isGuided/replacedBy/禁忌/证据可缺省。
+        // loadType / progressionStepKg / loadFactor 强制显式（内容事实不许靠默认值
+        // 溜进目录，同 rank 无默认值的 M2 教训）；其余可缺省。严格 decode 只作用于
+        // 包内 exercises.json（唯一被解码的目录文件，与 bundle 同 PR 演进，无历史
+        // 遗留文件需迁移）——缺字段=构建错误，fatal 于开发期（审查 M1 边界澄清）。
         loadType = try c.decode(String.self, forKey: .loadType)
         progressionStepKg = try c.decode(Double.self, forKey: .progressionStepKg)
+        loadFactor = try c.decode(Double.self, forKey: .loadFactor)
+        progressionKey = try c.decodeIfPresent(String.self, forKey: .progressionKey)
         isGuided = try c.decodeIfPresent(Bool.self, forKey: .isGuided) ?? false
         rank = try c.decode(Int.self, forKey: .rank)
         deprecated = try c.decodeIfPresent(Bool.self, forKey: .deprecated) ?? false

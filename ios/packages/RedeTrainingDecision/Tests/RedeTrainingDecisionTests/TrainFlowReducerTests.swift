@@ -119,7 +119,7 @@ final class TrainFlowReducerTests: XCTestCase {
                 id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
                 movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
                 secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
-                kind: entry.kind, substitutionGroup: entry.substitutionGroup,
+                kind: entry.kind, substitutionGroups: entry.substitutionGroups,
                 startWeightKg: entry.startWeightKg, loadType: entry.loadType,
                 progressionStepKg: 1.25, isGuided: entry.isGuided,
                 rank: entry.rank, deprecated: entry.deprecated

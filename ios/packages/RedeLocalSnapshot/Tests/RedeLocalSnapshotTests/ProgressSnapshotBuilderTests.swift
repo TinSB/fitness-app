@@ -223,4 +223,21 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(SnapshotDayMath.isoWeekStart(of: "2026-06-08"), "2026-06-08")
         XCTAssertNil(SnapshotDayMath.isoWeekStart(of: "2026-02-30"))
     }
+
+    // MARK: - §6.2 吨位系数（owner 拍板 B 案 2026-06-11）
+
+    func testVolumeAppliesLoadFactorFromFacts() {
+        let facts = ["db-bench-press": ExerciseStatsFacts(loadFactor: 2.0, isCompound: true)]
+        let snapshot = ProgressSnapshotBuilder.build(sessions: [
+            session("s1", "2026-06-01", [
+                ("db-bench-press", [set(30, 10)]),   // 单只 30 → 吨位 30×10×2 = 600
+                ("bench-press", [set(60, 5)]),       // facts 缺省 → ×1 = 300
+            ]),
+        ], facts: facts)
+        XCTAssertEqual(snapshot.history.first?.totalVolumeKg, 900)
+        XCTAssertEqual(snapshot.weeklyVolume.first?.totalVolumeKg, 900)
+        // e1RM/PR 永不乘系数（只作用于吨位统计）
+        let trend = snapshot.exerciseTrends.first { $0.exerciseId == "db-bench-press" }
+        XCTAssertEqual(trend?.bestWeightKg, 30)
+    }
 }

@@ -249,6 +249,12 @@ public enum TodayPrescriptionEngine {
         return max(step, base - step)
     }
 
+    /// 该动作最近一次工作顶组重量（供换动作后的小结 PR 口径：换入动作
+    /// 只和它自己的历史比，§6.2 修复 2026-06-11）；无历史 → nil。
+    public static func lastTopWeightKg(exerciseId: String, sessions: [CleanTrainingSession]) -> Double? {
+        lastPerformance(exerciseId: exerciseId, sessions: sessions)?.topWeightKg
+    }
+
     private struct LastPerformance {
         let topWeightKg: Double
         /// 顶组（最重一组）的次数。
