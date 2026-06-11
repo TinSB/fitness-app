@@ -37,6 +37,14 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.restNextExercise("Lat pulldown"), "Up next · Lat pulldown")
     }
 
+    func testResumeDialogAnchors() {
+        // 三颗按钮全部显式本地化——系统注入的 Cancel 跟随设备语言不理 app 设置
+        XCTAssertEqual(zh.resumeSessionContinue, "继续训练")
+        XCTAssertEqual(zh.resumeSessionDiscard, "放弃")
+        XCTAssertEqual(zh.resumeSessionLater, "稍后再说")
+        XCTAssertEqual(en.resumeSessionLater, "Not now")
+    }
+
     func testSkipReasonLabelsCoverAllCodes() {
         for code in ["equipmentBusy", "painDiscomfort", "fatigue", "timeShort", "other"] {
             XCTAssertFalse(zh.skipReasonLabel(code).isEmpty)

@@ -40,6 +40,11 @@ struct RootTabView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            // 启动时序竞态修复（2026-06-10 模拟器实证）：持久化语言偏好异步应用，
+            // 但 iOS 弹窗（如恢复训练 alert）一旦呈现就冻结文案——内容必须等
+            // 偏好应用完成（showOnboarding 从 nil 落定）才渲染，期间纯 redeBase
+            // 与启动屏无缝衔接。普通视图本可反应式刷新，但「首帧闪错语言」一并消除。
+            if showOnboarding != nil {
             Group {
                 switch selection {
                 case .today:
@@ -65,6 +70,7 @@ struct RootTabView: View {
 
             RedeTabBar(selection: $selection)
                 .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
+            }
 
             // M5-1b 首启引导（FR-ON1）：合法空文档才出现；unreadable 绝不进引导。
             if showOnboarding == true {
@@ -78,17 +84,11 @@ struct RootTabView: View {
         }
         .background(Color.redeBase.ignoresSafeArea())
         .task {
-            // 截图钩子 -forceOnboarding；-skipOnboarding 供既有自动化钩子绕过
-            let args = ProcessInfo.processInfo.arguments
-            if args.contains("-forceOnboarding") {
-                showOnboarding = true
-            } else if args.contains("-skipOnboarding") {
-                showOnboarding = false
-            } else {
-                showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
-            }
             // M5-2：启动读取持久化偏好（单位/语言）；-locale/-unit 启动参数优先（截图钩子）。
             // -locale 已在 init() 注入 store——此处传 nil 表示「不再用磁盘值覆盖」（顺序依赖，勿移）。
+            // 偏好必须先于 showOnboarding 落定：内容（含可能立刻弹出的恢复训练 alert）
+            // 以 showOnboarding != nil 为渲染闸，保证首个弹窗已是持久化语言。
+            let args = ProcessInfo.processInfo.arguments
             let prefs = await Task.detached { SessionStore.loadPreferences() }.value
             let unitForced = args.firstIndex(of: "-unit").flatMap { idx -> String? in
                 args.indices.contains(idx + 1) ? args[idx + 1] : nil
@@ -98,6 +98,14 @@ struct RootTabView: View {
                 unitRaw: unitForced ?? prefs.unit,
                 localeRaw: localePreApplied ? nil : prefs.locale
             )
+            // 截图钩子 -forceOnboarding；-skipOnboarding 供既有自动化钩子绕过
+            if args.contains("-forceOnboarding") {
+                showOnboarding = true
+            } else if args.contains("-skipOnboarding") {
+                showOnboarding = false
+            } else {
+                showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
+            }
         }
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；
