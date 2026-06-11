@@ -13,8 +13,10 @@ struct SettingsSheet: View {
 
     @State private var profile: SessionStore.ProfileSnapshot?
     @State private var showEditAnswers = false
+    @State private var feedbackFallbackText: String?
 
-    /// beta 反馈占位通道（FR-SE5 不引入 runtime 网络真相）；正式渠道归 M6-3。
+    /// M6-3 正式反馈渠道（owner 确认 2026-06-10）。mailto 外部拉起，
+    /// 不算 app runtime 网络真相（隐私文案「不连网」仍属实）。
     private let feedbackAddress = "xuhaochen122@gmail.com"
 
     private var s: RedeStrings { store.strings }
@@ -102,8 +104,12 @@ struct SettingsSheet: View {
                         Text(s.settingsDisclaimer)
                             .font(.redeCaption)
                             .foregroundStyle(Color.redeT3)
-                        SteelButton(title: s.settingsFeedback) {
-                            openURL(URL(string: "mailto:\(feedbackAddress)?subject=Rede%20Feedback")!)
+                        SteelButton(title: s.settingsFeedback) { sendFeedback() }
+                        if let feedbackFallbackText {
+                            Text(feedbackFallbackText)
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeT3)
+                                .textSelection(.enabled)
                         }
                     }
                 }
@@ -134,6 +140,38 @@ struct SettingsSheet: View {
             OnboardingView(onFinish: { showEditAnswers = false })
                 .environment(store)
                 .environment(sessionStore)
+        }
+    }
+
+    /// M6-3 一键反馈：主题带版本，正文带上下文行（版本/系统/机型/语言/单位）——
+    /// 全部在 compose 窗口对用户可见、可删，透明不偷带。mailto 打不开时如实给地址。
+    private func sendFeedback() {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        let model = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] ?? hardwareModel()
+        let context = "Rede \(version) (\(build)) · iOS \(UIDevice.current.systemVersion) · \(model) · \(store.locale.rawValue) · \(store.unit.rawValue)"
+        var comps = URLComponents()
+        comps.scheme = "mailto"
+        comps.path = feedbackAddress
+        comps.queryItems = [
+            URLQueryItem(name: "subject", value: s.feedbackSubject(version: version)),
+            URLQueryItem(name: "body", value: "\(s.feedbackBodyPrompt)\n\n—\n\(context)"),
+        ]
+        guard let url = comps.url else {
+            feedbackFallbackText = s.feedbackFallback(address: feedbackAddress)
+            return
+        }
+        openURL(url) { accepted in
+            feedbackFallbackText = accepted ? nil : s.feedbackFallback(address: feedbackAddress)
+        }
+    }
+
+    private func hardwareModel() -> String {
+        var sys = utsname()
+        uname(&sys)
+        return withUnsafePointer(to: &sys.machine) { ptr in
+            ptr.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) { String(cString: $0) }
         }
     }
 
