@@ -52,6 +52,8 @@ public struct CleanProfile: Equatable, Sendable {
     public let heightCm: Double?
     public let weightKg: Double?
     public let weeklyTrainingDays: Int?
+    /// FR-EQ1（2026-06-11）：器械场景，只认已知档位（builder 校验），引擎据此过滤目录。
+    public let equipmentScenario: String?
 
     public init(
         trainingLevel: String? = nil,
@@ -59,7 +61,8 @@ public struct CleanProfile: Equatable, Sendable {
         age: Int? = nil,
         heightCm: Double? = nil,
         weightKg: Double? = nil,
-        weeklyTrainingDays: Int? = nil
+        weeklyTrainingDays: Int? = nil,
+        equipmentScenario: String? = nil
     ) {
         self.trainingLevel = trainingLevel
         self.sex = sex
@@ -67,6 +70,7 @@ public struct CleanProfile: Equatable, Sendable {
         self.heightCm = heightCm
         self.weightKg = weightKg
         self.weeklyTrainingDays = weeklyTrainingDays
+        self.equipmentScenario = equipmentScenario
     }
 }
 

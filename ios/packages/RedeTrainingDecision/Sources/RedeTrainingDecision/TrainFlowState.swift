@@ -73,11 +73,14 @@ public struct TrainFlowState: Equatable, Sendable {
 
     private var phaseBeforeConfirm: Phase = .activeSet
     private let catalog: ExerciseCatalog
+    /// FR-EQ1（2026-06-11）：器械白名单（nil=不过滤），换动作候选据此过滤。
+    private let allowedEquipment: Set<String>?
 
-    public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal) {
+    public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil) {
         self.prescription = prescription
         self.plan = SessionSetPlanner.expand(prescription)
         self.catalog = catalog
+        self.allowedEquipment = allowedEquipment
     }
 
     // MARK: - 派生
@@ -136,7 +139,8 @@ public struct TrainFlowState: Equatable, Sendable {
         return ExerciseReplacementEngine.candidates(
             for: exercise.exerciseId,
             catalog: catalog,
-            excluding: Set(plan.exercises.map(\.exerciseId))
+            excluding: Set(plan.exercises.map(\.exerciseId)),
+            allowedEquipment: allowedEquipment
         )
     }
 
@@ -255,9 +259,10 @@ public struct TrainFlowState: Equatable, Sendable {
     public static func restore(
         prescription: TodayPrescription,
         events: [TrainFlowEvent],
-        catalog: ExerciseCatalog = .minimal
+        catalog: ExerciseCatalog = .minimal,
+        allowedEquipment: Set<String>? = nil
     ) -> TrainFlowState? {
-        var state = TrainFlowState(prescription: prescription, catalog: catalog)
+        var state = TrainFlowState(prescription: prescription, catalog: catalog, allowedEquipment: allowedEquipment)
         for event in events {
             switch event {
             case .logSet(let observation): state.logSet(observation)

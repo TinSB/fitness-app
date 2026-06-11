@@ -85,6 +85,17 @@ public struct ExerciseCatalog: Equatable, Sendable {
             .init(id: "db-rdl", movementPattern: "hinge", primaryMuscle: "hamstrings", secondaryMuscles: ["glutes"], equipment: "dumbbell", kind: "compound", substitutionGroup: "hinge", startWeightKg: 30),
             .init(id: "leg-curl", movementPattern: "knee-flexion", primaryMuscle: "hamstrings", equipment: "machine", kind: "isolation", substitutionGroup: "hamstring-curl", startWeightKg: 40),
             .init(id: "calf-raise", movementPattern: "calf-raise", primaryMuscle: "calves", equipment: "machine", kind: "isolation", substitutionGroup: "calves", startWeightKg: 50),
+
+            // FR-EQ1 家用哑铃覆盖（2026-06-11）：补齐槽位 pattern 的 dumbbell 选项。
+            // 一律附加在目录尾部——first-match 顺序不变，commercial/无场景行为与 golden 稳定。
+            // 重量口径：哑铃/单边 = 单只哑铃重量（系统逻辑 §153）。
+            .init(id: "goblet-squat", movementPattern: "squat-pattern", primaryMuscle: "quads", secondaryMuscles: ["glutes", "core"], equipment: "dumbbell", kind: "compound", substitutionGroup: "squat", startWeightKg: 17.5),
+            .init(id: "db-lunge", movementPattern: "squat-pattern", primaryMuscle: "quads", secondaryMuscles: ["glutes"], equipment: "dumbbell", kind: "compound", substitutionGroup: "squat", startWeightKg: 12.5),
+            .init(id: "db-fly", movementPattern: "fly", primaryMuscle: "chest", equipment: "dumbbell", kind: "isolation", substitutionGroup: "chest-fly", startWeightKg: 10),
+            .init(id: "db-pullover", movementPattern: "vertical-pull", primaryMuscle: "back", secondaryMuscles: ["chest"], equipment: "dumbbell", kind: "compound", substitutionGroup: "vertical-pull", startWeightKg: 15),
+            .init(id: "rear-delt-fly", movementPattern: "rear-delt", primaryMuscle: "rear-delt", secondaryMuscles: ["upper-back"], equipment: "dumbbell", kind: "isolation", substitutionGroup: "rear-delt", startWeightKg: 7.5),
+            .init(id: "db-overhead-triceps-extension", movementPattern: "triceps-extension", primaryMuscle: "triceps", equipment: "dumbbell", kind: "isolation", substitutionGroup: "triceps", startWeightKg: 10),
+            .init(id: "db-calf-raise", movementPattern: "calf-raise", primaryMuscle: "calves", equipment: "dumbbell", kind: "isolation", substitutionGroup: "calves", startWeightKg: 17.5),
         ]
     )
 }

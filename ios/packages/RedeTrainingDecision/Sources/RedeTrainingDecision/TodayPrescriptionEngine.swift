@@ -107,15 +107,28 @@ public enum TodayPrescriptionEngine {
         let sequence = daySequence(splitType: input.program.splitType)
         let dayCode = sequence[input.sessions.count % sequence.count]
 
+        // FR-EQ1（2026-06-11）：场景白名单硬过滤候选；槽位 equipment/machine-kind
+        // 偏好与白名单冲突时软化（保 pattern 在可用器械里匹配），槽位无解=如实 unfilled。
+        let allowed = EquipmentAccess.allowed(for: input.profile.equipmentScenario)
+
         var dayReasons: [DayPrescriptionReason] = []
         var usedIds: Set<String> = []
         var exercises: [ExercisePrescriptionPlan] = []
 
         for slot in slots(dayCode: dayCode) {
+            let slotEquipment = slot.equipment.flatMap { pref in
+                (allowed == nil || allowed!.contains(pref)) ? pref : nil
+            }
+            // kind 只软化 "machine"（器械耦合）；"compound" 永不软化——
+            // 它是动作性质约束（如深蹲主槽必须复合），与器械可得性无关
+            let slotKind = slot.kind.flatMap { kind in
+                (kind == "machine" && allowed != nil && !allowed!.contains("machine")) ? nil : kind
+            }
             guard let entry = catalog.entries.first(where: { entry in
                 entry.movementPattern == slot.pattern
-                    && (slot.kind == nil || entry.kind == slot.kind)
-                    && (slot.equipment == nil || entry.equipment == slot.equipment)
+                    && (slotKind == nil || entry.kind == slotKind)
+                    && (slotEquipment == nil || entry.equipment == slotEquipment)
+                    && (allowed == nil || allowed!.contains(entry.equipment))
                     && !usedIds.contains(entry.id)
             }) else {
                 dayReasons.append(.slotUnfilled(pattern: slot.pattern))

@@ -23,10 +23,13 @@ public enum SessionEndReason: String, CaseIterable, Equatable, Sendable, Codable
 public enum ExerciseReplacementEngine {
     /// 同替代族候选（catalog 声明顺序，排除自身与当日已排动作）；未知 id → 空。
     /// M3-3 接线时调用方必须传入当天清单的动作 id 集合，避免替换成已有动作。
+    /// FR-EQ1（2026-06-11）：candidates 同守器械白名单（nil = 不过滤）——
+    /// 不能给家用哑铃用户推荐换成器械推胸。
     public static func candidates(
         for exerciseId: String,
         catalog: ExerciseCatalog = .minimal,
-        excluding alreadyScheduledIds: Set<String> = []
+        excluding alreadyScheduledIds: Set<String> = [],
+        allowedEquipment: Set<String>? = nil
     ) -> [String] {
         guard let entry = catalog.entry(id: exerciseId) else { return [] }
         return catalog.entries
@@ -34,6 +37,7 @@ public enum ExerciseReplacementEngine {
                 $0.substitutionGroup == entry.substitutionGroup
                     && $0.id != exerciseId
                     && !alreadyScheduledIds.contains($0.id)
+                    && (allowedEquipment == nil || allowedEquipment!.contains($0.equipment))
             }
             .map(\.id)
     }

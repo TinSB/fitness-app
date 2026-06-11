@@ -10,6 +10,7 @@ import RedeDomain
 
 public enum CleanAppDataViewBuilder {
     private static let knownTrainingLevels: Set<String> = ["beginner", "intermediate", "advanced"]
+    private static let knownEquipmentScenarios: Set<String> = ["commercial-gym", "home-dumbbell", "minimal"]
 
     public static func build(from appData: AppData) -> CleanAppDataView {
         var issues: [DataHealthIssue] = []
@@ -141,13 +142,21 @@ public enum CleanAppDataViewBuilder {
             trainingLevel = nil
         }
 
+        // FR-EQ1：器械场景只认已知档位（未知 → nil 留痕，引擎不瞎过滤）
+        var equipmentScenario = profile.equipmentScenario
+        if let scenario = equipmentScenario, !knownEquipmentScenarios.contains(scenario) {
+            issues.append(.profileFieldIgnored(field: "equipmentScenario"))
+            equipmentScenario = nil
+        }
+
         return CleanProfile(
             trainingLevel: trainingLevel,
             sex: profile.sex,
             age: scalar(profile.age, 10...120, "age"),
             heightCm: scalar(profile.heightCm, 100...250, "heightCm"),
             weightKg: scalar(profile.weightKg, 20...400, "weightKg"),
-            weeklyTrainingDays: scalar(profile.weeklyTrainingDays, 1...14, "weeklyTrainingDays")
+            weeklyTrainingDays: scalar(profile.weeklyTrainingDays, 1...14, "weeklyTrainingDays"),
+            equipmentScenario: equipmentScenario
         )
     }
 }

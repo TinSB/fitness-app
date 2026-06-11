@@ -447,8 +447,13 @@ struct TrainTabView: View {
             .multilineTextAlignment(.center)
             .frame(width: 76)
             .padding(.vertical, 4)
-            .background(Color.redeHair.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            // 整面板（2026-06-11 欠账清尾）：输入可供性改 baseline 刻线式
+            // （与刻度轨同族），不再是圆角填充盒；聚焦时基线提亮
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(weightFieldFocused ? Color.redeSteel : Color.redeEtch)
+                    .frame(height: weightFieldFocused ? 2 : 1)
+            }
             .onChange(of: weightFieldFocused) { _, focused in
                 if !focused { commitWeightText() }
             }

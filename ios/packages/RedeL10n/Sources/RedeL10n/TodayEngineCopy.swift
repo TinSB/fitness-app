@@ -25,6 +25,11 @@ extension RedeStrings {
             "hack-squat": "哈克深蹲", "leg-press": "腿举",
             "romanian-deadlift": "罗马尼亚硬拉", "db-rdl": "哑铃罗马尼亚硬拉",
             "leg-curl": "腿弯举", "calf-raise": "提踵",
+            // FR-EQ1 家用哑铃覆盖（2026-06-11）
+            "goblet-squat": "高脚杯深蹲", "db-lunge": "哑铃箭步蹲",
+            "db-fly": "哑铃飞鸟", "db-pullover": "哑铃仰卧上拉",
+            "rear-delt-fly": "俯身反向飞鸟", "db-overhead-triceps-extension": "哑铃颈后臂屈伸",
+            "db-calf-raise": "哑铃提踵",
         ]
         let en: [String: String] = [
             "bench-press": "Bench press", "incline-db-press": "Incline DB press",
@@ -39,6 +44,11 @@ extension RedeStrings {
             "hack-squat": "Hack squat", "leg-press": "Leg press",
             "romanian-deadlift": "Romanian deadlift", "db-rdl": "DB RDL",
             "leg-curl": "Leg curl", "calf-raise": "Calf raise",
+            // FR-EQ1 home-dumbbell coverage (2026-06-11)
+            "goblet-squat": "Goblet squat", "db-lunge": "DB lunge",
+            "db-fly": "DB fly", "db-pullover": "DB pullover",
+            "rear-delt-fly": "Rear-delt fly", "db-overhead-triceps-extension": "Overhead triceps extension",
+            "db-calf-raise": "DB calf raise",
         ]
         let table = locale == .zh ? zh : en
         return table[id] ?? id

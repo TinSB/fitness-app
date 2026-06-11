@@ -23,7 +23,8 @@ final class SessionIntentModelTests: XCTestCase {
     func testReplacementExcludesSelfAndKeepsCatalogOrder() {
         let candidates = ExerciseReplacementEngine.candidates(for: "hack-squat")
         XCTAssertFalse(candidates.contains("hack-squat"))
-        XCTAssertEqual(candidates, ["squat", "leg-press"])
+        // FR-EQ1 目录扩充（2026-06-11）：squat 族尾部新增哑铃选项，目录序保持
+        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge"])
     }
 
     func testUnknownExerciseYieldsNoCandidates() {
@@ -31,7 +32,8 @@ final class SessionIntentModelTests: XCTestCase {
     }
 
     func testSoleMemberGroupReturnsNoCandidates() {
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "calf-raise"), [])
+        // FR-EQ1 后 calves 族不再单成员；hamstring-curl（leg-curl）仍是单成员族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), [])
     }
 
     // 排除当日已排动作（M3-3 接线合同：push-a 已含 machine-chest-press）

@@ -28,7 +28,7 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
     }
 
     /// nil = 重放失败（如 catalog 漂移）——调用方应放弃恢复而非展示错误状态。
-    public func restoreFlow() -> TrainFlowState? {
-        TrainFlowState.restore(prescription: prescription, events: events)
+    public func restoreFlow(allowedEquipment: Set<String>? = nil) -> TrainFlowState? {
+        TrainFlowState.restore(prescription: prescription, events: events, allowedEquipment: allowedEquipment)
     }
 }

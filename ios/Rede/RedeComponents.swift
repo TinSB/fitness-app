@@ -19,6 +19,9 @@ struct Overline: View {
 // MARK: - 锻面颗粒(.forged::after 噪声,~1.5% 可见度)
 
 struct ForgedGrain: View {
+    /// 0.5 ≈ 卡面 1.5%（K2 锁定）；base 全屏用 0.33 ≈ 1%（§12.2，真机 25% 亮度校准后定值）。
+    var intensity: Double = 0.5
+
     var body: some View {
         Canvas { context, size in
             var seed: UInt64 = 0x9E3779B97F4A7C15
@@ -44,7 +47,7 @@ struct ForgedGrain: View {
                 y += step
             }
         }
-        .opacity(0.5)
+        .opacity(intensity)
         .allowsHitTesting(false)
     }
 }

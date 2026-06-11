@@ -82,7 +82,14 @@ struct RootTabView: View {
                 .background(Color.redeBase.ignoresSafeArea())
             }
         }
-        .background(Color.redeBase.ignoresSafeArea())
+        // §12.2 整面板：base 自身的锻面颗粒（≈1%，hero 铭牌颗粒仍 1.5% 专属更密）
+        .background {
+            ZStack {
+                Color.redeBase
+                ForgedGrain(intensity: 0.33)
+            }
+            .ignoresSafeArea()
+        }
         .task {
             // M5-2：启动读取持久化偏好（单位/语言）；-locale/-unit 启动参数优先（截图钩子）。
             // -locale 已在 init() 注入 store——此处传 nil 表示「不再用磁盘值覆盖」（顺序依赖，勿移）。

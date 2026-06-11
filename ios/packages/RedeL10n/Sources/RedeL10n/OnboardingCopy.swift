@@ -133,7 +133,9 @@ extension RedeStrings {
         case "home-dumbbell":
             return locale == .zh ? "每个动作都能用哑铃和凳完成" : "Every lift works with dumbbells and a bench"
         default:
-            return locale == .zh ? "围绕最小器械排——轻负重加自重" : "Built around a minimal kit — light weights and bodyweight"
+            // FR-EQ1（2026-06-11）：目录暂无自重条目，回声只承诺引擎兑现的事——
+            // 「一对哑铃就够」；自重覆盖归目录扩充（§6.3）
+            return locale == .zh ? "围绕少量负重排——一对哑铃就够" : "Built around a small kit — a pair of dumbbells is enough"
         }
     }
 
