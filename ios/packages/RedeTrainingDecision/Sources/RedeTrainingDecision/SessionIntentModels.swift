@@ -34,11 +34,13 @@ public enum ExerciseReplacementEngine {
         guard let entry = catalog.entry(id: exerciseId) else { return [] }
         return catalog.entries
             .filter {
-                $0.substitutionGroup == entry.substitutionGroup
+                !$0.deprecated
+                    && $0.substitutionGroup == entry.substitutionGroup
                     && $0.id != exerciseId
                     && !alreadyScheduledIds.contains($0.id)
                     && (allowedEquipment == nil || allowedEquipment!.contains($0.equipment))
             }
+            .sorted { ($0.rank, $0.id) < ($1.rank, $1.id) }   // 内容系统 P0：去顺序化
             .map(\.id)
     }
 }

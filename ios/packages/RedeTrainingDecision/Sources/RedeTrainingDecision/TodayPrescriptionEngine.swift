@@ -124,13 +124,19 @@ public enum TodayPrescriptionEngine {
             let slotKind = slot.kind.flatMap { kind in
                 (kind == "machine" && allowed != nil && !allowed!.contains("machine")) ? nil : kind
             }
-            guard let entry = catalog.entries.first(where: { entry in
-                entry.movementPattern == slot.pattern
-                    && (slotKind == nil || entry.kind == slotKind)
-                    && (slotEquipment == nil || entry.equipment == slotEquipment)
-                    && (allowed == nil || allowed!.contains(entry.equipment))
-                    && !usedIds.contains(entry.id)
-            }) else {
+            // 内容系统 P0（2026-06-11）：匹配去顺序化——(rank, id) 升序取首，
+            // 文件顺序不再是合同；deprecated 条目不参与匹配（id 永生只为历史解析）
+            guard let entry = catalog.entries
+                .filter({ entry in
+                    !entry.deprecated
+                        && entry.movementPattern == slot.pattern
+                        && (slotKind == nil || entry.kind == slotKind)
+                        && (slotEquipment == nil || entry.equipment == slotEquipment)
+                        && (allowed == nil || allowed!.contains(entry.equipment))
+                        && !usedIds.contains(entry.id)
+                })
+                .min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
+            else {
                 dayReasons.append(.slotUnfilled(pattern: slot.pattern))
                 continue
             }

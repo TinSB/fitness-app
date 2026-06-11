@@ -158,7 +158,7 @@ struct TrainTabView: View {
         let exercise = flow.currentExercise
         let recommendation = flow.currentRecommendation
         return VStack(alignment: .leading, spacing: 0) {
-            Text(exercise.map { s.exerciseName($0.exerciseId) } ?? "")
+            Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
                 .font(.redeSubhead)
                 .foregroundStyle(Color.redeT2)
 
@@ -270,7 +270,7 @@ struct TrainTabView: View {
            flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise >= exercise.sets.count {
             let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
                 ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
-            return next.map { s.restNextExercise(s.exerciseName($0.exerciseId)) } ?? ""
+            return next.map { s.restNextExercise(localeStore.exerciseName($0.exerciseId)) } ?? ""
         }
         guard let rec = flow.currentRecommendation else { return "" }
         return s.restNextPreview(setNumber: rec.setIndex, kg: s.formatKg(rec.targetWeightKg), reps: rec.targetReps)
@@ -696,7 +696,7 @@ struct TrainTabView: View {
             ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
         return Group {
             if let next {
-                Text(s.restNextExercise(s.exerciseName(next.exerciseId)) + " · \(next.sets.count) × \(next.sets.first?.targetReps ?? 0)")
+                Text(s.restNextExercise(localeStore.exerciseName(next.exerciseId)) + " · \(next.sets.count) × \(next.sets.first?.targetReps ?? 0)")
                     .font(.redeCaption)
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT4)
@@ -789,7 +789,7 @@ struct TrainTabView: View {
             if let candidates = flow?.replacementCandidates, !candidates.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(Array(candidates.enumerated()), id: \.element) { idx, id in
-                        sheetActionRow(s.exerciseName(id), divider: idx < candidates.count - 1) {
+                        sheetActionRow(localeStore.exerciseName(id), divider: idx < candidates.count - 1) {
                             clearAdjustment() // 换动作 = 新目标，旧暂存作废
                             sessionStore.apply(.replaceExercise(id))
                             showSwapSheet = false
@@ -876,7 +876,7 @@ struct TrainTabView: View {
                             .foregroundStyle(Color.redeEmber)
                         VStack(alignment: .leading, spacing: 2) {
                             Overline(text: s.summaryPr, color: .redeEmber2)
-                            Text(s.summaryTopSet(name: s.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
+                            Text(s.summaryTopSet(name: localeStore.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
                                 .font(.redeBody)
                                 .foregroundStyle(Color.redeT1)
                         }
@@ -884,7 +884,7 @@ struct TrainTabView: View {
                     .padding(14)
                 }
             } else if let top = summary?.topSet {
-                Text(s.summaryTopSet(name: s.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
+                Text(s.summaryTopSet(name: localeStore.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeT2)
             }

@@ -308,7 +308,7 @@ struct OnboardingView: View {
                     if let first {
                         Overline(text: s.onbFirstSession)
                             .padding(.top, 18)
-                        Text(s.exerciseName(first.exerciseId))
+                        Text(localeStore.exerciseName(first.exerciseId))
                             .font(.redeSubhead)
                             .foregroundStyle(Color.redeT1)
                             .padding(.top, 6)

@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../RedePersistence"),
     ],
     targets: [
-        .target(name: "RedeTrainingDecision", dependencies: ["RedeDomain", "RedeDataHealth"]),
+        .target(name: "RedeTrainingDecision", dependencies: ["RedeDomain", "RedeDataHealth"], resources: [.process("Resources")]),
         .testTarget(name: "RedeTrainingDecisionTests", dependencies: ["RedeTrainingDecision", "RedePersistence"]),
     ]
 )

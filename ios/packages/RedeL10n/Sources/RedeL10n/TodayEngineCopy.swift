@@ -8,51 +8,10 @@
 import Foundation
 
 extension RedeStrings {
-    // MARK: - 名称（动作 24 条 + 训练日）
-
-    /// 动作双语名（id 即 catalog 稳定 id；未知 id 原样回显，不猜）。
-    public func exerciseName(_ id: String) -> String {
-        let zh: [String: String] = [
-            "bench-press": "平板卧推", "incline-db-press": "上斜哑铃卧推",
-            "db-bench-press": "哑铃卧推", "machine-chest-press": "器械推胸",
-            "cable-fly": "绳索夹胸", "lat-pulldown": "高位下拉",
-            "seated-row": "坐姿划船", "barbell-row": "杠铃划船",
-            "one-arm-db-row": "单臂哑铃划船", "face-pull": "面拉",
-            "shoulder-press": "哑铃肩推", "lateral-raise": "哑铃侧平举",
-            "db-curl": "哑铃弯举", "hammer-curl": "锤式弯举",
-            "preacher-curl": "牧师凳弯举", "triceps-pushdown": "绳索下压",
-            "close-grip-bench": "窄握卧推", "squat": "深蹲",
-            "hack-squat": "哈克深蹲", "leg-press": "腿举",
-            "romanian-deadlift": "罗马尼亚硬拉", "db-rdl": "哑铃罗马尼亚硬拉",
-            "leg-curl": "腿弯举", "calf-raise": "提踵",
-            // FR-EQ1 家用哑铃覆盖（2026-06-11）
-            "goblet-squat": "高脚杯深蹲", "db-lunge": "哑铃箭步蹲",
-            "db-fly": "哑铃飞鸟", "db-pullover": "哑铃仰卧上拉",
-            "rear-delt-fly": "俯身反向飞鸟", "db-overhead-triceps-extension": "哑铃颈后臂屈伸",
-            "db-calf-raise": "哑铃提踵",
-        ]
-        let en: [String: String] = [
-            "bench-press": "Bench press", "incline-db-press": "Incline DB press",
-            "db-bench-press": "DB bench press", "machine-chest-press": "Machine chest press",
-            "cable-fly": "Cable fly", "lat-pulldown": "Lat pulldown",
-            "seated-row": "Seated row", "barbell-row": "Barbell row",
-            "one-arm-db-row": "One-arm DB row", "face-pull": "Face pull",
-            "shoulder-press": "Shoulder press", "lateral-raise": "Lateral raise",
-            "db-curl": "DB curl", "hammer-curl": "Hammer curl",
-            "preacher-curl": "Preacher curl", "triceps-pushdown": "Triceps pushdown",
-            "close-grip-bench": "Close-grip bench", "squat": "Squat",
-            "hack-squat": "Hack squat", "leg-press": "Leg press",
-            "romanian-deadlift": "Romanian deadlift", "db-rdl": "DB RDL",
-            "leg-curl": "Leg curl", "calf-raise": "Calf raise",
-            // FR-EQ1 home-dumbbell coverage (2026-06-11)
-            "goblet-squat": "Goblet squat", "db-lunge": "DB lunge",
-            "db-fly": "DB fly", "db-pullover": "DB pullover",
-            "rear-delt-fly": "Rear-delt fly", "db-overhead-triceps-extension": "Overhead triceps extension",
-            "db-calf-raise": "DB calf raise",
-        ]
-        let table = locale == .zh ? zh : en
-        return table[id] ?? id
-    }
+    // MARK: - 训练日名称
+    // 动作名已迁入 ExerciseCatalog（内容系统 P0，2026-06-11）：
+    // 「本地化展示名是动作事实」——单一真源 exercises.json，app 层经
+    // LocaleStore.exerciseName 桥接；本包不再维护动作名字典。
 
     /// 训练日双语名（zh 复用 legacy TEMPLATE_NAME_MAP 词汇）。
     public func trainingDayName(_ code: String) -> String {

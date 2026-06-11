@@ -135,7 +135,7 @@ struct TodayTabView: View {
     private var changeLineText: String {
         guard let first = firstExercise else { return s.changeLineNone }
         return s.changeLine(
-            exerciseName: s.exerciseName(first.exerciseId),
+            exerciseName: localeStore.exerciseName(first.exerciseId),
             change: first.change.rawValue,
             fromKg: first.previousWeightKg.map(s.formatKg),
             toKg: s.formatKg(first.targetWeightKg)
@@ -170,7 +170,7 @@ struct TodayTabView: View {
                     HStack(alignment: .bottom) {
                         VStack(alignment: .leading, spacing: 0) {
                             Overline(text: s.todayStartHere, color: .redeEmber2)
-                            Text(s.exerciseName(first.exerciseId))
+                            Text(localeStore.exerciseName(first.exerciseId))
                                 .font(.redeSubhead)
                                 .foregroundStyle(Color.redeT1)
                                 .padding(.top, 7)
@@ -190,7 +190,7 @@ struct TodayTabView: View {
                         Spacer()
                         VStack(alignment: .trailing, spacing: 8) {
                             if let second = model?.prescription?.exercises.dropFirst().first {
-                                Text(s.thenLine(s.exerciseName(second.exerciseId)))
+                                Text(s.thenLine(localeStore.exerciseName(second.exerciseId)))
                                     .font(.redeCaption)
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT3)
@@ -198,7 +198,7 @@ struct TodayTabView: View {
                             if let third = model?.prescription?.exercises.dropFirst(2).first {
                                 HStack(spacing: 5) {
                                     Rectangle().fill(Color.redeNeu).frame(width: 16, height: 2)
-                                    Text(s.thenLine(s.exerciseName(third.exerciseId)))
+                                    Text(s.thenLine(localeStore.exerciseName(third.exerciseId)))
                                         .font(.redeCaption)
                                         .monospacedDigit()
                                         .foregroundStyle(Color.redeT3)
@@ -298,7 +298,7 @@ struct TodayTabView: View {
     // Progress Rail: last → today → next
     private var progressRail: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Overline(text: firstExercise.map { s.railTitle(s.exerciseName($0.exerciseId)) } ?? s.todayRailTitle)
+            Overline(text: firstExercise.map { s.railTitle(localeStore.exerciseName($0.exerciseId)) } ?? s.todayRailTitle)
             ZStack(alignment: .top) {
                 GeometryReader { geo in
                     Rectangle()

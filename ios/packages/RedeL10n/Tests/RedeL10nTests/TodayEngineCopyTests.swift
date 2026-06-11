@@ -40,17 +40,9 @@ final class TodayEngineCopyTests: XCTestCase {
         }
     }
 
+    // 动作名已迁入 ExerciseCatalog（内容系统 P0）：名字覆盖合同归
+    // RedeTrainingDecision/CatalogContractTests；本包只测训练日名。
     func testExerciseAndDayNames() {
-        XCTAssertEqual(zh.exerciseName("db-bench-press"), "哑铃卧推")
-        XCTAssertEqual(en.exerciseName("db-bench-press"), "DB bench press")
-        XCTAssertEqual(zh.exerciseName("unknown-id"), "unknown-id")
-        // FR-EQ1 家用哑铃覆盖条目：7 个新 id 双语都不许回退成裸 id
-        for id in ["goblet-squat", "db-lunge", "db-fly", "db-pullover",
-                   "rear-delt-fly", "db-overhead-triceps-extension", "db-calf-raise"] {
-            XCTAssertNotEqual(zh.exerciseName(id), id, "zh 缺名: \(id)")
-            XCTAssertNotEqual(en.exerciseName(id), id, "en 缺名: \(id)")
-        }
-        XCTAssertEqual(zh.exerciseName("goblet-squat"), "高脚杯深蹲")
         XCTAssertEqual(zh.trainingDayName("upper"), "上肢 A")
         XCTAssertEqual(en.trainingDayName("push-a"), "Push A")
         XCTAssertEqual(en.trainingDayName("upper"), "Upper")

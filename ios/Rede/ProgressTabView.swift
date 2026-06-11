@@ -192,7 +192,7 @@ struct ProgressTabView: View {
         let maxVolume = max(shown.map(\.volume).max() ?? 1, 1)
         let prSet = Set(latest.prExerciseIds)
         let bars = shown.map { item in
-            (label: s.exerciseName(item.id),
+            (label: localeStore.exerciseName(item.id),
              fraction: CGFloat(item.volume / maxVolume),
              tag: prSet.contains(item.id) ? s.historyPRBadge : nil,
              ember: prSet.contains(item.id))
@@ -201,8 +201,8 @@ struct ProgressTabView: View {
         let verdict: String
         let caption: String
         if let firstPR = latest.prExerciseIds.first {
-            verdict = s.sessionVerdictPR(s.exerciseName(firstPR))
-            caption = s.sessionCaptionPR(s.exerciseName(firstPR))
+            verdict = s.sessionVerdictPR(localeStore.exerciseName(firstPR))
+            caption = s.sessionCaptionPR(localeStore.exerciseName(firstPR))
         } else {
             verdict = s.sessionVerdictDone
             caption = s.sessionCaptionNoPR
@@ -214,7 +214,7 @@ struct ProgressTabView: View {
                .points.first(where: { $0.sessionId == latest.sessionId })?.e1RmKg {
             // e1RM 点缺失（理论不可达）→ 保持不含 e1RM 的兜底句，绝不显示「0 kg」
             sub = s.sessionSubTopSet(
-                lift: s.exerciseName(top.exerciseId),
+                lift: localeStore.exerciseName(top.exerciseId),
                 kg: s.formatKg(top.weightKg),
                 reps: top.reps,
                 e1rmKg: s.formatE1Rm(e1rm)
@@ -280,7 +280,7 @@ struct ProgressTabView: View {
                 caption: s.cycleCaptionPeak
             )
         }
-        let name = s.exerciseName(key.exerciseId)
+        let name = localeStore.exerciseName(key.exerciseId)
         let points = Array(key.points.suffix(6))
         let values = points.map { CGFloat($0.e1RmKg) }
         let emberIndex = values.indices.max(by: { values[$0] < values[$1] }) ?? 0
@@ -408,7 +408,7 @@ struct ProgressTabView: View {
                 }
                 ForEach(Array(record.exercises.enumerated()), id: \.offset) { _, exercise in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(s.exerciseName(exercise.exerciseId))
+                        Text(localeStore.exerciseName(exercise.exerciseId))
                             .font(.redeBody)
                             .foregroundStyle(Color.redeT1)
                         ForEach(Array(exercise.sets.enumerated()), id: \.offset) { setIndex, set in
@@ -461,12 +461,12 @@ struct ProgressTabView: View {
         switch suspect.reason {
         case .repsImplausiblyHigh:
             return s.suspectRepsLine(
-                dateISO: suspect.dateISO, lift: s.exerciseName(suspect.exerciseId),
+                dateISO: suspect.dateISO, lift: localeStore.exerciseName(suspect.exerciseId),
                 setIndex: suspect.setIndex, reps: suspect.reps
             )
         case .weightFarAboveOwnHistory, .weightBeyondPlausibleCeiling:
             return s.suspectWeightLine(
-                dateISO: suspect.dateISO, lift: s.exerciseName(suspect.exerciseId),
+                dateISO: suspect.dateISO, lift: localeStore.exerciseName(suspect.exerciseId),
                 setIndex: suspect.setIndex, kg: s.formatKg(suspect.weightKg)
             )
         }
