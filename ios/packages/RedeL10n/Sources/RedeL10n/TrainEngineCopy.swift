@@ -207,6 +207,9 @@ extension RedeStrings {
     }
     public var resumeSessionContinue: String { locale == .zh ? "继续训练" : "Resume" }
     public var resumeSessionDiscard: String { locale == .zh ? "放弃" : "Discard" }
+    /// 取消按钮必须显式给文案——SwiftUI 自动注入的系统 Cancel 跟随设备语言，
+    /// 不理 app 内语言设置（2026-06-10 模拟器实证：中文界面冒英文 Cancel）。
+    public var resumeSessionLater: String { locale == .zh ? "稍后再说" : "Not now" }
 
     /// 训练 tab 无进行中会话时的空态。
     public var trainEmptyTitle: String { locale == .zh ? "今天还没开始训练" : "No session in progress" }

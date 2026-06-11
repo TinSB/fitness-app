@@ -62,6 +62,9 @@ struct TodayTabView: View {
             Button(s.resumeSessionDiscard, role: .destructive) {
                 sessionStore.discardPendingDraft()
             }
+            // 显式取消（=稍后再说）：不给的话 SwiftUI 注入系统 Cancel，跟随设备
+            // 语言而非 app 内语言；动作留空，binding set(false) 负责清提示留 draft
+            Button(s.resumeSessionLater, role: .cancel) {}
         } message: {
             Text(s.resumeSessionMessage)
         }
