@@ -92,6 +92,31 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .tg b{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--base);transition:left .15s}
 .tg.on b{left:18px}
 .discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
+
+/* 设置 overlay（M5-2 工艺重做，拍板方向 B「信号键」2026-06-10；方向稿 rede-12-settings-instrument.html）：
+   面板铭牌头（overline 型号行 + headline）+ 机加工分段开关（凹槽轨 inset 阴影，选中=色调抬升不点 ember）
+   + 设备铭牌 spec plate（唯一 hero：锻面+registration+仪表字阶）+ S2 刻线分组
+   + 背板蚀刻渐进披露（默认收起）+ ember 仅一处=发送反馈（面板唯一向外动作）。 */
+.st-head{display:flex;justify-content:space-between;align-items:flex-end;padding:10px 20px 12px;border-bottom:1px solid var(--hair2)}
+.st-grab{width:36px;height:5px;border-radius:3px;background:var(--hair);margin:8px auto 0}
+.st-prow{display:flex;justify-content:space-between;align-items:center;margin:12px 20px 0}
+.st-seg{width:168px;display:flex;background:#1A1712;border-radius:9px;padding:3px;box-shadow:inset 0 1px 0 rgba(0,0,0,.28)}
+.st-seg button{flex:1;text-align:center;font-size:12px;font-weight:500;color:var(--t3);min-height:38px;border-radius:7px}
+.st-seg button[aria-selected="true"]{background:var(--hair);color:var(--t1)}
+.etick{display:flex;align-items:center;gap:20px;justify-content:center;margin:24px 20px 0;height:9px}
+.etick i{width:1px;height:6px;background:#2E2A22}
+.etick i:first-child,.etick i:last-child{height:9px}
+.st-plate{margin:9px 20px 0;padding:5px 16px}
+.st-srow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;position:relative;z-index:1}
+.st-srow+.st-srow{border-top:1px solid var(--hair2)}
+.st-srow b{font-size:15px;font-weight:600;color:var(--t1)}
+.st-edit{display:flex;justify-content:space-between;align-items:center;margin:10px 20px 0}
+.st-info{margin:14px 20px 0}
+.st-info .discl{border-bottom:1px solid var(--hair2);color:var(--t2)}
+.st-info .discl i{margin-left:auto;font-size:14px;color:var(--t4);transition:transform .2s}
+.st-info .discl[aria-expanded="true"] i{transform:rotate(180deg)}
+.st-db{display:none;padding:2px 0 12px;border-bottom:1px solid var(--hair2)}
+.discl[aria-expanded="true"]+.st-db{display:block}
 .ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
 /* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
 .hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
@@ -174,7 +199,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
    <!-- ===================== TODAY ===================== -->
    <section class="screen on" id="s-today" role="tabpanel" aria-label="Today">
-     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Sat · Jun 8 · Week 3</div></div><button class="iconbtn" aria-label="Settings"><i class="ti ti-settings gear"></i></button></div>
+     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Sat · Jun 8 · Week 3</div></div><button class="iconbtn" aria-label="Settings" onclick="openSettings()"><i class="ti ti-settings gear"></i></button></div>
 
      <!-- HERO = 判断块（D-B：判断句独占 hero；185 降到 ~20px 作次级预览） -->
      <div class="forged sect" style="padding:18px 16px;margin-top:20px">
@@ -393,6 +418,34 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
       <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-link" style="font-size:25px"></i>Copy link</button>
       <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-dots" style="font-size:25px"></i>More</button>
     </div>
+  </div></div>
+
+  <!-- 设置（M5-2 工艺重做，拍板方向 B「信号键」2026-06-10）：检修面板架构，
+       iOS 实现对照本 overlay；方向稿存档 rede-12-settings-instrument.html -->
+  <div class="ovl" id="ovl-settings" onclick="if(event.target===this)closeSettings()"><div class="sheet">
+    <div class="st-grab"></div>
+    <div class="st-head"><div><div class="ov">Rede · Tuning</div><div class="headline" style="margin-top:4px">Settings</div></div><button class="ghost" onclick="closeSettings()">Done</button></div>
+    <div class="st-prow"><span class="body t2">Units</span><div class="st-seg" data-stseg><button aria-selected="true">kg</button><button aria-selected="false">lb</button></div></div>
+    <div class="st-prow"><span class="body t2">Language</span><div class="st-seg" data-stseg><button aria-selected="false">中文</button><button aria-selected="true">English</button></div></div>
+    <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="ov" style="margin:18px 20px 0">Background</div>
+    <div class="forged st-plate"><svg class="reg" style="right:8px;top:8px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+      <div class="st-srow"><span class="ov">Goal</span><b>Muscle</b></div>
+      <div class="st-srow"><span class="ov">Days</span><b class="num">5 / week</b></div>
+      <div class="st-srow"><span class="ov">Equipment</span><b>Commercial gym</b></div>
+      <div class="st-srow"><span class="ov">Background</span><b>New to lifting</b></div>
+    </div>
+    <div class="st-edit"><span class="caption t4">Re-answer the 4 setup questions</span><button class="btn2">Edit answers</button></div>
+    <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="st-info">
+      <button class="discl" aria-expanded="false" onclick="dTog(this)">Data<i class="ti ti-chevron-down"></i></button>
+      <div class="st-db caption t3">All training records live on this device. One-tap export ships in a later version.</div>
+      <button class="discl" aria-expanded="false" onclick="dTog(this)">Privacy<i class="ti ti-chevron-down"></i></button>
+      <div class="st-db caption t3">Training records live on this device by default. Rede has no network connection, no account, and no third-party analytics. Deleting the app also deletes its local data.</div>
+      <button class="discl" aria-expanded="false" onclick="dTog(this)">About<i class="ti ti-chevron-down"></i></button>
+      <div class="st-db caption t3">Rede offers fitness guidance, not medical advice. If you have injuries or health concerns, talk to a professional before training.</div>
+    </div>
+    <button class="emb" style="margin:18px 20px 0"><i class="ti ti-mail" style="font-size:16px"></i>Send feedback</button>
   </div></div>
 
  </div>
@@ -672,6 +725,13 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
  /* ---------- toggles / overlays / summary ---------- */
  function tog(el){ const tg=el.querySelector('.tg'); const on=tg.classList.toggle('on'); el.setAttribute('aria-checked',String(on)); }
+ function openSettings(){ document.getElementById('ovl-settings').classList.add('on'); }
+ function closeSettings(){ document.getElementById('ovl-settings').classList.remove('on'); }
+ function dTog(b){ b.setAttribute('aria-expanded', b.getAttribute('aria-expanded')==='true'?'false':'true'); }
+ document.querySelectorAll('[data-stseg]').forEach(seg=>seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+   seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected','false'));
+   b.setAttribute('aria-selected','true');
+ })));
  function confirmFinish(){ document.getElementById('ovl-confirm').classList.add('on'); }
  function closeConfirm(){ document.getElementById('ovl-confirm').classList.remove('on'); }   // 取消 = 留在 Train，不重置
  function openSummary(){
@@ -696,7 +756,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  function share(){ document.getElementById('ovl-summary').classList.remove('on'); document.getElementById('ovl-share').classList.add('on'); }
  function shareBack(){ document.getElementById('ovl-share').classList.remove('on'); document.getElementById('ovl-summary').classList.add('on'); }   // P2-7: 退回小结
- function closeOvl(){ document.querySelectorAll('.ovl').forEach(o=>o.classList.remove('on')); resetTrain(); go('today'); }
+ /* 审查 NIT-1：只关训练流 overlay，不连带 settings（隔离两条 overlay 通路） */
+ function closeOvl(){ ['ovl-confirm','ovl-summary','ovl-share'].forEach(id=>document.getElementById(id)?.classList.remove('on')); resetTrain(); go('today'); }
 
  buildTable(); seg('Week');
 </script>

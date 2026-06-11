@@ -23,6 +23,7 @@ extension Color {
     static let redeHair2 = Color(redeHex: 0x221F1B)     // --hair2
     static let redeTabBar = Color(redeHex: 0x100E0B)    // tab bar 底
     static let redeSegBase = Color(redeHex: 0x1A1712)   // 分段控件底
+    static let redeEtch = Color(redeHex: 0x2E2A22)      // S2 刻线（rede-app.html .etick）
 
     // 文字
     static let redeT1 = Color(redeHex: 0xECE6D8)

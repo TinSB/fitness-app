@@ -209,9 +209,25 @@ struct RuleDivider: View {
 
 // MARK: - 分段控件(.seg)
 
+/// S2 刻线分组分隔（设置面板首用，rede-app.html .etick）：短竖刻线序列，两端略长收边。
+struct EngraveDivider: View {
+    var body: some View {
+        HStack(spacing: 20) {
+            ForEach(0..<9, id: \.self) { i in
+                Rectangle()
+                    .fill(Color.redeEtch)
+                    .frame(width: 1, height: (i == 0 || i == 8) ? 9 : 6)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
 struct SegControl: View {
     let options: [String]
     @Binding var selection: String
+    /// 机加工凹槽轨（设置面板，rede-app.html .st-seg）：槽顶 inset 暗线模拟铣槽深度。
+    var machined: Bool = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -233,6 +249,14 @@ struct SegControl: View {
         .padding(3)
         .background(Color.redeSegBase)
         .clipShape(RoundedRectangle(cornerRadius: 9))
+        .overlay(alignment: .top) {
+            if machined {
+                Rectangle()
+                    .fill(Color.black.opacity(0.28))
+                    .frame(height: 1)
+                    .padding(.horizontal, 6)
+            }
+        }
     }
 }
 

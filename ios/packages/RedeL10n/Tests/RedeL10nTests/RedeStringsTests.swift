@@ -34,6 +34,7 @@ final class RedeStringsTests: XCTestCase {
             ("settingsDaysValue", s.settingsDaysValue(4)), ("settingsData", s.settingsData),
             ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
             ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
+            ("settingsPanelOverline", s.settingsPanelOverline), ("settingsEditAnswersNote", s.settingsEditAnswersNote),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
             ("feedbackBodyPrompt", s.feedbackBodyPrompt),

@@ -69,8 +69,10 @@ struct TodayTabView: View {
             Text(s.resumeSessionMessage)
         }
         .sheet(isPresented: $showSettings) {
+            // 工艺重做（2026-06-10）：内容超半屏，补 .large 档 + 拖拽指示条
             SettingsSheet(store: localeStore)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 

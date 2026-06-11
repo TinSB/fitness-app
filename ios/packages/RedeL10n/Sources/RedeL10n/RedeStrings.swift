@@ -144,6 +144,12 @@ public struct RedeStrings: Sendable {
         t("所有训练记录都保存在这台设备本地。一键导出在后续版本提供。",
           "All training records live on this device. One-tap export ships in a later version.")
     }
+    /// 设置面板铭牌头型号行（工艺重做 2026-06-10，Overline 渲染为全大写）。
+    public var settingsPanelOverline: String { t("Rede · 调校", "Rede · Tuning") }
+    /// 「修改回答」后果说明（点击前可见，重操作不做盲按钮）。
+    public var settingsEditAnswersNote: String {
+        t("重新回答 4 个引导问题", "Re-answer the 4 setup questions")
+    }
     public var settingsPrivacy: String { t("隐私", "Privacy") }
     /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实——
     /// 「默认保存在本机」；禁绝对化（永不/100%/anonymous）。Apple 健康未上线不提。
