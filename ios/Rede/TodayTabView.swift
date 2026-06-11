@@ -268,10 +268,14 @@ struct TodayTabView: View {
                     }
                     GridRow {
                         Overline(text: s.receiptControl).padding(.top, 3)
-                        HStack(spacing: 7) {
-                            controlChip(s.controlApply)
-                            controlChip(s.controlHold)
-                            controlChip(s.controlSwap)
+                        // 整面板（2026-06-11）：去描边小框（A3 卡墙微缩版）——
+                        // 文字级 + 竖刻线分隔，刻度轨轨头 .rop 同款语法
+                        HStack(spacing: 12) {
+                            controlOp(s.controlApply)
+                            opTick
+                            controlOp(s.controlHold)
+                            opTick
+                            controlOp(s.controlSwap)
                         }
                     }
                 }
@@ -280,15 +284,15 @@ struct TodayTabView: View {
         }
     }
 
-    private func controlChip(_ title: String) -> some View {
+    private func controlOp(_ title: String) -> some View {
         Text(title)
             .font(.redeCaption)
             .foregroundStyle(Color.redeT2)
-            .padding(.horizontal, 14)
             .frame(minHeight: RedeShape.controlHeight)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8).stroke(Color.redeHair, lineWidth: 1)
-            )
+    }
+
+    private var opTick: some View {
+        Rectangle().fill(Color.redeEtch).frame(width: 1, height: 8)
     }
 
     // Progress Rail: last → today → next

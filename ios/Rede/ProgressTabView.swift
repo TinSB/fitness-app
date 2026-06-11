@@ -108,7 +108,8 @@ struct ProgressTabView: View {
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
         return VStack(alignment: .leading, spacing: 0) {
-            SegControl(options: segOptions, selection: segSelection)
+            // 整面板（2026-06-11）：通用 seg 凹盒升级机加工凹槽（与设置面板同工艺）
+            SegControl(options: segOptions, selection: segSelection, machined: true)
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 16)
 
@@ -430,7 +431,9 @@ struct ProgressTabView: View {
             .padding(RedeSpace.page)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.redeRaised)
+        // 整面板公理（2026-06-11）：sheet = 掀开的 base 锻面；raised 是抬升层语义，不当整面底。
+        // 审查 MINOR-3：用 presentationBackground（盖整个 sheet chrome），不是内容 background
+        .presentationBackground(Color.redeBase)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

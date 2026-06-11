@@ -708,66 +708,99 @@ struct TrainTabView: View {
         }
     }
 
+    // 整面板（2026-06-11）：空态是「道歉」不是「判断」，不配 hero 铭牌——
+    // 开放式直落 base（与 Progress 空态语法统一）
     private var emptyState: some View {
-        ForgedCard(emberBarInset: 18) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(s.trainEmptyTitle)
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .foregroundStyle(Color.redeT1)
-                if sessionStore.todayModel != nil, sessionStore.todayModel?.prescription == nil {
-                    Text(s.trainRestDayNote).font(.redeCallout).foregroundStyle(Color.redeT3)
-                }
-                EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(s.trainEmptyTitle)
+                .font(.redeHeadline)
+                .tracking(RedeTracking.headline)
+                .foregroundStyle(Color.redeT1)
+            if sessionStore.todayModel != nil, sessionStore.todayModel?.prescription == nil {
+                Text(s.trainRestDayNote).font(.redeCallout).foregroundStyle(Color.redeT3)
             }
-            .padding(.leading, 13)
-            .padding(.vertical, 18)
-            .padding(.horizontal, RedeSpace.card)
+            EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                .padding(.top, 4)
         }
+        .padding(.top, 24)
     }
 
     // MARK: - Sheets
 
-    private var moreSheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Overline(text: s.skipSetAction)
-            HStack(spacing: 7) {
-                ForEach(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"], id: \.self) { code in
-                    SteelButton(title: s.skipReasonLabel(code), action: { skipSet(code) })
+    // 整面板公理（拍板 2026-06-11）：sheet = 掀开的 base 锻面，不是弹出的大卡。
+    // 动作列表 = 开放行（文字+chevron+hairline，affordance 三件套），不堆描边按钮。
+
+    /// 开放动作行：文字级 + chevron + hairline 分隔（最后一行由调用方控制）。
+    private func sheetActionRow(_ title: String, divider: Bool = true, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(title)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                }
+                .frame(minHeight: 44)
+                if divider {
+                    Rectangle().fill(Color.redeHair2).frame(height: 1)
                 }
             }
-            Divider().overlay(Color.redeHair)
-            SteelButton(title: s.skipExerciseAction, action: skipExercise)
-            SteelButton(title: s.swapExerciseAction, action: {
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var moreSheet: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.skipSetAction)
+                .padding(.top, 18)
+            VStack(spacing: 0) {
+                ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
+                    sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipSet(code) }
+                }
+            }
+            .padding(.top, 4)
+            EngraveDivider().padding(.vertical, 12)
+            sheetActionRow(s.skipExerciseAction) { skipExercise() }
+            sheetActionRow(s.swapExerciseAction, divider: false) {
                 showMoreSheet = false
                 showSwapSheet = true
-            })
+            }
             Spacer()
         }
-        .padding(20)
-        .presentationDetents([.height(280)])
-        .presentationBackground(Color.redeSurface)
+        .padding(.horizontal, 20)
+        .presentationDetents([.height(380)])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.redeBase)
     }
 
     private var swapSheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             Overline(text: s.swapExerciseAction)
+                .padding(.top, 18)
             if let candidates = flow?.replacementCandidates, !candidates.isEmpty {
-                ForEach(candidates, id: \.self) { id in
-                    SteelButton(title: s.exerciseName(id), action: {
-                        clearAdjustment() // 换动作 = 新目标，旧暂存作废
-                        sessionStore.apply(.replaceExercise(id))
-                        showSwapSheet = false
-                    })
+                VStack(spacing: 0) {
+                    ForEach(Array(candidates.enumerated()), id: \.element) { idx, id in
+                        sheetActionRow(s.exerciseName(id), divider: idx < candidates.count - 1) {
+                            clearAdjustment() // 换动作 = 新目标，旧暂存作废
+                            sessionStore.apply(.replaceExercise(id))
+                            showSwapSheet = false
+                        }
+                    }
                 }
+                .padding(.top, 4)
             } else {
-                Text("—").foregroundStyle(Color.redeT3)
+                Text("—").foregroundStyle(Color.redeT3).padding(.top, 12)
             }
             Spacer()
         }
-        .padding(20)
-        .presentationDetents([.height(240)])
-        .presentationBackground(Color.redeSurface)
+        .padding(.horizontal, 20)
+        .presentationDetents([.height(280)])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.redeBase)
     }
 
     private var confirmBinding: Binding<Bool> {
@@ -788,12 +821,21 @@ struct TrainTabView: View {
             EmbButton(icon: nil, title: s.endWorkoutConfirm, action: {
                 sessionStore.apply(.confirmEnd(.timeUp))
             })
-            SteelButton(title: s.keepTraining, action: { sessionStore.apply(.keepTraining) })
+            // 整面板：次操作降文字级（A2-6），不再双按钮盒并立
+            Button(action: { sessionStore.apply(.keepTraining) }) {
+                Text(s.keepTraining)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT3)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(260)])
-        .presentationBackground(Color.redeSurface)
+        .presentationDetents([.height(280)])
+        .presentationDragIndicator(.visible) // 审查 MINOR-2：§12.3 grabber
+        .presentationBackground(Color.redeBase)
     }
 
     private var summaryBinding: Binding<Bool> {
@@ -817,13 +859,26 @@ struct TrainTabView: View {
             HStack(spacing: 20) {
                 summaryStat(value: s.formatKg(summary?.totalVolumeKg ?? 0), label: s.summaryVolume)
                 summaryStat(value: "\(summary?.completedSetCount ?? 0)", label: s.summarySets)
-                if summary?.isPersonalRecord == true {
-                    summaryStat(value: "1", label: s.summaryPr, valueColor: .redeEmber)
-                }
             }
             .padding(.top, 4)
 
-            if let top = summary?.topSet {
+            // 整面板：PR 时刻 = 本弹层唯一铭牌（原型 #sumPRcard 语法，两端统一拍板 2026-06-11）
+            if summary?.isPersonalRecord == true, let top = summary?.topSet {
+                ForgedCard {
+                    HStack(spacing: 11) {
+                        Image(systemName: "trophy")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.redeEmber)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Overline(text: s.summaryPr, color: .redeEmber2)
+                            Text(s.summaryTopSet(name: s.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
+                                .font(.redeBody)
+                                .foregroundStyle(Color.redeT1)
+                        }
+                    }
+                    .padding(14)
+                }
+            } else if let top = summary?.topSet {
                 Text(s.summaryTopSet(name: s.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeT2)
@@ -850,8 +905,8 @@ struct TrainTabView: View {
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(320)])
-        .presentationBackground(Color.redeSurface)
+        .presentationDetents([.height(380)])
+        .presentationBackground(Color.redeBase)
         .interactiveDismissDisabled(true)
     }
 

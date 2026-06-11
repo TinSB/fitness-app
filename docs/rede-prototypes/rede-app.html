@@ -117,7 +117,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .st-info .discl[aria-expanded="true"] i{transform:rotate(180deg)}
 .st-db{display:none;padding:2px 0 12px;border-bottom:1px solid var(--hair2)}
 .discl[aria-expanded="true"]+.st-db{display:block}
-.ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
+/* 整面板公理（拍板 2026-06-11）：控制操作去描边框（A3 卡墙微缩版）——文字级 + 竖刻线分隔 */
+.ctrlop{min-height:44px;color:var(--t2);font-size:12px;display:inline-flex;align-items:center}
+.optick{width:1px;height:8px;background:#2E2A22;align-self:center}
 /* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
 .hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
 .hstate.out{opacity:0;transform:scale(.98);pointer-events:none}
@@ -235,7 +237,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;padding-top:6px">
            <div class="ov" style="padding-top:3px">Signal</div><div class="callout t2">Last overhead felt heavy · sleep <span class="num">6.2h</span></div>
            <div class="ov" style="padding-top:3px">Change</div><div class="callout t2">Overhead <span class="num">95→85</span> lb · bench holds</div>
-           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:7px"><button class="ctrlchip">Apply</button><button class="ctrlchip">Hold</button><button class="ctrlchip">Swap</button></div>
+           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:12px"><button class="ctrlop">Apply</button><span class="optick"></span><button class="ctrlop">Hold</button><span class="optick"></span><button class="ctrlop">Swap</button></div>
          </div>
        </div>
      </div>
@@ -296,7 +298,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          </div>
          <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
            <button class="emb" onclick="logSet()"><i class="ti ti-check" style="font-size:16px"></i>Log set</button>
-           <span class="callout t3" style="display:flex;align-items:center;gap:5px;border:1px solid #3A352B;border-radius:10px;padding:0 15px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
+           <!-- 整面板：只读数据不穿描边框（框形=可点暗示；iOS 端早已正确，回写对齐） -->
+           <span class="callout t3" style="display:flex;align-items:center;gap:5px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
          </div>
        </div>
        <div id="restState" class="hstate out" style="display:flex;flex-direction:column;justify-content:center;text-align:center;padding-left:13px">
@@ -395,7 +398,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <div style="display:flex;justify-content:space-around;padding:8px 24px 20px;text-align:center">
       <div><div class="title num" id="sumVol">14.2k</div><div class="caption t3" style="margin-top:3px">lb</div></div>
       <div><div class="title num" id="sumSets">18</div><div class="caption t3" style="margin-top:3px">sets</div></div>
-      <div><div class="title num" id="sumPR" style="color:var(--ember)">1</div><div class="caption t3" style="margin-top:3px">PR</div></div>
+      <!-- 整面板（审查 MINOR-1）：PR 计数 stat 退役——PR 时刻由下方铭牌独占（两端统一 2026-06-11） -->
     </div>
     <div class="forged" id="sumPRcard" style="margin:0 20px 12px;padding:14px;display:flex;align-items:center;gap:11px"><i class="ti ti-trophy" style="font-size:21px;color:var(--ember)"></i><div><div class="body">New bench PR</div><div class="caption num t3" id="sumPRline" style="margin-top:1px">195 × 3 · +5 lb</div></div></div>
     <div style="padding:6px 20px 0;display:flex;flex-direction:column;align-items:flex-start;gap:10px"><button class="emb" onclick="share()"><i class="ti ti-share-2" style="font-size:16px"></i>Share session</button><button class="body t3" style="min-height:44px;padding:0 4px" onclick="closeOvl()">Done</button></div>
@@ -438,7 +441,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
       <button class="st-srow" style="width:100%"><span class="ov">Background</span><b style="margin-left:auto">New to lifting</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
     </div>
     <div class="st-edit"><span class="caption t4" id="stHint">Tap any row to change it</span></div>
-    <div class="forged" id="stEditCard" style="margin:10px 20px 0;padding:16px;display:none">
+    <!-- 整面板：编辑态不另起 forged（一屏一铭牌，spec plate 已是 hero）——开放分区 + 刻线上缘 -->
+    <div id="stEditCard" style="margin:10px 20px 0;padding:16px 0 4px;border-top:1px solid var(--hair2);display:none">
       <div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ov">Schedule</div><button class="ghost" style="min-height:24px;padding:0" onclick="stEditClose()">Cancel</button></div>
       <div class="headline" style="margin-top:6px;font-size:18px">How many days can you actually train?</div>
       <div class="caption t4" style="margin-top:4px">Pick the week you can hold, not the ideal one</div>
@@ -775,7 +779,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    const isPR=top&&top.w>=185;                          // 185 > 之前最好 180 → PR
    document.getElementById('sumVol').textContent=vol>=1000?(vol/1000).toFixed(1)+'k':vol;
    document.getElementById('sumSets').textContent=done.length;
-   document.getElementById('sumPR').textContent=isPR?1:0;
    const card=document.getElementById('sumPRcard');
    if(top){
      const e1=Math.round(top.w*(1+top.r/30));

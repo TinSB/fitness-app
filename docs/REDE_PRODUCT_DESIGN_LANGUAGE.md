@@ -591,3 +591,37 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 
 ### 11.5 覆盖关系
 本节覆盖：§3.1（暖 locked tokens）、§3.3（dark 为主）、§4.3（标签 letterspacing 例外）、§4.4（卡片 12px）。**§9 v0-prompt 三行（`8pt radius` / `letter spacing of 0` / `light mode first-class`）已就地更新为 12pt / 标签 letterspacing / dark-first。** 其余全部不变。
+
+---
+
+## 12. 整面板公理 (2026-06-11 · owner review)
+
+创始人反馈「都是卡片式布局，感觉很 AI 而且不够高级」后，经全 app 容器盘点（19 项取证）拍板。**与前文冲突处以本节为准。**
+
+### 12.1 公理
+
+> **每屏 = 一块连续锻面。至多一张铭牌（ForgedCard / .forged）＝该屏唯一 hero；其余一切直接蚀刻在 base 上——分区靠 S2 刻线 + overline + 密度节奏，层级靠字阶 + 亮度，控件要么是工艺件（机加工凹槽 / 刻度轨站点）要么是文字级操作。通用圆角描边框，禁。**
+
+「屏」按呈现单元计：tab 主屏、push 目标页、每张 sheet/overlay 各算一屏；互斥替换的双卡（如引导题卡⇄结果卡）算 1。
+
+### 12.2 铭牌语义（卡 = 物件，不是布局容器）
+
+卡片只允许是「可锻造的语义物件」：今日判断牌、训练仪表读数、设备铭牌（设置背景）、PR 成就牌（小结）、分享工件、引导题卡/结果卡、计划「今天」节点。顶缘高光 + registration 角标 + 颗粒为 **hero 铭牌专属身份**，不再是卡的通用皮。base 自身获得 ≤1% 全屏锻面颗粒（实体感，真机 25% 亮度校准后定值）。
+
+### 12.3 弹层规范
+
+sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/raised 整面底）+ grabber。动作列表 = 开放行（文字 + chevron + hairline），禁描边按钮堆；唯一主操作可用锻面主按钮（emb）。
+
+### 12.4 开放行 affordance 三件套
+
+无框可点元素必须带以下三者之一 + 命中区 ≥44pt + 整行 contentShape：① chevron（导航/展开）；② 钢色 tick 下标（选中态）；③ 数字/文字亮度跳档（站点/档位）。纯文字级操作仅限既有 .ghost / .rop / .ctrlop 类。
+
+### 12.5 空态规范
+
+空态是「道歉」不是「判断」，不配铭牌：headline + 一句注 + 锻面主按钮，开放式直落 base（三 tab 统一此语法）。
+
+### 12.6 覆盖与预算
+
+- 收紧 §2.5：「5 张以上＝IA 错」→ **每屏常驻铭牌至多 1 张**。
+- 收紧品质层 S5：「一屏 ≤3 层 surface」→ **base + hero 铭牌 1 层 + 控件态（seg 凹槽/选中填充）**。
+- 防回潮：质量门禁含每视图 ForgedCard 预算检查（`.claude/quality-gate.cmd`）。

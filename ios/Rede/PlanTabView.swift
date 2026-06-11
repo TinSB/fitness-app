@@ -28,23 +28,20 @@ struct PlanTabView: View {
                     }
                 )
 
-                ForgedCard(emberBarInset: 18) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(s.planEmptyHeadline)
-                            .font(.redeHeadline)
-                            .tracking(RedeTracking.headline)
-                            .foregroundStyle(Color.redeT1)
-                        Text(s.planEmptyNote)
-                            .font(.redeCallout)
-                            .foregroundStyle(Color.redeT3)
-                        EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
-                    }
-                    .padding(.leading, 13)
-                    .padding(.vertical, 18)
-                    .padding(.horizontal, RedeSpace.card)
+                // 整面板（2026-06-11）：空态开放式直落 base（与 Progress/Train 空态语法统一）
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(s.planEmptyHeadline)
+                        .font(.redeHeadline)
+                        .tracking(RedeTracking.headline)
+                        .foregroundStyle(Color.redeT1)
+                    Text(s.planEmptyNote)
+                        .font(.redeCallout)
+                        .foregroundStyle(Color.redeT3)
+                    EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                        .padding(.top, 4)
                 }
                 .padding(.horizontal, RedeSpace.page)
-                .padding(.top, 20)
+                .padding(.top, 24)
             }
             .padding(.bottom, 78)
         }
