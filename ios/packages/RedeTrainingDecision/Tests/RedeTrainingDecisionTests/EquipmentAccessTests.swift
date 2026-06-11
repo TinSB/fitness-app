@@ -51,11 +51,12 @@ final class EquipmentAccessTests: XCTestCase {
         XCTAssertEqual(equipments(prescription), ["dumbbell"])
         let ids = prescription.exercises.map(\.exerciseId)
         XCTAssertTrue(ids.contains("db-bench-press"))
+        XCTAssertTrue(ids.contains("db-floor-press")) // wave-1：第二平推槽已清（审查 M-1）
         XCTAssertTrue(ids.contains("db-fly"))
         XCTAssertTrue(ids.contains("db-overhead-triceps-extension"))
     }
 
-    // 家用哑铃 · 腿日：深蹲模式由 goblet-squat/db-lunge 补位；knee-flexion 无哑铃条目=如实 unfilled
+    // 家用哑铃 · 腿日：深蹲模式由 goblet-squat/db-lunge 补位；knee-flexion 由 wave-1 db-leg-curl 补位
     func testHomeDumbbellLegDayCoverage() throws {
         let prescription = try XCTUnwrap(try plan(
             scenario: "home-dumbbell",
@@ -69,7 +70,8 @@ final class EquipmentAccessTests: XCTestCase {
         XCTAssertTrue(ids.contains("db-rdl"))
         XCTAssertTrue(ids.contains("db-lunge"))
         XCTAssertTrue(ids.contains("db-calf-raise"))
-        XCTAssertTrue(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
+        XCTAssertTrue(ids.contains("db-leg-curl")) // wave-1：knee-flexion 缺口已清
+        XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
     }
 
     // 家用哑铃 · 拉力日：垂直拉由 db-pullover 补位，rear-delt 由 rear-delt-fly 补位
@@ -84,6 +86,7 @@ final class EquipmentAccessTests: XCTestCase {
         let ids = prescription.exercises.map(\.exerciseId)
         XCTAssertTrue(ids.contains("db-pullover"))
         XCTAssertTrue(ids.contains("rear-delt-fly"))
+        XCTAssertTrue(ids.contains("chest-supported-db-row")) // wave-1：第二划船槽已清
     }
 
     // 审查 M-1：upper/lower 分化同样锁定（防槽位/目录顺序静默变化）
@@ -105,7 +108,8 @@ final class EquipmentAccessTests: XCTestCase {
         let ids = prescription.exercises.map(\.exerciseId)
         XCTAssertTrue(ids.contains("goblet-squat"))
         XCTAssertTrue(ids.contains("db-lunge")) // usedIds 防重：两个深蹲槽各取其一
-        XCTAssertTrue(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
+        XCTAssertTrue(ids.contains("db-leg-curl")) // wave-1：knee-flexion 缺口已清
+        XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
     }
 
     // 审查 M-3：minimal 场景端到端（与 home-dumbbell 同白名单，仍单独锁一条）

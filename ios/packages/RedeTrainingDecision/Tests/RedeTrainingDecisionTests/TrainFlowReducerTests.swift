@@ -100,8 +100,9 @@ final class TrainFlowReducerTests: XCTestCase {
     func testReplaceExerciseSwapsTargetAndKeepsAudit() throws {
         var state = try makeState()
         let candidates = state.replacementCandidates
-        // push-a 当日已排 incline-db-press 与 machine-chest-press → 唯一候选哑铃卧推
-        XCTAssertEqual(candidates, ["db-bench-press"])
+        // push-a 当日已排 incline-db-press 与 machine-chest-press；wave-1 后
+        // 同族还有 db-floor-press（rank 靠后）
+        XCTAssertEqual(candidates, ["db-bench-press", "db-floor-press"])
 
         state.replaceCurrentExercise(with: "db-bench-press")
         XCTAssertEqual(state.currentExercise?.exerciseId, "db-bench-press")

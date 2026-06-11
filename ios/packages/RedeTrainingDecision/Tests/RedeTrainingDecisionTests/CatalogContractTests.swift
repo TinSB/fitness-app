@@ -31,11 +31,11 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "mvp-2")
-        XCTAssertEqual(catalog.entries.count, 31)
+        XCTAssertEqual(catalog.catalogVersion, "wave-1")
+        XCTAssertEqual(catalog.entries.count, 34)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 31, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 31, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 34, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 34, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
@@ -205,15 +205,16 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 覆盖矩阵 golden（FR-EQ1 制度化：新增缺口 = 红）
 
     func testCoverageMatrixMatchesKnownGaps() throws {
-        // 已知缺口清单（P1 填充目标 = 清空；与内容系统文档 §3 同步）。
-        // 后两条是本测试首跑当场抓到的（人工推演两轮都漏）：推力/拉力日的
-        // 第二容量槽（同 pattern 第二动作）家用场景无第二个哑铃候选。
-        let knownGaps: Set<String> = [
-            "home-dumbbell|legs-a|knee-flexion", "home-dumbbell|lower|knee-flexion",
-            "home-dumbbell|push-a|horizontal-press", "home-dumbbell|pull-a|horizontal-pull",
-        ]
+        // 已知缺口清单（与内容系统文档 §3 同步）。P0 首跑抓到 4 条
+        // （home-dumbbell 的 knee-flexion×2 / push-a 第二平推 / pull-a 第二划船），
+        // wave-1（2026-06-11）以 db-leg-curl / db-floor-press /
+        // chest-supported-db-row 三条全部清空。新增缺口 = 红。
+        let knownGaps: Set<String> = []
         var found: Set<String> = []
-        let scenarios: [(String?, String)] = [(nil, "commercial"), ("home-dumbbell", "home-dumbbell")]
+        let scenarios: [(String?, String)] = [
+            (nil, "commercial"), ("home-dumbbell", "home-dumbbell"),
+            ("minimal", "minimal"),   // 审查 M-2：与 home 同白名单也独立进矩阵（防场景投影漂移）
+        ]
         let days: [(String, String, Int)] = [ // (split, 期望 dayCode, 所需历史场数)
             ("push-pull-legs", "push-a", 0), ("push-pull-legs", "pull-a", 1), ("push-pull-legs", "legs-a", 2),
             ("upper-lower", "upper", 0), ("upper-lower", "lower", 1),

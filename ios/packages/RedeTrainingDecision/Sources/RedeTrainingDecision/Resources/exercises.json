@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "mvp-2",
+  "catalogVersion": "wave-1",
   "exercises": [
     {
       "id": "bench-press",
@@ -546,6 +546,60 @@
       "progressionStepKg": 2.5,
       "isGuided": false,
       "rank": 300
+    },
+    {
+      "id": "db-floor-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroup": "chest-press",
+      "startWeightKg": 25.0,
+      "nameZh": "哑铃地板卧推",
+      "nameEn": "DB floor press",
+      "loadType": "external",
+      "progressionStepKg": 2.5,
+      "isGuided": false,
+      "rank": 310
+    },
+    {
+      "id": "chest-supported-db-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroup": "row",
+      "startWeightKg": 17.5,
+      "nameZh": "上斜凳哑铃划船",
+      "nameEn": "Chest-supported DB row",
+      "loadType": "external",
+      "progressionStepKg": 2.5,
+      "isGuided": false,
+      "rank": 320
+    },
+    {
+      "id": "db-leg-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroup": "hamstring-curl",
+      "startWeightKg": 10.0,
+      "nameZh": "哑铃腿弯举",
+      "nameEn": "DB leg curl",
+      "loadType": "external",
+      "progressionStepKg": 2.5,
+      "isGuided": false,
+      "rank": 330
     }
   ]
 }

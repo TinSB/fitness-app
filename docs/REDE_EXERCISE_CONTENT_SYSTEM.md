@@ -48,11 +48,13 @@
 
 1. **golden 锁**：目录任何改动跑全量 golden；处方变化必须显式改 golden 留痕。
 2. **rank 改动 = 行为改动**：调 rank 等同调产品行为，PR 必须说明理由。
-3. **覆盖矩阵 golden**：每个槽位 pattern × 每种器械场景 → 必须有候选；缺口进「已知缺口清单」（golden 锁定）。新增缺口 = 门禁红；P1 填充的目标就是清空清单。
-   **当前已知缺口（P0 首跑即抓到 4 条，后两条人工推演两轮都漏）**：
-   - `home-dumbbell × knee-flexion`（legs-a / lower）——哑铃无合理腿弯举
-   - `home-dumbbell × push-a 第二 horizontal-press 槽`——家用只有一个哑铃平推候选（P1 候选：哑铃地板卧推/俯卧撑）
-   - `home-dumbbell × pull-a 第二 horizontal-pull 槽`——家用只有一个哑铃划船候选（P1 候选：上斜凳支撑哑铃划船）
+3. **覆盖矩阵 golden**：每个槽位 pattern × 每种器械场景 → 必须有候选；缺口进「已知缺口清单」（golden 锁定）。新增缺口 = 门禁红。
+   **当前已知缺口：无**——P0 首跑抓到的 4 条（home-dumbbell 的 knee-flexion×2 /
+   push-a 第二平推 / pull-a 第二划船）已由 **wave-1（2026-06-11）** 三条新动作全部清空：
+   `db-leg-curl`（哑铃腿弯举）、`db-floor-press`（哑铃地板卧推）、
+   `chest-supported-db-row`（上斜凳哑铃划船）——**owner 逐条审定通过
+   （2026-06-11，流水线 §4.2 首次执行）**。俯卧撑系 bodyweight，留给
+   bodyweight wave（loadType 闸内）。
 4. **名字全覆盖**：每条目双语名非空、不回退裸 id（测试锁）。
 5. **id 唯一 + 永生**：重复 id / 删除已发布 id = 测试红。
 
@@ -67,7 +69,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地 2026-06-11**）→ 批量填到 ~100（9 类器械核心动作）；substitutionGroups 一等公民；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）；§6.2 Should 第二批逐项拍板
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地 2026-06-11**）→ ~~wave-1 清缺口批~~（**已入库 2026-06-11，3 条，流水线首跑**）→ 批量填到 ~100（9 类器械核心动作）；substitutionGroups 一等公民；machine 拆分 plate-loaded/selectorized（id 原地改字段，§6.1 铁律）；§6.2 Should 第二批逐项拍板
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）

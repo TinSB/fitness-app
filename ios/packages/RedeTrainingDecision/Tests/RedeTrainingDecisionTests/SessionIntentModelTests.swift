@@ -17,7 +17,7 @@ final class SessionIntentModelTests: XCTestCase {
 
     func testReplacementCandidatesComeFromSameSubstitutionGroup() {
         let candidates = ExerciseReplacementEngine.candidates(for: "bench-press")
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press"])
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press"]) // wave-1 入族
     }
 
     func testReplacementExcludesSelfAndKeepsCatalogOrder() {
@@ -31,9 +31,12 @@ final class SessionIntentModelTests: XCTestCase {
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "no-such-exercise"), [])
     }
 
-    func testSoleMemberGroupReturnsNoCandidates() {
-        // FR-EQ1 后 calves 族不再单成员；hamstring-curl（leg-curl）仍是单成员族
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), [])
+    func testSubstitutionGroupSoleMemberAndPairedCounts() {   // 审查 L-2 改名：同时锁单成员族与配对族
+        // wave-1 后 hamstring-curl 族获得 db-leg-curl；现存单成员族 =
+        // shoulder-press / side-delt（lateral-raise）——锁后者
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), [])
+        // leg-curl 族不再单成员（wave-1 配对入族）
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl"])
     }
 
     // 排除当日已排动作（M3-3 接线合同：push-a 已含 machine-chest-press）
@@ -42,6 +45,6 @@ final class SessionIntentModelTests: XCTestCase {
             for: "bench-press",
             excluding: ["machine-chest-press"]
         )
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press"])
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press"]) // wave-1 入族
     }
 }
