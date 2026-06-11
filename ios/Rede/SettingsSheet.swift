@@ -89,6 +89,13 @@ struct SettingsSheet: View {
                         .foregroundStyle(Color.redeT3)
                 }
 
+                // M6-2 隐私说明（FR-DT4 诚实表达：只说代码可证事实，文案合同见 L10n 测试）
+                section(s.settingsPrivacy) {
+                    Text(s.settingsPrivacyNote)
+                        .font(.redeCallout)
+                        .foregroundStyle(Color.redeT3)
+                }
+
                 // FR-SE4 免责 + FR-SE5 反馈
                 section(s.settingsAbout) {
                     VStack(alignment: .leading, spacing: 12) {

@@ -144,6 +144,13 @@ public struct RedeStrings: Sendable {
         t("所有训练记录都保存在这台设备本地。一键导出在后续版本提供。",
           "All training records live on this device. One-tap export ships in a later version.")
     }
+    public var settingsPrivacy: String { t("隐私", "Privacy") }
+    /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实——
+    /// 「默认保存在本机」；禁绝对化（永不/100%/anonymous）。Apple 健康未上线不提。
+    public var settingsPrivacyNote: String {
+        t("训练记录默认保存在这台设备本机。Rede 不连网、没有账号，也没有第三方统计组件。删除 App 会同时删除本机数据。",
+          "Training records live on this device by default. Rede has no network connection, no account, and no third-party analytics. Deleting the app also deletes its local data.")
+    }
     public var settingsAbout: String { t("关于", "About") }
     /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。
     public var settingsDisclaimer: String {
