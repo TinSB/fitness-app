@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-6",
+  "catalogVersion": "wave-7",
   "exercises": [
     {
       "id": "bench-press",
@@ -1668,6 +1668,129 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 850
+    },
+    {
+      "id": "hammer-chest-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "悍马卧推",
+      "nameEn": "Hammer chest press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 860
+    },
+    {
+      "id": "incline-hammer-press",
+      "movementPattern": "incline-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "上斜悍马卧推",
+      "nameEn": "Incline Hammer press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 870
+    },
+    {
+      "id": "hammer-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "悍马划船",
+      "nameEn": "Hammer row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 880
+    },
+    {
+      "id": "hammer-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 45.0,
+      "nameZh": "悍马高位下拉",
+      "nameEn": "Hammer pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 890
+    },
+    {
+      "id": "hammer-shoulder-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "悍马肩推",
+      "nameEn": "Hammer shoulder press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 900
+    },
+    {
+      "id": "pendulum-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "钟摆深蹲",
+      "nameEn": "Pendulum squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 910
     }
   ]
 }
