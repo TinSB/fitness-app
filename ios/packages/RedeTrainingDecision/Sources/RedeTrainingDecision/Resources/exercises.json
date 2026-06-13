@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-3",
+  "catalogVersion": "wave-4",
   "exercises": [
     {
       "id": "bench-press",
@@ -1197,6 +1197,245 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 600
+    },
+    {
+      "id": "decline-barbell-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "下斜杠铃卧推",
+      "nameEn": "Decline barbell press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 610
+    },
+    {
+      "id": "high-cable-fly",
+      "movementPattern": "fly",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "高位绳索夹胸",
+      "nameEn": "High cable fly",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 620
+    },
+    {
+      "id": "concentration-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "集中弯举",
+      "nameEn": "Concentration curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 630
+    },
+    {
+      "id": "overhead-barbell-triceps",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "杠铃过顶臂屈伸",
+      "nameEn": "Overhead barbell extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 640
+    },
+    {
+      "id": "single-arm-cable-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "单臂绳索划船",
+      "nameEn": "Single-arm cable row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 650
+    },
+    {
+      "id": "sumo-deadlift",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings",
+        "quads",
+        "lower-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 80.0,
+      "nameZh": "相扑硬拉",
+      "nameEn": "Sumo deadlift",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 660
+    },
+    {
+      "id": "wide-grip-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "宽握下拉",
+      "nameEn": "Wide-grip pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 670
+    },
+    {
+      "id": "cable-kickback",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "绳索臂屈伸后踢",
+      "nameEn": "Cable kickback",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 680
+    },
+    {
+      "id": "landmine-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "地雷推举",
+      "nameEn": "Landmine press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 690
+    },
+    {
+      "id": "push-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "quads",
+        "core"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "借力推举",
+      "nameEn": "Push press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 700
+    },
+    {
+      "id": "meadows-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "草地划船",
+      "nameEn": "Meadows row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 710
+    },
+    {
+      "id": "machine-preacher-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "器械牧师弯举",
+      "nameEn": "Machine preacher curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 720
     }
   ]
 }
