@@ -297,6 +297,12 @@ final class SessionStore {
         DraftFile.clear()
     }
 
+    /// 放弃进行中训练（owner 反馈 2026-06-13）：清空流与 draft、不写 canonical——
+    /// 与「结束训练→保存并完成」相对，给用户一个「取消、什么都不存」的出口。
+    func abandonActiveSession() {
+        endSession()
+    }
+
     /// 完成写入（M3-3）：构建 canonical session → 真 DataHealth gate → 唯一写闸。
     /// 成功 → 清会话并重载今日（裁决翻转）；失败 → 如实报错、会话保留可重试。
     func completeAndPersistSession(now: Date = Date()) async -> Bool {

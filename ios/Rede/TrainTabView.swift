@@ -872,10 +872,27 @@ struct TrainTabView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            // 放弃出口（owner 反馈 2026-06-13）：取消进行中训练、什么都不存
+            EngraveDivider().padding(.vertical, 2)
+            Button(action: { sessionStore.abandonActiveSession() }) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(s.endWorkoutDiscard)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeRisk)
+                    Text(s.endWorkoutDiscardNote)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(280)])
+        .presentationDetents([.height(360)])
         .presentationDragIndicator(.visible) // 审查 MINOR-2：§12.3 grabber
         .presentationBackground(Color.redeBase)
     }

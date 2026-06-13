@@ -218,6 +218,11 @@ extension RedeStrings {
     }
     public var endWorkoutConfirm: String { locale == .zh ? "结束训练" : "End workout" }
     public var keepTraining: String { locale == .zh ? "继续练" : "Keep training" }
+    /// 放弃本次训练（不保存）——进行中训练的取消出口（2026-06-13 owner 反馈）。
+    public var endWorkoutDiscard: String { locale == .zh ? "放弃本次训练" : "Discard workout" }
+    public var endWorkoutDiscardNote: String {
+        locale == .zh ? "不保存任何记录，回到今日。" : "Nothing is saved — back to Today."
+    }
 
     public var summaryTitle: String { locale == .zh ? "训练完成" : "Session complete" }
     public func summaryMeta(minutes: Int) -> String {
