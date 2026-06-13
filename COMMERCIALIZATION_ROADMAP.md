@@ -21,11 +21,11 @@
 
 | Workstream | 重写基线 | 距离 / 难度 |
 |---|---|---|
-| iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;现有 `ios/` 代码仅作 legacy/reference inventory | **需要 clean rewrite**。不能把旧实现当 beta 基础;先用外部网站验证付费意向,过线后按 rewrite slices 建最小训练闭环 |
+| iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **P1 已基本完成（2026-06）**。clean rewrite 已实现 Today / 专注训练 / Progress / Plan 占位 / 引导 / 设置最小闭环（见 MVP §9，M0~M6 除 M6-4 外全 ✅，版本 0.1.0）;仅剩 M6-4 TestFlight 上传，阻塞=Apple Developer 账号 |
 | 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
 | 云同步 | 无 first-version runtime；已拍板方向是 local-first + opt-in + CRDT 记录级合并 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
 | 订阅基础设施 | 0 | StoreKit 2 / RevenueCat / 权益门禁 / paywall / 试用 / 恢复购买全部从零。App Store entitlement 可以先与一方账号解耦;账号只增强跨设备和支持体验。任何 StoreKit/RevenueCat/收据校验/权益持久化实现前都要先同步 Master Architecture |
-| 英文化 | 产品文案方向已定义;clean runtime 尚未建立 en locale、切换机制和英文教练解释文案 | **被低估的大头**。难点不在 UI 标签，在**证据/教练解释文案**——你的差异化所在,必须专业英文重写（非机翻） |
+| 英文化 | 产品文案方向已定义;双语 key 化基础设施与中英切换已建立（`RedeL10n` + `LocaleStore`，M0-3/M5-2），UI 文案全部 key 化 | **被低估的大头**。基础设施已就位;真正的难点仍在**证据/教练解释文案**——你的差异化所在,必须专业英文重写（非机翻），公开上架前由英文母语 lifter 审校 |
 | 合规 | README 已坚持"训练决策支持，非医疗诊断" | 隐私政策 / ToS / 隐私营养标签 / 医疗免责 / GDPR·CCPA / 第三方 AI 数据披露 待补。**务必守住 "fitness 不是 medical" 定位**，否则触发 Apple Guideline 1.4.1 的监管证明要求 |
 | 获客 / 增长 / 数据 | 无 approved runtime analytics;官网验证可在外部工具中进行 | 定位、ASO、冷启动渠道、漏斗埋点全空白 |
 | 分享 / 增长资产 | 系统逻辑已确定 Share / Growth System; native share snapshot/card renderer 尚未实现 | 官网阶段用静态 mock 测传播兴趣;第一版 App 用本地分享卡 + iOS Share Sheet。账号、feed、归因、公开主页后置到架构 gate |
@@ -78,7 +78,7 @@
 | 阶段 | 周期 | 目标 | 出口 Gate |
 |---|---|---|---|
 | **P0 外部定位与付费意向验证** | W0–W5 | 锁定英文定位/差异化、定价假设、付费意愿信号 | 有可量化需求 + 价格点击 / 留资 / founder beta 信号 |
-| **P1 Clean iOS Rewrite SPEC + 最小训练闭环** | W4–W14 | 把系统逻辑切成可验证 rewrite slices,实现 Today / 专注训练 / Progress 最小闭环 | clean runtime 有真实训练闭环、fixtures、Swift tests 和可演示 UI |
+| **P1 Clean iOS Rewrite SPEC + 最小训练闭环** ✅ 已基本完成 | W4–W14（已过） | 把系统逻辑切成可验证 rewrite slices,实现 Today / 专注训练 / Progress 最小闭环 | ✅ 已达成（M0~M6 除 M6-4 外全 ✅）：clean runtime 有真实训练闭环、fixtures、Swift tests 和可演示 UI;仅剩 M6-4 TestFlight 上传 |
 | **P2 商业化地基** | W10–W20 | 订阅+权益+埋点+基础备份/导出;账号/云同步完成 gate 设计 | 能收费 + 本地数据可带走 + 能测漏斗 |
 | **P3 英文化 / 合规 / iOS 上架就绪** | W12–W24 | 专业英文、StoreKit/App Store Connect、HealthKit 边界、合规、过审 | 价值面英文达母语级并拿到 App Store 批准 build |
 | **P4 软启动+冷启动** | W18–W26 | 小英文区软启动、跑通漏斗、起量 | 健康的 trial→paid 与 D30 |
@@ -95,8 +95,10 @@
 - **Gate**：waitlist 量级 + paywall 点击率 + 访谈质量 + founder beta 愿意尝试/愿付价格达到预设阈值,才进入 P1 clean rewrite。
 - *Claude Code brief*：①外部验证网站文案/信息架构/价格意向 CTA;②分享卡静态 mock 与文案变体;③访谈招募和信号表,不接仓库 runtime。
 
-### P1 Clean iOS Rewrite SPEC + 最小训练闭环（W4–W14）— 关键路径
+### P1 Clean iOS Rewrite SPEC + 最小训练闭环（W4–W14）— 关键路径 · ✅ 已基本完成
 
+> **现状（2026-06-13）**：P1 关键路径已基本走完——MVP 闭环 M0~M6 除 M6-4 外全部 ✅ 验收（版本 0.1.0，7 个干净包带测试，动作库 97 条）。仅剩 M6-4 TestFlight 上传，阻塞=owner 的 Apple Developer 账号，非代码。下方周数 W4–W14 已成历史，本节作战略节奏回顾保留。
+>
 > **P1 的 slice 级实现执行清单见 [`docs/REDE_MVP_IMPLEMENTATION_PLAN.md`](docs/REDE_MVP_IMPLEMENTATION_PLAN.md)**（已锁定决策基线:TestFlight 免费先行 + 纯核心训练闭环 + 中英双语）。本节是战略节奏,具体实现、slice 顺序、验收与上线 gate 以该文档为准并双向同步。该文档为**有界活文档**:MVP 经用户确认达成后留痕进 CHANGELOG、回收进 canonical docs、解除登记并删除;后续由 [`docs/REDE_PRD.md`](docs/REDE_PRD.md)(产品需求真源,已建,FR 优先级与发布映射见其 §5/§8) + 基于 PRD 与 MVP 完成度的开发规划接棒。
 
 - 把 `docs/REDE_iOS_SYSTEM_LOGIC.md` 拆成 rewrite parity slices:四 tab、专注训练、DataHealth、TrainingDecision、write path、fixtures、UI验收。

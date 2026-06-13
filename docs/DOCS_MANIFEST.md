@@ -1,7 +1,7 @@
 # DOCS_MANIFEST — 文档约束清单(活文档系统)
 
 > 本仓库文档遵循「小固定活文档集」纪律:**只维护下面登记的 canonical 活文档,禁止新建顶层 .md 文档**。
-> 目的:文档 = **约束项目的活规格**。在 clean rewrite 阶段,文档驱动新实现;旧代码只作参考库存,不反向覆盖产品真相。
+> 目的:文档 = **约束项目的活规格(设计真相)**。干净 iOS 实现已 shipping 到 M6,文档与代码双向校准——文档定义目标,已落地的 runtime 行为以代码 + 验证为准;已退役的旧 IronPath/PWA 代码只作参考,不反向覆盖产品真相。
 > 要加一份新文档?——先在本清单登记(写清职责 + 为何现有的容不下),否则不许建。
 
 ## 一、Canonical 活文档(唯一真源 · 相关改动必须同步更新)
@@ -25,7 +25,7 @@
 - `docs/REDE_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
 - `docs/US_MARKET_CONSUMER_ANALYSIS.md` — Diet Companion / Larder 饮食市场消费者研究;不是 Rede strength-training 的功能、定价或 GTM 证据
 - `docs/REDE_iOS_DECISION_CIRCUIT.html` — 系统回路视觉参考,不得覆盖 `docs/REDE_iOS_SYSTEM_LOGIC.md` 或 Master Architecture
-- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + rede-app 整合稿 + rede-landing-mocks)— MVP 核心页/推送/widget/分享卡/落地页的 v0 HTML 实现参照;视觉真源仍是 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`,不得覆盖系统逻辑/架构/MVP 实现文档
+- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + 10a/10b/10c 调参工艺三稿 + 11a/11b onboarding 两稿 + 12 设置仪表 + rede-app 整合稿 + rede-landing-mocks + review-shots/ 改版前后对比截图)— MVP 核心页/推送/widget/分享卡/落地页的 v0 HTML 实现参照;视觉真源仍是 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`,不得覆盖系统逻辑/架构/MVP 实现文档
 - **饮食子项目**:`docs/DIET_COMPANION_*.md` + `docs/diet-companion-*.html` + `docs/larder-*.html` + `docs/LARDER_ICON_EXPRESSION_GUIDE.md` + `docs/BLENDER_CLAY_*.md`(Blender 黏土图标构建简报) + `docs/competitor-food-visual-spectrum.html`(竞品食物视觉光谱分析)(成型后另立自己的 manifest)
 - **Agent 支撑文档**:`docs/agents/domain.md` · `docs/agents/issue-tracker.md` · `docs/agents/triage-labels.md` — 只服务 agent 工作流和 issue triage,不覆盖产品/架构真源
 

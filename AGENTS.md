@@ -1,6 +1,6 @@
 # Rede Agent Instructions
 
-You are working on Rede, a native iOS SwiftUI personal training product under a clean rewrite baseline. The former PWA, Node/Vite runtime, TypeScript source, browser tests, Supabase/Vercel implementation candidates, and cloud-sync scaffolding have been removed. Treat the living docs as the active product and engineering truth. Existing `ios/` code is legacy/reference inventory only; use it for evidence, naming, and tests only when a rewrite slice explicitly approves reuse. iOS-native account/cloud/sync/CRDT decisions remain in the living docs; they are not first-version runtime code.
+You are working on Rede, a native iOS SwiftUI personal training product. The former PWA, Node/Vite runtime, TypeScript source, browser tests, Supabase/Vercel implementation candidates, and cloud-sync scaffolding have been removed. Treat the living docs as the product and engineering source of truth. The clean iOS app under `ios/` is the active implementation that realizes those docs: `ios/Rede` is a clean app shell (since M0-1) and the MVP loop has shipped through M0–M6 (only M6-4 TestFlight upload remains). The original IronPath/PWA-era Swift packages were retired during M1-0 (reference at git tag `legacy-parity-final`) — do not revive them or any removed PWA/cloud runtime, and reuse retired code only through an approved rewrite slice. iOS-native account/cloud/sync/CRDT decisions remain in the living docs; they are not first-version runtime code.
 
 ## ⚠️ Read First — Master Technical Architecture (binding)
 
@@ -11,7 +11,7 @@ If a requested task **conflicts** with that document, **stop and require explici
 - The clean native iOS runtime stays **local-first** (on-device JSON files via Foundation only); the SwiftUI app layer stays **thin**; logic lives in **Swift packages**.
 - **Draft restore is an in-memory draft, not a full AppData restore** (full restore is gated behind DataHealth `buildCleanAppDataView`).
 - **TrainingDecision** consumes only a clean `CleanTrainingDecisionInput` — never raw AppData. The `RedeLocalSnapshot` history store must never touch canonical AppData.
-- Do **not** introduce CloudKit/iCloud/Supabase runtime clients/URLSession/WebView/auth runtime/UserDefaults/SQLite/CoreData/SwiftData, or expand HealthKit beyond the already-approved adapters, without an approved architecture task that amends the master doc.
+- Do **not** introduce CloudKit/iCloud/Supabase runtime clients/URLSession/WebView/auth runtime/UserDefaults-as-source-of-truth/SQLite/CoreData/SwiftData, or introduce HealthKit (no HealthKit adapter exists yet; it is a future architecture-gated boundary), without an approved architecture task that amends the master doc.
 - Do **not** change `project.pbxproj` or package manifests without explicit justification.
 - Use a normal branch from latest `origin/main` (no `git worktree`); never work on `main`; open a PR; wait for checks; no `--admin`; no branch-protection bypass.
 
@@ -43,7 +43,7 @@ Each page has a strict responsibility:
 - 进展 answers: did training work, what changed, and is the data trustworthy?
 - 计划 answers: how will I train in the future, and what changes are proposed?
 
-Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, backup/export, and subscription surfaces. Account or sync controls require a future architecture amendment and are not part of the first clean runtime. Legacy iOS code may contain a `我的` tab; target work must implement the commercial navigation directly.
+Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings, screening, data, units, HealthKit permissions, backup/export, and subscription surfaces. Account or sync controls require a future architecture amendment and are not part of the first clean runtime. The four-tab commercial navigation and the Settings sheet are already implemented in the clean app; there is no `我的` tab.
 
 **MVP execution entry.** The first shippable version's scope, slice queue (M0–M6), per-slice acceptance, and TestFlight launch gate live in [`docs/REDE_MVP_IMPLEMENTATION_PLAN.md`](docs/REDE_MVP_IMPLEMENTATION_PLAN.md) — the execution layer for roadmap P1 (locked baseline: TestFlight free-first, core training-loop only, bilingual zh/en UI). During MVP the `计划` tab is an honest empty-state placeholder; the core loop is 今日 / 训练 / 进展. This doc does not outrank the master architecture or system-logic docs. It is a **bounded-lifecycle doc**: once the user explicitly confirms the MVP is fully complete, follow its §11 termination flow (record in changelog → absorb into canonical docs → de-register → delete). The product-requirements truth lives in [`docs/REDE_PRD.md`](docs/REDE_PRD.md) (numbered FRs, priorities MVP/FF/LATER+GATE, acceptance criteria, release mapping); the development plan follows at MVP completion, registered separately at that time.
 
@@ -57,7 +57,6 @@ Profile / Settings is a low-frequency entry, not a bottom tab. It owns settings,
 - Do not repeat the same information across pages.
 - Do not expose raw exercise metadata unless the user opens details.
 - User UI must label Focus Mode as “专注训练”; technical docs may still mention Focus Mode when referring to the implementation shell.
-- Desktop layouts must use the full workspace with main content and auxiliary panels.
 
 ## UI Rules
 

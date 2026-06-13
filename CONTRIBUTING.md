@@ -1,6 +1,6 @@
 # Contributing
 
-Rede is a local-first native iOS SwiftUI training product under a clean rewrite baseline. The active truth is the manifest-registered living docs. Existing `ios/` code is legacy/reference inventory until a rewrite slice explicitly approves reuse.
+Rede is a local-first native iOS SwiftUI training product. The source of truth is the manifest-registered living docs; the clean iOS app under `ios/` is the active implementation that realizes them (MVP loop shipped through M0–M6, only M6-4 TestFlight upload remains). The original IronPath/PWA-era packages were retired during M1-0; do not revive them or any removed PWA/cloud runtime.
 
 Before changing behavior, read:
 
@@ -9,27 +9,27 @@ Before changing behavior, read:
 - `docs/REDE_iOS_SYSTEM_LOGIC.md`
 - `AGENTS.md`
 
-## Clean Rewrite Workflow
+## Workflow
 
-Start from the living docs, not from the legacy runtime. Docs/spec-only changes should be validated with:
+The living docs define the design truth; the clean iOS app realizes it. Docs/spec-only changes should be validated with:
 
 ```bash
 git diff --check
 ```
 
-When a clean runtime slice exists, run the smallest real verification for that slice. The existing Xcode project may still be inspected as legacy reference:
+For a runtime slice, run the smallest real verification for that slice. Open the active Xcode project:
 
 ```bash
 open ios/Rede.xcodeproj
 ```
 
-List legacy schemes:
+List schemes:
 
 ```bash
 xcodebuild -list -project ios/Rede.xcodeproj
 ```
 
-Build the legacy reference:
+Build the app:
 
 ```bash
 xcodebuild \
@@ -59,9 +59,9 @@ done
 ## Change Rules
 
 1. Preserve approved product/system logic unless the living docs are explicitly amended.
-2. Treat old `ios/` behavior as reference-only unless a rewrite slice approves reuse.
+2. Treat retired IronPath/PWA-era code as reference-only; reuse it only through an approved rewrite slice.
 3. Keep SwiftUI app-layer code thin; business logic belongs in local Swift packages.
-4. Preserve a canonical gated write path; old `CanonicalSessionWriter` is a reference contract, not a mandatory old implementation.
+4. All canonical writes must go through the implemented gated writer (`RedePersistence.CanonicalSessionWriter`: load → candidate → DataHealth gate → backup → atomic save → honest failure).
 5. Do not feed raw `AppData` into engines.
 6. Do not create a second source of truth.
 7. Do not add cloud, auth, networking, WebView, watchOS, CRDT, SQLite, CoreData, SwiftData, remote push, or new persistence mechanisms without an approved Master Architecture amendment.

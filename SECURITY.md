@@ -2,20 +2,20 @@
 
 ## Project Surface
 
-Rede is a local-first native iOS SwiftUI product under a clean rewrite baseline. The approved first-version runtime has no web runtime, browser storage, Node API, remote networking, account runtime, or cloud-sync runtime. Existing `ios/` code is legacy/reference inventory and must be audited before reuse.
+Rede is a local-first native iOS SwiftUI product. The clean iOS app is the active implementation; the approved first-version runtime has no web runtime, browser storage, Node API, remote networking, account runtime, or cloud-sync runtime. Retired IronPath/PWA-era code must be audited before any reuse.
 
-Target sensitive surfaces:
+Sensitive surfaces:
 
-- Local canonical `AppData` JSON files written through the approved persistence boundary.
+- Local canonical `AppData` JSON files written through the implemented gated persistence boundary (`RedePersistence.CanonicalSessionWriter`).
 - DataHealth cleaning and repair before engine consumption.
-- HealthKit adapters for approved body-weight import, workout-history import, and native workout export.
-- WidgetKit read-only readiness snapshots.
-- Local notifications for rest and weekly-training reminders.
-- Future account/cloud/sync/CRDT work, which is decisioned in the living docs but not implemented in first-version runtime code.
+- WidgetKit read-only readiness snapshots (shipped Readiness widget via `RedeWidgetShared` + the widget extension).
+- Local notifications for rest and weekly-training reminders (planned; no notification adapter is implemented yet).
+- HealthKit adapters for body-weight/workout import and native workout export — planned future surface; no HealthKit code exists yet.
+- Future account/cloud/sync/CRDT work, decisioned in the living docs but not implemented in first-version runtime code.
 
 ## Security Boundaries
 
-- Canonical writes must go through a gated writer with validation, backup, atomic save, and honest failure. Old `CanonicalSessionWriter` is a reference contract, not proof of implementation.
+- Canonical writes must go through the implemented gated writer (`RedePersistence.CanonicalSessionWriter`) with validation, backup, atomic save, and honest failure.
 - Raw `AppData` must not enter training engines.
 - Derived stores, widgets, HealthKit exports, UI view models, and local snapshots are not sources of truth.
 - Secrets must not be committed. `.env*` and local tool state are ignored.
