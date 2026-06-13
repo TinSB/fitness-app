@@ -42,11 +42,11 @@ final class SessionIntentModelTests: XCTestCase {
         ])
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "solo-move", catalog: solo), [])
         // 配对族：wave-1/2 入族后的真实目录
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl"])
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), ["cable-lateral-raise"]) // wave-2 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl", "seated-leg-curl"]) // wave-3 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), ["cable-lateral-raise", "machine-lateral-raise"]) // wave-2/3 入族
         // 审查 M-1/Mi-2（wave-2）：直臂下压系孤立动作，不得混入复合垂直拉族——
         // 独立 lat-isolation 族（单成员）；vertical-pull 族列表显式锁定
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover"])
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover", "close-grip-pulldown"]) // wave-3 入族
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "straight-arm-pulldown"), [])
     }
 

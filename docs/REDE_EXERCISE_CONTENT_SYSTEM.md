@@ -73,7 +73,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ ~~wave-3 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 61 条**：各族薄弱处补真实动作，rank 全尾部追加=处方零变化；审定随批定：肩推统一 shoulder 口径、T 杠划船不固定轨道、cable-pull-through 改 accessory）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）
