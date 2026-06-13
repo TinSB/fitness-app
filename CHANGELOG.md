@@ -2,7 +2,7 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
-> Backfill note (2026-06-13): the entries from M5-1 (2026-06-10) through wave-8 (2026-06-13) below were backfilled in one pass to restore per-PR traceability after the log fell ~3 days behind. Facts sourced from `DEV_LOG.md` same-day entries and `git log`; backfilled summaries are tighter than the live M1–M4 entries above.
+> Backfill note (2026-06-13): the entries from M5-1 (2026-06-10) through wave-8 (2026-06-13) below were backfilled in one pass to restore per-PR traceability after the log fell ~3 days behind. Facts sourced from `DEV_LOG.md` same-day entries and `git log`; backfilled summaries are tighter than the live M1–M4 entries above. Citation convention: `#NNN` = a merged PR; `#<7-hex>` = a commit with no PR number (the late-period work was committed locally while the GitHub account was suspended, so those entries cite the commit hash instead).
 
 ## 2026-06-13
 
