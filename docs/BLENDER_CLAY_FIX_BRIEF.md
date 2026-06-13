@@ -70,8 +70,8 @@ FIXES = [ ("banana", b_banana, (1.15, 0.45)) ]   # ← 只有 banana 被调用
 ### 给 Claude Code 的启动 prompt(可直接粘)
 ```
 返修并最终化 Larder clay 食材图标(12 个)。先读规范:
-/Users/xuhaochen/Developer/ironpath/docs/BLENDER_CLAY_FIX_BRIEF.md
-目录:/Users/xuhaochen/Developer/ironpath/assets/clay/
+/Users/xuhaochen/Developer/Rede/docs/BLENDER_CLAY_FIX_BRIEF.md
+目录:/Users/xuhaochen/Developer/Rede/assets/clay/
 把所有修复统一落到 build_all.py 并 headless 全量复跑 12 张(地台是全局问题,
 只重渲 5 个会留下其余图的灰方块)。
 

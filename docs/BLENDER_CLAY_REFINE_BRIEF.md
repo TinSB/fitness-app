@@ -59,7 +59,7 @@
 ### Claude Code prompt(§1 程序化精修 · 现在就能跑)
 ```
 精致化 Larder clay 图标的程序化部分(不依赖 Rodin,现在跑)。改 assets/clay/build_all.py,
-按 /Users/xuhaochen/Developer/ironpath/docs/BLENDER_CLAY_REFINE_BRIEF.md §1:给全 12 个加
+按 /Users/xuhaochen/Developer/Rede/docs/BLENDER_CLAY_REFINE_BRIEF.md §1:给全 12 个加
 Subdivision Surface(render 2–3)+ 轮廓 Bevel 倒角 + 有机/果体加极弱 Displace+Noise 微起伏 +
 修准比例 + 补真实细节(番茄真 5 瓣星萼、燕麦扁椭片、米粒细长两头尖、broccoli 次级颗粒等)。
 母场景与软椭圆落影不改。headless 全量复跑 12 + 刷新 _contact_sheet.png 发我。

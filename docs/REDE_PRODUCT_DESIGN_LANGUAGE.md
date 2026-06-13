@@ -9,7 +9,7 @@
 
 ## 品牌 (Brand) — 名称 · Wordmark · 命名体系
 
-> **新增 2026-06-08:** 产品正式定名 **Rede**（原 Rede，因商标/域名占用更名）。视觉装置（Forged Graphite + Emberline + Engrave + Instrument numerals）与名字**无关**，全部承接，不因改名重做。
+> **新增 2026-06-08:** 产品正式定名 **Rede**（原 IronPath，因商标/域名占用更名）。视觉装置（Forged Graphite + Emberline + Engrave + Instrument numerals）与名字**无关**，全部承接，不因改名重做。
 
 | 项 | 定 |
 |---|---|
