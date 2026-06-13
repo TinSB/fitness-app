@@ -164,19 +164,22 @@ struct TrainTabView: View {
 
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
                 let staging = showAdjust || hasAdjustment
+                let heroReps = staging ? adjustReps : (recommendation?.targetReps ?? exercise?.sets.first?.targetReps ?? 0)
                 HStack(alignment: .bottom, spacing: 8) {
                     Text(currentIsBodyweight
-                         ? "×\(flow.currentRecommendation?.targetReps ?? exercise?.sets.first?.targetReps ?? 0)"
+                         ? "\(heroReps)"
                          : s.formatKg(staging ? adjustWeight : targetKg))
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
-                        .contentTransition(.numericText(value: staging ? adjustWeight : targetKg))
+                        .contentTransition(.numericText(value: currentIsBodyweight ? Double(heroReps) : (staging ? adjustWeight : targetKg)))
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.2),
-                                   value: staging ? adjustWeight : targetKg)
-                    Text(s.trainLoadSuffix(
-                        targetReps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
-                        targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
+                                   value: currentIsBodyweight ? Double(heroReps) : (staging ? adjustWeight : targetKg))
+                    Text(currentIsBodyweight
+                         ? s.trainLoadSuffixBodyweight(targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2))
+                         : s.trainLoadSuffix(
+                            targetReps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
+                            targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
                     ))
                     .font(.redeCallout)
                     .monospacedDigit()
@@ -193,7 +196,7 @@ struct TrainTabView: View {
             .buttonStyle(.plain)
 
             if !hasUsedQuickAdjust && !showAdjust {
-                Text(s.adjustDiscoverHint)
+                Text(currentIsBodyweight ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                     .padding(.top, 2)
@@ -209,17 +212,21 @@ struct TrainTabView: View {
                  ? s.holdWhyLine
                  : (flow.completedInCurrentExercise.isEmpty
                     ? s.firstSetWhy
-                    : s.nextSetWhy(
-                        reasonCode: recommendation?.reason.code ?? "onPlan",
-                        fromKg: flow.completedInCurrentExercise.last.map { s.formatKg($0.weightKg) }
-                    )))
+                    : (currentIsBodyweight
+                       ? s.nextSetWhyBodyweight(reasonCode: recommendation?.reason.code ?? "onPlan")
+                       : s.nextSetWhy(
+                            reasonCode: recommendation?.reason.code ?? "onPlan",
+                            fromKg: flow.completedInCurrentExercise.last.map { s.formatKg($0.weightKg) }
+                        ))))
                 .font(.redeCallout)
                 .foregroundStyle(Color.redeT3)
                 .padding(.top, 10)
 
             HStack(spacing: 8) {
                 SteelButton(
-                    title: s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding),
+                    title: currentIsBodyweight
+                        ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
+                        : s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding),
                     isOn: flow.isHolding,
                     action: { sessionStore.apply(.toggleHold) }
                 )
@@ -275,6 +282,9 @@ struct TrainTabView: View {
             return next.map { s.restNextExercise(localeStore.exerciseName($0.exerciseId)) } ?? ""
         }
         guard let rec = flow.currentRecommendation else { return "" }
+        if flow.currentExercise?.loadType == "bodyweight" {
+            return s.restNextPreviewBodyweight(setNumber: rec.setIndex, reps: rec.targetReps)
+        }
         return s.restNextPreview(setNumber: rec.setIndex, kg: s.formatKg(rec.targetWeightKg), reps: rec.targetReps)
     }
 
@@ -285,18 +295,21 @@ struct TrainTabView: View {
     private func adjustPanel(_ flow: TrainFlowState) -> some View {
         let options = adjustOptions(flow)
         return VStack(alignment: .leading, spacing: 0) {
-            railHeader
-                .modifier(CascadeIn(index: 0, enabled: !reduceMotion))
-            railZone(options)
-                .frame(height: 74)
-                .padding(.top, 2)
-                .modifier(CascadeIn(index: 1, enabled: !reduceMotion))
-            if showExactField {
-                exactField
-                    .padding(.top, 4)
+            if !currentIsBodyweight {
+                // 自重无重量轴：隐藏重量刻度轨/±/精确，次数带成为主控（wave-6 UI 片）
+                railHeader
+                    .modifier(CascadeIn(index: 0, enabled: !reduceMotion))
+                railZone(options)
+                    .frame(height: 74)
+                    .padding(.top, 2)
+                    .modifier(CascadeIn(index: 1, enabled: !reduceMotion))
+                if showExactField {
+                    exactField
+                        .padding(.top, 4)
+                }
             }
             Overline(text: s.adjustReps)
-                .padding(.top, 14)
+                .padding(.top, currentIsBodyweight ? 0 : 14)
                 .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
             repsStrip(flow)
                 .padding(.top, 2)
@@ -562,7 +575,9 @@ struct TrainTabView: View {
         let text: String
         if let projection {
             let note = s.adjustPreviewNote(reasonCode: projection.reason.code)
-            text = s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg))
+            text = (currentIsBodyweight
+                    ? s.adjustPreviewNextBodyweight(reps: projection.targetReps)
+                    : s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg)))
                 + (note.map { " — \($0)" } ?? "")
         } else {
             text = s.adjustPreviewComplete
@@ -940,6 +955,13 @@ struct TrainTabView: View {
     }
 
     // MARK: - 行为
+
+    /// 当前指针组的计划次数（自重 hold 标签用）。
+    private func plannedSetReps(_ flow: TrainFlowState) -> Int {
+        guard let exercise = flow.currentExercise, !exercise.sets.isEmpty else { return 0 }
+        let pointer = min(flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise, exercise.sets.count - 1)
+        return exercise.sets[pointer].targetReps
+    }
 
     private func plannedWeight(_ flow: TrainFlowState) -> Double {
         guard let exercise = flow.currentExercise, !exercise.sets.isEmpty else { return 0 }

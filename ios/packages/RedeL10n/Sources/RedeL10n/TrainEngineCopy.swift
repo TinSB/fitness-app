@@ -122,6 +122,44 @@ extension RedeStrings {
         locale == .zh ? "打勾后 · 下一组 \(kg) \(unitLabel)" : "After log · next \(kg) \(unitLabel)"
     }
 
+    // MARK: - 自重 train 文案（wave-6：无重量轴，按次数）
+
+    /// 大数字后缀（自重）：「次 · RIR」——大数字已是次数本身。
+    public func trainLoadSuffixBodyweight(targetRir: Double?) -> String {
+        locale == .zh ? "次 · RIR \(targetRir.map(formatRir) ?? "—")" : "reps · RIR \(targetRir.map(formatRir) ?? "—")"
+    }
+
+    /// 下一组 why（自重）：不引用重量，按次数叙述。
+    public func nextSetWhyBodyweight(reasonCode: String) -> String {
+        switch reasonCode {
+        case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组稳住次数" : "Last set near failure — hold your reps"
+        case "belowRepFloor": return locale == .zh ? "上组次数偏低，本组稳住" : "Reps fell short — steady this set"
+        case "painReported": return locale == .zh ? "已登记不适，本组放缓" : "Discomfort noted — ease this set"
+        default: return locale == .zh ? "尽力做，记录实际次数" : "Go for it — log your actual reps"
+        }
+    }
+
+    /// Hold 按钮（自重）：保持目标次数。
+    public func holdLabelBodyweight(reps: Int, holding: Bool) -> String {
+        if locale == .zh { return holding ? "保持中 ×\(reps)" : "保持 ×\(reps)" }
+        return holding ? "Holding ×\(reps)" : "Hold ×\(reps)"
+    }
+
+    /// 休息预告（自重）：第 N 组 · ×次。
+    public func restNextPreviewBodyweight(setNumber: Int, reps: Int) -> String {
+        locale == .zh ? "下一组 · 第 \(setNumber) 组 · × \(reps)" : "Next · Set \(setNumber) · × \(reps)"
+    }
+
+    /// 后果预演（自重）：下一组 ×次。
+    public func adjustPreviewNextBodyweight(reps: Int) -> String {
+        locale == .zh ? "打勾后 · 下一组 × \(reps)" : "After log · next × \(reps)"
+    }
+
+    /// 快改入口提示（自重）：点次数可调整。
+    public var adjustDiscoverHintBodyweight: String {
+        locale == .zh ? "点次数可调整——之后的建议会跟着你" : "Tap the reps to adjust — suggestions follow your change"
+    }
+
     /// 预演短注（NextSetReason code → 短语；onPlan 不加注）。
     public func adjustPreviewNote(reasonCode: String) -> String? {
         switch reasonCode {
